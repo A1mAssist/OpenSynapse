@@ -93,8 +93,8 @@ public sealed partial class RazerHidDeviceService
             "razer_chroma_extended_matrix_set_custom_frame",
             "razer_chroma_extended_matrix_set_custom_frame2");
         Add(RazerHidBackendCapability.ReactiveTriggerWrite, "trigger_reactive_effect", "razer_chroma_misc_matrix_reactive_trigger");
-        // ScrollMode has no UI yet. Publishing it inflated the device's "available
-        // protocols" count with a control the page cannot show.
+        Add(RazerHidBackendCapability.ScrollModeRead, "get_scroll_mode", "razer_chroma_misc_get_scroll_mode");
+        Add(RazerHidBackendCapability.ScrollModeWrite, "set_scroll_mode", "razer_chroma_misc_set_scroll_mode");
         Add(RazerHidBackendCapability.ScrollAccelerationRead, "get_scroll_acceleration", "razer_chroma_misc_get_scroll_acceleration");
         Add(RazerHidBackendCapability.ScrollAccelerationWrite, "set_scroll_acceleration", "razer_chroma_misc_set_scroll_acceleration");
         Add(RazerHidBackendCapability.SmartReelRead, "get_scroll_smart_reel", "razer_chroma_misc_get_scroll_smart_reel");

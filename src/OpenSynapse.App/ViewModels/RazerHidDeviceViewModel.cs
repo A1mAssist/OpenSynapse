@@ -158,6 +158,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         _selectedLightingEffect = LightingEffects.FirstOrDefault();
         _selectedPollingRate = PollingOptions.FirstOrDefault();
         InitializeMatrixEditor();
+        RebuildScrollWheelModeChoices();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -830,6 +831,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         RazerHidBackendCapability.SmartReelWrite,
         RazerHidBackendCapability.SmartReelThresholdRead,
         RazerHidBackendCapability.SmartReelThresholdWrite,
+        RazerHidBackendCapability.ScrollModeRead,
+        RazerHidBackendCapability.ScrollModeWrite,
         RazerHidBackendCapability.ScrollFreeNotchedModeRead,
         RazerHidBackendCapability.ScrollFreeNotchedModeWrite,
         RazerHidBackendCapability.ScrollAccelerationLevelRead,
@@ -841,14 +844,12 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
     public Visibility ScrollAccelerationVisibility => VisibleWhen(HasAny(
         RazerHidBackendCapability.ScrollAccelerationRead, RazerHidBackendCapability.ScrollAccelerationWrite));
     public Visibility ScrollAccelerationWriteVisibility => VisibleWhen(Has(RazerHidBackendCapability.ScrollAccelerationWrite));
-    public Visibility SmartReelVisibility => VisibleWhen(HasAny(
-        RazerHidBackendCapability.SmartReelRead, RazerHidBackendCapability.SmartReelWrite));
+    public Visibility SmartReelVisibility => Visibility.Collapsed;
     public Visibility SmartReelWriteVisibility => VisibleWhen(Has(RazerHidBackendCapability.SmartReelWrite));
     public Visibility SmartReelThresholdVisibility => VisibleWhen(HasAny(
         RazerHidBackendCapability.SmartReelThresholdRead, RazerHidBackendCapability.SmartReelThresholdWrite));
     public Visibility SmartReelThresholdWriteVisibility => VisibleWhen(Has(RazerHidBackendCapability.SmartReelThresholdWrite));
-    public Visibility ScrollFreeNotchedModeVisibility => VisibleWhen(HasAny(
-        RazerHidBackendCapability.ScrollFreeNotchedModeRead, RazerHidBackendCapability.ScrollFreeNotchedModeWrite));
+    public Visibility ScrollFreeNotchedModeVisibility => Visibility.Collapsed;
     public Visibility ScrollFreeNotchedModeWriteVisibility =>
         VisibleWhen(Has(RazerHidBackendCapability.ScrollFreeNotchedModeWrite));
     public Visibility ScrollAccelerationLevelVisibility => VisibleWhen(HasAny(

@@ -10,8 +10,7 @@ namespace OpenSynapse.App;
 
 internal sealed class TaskbarStatusPresenter : IDisposable
 {
-    private static readonly TimeSpan BatteryReadInterval = TimeSpan.FromSeconds(20);
-    private readonly MainWindow _window;
+    private static readonly TimeSpan BatteryReadInterval = TimeSpan.FromSeconds(10);
     private readonly MainViewModel _viewModel;
     private readonly LocalDiagnosticLog _diagnosticLog;
     private readonly DispatcherQueue? _dispatcherQueue;
@@ -19,19 +18,16 @@ internal sealed class TaskbarStatusPresenter : IDisposable
     private readonly Dictionary<string, int?> _batteryReadings = new(StringComparer.OrdinalIgnoreCase);
     private TaskbarStatusWindow? _statusWindow;
     private CancellationTokenSource? _batteryReadCancellation;
-    private object? _activePeripheralSource;
     private DateTimeOffset _lastBatteryReadAt = DateTimeOffset.MinValue;
     private bool _batteryReadRequested = true;
     private bool _enabled;
     private bool _disposed;
 
     public TaskbarStatusPresenter(
-        MainWindow window,
         MainViewModel viewModel,
         AppBehaviorSettings settings,
         LocalDiagnosticLog diagnosticLog)
     {
-        _window = window;
         _viewModel = viewModel;
         _diagnosticLog = diagnosticLog;
         _viewModel.Devices.CollectionChanged += OnDevicesChanged;
@@ -40,7 +36,7 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         _timer = _dispatcherQueue?.CreateTimer();
         if (_timer is not null)
         {
-            _timer.Interval = TimeSpan.FromSeconds(2);
+            _timer.Interval = TimeSpan.FromSeconds(1);
             _timer.Tick += (_, _) => Refresh();
         }
         SetEnabled(settings.TaskbarStatusEnabled);
@@ -54,6 +50,7 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         {
             _timer?.Stop();
             CancelBatteryRead();
+            _batteryReadings.Clear();
             _statusWindow?.Dispose();
             _statusWindow = null;
             return;
@@ -95,12 +92,10 @@ internal sealed class TaskbarStatusPresenter : IDisposable
 
         if (battery is null)
         {
-            _activePeripheralSource = null;
             _statusWindow?.Hide();
             return;
         }
 
-        _activePeripheralSource = battery.Source;
         var snapshot = new TaskbarStatusSnapshot(
             battery.Percent,
             null,
@@ -119,7 +114,6 @@ internal sealed class TaskbarStatusPresenter : IDisposable
             {
                 _statusWindow = new TaskbarStatusWindow(
                     message => _diagnosticLog.TryWrite("taskbar-status", message));
-                _statusWindow.Activated += ActivatePeripheral;
             }
             _statusWindow.Update(snapshot, automationText);
         }
@@ -163,7 +157,8 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         {
             var readings = await _viewModel.Tray.ReadBatteriesAsync(cancellation.Token);
             if (cancellation.IsCancellationRequested || _disposed) return;
-            _batteryReadings.Clear();
+            // Keep the last good value per device. A failed or sleeping device
+            // must not blank the strip until the device actually disappears.
             foreach (var reading in readings)
             {
                 if (reading.Percent is { } percent)
@@ -199,16 +194,5 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         _batteryReadCancellation = null;
         cancellation?.Cancel();
         cancellation?.Dispose();
-    }
-
-    private void ActivatePeripheral()
-    {
-        if (_activePeripheralSource is { } source)
-        {
-            _window.RequestDeviceNavigation(source);
-            return;
-        }
-
-        _window.RequestNavigation("devices");
     }
 }

@@ -19,7 +19,6 @@ internal static class TaskbarStatusNative
     public const uint WmTimer = 0x0113;
     internal const uint WmPrintClient = 0x0318;
     public const uint WmDisplayChange = 0x007E;
-    public const uint WmLButtonUp = 0x0202;
     public const uint WmDpiChangedAfterParent = 0x02E0;
     public const uint WmThemeChanged = 0x031A;
 

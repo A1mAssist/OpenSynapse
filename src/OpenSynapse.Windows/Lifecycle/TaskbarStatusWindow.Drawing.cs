@@ -283,9 +283,6 @@ public sealed partial class TaskbarStatusWindow
     {
         switch (message)
         {
-            case WmLButtonUp:
-                Activated?.Invoke();
-                return IntPtr.Zero;
             case WmEraseBkgnd:
                 return new IntPtr(1);
             case WmPaint:

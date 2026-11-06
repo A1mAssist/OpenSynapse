@@ -328,6 +328,40 @@ public sealed class AppAuditRegressionTests
         Assert.Contains("viewModel.RestoreLightingAfterExternalAsync()", App("App.Chroma.cs"));
     }
 
+    [Fact]
+    public void ScrollWheelPresetUsesOneDropdownForHidDevices()
+    {
+        var xaml = App("Views/DevicesPage.xaml");
+        Assert.Contains("ItemsSource=\"{Binding ScrollWheelModeChoices}\"", xaml);
+        Assert.Contains("SelectedItem=\"{Binding SelectedScrollWheelMode, Mode=TwoWay}\"", xaml);
+        Assert.Contains("RazerHidApplyScrollWheelModeClick", xaml);
+        Assert.DoesNotContain("ScrollWheelModeCardStyle", xaml);
+        Assert.DoesNotContain("RazerHidScrollWheelModeClick", xaml);
+        var code = App("Views/DevicesPage.RazerHid.cs");
+        Assert.Contains("ApplySelectedScrollWheelModeAsync", code);
+        Assert.DoesNotContain("RazerHidScrollWheelModeClick", code);
+        var vm = Vm("RazerHidDeviceViewModel.ScrollWheelMode.cs");
+        Assert.Contains("LkScrollMaskForPreset", vm);
+        Assert.Contains("ScrollModeForPreset", vm);
+        Assert.Contains("FreeNotchedModeForPreset", vm);
+        Assert.Contains("RazerHidScrollWheelModeKind.SmartReel", vm);
+    }
+
+    [Fact]
+    public void TaskbarStripStaysBatteryOnlyAndDoesNotOpenTheMainWindow()
+    {
+        var presenter = App("TaskbarStatusPresenter.cs");
+        Assert.DoesNotContain("RequestDeviceNavigation", presenter);
+        Assert.DoesNotContain("Activated", presenter);
+        Assert.DoesNotContain(
+            "_batteryReadings.Clear()",
+            Method(presenter, "private async Task ReadBatteriesAsync"));
+        var window = File.ReadAllText(Path.Combine(
+            RepoLayout.Root, "src/OpenSynapse.Windows/Lifecycle/TaskbarStatusWindow.cs"));
+        Assert.Contains("const uint HostTimerInterval = 250", window);
+        Assert.Contains("SwpNoZOrder", window);
+    }
+
     private static string Vm(string file) => App("ViewModels/" + file);
     private static string App(string file) => File.ReadAllText(Path.Combine(RepoLayout.Root, "src/OpenSynapse.App", file));
 
