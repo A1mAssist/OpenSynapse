@@ -51,6 +51,24 @@ internal static class RazerFilterInputProtocol
         return payload;
     }
 
+    // SubmitInput type 2 carries one 0x18-byte mouse record at +8. The
+    // record is the same layout Synapse sends: max value, click mask,
+    // reserved, x, y, reserved.
+    internal static byte[] CreateMouseInput(
+        int maximumValue,
+        uint clickMask,
+        int x,
+        int y)
+    {
+        var payload = new byte[ConsumerInputLength];
+        BinaryPrimitives.WriteUInt32LittleEndian(payload.AsSpan(4), 2);
+        BinaryPrimitives.WriteInt32LittleEndian(payload.AsSpan(8), maximumValue);
+        BinaryPrimitives.WriteUInt32LittleEndian(payload.AsSpan(12), clickMask);
+        BinaryPrimitives.WriteInt32LittleEndian(payload.AsSpan(20), x);
+        BinaryPrimitives.WriteInt32LittleEndian(payload.AsSpan(24), y);
+        return payload;
+    }
+
     private static void WriteKeyboardKey(Span<byte> payload, ushort scanCode, ushort flag)
     {
         if ((flag & ~3) != 0)

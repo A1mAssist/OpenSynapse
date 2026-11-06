@@ -306,29 +306,42 @@ public sealed class WindowsMacroInputSink : IMacroInputSink
 
     private static (uint Flags, int X, int Y) ResolveForegroundMove(int x, int y)
     {
+        return TryResolveForegroundPoint(x, y, out var screenX, out var screenY)
+            ? (
+                MouseEventMove | MouseEventAbsolute | MouseEventVirtualDesk,
+                NormalizeScreenX(screenX),
+                NormalizeScreenY(screenY))
+            : (MouseEventMove, 0, 0);
+    }
+
+    internal static bool TryResolveForegroundPoint(
+        int x,
+        int y,
+        out int screenX,
+        out int screenY)
+    {
+        screenX = 0;
+        screenY = 0;
         var window = GetForegroundWindow();
         if (window == 0 ||
             !GetClientRect(window, out var client) ||
             client.Right <= client.Left ||
             client.Bottom <= client.Top)
         {
-            return (MouseEventMove, 0, 0);
+            return false;
         }
 
         var origin = default(Point);
         if (!ClientToScreen(window, ref origin))
         {
-            return (MouseEventMove, 0, 0);
+            return false;
         }
 
         var width = client.Right - client.Left;
         var height = client.Bottom - client.Top;
-        var screenX = origin.X + (int)((long)Math.Clamp(x, 0, 10_000) * (width - 1) / 10_000);
-        var screenY = origin.Y + (int)((long)Math.Clamp(y, 0, 10_000) * (height - 1) / 10_000);
-        return (
-            MouseEventMove | MouseEventAbsolute | MouseEventVirtualDesk,
-            NormalizeScreenX(screenX),
-            NormalizeScreenY(screenY));
+        screenX = origin.X + (int)((long)Math.Clamp(x, 0, 10_000) * (width - 1) / 10_000);
+        screenY = origin.Y + (int)((long)Math.Clamp(y, 0, 10_000) * (height - 1) / 10_000);
+        return true;
     }
 
     private static int NormalizeScreenX(int x)
