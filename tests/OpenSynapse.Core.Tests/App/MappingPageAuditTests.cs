@@ -87,7 +87,11 @@ public sealed class MappingPageAuditTests
             root, "src", "OpenSynapse.Core", "Devices", "RazerMappingBundle.cs"));
         var view = File.ReadAllText(Path.Combine(
             root, "src", "OpenSynapse.App", "Views", "RazerMappingView.xaml"));
+        var loader = File.ReadAllText(Path.Combine(
+            root, "src", "OpenSynapse.App", "ViewModels", "RazerMappingImageLoader.cs"));
 
+        Assert.Contains("LiftDarkBackdrop", loader);
+        Assert.DoesNotContain("pixels[offset + 3] = 0", loader);
         Assert.Contains("asset-manifest.json", service);
         Assert.Contains("prd-3x", service);
         Assert.Contains("StudioManifestService", service);

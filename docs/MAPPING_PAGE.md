@@ -105,6 +105,8 @@ Viper 保存后会用设备回读的 16 条 assignment 更新 profile，避免�
 - **键盘没有 studio SVG**：回退产品 bundle 的 3x 图 + `drawLines` 锚点，和鼠标共用一套 callout。多数键盘 bundle 没有 `drawLines` 或 `prd-3x`，这种型号仍然只显示行表格。
 - **没有对应资源**：只显示行表格；映射读写不受影响。
 
+AVIF 的透明底会被 Windows 解码成不透明黑。映射图不做颜色抠图，只把整张图的亮度加 `#141414` 提亮到卡片背景色；这样黑底和卡片融合，黑色机身边缘不会被抠成透明缺口。
+
 `drawLines(index, this.props.buttonList[N], x, y, !isLeft)` 里的 `N` 指向当前 `groupList` 的按钮对象，按钮对象的 `counter` 是固件按钮 id，`buttonPos` 是左右列。锚点坐标先减去 `(cvsW - 300) / 2`，再按 `300 × 340` 的产品图画布使用；3x 图实际是 `900 × 1020`，UI 只按同一比例缩放，不另存一套裁边坐标。左右列优先用 `buttonPos`，没有时才用 `!isLeft`。没有按钮 id 的 `drawLine` 不生成热点。
 
 不是每个按钮都有锚点。产品 99 的 bundle 有 9 个 `drawLine` 位置，但只有 5 个按钮对象能确认 id；这 5 个显示设备旁标签，其余行保留在下方表格里。没有锚点的行不伪造中心点。
