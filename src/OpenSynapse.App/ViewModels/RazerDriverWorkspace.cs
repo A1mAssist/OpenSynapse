@@ -31,7 +31,7 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
 
     public bool HasMissing => _missing.Count > 0;
 
-    public bool CanInstall => HasMissing && !_isBusy;
+    public bool CanInstall => !_isBusy && _missing.Any(static row => !row.IsInstalled);
 
     public bool IsBusy
     {
@@ -205,6 +205,7 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                     foreach (var row in _missing.Where(row =>
                                  string.Equals(row.Package?.Url, package.Url, StringComparison.OrdinalIgnoreCase)))
                     {
+                        row.IsInstalled = true;
                         row.StatusText = AppStrings.Text("RazerDriverInstalledRestart");
                     }
                 }
@@ -303,6 +304,7 @@ public sealed class RazerDriverRowViewModel : INotifyPropertyChanged
     public string ProductId { get; }
     public string Detail { get; }
     internal RazerDriverPackage? Package { get; }
+    internal bool IsInstalled { get; set; }
 
     public string StatusText
     {
