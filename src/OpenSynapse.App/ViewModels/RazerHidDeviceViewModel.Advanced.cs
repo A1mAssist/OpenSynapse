@@ -36,6 +36,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             await ReadOptionalAsync(RazerHidBackendCapability.ScrollAccelerationLevelRead,
                 async () => ScrollAccelerationLevel =
                     await _service.GetScrollVirtualAccelerationLevelAsync(Connection, cancellationToken));
+            RefreshScrollWheelModeSelection();
         }
         finally
         {

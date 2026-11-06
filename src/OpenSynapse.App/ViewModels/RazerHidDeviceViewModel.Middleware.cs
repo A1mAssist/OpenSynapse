@@ -247,9 +247,9 @@ public sealed partial class RazerHidDeviceViewModel
         ? $"maxId {info.MaxId}, available {CombineMemory(info.AvailableMemoryLow, info.AvailableMemoryHigh)} / {CombineMemory(info.MaxMemoryLow, info.MaxMemoryHigh)}"
         : "--";
 
-    public Visibility LkScrollVisibility => VisibleWhen(HasAny(
-        RazerHidBackendCapability.LkScrollWheelModeRead,
-        RazerHidBackendCapability.LkScrollWheelModeWrite));
+    // The preset card owns the visible mode controls. Keep the raw LK mask
+    // toggles out of the page so one device does not show two competing mode UIs.
+    public Visibility LkScrollVisibility => Visibility.Collapsed;
     public Visibility LkScrollWriteVisibility => VisibleWhen(Has(RazerHidBackendCapability.LkScrollWheelModeWrite));
     public bool LkScrollTactileEnabled { get => _lkScrollTactileEnabled; set => SetLkScrollFlag(ref _lkScrollTactileEnabled, value); }
     public bool LkScrollFreeSpinEnabled { get => _lkScrollFreeSpinEnabled; set => SetLkScrollFlag(ref _lkScrollFreeSpinEnabled, value); }
@@ -417,6 +417,7 @@ public sealed partial class RazerHidDeviceViewModel
             SelectedChromaTapFunctionIndex = Math.Clamp(tap.FunctionId - 1, 0, 3);
         }
         if (state.LkScrollWheelModeMask is { } mask) SetLkScrollMask(mask);
+        RefreshScrollWheelModeSelection();
     }
 
     public void NotifyMiddlewareStateChanged()

@@ -390,6 +390,9 @@ public sealed partial class DevicesPage : UserControl
     private async void RazerHidScrollExpanding(Expander sender, ExpanderExpandingEventArgs args) =>
         await (SelectedRazerHidDevice?.LoadScrollAsync(Lifetime) ?? Task.CompletedTask);
 
+    private async void RazerHidApplyScrollWheelModeClick(object sender, RoutedEventArgs e) =>
+        await (SelectedRazerHidDevice?.ApplySelectedScrollWheelModeAsync(Lifetime) ?? Task.CompletedTask);
+
     private async void RazerHidApplyScrollModeClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.ApplyScrollModeAsync(Lifetime) ?? Task.CompletedTask);
 

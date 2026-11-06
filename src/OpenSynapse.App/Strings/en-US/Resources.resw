@@ -1470,6 +1470,8 @@
   <data name="RazerHidScrollNotchedMode.Text" xml:space="preserve"><value>Notched</value></data>
   <data name="RazerHidScrollFreeSpinMode.Text" xml:space="preserve"><value>Free spin</value></data>
   <data name="RazerHidScrollModeLabel.Text" xml:space="preserve"><value>Scroll mode</value></data>
+  <data name="RazerHidScrollModeSmartReel" xml:space="preserve"><value>Smart scroll</value></data>
+  <data name="RazerHidScrollModeApplied" xml:space="preserve"><value>Scroll mode applied</value></data>
   <data name="RazerHidScrollAccelerationLabel.Text" xml:space="preserve"><value>Scroll acceleration</value></data>
   <data name="RazerHidSmartReelThresholdLabel.Text" xml:space="preserve"><value>Smart Reel threshold</value></data>
   <data name="RazerHidKeyswitchExpander.Header" xml:space="preserve"><value>Keyswitch optimization</value></data>
@@ -1670,7 +1672,7 @@
   <data name="TrayBatteryDescription.Text" xml:space="preserve"><value>Show battery percentages for connected mice and keyboards in the tray menu. Turning this off removes the battery rows.</value></data>
   <data name="TrayBatteryToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Tray menu peripheral battery</value></data>
   <data name="TaskbarStatusTitle.Text" xml:space="preserve"><value>Taskbar status strip</value></data>
-  <data name="TaskbarStatusDescription.Text" xml:space="preserve"><value>Show connected peripheral battery in the taskbar; also show the current performance mode when a Blade is detected.</value></data>
+  <data name="TaskbarStatusDescription.Text" xml:space="preserve"><value>Show connected peripheral battery in the taskbar. It does not show the performance mode or open the app window when clicked.</value></data>
   <data name="TaskbarStatusToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Taskbar status strip</value></data>
   <data name="PerformanceOverlayTitle" xml:space="preserve"><value>Performance overlay</value></data>
   <data name="PerformanceOverlayDescription" xml:space="preserve"><value>Show performance mode, CPU/GPU temperatures and clocks, memory usage and clock, and fan speed above other windows. Drag it anywhere; its position is remembered. Right-click to switch cards, reset the position, or close it.</value></data>
