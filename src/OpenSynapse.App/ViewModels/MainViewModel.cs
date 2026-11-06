@@ -116,6 +116,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             () => Devices.FirstOrDefault(device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily)),
             GetDeviceSerialAsync);
         Macros = new MacroWorkspace(() => GetActiveProfile(), SaveProfileAsync, _diagnosticLog, macroInputSink);
+        RazerDrivers = new RazerDriverWorkspace(_diagnosticLog);
         Display = new DisplayWorkspace(
             internalDisplayController,
             () => Blade.IsSelectedRefreshRatePowerActive,
@@ -271,6 +272,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     public UsbAccessoriesWorkspace Accessories { get; }
     public ThxAudioViewModel ThxAudio { get; }
     public MacroWorkspace Macros { get; }
+    public RazerDriverWorkspace RazerDrivers { get; }
     public RazerHidWorkspace RazerHid { get; }
     public TrayWorkspace Tray { get; }
     public ProfilesWorkspace Profiles { get; }
