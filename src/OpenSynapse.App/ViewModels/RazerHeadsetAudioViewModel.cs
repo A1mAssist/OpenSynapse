@@ -257,9 +257,10 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
     public Visibility GenericStatusVisibility => IsMixer053E ? Visibility.Collapsed : Visibility.Visible;
 
-    public Microsoft.UI.Xaml.Visibility LightingVisibility => !IsFeature91 || Lighting is null
-        ? Microsoft.UI.Xaml.Visibility.Collapsed
-        : Microsoft.UI.Xaml.Visibility.Visible;
+    public Microsoft.UI.Xaml.Visibility LightingVisibility =>
+        (IsFeature91 || IsKrakenBase) && Lighting is not null
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
 
     /// <summary>
     /// THX is an APO plus service on this headset, so the card only appears for the

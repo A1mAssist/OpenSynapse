@@ -81,16 +81,15 @@ public static class RazerHeadsetChannelCatalog
             [0x051E] = new("AudioAvneraDevice", RazerHeadsetChannel.Feature91),
             [0x051F] = new("AudioAvneraDevice", RazerHeadsetChannel.Feature91),
             [0x0528] = new("AudioAvneraDeviceOdessaT1", RazerHeadsetChannel.Feature91),
-            // OdessaT2 sends fixed 37-byte HID reports through hid.write/hid.read, not the
-            // 91-byte feature report used by the Avnera/Nari family. The same
-            // AudioKrakenBase class also backs 0520/0521/0526/0527/0554/0560, but those
-            // need a real-device report-length check before moving off Feature91.
+            // AudioKrakenBase sends fixed 37-byte HID reports through hid.write/hid.read,
+            // not the 91-byte feature report used by the Avnera/Nari family. The same
+            // base class backs the TE, Kitty, X USB, Ultimate and Kitty V2 models.
             [0x0529] = new("AudioKrakenOdessaT2", RazerHeadsetChannel.KrakenBase37),
-            [0x0520] = new("AudioKrakenTE", RazerHeadsetChannel.Feature91),
-            [0x0527] = new("AudioKrakenUltimate", RazerHeadsetChannel.Feature91),
-            [0x0526] = new("AudioKrakenXUSB", RazerHeadsetChannel.Feature91),
-            [0x0521] = new("AudioKrakenKitty", RazerHeadsetChannel.Feature91),
-            [0x0560] = new("AudioKrakenKittyT3", RazerHeadsetChannel.Feature91),
+            [0x0520] = new("AudioKrakenTE", RazerHeadsetChannel.KrakenBase37),
+            [0x0527] = new("AudioKrakenUltimate", RazerHeadsetChannel.KrakenBase37),
+            [0x0526] = new("AudioKrakenXUSB", RazerHeadsetChannel.KrakenBase37),
+            [0x0521] = new("AudioKrakenKitty", RazerHeadsetChannel.KrakenBase37),
+            [0x0560] = new("AudioKrakenKittyT3", RazerHeadsetChannel.KrakenBase37),
             [0x0533] = new("AudioKrystalT2", RazerHeadsetChannel.Feature91),
             [0x0549] = new("AudioKrystalT2", RazerHeadsetChannel.Feature91),
             [0x0537] = new("AudioKrystalT3", RazerHeadsetChannel.Feature91),
@@ -99,8 +98,8 @@ public static class RazerHeadsetChannelCatalog
             [0x0543] = new("AudioCamyT2", RazerHeadsetChannel.Feature91),
             [0x0F1B] = new("AudioCamyT3Device", RazerHeadsetChannel.Feature91),
             // AudioKrakenKittyV2Pro only appends a 37-byte Chroma frame to the same
-            // AudioKittyV2Pro audio base class, so its audio stays on the 91-byte channel.
-            [0x0554] = new("AudioKittyV2Pro", RazerHeadsetChannel.Feature91),
+            // AudioKrakenBase audio class, so its audio uses the 37-byte channel too.
+            [0x0554] = new("AudioKittyV2Pro", RazerHeadsetChannel.KrakenBase37),
             [0x0532] = new("rzDevice25Noa", RazerHeadsetChannel.Feature91),
             [0x0548] = new("rzDevice25Noa", RazerHeadsetChannel.Feature91),
             [0x055A] = new("rzDevice25NommoV2Pro", RazerHeadsetChannel.Feature91),
