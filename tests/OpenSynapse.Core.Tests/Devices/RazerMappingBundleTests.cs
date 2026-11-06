@@ -107,6 +107,18 @@ public sealed class RazerMappingBundleTests
     }
 
     [Fact]
+    public void ParsesButtonObjectsWithNestedKeypadGroups()
+    {
+        const string js = """
+            {buttonKey:"KEY_1",keyPadGroup:{type:1,columnSide:2},counter:1,HID:30}
+            """;
+
+        var bundle = RazerMappingBundleParser.Parse(js);
+
+        Assert.Equal("KEY_1", bundle.ButtonNamesById[1]);
+    }
+
+    [Fact]
     public void FirmwareButtonIdsFollowStandardMouseSemantics()
     {
         const string lines = """

@@ -53,7 +53,7 @@ public static class RazerMappingBundleParser
         RegexOptions.CultureInvariant);
 
     private static readonly Regex ButtonObjectRegex = new(
-        """\{buttonKey:"(?<key>[^"]+)"[^{}]*\}""",
+        """\{buttonKey:"(?<key>[^"]+)"(?:[^{}]|\{[^{}]*\})*\}""",
         RegexOptions.CultureInvariant);
 
     private static readonly Regex CounterRegex = new(

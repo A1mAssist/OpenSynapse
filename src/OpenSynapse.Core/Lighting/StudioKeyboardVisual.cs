@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace OpenSynapse.Core.Lighting;
 
@@ -23,6 +24,10 @@ public sealed record StudioKeyboardVisual(
 /// </summary>
 public static class StudioKeyboardVisualBuilder
 {
+    private static readonly Regex KeypadSelectionRegex = new(
+        """^selection-(?<index>\d+)$""",
+        RegexOptions.CultureInvariant);
+
     public static StudioKeyboardVisual Build(string svg)
     {
         var layout = StudioSvgLayoutParser.Parse(svg);
@@ -40,6 +45,45 @@ public static class StudioKeyboardVisualBuilder
             return Build(svg);
         }
         catch (Exception ex) when (ex is FormatException or ArgumentException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Keypads have numbered selection paths instead of keyboard key names.
+    /// Their first N paths map to the keypad counters in bundle order.
+    /// </summary>
+    public static StudioKeyboardVisual? BuildKeypad(StudioManifestDevice manifest)
+    {
+        ArgumentNullException.ThrowIfNull(manifest);
+        if (string.IsNullOrWhiteSpace(manifest.SvgBase64)) return null;
+
+        try
+        {
+            var svg = Encoding.UTF8.GetString(Convert.FromBase64String(manifest.SvgBase64));
+            var layout = StudioSvgLayoutParser.Parse(svg);
+            var keys = new List<StudioKeyboardKey>();
+            var keyIndex = 0;
+            foreach (var path in layout.Paths)
+            {
+                if (path.Role != StudioSvgRole.Selection ||
+                    !KeypadSelectionRegex.IsMatch(path.Id))
+                {
+                    continue;
+                }
+
+                var isScroll = path.SelectionGroup?.Contains("scroll", StringComparison.OrdinalIgnoreCase) == true ||
+                    path.Id.Contains("scroll", StringComparison.OrdinalIgnoreCase);
+                var keyName = isScroll ? "scroll" : $"key{++keyIndex}";
+                keys.Add(new StudioKeyboardKey(keyName, path.Id, path.Data, path.SelectionGroup));
+            }
+
+            return keys.Count == 0
+                ? null
+                : new StudioKeyboardVisual(layout.Width, layout.Height, layout.Paths, keys);
+        }
+        catch (Exception ex) when (ex is FormatException or ArgumentException or System.Xml.XmlException)
         {
             return null;
         }

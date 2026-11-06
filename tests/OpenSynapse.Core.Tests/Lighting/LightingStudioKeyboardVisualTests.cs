@@ -104,6 +104,24 @@ public sealed class LightingStudioKeyboardVisualTests
         Assert.Null(StudioKeyboardVisualBuilder.Build(Manifest(EncodeSvg("<html><body/></html>"))));
     }
 
+    [Fact]
+    public void KeypadSelectionPathsGetCounterNames()
+    {
+        const string svg = """
+            <svg xmlns="http://www.w3.org/2000/svg" width="320" height="440" viewBox="0 0 320 440">
+              <path id="selection-1" class="selection" d="M0,0H10V10H0Z"/>
+              <path id="selection-20" class="selection" data-selection-group="scroll" d="M20,0H30V10H20Z"/>
+              <path id="selection-21" class="selection" d="M40,0H50V10H40Z"/>
+            </svg>
+            """;
+        var manifest = Manifest(EncodeSvg(svg)) with { Category = "KEYPAD" };
+
+        var visual = StudioKeyboardVisualBuilder.BuildKeypad(manifest);
+
+        Assert.NotNull(visual);
+        Assert.Equal(new[] { "key1", "scroll", "key2" }, visual.Keys.Select(key => key.KeyName));
+    }
+
     private static StudioManifestDevice Manifest(string svgBase64) =>
         new(590, 0, "BlackWidow V3", true, "svg_0_1", svgBase64, "{}", null, null);
 
