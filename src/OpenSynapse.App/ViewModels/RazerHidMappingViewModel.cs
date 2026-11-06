@@ -6,7 +6,6 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
 using OpenSynapse.Core.Lighting;
 using OpenSynapse.Core.Macros;
 using OpenSynapse.Windows.Devices;
@@ -48,8 +47,6 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
         bool canWrite,
         Func<RazerOnboardMacroService>? macroServiceFactory = null,
         Func<IReadOnlyList<MacroDefinition>>? localMacros = null,
-        Uri? layoutUri = null,
-        RazerMappingImageLayout? layout = null,
         Action<string>? log = null,
         IRazerMappingActionCatalog? actionCatalog = null,
         Func<CancellationToken, Task>? afterApplyAsync = null,
@@ -63,8 +60,6 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
         _macroServiceFactory = macroServiceFactory;
         _localMacroProvider = localMacros;
         _afterApplyAsync = afterApplyAsync;
-        _layout = layout;
-        _layoutImage = CreateLayoutImage(layout?.ImageUri ?? layoutUri);
         _log = log;
         _productId = productId;
         _deviceKind = deviceKind;
@@ -210,14 +205,6 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
         }
 
         OnPropertyChanged(nameof(TableVisibility));
-    }
-
-    private static ImageSource? CreateLayoutImage(Uri? uri)
-    {
-        if (uri is null) return null;
-        return Path.GetExtension(uri.LocalPath).Equals(".svg", StringComparison.OrdinalIgnoreCase)
-            ? new SvgImageSource { UriSource = uri }
-            : new BitmapImage(uri);
     }
 
     public async Task ReadAsync(CancellationToken cancellationToken = default)

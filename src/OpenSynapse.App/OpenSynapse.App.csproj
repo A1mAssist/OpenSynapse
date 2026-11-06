@@ -40,12 +40,6 @@
     <Content Include="Assets\LightingLayouts\*.json"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="Assets\MappingLayouts\*.svg"
-             CopyToOutputDirectory="PreserveNewest"
-             CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="Assets\MappingLayouts\*.png"
-             CopyToOutputDirectory="PreserveNewest"
-             CopyToPublishDirectory="PreserveNewest" />
     <Content Include="Assets\LightingLayouts\studio-manifests.zip"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
