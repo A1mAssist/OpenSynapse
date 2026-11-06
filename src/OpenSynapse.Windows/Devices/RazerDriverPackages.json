@@ -1,5 +1,5 @@
 {
-  "source": "Razer Synapse device bundles; all official per-device driver packages; generated 2026-11-06",
+  "source": "Razer Synapse device bundles; all official per-device driver packages; completed from the component inventory 2026-11-07",
   "packages": {
     "0046": {
       "name": "Razer Mamba Elite",
@@ -48,6 +48,12 @@
       "version": "1.1.0.0",
       "size": 2824712,
       "url": "https://app-assets.razer.com/files/synapse/devices/98/1.0.0.1/PID0062Drv_v1.1.0.0.exe"
+    },
+    "0063": {
+      "name": "Razer Jugan",
+      "version": "1.1.2.0",
+      "size": 2840312,
+      "url": "https://app-assets.razer.com/files/synapse/devices/99/1.0.0.1/PID0063Drv_v1.1.2.0.exe"
     },
     "0064": {
       "name": "Razer Basilisk",
@@ -126,6 +132,18 @@
       "version": "0.1.2.0",
       "size": 2860376,
       "url": "https://app-assets.razer.com/files/synapse/devices/115/1.0.0.1/PID0072Drv_v0.1.2.0.exe"
+    },
+    "0074": {
+      "name": "Razer Abyssus Lite",
+      "version": "0.1.0.0",
+      "size": 2824688,
+      "url": "https://app-assets.razer.com/files/synapse/devices/116/1.0.0.1/PID0074Drv_v0.1.0.0.exe"
+    },
+    "0075": {
+      "name": "Razer Turret Mouse Xbox One Edition",
+      "version": "0.1.2.0",
+      "size": 2860208,
+      "url": "https://app-assets.razer.com/files/synapse/devices/117/1.0.0.1/PID0075Drv_v0.1.2.0.exe"
     },
     "0076": {
       "name": "Razer Pro Click",
@@ -246,6 +264,12 @@
       "version": "0.1.2.0",
       "size": 2823032,
       "url": "https://app-assets.razer.com/files/synapse/devices/143/1.0.0.1/PID0092Drv_v0.1.2.0.exe"
+    },
+    "0093": {
+      "name": "Razer Naga Classic Edition",
+      "version": "0.1.0.0",
+      "size": 2843784,
+      "url": "https://app-assets.razer.com/files/synapse/devices/147/1.0.0.0/PID0093Drv_v0.1.0.0.exe"
     },
     "0094": {
       "name": "Razer Orochi V2",
@@ -403,6 +427,12 @@
       "size": 1130824,
       "url": "https://app-assets.razer.com/files/synapse/devices/182/1.0.0.0/PID00b6Drv_v0.1.1.0.exe"
     },
+    "00B8": {
+      "name": "Razer Viper V3 HyperSpeed",
+      "version": "23.0.1.0",
+      "size": 1105112,
+      "url": "https://app-assets.razer.com/files/synapse/devices/184/1.0.0.1/PID00b8Drv_v23.0.1.0.exe"
+    },
     "00B9": {
       "name": "Razer Basilisk V3 X Hyperspeed",
       "version": "0.1.1.0",
@@ -523,6 +553,78 @@
       "size": 1082648,
       "url": "https://app-assets.razer.com/files/synapse/devices/218/PID00dcDrv_v24.0.0.0.exe"
     },
+    "00DD": {
+      "name": "Razer Krakoff",
+      "version": "1.0.0.0",
+      "size": 1097794,
+      "url": "https://app-assets.razer.com/files/synapse/devices/221/PID00ddDrv_v25.0.1.0.exe"
+    },
+    "00DE": {
+      "name": "Razer Viper V3 Pro SE",
+      "version": "25.0.0.51",
+      "size": 1118600,
+      "url": "https://app-assets.razer.com/files/synapse/devices/222/PID00deDrv_v25.0.1.0.exe"
+    },
+    "00E0": {
+      "name": "Razer Orochi V2",
+      "version": "0.0.0.5",
+      "size": 1102864,
+      "url": "https://app-assets.razer.com/files/synapse/devices/224/PID00e0Drv_v26.0.5.0.exe"
+    },
+    "00E1": {
+      "name": "Razer Orochi V2",
+      "version": "0.0.0.5",
+      "size": 1088744,
+      "url": "https://app-assets.razer.com/files/synapse/devices/224/PID00e1Drv_v26.0.5.0.exe"
+    },
+    "00E2": {
+      "name": "Razer Basilisk V4 Pro",
+      "version": "26.0.0.50",
+      "size": 1117552,
+      "url": "https://app-assets.razer.com/files/synapse/devices/226/PID00e2Drv_v26.0.2.0.exe"
+    },
+    "00E5": {
+      "name": "Razer Viper V4 Pro",
+      "version": "25.0.0.0",
+      "size": 1118664,
+      "url": "https://app-assets.razer.com/files/synapse/devices/229/PID00e5Drv_v25.0.0.0.exe"
+    },
+    "00E7": {
+      "name": "RAZER NAGA V3 PRO",
+      "version": "0.1.1.0",
+      "size": 1119640,
+      "url": "https://app-assets.razer.com/files/synapse/devices/231/PID00e7Drv_v26.0.0.50_Beta_r20260421.exe"
+    },
+    "00E9": {
+      "name": "RAZER NAGA V3 PRO",
+      "version": "0.1.1.0",
+      "size": 1087176,
+      "url": "https://app-assets.razer.com/files/synapse/devices/231/PID00e9Drv_v26.0.0.50_Beta_r20260421.exe"
+    },
+    "00EB": {
+      "name": "Razer Basilisk V4 HyperSpeed",
+      "version": "26.0.1.50",
+      "size": 1120552,
+      "url": "https://app-assets.razer.com/files/synapse/devices/235/PID00ebDrv_v26.0.2.0.exe"
+    },
+    "00EC": {
+      "name": "Razer Basilisk V4 HyperSpeed",
+      "version": "26.0.1.50",
+      "size": 1090136,
+      "url": "https://app-assets.razer.com/files/synapse/devices/235/PID00ecDrv_v26.0.2.0.exe"
+    },
+    "00EF": {
+      "name": "Razer DeathAdder V4 Pro Carbon Fiber Edition",
+      "version": "26.0.0.0",
+      "size": 1118712,
+      "url": "https://app-assets.razer.com/files/synapse/devices/239/PID00efDrv_v26.0.0.0.exe"
+    },
+    "00F1": {
+      "name": "Razer Mouse Dock V2 Pro",
+      "version": "0.1.3.0",
+      "size": 1117072,
+      "url": "https://app-assets.razer.com/files/synapse/devices/241/PID00f1Drv_v26.0.0.50_Beta_r20260528.exe"
+    },
     "0203": {
       "name": "Razer BlackWidow Chroma",
       "version": "0.1.2.0",
@@ -637,6 +739,12 @@
       "size": 2824624,
       "url": "https://app-assets.razer.com/files/synapse/devices/571/1.0.0.1/PID023bDrv_v0.1.0.0.exe"
     },
+    "023E": {
+      "name": "Turret Keyboard Xbox One Edition",
+      "version": "0.1.2.0",
+      "size": 2840256,
+      "url": "https://app-assets.razer.com/files/synapse/devices/574/1.0.0.1/PID023eDrv_v0.1.2.0.exe"
+    },
     "023F": {
       "name": "Razer Cynosa Lite",
       "version": "0.1.2.0",
@@ -679,6 +787,18 @@
       "size": 2824640,
       "url": "https://app-assets.razer.com/files/synapse/devices/582/1.0.0.1/PID0246Drv_v0.1.0.0.exe"
     },
+    "0248": {
+      "name": "Razer Pro Type",
+      "version": "0.1.2.0",
+      "size": 2802848,
+      "url": "https://app-assets.razer.com/files/synapse/devices/585/1.0.0.1/PID0248Drv_v0.1.2.0.exe"
+    },
+    "0249": {
+      "name": "Razer Pro Type",
+      "version": "0.1.2.0",
+      "size": 2840256,
+      "url": "https://app-assets.razer.com/files/synapse/devices/585/1.0.0.1/PID0249Drv_v0.1.2.0.exe"
+    },
     "024A": {
       "name": "Razer Blade Stealth 13",
       "version": "0.1.0.0",
@@ -708,6 +828,24 @@
       "version": "0.1.2.0",
       "size": 2860488,
       "url": "https://app-assets.razer.com/files/synapse/devices/590/1.0.0.1/PID024eDrv_v0.1.2.0.exe"
+    },
+    "024F": {
+      "name": "Razer BlackWidow X: Tenkeyless",
+      "version": "0.1.0.0",
+      "size": 2824592,
+      "url": "https://app-assets.razer.com/files/synapse/devices/591/1.0.0.1/PID024fDrv_v0.1.0.0.exe"
+    },
+    "0250": {
+      "name": "Razer Huntsman Essential",
+      "version": "0.1.2.0",
+      "size": 2840272,
+      "url": "https://app-assets.razer.com/files/synapse/devices/592/1.0.0.1/PID0250Drv_v0.1.2.0.exe"
+    },
+    "0251": {
+      "name": "Razer Pokémon Pikachu Limited Edition Backlit Keyboard",
+      "version": "0.1.0.0",
+      "size": 2824728,
+      "url": "https://app-assets.razer.com/files/synapse/devices/593/1.0.0.1/PID0251Drv_v0.1.0.0.exe"
     },
     "0252": {
       "name": "Razer Blade Stealth 13 Base Model",
@@ -859,6 +997,18 @@
       "size": 2840136,
       "url": "https://app-assets.razer.com/files/synapse/devices/630/1.0.0.0/PID0276Drv_v0.1.1.0.exe"
     },
+    "0277": {
+      "name": "Razer Pro Type Ultra",
+      "version": "0.1.2.0",
+      "size": 1079760,
+      "url": "https://app-assets.razer.com/files/synapse/devices/631/1.0.0.0/PID0277Drv_v0.1.2.0.exe"
+    },
+    "0278": {
+      "name": "Razer Pro Type Ultra",
+      "version": "0.1.2.0",
+      "size": 1070856,
+      "url": "https://app-assets.razer.com/files/synapse/devices/631/1.0.0.0/PID0278Drv_v0.1.2.0.exe"
+    },
     "0279": {
       "name": "Razer Blade 17",
       "version": "0.1.2.0",
@@ -870,6 +1020,12 @@
       "version": "0.1.1.0",
       "size": 2840160,
       "url": "https://app-assets.razer.com/files/synapse/devices/634/1.0.0.0/PID027aDrv_v0.1.1.0.exe"
+    },
+    "027B": {
+      "name": "Razer Pro Type Ultra",
+      "version": "0.1.2.0",
+      "size": 1110944,
+      "url": "https://app-assets.razer.com/files/synapse/devices/631/1.0.0.0/PID027bDrv_v0.1.2.0.exe"
     },
     "0282": {
       "name": "Razer Huntsman Mini Analog",
@@ -896,7 +1052,7 @@
       "url": "https://app-assets.razer.com/files/synapse/devices/651/v1.0.0.0/PID028bDrv_v0.1.2.0.exe"
     },
     "028C": {
-      "name": "Razer Blade 14 ",
+      "name": "Razer Blade 14",
       "version": "0.1.2.0",
       "size": 1104824,
       "url": "https://app-assets.razer.com/files/synapse/devices/652/v1.0.0.0/PID028cDrv_v0.1.2.0.exe"
@@ -906,6 +1062,12 @@
       "version": "24.0.0.0",
       "size": 1095992,
       "url": "https://app-assets.razer.com/files/synapse/devices/653/1.0.0.0/PID028dDrv_v24.0.0.0.exe"
+    },
+    "028E": {
+      "name": "Razer Cynosa Pro",
+      "version": "0.1.1.0",
+      "size": 1085352,
+      "url": "https://app-assets.razer.com/files/synapse/devices/654/1.0.0.0/PID028eDrv_v0.1.1.0.exe"
     },
     "028F": {
       "name": "Razer Ornata V3",
@@ -968,7 +1130,7 @@
       "url": "https://app-assets.razer.com/manifest/synapse/devices/664/1.0.0.0/PID0296Drv_v0.1.4.0.exe"
     },
     "029D": {
-      "name": "Razer Blade 14 ",
+      "name": "Razer Blade 14",
       "version": "0.1.1.0",
       "size": 1104776,
       "url": "https://app-assets.razer.com/files/synapse/devices/669/1.0.0.0/PID029dDrv_v0.1.1.0.exe"
@@ -1033,8 +1195,32 @@
       "size": 1113048,
       "url": "https://app-assets.razer.com/files/synapse/devices/688/1.0.0.2/PID02b0Drv_v25.0.1.0.exe"
     },
+    "02B1": {
+      "name": "Razer Huntsman V3 X Tenkeyless",
+      "version": "23.0.0.0",
+      "size": 1107504,
+      "url": "https://app-assets.razer.com/files/synapse/devices/689/1.0.0.0/PID02b1Drv_v23.0.0.0.exe"
+    },
+    "02B3": {
+      "name": "Blackwidow V4 Pro 75%",
+      "version": "23.0.0.0",
+      "size": 1119888,
+      "url": "https://app-assets.razer.com/files/synapse/devices/691/1.0.0.0/PID02b3Drv_v23.0.0.0.exe"
+    },
+    "02B4": {
+      "name": "Blackwidow V4 Pro 75%",
+      "version": "23.0.0.0",
+      "size": 1145376,
+      "url": "https://app-assets.razer.com/files/synapse/devices/691/1.0.0.0/PID02b4Drv_v23.0.0.0.exe"
+    },
+    "02B5": {
+      "name": "Blackwidow V4 Pro 75%",
+      "version": "23.0.0.0",
+      "size": 1096720,
+      "url": "https://app-assets.razer.com/files/synapse/devices/691/1.0.0.0/PID02b5Drv_v23.0.0.0.exe"
+    },
     "02B6": {
-      "name": "Razer Blade 14 ",
+      "name": "Razer Blade 14",
       "version": "24.0.0.0",
       "size": 1091256,
       "url": "https://app-assets.razer.com/files/synapse/devices/694/1.0.0.3/PID02b6Drv_v24.0.1.0.exe"
@@ -1069,17 +1255,59 @@
       "size": 1079704,
       "url": "https://app-assets.razer.com/files/synapse/devices/697/1.0.0.0/PID02bbDrv_v24.0.0.0.exe"
     },
+    "02C2": {
+      "name": "Razer Pro Type Ergo",
+      "version": "25.0.1.0",
+      "size": 1113152,
+      "url": "https://app-assets.razer.com/files/synapse/devices/706/PID02c2Drv_v25.0.1.0.exe"
+    },
+    "02C3": {
+      "name": "Razer Pro Type Ergo",
+      "version": "25.0.1.0",
+      "size": 1082768,
+      "url": "https://app-assets.razer.com/files/synapse/devices/707/PID02c3Drv_v25.0.1.0.exe"
+    },
+    "02C4": {
+      "name": "Razer Pro Type Ergo",
+      "version": "25.0.1.0",
+      "size": 1097184,
+      "url": "https://app-assets.razer.com/files/synapse/devices/708/PID02c4Drv_v25.0.1.0.exe"
+    },
     "02C5": {
       "name": "Razer Blade 14",
       "version": "24.0.0.0",
       "size": 1092664,
       "url": "https://app-assets.razer.com/files/synapse/devices/709/PID02c5Drv_v24.0.0.0.exe"
     },
+    "02C6": {
+      "name": "Razer Blade 16",
+      "version": "24.0.0.0",
+      "size": 1085672,
+      "url": "https://app-assets.razer.com/files/synapse/devices/710/PID02c6Drv_v24.0.0.0.exe"
+    },
     "02C7": {
       "name": "Razer Blade 18",
       "version": "24.0.0.0",
       "size": 1092776,
       "url": "https://app-assets.razer.com/files/synapse/devices/711/PID02c7Drv_v24.0.0.0.exe"
+    },
+    "02C9": {
+      "name": "Razer BlackWidow V4 Low-profile HyperSpeed",
+      "version": "24.0.1.0",
+      "size": 1113008,
+      "url": "https://app-assets.razer.com/files/synapse/devices/713/PID02c9Drv_v24.0.1.0.exe"
+    },
+    "02CA": {
+      "name": "Razer BlackWidow V4 Low-profile HyperSpeed",
+      "version": "24.0.1.0",
+      "size": 1082656,
+      "url": "https://app-assets.razer.com/files/synapse/devices/714/PID02caDrv_v24.0.1.0.exe"
+    },
+    "02CC": {
+      "name": "Razer BlackWidow V4 Low-profile HyperSpeed",
+      "version": "24.0.1.0",
+      "size": 1096960,
+      "url": "https://app-assets.razer.com/files/synapse/devices/716/PID02ccDrv_v24.0.1.0.exe"
     },
     "02CD": {
       "name": "Razer Joro",
@@ -1099,6 +1327,36 @@
       "size": 1111648,
       "url": "https://app-assets.razer.com/files/synapse/devices/719/PID02cfDrv_v25.0.1.0.exe"
     },
+    "02D0": {
+      "name": "Razer Huntsman V3 Pro Tenkeyless 8KHZ",
+      "version": "25.0.1.1",
+      "size": 1111656,
+      "url": "https://app-assets.razer.com/files/synapse/devices/720/PID02d0Drv_v25.0.1.0.exe"
+    },
+    "02D1": {
+      "name": "Razer Huntsman V3 Pro Mini 8KHz",
+      "version": "0.1.1.0",
+      "size": 1104960,
+      "url": "https://app-assets.razer.com/files/synapse/devices/721/PID02d1Drv_v2026.16.06.1639.exe"
+    },
+    "02D2": {
+      "name": "Razer BlackWidow V4 Low-profile Tenkeyless HyperSpeed",
+      "version": "24.0.1.0",
+      "size": 1113024,
+      "url": "https://app-assets.razer.com/files/synapse/devices/722/PID02d2Drv_v24.0.1.0.exe"
+    },
+    "02D3": {
+      "name": "Razer BlackWidow V4 Low-profile Tenkeyless HyperSpeed",
+      "version": "24.0.1.0",
+      "size": 1082680,
+      "url": "https://app-assets.razer.com/files/synapse/devices/723/PID02d3Drv_v24.0.1.0.exe"
+    },
+    "02D4": {
+      "name": "Razer BlackWidow V4 Low-profile Tenkeyless HyperSpeed",
+      "version": "24.0.1.0",
+      "size": 1096976,
+      "url": "https://app-assets.razer.com/files/synapse/devices/724/PID02d4Drv_v24.0.1.0.exe"
+    },
     "02D5": {
       "name": "Razer BlackWidow V4 Tenkeyless Hyperspeed",
       "version": "25.0.0.0",
@@ -1117,6 +1375,12 @@
       "size": 1117128,
       "url": "https://app-assets.razer.com/files/synapse/devices/727/1.0.0.0/PID02d5Drv_v25.0.0.0.exe"
     },
+    "02D8": {
+      "name": "Razer Huntsman Signature Edition",
+      "version": "25.1.2.0",
+      "size": 1111752,
+      "url": "https://app-assets.razer.com/files/synapse/devices/728/1.0.0.0/PID02d8Drv_v25.1.3.0.exe"
+    },
     "02E0": {
       "name": "Razer Blade 16",
       "version": "26.0.2.0",
@@ -1128,6 +1392,66 @@
       "version": "26.0.2.0",
       "size": 1088536,
       "url": "https://app-assets.razer.com/files/synapse/devices/737/PID02e1Drv_v26.0.2.0.exe"
+    },
+    "02E3": {
+      "name": "Razer Reclusa X Mini 65%",
+      "version": "2026.28.04.1653",
+      "size": 1113560,
+      "url": "https://app-assets.razer.com/files/synapse/devices/739/PID02e3Drv_v2026.28.04.1653.exe"
+    },
+    "02E4": {
+      "name": "Razer Huntsman V3 HE Magnetic Mini 65% 8KHz",
+      "version": "2026.13.03.1308",
+      "size": 1111656,
+      "url": "https://app-assets.razer.com/files/synapse/devices/740/PID02e4Drv_v2026.13.03.1308.exe"
+    },
+    "02E5": {
+      "name": "Razer Huntsman V3 Tenkeyless 8KHZ",
+      "version": "25.2.0.0",
+      "size": 1109176,
+      "url": "https://app-assets.razer.com/files/synapse/devices/741/PID02e5Drv_v25.2.0.0.exe"
+    },
+    "02E6": {
+      "name": "RAZER HUNTSMAN V3 PRO LOW-PROFILE TENKEYLESS 8KHZ",
+      "version": "25.0.3.0",
+      "size": 1114192,
+      "url": "https://app-assets.razer.com/files/synapse/devices/742/PID02e6Drv_v25.0.3.0.exe"
+    },
+    "02EA": {
+      "name": "Razer Huntsman V3 HE Magnetic Tenkeyless 8KHz",
+      "version": "2026.13.03.1308",
+      "size": 1111656,
+      "url": "https://app-assets.razer.com/files/synapse/devices/746/PID02eaDrv_v2026.13.03.1308.exe"
+    },
+    "02EB": {
+      "name": "Tartarus V2 Pro",
+      "version": "26.0.1.0",
+      "size": 863856,
+      "url": "https://app-assets.razer.com/files/synapse/devices/747/PID02ebDrv_v26.0.1.0.exe"
+    },
+    "02F0": {
+      "name": "Razer BlackWidow V4 75% XBOX 25 Anniversary Edition",
+      "version": "26.0.2.0",
+      "size": 849824,
+      "url": "https://app-assets.razer.com/files/synapse/devices/752/PID02f0Drv_v26.0.2.0.exe"
+    },
+    "02F4": {
+      "name": "Razer Reclusa Mini 65%",
+      "version": "26.0.2.0",
+      "size": 863696,
+      "url": "https://app-assets.razer.com/files/synapse/devices/756/PID02f4Drv_v26.0.2.0.exe"
+    },
+    "02F5": {
+      "name": "Razer Reclusa Mini 65%",
+      "version": "26.0.2.0",
+      "size": 880984,
+      "url": "https://app-assets.razer.com/files/synapse/devices/757/PID02f5Drv_v26.0.2.0.exe"
+    },
+    "02F6": {
+      "name": "Razer Reclusa Mini 65%",
+      "version": "26.0.2.0",
+      "size": 835656,
+      "url": "https://app-assets.razer.com/files/synapse/devices/758/PID02f6Drv_v26.0.2.0.exe"
     },
     "0517": {
       "name": "Razer Nommo Pro",
@@ -1141,11 +1465,71 @@
       "size": 2800184,
       "url": "https://app-assets.razer.com/files/synapse/devices/1304/1.0.1.0/PID0518Drv_v0.1.2.0.exe"
     },
+    "0521": {
+      "name": "Razer Kraken Kitty Edition",
+      "version": "0.1.2.0",
+      "size": 2778392,
+      "url": "https://app-assets.razer.com/files/synapse/devices/1313/1.0.1.0/PID0521Drv_v0.1.2.0.exe"
+    },
     "0524": {
       "name": "Razer Seiren Emote",
       "version": "0.1.2.0",
       "size": 2778392,
       "url": "https://app-assets.razer.com/files/synapse/devices/3867/1.0.0.3/PID0524Drv_v0.1.2.0.exe"
+    },
+    "052C": {
+      "name": "Razer Kraken V3 Pro",
+      "version": "0.1.2.0",
+      "size": 2778456,
+      "url": "https://app-assets.razer.com/files/synapse/devices/1324/1.0.0.0/PID052cDrv_v0.1.2.0.exe"
+    },
+    "0542": {
+      "name": "Razer Seiren V2 Pro",
+      "version": "5.30.1.0",
+      "size": 2096928,
+      "url": "https://app-assets.razer.com/files/synapse/devices/1346/1.0.0.0/PID0542Drv_v5.30.1.0.exe"
+    },
+    "0543": {
+      "name": "Razer Seiren V2 X",
+      "version": "5.30.1.0",
+      "size": 2097192,
+      "url": "https://app-assets.razer.com/files/synapse/devices/1347/1.0.0.0/PID0543Drv_v5.30.1.0.exe"
+    },
+    "0566": {
+      "name": "Razer WIRELESS CONTROL POD",
+      "version": "1.0.0.0",
+      "size": 1083392,
+      "url": "https://app-assets.razer.com/files/synapse/devices/1382/1.0.0.0/PID0566Drv_v23.0.6.0.exe"
+    },
+    "056A": {
+      "name": "Razer Seiren V3 Mini",
+      "version": "5.59.3.0",
+      "size": 1023024,
+      "url": "https://app-assets.razer.com/files/synapse/devices/1386/1.0.0.0/PID056ADrv_v5.59.3.0.exe"
+    },
+    "056F": {
+      "name": "Razer Seiren V3 Chroma",
+      "version": "5.59.4.0",
+      "size": 1023080,
+      "url": "https://app-assets.razer.com/files/synapse/devices/1391/1.0.0.1/PID056FDrv_v5.59.4.0+1.exe"
+    },
+    "0904": {
+      "name": "Turret Keyboard Xbox One Edition",
+      "version": "0.1.2.0",
+      "size": 2860304,
+      "url": "https://app-assets.razer.com/files/synapse/devices/574/1.0.0.1/PID0904Drv_v0.1.2.0.exe"
+    },
+    "0A21": {
+      "name": "Razer Turret Mouse Gears Of War 5 Edition",
+      "version": "0.1.2.0",
+      "size": 2860168,
+      "url": "https://app-assets.razer.com/files/synapse/devices/2594/1.0.0.1/PID0a21Drv_v0.1.2.0.exe"
+    },
+    "0A22": {
+      "name": "Razer Turret Mouse Gears Of War 5 Edition",
+      "version": "0.1.2.0",
+      "size": 2860152,
+      "url": "https://app-assets.razer.com/files/synapse/devices/2594/1.0.0.1/PID0a22Drv_v0.1.2.0.exe"
     },
     "0A24": {
       "name": "RAZER BLACKWIDOW V3 TENKEYLESS",
@@ -1438,6 +1822,12 @@
     "00D4": "00D3",
     "00D7": "00D6",
     "00DB": "00DA",
+    "00DF": "00DE",
+    "00E3": "00E2",
+    "00E6": "00E5",
+    "00E8": "00E7",
+    "00EA": "00EB",
+    "00F0": "00EF",
     "02DA": "02CD",
     "B00B": "B00A"
   }
