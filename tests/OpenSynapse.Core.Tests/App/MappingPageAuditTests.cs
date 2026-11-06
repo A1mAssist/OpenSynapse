@@ -78,8 +78,13 @@ public sealed class MappingPageAuditTests
     public void MappingArtIsResolvedPerProductAtRuntime()
     {
         var root = RepoLayout.Root;
-        var service = File.ReadAllText(Path.Combine(
-            root, "src", "OpenSynapse.App", "ViewModels", "RazerMappingAssetService.cs"));
+        var service = string.Join('\n', new[]
+        {
+            "RazerMappingAssetService.cs",
+            "RazerMappingAssetService.Manifest.cs",
+            "RazerMappingAssetService.Images.cs",
+        }.Select(name => File.ReadAllText(Path.Combine(
+            root, "src", "OpenSynapse.App", "ViewModels", name))));
         var bundle = File.ReadAllText(Path.Combine(
             root, "src", "OpenSynapse.Core", "Devices", "RazerMappingBundle.cs"));
         var view = File.ReadAllText(Path.Combine(
@@ -91,6 +96,9 @@ public sealed class MappingPageAuditTests
         Assert.DoesNotContain("LiftDarkBackdrop", loader);
         Assert.Contains("asset-manifest.json", service);
         Assert.Contains("prd-3x", service);
+        Assert.Contains("prd.svg", service);
+        Assert.Contains("CreateImageOnlyAsync", service);
+        Assert.Contains("RazerAvifDecoder", service);
         Assert.Contains("StudioManifestService", service);
         Assert.Contains("RazerMappingBundleParser", service);
         Assert.DoesNotContain("offlineCatalogPath", service);
