@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Macros;
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Windows.Input;
 
 namespace OpenSynapse.App.ViewModels;
 
@@ -33,6 +34,12 @@ public sealed partial class RazerHidDeviceViewModel
 
     private MacroInput? ResolveDefaultSoftwareMacroTrigger(byte buttonId)
     {
+        if (Connection.Definition.Category == DeviceCategory.Keyboard)
+        {
+            return RazerKeyboardMacroTriggerResolver.Resolve(
+                buttonId, Connection.Definition.ProductId);
+        }
+
         if (Connection.Definition.Category != DeviceCategory.Mouse)
         {
             return null;

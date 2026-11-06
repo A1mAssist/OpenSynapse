@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Macros;
 using OpenSynapse.Windows.Protocols;
 using Windows.UI;
@@ -201,6 +202,8 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
             deviceKind: RazerMappingDeviceKind.Keyboard,
             canWriteOnboardMacros:
                 RazerOnboardMacroDevices.Keyboards.Contains(_connection.ProductId),
+            softwareTriggerResolver: buttonId =>
+                RazerKeyboardMacroTriggerResolver.Resolve(buttonId, _connection.ProductId),
             softwareTriggerBinder: SoftwareMacroBinder);
 
     private RazerKeyboardService MappingService => _mappingService ??= OpenService();
