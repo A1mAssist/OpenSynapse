@@ -58,6 +58,10 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
     private RazerHidMappingViewModel? _mapping;
     private Microsoft.UI.Xaml.Visibility _mappingVisibility = Microsoft.UI.Xaml.Visibility.Collapsed;
 
+    public Func<string, OpenSynapse.Core.Macros.MacroInput,
+        OpenSynapse.Core.Macros.MacroTriggerMode, CancellationToken, Task<string?>>?
+        SoftwareMacroBinder { get; set; }
+
     public RazerKeyboardViewModel(
         RazerKeyboardConnection connection,
         Action<string>? diagnostic = null)
@@ -194,7 +198,10 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
             localMacros: () => Onboard.LocalMacroProvider?.Invoke() ?? [],
             actionCatalog: RazerKeyboardMappingActionCatalog.Instance,
             productId: _connection.DisplayProductId,
-            deviceKind: RazerMappingDeviceKind.Keyboard);
+            deviceKind: RazerMappingDeviceKind.Keyboard,
+            canWriteOnboardMacros:
+                RazerOnboardMacroDevices.Keyboards.Contains(_connection.ProductId),
+            softwareTriggerBinder: SoftwareMacroBinder);
 
     private RazerKeyboardService MappingService => _mappingService ??= OpenService();
 

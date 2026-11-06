@@ -77,13 +77,15 @@ public sealed class OnboardMacroRowViewModel
 public sealed class OnboardMacroListViewModel : INotifyPropertyChanged
 {
     private bool _isLoading;
+    private readonly bool _canWrite;
     private string _statusText = string.Empty;
     private int _selectedLocalMacroIndex = -1;
     private double _targetMacroId = 1;
     private RazerOnboardMacroStorageInfo? _storage;
 
-    public OnboardMacroListViewModel(bool supported)
+    public OnboardMacroListViewModel(bool supported, bool canWrite = true)
     {
+        _canWrite = canWrite;
         Visibility = supported
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
@@ -105,7 +107,12 @@ public sealed class OnboardMacroListViewModel : INotifyPropertyChanged
 
     public bool CanLoad => !_isLoading;
 
-    public bool CanWrite => !_isLoading && _storage is not null && _selectedLocalMacroIndex >= 0;
+    public bool CanWrite =>
+        _canWrite && !_isLoading && _storage is not null && _selectedLocalMacroIndex >= 0;
+
+    public Microsoft.UI.Xaml.Visibility WriteVisibility => _canWrite
+        ? Microsoft.UI.Xaml.Visibility.Visible
+        : Microsoft.UI.Xaml.Visibility.Collapsed;
 
     public int SelectedLocalMacroIndex
     {

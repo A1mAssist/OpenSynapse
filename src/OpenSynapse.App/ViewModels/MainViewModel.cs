@@ -192,6 +192,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             _diagnosticLog,
             () => Lighting.IsChromaIntegrationEnabled,
             () => Macros.Items.Select(macro => macro.Definition).ToArray(),
+            Macros.TryBindMacroTriggerAsync,
             ct => Refresh!.RefreshDevicesAsync(ct),
             RefreshDeviceOverviewVisibility,
             SetDeviceOperationError,

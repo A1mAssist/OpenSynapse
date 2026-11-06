@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Macros;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
@@ -46,7 +47,8 @@ public sealed record RazerMacroSlotOption(byte Id, string Name);
 public sealed class RazerHidMappingRowViewModel : INotifyPropertyChanged
 {
     private readonly IReadOnlyList<RazerHidMacroOption> _localMacros;
-    private readonly bool _supportsMacros;
+    private readonly bool _canUseSoftwareMacro;
+    private bool _canUseOnboardMacro;
     private readonly IReadOnlyList<RazerMappingGroupOption> _groupOptions;
     private readonly IRazerMappingActionCatalog _catalog;
     private int _groupIndex;
@@ -57,7 +59,11 @@ public sealed class RazerHidMappingRowViewModel : INotifyPropertyChanged
     private double _dpiClutchX = 800;
     private double _dpiClutchY = 800;
     private int _macroPlaybackIndex;
+    private int _macroTargetIndex;
+    private int _softwareTriggerModeIndex;
     private double _macroRepeatCount = 1;
+    private string _macroErrorText = string.Empty;
+    private string _macroSlotWarningText = string.Empty;
     private IReadOnlyList<string> _optionNames = [];
     private IReadOnlyList<RazerMacroSlotOption> _macroSlots = [];
     private int _selectedMacroSlotIndex;
@@ -67,13 +73,16 @@ public sealed class RazerHidMappingRowViewModel : INotifyPropertyChanged
     internal RazerHidMappingRowViewModel(
         byte buttonId,
         IReadOnlyList<RazerHidMacroOption> localMacros,
-        bool supportsMacros,
+        bool canUseOnboardMacro,
+        bool canUseSoftwareMacro,
         IRazerMappingActionCatalog catalog)
     {
         _localMacros = localMacros;
-        _supportsMacros = supportsMacros;
+        _canUseOnboardMacro = canUseOnboardMacro && localMacros.Count > 0;
+        _canUseSoftwareMacro = canUseSoftwareMacro && localMacros.Count > 0;
+        _macroTargetIndex = _canUseOnboardMacro ? (int)MacroExecutionTarget.Onboard : (int)MacroExecutionTarget.Software;
         _catalog = catalog;
-        _groupOptions = RazerMappingText.GroupOptions(_supportsMacros && _localMacros.Count > 0);
+        _groupOptions = RazerMappingText.GroupOptions(_canUseOnboardMacro || _canUseSoftwareMacro);
         ButtonId = buttonId;
         ButtonName = catalog.DescribeButton(buttonId);
     }
@@ -164,8 +173,11 @@ public sealed class RazerHidMappingRowViewModel : INotifyPropertyChanged
                 (RazerHidMappingGroup)value,
                 _localMacros);
             _optionIndex = 0;
+            SetMacroValidation(string.Empty);
+            SetMacroSlotWarning(string.Empty);
             OnPropertyChanged();
             OnPropertyChanged(nameof(OptionIndex));
+            OnPropertyChanged(nameof(ActionHeader));
             OnPropertyChanged(nameof(ModifierVisibility));
             OnPropertyChanged(nameof(TurboRateVisibility));
             OnPropertyChanged(nameof(ProfileIdVisibility));
@@ -175,6 +187,11 @@ public sealed class RazerHidMappingRowViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(MacroRepeatVisibility));
             OnPropertyChanged(nameof(MacroSlotVisibility));
             OnPropertyChanged(nameof(MacroNoSlotVisibility));
+            OnPropertyChanged(nameof(MacroTargetVisibility));
+            OnPropertyChanged(nameof(SoftwareTriggerVisibility));
+            OnPropertyChanged(nameof(OnboardBehaviorVisibility));
+            OnPropertyChanged(nameof(MacroSoftwareHintVisibility));
+            OnPropertyChanged(nameof(MacroOnboardHintVisibility));
             OnPropertyChanged(nameof(CanApply));
             OnPropertyChanged(nameof(GroupOptionIndex));
         }
@@ -188,6 +205,7 @@ public sealed class RazerHidMappingRowViewModel : INotifyPropertyChanged
             if (_optionIndex == value) return;
             _optionIndex = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(CanApply));
         }
     }
 
@@ -238,14 +256,76 @@ public sealed class RazerHidMappingRowViewModel : INotifyPropertyChanged
         set => SetDpi(ref _dpiClutchY, value);
     }
 
-    public IReadOnlyList<string> MacroPlaybackOptions => RazerHidMappingActions.MacroPlaybackNames;
+    public bool CanUseSoftwareMacro => _canUseSoftwareMacro;
+
+    public bool CanUseOnboardMacro => _canUseOnboardMacro;
+
+    public MacroExecutionTarget MacroTarget => (MacroExecutionTarget)_macroTargetIndex;
+
+    public int MacroTargetIndex
+    {
+        get => _macroTargetIndex;
+        set
+        {
+            var target = (MacroExecutionTarget)Math.Clamp(value, 0, 1);
+            if (target == MacroExecutionTarget.Software && !_canUseSoftwareMacro)
+            {
+                target = MacroExecutionTarget.Onboard;
+            }
+            else if (target == MacroExecutionTarget.Onboard && !_canUseOnboardMacro)
+            {
+                target = MacroExecutionTarget.Software;
+            }
+
+            var normalized = (int)target;
+            if (_macroTargetIndex == normalized) return;
+            _macroTargetIndex = normalized;
+            SetMacroValidation(string.Empty);
+            SetMacroSlotWarning(string.Empty);
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(MacroTarget));
+            OnPropertyChanged(nameof(MacroPlaybackVisibility));
+            OnPropertyChanged(nameof(MacroRepeatVisibility));
+            OnPropertyChanged(nameof(MacroSlotVisibility));
+            OnPropertyChanged(nameof(MacroNoSlotVisibility));
+            OnPropertyChanged(nameof(SoftwareTriggerVisibility));
+            OnPropertyChanged(nameof(OnboardBehaviorVisibility));
+            OnPropertyChanged(nameof(MacroSoftwareHintVisibility));
+            OnPropertyChanged(nameof(MacroOnboardHintVisibility));
+            OnPropertyChanged(nameof(CanApply));
+        }
+    }
+
+    public IReadOnlyList<string> MacroTargetOptions => AppStrings.Texts(
+        "RazerMappingMacroTargetSoftware", "RazerMappingMacroTargetOnboard");
+
+    public IReadOnlyList<string> SoftwareTriggerOptions => AppStrings.Texts(
+        "RazerMappingMacroPlaybackOnce", "RazerMappingMacroPlaybackToggle",
+        "RazerMappingMacroPlaybackHold", "RazerMappingMacroPlaybackSequence");
+
+    public int SoftwareTriggerModeIndex
+    {
+        get => _softwareTriggerModeIndex;
+        set
+        {
+            var clamped = Math.Clamp(value, 0, SoftwareTriggerOptions.Count - 1);
+            if (_softwareTriggerModeIndex == clamped) return;
+            _softwareTriggerModeIndex = clamped;
+            OnPropertyChanged();
+        }
+    }
+
+    public IReadOnlyList<string> MacroPlaybackOptions => AppStrings.Texts(
+        "RazerMappingMacroPlaybackOnce", "RazerMappingMacroPlaybackRepeat",
+        "RazerMappingMacroPlaybackHold", "RazerMappingMacroPlaybackToggle",
+        "RazerMappingMacroPlaybackSequence");
 
     public int MacroPlaybackIndex
     {
         get => _macroPlaybackIndex;
         set
         {
-            var clamped = Math.Clamp(value, 0, RazerHidMappingActions.MacroPlaybackNames.Count - 1);
+            var clamped = Math.Clamp(value, 0, MacroPlaybackOptions.Count - 1);
             if (_macroPlaybackIndex == clamped) return;
             _macroPlaybackIndex = clamped;
             OnPropertyChanged();
@@ -316,29 +396,107 @@ public sealed class RazerHidMappingRowViewModel : INotifyPropertyChanged
     public Visibility DpiClutchVisibility => _groupIndex == (int)RazerHidMappingGroup.DpiClutch
         ? Visibility.Visible
         : Visibility.Collapsed;
-    public Visibility MacroPlaybackVisibility =>
-        _groupIndex == (int)RazerHidMappingGroup.Macro && _supportsMacros && _localMacros.Count > 0
+    public Visibility MacroTargetVisibility =>
+        _groupIndex == (int)RazerHidMappingGroup.Macro && _canUseSoftwareMacro && _canUseOnboardMacro
             ? Visibility.Visible
             : Visibility.Collapsed;
+    public Visibility SoftwareTriggerVisibility =>
+        _groupIndex == (int)RazerHidMappingGroup.Macro && MacroTarget == MacroExecutionTarget.Software
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    public Visibility OnboardBehaviorVisibility =>
+        _groupIndex == (int)RazerHidMappingGroup.Macro && MacroTarget == MacroExecutionTarget.Onboard
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    public Visibility MacroPlaybackVisibility => OnboardBehaviorVisibility;
     public Visibility MacroRepeatVisibility =>
-        MacroPlaybackVisibility == Visibility.Visible &&
+        OnboardBehaviorVisibility == Visibility.Visible &&
         _macroPlaybackIndex == (int)RazerHidMacroPlayback.Repeat
             ? Visibility.Visible
             : Visibility.Collapsed;
+    public Visibility MacroSoftwareHintVisibility => SoftwareTriggerVisibility;
+    public Visibility MacroOnboardHintVisibility => OnboardBehaviorVisibility;
+    public Visibility MacroErrorVisibility =>
+        _groupIndex == (int)RazerHidMappingGroup.Macro && _macroErrorText.Length > 0
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    public string MacroErrorText => _macroErrorText;
+    public Visibility MacroSlotWarningVisibility =>
+        _groupIndex == (int)RazerHidMappingGroup.Macro && _macroSlotWarningText.Length > 0
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    public string MacroSlotWarningText => _macroSlotWarningText;
     public Visibility OptionVisibility => _groupIndex == (int)RazerHidMappingGroup.Keep
         ? Visibility.Collapsed
         : Visibility.Visible;
     public Visibility MacroSlotVisibility =>
-        _groupIndex == (int)RazerHidMappingGroup.Macro && _supportsMacros && MacroSlots.Count > 0
+        _groupIndex == (int)RazerHidMappingGroup.Macro &&
+        MacroTarget == MacroExecutionTarget.Onboard && _canUseOnboardMacro && MacroSlots.Count > 0
             ? Visibility.Visible
             : Visibility.Collapsed;
     public Visibility MacroNoSlotVisibility =>
-        _groupIndex == (int)RazerHidMappingGroup.Macro && _supportsMacros && MacroSlots.Count == 0
+        _groupIndex == (int)RazerHidMappingGroup.Macro &&
+        MacroTarget == MacroExecutionTarget.Onboard && _canUseOnboardMacro && MacroSlots.Count == 0
             ? Visibility.Visible
             : Visibility.Collapsed;
+    public string ActionHeader => Group == RazerHidMappingGroup.Macro
+        ? AppStrings.Text("RazerMappingMacroHeader")
+        : AppStrings.Text("RazerMappingActionColumn");
     public bool CanApply => _groupIndex > 0 &&
         (Group != RazerHidMappingGroup.Macro ||
-         _supportsMacros && _localMacros.Count > 0 && MacroSlots.Count > 0);
+         _localMacros.Count > 0 &&
+         !HasMacroError &&
+         (MacroTarget == MacroExecutionTarget.Software
+             ? _canUseSoftwareMacro
+             : _canUseOnboardMacro && MacroSlots.Count > 0));
+
+    public bool HasMacroError => _macroErrorText.Length > 0;
+
+    internal void SetMacroValidation(string message)
+    {
+        if (string.Equals(_macroErrorText, message, StringComparison.Ordinal)) return;
+        _macroErrorText = message;
+        OnPropertyChanged(nameof(MacroErrorText));
+        OnPropertyChanged(nameof(MacroErrorVisibility));
+        OnPropertyChanged(nameof(CanApply));
+    }
+
+    internal void SetMacroSlotWarning(string message)
+    {
+        if (string.Equals(_macroSlotWarningText, message, StringComparison.Ordinal)) return;
+        _macroSlotWarningText = message;
+        OnPropertyChanged(nameof(MacroSlotWarningText));
+        OnPropertyChanged(nameof(MacroSlotWarningVisibility));
+    }
+
+    internal void SetOnboardAvailability(bool available)
+    {
+        var normalized = available && _localMacros.Count > 0;
+        if (_canUseOnboardMacro == normalized) return;
+        _canUseOnboardMacro = normalized;
+        if (!normalized && MacroTarget == MacroExecutionTarget.Onboard && _canUseSoftwareMacro)
+        {
+            _macroTargetIndex = (int)MacroExecutionTarget.Software;
+        }
+
+        OnPropertyChanged(nameof(CanUseOnboardMacro));
+        OnPropertyChanged(nameof(MacroTargetIndex));
+        OnPropertyChanged(nameof(MacroTarget));
+        OnPropertyChanged(nameof(MacroTargetVisibility));
+        OnPropertyChanged(nameof(MacroPlaybackVisibility));
+        OnPropertyChanged(nameof(MacroRepeatVisibility));
+        OnPropertyChanged(nameof(MacroSlotVisibility));
+        OnPropertyChanged(nameof(MacroNoSlotVisibility));
+        OnPropertyChanged(nameof(SoftwareTriggerVisibility));
+        OnPropertyChanged(nameof(OnboardBehaviorVisibility));
+        OnPropertyChanged(nameof(MacroSoftwareHintVisibility));
+        OnPropertyChanged(nameof(MacroOnboardHintVisibility));
+        OnPropertyChanged(nameof(CanApply));
+        if (!normalized && !_canUseSoftwareMacro && Group == RazerHidMappingGroup.Macro)
+        {
+            GroupIndex = 0;
+        }
+    }
 
     internal void SetMacroSlots(
         IReadOnlyList<RazerMacroSlotOption> freeSlots,
@@ -364,10 +522,12 @@ public sealed class RazerHidMappingRowViewModel : INotifyPropertyChanged
     public RazerHidMappingAction? CreateAction() =>
         Group switch
         {
-            RazerHidMappingGroup.Macro => RazerHidMappingActions.CreateMacroAction(
+            RazerHidMappingGroup.Macro when MacroTarget == MacroExecutionTarget.Onboard =>
+                RazerHidMappingActions.CreateMacroAction(
                 SelectedMacroSlotId,
                 (RazerHidMacroPlayback)_macroPlaybackIndex,
                 checked((int)MacroRepeatCount)),
+            RazerHidMappingGroup.Macro => null,
             RazerHidMappingGroup.Keep => null,
             var group => _catalog.CreateAction(
                 group,
