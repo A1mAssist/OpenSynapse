@@ -62,6 +62,7 @@ public sealed class RazerHidMappingRowViewModel : INotifyPropertyChanged
     private IReadOnlyList<RazerMacroSlotOption> _macroSlots = [];
     private int _selectedMacroSlotIndex;
     private string _currentActionText = "--";
+    private string _buttonName = string.Empty;
 
     internal RazerHidMappingRowViewModel(
         byte buttonId,
@@ -80,7 +81,33 @@ public sealed class RazerHidMappingRowViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public byte ButtonId { get; }
-    public string ButtonName { get; }
+    public string ButtonName
+    {
+        get => _buttonName;
+        private set
+        {
+            if (_buttonName == value) return;
+            _buttonName = value;
+            OnPropertyChanged();
+        }
+    }
+
+    internal void SetButtonName(string name) => ButtonName = name;
+
+    internal static void ApplyButtonNames(
+        IEnumerable<RazerHidMappingRowViewModel> rows,
+        IReadOnlyDictionary<byte, string>? names)
+    {
+        if (names is not { Count: > 0 }) return;
+
+        foreach (var row in rows)
+        {
+            if (names.TryGetValue(row.ButtonId, out var name))
+            {
+                row.SetButtonName(name);
+            }
+        }
+    }
     public IReadOnlyList<string> GroupNames => _groupOptions.Select(option => option.Name).ToArray();
     public IReadOnlyList<string> ModifierNames => RazerHidMappingActions.ModifierNames;
     public string CurrentActionText

@@ -21,7 +21,7 @@ public enum RazerMappingDeviceKind
 /// studio manifests. Everything is fetched on demand and cached on disk; a missing
 /// asset never blocks the mapping read and never invents a hotspot.
 /// </summary>
-public sealed class RazerMappingAssetService
+public sealed partial class RazerMappingAssetService
 {
     private const string UiRoot = "https://apps.razer.com/synapse/products/";
     private const int MaxManifestBytes = 1024 * 1024;
@@ -138,7 +138,9 @@ public sealed class RazerMappingAssetService
 
         var imagePath = await CacheRemoteFileAsync(
             productId, image, MaxImageBytes, "image", cancellationToken).ConfigureAwait(false);
-        if (imagePath is null)
+        if (imagePath is null ||
+            !await HasExpectedAspectAsync(imagePath, bundle.ImageWidth, bundle.ImageHeight)
+                .ConfigureAwait(false))
         {
             return null;
         }
@@ -152,7 +154,10 @@ public sealed class RazerMappingAssetService
         return hotspots.Count == 0
             ? null
             : new RazerMappingImageLayout(
-                new Uri(imagePath), bundle.ImageWidth, bundle.ImageHeight, hotspots);
+                new Uri(imagePath), bundle.ImageWidth, bundle.ImageHeight, hotspots)
+            {
+                ButtonNames = bundle.ButtonNamesById,
+            };
     }
 
     private async Task<RazerMappingKeyboardLayout?> LoadKeyboardAsync(

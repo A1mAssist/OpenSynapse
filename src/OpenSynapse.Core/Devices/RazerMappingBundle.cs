@@ -12,7 +12,11 @@ public sealed record RazerMappingBundle(
     double ImageWidth,
     double ImageHeight,
     IReadOnlyList<RazerMappingBundleAnchor> MouseAnchors,
-    IReadOnlyDictionary<string, byte> KeyIdsByName);
+    IReadOnlyDictionary<string, byte> KeyIdsByName)
+{
+    public IReadOnlyDictionary<byte, string> ButtonNamesById { get; init; } =
+        new Dictionary<byte, string>();
+}
 
 public static class RazerMappingBundleParser
 {
@@ -23,6 +27,10 @@ public static class RazerMappingBundleParser
 
     private static readonly IReadOnlyDictionary<string, byte> EmptyKeyIds =
         new Dictionary<string, byte>(StringComparer.Ordinal);
+
+    private static readonly Regex CanvasConfigRegex = new(
+        """\{[^{}]*cvsW:[^{}]*\}""",
+        RegexOptions.CultureInvariant);
 
     private static readonly Regex CanvasWidthRegex = new(
         """cvsW:\s*(?<value>-?\d+(?:\.\d+)?)""",
@@ -37,7 +45,7 @@ public static class RazerMappingBundleParser
         RegexOptions.CultureInvariant);
 
     private static readonly Regex DrawLineRegex = new(
-        """drawLines?\(\s*(?<index>\d+)\s*,\s*this\.props\.buttonList\[(?<button>\d+)\]\s*,\s*(?<x>-?\d+(?:\.\d+)?)\s*,\s*(?<y>-?\d+(?:\.\d+)?)\s*,\s*!(?<left>[01])\s*\)""",
+        """drawLines?\(\s*(?<index>\d+)\s*,\s*this\.props\.buttonList\[(?<button>\d+)\]\s*,\s*(?<x>-?\d+(?:\.\d+)?)\s*,\s*(?<y>-?\d+(?:\.\d+)?)(?:\s*,\s*!(?<left>[01]))?\s*\)""",
         RegexOptions.CultureInvariant);
 
     private static readonly Regex ButtonObjectRegex = new(
@@ -81,15 +89,14 @@ public static class RazerMappingBundleParser
                 EmptyKeyIds);
         }
 
-        var canvasWidth = ReadNumber(CanvasWidthRegex.Match(mainJs)) is > 0 and var width
-            ? width
-            : DefaultCanvasWidth;
-        var canvasHeight = ReadNumber(CanvasHeightRegex.Match(mainJs)) is > 0 and var height
-            ? height
-            : DefaultImageHeight;
-        var dotRadius = ReadNumber(DotRadiusRegex.Match(mainJs)) is > 0 and var radius
-            ? radius
-            : DefaultDotRadius;
+        var canvasMatch = CanvasConfigRegex.Match(mainJs);
+        var canvasText = canvasMatch.Success ? canvasMatch.Value : mainJs;
+        var canvasWidth = ReadPositive(CanvasWidthRegex, canvasText) ??
+            ReadPositive(CanvasWidthRegex, mainJs) ?? DefaultCanvasWidth;
+        var canvasHeight = ReadPositive(CanvasHeightRegex, canvasText) ??
+            ReadPositive(CanvasHeightRegex, mainJs) ?? DefaultImageHeight;
+        var dotRadius = ReadPositive(DotRadiusRegex, canvasText) ??
+            ReadPositive(DotRadiusRegex, mainJs) ?? DefaultDotRadius;
         var buttons = ParseButtons(mainJs);
         var keyIds = ParseKeyIds(mainJs, buttons);
         var anchors = new List<RazerMappingBundleAnchor>();
@@ -112,7 +119,8 @@ public static class RazerMappingBundleParser
                 continue;
             }
 
-            drawLines.Add((index, match.Index, buttonIndex, x, y, match.Groups["left"].Value == "0"));
+            var isLeft = !match.Groups["left"].Success || match.Groups["left"].Value == "0";
+            drawLines.Add((index, match.Index, buttonIndex, x, y, isLeft));
         }
 
         foreach (var drawLine in drawLines.OrderBy(line => line.Index).ThenBy(line => line.MatchOffset))
@@ -149,7 +157,10 @@ public static class RazerMappingBundleParser
             DefaultImageWidth,
             DefaultImageHeight,
             anchors,
-            keyIds);
+            keyIds)
+        {
+            ButtonNamesById = BuildButtonNames(buttons),
+        };
     }
 
     public static string? FindMainJs(string assetManifestJson)
@@ -320,6 +331,64 @@ public static class RazerMappingBundleParser
         return keyIds;
     }
 
+    private static Dictionary<byte, string> BuildButtonNames(List<ButtonObject> buttons)
+    {
+        var names = new Dictionary<byte, string>();
+        foreach (var button in buttons)
+        {
+            if (button.ResolveButtonId() is not { } buttonId)
+            {
+                continue;
+            }
+
+            names.TryAdd(buttonId, DisplayName(button.Key));
+        }
+
+        return names;
+    }
+
+    // The bundle counter is a UI sequence number, not the firmware button id.
+    // Standard mouse semantics map the bundle keys onto the ids the device reports.
+    private static byte? StandardMouseButtonId(string key) => key switch
+    {
+        "LeftClick" => 0x01,
+        "RightClick" => 0x02,
+        "ScrollClick" or "MiddleClick" => 0x03,
+        "MouseButton4" or "Button4" => 0x04,
+        "MouseButton5" or "Button5" => 0x05,
+        "MouseButton6" or "Button6" => 0x06,
+        "MouseButton7" or "Button7" => 0x07,
+        "MouseButton8" or "Button8" => 0x08,
+        "ScrollUp" => 0x09,
+        "ScrollDown" => 0x0A,
+        "CycleUpSensitivityStages" => 0x60,
+        "CycleDownSensitivityStages" => 0x61,
+        _ => null,
+    };
+
+    private static string DisplayName(string key) => key switch
+    {
+        "LeftClick" => "Left",
+        "RightClick" => "Right",
+        "ScrollClick" or "MiddleClick" => "Middle",
+        "ScrollUp" => "Scroll up",
+        "ScrollDown" => "Scroll down",
+        "MouseButton4" or "Button4" => "Button 4",
+        "MouseButton5" or "Button5" => "Button 5",
+        "MouseButton6" or "Button6" => "Button 6",
+        "MouseButton7" or "Button7" => "Button 7",
+        "MouseButton8" or "Button8" => "Button 8",
+        "CycleUpSensitivityStages" => "DPI cycle up",
+        "CycleDownSensitivityStages" => "DPI cycle down",
+        _ => key,
+    };
+
+    private static double? ReadPositive(Regex regex, string text)
+    {
+        var value = ReadNumber(regex.Match(text));
+        return value is > 0 ? value : null;
+    }
+
     private static void AddKey(Dictionary<string, byte> keyIds, string? name, byte hid)
     {
         if (!string.IsNullOrEmpty(name))
@@ -371,6 +440,11 @@ public static class RazerMappingBundleParser
     {
         public byte? ResolveButtonId()
         {
+            if (StandardMouseButtonId(Key) is { } standard)
+            {
+                return standard;
+            }
+
             if (byte.TryParse(Counter, NumberStyles.None, CultureInfo.InvariantCulture, out var counter) &&
                 counter > 0)
             {

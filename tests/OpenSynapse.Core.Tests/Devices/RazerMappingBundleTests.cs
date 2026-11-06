@@ -39,7 +39,7 @@ public sealed class RazerMappingBundleTests
         Assert.Equal(340, bundle.ImageHeight);
         Assert.Equal(8, bundle.MouseAnchors.Count);
         Assert.Equal(
-            new byte[] { 1, 2, 3, 4, 5, 7, 6, 8 },
+            new byte[] { 1, 2, 3, 9, 10, 5, 4, 96 },
             bundle.MouseAnchors.Select(anchor => anchor.ButtonId));
 
         var leftClick = bundle.MouseAnchors.First(anchor => anchor.ButtonId == 1);
@@ -52,10 +52,43 @@ public sealed class RazerMappingBundleTests
         Assert.Equal(60.5, rightClick.Y, 6);
         Assert.False(rightClick.IsLeft);
 
-        var mouseButton4 = bundle.MouseAnchors.First(anchor => anchor.ButtonId == 6);
+        var mouseButton4 = bundle.MouseAnchors.First(anchor => anchor.ButtonId == 4);
         Assert.Equal(90.5, mouseButton4.X, 6);
         Assert.Equal(177.5, mouseButton4.Y, 6);
         Assert.True(mouseButton4.IsLeft);
+
+        Assert.Equal("Left", bundle.ButtonNamesById[1]);
+        Assert.Equal("Right", bundle.ButtonNamesById[2]);
+        Assert.Equal("Middle", bundle.ButtonNamesById[3]);
+        Assert.Equal("Button 4", bundle.ButtonNamesById[4]);
+        Assert.Equal("Button 5", bundle.ButtonNamesById[5]);
+        Assert.Equal("Scroll up", bundle.ButtonNamesById[9]);
+        Assert.Equal("Scroll down", bundle.ButtonNamesById[10]);
+        Assert.Equal("DPI cycle up", bundle.ButtonNamesById[96]);
+    }
+
+    [Fact]
+    public void FirmwareButtonIdsFollowStandardMouseSemantics()
+    {
+        const string lines = """
+            drawLine(0,this.props.buttonList[0],10,20,!0);
+            drawLine(1,this.props.buttonList[1],30,40,!0);
+            drawLine(2,this.props.buttonList[2],50,60,!0);
+            """;
+        const string buttons = """
+            {buttonKey:"ScrollUp",counter:4},
+            {buttonKey:"MouseButton4",counter:6},
+            {buttonKey:"CycleUpSensitivityStages",counter:8}
+            """;
+
+        var bundle = RazerMappingBundleParser.Parse(Bundle(lines, buttons));
+
+        Assert.Equal(
+            new byte[] { 9, 4, 96 },
+            bundle.MouseAnchors.Select(anchor => anchor.ButtonId));
+        Assert.Equal("Scroll up", bundle.ButtonNamesById[9]);
+        Assert.Equal("Button 4", bundle.ButtonNamesById[4]);
+        Assert.Equal("DPI cycle up", bundle.ButtonNamesById[96]);
     }
 
     [Fact]
@@ -129,6 +162,35 @@ public sealed class RazerMappingBundleTests
         Assert.Equal(22.5, anchor.Y, 6);
         Assert.Equal(300, bundle.ImageWidth);
         Assert.Equal(340, bundle.ImageHeight);
+    }
+
+    [Fact]
+    public void DrawLineWithoutSideFlagDefaultsToLeft()
+    {
+        const string js = """
+            drawLine(0,this.props.buttonList[0],10,20);
+            var groupList=[{buttonKey:"First",counter:1}];
+            """;
+
+        var bundle = RazerMappingBundleParser.Parse(js);
+
+        var anchor = Assert.Single(bundle.MouseAnchors);
+        Assert.Equal(12.5, anchor.X, 6);
+        Assert.Equal(22.5, anchor.Y, 6);
+        Assert.True(anchor.IsLeft);
+    }
+
+    [Fact]
+    public void UnknownButtonKeyIsKeptAsItsName()
+    {
+        const string js = """
+            drawLine(0,this.props.buttonList[0],10,20,!0);
+            var groupList=[{buttonKey:"CustomDial",counter:9}];
+            """;
+
+        var bundle = RazerMappingBundleParser.Parse(js);
+
+        Assert.Equal("CustomDial", bundle.ButtonNamesById[9]);
     }
 
     [Fact]
