@@ -18,6 +18,7 @@ internal static class TaskbarStatusNative
     public const uint WmEraseBkgnd = 0x0014;
     public const uint WmSettingChange = 0x001A;
     public const uint WmTimer = 0x0113;
+    internal const uint WmPrintClient = 0x0318;
     public const uint WmDisplayChange = 0x007E;
     public const uint WmLButtonUp = 0x0202;
     public const uint WmDpiChangedAfterParent = 0x02E0;
@@ -302,6 +303,11 @@ internal static class TaskbarStatusNative
     [DllImport("gdi32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool Polygon(IntPtr deviceContext, Point[] points, int count);
+
+    [DllImport("gdi32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool RoundRect(
+        IntPtr deviceContext, int left, int top, int right, int bottom, int width, int height);
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]

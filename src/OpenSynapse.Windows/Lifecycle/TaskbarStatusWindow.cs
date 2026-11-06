@@ -18,13 +18,16 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     private const int TargetHeightDip = 30;
     private const int MinimumHeightDip = 22;
     private const int MaximumHeightDip = 36;
-    private const int GapDip = 8;
-    private const int PaddingDip = 14;
-    private const int PerformanceGapDip = 10;
+    private const int GapDip = 6;
+    private const int PaddingDip = 8;
+    private const int PerformanceGapDip = 7;
     private const int BatteryIconGapDip = 5;
     private const int PerformanceMinWidthDip = 150;
-    private const int BoltWidthDip = 8;
-    private const int BoltHeightDip = 14;
+    private const int IconBadgeDip = 18;
+    private const int IconBadgeRadiusDip = 5;
+    private const int ChargingGapDip = 3;
+    private const int BoltWidthDip = 7;
+    private const int BoltHeightDip = 12;
     private const int NullPen = 8;
 
     private readonly Action<string>? _log;
@@ -319,6 +322,13 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             !GetClientRect(taskbar, out var client))
         {
             return false;
+        }
+
+        var taskbarDpi = (int)GetDpiForWindow(taskbar);
+        if (taskbarDpi > 0 && taskbarDpi != _dpi)
+        {
+            _dpi = taskbarDpi;
+            CreateFonts();
         }
 
         var monitor = MonitorFromWindow(taskbar, MonitorDefaultToNearest);
