@@ -10,6 +10,8 @@ internal sealed class ThxAudioHelperSession
     private const string EqualizerPropertyId = "eq_enabled";
     private const string NormalizationEnabledPropertyId = "volume_leveling_enabled";
     private const string NormalizationLevelPropertyId = "volume_leveling_level";
+    private const string BassBoostEnabledPropertyId = "bassboost_enabled";
+    private const string BassBoostLevelPropertyId = "bassboost_level";
     private const string VoiceClarityEnabledPropertyId = "voice_clarity_enabled";
     private const string VoiceClarityLevelPropertyId = "voice_clarity_level";
     private const string FloatPropertyType = "Float";
@@ -194,6 +196,7 @@ internal sealed class ThxAudioHelperSession
             "voiceClarity" => (VoiceClarityEnabledPropertyId, VoiceClarityLevelPropertyId),
             "soundNormalization" when endpoint == ThxAudioEndpoint.Speakers =>
                 (NormalizationEnabledPropertyId, NormalizationLevelPropertyId),
+            "bassBoost" => (BassBoostEnabledPropertyId, BassBoostLevelPropertyId),
             _ => throw new ArgumentException("The THX enhancement kind is invalid."),
         };
 
@@ -243,6 +246,7 @@ internal sealed class ThxAudioHelperSession
         var normalization = endpoint == ThxAudioEndpoint.Speakers
             ? ReadEnhancement(device, NormalizationEnabledPropertyId, NormalizationLevelPropertyId)
             : null;
+        var bassBoost = TryReadEnhancement(device, BassBoostEnabledPropertyId, BassBoostLevelPropertyId);
         var factoryCurves = presets.ToDictionary(
             preset => preset.Id,
             preset => ThxAudioAdmission.FactoryCurve(profile, endpoint, preset.Id),
@@ -257,7 +261,8 @@ internal sealed class ThxAudioHelperSession
             factoryCurves,
             normalization,
             voiceClarity,
-            CanEdit: true);
+            CanEdit: true,
+            BassBoost: bassBoost);
     }
 
     private IReadOnlyList<double> ReadNativeGains(string device) =>
@@ -278,6 +283,22 @@ internal sealed class ThxAudioHelperSession
         return new ThxAudioEnhancement(
             enabled,
             checked((int)Math.Round(level * 100, MidpointRounding.AwayFromZero)));
+    }
+
+    private ThxAudioEnhancement? TryReadEnhancement(
+        string device,
+        string enabledProperty,
+        string levelProperty)
+    {
+        try
+        {
+            return ReadEnhancement(device, enabledProperty, levelProperty);
+        }
+        catch (Exception exception) when (
+            exception is InvalidDataException or InvalidOperationException or JsonException)
+        {
+            return null;
+        }
     }
 
     private static bool ValidGains(ThxAudioEndpoint endpoint, IReadOnlyList<double> gains) =>

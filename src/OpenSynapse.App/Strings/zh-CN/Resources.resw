@@ -2333,6 +2333,30 @@
     <value>应用人声清晰度</value>
     <comment>应用人声清晰度</comment>
   </data>
+  <data name="ThxBassBoostLabel.Text" xml:space="preserve">
+    <value>低音增强</value>
+    <comment>THX 低音增强</comment>
+  </data>
+  <data name="ThxApplyBassBoostButton.Content" xml:space="preserve">
+    <value>应用低音增强</value>
+    <comment>应用 THX 低音增强</comment>
+  </data>
+  <data name="ThxBassBoostToggle.OnContent" xml:space="preserve">
+    <value>开启</value>
+    <comment>开启</comment>
+  </data>
+  <data name="ThxBassBoostToggle.OffContent" xml:space="preserve">
+    <value>关闭</value>
+    <comment>关闭</comment>
+  </data>
+  <data name="RazerHeadsetThxBassBoostToggle.Header" xml:space="preserve">
+    <value>低音增强</value>
+    <comment>THX 低音增强</comment>
+  </data>
+  <data name="RazerHeadsetThxBassBoostApply.Content" xml:space="preserve">
+    <value>应用低音增强</value>
+    <comment>应用 THX 低音增强</comment>
+  </data>
   <data name="ThxSoundNormalizationLabel.Text" xml:space="preserve">
     <value>音量标准化</value>
     <comment>音量标准化</comment>

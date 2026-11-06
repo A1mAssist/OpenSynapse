@@ -1947,6 +1947,30 @@
   <data name="ThxApplyVoiceClarityButton.Content" xml:space="preserve">
     <value>Apply voice clarity</value>
   </data>
+  <data name="ThxBassBoostLabel.Text" xml:space="preserve">
+    <value>Bass boost</value>
+    <comment>THX bass boost</comment>
+  </data>
+  <data name="ThxApplyBassBoostButton.Content" xml:space="preserve">
+    <value>Apply bass boost</value>
+    <comment>Apply THX bass boost</comment>
+  </data>
+  <data name="ThxBassBoostToggle.OnContent" xml:space="preserve">
+    <value>On</value>
+    <comment>On</comment>
+  </data>
+  <data name="ThxBassBoostToggle.OffContent" xml:space="preserve">
+    <value>Off</value>
+    <comment>Off</comment>
+  </data>
+  <data name="RazerHeadsetThxBassBoostToggle.Header" xml:space="preserve">
+    <value>Bass boost</value>
+    <comment>THX bass boost</comment>
+  </data>
+  <data name="RazerHeadsetThxBassBoostApply.Content" xml:space="preserve">
+    <value>Apply bass boost</value>
+    <comment>Apply THX bass boost</comment>
+  </data>
   <data name="ThxSoundNormalizationLabel.Text" xml:space="preserve">
     <value>Volume normalization</value>
   </data>
