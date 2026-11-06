@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Windows.Macros;
 
 namespace OpenSynapse.Windows.Devices;
 
@@ -68,6 +69,11 @@ public sealed partial class RazerHidDeviceService
             Add(RazerHidBackendCapability.BatteryDischargeCurveWrite, "set_battery_discharge_curve", "razer_chroma_misc_set_battery_discharge_curve");
         }
         Add(RazerHidBackendCapability.MacroStorageInfoRead, "get_macro_storage_info", "razer_chroma_misc_get_macro_storage_info");
+        if (RazerOnboardMacroDevices.Products.Contains(device.ProductId))
+        {
+            result.Add(RazerHidBackendCapability.MacroStorageDataWrite);
+            result.Add(RazerHidBackendCapability.MacroStorageNameWrite);
+        }
         // The shared middleware chunks carry the LK scroll-wheel command for every mouse,
         // but only products with a real scroll-wheel settings block answer it. The two
         // supported products expose Smart Reel; the rest only inherit the shared builder.

@@ -9,21 +9,23 @@
   <UserControl.Resources>
     <DataTemplate x:Key="MappingEditorTemplate">
       <StackPanel Spacing="12">
-        <Grid ColumnDefinitions="*,*" ColumnSpacing="14">
-          <ComboBox local:Localized.Uid="RazerMappingTypeColumn"
-                    Header="类型"
-                    ItemsSource="{Binding GroupNames}"
-                    SelectedIndex="{Binding GroupOptionIndex, Mode=TwoWay}"
-                    HorizontalAlignment="Stretch" />
-          <ComboBox Grid.Column="1"
-                    local:Localized.Uid="RazerMappingActionColumn"
-                    Header="目标动作"
-                    ItemsSource="{Binding OptionNames}"
-                    SelectedIndex="{Binding OptionIndex, Mode=TwoWay}"
-                    Visibility="{Binding OptionVisibility}"
-                    IsEnabled="{Binding CanApply}"
-                    HorizontalAlignment="Stretch" />
-        </Grid>
+        <ComboBox local:Localized.Uid="RazerMappingTypeColumn"
+                  Header="类型"
+                  ItemsSource="{Binding GroupNames}"
+                  SelectedIndex="{Binding GroupOptionIndex, Mode=TwoWay}"
+                  HorizontalAlignment="Stretch" />
+        <ComboBox Header="{Binding ActionHeader}"
+                  ItemsSource="{Binding OptionNames}"
+                  SelectedIndex="{Binding OptionIndex, Mode=TwoWay}"
+                  Visibility="{Binding OptionVisibility}"
+                  IsEnabled="{Binding CanApply}"
+                  HorizontalAlignment="Stretch" />
+        <ComboBox local:Localized.Uid="RazerMappingMacroTargetHeader"
+                  Header="运行位置"
+                  ItemsSource="{Binding MacroTargetOptions}"
+                  SelectedIndex="{Binding MacroTargetIndex, Mode=TwoWay}"
+                  Visibility="{Binding MacroTargetVisibility}"
+                  HorizontalAlignment="Stretch" />
         <StackPanel Spacing="8">
           <ComboBox local:Localized.Uid="RazerMappingModifierHeader"
                     Header="修饰键"
@@ -37,13 +39,19 @@
                     SelectedIndex="{Binding SelectedMacroSlotIndex, Mode=TwoWay}"
                     Visibility="{Binding MacroSlotVisibility}"
                     HorizontalAlignment="Stretch" />
+          <ComboBox local:Localized.Uid="RazerMappingSoftwareTriggerHeader"
+                    Header="触发方式"
+                    ItemsSource="{Binding SoftwareTriggerOptions}"
+                    SelectedIndex="{Binding SoftwareTriggerModeIndex, Mode=TwoWay}"
+                    Visibility="{Binding SoftwareTriggerVisibility}"
+                    HorizontalAlignment="Stretch" />
           <TextBlock local:Localized.Uid="RazerMappingMacroNoFreeSlot"
                      Text="没有空闲宏槽"
                      Visibility="{Binding MacroNoSlotVisibility}"
                      Foreground="{StaticResource WarningBrush}"
                      TextWrapping="Wrap" />
-          <ComboBox local:Localized.Uid="RazerMappingPlaybackHeader"
-                    Header="播放方式"
+          <ComboBox local:Localized.Uid="RazerMappingOnboardBehaviorHeader"
+                    Header="按键行为"
                     ItemsSource="{Binding MacroPlaybackOptions}"
                     SelectedIndex="{Binding MacroPlaybackIndex, Mode=TwoWay}"
                     Visibility="{Binding MacroPlaybackVisibility}"
@@ -88,6 +96,26 @@
                      SpinButtonPlacementMode="Inline"
                      Value="{Binding MacroRepeatCount, Mode=TwoWay}"
                      Visibility="{Binding MacroRepeatVisibility}" />
+          <TextBlock Text="{Binding MacroErrorText}"
+                     Visibility="{Binding MacroErrorVisibility}"
+                     Foreground="{StaticResource WarningBrush}"
+                     TextWrapping="Wrap" />
+          <TextBlock Text="{Binding MacroSlotWarningText}"
+                     Visibility="{Binding MacroSlotWarningVisibility}"
+                     Foreground="{StaticResource WarningBrush}"
+                     TextWrapping="Wrap" />
+          <TextBlock local:Localized.Uid="RazerMappingSoftwareMacroHint"
+                     Text="由 OpenSynapse 执行，软件关闭后不生效。"
+                     Visibility="{Binding MacroSoftwareHintVisibility}"
+                     Foreground="{StaticResource MutedBrush}"
+                     FontSize="12"
+                     TextWrapping="Wrap" />
+          <TextBlock local:Localized.Uid="RazerMappingOnboardMacroHint"
+                     Text="由设备执行，OpenSynapse 关闭后仍然有效。"
+                     Visibility="{Binding MacroOnboardHintVisibility}"
+                     Foreground="{StaticResource MutedBrush}"
+                     FontSize="12"
+                     TextWrapping="Wrap" />
         </StackPanel>
       </StackPanel>
     </DataTemplate>
@@ -251,9 +279,11 @@
                 <ComboBox Grid.Column="3" ItemsSource="{Binding OptionNames}" SelectedIndex="{Binding OptionIndex, Mode=TwoWay}" Visibility="{Binding OptionVisibility}" IsEnabled="{Binding CanApply}" AutomationProperties.Name="目标映射动作" HorizontalAlignment="Stretch" />
                 <StackPanel Grid.Column="4" Spacing="4" VerticalAlignment="Center">
                   <ComboBox ItemsSource="{Binding ModifierNames}" SelectedIndex="{Binding ModifierIndex, Mode=TwoWay}" Visibility="{Binding ModifierVisibility}" AutomationProperties.Name="键盘修饰键" HorizontalAlignment="Stretch" />
+                  <ComboBox ItemsSource="{Binding MacroTargetOptions}" SelectedIndex="{Binding MacroTargetIndex, Mode=TwoWay}" Visibility="{Binding MacroTargetVisibility}" AutomationProperties.Name="宏运行位置" HorizontalAlignment="Stretch" />
                   <ComboBox ItemsSource="{Binding MacroSlotNames}" SelectedIndex="{Binding SelectedMacroSlotIndex, Mode=TwoWay}" Visibility="{Binding MacroSlotVisibility}" AutomationProperties.Name="宏槽" HorizontalAlignment="Stretch" />
                   <TextBlock local:Localized.Uid="RazerMappingMacroNoFreeSlot" Text="没有空闲宏槽" Visibility="{Binding MacroNoSlotVisibility}" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" />
-                  <ComboBox ItemsSource="{Binding MacroPlaybackOptions}" SelectedIndex="{Binding MacroPlaybackIndex, Mode=TwoWay}" Visibility="{Binding MacroPlaybackVisibility}" AutomationProperties.Name="宏播放方式" HorizontalAlignment="Stretch" />
+                  <ComboBox ItemsSource="{Binding SoftwareTriggerOptions}" SelectedIndex="{Binding SoftwareTriggerModeIndex, Mode=TwoWay}" Visibility="{Binding SoftwareTriggerVisibility}" AutomationProperties.Name="软件宏触发方式" HorizontalAlignment="Stretch" />
+                  <ComboBox ItemsSource="{Binding MacroPlaybackOptions}" SelectedIndex="{Binding MacroPlaybackIndex, Mode=TwoWay}" Visibility="{Binding MacroPlaybackVisibility}" AutomationProperties.Name="板载按键行为" HorizontalAlignment="Stretch" />
                   <NumberBox local:Localized.Uid="RazerMappingTurboHeader" Header="Turbo 次/秒" Minimum="1" Maximum="50" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding TurboRate, Mode=TwoWay}" Visibility="{Binding TurboRateVisibility}" />
                   <NumberBox local:Localized.Uid="RazerMappingProfileIdHeader" Header="配置 ID" Minimum="1" Maximum="5" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding ProfileId, Mode=TwoWay}" Visibility="{Binding ProfileIdVisibility}" />
                   <StackPanel Orientation="Horizontal" Spacing="4" Visibility="{Binding DpiClutchVisibility}">
@@ -261,6 +291,8 @@
                     <NumberBox local:Localized.Uid="RazerMappingDpiYHeader" Header="DPI Y" Minimum="100" Maximum="30000" SmallChange="50" SpinButtonPlacementMode="Inline" Value="{Binding DpiClutchY, Mode=TwoWay}" />
                   </StackPanel>
                   <NumberBox local:Localized.Uid="RazerMappingMacroRepeatHeader" Header="宏次数" Minimum="1" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding MacroRepeatCount, Mode=TwoWay}" Visibility="{Binding MacroRepeatVisibility}" />
+                  <TextBlock Text="{Binding MacroErrorText}" Visibility="{Binding MacroErrorVisibility}" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding MacroSlotWarningText}" Visibility="{Binding MacroSlotWarningVisibility}" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" />
                 </StackPanel>
               </Grid>
             </DataTemplate>

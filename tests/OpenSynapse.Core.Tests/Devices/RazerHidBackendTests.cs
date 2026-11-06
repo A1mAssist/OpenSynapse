@@ -1,5 +1,6 @@
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Windows.Macros;
 using OpenSynapse.Windows.Protocols;
 using Xunit;
 
@@ -2017,6 +2018,14 @@ public sealed class RazerHidBackendTests
                 RazerHidBackendCapability.BatteryDischargeCurveRead => RazerHidMouseProtocol.GetBatteryDischargeCurve(device),
                 RazerHidBackendCapability.BatteryDischargeCurveWrite => RazerHidMouseProtocol.SetBatteryDischargeCurve(device, 0),
                 RazerHidBackendCapability.MacroStorageInfoRead => RazerHidMouseProtocol.GetMacroStorageInfo(device),
+                RazerHidBackendCapability.MacroStorageDataWrite =>
+                    RazerOnboardMacroProtocol.SetMacroMemory.CreateRequest(
+                        0x1F,
+                        RazerOnboardMacroProtocol.CreateWriteMemoryArguments(1, 0, [1])),
+                RazerHidBackendCapability.MacroStorageNameWrite =>
+                    RazerOnboardMacroProtocol.SetMacroName.CreateRequest(
+                        0x1F,
+                        RazerOnboardMacroProtocol.CreateWriteNameArguments(1, 0, new byte[64])),
                 RazerHidBackendCapability.LkScrollWheelModeRead => RazerHidMouseProtocol.GetLkScrollWheelMode(device),
                 RazerHidBackendCapability.LkScrollWheelModeWrite => RazerHidMouseProtocol.SetLkScrollWheelMode(device, 7),
                 RazerHidBackendCapability.BrightnessRead => RazerHidLightingProtocol.GetBrightness(device, null,
@@ -2185,6 +2194,23 @@ public sealed class RazerHidBackendTests
                 Assert.True(exception is null,
                     $"1532:{device.ProductId:X4} source capability {mapping.Capability} has no default binding: {exception}");
             }
+        }
+    }
+
+    [Fact]
+    public void OnboardMacroWriteCapabilitiesFollowTheSupportedProductSet()
+    {
+        foreach (var device in RazerHidDeviceCatalog.BuiltIn.Devices)
+        {
+            var capabilities = RazerHidDeviceService.GetCapabilities(device);
+            var expected = RazerOnboardMacroDevices.Products.Contains(device.ProductId);
+
+            Assert.Equal(
+                expected,
+                capabilities.Contains(RazerHidBackendCapability.MacroStorageDataWrite));
+            Assert.Equal(
+                expected,
+                capabilities.Contains(RazerHidBackendCapability.MacroStorageNameWrite));
         }
     }
 

@@ -2128,6 +2128,8 @@
   <data name="RazerHidCapabilityBatteryDischargeCurveRead" xml:space="preserve"><value>电池放电曲线读取</value></data>
   <data name="RazerHidCapabilityBatteryDischargeCurveWrite" xml:space="preserve"><value>电池放电曲线写入</value></data>
   <data name="RazerHidCapabilityMacroStorageInfoRead" xml:space="preserve"><value>板载宏容量读取</value></data>
+  <data name="RazerHidCapabilityMacroStorageDataWrite" xml:space="preserve"><value>板载宏数据写入</value></data>
+  <data name="RazerHidCapabilityMacroStorageNameWrite" xml:space="preserve"><value>板载宏名称写入</value></data>
   <data name="RazerHidCapabilityLkScrollWheelModeRead" xml:space="preserve"><value>滚轮模式读取</value></data>
   <data name="RazerHidCapabilityLkScrollWheelModeWrite" xml:space="preserve"><value>滚轮模式写入</value></data>
   <data name="RazerHidCapabilityMappingRead" xml:space="preserve"><value>按键映射读取</value></data>
@@ -2793,6 +2795,8 @@
   <data name="MacroTextDialogTitle" xml:space="preserve"><value>输入文本</value></data>
   <data name="MacroTriggerCleared" xml:space="preserve"><value>已清除触发键。</value></data>
   <data name="MacroTriggerConflict" xml:space="preserve"><value>触发键与“{0}”冲突。</value></data>
+  <data name="MacroTriggerMacroMissing" xml:space="preserve"><value>找不到这个宏，可能已被删除。</value></data>
+  <data name="MacroEditBusy" xml:space="preserve"><value>正在录制或倒计时，暂时不能修改触发键。</value></data>
   <data name="MacroMediaMail" xml:space="preserve"><value>邮件</value></data>
   <data name="MacroMediaHomePage" xml:space="preserve"><value>主页</value></data>
   <data name="MacroImportButton.Content" xml:space="preserve"><value>导入…</value></data>
@@ -3762,6 +3766,30 @@
   <data name="RazerMappingModifierHeader" xml:space="preserve"><value>修饰键</value></data>
   <data name="RazerMappingMacroSlotHeader" xml:space="preserve"><value>宏槽</value></data>
   <data name="RazerMappingPlaybackHeader" xml:space="preserve"><value>播放方式</value></data>
+  <data name="RazerMappingMacroTargetHeader" xml:space="preserve"><value>运行位置</value></data>
+  <data name="RazerMappingMacroHeader" xml:space="preserve"><value>宏</value></data>
+  <data name="RazerMappingMacroTargetSoftware" xml:space="preserve"><value>软件（OpenSynapse）</value></data>
+  <data name="RazerMappingMacroTargetOnboard" xml:space="preserve"><value>设备（板载）</value></data>
+  <data name="RazerMappingSoftwareTriggerHeader" xml:space="preserve"><value>触发方式</value></data>
+  <data name="RazerMappingOnboardBehaviorHeader" xml:space="preserve"><value>按键行为</value></data>
+  <data name="RazerMappingMacroPlaybackOnce" xml:space="preserve"><value>执行一次</value></data>
+  <data name="RazerMappingMacroPlaybackRepeat" xml:space="preserve"><value>重复 N 次</value></data>
+  <data name="RazerMappingMacroPlaybackHold" xml:space="preserve"><value>按住循环</value></data>
+  <data name="RazerMappingMacroPlaybackToggle" xml:space="preserve"><value>按一下开始 / 再按停止</value></data>
+  <data name="RazerMappingMacroPlaybackSequence" xml:space="preserve"><value>每次执行下一步</value></data>
+  <data name="RazerMappingSoftwareMacroHint" xml:space="preserve"><value>由 OpenSynapse 执行，软件关闭后不生效。</value></data>
+  <data name="RazerMappingOnboardMacroHint" xml:space="preserve"><value>由设备执行，OpenSynapse 关闭后仍然有效。</value></data>
+  <data name="RazerMappingMacroUnsupported" xml:space="preserve"><value>这个宏不能写入板载：第 {0} 步：{1}。请返回宏编辑器修改。</value></data>
+  <data name="RazerMappingMacroUnsupportedSoftware" xml:space="preserve"><value>这个宏不能写入板载：第 {0} 步：{1}。请改用软件宏，或返回宏编辑器修改。</value></data>
+  <data name="RazerMappingMacroSlotOverwrite" xml:space="preserve"><value>槽位里已有其他宏，保存会覆盖。</value></data>
+  <data name="RazerMappingMacroSoftwareApplied" xml:space="preserve"><value>{0}（软件）</value></data>
+  <data name="RazerMappingMacroCurrentOnce" xml:space="preserve"><value>{0} · 执行一次</value></data>
+  <data name="RazerMappingMacroCurrentRepeat" xml:space="preserve"><value>{0} · 重复 {1} 次</value></data>
+  <data name="RazerMappingMacroCurrentHold" xml:space="preserve"><value>{0} · 按住循环</value></data>
+  <data name="RazerMappingMacroCurrentToggle" xml:space="preserve"><value>{0} · 按一下开始 / 再按停止</value></data>
+  <data name="RazerMappingMacroCurrentSequence" xml:space="preserve"><value>{0} · 每次执行下一步</value></data>
+  <data name="RazerMappingMacroOnboardUnavailable" xml:space="preserve"><value>此设备只能读取板载槽位，不能写入。</value></data>
+  <data name="RazerMappingMacroSoftwareUnavailable" xml:space="preserve"><value>此按键不能用作软件宏触发键。</value></data>
   <data name="RazerMappingCalloutHint" xml:space="preserve"><value>点击设备旁的按键标签编辑映射</value></data>
   <data name="RazerMappingTitle" xml:space="preserve"><value>按键映射</value></data>
   <data name="RazerMappingRead" xml:space="preserve"><value>读取</value></data>
@@ -3793,7 +3821,7 @@
   <data name="RazerMappingGroupRazerKey" xml:space="preserve"><value>Razer 键</value></data>
   <data name="RazerMappingGroupWindowsShortcut" xml:space="preserve"><value>Windows 快捷键</value></data>
   <data name="RazerMappingGroupHyperShiftToggle" xml:space="preserve"><value>HyperShift 切换</value></data>
-  <data name="RazerMappingGroupMacro" xml:space="preserve"><value>用户宏</value></data>
+  <data name="RazerMappingGroupMacro" xml:space="preserve"><value>宏</value></data>
   <data name="RazerMappingGroupTurboKey" xml:space="preserve"><value>Turbo 键</value></data>
   <data name="RazerMappingGroupTurboButton" xml:space="preserve"><value>Turbo 按钮</value></data>
   <data name="RazerMappingGroupDpiClutch" xml:space="preserve"><value>DPI 离合</value></data>

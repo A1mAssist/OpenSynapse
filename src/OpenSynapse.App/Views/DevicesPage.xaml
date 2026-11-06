@@ -322,7 +322,7 @@
                       </ItemsControl>
                       <Button local:Localized.Uid="RazerOnboardMacroReadButton" Content="读取板载宏" Click="KeyboardReadOnboardMacrosClick" IsEnabled="{Binding Onboard.CanLoad}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" />
 
-                      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Visibility="{Binding Onboard.WriteVisibility}">
                         <ComboBox local:Localized.Uid="RazerOnboardMacroLocalLabel" Header="本机宏" ItemsSource="{Binding Onboard.LocalMacroNames}" SelectedIndex="{Binding Onboard.SelectedLocalMacroIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" IsEnabled="{Binding Onboard.CanLoad}" />
                         <NumberBox Grid.Column="1" local:Localized.Uid="RazerOnboardMacroSlotLabel" Header="板载槽位" Value="{Binding Onboard.TargetMacroId, Mode=TwoWay}" Minimum="1" Maximum="{Binding Onboard.MaxMacroId}" SmallChange="1" SpinButtonPlacementMode="Compact" Width="120" IsEnabled="{Binding Onboard.CanWrite}" />
                         <Button Grid.Column="2" local:Localized.Uid="RazerOnboardMacroWriteButton" Content="写入板载" Click="KeyboardWriteOnboardMacroClick" IsEnabled="{Binding Onboard.CanWrite}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
@@ -772,7 +772,7 @@
                       </ItemsControl>
                       <Button local:Localized.Uid="RazerOnboardMacroReadButton" Content="读取板载宏" Click="RazerHidReadOnboardMacrosClick" IsEnabled="{Binding Onboard.CanLoad}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" />
 
-                      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Visibility="{Binding Onboard.WriteVisibility}">
                         <ComboBox local:Localized.Uid="RazerOnboardMacroLocalLabel" Header="本机宏" ItemsSource="{Binding Onboard.LocalMacroNames}" SelectedIndex="{Binding Onboard.SelectedLocalMacroIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" IsEnabled="{Binding Onboard.CanLoad}" />
                         <NumberBox Grid.Column="1" local:Localized.Uid="RazerOnboardMacroSlotLabel" Header="板载槽位" Value="{Binding Onboard.TargetMacroId, Mode=TwoWay}" Minimum="1" Maximum="{Binding Onboard.MaxMacroId}" SmallChange="1" SpinButtonPlacementMode="Compact" Width="120" IsEnabled="{Binding Onboard.CanWrite}" />
                         <Button Grid.Column="2" local:Localized.Uid="RazerOnboardMacroWriteButton" Content="写入板载" Click="RazerHidWriteOnboardMacroClick" IsEnabled="{Binding Onboard.CanWrite}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />

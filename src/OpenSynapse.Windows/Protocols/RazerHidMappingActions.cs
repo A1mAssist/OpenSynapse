@@ -50,9 +50,6 @@ public enum RazerHidMacroPlayback
 /// </summary>
 public static class RazerHidMappingActions
 {
-    public static IReadOnlyList<string> MacroPlaybackNames { get; } =
-        ["Once", "N times", "Hold", "Toggle", "Sequence"];
-
     public static IReadOnlyList<string> ModifierNames { get; } = ["None", "Ctrl", "Shift", "Alt", "Win"];
 
     public static IReadOnlyList<byte> ModifierMasks { get; } = [0x00, 0x01, 0x02, 0x04, 0x08];

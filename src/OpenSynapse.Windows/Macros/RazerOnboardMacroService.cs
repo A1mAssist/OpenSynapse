@@ -355,8 +355,7 @@ public sealed class RazerOnboardMacroService
         var written = await ReadNameRawAsync(id, cancellationToken).ConfigureAwait(false);
         if (!written.AsSpan().SequenceEqual(expected))
         {
-            throw new InvalidOperationException(
-                $"Onboard macro {id} did not read back the name block that was written.");
+            throw new OnboardMacroVerificationException(id, nameBlock: true);
         }
     }
 
@@ -449,8 +448,7 @@ public sealed class RazerOnboardMacroService
         var written = await ReadMemoryAsync(id, expected.Length, cancellationToken).ConfigureAwait(false);
         if (!written.AsSpan().SequenceEqual(expected))
         {
-            throw new InvalidOperationException(
-                $"Onboard macro {id} did not read back the bytes that were written.");
+            throw new OnboardMacroVerificationException(id, nameBlock: false);
         }
     }
 

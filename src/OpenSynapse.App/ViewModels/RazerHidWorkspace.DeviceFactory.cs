@@ -33,6 +33,7 @@ public sealed partial class RazerHidWorkspace
             _localMacros);
         device.AttachMatrixLayout(_matrixLayoutLoader.LoadLayoutAsync, _dispatcherQueue);
         device.Onboard.LocalMacroProvider = _localMacros;
+        device.SoftwareMacroBinder = _softwareMacroBinder;
         return device;
     }
 }

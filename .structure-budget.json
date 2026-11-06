@@ -8,6 +8,11 @@
       "maxPublicMembers": 95
     },
     {
+      "path": "src/OpenSynapse.App/ViewModels/RazerHidMappingViewModel.cs",
+      "maxLines": 960,
+      "maxPublicMembers": 40
+    },
+    {
       "path": "src/OpenSynapse.App/ViewModels/BladeWorkspace.cs",
       "maxLines": 3165,
       "maxPublicMembers": 174

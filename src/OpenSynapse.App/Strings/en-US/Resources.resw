@@ -1756,6 +1756,8 @@
   <data name="RazerHidCapabilityBatteryDischargeCurveRead" xml:space="preserve"><value>Battery discharge curve read</value></data>
   <data name="RazerHidCapabilityBatteryDischargeCurveWrite" xml:space="preserve"><value>Battery discharge curve write</value></data>
   <data name="RazerHidCapabilityMacroStorageInfoRead" xml:space="preserve"><value>Onboard macro storage read</value></data>
+  <data name="RazerHidCapabilityMacroStorageDataWrite" xml:space="preserve"><value>Onboard macro data write</value></data>
+  <data name="RazerHidCapabilityMacroStorageNameWrite" xml:space="preserve"><value>Onboard macro name write</value></data>
   <data name="RazerHidCapabilityLkScrollWheelModeRead" xml:space="preserve"><value>Scroll wheel mode read</value></data>
   <data name="RazerHidCapabilityLkScrollWheelModeWrite" xml:space="preserve"><value>Scroll wheel mode write</value></data>
   <data name="RazerHidCapabilityMappingRead" xml:space="preserve"><value>Button mapping read</value></data>
@@ -2367,6 +2369,8 @@
   <data name="MacroTextDialogTitle" xml:space="preserve"><value>Insert text</value></data>
   <data name="MacroTriggerCleared" xml:space="preserve"><value>Trigger cleared.</value></data>
   <data name="MacroTriggerConflict" xml:space="preserve"><value>The trigger conflicts with "{0}".</value></data>
+  <data name="MacroTriggerMacroMissing" xml:space="preserve"><value>That macro no longer exists.</value></data>
+  <data name="MacroEditBusy" xml:space="preserve"><value>The trigger cannot be changed while recording or counting down.</value></data>
   <data name="MacroMediaMail" xml:space="preserve"><value>Mail</value></data>
   <data name="MacroMediaHomePage" xml:space="preserve"><value>Home</value></data>
   <data name="MacroImportButton.Content" xml:space="preserve"><value>Import…</value></data>
@@ -3336,6 +3340,30 @@
   <data name="RazerMappingModifierHeader" xml:space="preserve"><value>Modifier key</value></data>
   <data name="RazerMappingMacroSlotHeader" xml:space="preserve"><value>Macro slot</value></data>
   <data name="RazerMappingPlaybackHeader" xml:space="preserve"><value>Playback</value></data>
+  <data name="RazerMappingMacroTargetHeader" xml:space="preserve"><value>Execution</value></data>
+  <data name="RazerMappingMacroHeader" xml:space="preserve"><value>Macro</value></data>
+  <data name="RazerMappingMacroTargetSoftware" xml:space="preserve"><value>Software (OpenSynapse)</value></data>
+  <data name="RazerMappingMacroTargetOnboard" xml:space="preserve"><value>Device (onboard)</value></data>
+  <data name="RazerMappingSoftwareTriggerHeader" xml:space="preserve"><value>Trigger</value></data>
+  <data name="RazerMappingOnboardBehaviorHeader" xml:space="preserve"><value>Button behavior</value></data>
+  <data name="RazerMappingMacroPlaybackOnce" xml:space="preserve"><value>Run once</value></data>
+  <data name="RazerMappingMacroPlaybackRepeat" xml:space="preserve"><value>Repeat N times</value></data>
+  <data name="RazerMappingMacroPlaybackHold" xml:space="preserve"><value>Repeat while held</value></data>
+  <data name="RazerMappingMacroPlaybackToggle" xml:space="preserve"><value>Press to start / stop</value></data>
+  <data name="RazerMappingMacroPlaybackSequence" xml:space="preserve"><value>Run one step per press</value></data>
+  <data name="RazerMappingSoftwareMacroHint" xml:space="preserve"><value>Runs in OpenSynapse and stops working when the app is closed.</value></data>
+  <data name="RazerMappingOnboardMacroHint" xml:space="preserve"><value>Runs on the device and keeps working when OpenSynapse is closed.</value></data>
+  <data name="RazerMappingMacroUnsupported" xml:space="preserve"><value>This macro cannot be stored onboard: step {0}: {1}. Edit the macro and try again.</value></data>
+  <data name="RazerMappingMacroUnsupportedSoftware" xml:space="preserve"><value>This macro cannot be stored onboard: step {0}: {1}. Use a software macro or edit the macro.</value></data>
+  <data name="RazerMappingMacroSlotOverwrite" xml:space="preserve"><value>This slot already contains another macro; saving will overwrite it.</value></data>
+  <data name="RazerMappingMacroSoftwareApplied" xml:space="preserve"><value>{0} (software)</value></data>
+  <data name="RazerMappingMacroCurrentOnce" xml:space="preserve"><value>{0} · Run once</value></data>
+  <data name="RazerMappingMacroCurrentRepeat" xml:space="preserve"><value>{0} · Repeat {1} times</value></data>
+  <data name="RazerMappingMacroCurrentHold" xml:space="preserve"><value>{0} · Repeat while held</value></data>
+  <data name="RazerMappingMacroCurrentToggle" xml:space="preserve"><value>{0} · Press to start / stop</value></data>
+  <data name="RazerMappingMacroCurrentSequence" xml:space="preserve"><value>{0} · Run one step per press</value></data>
+  <data name="RazerMappingMacroOnboardUnavailable" xml:space="preserve"><value>This device can read onboard slots but cannot write them.</value></data>
+  <data name="RazerMappingMacroSoftwareUnavailable" xml:space="preserve"><value>This button cannot be used as a software macro trigger.</value></data>
   <data name="RazerMappingCalloutHint" xml:space="preserve"><value>Select a button label beside the device to edit its mapping.</value></data>
   <data name="RazerMappingTitle" xml:space="preserve"><value>Button mapping</value></data>
   <data name="RazerMappingRead" xml:space="preserve"><value>Read</value></data>
@@ -3367,7 +3395,7 @@
   <data name="RazerMappingGroupRazerKey" xml:space="preserve"><value>Razer key</value></data>
   <data name="RazerMappingGroupWindowsShortcut" xml:space="preserve"><value>Windows shortcut</value></data>
   <data name="RazerMappingGroupHyperShiftToggle" xml:space="preserve"><value>HyperShift toggle</value></data>
-  <data name="RazerMappingGroupMacro" xml:space="preserve"><value>User macro</value></data>
+  <data name="RazerMappingGroupMacro" xml:space="preserve"><value>Macro</value></data>
   <data name="RazerMappingGroupTurboKey" xml:space="preserve"><value>Turbo key</value></data>
   <data name="RazerMappingGroupTurboButton" xml:space="preserve"><value>Turbo button</value></data>
   <data name="RazerMappingGroupDpiClutch" xml:space="preserve"><value>DPI clutch</value></data>

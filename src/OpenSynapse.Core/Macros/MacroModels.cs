@@ -37,6 +37,12 @@ public enum MacroTriggerMode
     HoldRepeat = 4,
 }
 
+public enum MacroExecutionTarget
+{
+    Software = 0,
+    Onboard = 1,
+}
+
 public enum MacroDelayMode
 {
     Recorded = 0,
