@@ -68,6 +68,45 @@ public sealed class RazerMappingBundleTests
     }
 
     [Fact]
+    public void ParsesButtonListAliasDrawLines()
+    {
+        const string lines = """
+            const e=this.props.buttonList||[];
+            const t={};
+            drawLine(0,e[0]||t,114,53,!0);
+            drawLine(1,e[1]||t,181,53,!1);
+            """;
+        const string buttons = """
+            {buttonKey:"LeftClick",counter:1},
+            {buttonKey:"RightClick",counter:2}
+            """;
+
+        var bundle = RazerMappingBundleParser.Parse(Bundle(lines, buttons));
+
+        Assert.Equal(
+            new byte[] { 1, 2 },
+            bundle.MouseAnchors.Select(anchor => anchor.ButtonId));
+        Assert.True(bundle.MouseAnchors[0].IsLeft);
+        Assert.False(bundle.MouseAnchors[1].IsLeft);
+    }
+
+    [Fact]
+    public void IgnoresAnAliasNotDeclaredFromButtonList()
+    {
+        const string lines = """
+            const e=[];
+            drawLine(0,e[0],114,53,!0);
+            """;
+        const string buttons = """
+            {buttonKey:"LeftClick",counter:1}
+            """;
+
+        var bundle = RazerMappingBundleParser.Parse(Bundle(lines, buttons));
+
+        Assert.Empty(bundle.MouseAnchors);
+    }
+
+    [Fact]
     public void FirmwareButtonIdsFollowStandardMouseSemantics()
     {
         const string lines = """

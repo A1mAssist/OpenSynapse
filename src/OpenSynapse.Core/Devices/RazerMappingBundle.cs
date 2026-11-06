@@ -45,7 +45,11 @@ public static class RazerMappingBundleParser
         RegexOptions.CultureInvariant);
 
     private static readonly Regex DrawLineRegex = new(
-        """drawLines?\(\s*(?<index>\d+)\s*,\s*this\.props\.buttonList\[(?<button>\d+)\]\s*,\s*(?<x>-?\d+(?:\.\d+)?)\s*,\s*(?<y>-?\d+(?:\.\d+)?)(?:\s*,\s*!(?<left>[01]))?\s*\)""",
+        """drawLines?\(\s*(?<index>\d+)\s*,\s*(?:this\.props\.buttonList\[(?<button>\d+)\]|(?<buttonArray>[A-Za-z_$][\w$]*)\[(?<arrayButton>\d+)\])(?:\s*\|\|\s*[A-Za-z_$][\w$]*)?\s*,\s*(?<x>-?\d+(?:\.\d+)?)\s*,\s*(?<y>-?\d+(?:\.\d+)?)(?:\s*,\s*!(?<left>[01]))?\s*\)""",
+        RegexOptions.CultureInvariant);
+
+    private static readonly Regex ButtonListAliasRegex = new(
+        """(?:const|let|var)\s+(?<name>[A-Za-z_$][\w$]*)\s*=\s*this\.props\.buttonList\s*(?:\|\|\s*\[\s*\])?""",
         RegexOptions.CultureInvariant);
 
     private static readonly Regex ButtonObjectRegex = new(
@@ -104,12 +108,26 @@ public static class RazerMappingBundleParser
         var imageOffsetX = (canvasWidth - DefaultImageWidth) / 2;
         var imageOffsetY = (canvasHeight - DefaultImageHeight) / 2;
 
+        var buttonListAliases = new HashSet<string>(
+            ButtonListAliasRegex.Matches(mainJs).Select(match => match.Groups["name"].Value),
+            StringComparer.Ordinal);
         var drawLines = new List<(int Index, int MatchOffset, int ButtonIndex, double X, double Y, bool IsLeft)>();
         foreach (Match match in DrawLineRegex.Matches(mainJs))
         {
+            var buttonGroup = match.Groups["button"];
+            if (!buttonGroup.Success)
+            {
+                if (!buttonListAliases.Contains(match.Groups["buttonArray"].Value))
+                {
+                    continue;
+                }
+
+                buttonGroup = match.Groups["arrayButton"];
+            }
+
             if (!int.TryParse(match.Groups["index"].Value, NumberStyles.None, CultureInfo.InvariantCulture,
                     out var index) ||
-                !int.TryParse(match.Groups["button"].Value, NumberStyles.None, CultureInfo.InvariantCulture,
+                !int.TryParse(buttonGroup.Value, NumberStyles.None, CultureInfo.InvariantCulture,
                     out var buttonIndex) ||
                 !double.TryParse(match.Groups["x"].Value, NumberStyles.Float, CultureInfo.InvariantCulture,
                     out var x) ||

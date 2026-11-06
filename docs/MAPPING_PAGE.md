@@ -109,7 +109,7 @@ AVIF 由随包分发的 libavif 1.3.0 + dav1d 1.4.3 解码：输出 BGRA8，alph
 
 映射页不打包逐型号的预生成图片或锚点，00B8 的图片和锚点同样来自产品 184 的在线 bundle；下载或解码失败时只显示行表格。产品 184 的 3x AVIF 在映射页截图中 alpha 边缘干净，没有矩形或条纹。
 
-`drawLines(index, this.props.buttonList[N], x, y, !isLeft)` 里的 `N` 指向当前 `groupList` 的按钮对象。`counter` 是 bundle 的界面序号，不是固件按钮 id：00B8 设备实际回读的按钮是 `1,2,3,4,5,9,10,96`，而 bundle 的 `counter` 是 `1..8`。解析锚点时先把标准鼠标键位映射到固件 id（`LeftClick→1`、`RightClick→2`、`ScrollClick→3`、`MouseButton4→4`、`MouseButton5→5`、`ScrollUp→9`、`ScrollDown→10`、`CycleUpSensitivityStages→0x60`），未知键才回退 `counter`；`buttonPos` 是左右列。`drawLine` 实际画圆点的中心是 `x + 3*dotRadius`、`y + dotRadius`，再减去产品图在画布中的居中偏移 `(cvsW - 300) / 2`、`(cvsH - 340) / 2`；`cvsW`、`cvsH`、`dotRadius` 从 bundle 的同一段画布配置读取，缺省为 `310`、`340`、`2.5`。3x 图比例必须是 `300:340`，否则映射卡回退表格，不把锚点画到错误位置。左右列优先用 `buttonPos`，没有时才用 `!isLeft`；省略第五参数时按 `drawLine` 默认值归到左列。没有固件 id 的 `drawLine` 不生成热点。
+`drawLines(index, this.props.buttonList[N], x, y, !isLeft)` 里的 `N` 指向当前 `groupList` 的按钮对象。新 bundle 也会先写 `const e=this.props.buttonList||[]`，再调用 `drawLine(i, e[i]||t, x, y, !isLeft)`；解析器识别这种 buttonList 别名，仍按同一按钮表解析。`counter` 是 bundle 的界面序号，不是固件按钮 id：00B8 设备实际回读的按钮是 `1,2,3,4,5,9,10,96`，而 bundle 的 `counter` 是 `1..8`。解析锚点时先把标准鼠标键位映射到固件 id（`LeftClick→1`、`RightClick→2`、`ScrollClick→3`、`MouseButton4→4`、`MouseButton5→5`、`ScrollUp→9`、`ScrollDown→10`、`CycleUpSensitivityStages→0x60`），未知键才回退 `counter`；`buttonPos` 是左右列。`drawLine` 实际画圆点的中心是 `x + 3*dotRadius`、`y + dotRadius`，再减去产品图在画布中的居中偏移 `(cvsW - 300) / 2`、`(cvsH - 340) / 2`；`cvsW`、`cvsH`、`dotRadius` 从 bundle 的同一段画布配置读取，缺省为 `310`、`340`、`2.5`。3x 图比例必须是 `300:340`，否则映射卡回退表格，不把锚点画到错误位置。左右列优先用 `buttonPos`，没有时才用 `!isLeft`；省略第五参数时按 `drawLine` 默认值归到左列。没有固件 id 的 `drawLine` 不生成热点。
 
 行标题按同一固件 id 用 bundle 的 `buttonKey` 生成（`ScrollUp → Scroll up`、`MouseButton4 → Button 4`、`CycleUpSensitivityStages → DPI cycle up`）；没有 bundle 名称时才回退通用鼠标表。不要把 `counter` 直接当按钮 id，否则 00B8 的 4/5 会把侧键引线画到滚轮上。
 
@@ -126,7 +126,7 @@ AVIF 由随包分发的 libavif 1.3.0 + dav1d 1.4.3 解码：输出 BGRA8，alph
 - 清单支持 ETag 和离线缓存；`main.js`、3x 图按文件名缓存。清单 1 MB、脚本 16 MB、图片 4 MB 上限，单次请求 8 秒超时。
 - 解析结果按 `(PID, 设备类别)` 在进程内缓存；第二次打开不重复下载。
 
-2026-11-06 的 `AvailableDevices.json` 有 335 个产品 id，其中 172 个有 `prd-3x`，3 个清单 404；没有 3x 图或锚点的型号回退表格。这里不维护静态 PID 名单，也不把 00B9 的整机 SVG 坐标套到其他型号。00B9 的 `DeviceManifest_185_0.json` 只有整机轮廓，没有逐按钮锚点，因此不生成热点。映射页也不读取打包的 `studio-manifests.zip`；键盘图只来自在线清单或它在运行时的磁盘缓存。
+2026-11-06 的 `AvailableDevices.json` 有 335 个产品 id，其中 174 个有 `prd-3x`，1 个清单 404；没有 3x 图或锚点的型号回退表格。这里不维护静态 PID 名单，也不把 00B9 的整机 SVG 坐标套到其他型号。00B9 的 `DeviceManifest_185_0.json` 只有整机轮廓，没有逐按钮锚点，因此不生成热点。映射页也不读取打包的 `studio-manifests.zip`；键盘图只来自在线清单或它在运行时的磁盘缓存。
 
 BLE 协议 30 当前没有可靠的产品 id，映射页照常显示按钮行，设备图回退表格；不按蓝牙名称猜 PID。HID 鼠标、独立键盘和 Viper 都按各自实际 PID 走上面的运行时资源路径。
 
@@ -147,5 +147,7 @@ pwsh -NoProfile -File tools/Probe-RazerMappingAssets.ps1 -ProductId 590
 - 185：9 个鼠标锚点；冷启动约 1.28 秒，缓存后约 0.29 秒
 - 99：9 个 drawLine 位置，其中 5 个能确认按钮 id；冷启动约 1.24 秒，缓存后约 0.24 秒
 - 590：111 个键盘路径锚点（按 HID 去重），20 张键盘图片；冷启动约 0.9–1.3 秒，缓存后约 0.3 秒
+
+2026-11-06 对 `AvailableDevices.json` 的 335 个产品 id 做了全量扫描：334 个有 `asset-manifest`，174 个有 `prd-3x`；用 `RazerMappingBundleParser` 实际解析后，71 个鼠标 bundle 有非空锚点，74 个键盘清单能生成键位路径。其余型号多数不是映射设备，或者 bundle 没有 `drawLines` / 键位证据，按设计回退行表格。PID 680 的 `asset-manifest` 返回 404。555/580 这类 keypad 使用另一套 400×450 的画布和字符串键名 `drawLine`，坐标不能套鼠标的 300×340 模型，因此没有生成热点。
 
 `main.js` 缓存在 `%TEMP%\OpenSynapse-RazerMappingProbe`。正式映射页复用同一套解析规则，并把清单、`main.js`、图片和解析结果写入 `%LOCALAPPDATA%` 缓存；冷启动仍需约 1 秒网络时间，命中缓存后只读本地文件。
