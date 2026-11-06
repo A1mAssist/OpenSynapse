@@ -75,6 +75,22 @@ public static class RazerFilterEndpointDiscovery
                 productId),
             cancellationToken));
 
+    /// <summary>
+    /// Lists every present RZCONTROL endpoint. RzCommon routes a keyboard
+    /// injection to a device that advertises keyboard capability, so any
+    /// endpoint can carry the frame when the Blade one is absent.
+    /// </summary>
+    public static ValueTask<IReadOnlyList<string>> DiscoverAllAsync(
+        CancellationToken cancellationToken = default) =>
+        new(Task.Run(
+            () => (IReadOnlyList<string>)EnumerateCandidates(
+                    InterfaceClassGuid,
+                    cancellationToken)
+                .Select(static candidate => candidate.Path)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray(),
+            cancellationToken));
+
     internal static string? SelectEndpoint(
         IEnumerable<RazerFilterEndpointCandidate> candidates,
         ushort productId)
