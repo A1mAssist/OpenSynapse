@@ -115,6 +115,9 @@ public sealed partial class DevicesPage : UserControl
     private async void HeadsetAudioApplyThxBandsClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.Accessories.SelectedHeadsetAudio?.ApplyThxBandsAsync(Lifetime) ?? Task.CompletedTask);
 
+    private async void HeadsetAudioApplyThxS3BaselineClick(object sender, RoutedEventArgs e) =>
+        await (ViewModel.Accessories.SelectedHeadsetAudio?.ApplyS3BaselineAsync(Lifetime) ?? Task.CompletedTask);
+
     private async void HeadsetAudioApplyThxNormalizationClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.Accessories.SelectedHeadsetAudio?.ApplyThxNormalizationAsync(Lifetime) ?? Task.CompletedTask);
 
