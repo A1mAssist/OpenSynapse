@@ -51,30 +51,27 @@ public sealed class MappingPageAuditTests
         Assert.Contains("TableVisibility", view);
         Assert.Contains("CalloutClick", code);
         Assert.Contains("left ? 53 : -53", code);
-        Assert.Contains("FindLayout", assets);
-        Assert.Contains("0x00B8", assets);
+        Assert.Contains("RazerMappingImageLayout", assets);
         Assert.Contains("IsLeft", assets);
-        Assert.DoesNotContain("00B9", assets);
+        Assert.DoesNotContain("FindLayout", assets);
+        Assert.DoesNotContain("0x00B8", assets);
         Assert.DoesNotContain("#EDEDED", view);
     }
 
     [Fact]
-    public void MappingAssetsOnlyContainEvidencedDeviceImages()
+    public void MappingArtIsNotPreGenerated()
     {
         var directory = Path.Combine(
             RepoLayout.Root, "src", "OpenSynapse.App", "Assets", "MappingLayouts");
-        Assert.True(Directory.Exists(directory));
-        var images = Directory
-            .EnumerateFiles(directory)
-            .Where(path =>
-                path.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ||
-                path.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
-            .ToArray();
-        Assert.Contains(images, path => Path.GetFileName(path) == "00B9.svg");
-        Assert.Contains(images, path => Path.GetFileName(path) == "00B8.png");
-        Assert.DoesNotContain(
-            Directory.GetFiles(directory, "*.json"),
-            _ => true);
+        var images = Directory.Exists(directory)
+            ? Directory.EnumerateFiles(directory).ToArray()
+            : Array.Empty<string>();
+        Assert.Empty(images);
+
+        var assets = File.ReadAllText(Path.Combine(
+            RepoLayout.Root, "src", "OpenSynapse.App", "ViewModels", "RazerMappingAssetCatalog.cs"));
+        Assert.DoesNotContain("FindDeviceImage", assets);
+        Assert.DoesNotContain("FindLayout", assets);
     }
 
     [Fact]
@@ -96,8 +93,8 @@ public sealed class MappingPageAuditTests
         Assert.Contains("prd-3x", service);
         Assert.Contains("StudioManifestService", service);
         Assert.Contains("RazerMappingBundleParser", service);
-        Assert.Contains("offlineCatalogPath:", service);
-        Assert.Contains("studio-manifests.zip", service);
+        Assert.DoesNotContain("offlineCatalogPath", service);
+        Assert.DoesNotContain("studio-manifests.zip", service);
         Assert.Contains("{ 0, 129 }", service);
         Assert.Contains("var image = await LoadBundleAsync", service);
         Assert.Contains("drawLines", bundle);

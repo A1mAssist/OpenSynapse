@@ -122,7 +122,6 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
         _mapping ??= new RazerHidMappingViewModel(
             new RazerViperMappingTransport(_deviceTelemetryReader, _deviceDescriptors),
             canWrite: true,
-            layout: RazerMappingAssetCatalog.FindLayout(0x00B8),
             actionCatalog: RazerViperMappingActionCatalog.Instance,
             productId: 0x00B8,
             deviceKind: RazerMappingDeviceKind.Mouse,

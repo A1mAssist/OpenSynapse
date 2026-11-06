@@ -41,9 +41,7 @@ public sealed partial class RazerMappingAssetService
         _studio = new StudioManifestService(
             Http,
             AppDataPaths.Combine("mapping", "lighting-manifests"),
-            TimeSpan.FromMinutes(10),
-            offlineCatalogPath: Path.Combine(
-                AppContext.BaseDirectory, "Assets", "LightingLayouts", "studio-manifests.zip"));
+            TimeSpan.FromMinutes(10));
     }
 
     public static RazerMappingAssetService Shared { get; } = new();
