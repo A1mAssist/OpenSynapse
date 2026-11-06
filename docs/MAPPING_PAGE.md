@@ -96,33 +96,33 @@ HID 适配器复用 `RazerHidDeviceService` 的 `02:84 / 02:8C / 02:0C`；独立
 
 Viper 保存后会用设备回读的 16 条 assignment 更新 profile，避免下次启动时旧 profile 把用户改动覆盖回去。
 
-## 设备图与热点
+## 设备图与键位（运行时）
 
-设备图是可选装饰。映射卡按 PID 查找 `Assets/MappingLayouts/<PID>.svg` 或 `.png`，以资产实际存在为准；图片按绝对文件路径加载，发布目录里不依赖 `ms-appx:///` 解析。设备图画布保持透明，跟随页面深色背景，不再套白色底板。
+设备图不是打包资源。映射卡第一次打开某个 PID 时按设备类别取：
 
-当前包含 `00B8.png`：来自 Razer 产品 184 映射页自己的产品图 `https://apps.razer.com/synapse/products/184/ui/static/media/prd-3x.68dba287.avif`（300 × 340 画布的 3x 图，转换为 900 × 1020 PNG），裁去透明边并保留 12 像素安全边后为 408 × 778。它不是 dashboard 大图，也不是从截图量的坐标。
+- **鼠标**：先读 `https://apps.razer.com/synapse/products/{decimalPid}/ui/asset-manifest.json`，从 `main.js` 取该产品自己的 `drawLines()` 锚点，从 `static/media/prd-3x.*.avif` 取产品图。
+- **键盘**：优先读 `DeviceManifest_{PID}_0.json` 的灯光工作室 SVG，直接画 `productfill` / `productoutline` / `characters` / LED 键位，不画引线。`edition 0` 不存在时再试 `129`；打包的 `studio-manifests.zip` 只有 edition 0，所以离线状态只覆盖 edition 0。现有 catalog 里 edition 129 的样本不一定是键盘，这个兜底没有实机验证，不能当键盘专用版本。
+- **键盘没有 studio SVG**：回退产品 bundle 的 3x 图 + `drawLines` 锚点，和鼠标共用一套 callout。多数键盘 bundle 没有 `drawLines` 或 `prd-3x`，这种型号仍然只显示行表格。
+- **没有对应资源**：只显示行表格；映射读写不受影响。
 
-Razer 没有通用的 hotspot JSON 接口。产品 184 的映射页把八个锚点写死在 UI bundle `https://apps.razer.com/synapse/products/184/ui/static/js/main.2371171b.js` 的 `drawLines()` 里；`h5` 只定义画布尺寸、标签列和 53 像素引线长度。表中是 bundle 原始锚点和转换到裁边产品图的坐标：
+`drawLines(index, this.props.buttonList[N], x, y, !isLeft)` 里的 `N` 指向当前 `groupList` 的按钮对象，按钮对象的 `counter` 是固件按钮 id，`buttonPos` 是左右列。锚点坐标先减去 `(cvsW - 300) / 2`，再按 `300 × 340` 的产品图画布使用；3x 图实际是 `900 × 1020`，UI 只按同一比例缩放，不另存一套裁边坐标。左右列优先用 `buttonPos`，没有时才用 `!isLeft`。没有按钮 id 的 `drawLine` 不生成热点。
 
-| 按钮 | Razer 画布 | 裁边产品图 | 列 |
-|---|---:|---:|---|
-| LeftClick | 114, 58 | 96, 52 | 左 |
-| RightClick | 181, 58 | 282, 52 | 右 |
-| ScrollClick | 147, 88 | 180, 142 | 左 |
-| ScrollUp | 148, 75 | 183, 103 | 右 |
-| ScrollDown | 148, 105 | 183, 193 | 右 |
-| MouseButton4 | 88, 145 | 3, 313 | 左 |
-| MouseButton5 | 88, 175 | 3, 403 | 左 |
-| CycleUpSensitivityStages | 148, 138 | 183, 292 | 右 |
+不是每个按钮都有锚点。产品 99 的 bundle 有 9 个 `drawLine` 位置，但只有 5 个按钮对象能确认 id；这 5 个显示设备旁标签，其余行保留在下方表格里。没有锚点的行不伪造中心点。
 
-左右列不是按坐标 X 猜的，而是沿用 bundle `drawLines()` 的 `isLeft` 参数；滚动、DPI 和右键都在右列，左键、中键和两个侧键在左列。页面先画 53 像素水平短引线，再斜线连到按钮，端点使用小圆点和外圈；点击左侧或右侧标签在下方打开该按键的映射编辑器。热点只覆盖 Viper 00B8 的已读按钮：左键、右键、滚轮按下、后退、前进、滚轮上/下和 DPI 循环。
+键盘 SVG 的 `characters` 层是键帽文字，`led` 层是键位热区，Razer logo（`KeyName=Logo` 或 `selection-group=logo`）只画不点。键名到固件键 id 用标准 USB HID usage 映射，例如 `A → 4`、`Esc → 41`、`LeftShift → 225`；没有可靠映射的键仍显示，但点击不会硬选一行。键盘不铺 111 条引线，当前选中的键用描边高亮，编辑器在下方，完整行表格也保留。
 
-当前不伪造热点：
+键帽字符是设计稿里的浅灰 `#D2D2D2`，在深色主题上可见；在白色或透明背景上单独渲染会几乎看不见，这不是字符层丢失。2026-11-06 用真实 590 SVG 做深色等价渲染，两条 `characters` 路径分别是 12729 / 107509 字节，104 个键位，字符像素主色为 `#D2D2D2`。
 
-- 不从其他型号复制坐标。
-- Razer 的锚点是每个产品 bundle 内的构建时常量，不同 PID 的锚点不同，没有可稳定查询的公共 schema；不在运行时抓取任意 6 MB UI bundle 猜坐标。
-- 没有逐型号热点证据的设备回退到行表格，不显示设备旁标签或引线。
-- 00B9 的 `DeviceManifest_185_0.json` SVG 可作为装饰资产，但它的 `svg_0_0` 只有整机 `Product_Fill` / `Product_Outline` / `LED` 等层，没有逐按钮锚点，因此不生成点击热区。
+资源全部运行时获取并缓存：
+
+- 鼠标清单和 `main.js`：`%LOCALAPPDATA%\A1mAssist\OpenSynapse\mapping\devices\{PID}\`
+- 键盘清单：`%LOCALAPPDATA%\A1mAssist\OpenSynapse\mapping\lighting-manifests\`
+- 清单支持 ETag 和离线缓存；`main.js`、3x 图按文件名缓存。清单 1 MB、脚本 16 MB、图片 4 MB 上限，单次请求 8 秒超时。
+- 解析结果按 `(PID, 设备类别)` 在进程内缓存；第二次打开不重复下载。
+
+2026-11-06 的 `AvailableDevices.json` 有 335 个产品 id，其中 172 个有 `prd-3x`，3 个清单 404；没有 3x 图或锚点的型号回退表格。这里不维护静态 PID 名单，也不把 00B9 的整机 SVG 坐标套到其他型号。00B8 保留一份离线 `Assets/MappingLayouts/00B8.png` 及旧锚点，仅在 CDN 不可用时兜底；在线路径仍优先使用产品 184 自己的 bundle。00B9 的 `DeviceManifest_185_0.json` 只有整机轮廓，没有逐按钮锚点，因此只作为可选设备图，不生成热点。
+
+BLE 协议 30 当前没有可靠的产品 id，映射页照常显示按钮行，设备图回退表格；不按蓝牙名称猜 PID。HID 鼠标、独立键盘和 Viper 都按各自实际 PID 走上面的运行时资源路径。
 
 ## 实时解析探针
 
@@ -133,13 +133,13 @@ pwsh -NoProfile -File tools/Probe-RazerMappingAssets.ps1 -ProductId 184
 pwsh -NoProfile -File tools/Probe-RazerMappingAssets.ps1 -ProductId 590
 ```
 
-鼠标锚点来自 UI bundle 的 `drawLines()`；键盘没有 `drawLines`，每个键的 `buttonList[].d` 路径通过 WPF `Geometry.Parse()` 计算包围盒中心。键盘的产品图不是单张 `prd-3x`，而是多张 `img_prods/*-3x.png`；探针会同时列出这些 URL。
+鼠标锚点来自 UI bundle 的 `drawLines()`；当前检查的 590 键盘 bundle 没有 `drawLines`，每个键的 `buttonList[].d` 路径通过 WPF `Geometry.Parse()` 计算包围盒中心。键盘的产品图不是单张 `prd-3x`，而是多张 `img_prods/*-3x.png`；探针会同时列出这些 URL。
 
 2026-11-06 实测：
 
 - 184：8 个鼠标锚点，3x 图可用；冷启动约 1.26 秒，缓存 `main.js` 后约 0.29 秒
 - 185：9 个鼠标锚点；冷启动约 1.28 秒，缓存后约 0.29 秒
-- 99：9 个鼠标锚点；冷启动约 1.24 秒，缓存后约 0.24 秒
+- 99：9 个 drawLine 位置，其中 5 个能确认按钮 id；冷启动约 1.24 秒，缓存后约 0.24 秒
 - 590：111 个键盘路径锚点（按 HID 去重），20 张键盘图片；冷启动约 0.9–1.3 秒，缓存后约 0.3 秒
 
-`main.js` 缓存在 `%TEMP%\OpenSynapse-RazerMappingProbe`。实时解析可行，但冷启动仍需要约 1 秒网络时间；正式功能应把解析结果缓存或放到构建产物，而不是每次打开页面都重新下载 bundle。
+`main.js` 缓存在 `%TEMP%\OpenSynapse-RazerMappingProbe`。正式映射页复用同一套解析规则，并把清单、`main.js`、图片和解析结果写入 `%LOCALAPPDATA%` 缓存；冷启动仍需约 1 秒网络时间，命中缓存后只读本地文件。
