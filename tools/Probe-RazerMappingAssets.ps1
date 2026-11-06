@@ -54,7 +54,8 @@ function Get-SvgPathBounds([string]$pathData) {
 }
 
 function Get-KeyboardAnchors([string]$text) {
-    $seen = [Collections.Generic.HashSet[string]]::new()
+    $seenInput = [Collections.Generic.HashSet[string]]::new()
+    $seenHid = [Collections.Generic.HashSet[int]]::new()
     $anchors = @()
     $objects = [regex]::Matches($text, '\{buttonKey:"(?<key>[^"]+)"[^{}]*?\}')
     foreach ($object in $objects) {
@@ -63,13 +64,18 @@ function Get-KeyboardAnchors([string]$text) {
         $dMatch = [regex]::Match($body, 'd:"(?<d>[^"]+)"')
         if (-not $idMatch.Success -or -not $dMatch.Success) { continue }
         $inputId = $idMatch.Groups['id'].Value
-        if (-not $seen.Add($inputId)) { continue }
+        $hidMatch = [regex]::Match($body, 'HID:"(?<hid>\d+)"')
+        $hid = if ($hidMatch.Success) { [int]$hidMatch.Groups['hid'].Value } else { $null }
+        if ($null -ne $hid) {
+            if (-not $seenHid.Add($hid)) { continue }
+        } elseif (-not $seenInput.Add($inputId)) {
+            continue
+        }
         $bounds = Get-SvgPathBounds $dMatch.Groups['d'].Value
         if (-not $bounds) { continue }
-        $hidMatch = [regex]::Match($body, 'HID:"(?<hid>\d+)"')
         $anchors += [pscustomobject]@{
             InputId = $inputId
-            Hid = if ($hidMatch.Success) { [int]$hidMatch.Groups['hid'].Value } else { $null }
+            Hid = $hid
             Key = $object.Groups['key'].Value
             CenterX = $bounds.CenterX
             CenterY = $bounds.CenterY
