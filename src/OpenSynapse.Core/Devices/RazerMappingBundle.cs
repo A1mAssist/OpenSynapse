@@ -19,12 +19,21 @@ public static class RazerMappingBundleParser
     private const double DefaultCanvasWidth = 310;
     private const double DefaultImageWidth = 300;
     private const double DefaultImageHeight = 340;
+    private const double DefaultDotRadius = 2.5;
 
     private static readonly IReadOnlyDictionary<string, byte> EmptyKeyIds =
         new Dictionary<string, byte>(StringComparer.Ordinal);
 
     private static readonly Regex CanvasWidthRegex = new(
         """cvsW:\s*(?<value>-?\d+(?:\.\d+)?)""",
+        RegexOptions.CultureInvariant);
+
+    private static readonly Regex CanvasHeightRegex = new(
+        """cvsH:\s*(?<value>-?\d+(?:\.\d+)?)""",
+        RegexOptions.CultureInvariant);
+
+    private static readonly Regex DotRadiusRegex = new(
+        """dotRadius:\s*(?<value>-?\d+(?:\.\d+)?)""",
         RegexOptions.CultureInvariant);
 
     private static readonly Regex DrawLineRegex = new(
@@ -75,11 +84,18 @@ public static class RazerMappingBundleParser
         var canvasWidth = ReadNumber(CanvasWidthRegex.Match(mainJs)) is > 0 and var width
             ? width
             : DefaultCanvasWidth;
+        var canvasHeight = ReadNumber(CanvasHeightRegex.Match(mainJs)) is > 0 and var height
+            ? height
+            : DefaultImageHeight;
+        var dotRadius = ReadNumber(DotRadiusRegex.Match(mainJs)) is > 0 and var radius
+            ? radius
+            : DefaultDotRadius;
         var buttons = ParseButtons(mainJs);
         var keyIds = ParseKeyIds(mainJs, buttons);
         var anchors = new List<RazerMappingBundleAnchor>();
         var seenButtonIds = new HashSet<byte>();
         var imageOffsetX = (canvasWidth - DefaultImageWidth) / 2;
+        var imageOffsetY = (canvasHeight - DefaultImageHeight) / 2;
 
         var drawLines = new List<(int Index, int MatchOffset, int ButtonIndex, double X, double Y, bool IsLeft)>();
         foreach (Match match in DrawLineRegex.Matches(mainJs))
@@ -119,10 +135,11 @@ public static class RazerMappingBundleParser
                 _ => drawLine.IsLeft,
             };
 
+            // drawLine draws the dot at (x + 3r, y + r), not at the raw pair.
             anchors.Add(new RazerMappingBundleAnchor(
                 buttonId,
-                drawLine.X - imageOffsetX,
-                drawLine.Y,
+                drawLine.X + (3 * dotRadius) - imageOffsetX,
+                drawLine.Y + dotRadius - imageOffsetY,
                 isLeft));
         }
 

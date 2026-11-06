@@ -168,8 +168,18 @@ public sealed class RazerViperMappingActionCatalog : IRazerMappingActionCatalog
         IReadOnlyList<RazerHidMacroOption>? macros = null) =>
         RazerHidMappingActions.Describe(functionId, data, macros);
 
-    public string DescribeButton(byte buttonId) =>
-        RazerHidMappingActions.DescribeButton(buttonId);
+    public string DescribeButton(byte buttonId) => buttonId switch
+    {
+        0x01 => "Left",
+        0x02 => "Right",
+        0x03 => "Middle",
+        0x04 => "Scroll up",
+        0x05 => "Scroll down",
+        0x06 => "Button 4",
+        0x07 => "Button 5",
+        0x08 => "DPI cycle up",
+        _ => RazerHidMappingActions.DescribeButton(buttonId),
+    };
 
     private static readonly byte[] TurboButtons = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 

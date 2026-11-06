@@ -43,18 +43,18 @@ public sealed class RazerMappingBundleTests
             bundle.MouseAnchors.Select(anchor => anchor.ButtonId));
 
         var leftClick = bundle.MouseAnchors.First(anchor => anchor.ButtonId == 1);
-        Assert.Equal(109, leftClick.X, 6);
-        Assert.Equal(58, leftClick.Y, 6);
+        Assert.Equal(116.5, leftClick.X, 6);
+        Assert.Equal(60.5, leftClick.Y, 6);
         Assert.True(leftClick.IsLeft);
 
         var rightClick = bundle.MouseAnchors.First(anchor => anchor.ButtonId == 2);
-        Assert.Equal(176, rightClick.X, 6);
-        Assert.Equal(58, rightClick.Y, 6);
+        Assert.Equal(183.5, rightClick.X, 6);
+        Assert.Equal(60.5, rightClick.Y, 6);
         Assert.False(rightClick.IsLeft);
 
         var mouseButton4 = bundle.MouseAnchors.First(anchor => anchor.ButtonId == 6);
-        Assert.Equal(83, mouseButton4.X, 6);
-        Assert.Equal(175, mouseButton4.Y, 6);
+        Assert.Equal(90.5, mouseButton4.X, 6);
+        Assert.Equal(177.5, mouseButton4.Y, 6);
         Assert.True(mouseButton4.IsLeft);
     }
 
@@ -125,10 +125,42 @@ public sealed class RazerMappingBundleTests
         var bundle = RazerMappingBundleParser.Parse(js);
 
         var anchor = Assert.Single(bundle.MouseAnchors);
-        Assert.Equal(5, anchor.X, 6);
-        Assert.Equal(20, anchor.Y, 6);
+        Assert.Equal(12.5, anchor.X, 6);
+        Assert.Equal(22.5, anchor.Y, 6);
         Assert.Equal(300, bundle.ImageWidth);
         Assert.Equal(340, bundle.ImageHeight);
+    }
+
+    [Fact]
+    public void DotRadiusOffsetsTheHotspotCenter()
+    {
+        const string js = """
+            drawLine(0,this.props.buttonList[0],10,20,!0);
+            var groupList=[{buttonKey:"First",counter:1}];
+            const h5={cvsW:310,cvsH:340,dotRadius:5};
+            """;
+
+        var bundle = RazerMappingBundleParser.Parse(js);
+
+        var anchor = Assert.Single(bundle.MouseAnchors);
+        Assert.Equal(20, anchor.X, 6);
+        Assert.Equal(25, anchor.Y, 6);
+    }
+
+    [Fact]
+    public void CanvasHeightCentersTheImageVertically()
+    {
+        const string js = """
+            drawLine(0,this.props.buttonList[0],10,20,!0);
+            var groupList=[{buttonKey:"First",counter:1}];
+            const h5={cvsW:310,cvsH:360,dotRadius:2.5};
+            """;
+
+        var bundle = RazerMappingBundleParser.Parse(js);
+
+        var anchor = Assert.Single(bundle.MouseAnchors);
+        Assert.Equal(12.5, anchor.X, 6);
+        Assert.Equal(12.5, anchor.Y, 6);
     }
 
     [Fact]
