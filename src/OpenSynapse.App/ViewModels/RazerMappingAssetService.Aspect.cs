@@ -11,6 +11,24 @@ public sealed partial class RazerMappingAssetService
     /// whose 3x image has another aspect would place every hotspot off the body, so the
     /// card falls back to the table instead of drawing a wrong callout.
     /// </summary>
+    private static async Task<(double Width, double Height)?> ReadImageSizeAsync(string imagePath)
+    {
+        try
+        {
+            var file = await StorageFile.GetFileFromPathAsync(imagePath);
+            using var stream = await file.OpenReadAsync();
+            var decoder = await BitmapDecoder.CreateAsync(stream);
+            return decoder.PixelWidth > 0 && decoder.PixelHeight > 0
+                ? (decoder.PixelWidth, decoder.PixelHeight)
+                : null;
+        }
+        catch (Exception exception) when (exception is COMException or IOException or
+            InvalidOperationException or UnauthorizedAccessException or ArgumentException)
+        {
+            return null;
+        }
+    }
+
     private static async Task<bool> HasExpectedAspectAsync(
         string imagePath, double expectedWidth, double expectedHeight)
     {

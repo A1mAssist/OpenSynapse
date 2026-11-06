@@ -115,47 +115,67 @@ public sealed partial class RazerMappingAssetService
         CancellationToken cancellationToken)
     {
         var manifest = await ReadAssetManifestAsync(productId, cancellationToken).ConfigureAwait(false);
-        if (manifest?.MainJs is not { Length: > 0 } mainJs)
+        if (manifest is null)
         {
             return null;
         }
 
-        var scriptPath = await CacheRemoteFileAsync(
-            productId, mainJs, MaxScriptBytes, "script", cancellationToken).ConfigureAwait(false);
-        if (scriptPath is null)
+        if (manifest.MainJs is { Length: > 0 } mainJs)
         {
-            return null;
-        }
-
-        var script = await File.ReadAllTextAsync(scriptPath, cancellationToken).ConfigureAwait(false);
-        var bundle = RazerMappingBundleParser.Parse(script, manifest.Image3x);
-        if (bundle.MouseAnchors.Count == 0 || bundle.Image3x is not { Length: > 0 } image)
-        {
-            return null;
-        }
-
-        var imagePath = await CacheRemoteFileAsync(
-            productId, image, MaxImageBytes, "image", cancellationToken).ConfigureAwait(false);
-        if (imagePath is null ||
-            !await HasExpectedAspectAsync(imagePath, bundle.ImageWidth, bundle.ImageHeight)
-                .ConfigureAwait(false))
-        {
-            return null;
-        }
-
-        var hotspots = new Dictionary<byte, RazerMappingPoint>(bundle.MouseAnchors.Count);
-        foreach (var anchor in bundle.MouseAnchors)
-        {
-            hotspots.TryAdd(anchor.ButtonId, new RazerMappingPoint(anchor.X, anchor.Y, anchor.IsLeft));
-        }
-
-        return hotspots.Count == 0
-            ? null
-            : new RazerMappingImageLayout(
-                new Uri(imagePath), bundle.ImageWidth, bundle.ImageHeight, hotspots)
+            var scriptPath = await CacheRemoteFileAsync(
+                productId, mainJs, MaxScriptBytes, "script", cancellationToken).ConfigureAwait(false);
+            if (scriptPath is not null)
             {
-                ButtonNames = bundle.ButtonNamesById,
-            };
+                var script = await File.ReadAllTextAsync(scriptPath, cancellationToken).ConfigureAwait(false);
+                var bundle = RazerMappingBundleParser.Parse(script, manifest.Image3x);
+                if (bundle.Image3x is { Length: > 0 } image)
+                {
+                    var imagePath = await CacheRemoteFileAsync(
+                        productId, image, MaxImageBytes, "image", cancellationToken).ConfigureAwait(false);
+                    if (imagePath is not null)
+                    {
+                        if (bundle.MouseAnchors.Count == 0)
+                        {
+                            return await CreateImageOnlyAsync(new Uri(imagePath), cancellationToken)
+                                .ConfigureAwait(false);
+                        }
+
+                        if (await HasExpectedAspectAsync(imagePath, bundle.ImageWidth, bundle.ImageHeight)
+                                .ConfigureAwait(false))
+                        {
+                            var hotspots = new Dictionary<byte, RazerMappingPoint>(bundle.MouseAnchors.Count);
+                            foreach (var anchor in bundle.MouseAnchors)
+                            {
+                                hotspots.TryAdd(
+                                    anchor.ButtonId,
+                                    new RazerMappingPoint(anchor.X, anchor.Y, anchor.IsLeft));
+                            }
+
+                            if (hotspots.Count > 0)
+                            {
+                                return new RazerMappingImageLayout(
+                                    new Uri(imagePath), bundle.ImageWidth, bundle.ImageHeight, hotspots)
+                                {
+                                    ButtonNames = bundle.ButtonNamesById,
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (manifest.Svg is { Length: > 0 } svg)
+        {
+            var svgPath = await CacheRemoteFileAsync(
+                productId, svg, MaxImageBytes, "svg", cancellationToken).ConfigureAwait(false);
+            if (svgPath is not null)
+            {
+                return await CreateImageOnlyAsync(new Uri(svgPath), cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        return null;
     }
 
     private async Task<RazerMappingKeyboardLayout?> LoadKeyboardAsync(
@@ -418,57 +438,6 @@ public sealed partial class RazerMappingAssetService
         FormattableString.Invariant(
             $"{UiRoot}{productId}/ui/{relativeUrl.TrimStart('.', '/')}");
 
-    private sealed record AssetManifest(string? MainJs, string? Image3x)
-    {
-        public static AssetManifest? Parse(string json)
-        {
-            try
-            {
-                using var document = JsonDocument.Parse(json.TrimStart('\uFEFF'));
-                if (!document.RootElement.TryGetProperty("files", out var files) ||
-                    files.ValueKind != JsonValueKind.Object)
-                {
-                    return null;
-                }
-
-                string? mainJs = null;
-                string? image = null;
-                foreach (var property in files.EnumerateObject())
-                {
-                    if (property.NameEquals("main.js"))
-                    {
-                        mainJs = Value(property.Value);
-                    }
-                    else if (image is null &&
-                        IsPrd3x(property.Name))
-                    {
-                        image = Value(property.Value);
-                    }
-                }
-
-                return new AssetManifest(mainJs, image);
-            }
-            catch (JsonException)
-            {
-                return null;
-            }
-        }
-
-        private static bool IsPrd3x(string name) =>
-            name.StartsWith("static/media/prd-3x", StringComparison.OrdinalIgnoreCase) &&
-            (name.EndsWith(".avif", StringComparison.OrdinalIgnoreCase) ||
-             name.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) ||
-             name.EndsWith(".png", StringComparison.OrdinalIgnoreCase));
-
-        private static string? Value(JsonElement element) => element.ValueKind switch
-        {
-            JsonValueKind.String => element.GetString(),
-            JsonValueKind.Array => element.EnumerateArray()
-                .Select(item => item.ValueKind == JsonValueKind.String ? item.GetString() : null)
-                .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)),
-            _ => null,
-        };
-    }
 }
 
 /// <summary>Standard USB HID usage ids used by the mapping bundle for keyboard key ids.</summary>
