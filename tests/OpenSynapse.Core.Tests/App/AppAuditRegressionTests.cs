@@ -329,14 +329,16 @@ public sealed class AppAuditRegressionTests
     }
 
     [Fact]
-    public void RazerHidRowsStayVisibleWhenTheControlChannelIsUnresolved()
+    public void UnresolvedKeyboardsStayVisibleWhileUnresolvedMiceStayHidden()
     {
         var rows = Vm("ConnectedDeviceRowViewModel.cs");
         var razer = rows[
             rows.IndexOf("public ConnectedDeviceRowViewModel(RazerHidDeviceRowViewModel source)", StringComparison.Ordinal)..
             rows.IndexOf("public ConnectedDeviceRowViewModel(RazerHidKrakenDeviceRowViewModel source)", StringComparison.Ordinal)];
-        Assert.Contains("IsVisible = true;", razer);
-        Assert.DoesNotContain("source.Connection.IsReady && source.Connection.Capabilities.Count > 0", razer);
+        Assert.Contains("source.Connection.IsReady", razer);
+        Assert.Contains("source.Connection.Capabilities.Count > 0", razer);
+        Assert.Contains("source.HardwareCategory == DeviceCategory.Keyboard", razer);
+        Assert.DoesNotContain("IsVisible = true;", razer);
     }
 
     [Fact]

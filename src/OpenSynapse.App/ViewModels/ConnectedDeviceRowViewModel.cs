@@ -39,10 +39,12 @@ public sealed class ConnectedDeviceRowViewModel
                 : AppStrings.Text("Text_40985721");
         IconGlyph = source.IconGlyph;
         Category = source.HardwareCategory;
-        // Discovery only returns a row for a Razer device that is present in Windows.
-        // A failed control-channel probe must keep the card visible with its error,
-        // not make the keyboard/headset disappear from the device page.
-        IsVisible = true;
+        // A keyboard is wired and still present when its control channel fails, so keep
+        // the card and its error. A mouse may only be asleep behind its receiver, which
+        // is the case the protocol-response gate is meant to hide.
+        IsVisible = source.Connection.IsReady
+            ? source.Connection.Capabilities.Count > 0
+            : source.HardwareCategory == DeviceCategory.Keyboard;
     }
 
     public ConnectedDeviceRowViewModel(RazerHidKrakenDeviceRowViewModel source)
