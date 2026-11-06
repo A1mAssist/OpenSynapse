@@ -13,18 +13,19 @@ public sealed partial class TaskbarStatusWindow : IDisposable
 {
     private const uint HostTimerId = 1;
     private const uint HostTimerInterval = 2000;
-    private const int BaseWidthDip = 96;
-    private const int MaximumWidthDip = 200;
+    private const int BaseWidthDip = 64;
+    private const int MaximumWidthDip = 120;
     private const int TargetHeightDip = 30;
     private const int MinimumHeightDip = 22;
     private const int MaximumHeightDip = 36;
-    private const int GapDip = 8;
-    private const int PaddingDip = 14;
-    private const int PerformanceGapDip = 10;
+    private const int GapDip = 6;
+    private const int PaddingDip = 8;
     private const int BatteryIconGapDip = 5;
-    private const int PerformanceMinWidthDip = 150;
-    private const int BoltWidthDip = 8;
-    private const int BoltHeightDip = 14;
+    private const int IconBadgeDip = 18;
+    private const int IconBadgeRadiusDip = 5;
+    private const int ChargingGapDip = 3;
+    private const int BoltWidthDip = 7;
+    private const int BoltHeightDip = 12;
     private const int NullPen = 8;
 
     private readonly Action<string>? _log;
@@ -36,19 +37,12 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     private IntPtr _hostWindow;
     private IntPtr _statusWindow;
     private IntPtr _taskbarWindow;
-    private IntPtr _tooltipWindow;
     private IntPtr _batteryFont;
-    private IntPtr _performanceFont;
-    private IntPtr _cjkFont;
     private IntPtr _iconFont;
-    private IntPtr _tooltipTextPointer;
     private Rect _lastStatusRect;
-    private TaskbarStatusSnapshot _snapshot = new(null, null, string.Empty);
-    private string _tooltipText = string.Empty;
+    private TaskbarStatusSnapshot _snapshot = new(null, null);
     private string _automationText = string.Empty;
-    private bool _tooltipAdded;
     private bool _visible;
-    private bool _showPerformance;
     private bool _themeDark = true;
     private bool _attachFailed;
     private bool _disposed;
@@ -105,16 +99,14 @@ public sealed partial class TaskbarStatusWindow : IDisposable
 
     public event Action? Activated;
 
-    public void Update(TaskbarStatusSnapshot snapshot, string tooltip, string automationText)
+    public void Update(TaskbarStatusSnapshot snapshot, string automationText)
     {
         if (_disposed) return;
         _snapshot = snapshot;
-        _tooltipText = tooltip ?? string.Empty;
         _automationText = automationText ?? string.Empty;
         if (_statusWindow == IntPtr.Zero) return;
 
         SetWindowTextW(_statusWindow, _automationText);
-        UpdateTooltip();
         RepositionAndShow();
         InvalidateRect(_statusWindow, IntPtr.Zero, false);
     }
@@ -197,7 +189,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
                 string.Empty,
                 WsPopup,
                 0, 0, 0, 0,
-                IntPtr.Zero,
+                taskbar,
                 IntPtr.Zero,
                 instance,
                 IntPtr.Zero);
@@ -210,17 +202,11 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             }
 
             ShowWindow(status, SwHide);
-            var style = unchecked((uint)GetWindowLongW(status, GwlStyle));
-            style &= 0x7FFFFFFF;
-            style |= (uint)WsChild;
-            SetWindowLongW(status, GwlStyle, unchecked((int)style));
-
             SetLastError(0);
-            SetParent(status, taskbar);
             if (GetParent(status) != taskbar)
             {
                 _log?.Invoke(
-                    $"taskbar-status: attach failed (SetParent error {Marshal.GetLastWin32Error()}).");
+                    $"taskbar-status: attach failed (owner error {Marshal.GetLastWin32Error()}).");
                 DestroyWindow(status);
                 _attachFailed = true;
                 return;
@@ -234,10 +220,8 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             if (_dpi <= 0) _dpi = 96;
             _themeDark = ReadThemeDark();
             CreateFonts();
-            CreateTooltipWindow();
             SetWindowTextW(status, _automationText);
-            UpdateTooltip();
-            RepositionAndShow();
+                RepositionAndShow();
             InvalidateRect(status, IntPtr.Zero, false);
         }
         finally
@@ -251,16 +235,8 @@ public sealed partial class TaskbarStatusWindow : IDisposable
 
     private void DestroyStatusWindow()
     {
-        if (_tooltipWindow != IntPtr.Zero)
-        {
-            DestroyWindow(_tooltipWindow);
-            _tooltipWindow = IntPtr.Zero;
-        }
-        _tooltipAdded = false;
-        FreeTooltipText();
+
         DeleteFont(ref _batteryFont);
-        DeleteFont(ref _performanceFont);
-        DeleteFont(ref _cjkFont);
         DeleteFont(ref _iconFont);
         if (_statusWindow != IntPtr.Zero)
         {
@@ -321,6 +297,13 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             return false;
         }
 
+        var taskbarDpi = (int)GetDpiForWindow(taskbar);
+        if (taskbarDpi > 0 && taskbarDpi != _dpi)
+        {
+            _dpi = taskbarDpi;
+            CreateFonts();
+        }
+
         var monitor = MonitorFromWindow(taskbar, MonitorDefaultToNearest);
         var monitorInfo = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
         if (monitor == IntPtr.Zero || !GetMonitorInfoW(monitor, ref monitorInfo) ||
@@ -357,30 +340,23 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         var available = Math.Max(0, right - gap);
         var maximumWidth = (int)Math.Round(MaximumWidthDip * scale);
         var minimumWidth = (int)Math.Round(BaseWidthDip * scale);
-        var performanceMinimum = (int)Math.Round(PerformanceMinWidthDip * scale);
 
-        _showPerformance = !string.IsNullOrWhiteSpace(_snapshot.PerformanceMode) &&
-            TaskbarStatusPolicy.ShowPerformanceSegment(available, performanceMinimum);
-        width = MeasureWidth(_showPerformance);
-        if (width > maximumWidth)
-        {
-            _showPerformance = false;
-            width = MeasureWidth(false);
-        }
+        width = MeasureWidth();
         width = Math.Clamp(width, minimumWidth, maximumWidth);
         if (width > available)
         {
-            _showPerformance = false;
-            width = MeasureWidth(false);
-            if (width > available)
-            {
-                return false;
-            }
+            return false;
         }
 
-        x = right - gap - width;
-        y = Math.Max(0, (clientHeight - height) / 2);
-        return x >= 0;
+        var origin = new Point
+        {
+            X = right - gap - width,
+            Y = Math.Max(0, (clientHeight - height) / 2),
+        };
+        if (!ClientToScreen(taskbar, ref origin)) return false;
+        x = origin.X;
+        y = origin.Y;
+        return true;
     }
 
 }
