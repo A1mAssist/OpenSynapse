@@ -21,6 +21,10 @@
       "maxLines": 105
     },
     {
+      "path": "src/OpenSynapse.App/PerformanceOverlayWindow.xaml",
+      "maxLines": 650
+    },
+    {
       "path": "src/OpenSynapse.App/Views/SettingsPage.xaml.cs",
       "maxLines": 606
     },

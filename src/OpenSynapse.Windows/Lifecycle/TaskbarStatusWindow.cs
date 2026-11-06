@@ -102,13 +102,23 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     public void Update(TaskbarStatusSnapshot snapshot, string automationText)
     {
         if (_disposed) return;
+        automationText ??= string.Empty;
+        var contentChanged =
+            !_snapshot.Equals(snapshot) ||
+            !StringComparer.Ordinal.Equals(_automationText, automationText);
         _snapshot = snapshot;
-        _automationText = automationText ?? string.Empty;
+        _automationText = automationText;
         if (_statusWindow == IntPtr.Zero) return;
 
-        SetWindowTextW(_statusWindow, _automationText);
+        if (contentChanged)
+        {
+            SetWindowTextW(_statusWindow, _automationText);
+        }
         RepositionAndShow();
-        InvalidateRect(_statusWindow, IntPtr.Zero, false);
+        if (contentChanged)
+        {
+            InvalidateRect(_statusWindow, IntPtr.Zero, false);
+        }
     }
 
     public void Hide()
