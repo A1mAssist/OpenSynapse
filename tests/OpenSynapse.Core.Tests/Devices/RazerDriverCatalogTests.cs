@@ -26,6 +26,40 @@ public sealed class RazerDriverCatalogTests
         Assert.Equal("Razer DeathAdder V3 Pro", package.Name);
     }
 
+    [Theory]
+    [InlineData(0x0061, "PID0061Drv")]
+    [InlineData(0x0271, "PID0271Drv")]
+    [InlineData(0x02CD, "PID02cdDrv")]
+    [InlineData(0x0A74, "PID0a75Drv")]
+    [InlineData(0x0A7C, "PID0a7dDrv")]
+    [InlineData(0x0F1B, "PID0f1bDrv")]
+    [InlineData(0x0F59, "PID0f59Drv")]
+    [InlineData(0x0F5A, "PID0f59Drv")]
+    [InlineData(0xB005, "PIDb005Drv")]
+    public void ResolvesFilterDriverPackagesBeyondTheInitialCatalog(
+        int productId,
+        string expectedFile)
+    {
+        Assert.True(RazerDriverPackageCatalog.TryResolve((ushort)productId, out var package));
+
+        Assert.Contains(expectedFile, package.Url, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData(0x00C8, "00C7")]
+    [InlineData(0x00D1, "00D0")]
+    [InlineData(0x00DB, "00DA")]
+    [InlineData(0x02DA, "02CD")]
+    [InlineData(0xB00B, "B00A")]
+    public void WirelessSiblingResolvesToWiredPackage(
+        int productId,
+        string expectedProductId)
+    {
+        Assert.True(RazerDriverPackageCatalog.TryResolve((ushort)productId, out var package));
+
+        Assert.Equal(expectedProductId, package.ProductId);
+    }
+
     [Fact]
     public void UnknownProductHasNoPackage()
     {

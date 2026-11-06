@@ -60,12 +60,21 @@ internal static class RazerDriverPackageCatalog
         var packages = new Dictionary<string, PackageJson>(StringComparer.OrdinalIgnoreCase);
         foreach (var pair in source.Packages)
         {
-            if (!Uri.TryCreate(pair.Value.Url, UriKind.Absolute, out var uri) ||
+            if (!ushort.TryParse(
+                    pair.Key,
+                    System.Globalization.NumberStyles.HexNumber,
+                    null,
+                    out _) ||
+                pair.Key.Length != 4 ||
+                string.IsNullOrWhiteSpace(pair.Value.Name) ||
+                string.IsNullOrWhiteSpace(pair.Value.Version) ||
+                pair.Value.Size <= 0 ||
+                !Uri.TryCreate(pair.Value.Url, UriKind.Absolute, out var uri) ||
                 uri.Scheme != Uri.UriSchemeHttps ||
                 !string.Equals(uri.Host, "app-assets.razer.com", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException(
-                    $"Razer driver package {pair.Key} has an unexpected URL.");
+                    $"Razer driver package {pair.Key} has invalid metadata.");
             }
 
             packages[pair.Key.ToUpperInvariant()] = pair.Value;
@@ -74,10 +83,25 @@ internal static class RazerDriverPackageCatalog
         var aliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var pair in source.Aliases)
         {
-            if (packages.ContainsKey(pair.Value))
+            if (pair.Key.Length != 4 ||
+                pair.Value.Length != 4 ||
+                !ushort.TryParse(
+                    pair.Key,
+                    System.Globalization.NumberStyles.HexNumber,
+                    null,
+                    out _) ||
+                !ushort.TryParse(
+                    pair.Value,
+                    System.Globalization.NumberStyles.HexNumber,
+                    null,
+                    out _) ||
+                !packages.ContainsKey(pair.Value))
             {
-                aliases[pair.Key.ToUpperInvariant()] = pair.Value.ToUpperInvariant();
+                throw new InvalidOperationException(
+                    $"Razer driver alias {pair.Key} has invalid metadata.");
             }
+
+            aliases[pair.Key.ToUpperInvariant()] = pair.Value.ToUpperInvariant();
         }
 
         return new CatalogData(packages, aliases);
