@@ -213,6 +213,10 @@ internal static class TaskbarStatusNative
     public static extern bool ScreenToClient(IntPtr windowHandle, ref Point point);
 
     [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool ClientToScreen(IntPtr windowHandle, ref Point point);
+
+    [DllImport("user32.dll")]
     public static extern IntPtr MonitorFromWindow(IntPtr windowHandle, uint flags);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]

@@ -200,7 +200,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
                 string.Empty,
                 WsPopup,
                 0, 0, 0, 0,
-                IntPtr.Zero,
+                taskbar,
                 IntPtr.Zero,
                 instance,
                 IntPtr.Zero);
@@ -213,17 +213,11 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             }
 
             ShowWindow(status, SwHide);
-            var style = unchecked((uint)GetWindowLongW(status, GwlStyle));
-            style &= 0x7FFFFFFF;
-            style |= (uint)WsChild;
-            SetWindowLongW(status, GwlStyle, unchecked((int)style));
-
             SetLastError(0);
-            SetParent(status, taskbar);
             if (GetParent(status) != taskbar)
             {
                 _log?.Invoke(
-                    $"taskbar-status: attach failed (SetParent error {Marshal.GetLastWin32Error()}).");
+                    $"taskbar-status: attach failed (owner error {Marshal.GetLastWin32Error()}).");
                 DestroyWindow(status);
                 _attachFailed = true;
                 return;
@@ -388,9 +382,15 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             }
         }
 
-        x = right - gap - width;
-        y = Math.Max(0, (clientHeight - height) / 2);
-        return x >= 0;
+        var origin = new Point
+        {
+            X = right - gap - width,
+            Y = Math.Max(0, (clientHeight - height) / 2),
+        };
+        if (!ClientToScreen(taskbar, ref origin)) return false;
+        x = origin.X;
+        y = origin.Y;
+        return true;
     }
 
 }
