@@ -2045,12 +2045,15 @@
   <data name="TaskbarStatusDescription.Text" xml:space="preserve"><value>在任务栏显示已连接外设的电量；检测到 Blade 时同时显示当前性能模式。</value></data>
   <data name="TaskbarStatusToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>任务栏状态条</value></data>
   <data name="PerformanceOverlayTitle" xml:space="preserve"><value>性能悬浮窗</value></data>
-  <data name="PerformanceOverlayDescription" xml:space="preserve"><value>在桌面置顶显示性能模式、CPU/GPU 温度与频率、内存占用与频率，以及风扇转速；可拖动并记住位置。</value></data>
+  <data name="PerformanceOverlayDescription" xml:space="preserve"><value>在桌面置顶显示性能模式、CPU/GPU 温度与频率、内存占用与频率，以及风扇转速；可拖动并记住位置，右键可切换卡片、重置位置或关闭。</value></data>
   <data name="PerformanceOverlayDetailedTitle" xml:space="preserve"><value>详细卡片</value></data>
   <data name="PerformanceOverlayDetailedDescription" xml:space="preserve"><value>使用较大的半透明卡片，并显示 CPU/GPU 负载折线图。</value></data>
   <data name="PerformanceOverlayDetailedToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>详细性能悬浮窗</value></data>
   <data name="PerformanceOverlayToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>性能悬浮窗</value></data>
   <data name="PerformanceOverlayFanLabel" xml:space="preserve"><value>风扇</value></data>
+  <data name="PerformanceOverlayMenuResetPosition" xml:space="preserve"><value>重置位置</value></data>
+  <data name="PerformanceOverlayMenuSettings" xml:space="preserve"><value>打开设置</value></data>
+  <data name="PerformanceOverlayMenuClose" xml:space="preserve"><value>关闭悬浮窗</value></data>
   <data name="PeripheralLowBatteryTitle" xml:space="preserve"><value>外设电量不足</value></data>
   <data name="PeripheralLowBatteryBody" xml:space="preserve"><value>{0} 剩余电量为 {1}%。</value></data>
   <data name="ChromaSourcesTitle.Text" xml:space="preserve"><value>Chroma 来源</value></data>

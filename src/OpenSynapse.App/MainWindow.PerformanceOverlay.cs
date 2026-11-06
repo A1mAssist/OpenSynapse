@@ -29,6 +29,16 @@ public sealed partial class MainWindow
         if (_performanceOverlayWindow is null)
         {
             var window = new PerformanceOverlayWindow(_viewModel, _behaviorSettings);
+            window.SettingsRequested += () =>
+            {
+                SettingsPage.InitializeBehaviorSettingsUi();
+                RequestNavigation("settings");
+            };
+            window.CloseRequested += () =>
+            {
+                SettingsPage.InitializeBehaviorSettingsUi();
+                SetPerformanceOverlayEnabled(false);
+            };
             window.Closed += (_, _) =>
             {
                 if (!ReferenceEquals(_performanceOverlayWindow, window)) return;
