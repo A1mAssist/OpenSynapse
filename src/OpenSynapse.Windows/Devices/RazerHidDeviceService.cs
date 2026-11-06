@@ -1670,8 +1670,11 @@ public sealed partial class RazerHidDeviceService
         var operation = write ? "set" : "get";
         // RazerHid adds get/set_brightness at runtime and routes them to the backlight zone.
         if (zone == device.DefaultLedZone &&
-            (device.HasSourceCapability($"{operation}_brightness") || zone == RazerHidLedZone.Backlight))
+            (device.HasSourceCapability($"{operation}_brightness") ||
+             device.Category == DeviceCategory.Keyboard && zone == RazerHidLedZone.Backlight))
         {
+            // Keyboards get get/set_brightness injected at runtime; mice must not
+            // inherit a backlight zone they never declared.
             return true;
         }
         var name = SourceZones.SingleOrDefault(candidate => candidate.Zone == zone).Name;

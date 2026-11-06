@@ -1587,6 +1587,29 @@ public sealed class RazerHidBackendTests
         Assert.Equal((byte)RazerHidLedZone.ScrollWheel, request[RazerFeatureReport.ArgumentsOffset + 1]);
     }
 
+    [Fact]
+    public async Task DeathAdderEssential2021BrightnessReadTargetsTheLogo()
+    {
+        var device = RazerHidDeviceCatalog.BuiltIn.Find(0x1532, 0x0098)!;
+        var zones = RazerHidDeviceService.GetLightingZoneCapabilities(device);
+        Assert.True(zones[RazerHidLedZone.Logo].CanReadBrightness);
+        Assert.DoesNotContain(RazerHidLedZone.Backlight, zones.Keys);
+        var transport = new RecordingTransport();
+        var service = new RazerHidDeviceService(RazerHidDeviceCatalog.BuiltIn, transport);
+        var connection = new RazerHidDeviceConnection(device, "test-path", "test-device",
+            RazerHidEndpointState.Resolved, RazerHidDeviceService.GetCapabilities(device),
+            zones, null);
+
+        await service.GetBrightnessAsync(connection);
+
+        var request = Assert.Single(transport.Requests);
+        Assert.Equal(0x3F, request[2]);
+        Assert.Equal(0x0F, request[7]);
+        Assert.Equal(0x84, request[8]);
+        Assert.Equal(0x01, request[RazerFeatureReport.ArgumentsOffset]);
+        Assert.Equal((byte)RazerHidLedZone.Logo, request[RazerFeatureReport.ArgumentsOffset + 1]);
+    }
+
     [Theory]
     [InlineData(0x00AA)]
     [InlineData(0x00AB)]
