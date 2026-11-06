@@ -52,7 +52,7 @@ public sealed partial class TaskbarStatusWindow
             0, 0, 0, Gb2312Charset, 0, 0, AntialiasedQuality, DefaultPitch,
             "Microsoft YaHei UI");
         _iconFont = CreateFontW(
-            -(int)Math.Round(15 * scale), 0, 0, 0, FwNormal,
+            -(int)Math.Round(13 * scale), 0, 0, 0, FwNormal,
             0, 0, 0, DefaultCharset, 0, 0, AntialiasedQuality, DefaultPitch,
             "Segoe MDL2 Assets");
         if (_batteryFont == IntPtr.Zero)
@@ -79,7 +79,7 @@ public sealed partial class TaskbarStatusWindow
         if (_iconFont == IntPtr.Zero)
         {
             _iconFont = CreateFontW(
-                -(int)Math.Round(15 * scale), 0, 0, 0, FwNormal,
+                -(int)Math.Round(13 * scale), 0, 0, 0, FwNormal,
                 0, 0, 0, DefaultCharset, 0, 0, AntialiasedQuality, DefaultPitch,
                 "Segoe UI Symbol");
         }
@@ -154,14 +154,13 @@ public sealed partial class TaskbarStatusWindow
             var width = PaddingDip * 2 * scale;
             if (!string.IsNullOrWhiteSpace(_snapshot.BatteryIcon))
             {
-                width += MeasureText(dc, _iconFont, _snapshot.BatteryIcon) +
-                    BatteryIconGapDip * scale;
+                width += (IconBadgeDip + BatteryIconGapDip) * scale;
             }
             width += MeasureText(dc, _batteryFont,
                 TaskbarStatusPolicy.FormatBattery(_snapshot.BatteryPercent));
             if (_snapshot.IsCharging == true)
             {
-                width += 4 * scale + BoltWidthDip * scale;
+                width += ChargingGapDip * scale + BoltWidthDip * scale;
             }
             if (includePerformance && !string.IsNullOrWhiteSpace(_snapshot.PerformanceMode))
             {
@@ -263,90 +262,116 @@ public sealed partial class TaskbarStatusWindow
         try
         {
             if (!GetClientRect(window, out var client)) return;
-            var scale = _dpi / 96.0;
-            var background = _themeDark ? Rgb(32, 32, 32) : Rgb(243, 243, 243);
-            var primary = _themeDark ? Rgb(255, 255, 255) : Rgb(0, 0, 0);
-            var secondary = _themeDark ? Rgb(176, 176, 176) : Rgb(102, 102, 102);
-            var backgroundBrush = CreateSolidBrush(background);
-            FillRect(dc, ref client, backgroundBrush);
-            DeleteObject(backgroundBrush);
-            SetBkMode(dc, Transparent);
-
-            var x = PaddingDip * scale;
-            if (!string.IsNullOrWhiteSpace(_snapshot.BatteryIcon))
-            {
-                SetTextColor(dc, secondary);
-                var iconWidth = MeasureText(dc, _iconFont, _snapshot.BatteryIcon);
-                var previousIconFont = SelectObject(dc, _iconFont);
-                try
-                {
-                    var iconRect = new Rect
-                    {
-                        Left = (int)Math.Round(x),
-                        Top = 0,
-                        Right = (int)Math.Round(x + iconWidth + 2),
-                        Bottom = client.Bottom,
-                    };
-                    DrawTextW(
-                        dc,
-                        _snapshot.BatteryIcon,
-                        _snapshot.BatteryIcon.Length,
-                        ref iconRect,
-                        DtSingleLine | DtVCenter | DtNoPrefix);
-                }
-                finally
-                {
-                    SelectObject(dc, previousIconFont);
-                }
-                x += iconWidth + BatteryIconGapDip * scale;
-            }
-
-            var battery = TaskbarStatusPolicy.FormatBattery(_snapshot.BatteryPercent);
-            var previousFont = SelectObject(dc, _batteryFont);
-            SetTextColor(dc, primary);
-            var batteryWidth = MeasureText(dc, _batteryFont, battery);
-            var batteryRect = new Rect
-            {
-                Left = (int)Math.Round(x),
-                Top = 0,
-                Right = (int)Math.Round(x + batteryWidth + 2),
-                Bottom = client.Bottom,
-            };
-            DrawTextW(dc, battery, battery.Length, ref batteryRect, DtSingleLine | DtVCenter | DtNoPrefix);
-            x += batteryWidth;
-
-            if (_snapshot.IsCharging == true)
-            {
-                x += 4 * scale;
-                DrawBolt(dc, x, client.Height, scale);
-                x += BoltWidthDip * scale;
-            }
-
-            if (_showPerformance && !string.IsNullOrWhiteSpace(_snapshot.PerformanceMode))
-            {
-                x += PerformanceGapDip * scale;
-                SetTextColor(dc, secondary);
-                var performanceRect = new Rect
-                {
-                    Left = (int)Math.Round(x),
-                    Top = 0,
-                    Right = client.Right - (int)Math.Round(PaddingDip * scale),
-                    Bottom = client.Bottom,
-                };
-                DrawMixedText(
-                    dc,
-                    _performanceFont,
-                    _cjkFont,
-                    _snapshot.PerformanceMode,
-                    ref performanceRect,
-                    DtSingleLine | DtVCenter | DtNoPrefix);
-            }
-
-            SelectObject(dc, previousFont);
+            Draw(dc, client);
         }
         finally
         {
             ReleaseDC(window, dc);
+        }
+    }
+
+    private void Draw(IntPtr dc, Rect client)
+    {
+        var scale = _dpi / 96.0;
+        var background = _themeDark ? Rgb(36, 36, 36) : Rgb(243, 243, 243);
+        var primary = _themeDark ? Rgb(255, 255, 255) : Rgb(0, 0, 0);
+        var secondary = _themeDark ? Rgb(176, 176, 176) : Rgb(102, 102, 102);
+        var backgroundBrush = CreateSolidBrush(background);
+        FillRect(dc, ref client, backgroundBrush);
+        DeleteObject(backgroundBrush);
+        SetBkMode(dc, Transparent);
+
+        var x = PaddingDip * scale;
+        if (!string.IsNullOrWhiteSpace(_snapshot.BatteryIcon))
+        {
+            DrawIconBadge(dc, x, client.Height, scale, _snapshot.BatteryIcon);
+            x += (IconBadgeDip + BatteryIconGapDip) * scale;
+        }
+
+        var battery = TaskbarStatusPolicy.FormatBattery(_snapshot.BatteryPercent);
+        var previousFont = SelectObject(dc, _batteryFont);
+        SetTextColor(dc, primary);
+        var batteryWidth = MeasureText(dc, _batteryFont, battery);
+        var batteryRect = new Rect
+        {
+            Left = (int)Math.Round(x),
+            Top = 0,
+            Right = (int)Math.Round(x + batteryWidth + 2),
+            Bottom = client.Bottom,
+        };
+        DrawTextW(dc, battery, battery.Length, ref batteryRect, DtSingleLine | DtVCenter | DtNoPrefix);
+        x += batteryWidth;
+
+        if (_snapshot.IsCharging == true)
+        {
+            x += ChargingGapDip * scale;
+            DrawBolt(dc, x, client.Height, scale);
+            x += BoltWidthDip * scale;
+        }
+
+        if (_showPerformance && !string.IsNullOrWhiteSpace(_snapshot.PerformanceMode))
+        {
+            x += PerformanceGapDip * scale;
+            SetTextColor(dc, secondary);
+            var performanceRect = new Rect
+            {
+                Left = (int)Math.Round(x),
+                Top = 0,
+                Right = client.Right - (int)Math.Round(PaddingDip * scale),
+                Bottom = client.Bottom,
+            };
+            DrawMixedText(
+                dc,
+                _performanceFont,
+                _cjkFont,
+                _snapshot.PerformanceMode,
+                ref performanceRect,
+                DtSingleLine | DtVCenter | DtNoPrefix);
+        }
+
+        SelectObject(dc, previousFont);
+    }
+
+    private void DrawIconBadge(IntPtr dc, double x, int height, double scale, string glyph)
+    {
+        var size = IconBadgeDip * scale;
+        var left = (int)Math.Round(x);
+        var top = (int)Math.Round((height - size) / 2);
+        var right = (int)Math.Round(x + size);
+        var bottom = (int)Math.Round(top + size);
+        var radius = (int)Math.Round(IconBadgeRadiusDip * 2 * scale);
+        var background = _themeDark ? Rgb(27, 54, 33) : Rgb(226, 244, 222);
+        var foreground = _themeDark ? Rgb(68, 214, 44) : Rgb(37, 127, 23);
+
+        var brush = CreateSolidBrush(background);
+        var previousBrush = SelectObject(dc, brush);
+        var previousPen = SelectObject(dc, GetStockObject(NullPen));
+        try
+        {
+            RoundRect(dc, left, top, right, bottom, radius, radius);
+        }
+        finally
+        {
+            SelectObject(dc, previousPen);
+            SelectObject(dc, previousBrush);
+            DeleteObject(brush);
+        }
+
+        SetTextColor(dc, foreground);
+        var previousFont = SelectObject(dc, _iconFont);
+        try
+        {
+            var iconRect = new Rect { Left = left, Top = top, Right = right, Bottom = bottom };
+            DrawTextW(
+                dc,
+                glyph,
+                glyph.Length,
+                ref iconRect,
+                DtSingleLine | DtVCenter | DtCenter | DtNoPrefix);
+        }
+        finally
+        {
+            SelectObject(dc, previousFont);
         }
     }
 
@@ -405,8 +430,15 @@ public sealed partial class TaskbarStatusWindow
                 Draw(window);
                 ValidateRect(window, IntPtr.Zero);
                 return IntPtr.Zero;
+            case WmPrintClient:
+                if (GetClientRect(window, out var printClient))
+                {
+                    Draw(new IntPtr(unchecked((long)wParam.ToUInt64())), printClient);
+                }
+                return IntPtr.Zero;
             case WmDpiChangedAfterParent:
-                _dpi = (int)GetDpiForWindow(window);
+                var parent = GetParent(window);
+                _dpi = (int)GetDpiForWindow(parent != IntPtr.Zero ? parent : window);
                 if (_dpi <= 0) _dpi = 96;
                 CreateFonts();
                 _lastStatusRect = default;
