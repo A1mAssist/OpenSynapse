@@ -71,6 +71,7 @@ public sealed class WindowsThxHeadsetController : IThxAudioController, IAsyncDis
                 ThxAudioEnhancementKind.VoiceClarity => "voiceClarity",
                 ThxAudioEnhancementKind.SoundNormalization => "soundNormalization",
                 ThxAudioEnhancementKind.Sidetone => "sidetone",
+                ThxAudioEnhancementKind.BassBoost => "bassBoost",
                 _ => "voiceClarity",
             },
             levelPercent: levelPercent);

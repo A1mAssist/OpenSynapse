@@ -65,6 +65,8 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
     private double _voiceClarityLevel;
     private bool _normalizationEnabled;
     private double _normalizationLevel;
+    private bool _bassBoostEnabled;
+    private double _bassBoostLevel;
     private string? _errorCode;
 
     public ThxAudioViewModel(IThxAudioController? controller, bool isSupportedHost)
@@ -106,6 +108,8 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
     public Visibility UnavailableVisibility => ControlsVisibility == Visibility.Visible
         ? Visibility.Collapsed : Visibility.Visible;
     public Visibility SoundNormalizationVisibility => SelectedEndpoint.Endpoint == ThxAudioEndpoint.Speakers
+        ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility BassBoostVisibility => _state?.BassBoost is not null
         ? Visibility.Visible : Visibility.Collapsed;
     public Visibility EqualizerEditVisibility => IsEditablePreset ? Visibility.Visible : Visibility.Collapsed;
     public string StatusText { get => _statusText; private set => SetField(ref _statusText, value); }
@@ -182,6 +186,7 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedEndpoint));
             OnPropertyChanged(nameof(SoundNormalizationVisibility));
+            OnPropertyChanged(nameof(BassBoostVisibility));
             OnPropertyChanged(nameof(HasEqualizerChanges));
             OnPropertyChanged(nameof(CanApplyEqualizer));
             OnPropertyChanged(nameof(CanResetEqualizer));
@@ -297,6 +302,32 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
 
     public string SoundNormalizationLevelText => $"{_normalizationLevel:0}%";
 
+    public bool BassBoostEnabled
+    {
+        get => _bassBoostEnabled;
+        set
+        {
+            if (SetField(ref _bassBoostEnabled, value) && !_applying)
+            {
+                _ = SetEnhancementAsync(ThxAudioEnhancementKind.BassBoost, value, null);
+            }
+        }
+    }
+
+    public double BassBoostLevel
+    {
+        get => _bassBoostLevel;
+        set
+        {
+            if (SetField(ref _bassBoostLevel, Math.Clamp(value, 0, 100)))
+            {
+                OnPropertyChanged(nameof(BassBoostLevelText));
+            }
+        }
+    }
+
+    public string BassBoostLevelText => $"{_bassBoostLevel:0}%";
+
     public Task EnsureLoadedAsync() => _loaded ? Task.CompletedTask : RefreshAsync();
 
     public async Task RefreshAsync()
@@ -392,6 +423,17 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
                 ThxAudioEnhancementKind.SoundNormalization,
                 true,
                 (int)Math.Round(SoundNormalizationLevel));
+        }
+    }
+
+    public async Task ApplyBassBoostAsync()
+    {
+        if (BassBoostEnabled)
+        {
+            await SetEnhancementAsync(
+                ThxAudioEnhancementKind.BassBoost,
+                true,
+                (int)Math.Round(BassBoostLevel));
         }
     }
 

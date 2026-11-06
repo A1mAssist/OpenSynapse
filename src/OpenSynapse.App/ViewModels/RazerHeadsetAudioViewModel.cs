@@ -188,12 +188,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     private int _thxSelectedPresetIndex;
     private bool _thxSpatialEnabled;
     private bool _thxEqualizerEnabled;
-    private bool _thxNormalizationEnabled;
-    private int _thxNormalizationLevel;
-    private bool _thxVoiceClarityEnabled;
-    private int _thxVoiceClarityLevel;
-    private bool _thxSidetoneEnabled;
-    private int _thxSidetoneLevel;
     private double _brightness = 100;
     private int _selectedEffectIndex;
     private Color _primaryColor = Color.FromArgb(255, 0, 255, 0);
@@ -363,66 +357,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
     public Visibility ThxBandsVisibility =>
         _thxState is { EqualizerBands.Count: > 0 } ? Visibility.Visible : Visibility.Collapsed;
-
-    public bool ThxNormalizationEnabled
-    {
-        get => _thxNormalizationEnabled;
-        set => SetField(ref _thxNormalizationEnabled, value);
-    }
-
-    public int ThxNormalizationLevel
-    {
-        get => _thxNormalizationLevel;
-        set
-        {
-            if (!SetField(ref _thxNormalizationLevel, Math.Clamp(value, 0, 100))) return;
-            OnPropertyChanged(nameof(ThxNormalizationText));
-        }
-    }
-
-    public string ThxNormalizationText => $"{ThxNormalizationLevel}%";
-    public Visibility ThxNormalizationVisibility =>
-        _thxState?.SoundNormalization is not null ? Visibility.Visible : Visibility.Collapsed;
-
-    public bool ThxVoiceClarityEnabled
-    {
-        get => _thxVoiceClarityEnabled;
-        set => SetField(ref _thxVoiceClarityEnabled, value);
-    }
-
-    public int ThxVoiceClarityLevel
-    {
-        get => _thxVoiceClarityLevel;
-        set
-        {
-            if (!SetField(ref _thxVoiceClarityLevel, Math.Clamp(value, 0, 100))) return;
-            OnPropertyChanged(nameof(ThxVoiceClarityText));
-        }
-    }
-
-    public string ThxVoiceClarityText => $"{ThxVoiceClarityLevel}%";
-    public Visibility ThxVoiceClarityVisibility =>
-        _thxState is not null ? Visibility.Visible : Visibility.Collapsed;
-
-    public bool ThxSidetoneEnabled
-    {
-        get => _thxSidetoneEnabled;
-        set => SetField(ref _thxSidetoneEnabled, value);
-    }
-
-    public int ThxSidetoneLevel
-    {
-        get => _thxSidetoneLevel;
-        set
-        {
-            if (!SetField(ref _thxSidetoneLevel, Math.Clamp(value, 0, 100))) return;
-            OnPropertyChanged(nameof(ThxSidetoneText));
-        }
-    }
-
-    public string ThxSidetoneText => $"{ThxSidetoneLevel}%";
-    public Visibility ThxSidetoneVisibility =>
-        _thxState?.Sidetone is not null ? Visibility.Visible : Visibility.Collapsed;
 
     public IReadOnlyList<string> LightingEffectOptions =>
     [
@@ -888,36 +822,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             cancellationToken);
     }
 
-    public Task ApplyThxNormalizationAsync(CancellationToken cancellationToken = default) =>
-        RunThxAsync(
-            (controller, token) => controller.SetEnhancementAsync(
-                ThxAudioEndpoint.Headphones,
-                ThxAudioEnhancementKind.SoundNormalization,
-                ThxNormalizationEnabled,
-                ThxNormalizationLevel,
-                token),
-            cancellationToken);
-
-    public Task ApplyThxVoiceClarityAsync(CancellationToken cancellationToken = default) =>
-        RunThxAsync(
-            (controller, token) => controller.SetEnhancementAsync(
-                ThxAudioEndpoint.Headphones,
-                ThxAudioEnhancementKind.VoiceClarity,
-                ThxVoiceClarityEnabled,
-                ThxVoiceClarityLevel,
-                token),
-            cancellationToken);
-
-    public Task ApplyThxSidetoneAsync(CancellationToken cancellationToken = default) =>
-        RunThxAsync(
-            (controller, token) => controller.SetEnhancementAsync(
-                ThxAudioEndpoint.Headphones,
-                ThxAudioEnhancementKind.Sidetone,
-                ThxSidetoneEnabled,
-                ThxSidetoneLevel,
-                token),
-            cancellationToken);
-
     private WindowsThxHeadsetController ThxController =>
         _thxController ??= new WindowsThxHeadsetController(
             _connection.ProductId,
@@ -1029,6 +933,8 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         _thxNormalizationLevel = state.SoundNormalization?.LevelPercent ?? 0;
         _thxVoiceClarityEnabled = state.VoiceClarity.Enabled;
         _thxVoiceClarityLevel = state.VoiceClarity.LevelPercent;
+        _thxBassBoostEnabled = state.BassBoost?.Enabled ?? false;
+        _thxBassBoostLevel = state.BassBoost?.LevelPercent ?? 0;
         _thxSidetoneEnabled = state.Sidetone?.Enabled ?? false;
         _thxSidetoneLevel = state.Sidetone?.LevelPercent ?? 0;
         OnPropertyChanged(string.Empty);
@@ -1059,6 +965,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         OnPropertyChanged(nameof(ThxBandsVisibility));
         OnPropertyChanged(nameof(ThxNormalizationVisibility));
         OnPropertyChanged(nameof(ThxVoiceClarityVisibility));
+        OnPropertyChanged(nameof(ThxBassBoostVisibility));
         OnPropertyChanged(nameof(ThxSidetoneVisibility));
     }
 

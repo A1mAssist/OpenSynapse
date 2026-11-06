@@ -32,6 +32,9 @@ public sealed partial class ThxAudioView : UserControl
     private async void ApplyThxSoundNormalizationClick(object sender, RoutedEventArgs e) =>
         await ViewModel.ApplySoundNormalizationAsync();
 
+    private async void ApplyThxBassBoostClick(object sender, RoutedEventArgs e) =>
+        await ViewModel.ApplyBassBoostAsync();
+
     private async void DownloadThxComponentClick(object sender, RoutedEventArgs e) =>
         await ViewModel.InstallNativeComponentAsync();
 

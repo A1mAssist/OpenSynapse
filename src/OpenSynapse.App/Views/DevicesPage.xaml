@@ -194,6 +194,11 @@
                           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding ThxVoiceClarityLevel, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" /><TextBlock Grid.Column="1" Text="{Binding ThxVoiceClarityText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></Grid>
                           <Button local:Localized.Uid="RazerHeadsetThxVoiceClarityApply" Content="应用人声清晰度" Click="HeadsetAudioApplyThxVoiceClarityClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
                         </StackPanel>
+                        <StackPanel Spacing="8" Visibility="{Binding ThxBassBoostVisibility}">
+                          <ToggleSwitch local:Localized.Uid="RazerHeadsetThxBassBoostToggle" Header="低音增强" IsOn="{Binding ThxBassBoostEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding ThxBassBoostLevel, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" /><TextBlock Grid.Column="1" Text="{Binding ThxBassBoostText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></Grid>
+                          <Button local:Localized.Uid="RazerHeadsetThxBassBoostApply" Content="应用低音增强" Click="HeadsetAudioApplyThxBassBoostClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
+                        </StackPanel>
                         <StackPanel Spacing="8" Visibility="{Binding ThxSidetoneVisibility}">
                           <ToggleSwitch local:Localized.Uid="RazerHeadsetThxSidetoneToggle" Header="侧音" IsOn="{Binding ThxSidetoneEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
                           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding ThxSidetoneLevel, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" /><TextBlock Grid.Column="1" Text="{Binding ThxSidetoneText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></Grid>

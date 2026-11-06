@@ -51,6 +51,7 @@ public sealed partial class ThxAudioViewModel
         {
             _state = null;
             OnPropertyChanged(nameof(CanEdit));
+            OnPropertyChanged(nameof(BassBoostVisibility));
             OnPropertyChanged(nameof(HasEqualizerChanges));
             OnPropertyChanged(nameof(CanApplyEqualizer));
             OnPropertyChanged(nameof(CanResetEqualizer));
@@ -68,6 +69,8 @@ public sealed partial class ThxAudioViewModel
             VoiceClarityLevel = state.VoiceClarity.LevelPercent;
             SoundNormalizationEnabled = state.SoundNormalization?.Enabled ?? false;
             SoundNormalizationLevel = state.SoundNormalization?.LevelPercent ?? 0;
+            BassBoostEnabled = state.BassBoost?.Enabled ?? false;
+            BassBoostLevel = state.BassBoost?.LevelPercent ?? 0;
 
             Presets.Clear();
             foreach (var preset in state.Presets)
@@ -117,6 +120,7 @@ public sealed partial class ThxAudioViewModel
         }
 
         OnPropertyChanged(nameof(CanEdit));
+        OnPropertyChanged(nameof(BassBoostVisibility));
         OnPropertyChanged(nameof(HasEqualizerChanges));
         OnPropertyChanged(nameof(CanApplyEqualizer));
         OnPropertyChanged(nameof(CanResetEqualizer));

@@ -55,6 +55,10 @@ internal sealed class ThxV3NativeClient : IDisposable
     private readonly ContainerSetBoolCall _setNormalization;
     private readonly ContainerIntCall _getNormalizationLevel;
     private readonly ContainerSetIntCall _setNormalizationLevel;
+    private readonly ContainerBoolCall _getBassBoost;
+    private readonly ContainerSetBoolCall _setBassBoost;
+    private readonly ContainerIntCall _getBassBoostLevel;
+    private readonly ContainerSetIntCall _setBassBoostLevel;
     private readonly ContainerBoolCall _getVocalClarity;
     private readonly ContainerSetBoolCall _setVocalClarity;
     private readonly ContainerIntCall _getVocalClarityLevel;
@@ -94,6 +98,10 @@ internal sealed class ThxV3NativeClient : IDisposable
         _setNormalization = GetExport<ContainerSetBoolCall>("SetRenderNormalization");
         _getNormalizationLevel = GetExport<ContainerIntCall>("GetRenderNormalizationLevel");
         _setNormalizationLevel = GetExport<ContainerSetIntCall>("SetRenderNormalizationLevel");
+        _getBassBoost = GetExport<ContainerBoolCall>("GetRenderBassBoost");
+        _setBassBoost = GetExport<ContainerSetBoolCall>("SetRenderBassBoost");
+        _getBassBoostLevel = GetExport<ContainerIntCall>("GetRenderBassBoostLevel");
+        _setBassBoostLevel = GetExport<ContainerSetIntCall>("SetRenderBassBoostLevel");
         _getVocalClarity = GetExport<ContainerBoolCall>("GetRenderVocalClarity");
         _setVocalClarity = GetExport<ContainerSetBoolCall>("SetRenderVocalClarity");
         _getVocalClarityLevel = GetExport<ContainerIntCall>("GetRenderVocalClarityLevel");
@@ -135,6 +143,10 @@ internal sealed class ThxV3NativeClient : IDisposable
     internal bool SetNormalization(string containerId, bool enabled) => CallSetBool(containerId, _setNormalization, enabled);
     internal int GetNormalizationLevel(string containerId) => CallInt(containerId, _getNormalizationLevel);
     internal bool SetNormalizationLevel(string containerId, int level) => CallSetInt(containerId, _setNormalizationLevel, level);
+    internal bool GetBassBoost(string containerId) => CallBool(containerId, _getBassBoost);
+    internal bool SetBassBoost(string containerId, bool enabled) => CallSetBool(containerId, _setBassBoost, enabled);
+    internal int GetBassBoostLevel(string containerId) => CallInt(containerId, _getBassBoostLevel);
+    internal bool SetBassBoostLevel(string containerId, int level) => CallSetInt(containerId, _setBassBoostLevel, level);
     internal bool GetVocalClarity(string containerId) => CallBool(containerId, _getVocalClarity);
     internal bool SetVocalClarity(string containerId, bool enabled) => CallSetBool(containerId, _setVocalClarity, enabled);
     internal int GetVocalClarityLevel(string containerId) => CallInt(containerId, _getVocalClarityLevel);
