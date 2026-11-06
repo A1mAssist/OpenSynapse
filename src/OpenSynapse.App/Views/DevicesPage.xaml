@@ -48,16 +48,6 @@
               <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
                 <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="5"><TextBlock local:Localized.Uid="Loc_E7F68C4BF6" Text="设备" Style="{StaticResource PageTitleStyle}" /><TextBlock local:Localized.Uid="Loc_0053B5D025" Text="已发现的设备及其已验证控制。" Foreground="{StaticResource MutedBrush}" /></StackPanel><Button local:Localized.Uid="Loc_AB55074471" Grid.Column="1" Content="重新探测" Click="RefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" /></Grid>
                 <InfoBar IsOpen="{Binding HasDeviceError}" IsClosable="False" Severity="Warning" Message="{Binding DeviceErrorText}" />
-                <StackPanel Spacing="8">
-                <ItemsRepeater x:Name="DeviceCardsRepeater" ItemsSource="{Binding PrimaryDevices}" ItemTemplate="{StaticResource ConnectedDeviceCardTemplate}"><ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout></ItemsRepeater><TextBlock x:Name="DeviceEmptyStateText" Text="{Binding EmptyStateText}" Visibility="{Binding EmptyStateVisibility}" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" AutomationProperties.Name="设备探测状态" />
-                <StackPanel x:Name="AdditionalDevicesSection" Visibility="{Binding AdditionalDevicesVisibility}" Spacing="0">
-                  <Button x:Name="AdditionalDevicesExpandButton" Click="AdditionalDevicesToggleClick" Background="Transparent" BorderThickness="0" Padding="0" MinHeight="28" HorizontalAlignment="Left" AutomationProperties.Name="展开剩余设备"><StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE70D;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" Foreground="{StaticResource AccentBrush}" /><TextBlock Text="展开剩余设备" Foreground="{StaticResource AccentBrush}" /></StackPanel></Button>
-                  <StackPanel x:Name="AdditionalDevicesPanel" Visibility="Collapsed" Spacing="8">
-                  <ItemsRepeater ItemsSource="{Binding AdditionalDevices}" ItemTemplate="{StaticResource ConnectedDeviceCardTemplate}"><ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout></ItemsRepeater>
-                  </StackPanel>
-                  <Button x:Name="AdditionalDevicesCollapseButton" Visibility="Collapsed" Click="AdditionalDevicesToggleClick" Background="Transparent" BorderThickness="0" Padding="0" Margin="0,8,0,0" MinHeight="28" HorizontalAlignment="Left" AutomationProperties.Name="收起设备"><StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE70E;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" Foreground="{StaticResource AccentBrush}" /><TextBlock Text="收起设备" Foreground="{StaticResource AccentBrush}" /></StackPanel></Button>
-                </StackPanel>
-                </StackPanel>
                 <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding RazerDrivers.HasMissing, Converter={StaticResource BoolToVisibilityConverter}}">
                   <StackPanel Spacing="10">
                     <TextBlock local:Localized.Uid="RazerDriverTitle" Text="Razer 驱动" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
@@ -83,6 +73,16 @@
                     <TextBlock local:Localized.Uid="RazerDriverInstallHint" Text="安装包来自 Razer 官方 CDN，会请求管理员权限。安装完成后重新插拔设备或重启。" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
                   </StackPanel>
                 </Border>
+                <StackPanel Spacing="8">
+                <ItemsRepeater x:Name="DeviceCardsRepeater" ItemsSource="{Binding PrimaryDevices}" ItemTemplate="{StaticResource ConnectedDeviceCardTemplate}"><ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout></ItemsRepeater><TextBlock x:Name="DeviceEmptyStateText" Text="{Binding EmptyStateText}" Visibility="{Binding EmptyStateVisibility}" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" AutomationProperties.Name="设备探测状态" />
+                <StackPanel x:Name="AdditionalDevicesSection" Visibility="{Binding AdditionalDevicesVisibility}" Spacing="0">
+                  <Button x:Name="AdditionalDevicesExpandButton" Click="AdditionalDevicesToggleClick" Background="Transparent" BorderThickness="0" Padding="0" MinHeight="28" HorizontalAlignment="Left" AutomationProperties.Name="展开剩余设备"><StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE70D;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" Foreground="{StaticResource AccentBrush}" /><TextBlock Text="展开剩余设备" Foreground="{StaticResource AccentBrush}" /></StackPanel></Button>
+                  <StackPanel x:Name="AdditionalDevicesPanel" Visibility="Collapsed" Spacing="8">
+                  <ItemsRepeater ItemsSource="{Binding AdditionalDevices}" ItemTemplate="{StaticResource ConnectedDeviceCardTemplate}"><ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout></ItemsRepeater>
+                  </StackPanel>
+                  <Button x:Name="AdditionalDevicesCollapseButton" Visibility="Collapsed" Click="AdditionalDevicesToggleClick" Background="Transparent" BorderThickness="0" Padding="0" Margin="0,8,0,0" MinHeight="28" HorizontalAlignment="Left" AutomationProperties.Name="收起设备"><StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE70E;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" Foreground="{StaticResource AccentBrush}" /><TextBlock Text="收起设备" Foreground="{StaticResource AccentBrush}" /></StackPanel></Button>
+                </StackPanel>
+                </StackPanel>
                 <StackPanel x:Name="HuePanel" DataContext="{Binding Hue}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                     <StackPanel Spacing="4">
