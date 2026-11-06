@@ -42,6 +42,7 @@ internal static class TaskbarStatusNative
     public const uint DtNoPrefix = 0x0800;
 
     public const int Transparent = 1;
+    public const uint Srccopy = 0x00CC0020;
     public const int FwNormal = 400;
     public const int FwSemibold = 600;
     public const uint AntialiasedQuality = 4;
@@ -234,6 +235,23 @@ internal static class TaskbarStatusNative
 
     [DllImport("gdi32.dll")]
     public static extern IntPtr CreateSolidBrush(uint color);
+
+    [DllImport("gdi32.dll")]
+    public static extern IntPtr CreateCompatibleDC(IntPtr deviceContext);
+
+    [DllImport("gdi32.dll")]
+    public static extern IntPtr CreateCompatibleBitmap(
+        IntPtr deviceContext, int width, int height);
+
+    [DllImport("gdi32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool DeleteDC(IntPtr deviceContext);
+
+    [DllImport("gdi32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool BitBlt(
+        IntPtr destination, int x, int y, int width, int height,
+        IntPtr source, int sourceX, int sourceY, uint operation);
 
     [DllImport("gdi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     public static extern int AddFontResourceExW(string fileName, uint flags, IntPtr reserved);
