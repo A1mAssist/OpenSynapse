@@ -4,7 +4,40 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <Grid x:Name="DragRegion"
         Background="Transparent"
-        PointerPressed="DragRegionPointerPressed">
+        PointerPressed="DragRegionPointerPressed"
+        PointerMoved="DragRegionPointerMoved"
+        PointerReleased="DragRegionPointerReleased"
+        PointerCanceled="DragRegionPointerCanceled"
+        PointerCaptureLost="DragRegionPointerCaptureLost">
+    <Grid.ContextFlyout>
+      <MenuFlyout>
+        <ToggleMenuFlyoutItem x:Name="DetailedModeMenuItem"
+                              Click="DetailedModeMenuItemClick">
+          <ToggleMenuFlyoutItem.Icon>
+            <FontIcon Glyph="&#xE8A1;" FontFamily="{StaticResource IconFontFamily}" />
+          </ToggleMenuFlyoutItem.Icon>
+        </ToggleMenuFlyoutItem>
+        <MenuFlyoutSeparator />
+        <MenuFlyoutItem x:Name="ResetPositionMenuItem"
+                        Click="ResetPositionMenuItemClick">
+          <MenuFlyoutItem.Icon>
+            <FontIcon Glyph="&#xE72C;" FontFamily="{StaticResource IconFontFamily}" />
+          </MenuFlyoutItem.Icon>
+        </MenuFlyoutItem>
+        <MenuFlyoutItem x:Name="SettingsMenuItem"
+                        Click="SettingsMenuItemClick">
+          <MenuFlyoutItem.Icon>
+            <FontIcon Glyph="&#xE713;" FontFamily="{StaticResource IconFontFamily}" />
+          </MenuFlyoutItem.Icon>
+        </MenuFlyoutItem>
+        <MenuFlyoutItem x:Name="CloseMenuItem"
+                        Click="CloseMenuItemClick">
+          <MenuFlyoutItem.Icon>
+            <FontIcon Glyph="&#xE711;" FontFamily="{StaticResource IconFontFamily}" />
+          </MenuFlyoutItem.Icon>
+        </MenuFlyoutItem>
+      </MenuFlyout>
+    </Grid.ContextFlyout>
     <Border x:Name="CompactCard"
             CornerRadius="12"
             Padding="10"

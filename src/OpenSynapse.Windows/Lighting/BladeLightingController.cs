@@ -92,7 +92,6 @@ public sealed partial class BladeLightingController : IBladeLightingController
     private byte _transactionId;
     private bool _nativeEffectActive;
     private string? _nativeEffectDevicePath;
-    private BladeLightingEffect? _nativeEffect;
     private CancellationTokenSource? _nativeEffectKeepAliveCancellation;
     private Task _nativeEffectKeepAliveTask = Task.CompletedTask;
     private int _turnOffOnStop;
@@ -208,14 +207,12 @@ public sealed partial class BladeLightingController : IBladeLightingController
                     }
                     if (effect.Mode == BladeLightingMode.Off)
                     {
-                        _nativeEffect = null;
                         await ReleaseModeLeaseAsync(CancellationToken.None).ConfigureAwait(false);
                         _runtimeCompletion = Task.CompletedTask;
                         return;
                     }
                     _nativeEffectActive = true;
                     _nativeEffectDevicePath = device.Id;
-                    _nativeEffect = effect;
                     _nativeEffectKeepAliveCancellation = new CancellationTokenSource();
                     _nativeEffectKeepAliveTask = RunNativeEffectKeepAliveAsync(
                         device.Id,
@@ -419,7 +416,6 @@ public sealed partial class BladeLightingController : IBladeLightingController
                         {
                             _nativeEffectActive = false;
                             _nativeEffectDevicePath = null;
-                            _nativeEffect = null;
                         }
                     }
                 }
@@ -509,7 +505,6 @@ public sealed partial class BladeLightingController : IBladeLightingController
             {
                 _nativeEffectActive = false;
                 _nativeEffectDevicePath = null;
-                _nativeEffect = null;
             }
         }
 
@@ -557,20 +552,8 @@ public sealed partial class BladeLightingController : IBladeLightingController
                             exception is NotSupportedException or Win32Exception or IOException or
                                 InvalidOperationException or UnauthorizedAccessException or TimeoutException)
                         {
-                            // The probe can fail while the device is idle; the effect write
-                            // below is the keepalive's real job.
+                            // A transient read failure must not stop the read-only keepalive.
                         }
-
-                        if (_nativeEffect is not { } effect ||
-                            !TryCreateNativeEffectRequest(effect, out var request))
-                        {
-                            return;
-                        }
-                        await SendLightingEngineGateAsync(devicePath, cancellationToken).ConfigureAwait(false);
-                        await SendAsync(
-                            devicePath,
-                            request,
-                            cancellationToken).ConfigureAwait(false);
                     }
                     finally
                     {
