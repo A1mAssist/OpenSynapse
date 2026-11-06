@@ -12,7 +12,7 @@ namespace OpenSynapse.Windows.Lifecycle;
 public sealed partial class TaskbarStatusWindow : IDisposable
 {
     private const uint HostTimerId = 1;
-    private const uint HostTimerInterval = 2000;
+    private const uint HostTimerInterval = 250;
     private const int BaseWidthDip = 64;
     private const int MaximumWidthDip = 120;
     private const int TargetHeightDip = 30;
@@ -45,8 +45,10 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     private bool _visible;
     private bool _themeDark = true;
     private bool _attachFailed;
+    private bool _contentAvailable;
     private bool _disposed;
     private int _dpi = 96;
+    private int _layoutFailures;
 
     public TaskbarStatusWindow(Action<string>? log = null)
     {
@@ -97,8 +99,6 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         EnsureAttached();
     }
 
-    public event Action? Activated;
-
     public void Update(TaskbarStatusSnapshot snapshot, string automationText)
     {
         if (_disposed) return;
@@ -108,6 +108,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             !StringComparer.Ordinal.Equals(_automationText, automationText);
         _snapshot = snapshot;
         _automationText = automationText;
+        _contentAvailable = true;
         if (_statusWindow == IntPtr.Zero) return;
 
         if (contentChanged)
@@ -123,7 +124,9 @@ public sealed partial class TaskbarStatusWindow : IDisposable
 
     public void Hide()
     {
+        _contentAvailable = false;
         _visible = false;
+        _layoutFailures = 0;
         if (_statusWindow != IntPtr.Zero)
         {
             ShowWindow(_statusWindow, SwHide);
@@ -231,7 +234,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             _themeDark = ReadThemeDark();
             CreateFonts();
             SetWindowTextW(status, _automationText);
-                RepositionAndShow();
+            RepositionAndShow();
             InvalidateRect(status, IntPtr.Zero, false);
         }
         finally
@@ -245,7 +248,6 @@ public sealed partial class TaskbarStatusWindow : IDisposable
 
     private void DestroyStatusWindow()
     {
-
         DeleteFont(ref _batteryFont);
         DeleteFont(ref _iconFont);
         if (_statusWindow != IntPtr.Zero)
@@ -259,12 +261,16 @@ public sealed partial class TaskbarStatusWindow : IDisposable
 
     private void RepositionAndShow()
     {
-        if (_statusWindow == IntPtr.Zero) return;
+        if (_statusWindow == IntPtr.Zero || !_contentAvailable) return;
         if (!TryGetLayout(out var x, out var y, out var width, out var height))
         {
+            // Explorer briefly invalidates the taskbar while input methods and
+            // overflow flyouts change. Keep the last frame instead of blinking out.
+            if (++_layoutFailures < 4) return;
             Hide();
             return;
         }
+        _layoutFailures = 0;
 
         var rect = new Rect { Left = x, Top = y, Right = x + width, Bottom = y + height };
         var changed = rect.Left != _lastStatusRect.Left ||
@@ -273,11 +279,13 @@ public sealed partial class TaskbarStatusWindow : IDisposable
                       rect.Bottom != _lastStatusRect.Bottom;
         if (changed)
         {
+            var flags = SwpNoActivate | SwpNoZOrder;
+            if (!_visible) flags |= SwpShowWindow;
             if (!SetWindowPos(
                     _statusWindow,
                     IntPtr.Zero,
                     x, y, width, height,
-                    SwpNoActivate | SwpShowWindow))
+                    flags))
             {
                 _log?.Invoke(
                     $"taskbar-status: positioning failed ({Marshal.GetLastWin32Error()}).");

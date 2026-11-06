@@ -67,13 +67,19 @@ public sealed class RazerHidCapabilityAuditTests
     }
 
     [Fact]
-    public void ScrollModeIsNotPublishedUntilThePageHasAControl()
+    public void ScrollModePublishesOnlyWhenTheDeviceDeclaresBothSourceAndBuilder()
     {
         foreach (var device in RazerHidDeviceCatalog.BuiltIn.Devices)
         {
             var capabilities = RazerHidDeviceService.GetCapabilities(device);
-            Assert.DoesNotContain(RazerHidBackendCapability.ScrollModeRead, capabilities);
-            Assert.DoesNotContain(RazerHidBackendCapability.ScrollModeWrite, capabilities);
+            Assert.Equal(
+                device.HasSourceCapability("get_scroll_mode") &&
+                device.Transactions.ContainsKey("razer_chroma_misc_get_scroll_mode"),
+                capabilities.Contains(RazerHidBackendCapability.ScrollModeRead));
+            Assert.Equal(
+                device.HasSourceCapability("set_scroll_mode") &&
+                device.Transactions.ContainsKey("razer_chroma_misc_set_scroll_mode"),
+                capabilities.Contains(RazerHidBackendCapability.ScrollModeWrite));
         }
     }
 

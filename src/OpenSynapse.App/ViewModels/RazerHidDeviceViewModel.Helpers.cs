@@ -459,6 +459,9 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(CanWriteSmartReel));
         OnPropertyChanged(nameof(CanEditSmartReelThreshold));
         OnPropertyChanged(nameof(CanWriteSmartReelThreshold));
+        RebuildScrollWheelModeChoices();
+        OnPropertyChanged(nameof(CanEditScrollWheelMode));
+        OnPropertyChanged(nameof(CanApplyScrollWheelMode));
         OnPropertyChanged(nameof(KeyswitchVisibility));
         OnPropertyChanged(nameof(KeyswitchWriteVisibility));
         OnPropertyChanged(nameof(CanEditKeyswitch));
