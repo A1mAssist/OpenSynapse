@@ -410,7 +410,7 @@ public sealed class RazerHidWindowsPortTests
     }
 
     [Fact]
-    public async Task NativeBladeLightingKeepAliveReappliesEffectUntilStopped()
+    public async Task NativeBladeLightingKeepAliveProbesWithoutReapplyingEffect()
     {
         var transport = new PreparedReportRecordingTransport();
         await using var controller = new BladeLightingController(
@@ -436,16 +436,18 @@ public sealed class RazerHidWindowsPortTests
         await transport.SecondBrightnessRead.WaitAsync(TimeSpan.FromSeconds(1));
         await Task.Delay(50);
 
-        Assert.True(transport.Requests.Count(request =>
+        // Re-sending the effect resets the firmware animation and is visible as a
+        // periodic blink. The keepalive must only probe the device.
+        Assert.Equal(1, transport.Requests.Count(request =>
             request.CommandClass == 0x0F &&
             request.CommandId == 0x02 &&
-            request.Arguments.SequenceEqual(new byte[] { 0x00, 0x00, 0x08, 0x00, 0x00, 0x00 })) >= 2);
+            request.Arguments.SequenceEqual(new byte[] { 0x00, 0x00, 0x08, 0x00, 0x00, 0x00 })));
         // The 710 firmware's 0x01 is the rightward animation, so a Right effect
-        // must put 0x01 on the wire.
-        Assert.True(transport.Requests.Count(request =>
+        // must put 0x01 on the wire once.
+        Assert.Equal(1, transport.Requests.Count(request =>
             request.CommandClass == 0x03 &&
             request.CommandId == 0x0A &&
-            request.Arguments.SequenceEqual(new byte[] { 0x01, 0x01 })) >= 2);
+            request.Arguments.SequenceEqual(new byte[] { 0x01, 0x01 })));
         Assert.True(transport.Requests.Count(request =>
             request.CommandClass == 0x0E &&
             request.CommandId == 0x84 &&
@@ -521,9 +523,9 @@ public sealed class RazerHidWindowsPortTests
 
         Assert.False(controller.RuntimeCompletion.IsCompleted);
         Assert.True(transport.Requests.Count(request =>
-            request.CommandClass == 0x0F &&
-            request.CommandId == 0x02 &&
-            request.Arguments.SequenceEqual(new byte[] { 0x00, 0x00, 0x08, 0x00, 0x00, 0x00 })) >= 2);
+            request.CommandClass == 0x0E &&
+            request.CommandId == 0x84 &&
+            request.Arguments.SequenceEqual(new byte[] { 0x01, 0x00 })) >= 3);
         await controller.SetDisplayAvailableAsync(false);
     }
 
