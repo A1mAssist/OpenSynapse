@@ -10,7 +10,6 @@ internal static class TaskbarStatusNative
     public const int WsPopup = unchecked((int)0x80000000);
 
     public const int WsExToolWindow = 0x00000080;
-    public const int WsExTopmost = 0x00000008;
     public const int WsExNoActivate = 0x08000000;
 
     public const uint WmDestroy = 0x0002;
@@ -47,18 +46,9 @@ internal static class TaskbarStatusNative
     public const int FwSemibold = 600;
     public const uint AntialiasedQuality = 4;
     public const uint DefaultCharset = 1;
-    public const uint Gb2312Charset = 134;
     public const uint DefaultPitch = 0;
     public const uint FrPrivate = 0x10;
 
-    public const uint TtsAlwaysTip = 0x0001;
-    public const uint TtsNoPrefix = 0x0002;
-    public const uint TtfIdishwnd = 0x0001;
-    public const uint TtfSubclass = 0x0010;
-    public const uint TtfTransparent = 0x0100;
-    public const uint TtmAddTool = 0x0400 + 50;
-    public const uint TtmUpdateTipText = 0x0400 + 57;
-    public const uint TtmSetMaxTipWidth = 0x0400 + 37;
 
     public const int IdiArrow = 32512;
 
@@ -114,18 +104,6 @@ internal static class TaskbarStatusNative
         public IntPtr SmallIcon;
     }
 
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    public struct ToolInfo
-    {
-        public uint Size;
-        public uint Flags;
-        public IntPtr Window;
-        public UIntPtr Id;
-        public Rect Rect;
-        public IntPtr Instance;
-        public IntPtr Text;
-        public IntPtr Reserved;
-    }
 
     public delegate IntPtr WndProc(IntPtr windowHandle, uint message, UIntPtr wParam, IntPtr lParam);
 
@@ -239,11 +217,6 @@ internal static class TaskbarStatusNative
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool SetWindowTextW(IntPtr windowHandle, string text);
 
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    public static extern IntPtr SendMessageW(IntPtr windowHandle, uint message, IntPtr wParam, ref ToolInfo info);
-
-    [DllImport("user32.dll")]
-    public static extern IntPtr SendMessageW(IntPtr windowHandle, uint message, IntPtr wParam, IntPtr lParam);
 
     [DllImport("user32.dll")]
     public static extern IntPtr GetDC(IntPtr windowHandle);
@@ -316,6 +289,7 @@ internal static class TaskbarStatusNative
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool FillRect(IntPtr deviceContext, ref Rect rect, IntPtr brush);
+
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
     public static extern IntPtr GetModuleHandleW(string? moduleName);

@@ -8,12 +8,11 @@ public static class TaskbarStatusPolicy
     public static string FormatBattery(int? percent) =>
         percent is { } value ? $"{value}%" : string.Empty;
 
-    public static string FormatTooltip(
+    public static string FormatDescription(
         TaskbarStatusSnapshot snapshot,
-        string chargingText,
-        string performanceText)
+        string chargingText)
     {
-        var parts = new List<string>(4);
+        var parts = new List<string>(3);
         if (!string.IsNullOrWhiteSpace(snapshot.BatteryName))
         {
             parts.Add(snapshot.BatteryName.Trim());
@@ -21,10 +20,6 @@ public static class TaskbarStatusPolicy
         var battery = FormatBattery(snapshot.BatteryPercent);
         if (battery.Length > 0) parts.Add(battery);
         if (!string.IsNullOrWhiteSpace(chargingText)) parts.Add(chargingText.Trim());
-        if (!string.IsNullOrWhiteSpace(performanceText)) parts.Add(performanceText.Trim());
         return string.Join(" · ", parts);
     }
-
-    public static bool ShowPerformanceSegment(int widthPx, int minWidthPx) =>
-        widthPx >= minWidthPx && minWidthPx > 0;
 }
