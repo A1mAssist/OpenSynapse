@@ -35,15 +35,15 @@ public sealed partial class PerformanceOverlayWindow : Window
     private const int DwmBorderColor = 34;
     private const int DwmBorderColorDark = 0x001A1A1A;
     private const uint LwaAlpha = 0x00000002;
-    private const byte OverlayAlpha = 224;
-    private const double CompactWidthDip = 300;
-    private const double CompactHeightDip = 96;
-    private const double DetailedWidthDip = 380;
-    private const double DetailedHeightDip = 128;
+    private const byte OverlayAlpha = 232;
+    private const double CompactWidthDip = 316;
+    private const double CompactHeightDip = 104;
+    private const double DetailedWidthDip = 420;
+    private const double DetailedHeightDip = 160;
     private const double ScreenMarginDip = 16;
     private const int SparklineSamples = 24;
-    private const double SparklineWidthDip = 108;
-    private const double SparklineHeightDip = 38;
+    private const double SparklineWidthDip = 178;
+    private const double SparklineHeightDip = 70;
     private readonly MainViewModel _viewModel;
     private readonly AppBehaviorSettings _settings;
     private readonly IntPtr _windowHandle;
@@ -133,7 +133,7 @@ public sealed partial class PerformanceOverlayWindow : Window
 
     private void OnTelemetryChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (args.PropertyName != nameof(TelemetryWorkspace.CpuPercent)) return;
+        if (args.PropertyName != nameof(TelemetryWorkspace.TelemetryTimeText)) return;
         AddSample(_cpuHistory, _viewModel.Telemetry.CpuPercent);
         AddSample(_gpuHistory, _viewModel.Telemetry.GpuPercent);
         UpdateSparklines();
@@ -173,6 +173,8 @@ public sealed partial class PerformanceOverlayWindow : Window
     {
         CpuSparkline.Points = BuildPoints(_cpuHistory);
         GpuSparkline.Points = BuildPoints(_gpuHistory);
+        CpuArea.Points = BuildAreaPoints(_cpuHistory);
+        GpuArea.Points = BuildAreaPoints(_gpuHistory);
     }
 
     private static PointCollection BuildPoints(IReadOnlyCollection<double> samples)
@@ -190,6 +192,18 @@ public sealed partial class PerformanceOverlayWindow : Window
             index++;
         }
 
+        return points;
+    }
+
+    private static PointCollection BuildAreaPoints(IReadOnlyCollection<double> samples)
+    {
+        var points = BuildPoints(samples);
+        if (points.Count == 0) return points;
+
+        var last = points[points.Count - 1];
+        var first = points[0];
+        points.Add(new global::Windows.Foundation.Point(last.X, SparklineHeightDip));
+        points.Add(new global::Windows.Foundation.Point(first.X, SparklineHeightDip));
         return points;
     }
 
