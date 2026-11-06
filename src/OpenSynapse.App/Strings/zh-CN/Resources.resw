@@ -3804,4 +3804,29 @@
   <data name="RazerMappingMacroRepeatHeader" xml:space="preserve"><value>宏次数</value></data>
   <data name="RazerMappingKeyboardHint" xml:space="preserve"><value>点击键位编辑映射</value></data>
   <data name="RazerMappingKeyboardStage" xml:space="preserve"><value>键盘</value></data>
+  <data name="RazerDriverTitle.Text" xml:space="preserve"><value>Razer 驱动</value></data>
+  <data name="RazerDriverDescription.Text" xml:space="preserve"><value>这些外设缺少雷云过滤驱动。安装后驱动级宏和 Fn 接管才能走雷云同款驱动路径。</value></data>
+  <data name="RazerDriverInstall.Content" xml:space="preserve"><value>安装缺失驱动</value></data>
+  <data name="RazerDriverInstallHint.Text" xml:space="preserve"><value>安装包来自 Razer 官方 CDN，会请求管理员权限。安装完成后重新插拔设备或重启。</value></data>
+  <data name="RazerDriverChecking" xml:space="preserve"><value>正在检查 Razer 驱动…</value></data>
+  <data name="RazerDriverAllReady" xml:space="preserve"><value>所有已连接的 Razer 外设都已具备过滤驱动。</value></data>
+  <data name="RazerDriverMissingCount" xml:space="preserve"><value>发现 {0} 个 Razer 外设缺少驱动。</value></data>
+  <data name="RazerDriverCheckFailed" xml:space="preserve"><value>Razer 驱动检查失败：{0}</value></data>
+  <data name="RazerDriverWaiting" xml:space="preserve"><value>等待安装</value></data>
+  <data name="RazerDriverInstalledRestart" xml:space="preserve"><value>已安装，重启或重新插拔后生效</value></data>
+  <data name="RazerDriverInstallSummary" xml:space="preserve"><value>已安装 {0} 个 Razer 驱动包，重启或重新插拔设备后生效。</value></data>
+  <data name="RazerDriverInstallSummaryPartial" xml:space="preserve"><value>已安装 {0} 个，{1} 个未完成。</value></data>
+  <data name="RazerDriverInstallCancelled" xml:space="preserve"><value>驱动安装已取消。</value></data>
+  <data name="RazerDriverInstallFailed" xml:space="preserve"><value>Razer 驱动安装失败：{0}</value></data>
+  <data name="RazerDriverMissingStatus" xml:space="preserve"><value>缺少驱动</value></data>
+  <data name="RazerDriverDetail" xml:space="preserve"><value>VID_1532 / PID_{0} · 驱动 v{1}</value></data>
+  <data name="RazerDriverDownloading" xml:space="preserve"><value>正在下载 {0} 驱动…</value></data>
+  <data name="RazerDriverInstalling" xml:space="preserve"><value>正在启动 {0} 驱动安装程序，请在 UAC 中允许。</value></data>
+  <data name="RazerDriverInstallTimeout" xml:space="preserve"><value>Razer 驱动安装超时。</value></data>
+  <data name="RazerDriverInstallExitCode" xml:space="preserve"><value>Razer 驱动安装程序返回 {0}。</value></data>
+  <data name="RazerDriverInstallInvalidPackage" xml:space="preserve"><value>Razer 驱动包校验失败。</value></data>
+  <data name="RazerDriverDownloadFailed" xml:space="preserve"><value>Razer 驱动包下载或保存失败。</value></data>
+  <data name="RazerDriverInstallStartFailed" xml:space="preserve"><value>Razer 驱动安装程序没有启动。</value></data>
+  <data name="RazerDriverCommonDownloading" xml:space="preserve"><value>正在下载 Razer 通用控制驱动…</value></data>
+  <data name="RazerDriverCommonInstalling" xml:space="preserve"><value>正在安装 Razer 通用控制驱动，请在 UAC 中允许。</value></data>
 </root>

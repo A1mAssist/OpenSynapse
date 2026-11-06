@@ -58,6 +58,31 @@
                   <Button x:Name="AdditionalDevicesCollapseButton" Visibility="Collapsed" Click="AdditionalDevicesToggleClick" Background="Transparent" BorderThickness="0" Padding="0" Margin="0,8,0,0" MinHeight="28" HorizontalAlignment="Left" AutomationProperties.Name="收起设备"><StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE70E;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" Foreground="{StaticResource AccentBrush}" /><TextBlock Text="收起设备" Foreground="{StaticResource AccentBrush}" /></StackPanel></Button>
                 </StackPanel>
                 </StackPanel>
+                <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding RazerDrivers.HasMissing, Converter={StaticResource BoolToVisibilityConverter}}">
+                  <StackPanel Spacing="10">
+                    <TextBlock local:Localized.Uid="RazerDriverTitle" Text="Razer 驱动" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                    <TextBlock local:Localized.Uid="RazerDriverDescription" Text="这些外设缺少雷云过滤驱动。安装后驱动级宏和 Fn 接管才能走雷云同款驱动路径。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    <ItemsControl ItemsSource="{Binding RazerDrivers.Missing}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><StackPanel Spacing="6" /></ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" MinHeight="34">
+                            <StackPanel Spacing="2">
+                              <TextBlock Text="{Binding Name}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                              <TextBlock Text="{Binding Detail}" FontFamily="Cascadia Mono,Consolas" FontSize="10" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" Text="{Binding StatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" HorizontalAlignment="Right" VerticalAlignment="Center" MaxWidth="300" />
+                          </Grid>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="{Binding RazerDrivers.StatusText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    <Button local:Localized.Uid="RazerDriverInstall" Content="安装缺失驱动" Click="InstallRazerDriversClick" IsEnabled="{Binding RazerDrivers.CanInstall}" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Left" />
+                    <TextBlock local:Localized.Uid="RazerDriverInstallHint" Text="安装包来自 Razer 官方 CDN，会请求管理员权限。安装完成后重新插拔设备或重启。" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
+                  </StackPanel>
+                </Border>
                 <StackPanel x:Name="HuePanel" DataContext="{Binding Hue}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                     <StackPanel Spacing="4">

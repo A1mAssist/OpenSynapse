@@ -3378,4 +3378,29 @@
   <data name="RazerMappingMacroRepeatHeader" xml:space="preserve"><value>Macro repeats</value></data>
   <data name="RazerMappingKeyboardHint" xml:space="preserve"><value>Select a key to edit its mapping</value></data>
   <data name="RazerMappingKeyboardStage" xml:space="preserve"><value>Keyboard</value></data>
+  <data name="RazerDriverTitle.Text" xml:space="preserve"><value>Razer driver</value></data>
+  <data name="RazerDriverDescription.Text" xml:space="preserve"><value>These peripherals are missing Razer's filter driver. Install it so driver-level macros and Fn takeover use the same driver path as Synapse.</value></data>
+  <data name="RazerDriverInstall.Content" xml:space="preserve"><value>Install missing drivers</value></data>
+  <data name="RazerDriverInstallHint.Text" xml:space="preserve"><value>Packages come from Razer's official CDN and request administrator approval. Replug the device or restart after installation.</value></data>
+  <data name="RazerDriverChecking" xml:space="preserve"><value>Checking Razer drivers…</value></data>
+  <data name="RazerDriverAllReady" xml:space="preserve"><value>Every connected Razer peripheral already has its filter driver.</value></data>
+  <data name="RazerDriverMissingCount" xml:space="preserve"><value>{0} Razer peripheral(s) are missing a driver.</value></data>
+  <data name="RazerDriverCheckFailed" xml:space="preserve"><value>Razer driver check failed: {0}</value></data>
+  <data name="RazerDriverWaiting" xml:space="preserve"><value>Waiting to install</value></data>
+  <data name="RazerDriverInstalledRestart" xml:space="preserve"><value>Installed; replug the device or restart</value></data>
+  <data name="RazerDriverInstallSummary" xml:space="preserve"><value>Installed {0} Razer driver package(s). Replug the device or restart.</value></data>
+  <data name="RazerDriverInstallSummaryPartial" xml:space="preserve"><value>Installed {0}; {1} did not complete.</value></data>
+  <data name="RazerDriverInstallCancelled" xml:space="preserve"><value>Driver installation was cancelled.</value></data>
+  <data name="RazerDriverInstallFailed" xml:space="preserve"><value>Razer driver installation failed: {0}</value></data>
+  <data name="RazerDriverMissingStatus" xml:space="preserve"><value>Driver missing</value></data>
+  <data name="RazerDriverDetail" xml:space="preserve"><value>VID_1532 / PID_{0} · driver v{1}</value></data>
+  <data name="RazerDriverDownloading" xml:space="preserve"><value>Downloading the {0} driver…</value></data>
+  <data name="RazerDriverInstalling" xml:space="preserve"><value>Starting the {0} driver installer; approve it in UAC.</value></data>
+  <data name="RazerDriverInstallTimeout" xml:space="preserve"><value>Razer driver installation timed out.</value></data>
+  <data name="RazerDriverInstallExitCode" xml:space="preserve"><value>Razer driver installer returned {0}.</value></data>
+  <data name="RazerDriverInstallInvalidPackage" xml:space="preserve"><value>Razer driver package validation failed.</value></data>
+  <data name="RazerDriverDownloadFailed" xml:space="preserve"><value>The Razer driver package could not be downloaded or saved.</value></data>
+  <data name="RazerDriverInstallStartFailed" xml:space="preserve"><value>The Razer driver installer did not start.</value></data>
+  <data name="RazerDriverCommonDownloading" xml:space="preserve"><value>Downloading the Razer common control driver…</value></data>
+  <data name="RazerDriverCommonInstalling" xml:space="preserve"><value>Installing the Razer common control driver; approve it in UAC.</value></data>
 </root>
