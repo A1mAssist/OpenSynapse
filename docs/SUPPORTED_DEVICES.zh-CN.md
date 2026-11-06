@@ -361,6 +361,7 @@ Blade 16 (2023) 只提供固件渲染的关闭、呼吸、光谱和波浪效果�
 | Razer Marci | `1532:0F66` | 音频页 |
 | Razer Nari | `1532:051C` | 音频页 |
 | Razer Nari Essential | `1532:051E` | 音频页；提供 THX 安装入口 |
+| Razer Nari Essential (Wired) | `1532:051F` | 音频页；设备卡可见，控制通道失败时显示未就绪 |
 | Razer Nari Ultimate | `1532:051A` | 音频页 |
 
 Kraken 7.1 使用 37-byte output-report 通道；Kraken V4 有线版及其 2.4 GHz 接收器（`056C`）使用 64-byte report-0x02 通道。接收器把 byte 9 设为 `0x80`，有线版为 `0x00`。

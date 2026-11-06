@@ -79,6 +79,7 @@ public static class RazerHeadsetChannelCatalog
             [0x051A] = new("AudioAvneraDevice", RazerHeadsetChannel.Feature91),
             [0x051C] = new("AudioAvneraDevice", RazerHeadsetChannel.Feature91),
             [0x051E] = new("AudioAvneraDevice", RazerHeadsetChannel.Feature91),
+            [0x051F] = new("AudioAvneraDevice", RazerHeadsetChannel.Feature91),
             [0x0528] = new("AudioAvneraDeviceOdessaT1", RazerHeadsetChannel.Feature91),
             // OdessaT2 sends fixed 37-byte HID reports through hid.write/hid.read, not the
             // 91-byte feature report used by the Avnera/Nari family. The same

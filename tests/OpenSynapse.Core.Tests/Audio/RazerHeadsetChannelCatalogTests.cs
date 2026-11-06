@@ -62,6 +62,15 @@ public sealed class RazerHeadsetChannelCatalogTests
     }
 
     [Fact]
+    public void WiredNariEssentialUsesTheSameFeatureChannelAsTheWirelessModel()
+    {
+        Assert.True(RazerHeadsetAudioService.IsSupported(0x051F));
+        Assert.Equal("Razer Nari Essential", RazerHeadsetAudioService.Products[0x051F]);
+        Assert.Equal(RazerHeadsetChannel.Feature91, RazerHeadsetChannelCatalog.Resolve(0x051F));
+        Assert.Equal("Razer Nari Essential", RazerHeadsetAudioService.Products[0x051E]);
+    }
+
+    [Fact]
     public void UnknownProductsAreUnsupported()
     {
         Assert.Equal(RazerHeadsetChannel.Unsupported, RazerHeadsetChannelCatalog.Resolve(0xFFFF));
