@@ -37,6 +37,11 @@ public sealed class RazerFilterInputProtocolTests
             "0000000001000000000050000300000000000000AAAAAAAAAAAAAAAAAAAAAAAA",
             Convert.ToHexString(keyboardUp));
 
+        var mouse = RazerFilterInputProtocol.CreateMouseInput(0, 1, 10, -5);
+        Assert.Equal(
+            "00000000020000000000000001000000000000000A000000FBFFFFFF00000000",
+            Convert.ToHexString(mouse));
+
         Assert.Equal([1, 0, 0, 0, 1], RazerFilterInputProtocol.CreateKeyboardRedirect(true));
 
         var keyboard = CapturedFrame("000000000000000002000000000000000100000000003B0000000000100000000000000001000000F6FFFFFF");
