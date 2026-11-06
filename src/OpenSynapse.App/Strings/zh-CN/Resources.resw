@@ -2620,7 +2620,7 @@
   <data name="MacroMouseButton3" xml:space="preserve"><value>中键</value></data>
   <data name="MacroMouseButton4" xml:space="preserve"><value>侧键 1 (Mouse 4)</value></data>
   <data name="MacroMouseButton5" xml:space="preserve"><value>侧键 2 (Mouse 5)</value></data>
-  <data name="MacroMouseSideCapture" xml:space="preserve"><value>其他侧键 / 多功能键（按下捕获）</value></data>
+  <data name="MacroMouseSideCapture" xml:space="preserve"><value>第三个侧键 / 其他多功能键（按下捕获）</value></data>
   <data name="MacroNagaSideButton" xml:space="preserve"><value>Naga 侧键 {0}</value></data>
   <data name="MacroTriggerMouseSide.Text" xml:space="preserve"><value>鼠标侧键</value></data>
   <data name="MacroTriggerNaga.Text" xml:space="preserve"><value>Naga 侧键</value></data>

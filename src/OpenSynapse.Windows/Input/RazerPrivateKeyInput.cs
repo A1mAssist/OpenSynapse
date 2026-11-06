@@ -240,11 +240,14 @@ internal sealed class RazerPrivateKeyInput : IDisposable
         }, isDown);
     }
 
-    private static bool IsPrivateCollection(WindowsHidDiscovery.HidInterfaceDescriptor device) =>
+    internal static bool IsPrivateCollection(WindowsHidDiscovery.HidInterfaceDescriptor device) =>
         device.VendorId == RazerVendorId &&
         device.ProductId != 0 &&
         device.InputReportByteLength > 0 &&
-        device.UsagePage is 0x0000 or 0x0080 &&
+        // The vendor key collection is Usage 0x0000/0x0080 under the
+        // generic-desktop page (0x0001). Checking UsagePage skipped every
+        // Razer mouse whose private keys live there.
+        device.Usage is 0x0000 or 0x0080 &&
         // Blade keyboards publish every M-key, Fn shortcut and the microphone indicator
         // as report 4 on MI_01 Col04/Col05. The Product 710 filter runtime owns that
         // stream, and a second reader takes the reports away from it.
