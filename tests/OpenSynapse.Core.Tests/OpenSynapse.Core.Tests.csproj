@@ -29,6 +29,19 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="Fixtures\avif-alpha.avif" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\OpenSynapse.App\Native\Avif\avif.dll"
+          Link="avif.dll"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\OpenSynapse.App\Native\Avif\dav1d.dll"
+          Link="dav1d.dll"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\OpenSynapse.App\Native\Avif\vcruntime140.dll"
+          Link="vcruntime140.dll"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="Fixtures\studio-*.mp4" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Fixtures\Chroma\*.ChromaEffects" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Fixtures\Fire\*.json" CopyToOutputDirectory="PreserveNewest" />

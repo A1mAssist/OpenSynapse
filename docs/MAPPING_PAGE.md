@@ -100,14 +100,14 @@ Viper 保存后会用设备回读的 16 条 assignment 更新 profile，避免�
 
 设备图不是打包资源。映射卡第一次打开某个 PID 时按设备类别取：
 
-- **鼠标**：先读 `https://apps.razer.com/synapse/products/{decimalPid}/ui/asset-manifest.json`，从 `main.js` 取该产品自己的 `drawLines()` 锚点，从 `static/media/prd-3x.*.avif` 取产品图。
+- **鼠标**：先读 `https://apps.razer.com/synapse/products/{decimalPid}/ui/asset-manifest.json`，从 `main.js` 取该产品自己的 `drawLines()` 锚点，从 `static/media/prd-3x.*.avif` 取产品图；AVIF 由打包的 libavif + dav1d 解码，保留 alpha。
 - **键盘**：优先读 `DeviceManifest_{PID}_0.json` 的灯光工作室 SVG，直接画 `productfill` / `productoutline` / `characters` / LED 键位，不画引线。`edition 0` 不存在时再试 `129`；打包的 `studio-manifests.zip` 只有 edition 0，所以离线状态只覆盖 edition 0。现有 catalog 里 edition 129 的样本不一定是键盘，这个兜底没有实机验证，不能当键盘专用版本。
 - **键盘没有 studio SVG**：回退产品 bundle 的 3x 图 + `drawLines` 锚点，和鼠标共用一套 callout。多数键盘 bundle 没有 `drawLines` 或 `prd-3x`，这种型号仍然只显示行表格。
 - **没有对应资源**：只显示行表格；映射读写不受影响。
 
-AVIF 的透明底会被 Windows 解码成不透明黑。映射图不做颜色抠图，只把整张图的亮度加 `#141414` 提亮到卡片背景色；这样黑底和卡片融合，黑色机身边缘不会被抠成透明缺口。
+AVIF 由随包分发的 libavif 1.3.0 + dav1d 1.4.3 解码：输出 BGRA8，alpha 原样保留，再编码成 PNG 交给 `BitmapImage`。Windows 自带的 AVIF 解码器会丢掉 alpha，半透明投影会变成不透明黑底或矩形条纹，所以映射图不走平台 AVIF 解码，也不做亮度提亮或颜色抠图。
 
-00B8 例外：打包的 `00B8.png` 带正确的透明通道和已验证锚点，构造时已经有 layout 就不再下载云端 AVIF 覆盖它。Windows 的 AVIF 解码器会丢掉 alpha，云端图里的半透明投影会被提亮成矩形或条纹；实机验收以本地 PNG 为准。其他型号继续使用云端 bundle 的 3x 图，失败时回退表格。
+00B8 的打包 `00B8.png` 是带透明通道和已验证锚点的初始 layout；云端 AVIF 解码成功后才替换图片，CDN 不可用或解码失败时继续用本地 PNG。产品 184 的 3x AVIF 在映射页截图中 alpha 边缘干净，没有矩形或条纹。其他型号继续使用云端 bundle 的 3x 图，失败时回退表格。
 
 `drawLines(index, this.props.buttonList[N], x, y, !isLeft)` 里的 `N` 指向当前 `groupList` 的按钮对象。`counter` 是 bundle 的界面序号，不是固件按钮 id：00B8 设备实际回读的按钮是 `1,2,3,4,5,9,10,96`，而 bundle 的 `counter` 是 `1..8`。解析锚点时先把标准鼠标键位映射到固件 id（`LeftClick→1`、`RightClick→2`、`ScrollClick→3`、`MouseButton4→4`、`MouseButton5→5`、`ScrollUp→9`、`ScrollDown→10`、`CycleUpSensitivityStages→0x60`），未知键才回退 `counter`；`buttonPos` 是左右列。`drawLine` 实际画圆点的中心是 `x + 3*dotRadius`、`y + dotRadius`，再减去产品图在画布中的居中偏移 `(cvsW - 300) / 2`、`(cvsH - 340) / 2`；`cvsW`、`cvsH`、`dotRadius` 从 bundle 的同一段画布配置读取，缺省为 `310`、`340`、`2.5`。3x 图比例必须是 `300:340`，否则映射卡回退表格，不把锚点画到错误位置。左右列优先用 `buttonPos`，没有时才用 `!isLeft`；省略第五参数时按 `drawLine` 默认值归到左列。没有固件 id 的 `drawLine` 不生成热点。
 
