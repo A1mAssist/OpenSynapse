@@ -8,9 +8,8 @@ public sealed partial class RazerHidDeviceService
     public async Task<IReadOnlyList<RazerHidDeviceConnection>> DiscoverAsync(
         CancellationToken cancellationToken = default)
     {
-        var interfaces = await WindowsHidDiscovery.FindVendorFeatureInterfacesAsync(
+        var interfaces = await WindowsHidDiscovery.FindVendorInterfacesAsync(
             RazerHidDeviceDefinition.VendorId,
-            RazerFeatureReport.Length,
             cancellationToken,
             LogObservedInterface).ConfigureAwait(false);
         var results = new List<RazerHidDeviceConnection>();
@@ -29,7 +28,11 @@ public sealed partial class RazerHidDeviceService
             .ThenBy(group => group.Key.PhysicalDeviceKey, StringComparer.OrdinalIgnoreCase))
         {
             var candidates = group.ToArray();
+            var controlCollections = candidates
+                .Where(candidate => candidate.FeatureReportByteLength == RazerFeatureReport.Length)
+                .ToArray();
             var catalogued = _catalog.Find(RazerHidDeviceDefinition.VendorId, group.Key.ProductId);
+            if (catalogued is null && controlCollections.Length == 0) continue;
             var definition = catalogued ??
                 CreateProbeDefinition(
                     group.Key.ProductId,
@@ -37,17 +40,26 @@ public sealed partial class RazerHidDeviceService
                         ?.ProductName,
                     InferCategory(candidates));
             WriteDiagnostic(definition.ProductId,
-                $"scan found {candidates.Length} matching 91-byte HID collection(s)");
-            var available = candidates.Where(candidate => candidate.Access == DeviceAccessState.Available).ToArray();
+                $"scan found {candidates.Length} HID collection(s), {controlCollections.Length} with 91-byte feature reports");
+            if (controlCollections.Length == 0)
+            {
+                WriteDiagnostic(definition.ProductId,
+                    $"no 91-byte HID control collection: {DescribeRejected(candidates)}");
+                results.Add(CreateConnection(definition, null, group.Key.PhysicalDeviceKey,
+                    RazerHidEndpointState.RecognizedButUnresolved,
+                    $"No 91-byte HID control collection ({DescribeRejected(candidates)})."));
+                continue;
+            }
+
+            var available = controlCollections.Where(candidate => candidate.Access == DeviceAccessState.Available).ToArray();
             if (available.Length == 0)
             {
-                if (catalogued is null) continue;
                 WriteDiagnostic(definition.ProductId,
-                    $"no usable 91-byte HID control collection: {DescribeRejected(candidates)}");
+                    $"no usable 91-byte HID control collection: {DescribeRejected(controlCollections)}");
                 results.Add(CreateConnection(definition, null, group.Key.PhysicalDeviceKey,
                     RazerHidEndpointState.BusyOrUnavailable,
                     // Name the rejected collections: a wired receiver collection can hide why.
-                    $"No usable 91-byte HID control collection ({DescribeRejected(candidates)})."));
+                    $"No usable 91-byte HID control collection ({DescribeRejected(controlCollections)})."));
                 continue;
             }
 

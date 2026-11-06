@@ -73,7 +73,8 @@ public sealed partial class RazerHeadsetAudioService
         {
             [0x051A] = "Razer Nari Ultimate",
             [0x051C] = "Razer Nari",
-            [0x051E] = "Razer Nari",
+            [0x051E] = "Razer Nari Essential",
+            [0x051F] = "Razer Nari Essential",
             [0x0520] = "Razer USB Audio Controller",
             [0x0521] = "Razer Kraken Kitty Edition",
             [0x0527] = "Razer Kraken Ultimate",
@@ -205,6 +206,32 @@ public sealed partial class RazerHeadsetAudioService
             .ToArray();
         if (candidates.Length == 0)
         {
+            // Access-denied and audio-only collections can lose the feature-report
+            // metadata that normally identifies a usable channel. Keep the device
+            // visible so its card can explain why controls are unavailable.
+            var fallback = interfaces
+                .Where(item => Products.ContainsKey(item.ProductId) &&
+                    RazerHeadsetChannelCatalog.Resolve(item.ProductId) != RazerHeadsetChannel.Unsupported)
+                .OrderByDescending(item => item.Access == DeviceAccessState.Available)
+                .ThenByDescending(item => item.UsagePage == 0xFF14)
+                .ThenBy(item => item.ProductId)
+                .FirstOrDefault();
+            if (fallback is not null)
+            {
+                var fallbackChannel = RazerHeadsetChannelCatalog.Resolve(fallback.ProductId);
+                diagnostic?.Invoke(
+                    $"headset-audio selected unresolved {fallbackChannel} pid={fallback.ProductId:X4} " +
+                    $"product='{fallback.ProductName}' feature={fallback.FeatureReportByteLength} " +
+                    $"access={fallback.Access}");
+                return new RazerHeadsetAudioConnection(
+                    fallback.DevicePath,
+                    fallback.ProductId,
+                    Products[fallback.ProductId],
+                    fallback.FeatureReportByteLength,
+                    ToContainerId(fallback.PhysicalDeviceKey),
+                    ToTransport(fallbackChannel));
+            }
+
             diagnostic?.Invoke(
                 "headset-audio found no interface for a supported channel; " +
                 $"enumerated={string.Join(",", interfaces.Select(item => $"{item.ProductId:X4}:0x{item.UsagePage:X4}:{item.FeatureReportByteLength}/{item.OutputReportByteLength}"))}");

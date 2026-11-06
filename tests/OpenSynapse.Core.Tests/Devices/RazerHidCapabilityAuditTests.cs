@@ -84,6 +84,17 @@ public sealed class RazerHidCapabilityAuditTests
     }
 
     [Fact]
+    public void HuntsmanTournamentEditionStaysInTheKeyboardCatalog()
+    {
+        var device = RazerHidDeviceCatalog.BuiltIn.Find(0x1532, 0x0243);
+        Assert.NotNull(device);
+        Assert.Equal("Razer Huntsman Tournament Edition", device.DisplayName);
+        var capabilities = RazerHidDeviceService.GetCapabilities(device);
+        Assert.Contains(RazerHidBackendCapability.BrightnessRead, capabilities);
+        Assert.Contains(RazerHidBackendCapability.MatrixFrameWrite, capabilities);
+    }
+
+    [Fact]
     public void EveryWritablePollingControlPublishesAnEncodableRateLadder()
     {
         foreach (var device in RazerHidDeviceCatalog.BuiltIn.Devices)
