@@ -254,7 +254,7 @@ public sealed partial class RazerHeadsetAudioService
             ToTransport(channel));
     }
 
-    private static bool MatchesChannel(
+    internal static bool MatchesChannel(
         RazerHeadsetChannel channel,
         WindowsHidDiscovery.HidInterfaceDescriptor item) =>
         channel switch

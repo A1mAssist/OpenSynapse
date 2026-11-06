@@ -39,11 +39,16 @@ public sealed class RazerKrakenBaseProtocolTests
         Assert.False(RazerKrakenBaseProtocol.ParseAncEnabled(new byte[] { 0, 2 }));
     }
 
-    [Fact]
-    public void OdessaT2UsesThe37ByteChannel()
-    {
+    [Theory]
+    [InlineData(0x0520)]
+    [InlineData(0x0521)]
+    [InlineData(0x0526)]
+    [InlineData(0x0527)]
+    [InlineData(0x0529)]
+    [InlineData(0x0554)]
+    [InlineData(0x0560)]
+    public void AudioKrakenBaseModelsUseThe37ByteChannel(ushort productId) =>
         Assert.Equal(
             RazerHeadsetChannel.KrakenBase37,
-            RazerHeadsetChannelCatalog.Resolve(0x0529));
-    }
+            RazerHeadsetChannelCatalog.Resolve(productId));
 }

@@ -12,8 +12,30 @@ public sealed class RazerHidSpecialLightingTests
     [InlineData(0x0560)]
     public void KrakenLightingMergesIntoTheAudioPage(ushort productId) =>
         Assert.True(
-            RazerHidSpecialLightingService.IsMergedIntoAudioPage(productId, hasAudioFeatureInterface: true),
+            RazerHidSpecialLightingService.IsMergedIntoAudioPage(productId, hasAudioChannelInterface: true),
             $"0x{productId:X4}");
+
+    [Theory]
+    [InlineData(0x0520)]
+    [InlineData(0x0521)]
+    [InlineData(0x0526)]
+    [InlineData(0x0527)]
+    [InlineData(0x0529)]
+    [InlineData(0x0554)]
+    [InlineData(0x0560)]
+    public void KrakenBaseModelsExposeThe37ByteAudioChannel(ushort productId) =>
+        Assert.True(
+            RazerHidSpecialLightingService.HasAudioChannelInterface(
+                productId,
+                new[] { Descriptor(productId, input: 37, output: 37) }),
+            $"0x{productId:X4}");
+
+    [Fact]
+    public void KrakenV4DoesNotMoveToTheAudioPageOnItsLightingCollection() =>
+        Assert.False(
+            RazerHidSpecialLightingService.HasAudioChannelInterface(
+                0x056B,
+                new[] { Descriptor(0x056B, input: 64, output: 64) }));
 
     [Theory]
     [InlineData(0x0501)]
@@ -22,7 +44,7 @@ public sealed class RazerHidSpecialLightingTests
     [InlineData(0x0510)]
     public void OlderKrakenModelsKeepTheirLightingRow(ushort productId) =>
         Assert.False(
-            RazerHidSpecialLightingService.IsMergedIntoAudioPage(productId, hasAudioFeatureInterface: false),
+            RazerHidSpecialLightingService.IsMergedIntoAudioPage(productId, hasAudioChannelInterface: false),
             $"0x{productId:X4}");
 
     [Fact]
@@ -32,7 +54,7 @@ public sealed class RazerHidSpecialLightingTests
         // never selects it. Moving its lighting card to the audio page would hide
         // the headset from the app entirely.
         Assert.False(
-            RazerHidSpecialLightingService.IsMergedIntoAudioPage(0x056B, hasAudioFeatureInterface: false),
+            RazerHidSpecialLightingService.IsMergedIntoAudioPage(0x056B, hasAudioChannelInterface: false),
             "0x056B");
     }
 
@@ -40,9 +62,16 @@ public sealed class RazerHidSpecialLightingTests
     public void KrakenV4DongleAlsoKeepsItsLightingRow()
     {
         Assert.False(
-            RazerHidSpecialLightingService.IsMergedIntoAudioPage(0x056C, hasAudioFeatureInterface: false),
+            RazerHidSpecialLightingService.IsMergedIntoAudioPage(0x056C, hasAudioChannelInterface: false),
             "0x056C");
     }
+
+    private static WindowsHidDiscovery.HidInterfaceDescriptor Descriptor(
+        ushort productId,
+        ushort input,
+        ushort output) =>
+        new("path", "key", 0x1532, productId, input, output, 0, 0xFF00, 0x0001,
+            OpenSynapse.Core.Devices.DeviceAccessState.Available, "test");
 
     [Fact]
     public void ArgbFrameCarriesChannelAndColorBytes()

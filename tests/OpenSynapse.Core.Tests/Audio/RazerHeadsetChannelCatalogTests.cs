@@ -34,9 +34,14 @@ public sealed class RazerHeadsetChannelCatalogTests
     [InlineData(0x0587, RazerHeadsetChannel.Billie64)]
     [InlineData(0x0593, RazerHeadsetChannel.Mxic64)]
     [InlineData(0x0555, RazerHeadsetChannel.Mxic64)]
-    // AudioKrakenKittyV2Pro only appends a 37-byte Chroma frame to AudioKittyV2Pro;
-    // the audio base class still uses the 91-byte feature channel.
-    [InlineData(0x0554, RazerHeadsetChannel.Feature91)]
+    // AudioKrakenBase and all of its subclasses use the 37-byte HID channel.
+    [InlineData(0x0520, RazerHeadsetChannel.KrakenBase37)]
+    [InlineData(0x0521, RazerHeadsetChannel.KrakenBase37)]
+    [InlineData(0x0526, RazerHeadsetChannel.KrakenBase37)]
+    [InlineData(0x0527, RazerHeadsetChannel.KrakenBase37)]
+    [InlineData(0x0529, RazerHeadsetChannel.KrakenBase37)]
+    [InlineData(0x0554, RazerHeadsetChannel.KrakenBase37)]
+    [InlineData(0x0560, RazerHeadsetChannel.KrakenBase37)]
     // 0565 is the 2.4 GHz endpoint of the 056E BlackShark V2 HyperSpeed bundle.
     [InlineData(0x0565, RazerHeadsetChannel.Feature91)]
     [InlineData(0x056E, RazerHeadsetChannel.Feature91)]
