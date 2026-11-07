@@ -14,7 +14,8 @@ public static class RazerKeyboardProtocol
 
     /// <summary>
     /// The DualLinkKeyboard middleware module sends every command with 0x80 | sequence.
-    /// These PIDs are the dongles that select that module; the wired and BLE siblings do not.
+    /// The RazerHid catalogue already carries high-bank transactions for its dual-link
+    /// keyboards; these are the remaining dongles handled by the protocol-25 keyboard page.
     /// </summary>
     public static bool UsesDualLinkTransaction(ushort productId) =>
         productId is 0x02C9 or 0x02D2 or 0x02C2 or 0x02F5;

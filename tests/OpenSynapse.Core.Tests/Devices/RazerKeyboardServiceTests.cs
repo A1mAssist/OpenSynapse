@@ -125,6 +125,19 @@ public sealed class RazerKeyboardServiceTests
         Assert.Equal(0x02C9, Assert.Single(candidates).ProductId);
     }
 
+    [Theory]
+    [InlineData(0x02CA)]
+    [InlineData(0x02D3)]
+    [InlineData(0x02B5)]
+    [InlineData(0x02C3)]
+    [InlineData(0x02F6)]
+    public void BleSiblingsAreNotAdmittedToTheProtocol25KeyboardPage(ushort productId)
+    {
+        var descriptor = Descriptor("ble", "keyboard-ble", productId);
+
+        Assert.Empty(RazerKeyboardService.SelectCandidates([descriptor]));
+    }
+
     [Fact]
     public void SelectConnectionsKeepsEveryPhysicalKeyboardAndCollapsesItsInterfaces()
     {
