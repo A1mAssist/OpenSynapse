@@ -118,9 +118,34 @@ public sealed class AudioSpecialAuditRegressionTests
         var firstCallCount = reports.Count;
         await service.SetKrakenLightingAsync(connection, new(RazerHidLightingEffect.Off));
 
-        Assert.Equal(firstCallCount + 3, reports.Count);
+        Assert.Equal(firstCallCount + 1, reports.Count);
         Assert.DoesNotContain(reports.Skip(firstCallCount), report =>
-            report.SequenceEqual(RazerHidKrakenV4Protocol.CreateConnect(productId == 0x056C)));
+            report.SequenceEqual(RazerHidKrakenV4Protocol.CreateConnect(productId == 0x056C)) ||
+            report.SequenceEqual(RazerHidKrakenV4Protocol.CreateForceChroma(true, productId == 0x056C)) ||
+            report.SequenceEqual(RazerHidKrakenV4Protocol.CreateBrightness(100, productId == 0x056C)));
+    }
+
+    [Fact]
+    public async Task V4ServiceRearmsAfterAFailedSend()
+    {
+        var reports = new List<byte[]>();
+        var fail = true;
+        var service = new RazerHidSpecialLightingService((_, report, _) =>
+        {
+            if (fail) return Task.FromException(new InvalidOperationException("boom"));
+            reports.Add(report.ToArray());
+            return Task.CompletedTask;
+        });
+        var connection = new RazerHidSpecialLightingConnection(0x056B, "test",
+            RazerHidSpecialLightingKind.KrakenV4, "test-rearm", "fake", null, null,
+            new HashSet<RazerHidLightingEffect> { RazerHidLightingEffect.Off }, true, false, null);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.SetKrakenLightingAsync(connection, new(RazerHidLightingEffect.Off)));
+        fail = false;
+        await service.SetKrakenLightingAsync(connection, new(RazerHidLightingEffect.Off));
+
+        Assert.Equal(RazerHidKrakenV4Protocol.CreateConnect(), reports[0]);
     }
 
     [Fact]
