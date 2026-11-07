@@ -119,6 +119,8 @@ public sealed class RazerHidSpecialLightingService
         new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, byte> _krakenV4Armed =
         new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, RazerMxicHeadsetTransport> _krakenV4Transports =
+        new(StringComparer.OrdinalIgnoreCase);
     private readonly Action<string>? _diagnostic;
 
     public RazerHidSpecialLightingService(Action<string>? diagnostic = null)
@@ -391,41 +393,76 @@ public sealed class RazerHidSpecialLightingService
         bool sendHandshake,
         CancellationToken cancellationToken)
     {
-        await using var transport = new RazerMxicHeadsetTransport(
-            devicePath, RazerHidKrakenV4Protocol.ReportLength);
-
-        for (var index = 0; index < reports.Count; index++)
+        // Synapse keeps one HID handle open for the lighting session. 056B drops
+        // host control when that handle closes, so a handle per click makes later
+        // effects no-ops even though the firmware still ACKs them.
+        if (!_krakenV4Transports.TryGetValue(devicePath, out var transport))
         {
-            var report = reports[index];
-            if (sendHandshake && index == 0)
+            var created = new RazerMxicHeadsetTransport(
+                devicePath, RazerHidKrakenV4Protocol.ReportLength);
+            if (_krakenV4Transports.TryAdd(devicePath, created))
             {
-                await transport.SendAsync(report, cancellationToken).ConfigureAwait(false);
-                await Task.Delay(TimeSpan.FromMilliseconds(50), cancellationToken).ConfigureAwait(false);
-                continue;
-            }
-
-            if (RazerHidKrakenV4Protocol.ExpectsResponse(report))
-            {
-                var response = await transport.QueryRawAsync(
-                    report, data => RazerHidKrakenV4Protocol.IsCommandResponse(report, data), cancellationToken)
-                    .ConfigureAwait(false);
-                _diagnostic?.Invoke(response is null
-                    ? "kraken lighting response=none"
-                    : $"kraken lighting response status=0x{response[1]:X2} report=[{Convert.ToHexString(response)}]");
+                transport = created;
             }
             else
             {
-                await transport.SendAsync(report, cancellationToken).ConfigureAwait(false);
-            }
-
-            await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
-            if (sendHandshake && index == 2)
-            {
-                // 056B plays a takeover animation after E8/C1 and drops the first
-                // effect that arrives during it.
-                await Task.Delay(TimeSpan.FromMilliseconds(1000), cancellationToken).ConfigureAwait(false);
+                await created.DisposeAsync().ConfigureAwait(false);
+                transport = _krakenV4Transports[devicePath];
             }
         }
+
+        try
+        {
+            for (var index = 0; index < reports.Count; index++)
+            {
+                var report = reports[index];
+                if (sendHandshake && index == 0)
+                {
+                    await transport.SendAsync(report, cancellationToken).ConfigureAwait(false);
+                    await Task.Delay(TimeSpan.FromMilliseconds(50), cancellationToken).ConfigureAwait(false);
+                    continue;
+                }
+
+                await SendKrakenV4ReportAsync(transport, report, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
+            }
+
+            if (sendHandshake)
+            {
+                // The takeover animation drops the first effect; repeat it on the
+                // same session so the first click sticks without a second click.
+                await Task.Delay(TimeSpan.FromMilliseconds(1500), cancellationToken).ConfigureAwait(false);
+                await SendKrakenV4ReportAsync(transport, reports[^1], cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch
+        {
+            if (_krakenV4Transports.TryRemove(devicePath, out var stale))
+            {
+                await stale.DisposeAsync().ConfigureAwait(false);
+            }
+
+            throw;
+        }
+    }
+
+    private async Task SendKrakenV4ReportAsync(
+        RazerMxicHeadsetTransport transport,
+        byte[] report,
+        CancellationToken cancellationToken)
+    {
+        if (RazerHidKrakenV4Protocol.ExpectsResponse(report))
+        {
+            var response = await transport.QueryRawAsync(
+                report, data => RazerHidKrakenV4Protocol.IsCommandResponse(report, data), cancellationToken)
+                .ConfigureAwait(false);
+            _diagnostic?.Invoke(response is null
+                ? "kraken lighting response=none"
+                : $"kraken lighting response status=0x{response[1]:X2} report=[{Convert.ToHexString(response)}]");
+            return;
+        }
+
+        await transport.SendAsync(report, cancellationToken).ConfigureAwait(false);
     }
 
     private static void RequireReady(

@@ -37,6 +37,7 @@ public sealed partial class DevicesPage : UserControl
         CreateLightingColor("#FFD740", 0xFF, 0xD7, 0x40),
         CreateLightingColor("#9BE564", 0x9B, 0xE5, 0x64),
         CreateLightingColor("#42D67B", 0x42, 0xD6, 0x7B),
+        CreateLightingColor("#44D62C", 0x44, 0xD6, 0x2C),
         CreateLightingColor("#38D9C5", 0x38, 0xD9, 0xC5),
         CreateLightingColor("#4FC3F7", 0x4F, 0xC3, 0xF7),
         CreateLightingColor("#448AFF", 0x44, 0x8A, 0xFF),

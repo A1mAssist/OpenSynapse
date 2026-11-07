@@ -15,7 +15,7 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
     private Color _primary = Color.FromArgb(255, 0, 255, 102);
     private Color _secondary = Color.FromArgb(255, 0, 153, 255);
     private Color _tertiary = Color.FromArgb(255, 255, 0, 153);
-    private byte _intensity = 255;
+    private double _intensity = 255;
     private bool _isBusy;
     private bool _requiresRescan;
     private string _errorText;
@@ -94,7 +94,7 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
     public Color Primary { get => _primary; set => SetField(ref _primary, value); }
     public Color Secondary { get => _secondary; set => SetField(ref _secondary, value); }
     public Color Tertiary { get => _tertiary; set => SetField(ref _tertiary, value); }
-    public byte Intensity { get => _intensity; set => SetField(ref _intensity, value); }
+    public double Intensity { get => _intensity; set => SetField(ref _intensity, value); }
     public string IntensityText => $"{Math.Round(Intensity / 255d * 100)}%";
     public Visibility LightingPresetVisibility => SecondaryVisibility;
     public Visibility PrimaryVisibility => VisibleWhen(SelectedEffect is
@@ -121,7 +121,9 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
         {
             await _service.SetKrakenLightingAsync(Connection, new RazerHidLightingSettings(
                 effect, Primary: ToColor(Primary), Secondary: ToColor(Secondary), Tertiary: ToColor(Tertiary)),
-                effect is RazerHidLightingEffect.Static or RazerHidLightingEffect.Custom ? Intensity : null,
+                effect is RazerHidLightingEffect.Static or RazerHidLightingEffect.Custom
+                    ? (byte)Math.Clamp(Math.Round(Intensity), 0, 255)
+                    : null,
                 cancellationToken);
             ErrorText = string.Empty;
         }
