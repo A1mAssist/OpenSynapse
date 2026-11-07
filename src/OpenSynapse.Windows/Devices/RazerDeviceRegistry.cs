@@ -475,11 +475,11 @@ internal sealed partial class RazerDeviceRegistry
             throw new InvalidOperationException($"Manifest '{source.Id}' has an invalid wait time.");
         }
         if (source.MatrixRows.HasValue != source.MatrixColumns.HasValue ||
-            source.MatrixRows is < 1 or > 6 ||
+            source.MatrixRows is < 1 or > 7 ||
             source.MatrixColumns is < 1 or > 25)
         {
             throw new InvalidOperationException(
-                $"Manifest '{source.Id}' must declare matrixRows (1..6) and matrixColumns (1..25) together.");
+                $"Manifest '{source.Id}' must declare matrixRows (1..7) and matrixColumns (1..25) together.");
         }
 
         var vendorId = ParseWord(source.VendorId, "vendorId");

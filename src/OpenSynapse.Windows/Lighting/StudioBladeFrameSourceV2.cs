@@ -14,6 +14,9 @@ public enum StudioBladeFrameMode
     /// <summary>7 x 15 logical canvas mapped through the 2024 sparse layout to 6 x 16.</summary>
     Sparse16,
 
+    /// <summary>Render the manifest matrix and use its exact LED table for the device frame.</summary>
+    Sparse,
+
     /// <summary>Render the manifest matrix directly; no 710 sparse map.</summary>
     Direct,
 }
@@ -60,10 +63,28 @@ public static class StudioBladeDevices
                     BladeLightingLayout16.LogicalColumns);
             }
 
+            if (manifest.MatrixColumns == 19)
+            {
+                return new(StudioBladeFrameMode.Sparse, 8, 18);
+            }
+
             return new(
                 StudioBladeFrameMode.Sparse710,
                 BladeLightingLayout.LogicalRows,
                 BladeLightingLayout.LogicalColumns);
+        }
+
+        if (dialect == BladeLightingDialect.LedMatrix2026)
+        {
+            if (manifest.MatrixColumns == 17)
+            {
+                return new(StudioBladeFrameMode.Sparse, 7, 16);
+            }
+
+            if (manifest.MatrixColumns == 19)
+            {
+                return new(StudioBladeFrameMode.Sparse, 6, 19);
+            }
         }
 
         if (!IsSoftwareMatrix(dialect)) return null;
@@ -149,6 +170,10 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
             (layout.MatrixRows != rows || layout.MatrixColumns != columns))
         {
             throw new ArgumentException("The manifest layout does not match the canvas.", nameof(layout));
+        }
+        if (mode == StudioBladeFrameMode.Sparse && layout is null)
+        {
+            throw new ArgumentException("Sparse Blade frames require the manifest LED table.", nameof(layout));
         }
 
         _mode = mode;

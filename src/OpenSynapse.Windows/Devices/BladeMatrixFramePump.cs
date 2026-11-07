@@ -54,7 +54,7 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         ArgumentNullException.ThrowIfNull(transport);
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
         ArgumentNullException.ThrowIfNull(restorePersistentEffect);
-        if (matrixRows is < 1 or > 6 || matrixColumns is < 1 or > 25)
+        if (matrixRows is < 1 or > 7 || matrixColumns is < 1 or > 25)
         {
             throw new ArgumentOutOfRangeException(nameof(matrixRows));
         }

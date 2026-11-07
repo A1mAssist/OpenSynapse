@@ -203,9 +203,9 @@ public static class BladeLightingProtocol
 
     private static void ValidateMatrixDimensions(int rows, int columns)
     {
-        if (rows is < 1 or > 6 || columns is < 1 or > 25)
+        if (rows is < 1 or > 7 || columns is < 1 or > 25)
         {
-            throw new ArgumentOutOfRangeException(nameof(rows), "Blade matrix dimensions must be 1..6 rows and 1..25 columns.");
+            throw new ArgumentOutOfRangeException(nameof(rows), "Blade matrix dimensions must be 1..7 rows and 1..25 columns.");
         }
     }
 
