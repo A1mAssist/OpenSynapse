@@ -1382,8 +1382,10 @@
   <data name="ChromaRestStatusUnavailable" xml:space="preserve"><value>Unavailable</value></data>
   <data name="ChromaRestStatusReady" xml:space="preserve"><value>{0} · Ready</value></data>
   <data name="ChromaRestStatusSession" xml:space="preserve"><value>{0} · {1} · {2:0} fps · {3} skipped</value></data>
-  <data name="ChromaShimTitle.Text" xml:space="preserve"><value>Game compatibility layer</value></data>
-  <data name="ChromaShimDescription.Text" xml:space="preserve"><value>Lets games load the OpenSynapse Chroma compatible DLL. Start OpenSynapse before launching a game. Installing backs up and replaces Razer's official x64 DLL and needs administrator rights.</value></data>
+  <data name="ChromaOfficialDllTitle.Text" xml:space="preserve"><value>Official Chroma DLL</value></data>
+  <data name="ChromaOfficialDllDescription.Text" xml:space="preserve"><value>Download only Razer's official RzChromaSDK64.dll and place it in C:\Windows\System32. OpenSynapse's broker handles game lighting; the full Chroma SDK and Synapse are not required.</value></data>
+  <data name="ChromaShimTitle.Text" xml:space="preserve"><value>Game compatibility layer (custom shim)</value></data>
+  <data name="ChromaShimDescription.Text" xml:space="preserve"><value>Fallback for when the official DLL + broker is unavailable. Installing backs up and replaces Razer's official x64 DLL; start OpenSynapse before launching a game.</value></data>
   <data name="ChromaShimStatus.Text" xml:space="preserve"><value>Not installed</value></data>
   <data name="ChromaShimInstallButton.Content" xml:space="preserve"><value>Install</value></data>
   <data name="ChromaShimRestoreButton.Content" xml:space="preserve"><value>Restore official DLL</value></data>
@@ -1391,6 +1393,7 @@
   <data name="ChromaShimStatusInstalled" xml:space="preserve"><value>Installed; game lighting is handled by OpenSynapse.</value></data>
   <data name="ChromaShimStatusUnavailable" xml:space="preserve"><value>Razer Chroma SDK not found.</value></data>
   <data name="ChromaShimStatusBusy" xml:space="preserve"><value>Working...</value></data>
+  <data name="ChromaOfficialDllDownload.Content" xml:space="preserve"><value>Download DLL</value></data>
   <data name="ChromaShimInstallFailed" xml:space="preserve"><value>Install failed (code {0}). Close games and try again.</value></data>
   <data name="ChromaShimRestoreFailed" xml:space="preserve"><value>Restore failed (code {0}). Close games and try again.</value></data>
   <data name="ChromaRestoreTitle.Text" xml:space="preserve"><value>Restore lighting after external control</value></data>
