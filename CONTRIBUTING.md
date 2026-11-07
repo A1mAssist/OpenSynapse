@@ -75,11 +75,17 @@ startup entry points to the Program Files executable. User data must stay in
 `%LOCALAPPDATA%\A1mAssist\OpenSynapse`, not under the Velopack-managed
 `%LOCALAPPDATA%\OpenSynapse` directory, because MSI cleanup removes the latter.
 
-Velopack release assets must be generated as one set. Do not hand-rename setup
-or portable files, or edit `assets.win.json`, `releases.win.json`, or `RELEASES`
-after packing. Before uploading, compare every listed filename, SHA-1, SHA-256,
-and size against the files produced by the same `vpk pack` invocation, then
-launch the exact packaged executable from its deployed `current` directory.
+Velopack release assets must be generated as one set. Keep the generated feed
+files (`*.nupkg`, `RELEASES`, `releases.win.json`, `assets.win.json`) unchanged.
+The three user-facing installers are published under versioned names after
+packing: `OpenSynapse-<version>-win-x64.msi`,
+`OpenSynapse-<version>-win-Setup-AutoUpdate-PerUser.exe`, and
+`OpenSynapse-<version>-win-Portable.zip`. The MSI is the recommended download;
+label the Setup package as the auto-update/per-user package in the release
+notes. Before uploading, compare every renamed installer with the file produced
+by the same `vpk pack` invocation for size and SHA-256, keep the feed filenames
+untouched, then launch the exact packaged executable from its deployed
+`current` directory. See `docs/RELEASING.zh-CN.md` for the full checklist.
 
 ### Test builds
 

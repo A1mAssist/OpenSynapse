@@ -66,9 +66,11 @@ The `OpenSynapse.ChromaSdk.Shim` project publishes an x64 `RzChromaSDK64.dll` th
 
 Download one of these files from [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest).
 
-- `OpenSynapse-win.msi` installs for all users under `Program Files` and registers the GPU mode service with administrator approval. When registration succeeds, supported GPU switches use the service without another UAC prompt. If an older per-user Setup install is present, installation preserves its profiles and settings. The next unelevated launch verifies that every data file has a preserved copy, keeps conflicting versions as `.legacy-backup` files, and then removes the old install and repairs startup. Elevated launches leave the old uninstaller untouched.
-- `OpenSynapse-win-Setup.exe` installs for the current user and supports automatic updates. It does not install the machine-wide service; the GPU switch falls back to a UAC prompt for each change.
-- `OpenSynapse-win-Portable.zip` runs without installation. The GPU switch prompts for UAC when used.
+- `OpenSynapse-<version>-win-x64.msi` — **Recommended.** Installs for all users under `Program Files` and registers the GPU mode service with administrator approval. When registration succeeds, supported GPU switches use the service without another UAC prompt. If an older per-user Setup install is present, installation preserves its profiles and settings. The next unelevated launch verifies that every data file has a preserved copy, keeps conflicting versions as `.legacy-backup` files, and then removes the old install and repairs startup. Elevated launches leave the old uninstaller untouched.
+- `OpenSynapse-<version>-win-Setup-AutoUpdate-PerUser.exe` — Velopack auto-update/per-user package. It installs for the current user only and does not install the machine-wide service; the GPU switch falls back to a UAC prompt for each change. Use this only when you need a per-user install or are following the auto-update path; normal installs should use the MSI.
+- `OpenSynapse-<version>-win-Portable.zip` — Portable copy. It runs without installation; the GPU switch prompts for UAC when used.
+
+`<version>` is the release version, for example `1.6.1`.
 
 The MSI service runs as `LocalSystem` and uses the protected executable under `Program Files`. It accepts fixed status, GPU enable/disable/restart, CPU power/Curve Optimizer and GPU clock operations, plus the fixed macro-agent launch request. The control pipe allows the configured installation-user SID, local Administrators and SYSTEM, and denies network logons. Available controls remain subject to model, driver and protocol admission; failed registration can still require the existing UAC fallback.
 
