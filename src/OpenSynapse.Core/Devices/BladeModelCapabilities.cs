@@ -16,6 +16,7 @@ public static class BladeModelCapabilities
     public const ushort Blade14_2022ProductId = 0x028C;
     public const ushort Blade16_2026ProductId = 0x02E0;
     public const ushort Blade18_2026ProductId = 0x02E1;
+    public const ushort RazerBook13ProductId = 0x026A;
 
     /// <summary>Custom CPU levels every audited model captures (0x0D:0x07 payload level).</summary>
     private static readonly BladeCpuBoostMode[] LowMediumHigh =
@@ -146,6 +147,15 @@ public static class BladeModelCapabilities
         BladePerformanceMode.Balanced,
         BladePerformanceMode.Performance,
         BladePerformanceMode.Gaming,
+    ];
+
+    // 026A publishes Balanced, Battery Saver and Performance, each with the same
+    // 2700..5500 RPM fan range and a 4000 RPM default. It publishes no Custom mode.
+    private static readonly BladePerformanceMode[] Modes026A =
+    [
+        BladePerformanceMode.Balanced,
+        BladePerformanceMode.BatterySaver,
+        BladePerformanceMode.Performance,
     ];
 
     private static readonly BladePerformanceMode[] ModesBalancedPerformance =
@@ -475,6 +485,9 @@ public static class BladeModelCapabilities
             [0x024C] = new(
                 MaxFan: false,
                 LowMediumHigh,
+                FixedFan: true,
+                MinimumFanTargetRpm: 3400,
+                MaximumFanTargetRpm: 5300,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3400, 5200, 4100),
                     (BladePerformanceMode.Custom, 4000, 5300, 4600)),
@@ -625,6 +638,23 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.BatterySaver, 2500, 5600, 4000),
                     (BladePerformanceMode.Gaming, 2500, 5600, 4000)),
                 Modes: ModesBalancedBatterySaverGaming),
+
+            // Razer Book 13 (2020) 1532:026A. Its bundle publishes Balanced, Battery Saver
+            // and Performance only, each with a 2700..5500 RPM fan range and a 4000 RPM
+            // default, and its fixed-speed writes the same RPM/100 value on 0D:01. It has
+            // no Custom mode or hasCustomPerformance flag, so no CPU boost level is
+            // admitted; the family-required 0D:87/07 report stays protocol-only.
+            [RazerBook13ProductId] = new(
+                MaxFan: false,
+                None,
+                FixedFan: true,
+                MinimumFanTargetRpm: 2700,
+                MaximumFanTargetRpm: 5500,
+                ModeFanRanges: Ranges(
+                    (BladePerformanceMode.Balanced, 2700, 5500, 4000),
+                    (BladePerformanceMode.BatterySaver, 2700, 5500, 4000),
+                    (BladePerformanceMode.Performance, 2700, 5500, 4000)),
+                Modes: Modes026A),
 
             [0x027A] = new(
                 MaxFan: false,

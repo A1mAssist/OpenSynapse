@@ -1323,6 +1323,30 @@
                       <ToggleSwitch Grid.Column="1" Tag="cpuPowerBoost" IsOn="{Binding Blade.CpuPowerBoostEnabled, Mode=TwoWay}" IsEnabled="{Binding Blade.CanSetCpuPowerBoost}" Toggled="AutoApplyPlatformToggleToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.LabeledBy="{Binding ElementName=BladeCpuPowerBoostLabel}" />
                     </Grid>
                   </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding Blade.LegacyBladeSettingsVisibility}">
+                    <StackPanel Spacing="12">
+                      <StackPanel Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock x:Name="BladeLegacySettingsLabel" local:Localized.Uid="BladeLegacySettingsTitle" Text="电源与指示灯" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
+                        <TextBlock local:Localized.Uid="BladeLegacySettingsDescription" Text="老款 Blade 的电源、屏幕变暗与指示灯设置。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      </StackPanel>
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16" Visibility="{Binding Blade.AutoSleepVisibility}">
+                        <TextBlock x:Name="BladeAutoSleepLabel" local:Localized.Uid="BladeAutoSleepTitle" Text="自动睡眠" FontSize="15" VerticalAlignment="Center" />
+                        <ToggleSwitch Grid.Column="1" Tag="autoSleep" IsOn="{Binding Blade.AutoSleepEnabled, Mode=TwoWay}" IsEnabled="{Binding Blade.CanSetAutoSleep}" Toggled="AutoApplyPlatformToggleToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.LabeledBy="{Binding ElementName=BladeAutoSleepLabel}" />
+                      </Grid>
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16" Visibility="{Binding Blade.TimeToDimVisibility}">
+                        <TextBlock x:Name="BladeTimeToDimLabel" local:Localized.Uid="BladeTimeToDimTitle" Text="屏幕变暗（秒）" FontSize="15" VerticalAlignment="Center" />
+                        <ComboBox Grid.Column="1" Tag="timeToDim" ItemsSource="{Binding Blade.TimeToDimOptions}" SelectedIndex="{Binding Blade.TimeToDimIndex, Mode=TwoWay}" SelectionChanged="AutoApplyComboSelectionChanged" IsEnabled="{Binding Blade.CanSetTimeToDim}" MinWidth="120" VerticalAlignment="Center" AutomationProperties.LabeledBy="{Binding ElementName=BladeTimeToDimLabel}" />
+                      </Grid>
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16" Visibility="{Binding Blade.IndicatorLedVisibility}">
+                        <TextBlock x:Name="BladeIndicatorLedLabel" local:Localized.Uid="BladeIndicatorLedTitle" Text="指示灯" FontSize="15" VerticalAlignment="Center" />
+                        <ToggleSwitch Grid.Column="1" Tag="indicatorLed" IsOn="{Binding Blade.IndicatorLedEnabled, Mode=TwoWay}" IsEnabled="{Binding Blade.CanSetIndicatorLed}" Toggled="AutoApplyPlatformToggleToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.LabeledBy="{Binding ElementName=BladeIndicatorLedLabel}" />
+                      </Grid>
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16" Visibility="{Binding Blade.GpuCardDetectionVisibility}">
+                        <TextBlock x:Name="BladeGpuCardDetectionLabel" local:Localized.Uid="BladeGpuCardDetectionTitle" Text="显卡检测指示灯" FontSize="15" VerticalAlignment="Center" />
+                        <ToggleSwitch Grid.Column="1" Tag="gpuCardDetection" IsOn="{Binding Blade.GpuCardDetectionEnabled, Mode=TwoWay}" IsEnabled="{Binding Blade.CanSetGpuCardDetection}" Toggled="AutoApplyPlatformToggleToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.LabeledBy="{Binding ElementName=BladeGpuCardDetectionLabel}" />
+                      </Grid>
+                    </StackPanel>
+                  </Border>
                   <Grid x:Name="BladeAuxCardsGrid" ColumnDefinitions="*,*,*" ColumnSpacing="12">
                     <Border x:Name="BladeGamingModeCard" Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding Blade.GamingModeVisibility}">
                       <StackPanel Spacing="8">

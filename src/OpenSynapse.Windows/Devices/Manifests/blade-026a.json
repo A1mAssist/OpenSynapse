@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 2,
+  "id": "blade-026a",
+  "displayName": "Razer Book 13",
+  "vendorId": "1532",
+  "productIds": [
+    "026A"
+  ],
+  "collection": {
+    "usagePage": "0001",
+    "usage": "0002",
+    "featureReportLength": 91
+  },
+  "protocolFamily": "blade-671",
+  "category": "laptop",
+  "transport": {
+    "waitMilliseconds": 2
+  },
+  "capabilities": {
+    "thermal-state.get": {
+      "transactionId": "1F",
+      "dataSize": "04",
+      "commandClass": "0D",
+      "commandId": "82",
+      "arguments": ""
+    },
+    "thermal-state.set": {
+      "transactionId": "1F",
+      "dataSize": "04",
+      "commandClass": "0D",
+      "commandId": "02",
+      "arguments": ""
+    },
+    "fan-target.get": {
+      "transactionId": "1F",
+      "dataSize": "03",
+      "commandClass": "0D",
+      "commandId": "81",
+      "arguments": ""
+    },
+    "current-fan-rpm.get": {
+      "transactionId": "1F",
+      "dataSize": "03",
+      "commandClass": "0D",
+      "commandId": "88",
+      "arguments": ""
+    },
+    "auto-sleep.get": {
+      "transactionId": "1F",
+      "dataSize": "02",
+      "commandClass": "07",
+      "commandId": "88",
+      "arguments": "00"
+    },
+    "auto-sleep.set": {
+      "transactionId": "1F",
+      "dataSize": "02",
+      "commandClass": "07",
+      "commandId": "08",
+      "arguments": ""
+    },
+    "time-to-dim.get": {
+      "transactionId": "1F",
+      "dataSize": "05",
+      "commandClass": "07",
+      "commandId": "8B",
+      "arguments": "00"
+    },
+    "time-to-dim.set": {
+      "transactionId": "1F",
+      "dataSize": "05",
+      "commandClass": "07",
+      "commandId": "0B",
+      "arguments": ""
+    },
+    "indicator-led.get": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "90",
+      "arguments": "00"
+    },
+    "indicator-led.set": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "10",
+      "arguments": ""
+    },
+    "boost.get": {
+      "transactionId": "1F",
+      "dataSize": "03",
+      "commandClass": "0D",
+      "commandId": "87",
+      "arguments": ""
+    },
+    "boost.set": {
+      "transactionId": "1F",
+      "dataSize": "03",
+      "commandClass": "0D",
+      "commandId": "07",
+      "arguments": ""
+    },
+    "charge-limit.get": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "92",
+      "arguments": "00",
+      "allowRemainingPacketsMismatch": true
+    },
+    "charge-limit.set": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "12",
+      "arguments": ""
+    },
+    "keyboard-brightness.get": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "83",
+      "arguments": "010500",
+      "allowRemainingPacketsMismatch": true
+    },
+    "keyboard-brightness.set": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "03",
+      "arguments": "",
+      "allowRemainingPacketsMismatch": true
+    },
+    "keyboard-effect.get": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "0F",
+      "commandId": "82",
+      "arguments": "010500",
+      "allowRemainingPacketsMismatch": true
+    },
+    "keyboard-effect.set": {
+      "transactionId": "03",
+      "dataSize": "06",
+      "commandClass": "0F",
+      "commandId": "02",
+      "arguments": "",
+      "allowRemainingPacketsMismatch": true
+    }
+  },
+  "device": {
+    "name": "Razer Book 13",
+    "shortName": "Margaret_MW",
+    "editionIds": [
+      0,
+      128
+    ],
+    "layoutIds": [
+      1,
+      3,
+      4,
+      6,
+      7,
+      8,
+      9,
+      12,
+      16
+    ],
+    "rzDeviceType": "rzDevice25LedMatrixBlade",
+    "firmware": {
+      "latest": null,
+      "driver": {
+        "version": "0.1.2.0",
+        "url": "https://app-assets.razer.com/files/synapse/devices/618/1.0.0.0/PID026aDrv_v0.1.2.0.exe"
+      }
+    }
+  },
+  "lightingDialect": "FirmwareEffect"
+}

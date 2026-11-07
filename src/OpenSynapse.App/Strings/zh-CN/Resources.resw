@@ -2589,6 +2589,24 @@
     <value>GPU 空闲时允许 CPU 使用更高功耗。</value>
     <comment>GPU 空闲时允许 CPU 使用更高功耗。</comment>
   </data>
+  <data name="BladeLegacySettingsTitle.Text" xml:space="preserve">
+    <value>电源与指示灯</value>
+  </data>
+  <data name="BladeLegacySettingsDescription.Text" xml:space="preserve">
+    <value>老款 Blade 的电源、屏幕变暗与指示灯设置。</value>
+  </data>
+  <data name="BladeAutoSleepTitle.Text" xml:space="preserve">
+    <value>自动睡眠</value>
+  </data>
+  <data name="BladeTimeToDimTitle.Text" xml:space="preserve">
+    <value>屏幕变暗（秒）</value>
+  </data>
+  <data name="BladeIndicatorLedTitle.Text" xml:space="preserve">
+    <value>指示灯</value>
+  </data>
+  <data name="BladeGpuCardDetectionTitle.Text" xml:space="preserve">
+    <value>显卡检测指示灯</value>
+  </data>
   <data name="ScanHidCommands" xml:space="preserve">
     <value>扫描 HID 命令</value>
   </data>

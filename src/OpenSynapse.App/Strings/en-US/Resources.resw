@@ -2161,6 +2161,24 @@
   <data name="BladeCpuPowerBoostDescription.Text" xml:space="preserve">
     <value>Allows the CPU to draw more power while the GPU is idle.</value>
   </data>
+  <data name="BladeLegacySettingsTitle.Text" xml:space="preserve">
+    <value>Power and indicators</value>
+  </data>
+  <data name="BladeLegacySettingsDescription.Text" xml:space="preserve">
+    <value>Power, screen dim and indicator settings for older Blade models.</value>
+  </data>
+  <data name="BladeAutoSleepTitle.Text" xml:space="preserve">
+    <value>Automatic sleep</value>
+  </data>
+  <data name="BladeTimeToDimTitle.Text" xml:space="preserve">
+    <value>Screen dim (seconds)</value>
+  </data>
+  <data name="BladeIndicatorLedTitle.Text" xml:space="preserve">
+    <value>Indicator LED</value>
+  </data>
+  <data name="BladeGpuCardDetectionTitle.Text" xml:space="preserve">
+    <value>GPU card indicator</value>
+  </data>
   <data name="ScanHidCommands" xml:space="preserve">
     <value>Scan HID commands</value>
   </data>
