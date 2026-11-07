@@ -200,7 +200,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
                 WsExToolWindow | WsExNoActivate,
                 _statusClassName,
                 string.Empty,
-                WsPopup,
+                WsChild,
                 0, 0, 0, 0,
                 taskbar,
                 IntPtr.Zero,
@@ -366,14 +366,8 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             return false;
         }
 
-        var origin = new Point
-        {
-            X = right - gap - width,
-            Y = Math.Max(0, (clientHeight - height) / 2),
-        };
-        if (!ClientToScreen(taskbar, ref origin)) return false;
-        x = origin.X;
-        y = origin.Y;
+        x = right - gap - width;
+        y = Math.Max(0, (clientHeight - height) / 2);
         return true;
     }
 

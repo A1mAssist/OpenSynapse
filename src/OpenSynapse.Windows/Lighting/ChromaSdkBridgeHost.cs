@@ -11,6 +11,7 @@ internal sealed class ChromaSdkBridgeHost : IAsyncDisposable
     private readonly Func<Task> _restoreLighting;
     private readonly Func<bool> _restorePersistentEffect;
     private readonly Func<uint> _supportedDevices;
+    private readonly Action<string>? _log;
     private readonly string _pipeName;
     private readonly CancellationTokenSource _stop = new();
     private readonly SemaphoreSlim _sessionGate = new(1, 1);
@@ -30,12 +31,14 @@ internal sealed class ChromaSdkBridgeHost : IAsyncDisposable
         Func<Task> restoreLighting,
         Func<bool>? restorePersistentEffect = null,
         Func<uint>? supportedDevices = null,
-        string pipeName = ChromaSdkPipe.Name)
+        string pipeName = ChromaSdkPipe.Name,
+        Action<string>? log = null)
     {
         _applyEffect = applyEffect ?? throw new ArgumentNullException(nameof(applyEffect));
         _restoreLighting = restoreLighting ?? throw new ArgumentNullException(nameof(restoreLighting));
         _restorePersistentEffect = restorePersistentEffect ?? (() => true);
         _supportedDevices = supportedDevices ?? (() => 0);
+        _log = log;
         ArgumentException.ThrowIfNullOrWhiteSpace(pipeName);
         _pipeName = pipeName;
     }
@@ -195,6 +198,7 @@ internal sealed class ChromaSdkBridgeHost : IAsyncDisposable
             }
 
             session.Title = value.Value.Title;
+            _log?.Invoke($"client connected: {value.Value.Title} (pid {value.Value.ProcessId})");
             ChromaSdkPipe.Write(session.Pipe, new ChromaSdkHelloAckMessage(
                 new ChromaSdkHelloAck(0, _supportedDevices())));
 
@@ -239,6 +243,7 @@ internal sealed class ChromaSdkBridgeHost : IAsyncDisposable
             }
             finally
             {
+                _log?.Invoke($"client disconnected: {session.Title}");
                 session.Dispose();
             }
         }

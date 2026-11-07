@@ -90,6 +90,10 @@
              Link="dav1d-LICENSE.txt"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Native\Chroma\RzChromaSDK64.dll"
+             Link="ChromaSdkShim\RzChromaSDK64.dll"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

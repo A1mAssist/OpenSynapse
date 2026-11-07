@@ -85,7 +85,8 @@ public partial class App
                     ? Task.CompletedTask
                     : RestoreChromaAsync(viewModel),
                 () => _behaviorSettings.RestoreLightingAfterChromaSession,
-                () => applier.SupportedDevices);
+                () => applier.SupportedDevices,
+                log: message => _diagnosticLog.TryWrite("chroma-sdk", message));
             bridge.StartAsync();
             _chromaSdkBridge = bridge;
             _diagnosticLog.TryWrite("chroma-sdk", "Chroma SDK bridge listening on \\\\.\\pipe\\OpenSynapseChromaSdk.");

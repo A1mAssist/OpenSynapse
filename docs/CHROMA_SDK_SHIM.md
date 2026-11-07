@@ -302,13 +302,18 @@ OpenSynapse shim 当前校验：
 - Release AOT 产物包含 15 个 Chroma 导出，另有一个 `DotNetRuntimeDebugHeader`；后者是 .NET runtime 工件，不属于 Chroma API。
 - Release AOT shim 的 no-host 冒烟：`Init` -> 1062，`CreateKeyboardEffect(4, NULL)` -> 87，`CreateKeyboardEffect(4, buf)` -> 5023，`SetEffect`/`DeleteEffect` 未知 GUID -> 1168，`UnInit` -> 0。只证明 DLL 可加载和返回值路径，不证明游戏或硬件。
 
-### 8.2 放置方式
+### 8.2 安装方式
 
-1. 优先把发布版 `RzChromaSDK64.dll` 放在游戏可执行文件同目录，确保游戏的 DLL 搜索会先解析到它。app-local 是否优先取决于游戏的加载方式；用 Process Monitor 过滤 `RzChromaSDK64.dll` 的 `Load Image` 事件验证。
-2. 如果游戏从 `C:\Program Files\Razer Chroma SDK\bin` 加载，则先备份 Razer 签名的原始 DLL，再用 shim 替换该文件。
-3. 这是 app-local 或显式选择的替换；不要声称可以静默、系统级替换。替换 SDK 目录会影响所有使用该目录的游戏，必须由用户明确操作。
-4. 仅 x64。没有 x86 shim。
-5. 运行游戏前，OpenSynapse 必须已启动并开启实验性 Chroma；否则 `Init` 返回 1062。
+发布包会带上 `ChromaSdkShim\RzChromaSDK64.dll`。设置页的“Chroma 集成 → 游戏兼容层 → 安装”会：
+
+1. 读取 `HKLM\SOFTWARE\WOW6432Node\Razer Chroma SDK` 的 `InstallPath64`，定位 `bin` 目录。
+2. 把 Razer 官方 DLL 备份为 `RzChromaSDK64.dll.opensynapse-backup`。
+3. 用同目录临时文件原子替换为 OpenSynapse shim。
+4. 点“恢复官方 DLL”或卸载 OpenSynapse 时把备份还原。
+
+这个操作会替换系统级 SDK 目录，影响所有从该目录加载 DLL 的 x64 游戏，因此必须由用户明确点击并经过 UAC；应用不会静默替换。若游戏自带 app-local 的 `RzChromaSDK64.dll`，替换 SDK 目录不会生效，需要用 Process Monitor 过滤 `RzChromaSDK64.dll` 的 `Load Image` 事件确认来源。
+
+运行游戏前，OpenSynapse 必须已启动并开启 Chroma 集成；否则 `Init` 返回 1062。仅 x64，没有 x86 shim；shim 未签名，反作弊是否拦截需要按游戏实测。
 
 ## 9. 生命周期与安全
 

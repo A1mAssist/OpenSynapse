@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Lifecycle;
+using OpenSynapse.Windows.Lighting;
 using Velopack;
 using Velopack.Locators;
 using Velopack.Windows;
@@ -28,6 +29,16 @@ public static class Program
         if (args.Contains("--probe-dkm", StringComparer.OrdinalIgnoreCase))
         {
             Environment.Exit(ProbeDkmTable());
+        }
+
+        if (args.Contains("--install-chroma-shim", StringComparer.OrdinalIgnoreCase))
+        {
+            Environment.Exit(ChromaSdkShimInstaller.Install());
+        }
+
+        if (args.Contains("--restore-chroma-shim", StringComparer.OrdinalIgnoreCase))
+        {
+            Environment.Exit(ChromaSdkShimInstaller.Restore());
         }
 
         if (GpuModeServiceHost.TryRun(args))
@@ -69,6 +80,7 @@ public static class Program
                 RemoveGpuService();
                 RemoveMacroAgentTask();
                 RemoveStartupRegistration();
+                RestoreChromaShim();
                 OfferUserDataCleanup();
             })
             .Run();
@@ -235,6 +247,18 @@ public static class Program
         }
         catch (Exception)
         {
+        }
+    }
+
+    private static void RestoreChromaShim()
+    {
+        try
+        {
+            _ = ChromaSdkShimInstaller.Restore();
+        }
+        catch (Exception)
+        {
+            // Uninstall must finish even when the SDK DLL is locked by a game.
         }
     }
 

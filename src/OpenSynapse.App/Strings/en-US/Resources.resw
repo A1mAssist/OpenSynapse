@@ -1382,6 +1382,17 @@
   <data name="ChromaRestStatusUnavailable" xml:space="preserve"><value>Unavailable</value></data>
   <data name="ChromaRestStatusReady" xml:space="preserve"><value>{0} · Ready</value></data>
   <data name="ChromaRestStatusSession" xml:space="preserve"><value>{0} · {1} · {2:0} fps · {3} skipped</value></data>
+  <data name="ChromaShimTitle.Text" xml:space="preserve"><value>Game compatibility layer</value></data>
+  <data name="ChromaShimDescription.Text" xml:space="preserve"><value>Lets games load the OpenSynapse Chroma compatible DLL. Start OpenSynapse before launching a game. Installing backs up and replaces Razer's official x64 DLL and needs administrator rights.</value></data>
+  <data name="ChromaShimStatus.Text" xml:space="preserve"><value>Not installed</value></data>
+  <data name="ChromaShimInstallButton.Content" xml:space="preserve"><value>Install</value></data>
+  <data name="ChromaShimRestoreButton.Content" xml:space="preserve"><value>Restore official DLL</value></data>
+  <data name="ChromaShimStatusNotInstalled" xml:space="preserve"><value>Not installed; game lighting still uses Razer's Chroma service.</value></data>
+  <data name="ChromaShimStatusInstalled" xml:space="preserve"><value>Installed; game lighting is handled by OpenSynapse.</value></data>
+  <data name="ChromaShimStatusUnavailable" xml:space="preserve"><value>Razer Chroma SDK not found.</value></data>
+  <data name="ChromaShimStatusBusy" xml:space="preserve"><value>Working...</value></data>
+  <data name="ChromaShimInstallFailed" xml:space="preserve"><value>Install failed (code {0}). Close games and try again.</value></data>
+  <data name="ChromaShimRestoreFailed" xml:space="preserve"><value>Restore failed (code {0}). Close games and try again.</value></data>
   <data name="ChromaRestoreTitle.Text" xml:space="preserve"><value>Restore lighting after external control</value></data>
   <data name="ChromaRestoreDescription.Text" xml:space="preserve"><value>Return to the OpenSynapse effect after the session ends or times out.</value></data>
   <data name="ChromaRestoreToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Restore lighting after external control</value></data>
@@ -1681,7 +1692,7 @@
   <data name="TaskbarStatusDescription.Text" xml:space="preserve"><value>Show connected peripheral battery in the taskbar. It does not show the performance mode or open the app window when clicked.</value></data>
   <data name="TaskbarStatusToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Taskbar status strip</value></data>
   <data name="PerformanceOverlayTitle" xml:space="preserve"><value>Performance overlay</value></data>
-  <data name="PerformanceOverlayDescription" xml:space="preserve"><value>Show performance mode, CPU/GPU temperatures and clocks, memory usage and clock, and fan speed above other windows. Drag it anywhere; its position is remembered. Right-click to switch cards, reset the position, or close it.</value></data>
+  <data name="PerformanceOverlayDescription" xml:space="preserve"><value>Show performance mode, CPU/GPU temperatures and clocks, memory usage and clock, and fan speed on the desktop. Drag it anywhere; its position is remembered. Right-click to switch cards, reset the position, or close it.</value></data>
   <data name="PerformanceOverlayDetailedTitle" xml:space="preserve"><value>Detailed card</value></data>
   <data name="PerformanceOverlayDetailedDescription" xml:space="preserve"><value>Use the larger translucent card with a CPU/GPU load chart.</value></data>
   <data name="PerformanceOverlayDetailedToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Detailed performance overlay</value></data>
