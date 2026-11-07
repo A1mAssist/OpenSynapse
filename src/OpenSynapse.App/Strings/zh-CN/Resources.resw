@@ -1757,7 +1757,7 @@
   <data name="ChromaRestStatusReady" xml:space="preserve"><value>{0} · 已就绪</value><comment>Chroma REST 已就绪</comment></data>
   <data name="ChromaRestStatusSession" xml:space="preserve"><value>{0} · {1} · {2:0} fps · 跳过 {3}</value><comment>Chroma REST 活动会话与帧统计</comment></data>
   <data name="ChromaOfficialDllTitle.Text" xml:space="preserve"><value>官方 Chroma DLL</value><comment>官方 DLL 与 broker 标题</comment></data>
-  <data name="ChromaOfficialDllDescription.Text" xml:space="preserve"><value>只下载官方 RzChromaSDK64.dll，放到 C:\Windows\System32。安装版通过 OpenSynapseGpuMode 服务启动 broker，不需要每次授权；雷云 Chroma 服务运行时 broker 会自动让出。</value><comment>官方 DLL 单文件与 broker 说明</comment></data>
+  <data name="ChromaOfficialDllDescription.Text" xml:space="preserve"><value>只下载官方 RzChromaSDK64.dll，放到 C:\Windows\System32。安装版通过 OpenSynapseService 服务启动 broker，不需要每次授权；雷云 Chroma 服务运行时 broker 会自动让出。</value><comment>官方 DLL 单文件与 broker 说明</comment></data>
   <data name="ChromaOfficialDllDownload.Content" xml:space="preserve"><value>下载 DLL</value><comment>下载 GitHub 托管的官方 RzChromaSDK64.dll</comment></data>
   <data name="ChromaRestoreTitle.Text" xml:space="preserve"><value>外部控制结束后恢复灯光</value><comment>恢复灯光标题</comment></data>
   <data name="ChromaRestoreDescription.Text" xml:space="preserve"><value>会话结束或超时后恢复 OpenSynapse 当前配置的灯效。</value><comment>恢复灯光说明</comment></data>

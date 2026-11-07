@@ -134,7 +134,7 @@ public partial class App
             _chromaBrokerHost = host;
             _diagnosticLog.TryWrite(
                 "chroma-broker",
-                "listening; asking the OpenSynapseGpuMode service to start the official-DLL broker.");
+                "listening; asking the OpenSynapseService to start the official-DLL broker.");
             _chromaBrokerStartTask = StartChromaBrokerServiceAsync();
         }
         catch (Exception exception) when (
@@ -159,7 +159,7 @@ public partial class App
             _diagnosticLog.TryWrite(
                 "chroma-broker",
                 started
-                    ? "OpenSynapseGpuMode service started the broker."
+                    ? "OpenSynapseService started the broker."
                     : "broker service unavailable; the broker was not started.");
         }
         catch (Exception exception) when (

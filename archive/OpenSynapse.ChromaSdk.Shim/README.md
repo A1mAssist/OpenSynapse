@@ -8,7 +8,7 @@ The production path is now:
 
 1. Razer's official `RzChromaSDK64.dll` in `C:\Windows\System32`.
 2. `OpenSynapse.ChromaBroker`, started as LocalSystem by the
-   `OpenSynapseGpuMode` service registered at install time.
+   `OpenSynapseService` service registered at install time.
 3. The app receives decoded frames on `OpenSynapseChromaBroker`.
 
 Kept here for ABI/protocol reference and for understanding old beta installs.

@@ -9,7 +9,10 @@ namespace OpenSynapse.Windows.Lifecycle;
 /// </summary>
 public static class DedicatedGpuModeServiceProtocol
 {
-    public const string ServiceName = "OpenSynapseGpuMode";
+    public const string ServiceName = "OpenSynapseService";
+    // The pre-rename machine-wide service. EnsureInstalled deletes it once the new
+    // name is installed and verified, so an interrupted upgrade keeps the old path.
+    public const string LegacyServiceName = "OpenSynapseGpuMode";
     public const string PipeName = "OpenSynapse.GpuMode.v1";
     public const string ServiceArgument = "--gpu-service";
     public const string ServiceUserArgument = "--gpu-service-user";

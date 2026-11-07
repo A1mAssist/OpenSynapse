@@ -82,13 +82,17 @@ public static class DedicatedGpuModeServiceInstaller
         var command = $"\"{Path.GetFullPath(executablePath)}\" {DedicatedGpuModeServiceProtocol.ServiceArgument} " +
             $"{DedicatedGpuModeServiceProtocol.ServiceUserArgument} {userSid}";
         var current = read();
-        if (current?.Matches(command, ServiceSddl) == true) return true;
+        if (current?.Matches(command, ServiceSddl) == true)
+        {
+            if (mayChange) RemoveLegacy(run);
+            return true;
+        }
         if (!mayChange) return false;
         if (current is null)
         {
             var created = run(["create", DedicatedGpuModeServiceProtocol.ServiceName, "binPath=", command,
                 "type=", "own", "start=", "demand", "obj=", "LocalSystem",
-                "DisplayName=", "OpenSynapse GPU Mode", "error=", "normal"]);
+                "DisplayName=", "OpenSynapse Service", "error=", "normal"]);
             if (created.ExitCode is not (0 or ServiceAlreadyExists)) return false;
             current = read();
             if (current is null) return false;
@@ -102,33 +106,55 @@ public static class DedicatedGpuModeServiceInstaller
         if (!current.MatchesDacl(ServiceSddl) &&
             run(["sdset", DedicatedGpuModeServiceProtocol.ServiceName, ServiceSddl]).ExitCode != 0) return false;
         if (run(["description", DedicatedGpuModeServiceProtocol.ServiceName,
-            "Provides fixed GPU/CPU controls, the OpenSynapse macro agent, and the Chroma broker."]).ExitCode != 0) return false;
-        return read()?.Matches(command, ServiceSddl) == true;
+            "Provides OpenSynapse privileged features: GPU and CPU controls, the macro agent, and the Chroma broker."]).ExitCode != 0) return false;
+        if (read()?.Matches(command, ServiceSddl) != true) return false;
+        RemoveLegacy(run);
+        return true;
     }
 
-    public static bool Stop()
+    public static bool Stop() =>
+        StopService(DedicatedGpuModeServiceProtocol.ServiceName) &
+        StopService(DedicatedGpuModeServiceProtocol.LegacyServiceName);
+
+    private static bool StopService(string name)
     {
+        ServiceController controller;
         try
         {
-            using var controller = new ServiceController(
-                DedicatedGpuModeServiceProtocol.ServiceName);
+            controller = new ServiceController(name);
             controller.Refresh();
-            if (controller.Status == ServiceControllerStatus.Stopped)
-            {
-                return true;
-            }
-
-            controller.Stop();
-            controller.WaitForStatus(
-                ServiceControllerStatus.Stopped,
-                TimeSpan.FromSeconds(10));
+        }
+        catch (InvalidOperationException)
+        {
+            // The service is not installed; this name has nothing to stop.
             return true;
         }
-        catch (Exception exception) when (
-            exception is InvalidOperationException or Win32Exception or
-                System.ServiceProcess.TimeoutException or ObjectDisposedException)
+        catch (Exception exception) when (exception is Win32Exception or ObjectDisposedException)
         {
             return false;
+        }
+
+        using (controller)
+        {
+            try
+            {
+                if (controller.Status == ServiceControllerStatus.Stopped)
+                {
+                    return true;
+                }
+
+                controller.Stop();
+                controller.WaitForStatus(
+                    ServiceControllerStatus.Stopped,
+                    TimeSpan.FromSeconds(10));
+                return true;
+            }
+            catch (Exception exception) when (
+                exception is InvalidOperationException or Win32Exception or
+                    System.ServiceProcess.TimeoutException or ObjectDisposedException)
+            {
+                return false;
+            }
         }
     }
 
@@ -140,7 +166,10 @@ public static class DedicatedGpuModeServiceInstaller
             var result = RunSc(
                 "delete",
                 DedicatedGpuModeServiceProtocol.ServiceName);
-            return result.ExitCode == 0 || result.ExitCode == ServiceDoesNotExist;
+            var legacy = RunSc(
+                "delete",
+                DedicatedGpuModeServiceProtocol.LegacyServiceName);
+            return IsRemoved(result) && IsRemoved(legacy);
         }
         catch (Exception exception) when (
             exception is Win32Exception or InvalidOperationException or IOException)
@@ -148,6 +177,17 @@ public static class DedicatedGpuModeServiceInstaller
             return false;
         }
     }
+
+    private static void RemoveLegacy(Func<string[], ScResult> run)
+    {
+        // Delete the pre-rename service only after the new one is in place. Both
+        // exit codes are ignored: 1060/1062 mean it was never installed or already stopped.
+        _ = run(["stop", DedicatedGpuModeServiceProtocol.LegacyServiceName]);
+        _ = run(["delete", DedicatedGpuModeServiceProtocol.LegacyServiceName]);
+    }
+
+    private static bool IsRemoved(ScResult result) =>
+        result.ExitCode is 0 or ServiceDoesNotExist;
 
     private static ScResult RunSc(params string[] arguments)
     {

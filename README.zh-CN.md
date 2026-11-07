@@ -50,7 +50,7 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 
 ### Chroma SDK broker
 
-`OpenSynapse.ChromaBroker` 读取官方 Chroma SDK 4.x 的共享内存协议，解码键盘、鼠标、耳机、鼠标垫、键区和 ChromaLink 的灯效帧。它由安装时注册的 `OpenSynapseGpuMode` 服务以 LocalSystem 启动，不需要每次启动都弹 UAC。用户只需要把雷蛇官方的 `RzChromaSDK64.dll` 放到 `C:\Windows\System32`，设置页提供已验证文件的下载链接。雷云自己的 Chroma 服务持有仲裁 mutex 时，broker 会主动让出，游戏灯光继续由雷云接管。原来的自研 shim 已归档到 `archive/OpenSynapse.ChromaSdk.Shim`，不再随包发布或启动。
+`OpenSynapse.ChromaBroker` 读取官方 Chroma SDK 4.x 的共享内存协议，解码键盘、鼠标、耳机、鼠标垫、键区和 ChromaLink 的灯效帧。它由安装时注册的 `OpenSynapseService` 服务以 LocalSystem 启动，不需要每次启动都弹 UAC。用户只需要把雷蛇官方的 `RzChromaSDK64.dll` 放到 `C:\Windows\System32`，设置页提供已验证文件的下载链接。雷云自己的 Chroma 服务持有仲裁 mutex 时，broker 会主动让出，游戏灯光继续由雷云接管。原来的自研 shim 已归档到 `archive/OpenSynapse.ChromaSdk.Shim`，不再随包发布或启动。
 
 ## 界面预览
 
