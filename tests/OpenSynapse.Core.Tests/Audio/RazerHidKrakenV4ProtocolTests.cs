@@ -6,30 +6,22 @@ namespace OpenSynapse.Core.Tests;
 public sealed class RazerHidKrakenV4ProtocolTests
 {
     [Fact]
-    public void StaticColorSetsTheEffectThenWritesADirectFrame()
+    public void StaticColorCarriesTheColorInTheEffectCommand()
     {
-        var reports = RazerHidKrakenV4Protocol.CreateStatic(new RazerHidColor(0x11, 0x22, 0x33));
-        Assert.Equal(2, reports.Count);
-        Assert.Equal([0xC0, 0x00, 0x01, 0x01], reports[0][10..14]);
-
-        var frame = reports[1];
-        Assert.Equal(RazerHidKrakenV4Protocol.ReportLength, frame.Length);
-        Assert.Equal(0x02, frame[0]);
-        Assert.Equal(0x60, frame[2]);
-        Assert.Equal(0x21, frame[6]);
-        Assert.Equal(0x0F, frame[7]);
-        Assert.Equal(0x03, frame[8]);
-        Assert.Equal(0x00, frame[9]);
-        Assert.Equal([0x00, 0x00, 0x00, 0x00, 0x08], frame[10..15]);
-
-        for (var led = 0; led < RazerHidKrakenV4Protocol.LedCount; led++)
-        {
-            Assert.Equal([0x11, 0x22, 0x33], frame[(15 + (led * 3))..(18 + (led * 3))]);
-        }
+        var report = Assert.Single(RazerHidKrakenV4Protocol.CreateStatic(
+            new RazerHidColor(0x11, 0x22, 0x33)));
+        Assert.Equal(RazerHidKrakenV4Protocol.ReportLength, report.Length);
+        Assert.Equal(0x02, report[0]);
+        Assert.Equal(0x60, report[2]);
+        Assert.Equal(0x08, report[6]);
+        Assert.Equal(0x00, report[7]);
+        Assert.Equal(0x00, report[8]);
+        Assert.Equal(0x00, report[9]);
+        Assert.Equal([0xC0, 0x00, 0x04, 0x01, 0x11, 0x22, 0x33], report[10..17]);
     }
 
     [Fact]
-    public void GeneralCommandsCarryTheChecksumAndCustomFramesLeaveItZero()
+    public void GeneralCommandsCarryTheChecksum()
     {
         var staticReports = RazerHidKrakenV4Protocol.CreateStatic(new RazerHidColor(0x11, 0x22, 0x33));
         foreach (var report in new[]
@@ -47,8 +39,6 @@ public sealed class RazerHidKrakenV4ProtocolTests
 
             Assert.Equal(expected, report[RazerHidKrakenV4Protocol.ReportLength - 2]);
         }
-
-        Assert.Equal(0, staticReports[1][RazerHidKrakenV4Protocol.ReportLength - 2]);
     }
 
     [Fact]
@@ -86,28 +76,22 @@ public sealed class RazerHidKrakenV4ProtocolTests
     [Fact]
     public void IntensityScalesTheColor()
     {
-        var frame = RazerHidKrakenV4Protocol.CreateStatic(
-            new RazerHidColor(200, 100, 50), 128)[1];
-        Assert.Equal(100, frame[15]);
-        Assert.Equal(50, frame[16]);
-        Assert.Equal(25, frame[17]);
+        var report = Assert.Single(RazerHidKrakenV4Protocol.CreateStatic(
+            new RazerHidColor(200, 100, 50), 128));
+        Assert.Equal(100, report[14]);
+        Assert.Equal(50, report[15]);
+        Assert.Equal(25, report[16]);
     }
 
     [Fact]
-    public void TheFramesMatchTheRazerBundleByteForByte()
+    public void TheCommandsMatchTheRazerBundleByteForByte()
     {
-        // Reference frames built from the "Billie" headset bundle. The static
-        // path first sends C0 00 01 01, then the 0F:03 frame with a
-        // [0,0,row-1,0,col-1] header. The bundle counts the trailing checksum
-        // slot in data_size, so the frame is 5 + 27 + 1 = 0x21 bytes.
-        var staticReports = RazerHidKrakenV4Protocol.CreateStatic(
-            new RazerHidColor(0x11, 0x22, 0x33));
+        // Reference commands built from the "Billie" headset bundle. Static
+        // carries the colour in C0 00 04; off and wave only carry the effect id.
         Assert.Equal(
-            "02006000000005000000C0000101000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000A700",
-            Convert.ToHexString(staticReports[0]));
-        Assert.Equal(
-            "020060000000210F0300000000000811223311223311223311223311223311223311223311223311223300000000000000000000000000000000000000000000",
-            Convert.ToHexString(staticReports[1]));
+            "02006000000008000000C0000401112233000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000AF00",
+            Convert.ToHexString(Assert.Single(RazerHidKrakenV4Protocol.CreateStatic(
+                new RazerHidColor(0x11, 0x22, 0x33)))));
 
         Assert.Equal(
             "02006000000004000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006400",
@@ -127,11 +111,10 @@ public sealed class RazerHidKrakenV4ProtocolTests
     }
 
     [Fact]
-    public void TheStaticEffectExpectsAReplyAndTheFrameDoesNot()
+    public void TheStaticEffectExpectsAReply()
     {
         var reports = RazerHidKrakenV4Protocol.CreateStatic(new RazerHidColor(1, 2, 3));
         Assert.True(RazerHidKrakenV4Protocol.ExpectsResponse(reports[0]));
-        Assert.False(RazerHidKrakenV4Protocol.ExpectsResponse(reports[1]));
     }
 
     [Fact]
@@ -150,12 +133,12 @@ public sealed class RazerHidKrakenV4ProtocolTests
     }
 
     [Fact]
-    public void DongleFramesUseTheWirelessRoutingFlag()
+    public void DongleCommandsUseTheWirelessRoutingFlag()
     {
-        var report = RazerHidKrakenV4Protocol.CreateStatic(
-            new RazerHidColor(0x11, 0x22, 0x33), isDongle: true)[1];
+        var report = Assert.Single(RazerHidKrakenV4Protocol.CreateStatic(
+            new RazerHidColor(0x11, 0x22, 0x33), isDongle: true));
         Assert.Equal(0x80, report[9]);
-        Assert.Equal([0x00, 0x00, 0x00, 0x00, 0x08], report[10..15]);
+        Assert.Equal([0xC0, 0x00, 0x04, 0x01, 0x11, 0x22, 0x33], report[10..17]);
 
         var connect = RazerHidKrakenV4Protocol.CreateConnect(isDongle: true);
         Assert.Equal(0x80, connect[9]);
