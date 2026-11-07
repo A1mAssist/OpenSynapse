@@ -192,9 +192,6 @@ public sealed partial class DevicesPage : UserControl
         }
     }
 
-    private async void RazerHidKrakenDownloadThxClick(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidKraken?.InstallThxNativeAsync(Lifetime) ?? Task.CompletedTask);
-
     private RazerHidDeviceViewModel? SelectedRazerHidDevice => ViewModel.RazerHid.SelectedDevice;
     private RazerHidKrakenViewModel? SelectedRazerHidKraken => ViewModel.RazerHid.SelectedKraken;
 

@@ -328,12 +328,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             _ => string.Empty,
         };
 
-    public Visibility ThxDownloadVisibility =>
-        _thxStatus.Availability == ThxHeadsetAvailability.NativeMissing ||
-        _thxStatus.ErrorCode is "ThxNativeMissing"
-            ? Visibility.Visible
-            : Visibility.Collapsed;
-
     public Visibility ThxControlsVisibility =>
         _thxStatus.Availability == ThxHeadsetAvailability.Available && _thxState is not null
             ? Visibility.Visible
@@ -342,9 +336,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     /// <summary>Synapse 3 baseline applies only to the two affected Kraken models.</summary>
     public Visibility ThxS3BaselineVisibility =>
         SupportsS3Baseline(_connection.ProductId) ? Visibility.Visible : Visibility.Collapsed;
-
-    public bool CanDownloadThxComponent =>
-        !IsBusy && _thxStatus.Availability == ThxHeadsetAvailability.NativeMissing;
 
     public bool CanApplyThx => !IsBusy && _thxState is not null &&
         _thxStatus.Availability == ThxHeadsetAvailability.Available;
@@ -741,7 +732,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             if (!SetField(ref _isBusy, value)) return;
             OnPropertyChanged(nameof(CanEdit));
             OnPropertyChanged(nameof(CanInstallThx));
-            OnPropertyChanged(nameof(CanDownloadThxComponent));
             OnPropertyChanged(nameof(CanApplyThx));
         }
     }
@@ -1014,10 +1004,8 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     {
         OnPropertyChanged(nameof(ThxStatusText));
         OnPropertyChanged(nameof(ThxInstallerVisibility));
-        OnPropertyChanged(nameof(ThxDownloadVisibility));
         OnPropertyChanged(nameof(ThxControlsVisibility));
         OnPropertyChanged(nameof(CanInstallThx));
-        OnPropertyChanged(nameof(CanDownloadThxComponent));
         OnPropertyChanged(nameof(CanApplyThx));
         OnPropertyChanged(nameof(ThxPresetOptions));
         OnPropertyChanged(nameof(ThxBandsVisibility));

@@ -95,7 +95,6 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(CanEdit));
                 OnPropertyChanged(nameof(CanApplyEqualizer));
                 OnPropertyChanged(nameof(CanResetEqualizer));
-                OnPropertyChanged(nameof(CanDownloadComponent));
                 OnPropertyChanged(nameof(CanInstallComponents));
             }
         }
@@ -156,11 +155,11 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
         _ when IsNativeMissingError => AppStrings.Text("ThxHintNativeMissing"),
         _ => AppStrings.Text("ThxHintGeneric"),
     };
-    public Visibility DownloadVisibility => IsNativeMissingError
-        ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility InstallVisibility => _errorCode == "ThxServiceMissing" && CanInstallComponents
-        ? Visibility.Visible : Visibility.Collapsed;
-    public bool CanDownloadComponent => !_busy && _controller is not null && IsNativeMissingError;
+    public Visibility InstallVisibility =>
+        (_errorCode == "ThxServiceMissing" || IsNativeMissingError) &&
+        _controller?.CanInstallComponents == true
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     public bool CanInstallComponents => !_busy && _controller?.CanInstallComponents == true;
     private bool IsNativeMissingError => _errorCode == "ThxNativeMissing" ||
         _errorCode?.StartsWith("ThxDownload", StringComparison.Ordinal) == true;
@@ -341,20 +340,6 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
         StatusText = AppStrings.Text("ThxStatusReading");
         var endpoint = SelectedEndpoint.Endpoint;
         await ExecuteAsync(() => _controller.ReadAsync(endpoint));
-        _loaded = true;
-    }
-
-    public async Task InstallNativeComponentAsync()
-    {
-        if (_controller is not { } controller || !CanDownloadComponent)
-        {
-            return;
-        }
-
-        StatusText = AppStrings.Text("ThxStatusDownloading");
-        await ExecuteAsync(
-            () => controller.InstallNativeComponentAsync(SelectedEndpoint.Endpoint),
-            "ThxDownloadFailed");
         _loaded = true;
     }
 
