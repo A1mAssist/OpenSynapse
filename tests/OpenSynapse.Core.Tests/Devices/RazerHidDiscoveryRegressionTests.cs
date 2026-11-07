@@ -188,6 +188,20 @@ public sealed class RazerHidDiscoveryRegressionTests
     }
 
     [Fact]
+    public void DualLinkKeyboardPairingAndScanUseTheLowBank()
+    {
+        var sequence = -1;
+        const string path = "HID#VID_1532&PID_02C9#keyboard";
+
+        Assert.Equal(
+            (byte)0x00,
+            RazerFeatureTransport.PrepareTransactionId(path, 0x1F, 0x00, 0x41, ref sequence));
+        Assert.Equal(
+            (byte)0x01,
+            RazerFeatureTransport.PrepareTransactionId(path, 0x1F, 0x00, 0x46, ref sequence));
+    }
+
+    [Fact]
     public void DockLinkerOnlySetsTheHighBitForLinkerCommands()
     {
         const string path = "HID#VID_1532&PID_00A4#dock";
