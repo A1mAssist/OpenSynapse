@@ -243,3 +243,11 @@ public static class ChromaSdkPipe
         if (offset != buffer.Length) throw new EndOfStreamException();
     }
 }
+
+public static class ChromaBrokerProtocol
+{
+    public const string PipeName = "OpenSynapseChromaBroker";
+
+    public static string StopEventName(int parentProcessId) =>
+        $@"Local\OpenSynapseChromaBrokerStop-{parentProcessId}";
+}

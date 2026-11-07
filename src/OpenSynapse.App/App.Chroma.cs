@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Sockets;
 using OpenSynapse.App.Runtime;
 using OpenSynapse.App.ViewModels;
@@ -9,6 +10,8 @@ public partial class App
 {
     private ChromaRestHost? _chromaRestHost;
     private ChromaSdkBridgeHost? _chromaSdkBridge;
+    private ChromaBrokerHost? _chromaBrokerHost;
+    private Process? _chromaBrokerProcess;
     private ChromaDeviceRouter? _chromaDeviceRouter;
     internal bool IsChromaRestRunning => _chromaRestHost?.IsRunning == true;
 
@@ -42,6 +45,7 @@ public partial class App
     {
         _chromaDeviceRouter ??= CreateChromaDeviceRouter(viewModel);
         StartChromaSdkBridge(viewModel);
+        StartChromaBroker(viewModel);
         StartChromaRestHost(viewModel);
     }
 
@@ -130,6 +134,55 @@ public partial class App
         }
     }
 
+    private void StartChromaBroker(MainViewModel viewModel)
+    {
+        if (!_behaviorSettings.ExperimentalChromaRestEnabled || _chromaBrokerHost is not null)
+        {
+            return;
+        }
+        if (!ChromaBrokerLauncher.IsAvailable)
+        {
+            _diagnosticLog.TryWrite("chroma-broker", "broker executable is not packaged; skipped.");
+            return;
+        }
+        if (!ChromaBrokerLauncher.IsOfficialDllInstalled)
+        {
+            _diagnosticLog.TryWrite("chroma-broker", "official RzChromaSDK64.dll is not installed; broker skipped.");
+            return;
+        }
+
+        ChromaBrokerHost? host = null;
+        try
+        {
+            var applier = new ChromaSdkEffectApplier(viewModel, _bladeLightingController, _chromaDeviceRouter);
+            host = new ChromaBrokerHost(
+                applier.ApplyAsync,
+                () => Volatile.Read(ref _closing) != 0 || !_behaviorSettings.RestoreLightingAfterChromaSession
+                    ? Task.CompletedTask
+                    : RestoreChromaAsync(viewModel),
+                () => _behaviorSettings.RestoreLightingAfterChromaSession,
+                log: message => _diagnosticLog.TryWrite("chroma-broker", message));
+            host.StartAsync();
+            _chromaBrokerHost = host;
+            _chromaBrokerProcess = ChromaBrokerLauncher.Start();
+            _diagnosticLog.TryWrite(
+                "chroma-broker",
+                _chromaBrokerProcess is null
+                    ? "listening; broker launch was declined."
+                    : "listening; official-DLL broker started.");
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            _chromaBrokerHost = null;
+            if (host is not null)
+            {
+                _ = host.DisposeAsync();
+            }
+            _diagnosticLog.TryWrite("chroma-broker", $"unavailable: {exception.Message}");
+        }
+    }
+
     private async Task StartChromaRestHostAsync(ChromaRestHost host)
     {
         // A restart can briefly leave the previous instance holding the fixed port.
@@ -192,5 +245,20 @@ public partial class App
                 _diagnosticLog.TryWrite("chroma-sdk", $"stop failed: {exception}");
             }
         }
+
+        var brokerHost = Interlocked.Exchange(ref _chromaBrokerHost, null);
+        if (brokerHost is not null)
+        {
+            try
+            {
+                await brokerHost.DisposeAsync().ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                _diagnosticLog.TryWrite("chroma-broker", $"stop failed: {exception}");
+            }
+        }
+
+        ChromaBrokerLauncher.Stop(Interlocked.Exchange(ref _chromaBrokerProcess, null));
     }
 }
