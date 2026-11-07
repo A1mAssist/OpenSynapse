@@ -12,9 +12,10 @@ namespace OpenSynapse.Windows.Devices;
 public sealed class BladeMatrixFramePump : IAsyncDisposable
 {
     private static readonly TimeSpan DeviceWait = TimeSpan.FromMilliseconds(1);
-    // The EC drops a custom frame after its idle window. A static Studio frame
-    // therefore still needs a periodic re-latch even when its pixels do not change.
-    private static readonly TimeSpan IdenticalFrameKeepAlive = TimeSpan.FromSeconds(1);
+    // The EC drops a custom frame after its short idle window. The official
+    // lighting engine re-sends every rendered frame, including an unchanged
+    // static frame, so do not suppress identical frames by default.
+    private static readonly TimeSpan IdenticalFrameKeepAlive = TimeSpan.Zero;
 
     private readonly IRazerFeatureTransport _transport;
     private readonly string _devicePath;
@@ -65,7 +66,7 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         _matrixRows = matrixRows;
         _matrixColumns = matrixColumns;
         _identicalFrameKeepAlive = identicalFrameKeepAlive ?? IdenticalFrameKeepAlive;
-        if (_identicalFrameKeepAlive <= TimeSpan.Zero)
+        if (_identicalFrameKeepAlive < TimeSpan.Zero)
         {
             throw new ArgumentOutOfRangeException(nameof(identicalFrameKeepAlive));
         }
@@ -152,7 +153,8 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
                     break;
                 }
 
-                if (_lastSentFrame is not null &&
+                if (_identicalFrameKeepAlive > TimeSpan.Zero &&
+                    _lastSentFrame is not null &&
                     _lastSentFrame.AsSpan().SequenceEqual(frame) &&
                     Stopwatch.GetElapsedTime(_lastFrameSentAt) < _identicalFrameKeepAlive)
                 {

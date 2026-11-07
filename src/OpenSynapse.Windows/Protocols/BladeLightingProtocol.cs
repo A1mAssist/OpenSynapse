@@ -9,8 +9,9 @@ public enum BladeWaveDirection : byte
 public readonly record struct RazerRgb(byte Red, byte Green, byte Blue);
 
 /// <summary>
-/// Source-backed request builders for the Blade 16 2025 standard matrix protocol.
-/// Sending remains gated until the current effect can be restored deterministically.
+/// Source-backed request builders for the Blade matrix protocol.
+/// The 7 x 16 logical canvas and 6 x 17 device frame in this file belong to the
+/// 2025-family layout; 2024 16-column panels use <see cref="BladeLightingLayout16"/>.
 /// </summary>
 public static class BladeLightingProtocol
 {
