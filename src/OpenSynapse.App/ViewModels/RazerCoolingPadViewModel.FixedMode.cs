@@ -103,6 +103,8 @@ public sealed partial class RazerCoolingPadViewModel
         }
 
         OnPropertyChanged(nameof(FixedModeVisibility));
+        OnPropertyChanged(nameof(ProtocolAvailableCount));
+        OnPropertyChanged(nameof(CapabilityText));
         OnPropertyChanged(nameof(SelectedFixedModeIndex));
         OnPropertyChanged(nameof(FixedModeStatusText));
         OnPropertyChanged(nameof(CanApplyFixedMode));

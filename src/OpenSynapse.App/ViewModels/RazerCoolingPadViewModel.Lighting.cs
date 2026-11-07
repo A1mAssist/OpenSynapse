@@ -222,6 +222,8 @@ public sealed partial class RazerCoolingPadViewModel
                 LightingStatusText = string.Empty;
                 OnPropertyChanged(nameof(LightingVisibility));
                 OnPropertyChanged(nameof(CanApplyLighting));
+                OnPropertyChanged(nameof(ProtocolAvailableCount));
+                OnPropertyChanged(nameof(CapabilityText));
                 return;
             }
 
@@ -234,12 +236,16 @@ public sealed partial class RazerCoolingPadViewModel
             LightingStatusText = exception.Message;
             OnPropertyChanged(nameof(LightingVisibility));
             OnPropertyChanged(nameof(CanApplyLighting));
+            OnPropertyChanged(nameof(ProtocolAvailableCount));
+            OnPropertyChanged(nameof(CapabilityText));
         }
     }
 
     private void ApplyLightingState(RazerCoolingPadLightingState state)
     {
         _hasLighting = true;
+        OnPropertyChanged(nameof(ProtocolAvailableCount));
+        OnPropertyChanged(nameof(CapabilityText));
         _lightingEffects = state.EffectIds
             .Where(id => id is 1 or 2 or 3 or 4 or 7 or 8 or 11 or 12 or 13 or 19)
             .ToArray();

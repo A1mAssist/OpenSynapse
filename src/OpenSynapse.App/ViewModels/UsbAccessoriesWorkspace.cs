@@ -66,7 +66,15 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
         }
 
         HeadsetAudioDevices.Clear();
-        HeadsetAudioDevices.Add(new RazerHeadsetAudioDeviceRowViewModel(connection));
+        var row = new RazerHeadsetAudioDeviceRowViewModel(connection);
+        HeadsetAudioDevices.Add(row);
+        var probe = new RazerHeadsetAudioViewModel(
+            connection,
+            message => _diagnosticLog.TryWrite("headset-audio", message),
+            _openRazer.CreateKrakenLighting(connection.ProductId));
+        await probe.LoadAsync(cancellationToken);
+        row.SetCapabilityText(probe.CapabilityText);
+        await probe.DisposeAsync();
         if (_selectedHeadsetAudioDevice is null ||
             !StringComparer.OrdinalIgnoreCase.Equals(
                 _selectedHeadsetAudioDevice.Connection.DevicePath, connection.DevicePath))
@@ -230,7 +238,12 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
         }
 
         GamepadDevices.Clear();
-        GamepadDevices.Add(new RazerGamepadDeviceRowViewModel(connection));
+        var row = new RazerGamepadDeviceRowViewModel(connection);
+        GamepadDevices.Add(row);
+        var probe = new RazerGamepadViewModel(
+            connection, message => _diagnosticLog.TryWrite("gamepad", message));
+        await probe.LoadAsync(cancellationToken);
+        row.SetCapabilityText(probe.CapabilityText);
         if (_selectedGamepadDevice is null ||
             !StringComparer.OrdinalIgnoreCase.Equals(
                 _selectedGamepadDevice.Connection.DevicePath, connection.DevicePath))
