@@ -6,6 +6,23 @@ This document lists each concrete device entry that OpenSynapse can currently ex
 
 The device list is a manifest capability inventory. At runtime, OpenSynapse still requires the device endpoint to resolve and the transaction to be accepted before showing controls. A rejected or unavailable transaction hides that control. The 91-byte HID paths below are OpenRazer-derived protocol definitions. The separate OpenSynapse `RzChromaSDK64.dll` shim implements the Chroma SDK 4.0.1 ABI; see [Chroma SDK shim](CHROMA_SDK_SHIM.md).
 
+## Channel routing
+
+`ChromaDeviceCatalog` copies Razer's Chroma SDK Devices 4.1.0 `Devices.xml` (327 PIDs). When a device connects, that manifest decides which channel it joins:
+
+| Channel | Devices | Frame handling |
+|---|---|---|
+| keyboard | Keyboards and Blade laptops | The device's own matrix when it accepts frames; otherwise one static colour |
+| mouse | Mice | The device's own matrix when it accepts frames; otherwise one static colour |
+| headset | Kraken headsets | Static colour |
+| mousepad | Mouse mats plus the stands and accessories Razer maps to `mousemat` | The device's own matrix when it accepts frames; otherwise one static colour |
+| keypad | Orbweaver and Tartarus V2/Pro | The keypad matrix resized to the device |
+| chromalink | Aether lamps, docks, stands, ARGB controllers and Chroma modules | The frame's average colour |
+
+A connected device absent from that manifest still keeps its own lighting page, but Chroma clients do not address it.
+
+A manifest PID is admitted through the class 0x10 whole-device static path when Windows enumerates its 91-byte vendor feature interface and no richer native page owns it. That is the fallback for older mice, headsets and audio devices. A device that exposes no enumerable endpoint still needs captured protocol evidence before it can be added.
+
 ## Blade Chroma REST
 
 | Model | VID:PID | Matrix | Transport | Scope |

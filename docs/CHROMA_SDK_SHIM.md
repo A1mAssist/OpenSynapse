@@ -29,13 +29,13 @@
   - `D:\Workspaces\OpenSynapse-chroma\src\OpenSynapse.ChromaSdk.Shim\ChromaPipeClient.cs`
   - `D:\Workspaces\OpenSynapse-chroma\src\OpenSynapse.Windows\Lighting\ChromaSdkBridgeHost.cs`
   - `D:\Workspaces\OpenSynapse-chroma\src\OpenSynapse.App\Runtime\ChromaSdkEffectApplier.cs`
-- 应用启动路径在启用实验性 Chroma 时会启动 `ChromaSdkBridgeHost`；applier 支持键盘、鼠标、耳机、鼠标垫，键区/Chroma Link 暂不广告。
+- 应用启动路径在启用实验性 Chroma 时会启动 `ChromaSdkBridgeHost`；applier 支持键盘、鼠标、耳机、鼠标垫、键区和 Chroma Link 全部六类，host 按会话声明的任一 Chroma 通道接受效果。
 
 ### 未验证
 
 - 没有用真实 Chroma 游戏加载过发布版 shim DLL；没有验证游戏是否检查签名、是否受反作弊影响。
-- 没有在真实 Razer 键盘/鼠标/耳机/鼠标垫/键区/Chroma Link 上验证最终灯光。
-- 鼠标、耳机、鼠标垫已接到 RazerHid 矩阵输出，但没有真机验证；键区/Chroma Link 尚未接通。
+- 没有在真实 Razer 键盘/鼠标/耳机/鼠标垫/键区/Chroma Link 上验证最终灯光；六类通道目前只有单元和管道层证据。
+- 矩阵设备走 RazerHid 或键盘矩阵输出，单区设备走 class 0x10 或 Kraken 静态色；键区/Chroma Link 已接通，但没有真机验证。
 - 通用 `CreateEffect` 和 `QueryDevice` 没有实现；官方 per-device GUID 映射未验证。
 - 弃用/复杂效果（Wave、Spectrum、Breathing、Blinking、Reactive 等）没有硬件行为验证。
 - 本次已执行 `dotnet build OpenSynapse.slnx -c Debug`（0 error，0 warning；SDK 10.0.302 自带的 ILCompiler 10.0.10 有 NU1903 构建期 advisory，项目按 SDK 约束独立升级会破坏 NativeAOT，因此只在 shim 项目中抑制并记录）和 `dotnet test --filter ChromaSdk`（10 passed）。Release AOT 已发布，并用独立探针加载发布 DLL 走通 Init/Create/Set/UnInit 与静态颜色管道传输；这些仍不能替代真机或真实游戏证据。
@@ -288,7 +288,7 @@ OpenSynapse shim 当前校验：
 - `QueryDevice`：返回 50。它需要同一套 GUID 映射和 `DEVICE_INFO_TYPE` 语义；当前只会在非空 `DeviceInfo` 时顺便刷新管道支持的设备掩码，不写设备信息。
 - 弃用/复杂效果：Wave、Spectrum、Breathing、Blinking、Reactive、Starlight 等返回 50。没有硬件报文/真机证据，不能凭 Synapse 2 的布局猜测。
 - `RegisterEventNotification` 只做最小实现：保存 HWND 并投递 `WM_CHROMA_EVENT`，不提供完整的设备事件流。
-- Keypad/ChromaLink 即使 `Create*` 成功，host 也不会广告这些类别，bridge 会跳过帧；shim 仍返回 0（官方在无设备时也返回 0）。Mouse/Headset/Mousepad 会在存在矩阵设备时广告并应用。
+- Keypad/ChromaLink 现在和其他通道一样会广告并按 PID 路由；只有存在可达目标时才真正写入，否则 shim 仍返回 0（官方在无设备时也返回 0）。Mouse/Headset/Mousepad 同样按设备实际传输能力应用。
 
 ## 8. 部署
 
@@ -322,7 +322,7 @@ OpenSynapse shim 当前校验：
 ## 10. 仍需完成
 
 1. **真实游戏 DLL 加载测试**：用一款 Chroma 游戏分别测试 app-local 和 SDK bin 替换，确认 15 个导出解析、Init/InitSDK、实际灯光、退出恢复；记录游戏是否检查签名或受反作弊影响。
-2. **设备类别扩展**：鼠标/耳机/鼠标垫已接通 RazerHid 矩阵输出，待真机验证；Keypad/Chroma Link 还没有对应的 OpenSynapse 设备类别/几何映射。
+2. **设备类别扩展**：六类通道都已接通，待真机验证。官方清单里没有 OpenSynapse 端点的旧设备仍不会亮；不能靠猜协议补，需要先取得可验证的报文。
 3. **通用 CreateEffect/QueryDevice**：补齐官方 per-device GUID 表和 `DEVICE_INFO_TYPE` 语义；在此之前保持 50。
 4. **弃用效果硬件捕获**：为 Wave、Spectrum、Breathing、Blinking、Reactive 等抓取真实设备报文，确认是否值得实现；不要用 Synapse 2 布局猜测。
 5. **effect 数量上限/清理策略**：当前 shim 的 effect 字典没有上限，需要评估长时间运行的内存风险。

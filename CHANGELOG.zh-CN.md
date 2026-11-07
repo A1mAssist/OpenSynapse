@@ -4,6 +4,16 @@
 
 这里记录 OpenSynapse 所有值得用户关注的变更。
 
+## [Unreleased]
+
+### 新增
+
+- Chroma 现在覆盖雷云自己的 Chroma 设备清单里的全部通道（327 个 PID）。REST API 支持 `/keyboard`、`/mouse`、`/headset`、`/mousepad`、`/keypad` 和 `/chromalink`，会话可以从这些通道里任选，不再强制声明 keyboard。
+- Chroma SDK 兼容层接上了 ChromaLink 和键区灯效。每台设备按雷云分配给它的 PID 通道接收灯光：矩阵设备收到缩放后的帧，单区设备、Aether 灯具、扩展坞、支架和 ARGB 控制器收到整帧平均色，Kraken 耳机写入静态色。
+- 只在 protocol 25 键盘页出现的型号（Pro Type、Pro Type Ultra、Pikachu、Cynosapro、BlackWidow X Tenkeyless、Huntsman Essential、Tartarus V2 Pro）现在通过整机效果通道接受 Chroma 帧。
+- 每台单区设备在第一帧前会保存原有效果、颜色和亮度，Chroma 会话结束后恢复。
+- Chroma 清单里的旧鼠标、旧耳机和音频设备只要暴露 91-byte 控制接口，就会自动走 class 0x10 整机静态色兜底，不再需要逐个手工加白名单。
+
 ## [1.6.0] - 2026-10-26
 
 这一版把 OpenSynapse 从「能认出设备」推进到「能完整控制设备」。

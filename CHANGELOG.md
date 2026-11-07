@@ -4,6 +4,16 @@ English · [Chinese](CHANGELOG.zh-CN.md)
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [Unreleased]
+
+### Added
+
+- Chroma now covers every channel in Razer's own Chroma device manifest (327 PIDs). The REST API accepts effects on `/keyboard`, `/mouse`, `/headset`, `/mousepad`, `/keypad` and `/chromalink`, and a session may declare any of those channels instead of requiring `keyboard`.
+- The Chroma SDK shim now routes ChromaLink and Keypad effects. Every connected light joins the channel Razer assigns to its PID: matrix devices receive the resized frame; single-zone devices, Aether lamps, docks, stands and ARGB controllers receive the frame's average colour; Kraken headsets receive a static colour.
+- Keyboards driven only by the protocol-25 page (Pro Type, Pro Type Ultra, Pikachu, Cynosapro, BlackWidow X Tenkeyless, Huntsman Essential, Tartarus V2 Pro) now accept Chroma frames through their whole-device effect channel.
+- The router snapshots each whole-device target before the first Chroma frame and restores its previous effect, colour and brightness when the session ends.
+- Older mice, headsets and audio devices in the Chroma manifest now fall back to the class 0x10 whole-device static path whenever their 91-byte control interface is present, instead of requiring a hand-maintained allowlist.
+
 ## [1.6.0] - 2026-10-26
 
 OpenSynapse now goes beyond recognizing devices: it controls them.

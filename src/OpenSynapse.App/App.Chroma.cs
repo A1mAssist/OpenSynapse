@@ -9,6 +9,7 @@ public partial class App
 {
     private ChromaRestHost? _chromaRestHost;
     private ChromaSdkBridgeHost? _chromaSdkBridge;
+    private ChromaDeviceRouter? _chromaDeviceRouter;
     internal bool IsChromaRestRunning => _chromaRestHost?.IsRunning == true;
 
     internal ChromaRestSnapshot GetChromaRestSnapshot() =>
@@ -39,8 +40,32 @@ public partial class App
 
     private void StartChromaHosts(MainViewModel viewModel)
     {
+        _chromaDeviceRouter ??= CreateChromaDeviceRouter(viewModel);
         StartChromaSdkBridge(viewModel);
         StartChromaRestHost(viewModel);
+    }
+
+    private ChromaDeviceRouter CreateChromaDeviceRouter(MainViewModel viewModel) =>
+        new(
+            viewModel.RazerHid.DeviceService,
+            viewModel.RazerHid.SpecialLightingService,
+            () => viewModel.RazerHid.CurrentConnections,
+            () => viewModel.Accessories.KeyboardDevices
+                .Select(row => row.Connection)
+                .ToArray(),
+            () => viewModel.Accessories.ChromaDevices
+                .Select(row => row.Connection)
+                .ToArray(),
+            () => viewModel.RazerHid.KrakenConnections,
+            message => _diagnosticLog.TryWrite("chroma", message));
+
+    private async Task RestoreChromaAsync(MainViewModel viewModel)
+    {
+        await viewModel.RestoreLightingAfterExternalAsync().ConfigureAwait(false);
+        if (_chromaDeviceRouter is not null)
+        {
+            await _chromaDeviceRouter.RestoreAsync().ConfigureAwait(false);
+        }
     }
 
     private void StartChromaSdkBridge(MainViewModel viewModel)
@@ -53,12 +78,12 @@ public partial class App
 
         try
         {
-            var applier = new ChromaSdkEffectApplier(viewModel, _bladeLightingController);
+            var applier = new ChromaSdkEffectApplier(viewModel, _bladeLightingController, _chromaDeviceRouter);
             var bridge = new ChromaSdkBridgeHost(
                 applier.ApplyAsync,
                 () => Volatile.Read(ref _closing) != 0 || !_behaviorSettings.RestoreLightingAfterChromaSession
                     ? Task.CompletedTask
-                    : viewModel.RestoreLightingAfterExternalAsync(),
+                    : RestoreChromaAsync(viewModel),
                 () => _behaviorSettings.RestoreLightingAfterChromaSession,
                 () => applier.SupportedDevices);
             bridge.StartAsync();
@@ -88,9 +113,10 @@ public partial class App
                 _bladeLightingController,
                 () => Volatile.Read(ref _closing) != 0 || !_behaviorSettings.RestoreLightingAfterChromaSession
                     ? Task.CompletedTask
-                    : viewModel.RestoreLightingAfterExternalAsync(),
+                    : RestoreChromaAsync(viewModel),
                 () => _behaviorSettings.RestoreLightingAfterChromaSession,
-                viewModel.RazerHid.ApplyChromaFrameAsync,
+                (kind, frame, rows, columns, token) =>
+                    _chromaDeviceRouter?.ApplyAsync(kind, frame, rows, columns, token) ?? Task.FromResult(false),
                 viewModel.Lighting.IsBladeChromaOverrideEnabled,
                 _behaviorSettings.ChromaBlockedSources);
             _chromaRestHost = host;
