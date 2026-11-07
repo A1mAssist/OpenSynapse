@@ -114,6 +114,7 @@
                         <TextBlock local:Localized.Uid="ChromaShimTitle" Text="游戏兼容层" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
                         <TextBlock local:Localized.Uid="ChromaShimDescription" Text="安装后游戏会加载 OpenSynapse 的 Chroma 兼容 DLL；请先启动 OpenSynapse 再开游戏。安装会备份并替换 Razer 官方的 x64 DLL，需要管理员权限。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                         <TextBlock local:Localized.Uid="ChromaShimStatus" x:Name="ChromaShimStatusText" Text="未安装" FontSize="12" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                        <HyperlinkButton local:Localized.Uid="ChromaSdkDownloadLink" Content="下载官方 Chroma SDK" NavigateUri="https://app-assets.razer.com/files/synapse/Razer_Chroma_SDK_Core_v4.1.0.10151444.exe" Padding="0" FontSize="12" />
                       </StackPanel>
                       <Button local:Localized.Uid="ChromaShimInstallButton" x:Name="ChromaShimButton" Grid.Column="1" Content="安装" Click="ChromaShimActionClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
                     </Grid>
