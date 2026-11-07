@@ -4,7 +4,7 @@
 
 映射页只做一件事：把设备实际接受的按键映射列出来，允许用户改目标动作，并在保存后回读确认。页面行来自设备返回的 button list，不来自型号白名单。
 
-- RazerHid 鼠标/键盘：`0x02:0x84` 返回至少一个非零按钮 id 时，`ProbeMiddlewareCapabilitiesAsync` 才加入 `MappingRead` / `MappingWrite`；不回答时再试 protocol 30 的 `0x08:0x80`，两者都返回非零按钮 id 才加入。命中哪一族就由哪一族负责后续读写，避免读 `0x08` 却写 `0x02`。映射 GET 也是端点探测的最后一条只读回退，避免只回答映射的固件在身份探测阶段被丢掉。
+- RazerHid 鼠标/键盘：`0x02:0x84` 返回至少一个非零按钮 id 时，`ProbeMiddlewareCapabilitiesAsync` 才加入 `MappingRead` / `MappingWrite`。映射 GET 也是端点探测的最后一条只读回退，避免只回答映射的固件在身份探测阶段被丢掉。
 - 独立键盘页（`RazerKeyboardService` 已收录的 23 个型号）：`FindAllAsync` 按物理设备枚举全部已连接键盘，每个键盘各自探测 `0x02:0x84`；不回答时再试 protocol 30 的 `0x08:0x80`，两者都返回非零按钮 id 才显示映射卡。
 - Viper 00B8：沿用现有 `viper-184` 端点，读 `0x02:0x84 / 0x02:0x8C`，写 `0x02:0x0C`，通过 `RazerViperMappingTransport` 接入同一个行模型。
 - BLE 设备：`0x08:0x80` 返回非空按钮列表时显示映射卡。
@@ -23,7 +23,7 @@ GetAssignmentAsync(buttonId, mode)
 SetAssignmentAsync(buttonId, mode, functionId, data)
 ```
 
-HID 适配器复用 `RazerHidDeviceService` 的 `02:84 / 02:8C / 02:0C`，探测只答 `08:80` 时整套走 `08:80 / 08:84 / 08:04`；独立键盘适配器复用 `RazerKeyboardService` 的同一组 middleware 命令，并在必要时使用 protocol 30 `08:80 / 08:84 / 08:04`；Viper 适配器复用 `IRazerDeviceTelemetryReader` 的 Product 184 读/写/回读路径；BLE 适配器复用 `RazerBleDeviceService` 的 `08:80 / 08:84 / 08:04`。
+HID 适配器复用 `RazerHidDeviceService` 的 `02:84 / 02:8C / 02:0C`；独立键盘适配器复用 `RazerKeyboardService` 的同一组 middleware 命令，并在必要时使用 protocol 30 `08:80 / 08:84 / 08:04`；Viper 适配器复用 `IRazerDeviceTelemetryReader` 的 Product 184 读/写/回读路径；BLE 适配器复用 `RazerBleDeviceService` 的 `08:80 / 08:84 / 08:04`。
 
 这些传输共用 `RazerHidMappingViewModel` 和行模型。动作目录通过 `IRazerMappingActionCatalog` 分开：HID/BLE 用 `RazerHidMappingActionCatalog`，Viper 用 bundle 已核实的 `RazerViperMappingActionCatalog`，独立键盘用 `RazerKeyboardMappingActionCatalog`（只把按钮名改成键位，不另造动作编码）。BLE 只保留自己的传输适配，不再维护另一套动作目录。
 

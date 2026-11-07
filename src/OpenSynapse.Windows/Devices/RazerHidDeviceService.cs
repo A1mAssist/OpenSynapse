@@ -34,18 +34,12 @@ public sealed partial class RazerHidDeviceService
     // Middleware bundles increment the transaction id per exchange; the firmware only
     // matches it against the response, so one fixed value works for a single request.
     private const byte MiddlewareTransactionId = 0x1F;
-    // Class 2 addresses the pointer key table in both assignment families.
-    private const byte MappingClassId = 0x02;
     private static readonly IReadOnlySet<RazerHidBackendCapability> MappingCapabilities =
         new HashSet<RazerHidBackendCapability>
         {
             RazerHidBackendCapability.MappingRead,
             RazerHidBackendCapability.MappingWrite,
         }.ToFrozenSet();
-    // The 0x02 and 0x08 families carry the same assignment data in different frames.
-    // The probe records which one answered so reads and writes use that same family.
-    private readonly ConcurrentDictionary<string, bool> _mappingUsesButtonAssignment =
-        new(StringComparer.OrdinalIgnoreCase);
     private static readonly IReadOnlySet<RazerHidBackendCapability> ScrollWheelCapabilities =
         new HashSet<RazerHidBackendCapability>
         {
@@ -682,24 +676,9 @@ public sealed partial class RazerHidDeviceService
 
     public async Task<IReadOnlyList<byte>> GetMappingButtonIdsAsync(
         RazerHidDeviceConnection connection,
-        CancellationToken cancellationToken = default)
-    {
-        var usesButtonAssignment = UsesButtonAssignment(connection);
-        var response = await ExecuteAsync(connection,
-            usesButtonAssignment
-                ? new RazerHidRequest("mapping.getButtonList08",
-                    RazerButtonAssignmentProtocol.CreateGetButtonListRequest(
-                        MiddlewareTransactionId, MappingClassId))
-                : RazerHidMappingProtocol.GetButtonList(),
-            cancellationToken).ConfigureAwait(false);
-        return usesButtonAssignment
-            ? RazerButtonAssignmentProtocol.ParseButtonList(response)
-            : RazerHidMappingProtocol.ParseButtonList(response);
-    }
-
-    private bool UsesButtonAssignment(RazerHidDeviceConnection connection) =>
-        connection.DevicePath is { } path &&
-        _mappingUsesButtonAssignment.TryGetValue(path, out var uses) && uses;
+        CancellationToken cancellationToken = default) =>
+        RazerHidMappingProtocol.ParseButtonList(await ExecuteAsync(connection,
+            RazerHidMappingProtocol.GetButtonList(), cancellationToken).ConfigureAwait(false));
 
     public async Task<byte> GetBrightnessAsync(
         RazerHidDeviceConnection connection,
@@ -1142,28 +1121,12 @@ public sealed partial class RazerHidDeviceService
         var isProbeDefinition =
             definition.SourceCapabilities.Count == 0 && definition.Transactions.Count == 0;
         var buttonList = RazerHidMappingProtocol.GetButtonList();
-        var usesButtonAssignment = false;
         if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
                 "mapping", buttonList.Report,
                 response => RazerHidMappingProtocol.ParseButtonList(response).Any(id => id != 0),
                 cancellationToken).ConfigureAwait(false))
         {
             result.UnionWith(MappingCapabilities);
-        }
-        else if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
-                "mapping.08",
-                RazerButtonAssignmentProtocol.CreateGetButtonListRequest(
-                    MiddlewareTransactionId, MappingClassId),
-                response => RazerButtonAssignmentProtocol.ParseButtonList(response)
-                    .Count(id => id != 0) >= 2,
-                cancellationToken).ConfigureAwait(false))
-        {
-            usesButtonAssignment = true;
-            result.UnionWith(MappingCapabilities);
-        }
-        if (result.Contains(RazerHidBackendCapability.MappingRead))
-        {
-            _mappingUsesButtonAssignment[devicePath] = usesButtonAssignment;
         }
 
         if (isProbeDefinition)
