@@ -30,6 +30,11 @@ public sealed partial class RazerFeatureTransport
             return 0xFF;
         }
         if (requested == 0xFF) return requested;
+        if (DeviceIdParser.TryParse(devicePath, out _, out var productId) &&
+            RazerKeyboardProtocol.UsesDualLinkTransaction(productId))
+        {
+            return (byte)(0x80 | NextTransactionId(ref sequence));
+        }
         if (TryGetKnownWirelessTransaction(devicePath, commandClass, commandId, out var known))
         {
             // OpenRazer overrides the catalog's generic battery transaction for these

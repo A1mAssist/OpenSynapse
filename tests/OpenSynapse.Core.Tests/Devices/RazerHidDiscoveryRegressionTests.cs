@@ -156,6 +156,37 @@ public sealed class RazerHidDiscoveryRegressionTests
             "HID#VID_1532&PID_0088#receiver", 0x3F, 0x07, 0x80, ref receiverSequence));
     }
 
+    [Theory]
+    [InlineData(0x02C9)]
+    [InlineData(0x02D2)]
+    [InlineData(0x02C2)]
+    [InlineData(0x02F5)]
+    public void DualLinkKeyboardTransactionsUseTheHighBank(ushort productId)
+    {
+        var sequence = -1;
+        var path = $"HID#VID_1532&PID_{productId:X4}#keyboard";
+
+        for (var index = 0; index < 34; index++)
+        {
+            Assert.Equal(
+                (byte)(0x80 | (index & 0x1F)),
+                RazerFeatureTransport.PrepareTransactionId(path, 0x1F, 0x00, 0x87, ref sequence));
+        }
+    }
+
+    [Theory]
+    [InlineData(0x02B4)]
+    [InlineData(0x02CC)]
+    public void OtherKeyboardLinksKeepTheLowBank(ushort productId)
+    {
+        var sequence = -1;
+        var path = $"HID#VID_1532&PID_{productId:X4}#keyboard";
+
+        Assert.Equal(
+            (byte)0x00,
+            RazerFeatureTransport.PrepareTransactionId(path, 0x1F, 0x00, 0x87, ref sequence));
+    }
+
     [Fact]
     public void DockLinkerOnlySetsTheHighBitForLinkerCommands()
     {
