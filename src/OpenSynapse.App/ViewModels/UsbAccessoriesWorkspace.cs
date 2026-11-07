@@ -150,7 +150,13 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
         KeyboardDevices.Clear();
         foreach (var connection in connections)
         {
-            KeyboardDevices.Add(new RazerKeyboardDeviceRowViewModel(connection));
+            KeyboardDevices.Add(new RazerKeyboardDeviceRowViewModel(
+                connection, message => _diagnosticLog.TryWrite("keyboard", message)));
+        }
+
+        foreach (var row in KeyboardDevices)
+        {
+            _ = row.EnsureLoadedAsync(cancellationToken);
         }
 
         _selectedKeyboardDevice = KeyboardDevices.FirstOrDefault(row =>
@@ -174,12 +180,11 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
         }
 
         _selectedKeyboardDevice = row;
-        SelectedKeyboard = new RazerKeyboardViewModel(
-            row.Connection, message => _diagnosticLog.TryWrite("keyboard", message));
+        SelectedKeyboard = row.Detail;
         SelectedKeyboard.Onboard.LocalMacroProvider =
             () => _macros.Items.Select(macro => macro.Definition).ToArray();
         SelectedKeyboard.SoftwareMacroBinder = _macros.TryBindMacroTriggerAsync;
-        await SelectedKeyboard.LoadAsync(cancellationToken);
+        await row.EnsureLoadedAsync(cancellationToken);
     }
 
     private RazerGamepadDeviceRowViewModel? _selectedGamepadDevice;

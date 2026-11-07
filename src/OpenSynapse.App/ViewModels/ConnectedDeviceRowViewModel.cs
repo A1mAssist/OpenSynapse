@@ -196,6 +196,7 @@ public sealed class ConnectedDeviceRowViewModel
         RazerHidKrakenDeviceRowViewModel row => row.Status,
         RazerBleDeviceRowViewModel row => row.Status,
         BlackSharkDeviceRowViewModel row => row.Status,
+        RazerKeyboardDeviceRowViewModel row => row.Capability,
         RazerGamepadDeviceRowViewModel row => row.Status,
         RazerCoolingPadViewModel row => row.CapabilityText,
         PhilipsHueViewModel row => row.IsConfigured ? AppStrings.Text("HuePaired") : string.Empty,
