@@ -4,7 +4,7 @@
 
 映射页只做一件事：把设备实际接受的按键映射列出来，允许用户改目标动作，并在保存后回读确认。页面行来自设备返回的 button list，不来自型号白名单。
 
-- RazerHid 鼠标/键盘：`0x02:0x84` 返回至少一个非零按钮 id 时，`ProbeMiddlewareCapabilitiesAsync` 才加入 `MappingRead` / `MappingWrite`。映射 GET 也是端点探测的最后一条只读回退，避免只回答映射的固件在身份探测阶段被丢掉。
+- RazerHid 鼠标/键盘：`0x02:0x84` 返回至少一个非零按钮 id 时，`ProbeMiddlewareCapabilitiesAsync` 才加入 `MappingRead` / `MappingWrite`；`0x84` 不应答时再读一次 `02:8C`（profile 1 / button 1 / 普通层），有合法 assignment 才认映射能力。Razer 自己的 UI 不调用 `0x84`，按钮表来自产品 bundle 的 `fwID`；0083 这类只答 assignment 表的固件，行列表回退到 bundle 已解析的 `fwID`。映射 GET 也是端点探测的最后一条只读回退，避免只回答映射的固件在身份探测阶段被丢掉。
 - 独立键盘页（`RazerKeyboardService` 已收录的 23 个型号）：`FindAllAsync` 按物理设备枚举全部已连接键盘，每个键盘各自探测 `0x02:0x84`；不回答时再试 protocol 30 的 `0x08:0x80`，两者都返回非零按钮 id 才显示映射卡。
 - Viper 00B8：沿用现有 `viper-184` 端点，读 `0x02:0x84 / 0x02:0x8C`，写 `0x02:0x0C`，通过 `RazerViperMappingTransport` 接入同一个行模型。
 - BLE 设备：`0x08:0x80` 返回非空按钮列表时显示映射卡。

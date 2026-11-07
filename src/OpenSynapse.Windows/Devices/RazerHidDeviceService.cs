@@ -676,9 +676,20 @@ public sealed partial class RazerHidDeviceService
 
     public async Task<IReadOnlyList<byte>> GetMappingButtonIdsAsync(
         RazerHidDeviceConnection connection,
-        CancellationToken cancellationToken = default) =>
-        RazerHidMappingProtocol.ParseButtonList(await ExecuteAsync(connection,
-            RazerHidMappingProtocol.GetButtonList(), cancellationToken).ConfigureAwait(false));
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return RazerHidMappingProtocol.ParseButtonList(await ExecuteAsync(connection,
+                RazerHidMappingProtocol.GetButtonList(), cancellationToken).ConfigureAwait(false));
+        }
+        catch (Exception exception) when (exception is NotSupportedException or RazerDeviceTimeoutException)
+        {
+            // Razer's own UI never asks this GET for every product; some firmware only
+            // answers the assignment table. The caller falls back to the product bundle ids.
+            return [];
+        }
+    }
 
     public async Task<byte> GetBrightnessAsync(
         RazerHidDeviceConnection connection,
@@ -1127,6 +1138,23 @@ public sealed partial class RazerHidDeviceService
                 cancellationToken).ConfigureAwait(false))
         {
             result.UnionWith(MappingCapabilities);
+        }
+        else
+        {
+            // 0083 and other OBM mice answer the assignment table even when the button
+            // list GET is silent, so read one known assignment as the capability probe.
+            var assignment = RazerHidMappingProtocol.GetAssignment(
+                0x01, RazerHidMappingProtocol.NormalMode);
+            if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
+                    "mapping.assignment", assignment.Report,
+                    response =>
+                    {
+                        _ = RazerHidMappingProtocol.ParseAssignment(response);
+                        return true;
+                    }, cancellationToken).ConfigureAwait(false))
+            {
+                result.UnionWith(MappingCapabilities);
+            }
         }
 
         if (isProbeDefinition)
