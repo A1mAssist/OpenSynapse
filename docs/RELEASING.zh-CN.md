@@ -38,7 +38,7 @@
 
 | 文件 | 用途 |
 |---|---|
-| `OpenSynapse-<version>-win-x64-Setup.msi` | **推荐。** 安装到 `Program Files`，注册机器级 GPU 服务，之后切换显卡不再重复弹 UAC。 |
+| `OpenSynapse-<version>-win-x64-Setup.msi` | **推荐。** 安装到 `Program Files`，注册机器级 OpenSynapse 服务，之后切换显卡不再重复弹 UAC。 |
 | `OpenSynapse-<version>-win-Portable.zip` | 便携版，解压即用；切换显卡时会请求 UAC。 |
 ```
 
@@ -51,7 +51,7 @@ English:
 
 | File | Purpose |
 |---|---|
-| `OpenSynapse-<version>-win-x64-Setup.msi` | **Recommended.** Installs under `Program Files` and registers the machine-wide GPU service, so GPU switches no longer prompt for UAC. |
+| `OpenSynapse-<version>-win-x64-Setup.msi` | **Recommended.** Installs under `Program Files` and registers the machine-wide OpenSynapse service, so GPU switches no longer prompt for UAC. |
 | `OpenSynapse-<version>-win-Portable.zip` | Portable copy. The GPU switch prompts for UAC. |
 ```
 

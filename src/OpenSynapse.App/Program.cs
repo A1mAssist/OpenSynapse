@@ -19,10 +19,10 @@ public static class Program
         {
             var ok = DedicatedGpuModeServiceInstaller.EnsureInstalled(Environment.ProcessPath);
             Console.WriteLine(ok
-                ? "OpenSynapseGpuMode service registered."
+                ? "OpenSynapseService registered."
                 : !DedicatedGpuModeServiceInstaller.IsMachineInstallPath(Environment.ProcessPath)
-                    ? "OpenSynapseGpuMode service registration failed: install under Program Files first."
-                    : "OpenSynapseGpuMode service registration failed: run the command as administrator.");
+                    ? "OpenSynapseService registration failed: install under Program Files first."
+                    : "OpenSynapseService registration failed: run the command as administrator.");
             Environment.Exit(ok ? 0 : 1);
         }
 

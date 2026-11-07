@@ -1383,7 +1383,7 @@
   <data name="ChromaRestStatusReady" xml:space="preserve"><value>{0} · Ready</value></data>
   <data name="ChromaRestStatusSession" xml:space="preserve"><value>{0} · {1} · {2:0} fps · {3} skipped</value></data>
   <data name="ChromaOfficialDllTitle.Text" xml:space="preserve"><value>Official Chroma DLL</value></data>
-  <data name="ChromaOfficialDllDescription.Text" xml:space="preserve"><value>Download only Razer's official RzChromaSDK64.dll and place it in C:\Windows\System32. Installed builds start the broker through the OpenSynapseGpuMode service, so no per-launch elevation is needed. The broker stands down while Razer's Chroma service is running.</value></data>
+  <data name="ChromaOfficialDllDescription.Text" xml:space="preserve"><value>Download only Razer's official RzChromaSDK64.dll and place it in C:\Windows\System32. Installed builds start the broker through the OpenSynapseService service, so no per-launch elevation is needed. The broker stands down while Razer's Chroma service is running.</value></data>
   <data name="ChromaOfficialDllDownload.Content" xml:space="preserve"><value>Download DLL</value></data>
   <data name="ChromaRestoreTitle.Text" xml:space="preserve"><value>Restore lighting after external control</value></data>
   <data name="ChromaRestoreDescription.Text" xml:space="preserve"><value>Return to the OpenSynapse effect after the session ends or times out.</value></data>

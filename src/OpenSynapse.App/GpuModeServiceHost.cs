@@ -66,7 +66,7 @@ internal static class GpuModeServiceHost
             if (_authorizedUser is null)
             {
                 throw new InvalidOperationException(
-                    "The GPU service is missing its authorized user SID.");
+                    "The OpenSynapse service is missing its authorized user SID.");
             }
 
             _worker = Task.Run(() => RunAsync(_stop.Token));
@@ -206,7 +206,7 @@ internal static class GpuModeServiceHost
             if (request is null ||
                 request.Version != DedicatedGpuModeServiceProtocol.Version)
             {
-                return Invalid("Unsupported GPU service request.");
+                return Invalid("Unsupported OpenSynapse service request.");
             }
 
             switch (DedicatedGpuModeServiceRequestParser.Parse(request))
@@ -342,7 +342,7 @@ internal static class GpuModeServiceHost
                     });
 
                 default:
-                    return Invalid("Invalid GPU service command.");
+                    return Invalid("Invalid OpenSynapse service command.");
             }
         }
 
@@ -359,13 +359,13 @@ internal static class GpuModeServiceHost
         {
             if (authorizedUser is null)
             {
-                return Invalid("The GPU service is missing its authorized user SID.");
+                return Invalid("The OpenSynapse service is missing its authorized user SID.");
             }
 
             var executablePath = Environment.ProcessPath;
             if (string.IsNullOrWhiteSpace(executablePath))
             {
-                return Invalid("The GPU service cannot resolve its own path.");
+                return Invalid("The OpenSynapse service cannot resolve its own path.");
             }
 
             if (!ElevatedMacroTaskInstaller.EnsureInstalled(
@@ -400,7 +400,7 @@ internal static class GpuModeServiceHost
         {
             if (authorizedUser is null)
             {
-                return Invalid("The GPU service is missing its authorized user SID.");
+                return Invalid("The OpenSynapse service is missing its authorized user SID.");
             }
 
             if (parentProcessId is not > 0)

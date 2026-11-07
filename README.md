@@ -50,7 +50,7 @@ Compatible games and integrations can send static, `CUSTOM`, `CUSTOM_KEY`, and `
 
 ### Chroma SDK broker
 
-`OpenSynapse.ChromaBroker` reads the official Chroma SDK 4.x shared-memory protocol and decodes keyboard, mouse, headset, mousepad, keypad and ChromaLink frames. It runs as LocalSystem from the `OpenSynapseGpuMode` service registered at install time, so the app does not prompt for elevation on every launch. The only user-installed file is Razer's official `RzChromaSDK64.dll` in `C:\Windows\System32`; the settings page links the verified copy. When Razer's own Chroma service owns the arbitration mutex, the broker stands down and leaves game lighting to Razer. The retired self-developed shim is archived under `archive/OpenSynapse.ChromaSdk.Shim` and is not shipped or started.
+`OpenSynapse.ChromaBroker` reads the official Chroma SDK 4.x shared-memory protocol and decodes keyboard, mouse, headset, mousepad, keypad and ChromaLink frames. It runs as LocalSystem from the `OpenSynapseService` service registered at install time, so the app does not prompt for elevation on every launch. The only user-installed file is Razer's official `RzChromaSDK64.dll` in `C:\Windows\System32`; the settings page links the verified copy. When Razer's own Chroma service owns the arbitration mutex, the broker stands down and leaves game lighting to Razer. The retired self-developed shim is archived under `archive/OpenSynapse.ChromaSdk.Shim` and is not shipped or started.
 
 ## Screenshots
 

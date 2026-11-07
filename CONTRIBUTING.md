@@ -65,7 +65,7 @@ directory smoke test alone is insufficient.
 
 The machine-wide installer is the MSI built with `vpk 1.2.161` or newer using
 `--msi --instLocation PerMachine --runtime win-x64`. It installs the app under
-`Program Files` and registers the GPU service from the installed
+`Program Files` and registers the OpenSynapse service from the installed
 `current\OpenSynapse.App.exe`. The per-user installer does not register the
 service. For an MSI build, verify a silent install, the service
 path and account, one UI toggle without a UAC prompt, and that uninstall removes
