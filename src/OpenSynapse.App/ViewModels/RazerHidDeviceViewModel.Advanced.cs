@@ -19,7 +19,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
     /// </summary>
     public Visibility OnboardProfileResetVisibility =>
         VisibleWhen(Has(RazerHidBackendCapability.OnboardProfileWrite) &&
-            !RazerHidDeviceService.SupportsOnboardProfileReset(Connection.Definition.ProductId));
+            RazerHidDeviceService.SupportsOnboardProfileReset(Connection.Definition.ProductId));
     public Visibility OnboardProfileVisibility => VisibleWhen(HasAny(
         RazerHidBackendCapability.OnboardProfileRead, RazerHidBackendCapability.OnboardProfileWrite));
     public Visibility OnboardProfileWriteVisibility =>
@@ -65,7 +65,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         OnboardProfileCount < OnboardMaxProfiles;
     public bool CanDeleteOnboardProfile => CanEditOnboardProfile &&
         OnboardProfileCount > 1;
-    public bool CanResetOnboardProfile => CanEditOnboardProfile;
+    public bool CanResetOnboardProfile => CanEditOnboardProfile &&
+        RazerHidDeviceService.SupportsOnboardProfileReset(Connection.Definition.ProductId);
 
     /// <summary>
     /// The onboard profile card enables its buttons from the profile counters, so a
