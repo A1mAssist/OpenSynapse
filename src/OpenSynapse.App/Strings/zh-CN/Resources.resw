@@ -3797,6 +3797,7 @@
   <data name="RazerMappingLayerNormal" xml:space="preserve"><value>普通层</value></data>
   <data name="RazerMappingLayerHyperShift" xml:space="preserve"><value>HyperShift 层</value></data>
   <data name="RazerMappingKeyboardButton" xml:space="preserve"><value>键位 {0}</value></data>
+  <data name="RazerMappingNagaSideButton" xml:space="preserve"><value>侧键 {0}</value></data>
   <data name="RazerMappingButtonColumn" xml:space="preserve"><value>按键</value></data>
   <data name="RazerMappingCurrentColumn" xml:space="preserve"><value>当前动作</value></data>
   <data name="RazerMappingTypeColumn" xml:space="preserve"><value>类型</value></data>

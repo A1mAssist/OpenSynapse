@@ -36,9 +36,13 @@ internal static class RazerNagaSideButtons
             0x30 => 10,
             0x7B => 11,
             0x2C => 12,
+            0xBD => 11,
+            0xBB => 12,
             0 or 0xFF => scanCode switch
             {
                 >= 0x02 and <= 0x0B => scanCode - 1,
+                0x0C => 11,
+                0x0D => 12,
                 0x58 => 11,
                 0x37 => 12,
                 _ => 0,

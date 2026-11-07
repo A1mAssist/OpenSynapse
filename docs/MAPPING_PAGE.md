@@ -94,7 +94,9 @@ HID 适配器复用 `RazerHidDeviceService` 的 `02:84 / 02:8C / 02:0C`；独立
 
 没有板载宏能力的设备不显示 `Macro` 组。独立键盘页在设备实际回答存储探测时显示宏组，不再用静态型号名单决定是否显示；Viper 当前没有接入板载宏名称结构，因此不显示宏组。
 
-软件宏触发器只对已证明可按原始输入捕获的按键开放：鼠标 4/5 键直接映射为 `MouseButton`；键盘把映射 button id（USB HID usage）转成 `DeviceButton`，带 PID、虚拟键、扫描码和 extended 标记。小键盘和 PrintScreen 的非扩展扫描码与导航键重合，`MapVirtualKey` 无法区分，这些键不显示软件宏选项，避免绑定到另一个物理键。Naga 侧键需要逐型号的侧板证据，当前也不显示软件宏选项。
+软件宏触发器只对已证明可按原始输入捕获的按键开放：鼠标 4/5 键直接映射为 `MouseButton`；键盘把映射 button id（USB HID usage）转成 `DeviceButton`，带 PID、虚拟键、扫描码和 extended 标记。小键盘和 PrintScreen 的非扩展扫描码与导航键重合，`MapVirtualKey` 无法区分，这些键不显示软件宏选项，避免绑定到另一个物理键。
+
+Naga 侧板默认把侧键报成键盘数字行 `1-0` 以及 `-`、`=`，对应 HID usage `0x1E..0x27 / 0x2D / 0x2E`。映射页把这些 id 还原成 `NagaSideButton` 1-12，并显示“侧键 N”；12 键侧板的 `-`/`=` 也由 `RazerNagaSideButtons` 归到 11/12。用户如果改过侧板的默认按键，原始输入不再是这套布局，需要先恢复默认。
 
 Viper 保存后会用设备回读的 16 条 assignment 更新 profile，避免下次启动时旧 profile 把用户改动覆盖回去。
 
