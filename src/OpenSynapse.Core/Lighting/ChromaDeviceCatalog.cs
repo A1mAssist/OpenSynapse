@@ -15,7 +15,6 @@ public enum ChromaDeviceKind
     Keypad,
     ChromaLink,
 }
-
 /// <summary>
 /// PID to Chroma channel, copied from Razer's Chroma SDK device manifest.
 /// A device absent here still lights through its own page, but games and the
