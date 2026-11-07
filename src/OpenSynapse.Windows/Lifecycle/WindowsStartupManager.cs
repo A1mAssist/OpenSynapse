@@ -37,6 +37,13 @@ public sealed class WindowsStartupManager
         }
     }
 
+    /// <summary>Removes the current user's startup entry, if present.</summary>
+    public static void Remove()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true);
+        key?.DeleteValue(ValueName, throwOnMissingValue: false);
+    }
+
     /// <summary>
     /// Points an existing OpenSynapse startup entry at the current executable
     /// when the registered per-user executable no longer exists.
