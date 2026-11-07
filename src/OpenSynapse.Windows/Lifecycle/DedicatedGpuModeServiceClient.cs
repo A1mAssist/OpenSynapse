@@ -66,6 +66,58 @@ public static class DedicatedGpuModeServiceClient
     }
 
     /// <summary>
+    /// Asks the machine-wide service to start the Chroma broker as LocalSystem.
+    /// The broker exits when the calling app process exits.
+    /// </summary>
+    public static async Task<bool> TryStartChromaBrokerAsync(
+        int parentProcessId,
+        CancellationToken cancellationToken = default)
+    {
+        if (parentProcessId <= 0)
+        {
+            return false;
+        }
+
+        var request = new DedicatedGpuModeServiceRequest(
+            DedicatedGpuModeServiceProtocol.Version,
+            DedicatedGpuModeServiceProtocol.StartChromaBrokerOperation,
+            Enabled: null,
+            ParentProcessId: parentProcessId);
+
+        var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
+        return response?.Handled == true &&
+            response.Outcome == DedicatedGpuSwitchOutcome.Success;
+    }
+
+    /// <summary>
+    /// Stops the Chroma broker that belongs to this installation's service.
+    /// The broker also exits by itself when its parent app process goes away.
+    /// </summary>
+    public static async Task<bool> TryStopChromaBrokerAsync(
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsServiceRunning())
+        {
+            return true;
+        }
+
+        var request = new DedicatedGpuModeServiceRequest(
+            DedicatedGpuModeServiceProtocol.Version,
+            DedicatedGpuModeServiceProtocol.StopChromaBrokerOperation,
+            Enabled: null);
+
+        var response = await SendForResponseAsync(
+                request,
+                cancellationToken,
+                _ => Task.FromResult(IsServiceRunning()),
+                SendAsync,
+                Task.Delay)
+            .ConfigureAwait(false);
+        return response?.Handled == true &&
+            response.Outcome == DedicatedGpuSwitchOutcome.Success;
+    }
+
+    /// <summary>
     /// Asks the service whether the driver accepts GPU clock offsets. Null means the
     /// service is unavailable, so the caller keeps the offset controls hidden.
     /// </summary>
@@ -328,6 +380,23 @@ public static class DedicatedGpuModeServiceClient
                 return false;
             }
         }, cancellationToken);
+
+    private static bool IsServiceRunning()
+    {
+        try
+        {
+            using var controller = new ServiceController(
+                DedicatedGpuModeServiceProtocol.ServiceName);
+            controller.Refresh();
+            return controller.Status is ServiceControllerStatus.Running or
+                ServiceControllerStatus.StartPending;
+        }
+        catch (Exception exception) when (
+            exception is InvalidOperationException or Win32Exception or ObjectDisposedException)
+        {
+            return false;
+        }
+    }
 
     private static Task<DedicatedGpuModeServiceResponse?> SendAsync(
         DedicatedGpuModeServiceRequest request,

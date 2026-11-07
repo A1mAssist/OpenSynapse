@@ -1375,7 +1375,7 @@
   <data name="BladeFnRuntimeStoppedBeforeAudioSync" xml:space="preserve"><value>The Blade Fn runtime stopped safely before audio synchronization completed.</value></data>
   <data name="PerformanceSamplingUnavailable" xml:space="preserve"><value>Sampling failed · showing the last value</value></data>
   <data name="ChromaRestTitle.Text" xml:space="preserve"><value>Chroma integration</value><comment>Chroma integration title</comment></data>
-  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>Allow compatible REST and SDK clients to control connected lighting locally. The SDK shim does not require Razer Synapse.</value><comment>Chroma integration description</comment></data>
+  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>Allow compatible REST and SDK clients to control connected lighting locally. The official Chroma DLL and broker do not require Razer Synapse.</value><comment>Chroma integration description</comment></data>
   <data name="ChromaRestToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Chroma integration</value><comment>Chroma integration toggle</comment></data>
   <data name="ChromaRestStatus.Text" xml:space="preserve"><value>Disabled</value></data>
   <data name="ChromaRestStatusDisabled" xml:space="preserve"><value>Disabled</value></data>
@@ -1383,19 +1383,8 @@
   <data name="ChromaRestStatusReady" xml:space="preserve"><value>{0} · Ready</value></data>
   <data name="ChromaRestStatusSession" xml:space="preserve"><value>{0} · {1} · {2:0} fps · {3} skipped</value></data>
   <data name="ChromaOfficialDllTitle.Text" xml:space="preserve"><value>Official Chroma DLL</value></data>
-  <data name="ChromaOfficialDllDescription.Text" xml:space="preserve"><value>Download only Razer's official RzChromaSDK64.dll and place it in C:\Windows\System32. OpenSynapse's broker handles game lighting; the full Chroma SDK and Synapse are not required.</value></data>
-  <data name="ChromaShimTitle.Text" xml:space="preserve"><value>Game compatibility layer (custom shim)</value></data>
-  <data name="ChromaShimDescription.Text" xml:space="preserve"><value>Fallback for when the official DLL + broker is unavailable. Installing backs up and replaces Razer's official x64 DLL; start OpenSynapse before launching a game.</value></data>
-  <data name="ChromaShimStatus.Text" xml:space="preserve"><value>Not installed</value></data>
-  <data name="ChromaShimInstallButton.Content" xml:space="preserve"><value>Install</value></data>
-  <data name="ChromaShimRestoreButton.Content" xml:space="preserve"><value>Restore official DLL</value></data>
-  <data name="ChromaShimStatusNotInstalled" xml:space="preserve"><value>Not installed; game lighting still uses Razer's Chroma service.</value></data>
-  <data name="ChromaShimStatusInstalled" xml:space="preserve"><value>Installed; game lighting is handled by OpenSynapse.</value></data>
-  <data name="ChromaShimStatusUnavailable" xml:space="preserve"><value>Razer Chroma SDK not found.</value></data>
-  <data name="ChromaShimStatusBusy" xml:space="preserve"><value>Working...</value></data>
+  <data name="ChromaOfficialDllDescription.Text" xml:space="preserve"><value>Download only Razer's official RzChromaSDK64.dll and place it in C:\Windows\System32. Installed builds start the broker through the OpenSynapseGpuMode service, so no per-launch elevation is needed. The broker stands down while Razer's Chroma service is running.</value></data>
   <data name="ChromaOfficialDllDownload.Content" xml:space="preserve"><value>Download DLL</value></data>
-  <data name="ChromaShimInstallFailed" xml:space="preserve"><value>Install failed (code {0}). Close games and try again.</value></data>
-  <data name="ChromaShimRestoreFailed" xml:space="preserve"><value>Restore failed (code {0}). Close games and try again.</value></data>
   <data name="ChromaRestoreTitle.Text" xml:space="preserve"><value>Restore lighting after external control</value></data>
   <data name="ChromaRestoreDescription.Text" xml:space="preserve"><value>Return to the OpenSynapse effect after the session ends or times out.</value></data>
   <data name="ChromaRestoreToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Restore lighting after external control</value></data>

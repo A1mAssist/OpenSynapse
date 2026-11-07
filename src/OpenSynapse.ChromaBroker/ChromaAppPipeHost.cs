@@ -18,13 +18,17 @@ internal sealed class ChromaAppPipeHost : IDisposable
     private const int RegistrationLength = 3600;
 
     private readonly Action<uint, string>? _registered;
+    private readonly SecurityIdentifier? _authorizedUser;
     private readonly CancellationTokenSource _stop = new();
     private readonly Task _acceptLoop;
     private int _disposed;
 
-    internal ChromaAppPipeHost(Action<uint, string>? registered = null)
+    internal ChromaAppPipeHost(
+        Action<uint, string>? registered = null,
+        SecurityIdentifier? authorizedUser = null)
     {
         _registered = registered;
+        _authorizedUser = authorizedUser;
         _acceptLoop = AcceptLoopAsync();
     }
 
@@ -66,6 +70,14 @@ internal sealed class ChromaAppPipeHost : IDisposable
                 {
                     security.AddAccessRule(new PipeAccessRule(
                         user,
+                        PipeAccessRights.ReadWrite,
+                        AccessControlType.Allow));
+                }
+                if (_authorizedUser is { } authorizedUser &&
+                    (identity.User is not { } currentUser || !authorizedUser.Equals(currentUser)))
+                {
+                    security.AddAccessRule(new PipeAccessRule(
+                        authorizedUser,
                         PipeAccessRights.ReadWrite,
                         AccessControlType.Allow));
                 }

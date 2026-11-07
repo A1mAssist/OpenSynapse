@@ -16,10 +16,6 @@ internal sealed class ChromaBrokerHost : IAsyncDisposable
     private readonly Func<bool> _restoreEnabled;
     private readonly Action<string>? _log;
     private readonly string _pipeName;
-    private readonly EventWaitHandle _stopSignal = new(
-        initialState: false,
-        EventResetMode.ManualReset,
-        ChromaBrokerLauncher.StopEventName(Environment.ProcessId));
     private readonly CancellationTokenSource _stop = new();
     private Task? _acceptLoop;
     private NamedPipeServerStream? _listener;
@@ -30,7 +26,7 @@ internal sealed class ChromaBrokerHost : IAsyncDisposable
         Func<ChromaSdkEffect, CancellationToken, Task<bool>> applyEffect,
         Func<Task> restoreLighting,
         Func<bool>? restoreEnabled = null,
-        string pipeName = "OpenSynapseChromaBroker",
+        string pipeName = ChromaBrokerProtocol.PipeName,
         Action<string>? log = null)
     {
         _applyEffect = applyEffect ?? throw new ArgumentNullException(nameof(applyEffect));
@@ -56,7 +52,6 @@ internal sealed class ChromaBrokerHost : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
-        try { _stopSignal.Set(); } catch (ObjectDisposedException) { }
         _stop.Cancel();
         _listener?.Dispose();
         var loop = _acceptLoop;
@@ -65,7 +60,6 @@ internal sealed class ChromaBrokerHost : IAsyncDisposable
             try { await loop.ConfigureAwait(false); }
             catch (Exception) when (_stop.IsCancellationRequested) { }
         }
-        _stopSignal.Dispose();
         _stop.Dispose();
     }
 

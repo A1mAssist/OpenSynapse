@@ -36,7 +36,7 @@ The list is grouped by device type and includes every recognized PID, so a Devic
 
 - **Device and power:** identity, firmware, serial number, battery, charging, sleep, charge limit, and low-battery behavior when the connected endpoint exposes them.
 - **Input and performance:** DPI, DPI stages, polling rate, scroll behavior, key actuation, Fn and key remapping, onboard profiles, and macro storage where the device protocol supports them.
-- **Lighting:** per-zone brightness and effects, matrix output, Chroma REST, and the Chroma SDK shim. Lighting Studio adds an SVG device canvas, per-LED editing, regions, profiles, and effect composition.
+- **Lighting:** per-zone brightness and effects, matrix output, Chroma REST, and the official Chroma DLL broker. Lighting Studio adds an SVG device canvas, per-LED editing, regions, profiles, and effect composition.
 - **Thermals and display:** telemetry, performance modes, fan curves, panel and GPU modes, local dimming, and touchpad controls on supported laptops. Integrated-graphics-only mode disables the discrete GPU through Windows PnP; it is not a MUX switch, and external displays may stop working until the GPU is re-enabled.
 - **Audio:** EQ, microphone volume, sidetone, ANC, THX, and game/chat balance when the installed audio stack exposes them.
 
@@ -48,9 +48,9 @@ See [Chroma-supported devices](docs/CHROMA_SUPPORTED_DEVICES.md) for the current
 
 Compatible games and integrations can send static, `CUSTOM`, `CUSTOM_KEY`, and `CUSTOM2` frames to `127.0.0.1:54235` for keyboard, mouse, headset, mousepad, keypad and ChromaLink. Matrix channels use the device's own grid; whole-device channels receive the frame's average colour. ChromaLink reaches Aether lamps, docks, stands, ARGB controllers and Chroma accessories. OpenSynapse restores the effect each device had before external control. Razer Synapse is not required.
 
-### Chroma SDK shim
+### Chroma SDK broker
 
-The `OpenSynapse.ChromaSdk.Shim` project publishes an x64 `RzChromaSDK64.dll` that implements the Chroma SDK 4.0.1 ABI and routes effects to OpenSynapse over `\\.\pipe\OpenSynapseChromaSdk`. Keyboard, mouse, headset, mousepad, keypad and ChromaLink custom/static effects are decoded and applied to every connected device Razer's own Chroma manifest assigns to that channel. Matrix devices receive the resized frame; single-zone devices receive the frame's average colour. Generic `CreateEffect`, `QueryDevice`, and deprecated effects remain unimplemented. See [Chroma SDK shim](docs/CHROMA_SDK_SHIM.md) for the ABI evidence and deployment steps.
+`OpenSynapse.ChromaBroker` reads the official Chroma SDK 4.x shared-memory protocol and decodes keyboard, mouse, headset, mousepad, keypad and ChromaLink frames. It runs as LocalSystem from the `OpenSynapseGpuMode` service registered at install time, so the app does not prompt for elevation on every launch. The only user-installed file is Razer's official `RzChromaSDK64.dll` in `C:\Windows\System32`; the settings page links the verified copy. When Razer's own Chroma service owns the arbitration mutex, the broker stands down and leaves game lighting to Razer. The retired self-developed shim is archived under `archive/OpenSynapse.ChromaSdk.Shim` and is not shipped or started.
 
 ## Screenshots
 
@@ -101,7 +101,6 @@ The post-v1.5.1 source/test-build controls for peripheral low-battery notificati
 dotnet restore OpenSynapse.slnx
 dotnet build OpenSynapse.slnx -c Release
 dotnet build src/OpenSynapse.App/OpenSynapse.App.csproj -c Release -p:Platform=x64
-dotnet publish src/OpenSynapse.ChromaSdk.Shim/OpenSynapse.ChromaSdk.Shim.csproj -c Release -r win-x64 -o artifacts/chroma-sdk-shim
 ```
 
 Run the local build with:
