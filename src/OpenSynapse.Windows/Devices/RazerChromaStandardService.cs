@@ -34,7 +34,7 @@ public enum RazerChromaChannel
 /// Brightness and effect control over the class 0x10 Chroma channel shared by mice,
 /// keyboards, lamps, ARGB controllers and docks that the RazerHid catalogue does not cover.
 /// </summary>
-public sealed class RazerChromaStandardService
+public sealed partial class RazerChromaStandardService
 {
     private readonly IRazerFeatureTransport _transport;
     private readonly string _devicePath;
@@ -147,29 +147,6 @@ public sealed class RazerChromaStandardService
 
         return connections;
     }
-
-    internal static IReadOnlyList<RazerChromaDeviceConnection> SelectConnections(
-        IEnumerable<WindowsHidDiscovery.HidInterfaceDescriptor> interfaces) =>
-        interfaces
-            .Where(item => Products.ContainsKey(item.ProductId))
-            .Where(item => RazerHidDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
-            // A device with its own native page owns its card; Chroma never adds a second one.
-            .Where(item => RazerDeviceRegistry.BuiltIn.Find(0x1532, item.ProductId) is null)
-            .Where(item => !RazerHeadsetAudioService.IsSupported(item.ProductId))
-            .Where(item => !RazerKeyboardService.IsSupported(item.ProductId))
-            .GroupBy(item => item.PhysicalDeviceKey, StringComparer.OrdinalIgnoreCase)
-            .Select(group => group
-                .OrderByDescending(item => item.Access == DeviceAccessState.Available)
-                .ThenBy(item => item.DevicePath, StringComparer.OrdinalIgnoreCase)
-                .First())
-            .OrderBy(item => item.ProductId)
-            .ThenBy(item => item.DevicePath, StringComparer.OrdinalIgnoreCase)
-            .Select(item =>
-            {
-                var (name, category) = Products[item.ProductId];
-                return new RazerChromaDeviceConnection(item.DevicePath, item.ProductId, name, category);
-            })
-            .ToArray();
 
     public async Task<RazerChromaStandardState> ReadStateAsync(CancellationToken cancellationToken = default)
     {

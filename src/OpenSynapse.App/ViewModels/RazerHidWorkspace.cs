@@ -135,6 +135,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
     }
 
     internal RazerHidDeviceService? DeviceService => _deviceService;
+    internal IReadOnlyList<RazerHidSpecialLightingConnection> KrakenConnections => _krakenConnections;
 
     internal IReadOnlyList<RazerHidDeviceConnection> CurrentConnections =>
         Devices.Select(row => row.Connection).ToArray();

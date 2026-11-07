@@ -46,11 +46,11 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 
 参见 [Chroma 支持设备](docs/CHROMA_SUPPORTED_DEVICES.zh-CN.md) 查看当前设备与传输方式矩阵。
 
-兼容的游戏和外部程序可以向 `127.0.0.1:54235` 提交静态、`CUSTOM`、`CUSTOM_KEY` 和 `CUSTOM2` 键盘灯光帧。灯光帧使用当前设备已验证的键盘矩阵布局，外部控制结束后会恢复当前选择的灯效。不需要安装雷云。
+兼容的游戏和外部程序可以向 `127.0.0.1:54235` 提交键盘、鼠标、耳机、鼠标垫、键区和 ChromaLink 的静态、`CUSTOM`、`CUSTOM_KEY` 和 `CUSTOM2` 灯光帧。矩阵通道使用设备自己的网格；单区设备取整帧的平均色。ChromaLink 覆盖 Aether 灯具、扩展坞、支架、ARGB 控制器和 Chroma 配件。外部控制结束后会恢复每台设备原来的效果。不需要安装雷云。
 
 ### Chroma SDK 兼容层
 
-`OpenSynapse.ChromaSdk.Shim` 发布 x64 `RzChromaSDK64.dll`，实现 Chroma SDK 4.0.1 ABI，并通过 `\\.\pipe\OpenSynapseChromaSdk` 把键盘灯效交给 OpenSynapse。键盘 `CUSTOM`、`CUSTOM_KEY`、8×24 `CUSTOM2`，以及鼠标、耳机和鼠标垫的静态/自定义灯效，在有对应矩阵设备时会解码并应用。通用 `CreateEffect`、`QueryDevice`、键区、ChromaLink 和已弃用效果尚未实现。ABI 证据与部署步骤见 [Chroma SDK 兼容层](docs/CHROMA_SDK_SHIM.md)。
+`OpenSynapse.ChromaSdk.Shim` 发布 x64 `RzChromaSDK64.dll`，实现 Chroma SDK 4.0.1 ABI，并通过 `\\.\pipe\OpenSynapseChromaSdk` 把灯效交给 OpenSynapse。键盘、鼠标、耳机、鼠标垫、键区和 ChromaLink 的静态/自定义灯效，会按雷云 Chroma 设备清单投递到对应通道：矩阵设备收到缩放后的帧，单区设备收到整帧的平均色。通用 `CreateEffect`、`QueryDevice` 和已弃用效果仍未实现。ABI 证据与部署步骤见 [Chroma SDK 兼容层](docs/CHROMA_SDK_SHIM.md)。
 
 ## 界面预览
 

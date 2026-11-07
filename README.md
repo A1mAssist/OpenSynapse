@@ -46,11 +46,11 @@ Controls are resolved from the connected PID and HID endpoint. A control that is
 
 See [Chroma-supported devices](docs/CHROMA_SUPPORTED_DEVICES.md) for the current device and transport matrix.
 
-Compatible games and integrations can send static, `CUSTOM`, `CUSTOM_KEY`, and `CUSTOM2` keyboard frames to `127.0.0.1:54235`. Frames use the verified keyboard matrix layout for the selected device, and OpenSynapse restores the selected lighting effect after external control ends. Razer Synapse is not required.
+Compatible games and integrations can send static, `CUSTOM`, `CUSTOM_KEY`, and `CUSTOM2` frames to `127.0.0.1:54235` for keyboard, mouse, headset, mousepad, keypad and ChromaLink. Matrix channels use the device's own grid; whole-device channels receive the frame's average colour. ChromaLink reaches Aether lamps, docks, stands, ARGB controllers and Chroma accessories. OpenSynapse restores the effect each device had before external control. Razer Synapse is not required.
 
 ### Chroma SDK shim
 
-The `OpenSynapse.ChromaSdk.Shim` project publishes an x64 `RzChromaSDK64.dll` that implements the Chroma SDK 4.0.1 ABI and routes keyboard effects to OpenSynapse over `\\.\pipe\OpenSynapseChromaSdk`. Keyboard `CUSTOM`, `CUSTOM_KEY`, and 8×24 `CUSTOM2`, plus mouse, headset, and mousepad custom/static effects, are decoded and applied when a matching matrix device is available. Generic `CreateEffect`, `QueryDevice`, keypad, ChromaLink, and deprecated effects are not implemented. See [Chroma SDK shim](docs/CHROMA_SDK_SHIM.md) for the ABI evidence and deployment steps.
+The `OpenSynapse.ChromaSdk.Shim` project publishes an x64 `RzChromaSDK64.dll` that implements the Chroma SDK 4.0.1 ABI and routes effects to OpenSynapse over `\\.\pipe\OpenSynapseChromaSdk`. Keyboard, mouse, headset, mousepad, keypad and ChromaLink custom/static effects are decoded and applied to every connected device Razer's own Chroma manifest assigns to that channel. Matrix devices receive the resized frame; single-zone devices receive the frame's average colour. Generic `CreateEffect`, `QueryDevice`, and deprecated effects remain unimplemented. See [Chroma SDK shim](docs/CHROMA_SDK_SHIM.md) for the ABI evidence and deployment steps.
 
 ## Screenshots
 
