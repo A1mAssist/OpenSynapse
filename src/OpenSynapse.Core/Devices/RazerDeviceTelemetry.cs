@@ -118,6 +118,12 @@ public readonly record struct BladeSkuHardwareConfiguration(
     public bool SupportsNativeDisplayMode => MiniLedResolution;
 }
 
+/// <summary>Screen dim delay as the old Blade firmware reports it.</summary>
+public readonly record struct BladeTimeToDimTelemetry(bool Enabled, int Seconds, byte Percentage);
+
+/// <summary>GPU card indicator: led class, enabled flag and firmware status.</summary>
+public readonly record struct BladeGpuCardDetectionTelemetry(byte LedClassId, bool Enabled, byte Status);
+
 public sealed record ViperDpiStageTelemetry(byte Number, int X, int Y);
 
 public sealed record ViperDpiStagesTelemetry(
@@ -167,10 +173,17 @@ public static class DeviceCapabilitySummaryCalculator
 {
     public static DeviceCapabilitySummary Calculate(
         DeviceDescriptor descriptor,
-        RazerDeviceTelemetry telemetry)
+        RazerDeviceTelemetry telemetry,
+        IReadOnlySet<string>? declaredCapabilities = null)
     {
         ArgumentNullException.ThrowIfNull(descriptor);
         ArgumentNullException.ThrowIfNull(telemetry);
+        if (declaredCapabilities is not null &&
+            descriptor.ProtocolFamily is "blade-671" or "blade-710" or "blade-710-chroma" or "blade-597")
+        {
+            return SummarizeDeclaredBladeReads(descriptor, telemetry, declaredCapabilities);
+        }
+
         var supportsLocalDimming =
             telemetry.BladeSkuHardwareConfiguration?.MiniLedResolution == true;
         // A shared Power Mode bit reads back on models that never implemented it, so the
@@ -244,6 +257,84 @@ public static class DeviceCapabilitySummaryCalculator
                 6),
             _ => new(0, 0),
         };
+    }
+
+    /// <summary>
+    /// Counts the Blade read rows the device page owns. A row is supported when its
+    /// capability is declared and available when its telemetry value came back; a
+    /// declaration alone must not inflate the available count.
+    /// </summary>
+    private static DeviceCapabilitySummary SummarizeDeclaredBladeReads(
+        DeviceDescriptor descriptor,
+        RazerDeviceTelemetry telemetry,
+        IReadOnlySet<string> declaredCapabilities)
+    {
+        var available = 0;
+        var supported = 0;
+
+        void Row(bool owns, object? value)
+        {
+            if (!owns)
+            {
+                return;
+            }
+
+            supported++;
+            if (value is not null)
+            {
+                available++;
+            }
+        }
+
+        bool Owns(string capability) => declaredCapabilities.Contains(capability);
+
+        var powerMode = Owns(CapabilityIds.PowerModeGet);
+        var sku = Owns(CapabilityIds.SkuHardwareConfigurationGet);
+        Row(Owns(CapabilityIds.KeyboardBrightnessGet), telemetry.BladeKeyboardBrightness);
+        Row(Owns(CapabilityIds.KeyboardEffectGet), telemetry.BladeKeyboardEffect);
+        Row(Owns(CapabilityIds.ThermalStateGet), telemetry.BladePerformanceMode);
+        Row(Owns(CapabilityIds.ThermalStateGet), telemetry.BladeFanMode);
+        Row(Owns(CapabilityIds.FanTargetGet), telemetry.BladeFanTargetRpm);
+        Row(Owns(CapabilityIds.CurrentFanRpmGet), telemetry.BladeCurrentFanCpuRpm);
+        Row(Owns(CapabilityIds.CurrentFanRpmGet), telemetry.BladeCurrentFanGpuRpm);
+        Row(Owns(CapabilityIds.AdvancedFanModeGet), telemetry.BladeAdvancedFanCpuModeRaw);
+        Row(Owns(CapabilityIds.AdvancedFanModeGet), telemetry.BladeAdvancedFanGpuModeRaw);
+        Row(Owns(CapabilityIds.BoostGet), telemetry.BladeCpuBoostMode);
+        Row(Owns(CapabilityIds.BoostGet), telemetry.BladeGpuBoostMode);
+        Row(Owns(CapabilityIds.ChargeLimitGet), telemetry.BladeChargeLimitPercent);
+        Row(powerMode && BladeModelCapabilities.SupportsMaxFan(descriptor.ProductId),
+            telemetry.BladeMaxFanMode);
+        Row(powerMode && BladeModelCapabilities.SupportsCpuPowerBoost(descriptor.ProductId),
+            telemetry.BladeCpuPowerBoostEnabled);
+        Row(powerMode, telemetry.BladeOneTimeFullChargeEnabled);
+        Row(powerMode && sku &&
+            telemetry.BladeSkuHardwareConfiguration?.MiniLedResolution == true,
+            telemetry.BladeLocalDimmingEnabled);
+        Row(Owns(CapabilityIds.LogoModeGet), telemetry.BladeLogoMode);
+        Row(Owns(CapabilityIds.GamingModeGet), telemetry.BladeGameMode);
+        Row(Owns(CapabilityIds.StartupAnimationGet), telemetry.BladeStartupAnimationEnabled);
+        Row(Owns(CapabilityIds.NativeDisplayModeGet) &&
+            telemetry.BladeSkuHardwareConfiguration?.SupportsNativeDisplayMode == true,
+            telemetry.BladeNativeDisplayMode);
+        Row(sku, telemetry.BladeSkuHardwareConfiguration);
+        Row(Owns(CapabilityIds.AdapterPowerGet), telemetry.BladeAdapterPower);
+        Row(Owns(CapabilityIds.FnKeyGet), telemetry.BladeFnKeyMultimediaPrimary);
+        Row(Owns(CapabilityIds.McuVersionGet), telemetry.BladeMcuVersion);
+        Row(Owns(CapabilityIds.AutoSleepGet), telemetry.BladeAutoSleepEnabled);
+        Row(Owns(CapabilityIds.TimeToDimGet), telemetry.BladeTimeToDim);
+        Row(Owns(CapabilityIds.IndicatorLedGet), telemetry.BladeIndicatorLedEnabled);
+        Row(Owns(CapabilityIds.GpuCardDetectionGet), telemetry.BladeGpuCardDetection);
+        // The MUX is read by its own control path, outside this telemetry pass, so
+        // it is a supported row without a value in this summary.
+        if (Owns(CapabilityIds.DisplayMuxGet) && Owns(CapabilityIds.DisplayMuxSet) &&
+            Owns(CapabilityIds.DisplayMuxCapabilitiesGet) ||
+            Owns(CapabilityIds.LegacyDisplayMuxGet) && Owns(CapabilityIds.LegacyDisplayMuxSet) &&
+            Owns(CapabilityIds.LegacyDisplayMuxCapabilitiesGet))
+        {
+            supported++;
+        }
+
+        return new(available, supported);
     }
 
     private static int Count(params object?[] values) => values.Count(value => value is not null);
@@ -327,7 +418,15 @@ public sealed record RazerDeviceTelemetry(
     IReadOnlyDictionary<string, DeviceCapabilitySummary>? CapabilitySummaries = null,
     bool? BladeFnKeyMultimediaPrimary = null,
     string? BladeMcuVersion = null,
-    BladeAdapterPowerSnapshot? BladeAdapterPower = null);
+    BladeAdapterPowerSnapshot? BladeAdapterPower = null,
+    bool? BladeAutoSleepEnabled = null,
+    BladeTimeToDimTelemetry? BladeTimeToDim = null,
+    bool? BladeIndicatorLedEnabled = null,
+    BladeGpuCardDetectionTelemetry? BladeGpuCardDetection = null,
+    bool BladeAutoSleepWritable = false,
+    bool BladeTimeToDimWritable = false,
+    bool BladeIndicatorLedWritable = false,
+    bool BladeGpuCardDetectionWritable = false);
 
 public interface IRazerDeviceTelemetryReader
 {
@@ -458,6 +557,30 @@ public interface IRazerDeviceTelemetryReader
         IReadOnlyList<DeviceDescriptor> devices,
         BladeLogoMode mode,
         CancellationToken cancellationToken = default);
+
+    ValueTask<bool> SetBladeAutoSleepAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
+
+    ValueTask<BladeTimeToDimTelemetry> SetBladeTimeToDimAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        int seconds,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
+
+    ValueTask<bool> SetBladeIndicatorLedAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
+
+    ValueTask<BladeGpuCardDetectionTelemetry> SetBladeGpuCardDetectionAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
 
     ValueTask<int> SetViperPollingRateAsync(
         IReadOnlyList<DeviceDescriptor> devices,

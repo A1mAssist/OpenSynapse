@@ -17,10 +17,18 @@ internal sealed partial class RazerDeviceRegistry
                 [CapabilityIds.BoostGet] = new(0x03, 0x0D, 0x87, ""),
                 [CapabilityIds.BoostSet] = new(0x03, 0x0D, 0x07, ""),
                 [CapabilityIds.AdapterPowerGet] = new(0x02, 0x07, 0x8C, "0000", true, true),
+                [CapabilityIds.AutoSleepGet] = new(0x02, 0x07, 0x88, "00"),
+                [CapabilityIds.AutoSleepSet] = new(0x02, 0x07, 0x08, ""),
                 [CapabilityIds.ChargeLimitGet] = new(0x01, 0x07, 0x92, "00", true),
                 [CapabilityIds.ChargeLimitSet] = new(0x01, 0x07, 0x12, ""),
+                [CapabilityIds.GpuCardDetectionGet] = new(0x03, 0x03, 0xA0, "00"),
+                [CapabilityIds.GpuCardDetectionSet] = new(0x03, 0x03, 0x20, ""),
+                [CapabilityIds.IndicatorLedGet] = new(0x01, 0x07, 0x90, "00"),
+                [CapabilityIds.IndicatorLedSet] = new(0x01, 0x07, 0x10, ""),
                 [CapabilityIds.PowerModeGet] = new(0x01, 0x07, 0x8F, "00", true),
                 [CapabilityIds.PowerModeSet] = new(0x01, 0x07, 0x0F, ""),
+                [CapabilityIds.TimeToDimGet] = new(0x05, 0x07, 0x8B, "00"),
+                [CapabilityIds.TimeToDimSet] = new(0x05, 0x07, 0x0B, ""),
                 [CapabilityIds.GamingModeSet] = new(0x04, 0x00, 0x08, "", AllowZeroTransactionId: true),
                 [CapabilityIds.FnKeyGet] = new(0x02, 0x02, 0x86, "0100", AllowZeroTransactionId: true),
                 [CapabilityIds.McuVersionGet] = new(0x04, 0x00, 0x87, "00000000", AllowZeroTransactionId: true),
@@ -63,10 +71,18 @@ internal sealed partial class RazerDeviceRegistry
                 [CapabilityIds.BoostGet] = new(0x03, 0x0D, 0x87, ""),
                 [CapabilityIds.BoostSet] = new(0x03, 0x0D, 0x07, ""),
                 [CapabilityIds.AdapterPowerGet] = new(0x02, 0x07, 0x8C, "0000", true, true),
+                [CapabilityIds.AutoSleepGet] = new(0x02, 0x07, 0x88, "00"),
+                [CapabilityIds.AutoSleepSet] = new(0x02, 0x07, 0x08, ""),
                 [CapabilityIds.ChargeLimitGet] = new(0x01, 0x07, 0x92, "00", true),
                 [CapabilityIds.ChargeLimitSet] = new(0x01, 0x07, 0x12, ""),
+                [CapabilityIds.GpuCardDetectionGet] = new(0x03, 0x03, 0xA0, "00"),
+                [CapabilityIds.GpuCardDetectionSet] = new(0x03, 0x03, 0x20, ""),
+                [CapabilityIds.IndicatorLedGet] = new(0x01, 0x07, 0x90, "00"),
+                [CapabilityIds.IndicatorLedSet] = new(0x01, 0x07, 0x10, ""),
                 [CapabilityIds.PowerModeGet] = new(0x01, 0x07, 0x8F, "00", true),
                 [CapabilityIds.PowerModeSet] = new(0x01, 0x07, 0x0F, ""),
+                [CapabilityIds.TimeToDimGet] = new(0x05, 0x07, 0x8B, "00"),
+                [CapabilityIds.TimeToDimSet] = new(0x05, 0x07, 0x0B, ""),
                 [CapabilityIds.SkuHardwareConfigurationGet] = new(0x01, 0x0D, 0x8F, "00", true),
                 [CapabilityIds.GamingModeGet] = new(0x04, 0x00, 0x88, "", AllowZeroTransactionId: true),
                 [CapabilityIds.GamingModeSet] = new(0x04, 0x00, 0x08, "", AllowZeroTransactionId: true),
@@ -97,6 +113,17 @@ internal sealed partial class RazerDeviceRegistry
             {
                 [CapabilityIds.ThermalStateGet] = new(0x04, 0x0D, 0x82, ""),
                 [CapabilityIds.ThermalStateSet] = new(0x04, 0x0D, 0x02, ""),
+                [CapabilityIds.BoostGet] = new(0x03, 0x0D, 0x87, ""),
+                [CapabilityIds.BoostSet] = new(0x03, 0x0D, 0x07, ""),
+                [CapabilityIds.AdapterPowerGet] = new(0x02, 0x07, 0x8C, "0000", true, true),
+                [CapabilityIds.AutoSleepGet] = new(0x02, 0x07, 0x88, "00"),
+                [CapabilityIds.AutoSleepSet] = new(0x02, 0x07, 0x08, ""),
+                [CapabilityIds.TimeToDimGet] = new(0x05, 0x07, 0x8B, "00"),
+                [CapabilityIds.TimeToDimSet] = new(0x05, 0x07, 0x0B, ""),
+                [CapabilityIds.IndicatorLedGet] = new(0x01, 0x07, 0x90, "00"),
+                [CapabilityIds.IndicatorLedSet] = new(0x01, 0x07, 0x10, ""),
+                [CapabilityIds.GpuCardDetectionGet] = new(0x03, 0x03, 0xA0, "00"),
+                [CapabilityIds.GpuCardDetectionSet] = new(0x03, 0x03, 0x20, ""),
                 [CapabilityIds.KeyboardBrightnessGet] = new(0x03, 0x0F, 0x84, "0105", true),
                 [CapabilityIds.KeyboardBrightnessSet] = new(0x03, 0x0F, 0x04, ""),
                 [CapabilityIds.ChargeLimitGet] = new(0x01, 0x07, 0x92, "00", true),
@@ -130,11 +157,20 @@ internal sealed partial class RazerDeviceRegistry
     private static readonly IReadOnlyDictionary<string, IReadOnlySet<string>> FamilyRequiredCapabilities =
         new Dictionary<string, IReadOnlySet<string>>(StringComparer.Ordinal)
         {
-            ["blade-710"] = FamilyCapabilities["blade-710"].Keys.ToHashSet(StringComparer.Ordinal),
+            ["blade-710"] = FamilyCapabilities["blade-710"].Keys
+                .Where(capability => capability is not (CapabilityIds.AutoSleepGet or CapabilityIds.AutoSleepSet or
+                    CapabilityIds.TimeToDimGet or CapabilityIds.TimeToDimSet or
+                    CapabilityIds.IndicatorLedGet or CapabilityIds.IndicatorLedSet or
+                    CapabilityIds.GpuCardDetectionGet or CapabilityIds.GpuCardDetectionSet))
+                .ToHashSet(StringComparer.Ordinal),
             // The Blade 18 (2024) firmware rejects 0F:98/18, even though the family
             // shares those reports. Keep them optional; the other manifests still own them.
             ["blade-710-chroma"] = FamilyCapabilities["blade-710-chroma"].Keys
-                .Where(capability => capability is not (CapabilityIds.StartupAnimationGet or CapabilityIds.StartupAnimationSet))
+                .Where(capability => capability is not (CapabilityIds.StartupAnimationGet or CapabilityIds.StartupAnimationSet or
+                    CapabilityIds.AutoSleepGet or CapabilityIds.AutoSleepSet or
+                    CapabilityIds.TimeToDimGet or CapabilityIds.TimeToDimSet or
+                    CapabilityIds.IndicatorLedGet or CapabilityIds.IndicatorLedSet or
+                    CapabilityIds.GpuCardDetectionGet or CapabilityIds.GpuCardDetectionSet))
                 .ToHashSet(StringComparer.Ordinal),
             // Per-model reports are optional: 0270 rejects gaming-mode 00:08;
             // 024C rejects Power Mode Control with 0x05.
@@ -147,9 +183,20 @@ internal sealed partial class RazerDeviceRegistry
                     CapabilityIds.DisplayMuxGet or CapabilityIds.DisplayMuxSet or CapabilityIds.DisplayMuxCapabilitiesGet or
                     CapabilityIds.LegacyDisplayMuxGet or CapabilityIds.LegacyDisplayMuxSet or CapabilityIds.LegacyDisplayMuxCapabilitiesGet or
                     CapabilityIds.SkuHardwareConfigurationGet or
-                    CapabilityIds.NativeDisplayModeGet or CapabilityIds.NativeDisplayModeSet or CapabilityIds.GamingModeGet or CapabilityIds.GamingModeSet or CapabilityIds.StartupAnimationGet or CapabilityIds.StartupAnimationSet))
+                    CapabilityIds.NativeDisplayModeGet or CapabilityIds.NativeDisplayModeSet or CapabilityIds.GamingModeGet or CapabilityIds.GamingModeSet or CapabilityIds.StartupAnimationGet or CapabilityIds.StartupAnimationSet or
+                    CapabilityIds.AutoSleepGet or CapabilityIds.AutoSleepSet or
+                    CapabilityIds.TimeToDimGet or CapabilityIds.TimeToDimSet or
+                    CapabilityIds.IndicatorLedGet or CapabilityIds.IndicatorLedSet or
+                    CapabilityIds.GpuCardDetectionGet or CapabilityIds.GpuCardDetectionSet))
                 .ToHashSet(StringComparer.Ordinal),
-            ["blade-597"] = FamilyCapabilities["blade-597"].Keys.ToHashSet(StringComparer.Ordinal),
+            ["blade-597"] = FamilyCapabilities["blade-597"].Keys
+                .Where(capability => capability is not (CapabilityIds.BoostGet or CapabilityIds.BoostSet or
+                    CapabilityIds.AdapterPowerGet or
+                    CapabilityIds.AutoSleepGet or CapabilityIds.AutoSleepSet or
+                    CapabilityIds.TimeToDimGet or CapabilityIds.TimeToDimSet or
+                    CapabilityIds.IndicatorLedGet or CapabilityIds.IndicatorLedSet or
+                    CapabilityIds.GpuCardDetectionGet or CapabilityIds.GpuCardDetectionSet))
+                .ToHashSet(StringComparer.Ordinal),
             ["viper-184"] = FamilyCapabilities["viper-184"].Keys.ToHashSet(StringComparer.Ordinal),
             ["openrazer-standard"] = new HashSet<string>(StringComparer.Ordinal),
         };

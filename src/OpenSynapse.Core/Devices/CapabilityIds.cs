@@ -8,6 +8,8 @@ public static class CapabilityIds
 {
     public const string AdapterPowerGet = "adapter-power.get";
     public const string AdvancedFanModeGet = "advanced-fan-mode.get";
+    public const string AutoSleepGet = "auto-sleep.get";
+    public const string AutoSleepSet = "auto-sleep.set";
     public const string BatteryChemistrySet = "battery-chemistry.set";
     public const string BatteryGet = "battery.get";
     public const string BoostGet = "boost.get";
@@ -30,8 +32,12 @@ public static class CapabilityIds
     public const string FnKeySet = "fn-key.set";
     public const string GamingModeGet = "gaming-mode.get";
     public const string GamingModeSet = "gaming-mode.set";
+    public const string GpuCardDetectionGet = "gpu-card-detection.get";
+    public const string GpuCardDetectionSet = "gpu-card-detection.set";
     public const string IdleTimeoutGet = "idle-timeout.get";
     public const string IdleTimeoutSet = "idle-timeout.set";
+    public const string IndicatorLedGet = "indicator-led.get";
+    public const string IndicatorLedSet = "indicator-led.set";
     public const string KeyboardBrightnessGet = "keyboard-brightness.get";
     public const string KeyboardBrightnessSet = "keyboard-brightness.set";
     public const string KeyboardEffectGet = "keyboard-effect.get";
@@ -64,11 +70,15 @@ public static class CapabilityIds
     public const string StartupAnimationSet = "startup-animation.set";
     public const string ThermalStateGet = "thermal-state.get";
     public const string ThermalStateSet = "thermal-state.set";
+    public const string TimeToDimGet = "time-to-dim.get";
+    public const string TimeToDimSet = "time-to-dim.set";
 
     public static IReadOnlyList<string> All { get; } = Array.AsReadOnly(new[]
     {
         AdapterPowerGet,
         AdvancedFanModeGet,
+        AutoSleepGet,
+        AutoSleepSet,
         BatteryChemistrySet,
         BatteryGet,
         BoostGet,
@@ -88,8 +98,12 @@ public static class CapabilityIds
         FnKeySet,
         GamingModeGet,
         GamingModeSet,
+        GpuCardDetectionGet,
+        GpuCardDetectionSet,
         IdleTimeoutGet,
         IdleTimeoutSet,
+        IndicatorLedGet,
+        IndicatorLedSet,
         KeyboardBrightnessGet,
         KeyboardBrightnessSet,
         KeyboardEffectGet,
@@ -125,5 +139,7 @@ public static class CapabilityIds
         StartupAnimationSet,
         ThermalStateGet,
         ThermalStateSet,
+        TimeToDimGet,
+        TimeToDimSet,
     });
 }

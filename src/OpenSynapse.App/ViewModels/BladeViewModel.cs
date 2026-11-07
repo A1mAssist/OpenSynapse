@@ -92,6 +92,18 @@ internal sealed class BladeViewModel
     internal double _bladeCoreClockOffsetMhz;
     internal double _bladeMemoryClockOffsetMhz;
     internal string _bladeGpuClockOffsetStatusText = string.Empty;
+    internal bool? _bladeAutoSleepEnabled;
+    internal bool _bladeAutoSleepSelection;
+    internal bool _bladeAutoSleepWritable;
+    internal BladeTimeToDimTelemetry? _bladeTimeToDim;
+    internal int _bladeTimeToDimIndex = -1;
+    internal bool _bladeTimeToDimWritable;
+    internal bool? _bladeIndicatorLedEnabled;
+    internal bool _bladeIndicatorLedSelection;
+    internal bool _bladeIndicatorLedWritable;
+    internal BladeGpuCardDetectionTelemetry? _bladeGpuCardDetection;
+    internal bool _bladeGpuCardDetectionSelection;
+    internal bool _bladeGpuCardDetectionWritable;
 
     internal IReadOnlyList<BladePerformanceMode> PerformanceModes =>
         BladeModelCapabilities.PerformanceModesFor(_bladeProductId);
@@ -285,5 +297,46 @@ internal sealed class BladeViewModel
         {
             _confirmedBladeLogoIndex = _bladeLogoIndex;
         }
+    }
+
+    private static readonly int[] TimeToDimPresetSeconds = [15, 30, 60, 120];
+
+    /// <summary>Preset delays plus the firmware's own value when it is not one of them.</summary>
+    internal IReadOnlyList<int> TimeToDimSeconds =>
+        _bladeTimeToDim is { } state && !TimeToDimPresetSeconds.Contains(state.Seconds)
+            ? [.. TimeToDimPresetSeconds, state.Seconds]
+            : TimeToDimPresetSeconds;
+
+    internal int ConfirmedTimeToDimIndex =>
+        _bladeTimeToDim is { } state ? TimeToDimSeconds.ToList().IndexOf(state.Seconds) : -1;
+
+    internal void SetAutoSleep(bool? enabled, bool writable)
+    {
+        _bladeAutoSleepEnabled = enabled;
+        _bladeAutoSleepSelection = enabled ?? false;
+        _bladeAutoSleepWritable = writable;
+    }
+
+    internal void SetTimeToDim(BladeTimeToDimTelemetry? state, bool writable)
+    {
+        _bladeTimeToDim = state;
+        _bladeTimeToDimWritable = writable;
+        _bladeTimeToDimIndex = state is { } value
+            ? TimeToDimSeconds.ToList().IndexOf(value.Seconds)
+            : -1;
+    }
+
+    internal void SetIndicatorLed(bool? enabled, bool writable)
+    {
+        _bladeIndicatorLedEnabled = enabled;
+        _bladeIndicatorLedSelection = enabled ?? false;
+        _bladeIndicatorLedWritable = writable;
+    }
+
+    internal void SetGpuCardDetection(BladeGpuCardDetectionTelemetry? state, bool writable)
+    {
+        _bladeGpuCardDetection = state;
+        _bladeGpuCardDetectionSelection = state?.Enabled ?? false;
+        _bladeGpuCardDetectionWritable = writable;
     }
 }
