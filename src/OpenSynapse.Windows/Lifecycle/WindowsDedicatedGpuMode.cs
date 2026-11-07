@@ -103,7 +103,7 @@ public static class WindowsDedicatedGpuMode
     }
 
     /// <summary>
-    /// Performs the PnP change in the current process. The GPU service runs this
+    /// Performs the PnP change in the current process. The OpenSynapse service runs this
     /// as LocalSystem; the UAC helper uses the same path after elevation.
     /// </summary>
     public static DedicatedGpuSwitchResult SetEnabledDirect(
@@ -182,7 +182,7 @@ public static class WindowsDedicatedGpuMode
             return new DedicatedGpuSwitchResult(DedicatedGpuSwitchOutcome.Success);
         }
 
-        if (await DedicatedGpuModeServiceClient.TryRestartDeviceAsync(cancellationToken)
+        if (await OpenSynapseServiceClient.TryRestartDeviceAsync(cancellationToken)
                 .ConfigureAwait(false) is { } serviceResult)
         {
             return await AwaitRecoveryAsync(serviceResult, CancellationToken.None).ConfigureAwait(false);
@@ -194,7 +194,7 @@ public static class WindowsDedicatedGpuMode
     }
 
     /// <summary>
-    /// Restarts the discrete adapter in the current process. The GPU service runs
+    /// Restarts the discrete adapter in the current process. The OpenSynapse service runs
     /// this as LocalSystem, which is what a device restart needs.
     /// </summary>
     public static DedicatedGpuSwitchResult RestartFaultedDirect()
@@ -268,7 +268,7 @@ public static class WindowsDedicatedGpuMode
             }
         }
 
-        if (await DedicatedGpuModeServiceClient.TrySetEnabledAsync(enabled, cancellationToken)
+        if (await OpenSynapseServiceClient.TrySetEnabledAsync(enabled, cancellationToken)
                 .ConfigureAwait(false) is { } serviceResult)
         {
             return serviceResult;

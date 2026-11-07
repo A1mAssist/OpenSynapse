@@ -153,7 +153,7 @@ public partial class App
     {
         try
         {
-            var started = await DedicatedGpuModeServiceClient
+            var started = await OpenSynapseServiceClient
                 .TryStartChromaBrokerAsync(Environment.ProcessId)
                 .ConfigureAwait(false);
             _diagnosticLog.TryWrite(
@@ -239,7 +239,7 @@ public partial class App
             await startTask.ConfigureAwait(false);
         }
 
-        var stopped = await DedicatedGpuModeServiceClient
+        var stopped = await OpenSynapseServiceClient
             .TryStopChromaBrokerAsync()
             .ConfigureAwait(false);
         if (!stopped)

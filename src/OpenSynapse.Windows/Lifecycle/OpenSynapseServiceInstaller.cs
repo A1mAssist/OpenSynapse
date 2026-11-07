@@ -10,7 +10,7 @@ namespace OpenSynapse.Windows.Lifecycle;
 /// protected OpenSynapse.App.exe already installed under Program Files; no
 /// user-writable executable is ever given LocalSystem startup authority.
 /// </summary>
-public static class DedicatedGpuModeServiceInstaller
+public static class OpenSynapseServiceInstaller
 {
     private const int ServiceAlreadyExists = 1073;
     private const int ServiceDoesNotExist = 1060;
@@ -62,8 +62,8 @@ public static class DedicatedGpuModeServiceInstaller
             var userSid = identity.User?.Value;
             return EnsureInstalled(executablePath, userSid,
                 new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator) || identity.IsSystem,
-                DedicatedGpuServiceConfiguration.IsProtectedExecutable,
-                DedicatedGpuServiceConfiguration.Read, RunSc, Stop);
+                OpenSynapseServiceConfiguration.IsProtectedExecutable,
+                OpenSynapseServiceConfiguration.Read, RunSc, Stop);
         }
         catch (Exception exception) when (
             exception is Win32Exception or InvalidOperationException or IOException or UnauthorizedAccessException or
@@ -74,13 +74,13 @@ public static class DedicatedGpuModeServiceInstaller
     }
 
     internal static bool EnsureInstalled(string? executablePath, string? userSid, bool mayChange,
-        Func<string, bool> isProtected, Func<DedicatedGpuServiceConfiguration?> read,
+        Func<string, bool> isProtected, Func<OpenSynapseServiceConfiguration?> read,
         Func<string[], ScResult> run, Func<bool> stop)
     {
         if (string.IsNullOrWhiteSpace(executablePath) || string.IsNullOrWhiteSpace(userSid) ||
-            !isProtected(executablePath) || !DedicatedGpuServiceConfiguration.IsValidSid(userSid)) return false;
-        var command = $"\"{Path.GetFullPath(executablePath)}\" {DedicatedGpuModeServiceProtocol.ServiceArgument} " +
-            $"{DedicatedGpuModeServiceProtocol.ServiceUserArgument} {userSid}";
+            !isProtected(executablePath) || !OpenSynapseServiceConfiguration.IsValidSid(userSid)) return false;
+        var command = $"\"{Path.GetFullPath(executablePath)}\" {OpenSynapseServiceProtocol.ServiceArgument} " +
+            $"{OpenSynapseServiceProtocol.ServiceUserArgument} {userSid}";
         var current = read();
         if (current?.Matches(command, ServiceSddl) == true)
         {
@@ -90,7 +90,7 @@ public static class DedicatedGpuModeServiceInstaller
         if (!mayChange) return false;
         if (current is null)
         {
-            var created = run(["create", DedicatedGpuModeServiceProtocol.ServiceName, "binPath=", command,
+            var created = run(["create", OpenSynapseServiceProtocol.ServiceName, "binPath=", command,
                 "type=", "own", "start=", "demand", "obj=", "LocalSystem",
                 "DisplayName=", "OpenSynapse Service", "error=", "normal"]);
             if (created.ExitCode is not (0 or ServiceAlreadyExists)) return false;
@@ -100,12 +100,12 @@ public static class DedicatedGpuModeServiceInstaller
         if (!current.MatchesSettings(command))
         {
             if (current.IsRunning && (!stop() || read() is not { IsRunning: false })) return false;
-            if (run(["config", DedicatedGpuModeServiceProtocol.ServiceName, "binPath=", command,
+            if (run(["config", OpenSynapseServiceProtocol.ServiceName, "binPath=", command,
                 "type=", "own", "start=", "demand", "obj=", "LocalSystem", "error=", "normal"]).ExitCode != 0) return false;
         }
         if (!current.MatchesDacl(ServiceSddl) &&
-            run(["sdset", DedicatedGpuModeServiceProtocol.ServiceName, ServiceSddl]).ExitCode != 0) return false;
-        if (run(["description", DedicatedGpuModeServiceProtocol.ServiceName,
+            run(["sdset", OpenSynapseServiceProtocol.ServiceName, ServiceSddl]).ExitCode != 0) return false;
+        if (run(["description", OpenSynapseServiceProtocol.ServiceName,
             "Provides OpenSynapse privileged features: GPU and CPU controls, the macro agent, and the Chroma broker."]).ExitCode != 0) return false;
         if (read()?.Matches(command, ServiceSddl) != true) return false;
         RemoveLegacy(run);
@@ -113,8 +113,8 @@ public static class DedicatedGpuModeServiceInstaller
     }
 
     public static bool Stop() =>
-        StopService(DedicatedGpuModeServiceProtocol.ServiceName) &
-        StopService(DedicatedGpuModeServiceProtocol.LegacyServiceName);
+        StopService(OpenSynapseServiceProtocol.ServiceName) &
+        StopService(OpenSynapseServiceProtocol.LegacyServiceName);
 
     private static bool StopService(string name)
     {
@@ -165,10 +165,10 @@ public static class DedicatedGpuModeServiceInstaller
         {
             var result = RunSc(
                 "delete",
-                DedicatedGpuModeServiceProtocol.ServiceName);
+                OpenSynapseServiceProtocol.ServiceName);
             var legacy = RunSc(
                 "delete",
-                DedicatedGpuModeServiceProtocol.LegacyServiceName);
+                OpenSynapseServiceProtocol.LegacyServiceName);
             return IsRemoved(result) && IsRemoved(legacy);
         }
         catch (Exception exception) when (
@@ -182,8 +182,8 @@ public static class DedicatedGpuModeServiceInstaller
     {
         // Delete the pre-rename service only after the new one is in place. Both
         // exit codes are ignored: 1060/1062 mean it was never installed or already stopped.
-        _ = run(["stop", DedicatedGpuModeServiceProtocol.LegacyServiceName]);
-        _ = run(["delete", DedicatedGpuModeServiceProtocol.LegacyServiceName]);
+        _ = run(["stop", OpenSynapseServiceProtocol.LegacyServiceName]);
+        _ = run(["delete", OpenSynapseServiceProtocol.LegacyServiceName]);
     }
 
     private static bool IsRemoved(ScResult result) =>

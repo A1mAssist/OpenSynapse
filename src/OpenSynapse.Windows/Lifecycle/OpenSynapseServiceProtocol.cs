@@ -3,19 +3,19 @@ using OpenSynapse.Core.Devices;
 namespace OpenSynapse.Windows.Lifecycle;
 
 /// <summary>
-/// The fixed command surface shared by the app and the machine-wide GPU service.
+/// The fixed command surface shared by the app and the machine-wide OpenSynapse service.
 /// Keep this wire format backward compatible. Only confirmed non-execution permits
 /// UAC fallback; losing a dispatched PnP write response does not cancel the write.
 /// </summary>
-public static class DedicatedGpuModeServiceProtocol
+public static class OpenSynapseServiceProtocol
 {
     public const string ServiceName = "OpenSynapseService";
     // The pre-rename machine-wide service. EnsureInstalled deletes it once the new
     // name is installed and verified, so an interrupted upgrade keeps the old path.
     public const string LegacyServiceName = "OpenSynapseGpuMode";
-    public const string PipeName = "OpenSynapse.GpuMode.v1";
-    public const string ServiceArgument = "--gpu-service";
-    public const string ServiceUserArgument = "--gpu-service-user";
+    public const string PipeName = "OpenSynapse.Service.v1";
+    public const string ServiceArgument = "--open-synapse-service";
+    public const string ServiceUserArgument = "--open-synapse-service-user";
     public const int Version = 1;
     public const string StatusOperation = "status";
     public const string SetOperation = "set";
@@ -36,7 +36,7 @@ public static class DedicatedGpuModeServiceProtocol
     public const int MaximumMessageLength = 4096;
 }
 
-public sealed record DedicatedGpuModeServiceRequest(
+public sealed record OpenSynapseServiceRequest(
     int Version,
     string Operation,
     bool? Enabled,
@@ -52,7 +52,7 @@ public sealed record DedicatedGpuModeServiceRequest(
 /// The operation a service request asks for. The decision lives here so the
 /// request routing can be tested without a running Windows service.
 /// </summary>
-public enum DedicatedGpuModeServiceAction
+public enum OpenSynapseServiceAction
 {
     /// <summary>Return the current adapter state.</summary>
     Status,
@@ -112,7 +112,7 @@ public enum DedicatedGpuModeServiceAction
     Unsupported,
 }
 
-public sealed record DedicatedGpuModeServiceResponse(
+public sealed record OpenSynapseServiceResponse(
     int Version,
     bool Handled,
     DedicatedGpuSwitchOutcome Outcome,
@@ -149,142 +149,142 @@ public sealed record DedicatedGpuCurveOptimizerState(bool Available, string? Err
 
 public sealed record DedicatedGpuCurveOptimizerResult(bool Applied, string? Error);
 
-public static class DedicatedGpuModeServiceRequestParser
+public static class OpenSynapseServiceRequestParser
 {
     /// <summary>
     /// Maps a request onto the action the service should take. The restart action is
     /// resolved before the set action, because a restart carries no enable flag and
     /// would otherwise be rejected as a malformed set.
     /// </summary>
-    public static DedicatedGpuModeServiceAction Parse(DedicatedGpuModeServiceRequest request)
+    public static OpenSynapseServiceAction Parse(OpenSynapseServiceRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
-        if (request.Version != DedicatedGpuModeServiceProtocol.Version)
+        if (request.Version != OpenSynapseServiceProtocol.Version)
         {
-            return DedicatedGpuModeServiceAction.Unsupported;
+            return OpenSynapseServiceAction.Unsupported;
         }
 
         if (StringComparer.Ordinal.Equals(
                 request.Operation,
-                DedicatedGpuModeServiceProtocol.StatusOperation))
+                OpenSynapseServiceProtocol.StatusOperation))
         {
-            return DedicatedGpuModeServiceAction.Status;
+            return OpenSynapseServiceAction.Status;
         }
 
         if (StringComparer.Ordinal.Equals(
                 request.Operation,
-                DedicatedGpuModeServiceProtocol.RestartOperation))
+                OpenSynapseServiceProtocol.RestartOperation))
         {
-            return DedicatedGpuModeServiceAction.Restart;
+            return OpenSynapseServiceAction.Restart;
         }
 
         if (StringComparer.Ordinal.Equals(
                 request.Operation,
-                DedicatedGpuModeServiceProtocol.EnsureMacroAgentOperation))
+                OpenSynapseServiceProtocol.EnsureMacroAgentOperation))
         {
-            return DedicatedGpuModeServiceAction.EnsureMacroAgent;
+            return OpenSynapseServiceAction.EnsureMacroAgent;
         }
 
         if (StringComparer.Ordinal.Equals(
                 request.Operation,
-                DedicatedGpuModeServiceProtocol.StartMacroAgentOperation))
+                OpenSynapseServiceProtocol.StartMacroAgentOperation))
         {
-            return DedicatedGpuModeServiceAction.StartMacroAgent;
+            return OpenSynapseServiceAction.StartMacroAgent;
         }
 
         if (StringComparer.Ordinal.Equals(
                 request.Operation,
-                DedicatedGpuModeServiceProtocol.GpuClockOffsetStatusOperation))
+                OpenSynapseServiceProtocol.GpuClockOffsetStatusOperation))
         {
-            return DedicatedGpuModeServiceAction.GpuClockOffsetStatus;
+            return OpenSynapseServiceAction.GpuClockOffsetStatus;
         }
 
         if (StringComparer.Ordinal.Equals(
                 request.Operation,
-                DedicatedGpuModeServiceProtocol.SetGpuClockOffsetOperation) &&
+                OpenSynapseServiceProtocol.SetGpuClockOffsetOperation) &&
             request.CoreOffsetMhz is not null &&
             request.MemoryOffsetMhz is not null)
         {
-            return DedicatedGpuModeServiceAction.SetGpuClockOffset;
+            return OpenSynapseServiceAction.SetGpuClockOffset;
         }
 
         if (StringComparer.Ordinal.Equals(
                 request.Operation,
-                DedicatedGpuModeServiceProtocol.GpuClockLimitStatusOperation))
+                OpenSynapseServiceProtocol.GpuClockLimitStatusOperation))
         {
-            return DedicatedGpuModeServiceAction.GpuClockLimitStatus;
+            return OpenSynapseServiceAction.GpuClockLimitStatus;
         }
 
         if (StringComparer.Ordinal.Equals(
                 request.Operation,
-                DedicatedGpuModeServiceProtocol.SetGpuClockLimitOperation) &&
+                OpenSynapseServiceProtocol.SetGpuClockLimitOperation) &&
             request.ClockLimitMhz is not null)
         {
-            return DedicatedGpuModeServiceAction.SetGpuClockLimit;
+            return OpenSynapseServiceAction.SetGpuClockLimit;
         }
 
         if (StringComparer.Ordinal.Equals(
                 request.Operation,
-                DedicatedGpuModeServiceProtocol.CpuPowerLimitStatusOperation))
+                OpenSynapseServiceProtocol.CpuPowerLimitStatusOperation))
         {
-            return DedicatedGpuModeServiceAction.CpuPowerLimitStatus;
+            return OpenSynapseServiceAction.CpuPowerLimitStatus;
         }
 
         if (StringComparer.Ordinal.Equals(
                 request.Operation,
-                DedicatedGpuModeServiceProtocol.SetCpuPowerLimitOperation) &&
+                OpenSynapseServiceProtocol.SetCpuPowerLimitOperation) &&
             request.Pl1Watts is not null &&
             request.Pl2Watts is not null)
         {
-            return DedicatedGpuModeServiceAction.SetCpuPowerLimit;
+            return OpenSynapseServiceAction.SetCpuPowerLimit;
         }
 
         if (StringComparer.Ordinal.Equals(
                 request.Operation,
-                DedicatedGpuModeServiceProtocol.RestoreCpuPowerLimitOperation) &&
+                OpenSynapseServiceProtocol.RestoreCpuPowerLimitOperation) &&
             (request.Pl1Watts is null) == (request.Pl2Watts is null))
         {
-            return DedicatedGpuModeServiceAction.RestoreCpuPowerLimit;
+            return OpenSynapseServiceAction.RestoreCpuPowerLimit;
         }
 
         if (StringComparer.Ordinal.Equals(
                 request.Operation,
-                DedicatedGpuModeServiceProtocol.CurveOptimizerStatusOperation))
+                OpenSynapseServiceProtocol.CurveOptimizerStatusOperation))
         {
-            return DedicatedGpuModeServiceAction.CurveOptimizerStatus;
+            return OpenSynapseServiceAction.CurveOptimizerStatus;
         }
 
         if (StringComparer.Ordinal.Equals(
                 request.Operation,
-                DedicatedGpuModeServiceProtocol.SetCurveOptimizerOperation) &&
+                OpenSynapseServiceProtocol.SetCurveOptimizerOperation) &&
             request.CurveSteps is not null)
         {
-            return DedicatedGpuModeServiceAction.SetCurveOptimizer;
+            return OpenSynapseServiceAction.SetCurveOptimizer;
         }
 
         if (StringComparer.Ordinal.Equals(
                 request.Operation,
-                DedicatedGpuModeServiceProtocol.StartChromaBrokerOperation) &&
+                OpenSynapseServiceProtocol.StartChromaBrokerOperation) &&
             request.ParentProcessId is > 0)
         {
-            return DedicatedGpuModeServiceAction.StartChromaBroker;
+            return OpenSynapseServiceAction.StartChromaBroker;
         }
 
         if (StringComparer.Ordinal.Equals(
                 request.Operation,
-                DedicatedGpuModeServiceProtocol.StopChromaBrokerOperation))
+                OpenSynapseServiceProtocol.StopChromaBrokerOperation))
         {
-            return DedicatedGpuModeServiceAction.StopChromaBroker;
+            return OpenSynapseServiceAction.StopChromaBroker;
         }
 
         if (StringComparer.Ordinal.Equals(
                 request.Operation,
-                DedicatedGpuModeServiceProtocol.SetOperation) &&
+                OpenSynapseServiceProtocol.SetOperation) &&
             request.Enabled is bool)
         {
-            return DedicatedGpuModeServiceAction.Set;
+            return OpenSynapseServiceAction.Set;
         }
 
-        return DedicatedGpuModeServiceAction.Unsupported;
+        return OpenSynapseServiceAction.Unsupported;
     }
 }

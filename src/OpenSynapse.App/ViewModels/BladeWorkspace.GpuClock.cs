@@ -214,7 +214,7 @@ public sealed partial class BladeWorkspace
         OnPropertyChanged(nameof(CanEditGpuClockLimit));
         try
         {
-            var state = await DedicatedGpuModeServiceClient.TryGetGpuClockOffsetAsync();
+            var state = await OpenSynapseServiceClient.TryGetGpuClockOffsetAsync();
             _blade._bladeGpuClockOffsetAvailable = state?.Available == true;
             if (state is { Available: true })
             {
@@ -242,7 +242,7 @@ public sealed partial class BladeWorkspace
 
         try
         {
-            var limit = await DedicatedGpuModeServiceClient.TryGetGpuClockLimitAsync();
+            var limit = await OpenSynapseServiceClient.TryGetGpuClockLimitAsync();
             _bladeGpuClockLimitAvailable = limit?.Available == true;
             if (limit is { Available: true })
             {
@@ -288,7 +288,7 @@ public sealed partial class BladeWorkspace
                 {
                     try
                     {
-                        if (!await DedicatedGpuModeServiceClient.TrySetGpuClockOffsetAsync(
+                        if (!await OpenSynapseServiceClient.TrySetGpuClockOffsetAsync(
                                 core, memory, cancellationToken))
                         {
                             throw new InvalidOperationException(AppStrings.Text("BladeGpuClockOffsetFailed"));
@@ -329,7 +329,7 @@ public sealed partial class BladeWorkspace
         }
 
         var serviceValue = megahertz <= 0 ? NvApiGpuClockLimit.MaximumMhz : megahertz;
-        if (!await DedicatedGpuModeServiceClient.TrySetGpuClockLimitAsync(
+        if (!await OpenSynapseServiceClient.TrySetGpuClockLimitAsync(
                 serviceValue, cancellationToken))
         {
             throw new InvalidOperationException(AppStrings.Text("BladeGpuClockOffsetFailed"));
