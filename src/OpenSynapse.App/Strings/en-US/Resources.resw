@@ -1013,6 +1013,12 @@
   <data name="RazerHidProtocolQueryFailed" xml:space="preserve">
     <value>The device channel could not be read.</value>
   </data>
+  <data name="RazerHidOnboardProfileRejected" xml:space="preserve">
+    <value>The device rejected the operation. Check that the profile id exists and that a slot is free.</value>
+  </data>
+  <data name="RazerHidOnboardProfileUnsupported" xml:space="preserve">
+    <value>This device does not support this onboard profile operation.</value>
+  </data>
   <data name="RazerHidMappingNoButtons" xml:space="preserve">
     <value>Device reported no mapping buttons</value>
   </data>

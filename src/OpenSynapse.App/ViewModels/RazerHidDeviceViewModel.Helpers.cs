@@ -526,6 +526,26 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         }
     }
 
+    private void SetBusy(
+        ref bool field,
+        bool value,
+        string canEditProperty,
+        string canApplyProperty,
+        string canCreateProperty,
+        string canDeleteProperty,
+        string canResetProperty,
+        [CallerMemberName] string? propertyName = null)
+    {
+        if (SetField(ref field, value, propertyName))
+        {
+            OnPropertyChanged(canEditProperty);
+            OnPropertyChanged(canApplyProperty);
+            OnPropertyChanged(canCreateProperty);
+            OnPropertyChanged(canDeleteProperty);
+            OnPropertyChanged(canResetProperty);
+        }
+    }
+
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 }
