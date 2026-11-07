@@ -66,9 +66,10 @@ The `OpenSynapse.ChromaSdk.Shim` project publishes an x64 `RzChromaSDK64.dll` th
 
 Download one of these files from [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest).
 
-- `OpenSynapse-<version>-win-x64.msi` — **Recommended.** Installs for all users under `Program Files` and registers the GPU mode service with administrator approval. When registration succeeds, supported GPU switches use the service without another UAC prompt. If an older per-user Setup install is present, installation preserves its profiles and settings. The next unelevated launch verifies that every data file has a preserved copy, keeps conflicting versions as `.legacy-backup` files, and then removes the old install and repairs startup. Elevated launches leave the old uninstaller untouched.
-- `OpenSynapse-<version>-win-Setup-AutoUpdate-PerUser.exe` — Velopack auto-update/per-user package. It installs for the current user only and does not install the machine-wide service; the GPU switch falls back to a UAC prompt for each change. Use this only when you need a per-user install or are following the auto-update path; normal installs should use the MSI.
+- `OpenSynapse-<version>-win-x64.msi` — **Recommended.** Installs for all users under `Program Files` and registers the GPU mode service with administrator approval. When registration succeeds, supported GPU switches use the service without another UAC prompt. If an older per-user install is present, installation preserves its profiles and settings. The next unelevated launch verifies that every data file has a preserved copy, keeps conflicting versions as `.legacy-backup` files, and then removes the old install and repairs startup. Elevated launches leave the old uninstaller untouched.
 - `OpenSynapse-<version>-win-Portable.zip` — Portable copy. It runs without installation; the GPU switch prompts for UAC when used.
+
+Advanced: `OpenSynapse-<version>-win-AutoUpdate-PerUser.exe` is the auto-update/per-user package. Do not download it for a normal install; use the MSI or Portable. It installs for the current user only and does not install the machine-wide service; use it only when you specifically need a per-user install or the auto-update path.
 
 `<version>` is the release version, for example `1.6.1`.
 
