@@ -306,7 +306,11 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         ThxHeadsetAdmission.GetProfile(_connection.ProductId)?.InstallerUri ?? string.Empty;
 
     public Visibility ThxInstallerLinkVisibility =>
-        ThxVisibility == Visibility.Visible && ThxInstallerUri.Length > 0
+        ThxVisibility == Visibility.Visible &&
+        ThxInstallerUri.Length > 0 &&
+        (_thxErrorText.Length > 0 ||
+         _thxStatus.ErrorCode is "ThxDownloadFailed" or "ThxDownloadVerificationFailed" ||
+         _thxStatus.ErrorCode?.StartsWith("ThxInstaller", StringComparison.Ordinal) == true)
             ? Visibility.Visible
             : Visibility.Collapsed;
 
@@ -1004,6 +1008,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     {
         OnPropertyChanged(nameof(ThxStatusText));
         OnPropertyChanged(nameof(ThxInstallerVisibility));
+        OnPropertyChanged(nameof(ThxInstallerLinkVisibility));
         OnPropertyChanged(nameof(ThxControlsVisibility));
         OnPropertyChanged(nameof(CanInstallThx));
         OnPropertyChanged(nameof(CanApplyThx));
