@@ -87,6 +87,21 @@ public static class StudioBladeDevices
             }
         }
 
+        if (dialect == BladeLightingDialect.LedMatrixBlade)
+        {
+            // Older Blade canvases are 6 x 15 or 7 x 15 with a 6 x 16 device
+            // frame. The runtime manifest only carries the device geometry.
+            var (logicalRows, logicalColumns) = descriptor.ProductId switch
+            {
+                0x0234 or 0x023A or 0x024B or 0x024C or 0x024D => (6, 15),
+                0x0253 or 0x0256 or 0x026D or 0x026E or 0x0270 or 0x0276 or 0x0279 => (7, 15),
+                _ => (manifest.MatrixRows, manifest.MatrixColumns),
+            };
+            return logicalColumns == manifest.MatrixColumns
+                ? new(StudioBladeFrameMode.Direct, logicalRows, logicalColumns)
+                : new(StudioBladeFrameMode.Sparse, logicalRows, logicalColumns);
+        }
+
         if (!IsSoftwareMatrix(dialect)) return null;
         var rows = manifest.MatrixRows;
         var columns = manifest.MatrixColumns;
