@@ -870,13 +870,6 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
     }
     public bool CanEditOnboardProfile =>
         CanUse(RazerHidBackendCapability.OnboardProfileWrite) && !IsOnboardProfileBusy;
-    public bool CanApplyOnboardProfile => CanEditOnboardProfile &&
-        SelectedOnboardProfileId != ActiveOnboardProfileId;
-    public bool CanCreateOnboardProfile => CanEditOnboardProfile &&
-        OnboardProfileCount < OnboardMaxProfiles;
-    public bool CanDeleteOnboardProfile => CanEditOnboardProfile &&
-        OnboardProfileCount > 1;
-    public bool CanResetOnboardProfile => CanEditOnboardProfile;
     public IReadOnlyList<string> ScrollFreeNotchedModeTexts { get; } =
         [AppStrings.Text("RazerHidScrollNotchedMode"), AppStrings.Text("RazerHidScrollFreeSpinMode")];
     public bool IsScrollLoading { get => _isScrollLoading; private set => SetField(ref _isScrollLoading, value); }
