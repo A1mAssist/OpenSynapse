@@ -1329,6 +1329,14 @@
     <value>设备通道读取失败。</value>
     <comment>设备通道读取失败</comment>
   </data>
+  <data name="RazerHidOnboardProfileRejected" xml:space="preserve">
+    <value>设备拒绝了该操作。请确认配置编号在已用范围内，且槽位未满。</value>
+    <comment>板载配置命令被设备拒绝</comment>
+  </data>
+  <data name="RazerHidOnboardProfileUnsupported" xml:space="preserve">
+    <value>该设备不支持这项板载配置操作。</value>
+    <comment>板载配置命令不支持</comment>
+  </data>
   <data name="RazerHidMappingNoButtons" xml:space="preserve">
     <value>设备未报告任何映射按键</value>
     <comment>设备未报告任何映射按键</comment>

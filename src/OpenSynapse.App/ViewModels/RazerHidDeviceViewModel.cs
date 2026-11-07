@@ -856,42 +856,27 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         RazerHidBackendCapability.ScrollAccelerationLevelRead, RazerHidBackendCapability.ScrollAccelerationLevelWrite));
     public Visibility ScrollAccelerationLevelWriteVisibility =>
         VisibleWhen(Has(RazerHidBackendCapability.ScrollAccelerationLevelWrite));
-    public Visibility OnboardProfileVisibility => VisibleWhen(HasAny(
-        RazerHidBackendCapability.OnboardProfileRead, RazerHidBackendCapability.OnboardProfileWrite));
-    public Visibility OnboardProfileWriteVisibility =>
-        VisibleWhen(Has(RazerHidBackendCapability.OnboardProfileWrite));
-    public byte OnboardProfileCount
-    {
-        get => _onboardProfileCount;
-        set => SetField(ref _onboardProfileCount, value);
-    }
-    public byte OnboardMaxProfiles
-    {
-        get => _onboardMaxProfiles;
-        set => SetField(ref _onboardMaxProfiles, value);
-    }
-    public byte ActiveOnboardProfileId
-    {
-        get => _activeOnboardProfileId;
-        set => SetField(ref _activeOnboardProfileId, value);
-    }
-    public byte SelectedOnboardProfileId
-    {
-        get => _selectedOnboardProfileId;
-        set => SetField(ref _selectedOnboardProfileId, value);
-    }
-    public string OnboardProfileStatusText
-    {
-        get => _onboardProfileStatusText;
-        set => SetField(ref _onboardProfileStatusText, value);
-    }
     public bool IsOnboardProfileBusy
     {
         get => _isOnboardProfileBusy;
-        private set => SetBusy(ref _isOnboardProfileBusy, value, nameof(CanEditOnboardProfile));
+        private set => SetBusy(
+            ref _isOnboardProfileBusy,
+            value,
+            nameof(CanEditOnboardProfile),
+            nameof(CanApplyOnboardProfile),
+            nameof(CanCreateOnboardProfile),
+            nameof(CanDeleteOnboardProfile),
+            nameof(CanResetOnboardProfile));
     }
     public bool CanEditOnboardProfile =>
         CanUse(RazerHidBackendCapability.OnboardProfileWrite) && !IsOnboardProfileBusy;
+    public bool CanApplyOnboardProfile => CanEditOnboardProfile &&
+        SelectedOnboardProfileId != ActiveOnboardProfileId;
+    public bool CanCreateOnboardProfile => CanEditOnboardProfile &&
+        OnboardProfileCount < OnboardMaxProfiles;
+    public bool CanDeleteOnboardProfile => CanEditOnboardProfile &&
+        OnboardProfileCount > 1;
+    public bool CanResetOnboardProfile => CanEditOnboardProfile;
     public IReadOnlyList<string> ScrollFreeNotchedModeTexts { get; } =
         [AppStrings.Text("RazerHidScrollNotchedMode"), AppStrings.Text("RazerHidScrollFreeSpinMode")];
     public bool IsScrollLoading { get => _isScrollLoading; private set => SetField(ref _isScrollLoading, value); }

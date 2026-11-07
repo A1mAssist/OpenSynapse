@@ -19,6 +19,19 @@ public readonly record struct RazerProfileColor(
 public static class RazerOnboardProfileProtocol
 {
     private const byte CommandClass = 0x05;
+    /// <summary>
+    /// The DeathAdder V4 Pro family (00BE/00BF) exposes the same profile commands under
+    /// class 0x03 instead of 0x05, so the firmware rejects a class 0x05 write with 0x03.
+    /// The command ids differ as well: max profiles is 0x89 (not 0x8A), the profile count
+    /// list is 0x80, the active id is 0x83 and the create/delete ids are 0x02/0x03.
+    /// </summary>
+    private const byte AltCommandClass = 0x03;
+    private const byte AltGetMaxProfilesSupportedCommand = 0x89;
+    private const byte AltGetNumberOfProfilesCommand = 0x80;
+    private const byte AltCreateNewProfileCommand = 0x02;
+    private const byte AltDeleteProfileCommand = 0x03;
+    private const byte AltSetActiveProfileIdCommand = 0x04;
+    private const byte AltGetActiveProfileIdCommand = 0x83;
     private const byte GetMaxProfilesSupportedCommand = 0x8A;
     private const byte GetNumberOfProfilesCommand = 0x80;
     private const byte CreateNewProfileCommand = 0x02;
@@ -37,6 +50,57 @@ public static class RazerOnboardProfileProtocol
             ProfileIdSize,
             CommandClass,
             GetMaxProfilesSupportedCommand,
+            []);
+
+    /// <summary>
+    /// The class 0x03 profile dialect used by the DeathAdder V4 Pro family.
+    /// </summary>
+    public static byte[] CreateAltGetMaxProfilesSupportedRequest(byte transactionId) =>
+        RazerFeatureReport.CreateRequest(
+            transactionId,
+            ProfileIdSize,
+            AltCommandClass,
+            AltGetMaxProfilesSupportedCommand,
+            []);
+
+    public static byte[] CreateAltGetNumberOfProfilesRequest(byte transactionId) =>
+        RazerFeatureReport.CreateRequest(
+            transactionId,
+            ProfileIdSize,
+            AltCommandClass,
+            AltGetNumberOfProfilesCommand,
+            []);
+
+    public static byte[] CreateAltCreateNewProfileRequest(byte transactionId, byte profileId) =>
+        RazerFeatureReport.CreateRequest(
+            transactionId,
+            ProfileIdSize,
+            AltCommandClass,
+            AltCreateNewProfileCommand,
+            [profileId]);
+
+    public static byte[] CreateAltDeleteProfileRequest(byte transactionId, byte profileId) =>
+        RazerFeatureReport.CreateRequest(
+            transactionId,
+            ProfileIdSize,
+            AltCommandClass,
+            AltDeleteProfileCommand,
+            [profileId]);
+
+    public static byte[] CreateAltSetActiveProfileIdRequest(byte transactionId, byte profileId) =>
+        RazerFeatureReport.CreateRequest(
+            transactionId,
+            ProfileIdSize,
+            AltCommandClass,
+            AltSetActiveProfileIdCommand,
+            [profileId]);
+
+    public static byte[] CreateAltGetActiveProfileIdRequest(byte transactionId) =>
+        RazerFeatureReport.CreateRequest(
+            transactionId,
+            ProfileIdSize,
+            AltCommandClass,
+            AltGetActiveProfileIdCommand,
             []);
 
     public static byte[] CreateGetNumberOfProfilesRequest(byte transactionId) =>
