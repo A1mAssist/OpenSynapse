@@ -364,4 +364,3 @@ public static class ChromaDeviceCatalog
         return canonical != productId && Devices.TryGetValue(canonical, out kind) ? kind : null;
     }
 }
-
