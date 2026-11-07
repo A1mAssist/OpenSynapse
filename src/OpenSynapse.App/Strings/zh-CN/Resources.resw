@@ -1756,6 +1756,17 @@
   <data name="ChromaRestStatusUnavailable" xml:space="preserve"><value>不可用</value><comment>Chroma REST 不可用</comment></data>
   <data name="ChromaRestStatusReady" xml:space="preserve"><value>{0} · 已就绪</value><comment>Chroma REST 已就绪</comment></data>
   <data name="ChromaRestStatusSession" xml:space="preserve"><value>{0} · {1} · {2:0} fps · 跳过 {3}</value><comment>Chroma REST 活动会话与帧统计</comment></data>
+  <data name="ChromaShimTitle.Text" xml:space="preserve"><value>游戏兼容层</value><comment>Chroma 游戏兼容 DLL 标题</comment></data>
+  <data name="ChromaShimDescription.Text" xml:space="preserve"><value>安装后游戏会加载 OpenSynapse 的 Chroma 兼容 DLL；请先启动 OpenSynapse 再开游戏。安装会备份并替换 Razer 官方的 x64 DLL，需要管理员权限。</value><comment>Chroma 游戏兼容 DLL 说明</comment></data>
+  <data name="ChromaShimStatus.Text" xml:space="preserve"><value>未安装</value><comment>Chroma 游戏兼容 DLL 初始状态</comment></data>
+  <data name="ChromaShimInstallButton.Content" xml:space="preserve"><value>安装</value><comment>安装 Chroma 游戏兼容 DLL</comment></data>
+  <data name="ChromaShimRestoreButton.Content" xml:space="preserve"><value>恢复官方 DLL</value><comment>恢复 Razer 官方 Chroma DLL</comment></data>
+  <data name="ChromaShimStatusNotInstalled" xml:space="preserve"><value>未安装，游戏灯光仍由雷云接管。</value></data>
+  <data name="ChromaShimStatusInstalled" xml:space="preserve"><value>已安装，游戏灯光走 OpenSynapse。</value></data>
+  <data name="ChromaShimStatusUnavailable" xml:space="preserve"><value>未检测到 Razer Chroma SDK。</value></data>
+  <data name="ChromaShimStatusBusy" xml:space="preserve"><value>正在处理…</value></data>
+  <data name="ChromaShimInstallFailed" xml:space="preserve"><value>安装失败（错误码 {0}）。请关闭游戏后重试。</value></data>
+  <data name="ChromaShimRestoreFailed" xml:space="preserve"><value>恢复失败（错误码 {0}）。请关闭游戏后重试。</value></data>
   <data name="ChromaRestoreTitle.Text" xml:space="preserve"><value>外部控制结束后恢复灯光</value><comment>恢复灯光标题</comment></data>
   <data name="ChromaRestoreDescription.Text" xml:space="preserve"><value>会话结束或超时后恢复 OpenSynapse 当前配置的灯效。</value><comment>恢复灯光说明</comment></data>
   <data name="ChromaRestoreToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>外部控制结束后恢复灯光</value><comment>恢复灯光开关</comment></data>
@@ -2055,7 +2066,7 @@
   <data name="TaskbarStatusDescription.Text" xml:space="preserve"><value>在任务栏显示已连接外设的电量；不显示性能模式，点击也不会打开主窗口。</value></data>
   <data name="TaskbarStatusToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>任务栏状态条</value></data>
   <data name="PerformanceOverlayTitle" xml:space="preserve"><value>性能悬浮窗</value></data>
-  <data name="PerformanceOverlayDescription" xml:space="preserve"><value>在桌面置顶显示性能模式、CPU/GPU 温度与频率、内存占用与频率，以及风扇转速；可拖动并记住位置，右键可切换卡片、重置位置或关闭。</value></data>
+  <data name="PerformanceOverlayDescription" xml:space="preserve"><value>在桌面显示性能模式、CPU/GPU 温度与频率、内存占用与频率，以及风扇转速；可拖动并记住位置，右键可切换卡片、重置位置或关闭。</value></data>
   <data name="PerformanceOverlayDetailedTitle" xml:space="preserve"><value>详细卡片</value></data>
   <data name="PerformanceOverlayDetailedDescription" xml:space="preserve"><value>使用较大的半透明卡片，并显示 CPU/GPU 负载折线图。</value></data>
   <data name="PerformanceOverlayDetailedToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>详细性能悬浮窗</value></data>

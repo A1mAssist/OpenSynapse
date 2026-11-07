@@ -76,7 +76,7 @@
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                       <StackPanel Spacing="4">
                         <TextBlock local:Localized.Uid="PerformanceOverlayTitle" Text="性能悬浮窗" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                        <TextBlock local:Localized.Uid="PerformanceOverlayDescription" Text="在桌面置顶显示性能模式、CPU/GPU 温度和风扇转速；可拖动并记住位置。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                        <TextBlock local:Localized.Uid="PerformanceOverlayDescription" Text="在桌面显示性能模式、CPU/GPU 温度和风扇转速；可拖动并记住位置。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                       </StackPanel>
                       <ToggleSwitch local:Localized.Uid="PerformanceOverlayToggle" x:Name="PerformanceOverlayToggle" Grid.Column="1" Toggled="PerformanceOverlayToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="性能悬浮窗" />
                     </Grid>
@@ -108,6 +108,15 @@
                       <ToggleSwitch local:Localized.Uid="ChromaRestoreToggle" x:Name="ChromaRestoreToggle" Grid.Column="1" Toggled="ChromaRestoreToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="Restore lighting after external control" />
                     </Grid>
                     <TextBlock local:Localized.Uid="ChromaRestStatus" x:Name="ChromaRestStatusText" Text="Disabled" FontFamily="Cascadia Mono,Consolas" FontSize="12" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    <Border Height="1" Background="{StaticResource LineBrush}" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                      <StackPanel Spacing="4">
+                        <TextBlock local:Localized.Uid="ChromaShimTitle" Text="游戏兼容层" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock local:Localized.Uid="ChromaShimDescription" Text="安装后游戏会加载 OpenSynapse 的 Chroma 兼容 DLL；请先启动 OpenSynapse 再开游戏。安装会备份并替换 Razer 官方的 x64 DLL，需要管理员权限。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                        <TextBlock local:Localized.Uid="ChromaShimStatus" x:Name="ChromaShimStatusText" Text="未安装" FontSize="12" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      </StackPanel>
+                      <Button local:Localized.Uid="ChromaShimInstallButton" x:Name="ChromaShimButton" Grid.Column="1" Content="安装" Click="ChromaShimActionClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+                    </Grid>
                     <StackPanel x:Name="ChromaSourceSection" Spacing="10">
                       <Border Height="1" Background="{StaticResource LineBrush}" />
                       <TextBlock local:Localized.Uid="ChromaSourcesTitle" Text="Chroma sources" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" FontSize="16" />

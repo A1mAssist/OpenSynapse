@@ -26,8 +26,6 @@ public sealed partial class PerformanceOverlayWindow : Window
     private const uint SwpNoZOrder = 0x0004;
     private const uint SwpNoActivate = 0x0010;
     private const uint SwpFrameChanged = 0x0020;
-    private const uint SwpNoOwnerZOrder = 0x0200;
-    private const int HwndTopmost = -1;
     private const int DwmWindowCornerPreference = 33;
     private const int DwmWindowCornerRound = 2;
     private const int DwmBorderColor = 34;
@@ -72,7 +70,6 @@ public sealed partial class PerformanceOverlayWindow : Window
             presenter.IsResizable = false;
             presenter.IsMaximizable = false;
             presenter.IsMinimizable = false;
-            presenter.IsAlwaysOnTop = true;
         }
 
         _windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
@@ -239,14 +236,15 @@ public sealed partial class PerformanceOverlayWindow : Window
         x = Math.Clamp(x, workArea.X, Math.Max(workArea.X, workArea.X + workArea.Width - width));
         y = Math.Clamp(y, workArea.Y, Math.Max(workArea.Y, workArea.Y + workArea.Height - height));
         AppWindow.MoveAndResize(new RectInt32(x, y, width, height));
+        // Normal-window z-order; topmost breaks DirectFlip in borderless games.
         _ = SetWindowPos(
             _windowHandle,
-            new IntPtr(HwndTopmost),
+            IntPtr.Zero,
             0,
             0,
             0,
             0,
-            SwpNoMove | SwpNoSize | SwpNoActivate | SwpNoOwnerZOrder);
+            SwpNoMove | SwpNoSize | SwpNoActivate);
     }
 
     private void DragRegionPointerPressed(object sender, PointerRoutedEventArgs e)
