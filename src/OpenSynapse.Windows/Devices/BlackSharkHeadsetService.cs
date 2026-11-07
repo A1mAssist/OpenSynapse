@@ -372,6 +372,13 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
         ushort usage,
         int outputReportByteLength)
     {
+        // The V2 HyperSpeed is an AudioOdessaT2Wireless device, not a V3 Pro.
+        // Keep it out of this panel even when a stale catalog has no entry for it.
+        if (BlackSharkV3ProProtocol.IsHyperSpeedProductId(productId))
+        {
+            return false;
+        }
+
         // Catalog-declared identities must be the dedicated V3 Pro panel; unknown PIDs keep
         // the product-name fallback for unlisted SKUs, but known non-dedicated BlackShark
         // devices (0528, 0A4E, 101E, ...) must not be pulled into the V3 Pro protocol.

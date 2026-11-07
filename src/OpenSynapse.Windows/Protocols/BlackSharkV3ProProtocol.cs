@@ -22,6 +22,8 @@ public static class BlackSharkV3ProProtocol
 {
     public const ushort WiredProductId = 0x0576;
     public const ushort WirelessProductId = 0x0577;
+    public const ushort HyperSpeedWirelessProductId = 0x0565;
+    public const ushort HyperSpeedUsbProductId = 0x056E;
 
     /// <summary>
     /// Hardware enumerated the 2.4 GHz dongle as 0x101B and the USB cable as 0x101C.
@@ -47,7 +49,10 @@ public static class BlackSharkV3ProProtocol
     private const byte GameChatSetClass = 0xDC;
 
     public static bool IsWiredProductId(ushort productId) =>
-        productId is WiredProductId or UsbProductId;
+        productId is WiredProductId or UsbProductId or HyperSpeedUsbProductId;
+
+    public static bool IsHyperSpeedProductId(ushort productId) =>
+        productId is HyperSpeedWirelessProductId or HyperSpeedUsbProductId;
 
     public static string DescribeProduct(ushort productId) => productId switch
     {
@@ -55,6 +60,8 @@ public static class BlackSharkV3ProProtocol
         UsbProductId => "Razer BlackShark V3 Pro (USB)",
         DongleProductId => "Razer BlackShark V3 Pro (2.4 GHz dongle)",
         WirelessProductId => "Razer BlackShark V3 Pro (2.4 GHz receiver)",
+        HyperSpeedWirelessProductId => "Razer BlackShark V2 HyperSpeed (2.4 GHz dongle)",
+        HyperSpeedUsbProductId => "Razer BlackShark V2 HyperSpeed (USB)",
         _ => "Razer BlackShark V3 Pro",
     };
 

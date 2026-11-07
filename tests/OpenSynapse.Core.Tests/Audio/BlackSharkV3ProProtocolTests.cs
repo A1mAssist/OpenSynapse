@@ -38,8 +38,18 @@ public sealed class BlackSharkV3ProProtocolTests
     {
         Assert.True(BlackSharkV3ProProtocol.IsWiredProductId(BlackSharkV3ProProtocol.WiredProductId));
         Assert.True(BlackSharkV3ProProtocol.IsWiredProductId(BlackSharkV3ProProtocol.UsbProductId));
+        Assert.True(BlackSharkV3ProProtocol.IsWiredProductId(
+            BlackSharkV3ProProtocol.HyperSpeedUsbProductId));
         Assert.False(BlackSharkV3ProProtocol.IsWiredProductId(BlackSharkV3ProProtocol.DongleProductId));
         Assert.False(BlackSharkV3ProProtocol.IsWiredProductId(BlackSharkV3ProProtocol.WirelessProductId));
+        Assert.False(BlackSharkV3ProProtocol.IsWiredProductId(
+            BlackSharkV3ProProtocol.HyperSpeedWirelessProductId));
+        Assert.Equal(
+            "Razer BlackShark V2 HyperSpeed (2.4 GHz dongle)",
+            BlackSharkV3ProProtocol.DescribeProduct(0x0565));
+        Assert.Equal(
+            "Razer BlackShark V2 HyperSpeed (USB)",
+            BlackSharkV3ProProtocol.DescribeProduct(0x056E));
     }
 
     [Fact]

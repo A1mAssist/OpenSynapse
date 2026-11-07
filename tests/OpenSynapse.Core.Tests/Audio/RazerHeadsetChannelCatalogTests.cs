@@ -42,9 +42,9 @@ public sealed class RazerHeadsetChannelCatalogTests
     [InlineData(0x0529, RazerHeadsetChannel.KrakenBase37)]
     [InlineData(0x0554, RazerHeadsetChannel.KrakenBase37)]
     [InlineData(0x0560, RazerHeadsetChannel.KrakenBase37)]
-    // 0565 is the 2.4 GHz endpoint of the 056E BlackShark V2 HyperSpeed bundle.
-    [InlineData(0x0565, RazerHeadsetChannel.Feature91)]
-    [InlineData(0x056E, RazerHeadsetChannel.Feature91)]
+    // AudioOdessaT2Wireless uses the Billie-style 64-byte report-id-2 frame.
+    [InlineData(0x0565, RazerHeadsetChannel.Billie64)]
+    [InlineData(0x056E, RazerHeadsetChannel.Billie64)]
     public void BundleDifferencesSelectTheirDeclaredChannel(ushort productId, RazerHeadsetChannel expected) =>
         Assert.Equal(expected, RazerHeadsetChannelCatalog.Resolve(productId));
 

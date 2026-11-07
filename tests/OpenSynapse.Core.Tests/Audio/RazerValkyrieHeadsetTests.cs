@@ -147,6 +147,8 @@ public sealed partial class RazerValkyrieHeadsetTests
         Assert.True(RazerValkyrieHeadsetService.IsSupported(0x0567));
         Assert.True(RazerValkyrieHeadsetService.IsSupported(0x056B));
         Assert.True(RazerValkyrieHeadsetService.IsSupported(0x0587));
+        Assert.True(RazerValkyrieHeadsetService.IsSupported(0x0565));
+        Assert.True(RazerValkyrieHeadsetService.IsSupported(0x056E));
         Assert.False(RazerValkyrieHeadsetService.IsSupported(0x0576));
         Assert.False(RazerValkyrieHeadsetService.IsSupported(0x0555));
     }
@@ -260,6 +262,7 @@ public sealed partial class RazerValkyrieHeadsetTests
     [InlineData(0x0567)]
     [InlineData(0x056B)]
     [InlineData(0x0587)]
+    [InlineData(0x056E)]
     public async Task ProfileFramesShareTheFixedTransactionAndZeroDirection(ushort productId)
     {
         // bundle 对齐: Valkyrie, T1Wired and T2 all leave byte 9 zero for audio commands.
@@ -274,6 +277,25 @@ public sealed partial class RazerValkyrieHeadsetTests
         Assert.Equal(0, write[9]);
         Assert.Equal(new byte[] { 0x93, 0x00, 0x01 }, write[10..13]);
         Assert.Equal(5, write[13]);
+    }
+
+    [Fact]
+    public async Task HyperspeedDongleUsesTheWirelessDirection()
+    {
+        var transport = new FakeTransport { Preset = 0 };
+        var service = new RazerValkyrieHeadsetService(transport, 0x0565);
+
+        await service.SetEqPresetAsync(5);
+
+        var write = transport.Requests.Single(request => request[10] == 0x93);
+        Assert.Equal(0x60, write[2]);
+        Assert.Equal(0x80, write[9]);
+        byte checksum = 0;
+        for (var index = 0; index < 62; index++)
+        {
+            checksum ^= write[index];
+        }
+        Assert.Equal(checksum, write[62]);
     }
 
     [Fact]
