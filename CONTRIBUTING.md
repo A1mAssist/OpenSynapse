@@ -11,9 +11,11 @@ If you own a device that needs new or additional support, read [docs/DEVICE_ADAP
 Commit only files needed to build, test, document, or license the project:
 
 - source code and project files;
-- tests and deterministic test data;
 - device manifests and verified runtime configuration;
 - documentation, localized screenshots, product artwork, and third-party license files;
+
+The private test tree and device-specific fixtures are kept locally and are
+not published in this repository.
 
 Do not commit:
 
@@ -42,7 +44,7 @@ Run the smallest relevant tests, then run these repository checks from PowerShel
 ```powershell
 git status --short --untracked-files=all
 git diff --check
-dotnet test OpenSynapse.slnx -c Release
+dotnet build OpenSynapse.slnx -c Release
 ```
 
 For application or packaging changes, also run:

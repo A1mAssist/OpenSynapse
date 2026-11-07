@@ -14,7 +14,4 @@
     </Project>
     <Project Path="src/OpenSynapse.Windows/OpenSynapse.Windows.csproj" />
   </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/OpenSynapse.Core.Tests/OpenSynapse.Core.Tests.csproj" />
-  </Folder>
 </Solution>

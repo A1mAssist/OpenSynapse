@@ -32,21 +32,21 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 
 列表按设备类型分组，并逐个列出可识别的 PID，可直接对照设备管理器。设备出现在列表中，不代表每个控制项都已在该型号上完成真机验证。端点无法解析或正被占用时，页面会保持只读，直到重新扫描；OpenSynapse 不会按产品名称猜测能力，也不会通过未经验证的 HID 接口强行写入。
 
-### 主要控制项
+### 按能力提供的控制项
 
-- **Blade：** 遥测、键盘灯光、性能、风扇、显示、面板模式、支持机型上的局部调光、电池、触控板、充电上限，以及经过验证的 Fn/M3/M4/M5。
-- **显示：** 可选的“仅核显”模式通过 Windows PnP 禁用 NVIDIA 独显。它不是 MUX 切换；重新启用独显前，外接屏可能没有画面。机器级 MSI 安装会使用 LocalSystem 服务，切换时不再请求 UAC；当前用户安装和 Portable 仍会逐次请求 UAC。
-- **Blade THX 音频：** 受支持的 Blade 16 和 Blade 14 机型提供空间音频、均衡器预设与频段、人声清晰度和扬声器音量标准化。Blade 设备页会打开可重复使用的 THX 控制窗口。带签名的雷蛇原生组件不随安装包分发；检测到缺失时，会提供经过校验的官方下载。
-- **Viper：** 电量、DPI、轮询率、休眠、电池类型和板载映射。
-- **耳机：** 音频页按设备和已安装组件提供 EQ、麦克风音量、侧音、ANC、THX 与游戏/语音平衡。Kraken 7.1 仅支持灯光；受支持机型缺少原生组件时提供 THX V3/V4 安装入口。
-- **BlackShark V3 Pro：** 通过独立 HID 通道提供电量、充电、侧音、THX、主动降噪和游戏/语音平衡。暂不包含 EQ、麦克风增益、固件更新和指示灯模式。
-- **灯光工作室：** 侧边栏独立入口；设备画布（SVG 外形 + 逐 LED）、区域/组/配置档、14 个效果、`.ChromaEffects` 导入导出、Blade/HID 多设备矩阵输出、屏幕/音频输入和 Chroma Generate 非 AI 路径。控制器真机与 Chroma 客户端实导入仍需验证。
+- **设备与电源：** 设备信息、固件、序列号、电量、充电、休眠、充电上限和低电量行为；仅在连接端点实际提供时显示。
+- **输入与性能：** DPI、DPI 档位、轮询率、滚轮行为、键轴触发、Fn 与按键重映射、板载配置和宏存储等，按设备协议能力开放。
+- **灯光：** 分区亮度与灯效、矩阵输出、Chroma REST 和 Chroma SDK 兼容层；灯光工作室提供 SVG 设备画布、逐 LED 编辑、区域、配置档和效果组合。
+- **散热与显示：** 遥测、性能模式、风扇曲线、面板与 GPU 模式、局部调光和触控板控制等，按笔记本能力开放。仅核显模式通过 Windows PnP 禁用独显，不是 MUX 切换；重新启用独显前外接屏可能没有画面。
+- **音频：** EQ、麦克风音量、侧音、ANC、THX 和游戏/语音平衡；取决于设备与已安装音频栈。
+
+控制项由连接的 PID 和 HID 端点解析。当前端点没有提供的能力不会按产品名称猜测。
 
 ### Chroma REST
 
 参见 [Chroma 支持设备](docs/CHROMA_SUPPORTED_DEVICES.zh-CN.md) 查看当前设备与传输方式矩阵。
 
-兼容的游戏和外部程序可以向 `127.0.0.1:54235` 提交静态、`CUSTOM`、`CUSTOM_KEY` 和 `CUSTOM2` 键盘灯光帧。灯光帧使用经过验证的 Blade 16 实体键位，外部控制结束后会恢复当前选择的灯效。不需要安装雷云。
+兼容的游戏和外部程序可以向 `127.0.0.1:54235` 提交静态、`CUSTOM`、`CUSTOM_KEY` 和 `CUSTOM2` 键盘灯光帧。灯光帧使用当前设备已验证的键盘矩阵布局，外部控制结束后会恢复当前选择的灯效。不需要安装雷云。
 
 ### Chroma SDK 兼容层
 
@@ -58,9 +58,9 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 |---|---|
 | ![OpenSynapse 中文概览页面](screenshots/overview-zh.png) | ![OpenSynapse 中文设备页面](screenshots/devices-zh.png) |
 
-| Blade 控制 | 设置 |
+| 笔记本控制 | 设置 |
 |---|---|
-| ![OpenSynapse 中文 Blade 控制页面](screenshots/blade-zh.png) | ![OpenSynapse 中文设置页面](screenshots/settings-zh.png) |
+| ![OpenSynapse 中文笔记本控制页面](screenshots/blade-zh.png) | ![OpenSynapse 中文设置页面](screenshots/settings-zh.png) |
 
 ## 安装
 
@@ -80,7 +80,7 @@ MSI 服务以 `LocalSystem` 运行，使用 `Program Files` 内受保护的应�
 
 ### 驱动要求
 
-核心设备控制不依赖 Razer Synapse、AppEngine 或 `mapping_engine.dll`。Blade 的 Fn、M3、M4 和 M5 功能仍依赖 Product 710 Razer 设备驱动。THX 音频需要匹配的雷蛇 THX 音频栈，以及 Blade 音频窗口提供的带签名原生组件。
+核心设备控制不依赖 Razer Synapse、AppEngine 或 `mapping_engine.dll`。部分笔记本的 Fn 和多媒体键仍需要匹配的雷蛇设备驱动，仓库不随包分发该驱动。THX 音频需要匹配的雷蛇 THX 音频栈，以及音频窗口提供的带签名原生组件。
 
 ## 当前不包含
 
@@ -95,7 +95,6 @@ MSI 服务以 `LocalSystem` 运行，使用 `Program Files` 内受保护的应�
 ```powershell
 dotnet restore OpenSynapse.slnx
 dotnet build OpenSynapse.slnx -c Release
-dotnet test OpenSynapse.slnx -c Release --no-build
 dotnet build src/OpenSynapse.App/OpenSynapse.App.csproj -c Release -p:Platform=x64
 dotnet publish src/OpenSynapse.ChromaSdk.Shim/OpenSynapse.ChromaSdk.Shim.csproj -c Release -r win-x64 -o artifacts/chroma-sdk-shim
 ```

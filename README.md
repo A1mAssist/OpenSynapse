@@ -32,21 +32,21 @@ OpenSynapse reads connected devices first, then exposes only the controls resolv
 
 The list is grouped by device type and includes every recognized PID, so a Device Manager entry can be matched directly. Presence in the list does not mean every control has been physically verified on every model. An unresolved or busy endpoint stays read only until the next scan; OpenSynapse does not guess support from a product name or send a write through an unverified HID collection.
 
-### Notable controls
+### Controls by capability
 
-- **Blade:** telemetry, keyboard lighting, performance, fans, display, native panel mode, local dimming where supported, battery, touchpad, charge limit, and verified Fn/M3/M4/M5 behavior.
-- **Display:** an optional integrated-graphics-only mode disables the NVIDIA GPU through Windows PnP. It is not a MUX switch; external displays may stop working until the GPU is re-enabled. The machine-wide MSI install uses a LocalSystem service so the switch does not ask for UAC again; per-user and portable installs fall back to a UAC prompt.
-- **Blade THX audio:** spatial audio, EQ presets and bands, voice clarity, and speaker volume normalization on supported Blade 16 and Blade 14 models. The Blade device page opens a reusable THX control window. The signed Razer native component is not bundled; if missing, the app offers a verified download from Razer's official server.
-- **Viper:** battery, DPI, polling, sleep timeout, battery type, and onboard mappings.
-- **Headsets:** an audio page exposes EQ, microphone volume, sidetone, ANC, THX, and game/chat balance where the model and installed components support them. Kraken 7.1 models are lighting-only; THX V3/V4 installers are offered on supported models when the native component is missing.
-- **BlackShark V3 Pro:** battery, charging, sidetone, THX, ANC, and game/chat balance over its own HID channel. EQ, microphone gain, firmware updates, and indicator-LED modes are not included yet.
-- **Lighting Studio:** a dedicated sidebar page with an SVG device canvas and per-LED editing, regions, groups, profiles, 14 effects, `.ChromaEffects` import/export, Blade/HID multi-device matrix output, screen/audio inputs, and the non-AI Chroma Generate path. Controller hardware and real Chroma-client import still need validation.
+- **Device and power:** identity, firmware, serial number, battery, charging, sleep, charge limit, and low-battery behavior when the connected endpoint exposes them.
+- **Input and performance:** DPI, DPI stages, polling rate, scroll behavior, key actuation, Fn and key remapping, onboard profiles, and macro storage where the device protocol supports them.
+- **Lighting:** per-zone brightness and effects, matrix output, Chroma REST, and the Chroma SDK shim. Lighting Studio adds an SVG device canvas, per-LED editing, regions, profiles, and effect composition.
+- **Thermals and display:** telemetry, performance modes, fan curves, panel and GPU modes, local dimming, and touchpad controls on supported laptops. Integrated-graphics-only mode disables the discrete GPU through Windows PnP; it is not a MUX switch, and external displays may stop working until the GPU is re-enabled.
+- **Audio:** EQ, microphone volume, sidetone, ANC, THX, and game/chat balance when the installed audio stack exposes them.
+
+Controls are resolved from the connected PID and HID endpoint. A control that is absent from the current endpoint is not guessed from the product name.
 
 ### Chroma REST
 
 See [Chroma-supported devices](docs/CHROMA_SUPPORTED_DEVICES.md) for the current device and transport matrix.
 
-Compatible games and integrations can send static, `CUSTOM`, `CUSTOM_KEY`, and `CUSTOM2` keyboard frames to `127.0.0.1:54235`. Frames use the verified Blade 16 key layout, and OpenSynapse restores the selected lighting effect after external control ends. Razer Synapse is not required.
+Compatible games and integrations can send static, `CUSTOM`, `CUSTOM_KEY`, and `CUSTOM2` keyboard frames to `127.0.0.1:54235`. Frames use the verified keyboard matrix layout for the selected device, and OpenSynapse restores the selected lighting effect after external control ends. Razer Synapse is not required.
 
 ### Chroma SDK shim
 
@@ -58,9 +58,9 @@ The `OpenSynapse.ChromaSdk.Shim` project publishes an x64 `RzChromaSDK64.dll` th
 |---|---|
 | ![OpenSynapse English overview page](screenshots/overview-en.png) | ![OpenSynapse English devices page](screenshots/devices-en.png) |
 
-| Blade controls | Settings |
+| Laptop controls | Settings |
 |---|---|
-| ![OpenSynapse English Blade controls](screenshots/blade-en.png) | ![OpenSynapse English settings page](screenshots/settings-en.png) |
+| ![OpenSynapse English laptop controls](screenshots/blade-en.png) | ![OpenSynapse English settings page](screenshots/settings-en.png) |
 
 ## Install
 
@@ -80,7 +80,7 @@ The release is not code signed. Windows SmartScreen may show a warning on first 
 
 ### Driver requirements
 
-The application does not require Razer Synapse, AppEngine, or `mapping_engine.dll` for its core device controls. Blade Fn, M3, M4, and M5 support still depends on the Product 710 Razer device drivers. THX audio requires the matching Razer THX stack and the signed native component offered by the Blade audio window.
+The application does not require Razer Synapse, AppEngine, or `mapping_engine.dll` for its core device controls. Some laptop Fn and multimedia keys still require the matching Razer device driver, which is not redistributed. THX audio requires the matching Razer THX stack and the signed native component offered by the audio window.
 
 ## Not included
 
@@ -97,7 +97,6 @@ The post-v1.5.1 source/test-build controls for peripheral low-battery notificati
 ```powershell
 dotnet restore OpenSynapse.slnx
 dotnet build OpenSynapse.slnx -c Release
-dotnet test OpenSynapse.slnx -c Release --no-build
 dotnet build src/OpenSynapse.App/OpenSynapse.App.csproj -c Release -p:Platform=x64
 dotnet publish src/OpenSynapse.ChromaSdk.Shim/OpenSynapse.ChromaSdk.Shim.csproj -c Release -r win-x64 -o artifacts/chroma-sdk-shim
 ```
