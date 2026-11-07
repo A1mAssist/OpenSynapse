@@ -7,6 +7,9 @@ coverage/
 *.coverage
 *.coveragexml
 
+# Private test tree (kept locally, not published)
+/tests/
+
 # Local build and release bundles
 artifacts/
 docs/
@@ -33,6 +36,7 @@ artifacts/logo-previews/
 artifacts/release-*/
 artifacts/codex-*/
 dist/
+Product710_Driver.zip
 src/OpenSynapse.App/artifacts/
 scripts/*
 !scripts/scan-device-transport.ps1
