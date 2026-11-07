@@ -1765,6 +1765,7 @@
   <data name="ChromaShimStatusInstalled" xml:space="preserve"><value>已安装，游戏灯光走 OpenSynapse。</value></data>
   <data name="ChromaShimStatusUnavailable" xml:space="preserve"><value>未检测到 Razer Chroma SDK。</value></data>
   <data name="ChromaShimStatusBusy" xml:space="preserve"><value>正在处理…</value></data>
+  <data name="ChromaSdkDownloadLink.Content" xml:space="preserve"><value>下载官方 Chroma SDK</value><comment>官方 Chroma SDK Core 下载链接</comment></data>
   <data name="ChromaShimInstallFailed" xml:space="preserve"><value>安装失败（错误码 {0}）。请关闭游戏后重试。</value></data>
   <data name="ChromaShimRestoreFailed" xml:space="preserve"><value>恢复失败（错误码 {0}）。请关闭游戏后重试。</value></data>
   <data name="ChromaRestoreTitle.Text" xml:space="preserve"><value>外部控制结束后恢复灯光</value><comment>恢复灯光标题</comment></data>
