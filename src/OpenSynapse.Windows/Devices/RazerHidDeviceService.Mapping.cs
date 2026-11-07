@@ -18,22 +18,6 @@ public sealed partial class RazerHidDeviceService
                 .ConfigureAwait(false));
         }
 
-        if (UsesButtonAssignment(connection))
-        {
-            var assignment = RazerButtonAssignmentProtocol.ParseSingleAssignment(
-                await ExecuteAsync(connection,
-                    new RazerHidRequest("mapping.getAssignment08",
-                        RazerButtonAssignmentProtocol.CreateGetSingleAssignmentRequest(
-                            MiddlewareTransactionId, MappingClassId, buttonId)),
-                    cancellationToken).ConfigureAwait(false),
-                (RazerButtonAssignmentMode)mode);
-            return new RazerHidButtonAssignment(
-                assignment.ButtonId,
-                (byte)assignment.Mode,
-                (byte)assignment.FunctionId,
-                assignment.Data.Take(assignment.DataSize).ToArray());
-        }
-
         var request = UsesKeyAssignments(connection)
             ? RazerHidMappingProtocol.GetKeyAssignment(buttonId, mode)
             : RazerHidMappingProtocol.GetAssignment(buttonId, mode);
@@ -68,16 +52,7 @@ public sealed partial class RazerHidDeviceService
         }
 
         RazerHidRequest request;
-        if (UsesButtonAssignment(connection))
-        {
-            request = new RazerHidRequest("mapping.setAssignment08",
-                RazerButtonAssignmentProtocol.CreateSetSingleAssignmentRequest(
-                    MiddlewareTransactionId, MappingClassId, buttonId,
-                    (RazerButtonAssignmentMode)mode,
-                    (RazerButtonFunctionType)functionId,
-                    data.ToArray()));
-        }
-        else if (UsesAnalogKeyAssignments(connection))
+        if (UsesAnalogKeyAssignments(connection))
         {
             // Preserve the key's actuation band; changing it would alter how the key feels.
             var current = await GetButtonAssignmentAsync(connection, buttonId, mode, cancellationToken)
