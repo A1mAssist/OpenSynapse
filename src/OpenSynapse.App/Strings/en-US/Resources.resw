@@ -3412,7 +3412,7 @@
   <data name="RazerMappingKeyboardHint" xml:space="preserve"><value>Select a key to edit its mapping</value></data>
   <data name="RazerMappingKeyboardStage" xml:space="preserve"><value>Keyboard</value></data>
   <data name="RazerDriverTitle.Text" xml:space="preserve"><value>Razer driver</value></data>
-  <data name="RazerDriverDescription.Text" xml:space="preserve"><value>These peripherals are missing Razer's filter driver. Install it so driver-level macros and Fn takeover use the same driver path as Synapse.</value></data>
+  <data name="RazerDriverDescription.Text" xml:space="preserve"><value>Install Razer's device filter driver so button mapping and macros use the same driver-level injection path as Synapse.</value></data>
   <data name="RazerDriverInstall.Content" xml:space="preserve"><value>Install missing drivers</value></data>
   <data name="RazerDriverInstallHint.Text" xml:space="preserve"><value>Packages come from Razer's official CDN and request administrator approval. Replug the device or restart after installation.</value></data>
   <data name="RazerDriverChecking" xml:space="preserve"><value>Checking Razer drivers…</value></data>
