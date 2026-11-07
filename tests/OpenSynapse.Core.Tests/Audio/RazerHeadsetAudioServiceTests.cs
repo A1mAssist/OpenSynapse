@@ -29,10 +29,13 @@ public sealed partial class RazerHeadsetAudioServiceTests
         Assert.True(RazerHeadsetAudioService.IsSupported(productId));
 
     [Fact]
-    public void BlackSharkV2HyperSpeedDongleUsesTheFeatureReportPage()
+    public void BlackSharkV2HyperSpeedUsesTheBillieChannel()
     {
-        Assert.True(RazerHeadsetAudioService.UsesFeatureReportTransport(0x0565));
+        Assert.False(RazerHeadsetAudioService.UsesFeatureReportTransport(0x0565));
+        Assert.False(RazerHeadsetAudioService.UsesFeatureReportTransport(0x056E));
         Assert.True(RazerHeadsetAudioService.IsSupported(0x0565));
+        Assert.True(RazerValkyrieHeadsetService.IsSupported(0x0565));
+        Assert.True(RazerValkyrieHeadsetService.IsSupported(0x056E));
     }
 
     [Fact]
