@@ -92,6 +92,12 @@ public sealed class AudioSpecialAuditRegressionTests
             new HashSet<RazerHidLightingEffect> { RazerHidLightingEffect.Off }, true, false, null);
         await service.SetKrakenLightingAsync(connection, new(RazerHidLightingEffect.Off));
         Assert.Equal(RazerHidKrakenV4Protocol.CreateConnect(productId == 0x056C), reports[0]);
+        Assert.Equal(
+            RazerHidKrakenV4Protocol.CreateForceChroma(enabled: true, productId == 0x056C),
+            reports[1]);
+        Assert.Equal(
+            RazerHidKrakenV4Protocol.CreateBrightness(100, productId == 0x056C),
+            reports[2]);
     }
 
     [Theory]
@@ -112,7 +118,7 @@ public sealed class AudioSpecialAuditRegressionTests
         var firstCallCount = reports.Count;
         await service.SetKrakenLightingAsync(connection, new(RazerHidLightingEffect.Off));
 
-        Assert.Equal(firstCallCount + 1, reports.Count);
+        Assert.Equal(firstCallCount + 3, reports.Count);
         Assert.DoesNotContain(reports.Skip(firstCallCount), report =>
             report.SequenceEqual(RazerHidKrakenV4Protocol.CreateConnect(productId == 0x056C)));
     }

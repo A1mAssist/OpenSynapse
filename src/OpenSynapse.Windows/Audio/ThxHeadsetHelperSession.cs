@@ -11,6 +11,7 @@ namespace OpenSynapse.Windows.Audio;
 internal sealed class ThxHeadsetHelperSession
 {
     private const string PresetGroupId = "profile_presets";
+    private const string DefaultPresetId = "default";
     private const string SpatialPropertyId = "spatial_enabled";
     private const string EqualizerPropertyId = "eq_enabled";
     private const string NormalizationEnabledPropertyId = "volume_leveling_enabled";
@@ -21,6 +22,8 @@ internal sealed class ThxHeadsetHelperSession
     private const int SidetoneMinimum = 1;
     private const int SidetoneMaximum = 3162;
     private static readonly int[] Frequencies = [31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+    private static readonly ThxAudioPreset DefaultPreset = new(DefaultPresetId, "Default");
+    private static readonly IReadOnlyList<double> DefaultGains = new double[10];
 
     private ThxHeadsetProfile? _profile;
     private ThxV3NativeClient? _v3;
@@ -330,7 +333,7 @@ internal sealed class ThxHeadsetHelperSession
             selected,
             presets,
             ToBands(gains),
-            new Dictionary<string, IReadOnlyList<double>>(StringComparer.Ordinal),
+            DefaultFactoryCurves(),
             ReadV4Enhancement(NormalizationEnabledPropertyId, NormalizationLevelPropertyId),
             ReadV4Enhancement(VoiceClarityEnabledPropertyId, VoiceClarityLevelPropertyId) ??
                 new ThxAudioEnhancement(false, 0),
@@ -350,7 +353,7 @@ internal sealed class ThxHeadsetHelperSession
             selected,
             presets,
             ToBands(gains),
-            new Dictionary<string, IReadOnlyList<double>>(StringComparer.Ordinal),
+            DefaultFactoryCurves(),
             new ThxAudioEnhancement(
                 _v3.GetNormalization(containerId),
                 ClampPercent(_v3.GetNormalizationLevel(containerId))),
@@ -366,15 +369,23 @@ internal sealed class ThxHeadsetHelperSession
     private IReadOnlyList<ThxAudioPreset> ReadV3Presets(string containerId)
     {
         var entries = TryRead(() => ThxVendorJson.ParsePresetEntries(_v3!.GetPresetList(containerId)));
-        return entries?.Select(entry => new ThxAudioPreset(entry.Id, entry.Name)).ToArray() ?? [];
+        return WithDefaultPreset(entries?.Select(entry => new ThxAudioPreset(entry.Id, entry.Name)).ToArray());
     }
 
     private IReadOnlyList<ThxAudioPreset> ReadV4Presets()
     {
         var entries = TryRead(() => ThxVendorJson.ParsePresetEntries(
             _v4!.GetPresetList(_v4Device!, PresetGroupId)));
-        return entries?.Select(entry => new ThxAudioPreset(entry.Id, entry.Name)).ToArray() ?? [];
+        return WithDefaultPreset(entries?.Select(entry => new ThxAudioPreset(entry.Id, entry.Name)).ToArray());
     }
+
+    internal static IReadOnlyList<ThxAudioPreset> WithDefaultPreset(ThxAudioPreset[]? presets) =>
+        presets is not null && presets.Any(preset => preset.Id == DefaultPresetId)
+            ? presets
+            : [DefaultPreset, .. presets ?? []];
+
+    private static Dictionary<string, IReadOnlyList<double>> DefaultFactoryCurves() =>
+        new(StringComparer.Ordinal) { [DefaultPresetId] = DefaultGains };
 
     private ThxAudioEnhancement? ReadV4Enhancement(string enabledProperty, string levelProperty)
     {

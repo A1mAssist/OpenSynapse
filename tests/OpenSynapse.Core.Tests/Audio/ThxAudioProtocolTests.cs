@@ -84,4 +84,16 @@ public sealed class ThxAudioProtocolTests
         Assert.Equal("game", new ThxAudioPreset("game", "").DisplayName);
         Assert.Equal("Game", new ThxAudioPreset("game", "Game").DisplayName);
     }
+
+    [Fact]
+    public void HeadsetPresetListAlwaysOffersTheDefaultEntry()
+    {
+        Assert.Equal(
+            ["default", "game"],
+            ThxHeadsetHelperSession.WithDefaultPreset([new("game", "Game")])
+                .Select(preset => preset.Id));
+        Assert.Equal(
+            ["default"],
+            ThxHeadsetHelperSession.WithDefaultPreset([]).Select(preset => preset.Id));
+    }
 }

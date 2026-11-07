@@ -116,6 +116,12 @@ public sealed class RazerHidKrakenV4ProtocolTests
             "02006000000005000000C0000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000A600",
             Convert.ToHexString(Assert.Single(RazerHidKrakenV4Protocol.CreateOff())));
         Assert.Equal(
+            "02006000000005000000E80001010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008F00",
+            Convert.ToHexString(RazerHidKrakenV4Protocol.CreateForceChroma(enabled: true)));
+        Assert.Equal(
+            "02006000000005000000C10001FF0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005800",
+            Convert.ToHexString(RazerHidKrakenV4Protocol.CreateBrightness(100)));
+        Assert.Equal(
             "02006000000005000000C0000104000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000A200",
             Convert.ToHexString(Assert.Single(RazerHidKrakenV4Protocol.CreateWave())));
     }
@@ -129,17 +135,18 @@ public sealed class RazerHidKrakenV4ProtocolTests
     }
 
     [Fact]
-    public void TheEffectReplyUsesTheC0ResponseHeader()
+    public void AGeneralReplyEchoesTheRequestCommand()
     {
+        var request = RazerHidKrakenV4Protocol.CreateStatic(new RazerHidColor(1, 2, 3))[0];
         var reply = new byte[RazerHidKrakenV4Protocol.ReportLength];
         reply[0] = 0x02;
         reply[2] = 0x60;
         reply[10] = 0xC0;
         reply[11] = 0x01;
-        Assert.True(RazerHidKrakenV4Protocol.IsEffectResponse(reply));
+        Assert.True(RazerHidKrakenV4Protocol.IsCommandResponse(request, reply));
 
         reply[11] = 0x00;
-        Assert.False(RazerHidKrakenV4Protocol.IsEffectResponse(reply));
+        Assert.False(RazerHidKrakenV4Protocol.IsCommandResponse(request, reply));
     }
 
     [Fact]
