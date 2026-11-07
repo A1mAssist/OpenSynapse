@@ -387,10 +387,9 @@ public sealed class RazerChromaStandardService
         byte[] payload,
         CancellationToken cancellationToken)
     {
-        // Every protocol-25 keyboard runs the rzDevice25LedMatrix page, whose
-        // setChromaEffectCommon override sends class 0x03 command 0x0A instead of the
-        // class 0x0F effect command. Sending 0F:02 leaves the keyboard unchanged.
-        if (_productId is { } productId && RazerKeyboardService.Products.ContainsKey(productId))
+        // The rzDevice25LegacyHardwareEffect page overrides setChromaEffectCommon with the
+        // class 0x03 command 0x0A; the plain rzDevice25 page keeps the 0F:02 effect command.
+        if (_productId is { } productId && RazerKeyboardService.UsesMatrixChroma(productId))
         {
             var matrixFlags = effect == RazerChromaEffect.Breathing ? (byte)(payload.Length / 3) : (byte)0;
             await QueryAsync(
