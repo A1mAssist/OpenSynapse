@@ -117,7 +117,7 @@ public sealed class RazerHidSpecialLightingService
     private readonly Func<string, IReadOnlyList<byte[]>, bool, CancellationToken, Task> _sendKrakenV4;
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _gates =
         new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, byte> _krakenV4Connected =
+    private readonly ConcurrentDictionary<string, byte> _krakenV4Armed =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly Action<string>? _diagnostic;
 
@@ -338,16 +338,17 @@ public sealed class RazerHidSpecialLightingService
         try
         {
             var devicePath = connection.DevicePath!;
-            var sendConnect = !_krakenV4Connected.ContainsKey(devicePath);
-            var reportsToSend = new List<byte[]>(reports.Count + 3);
-            if (sendConnect)
+            var arm = !_krakenV4Armed.ContainsKey(devicePath);
+            var reportsToSend = new List<byte[]>(reports.Count + (arm ? 3 : 0));
+            if (arm)
             {
+                // Re-taking Chroma control on every click makes 056B fade to the
+                // old colour, so the handshake only runs once per device path.
                 reportsToSend.Add(RazerHidKrakenV4Protocol.CreateConnect(isDongle));
+                reportsToSend.Add(RazerHidKrakenV4Protocol.CreateForceChroma(enabled: true, isDongle));
+                reportsToSend.Add(RazerHidKrakenV4Protocol.CreateBrightness(100, isDongle));
             }
 
-            // The Chroma bridge takes host control before it streams frames.
-            reportsToSend.Add(RazerHidKrakenV4Protocol.CreateForceChroma(enabled: true, isDongle));
-            reportsToSend.Add(RazerHidKrakenV4Protocol.CreateBrightness(100, isDongle));
             reportsToSend.AddRange(reports);
             foreach (var report in reportsToSend)
             {
@@ -356,11 +357,21 @@ public sealed class RazerHidSpecialLightingService
                     $"report=[{Convert.ToHexString(report)}]");
             }
 
-            await _sendKrakenV4(devicePath, reportsToSend, sendConnect, cancellationToken)
-                .ConfigureAwait(false);
-            if (sendConnect)
+            try
             {
-                _krakenV4Connected.TryAdd(devicePath, 0);
+                await _sendKrakenV4(devicePath, reportsToSend, arm, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch
+            {
+                // A failed or cancelled send leaves the takeover state unknown.
+                _krakenV4Armed.TryRemove(devicePath, out _);
+                throw;
+            }
+
+            if (arm)
+            {
+                _krakenV4Armed.TryAdd(devicePath, 0);
             }
         }
         finally
@@ -377,7 +388,7 @@ public sealed class RazerHidSpecialLightingService
     private async Task SendKrakenV4Async(
         string devicePath,
         IReadOnlyList<byte[]> reports,
-        bool sendConnect,
+        bool sendHandshake,
         CancellationToken cancellationToken)
     {
         await using var transport = new RazerMxicHeadsetTransport(
@@ -386,7 +397,7 @@ public sealed class RazerHidSpecialLightingService
         for (var index = 0; index < reports.Count; index++)
         {
             var report = reports[index];
-            if (sendConnect && index == 0)
+            if (sendHandshake && index == 0)
             {
                 await transport.SendAsync(report, cancellationToken).ConfigureAwait(false);
                 await Task.Delay(TimeSpan.FromMilliseconds(50), cancellationToken).ConfigureAwait(false);
@@ -408,6 +419,12 @@ public sealed class RazerHidSpecialLightingService
             }
 
             await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
+            if (sendHandshake && index == 2)
+            {
+                // 056B plays a takeover animation after E8/C1 and drops the first
+                // effect that arrives during it.
+                await Task.Delay(TimeSpan.FromMilliseconds(1000), cancellationToken).ConfigureAwait(false);
+            }
         }
     }
 
