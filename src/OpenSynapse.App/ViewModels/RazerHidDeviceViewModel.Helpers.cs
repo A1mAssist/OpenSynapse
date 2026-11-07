@@ -459,6 +459,9 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(CanWriteSmartReel));
         OnPropertyChanged(nameof(CanEditSmartReelThreshold));
         OnPropertyChanged(nameof(CanWriteSmartReelThreshold));
+        RebuildScrollWheelModeChoices();
+        OnPropertyChanged(nameof(CanEditScrollWheelMode));
+        OnPropertyChanged(nameof(CanApplyScrollWheelMode));
         OnPropertyChanged(nameof(KeyswitchVisibility));
         OnPropertyChanged(nameof(KeyswitchWriteVisibility));
         OnPropertyChanged(nameof(CanEditKeyswitch));
@@ -520,6 +523,26 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         {
             OnPropertyChanged(canEditProperty);
             OnPropertyChanged(canWriteProperty);
+        }
+    }
+
+    private void SetBusy(
+        ref bool field,
+        bool value,
+        string canEditProperty,
+        string canApplyProperty,
+        string canCreateProperty,
+        string canDeleteProperty,
+        string canResetProperty,
+        [CallerMemberName] string? propertyName = null)
+    {
+        if (SetField(ref field, value, propertyName))
+        {
+            OnPropertyChanged(canEditProperty);
+            OnPropertyChanged(canApplyProperty);
+            OnPropertyChanged(canCreateProperty);
+            OnPropertyChanged(canDeleteProperty);
+            OnPropertyChanged(canResetProperty);
         }
     }
 

@@ -76,15 +76,21 @@ public static class BladeSynapsePolicyProtocol
     /// Synapse's Product 710 Logo path uses effect 0 for Off/Static and effect
     /// 2 for Breathing. Power is a separate state SET and must follow it.
     /// </summary>
-    public static byte[] CreateSetLogoEffectRequest(BladeLogoMode mode) =>
-        RazerFeatureReport.CreateRequest(
+    public static byte[] CreateSetLogoEffectRequest(BladeLogoMode mode, byte profileId)
+    {
+        if (profileId > 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(profileId));
+        }
+
+        return RazerFeatureReport.CreateRequest(
             SynapseTransactionId,
             0x03,
             LedCommandClass,
             LedEffectSetCommandId,
             new byte[]
             {
-                0x00,
+                profileId,
                 LogoLedId,
                 mode switch
                 {
@@ -93,16 +99,23 @@ public static class BladeSynapsePolicyProtocol
                     _ => throw new ArgumentOutOfRangeException(nameof(mode)),
                 },
             });
+    }
 
-    public static byte[] CreateSetLogoStateRequest(BladeLogoMode mode) =>
-        RazerFeatureReport.CreateRequest(
+    public static byte[] CreateSetLogoStateRequest(BladeLogoMode mode, byte profileId)
+    {
+        if (profileId > 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(profileId));
+        }
+
+        return RazerFeatureReport.CreateRequest(
             SynapseTransactionId,
             0x03,
             LedCommandClass,
             LedStateSetCommandId,
             new byte[]
             {
-                0x00,
+                profileId,
                 LogoLedId,
                 mode switch
                 {
@@ -111,6 +124,7 @@ public static class BladeSynapsePolicyProtocol
                     _ => throw new ArgumentOutOfRangeException(nameof(mode)),
                 },
             });
+    }
 
     public static byte[] CreateSetGameModeRequest(bool enabled) =>
         RazerFeatureReport.CreateRequest(

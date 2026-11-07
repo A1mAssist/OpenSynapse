@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/A1mAssist/OpenSynapse/releases/latest"><img alt="最新版本" src="https://img.shields.io/github/v/release/A1mAssist/OpenSynapse?style=flat-square"></a>
-  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-44D62C?style=flat-square"></a>
+  <a href="LICENSE"><img alt="AGPL-3.0 License" src="https://img.shields.io/badge/license-AGPL--3.0-44D62C?style=flat-square"></a>
   <img alt="Windows 11 x64" src="https://img.shields.io/badge/Windows-11%20x64-0078D4?style=flat-square">
 </p>
 
@@ -32,25 +32,25 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 
 列表按设备类型分组，并逐个列出可识别的 PID，可直接对照设备管理器。设备出现在列表中，不代表每个控制项都已在该型号上完成真机验证。端点无法解析或正被占用时，页面会保持只读，直到重新扫描；OpenSynapse 不会按产品名称猜测能力，也不会通过未经验证的 HID 接口强行写入。
 
-### 主要控制项
+### 按能力提供的控制项
 
-- **Blade：** 遥测、键盘灯光、性能、风扇、显示、面板模式、支持机型上的局部调光、电池、触控板、充电上限，以及经过验证的 Fn/M3/M4/M5。
-- **显示：** 可选的“仅核显”模式通过 Windows PnP 禁用 NVIDIA 独显。它不是 MUX 切换；重新启用独显前，外接屏可能没有画面。机器级 MSI 安装会使用 LocalSystem 服务，切换时不再请求 UAC；当前用户安装和 Portable 仍会逐次请求 UAC。
-- **Blade THX 音频：** 受支持的 Blade 16 和 Blade 14 机型提供空间音频、均衡器预设与频段、人声清晰度和扬声器音量标准化。Blade 设备页会打开可重复使用的 THX 控制窗口。带签名的雷蛇原生组件不随安装包分发；检测到缺失时，会提供经过校验的官方下载。
-- **Viper：** 电量、DPI、轮询率、休眠、电池类型和板载映射。
-- **耳机：** 音频页按设备和已安装组件提供 EQ、麦克风音量、侧音、ANC、THX 与游戏/语音平衡。Kraken 7.1 仅支持灯光；受支持机型缺少原生组件时提供 THX V3/V4 安装入口。
-- **BlackShark V3 Pro：** 通过独立 HID 通道提供电量、充电、侧音、THX、主动降噪和游戏/语音平衡。暂不包含 EQ、麦克风增益、固件更新和指示灯模式。
-- **灯光工作室：** 侧边栏独立入口；设备画布（SVG 外形 + 逐 LED）、区域/组/配置档、14 个效果、`.ChromaEffects` 导入导出、Blade/HID 多设备矩阵输出、屏幕/音频输入和 Chroma Generate 非 AI 路径。控制器真机与 Chroma 客户端实导入仍需验证。
+- **设备与电源：** 设备信息、固件、序列号、电量、充电、休眠、充电上限和低电量行为；仅在连接端点实际提供时显示。
+- **输入与性能：** DPI、DPI 档位、轮询率、滚轮行为、键轴触发、Fn 与按键重映射、板载配置和宏存储等，按设备协议能力开放。
+- **灯光：** 分区亮度与灯效、矩阵输出、Chroma REST 和官方 Chroma DLL broker；灯光工作室提供 SVG 设备画布、逐 LED 编辑、区域、配置档和效果组合。
+- **散热与显示：** 遥测、性能模式、风扇曲线、面板与 GPU 模式、局部调光和触控板控制等，按笔记本能力开放。仅核显模式通过 Windows PnP 禁用独显，不是 MUX 切换；重新启用独显前外接屏可能没有画面。
+- **音频：** EQ、麦克风音量、侧音、ANC、THX 和游戏/语音平衡；取决于设备与已安装音频栈。
+
+控制项由连接的 PID 和 HID 端点解析。当前端点没有提供的能力不会按产品名称猜测。
 
 ### Chroma REST
 
 参见 [Chroma 支持设备](docs/CHROMA_SUPPORTED_DEVICES.zh-CN.md) 查看当前设备与传输方式矩阵。
 
-兼容的游戏和外部程序可以向 `127.0.0.1:54235` 提交静态、`CUSTOM`、`CUSTOM_KEY` 和 `CUSTOM2` 键盘灯光帧。灯光帧使用经过验证的 Blade 16 实体键位，外部控制结束后会恢复当前选择的灯效。不需要安装雷云。
+兼容的游戏和外部程序可以向 `127.0.0.1:54235` 提交键盘、鼠标、耳机、鼠标垫、键区和 ChromaLink 的静态、`CUSTOM`、`CUSTOM_KEY` 和 `CUSTOM2` 灯光帧。矩阵通道使用设备自己的网格；单区设备取整帧的平均色。ChromaLink 覆盖 Aether 灯具、扩展坞、支架、ARGB 控制器和 Chroma 配件。外部控制结束后会恢复每台设备原来的效果。不需要安装雷云。
 
-### Chroma SDK 兼容层
+### Chroma SDK broker
 
-`OpenSynapse.ChromaSdk.Shim` 发布 x64 `RzChromaSDK64.dll`，实现 Chroma SDK 4.0.1 ABI，并通过 `\\.\pipe\OpenSynapseChromaSdk` 把键盘灯效交给 OpenSynapse。键盘 `CUSTOM`、`CUSTOM_KEY`、8×24 `CUSTOM2`，以及鼠标、耳机和鼠标垫的静态/自定义灯效，在有对应矩阵设备时会解码并应用。通用 `CreateEffect`、`QueryDevice`、键区、ChromaLink 和已弃用效果尚未实现。ABI 证据与部署步骤见 [Chroma SDK 兼容层](docs/CHROMA_SDK_SHIM.md)。
+`OpenSynapse.ChromaBroker` 读取官方 Chroma SDK 4.x 的共享内存协议，解码键盘、鼠标、耳机、鼠标垫、键区和 ChromaLink 的灯效帧。它由安装时注册的 `OpenSynapseService` 服务以 LocalSystem 启动，不需要每次启动都弹 UAC。用户只需要把雷蛇官方的 `RzChromaSDK64.dll` 放到 `C:\Windows\System32`，设置页提供已验证文件的下载链接。雷云自己的 Chroma 服务持有仲裁 mutex 时，broker 会主动让出，游戏灯光继续由雷云接管。原来的自研 shim 已归档到 `archive/OpenSynapse.ChromaSdk.Shim`，不再随包发布或启动。
 
 ## 界面预览
 
@@ -58,17 +58,20 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 |---|---|
 | ![OpenSynapse 中文概览页面](screenshots/overview-zh.png) | ![OpenSynapse 中文设备页面](screenshots/devices-zh.png) |
 
-| Blade 控制 | 设置 |
+| 笔记本控制 | 设置 |
 |---|---|
-| ![OpenSynapse 中文 Blade 控制页面](screenshots/blade-zh.png) | ![OpenSynapse 中文设置页面](screenshots/settings-zh.png) |
+| ![OpenSynapse 中文笔记本控制页面](screenshots/blade-zh.png) | ![OpenSynapse 中文设置页面](screenshots/settings-zh.png) |
 
 ## 安装
 
 从 [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest) 下载其中一种安装文件。
 
-- `OpenSynapse-win.msi` 安装到 `Program Files`，并在取得管理员权限后为所有用户注册 GPU 模式服务。注册成功后，受支持的显卡切换通过服务执行，不再重复弹 UAC。检测到旧的当前用户 Setup 安装时，安装阶段先保全配置和设置；下一次非提升启动确认所有数据文件已有保留副本后才卸载旧版并修复启动项。内容冲突保留为 `.legacy-backup` 版本副本；提升启动不执行旧用户卸载器。
-- `OpenSynapse-win-Setup.exe` 安装到当前用户目录并支持自动更新。它不安装机器级服务，切换“仅核显”仍会逐次请求 UAC。
-- `OpenSynapse-win-Portable.zip` 解压后即可运行；使用“仅核显”时会请求 UAC。
+- `OpenSynapse-<version>-win-x64-Setup.msi` — **推荐。** 安装到 `Program Files`，并在取得管理员权限后为所有用户注册 GPU 模式服务。注册成功后，受支持的显卡切换通过服务执行，不再重复弹 UAC。检测到旧的当前用户安装时，安装阶段先保全配置和设置；下一次非提升启动确认所有数据文件已有保留副本后才卸载旧版并修复启动项。内容冲突保留为 `.legacy-backup` 版本副本；提升启动不执行旧用户卸载器。
+- `OpenSynapse-<version>-win-Portable.zip` — 便携版，解压后即可运行；使用“仅核显”时会请求 UAC。
+
+进阶用途：`OpenSynapse-<version>-win-AutoUpdate-PerUser.exe` 是自动更新用包（当前用户安装）。**普通安装不要下载，请用 MSI 或 Portable。** 它只安装到当前用户目录，不安装机器级服务，切换“仅核显”仍会逐次请求 UAC；只有明确需要当前用户安装或自动更新链路时才用它。
+
+`<version>` 是发布版本号，例如 `1.6.1`。
 
 MSI 服务以 `LocalSystem` 运行，使用 `Program Files` 内受保护的应用程序，接受固定的状态查询、GPU 启用／禁用／重启、CPU 功耗／Curve Optimizer、GPU 时钟操作及固定宏代理启动请求。控制管道允许配置的安装用户 SID、本机 Administrators 和 SYSTEM，并拒绝网络登录；各控制项仍受型号、驱动和协议准入限制。注册失败时仍可能需要既有 UAC 后备路径。
 
@@ -80,7 +83,7 @@ MSI 服务以 `LocalSystem` 运行，使用 `Program Files` 内受保护的应�
 
 ### 驱动要求
 
-核心设备控制不依赖 Razer Synapse、AppEngine 或 `mapping_engine.dll`。Blade 的 Fn、M3、M4 和 M5 功能仍依赖 Product 710 Razer 设备驱动。THX 音频需要匹配的雷蛇 THX 音频栈，以及 Blade 音频窗口提供的带签名原生组件。
+核心设备控制不依赖 Razer Synapse、AppEngine 或 `mapping_engine.dll`。部分笔记本的 Fn 和多媒体键仍需要匹配的雷蛇设备驱动，仓库不随包分发该驱动。THX 音频需要匹配的雷蛇 THX 音频栈，以及音频窗口提供的带签名原生组件。
 
 ## 当前不包含
 
@@ -95,9 +98,7 @@ MSI 服务以 `LocalSystem` 运行，使用 `Program Files` 内受保护的应�
 ```powershell
 dotnet restore OpenSynapse.slnx
 dotnet build OpenSynapse.slnx -c Release
-dotnet test OpenSynapse.slnx -c Release --no-build
 dotnet build src/OpenSynapse.App/OpenSynapse.App.csproj -c Release -p:Platform=x64
-dotnet publish src/OpenSynapse.ChromaSdk.Shim/OpenSynapse.ChromaSdk.Shim.csproj -c Release -r win-x64 -o artifacts/chroma-sdk-shim
 ```
 
 本地构建完成后可以这样启动。
@@ -114,7 +115,7 @@ dotnet publish src/OpenSynapse.ChromaSdk.Shim/OpenSynapse.ChromaSdk.Shim.csproj 
 
 ## 许可
 
-OpenSynapse 采用 [MIT License](LICENSE)。第三方组件和随附资源继续遵循各自的许可证与分发条款。
+OpenSynapse 采用 [GNU Affero General Public License v3.0](LICENSE)，即 AGPL-3.0-only。Copyright (c) 2026 A1mAssist。修改后在网络上向用户提供服务时，需要向这些用户提供对应源代码。第三方组件和随附资源继续遵循各自的许可证与分发条款。
 
 协议实现参考了 [OpenRazer](https://github.com/openrazer/openrazer)、[OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB) 及其他公开实现。OpenSynapse 与 Razer Inc. 没有隶属或认可关系，Razer 及相关产品名称是其各自所有者的商标。
 

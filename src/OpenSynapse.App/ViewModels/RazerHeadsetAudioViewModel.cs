@@ -181,6 +181,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     private bool _hasBass;
     private bool _hasAnc;
     private bool _hasLighting;
+    private bool _capabilityProbed;
     private ThxHeadsetStatus _thxStatus = new(ThxHeadsetAvailability.UnsupportedDevice, null);
     private ThxAudioState? _thxState;
     private WindowsThxHeadsetController? _thxController;
@@ -188,12 +189,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     private int _thxSelectedPresetIndex;
     private bool _thxSpatialEnabled;
     private bool _thxEqualizerEnabled;
-    private bool _thxNormalizationEnabled;
-    private int _thxNormalizationLevel;
-    private bool _thxVoiceClarityEnabled;
-    private int _thxVoiceClarityLevel;
-    private bool _thxSidetoneEnabled;
-    private int _thxSidetoneLevel;
     private double _brightness = 100;
     private int _selectedEffectIndex;
     private Color _primaryColor = Color.FromArgb(255, 0, 255, 0);
@@ -202,14 +197,28 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     private static readonly RazerChromaEffect[] LightingEffects =
         [RazerChromaEffect.Off, RazerChromaEffect.Static, RazerChromaEffect.Breathing, RazerChromaEffect.Spectrum];
 
+    private bool IsKrakenBase => _connection.Transport == RazerHeadsetAudioTransport.KrakenBase37;
     private bool IsT3 => _connection.Transport == RazerHeadsetAudioTransport.ValkyrieT3Feature64;
     private bool IsMxic => _connection.Transport is RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64;
     private bool IsMixer053E => _connection.Transport == RazerHeadsetAudioTransport.Mixer053E;
     private bool IsProtocol40 => RazerProtocol40HeadsetProtocol.IsSupported(_connection.ProductId);
     private bool IsValkyrie => _connection.Transport is
         RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64;
-    private bool IsFeature91 => !IsMxic && !IsValkyrie && !IsMixer053E;
+    private bool IsFeature91 => !IsMxic && !IsValkyrie && !IsMixer053E && !IsKrakenBase;
     private (byte Value, string Key)[] ActivePresets => IsT3 ? Presets[..4] : IsFeature91 ? Presets : MxicPresets;
+
+    private static bool SupportsS3Baseline(ushort productId) =>
+        productId is 0x0521 or 0x0549;
+
+    // Synapse 3 shipped the KrystalT2 family (Kraken V3 / HyperSense) with this
+    // Game curve. Synapse 4 changed the same preset to [-3,-3,-4,0,5,5,4,1,0,-1],
+    // which is +7 dB at 500 Hz and -3 dB at 4-16 kHz versus the curve below.
+    private static readonly byte[] Synapse3GameBands =
+    [
+        0xFB, 0xFB, 0xFC, 0xFD, 0xFE, 0x02, 0x04, 0x04, 0x03, 0x02,
+    ];
+
+    private static readonly double[] FlatThxBands = new double[10];
 
     private byte ToFirmwareBand(double level) => _connection.Transport switch
     {
@@ -262,9 +271,10 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
     public Visibility GenericStatusVisibility => IsMixer053E ? Visibility.Collapsed : Visibility.Visible;
 
-    public Microsoft.UI.Xaml.Visibility LightingVisibility => !IsFeature91 || Lighting is null
-        ? Microsoft.UI.Xaml.Visibility.Collapsed
-        : Microsoft.UI.Xaml.Visibility.Visible;
+    public Microsoft.UI.Xaml.Visibility LightingVisibility =>
+        (IsFeature91 || IsKrakenBase) && Lighting is not null
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
 
     /// <summary>
     /// THX is an APO plus service on this headset, so the card only appears for the
@@ -297,7 +307,11 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         ThxHeadsetAdmission.GetProfile(_connection.ProductId)?.InstallerUri ?? string.Empty;
 
     public Visibility ThxInstallerLinkVisibility =>
-        ThxVisibility == Visibility.Visible && ThxInstallerUri.Length > 0
+        ThxVisibility == Visibility.Visible &&
+        ThxInstallerUri.Length > 0 &&
+        (_thxErrorText.Length > 0 ||
+         _thxStatus.ErrorCode is "ThxDownloadFailed" or "ThxDownloadVerificationFailed" ||
+         _thxStatus.ErrorCode?.StartsWith("ThxInstaller", StringComparison.Ordinal) == true)
             ? Visibility.Visible
             : Visibility.Collapsed;
 
@@ -319,19 +333,14 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             _ => string.Empty,
         };
 
-    public Visibility ThxDownloadVisibility =>
-        _thxStatus.Availability == ThxHeadsetAvailability.NativeMissing ||
-        _thxStatus.ErrorCode is "ThxNativeMissing"
-            ? Visibility.Visible
-            : Visibility.Collapsed;
-
     public Visibility ThxControlsVisibility =>
         _thxStatus.Availability == ThxHeadsetAvailability.Available && _thxState is not null
             ? Visibility.Visible
             : Visibility.Collapsed;
 
-    public bool CanDownloadThxComponent =>
-        !IsBusy && _thxStatus.Availability == ThxHeadsetAvailability.NativeMissing;
+    /// <summary>Synapse 3 baseline applies only to the two affected Kraken models.</summary>
+    public Visibility ThxS3BaselineVisibility =>
+        SupportsS3Baseline(_connection.ProductId) ? Visibility.Visible : Visibility.Collapsed;
 
     public bool CanApplyThx => !IsBusy && _thxState is not null &&
         _thxStatus.Availability == ThxHeadsetAvailability.Available;
@@ -364,66 +373,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
     public Visibility ThxBandsVisibility =>
         _thxState is { EqualizerBands.Count: > 0 } ? Visibility.Visible : Visibility.Collapsed;
-
-    public bool ThxNormalizationEnabled
-    {
-        get => _thxNormalizationEnabled;
-        set => SetField(ref _thxNormalizationEnabled, value);
-    }
-
-    public int ThxNormalizationLevel
-    {
-        get => _thxNormalizationLevel;
-        set
-        {
-            if (!SetField(ref _thxNormalizationLevel, Math.Clamp(value, 0, 100))) return;
-            OnPropertyChanged(nameof(ThxNormalizationText));
-        }
-    }
-
-    public string ThxNormalizationText => $"{ThxNormalizationLevel}%";
-    public Visibility ThxNormalizationVisibility =>
-        _thxState?.SoundNormalization is not null ? Visibility.Visible : Visibility.Collapsed;
-
-    public bool ThxVoiceClarityEnabled
-    {
-        get => _thxVoiceClarityEnabled;
-        set => SetField(ref _thxVoiceClarityEnabled, value);
-    }
-
-    public int ThxVoiceClarityLevel
-    {
-        get => _thxVoiceClarityLevel;
-        set
-        {
-            if (!SetField(ref _thxVoiceClarityLevel, Math.Clamp(value, 0, 100))) return;
-            OnPropertyChanged(nameof(ThxVoiceClarityText));
-        }
-    }
-
-    public string ThxVoiceClarityText => $"{ThxVoiceClarityLevel}%";
-    public Visibility ThxVoiceClarityVisibility =>
-        _thxState is not null ? Visibility.Visible : Visibility.Collapsed;
-
-    public bool ThxSidetoneEnabled
-    {
-        get => _thxSidetoneEnabled;
-        set => SetField(ref _thxSidetoneEnabled, value);
-    }
-
-    public int ThxSidetoneLevel
-    {
-        get => _thxSidetoneLevel;
-        set
-        {
-            if (!SetField(ref _thxSidetoneLevel, Math.Clamp(value, 0, 100))) return;
-            OnPropertyChanged(nameof(ThxSidetoneText));
-        }
-    }
-
-    public string ThxSidetoneText => $"{ThxSidetoneLevel}%";
-    public Visibility ThxSidetoneVisibility =>
-        _thxState?.Sidetone is not null ? Visibility.Visible : Visibility.Collapsed;
 
     public IReadOnlyList<string> LightingEffectOptions =>
     [
@@ -483,6 +432,32 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     public string Identity => $"VID_1532 / PID_{_connection.ProductId:X4}";
     public string DevicePath => _connection.DevicePath;
     public string StatusText => AppStrings.Text("BlackSharkStatusConnected");
+    public bool HasCapabilityProbe => _capabilityProbed;
+    public int ProtocolTotalCount => 20;
+    public int ProtocolAvailableCount =>
+        (_hasEqBands ? 1 : 0) +
+        (_hasBass ? 1 : 0) +
+        (_hasMicMuted || _hasMicVolume ? 1 : 0) +
+        (_hasAudioSource ? 1 : 0) +
+        (_hasNoiseSuppression ? 1 : 0) +
+        (_hasAnc ? 1 : 0) +
+        (_hasLighting ? 1 : 0) +
+        (_hasHaptics ? 1 : 0) +
+        (_hasParametricEq ? 1 : 0) +
+        (_hasMicCompressor ? 1 : 0) +
+        (_hasMicMonitoring ? 1 : 0) +
+        (_hasDnd ? 1 : 0) +
+        (_hasAutoPause ? 1 : 0) +
+        (_hasGestureControl ? 1 : 0) +
+        (_hasDolby ? 1 : 0) +
+        (_hasNightMode ? 1 : 0) +
+        (_hasVoicePrompts ? 1 : 0) +
+        (_hasMicDeEsser ? 1 : 0) +
+        (_hasMicLimiter ? 1 : 0) +
+        (_hasMicReverb ? 1 : 0);
+    public string CapabilityText => !_capabilityProbed
+        ? AppStrings.Text("BlackSharkStatusConnected")
+        : AppStrings.FormatText("ProtocolAvailableCount", ProtocolAvailableCount, ProtocolTotalCount);
 
     public string FirmwareText { get => _firmwareText; private set => SetField(ref _firmwareText, value); }
     public string BatteryText { get => _batteryText; private set => SetField(ref _batteryText, value); }
@@ -501,7 +476,9 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
     public Visibility EqBandsVisibility => _hasEqBands ? Visibility.Visible : Visibility.Collapsed;
 
-    public Visibility EqPresetVisibility => IsMixer053E || IsProtocol40 ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility EqPresetVisibility => IsMixer053E || IsProtocol40 || IsKrakenBase
+        ? Visibility.Collapsed
+        : Visibility.Visible;
 
     public double Bass
     {
@@ -742,19 +719,24 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     public Visibility ParametricEqVisibility =>
         _hasParametricEq ? Visibility.Visible : Visibility.Collapsed;
 
+    private RazerAncState[] DeviceAncStates => IsKrakenBase
+        ? [RazerAncState.Off, RazerAncState.On]
+        : AncStates;
+
     public IReadOnlyList<string> AncOptions =>
-    [
-        AppStrings.Text("RazerHeadsetAncOff"),
-        AppStrings.Text("RazerHeadsetAncOn"),
-        AppStrings.Text("RazerHeadsetAncAmbient"),
-    ];
+        DeviceAncStates.Select(state => AppStrings.Text(state switch
+        {
+            RazerAncState.Off => "RazerHeadsetAncOff",
+            RazerAncState.On => "RazerHeadsetAncOn",
+            _ => "RazerHeadsetAncAmbient",
+        })).ToArray();
 
     public int SelectedAncIndex
     {
         get => _selectedAncIndex;
         set
         {
-            if (!SetField(ref _selectedAncIndex, Math.Clamp(value, 0, AncStates.Length - 1))) return;
+            if (!SetField(ref _selectedAncIndex, Math.Clamp(value, 0, DeviceAncStates.Length - 1))) return;
             OnPropertyChanged(nameof(AncLevelVisibility));
         }
     }
@@ -770,7 +752,9 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     }
 
     public string AncLevelText => $"{Math.Round(AncLevel)} / 10";
-    public Visibility AncLevelVisibility => _selectedAncIndex == 1 ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility AncLevelVisibility => !IsKrakenBase && _selectedAncIndex == 1
+        ? Visibility.Visible
+        : Visibility.Collapsed;
     public Visibility AncVisibility => _hasAnc ? Visibility.Visible : Visibility.Collapsed;
 
     public bool IsBusy
@@ -781,7 +765,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             if (!SetField(ref _isBusy, value)) return;
             OnPropertyChanged(nameof(CanEdit));
             OnPropertyChanged(nameof(CanInstallThx));
-            OnPropertyChanged(nameof(CanDownloadThxComponent));
             OnPropertyChanged(nameof(CanApplyThx));
         }
     }
@@ -850,6 +833,11 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         {
             await RefreshThxAsync(cancellationToken);
         }
+
+        _capabilityProbed = true;
+        OnPropertyChanged(nameof(HasCapabilityProbe));
+        OnPropertyChanged(nameof(ProtocolAvailableCount));
+        OnPropertyChanged(nameof(CapabilityText));
     }
 
     public Task ApplyThxSpatialAsync(CancellationToken cancellationToken = default) =>
@@ -882,35 +870,45 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             cancellationToken);
     }
 
-    public Task ApplyThxNormalizationAsync(CancellationToken cancellationToken = default) =>
-        RunThxAsync(
-            (controller, token) => controller.SetEnhancementAsync(
-                ThxAudioEndpoint.Headphones,
-                ThxAudioEnhancementKind.SoundNormalization,
-                ThxNormalizationEnabled,
-                ThxNormalizationLevel,
-                token),
+    /// <summary>
+    /// Synapse 3 ran these headsets with VirtualSurround off and its Game EQ on
+    /// the headset firmware. Synapse 4 keeps spatial on for the Kitty and uses a
+    /// different Game curve, so restore both halves of the old baseline.
+    /// </summary>
+    public async Task ApplyS3BaselineAsync(CancellationToken cancellationToken = default)
+    {
+        if (!SupportsS3Baseline(_connection.ProductId) || !CanApplyThx) return;
+
+        ThxSpatialEnabled = false;
+        await ApplyThxSpatialAsync(cancellationToken);
+        if (!CanApplyThx || ThxSpatialEnabled) return;
+
+        var customPresetId = _thxState?.Presets
+            .FirstOrDefault(preset =>
+                preset.Id.Equals("Custom", StringComparison.OrdinalIgnoreCase) ||
+                preset.DisplayName.Contains("Custom", StringComparison.OrdinalIgnoreCase))
+            ?.Id ?? "Custom";
+        await RunThxAsync(
+            (controller, token) => controller.SelectPresetAsync(
+                ThxAudioEndpoint.Headphones, customPresetId, FlatThxBands, token),
             cancellationToken);
 
-    public Task ApplyThxVoiceClarityAsync(CancellationToken cancellationToken = default) =>
-        RunThxAsync(
-            (controller, token) => controller.SetEnhancementAsync(
-                ThxAudioEndpoint.Headphones,
-                ThxAudioEnhancementKind.VoiceClarity,
-                ThxVoiceClarityEnabled,
-                ThxVoiceClarityLevel,
-                token),
-            cancellationToken);
-
-    public Task ApplyThxSidetoneAsync(CancellationToken cancellationToken = default) =>
-        RunThxAsync(
-            (controller, token) => controller.SetEnhancementAsync(
-                ThxAudioEndpoint.Headphones,
-                ThxAudioEnhancementKind.Sidetone,
-                ThxSidetoneEnabled,
-                ThxSidetoneLevel,
-                token),
-            cancellationToken);
+        // 0549 and the other 91-byte THX headsets expose the ten-band firmware EQ.
+        // 0521 (KrakenBase37) has no EQ writer here; its Synapse 3 fix is spatial off.
+        if (IsFeature91 && CanApplyThx)
+        {
+            var customIndex = Array.FindIndex(
+                ActivePresets, preset => preset.Key == "RazerHeadsetPresetCustom");
+            if (customIndex >= 0)
+            {
+                var customPreset = ActivePresets[customIndex].Value;
+                await RunWriteAsync(
+                    (service, token) => service.SetCustomEqAsync(
+                        customPreset, Synapse3GameBands, token),
+                    cancellationToken);
+            }
+        }
+    }
 
     private WindowsThxHeadsetController ThxController =>
         _thxController ??= new WindowsThxHeadsetController(
@@ -1023,6 +1021,8 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         _thxNormalizationLevel = state.SoundNormalization?.LevelPercent ?? 0;
         _thxVoiceClarityEnabled = state.VoiceClarity.Enabled;
         _thxVoiceClarityLevel = state.VoiceClarity.LevelPercent;
+        _thxBassBoostEnabled = state.BassBoost?.Enabled ?? false;
+        _thxBassBoostLevel = state.BassBoost?.LevelPercent ?? 0;
         _thxSidetoneEnabled = state.Sidetone?.Enabled ?? false;
         _thxSidetoneLevel = state.Sidetone?.LevelPercent ?? 0;
         OnPropertyChanged(string.Empty);
@@ -1044,20 +1044,21 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     {
         OnPropertyChanged(nameof(ThxStatusText));
         OnPropertyChanged(nameof(ThxInstallerVisibility));
-        OnPropertyChanged(nameof(ThxDownloadVisibility));
+        OnPropertyChanged(nameof(ThxInstallerLinkVisibility));
         OnPropertyChanged(nameof(ThxControlsVisibility));
         OnPropertyChanged(nameof(CanInstallThx));
-        OnPropertyChanged(nameof(CanDownloadThxComponent));
         OnPropertyChanged(nameof(CanApplyThx));
         OnPropertyChanged(nameof(ThxPresetOptions));
         OnPropertyChanged(nameof(ThxBandsVisibility));
         OnPropertyChanged(nameof(ThxNormalizationVisibility));
         OnPropertyChanged(nameof(ThxVoiceClarityVisibility));
+        OnPropertyChanged(nameof(ThxBassBoostVisibility));
         OnPropertyChanged(nameof(ThxSidetoneVisibility));
     }
 
     public Task ApplyEqPresetAsync(CancellationToken cancellationToken = default)
     {
+        if (IsKrakenBase) return Task.CompletedTask;
         var preset = ActivePresets[SelectedEqPresetIndex].Value;
         return _connection.Transport switch
         {
@@ -1309,10 +1310,10 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             : RunWriteAsync((service, token) => service.SetNoiseSuppressionAsync(NoiseSuppression, token), cancellationToken);
 
     public Task ApplyAncAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91
+        !IsFeature91 && !IsKrakenBase
             ? Task.CompletedTask
             : RunWriteAsync(
-                (service, token) => service.SetAncAsync(AncStates[SelectedAncIndex], (byte)Math.Round(AncLevel), token),
+                (service, token) => service.SetAncAsync(DeviceAncStates[SelectedAncIndex], (byte)Math.Round(AncLevel), token),
                 cancellationToken);
 
     public void RefreshLocalization()
@@ -1338,7 +1339,9 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     }
 
     private RazerHeadsetAudioService OpenService() =>
-        new(new RazerFeatureTransport(), _connection.DevicePath, TimeSpan.FromMilliseconds(20), _diagnostic);
+        new(new RazerFeatureTransport(), _connection.DevicePath,
+            IsKrakenBase ? TimeSpan.FromMilliseconds(250) : TimeSpan.FromMilliseconds(20),
+            _diagnostic, _connection.Transport);
 
     private RazerMxicHeadsetService OpenMxicService() =>
         new(_connection.ProductId, _connection.DevicePath, _diagnostic);
@@ -1635,7 +1638,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         }
         if (state.AncState is RazerAncState anc)
         {
-            var index = Array.IndexOf(AncStates, anc);
+            var index = Array.IndexOf(DeviceAncStates, anc);
             if (index >= 0)
             {
                 SelectedAncIndex = index;
@@ -1648,6 +1651,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     }
 
     private static bool HasAnyValue(RazerHeadsetAudioState state) =>
+        state.Firmware is not null || state.AncState is not null ||
         state.BatteryPercent is not null || state.EqPreset is not null || state.EqBands is not null ||
         state.MicBands is not null ||
         state.Bass is not null || state.MicMuted is not null || state.AudioSource is not null;

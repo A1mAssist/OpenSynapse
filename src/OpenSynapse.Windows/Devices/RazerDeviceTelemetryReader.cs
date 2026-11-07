@@ -99,14 +99,25 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             BladeKeyboardEffect: bladeResult?.BladeKeyboardEffect,
             BladeFnKeyMultimediaPrimary: bladeResult?.BladeFnKeyMultimediaPrimary,
             BladeMcuVersion: bladeResult?.BladeMcuVersion,
-            BladeAdapterPower: bladeResult?.BladeAdapterPower);
+            BladeAdapterPower: bladeResult?.BladeAdapterPower,
+            BladeAutoSleepEnabled: bladeResult?.BladeAutoSleepEnabled,
+            BladeTimeToDim: bladeResult?.BladeTimeToDim,
+            BladeIndicatorLedEnabled: bladeResult?.BladeIndicatorLedEnabled,
+            BladeGpuCardDetection: bladeResult?.BladeGpuCardDetection,
+            BladeAutoSleepWritable: bladeResult?.BladeAutoSleepWritable ?? false,
+            BladeTimeToDimWritable: bladeResult?.BladeTimeToDimWritable ?? false,
+            BladeIndicatorLedWritable: bladeResult?.BladeIndicatorLedWritable ?? false,
+            BladeGpuCardDetectionWritable: bladeResult?.BladeGpuCardDetectionWritable ?? false);
 
         var capabilitySummaries = new Dictionary<string, DeviceCapabilitySummary>(
             StringComparer.OrdinalIgnoreCase);
         if (blade is not null)
         {
             capabilitySummaries[blade.Descriptor.Id] =
-                DeviceCapabilitySummaryCalculator.Calculate(blade.Descriptor, telemetry);
+                DeviceCapabilitySummaryCalculator.Calculate(
+                    blade.Descriptor,
+                    telemetry,
+                    blade.Manifest.Capabilities.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase));
         }
         if (mouse is not null)
         {
@@ -246,6 +257,30 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
         BladeLogoMode mode,
         CancellationToken cancellationToken = default) =>
         _bladeReader.SetBladeLogoModeAsync(devices, mode, cancellationToken);
+
+    public ValueTask<bool> SetBladeAutoSleepAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default) =>
+        _bladeReader.SetBladeAutoSleepAsync(devices, enabled, cancellationToken);
+
+    public ValueTask<BladeTimeToDimTelemetry> SetBladeTimeToDimAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        int seconds,
+        CancellationToken cancellationToken = default) =>
+        _bladeReader.SetBladeTimeToDimAsync(devices, seconds, cancellationToken);
+
+    public ValueTask<bool> SetBladeIndicatorLedAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default) =>
+        _bladeReader.SetBladeIndicatorLedAsync(devices, enabled, cancellationToken);
+
+    public ValueTask<BladeGpuCardDetectionTelemetry> SetBladeGpuCardDetectionAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default) =>
+        _bladeReader.SetBladeGpuCardDetectionAsync(devices, enabled, cancellationToken);
 
     public ValueTask<int> SetViperPollingRateAsync(
         IReadOnlyList<DeviceDescriptor> devices,

@@ -9,7 +9,7 @@ public enum RazerHeadsetAudioTransport
     Feature91,
     Mxic64,
     Valkyrie64,
-    Billie64, Mixer053E, ValkyrieT3Feature64,
+    Billie64, Mixer053E, ValkyrieT3Feature64, KrakenBase37,
 }
 
 public sealed record RazerHeadsetAudioConnection(
@@ -73,7 +73,8 @@ public sealed partial class RazerHeadsetAudioService
         {
             [0x051A] = "Razer Nari Ultimate",
             [0x051C] = "Razer Nari",
-            [0x051E] = "Razer Nari",
+            [0x051E] = "Razer Nari Essential",
+            [0x051F] = "Razer Nari Essential",
             [0x0520] = "Razer USB Audio Controller",
             [0x0521] = "Razer Kraken Kitty Edition",
             [0x0527] = "Razer Kraken Ultimate",
@@ -141,13 +142,16 @@ public sealed partial class RazerHeadsetAudioService
     private readonly string _devicePath;
     private readonly TimeSpan _deviceWait;
     private readonly Action<string>? _diagnostic;
+    private readonly RazerHeadsetAudioTransport _transportKind;
+    private readonly RazerHidHidReportTransport _hidReports = new();
     private byte _transactionId = 0x1F;
 
     internal RazerHeadsetAudioService(
         IRazerFeatureTransport transport,
         string devicePath,
         TimeSpan deviceWait,
-        Action<string>? diagnostic = null)
+        Action<string>? diagnostic = null,
+        RazerHeadsetAudioTransport transportKind = RazerHeadsetAudioTransport.Feature91)
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _devicePath = string.IsNullOrWhiteSpace(devicePath)
@@ -155,6 +159,7 @@ public sealed partial class RazerHeadsetAudioService
             : devicePath;
         _deviceWait = deviceWait;
         _diagnostic = diagnostic;
+        _transportKind = transportKind;
     }
 
     public static bool IsSupported(ushort productId) => Products.ContainsKey(productId);
@@ -201,6 +206,32 @@ public sealed partial class RazerHeadsetAudioService
             .ToArray();
         if (candidates.Length == 0)
         {
+            // Access-denied and audio-only collections can lose the feature-report
+            // metadata that normally identifies a usable channel. Keep the device
+            // visible so its card can explain why controls are unavailable.
+            var fallback = interfaces
+                .Where(item => Products.ContainsKey(item.ProductId) &&
+                    RazerHeadsetChannelCatalog.Resolve(item.ProductId) != RazerHeadsetChannel.Unsupported)
+                .OrderByDescending(item => item.Access == DeviceAccessState.Available)
+                .ThenByDescending(item => item.UsagePage == 0xFF14)
+                .ThenBy(item => item.ProductId)
+                .FirstOrDefault();
+            if (fallback is not null)
+            {
+                var fallbackChannel = RazerHeadsetChannelCatalog.Resolve(fallback.ProductId);
+                diagnostic?.Invoke(
+                    $"headset-audio selected unresolved {fallbackChannel} pid={fallback.ProductId:X4} " +
+                    $"product='{fallback.ProductName}' feature={fallback.FeatureReportByteLength} " +
+                    $"access={fallback.Access}");
+                return new RazerHeadsetAudioConnection(
+                    fallback.DevicePath,
+                    fallback.ProductId,
+                    Products[fallback.ProductId],
+                    fallback.FeatureReportByteLength,
+                    ToContainerId(fallback.PhysicalDeviceKey),
+                    ToTransport(fallbackChannel));
+            }
+
             diagnostic?.Invoke(
                 "headset-audio found no interface for a supported channel; " +
                 $"enumerated={string.Join(",", interfaces.Select(item => $"{item.ProductId:X4}:0x{item.UsagePage:X4}:{item.FeatureReportByteLength}/{item.OutputReportByteLength}"))}");
@@ -223,12 +254,15 @@ public sealed partial class RazerHeadsetAudioService
             ToTransport(channel));
     }
 
-    private static bool MatchesChannel(
+    internal static bool MatchesChannel(
         RazerHeadsetChannel channel,
         WindowsHidDiscovery.HidInterfaceDescriptor item) =>
         channel switch
         {
             RazerHeadsetChannel.Feature91 => item.FeatureReportByteLength == RazerFeatureReport.Length,
+            RazerHeadsetChannel.KrakenBase37 =>
+                item.OutputReportByteLength >= RazerKrakenBaseProtocol.ReportLength &&
+                item.InputReportByteLength >= 33,
             RazerHeadsetChannel.ValkyrieT3Feature64 => item.FeatureReportByteLength == 64,
             RazerHeadsetChannel.Mxic64 or RazerHeadsetChannel.Valkyrie64 or RazerHeadsetChannel.Billie64 => item.OutputReportByteLength == RazerMxicHeadsetProtocol.ReportLength && item.InputReportByteLength >= RazerMxicHeadsetProtocol.ReportLength,
             RazerHeadsetChannel.Mixer053E => item.FeatureReportByteLength == RazerMixer053EProtocol.FeatureReportLength && item.InputReportByteLength == RazerMixer053EProtocol.StatusReportLength && item.OutputReportByteLength == RazerMixer053EProtocol.OutputReportLength,
@@ -242,11 +276,17 @@ public sealed partial class RazerHeadsetAudioService
             RazerHeadsetChannel.ValkyrieT3Feature64 => RazerHeadsetAudioTransport.ValkyrieT3Feature64,
             RazerHeadsetChannel.Valkyrie64 => RazerHeadsetAudioTransport.Valkyrie64,
             RazerHeadsetChannel.Billie64 => RazerHeadsetAudioTransport.Billie64,
+            RazerHeadsetChannel.KrakenBase37 => RazerHeadsetAudioTransport.KrakenBase37,
             _ => channel == RazerHeadsetChannel.Mixer053E ? RazerHeadsetAudioTransport.Mixer053E : RazerHeadsetAudioTransport.Feature91,
         };
 
     public async Task<RazerHeadsetAudioState> ReadStateAsync(CancellationToken cancellationToken = default)
     {
+        if (_transportKind == RazerHeadsetAudioTransport.KrakenBase37)
+        {
+            return await ReadKrakenBaseStateAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         var errors = new List<string>();
         var firmware = await ProbeAsync(
             "firmware", RazerHeadsetAudioProtocol.GetFirmware, RazerHeadsetAudioProtocol.ReadFirmware,
@@ -536,6 +576,25 @@ public sealed partial class RazerHeadsetAudioService
         if (level > RazerHeadsetAudioProtocol.TenBandCount)
         {
             throw new ArgumentOutOfRangeException(nameof(level), "ANC level must be between 0 and 10.");
+        }
+
+        if (_transportKind == RazerHeadsetAudioTransport.KrakenBase37)
+        {
+            var enabled = state != RazerAncState.Off;
+            await QueryKrakenBaseAsync(
+                    RazerKrakenBaseProtocol.CreateAncSetRequest(enabled), cancellationToken)
+                .ConfigureAwait(false);
+            var actual = RazerKrakenBaseProtocol.ParseAncEnabled(
+                await QueryKrakenBaseAsync(
+                        RazerKrakenBaseProtocol.CreateAncGetRequest(), cancellationToken)
+                    .ConfigureAwait(false));
+            if (actual is null || actual.Value != enabled)
+            {
+                throw new InvalidOperationException(
+                    "Razer ANC read-back did not match the requested state.");
+            }
+
+            return;
         }
 
         var previous = RazerHeadsetAudioProtocol.ReadAnc(

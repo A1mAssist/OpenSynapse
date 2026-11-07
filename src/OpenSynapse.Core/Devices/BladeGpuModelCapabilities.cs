@@ -12,7 +12,7 @@ public static class BladeGpuModelCapabilities
     private static readonly FrozenSet<ushort> DedicatedGpuPnpSwitchProductIds =
         new ushort[]
         {
-            0x0276, 0x029D, 0x029F, 0x02B6, 0x02B7, 0x02B8,
+            0x024C, 0x0276, 0x029D, 0x029F, 0x02A0, 0x02B6, 0x02B7, 0x02B8,
             0x02C5, 0x02C6, 0x02C7, 0x02E0, 0x02E1,
         }.ToFrozenSet();
 

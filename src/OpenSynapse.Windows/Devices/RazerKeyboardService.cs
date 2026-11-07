@@ -79,6 +79,20 @@ public sealed class RazerKeyboardService
     public static bool UsesLegacyChroma(ushort productId) =>
         LegacyChromaProducts.Contains(RazerProductAliases.Canonical(productId));
 
+    /// <summary>
+    /// The product page decides the device class with useFeature("rzDeviceType"). Only
+    /// 028E declares rzDevice25LegacyHardwareEffect, whose setChromaEffectCommon override
+    /// switches the whole-device effect to class 0x03 command 0x0A. Every other keyboard
+    /// page declares plain rzDevice25 and keeps the class 0x0F effect command.
+    /// </summary>
+    public static readonly IReadOnlySet<ushort> MatrixChromaProducts = new HashSet<ushort>
+    {
+        0x028E,
+    };
+
+    public static bool UsesMatrixChroma(ushort productId) =>
+        MatrixChromaProducts.Contains(RazerProductAliases.Canonical(productId));
+
     private readonly IRazerFeatureTransport _transport;
     private readonly string _devicePath;
     private readonly TimeSpan _deviceWait;
@@ -148,6 +162,7 @@ public sealed class RazerKeyboardService
         IReadOnlyList<WindowsHidDiscovery.HidInterfaceDescriptor> interfaces) =>
         interfaces
             .Where(item => Products.ContainsKey(RazerProductAliases.Canonical(item.ProductId)))
+            .Where(item => !RazerProductAliases.IsBleAlias(item.ProductId))
             // The RazerHid catalogue already owns these PIDs and shows its own page.
             .Where(item => RazerHidDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
             .GroupBy(item => item.PhysicalDeviceKey, StringComparer.OrdinalIgnoreCase)

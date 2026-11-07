@@ -218,7 +218,14 @@ public static class StudioSvgLayoutParser
         if (string.IsNullOrWhiteSpace(data)) return null;
 
         var transform = inherited.Transform.Multiply(SvgMatrix.Parse(reader.GetAttribute("transform")));
-        var role = inherited.Role != StudioSvgRole.Other ? inherited.Role : RoleOf(classes);
+        // A child can carry a more specific role (characters/key) than its product group.
+        var ownRole = RoleOf(classes);
+        if (ownRole == StudioSvgRole.Other)
+        {
+            ownRole = RoleOf(reader.GetAttribute("id"));
+        }
+
+        var role = ownRole != StudioSvgRole.Other ? ownRole : inherited.Role;
         return new StudioSvgPath(
             reader.GetAttribute("id") ?? string.Empty,
             SvgPathData.Transform(data, transform),
@@ -293,7 +300,8 @@ public static class StudioSvgLayoutParser
         if (string.IsNullOrEmpty(token)) return StudioSvgRole.Other;
         if (token.Contains("selection", StringComparison.OrdinalIgnoreCase)) return StudioSvgRole.Selection;
         if (token.Contains("led", StringComparison.OrdinalIgnoreCase)) return StudioSvgRole.Led;
-        if (token.Contains("lettering", StringComparison.OrdinalIgnoreCase)) return StudioSvgRole.Lettering;
+        if (token.Contains("lettering", StringComparison.OrdinalIgnoreCase) ||
+            token.Contains("characters", StringComparison.OrdinalIgnoreCase)) return StudioSvgRole.Lettering;
         if (token.Contains("product", StringComparison.OrdinalIgnoreCase)) return StudioSvgRole.Product;
         return StudioSvgRole.Other;
     }

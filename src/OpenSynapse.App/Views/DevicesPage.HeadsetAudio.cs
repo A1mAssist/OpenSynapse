@@ -49,9 +49,6 @@ public sealed partial class DevicesPage : UserControl
         }
     }
 
-    private async void HeadsetAudioDownloadThxClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel.Accessories.SelectedHeadsetAudio?.InstallThxNativeAsync(Lifetime) ?? Task.CompletedTask);
-
     private async void HeadsetAudioApplyEqPresetClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.Accessories.SelectedHeadsetAudio?.ApplyEqPresetAsync(Lifetime) ?? Task.CompletedTask);
 
@@ -115,11 +112,17 @@ public sealed partial class DevicesPage : UserControl
     private async void HeadsetAudioApplyThxBandsClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.Accessories.SelectedHeadsetAudio?.ApplyThxBandsAsync(Lifetime) ?? Task.CompletedTask);
 
+    private async void HeadsetAudioApplyThxS3BaselineClick(object sender, RoutedEventArgs e) =>
+        await (ViewModel.Accessories.SelectedHeadsetAudio?.ApplyS3BaselineAsync(Lifetime) ?? Task.CompletedTask);
+
     private async void HeadsetAudioApplyThxNormalizationClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.Accessories.SelectedHeadsetAudio?.ApplyThxNormalizationAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void HeadsetAudioApplyThxVoiceClarityClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.Accessories.SelectedHeadsetAudio?.ApplyThxVoiceClarityAsync(Lifetime) ?? Task.CompletedTask);
+
+    private async void HeadsetAudioApplyThxBassBoostClick(object sender, RoutedEventArgs e) =>
+        await (ViewModel.Accessories.SelectedHeadsetAudio?.ApplyThxBassBoostAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void HeadsetAudioApplyThxSidetoneClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.Accessories.SelectedHeadsetAudio?.ApplyThxSidetoneAsync(Lifetime) ?? Task.CompletedTask);

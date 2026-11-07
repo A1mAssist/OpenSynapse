@@ -75,6 +75,8 @@ public enum RazerHidBackendCapability
     BatteryDischargeCurveRead,
     BatteryDischargeCurveWrite,
     MacroStorageInfoRead,
+    MacroStorageDataWrite,
+    MacroStorageNameWrite,
     LkScrollWheelModeRead,
     LkScrollWheelModeWrite,
     BrightnessRead,

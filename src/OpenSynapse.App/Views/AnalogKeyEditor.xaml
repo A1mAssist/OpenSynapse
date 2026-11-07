@@ -1,0 +1,130 @@
+<UserControl
+    x:Class="OpenSynapse.App.Views.AnalogKeyEditor"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <UserControl.Resources>
+    <Style x:Key="AnalogKeyToggleStyle" TargetType="ToggleButton">
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Height" Value="34" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Background" Value="{StaticResource SurfaceRaisedBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="Foreground" Value="{StaticResource DataBrush}" />
+      <Setter Property="FontFamily" Value="{StaticResource AppFontSemiBoldFamily}" />
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+  </UserControl.Resources>
+
+  <StackPanel Spacing="10" Visibility="{Binding AnalogKeyLayoutVisibility}">
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+      <StackPanel Spacing="2">
+        <TextBlock Text="逐键触发" FontSize="15" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+        <TextBlock Text="{Binding AnalogKeyLayoutName}" Style="{StaticResource MetricLabelStyle}" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+        <Button Content="全选" Click="SelectAllClick" Style="{StaticResource SecondaryButtonStyle}" MinHeight="30" Padding="10,0" IsEnabled="{Binding CanEditAnalogKey}" />
+        <Button Content="清空" Click="ClearSelectionClick" Style="{StaticResource SecondaryButtonStyle}" MinHeight="30" Padding="10,0" IsEnabled="{Binding CanEditAnalogKey}" />
+      </StackPanel>
+    </Grid>
+
+    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                  VerticalScrollBarVisibility="Disabled"
+                  HorizontalScrollMode="Enabled"
+                  VerticalScrollMode="Disabled"
+                  ZoomMode="Disabled">
+      <ItemsControl ItemsSource="{Binding AnalogKeyRows}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <ItemsControl ItemsSource="{Binding Keys}" Margin="0,0,0,4">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Orientation="Horizontal" Spacing="4" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <ToggleButton Width="{Binding Width}"
+                                Content="{Binding Label}"
+                                IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                Click="KeyClick"
+                                Style="{StaticResource AnalogKeyToggleStyle}" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+
+    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+      <NumberBox Header="触发行程 (mm)"
+                 Value="{Binding AnalogKeyActuationPointMillimeters, Mode=TwoWay}"
+                 Minimum="0.1" Maximum="4" SmallChange="0.1"
+                 SpinButtonPlacementMode="Inline"
+                 IsEnabled="{Binding CanEditAnalogKey}" />
+      <StackPanel Grid.Column="1" Spacing="6">
+        <TextBlock Text="Rapid Trigger" Style="{StaticResource MetricLabelStyle}" />
+        <ToggleSwitch IsOn="{Binding AnalogKeyRapidTriggerEnabled, Mode=TwoWay}"
+                      OnContent="" OffContent=""
+                      IsEnabled="{Binding CanEditAnalogKey}" />
+      </StackPanel>
+      <NumberBox Grid.Column="2"
+                 Header="RT 灵敏度 (mm)"
+                 Value="{Binding AnalogKeyRapidTriggerSensitivityMillimeters, Mode=TwoWay}"
+                 Minimum="0.1" Maximum="4" SmallChange="0.1"
+                 SpinButtonPlacementMode="Inline"
+                 IsEnabled="{Binding CanEditAnalogKey}" />
+    </Grid>
+
+    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+      <StackPanel Spacing="2">
+        <TextBlock Text="{Binding AnalogKeySelectionText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" />
+        <TextBlock Text="{Binding AnalogKeyLayoutStatusText}" Style="{StaticResource MetricLabelStyle}" TextWrapping="Wrap" />
+      </StackPanel>
+      <Button Grid.Column="1" Content="应用到所选"
+              Click="ApplySelectedClick"
+              IsEnabled="{Binding CanApplyAnalogKeySelection}"
+              Style="{StaticResource RazerHidSaveButtonStyle}" />
+      <Button Grid.Column="2" Content="应用到全部"
+              Click="ApplyAllClick"
+              IsEnabled="{Binding CanEditAnalogKey}"
+              Style="{StaticResource RazerHidSaveButtonStyle}" />
+    </Grid>
+    <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource LineBrush}"
+            BorderThickness="1" CornerRadius="4" Padding="12"
+            Visibility="{Binding AnalogSnapTapVisibility}">
+      <StackPanel Spacing="8">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+          <StackPanel Spacing="2">
+            <TextBlock Text="Snap Tap" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+            <TextBlock Text="两键一组，最多 4 组；同一键不能重复使用。" Style="{StaticResource MetricLabelStyle}" TextWrapping="Wrap" />
+          </StackPanel>
+          <ToggleSwitch Grid.Column="1" Header="启用"
+                        IsOn="{Binding AnalogSnapTapEnabled, Mode=TwoWay}"
+                        IsEnabled="{Binding CanEditAnalogKey}" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding AnalogSnapTapPairs}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="8" Margin="0,0,0,6">
+                <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Key1, Mode=TwoWay}" DisplayMemberPath="Label" PlaceholderText="按键 1" HorizontalAlignment="Stretch" />
+                <ComboBox Grid.Column="1" ItemsSource="{Binding Choices}" SelectedItem="{Binding Key2, Mode=TwoWay}" DisplayMemberPath="Label" PlaceholderText="按键 2" HorizontalAlignment="Stretch" />
+                <Button Grid.Column="2" Content="移除" Click="RemoveSnapTapPairClick" Style="{StaticResource SecondaryButtonStyle}" MinHeight="30" Padding="10,0" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+          <Button Content="添加一组" Click="AddSnapTapPairClick" Style="{StaticResource SecondaryButtonStyle}" MinHeight="30" Padding="10,0" IsEnabled="{Binding CanEditAnalogKey}" />
+          <TextBlock Grid.Column="1" Text="{Binding AnalogSnapTapStatusText}" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" TextWrapping="Wrap" />
+          <Button Grid.Column="2" Content="应用 Snap Tap" Click="ApplySnapTapClick" IsEnabled="{Binding CanApplyAnalogSnapTap}" Style="{StaticResource RazerHidSaveButtonStyle}" />
+        </Grid>
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

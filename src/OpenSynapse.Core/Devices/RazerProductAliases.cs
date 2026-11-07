@@ -29,10 +29,19 @@ public static class RazerProductAliases
             [0x02F6] = 0x02F4,
         };
 
+    // These siblings expose the protocol-30 BLE page, not the 91-byte protocol-25 keyboard path.
+    private static readonly IReadOnlySet<ushort> BleProductIds = new HashSet<ushort>
+    {
+        0x02CA, 0x02D3, 0x02B5, 0x02C3, 0x02F6,
+    };
+
     /// <summary>The wired PID that owns the model's capabilities, or the PID itself.</summary>
     public static ushort Canonical(ushort productId) =>
         CanonicalProductIds.TryGetValue(productId, out var canonical) ? canonical : productId;
 
     /// <summary>True when the PID is a wireless sibling of a wired model.</summary>
     public static bool IsWirelessAlias(ushort productId) => CanonicalProductIds.ContainsKey(productId);
+
+    /// <summary>True when the PID is the Bluetooth LE sibling handled by the BLE page.</summary>
+    public static bool IsBleAlias(ushort productId) => BleProductIds.Contains(productId);
 }

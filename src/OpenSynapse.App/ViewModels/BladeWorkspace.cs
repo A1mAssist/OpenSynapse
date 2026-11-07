@@ -132,7 +132,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             SetDisplayMuxModeAsync,
             WindowsDedicatedGpuMode.GetStatus,
             WindowsDedicatedGpuMode.SetEnabledAsync,
-            DedicatedGpuModeServiceClient.TrySetEnabledAsync,
+            OpenSynapseServiceClient.TrySetEnabledAsync,
             WindowsDedicatedGpuMode.RestartFaultedAsync,
             WindowsDisplayTopology.Read);
     }
@@ -864,6 +864,74 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             StartupAnimationEnabled = _blade._bladeStartupAnimationEnabled ?? false);
     }
 
+    public async Task ApplyAutoSleepAsync(CancellationToken cancellationToken = default)
+    {
+        if (!CanApplyAutoSleep)
+        {
+            return;
+        }
+
+        await RunDeviceOperationAsync(AppStrings.Text("BladeAutoSleepTitle/Text"), async () =>
+        {
+            var actual = await _deviceTelemetryReader.SetBladeAutoSleepAsync(
+                ActiveDescriptors, AutoSleepEnabled, cancellationToken);
+            SetAutoSleep(actual, _blade._bladeAutoSleepWritable);
+            RequestDeviceRefresh();
+        }, cancellationToken, () =>
+            AutoSleepEnabled = _blade._bladeAutoSleepEnabled ?? false);
+    }
+
+    public async Task ApplyTimeToDimAsync(CancellationToken cancellationToken = default)
+    {
+        if (!CanApplyTimeToDim)
+        {
+            return;
+        }
+
+        await RunDeviceOperationAsync(AppStrings.Text("BladeTimeToDimTitle/Text"), async () =>
+        {
+            var actual = await _deviceTelemetryReader.SetBladeTimeToDimAsync(
+                ActiveDescriptors, TimeToDimSeconds[TimeToDimIndex], cancellationToken);
+            SetTimeToDim(actual, _blade._bladeTimeToDimWritable);
+            RequestDeviceRefresh();
+        }, cancellationToken, () =>
+            TimeToDimIndex = _blade.ConfirmedTimeToDimIndex);
+    }
+
+    public async Task ApplyIndicatorLedAsync(CancellationToken cancellationToken = default)
+    {
+        if (!CanApplyIndicatorLed)
+        {
+            return;
+        }
+
+        await RunDeviceOperationAsync(AppStrings.Text("BladeIndicatorLedTitle/Text"), async () =>
+        {
+            var actual = await _deviceTelemetryReader.SetBladeIndicatorLedAsync(
+                ActiveDescriptors, IndicatorLedEnabled, cancellationToken);
+            SetIndicatorLed(actual, _blade._bladeIndicatorLedWritable);
+            RequestDeviceRefresh();
+        }, cancellationToken, () =>
+            IndicatorLedEnabled = _blade._bladeIndicatorLedEnabled ?? false);
+    }
+
+    public async Task ApplyGpuCardDetectionAsync(CancellationToken cancellationToken = default)
+    {
+        if (!CanApplyGpuCardDetection)
+        {
+            return;
+        }
+
+        await RunDeviceOperationAsync(AppStrings.Text("BladeGpuCardDetectionTitle/Text"), async () =>
+        {
+            var actual = await _deviceTelemetryReader.SetBladeGpuCardDetectionAsync(
+                ActiveDescriptors, GpuCardDetectionEnabled, cancellationToken);
+            SetGpuCardDetection(actual, _blade._bladeGpuCardDetectionWritable);
+            RequestDeviceRefresh();
+        }, cancellationToken, () =>
+            GpuCardDetectionEnabled = _blade._bladeGpuCardDetection?.Enabled ?? false);
+    }
+
     public async Task ApplyNativeDisplayModeAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApplyNativeDisplayMode)
@@ -1238,6 +1306,83 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     }
     public bool CanSetStartupAnimation => _blade._bladeStartupAnimationEnabled is not null;
     public bool CanApplyStartupAnimation => CanSetStartupAnimation && StartupAnimationEnabled != _blade._bladeStartupAnimationEnabled;
+    public Visibility LegacyBladeSettingsVisibility =>
+        _blade._bladeAutoSleepEnabled is not null || _blade._bladeTimeToDim is not null ||
+        _blade._bladeIndicatorLedEnabled is not null || _blade._bladeGpuCardDetection is not null
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    public bool AutoSleepEnabled
+    {
+        get => _blade._bladeAutoSleepSelection;
+        set
+        {
+            if (SetField(ref _blade._bladeAutoSleepSelection, value))
+            {
+                OnPropertyChanged(nameof(CanApplyAutoSleep));
+            }
+        }
+    }
+    public bool CanSetAutoSleep =>
+        _blade._bladeAutoSleepEnabled is not null && _blade._bladeAutoSleepWritable;
+    public bool CanApplyAutoSleep =>
+        CanSetAutoSleep && AutoSleepEnabled != _blade._bladeAutoSleepEnabled;
+    public Visibility AutoSleepVisibility =>
+        _blade._bladeAutoSleepEnabled is not null ? Visibility.Visible : Visibility.Collapsed;
+    public IReadOnlyList<string> TimeToDimOptions =>
+        [.. TimeToDimSeconds.Select(seconds => seconds.ToString())];
+    public int TimeToDimIndex
+    {
+        get => _blade._bladeTimeToDimIndex;
+        set
+        {
+            if (SetField(ref _blade._bladeTimeToDimIndex, value))
+            {
+                OnPropertyChanged(nameof(CanApplyTimeToDim));
+            }
+        }
+    }
+    public bool CanSetTimeToDim =>
+        _blade._bladeTimeToDim is not null && _blade._bladeTimeToDimWritable;
+    public bool CanApplyTimeToDim =>
+        CanSetTimeToDim && TimeToDimIndex >= 0 && TimeToDimIndex < TimeToDimSeconds.Count &&
+        TimeToDimSeconds[TimeToDimIndex] != _blade._bladeTimeToDim!.Value.Seconds;
+    public Visibility TimeToDimVisibility =>
+        _blade._bladeTimeToDim is not null ? Visibility.Visible : Visibility.Collapsed;
+    public bool IndicatorLedEnabled
+    {
+        get => _blade._bladeIndicatorLedSelection;
+        set
+        {
+            if (SetField(ref _blade._bladeIndicatorLedSelection, value))
+            {
+                OnPropertyChanged(nameof(CanApplyIndicatorLed));
+            }
+        }
+    }
+    public bool CanSetIndicatorLed =>
+        _blade._bladeIndicatorLedEnabled is not null && _blade._bladeIndicatorLedWritable;
+    public bool CanApplyIndicatorLed =>
+        CanSetIndicatorLed && IndicatorLedEnabled != _blade._bladeIndicatorLedEnabled;
+    public Visibility IndicatorLedVisibility =>
+        _blade._bladeIndicatorLedEnabled is not null ? Visibility.Visible : Visibility.Collapsed;
+    public bool GpuCardDetectionEnabled
+    {
+        get => _blade._bladeGpuCardDetectionSelection;
+        set
+        {
+            if (SetField(ref _blade._bladeGpuCardDetectionSelection, value))
+            {
+                OnPropertyChanged(nameof(CanApplyGpuCardDetection));
+            }
+        }
+    }
+    public bool CanSetGpuCardDetection =>
+        _blade._bladeGpuCardDetection is not null && _blade._bladeGpuCardDetectionWritable;
+    public bool CanApplyGpuCardDetection =>
+        CanSetGpuCardDetection && GpuCardDetectionEnabled != _blade._bladeGpuCardDetection?.Enabled;
+    public Visibility GpuCardDetectionVisibility =>
+        _blade._bladeGpuCardDetection is not null ? Visibility.Visible : Visibility.Collapsed;
+    private IReadOnlyList<int> TimeToDimSeconds => _blade.TimeToDimSeconds;
     public IReadOnlyList<string> NativeDisplayModeOptions => AppStrings.Texts("UHD", "FHD");
     public int NativeDisplayModeIndex
     {
@@ -2248,6 +2393,18 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         {
             SetFnKey(fnKeyMultimediaPrimary);
         }
+        SetAutoSleep(
+            telemetry.BladeAutoSleepEnabled ?? _blade._bladeAutoSleepEnabled,
+            telemetry.BladeAutoSleepWritable);
+        SetTimeToDim(
+            telemetry.BladeTimeToDim ?? _blade._bladeTimeToDim,
+            telemetry.BladeTimeToDimWritable);
+        SetIndicatorLed(
+            telemetry.BladeIndicatorLedEnabled ?? _blade._bladeIndicatorLedEnabled,
+            telemetry.BladeIndicatorLedWritable);
+        SetGpuCardDetection(
+            telemetry.BladeGpuCardDetection ?? _blade._bladeGpuCardDetection,
+            telemetry.BladeGpuCardDetectionWritable);
         _applyFirmwareMcuVersion(telemetry.BladeMcuVersion);
         _blade._bladeSkuHardwareConfiguration = telemetry.BladeSkuHardwareConfiguration;
         if (_blade._bladeSkuHardwareConfiguration?.SupportsNativeDisplayMode == true &&
@@ -2367,6 +2524,10 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         _blade._bladeStartupAnimationEnabled = null;
         StartupAnimationEnabled = false;
         OnPropertyChanged(nameof(CanSetStartupAnimation));
+        SetAutoSleep(null, false);
+        SetTimeToDim(null, false);
+        SetIndicatorLed(null, false);
+        SetGpuCardDetection(null, false);
         _blade._bladeFnKeyMultimediaPrimary = null;
         _blade._bladeFnKeyText = "--";
         OnPropertyChanged(nameof(FnKeyText));
@@ -2463,6 +2624,47 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         OnPropertyChanged(nameof(FnKeyMultimediaPrimary));
         OnPropertyChanged(nameof(CanSetFnKey));
         OnPropertyChanged(nameof(CanApplyFnKey));
+    }
+
+    private void SetAutoSleep(bool? enabled, bool writable)
+    {
+        _blade.SetAutoSleep(enabled, writable);
+        OnPropertyChanged(nameof(AutoSleepEnabled));
+        OnPropertyChanged(nameof(CanSetAutoSleep));
+        OnPropertyChanged(nameof(CanApplyAutoSleep));
+        OnPropertyChanged(nameof(AutoSleepVisibility));
+        OnPropertyChanged(nameof(LegacyBladeSettingsVisibility));
+    }
+
+    private void SetTimeToDim(BladeTimeToDimTelemetry? state, bool writable)
+    {
+        _blade.SetTimeToDim(state, writable);
+        OnPropertyChanged(nameof(TimeToDimOptions));
+        OnPropertyChanged(nameof(TimeToDimIndex));
+        OnPropertyChanged(nameof(CanSetTimeToDim));
+        OnPropertyChanged(nameof(CanApplyTimeToDim));
+        OnPropertyChanged(nameof(TimeToDimVisibility));
+        OnPropertyChanged(nameof(LegacyBladeSettingsVisibility));
+    }
+
+    private void SetIndicatorLed(bool? enabled, bool writable)
+    {
+        _blade.SetIndicatorLed(enabled, writable);
+        OnPropertyChanged(nameof(IndicatorLedEnabled));
+        OnPropertyChanged(nameof(CanSetIndicatorLed));
+        OnPropertyChanged(nameof(CanApplyIndicatorLed));
+        OnPropertyChanged(nameof(IndicatorLedVisibility));
+        OnPropertyChanged(nameof(LegacyBladeSettingsVisibility));
+    }
+
+    private void SetGpuCardDetection(BladeGpuCardDetectionTelemetry? state, bool writable)
+    {
+        _blade.SetGpuCardDetection(state, writable);
+        OnPropertyChanged(nameof(GpuCardDetectionEnabled));
+        OnPropertyChanged(nameof(CanSetGpuCardDetection));
+        OnPropertyChanged(nameof(CanApplyGpuCardDetection));
+        OnPropertyChanged(nameof(GpuCardDetectionVisibility));
+        OnPropertyChanged(nameof(LegacyBladeSettingsVisibility));
     }
 
     private void SetChargeLimit(int percent)

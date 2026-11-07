@@ -4,8 +4,9 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
 
-internal sealed class BladeTelemetryReader
+internal sealed partial class BladeTelemetryReader
 {
+    private readonly RazerDeviceResolver _resolver;
     private readonly RazerCapabilityClient _client;
     private readonly BladeValidationState _validation = new();
     private readonly BladeFanTelemetryReader _fan;
@@ -15,6 +16,7 @@ internal sealed class BladeTelemetryReader
     public BladeTelemetryReader(RazerDeviceResolver resolver, RazerCapabilityClient client)
     {
         ArgumentNullException.ThrowIfNull(resolver);
+        _resolver = resolver;
         _client = client ?? throw new ArgumentNullException(nameof(client));
         _fan = new BladeFanTelemetryReader(resolver, client);
         _power = new BladePowerTelemetryReader(resolver, client, _validation, _fan);
@@ -50,10 +52,18 @@ internal sealed class BladeTelemetryReader
         bool? bladeFnKeyMultimediaPrimary = null;
         string? bladeMcuVersion = null;
         BladeAdapterPowerSnapshot? bladeAdapterPower = null;
+        bool? bladeAutoSleepEnabled = null;
+        BladeTimeToDimTelemetry? bladeTimeToDim = null;
+        bool? bladeIndicatorLedEnabled = null;
+        BladeGpuCardDetectionTelemetry? bladeGpuCardDetection = null;
         var errors = new List<string>();
         // Capabilities absent from this model's manifest are not attempted, so a
         // Blade family that never owned a report never logs a phantom error.
         var owns = blade.Owns;
+        var canWriteAutoSleep = owns(CapabilityIds.AutoSleepSet) && blade.AllowsControlWrites;
+        var canWriteTimeToDim = owns(CapabilityIds.TimeToDimSet) && blade.AllowsControlWrites;
+        var canWriteIndicatorLed = owns(CapabilityIds.IndicatorLedSet) && blade.AllowsControlWrites;
+        var canWriteGpuCardDetection = owns(CapabilityIds.GpuCardDetectionSet) && blade.AllowsControlWrites;
         var bladeThermalReadSucceeded = false;
         if (owns(CapabilityIds.KeyboardBrightnessGet))
         {
@@ -348,6 +358,54 @@ internal sealed class BladeTelemetryReader
             }
         }
 
+        if (owns(CapabilityIds.AutoSleepGet))
+        {
+            try
+            {
+                bladeAutoSleepEnabled = await ReadAutoSleepAsync(blade, cancellationToken);
+            }
+            catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
+            {
+                errors.Add($"Auto sleep: {exception.Message}");
+            }
+        }
+
+        if (owns(CapabilityIds.TimeToDimGet))
+        {
+            try
+            {
+                bladeTimeToDim = await ReadTimeToDimAsync(blade, cancellationToken);
+            }
+            catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
+            {
+                errors.Add($"Time to dim: {exception.Message}");
+            }
+        }
+
+        if (owns(CapabilityIds.IndicatorLedGet))
+        {
+            try
+            {
+                bladeIndicatorLedEnabled = await ReadIndicatorLedAsync(blade, cancellationToken);
+            }
+            catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
+            {
+                errors.Add($"Indicator LED: {exception.Message}");
+            }
+        }
+
+        if (owns(CapabilityIds.GpuCardDetectionGet))
+        {
+            try
+            {
+                bladeGpuCardDetection = await ReadGpuCardDetectionAsync(blade, cancellationToken);
+            }
+            catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
+            {
+                errors.Add($"GPU card detection: {exception.Message}");
+            }
+        }
+
         if (owns(CapabilityIds.NativeDisplayModeGet))
         {
             try
@@ -429,6 +487,14 @@ internal sealed class BladeTelemetryReader
             bladeFnKeyMultimediaPrimary,
             bladeMcuVersion,
             bladeAdapterPower,
+            bladeAutoSleepEnabled,
+            bladeTimeToDim,
+            bladeIndicatorLedEnabled,
+            bladeGpuCardDetection,
+            canWriteAutoSleep,
+            canWriteTimeToDim,
+            canWriteIndicatorLed,
+            canWriteGpuCardDetection,
             errors);
     }
 
@@ -608,4 +674,12 @@ internal sealed record BladeTelemetryReadResult(
     bool? BladeFnKeyMultimediaPrimary,
     string? BladeMcuVersion,
     BladeAdapterPowerSnapshot? BladeAdapterPower,
+    bool? BladeAutoSleepEnabled,
+    BladeTimeToDimTelemetry? BladeTimeToDim,
+    bool? BladeIndicatorLedEnabled,
+    BladeGpuCardDetectionTelemetry? BladeGpuCardDetection,
+    bool BladeAutoSleepWritable,
+    bool BladeTimeToDimWritable,
+    bool BladeIndicatorLedWritable,
+    bool BladeGpuCardDetectionWritable,
     IReadOnlyList<string> Errors);

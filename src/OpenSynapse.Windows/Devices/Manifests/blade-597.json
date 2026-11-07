@@ -17,6 +17,62 @@
     "waitMilliseconds": 2
   },
   "capabilities": {
+    "auto-sleep.get": {
+      "transactionId": "1F",
+      "dataSize": "02",
+      "commandClass": "07",
+      "commandId": "88",
+      "arguments": "00"
+    },
+    "auto-sleep.set": {
+      "transactionId": "1F",
+      "dataSize": "02",
+      "commandClass": "07",
+      "commandId": "08",
+      "arguments": ""
+    },
+    "time-to-dim.get": {
+      "transactionId": "1F",
+      "dataSize": "05",
+      "commandClass": "07",
+      "commandId": "8B",
+      "arguments": "00"
+    },
+    "time-to-dim.set": {
+      "transactionId": "1F",
+      "dataSize": "05",
+      "commandClass": "07",
+      "commandId": "0B",
+      "arguments": ""
+    },
+    "indicator-led.get": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "90",
+      "arguments": "00"
+    },
+    "indicator-led.set": {
+      "transactionId": "1F",
+      "dataSize": "01",
+      "commandClass": "07",
+      "commandId": "10",
+      "arguments": ""
+    },
+    "gpu-card-detection.get": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "A0",
+      "arguments": "00"
+    },
+    "gpu-card-detection.set": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "20",
+      "arguments": ""
+    },
     "thermal-state.get": {
       "transactionId": "01",
       "dataSize": "04",
@@ -44,6 +100,28 @@
       "dataSize": "03",
       "commandClass": "0F",
       "commandId": "04",
+      "arguments": ""
+    },
+    "adapter-power.get": {
+      "transactionId": "00",
+      "dataSize": "02",
+      "commandClass": "07",
+      "commandId": "8C",
+      "arguments": "0000",
+      "allowRemainingPacketsMismatch": true
+    },
+    "boost.get": {
+      "transactionId": "1F",
+      "dataSize": "03",
+      "commandClass": "0D",
+      "commandId": "87",
+      "arguments": ""
+    },
+    "boost.set": {
+      "transactionId": "1F",
+      "dataSize": "03",
+      "commandClass": "0D",
+      "commandId": "07",
       "arguments": ""
     },
     "charge-limit.get": {

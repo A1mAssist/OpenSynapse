@@ -1329,6 +1329,14 @@
     <value>设备通道读取失败。</value>
     <comment>设备通道读取失败</comment>
   </data>
+  <data name="RazerHidOnboardProfileRejected" xml:space="preserve">
+    <value>设备拒绝了该操作。请确认配置编号在已用范围内，且槽位未满。</value>
+    <comment>板载配置命令被设备拒绝</comment>
+  </data>
+  <data name="RazerHidOnboardProfileUnsupported" xml:space="preserve">
+    <value>该设备不支持这项板载配置操作。</value>
+    <comment>板载配置命令不支持</comment>
+  </data>
   <data name="RazerHidMappingNoButtons" xml:space="preserve">
     <value>设备未报告任何映射按键</value>
     <comment>设备未报告任何映射按键</comment>
@@ -1741,13 +1749,16 @@
   <data name="BladeFnRuntimeStoppedBeforeAudioSync" xml:space="preserve"><value>Blade Fn 运行时在音频同步完成前已被安全停止。</value><comment>Fn 运行时提前停止</comment></data>
   <data name="PerformanceSamplingUnavailable" xml:space="preserve"><value>采样失败 · 显示上次值</value><comment>性能采样不可用</comment></data>
   <data name="ChromaRestTitle.Text" xml:space="preserve"><value>Chroma 集成</value><comment>Chroma 集成标题</comment></data>
-  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>允许兼容的 REST 与 SDK 客户端在本机控制已连接设备的灯光；SDK 兼容层不需要安装雷云。</value><comment>Chroma 集成说明</comment></data>
+  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>允许兼容的 REST 与 SDK 客户端在本机控制已连接设备的灯光；官方 Chroma DLL + broker 不需要安装雷云。</value><comment>Chroma 集成说明</comment></data>
   <data name="ChromaRestToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Chroma 集成</value><comment>Chroma 集成开关</comment></data>
   <data name="ChromaRestStatus.Text" xml:space="preserve"><value>已禁用</value><comment>Chroma REST 状态</comment></data>
   <data name="ChromaRestStatusDisabled" xml:space="preserve"><value>已禁用</value><comment>Chroma REST 已禁用</comment></data>
   <data name="ChromaRestStatusUnavailable" xml:space="preserve"><value>不可用</value><comment>Chroma REST 不可用</comment></data>
   <data name="ChromaRestStatusReady" xml:space="preserve"><value>{0} · 已就绪</value><comment>Chroma REST 已就绪</comment></data>
   <data name="ChromaRestStatusSession" xml:space="preserve"><value>{0} · {1} · {2:0} fps · 跳过 {3}</value><comment>Chroma REST 活动会话与帧统计</comment></data>
+  <data name="ChromaOfficialDllTitle.Text" xml:space="preserve"><value>官方 Chroma DLL</value><comment>官方 DLL 与 broker 标题</comment></data>
+  <data name="ChromaOfficialDllDescription.Text" xml:space="preserve"><value>只下载官方 RzChromaSDK64.dll，放到 C:\Windows\System32。安装版通过 OpenSynapseService 服务启动 broker，不需要每次授权；雷云 Chroma 服务运行时 broker 会自动让出。</value><comment>官方 DLL 单文件与 broker 说明</comment></data>
+  <data name="ChromaOfficialDllDownload.Content" xml:space="preserve"><value>下载 DLL</value><comment>下载 GitHub 托管的官方 RzChromaSDK64.dll</comment></data>
   <data name="ChromaRestoreTitle.Text" xml:space="preserve"><value>外部控制结束后恢复灯光</value><comment>恢复灯光标题</comment></data>
   <data name="ChromaRestoreDescription.Text" xml:space="preserve"><value>会话结束或超时后恢复 OpenSynapse 当前配置的灯效。</value><comment>恢复灯光说明</comment></data>
   <data name="ChromaRestoreToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>外部控制结束后恢复灯光</value><comment>恢复灯光开关</comment></data>
@@ -1842,6 +1853,8 @@
   <data name="RazerHidScrollNotchedMode.Text" xml:space="preserve"><value>段落感</value></data>
   <data name="RazerHidScrollFreeSpinMode.Text" xml:space="preserve"><value>自由滚动</value></data>
   <data name="RazerHidScrollModeLabel.Text" xml:space="preserve"><value>滚轮模式</value></data>
+  <data name="RazerHidScrollModeSmartReel" xml:space="preserve"><value>智能滚动</value></data>
+  <data name="RazerHidScrollModeApplied" xml:space="preserve"><value>滚轮模式已应用</value></data>
   <data name="RazerHidScrollAccelerationLabel.Text" xml:space="preserve"><value>滚轮加速</value></data>
   <data name="RazerHidSmartReelThresholdLabel.Text" xml:space="preserve"><value>Smart Reel 阈值</value></data>
   <data name="RazerHidKeyswitchExpander.Header" xml:space="preserve"><value>键轴优化</value></data>
@@ -2042,15 +2055,18 @@
   <data name="TrayBatteryDescription.Text" xml:space="preserve"><value>在右键菜单中显示已连接鼠标和键盘的电量；关闭后不再显示电量行。</value></data>
   <data name="TrayBatteryToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>托盘菜单外设电量</value></data>
   <data name="TaskbarStatusTitle.Text" xml:space="preserve"><value>任务栏状态条</value></data>
-  <data name="TaskbarStatusDescription.Text" xml:space="preserve"><value>在任务栏显示已连接外设的电量；检测到 Blade 时同时显示当前性能模式。</value></data>
+  <data name="TaskbarStatusDescription.Text" xml:space="preserve"><value>在任务栏显示已连接外设的电量；不显示性能模式，点击也不会打开主窗口。</value></data>
   <data name="TaskbarStatusToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>任务栏状态条</value></data>
   <data name="PerformanceOverlayTitle" xml:space="preserve"><value>性能悬浮窗</value></data>
-  <data name="PerformanceOverlayDescription" xml:space="preserve"><value>在桌面置顶显示性能模式、CPU/GPU 温度与频率、内存占用与频率，以及风扇转速；可拖动并记住位置。</value></data>
+  <data name="PerformanceOverlayDescription" xml:space="preserve"><value>在桌面显示性能模式、CPU/GPU 温度与频率、内存占用与频率，以及风扇转速；可拖动并记住位置，右键可切换卡片、重置位置或关闭。</value></data>
   <data name="PerformanceOverlayDetailedTitle" xml:space="preserve"><value>详细卡片</value></data>
   <data name="PerformanceOverlayDetailedDescription" xml:space="preserve"><value>使用较大的半透明卡片，并显示 CPU/GPU 负载折线图。</value></data>
   <data name="PerformanceOverlayDetailedToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>详细性能悬浮窗</value></data>
   <data name="PerformanceOverlayToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>性能悬浮窗</value></data>
   <data name="PerformanceOverlayFanLabel" xml:space="preserve"><value>风扇</value></data>
+  <data name="PerformanceOverlayMenuResetPosition" xml:space="preserve"><value>重置位置</value></data>
+  <data name="PerformanceOverlayMenuSettings" xml:space="preserve"><value>打开设置</value></data>
+  <data name="PerformanceOverlayMenuClose" xml:space="preserve"><value>关闭悬浮窗</value></data>
   <data name="PeripheralLowBatteryTitle" xml:space="preserve"><value>外设电量不足</value></data>
   <data name="PeripheralLowBatteryBody" xml:space="preserve"><value>{0} 剩余电量为 {1}%。</value></data>
   <data name="ChromaSourcesTitle.Text" xml:space="preserve"><value>Chroma 来源</value></data>
@@ -2123,6 +2139,8 @@
   <data name="RazerHidCapabilityBatteryDischargeCurveRead" xml:space="preserve"><value>电池放电曲线读取</value></data>
   <data name="RazerHidCapabilityBatteryDischargeCurveWrite" xml:space="preserve"><value>电池放电曲线写入</value></data>
   <data name="RazerHidCapabilityMacroStorageInfoRead" xml:space="preserve"><value>板载宏容量读取</value></data>
+  <data name="RazerHidCapabilityMacroStorageDataWrite" xml:space="preserve"><value>板载宏数据写入</value></data>
+  <data name="RazerHidCapabilityMacroStorageNameWrite" xml:space="preserve"><value>板载宏名称写入</value></data>
   <data name="RazerHidCapabilityLkScrollWheelModeRead" xml:space="preserve"><value>滚轮模式读取</value></data>
   <data name="RazerHidCapabilityLkScrollWheelModeWrite" xml:space="preserve"><value>滚轮模式写入</value></data>
   <data name="RazerHidCapabilityMappingRead" xml:space="preserve"><value>按键映射读取</value></data>
@@ -2282,11 +2300,11 @@
     <comment>重新读取</comment>
   </data>
   <data name="ThxHintNativeMissing" xml:space="preserve">
-    <value>缺少雷蛇提供的 THX 控制组件。点击“下载 THX 控制组件”从雷蛇官方服务器获取，下载后会校验完整性；OpenSynapse 安装包不附带该组件。</value>
+    <value>缺少雷蛇提供的 THX 控制组件。点“下载并安装 THX 组件”自动从雷蛇官方服务器补齐，下载后会校验完整性；OpenSynapse 安装包不附带该组件。</value>
   </data>
   <data name="ThxInstallButton.Content" xml:space="preserve">
-    <value>安装 THX 组件</value>
-    <comment>安装 THX 组件</comment>
+    <value>下载并安装 THX 组件</value>
+    <comment>下载并安装 THX 组件</comment>
   </data>
   <data name="ThxOutputLabel.Header" xml:space="preserve">
     <value>输出</value>
@@ -2330,6 +2348,30 @@
   <data name="ThxApplyVoiceClarityButton.Content" xml:space="preserve">
     <value>应用人声清晰度</value>
     <comment>应用人声清晰度</comment>
+  </data>
+  <data name="ThxBassBoostLabel.Text" xml:space="preserve">
+    <value>低音增强</value>
+    <comment>THX 低音增强</comment>
+  </data>
+  <data name="ThxApplyBassBoostButton.Content" xml:space="preserve">
+    <value>应用低音增强</value>
+    <comment>应用 THX 低音增强</comment>
+  </data>
+  <data name="ThxBassBoostToggle.OnContent" xml:space="preserve">
+    <value>开启</value>
+    <comment>开启</comment>
+  </data>
+  <data name="ThxBassBoostToggle.OffContent" xml:space="preserve">
+    <value>关闭</value>
+    <comment>关闭</comment>
+  </data>
+  <data name="RazerHeadsetThxBassBoostToggle.Header" xml:space="preserve">
+    <value>低音增强</value>
+    <comment>THX 低音增强</comment>
+  </data>
+  <data name="RazerHeadsetThxBassBoostApply.Content" xml:space="preserve">
+    <value>应用低音增强</value>
+    <comment>应用 THX 低音增强</comment>
   </data>
   <data name="ThxSoundNormalizationLabel.Text" xml:space="preserve">
     <value>音量标准化</value>
@@ -2497,9 +2539,6 @@
   <data name="ThxStatusInvalidRequest" xml:space="preserve">
     <value>THX 设置参数无效。</value>
   </data>
-  <data name="ThxDownloadComponentButton.Content" xml:space="preserve">
-    <value>下载 THX 控制组件</value>
-  </data>
   <data name="ThxStatusDownloading" xml:space="preserve">
     <value>正在下载并安装 THX 组件…</value>
   </data>
@@ -2544,6 +2583,24 @@
   <data name="BladeCpuPowerBoostDescription.Text" xml:space="preserve">
     <value>GPU 空闲时允许 CPU 使用更高功耗。</value>
     <comment>GPU 空闲时允许 CPU 使用更高功耗。</comment>
+  </data>
+  <data name="BladeLegacySettingsTitle.Text" xml:space="preserve">
+    <value>电源与指示灯</value>
+  </data>
+  <data name="BladeLegacySettingsDescription.Text" xml:space="preserve">
+    <value>老款 Blade 的电源、屏幕变暗与指示灯设置。</value>
+  </data>
+  <data name="BladeAutoSleepTitle.Text" xml:space="preserve">
+    <value>自动睡眠</value>
+  </data>
+  <data name="BladeTimeToDimTitle.Text" xml:space="preserve">
+    <value>屏幕变暗（秒）</value>
+  </data>
+  <data name="BladeIndicatorLedTitle.Text" xml:space="preserve">
+    <value>指示灯</value>
+  </data>
+  <data name="BladeGpuCardDetectionTitle.Text" xml:space="preserve">
+    <value>显卡检测指示灯</value>
   </data>
   <data name="ScanHidCommands" xml:space="preserve">
     <value>扫描 HID 命令</value>
@@ -2620,7 +2677,7 @@
   <data name="MacroMouseButton3" xml:space="preserve"><value>中键</value></data>
   <data name="MacroMouseButton4" xml:space="preserve"><value>侧键 1 (Mouse 4)</value></data>
   <data name="MacroMouseButton5" xml:space="preserve"><value>侧键 2 (Mouse 5)</value></data>
-  <data name="MacroMouseSideCapture" xml:space="preserve"><value>其他侧键 / 多功能键（按下捕获）</value></data>
+  <data name="MacroMouseSideCapture" xml:space="preserve"><value>第三个侧键 / 其他多功能键（按下捕获）</value></data>
   <data name="MacroNagaSideButton" xml:space="preserve"><value>Naga 侧键 {0}</value></data>
   <data name="MacroTriggerMouseSide.Text" xml:space="preserve"><value>鼠标侧键</value></data>
   <data name="MacroTriggerNaga.Text" xml:space="preserve"><value>Naga 侧键</value></data>
@@ -2767,6 +2824,8 @@
   <data name="MacroTextDialogTitle" xml:space="preserve"><value>输入文本</value></data>
   <data name="MacroTriggerCleared" xml:space="preserve"><value>已清除触发键。</value></data>
   <data name="MacroTriggerConflict" xml:space="preserve"><value>触发键与“{0}”冲突。</value></data>
+  <data name="MacroTriggerMacroMissing" xml:space="preserve"><value>找不到这个宏，可能已被删除。</value></data>
+  <data name="MacroEditBusy" xml:space="preserve"><value>正在录制或倒计时，暂时不能修改触发键。</value></data>
   <data name="MacroMediaMail" xml:space="preserve"><value>邮件</value></data>
   <data name="MacroMediaHomePage" xml:space="preserve"><value>主页</value></data>
   <data name="MacroImportButton.Content" xml:space="preserve"><value>导入…</value></data>
@@ -2911,13 +2970,12 @@
   <data name="RazerArgbDriverDescription.Text" xml:space="preserve"><value>逐灯控制需要雷云的 0F1F 控制驱动。下载并安装后，点“刷新”重新检测。</value></data>
   <data name="RazerArgbDriverButton.Content" xml:space="preserve"><value>下载 ARGB 驱动</value></data>
   <data name="RazerHeadsetThxTitle.Text" xml:space="preserve"><value>THX Spatial Audio</value></data>
-  <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio 需要 THX 音频服务和组件。这里只下载并安装官方 THX 音频包，不会安装雷云，也不需要激活码；安装时需要管理员权限。</value></data>
-  <data name="RazerHeadsetThxInstallButton.Content" xml:space="preserve"><value>安装 THX 组件</value></data>
-  <data name="RazerHeadsetThxDownloadButton.Content" xml:space="preserve"><value>下载 THX 控制组件</value></data>
+  <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio 需要 THX 音频服务和组件。点一次按钮会自动补齐缺少的部分；只安装官方 THX 音频包，不会安装雷云，也不需要激活码；安装时需要管理员权限。</value></data>
+  <data name="RazerHeadsetThxInstallButton.Content" xml:space="preserve"><value>下载并安装 THX 组件</value></data>
   <data name="RazerHeadsetThxGameProfilesButton.Content" xml:space="preserve"><value>更新 THX 游戏配置</value></data>
   <data name="RazerHeadsetThxPatcherButton.Content" xml:space="preserve"><value>更新 THX Patcher</value></data>
   <data name="RazerHeadsetThxServiceMissing" xml:space="preserve"><value>未检测到 THX 服务。点上面的按钮由 OpenSynapse 安装官方 THX 音频组件；不会安装雷云。</value></data>
-  <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>THX 服务已就绪，但缺少控制组件。点上面的按钮下载。</value></data>
+  <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>THX 服务已就绪，但缺少控制组件。点上面的按钮安装。</value></data>
   <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>正在下载并安装 THX 组件…</value></data>
   <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>THX 组件下载、校验或安装失败，请确认允许管理员权限后重试。</value></data>
   <data name="RazerHeadsetThxIncomplete" xml:space="preserve"><value>安装程序已结束，但 THX 服务仍未就绪。请重启后重试，或点“手动下载 THX 安装包”自行安装。</value></data>
@@ -2925,6 +2983,8 @@
   <data name="RazerHeadsetThxReady" xml:space="preserve"><value>THX 组件已安装。</value></data>
   <data name="RazerHeadsetThxSpatialToggle.Header" xml:space="preserve"><value>空间音效</value></data>
   <data name="RazerHeadsetThxSpatialApply.Content" xml:space="preserve"><value>应用空间音效</value></data>
+  <data name="RazerHeadsetThxS3Baseline.Content" xml:space="preserve"><value>雷云3 默认声底</value></data>
+  <data name="RazerHeadsetThxS3BaselineHint.Text" xml:space="preserve"><value>关闭空间音效并把 THX 归零；0549 同时写回雷云3 的 Game 曲线。</value></data>
   <data name="RazerHeadsetThxPresetLabel.Header" xml:space="preserve"><value>预设</value></data>
   <data name="RazerHeadsetThxPresetLabel.PlaceholderText" xml:space="preserve"><value>默认配置</value></data>
   <data name="RazerHeadsetThxPresetApply.Content" xml:space="preserve"><value>应用预设</value></data>
@@ -3732,12 +3792,41 @@
   <data name="LightingStudioMore" xml:space="preserve"><value>更多</value></data>
   <data name="LightingStudioProfileTitle" xml:space="preserve"><value>配置档名称</value></data>
   <data name="RazerMappingDeviceImageLabel" xml:space="preserve"><value>设备图</value></data>
+  <data name="RazerMappingModifierHeader" xml:space="preserve"><value>修饰键</value></data>
+  <data name="RazerMappingMacroSlotHeader" xml:space="preserve"><value>宏槽</value></data>
+  <data name="RazerMappingPlaybackHeader" xml:space="preserve"><value>播放方式</value></data>
+  <data name="RazerMappingMacroTargetHeader" xml:space="preserve"><value>运行位置</value></data>
+  <data name="RazerMappingMacroHeader" xml:space="preserve"><value>宏</value></data>
+  <data name="RazerMappingMacroTargetSoftware" xml:space="preserve"><value>软件（OpenSynapse）</value></data>
+  <data name="RazerMappingMacroTargetOnboard" xml:space="preserve"><value>设备（板载）</value></data>
+  <data name="RazerMappingSoftwareTriggerHeader" xml:space="preserve"><value>触发方式</value></data>
+  <data name="RazerMappingOnboardBehaviorHeader" xml:space="preserve"><value>按键行为</value></data>
+  <data name="RazerMappingMacroPlaybackOnce" xml:space="preserve"><value>执行一次</value></data>
+  <data name="RazerMappingMacroPlaybackRepeat" xml:space="preserve"><value>重复 N 次</value></data>
+  <data name="RazerMappingMacroPlaybackHold" xml:space="preserve"><value>按住循环</value></data>
+  <data name="RazerMappingMacroPlaybackToggle" xml:space="preserve"><value>按一下开始 / 再按停止</value></data>
+  <data name="RazerMappingMacroPlaybackSequence" xml:space="preserve"><value>每次执行下一步</value></data>
+  <data name="RazerMappingSoftwareMacroHint" xml:space="preserve"><value>由 OpenSynapse 执行，软件关闭后不生效。</value></data>
+  <data name="RazerMappingOnboardMacroHint" xml:space="preserve"><value>由设备执行，OpenSynapse 关闭后仍然有效。</value></data>
+  <data name="RazerMappingMacroUnsupported" xml:space="preserve"><value>这个宏不能写入板载：第 {0} 步：{1}。请返回宏编辑器修改。</value></data>
+  <data name="RazerMappingMacroUnsupportedSoftware" xml:space="preserve"><value>这个宏不能写入板载：第 {0} 步：{1}。请改用软件宏，或返回宏编辑器修改。</value></data>
+  <data name="RazerMappingMacroSlotOverwrite" xml:space="preserve"><value>槽位里已有其他宏，保存会覆盖。</value></data>
+  <data name="RazerMappingMacroSoftwareApplied" xml:space="preserve"><value>{0}（软件）</value></data>
+  <data name="RazerMappingMacroCurrentOnce" xml:space="preserve"><value>{0} · 执行一次</value></data>
+  <data name="RazerMappingMacroCurrentRepeat" xml:space="preserve"><value>{0} · 重复 {1} 次</value></data>
+  <data name="RazerMappingMacroCurrentHold" xml:space="preserve"><value>{0} · 按住循环</value></data>
+  <data name="RazerMappingMacroCurrentToggle" xml:space="preserve"><value>{0} · 按一下开始 / 再按停止</value></data>
+  <data name="RazerMappingMacroCurrentSequence" xml:space="preserve"><value>{0} · 每次执行下一步</value></data>
+  <data name="RazerMappingMacroOnboardUnavailable" xml:space="preserve"><value>此设备只能读取板载槽位，不能写入。</value></data>
+  <data name="RazerMappingMacroSoftwareUnavailable" xml:space="preserve"><value>此按键不能用作软件宏触发键。</value></data>
+  <data name="RazerMappingCalloutHint" xml:space="preserve"><value>点击设备旁的按键标签编辑映射</value></data>
   <data name="RazerMappingTitle" xml:space="preserve"><value>按键映射</value></data>
   <data name="RazerMappingRead" xml:space="preserve"><value>读取</value></data>
   <data name="RazerMappingSave" xml:space="preserve"><value>保存</value></data>
   <data name="RazerMappingLayerNormal" xml:space="preserve"><value>普通层</value></data>
   <data name="RazerMappingLayerHyperShift" xml:space="preserve"><value>HyperShift 层</value></data>
   <data name="RazerMappingKeyboardButton" xml:space="preserve"><value>键位 {0}</value></data>
+  <data name="RazerMappingNagaSideButton" xml:space="preserve"><value>侧键 {0}</value></data>
   <data name="RazerMappingButtonColumn" xml:space="preserve"><value>按键</value></data>
   <data name="RazerMappingCurrentColumn" xml:space="preserve"><value>当前动作</value></data>
   <data name="RazerMappingTypeColumn" xml:space="preserve"><value>类型</value></data>
@@ -3762,7 +3851,7 @@
   <data name="RazerMappingGroupRazerKey" xml:space="preserve"><value>Razer 键</value></data>
   <data name="RazerMappingGroupWindowsShortcut" xml:space="preserve"><value>Windows 快捷键</value></data>
   <data name="RazerMappingGroupHyperShiftToggle" xml:space="preserve"><value>HyperShift 切换</value></data>
-  <data name="RazerMappingGroupMacro" xml:space="preserve"><value>用户宏</value></data>
+  <data name="RazerMappingGroupMacro" xml:space="preserve"><value>宏</value></data>
   <data name="RazerMappingGroupTurboKey" xml:space="preserve"><value>Turbo 键</value></data>
   <data name="RazerMappingGroupTurboButton" xml:space="preserve"><value>Turbo 按钮</value></data>
   <data name="RazerMappingGroupDpiClutch" xml:space="preserve"><value>DPI 离合</value></data>
@@ -3773,4 +3862,31 @@
   <data name="RazerMappingDpiXHeader" xml:space="preserve"><value>DPI X</value></data>
   <data name="RazerMappingDpiYHeader" xml:space="preserve"><value>DPI Y</value></data>
   <data name="RazerMappingMacroRepeatHeader" xml:space="preserve"><value>宏次数</value></data>
+  <data name="RazerMappingKeyboardHint" xml:space="preserve"><value>点击键位编辑映射</value></data>
+  <data name="RazerMappingKeyboardStage" xml:space="preserve"><value>键盘</value></data>
+  <data name="RazerDriverTitle.Text" xml:space="preserve"><value>Razer 驱动</value></data>
+  <data name="RazerDriverDescription.Text" xml:space="preserve"><value>安装雷云的设备过滤驱动后，按键映射与宏可以走驱动级注入，和雷云同一条路径。</value></data>
+  <data name="RazerDriverInstall.Content" xml:space="preserve"><value>安装缺失驱动</value></data>
+  <data name="RazerDriverInstallHint.Text" xml:space="preserve"><value>安装包来自 Razer 官方 CDN，会请求管理员权限。安装完成后重新插拔设备或重启。</value></data>
+  <data name="RazerDriverChecking" xml:space="preserve"><value>正在检查 Razer 驱动…</value></data>
+  <data name="RazerDriverAllReady" xml:space="preserve"><value>所有已连接的 Razer 外设都已具备过滤驱动。</value></data>
+  <data name="RazerDriverMissingCount" xml:space="preserve"><value>发现 {0} 个 Razer 外设缺少驱动。</value></data>
+  <data name="RazerDriverCheckFailed" xml:space="preserve"><value>Razer 驱动检查失败：{0}</value></data>
+  <data name="RazerDriverWaiting" xml:space="preserve"><value>等待安装</value></data>
+  <data name="RazerDriverInstalledRestart" xml:space="preserve"><value>已安装，重启或重新插拔后生效</value></data>
+  <data name="RazerDriverInstallSummary" xml:space="preserve"><value>已安装 {0} 个 Razer 驱动包，重启或重新插拔设备后生效。</value></data>
+  <data name="RazerDriverInstallSummaryPartial" xml:space="preserve"><value>已安装 {0} 个，{1} 个未完成。</value></data>
+  <data name="RazerDriverInstallCancelled" xml:space="preserve"><value>驱动安装已取消。</value></data>
+  <data name="RazerDriverInstallFailed" xml:space="preserve"><value>Razer 驱动安装失败：{0}</value></data>
+  <data name="RazerDriverMissingStatus" xml:space="preserve"><value>缺少驱动</value></data>
+  <data name="RazerDriverDetail" xml:space="preserve"><value>VID_1532 / PID_{0} · 驱动 v{1}</value></data>
+  <data name="RazerDriverDownloading" xml:space="preserve"><value>正在下载 {0} 驱动…</value></data>
+  <data name="RazerDriverInstalling" xml:space="preserve"><value>正在启动 {0} 驱动安装程序，请在 UAC 中允许。</value></data>
+  <data name="RazerDriverInstallTimeout" xml:space="preserve"><value>Razer 驱动安装超时。</value></data>
+  <data name="RazerDriverInstallExitCode" xml:space="preserve"><value>Razer 驱动安装程序返回 {0}。</value></data>
+  <data name="RazerDriverInstallInvalidPackage" xml:space="preserve"><value>Razer 驱动包校验失败。</value></data>
+  <data name="RazerDriverDownloadFailed" xml:space="preserve"><value>Razer 驱动包下载或保存失败。</value></data>
+  <data name="RazerDriverInstallStartFailed" xml:space="preserve"><value>Razer 驱动安装程序没有启动。</value></data>
+  <data name="RazerDriverCommonDownloading" xml:space="preserve"><value>正在下载 Razer 通用控制驱动…</value></data>
+  <data name="RazerDriverCommonInstalling" xml:space="preserve"><value>正在安装 Razer 通用控制驱动，请在 UAC 中允许。</value></data>
 </root>

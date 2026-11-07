@@ -27,6 +27,12 @@ public sealed class RazerHidKrakenDeviceRowViewModel : INotifyPropertyChanged
     public string Status => Connection.IsReady
         ? AppStrings.Text("Text_C097B416")
         : AppStrings.Text("Text_242E08F4");
+    public int ProtocolTotalCount => 2;
+    public int ProtocolAvailableCount =>
+        (Connection.SupportedEffects.Count > 0 ? 1 : 0) +
+        (Connection.SupportsStaticColor ? 1 : 0);
+    public string CapabilityText =>
+        AppStrings.FormatText("ProtocolAvailableCount", ProtocolAvailableCount, ProtocolTotalCount);
     public Brush StatusBrush { get; }
     public string Error => string.IsNullOrWhiteSpace(Connection.Error)
         ? string.Empty

@@ -48,7 +48,7 @@ public sealed class RazerHidSpecialLightingConnection
     public bool SupportsStaticColor { get; }
     /// <summary>
     /// True when the audio page owns this headset and shows the lighting card there.
-    /// The audio page only discovers a headset that exposes the 91-byte feature
+    /// The audio page only discovers a headset whose bundle channel has a matching
     /// interface, so a headset without one keeps its own lighting row.
     /// </summary>
     public bool IsMergedIntoAudioPage { get; }
@@ -105,13 +105,25 @@ public sealed class RazerHidSpecialLightingService
     /// lighting discovery must not emit a second, lighting-only row for the same device.
     /// </summary>
     /// <remarks>
-    /// The audio page only discovers a headset that exposes the 91-byte feature
+    /// The audio page only discovers a headset whose bundle channel has a matching
     /// interface, so the lighting card may only move there for a headset that has one.
     /// A headset without that interface keeps its own lighting row; otherwise it would
     /// vanish from the app, because neither page could show it.
     /// </remarks>
-    public static bool IsMergedIntoAudioPage(ushort productId, bool hasAudioFeatureInterface) =>
-        hasAudioFeatureInterface && RazerHeadsetAudioService.IsSupported(productId);
+    public static bool IsMergedIntoAudioPage(ushort productId, bool hasAudioChannelInterface) =>
+        hasAudioChannelInterface && RazerHeadsetAudioService.IsSupported(productId);
+
+    /// <summary>
+    /// True when the audio page can discover this headset on the channel its bundle declares.
+    /// </summary>
+    internal static bool HasAudioChannelInterface(
+        ushort productId,
+        IEnumerable<WindowsHidDiscovery.HidInterfaceDescriptor> interfaces)
+    {
+        var channel = RazerHeadsetChannelCatalog.Resolve(productId);
+        return channel is RazerHeadsetChannel.Feature91 or RazerHeadsetChannel.KrakenBase37 &&
+            interfaces.Any(item => RazerHeadsetAudioService.MatchesChannel(channel, item));
+    }
 
     private readonly Func<string, ReadOnlyMemory<byte>, CancellationToken, Task> _sendOutput;
     private readonly Func<string, IReadOnlyList<byte[]>, bool, CancellationToken, Task> _sendKrakenV4;
@@ -195,13 +207,12 @@ public sealed class RazerHidSpecialLightingService
                         ? "No available FF14:0001 64-byte Output Report collection was found."
                         : "No available MI_03 37-byte Output Report collection was found."
                     : null;
-            // The audio page only finds a headset that exposes the 91-byte feature
-            // interface. The Kraken V4 exposes only a 64-byte FF14 collection, so the
-            // audio page never selects it and the lighting card has to stay on its
-            // own row, otherwise the headset disappears from the app entirely.
+            // The audio page only finds a headset whose bundle channel has a matching
+            // interface. The Kraken V4 channel is not handled there, so its lighting
+            // card has to stay on its own row or the headset disappears entirely.
             var mergedIntoAudioPage = !argb && IsMergedIntoAudioPage(
                 group.Key.ProductId,
-                group.Any(item => item.FeatureReportByteLength == RazerFeatureReport.Length));
+                HasAudioChannelInterface(group.Key.ProductId, group));
             results.Add(new RazerHidSpecialLightingConnection(
                 group.Key.ProductId,
                 name,

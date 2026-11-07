@@ -16,6 +16,9 @@ public sealed record StudioManifestDevice(
     ushort WiredProductId = 0,
     ushort DongleProductId = 0)
 {
+    /// <summary>Razer device category, for example KEYBOARD, KEYPAD or MOUSE.</summary>
+    public string? Category { get; init; }
+
     /// <summary>Product folder that owns the Synapse cover art.</summary>
     public ushort CoverProductId => WiredProductId != 0 ? WiredProductId : ProductId;
 }
@@ -60,6 +63,11 @@ internal static class StudioManifestParser
                     ? nameElement.GetString()
                     : null;
 
+            var category = root.TryGetProperty("category", out var categoryElement) &&
+                categoryElement.ValueKind == JsonValueKind.String
+                    ? categoryElement.GetString()
+                    : null;
+
             var isStudioSupported = root.TryGetProperty("isChromaStudioSupported", out var supportedElement) &&
                 supportedElement.ValueKind == JsonValueKind.True;
 
@@ -80,7 +88,10 @@ internal static class StudioManifestParser
                 etag,
                 lastModified,
                 wiredProductId,
-                dongleProductId);
+                dongleProductId)
+            {
+                Category = category,
+            };
         }
         catch (JsonException)
         {

@@ -30,6 +30,15 @@ public sealed partial class RazerFeatureTransport
             return 0xFF;
         }
         if (requested == 0xFF) return requested;
+        if (DeviceIdParser.TryParse(devicePath, out _, out var productId) &&
+            RazerKeyboardProtocol.UsesDualLinkTransaction(productId))
+        {
+            // DualLinkKeyboard clears the high bit for Set Device Pairing Mode (0x41)
+            // and Set Device Scan (0x46); every other command keeps 0x80 | sequence.
+            if (commandClass == 0x00 && commandId is 0x41 or 0x46)
+                return NextTransactionId(ref sequence);
+            return (byte)(0x80 | NextTransactionId(ref sequence));
+        }
         if (TryGetKnownWirelessTransaction(devicePath, commandClass, commandId, out var known))
         {
             // OpenRazer overrides the catalog's generic battery transaction for these

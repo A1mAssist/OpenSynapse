@@ -2,6 +2,10 @@
 
 OpenSynapse controls real hardware. Keep changes small, traceable, and backed by tests or hardware evidence.
 
+## Licensing
+
+OpenSynapse is licensed under AGPL-3.0-only. By submitting a contribution, you agree that it is licensed under the same terms.
+
 ## Device support
 
 If you own a device that needs new or additional support, read [docs/DEVICE_ADAPTATION.md](docs/DEVICE_ADAPTATION.md) and use the [device support issue form](https://github.com/A1mAssist/OpenSynapse/issues/new?template=device-support.yml). The top of the guide is a three-step owner checklist; the lower sections are maintainer reference.
@@ -11,9 +15,11 @@ If you own a device that needs new or additional support, read [docs/DEVICE_ADAP
 Commit only files needed to build, test, document, or license the project:
 
 - source code and project files;
-- tests and deterministic test data;
 - device manifests and verified runtime configuration;
 - documentation, localized screenshots, product artwork, and third-party license files;
+
+The private test tree and device-specific fixtures are kept locally and are
+not published in this repository.
 
 Do not commit:
 
@@ -42,7 +48,7 @@ Run the smallest relevant tests, then run these repository checks from PowerShel
 ```powershell
 git status --short --untracked-files=all
 git diff --check
-dotnet test OpenSynapse.slnx -c Release
+dotnet build OpenSynapse.slnx -c Release
 ```
 
 For application or packaging changes, also run:
@@ -59,21 +65,27 @@ directory smoke test alone is insufficient.
 
 The machine-wide installer is the MSI built with `vpk 1.2.161` or newer using
 `--msi --instLocation PerMachine --runtime win-x64`. It installs the app under
-`Program Files` and registers the GPU service from the installed
-`current\OpenSynapse.App.exe`. `Setup.exe` remains a per-user installer and does
-not register the service. For an MSI build, verify a silent install, the service
+`Program Files` and registers the OpenSynapse service from the installed
+`current\OpenSynapse.App.exe`. The per-user installer does not register the
+service. For an MSI build, verify a silent install, the service
 path and account, one UI toggle without a UAC prompt, and that uninstall removes
-the service. Also upgrade a per-user Setup install and verify that profiles and
+the service. Also upgrade a per-user install and verify that profiles and
 settings survive, the old directory no longer contains `current`, and the HKCU
 startup entry points to the Program Files executable. User data must stay in
 `%LOCALAPPDATA%\A1mAssist\OpenSynapse`, not under the Velopack-managed
 `%LOCALAPPDATA%\OpenSynapse` directory, because MSI cleanup removes the latter.
 
-Velopack release assets must be generated as one set. Do not hand-rename setup
-or portable files, or edit `assets.win.json`, `releases.win.json`, or `RELEASES`
-after packing. Before uploading, compare every listed filename, SHA-1, SHA-256,
-and size against the files produced by the same `vpk pack` invocation, then
-launch the exact packaged executable from its deployed `current` directory.
+Velopack release assets must be generated as one set. Keep the generated feed
+files (`*.nupkg`, `RELEASES`, `releases.win.json`, `assets.win.json`) unchanged.
+The three user-facing installers are published under versioned names after
+packing: `OpenSynapse-<version>-win-x64-Setup.msi`,
+`OpenSynapse-<version>-win-AutoUpdate-PerUser.exe`, and
+`OpenSynapse-<version>-win-Portable.zip`. The MSI is the recommended download;
+label it as the auto-update/per-user package in the release notes. Before
+uploading, compare every renamed installer with the file produced
+by the same `vpk pack` invocation for size and SHA-256, keep the feed filenames
+untouched, then launch the exact packaged executable from its deployed
+`current` directory. See `docs/RELEASING.zh-CN.md` for the full checklist.
 
 ### Test builds
 
@@ -86,7 +98,7 @@ gh release create <tag> <testbuild.zip> --draft --title "<title>" --notes "<note
 gh release edit <tag> --draft=false --prerelease
 ```
 
-Do not attach `Setup.exe`, `*.nupkg`, or anything produced by `vpk pack` to a test
+Do not attach the per-user installer, `*.nupkg`, or anything produced by `vpk pack` to a test
 build: those assets feed the Velopack update channel, and a user would silently
 auto-update onto an unverified build.
 

@@ -16,6 +16,8 @@ internal sealed class ThxHeadsetHelperSession
     private const string EqualizerPropertyId = "eq_enabled";
     private const string NormalizationEnabledPropertyId = "volume_leveling_enabled";
     private const string NormalizationLevelPropertyId = "volume_leveling_level";
+    private const string BassBoostEnabledPropertyId = "bassboost_enabled";
+    private const string BassBoostLevelPropertyId = "bassboost_level";
     private const string VoiceClarityEnabledPropertyId = "voice_clarity_enabled";
     private const string VoiceClarityLevelPropertyId = "voice_clarity_level";
     private const string FloatPropertyType = "Float";
@@ -269,6 +271,11 @@ internal sealed class ThxHeadsetHelperSession
                      (Func<bool, bool>)(value => _v3!.SetNormalization(containerId!, value)),
                      (Func<int>)(() => _v3!.GetNormalizationLevel(containerId!)),
                      (Func<int, bool>)(value => _v3!.SetNormalizationLevel(containerId!, value))),
+                "bassBoost" =>
+                    ((Func<bool>)(() => _v3!.GetBassBoost(containerId!)),
+                     (Func<bool, bool>)(value => _v3!.SetBassBoost(containerId!, value)),
+                     (Func<int>)(() => _v3!.GetBassBoostLevel(containerId!)),
+                     (Func<int, bool>)(value => _v3!.SetBassBoostLevel(containerId!, value))),
                 _ => throw new ArgumentException("The THX enhancement kind is invalid."),
             };
 
@@ -287,6 +294,7 @@ internal sealed class ThxHeadsetHelperSession
         {
             "voiceClarity" => (VoiceClarityEnabledPropertyId, VoiceClarityLevelPropertyId),
             "soundNormalization" => (NormalizationEnabledPropertyId, NormalizationLevelPropertyId),
+            "bassBoost" => (BassBoostEnabledPropertyId, BassBoostLevelPropertyId),
             _ => throw new ArgumentException("The THX enhancement kind is invalid."),
         };
 
@@ -337,7 +345,8 @@ internal sealed class ThxHeadsetHelperSession
             ReadV4Enhancement(NormalizationEnabledPropertyId, NormalizationLevelPropertyId),
             ReadV4Enhancement(VoiceClarityEnabledPropertyId, VoiceClarityLevelPropertyId) ??
                 new ThxAudioEnhancement(false, 0),
-            CanEdit: true);
+            CanEdit: true,
+            BassBoost: ReadV4Enhancement(BassBoostEnabledPropertyId, BassBoostLevelPropertyId));
     }
 
     private ThxAudioState ReadV3State(ThxHeadsetProfile profile, string containerId)
@@ -363,7 +372,10 @@ internal sealed class ThxHeadsetHelperSession
             true,
             new ThxAudioEnhancement(
                 _v3.GetSidetone(containerId),
-                SidetonePercent(_v3.GetSidetoneLevel(containerId))));
+                SidetonePercent(_v3.GetSidetoneLevel(containerId))),
+            BassBoost: new ThxAudioEnhancement(
+                _v3.GetBassBoost(containerId),
+                ClampPercent(_v3.GetBassBoostLevel(containerId))));
     }
 
     private IReadOnlyList<ThxAudioPreset> ReadV3Presets(string containerId)

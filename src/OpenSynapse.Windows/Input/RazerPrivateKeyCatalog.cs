@@ -64,6 +64,9 @@ internal static class RazerPrivateKeyCatalog
         return $"Razer key {keyCode}";
     }
 
+    internal static bool IsPrivate(ushort productId, int keyCode) =>
+        Mappings.TryGetValue(productId, out var mapping) && mapping.ContainsKey(keyCode);
+
     internal static bool SupportsThirdSideButton(ushort productId) =>
         Mappings.TryGetValue(productId, out var mapping) &&
         mapping.Values.Any(label => label == "MultiFunctionTrigger");

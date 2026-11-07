@@ -228,6 +228,9 @@ public sealed partial class DevicesPage : UserControl
             case "nativeDisplayMode":
                 await ViewModel.Blade.ApplyNativeDisplayModeAsync(Lifetime);
                 break;
+            case "timeToDim":
+                await ViewModel.Blade.ApplyTimeToDimAsync(Lifetime);
+                break;
         }
     }
 
@@ -334,6 +337,15 @@ public sealed partial class DevicesPage : UserControl
                 break;
             case "cpuPowerBoost":
                 await ViewModel.Blade.ApplyCpuPowerBoostAsync(Lifetime);
+                break;
+            case "autoSleep":
+                await ViewModel.Blade.ApplyAutoSleepAsync(Lifetime);
+                break;
+            case "indicatorLed":
+                await ViewModel.Blade.ApplyIndicatorLedAsync(Lifetime);
+                break;
+            case "gpuCardDetection":
+                await ViewModel.Blade.ApplyGpuCardDetectionAsync(Lifetime);
                 break;
         }
     }

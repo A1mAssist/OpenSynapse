@@ -81,94 +81,6 @@ public sealed partial class RazerHidDeviceService
             : null;
     }
 
-    public async Task<IReadOnlyList<RazerHidDeviceConnection>> DiscoverAsync(
-        CancellationToken cancellationToken = default)
-    {
-        var interfaces = await WindowsHidDiscovery.FindVendorFeatureInterfacesAsync(
-            RazerHidDeviceDefinition.VendorId,
-            RazerFeatureReport.Length,
-            cancellationToken,
-            LogObservedInterface).ConfigureAwait(false);
-        var results = new List<RazerHidDeviceConnection>();
-        foreach (var group in interfaces
-            .Where(item => _catalog.Find(item.VendorId, item.ProductId) is not null)
-            // A locally admitted Blade manifest owns the laptop controls and matrix path;
-            // discovering it twice would show one physical device as two cards.
-            .Where(item => RazerDeviceRegistry.BuiltIn.Find(item.VendorId, item.ProductId) is null)
-            // Discovery normally carries a container id. Keep the path-derived key for the
-            // empty case so two same-model devices are not merged before instance ids exist.
-            .GroupBy(item => (
-                item.ProductId,
-                PhysicalDeviceKey: string.IsNullOrWhiteSpace(item.PhysicalDeviceKey)
-                    ? WindowsHidDiscovery.GetPhysicalDeviceKey(item.DevicePath)
-                    : item.PhysicalDeviceKey))
-            .OrderBy(group => group.Key.ProductId)
-            .ThenBy(group => group.Key.PhysicalDeviceKey, StringComparer.OrdinalIgnoreCase))
-        {
-            var definition = _catalog.Find(RazerHidDeviceDefinition.VendorId, group.Key.ProductId)!;
-            var candidates = group.ToArray();
-            WriteDiagnostic(definition.ProductId,
-                $"scan found {candidates.Length} matching 91-byte HID collection(s)");
-            var available = candidates.Where(candidate => candidate.Access == DeviceAccessState.Available).ToArray();
-            if (available.Length == 0)
-            {
-                WriteDiagnostic(definition.ProductId,
-                    $"no usable 91-byte HID control collection: {DescribeRejected(candidates)}");
-                results.Add(CreateConnection(definition, null, group.Key.PhysicalDeviceKey,
-                    RazerHidEndpointState.BusyOrUnavailable,
-                    // Name the rejected collections: a wired receiver collection can hide why.
-                    $"No usable 91-byte HID control collection ({DescribeRejected(candidates)})."));
-                continue;
-            }
-
-            var ordered = OrderEndpointCandidates(
-                definition.ProductId,
-                available,
-                _endpointCache.TryGetValue(group.Key.PhysicalDeviceKey, out var cachedPath) ? cachedPath : null);
-
-            var resolution = await ResolveEndpointPathAsync(
-                definition, ordered.Select(candidate => candidate.DevicePath), cancellationToken).ConfigureAwait(false);
-            if (resolution.Path is null)
-            {
-                // A just-enumerated wireless endpoint can still be settling. One delayed
-                // retry lets a transiently busy collection resolve without inventing a
-                // wake command or waiting for the next 10 s poll.
-                await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken).ConfigureAwait(false);
-                resolution = await ResolveEndpointPathAsync(
-                    definition, ordered.Select(candidate => candidate.DevicePath), cancellationToken).ConfigureAwait(false);
-            }
-            var resolvedPath = resolution.Path;
-            var lastError = resolution.Error;
-            if (resolvedPath is null)
-            {
-                _endpointCache.TryRemove(group.Key.PhysicalDeviceKey, out _);
-                foreach (var candidate in available)
-                {
-                    InvalidateMiddlewareProbeCache(candidate.DevicePath);
-                }
-                WriteDiagnostic(definition.ProductId, $"control channel unresolved: {lastError ?? "no side-effect-free GET answered"}");
-                results.Add(CreateConnection(definition, null, group.Key.PhysicalDeviceKey,
-                    RazerHidEndpointState.RecognizedButUnresolved, lastError));
-            }
-            else
-            {
-                _endpointCache[group.Key.PhysicalDeviceKey] = resolvedPath;
-                var resolvedDefinition = await ResolveLeviathanDefinitionAsync(
-                    definition, resolvedPath, cancellationToken).ConfigureAwait(false);
-                var probedCapabilities = await ProbeMiddlewareCapabilitiesAsync(
-                    resolvedDefinition, resolvedPath, cancellationToken).ConfigureAwait(false);
-                results.Add(CreateConnection(resolvedDefinition, resolvedPath, group.Key.PhysicalDeviceKey,
-                    RazerHidEndpointState.Resolved, null,
-                    probedCapabilities.Count > 0 ? probedCapabilities : null));
-
-                await AddLinkedConnectionsAsync(results, resolvedDefinition, resolvedPath, ordered,
-                    group.Key.PhysicalDeviceKey, cancellationToken).ConfigureAwait(false);
-            }
-        }
-        RemoveDuplicateLinkedConnections(results);
-        return results;
-    }
-
     public async Task<RazerHidBasicState> ReadBasicStateAsync(
         RazerHidDeviceConnection connection,
         CancellationToken cancellationToken = default,
@@ -764,9 +676,20 @@ public sealed partial class RazerHidDeviceService
 
     public async Task<IReadOnlyList<byte>> GetMappingButtonIdsAsync(
         RazerHidDeviceConnection connection,
-        CancellationToken cancellationToken = default) =>
-        RazerHidMappingProtocol.ParseButtonList(await ExecuteAsync(connection,
-            RazerHidMappingProtocol.GetButtonList(), cancellationToken).ConfigureAwait(false));
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return RazerHidMappingProtocol.ParseButtonList(await ExecuteAsync(connection,
+                RazerHidMappingProtocol.GetButtonList(), cancellationToken).ConfigureAwait(false));
+        }
+        catch (Exception exception) when (exception is NotSupportedException or RazerDeviceTimeoutException)
+        {
+            // Razer's own UI never asks this GET for every product; some firmware only
+            // answers the assignment table. The caller falls back to the product bundle ids.
+            return [];
+        }
+    }
 
     public async Task<byte> GetBrightnessAsync(
         RazerHidDeviceConnection connection,
@@ -1206,6 +1129,8 @@ public sealed partial class RazerHidDeviceService
         }
 
         var result = new HashSet<RazerHidBackendCapability>();
+        var isProbeDefinition =
+            definition.SourceCapabilities.Count == 0 && definition.Transactions.Count == 0;
         var buttonList = RazerHidMappingProtocol.GetButtonList();
         if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
                 "mapping", buttonList.Report,
@@ -1213,6 +1138,28 @@ public sealed partial class RazerHidDeviceService
                 cancellationToken).ConfigureAwait(false))
         {
             result.UnionWith(MappingCapabilities);
+        }
+        else
+        {
+            // 0083 and other OBM mice answer the assignment table even when the button
+            // list GET is silent, so read one known assignment as the capability probe.
+            var assignment = RazerHidMappingProtocol.GetAssignment(
+                0x01, RazerHidMappingProtocol.NormalMode);
+            if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
+                    "mapping.assignment", assignment.Report,
+                    response =>
+                    {
+                        _ = RazerHidMappingProtocol.ParseAssignment(response);
+                        return true;
+                    }, cancellationToken).ConfigureAwait(false))
+            {
+                result.UnionWith(MappingCapabilities);
+            }
+        }
+
+        if (isProbeDefinition)
+        {
+            return result.ToFrozenSet();
         }
 
         if (definition.Category == DeviceCategory.Mouse)
@@ -1318,10 +1265,11 @@ public sealed partial class RazerHidDeviceService
     {
         var probes = CreateSafeProbesWithDiagnostics(
             definition, message => WriteDiagnostic(definition.ProductId, message));
-        if (probes.Count == 0)
-            return new(EndpointProbeOutcome.Failed, "No side-effect-free GET is declared for this product.");
-
-        string? lastError = null;
+        // An uncatalogued device has no identity reads to try; the mapping button list
+        // below is the only side-effect-free probe that can admit it.
+        string? lastError = probes.Count == 0
+            ? "No catalog GET is declared; trying the mapping button list."
+            : null;
         foreach (var probe in probes)
         {
             WriteDiagnostic(definition.ProductId,
@@ -1750,8 +1698,11 @@ public sealed partial class RazerHidDeviceService
         var operation = write ? "set" : "get";
         // RazerHid adds get/set_brightness at runtime and routes them to the backlight zone.
         if (zone == device.DefaultLedZone &&
-            (device.HasSourceCapability($"{operation}_brightness") || zone == RazerHidLedZone.Backlight))
+            (device.HasSourceCapability($"{operation}_brightness") ||
+             device.Category == DeviceCategory.Keyboard && zone == RazerHidLedZone.Backlight))
         {
+            // Keyboards get get/set_brightness injected at runtime; mice must not
+            // inherit a backlight zone they never declared.
             return true;
         }
         var name = SourceZones.SingleOrDefault(candidate => candidate.Zone == zone).Name;

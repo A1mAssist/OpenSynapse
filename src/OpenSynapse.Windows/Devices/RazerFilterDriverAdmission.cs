@@ -1,3 +1,5 @@
+using OpenSynapse.Core.Devices;
+
 namespace OpenSynapse.Windows.Devices;
 
 /// <summary>
@@ -13,4 +15,39 @@ internal static class RazerFilterDriverAdmission
 
     internal static bool NeedsDriver(ushort productId, bool endpointReady) =>
         productId == ArgbProductId && !endpointReady;
+
+    /// <summary>
+    /// Only mice and keyboards reach the RZCONTROL endpoint the filter driver publishes.
+    /// Headsets, mats, lamps, monitors and stands light themselves over feature reports or
+    /// output reports, so offering their driver would install a filter for nothing.
+    /// </summary>
+    internal static bool NeedsFilterDriver(ushort productId)
+    {
+        var category = ResolveCategory(productId);
+        return category is DeviceCategory.Mouse or DeviceCategory.Keyboard;
+    }
+
+    private static DeviceCategory? ResolveCategory(ushort productId)
+    {
+        // Dongles enumerate their own PID; the wired sibling owns the catalogue entry.
+        var canonical = RazerProductAliases.Canonical(productId);
+        if (RazerHidDeviceCatalog.BuiltIn.Find(0x1532, canonical) is { } hid)
+        {
+            return hid.Category;
+        }
+
+        if (RazerDeviceRegistry.BuiltIn.Find(0x1532, canonical) is { } registry)
+        {
+            return registry.Category;
+        }
+
+        if (RazerKeyboardService.Products.ContainsKey(canonical))
+        {
+            return DeviceCategory.Keyboard;
+        }
+
+        return RazerChromaStandardService.Products.TryGetValue(canonical, out var chroma)
+            ? chroma.Category
+            : null;
+    }
 }

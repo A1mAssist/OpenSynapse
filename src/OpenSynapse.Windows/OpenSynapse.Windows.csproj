@@ -27,7 +27,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Devices\Manifests\*.json" />
-    <EmbeddedResource Include="Devices\RazerHid\*.json" />
+    <EmbeddedResource Include="Devices\\Manifests\\*.json" />
+    <EmbeddedResource Include="Devices\\RazerHid\\*.json" />
+    <EmbeddedResource Include="Devices\\RazerDriverPackages.json" />
   </ItemGroup>
 </Project>

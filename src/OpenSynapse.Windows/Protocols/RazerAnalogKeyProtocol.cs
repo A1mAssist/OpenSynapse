@@ -61,7 +61,7 @@ public readonly record struct RazerAnalogKeyKillSwitch(
 /// The tuple's first byte sizes the middleware's staging buffer, not the wire length:
 /// list commands send 2 + stride * count (or 1 + stride * count) bytes instead.
 /// </summary>
-public static class RazerAnalogKeyProtocol
+public static partial class RazerAnalogKeyProtocol
 {
     public const int MaxActuationPoints = 15;
     public const int MaxRapidTriggerKeys = 13;
@@ -500,6 +500,19 @@ public static class RazerAnalogKeyProtocol
 
     public static byte ParseAnalogReportMode(ReadOnlySpan<byte> response) => Arguments(response, 1)[0];
 
+    public const double UnitsPerMillimeter = 16_380d;
+    public const double MinimumMillimeters = 0.1d;
+    public const double MaximumMillimeters = 4.0d;
+
+    /// <summary>
+    /// The middleware's actuationInfo unit is 1638 per 0.1 mm (1 mm = 16380).
+    /// </summary>
+    public static ushort ToThreshold(double millimeters) =>
+        (ushort)Math.Round(
+            Math.Clamp(millimeters, MinimumMillimeters, MaximumMillimeters) * UnitsPerMillimeter,
+            MidpointRounding.AwayFromZero);
+
+    public static double ToMillimeters(ushort threshold) => threshold / UnitsPerMillimeter;
     public static RazerAnalogKeyKillSwitch ParseKeyboardKillSwitch(ReadOnlySpan<byte> response)
     {
         var data = Arguments(response, 4);

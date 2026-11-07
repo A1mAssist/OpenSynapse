@@ -65,9 +65,14 @@ public sealed class WindowsThxAudioController : IThxAudioController, IAsyncDispo
             "setEnhancement",
             EndpointName(endpoint),
             Enabled: enabled,
-            Enhancement: kind == ThxAudioEnhancementKind.VoiceClarity
-                ? "voiceClarity"
-                : "soundNormalization",
+            Enhancement: kind switch
+            {
+                ThxAudioEnhancementKind.VoiceClarity => "voiceClarity",
+                ThxAudioEnhancementKind.SoundNormalization => "soundNormalization",
+                ThxAudioEnhancementKind.Sidetone => "sidetone",
+                ThxAudioEnhancementKind.BassBoost => "bassBoost",
+                _ => "voiceClarity",
+            },
             LevelPercent: levelPercent), cancellationToken);
 
     public bool CanInstallComponents => ThxAudioAdmission.CanInstallService();

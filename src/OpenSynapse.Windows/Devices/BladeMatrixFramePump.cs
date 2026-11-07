@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.ExceptionServices;
 using System.Threading.Channels;
 using OpenSynapse.Windows.Protocols;
@@ -11,6 +12,9 @@ namespace OpenSynapse.Windows.Devices;
 public sealed class BladeMatrixFramePump : IAsyncDisposable
 {
     private static readonly TimeSpan DeviceWait = TimeSpan.FromMilliseconds(1);
+    // The EC drops a custom frame after its idle window. A static Studio frame
+    // therefore still needs a periodic re-latch even when its pixels do not change.
+    private static readonly TimeSpan IdenticalFrameKeepAlive = TimeSpan.FromSeconds(1);
 
     private readonly IRazerFeatureTransport _transport;
     private readonly string _devicePath;
@@ -18,6 +22,7 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
     private readonly Func<IReadOnlyList<RazerRgb>, int, int, byte[][]> _createFrameRequests;
     private readonly int _matrixRows;
     private readonly int _matrixColumns;
+    private readonly TimeSpan _identicalFrameKeepAlive;
     private readonly Channel<RazerRgb[]> _frames = Channel.CreateBounded<RazerRgb[]>(
         new BoundedChannelOptions(1)
         {
@@ -30,6 +35,7 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly Task _worker;
     private RazerRgb[]? _lastSentFrame;
+    private long _lastFrameSentAt;
     private int _stopped;
     private int _turnOffOnStop;
     private long _framesSent;
@@ -41,7 +47,8 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         Func<CancellationToken, Task> restorePersistentEffect,
         int matrixRows = BladeLightingProtocol.Rows,
         int matrixColumns = BladeLightingProtocol.Columns,
-        Func<IReadOnlyList<RazerRgb>, int, int, byte[][]>? createFrameRequests = null)
+        Func<IReadOnlyList<RazerRgb>, int, int, byte[][]>? createFrameRequests = null,
+        TimeSpan? identicalFrameKeepAlive = null)
     {
         ArgumentNullException.ThrowIfNull(transport);
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
@@ -57,6 +64,11 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         _createFrameRequests = createFrameRequests ?? BladeLightingProtocol.CreateMatrixFrameRequests;
         _matrixRows = matrixRows;
         _matrixColumns = matrixColumns;
+        _identicalFrameKeepAlive = identicalFrameKeepAlive ?? IdenticalFrameKeepAlive;
+        if (_identicalFrameKeepAlive <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(identicalFrameKeepAlive));
+        }
         _worker = RunAsync();
     }
 
@@ -140,7 +152,9 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
                     break;
                 }
 
-                if (_lastSentFrame is not null && _lastSentFrame.AsSpan().SequenceEqual(frame))
+                if (_lastSentFrame is not null &&
+                    _lastSentFrame.AsSpan().SequenceEqual(frame) &&
+                    Stopwatch.GetElapsedTime(_lastFrameSentAt) < _identicalFrameKeepAlive)
                 {
                     Interlocked.Increment(ref _framesSkipped);
                     continue;
@@ -149,6 +163,7 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
                 restoreRequired = true;
                 await SendFrameAsync(frame, session, _stop.Token).ConfigureAwait(false);
                 _lastSentFrame = frame;
+                _lastFrameSentAt = Stopwatch.GetTimestamp();
                 Interlocked.Increment(ref _framesSent);
 
                 _firstFrameApplied.TrySetResult();

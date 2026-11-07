@@ -12,6 +12,7 @@ public enum RazerHeadsetChannel
     DedicatedBlackShark,
     Unsupported,
     ValkyrieT3Feature64,
+    KrakenBase37,
 }
 
 /// <summary>
@@ -78,13 +79,17 @@ public static class RazerHeadsetChannelCatalog
             [0x051A] = new("AudioAvneraDevice", RazerHeadsetChannel.Feature91),
             [0x051C] = new("AudioAvneraDevice", RazerHeadsetChannel.Feature91),
             [0x051E] = new("AudioAvneraDevice", RazerHeadsetChannel.Feature91),
+            [0x051F] = new("AudioAvneraDevice", RazerHeadsetChannel.Feature91),
             [0x0528] = new("AudioAvneraDeviceOdessaT1", RazerHeadsetChannel.Feature91),
-            [0x0529] = new("AudioKrakenOdessaT2", RazerHeadsetChannel.Feature91),
-            [0x0520] = new("AudioKrakenTE", RazerHeadsetChannel.Feature91),
-            [0x0527] = new("AudioKrakenUltimate", RazerHeadsetChannel.Feature91),
-            [0x0526] = new("AudioKrakenXUSB", RazerHeadsetChannel.Feature91),
-            [0x0521] = new("AudioKrakenKitty", RazerHeadsetChannel.Feature91),
-            [0x0560] = new("AudioKrakenKittyT3", RazerHeadsetChannel.Feature91),
+            // AudioKrakenBase sends fixed 37-byte HID reports through hid.write/hid.read,
+            // not the 91-byte feature report used by the Avnera/Nari family. The same
+            // base class backs the TE, Kitty, X USB, Ultimate and Kitty V2 models.
+            [0x0529] = new("AudioKrakenOdessaT2", RazerHeadsetChannel.KrakenBase37),
+            [0x0520] = new("AudioKrakenTE", RazerHeadsetChannel.KrakenBase37),
+            [0x0527] = new("AudioKrakenUltimate", RazerHeadsetChannel.KrakenBase37),
+            [0x0526] = new("AudioKrakenXUSB", RazerHeadsetChannel.KrakenBase37),
+            [0x0521] = new("AudioKrakenKitty", RazerHeadsetChannel.KrakenBase37),
+            [0x0560] = new("AudioKrakenKittyT3", RazerHeadsetChannel.KrakenBase37),
             [0x0533] = new("AudioKrystalT2", RazerHeadsetChannel.Feature91),
             [0x0549] = new("AudioKrystalT2", RazerHeadsetChannel.Feature91),
             [0x0537] = new("AudioKrystalT3", RazerHeadsetChannel.Feature91),
@@ -93,8 +98,8 @@ public static class RazerHeadsetChannelCatalog
             [0x0543] = new("AudioCamyT2", RazerHeadsetChannel.Feature91),
             [0x0F1B] = new("AudioCamyT3Device", RazerHeadsetChannel.Feature91),
             // AudioKrakenKittyV2Pro only appends a 37-byte Chroma frame to the same
-            // AudioKittyV2Pro audio base class, so its audio stays on the 91-byte channel.
-            [0x0554] = new("AudioKittyV2Pro", RazerHeadsetChannel.Feature91),
+            // AudioKrakenBase audio class, so its audio uses the 37-byte channel too.
+            [0x0554] = new("AudioKittyV2Pro", RazerHeadsetChannel.KrakenBase37),
             [0x0532] = new("rzDevice25Noa", RazerHeadsetChannel.Feature91),
             [0x0548] = new("rzDevice25Noa", RazerHeadsetChannel.Feature91),
             [0x055A] = new("rzDevice25NommoV2Pro", RazerHeadsetChannel.Feature91),
@@ -102,10 +107,11 @@ public static class RazerHeadsetChannelCatalog
             [0x055E] = new("rzDevice25NommoV2Pro", RazerHeadsetChannel.Feature91),
             [0x056A] = new("rzDevice25AudioCamyT3V2", RazerHeadsetChannel.Feature91),
             [0x0F66] = new("rzDevice25MarciT1", RazerHeadsetChannel.Feature91),
-            [0x056E] = new("AudioOdessaT2Wireless", RazerHeadsetChannel.Feature91),
-            // 0565 is the 2.4 GHz dongle endpoint of the 056E BlackShark V2 HyperSpeed
-            // bundle (dongleId 0x0565), not a BlackShark V3 Pro identity.
-            [0x0565] = new("AudioOdessaT2Wireless", RazerHeadsetChannel.Feature91),
+            // AudioOdessaT2Wireless overrides the AudioMxicDevice sender with the
+            // Billie-style 64-byte report-id-2 frame. 056E is the wired endpoint and
+            // 0565 is its 2.4 GHz dongle; neither is a BlackShark V3 Pro identity.
+            [0x056E] = new("AudioOdessaT2Wireless", RazerHeadsetChannel.Billie64),
+            [0x0565] = new("AudioOdessaT2Wireless", RazerHeadsetChannel.Billie64),
 
             // AudioMixer uses the dedicated 64-byte feature / 16-byte report-9
             // collection; it must not fall back to the 91-byte feature channel.

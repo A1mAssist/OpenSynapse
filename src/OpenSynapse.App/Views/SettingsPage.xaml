@@ -66,7 +66,7 @@
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                     <StackPanel Spacing="4">
                       <TextBlock local:Localized.Uid="TaskbarStatusTitle" Text="任务栏状态条" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <TextBlock local:Localized.Uid="TaskbarStatusDescription" Text="在任务栏显示已连接外设的电量；检测到 Blade 时同时显示当前性能模式。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="TaskbarStatusDescription" Text="在任务栏显示已连接外设的电量；不显示性能模式，点击也不会打开主窗口。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                     </StackPanel>
                     <ToggleSwitch local:Localized.Uid="TaskbarStatusToggle" x:Name="TaskbarStatusToggle" Grid.Column="1" Toggled="TaskbarStatusToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="任务栏状态条" />
                   </Grid>
@@ -76,7 +76,7 @@
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                       <StackPanel Spacing="4">
                         <TextBlock local:Localized.Uid="PerformanceOverlayTitle" Text="性能悬浮窗" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                        <TextBlock local:Localized.Uid="PerformanceOverlayDescription" Text="在桌面置顶显示性能模式、CPU/GPU 温度和风扇转速；可拖动并记住位置。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                        <TextBlock local:Localized.Uid="PerformanceOverlayDescription" Text="在桌面显示性能模式、CPU/GPU 温度和风扇转速；可拖动并记住位置。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                       </StackPanel>
                       <ToggleSwitch local:Localized.Uid="PerformanceOverlayToggle" x:Name="PerformanceOverlayToggle" Grid.Column="1" Toggled="PerformanceOverlayToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="性能悬浮窗" />
                     </Grid>
@@ -108,6 +108,14 @@
                       <ToggleSwitch local:Localized.Uid="ChromaRestoreToggle" x:Name="ChromaRestoreToggle" Grid.Column="1" Toggled="ChromaRestoreToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="Restore lighting after external control" />
                     </Grid>
                     <TextBlock local:Localized.Uid="ChromaRestStatus" x:Name="ChromaRestStatusText" Text="Disabled" FontFamily="Cascadia Mono,Consolas" FontSize="12" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    <Border Height="1" Background="{StaticResource LineBrush}" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                      <StackPanel Spacing="4">
+                        <TextBlock local:Localized.Uid="ChromaOfficialDllTitle" Text="官方 Chroma DLL" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock local:Localized.Uid="ChromaOfficialDllDescription" Text="只下载官方 RzChromaSDK64.dll，放到 C:\Windows\System32。OpenSynapse 的 broker 会接管游戏灯光，不需要安装完整 Chroma SDK 或雷云。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      </StackPanel>
+                      <HyperlinkButton local:Localized.Uid="ChromaOfficialDllDownload" Grid.Column="1" Content="下载 DLL" NavigateUri="https://github.com/A1mAssist/OpenSynapse/releases/download/chroma-sdk-4.1.0.10151444/RzChromaSDK64.dll" Padding="0" FontSize="12" VerticalAlignment="Center" />
+                    </Grid>
                     <StackPanel x:Name="ChromaSourceSection" Spacing="10">
                       <Border Height="1" Background="{StaticResource LineBrush}" />
                       <TextBlock local:Localized.Uid="ChromaSourcesTitle" Text="Chroma sources" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" FontSize="16" />

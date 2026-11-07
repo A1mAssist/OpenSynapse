@@ -26,30 +26,34 @@ public sealed partial class PerformanceOverlayWindow : Window
     private const uint SwpNoZOrder = 0x0004;
     private const uint SwpNoActivate = 0x0010;
     private const uint SwpFrameChanged = 0x0020;
-    private const uint SwpNoOwnerZOrder = 0x0200;
-    private const int HwndTopmost = -1;
-    private const int WmNcLButtonDown = 0x00A1;
-    private const int HtCaption = 2;
     private const int DwmWindowCornerPreference = 33;
     private const int DwmWindowCornerRound = 2;
     private const int DwmBorderColor = 34;
     private const int DwmBorderColorDark = 0x001A1A1A;
     private const uint LwaAlpha = 0x00000002;
-    private const byte OverlayAlpha = 224;
-    private const double CompactWidthDip = 300;
-    private const double CompactHeightDip = 96;
-    private const double DetailedWidthDip = 380;
-    private const double DetailedHeightDip = 128;
+    private const byte OverlayAlpha = 232;
+    private const double CompactWidthDip = 316;
+    private const double CompactHeightDip = 104;
+    private const double DetailedWidthDip = 680;
+    private const double DetailedHeightDip = 176;
     private const double ScreenMarginDip = 16;
     private const int SparklineSamples = 24;
-    private const double SparklineWidthDip = 108;
-    private const double SparklineHeightDip = 38;
+    private const double SparklineWidthDip = 178;
+    private const double SparklineHeightDip = 70;
+    private const int DragThresholdPixels = 3;
     private readonly MainViewModel _viewModel;
     private readonly AppBehaviorSettings _settings;
     private readonly IntPtr _windowHandle;
     private readonly Queue<double> _cpuHistory = new();
     private readonly Queue<double> _gpuHistory = new();
     private bool _closed;
+    private bool _dragging;
+    private bool _dragMoved;
+    private NativePoint _dragStartCursor;
+    private PointInt32 _dragStartWindow;
+
+    public event Action? SettingsRequested;
+    public event Action? CloseRequested;
 
     public PerformanceOverlayWindow(MainViewModel viewModel, AppBehaviorSettings settings)
     {
@@ -66,7 +70,6 @@ public sealed partial class PerformanceOverlayWindow : Window
             presenter.IsResizable = false;
             presenter.IsMaximizable = false;
             presenter.IsMinimizable = false;
-            presenter.IsAlwaysOnTop = true;
         }
 
         _windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
@@ -105,6 +108,11 @@ public sealed partial class PerformanceOverlayWindow : Window
         var fanLabel = AppStrings.Text("PerformanceOverlayFanLabel");
         CompactFanLabel.Text = fanLabel;
         DetailedFanLabel.Text = fanLabel;
+        DetailedModeMenuItem.Text = AppStrings.Text("PerformanceOverlayDetailedTitle");
+        DetailedModeMenuItem.IsChecked = _settings.PerformanceOverlayDetailed;
+        ResetPositionMenuItem.Text = AppStrings.Text("PerformanceOverlayMenuResetPosition");
+        SettingsMenuItem.Text = AppStrings.Text("PerformanceOverlayMenuSettings");
+        CloseMenuItem.Text = AppStrings.Text("PerformanceOverlayMenuClose");
         AutomationProperties.SetName(DragRegion, Title);
     }
 
@@ -118,6 +126,7 @@ public sealed partial class PerformanceOverlayWindow : Window
 
         CompactCard.Visibility = detailed ? Visibility.Collapsed : Visibility.Visible;
         DetailedCard.Visibility = detailed ? Visibility.Visible : Visibility.Collapsed;
+        DetailedModeMenuItem.IsChecked = detailed;
         PositionOnDisplay();
         UpdateSparklines();
     }
@@ -133,7 +142,7 @@ public sealed partial class PerformanceOverlayWindow : Window
 
     private void OnTelemetryChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (args.PropertyName != nameof(TelemetryWorkspace.CpuPercent)) return;
+        if (args.PropertyName != nameof(TelemetryWorkspace.TelemetryTimeText)) return;
         AddSample(_cpuHistory, _viewModel.Telemetry.CpuPercent);
         AddSample(_gpuHistory, _viewModel.Telemetry.GpuPercent);
         UpdateSparklines();
@@ -173,6 +182,8 @@ public sealed partial class PerformanceOverlayWindow : Window
     {
         CpuSparkline.Points = BuildPoints(_cpuHistory);
         GpuSparkline.Points = BuildPoints(_gpuHistory);
+        CpuArea.Points = BuildAreaPoints(_cpuHistory);
+        GpuArea.Points = BuildAreaPoints(_gpuHistory);
     }
 
     private static PointCollection BuildPoints(IReadOnlyCollection<double> samples)
@@ -190,6 +201,18 @@ public sealed partial class PerformanceOverlayWindow : Window
             index++;
         }
 
+        return points;
+    }
+
+    private static PointCollection BuildAreaPoints(IReadOnlyCollection<double> samples)
+    {
+        var points = BuildPoints(samples);
+        if (points.Count == 0) return points;
+
+        var last = points[points.Count - 1];
+        var first = points[0];
+        points.Add(new global::Windows.Foundation.Point(last.X, SparklineHeightDip));
+        points.Add(new global::Windows.Foundation.Point(first.X, SparklineHeightDip));
         return points;
     }
 
@@ -213,23 +236,105 @@ public sealed partial class PerformanceOverlayWindow : Window
         x = Math.Clamp(x, workArea.X, Math.Max(workArea.X, workArea.X + workArea.Width - width));
         y = Math.Clamp(y, workArea.Y, Math.Max(workArea.Y, workArea.Y + workArea.Height - height));
         AppWindow.MoveAndResize(new RectInt32(x, y, width, height));
+        // Normal-window z-order; topmost breaks DirectFlip in borderless games.
         _ = SetWindowPos(
             _windowHandle,
-            new IntPtr(HwndTopmost),
+            IntPtr.Zero,
             0,
             0,
             0,
             0,
-            SwpNoMove | SwpNoSize | SwpNoActivate | SwpNoOwnerZOrder);
+            SwpNoMove | SwpNoSize | SwpNoActivate);
     }
 
     private void DragRegionPointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        var point = e.GetCurrentPoint(DragRegion);
-        if (!point.Properties.IsLeftButtonPressed) return;
-        ReleaseCapture();
-        _ = SendMessage(_windowHandle, WmNcLButtonDown, new IntPtr(HtCaption), IntPtr.Zero);
+        if (!e.GetCurrentPoint(DragRegion).Properties.IsLeftButtonPressed) return;
+        if (!GetCursorPos(out var cursor)) return;
+        _dragStartCursor = cursor;
+        _dragStartWindow = AppWindow.Position;
+        _dragging = true;
+        _dragMoved = false;
+        DragRegion.CapturePointer(e.Pointer);
         e.Handled = true;
+    }
+
+    private void DragRegionPointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_dragging || !GetCursorPos(out var cursor)) return;
+        var deltaX = cursor.X - _dragStartCursor.X;
+        var deltaY = cursor.Y - _dragStartCursor.Y;
+        if (!_dragMoved &&
+            Math.Abs(deltaX) < DragThresholdPixels &&
+            Math.Abs(deltaY) < DragThresholdPixels)
+        {
+            return;
+        }
+        _dragMoved = true;
+
+        var size = AppWindow.Size;
+        var display = DisplayArea.GetFromPoint(
+            new PointInt32(cursor.X, cursor.Y),
+            DisplayAreaFallback.Nearest);
+        var workArea = display.WorkArea;
+        var x = Math.Clamp(
+            _dragStartWindow.X + deltaX,
+            workArea.X,
+            Math.Max(workArea.X, workArea.X + workArea.Width - size.Width));
+        var y = Math.Clamp(
+            _dragStartWindow.Y + deltaY,
+            workArea.Y,
+            Math.Max(workArea.Y, workArea.Y + workArea.Height - size.Height));
+        var current = AppWindow.Position;
+        if (current.X == x && current.Y == y) return;
+        AppWindow.Move(new PointInt32(x, y));
+        e.Handled = true;
+    }
+
+    private void DragRegionPointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_dragging) return;
+        EndDrag();
+        e.Handled = true;
+    }
+
+    private void DragRegionPointerCanceled(object sender, PointerRoutedEventArgs e) => EndDrag();
+
+    private void DragRegionPointerCaptureLost(object sender, PointerRoutedEventArgs e) => EndDrag();
+
+    private void EndDrag()
+    {
+        if (!_dragging) return;
+        _dragging = false;
+        DragRegion.ReleasePointerCaptures();
+        SavePosition();
+    }
+
+    private void DetailedModeMenuItemClick(object sender, RoutedEventArgs e)
+    {
+        var detailed = DetailedModeMenuItem.IsChecked;
+        if (_settings.PerformanceOverlayDetailed == detailed) return;
+        _settings.PerformanceOverlayDetailed = detailed;
+        SaveSettings();
+        ApplyLayout(detailed);
+    }
+
+    private void ResetPositionMenuItemClick(object sender, RoutedEventArgs e)
+    {
+        _settings.PerformanceOverlayX = null;
+        _settings.PerformanceOverlayY = null;
+        SaveSettings();
+        PositionOnDisplay();
+    }
+
+    private void SettingsMenuItemClick(object sender, RoutedEventArgs e) =>
+        SettingsRequested?.Invoke();
+
+    private void CloseMenuItemClick(object sender, RoutedEventArgs e)
+    {
+        _settings.PerformanceOverlayEnabled = false;
+        SaveSettings();
+        CloseRequested?.Invoke();
     }
 
     private void OnClosed(object sender, WindowEventArgs args)
@@ -238,6 +343,11 @@ public sealed partial class PerformanceOverlayWindow : Window
         _closed = true;
         _viewModel.Blade.PropertyChanged -= OnBladeChanged;
         _viewModel.Telemetry.PropertyChanged -= OnTelemetryChanged;
+        SavePosition();
+    }
+
+    private void SavePosition()
+    {
         if (!GetWindowRect(_windowHandle, out var rect)) return;
         var width = rect.Right - rect.Left;
         var height = rect.Bottom - rect.Top;
@@ -252,6 +362,11 @@ public sealed partial class PerformanceOverlayWindow : Window
             rect.Top,
             workArea.Y,
             Math.Max(workArea.Y, workArea.Y + workArea.Height - height));
+        SaveSettings();
+    }
+
+    private void SaveSettings()
+    {
         try
         {
             _settings.Save();
@@ -270,6 +385,13 @@ public sealed partial class PerformanceOverlayWindow : Window
         public int Top;
         public int Right;
         public int Bottom;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativePoint
+    {
+        public int X;
+        public int Y;
     }
 
     [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
@@ -310,10 +432,7 @@ public sealed partial class PerformanceOverlayWindow : Window
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool ReleaseCapture();
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    private static extern IntPtr SendMessage(IntPtr window, uint message, IntPtr wParam, IntPtr lParam);
+    private static extern bool GetCursorPos(out NativePoint point);
 
     [DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(

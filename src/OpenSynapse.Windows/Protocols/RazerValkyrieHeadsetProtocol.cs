@@ -237,7 +237,7 @@ public static class RazerValkyrieHeadsetProtocol
     public static sbyte DecodeEqBandLevel(byte raw) =>
         raw > 128 ? (sbyte)(128 - raw) : (sbyte)raw;
 
-    private static byte Checksum(ReadOnlySpan<byte> report)
+    internal static byte Checksum(ReadOnlySpan<byte> report)
     {
         byte checksum = 0;
         for (var index = 0; index < ReportLength - 2; index++)

@@ -361,6 +361,7 @@ The audio page covers EQ, microphone volume, sidetone, ANC, THX and game/chat ba
 | Razer Marci | `1532:0F66` | Audio page |
 | Razer Nari | `1532:051C` | Audio page |
 | Razer Nari Essential | `1532:051E` | Audio page; THX installer |
+| Razer Nari Essential (Wired) | `1532:051F` | Audio page; the card stays visible and reports not-ready when its control channel fails |
 | Razer Nari Ultimate | `1532:051A` | Audio page |
 
 Kraken 7.1 uses the 37-byte output-report path; Kraken V4 wired and its 2.4 GHz receiver (`056C`) use the 64-byte report-0x02 path. The receiver sets byte 9 to `0x80`; the wired model uses `0x00`.

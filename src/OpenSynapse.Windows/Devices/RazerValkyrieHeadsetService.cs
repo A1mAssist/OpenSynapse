@@ -5,8 +5,8 @@ namespace OpenSynapse.Windows.Devices;
 
 /// <summary>
 /// Audio controls for the AudioValkyrie / AudioBillie 64-byte report-id-2 channel.
-/// The three bundle profiles share the fixed 0x60 transaction and zero direction byte;
-/// they differ in which EQ-band tuple their chunk selects.
+/// The bundle profiles share the fixed 0x60 transaction. The wired Billie/Valkyrie
+/// profiles leave the direction byte zero; the Odessa T2 dongle sets 0x80.
 /// </summary>
 public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
 {
@@ -15,11 +15,13 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
         Valkyrie,
         BillieT1Wired,
         BillieT2,
+        OdessaT2Wireless,
     }
 
     private readonly IRazerHeadsetHidTransport _transport;
     private readonly Action<string>? _diagnostic;
     private readonly HeadsetProfile _profile;
+    private readonly byte _direction;
     private readonly bool _eqBandsWithProfile;
 
     public RazerValkyrieHeadsetService(
@@ -37,19 +39,26 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _profile = GetProfile(productId);
+        _direction = productId == BlackSharkV3ProProtocol.HyperSpeedWirelessProductId
+            ? (byte)0x80
+            : (byte)0x00;
         _eqBandsWithProfile = UsesProfilePrefixedEqBands(productId);
         _diagnostic = diagnostic;
     }
 
     public static bool IsSupported(ushort productId) => productId is
         0x0579 or 0x0A4E or 0x0A51 or 0x101E or 0x101F or
-        0x0567 or 0x056B or 0x0587;
+        0x0567 or 0x056B or 0x0587 or
+        BlackSharkV3ProProtocol.HyperSpeedWirelessProductId or
+        BlackSharkV3ProProtocol.HyperSpeedUsbProductId;
 
     private static HeadsetProfile GetProfile(ushort productId) => productId switch
     {
         0x0567 => HeadsetProfile.BillieT1Wired,
         0x056B => HeadsetProfile.BillieT2,
         0x0587 => HeadsetProfile.BillieT2,
+        BlackSharkV3ProProtocol.HyperSpeedWirelessProductId or
+            BlackSharkV3ProProtocol.HyperSpeedUsbProductId => HeadsetProfile.OdessaT2Wireless,
         0x0579 or 0x0A4E or 0x0A51 or 0x101E or 0x101F => HeadsetProfile.Valkyrie,
         _ => throw new NotSupportedException(
             $"AudioValkyrie is not supported on product 0x{productId:X4}."),
@@ -275,6 +284,12 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
         string label,
         CancellationToken cancellationToken)
     {
+        if (_direction != 0)
+        {
+            report[9] = _direction;
+            report[62] = RazerValkyrieHeadsetProtocol.Checksum(report);
+        }
+
         _diagnostic?.Invoke(
             $"{_profile} {label}: command=0x{report[10]:X2} 0x{report[11]:X2} 0x{report[12]:X2}");
         for (var attempt = 0; attempt < 3; attempt++)
