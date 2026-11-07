@@ -44,9 +44,7 @@ public sealed partial class ThxAudioViewModel
         OnPropertyChanged(nameof(UnavailableVisibility));
         OnPropertyChanged(nameof(HasError));
         OnPropertyChanged(nameof(UnavailableHint));
-        OnPropertyChanged(nameof(DownloadVisibility));
         OnPropertyChanged(nameof(InstallVisibility));
-        OnPropertyChanged(nameof(CanDownloadComponent));
         if (status.State is not { } state || !status.IsAvailable)
         {
             _state = null;

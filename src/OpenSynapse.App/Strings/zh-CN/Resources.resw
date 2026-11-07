@@ -2289,11 +2289,11 @@
     <comment>重新读取</comment>
   </data>
   <data name="ThxHintNativeMissing" xml:space="preserve">
-    <value>缺少雷蛇提供的 THX 控制组件。点击“下载 THX 控制组件”从雷蛇官方服务器获取，下载后会校验完整性；OpenSynapse 安装包不附带该组件。</value>
+    <value>缺少雷蛇提供的 THX 控制组件。点“下载并安装 THX 组件”自动从雷蛇官方服务器补齐，下载后会校验完整性；OpenSynapse 安装包不附带该组件。</value>
   </data>
   <data name="ThxInstallButton.Content" xml:space="preserve">
-    <value>安装 THX 组件</value>
-    <comment>安装 THX 组件</comment>
+    <value>下载并安装 THX 组件</value>
+    <comment>下载并安装 THX 组件</comment>
   </data>
   <data name="ThxOutputLabel.Header" xml:space="preserve">
     <value>输出</value>
@@ -2524,9 +2524,6 @@
   </data>
   <data name="ThxStatusInvalidRequest" xml:space="preserve">
     <value>THX 设置参数无效。</value>
-  </data>
-  <data name="ThxDownloadComponentButton.Content" xml:space="preserve">
-    <value>下载 THX 控制组件</value>
   </data>
   <data name="ThxStatusDownloading" xml:space="preserve">
     <value>正在下载并安装 THX 组件…</value>
@@ -2941,13 +2938,12 @@
   <data name="RazerArgbDriverDescription.Text" xml:space="preserve"><value>逐灯控制需要雷云的 0F1F 控制驱动。下载并安装后，点“刷新”重新检测。</value></data>
   <data name="RazerArgbDriverButton.Content" xml:space="preserve"><value>下载 ARGB 驱动</value></data>
   <data name="RazerHeadsetThxTitle.Text" xml:space="preserve"><value>THX Spatial Audio</value></data>
-  <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio 需要 THX 音频服务和组件。这里只下载并安装官方 THX 音频包，不会安装雷云，也不需要激活码；安装时需要管理员权限。</value></data>
-  <data name="RazerHeadsetThxInstallButton.Content" xml:space="preserve"><value>安装 THX 组件</value></data>
-  <data name="RazerHeadsetThxDownloadButton.Content" xml:space="preserve"><value>下载 THX 控制组件</value></data>
+  <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio 需要 THX 音频服务和组件。点一次按钮会自动补齐缺少的部分；只安装官方 THX 音频包，不会安装雷云，也不需要激活码；安装时需要管理员权限。</value></data>
+  <data name="RazerHeadsetThxInstallButton.Content" xml:space="preserve"><value>下载并安装 THX 组件</value></data>
   <data name="RazerHeadsetThxGameProfilesButton.Content" xml:space="preserve"><value>更新 THX 游戏配置</value></data>
   <data name="RazerHeadsetThxPatcherButton.Content" xml:space="preserve"><value>更新 THX Patcher</value></data>
   <data name="RazerHeadsetThxServiceMissing" xml:space="preserve"><value>未检测到 THX 服务。点上面的按钮由 OpenSynapse 安装官方 THX 音频组件；不会安装雷云。</value></data>
-  <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>THX 服务已就绪，但缺少控制组件。点上面的按钮下载。</value></data>
+  <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>THX 服务已就绪，但缺少控制组件。点上面的按钮安装。</value></data>
   <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>正在下载并安装 THX 组件…</value></data>
   <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>THX 组件下载、校验或安装失败，请确认允许管理员权限后重试。</value></data>
   <data name="RazerHeadsetThxIncomplete" xml:space="preserve"><value>安装程序已结束，但 THX 服务仍未就绪。请重启后重试，或点“手动下载 THX 安装包”自行安装。</value></data>

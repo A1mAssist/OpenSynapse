@@ -19,8 +19,7 @@
                     <TextBlock Text="THX Spatial Audio" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
                     <TextBlock Text="{Binding UnavailableHint}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                      <Button local:Localized.Uid="ThxDownloadComponentButton" Content="下载 THX 控制组件" Click="DownloadThxComponentClick" Style="{StaticResource PrimaryButtonStyle}" IsEnabled="{Binding CanDownloadComponent}" Visibility="{Binding DownloadVisibility}" />
-                      <Button local:Localized.Uid="ThxInstallButton" Content="安装 THX 组件" Click="OpenThxInstallClick" Style="{StaticResource SecondaryButtonStyle}" Visibility="{Binding InstallVisibility}" IsEnabled="{Binding CanInstallComponents}" />
+                      <Button local:Localized.Uid="ThxInstallButton" Content="下载并安装 THX 组件" Click="OpenThxInstallClick" Style="{StaticResource PrimaryButtonStyle}" Visibility="{Binding InstallVisibility}" IsEnabled="{Binding CanInstallComponents}" />
                     </StackPanel>
                   </StackPanel>
                 </Border>

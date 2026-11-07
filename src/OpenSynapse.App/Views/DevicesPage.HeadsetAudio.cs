@@ -49,9 +49,6 @@ public sealed partial class DevicesPage : UserControl
         }
     }
 
-    private async void HeadsetAudioDownloadThxClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel.Accessories.SelectedHeadsetAudio?.InstallThxNativeAsync(Lifetime) ?? Task.CompletedTask);
-
     private async void HeadsetAudioApplyEqPresetClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.Accessories.SelectedHeadsetAudio?.ApplyEqPresetAsync(Lifetime) ?? Task.CompletedTask);
 
