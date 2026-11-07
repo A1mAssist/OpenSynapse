@@ -107,10 +107,11 @@ public static class RazerHeadsetChannelCatalog
             [0x055E] = new("rzDevice25NommoV2Pro", RazerHeadsetChannel.Feature91),
             [0x056A] = new("rzDevice25AudioCamyT3V2", RazerHeadsetChannel.Feature91),
             [0x0F66] = new("rzDevice25MarciT1", RazerHeadsetChannel.Feature91),
-            [0x056E] = new("AudioOdessaT2Wireless", RazerHeadsetChannel.Feature91),
-            // 0565 is the 2.4 GHz dongle endpoint of the 056E BlackShark V2 HyperSpeed
-            // bundle (dongleId 0x0565), not a BlackShark V3 Pro identity.
-            [0x0565] = new("AudioOdessaT2Wireless", RazerHeadsetChannel.Feature91),
+            // AudioOdessaT2Wireless overrides the AudioMxicDevice sender with the
+            // Billie-style 64-byte report-id-2 frame. 056E is the wired endpoint and
+            // 0565 is its 2.4 GHz dongle; neither is a BlackShark V3 Pro identity.
+            [0x056E] = new("AudioOdessaT2Wireless", RazerHeadsetChannel.Billie64),
+            [0x0565] = new("AudioOdessaT2Wireless", RazerHeadsetChannel.Billie64),
 
             // AudioMixer uses the dedicated 64-byte feature / 16-byte report-9
             // collection; it must not fall back to the 91-byte feature channel.
