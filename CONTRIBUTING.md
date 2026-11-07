@@ -78,7 +78,7 @@ startup entry points to the Program Files executable. User data must stay in
 Velopack release assets must be generated as one set. Keep the generated feed
 files (`*.nupkg`, `RELEASES`, `releases.win.json`, `assets.win.json`) unchanged.
 The three user-facing installers are published under versioned names after
-packing: `OpenSynapse-<version>-win-x64.msi`,
+packing: `OpenSynapse-<version>-win-x64-Setup.msi`,
 `OpenSynapse-<version>-win-AutoUpdate-PerUser.exe`, and
 `OpenSynapse-<version>-win-Portable.zip`. The MSI is the recommended download;
 label it as the auto-update/per-user package in the release notes. Before

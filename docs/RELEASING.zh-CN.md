@@ -6,7 +6,7 @@
 
 | 用途 | 文件名 |
 |---|---|
-| 正式安装（推荐） | `OpenSynapse-<version>-win-x64.msi` |
+| 正式安装（推荐） | `OpenSynapse-<version>-win-x64-Setup.msi` |
 | 便携版 | `OpenSynapse-<version>-win-Portable.zip` |
 | Velopack 更新包 | 保持 `vpk` 生成的 `OpenSynapse-<version>-full.nupkg` |
 | Velopack 清单 | 保持 `RELEASES`、`releases.win.json`、`assets.win.json` |
@@ -38,7 +38,7 @@
 
 | 文件 | 用途 |
 |---|---|
-| `OpenSynapse-<version>-win-x64.msi` | **推荐。** 安装到 `Program Files`，注册机器级 GPU 服务，之后切换显卡不再重复弹 UAC。 |
+| `OpenSynapse-<version>-win-x64-Setup.msi` | **推荐。** 安装到 `Program Files`，注册机器级 GPU 服务，之后切换显卡不再重复弹 UAC。 |
 | `OpenSynapse-<version>-win-Portable.zip` | 便携版，解压即用；切换显卡时会请求 UAC。 |
 ```
 
@@ -51,7 +51,7 @@ English:
 
 | File | Purpose |
 |---|---|
-| `OpenSynapse-<version>-win-x64.msi` | **Recommended.** Installs under `Program Files` and registers the machine-wide GPU service, so GPU switches no longer prompt for UAC. |
+| `OpenSynapse-<version>-win-x64-Setup.msi` | **Recommended.** Installs under `Program Files` and registers the machine-wide GPU service, so GPU switches no longer prompt for UAC. |
 | `OpenSynapse-<version>-win-Portable.zip` | Portable copy. The GPU switch prompts for UAC. |
 ```
 
