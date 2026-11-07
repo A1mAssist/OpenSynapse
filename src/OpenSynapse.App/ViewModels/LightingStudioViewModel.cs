@@ -462,13 +462,24 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
 
             if (_lighting is not null && blade is not null)
             {
-                var (rows, columns) = FrameSize(blade);
+                // The live manifest is the authority for the sparse map. A 2024
+                // Blade 16 is 7 x 15 logical -> 6 x 16 device, not the 2025
+                // 7 x 16 -> 6 x 17 layout.
+                var layout = blade.BladeFrameMode == StudioBladeFrameMode.Direct
+                    ? null
+                    : await _visualLoader
+                        .LoadLayoutAsync(blade.EffectiveProductId, CancellationToken.None)
+                        .ConfigureAwait(true);
+                var (rows, columns) = layout is { MatrixRows: > 0, MatrixColumns: > 0 }
+                    ? (layout.MatrixRows, layout.MatrixColumns)
+                    : FrameSize(blade);
                 _source = new StudioBladeFrameSourceV2(
                     blade.BladeFrameMode,
                     rows,
                     columns,
                     (inputRows, inputColumns) =>
-                        _inputSampler?.Sample(inputRows, inputColumns) ?? default);
+                        _inputSampler?.Sample(inputRows, inputColumns) ?? default,
+                    layout);
                 _appliedBlade = blade;
                 _inputClock.Restart();
                 _source.Update(BuildLayersFor(blade));

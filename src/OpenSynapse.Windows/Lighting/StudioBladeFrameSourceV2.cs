@@ -11,6 +11,9 @@ public enum StudioBladeFrameMode
     /// <summary>7 x 16 logical canvas mapped through the sparse 710 layout to 6 x 17.</summary>
     Sparse710,
 
+    /// <summary>7 x 15 logical canvas mapped through the 2024 sparse layout to 6 x 16.</summary>
+    Sparse16,
+
     /// <summary>Render the manifest matrix directly; no 710 sparse map.</summary>
     Direct,
 }
@@ -49,6 +52,14 @@ public static class StudioBladeDevices
 
         if (dialect == BladeLightingDialect.LedMatrix710)
         {
+            if (manifest.MatrixColumns == BladeLightingLayout16.DeviceColumns)
+            {
+                return new(
+                    StudioBladeFrameMode.Sparse16,
+                    BladeLightingLayout16.LogicalRows,
+                    BladeLightingLayout16.LogicalColumns);
+            }
+
             return new(
                 StudioBladeFrameMode.Sparse710,
                 BladeLightingLayout.LogicalRows,
@@ -77,8 +88,8 @@ public static class StudioBladeDevices
 
 /// <summary>
 /// V2 frame source: every layer keeps its own playback clock, mask and effect
-/// parameters, then the composite is mapped onto the Blade frame. The 710 family
-/// keeps the sparse 7 x 16 -> 6 x 17 map; newer matrix dialects render directly.
+/// parameters, then the composite is mapped onto the Blade frame. Manifests with
+/// a live LED table use that exact map; the 710 fallback keeps 7 x 16 -> 6 x 17.
 /// </summary>
 public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
 {
@@ -89,6 +100,7 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
     private readonly StudioBladeFrameMode _mode;
     private readonly int _rows;
     private readonly int _columns;
+    private readonly StudioLedLayout? _layout;
     private StudioLayerRender[] _layers = [];
 
     public StudioBladeFrameSourceV2()
@@ -112,7 +124,8 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
         StudioBladeFrameMode mode,
         int rows,
         int columns,
-        Func<int, int, StudioEffectInput>? inputProvider = null)
+        Func<int, int, StudioEffectInput>? inputProvider = null,
+        StudioLedLayout? layout = null)
     {
         if (!Enum.IsDefined(mode)) throw new ArgumentOutOfRangeException(nameof(mode));
         if (rows < 1) throw new ArgumentOutOfRangeException(nameof(rows));
@@ -127,10 +140,21 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
         {
             throw new ArgumentException("The sparse 710 canvas is 7 x 16.", nameof(rows));
         }
+        if (mode == StudioBladeFrameMode.Sparse16 &&
+            (rows != BladeLightingLayout16.LogicalRows || columns != BladeLightingLayout16.LogicalColumns))
+        {
+            throw new ArgumentException("The sparse 2024 canvas is 7 x 15.", nameof(rows));
+        }
+        if (layout is not null &&
+            (layout.MatrixRows != rows || layout.MatrixColumns != columns))
+        {
+            throw new ArgumentException("The manifest layout does not match the canvas.", nameof(layout));
+        }
 
         _mode = mode;
         _rows = rows;
         _columns = columns;
+        _layout = layout;
         _inputProvider = inputProvider;
         _trigger = new StudioPlaybackTrigger(GetClock);
     }
@@ -175,10 +199,32 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
             colors[index] = new RazerRgb(logical[index].R, logical[index].G, logical[index].B);
         }
 
-        return ValueTask.FromResult<IReadOnlyList<RazerRgb>>(
-            _mode == StudioBladeFrameMode.Sparse710
-                ? BladeLightingLayout.MapToDeviceFrame(colors)
-                : colors);
+        if (_layout is not null)
+        {
+            var device = new RazerRgb[_layout.DeviceRows * _layout.DeviceColumns];
+            foreach (var led in _layout.Leds)
+            {
+                if ((uint)led.MatrixRow >= (uint)_rows ||
+                    (uint)led.MatrixCol >= (uint)_columns ||
+                    (uint)led.DeviceRow >= (uint)_layout.DeviceRows ||
+                    (uint)led.DeviceCol >= (uint)_layout.DeviceColumns)
+                {
+                    continue;
+                }
+
+                device[led.DeviceRow * _layout.DeviceColumns + led.DeviceCol] =
+                    colors[led.MatrixRow * _columns + led.MatrixCol];
+            }
+
+            return ValueTask.FromResult<IReadOnlyList<RazerRgb>>(device);
+        }
+
+        return ValueTask.FromResult<IReadOnlyList<RazerRgb>>(_mode switch
+        {
+            StudioBladeFrameMode.Sparse710 => BladeLightingLayout.MapToDeviceFrame(colors),
+            StudioBladeFrameMode.Sparse16 => BladeLightingLayout16.MapToDeviceFrame(colors),
+            _ => colors,
+        });
     }
 
     private StudioPlaybackClock GetClock(Guid id)
