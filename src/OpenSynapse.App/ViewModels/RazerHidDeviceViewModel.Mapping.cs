@@ -15,6 +15,11 @@ public sealed partial class RazerHidDeviceViewModel
 
     public Func<byte, MacroInput?>? SoftwareMacroTriggerResolver { get; set; }
 
+    private bool IsNagaMouse =>
+        Connection.Definition.Category == DeviceCategory.Mouse &&
+        RazerNagaSideButtons.IsNaga(
+            0x1532, Connection.Definition.ProductId, Connection.Definition.DisplayName);
+
     public RazerHidMappingViewModel Mapping =>
         _mapping ??= new RazerHidMappingViewModel(
             new RazerHidMappingTransport(_service, Connection),
@@ -25,6 +30,7 @@ public sealed partial class RazerHidDeviceViewModel
             deviceKind: Connection.Definition.Category == DeviceCategory.Keyboard
                 ? RazerMappingDeviceKind.Keyboard
                 : RazerMappingDeviceKind.Mouse,
+            actionCatalog: IsNagaMouse ? RazerNagaMappingActionCatalog.Instance : null,
             canWriteOnboardMacros:
                 Has(RazerHidBackendCapability.MacroStorageDataWrite) &&
                 Has(RazerHidBackendCapability.MacroStorageNameWrite),
@@ -45,13 +51,16 @@ public sealed partial class RazerHidDeviceViewModel
             return null;
         }
 
-        return buttonId is 4 or 5
-            ? new MacroInput
+        if (buttonId is 4 or 5)
+        {
+            return new MacroInput
             {
                 Kind = MacroInputKind.MouseButton,
                 MouseButton = buttonId,
-            }
-            : null;
+            };
+        }
+
+        return IsNagaMouse ? RazerNagaSideButtonResolver.Resolve(buttonId) : null;
     }
 
     public Visibility MappingVisibility => VisibleWhen(Has(RazerHidBackendCapability.MappingRead));

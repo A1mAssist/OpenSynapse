@@ -13,13 +13,41 @@ public sealed class NagaSideButtonTests
     [InlineData(0x30, 0x0B, 10)]
     [InlineData(0x7B, 0x58, 11)]
     [InlineData(0x2C, 0x37, 12)]
+    [InlineData(0xBD, 0x0C, 11)]
+    [InlineData(0xBB, 0x0D, 12)]
     [InlineData(0, 0x02, 1)]
     [InlineData(0xFF, 0x58, 11)]
+    [InlineData(0, 0x0C, 11)]
+    [InlineData(0xFF, 0x0D, 12)]
     [InlineData(0x41, 0x1E, 0)]
     [InlineData(0x6A, 0x37, 0)]
     public void MapsTheNagaSidePlateKeyUsages(int virtualKey, int scanCode, int expected)
     {
         Assert.Equal(expected, RazerNagaSideButtons.FromKeyboard(virtualKey, scanCode));
+    }
+
+    [Theory]
+    [InlineData(0x1E, 1)]
+    [InlineData(0x22, 5)]
+    [InlineData(0x27, 10)]
+    [InlineData(0x2D, 11)]
+    [InlineData(0x2E, 12)]
+    public void ResolvesNagaSidePlateHidUsages(byte usage, int expected)
+    {
+        var input = RazerNagaSideButtonResolver.Resolve(usage);
+
+        Assert.NotNull(input);
+        Assert.Equal(MacroInputKind.NagaSideButton, input.Kind);
+        Assert.Equal(expected, input.SideButton);
+    }
+
+    [Theory]
+    [InlineData(0x04)]
+    [InlineData(0x28)]
+    [InlineData(0x2C)]
+    public void LeavesOtherKeysUnbound(byte usage)
+    {
+        Assert.Null(RazerNagaSideButtonResolver.Resolve(usage));
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
@@ -79,6 +80,20 @@ public sealed class RazerKeyboardMappingActionCatalog : RazerHidMappingActionCat
 
     public override string DescribeButton(byte buttonId) =>
         AppStrings.FormatText("RazerMappingKeyboardButton", buttonId);
+}
+
+/// <summary>
+/// Naga side plates report the keyboard number row, not the 1-12 names the
+/// mapping rows should show.
+/// </summary>
+public sealed class RazerNagaMappingActionCatalog : RazerHidMappingActionCatalog
+{
+    public static new RazerNagaMappingActionCatalog Instance { get; } = new();
+
+    public override string DescribeButton(byte buttonId) =>
+        RazerNagaSideButtonResolver.Resolve(buttonId) is { } input
+            ? AppStrings.FormatText("RazerMappingNagaSideButton", input.SideButton)
+            : base.DescribeButton(buttonId);
 }
 
 /// <summary>
