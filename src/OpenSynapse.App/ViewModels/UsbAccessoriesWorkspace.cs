@@ -156,7 +156,7 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
 
         foreach (var row in KeyboardDevices)
         {
-            _ = row.EnsureLoadedAsync(cancellationToken);
+            await row.EnsureLoadedAsync(cancellationToken);
         }
 
         _selectedKeyboardDevice = KeyboardDevices.FirstOrDefault(row =>
