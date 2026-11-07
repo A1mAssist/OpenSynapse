@@ -19,6 +19,12 @@ public sealed class BlackSharkHeadsetViewModel : INotifyPropertyChanged
     private string? _serial;
     private int? _batteryPercent;
     private bool? _charging;
+    private bool _hasBattery;
+    private bool _hasCharging;
+    private bool _hasSidetone;
+    private bool _hasThx;
+    private bool _hasAnc;
+    private bool _hasGameChat;
     private double _sidetoneLevel;
     private bool _thxEnabled;
     private int _selectedAncModeIndex;
@@ -40,6 +46,16 @@ public sealed class BlackSharkHeadsetViewModel : INotifyPropertyChanged
     public string Identity => $"VID_1532 / PID_{_connection.ProductId:X4}";
     public string DevicePath => _connection.DevicePath;
     public string StatusText => AppStrings.Text("BlackSharkStatusConnected");
+    public int ProtocolTotalCount => 6;
+    public int ProtocolAvailableCount =>
+        (_hasBattery ? 1 : 0) +
+        (_hasCharging ? 1 : 0) +
+        (_hasSidetone ? 1 : 0) +
+        (_hasThx ? 1 : 0) +
+        (_hasAnc ? 1 : 0) +
+        (_hasGameChat ? 1 : 0);
+    public string CapabilityText =>
+        AppStrings.FormatText("ProtocolAvailableCount", ProtocolAvailableCount, ProtocolTotalCount);
     public string? Serial { get => _serial; private set => SetField(ref _serial, value); }
     public Visibility SerialVisibility => string.IsNullOrWhiteSpace(Serial)
         ? Visibility.Collapsed
@@ -162,6 +178,8 @@ public sealed class BlackSharkHeadsetViewModel : INotifyPropertyChanged
         finally
         {
             IsBusy = false;
+            OnPropertyChanged(nameof(ProtocolAvailableCount));
+            OnPropertyChanged(nameof(CapabilityText));
         }
     }
 
@@ -221,23 +239,26 @@ public sealed class BlackSharkHeadsetViewModel : INotifyPropertyChanged
         if (state.BatteryPercent is byte battery)
         {
             _batteryPercent = battery;
+            _hasBattery = true;
             OnPropertyChanged(nameof(BatteryText));
         }
 
         if (state.Charging is bool charging)
         {
             _charging = charging;
+            _hasCharging = true;
             OnPropertyChanged(nameof(ChargingText));
         }
 
-        if (state.Sidetone is byte sidetone) SidetoneLevel = sidetone;
-        if (state.Thx is bool thx) ThxEnabled = thx;
+        if (state.Sidetone is byte sidetone) { SidetoneLevel = sidetone; _hasSidetone = true; }
+        if (state.Thx is bool thx) { ThxEnabled = thx; _hasThx = true; }
         if (state.AncMode is BlackSharkAncMode mode)
         {
             SelectedAncModeIndex = Array.IndexOf(AncModes, mode);
+            _hasAnc = true;
         }
         if (state.AncLevel is int ancLevel) AncLevel = ancLevel;
-        if (state.GameChatBalance is int balance) GameChatBalance = balance;
+        if (state.GameChatBalance is int balance) { GameChatBalance = balance; _hasGameChat = true; }
     }
 
     private bool BeginOperation()

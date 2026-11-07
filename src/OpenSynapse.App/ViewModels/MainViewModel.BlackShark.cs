@@ -48,7 +48,12 @@ public sealed partial class MainViewModel
         }
 
         BlackSharkDevices.Clear();
-        BlackSharkDevices.Add(new BlackSharkDeviceRowViewModel(connection));
+        var row = new BlackSharkDeviceRowViewModel(connection);
+        BlackSharkDevices.Add(row);
+        var probe = new BlackSharkHeadsetViewModel(
+            connection, message => _diagnosticLog.TryWrite("blackshark", message));
+        await probe.LoadAsync(cancellationToken);
+        row.SetCapabilityText(probe.CapabilityText);
         if (_selectedBlackSharkDevice is not null &&
             StringComparer.OrdinalIgnoreCase.Equals(
                 _selectedBlackSharkDevice.Connection.DevicePath, connection.DevicePath))

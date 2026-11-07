@@ -181,6 +181,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     private bool _hasBass;
     private bool _hasAnc;
     private bool _hasLighting;
+    private bool _capabilityProbed;
     private ThxHeadsetStatus _thxStatus = new(ThxHeadsetAvailability.UnsupportedDevice, null);
     private ThxAudioState? _thxState;
     private WindowsThxHeadsetController? _thxController;
@@ -429,6 +430,32 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     public string Identity => $"VID_1532 / PID_{_connection.ProductId:X4}";
     public string DevicePath => _connection.DevicePath;
     public string StatusText => AppStrings.Text("BlackSharkStatusConnected");
+    public bool HasCapabilityProbe => _capabilityProbed;
+    public int ProtocolTotalCount => 20;
+    public int ProtocolAvailableCount =>
+        (_hasEqBands ? 1 : 0) +
+        (_hasBass ? 1 : 0) +
+        (_hasMicMuted || _hasMicVolume ? 1 : 0) +
+        (_hasAudioSource ? 1 : 0) +
+        (_hasNoiseSuppression ? 1 : 0) +
+        (_hasAnc ? 1 : 0) +
+        (_hasLighting ? 1 : 0) +
+        (_hasHaptics ? 1 : 0) +
+        (_hasParametricEq ? 1 : 0) +
+        (_hasMicCompressor ? 1 : 0) +
+        (_hasMicMonitoring ? 1 : 0) +
+        (_hasDnd ? 1 : 0) +
+        (_hasAutoPause ? 1 : 0) +
+        (_hasGestureControl ? 1 : 0) +
+        (_hasDolby ? 1 : 0) +
+        (_hasNightMode ? 1 : 0) +
+        (_hasVoicePrompts ? 1 : 0) +
+        (_hasMicDeEsser ? 1 : 0) +
+        (_hasMicLimiter ? 1 : 0) +
+        (_hasMicReverb ? 1 : 0);
+    public string CapabilityText => !_capabilityProbed
+        ? AppStrings.Text("BlackSharkStatusConnected")
+        : AppStrings.FormatText("ProtocolAvailableCount", ProtocolAvailableCount, ProtocolTotalCount);
 
     public string FirmwareText { get => _firmwareText; private set => SetField(ref _firmwareText, value); }
     public string BatteryText { get => _batteryText; private set => SetField(ref _batteryText, value); }
@@ -804,6 +831,11 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         {
             await RefreshThxAsync(cancellationToken);
         }
+
+        _capabilityProbed = true;
+        OnPropertyChanged(nameof(HasCapabilityProbe));
+        OnPropertyChanged(nameof(ProtocolAvailableCount));
+        OnPropertyChanged(nameof(CapabilityText));
     }
 
     public Task ApplyThxSpatialAsync(CancellationToken cancellationToken = default) =>

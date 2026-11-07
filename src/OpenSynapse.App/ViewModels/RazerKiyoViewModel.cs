@@ -53,6 +53,18 @@ public sealed class RazerKiyoViewModel : INotifyPropertyChanged, IDisposable
             _service is { IsAvailable: true } ? "KiyoStatusConnected" : "KiyoStatusNotConnected");
     public string FirmwareText => _firmwareText;
     public string SerialText => _serialText;
+    public int ProtocolTotalCount => 8;
+    public int ProtocolAvailableCount =>
+        (_brightness is not null ? 1 : 0) +
+        (_contrast is not null ? 1 : 0) +
+        (_saturation is not null ? 1 : 0) +
+        (_whiteBalance is not null ? 1 : 0) +
+        (_focus is not null ? 1 : 0) +
+        (_zoom is not null ? 1 : 0) +
+        (_firmwareText != "--" ? 1 : 0) +
+        (_serialText != "--" ? 1 : 0);
+    public string CapabilityText =>
+        AppStrings.FormatText("ProtocolAvailableCount", ProtocolAvailableCount, ProtocolTotalCount);
     public string BrightnessText => FormatValue(_brightness);
     public string ContrastText => FormatValue(_contrast);
     public string SaturationText => FormatValue(_saturation);
@@ -224,6 +236,8 @@ public sealed class RazerKiyoViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(ZoomText));
         OnPropertyChanged(nameof(IsWhiteBalanceAuto));
         OnPropertyChanged(nameof(CanApplyWhiteBalance));
+        OnPropertyChanged(nameof(ProtocolAvailableCount));
+        OnPropertyChanged(nameof(CapabilityText));
     }
 
     private static string FormatValue(RazerKiyoValue? value) =>

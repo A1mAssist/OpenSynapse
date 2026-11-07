@@ -10,26 +10,6 @@ using Windows.UI;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed class RazerGamepadDeviceRowViewModel : INotifyPropertyChanged
-{
-    public RazerGamepadDeviceRowViewModel(RazerGamepadConnection connection)
-    {
-        Connection = connection;
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-    public RazerGamepadConnection Connection { get; }
-    public DeviceCategory HardwareCategory => DeviceCategory.Gamepad;
-    public string Name => Connection.Name;
-    public string Category => AppStrings.Text("RazerGamepadCategory");
-    public string Identity => $"VID_1532 / PID_{Connection.ProductId:X4}";
-    public string IconGlyph => "\uE7FC";
-    public string Status => AppStrings.Text("BlackSharkStatusConnected");
-    public Brush StatusBrush { get; } = new SolidColorBrush(Color.FromArgb(255, 153, 221, 114));
-    public string Error => string.Empty;
-    public void RefreshLocalization() => PropertyChanged?.Invoke(this, new(string.Empty));
-}
-
 public sealed class RazerGamepadButtonAssignmentRowViewModel : INotifyPropertyChanged
 {
     private RazerGamepadButtonAssignment _assignment;
@@ -335,6 +315,16 @@ public sealed partial class RazerGamepadViewModel : INotifyPropertyChanged
     public string Identity => $"VID_1532 / PID_{_connection.ProductId:X4}";
     public string DevicePath => _connection.DevicePath;
     public string StatusText => AppStrings.Text("BlackSharkStatusConnected");
+    public int ProtocolTotalCount => 6;
+    public int ProtocolAvailableCount =>
+        (Sticks.Any(row => row.IsAvailable) ? 1 : 0) +
+        (Triggers.Any(row => row.IsAvailable) ? 1 : 0) +
+        (_hasDpad ? 1 : 0) +
+        (_hasVibration ? 1 : 0) +
+        (ButtonAssignments.Count > 0 ? 1 : 0) +
+        (_hasLighting ? 1 : 0);
+    public string CapabilityText =>
+        AppStrings.FormatText("ProtocolAvailableCount", ProtocolAvailableCount, ProtocolTotalCount);
 
     public Visibility SticksVisibility =>
         Sticks.Any(row => row.IsAvailable) ? Visibility.Visible : Visibility.Collapsed;
@@ -449,6 +439,8 @@ public sealed partial class RazerGamepadViewModel : INotifyPropertyChanged
         finally
         {
             IsBusy = false;
+            OnPropertyChanged(nameof(ProtocolAvailableCount));
+            OnPropertyChanged(nameof(CapabilityText));
         }
     }
 

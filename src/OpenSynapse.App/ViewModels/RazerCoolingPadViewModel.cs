@@ -47,7 +47,14 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
     public string IconGlyph => "\uE7F8";
     public string StatusText => AppStrings.Text(IsConnected ? "CoolingPadStatusConnected" : "CoolingPadStatusNotConnected");
     public Brush StatusBrush { get; } = new SolidColorBrush(Color.FromArgb(255, 153, 221, 114));
-    public string CapabilityText => IsConnected ? AppStrings.Text("CoolingPadCategory") : string.Empty;
+    public int ProtocolTotalCount => 3;
+    public int ProtocolAvailableCount =>
+        (IsConnected ? 1 : 0) +
+        (_hasFixedMode ? 1 : 0) +
+        (_hasLighting ? 1 : 0);
+    public string CapabilityText => IsConnected
+        ? AppStrings.FormatText("ProtocolAvailableCount", ProtocolAvailableCount, ProtocolTotalCount)
+        : string.Empty;
     public string ErrorText => _errorText;
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);
     public bool IsConnected => _isConnected;
@@ -236,6 +243,7 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
 
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(Identity));
+        OnPropertyChanged(nameof(ProtocolAvailableCount));
         OnPropertyChanged(nameof(CapabilityText));
         OnPropertyChanged(nameof(CanApply));
         OnPropertyChanged(nameof(CanRefresh));

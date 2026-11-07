@@ -21,8 +21,15 @@ public sealed class BlackSharkDeviceRowViewModel : INotifyPropertyChanged
     public string Identity => $"VID_1532 / PID_{Connection.ProductId:X4}";
     public string IconGlyph => "\uE7F6";
     public string Status => AppStrings.Text("BlackSharkStatusConnected");
+    public string CapabilityText { get; private set; } = AppStrings.Text("BlackSharkStatusConnected");
     public Brush StatusBrush { get; } = new SolidColorBrush(Color.FromArgb(255, 153, 221, 114));
     public string Error => string.Empty;
+
+    internal void SetCapabilityText(string text)
+    {
+        CapabilityText = text;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CapabilityText)));
+    }
 
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
 }
