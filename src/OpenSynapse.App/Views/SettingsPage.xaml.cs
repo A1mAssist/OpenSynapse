@@ -259,7 +259,6 @@ public sealed partial class SettingsPage : UserControl
 
     private void RefreshChromaRestStatus()
     {
-        RefreshChromaShimStatus();
         RefreshChromaSources();
         if (!Host.BehaviorSettings.ExperimentalChromaRestEnabled)
         {

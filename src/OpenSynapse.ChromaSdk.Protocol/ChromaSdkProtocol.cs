@@ -247,7 +247,4 @@ public static class ChromaSdkPipe
 public static class ChromaBrokerProtocol
 {
     public const string PipeName = "OpenSynapseChromaBroker";
-
-    public static string StopEventName(int parentProcessId) =>
-        $@"Local\OpenSynapseChromaBrokerStop-{parentProcessId}";
 }

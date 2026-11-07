@@ -74,6 +74,7 @@ internal static class GpuModeServiceHost
 
         protected override void OnStop()
         {
+            ChromaBrokerServiceChild.Stop();
             _stop.Cancel();
             try
             {
@@ -113,6 +114,11 @@ internal static class GpuModeServiceHost
                 }
                 catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                 {
+                    if (ChromaBrokerServiceChild.IsRunning)
+                    {
+                        continue;
+                    }
+
                     shouldStop = true;
                     break;
                 }
@@ -241,6 +247,12 @@ internal static class GpuModeServiceHost
 
                 case DedicatedGpuModeServiceAction.StartMacroAgent:
                     return StartMacroAgent();
+
+                case DedicatedGpuModeServiceAction.StartChromaBroker:
+                    return StartChromaBroker(authorizedUser, request.ParentProcessId);
+
+                case DedicatedGpuModeServiceAction.StopChromaBroker:
+                    return StopChromaBroker();
 
                 case DedicatedGpuModeServiceAction.GpuClockOffsetStatus:
                     var clockRead = NvApiGpuClockOffset.TryRead(
@@ -373,6 +385,44 @@ internal static class GpuModeServiceHost
                 return Invalid("The macro agent task could not be started.");
             }
 
+            return new DedicatedGpuModeServiceResponse(
+                DedicatedGpuModeServiceProtocol.Version,
+                Handled: true,
+                DedicatedGpuSwitchOutcome.Success,
+                ExitCode: 0,
+                Status: null,
+                Error: null);
+        }
+
+        private static DedicatedGpuModeServiceResponse StartChromaBroker(
+            SecurityIdentifier? authorizedUser,
+            int? parentProcessId)
+        {
+            if (authorizedUser is null)
+            {
+                return Invalid("The GPU service is missing its authorized user SID.");
+            }
+
+            if (parentProcessId is not > 0)
+            {
+                return Invalid("The Chroma broker request is missing its parent process.");
+            }
+
+            var error = ChromaBrokerServiceChild.Start(parentProcessId.Value, authorizedUser);
+            return error is null
+                ? new DedicatedGpuModeServiceResponse(
+                    DedicatedGpuModeServiceProtocol.Version,
+                    Handled: true,
+                    DedicatedGpuSwitchOutcome.Success,
+                    ExitCode: 0,
+                    Status: null,
+                    Error: null)
+                : Invalid(error);
+        }
+
+        private static DedicatedGpuModeServiceResponse StopChromaBroker()
+        {
+            ChromaBrokerServiceChild.Stop();
             return new DedicatedGpuModeServiceResponse(
                 DedicatedGpuModeServiceProtocol.Version,
                 Handled: true,

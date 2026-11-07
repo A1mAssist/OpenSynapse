@@ -4,7 +4,7 @@ This document lists each concrete device entry that OpenSynapse can currently ex
 
 ## Runtime availability
 
-The device list is a manifest capability inventory. At runtime, OpenSynapse still requires the device endpoint to resolve and the transaction to be accepted before showing controls. A rejected or unavailable transaction hides that control. The 91-byte HID paths below are OpenRazer-derived protocol definitions. The separate OpenSynapse `RzChromaSDK64.dll` shim implements the Chroma SDK 4.0.1 ABI; see [Chroma SDK shim](CHROMA_SDK_SHIM.md).
+The device list is a manifest capability inventory. At runtime, OpenSynapse still requires the device endpoint to resolve and the transaction to be accepted before showing controls. A rejected or unavailable transaction hides that control. The 91-byte HID paths below are OpenRazer-derived protocol definitions. Razer's official `RzChromaSDK64.dll` is paired with the OpenSynapse `ChromaBroker` service.
 
 ## Channel routing
 
@@ -237,7 +237,7 @@ These models use the separate Kraken 37-byte Output Report. Each USB PID is list
 
 ## Boundaries
 
-- OpenSynapse does not load Razer Synapse or Razer's signed `RzChromaConnectAPI.dll`; the optional `RzChromaSDK64.dll` is OpenSynapse's own ABI-compatible shim.
+- OpenSynapse does not load Razer Synapse or Razer's signed `RzChromaConnectAPI.dll`; Razer's official `RzChromaSDK64.dll` is bridged by the OpenSynapse `ChromaBroker` service.
 - Chroma REST is currently verified on the Blade 16 keyboard only. It is not a promise that a REST frame is translated to every OpenRazer matrix device.
 - Matrix dimensions and manifest transactions are capability metadata, not hardware certification. The connected endpoint and successful transaction remain the final authority.
 - Unsupported or unverified controls are hidden instead of being presented as configurable controls.

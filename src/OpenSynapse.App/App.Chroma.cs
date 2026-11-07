@@ -1,7 +1,7 @@
-using System.Diagnostics;
 using System.Net.Sockets;
 using OpenSynapse.App.Runtime;
 using OpenSynapse.App.ViewModels;
+using OpenSynapse.Windows.Lifecycle;
 using OpenSynapse.Windows.Lighting;
 
 namespace OpenSynapse.App;
@@ -9,9 +9,8 @@ namespace OpenSynapse.App;
 public partial class App
 {
     private ChromaRestHost? _chromaRestHost;
-    private ChromaSdkBridgeHost? _chromaSdkBridge;
     private ChromaBrokerHost? _chromaBrokerHost;
-    private Process? _chromaBrokerProcess;
+    private Task? _chromaBrokerStartTask;
     private ChromaDeviceRouter? _chromaDeviceRouter;
     internal bool IsChromaRestRunning => _chromaRestHost?.IsRunning == true;
 
@@ -44,7 +43,6 @@ public partial class App
     private void StartChromaHosts(MainViewModel viewModel)
     {
         _chromaDeviceRouter ??= CreateChromaDeviceRouter(viewModel);
-        StartChromaSdkBridge(viewModel);
         StartChromaBroker(viewModel);
         StartChromaRestHost(viewModel);
     }
@@ -69,36 +67,6 @@ public partial class App
         if (_chromaDeviceRouter is not null)
         {
             await _chromaDeviceRouter.RestoreAsync().ConfigureAwait(false);
-        }
-    }
-
-    private void StartChromaSdkBridge(MainViewModel viewModel)
-    {
-        if (!_behaviorSettings.ExperimentalChromaRestEnabled ||
-            _chromaSdkBridge is not null)
-        {
-            return;
-        }
-
-        try
-        {
-            var applier = new ChromaSdkEffectApplier(viewModel, _bladeLightingController, _chromaDeviceRouter);
-            var bridge = new ChromaSdkBridgeHost(
-                applier.ApplyAsync,
-                () => Volatile.Read(ref _closing) != 0 || !_behaviorSettings.RestoreLightingAfterChromaSession
-                    ? Task.CompletedTask
-                    : RestoreChromaAsync(viewModel),
-                () => _behaviorSettings.RestoreLightingAfterChromaSession,
-                () => applier.SupportedDevices,
-                log: message => _diagnosticLog.TryWrite("chroma-sdk", message));
-            bridge.StartAsync();
-            _chromaSdkBridge = bridge;
-            _diagnosticLog.TryWrite("chroma-sdk", "Chroma SDK bridge listening on \\\\.\\pipe\\OpenSynapseChromaSdk.");
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
-        {
-            _chromaSdkBridge = null;
-            _diagnosticLog.TryWrite("chroma-sdk", $"Chroma SDK bridge unavailable: {exception.Message}");
         }
     }
 
@@ -164,12 +132,10 @@ public partial class App
                 log: message => _diagnosticLog.TryWrite("chroma-broker", message));
             host.StartAsync();
             _chromaBrokerHost = host;
-            _chromaBrokerProcess = ChromaBrokerLauncher.Start();
             _diagnosticLog.TryWrite(
                 "chroma-broker",
-                _chromaBrokerProcess is null
-                    ? "listening; broker launch was declined."
-                    : "listening; official-DLL broker started.");
+                "listening; asking the OpenSynapseGpuMode service to start the official-DLL broker.");
+            _chromaBrokerStartTask = StartChromaBrokerServiceAsync();
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or InvalidOperationException)
@@ -180,6 +146,27 @@ public partial class App
                 _ = host.DisposeAsync();
             }
             _diagnosticLog.TryWrite("chroma-broker", $"unavailable: {exception.Message}");
+        }
+    }
+
+    private async Task StartChromaBrokerServiceAsync()
+    {
+        try
+        {
+            var started = await DedicatedGpuModeServiceClient
+                .TryStartChromaBrokerAsync(Environment.ProcessId)
+                .ConfigureAwait(false);
+            _diagnosticLog.TryWrite(
+                "chroma-broker",
+                started
+                    ? "OpenSynapseGpuMode service started the broker."
+                    : "broker service unavailable; the broker was not started.");
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+                InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            _diagnosticLog.TryWrite("chroma-broker", $"service start failed: {exception.Message}");
         }
     }
 
@@ -233,19 +220,6 @@ public partial class App
             }
         }
 
-        var sdkBridge = Interlocked.Exchange(ref _chromaSdkBridge, null);
-        if (sdkBridge is not null)
-        {
-            try
-            {
-                await sdkBridge.DisposeAsync().ConfigureAwait(false);
-            }
-            catch (Exception exception)
-            {
-                _diagnosticLog.TryWrite("chroma-sdk", $"stop failed: {exception}");
-            }
-        }
-
         var brokerHost = Interlocked.Exchange(ref _chromaBrokerHost, null);
         if (brokerHost is not null)
         {
@@ -259,6 +233,18 @@ public partial class App
             }
         }
 
-        ChromaBrokerLauncher.Stop(Interlocked.Exchange(ref _chromaBrokerProcess, null));
+        var startTask = Interlocked.Exchange(ref _chromaBrokerStartTask, null);
+        if (startTask is not null)
+        {
+            await startTask.ConfigureAwait(false);
+        }
+
+        var stopped = await DedicatedGpuModeServiceClient
+            .TryStopChromaBrokerAsync()
+            .ConfigureAwait(false);
+        if (!stopped)
+        {
+            _diagnosticLog.TryWrite("chroma-broker", "broker service stop request failed.");
+        }
     }
 }

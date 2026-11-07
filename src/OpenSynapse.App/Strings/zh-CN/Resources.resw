@@ -1749,7 +1749,7 @@
   <data name="BladeFnRuntimeStoppedBeforeAudioSync" xml:space="preserve"><value>Blade Fn 运行时在音频同步完成前已被安全停止。</value><comment>Fn 运行时提前停止</comment></data>
   <data name="PerformanceSamplingUnavailable" xml:space="preserve"><value>采样失败 · 显示上次值</value><comment>性能采样不可用</comment></data>
   <data name="ChromaRestTitle.Text" xml:space="preserve"><value>Chroma 集成</value><comment>Chroma 集成标题</comment></data>
-  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>允许兼容的 REST 与 SDK 客户端在本机控制已连接设备的灯光；SDK 兼容层不需要安装雷云。</value><comment>Chroma 集成说明</comment></data>
+  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>允许兼容的 REST 与 SDK 客户端在本机控制已连接设备的灯光；官方 Chroma DLL + broker 不需要安装雷云。</value><comment>Chroma 集成说明</comment></data>
   <data name="ChromaRestToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Chroma 集成</value><comment>Chroma 集成开关</comment></data>
   <data name="ChromaRestStatus.Text" xml:space="preserve"><value>已禁用</value><comment>Chroma REST 状态</comment></data>
   <data name="ChromaRestStatusDisabled" xml:space="preserve"><value>已禁用</value><comment>Chroma REST 已禁用</comment></data>
@@ -1757,19 +1757,8 @@
   <data name="ChromaRestStatusReady" xml:space="preserve"><value>{0} · 已就绪</value><comment>Chroma REST 已就绪</comment></data>
   <data name="ChromaRestStatusSession" xml:space="preserve"><value>{0} · {1} · {2:0} fps · 跳过 {3}</value><comment>Chroma REST 活动会话与帧统计</comment></data>
   <data name="ChromaOfficialDllTitle.Text" xml:space="preserve"><value>官方 Chroma DLL</value><comment>官方 DLL 与 broker 标题</comment></data>
-  <data name="ChromaOfficialDllDescription.Text" xml:space="preserve"><value>只下载官方 RzChromaSDK64.dll，放到 C:\Windows\System32。OpenSynapse 的 broker 会接管游戏灯光，不需要安装完整 Chroma SDK 或雷云。</value><comment>官方 DLL 单文件与 broker 说明</comment></data>
-  <data name="ChromaShimTitle.Text" xml:space="preserve"><value>游戏兼容层（自研 shim）</value><comment>Chroma 游戏兼容 DLL 标题</comment></data>
-  <data name="ChromaShimDescription.Text" xml:space="preserve"><value>官方 DLL + broker 不可用时的后备方案。安装会备份并替换 Razer 官方的 x64 DLL；请先启动 OpenSynapse 再开游戏。</value><comment>Chroma 游戏兼容 DLL 说明</comment></data>
-  <data name="ChromaShimStatus.Text" xml:space="preserve"><value>未安装</value><comment>Chroma 游戏兼容 DLL 初始状态</comment></data>
-  <data name="ChromaShimInstallButton.Content" xml:space="preserve"><value>安装</value><comment>安装 Chroma 游戏兼容 DLL</comment></data>
-  <data name="ChromaShimRestoreButton.Content" xml:space="preserve"><value>恢复官方 DLL</value><comment>恢复 Razer 官方 Chroma DLL</comment></data>
-  <data name="ChromaShimStatusNotInstalled" xml:space="preserve"><value>未安装，游戏灯光仍由雷云接管。</value></data>
-  <data name="ChromaShimStatusInstalled" xml:space="preserve"><value>已安装，游戏灯光走 OpenSynapse。</value></data>
-  <data name="ChromaShimStatusUnavailable" xml:space="preserve"><value>未检测到 Razer Chroma SDK。</value></data>
-  <data name="ChromaShimStatusBusy" xml:space="preserve"><value>正在处理…</value></data>
+  <data name="ChromaOfficialDllDescription.Text" xml:space="preserve"><value>只下载官方 RzChromaSDK64.dll，放到 C:\Windows\System32。安装版通过 OpenSynapseGpuMode 服务启动 broker，不需要每次授权；雷云 Chroma 服务运行时 broker 会自动让出。</value><comment>官方 DLL 单文件与 broker 说明</comment></data>
   <data name="ChromaOfficialDllDownload.Content" xml:space="preserve"><value>下载 DLL</value><comment>下载 GitHub 托管的官方 RzChromaSDK64.dll</comment></data>
-  <data name="ChromaShimInstallFailed" xml:space="preserve"><value>安装失败（错误码 {0}）。请关闭游戏后重试。</value></data>
-  <data name="ChromaShimRestoreFailed" xml:space="preserve"><value>恢复失败（错误码 {0}）。请关闭游戏后重试。</value></data>
   <data name="ChromaRestoreTitle.Text" xml:space="preserve"><value>外部控制结束后恢复灯光</value><comment>恢复灯光标题</comment></data>
   <data name="ChromaRestoreDescription.Text" xml:space="preserve"><value>会话结束或超时后恢复 OpenSynapse 当前配置的灯效。</value><comment>恢复灯光说明</comment></data>
   <data name="ChromaRestoreToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>外部控制结束后恢复灯光</value><comment>恢复灯光开关</comment></data>

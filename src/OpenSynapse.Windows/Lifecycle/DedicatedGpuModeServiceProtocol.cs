@@ -28,6 +28,8 @@ public static class DedicatedGpuModeServiceProtocol
     public const string RestoreCpuPowerLimitOperation = "restore-power-limit";
     public const string CurveOptimizerStatusOperation = "curve-optimizer-status";
     public const string SetCurveOptimizerOperation = "set-curve-optimizer";
+    public const string StartChromaBrokerOperation = "start-chroma-broker";
+    public const string StopChromaBrokerOperation = "stop-chroma-broker";
     public const int MaximumMessageLength = 4096;
 }
 
@@ -40,7 +42,8 @@ public sealed record DedicatedGpuModeServiceRequest(
     int? ClockLimitMhz = null,
     double? Pl1Watts = null,
     double? Pl2Watts = null,
-    int? CurveSteps = null);
+    int? CurveSteps = null,
+    int? ParentProcessId = null);
 
 /// <summary>
 /// The operation a service request asks for. The decision lives here so the
@@ -95,6 +98,12 @@ public enum DedicatedGpuModeServiceAction
 
     /// <summary>Apply an all-core Curve Optimizer offset.</summary>
     SetCurveOptimizer,
+
+    /// <summary>Start the Chroma shared-memory broker for the calling app process.</summary>
+    StartChromaBroker,
+
+    /// <summary>Stop the Chroma shared-memory broker.</summary>
+    StopChromaBroker,
 
     /// <summary>The request does not match any known operation.</summary>
     Unsupported,
@@ -248,6 +257,21 @@ public static class DedicatedGpuModeServiceRequestParser
             request.CurveSteps is not null)
         {
             return DedicatedGpuModeServiceAction.SetCurveOptimizer;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                DedicatedGpuModeServiceProtocol.StartChromaBrokerOperation) &&
+            request.ParentProcessId is > 0)
+        {
+            return DedicatedGpuModeServiceAction.StartChromaBroker;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                DedicatedGpuModeServiceProtocol.StopChromaBrokerOperation))
+        {
+            return DedicatedGpuModeServiceAction.StopChromaBroker;
         }
 
         if (StringComparer.Ordinal.Equals(

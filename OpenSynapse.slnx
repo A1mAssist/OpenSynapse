@@ -5,7 +5,6 @@
     </Project>
     <Project Path="src/OpenSynapse.Core/OpenSynapse.Core.csproj" />
     <Project Path="src/OpenSynapse.ChromaSdk.Protocol/OpenSynapse.ChromaSdk.Protocol.csproj" />
-    <Project Path="src/OpenSynapse.ChromaSdk.Shim/OpenSynapse.ChromaSdk.Shim.csproj" />
     <Project Path="src/OpenSynapse.ChromaBroker/OpenSynapse.ChromaBroker.csproj">
       <Platform Project="x64" />
     </Project>

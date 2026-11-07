@@ -36,7 +36,7 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 
 - **设备与电源：** 设备信息、固件、序列号、电量、充电、休眠、充电上限和低电量行为；仅在连接端点实际提供时显示。
 - **输入与性能：** DPI、DPI 档位、轮询率、滚轮行为、键轴触发、Fn 与按键重映射、板载配置和宏存储等，按设备协议能力开放。
-- **灯光：** 分区亮度与灯效、矩阵输出、Chroma REST 和 Chroma SDK 兼容层；灯光工作室提供 SVG 设备画布、逐 LED 编辑、区域、配置档和效果组合。
+- **灯光：** 分区亮度与灯效、矩阵输出、Chroma REST 和官方 Chroma DLL broker；灯光工作室提供 SVG 设备画布、逐 LED 编辑、区域、配置档和效果组合。
 - **散热与显示：** 遥测、性能模式、风扇曲线、面板与 GPU 模式、局部调光和触控板控制等，按笔记本能力开放。仅核显模式通过 Windows PnP 禁用独显，不是 MUX 切换；重新启用独显前外接屏可能没有画面。
 - **音频：** EQ、麦克风音量、侧音、ANC、THX 和游戏/语音平衡；取决于设备与已安装音频栈。
 
@@ -48,9 +48,9 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 
 兼容的游戏和外部程序可以向 `127.0.0.1:54235` 提交键盘、鼠标、耳机、鼠标垫、键区和 ChromaLink 的静态、`CUSTOM`、`CUSTOM_KEY` 和 `CUSTOM2` 灯光帧。矩阵通道使用设备自己的网格；单区设备取整帧的平均色。ChromaLink 覆盖 Aether 灯具、扩展坞、支架、ARGB 控制器和 Chroma 配件。外部控制结束后会恢复每台设备原来的效果。不需要安装雷云。
 
-### Chroma SDK 兼容层
+### Chroma SDK broker
 
-`OpenSynapse.ChromaSdk.Shim` 发布 x64 `RzChromaSDK64.dll`，实现 Chroma SDK 4.0.1 ABI，并通过 `\\.\pipe\OpenSynapseChromaSdk` 把灯效交给 OpenSynapse。键盘、鼠标、耳机、鼠标垫、键区和 ChromaLink 的静态/自定义灯效，会按雷云 Chroma 设备清单投递到对应通道：矩阵设备收到缩放后的帧，单区设备收到整帧的平均色。通用 `CreateEffect`、`QueryDevice` 和已弃用效果仍未实现。ABI 证据与部署步骤见 [Chroma SDK 兼容层](docs/CHROMA_SDK_SHIM.md)。
+`OpenSynapse.ChromaBroker` 读取官方 Chroma SDK 4.x 的共享内存协议，解码键盘、鼠标、耳机、鼠标垫、键区和 ChromaLink 的灯效帧。它由安装时注册的 `OpenSynapseGpuMode` 服务以 LocalSystem 启动，不需要每次启动都弹 UAC。用户只需要把雷蛇官方的 `RzChromaSDK64.dll` 放到 `C:\Windows\System32`，设置页提供已验证文件的下载链接。雷云自己的 Chroma 服务持有仲裁 mutex 时，broker 会主动让出，游戏灯光继续由雷云接管。原来的自研 shim 已归档到 `archive/OpenSynapse.ChromaSdk.Shim`，不再随包发布或启动。
 
 ## 界面预览
 
@@ -99,7 +99,6 @@ MSI 服务以 `LocalSystem` 运行，使用 `Program Files` 内受保护的应�
 dotnet restore OpenSynapse.slnx
 dotnet build OpenSynapse.slnx -c Release
 dotnet build src/OpenSynapse.App/OpenSynapse.App.csproj -c Release -p:Platform=x64
-dotnet publish src/OpenSynapse.ChromaSdk.Shim/OpenSynapse.ChromaSdk.Shim.csproj -c Release -r win-x64 -o artifacts/chroma-sdk-shim
 ```
 
 本地构建完成后可以这样启动。

@@ -31,16 +31,6 @@ public static class Program
             Environment.Exit(ProbeDkmTable());
         }
 
-        if (args.Contains("--install-chroma-shim", StringComparer.OrdinalIgnoreCase))
-        {
-            Environment.Exit(ChromaSdkShimInstaller.Install());
-        }
-
-        if (args.Contains("--restore-chroma-shim", StringComparer.OrdinalIgnoreCase))
-        {
-            Environment.Exit(ChromaSdkShimInstaller.Restore());
-        }
-
         if (GpuModeServiceHost.TryRun(args))
         {
             return;
@@ -65,12 +55,14 @@ public static class Program
                 RepairStartupRegistration();
                 EnsureGpuService();
                 EnsureMacroAgentTask();
+                MigrateChromaShim();
                 PreserveExistingShortcuts();
             })
             .OnAfterUpdateFastCallback(_ =>
             {
                 EnsureGpuService();
                 EnsureMacroAgentTask();
+                MigrateChromaShim();
                 RepairStartupRegistration();
                 PreserveExistingShortcuts();
             })
@@ -80,7 +72,7 @@ public static class Program
                 RemoveGpuService();
                 RemoveMacroAgentTask();
                 RemoveStartupRegistration();
-                RestoreChromaShim();
+                MigrateChromaShim();
                 OfferUserDataCleanup();
             })
             .Run();
@@ -89,6 +81,7 @@ public static class Program
             DedicatedGpuModeServiceInstaller.IsMachineInstallPath(Environment.ProcessPath))
         {
             EnsureGpuService();
+            MigrateChromaShim();
         }
 
         MigrateLegacyUserData();
@@ -250,15 +243,16 @@ public static class Program
         }
     }
 
-    private static void RestoreChromaShim()
+    private static void MigrateChromaShim()
     {
         try
         {
-            _ = ChromaSdkShimInstaller.Restore();
+            LegacyChromaShimMigration.TryRestore();
+            LegacyChromaShimMigration.TryRemovePackagedShim();
         }
         catch (Exception)
         {
-            // Uninstall must finish even when the SDK DLL is locked by a game.
+            // Install and uninstall must finish even when the SDK DLL is locked by a game.
         }
     }
 

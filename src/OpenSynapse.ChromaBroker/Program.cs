@@ -4,6 +4,7 @@
 using System.Buffers.Binary;
 using System.Globalization;
 using System.Runtime.Versioning;
+using System.Security.Principal;
 using System.Text;
 using OpenSynapse.ChromaSdk.Protocol;
 
@@ -29,7 +30,8 @@ internal static class Program
         }
 
         BrokerLog.Info(
-            $"starting: pipe={options.PipeName}, parent={options.ParentPid?.ToString(CultureInfo.InvariantCulture) ?? "none"}");
+            $"starting: pipe={options.PipeName}, parent={options.ParentPid?.ToString(CultureInfo.InvariantCulture) ?? "none"}, " +
+            $"user={options.User?.Value ?? "current"}");
 
         ChromaSharedMemoryServer? server = null;
         ChromaBrokerPipeClient? pipe = null;
@@ -44,9 +46,8 @@ internal static class Program
         try
         {
             server = ChromaSharedMemoryServer.Create();
-            appPipe = new ChromaAppPipeHost((pid, _) => server.NoteRegisteredClient(pid));
+            appPipe = new ChromaAppPipeHost((pid, _) => server.NoteRegisteredClient(pid), options.User);
             pipe = new ChromaBrokerPipeClient(options.PipeName);
-            using var stopEvent = OpenStopEvent(options.ParentPid);
             var nextParentCheck = Environment.TickCount64;
 
             while (!stop.IsCancellationRequested)
@@ -60,12 +61,6 @@ internal static class Program
                         BrokerLog.Info($"parent process {parentPid} exited; shutting down.");
                         break;
                     }
-                }
-
-                if (stopEvent?.WaitOne(0) == true)
-                {
-                    BrokerLog.Info("parent asked the broker to stop.");
-                    break;
                 }
 
                 if (server.UpdateClient(now))
@@ -114,6 +109,7 @@ internal static class Program
     {
         var pipeName = ChromaBrokerPipeClient.DefaultPipeName;
         uint? parentPid = null;
+        SecurityIdentifier? user = null;
         var selfTest = false;
         error = string.Empty;
 
@@ -135,8 +131,21 @@ internal static class Program
                     parentPid = pid;
                     index++;
                     break;
+                case "--user" when index + 1 < args.Length:
+                    try
+                    {
+                        user = new SecurityIdentifier(args[++index]);
+                    }
+                    catch (ArgumentException)
+                    {
+                        error = "invalid value for --user";
+                        options = default!;
+                        return false;
+                    }
+                    break;
                 case "--pipe":
                 case "--parent":
+                case "--user":
                     error = "missing or invalid value for " + args[index];
                     options = default!;
                     return false;
@@ -147,27 +156,8 @@ internal static class Program
             }
         }
 
-        options = new Options(pipeName, parentPid, selfTest);
+        options = new Options(pipeName, parentPid, selfTest, user);
         return true;
-    }
-
-    private static EventWaitHandle? OpenStopEvent(uint? parentPid)
-    {
-        if (parentPid is null)
-        {
-            return null;
-        }
-
-        try
-        {
-            return EventWaitHandle.OpenExisting(
-                ChromaBrokerProtocol.StopEventName(unchecked((int)parentPid.Value)));
-        }
-        catch (Exception exception) when (
-            exception is WaitHandleCannotBeOpenedException or UnauthorizedAccessException or IOException)
-        {
-            return null;
-        }
     }
 
     private static bool RunSelfTest()
@@ -341,7 +331,11 @@ internal static class Program
         }
     }
 
-    private sealed record Options(string PipeName, uint? ParentPid, bool SelfTest);
+    private sealed record Options(
+        string PipeName,
+        uint? ParentPid,
+        bool SelfTest,
+        SecurityIdentifier? User);
 }
 
 internal static class BrokerLog

@@ -102,7 +102,7 @@ public static class DedicatedGpuModeServiceInstaller
         if (!current.MatchesDacl(ServiceSddl) &&
             run(["sdset", DedicatedGpuModeServiceProtocol.ServiceName, ServiceSddl]).ExitCode != 0) return false;
         if (run(["description", DedicatedGpuModeServiceProtocol.ServiceName,
-            "Provides fixed GPU/CPU controls and the OpenSynapse macro broker."]).ExitCode != 0) return false;
+            "Provides fixed GPU/CPU controls, the OpenSynapse macro agent, and the Chroma broker."]).ExitCode != 0) return false;
         return read()?.Matches(command, ServiceSddl) == true;
     }
 
