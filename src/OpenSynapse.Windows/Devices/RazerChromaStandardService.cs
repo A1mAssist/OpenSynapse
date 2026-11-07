@@ -387,16 +387,16 @@ public sealed class RazerChromaStandardService
         byte[] payload,
         CancellationToken cancellationToken)
     {
-        if (_productId == 0x02B3 && effect == RazerChromaEffect.Static)
+        // Every protocol-25 keyboard runs the rzDevice25LedMatrix page, whose
+        // setChromaEffectCommon override sends class 0x03 command 0x0A instead of the
+        // class 0x0F effect command. Sending 0F:02 leaves the keyboard unchanged.
+        if (_productId is { } productId && RazerKeyboardService.Products.ContainsKey(productId))
         {
-            if (payload.Length != 3)
-            {
-                throw new ArgumentException("Matrix static takes one RGB colour.", nameof(payload));
-            }
-
+            var matrixFlags = effect == RazerChromaEffect.Breathing ? (byte)(payload.Length / 3) : (byte)0;
             await QueryAsync(
-                transaction => RazerLegacyChromaProtocol.SetMatrixStatic(transaction, payload),
-                "set matrix static effect",
+                transaction => RazerLegacyChromaProtocol.SetMatrixEffect(
+                    transaction, effect, payload, matrixFlags),
+                "set matrix effect",
                 cancellationToken).ConfigureAwait(false);
             return;
         }

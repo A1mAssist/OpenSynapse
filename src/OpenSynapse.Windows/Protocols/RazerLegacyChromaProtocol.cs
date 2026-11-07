@@ -11,10 +11,15 @@ public static class RazerLegacyChromaProtocol
     public const byte CommandClass = 0x0F;
     public const int MaxColors = 2;
 
-    // 02B3 uses the rzDevice25 matrix selector for static colours instead of the
-    // class 0x0F effect command. The bundle payload is [0x06, r, g, b].
+    // The led-matrix keyboards (rzDevice25LedMatrix) take the whole-device effect on
+    // class 0x03 command 0x0A instead of the class 0x0F effect command. The payload is
+    // [effectId, flags, colours...]; ids come from the middleware UE enum.
     public const byte MatrixCommandClass = 0x03;
     public const byte MatrixSetEffectCommandId = 0x0A;
+    private const byte MatrixEffectOff = 0x00;
+    private const byte MatrixEffectBreathing = 0x03;
+    private const byte MatrixEffectSpectrum = 0x04;
+    private const byte MatrixEffectStatic = 0x06;
 
     // The middleware only ever reads profile 1, region 0 (6737.*.js, BLE effect read).
     public const byte ReadProfileId = 1;
@@ -74,19 +79,40 @@ public static class RazerLegacyChromaProtocol
             arguments);
     }
 
-    public static byte[] SetMatrixStatic(byte transactionId, ReadOnlySpan<byte> color)
+    /// <summary>
+    /// The rzDevice25LedMatrix override of setChromaEffectCommon: Off/Spectrum carry the
+    /// effect id alone, Static adds one colour, Breathing adds a flag byte and one or two
+    /// colours. profileId and regionId never reach the wire on this dialect.
+    /// </summary>
+    public static byte[] SetMatrixEffect(
+        byte transactionId,
+        RazerChromaEffect effect,
+        ReadOnlySpan<byte> colors,
+        byte flags = 0)
     {
-        if (color.Length != 3)
+        if (colors.Length % 3 != 0 || colors.Length / 3 > MaxColors)
         {
-            throw new ArgumentException("Matrix static takes one RGB colour.", nameof(color));
+            throw new ArgumentException("Chroma effects take one or two RGB colors.", nameof(colors));
         }
+
+        var payload = effect switch
+        {
+            RazerChromaEffect.Off => new byte[] { MatrixEffectOff },
+            RazerChromaEffect.Spectrum => new byte[] { MatrixEffectSpectrum },
+            RazerChromaEffect.Static when colors.Length == 3 =>
+                [MatrixEffectStatic, colors[0], colors[1], colors[2]],
+            RazerChromaEffect.Breathing when colors.Length is 3 or 6 =>
+                [MatrixEffectBreathing, flags == 0 ? (byte)(colors.Length / 3) : flags, .. colors],
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(effect), "The matrix dialect only defines Off, Static, Breathing and Spectrum."),
+        };
 
         return RazerFeatureReport.CreateRequest(
             transactionId,
-            4,
+            (byte)payload.Length,
             MatrixCommandClass,
             MatrixSetEffectCommandId,
-            [0x06, color[0], color[1], color[2]]);
+            payload);
     }
 
     public static (byte EffectId, byte Flags, byte Rate, byte[] Colors) ReadEffect(
