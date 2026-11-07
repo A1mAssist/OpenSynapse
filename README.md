@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/A1mAssist/OpenSynapse/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/A1mAssist/OpenSynapse?style=flat-square"></a>
-  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-44D62C?style=flat-square"></a>
+  <a href="LICENSE"><img alt="AGPL-3.0 License" src="https://img.shields.io/badge/license-AGPL--3.0-44D62C?style=flat-square"></a>
   <img alt="Windows 11 x64" src="https://img.shields.io/badge/Windows-11%20x64-0078D4?style=flat-square">
 </p>
 
@@ -115,7 +115,7 @@ If you own a device that needs support, follow the [Device Adaptation Guide](doc
 
 ## License
 
-OpenSynapse is available under the [MIT License](LICENSE). Third-party components and bundled resources keep their own licenses and distribution terms.
+OpenSynapse is licensed under the [GNU Affero General Public License v3.0](LICENSE), AGPL-3.0-only. Copyright (c) 2026 A1mAssist. If you modify the program and let users interact with it over a network, those users must be offered the corresponding source. Third-party components and bundled resources keep their own licenses and distribution terms.
 
 The protocol implementation references [OpenRazer](https://github.com/openrazer/openrazer), [OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB), and other public implementations. OpenSynapse is not affiliated with or endorsed by Razer Inc. Razer and related product names are trademarks of their respective owners.
 
