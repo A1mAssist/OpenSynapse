@@ -403,12 +403,18 @@ public sealed class RazerHidSpecialLightingService
             if (_krakenV4Transports.TryAdd(devicePath, created))
             {
                 transport = created;
+                _diagnostic?.Invoke("kraken lighting session=open");
             }
             else
             {
                 await created.DisposeAsync().ConfigureAwait(false);
                 transport = _krakenV4Transports[devicePath];
+                _diagnostic?.Invoke("kraken lighting session=reuse");
             }
+        }
+        else
+        {
+            _diagnostic?.Invoke("kraken lighting session=reuse");
         }
 
         try
@@ -432,6 +438,7 @@ public sealed class RazerHidSpecialLightingService
                 // The takeover animation drops the first effect; repeat it on the
                 // same session so the first click sticks without a second click.
                 await Task.Delay(TimeSpan.FromMilliseconds(1500), cancellationToken).ConfigureAwait(false);
+                _diagnostic?.Invoke("kraken lighting retry=1");
                 await SendKrakenV4ReportAsync(transport, reports[^1], cancellationToken).ConfigureAwait(false);
             }
         }
@@ -439,6 +446,7 @@ public sealed class RazerHidSpecialLightingService
         {
             if (_krakenV4Transports.TryRemove(devicePath, out var stale))
             {
+                _diagnostic?.Invoke("kraken lighting session=reset");
                 await stale.DisposeAsync().ConfigureAwait(false);
             }
 
