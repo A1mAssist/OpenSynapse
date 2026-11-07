@@ -83,7 +83,7 @@ public partial class App
 
         try
         {
-            _chromaRestHost = new ChromaRestHost(
+            var host = new ChromaRestHost(
                 () => viewModel.CurrentDeviceDescriptors,
                 _bladeLightingController,
                 () => Volatile.Read(ref _closing) != 0 || !_behaviorSettings.RestoreLightingAfterChromaSession
@@ -93,13 +93,48 @@ public partial class App
                 viewModel.RazerHid.ApplyChromaFrameAsync,
                 viewModel.Lighting.IsBladeChromaOverrideEnabled,
                 _behaviorSettings.ChromaBlockedSources);
-            _chromaRestHost.StartAsync();
-            _diagnosticLog.TryWrite("chroma-rest", "Chroma REST host listening on 127.0.0.1:54235.");
+            _chromaRestHost = host;
+            _ = StartChromaRestHostAsync(host);
         }
-        catch (SocketException exception)
+        catch (Exception exception)
         {
             _chromaRestHost = null;
             _diagnosticLog.TryWrite("chroma-rest", $"Chroma REST host unavailable: {exception.Message}");
+        }
+    }
+
+    private async Task StartChromaRestHostAsync(ChromaRestHost host)
+    {
+        // A restart can briefly leave the previous instance holding the fixed port.
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                await host.StartAsync().ConfigureAwait(false);
+                if (!ReferenceEquals(_chromaRestHost, host))
+                {
+                    await host.DisposeAsync().ConfigureAwait(false);
+                    return;
+                }
+                _diagnosticLog.TryWrite("chroma-rest", "Chroma REST host listening on 127.0.0.1:54235.");
+                return;
+            }
+            catch (SocketException exception) when (
+                exception.SocketErrorCode == SocketError.AddressAlreadyInUse &&
+                attempt < 10 &&
+                ReferenceEquals(_chromaRestHost, host))
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(500)).ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                if (ReferenceEquals(_chromaRestHost, host))
+                {
+                    _chromaRestHost = null;
+                    _diagnosticLog.TryWrite("chroma-rest", $"Chroma REST host unavailable: {exception.Message}");
+                }
+                return;
+            }
         }
     }
 
