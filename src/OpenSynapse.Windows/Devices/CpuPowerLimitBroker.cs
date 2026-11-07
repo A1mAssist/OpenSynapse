@@ -25,7 +25,7 @@ public static class CpuPowerLimitBroker
             return CpuPowerLimitReport.Unavailable(local.Availability, local.Detail);
         }
 
-        var served = await DedicatedGpuModeServiceClient
+        var served = await OpenSynapseServiceClient
             .TryGetCpuPowerLimitAsync(cancellationToken)
             .ConfigureAwait(false);
         return served ?? NoPrivilegedPath(local.Detail);
@@ -47,7 +47,7 @@ public static class CpuPowerLimitBroker
             return CpuPowerLimitReport.Unavailable(local.Availability, local.Detail);
         }
 
-        var served = await DedicatedGpuModeServiceClient
+        var served = await OpenSynapseServiceClient
             .TrySetCpuPowerLimitAsync(limit.Pl1Watts, limit.Pl2Watts, cancellationToken)
             .ConfigureAwait(false);
         return served ?? NoPrivilegedPath(local.Detail);
@@ -73,7 +73,7 @@ public static class CpuPowerLimitBroker
             return CpuPowerLimitReport.Unavailable(local.Availability, local.Detail);
         }
 
-        var served = await DedicatedGpuModeServiceClient
+        var served = await OpenSynapseServiceClient
             .TryRestoreCpuPowerLimitAsync(
                 baseline?.Pl1Watts,
                 baseline?.Pl2Watts,

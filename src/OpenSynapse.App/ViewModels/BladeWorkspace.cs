@@ -132,7 +132,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             SetDisplayMuxModeAsync,
             WindowsDedicatedGpuMode.GetStatus,
             WindowsDedicatedGpuMode.SetEnabledAsync,
-            DedicatedGpuModeServiceClient.TrySetEnabledAsync,
+            OpenSynapseServiceClient.TrySetEnabledAsync,
             WindowsDedicatedGpuMode.RestartFaultedAsync,
             WindowsDisplayTopology.Read);
     }

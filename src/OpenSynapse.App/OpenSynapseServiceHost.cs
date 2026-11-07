@@ -12,7 +12,7 @@ using OpenSynapse.Windows.Lifecycle;
 
 namespace OpenSynapse.App;
 
-internal static class GpuModeServiceHost
+internal static class OpenSynapseServiceHost
 {
     private const int IdleStopSeconds = 5;
     private static readonly TimeSpan RequestReadTimeout = TimeSpan.FromSeconds(5);
@@ -22,7 +22,7 @@ internal static class GpuModeServiceHost
         if (args.Length == 0 ||
             !StringComparer.Ordinal.Equals(
                 args[0],
-                DedicatedGpuModeServiceProtocol.ServiceArgument))
+                OpenSynapseServiceProtocol.ServiceArgument))
         {
             return false;
         }
@@ -31,7 +31,7 @@ internal static class GpuModeServiceHost
         if (args.Length == 3 &&
             StringComparer.Ordinal.Equals(
                 args[1],
-                DedicatedGpuModeServiceProtocol.ServiceUserArgument))
+                OpenSynapseServiceProtocol.ServiceUserArgument))
         {
             try
             {
@@ -43,20 +43,20 @@ internal static class GpuModeServiceHost
         }
 
         Environment.CurrentDirectory = AppContext.BaseDirectory;
-        ServiceBase.Run(new DedicatedGpuModeWindowsService(authorizedUser));
+        ServiceBase.Run(new OpenSynapseWindowsService(authorizedUser));
         return true;
     }
 
-    private sealed class DedicatedGpuModeWindowsService : ServiceBase
+    private sealed class OpenSynapseWindowsService : ServiceBase
     {
         private readonly SecurityIdentifier? _authorizedUser;
         private readonly CancellationTokenSource _stop = new();
         private Task? _worker;
 
-        public DedicatedGpuModeWindowsService(SecurityIdentifier? authorizedUser)
+        public OpenSynapseWindowsService(SecurityIdentifier? authorizedUser)
         {
             _authorizedUser = authorizedUser;
-            ServiceName = DedicatedGpuModeServiceProtocol.ServiceName;
+            ServiceName = OpenSynapseServiceProtocol.ServiceName;
             CanStop = true;
             AutoLog = true;
         }
@@ -182,13 +182,13 @@ internal static class GpuModeServiceHost
                 return;
             }
 
-            DedicatedGpuModeServiceRequest? request = null;
+            OpenSynapseServiceRequest? request = null;
             if (!string.IsNullOrWhiteSpace(line) &&
-                line.Length <= DedicatedGpuModeServiceProtocol.MaximumMessageLength)
+                line.Length <= OpenSynapseServiceProtocol.MaximumMessageLength)
             {
                 try
                 {
-                    request = JsonSerializer.Deserialize<DedicatedGpuModeServiceRequest>(line);
+                    request = JsonSerializer.Deserialize<OpenSynapseServiceRequest>(line);
                 }
                 catch (JsonException)
                 {
@@ -199,66 +199,66 @@ internal static class GpuModeServiceHost
             await writer.WriteLineAsync(JsonSerializer.Serialize(response)).ConfigureAwait(false);
         }
 
-        private static DedicatedGpuModeServiceResponse Execute(
-            DedicatedGpuModeServiceRequest? request,
+        private static OpenSynapseServiceResponse Execute(
+            OpenSynapseServiceRequest? request,
             SecurityIdentifier? authorizedUser)
         {
             if (request is null ||
-                request.Version != DedicatedGpuModeServiceProtocol.Version)
+                request.Version != OpenSynapseServiceProtocol.Version)
             {
                 return Invalid("Unsupported OpenSynapse service request.");
             }
 
-            switch (DedicatedGpuModeServiceRequestParser.Parse(request))
+            switch (OpenSynapseServiceRequestParser.Parse(request))
             {
-                case DedicatedGpuModeServiceAction.Status:
-                    return new DedicatedGpuModeServiceResponse(
-                        DedicatedGpuModeServiceProtocol.Version,
+                case OpenSynapseServiceAction.Status:
+                    return new OpenSynapseServiceResponse(
+                        OpenSynapseServiceProtocol.Version,
                         Handled: true,
                         DedicatedGpuSwitchOutcome.Success,
                         ExitCode: 0,
                         Status: WindowsDedicatedGpuMode.GetStatus(),
                         Error: null);
 
-                case DedicatedGpuModeServiceAction.Restart:
+                case OpenSynapseServiceAction.Restart:
                     var restart = WindowsDedicatedGpuMode.RestartFaultedDirect();
-                    return new DedicatedGpuModeServiceResponse(
-                        DedicatedGpuModeServiceProtocol.Version,
+                    return new OpenSynapseServiceResponse(
+                        OpenSynapseServiceProtocol.Version,
                         Handled: true,
                         restart.Outcome,
                         ExitCode: restart.ExitCode,
                         Status: WindowsDedicatedGpuMode.GetStatus(),
                         Error: null);
 
-                case DedicatedGpuModeServiceAction.Set:
+                case OpenSynapseServiceAction.Set:
                     var result = WindowsDedicatedGpuMode.SetEnabledDirect(
                         request.Enabled!.Value,
                         validateDisplayPolicy: false);
-                    return new DedicatedGpuModeServiceResponse(
-                        DedicatedGpuModeServiceProtocol.Version,
+                    return new OpenSynapseServiceResponse(
+                        OpenSynapseServiceProtocol.Version,
                         Handled: true,
                         result.Outcome,
                         ExitCode: result.ExitCode,
                         Status: WindowsDedicatedGpuMode.GetStatus(),
                         Error: null);
 
-                case DedicatedGpuModeServiceAction.EnsureMacroAgent:
+                case OpenSynapseServiceAction.EnsureMacroAgent:
                     return EnsureMacroAgent(authorizedUser);
 
-                case DedicatedGpuModeServiceAction.StartMacroAgent:
+                case OpenSynapseServiceAction.StartMacroAgent:
                     return StartMacroAgent();
 
-                case DedicatedGpuModeServiceAction.StartChromaBroker:
+                case OpenSynapseServiceAction.StartChromaBroker:
                     return StartChromaBroker(authorizedUser, request.ParentProcessId);
 
-                case DedicatedGpuModeServiceAction.StopChromaBroker:
+                case OpenSynapseServiceAction.StopChromaBroker:
                     return StopChromaBroker();
 
-                case DedicatedGpuModeServiceAction.GpuClockOffsetStatus:
+                case OpenSynapseServiceAction.GpuClockOffsetStatus:
                     var clockRead = NvApiGpuClockOffset.TryRead(
                         out var clockCore, out var clockMemory, out var clockReadError);
-                    return new DedicatedGpuModeServiceResponse(
-                        DedicatedGpuModeServiceProtocol.Version,
+                    return new OpenSynapseServiceResponse(
+                        OpenSynapseServiceProtocol.Version,
                         Handled: true,
                         DedicatedGpuSwitchOutcome.Success,
                         ExitCode: 0,
@@ -268,13 +268,13 @@ internal static class GpuModeServiceHost
                         CoreOffsetMhz: clockRead ? clockCore : null,
                         MemoryOffsetMhz: clockRead ? clockMemory : null);
 
-                case DedicatedGpuModeServiceAction.SetGpuClockOffset:
+                case OpenSynapseServiceAction.SetGpuClockOffset:
                     var clockApplied = NvApiGpuClockOffset.TryApply(
                         request.CoreOffsetMhz!.Value,
                         request.MemoryOffsetMhz!.Value,
                         out var clockApplyError);
-                    return new DedicatedGpuModeServiceResponse(
-                        DedicatedGpuModeServiceProtocol.Version,
+                    return new OpenSynapseServiceResponse(
+                        OpenSynapseServiceProtocol.Version,
                         Handled: true,
                         clockApplied ? DedicatedGpuSwitchOutcome.Success : DedicatedGpuSwitchOutcome.Failed,
                         ExitCode: clockApplied ? 0 : 1,
@@ -282,14 +282,14 @@ internal static class GpuModeServiceHost
                         Error: clockApplyError,
                         ClockOffsetAvailable: clockApplied);
 
-                case DedicatedGpuModeServiceAction.GpuClockLimitStatus:
+                case OpenSynapseServiceAction.GpuClockLimitStatus:
                     var limitAvailable = NvApiGpuClockLimit.TryProbe(out var limitProbeError);
                     var limitMhz = 0;
                     string? limitReadError = null;
                     var limitRead = limitAvailable &&
                         NvApiGpuClockLimit.TryRead(out limitMhz, out limitReadError);
-                    return new DedicatedGpuModeServiceResponse(
-                        DedicatedGpuModeServiceProtocol.Version,
+                    return new OpenSynapseServiceResponse(
+                        OpenSynapseServiceProtocol.Version,
                         Handled: true,
                         DedicatedGpuSwitchOutcome.Success,
                         ExitCode: 0,
@@ -300,12 +300,12 @@ internal static class GpuModeServiceHost
                         ClockLimitAvailable: limitAvailable && limitRead,
                         ClockLimitMhz: limitRead ? limitMhz : null);
 
-                case DedicatedGpuModeServiceAction.SetGpuClockLimit:
+                case OpenSynapseServiceAction.SetGpuClockLimit:
                     var limitApplied = NvApiGpuClockLimit.TryApply(
                         request.ClockLimitMhz!.Value,
                         out var limitApplyError);
-                    return new DedicatedGpuModeServiceResponse(
-                        DedicatedGpuModeServiceProtocol.Version,
+                    return new OpenSynapseServiceResponse(
+                        OpenSynapseServiceProtocol.Version,
                         Handled: true,
                         limitApplied ? DedicatedGpuSwitchOutcome.Success : DedicatedGpuSwitchOutcome.Failed,
                         ExitCode: limitApplied ? 0 : 1,
@@ -313,10 +313,10 @@ internal static class GpuModeServiceHost
                         Error: limitApplyError,
                         ClockLimitAvailable: limitApplied);
 
-                case DedicatedGpuModeServiceAction.CpuPowerLimitStatus:
+                case OpenSynapseServiceAction.CpuPowerLimitStatus:
                     return WithPowerLimit(controller => controller.Read());
 
-                case DedicatedGpuModeServiceAction.SetCpuPowerLimit:
+                case OpenSynapseServiceAction.SetCpuPowerLimit:
                     var powerLimit = new CpuPowerLimit(
                         request.Pl1Watts!.Value,
                         request.Pl2Watts!.Value,
@@ -324,16 +324,16 @@ internal static class GpuModeServiceHost
                         0);
                     return WithPowerLimit(controller => controller.Apply(powerLimit));
 
-                case DedicatedGpuModeServiceAction.RestoreCpuPowerLimit:
+                case OpenSynapseServiceAction.RestoreCpuPowerLimit:
                     return WithPowerLimit(controller =>
                         request.Pl1Watts is { } pl1 && request.Pl2Watts is { } pl2
                             ? controller.RestoreTo(pl1, pl2)
                             : controller.RestoreFirmware());
 
-                case DedicatedGpuModeServiceAction.CurveOptimizerStatus:
+                case OpenSynapseServiceAction.CurveOptimizerStatus:
                     return WithCurveOptimizer(_ => (true, null));
 
-                case DedicatedGpuModeServiceAction.SetCurveOptimizer:
+                case OpenSynapseServiceAction.SetCurveOptimizer:
                     var curveSteps = request.CurveSteps!.Value;
                     return WithCurveOptimizer(controller =>
                     {
@@ -354,7 +354,7 @@ internal static class GpuModeServiceHost
         /// interactive token, so the agent reaches the user's desktop and no
         /// further UAC prompt is needed.
         /// </summary>
-        private static DedicatedGpuModeServiceResponse EnsureMacroAgent(
+        private static OpenSynapseServiceResponse EnsureMacroAgent(
             SecurityIdentifier? authorizedUser)
         {
             if (authorizedUser is null)
@@ -378,15 +378,15 @@ internal static class GpuModeServiceHost
             return StartMacroAgent();
         }
 
-        private static DedicatedGpuModeServiceResponse StartMacroAgent()
+        private static OpenSynapseServiceResponse StartMacroAgent()
         {
             if (!ElevatedMacroTaskInstaller.TryStart())
             {
                 return Invalid("The macro agent task could not be started.");
             }
 
-            return new DedicatedGpuModeServiceResponse(
-                DedicatedGpuModeServiceProtocol.Version,
+            return new OpenSynapseServiceResponse(
+                OpenSynapseServiceProtocol.Version,
                 Handled: true,
                 DedicatedGpuSwitchOutcome.Success,
                 ExitCode: 0,
@@ -394,7 +394,7 @@ internal static class GpuModeServiceHost
                 Error: null);
         }
 
-        private static DedicatedGpuModeServiceResponse StartChromaBroker(
+        private static OpenSynapseServiceResponse StartChromaBroker(
             SecurityIdentifier? authorizedUser,
             int? parentProcessId)
         {
@@ -410,8 +410,8 @@ internal static class GpuModeServiceHost
 
             var error = ChromaBrokerServiceChild.Start(parentProcessId.Value, authorizedUser);
             return error is null
-                ? new DedicatedGpuModeServiceResponse(
-                    DedicatedGpuModeServiceProtocol.Version,
+                ? new OpenSynapseServiceResponse(
+                    OpenSynapseServiceProtocol.Version,
                     Handled: true,
                     DedicatedGpuSwitchOutcome.Success,
                     ExitCode: 0,
@@ -420,11 +420,11 @@ internal static class GpuModeServiceHost
                 : Invalid(error);
         }
 
-        private static DedicatedGpuModeServiceResponse StopChromaBroker()
+        private static OpenSynapseServiceResponse StopChromaBroker()
         {
             ChromaBrokerServiceChild.Stop();
-            return new DedicatedGpuModeServiceResponse(
-                DedicatedGpuModeServiceProtocol.Version,
+            return new OpenSynapseServiceResponse(
+                OpenSynapseServiceProtocol.Version,
                 Handled: true,
                 DedicatedGpuSwitchOutcome.Success,
                 ExitCode: 0,
@@ -436,7 +436,7 @@ internal static class GpuModeServiceHost
         /// Runs one CPU power operation with one controller. Failures become reports so a
         /// firmware lock or a broken PawnIO install cannot take the whole service down.
         /// </summary>
-        private static DedicatedGpuModeServiceResponse WithPowerLimit(
+        private static OpenSynapseServiceResponse WithPowerLimit(
             Func<ICpuPowerLimitController, CpuPowerLimitReport> action)
         {
             ICpuPowerLimitController? controller = null;
@@ -459,8 +459,8 @@ internal static class GpuModeServiceHost
                 controller?.Dispose();
             }
 
-            return new DedicatedGpuModeServiceResponse(
-                DedicatedGpuModeServiceProtocol.Version,
+            return new OpenSynapseServiceResponse(
+                OpenSynapseServiceProtocol.Version,
                 Handled: true,
                 report.Availability == CpuPowerLimitAvailability.Available
                     ? DedicatedGpuSwitchOutcome.Success
@@ -475,7 +475,7 @@ internal static class GpuModeServiceHost
         /// Runs one Curve Optimizer operation. The SMU cannot read the offset back, so a
         /// write is reported as accepted rather than verified.
         /// </summary>
-        private static DedicatedGpuModeServiceResponse WithCurveOptimizer(
+        private static OpenSynapseServiceResponse WithCurveOptimizer(
             Func<ICurveOptimizerController, (bool Applied, string? Error)> action)
         {
             ICurveOptimizerController? controller = null;
@@ -486,8 +486,8 @@ internal static class GpuModeServiceHost
                 RyzenSmuCurveOptimizer.TryOpen(out controller, out var detail);
                 if (controller is null)
                 {
-                    return new DedicatedGpuModeServiceResponse(
-                        DedicatedGpuModeServiceProtocol.Version,
+                    return new OpenSynapseServiceResponse(
+                        OpenSynapseServiceProtocol.Version,
                         Handled: true,
                         DedicatedGpuSwitchOutcome.Failed,
                         ExitCode: 1,
@@ -508,8 +508,8 @@ internal static class GpuModeServiceHost
                 controller?.Dispose();
             }
 
-            return new DedicatedGpuModeServiceResponse(
-                DedicatedGpuModeServiceProtocol.Version,
+            return new OpenSynapseServiceResponse(
+                OpenSynapseServiceProtocol.Version,
                 Handled: true,
                 applied ? DedicatedGpuSwitchOutcome.Success : DedicatedGpuSwitchOutcome.Failed,
                 ExitCode: applied ? 0 : 1,
@@ -518,9 +518,9 @@ internal static class GpuModeServiceHost
                 CurveOptimizerAvailable: applied);
         }
 
-        private static DedicatedGpuModeServiceResponse Invalid(string error) =>
+        private static OpenSynapseServiceResponse Invalid(string error) =>
             new(
-                DedicatedGpuModeServiceProtocol.Version,
+                OpenSynapseServiceProtocol.Version,
                 Handled: false,
                 DedicatedGpuSwitchOutcome.Failed,
                 ExitCode: 0,
@@ -549,7 +549,7 @@ internal static class GpuModeServiceHost
                 AccessControlType.Deny));
 
             return NamedPipeServerStreamAcl.Create(
-                DedicatedGpuModeServiceProtocol.PipeName,
+                OpenSynapseServiceProtocol.PipeName,
                 PipeDirection.InOut,
                 maxNumberOfServerInstances: 1,
                 PipeTransmissionMode.Byte,

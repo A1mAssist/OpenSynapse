@@ -5,7 +5,7 @@ using System.Security.Principal;
 
 namespace OpenSynapse.Windows.Lifecycle;
 
-internal sealed record DedicatedGpuServiceConfiguration(
+internal sealed record OpenSynapseServiceConfiguration(
     string BinaryPath, string Account, uint StartType, uint ServiceType, uint ErrorControl, string Dacl, bool IsRunning)
 {
     internal bool MatchesSettings(string command) =>
@@ -27,7 +27,7 @@ internal sealed record DedicatedGpuServiceConfiguration(
 
     internal static bool IsProtectedExecutable(string path)
     {
-        if (!DedicatedGpuModeServiceInstaller.IsMachineInstallPath(path) || !File.Exists(path) ||
+        if (!OpenSynapseServiceInstaller.IsMachineInstallPath(path) || !File.Exists(path) ||
             !Path.GetFileName(path).Equals("OpenSynapse.App.exe", StringComparison.OrdinalIgnoreCase)) return false;
         // Parent delete/create rights can replace a read-only executable too. Reject junctions and writable ancestors.
         for (FileSystemInfo? item = new FileInfo(Path.GetFullPath(path)); item is not null;
@@ -64,13 +64,13 @@ internal sealed record DedicatedGpuServiceConfiguration(
         sid.IsWellKnown(WellKnownSidType.BuiltinAdministratorsSid) ||
         sid.Value == "S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464"; // Windows Modules Installer
 
-    internal static DedicatedGpuServiceConfiguration? Read()
+    internal static OpenSynapseServiceConfiguration? Read()
     {
         var manager = Native.OpenSCManager(null, null, 1);
         if (manager == IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error());
         try
         {
-            var service = Native.OpenService(manager, DedicatedGpuModeServiceProtocol.ServiceName, 0x0001 | 0x0004 | 0x20000);
+            var service = Native.OpenService(manager, OpenSynapseServiceProtocol.ServiceName, 0x0001 | 0x0004 | 0x20000);
             if (service == IntPtr.Zero)
             {
                 var error = Marshal.GetLastWin32Error();

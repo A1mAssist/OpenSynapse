@@ -130,7 +130,7 @@ public partial class App : Application
         try
         {
             if (Environment.ProcessPath is string executablePath &&
-                DedicatedGpuModeServiceInstaller.IsMachineInstallPath(executablePath) &&
+                OpenSynapseServiceInstaller.IsMachineInstallPath(executablePath) &&
                 WindowsStartupManager.TryRepairStaleRegistration(executablePath))
             {
                 _diagnosticLog.TryWrite(
@@ -276,7 +276,7 @@ public partial class App : Application
 
         try
         {
-            if (!await DedicatedGpuModeServiceClient.TryEnsureMacroAgentAsync()
+            if (!await OpenSynapseServiceClient.TryEnsureMacroAgentAsync()
                     .ConfigureAwait(false))
             {
                 _diagnosticLog.TryWrite(

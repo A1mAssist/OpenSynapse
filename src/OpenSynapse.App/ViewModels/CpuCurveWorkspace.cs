@@ -76,7 +76,7 @@ public sealed class CpuCurveWorkspace : INotifyPropertyChanged
         var timedOut = false;
         try
         {
-            state = await DedicatedGpuModeServiceClient.TryGetCurveOptimizerAsync();
+            state = await OpenSynapseServiceClient.TryGetCurveOptimizerAsync();
         }
         catch (OperationCanceledException)
         {
@@ -116,7 +116,7 @@ public sealed class CpuCurveWorkspace : INotifyPropertyChanged
                 {
                     try
                     {
-                        var result = await DedicatedGpuModeServiceClient.TrySetCurveOptimizerAsync(
+                        var result = await OpenSynapseServiceClient.TrySetCurveOptimizerAsync(
                             steps, cancellationToken);
                         if (result is null || !result.Applied)
                         {

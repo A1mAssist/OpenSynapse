@@ -12,7 +12,7 @@ namespace OpenSynapse.Windows.Lifecycle;
 /// service, or a confirmed protocol rejection returns null for the UAC helper.
 /// A PnP write with no trustworthy terminal response is uncertain, never a fallback.
 /// </summary>
-public static class DedicatedGpuModeServiceClient
+public static class OpenSynapseServiceClient
 {
     private static readonly TimeSpan ServiceStartTimeout = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan PipeConnectTimeout = TimeSpan.FromSeconds(3);
@@ -22,9 +22,9 @@ public static class DedicatedGpuModeServiceClient
         bool enabled,
         CancellationToken cancellationToken = default)
     {
-        var request = new DedicatedGpuModeServiceRequest(
-            DedicatedGpuModeServiceProtocol.Version,
-            DedicatedGpuModeServiceProtocol.SetOperation,
+        var request = new OpenSynapseServiceRequest(
+            OpenSynapseServiceProtocol.Version,
+            OpenSynapseServiceProtocol.SetOperation,
             enabled);
 
         return await SendWithWakeupRetryAsync(request, cancellationToken).ConfigureAwait(false);
@@ -37,9 +37,9 @@ public static class DedicatedGpuModeServiceClient
     public static async Task<DedicatedGpuSwitchResult?> TryRestartDeviceAsync(
         CancellationToken cancellationToken = default)
     {
-        var request = new DedicatedGpuModeServiceRequest(
-            DedicatedGpuModeServiceProtocol.Version,
-            DedicatedGpuModeServiceProtocol.RestartOperation,
+        var request = new OpenSynapseServiceRequest(
+            OpenSynapseServiceProtocol.Version,
+            OpenSynapseServiceProtocol.RestartOperation,
             Enabled: null);
 
         return await SendWithWakeupRetryAsync(request, cancellationToken).ConfigureAwait(false);
@@ -55,9 +55,9 @@ public static class DedicatedGpuModeServiceClient
     public static async Task<bool> TryEnsureMacroAgentAsync(
         CancellationToken cancellationToken = default)
     {
-        var request = new DedicatedGpuModeServiceRequest(
-            DedicatedGpuModeServiceProtocol.Version,
-            DedicatedGpuModeServiceProtocol.EnsureMacroAgentOperation,
+        var request = new OpenSynapseServiceRequest(
+            OpenSynapseServiceProtocol.Version,
+            OpenSynapseServiceProtocol.EnsureMacroAgentOperation,
             Enabled: null);
 
         var response = await SendWithWakeupRetryAsync(request, cancellationToken)
@@ -78,9 +78,9 @@ public static class DedicatedGpuModeServiceClient
             return false;
         }
 
-        var request = new DedicatedGpuModeServiceRequest(
-            DedicatedGpuModeServiceProtocol.Version,
-            DedicatedGpuModeServiceProtocol.StartChromaBrokerOperation,
+        var request = new OpenSynapseServiceRequest(
+            OpenSynapseServiceProtocol.Version,
+            OpenSynapseServiceProtocol.StartChromaBrokerOperation,
             Enabled: null,
             ParentProcessId: parentProcessId);
 
@@ -101,9 +101,9 @@ public static class DedicatedGpuModeServiceClient
             return true;
         }
 
-        var request = new DedicatedGpuModeServiceRequest(
-            DedicatedGpuModeServiceProtocol.Version,
-            DedicatedGpuModeServiceProtocol.StopChromaBrokerOperation,
+        var request = new OpenSynapseServiceRequest(
+            OpenSynapseServiceProtocol.Version,
+            OpenSynapseServiceProtocol.StopChromaBrokerOperation,
             Enabled: null);
 
         var response = await SendForResponseAsync(
@@ -124,9 +124,9 @@ public static class DedicatedGpuModeServiceClient
     public static async Task<DedicatedGpuClockOffsetState?> TryGetGpuClockOffsetAsync(
         CancellationToken cancellationToken = default)
     {
-        var request = new DedicatedGpuModeServiceRequest(
-            DedicatedGpuModeServiceProtocol.Version,
-            DedicatedGpuModeServiceProtocol.GpuClockOffsetStatusOperation,
+        var request = new OpenSynapseServiceRequest(
+            OpenSynapseServiceProtocol.Version,
+            OpenSynapseServiceProtocol.GpuClockOffsetStatusOperation,
             Enabled: null);
 
         var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
@@ -150,9 +150,9 @@ public static class DedicatedGpuModeServiceClient
         int memoryOffsetMhz,
         CancellationToken cancellationToken = default)
     {
-        var request = new DedicatedGpuModeServiceRequest(
-            DedicatedGpuModeServiceProtocol.Version,
-            DedicatedGpuModeServiceProtocol.SetGpuClockOffsetOperation,
+        var request = new OpenSynapseServiceRequest(
+            OpenSynapseServiceProtocol.Version,
+            OpenSynapseServiceProtocol.SetGpuClockOffsetOperation,
             Enabled: null,
             CoreOffsetMhz: coreOffsetMhz,
             MemoryOffsetMhz: memoryOffsetMhz);
@@ -168,9 +168,9 @@ public static class DedicatedGpuModeServiceClient
     public static async Task<DedicatedGpuClockLimitState?> TryGetGpuClockLimitAsync(
         CancellationToken cancellationToken = default)
     {
-        var request = new DedicatedGpuModeServiceRequest(
-            DedicatedGpuModeServiceProtocol.Version,
-            DedicatedGpuModeServiceProtocol.GpuClockLimitStatusOperation,
+        var request = new OpenSynapseServiceRequest(
+            OpenSynapseServiceProtocol.Version,
+            OpenSynapseServiceProtocol.GpuClockLimitStatusOperation,
             Enabled: null);
 
         var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
@@ -189,9 +189,9 @@ public static class DedicatedGpuModeServiceClient
         int megahertz,
         CancellationToken cancellationToken = default)
     {
-        var request = new DedicatedGpuModeServiceRequest(
-            DedicatedGpuModeServiceProtocol.Version,
-            DedicatedGpuModeServiceProtocol.SetGpuClockLimitOperation,
+        var request = new OpenSynapseServiceRequest(
+            OpenSynapseServiceProtocol.Version,
+            OpenSynapseServiceProtocol.SetGpuClockLimitOperation,
             Enabled: null,
             ClockLimitMhz: megahertz);
 
@@ -206,9 +206,9 @@ public static class DedicatedGpuModeServiceClient
     public static async Task<CpuPowerLimitReport?> TryGetCpuPowerLimitAsync(
         CancellationToken cancellationToken = default)
     {
-        var request = new DedicatedGpuModeServiceRequest(
-            DedicatedGpuModeServiceProtocol.Version,
-            DedicatedGpuModeServiceProtocol.CpuPowerLimitStatusOperation,
+        var request = new OpenSynapseServiceRequest(
+            OpenSynapseServiceProtocol.Version,
+            OpenSynapseServiceProtocol.CpuPowerLimitStatusOperation,
             Enabled: null);
 
         var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
@@ -221,9 +221,9 @@ public static class DedicatedGpuModeServiceClient
         double pl2Watts,
         CancellationToken cancellationToken = default)
     {
-        var request = new DedicatedGpuModeServiceRequest(
-            DedicatedGpuModeServiceProtocol.Version,
-            DedicatedGpuModeServiceProtocol.SetCpuPowerLimitOperation,
+        var request = new OpenSynapseServiceRequest(
+            OpenSynapseServiceProtocol.Version,
+            OpenSynapseServiceProtocol.SetCpuPowerLimitOperation,
             Enabled: null,
             Pl1Watts: pl1Watts,
             Pl2Watts: pl2Watts);
@@ -241,9 +241,9 @@ public static class DedicatedGpuModeServiceClient
         double? pl2Watts,
         CancellationToken cancellationToken = default)
     {
-        var request = new DedicatedGpuModeServiceRequest(
-            DedicatedGpuModeServiceProtocol.Version,
-            DedicatedGpuModeServiceProtocol.RestoreCpuPowerLimitOperation,
+        var request = new OpenSynapseServiceRequest(
+            OpenSynapseServiceProtocol.Version,
+            OpenSynapseServiceProtocol.RestoreCpuPowerLimitOperation,
             Enabled: null,
             Pl1Watts: pl1Watts,
             Pl2Watts: pl2Watts);
@@ -259,9 +259,9 @@ public static class DedicatedGpuModeServiceClient
     public static async Task<DedicatedGpuCurveOptimizerState?> TryGetCurveOptimizerAsync(
         CancellationToken cancellationToken = default)
     {
-        var request = new DedicatedGpuModeServiceRequest(
-            DedicatedGpuModeServiceProtocol.Version,
-            DedicatedGpuModeServiceProtocol.CurveOptimizerStatusOperation,
+        var request = new OpenSynapseServiceRequest(
+            OpenSynapseServiceProtocol.Version,
+            OpenSynapseServiceProtocol.CurveOptimizerStatusOperation,
             Enabled: null);
 
         var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
@@ -275,9 +275,9 @@ public static class DedicatedGpuModeServiceClient
         int steps,
         CancellationToken cancellationToken = default)
     {
-        var request = new DedicatedGpuModeServiceRequest(
-            DedicatedGpuModeServiceProtocol.Version,
-            DedicatedGpuModeServiceProtocol.SetCurveOptimizerOperation,
+        var request = new OpenSynapseServiceRequest(
+            OpenSynapseServiceProtocol.Version,
+            OpenSynapseServiceProtocol.SetCurveOptimizerOperation,
             Enabled: null,
             CurveSteps: steps);
 
@@ -290,7 +290,7 @@ public static class DedicatedGpuModeServiceClient
     }
 
     private static async Task<DedicatedGpuSwitchResult?> SendWithWakeupRetryAsync(
-        DedicatedGpuModeServiceRequest request,
+        OpenSynapseServiceRequest request,
         CancellationToken cancellationToken)
     {
         var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
@@ -299,15 +299,15 @@ public static class DedicatedGpuModeServiceClient
             : new DedicatedGpuSwitchResult(response.Outcome, response.ExitCode);
     }
 
-    private static Task<DedicatedGpuModeServiceResponse?> SendForResponseAsync(
-        DedicatedGpuModeServiceRequest request,
+    private static Task<OpenSynapseServiceResponse?> SendForResponseAsync(
+        OpenSynapseServiceRequest request,
         CancellationToken cancellationToken) =>
         SendForResponseAsync(request, cancellationToken, TryEnsureServiceRunningAsync, SendAsync, Task.Delay);
 
-    internal static async Task<DedicatedGpuModeServiceResponse?> SendForResponseAsync(
-        DedicatedGpuModeServiceRequest request, CancellationToken cancellationToken,
+    internal static async Task<OpenSynapseServiceResponse?> SendForResponseAsync(
+        OpenSynapseServiceRequest request, CancellationToken cancellationToken,
         Func<CancellationToken, Task<bool>> ensureRunning,
-        Func<DedicatedGpuModeServiceRequest, CancellationToken, Task<DedicatedGpuModeServiceResponse?>> send,
+        Func<OpenSynapseServiceRequest, CancellationToken, Task<OpenSynapseServiceResponse?>> send,
         Func<TimeSpan, CancellationToken, Task> delay)
     {
         // The service is demand-started and stops itself after an idle window, so a
@@ -325,7 +325,7 @@ public static class DedicatedGpuModeServiceClient
             var response = await send(request, cancellationToken).ConfigureAwait(false);
             if (response is not null &&
                 response.Handled &&
-                response.Version == DedicatedGpuModeServiceProtocol.Version)
+                response.Version == OpenSynapseServiceProtocol.Version)
             {
                 return response;
             }
@@ -344,7 +344,7 @@ public static class DedicatedGpuModeServiceClient
         {
             try
             {
-                using var controller = new ServiceController(DedicatedGpuModeServiceProtocol.ServiceName);
+                using var controller = new ServiceController(OpenSynapseServiceProtocol.ServiceName);
                 controller.Refresh();
                 if (controller.Status == ServiceControllerStatus.Running)
                 {
@@ -386,7 +386,7 @@ public static class DedicatedGpuModeServiceClient
         try
         {
             using var controller = new ServiceController(
-                DedicatedGpuModeServiceProtocol.ServiceName);
+                OpenSynapseServiceProtocol.ServiceName);
             controller.Refresh();
             return controller.Status is ServiceControllerStatus.Running or
                 ServiceControllerStatus.StartPending;
@@ -398,12 +398,12 @@ public static class DedicatedGpuModeServiceClient
         }
     }
 
-    private static Task<DedicatedGpuModeServiceResponse?> SendAsync(
-        DedicatedGpuModeServiceRequest request,
+    private static Task<OpenSynapseServiceResponse?> SendAsync(
+        OpenSynapseServiceRequest request,
         CancellationToken cancellationToken) => ExchangeAsync(request, cancellationToken, async token =>
         {
             var pipe = new NamedPipeClientStream(
-                ".", DedicatedGpuModeServiceProtocol.PipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
+                ".", OpenSynapseServiceProtocol.PipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
             try
             {
                 await pipe.ConnectAsync((int)PipeConnectTimeout.TotalMilliseconds, token).ConfigureAwait(false);
@@ -412,12 +412,12 @@ public static class DedicatedGpuModeServiceClient
             catch { pipe.Dispose(); throw; }
         });
 
-    internal static async Task<DedicatedGpuModeServiceResponse?> ExchangeAsync(
-        DedicatedGpuModeServiceRequest request, CancellationToken cancellationToken,
+    internal static async Task<OpenSynapseServiceResponse?> ExchangeAsync(
+        OpenSynapseServiceRequest request, CancellationToken cancellationToken,
         Func<CancellationToken, Task<Stream>> connect, TimeSpan? responseTimeout = null)
     {
-        var pnpWrite = request.Operation is DedicatedGpuModeServiceProtocol.SetOperation or
-            DedicatedGpuModeServiceProtocol.RestartOperation;
+        var pnpWrite = request.Operation is OpenSynapseServiceProtocol.SetOperation or
+            OpenSynapseServiceProtocol.RestartOperation;
         var dispatched = false;
         try
         {
@@ -449,22 +449,22 @@ public static class DedicatedGpuModeServiceClient
             timeout.CancelAfter(responseTimeout ?? ResponseTimeout);
             var line = await reader.ReadLineAsync(timeout.Token).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(line) ||
-                line.Length > DedicatedGpuModeServiceProtocol.MaximumMessageLength)
+                line.Length > OpenSynapseServiceProtocol.MaximumMessageLength)
             {
-                if (pnpWrite) throw new IOException("The GPU service did not return a complete response.");
+                if (pnpWrite) throw new IOException("The OpenSynapse service did not return a complete response.");
                 return null;
             }
 
-            var response = JsonSerializer.Deserialize<DedicatedGpuModeServiceResponse>(line);
+            var response = JsonSerializer.Deserialize<OpenSynapseServiceResponse>(line);
             if (pnpWrite && (response is null ||
-                response.Version != DedicatedGpuModeServiceProtocol.Version || !Enum.IsDefined(response.Outcome)))
-                throw new IOException("The GPU service returned an untrustworthy write response.");
+                response.Version != OpenSynapseServiceProtocol.Version || !Enum.IsDefined(response.Outcome)))
+                throw new IOException("The OpenSynapse service returned an untrustworthy write response.");
             return response;
         }
         catch (Exception exception) when (pnpWrite && dispatched)
         {
             throw new DedicatedGpuOperationUncertainException(
-                "The GPU service request may have executed; its terminal state is unknown.", exception);
+                "The OpenSynapse service request may have executed; its terminal state is unknown.", exception);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
