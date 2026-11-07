@@ -4,7 +4,24 @@
 
 ## 运行时可用性
 
-下面的清单是 manifest 能力库存。运行时仍必须先解析到设备端点，并且事务实际被设备接受，软件才会显示对应控件；事务被拒绝或端点不可用时，控件会隐藏。下面的 91-byte HID 路径来自 OpenRazer 协议定义。独立的 OpenSynapse `RzChromaSDK64.dll` 兼容层实现 Chroma SDK 4.0.1 ABI，见 [Chroma SDK 兼容层](CHROMA_SDK_SHIM.md)。
+下面的清单是 manifest 能力库存。运行时仍必须先解析到设备端点，并且事务实际被设备接受，软件才会显示对应控件；事务被拒绝或端点不可用时，控件会隐藏。下面的 91-byte HID 路径来自 OpenRazer 协议定义。雷蛇官方的 `RzChromaSDK64.dll` 由 OpenSynapse 的 `ChromaBroker` 服务接管。
+
+## 通道归属
+
+`ChromaDeviceCatalog` 复制雷云 Chroma SDK Devices 4.1.0 的 `Devices.xml`，共 327 个 PID。设备连上后，由这份清单决定它归哪条通道：
+
+| 通道 | 设备 | 帧处理 |
+|---|---|---|
+| keyboard | 键盘和 Blade 笔记本 | 能写帧的按自身矩阵输出；否则输出一个静态色 |
+| mouse | 鼠标 | 能写帧的按自身矩阵输出；否则输出一个静态色 |
+| headset | Kraken 耳机 | 静态色 |
+| mousepad | 鼠标垫，以及雷云归到 `mousemat` 的支架和配件 | 能写帧的按自身矩阵输出；否则输出一个静态色 |
+| keypad | Orbweaver、Tartarus V2/Pro | 键区矩阵缩放后写入 |
+| chromalink | Aether 灯具、扩展坞、支架、ARGB 控制器和 Chroma 模块 | 整帧平均色 |
+
+不在清单里的设备仍然保留自己的灯光页面，但 Chroma 客户端不会向它投递灯效。
+
+清单里的 PID 只要以 91-byte vendor feature interface 枚举，并且没有更完整的专属页面，就会走 class 0x10 整机静态色路径；这是覆盖旧鼠标、旧耳机和音频设备的兜底。没有可枚举端点的设备不会凭空出现，仍需单独取得报文后才能接入。
 
 ## Blade Chroma REST
 
@@ -218,7 +235,7 @@
 
 ## 边界说明
 
-- OpenSynapse 不加载雷云或 Razer 签名的 `RzChromaConnectAPI.dll`；可选的 `RzChromaSDK64.dll` 是 OpenSynapse 自己的 ABI 兼容层。
+- OpenSynapse 不加载雷云或 Razer 签名的 `RzChromaConnectAPI.dll`；雷蛇官方的 `RzChromaSDK64.dll` 由 OpenSynapse 的 `ChromaBroker` 服务接管。
 - Chroma REST 当前只在 Blade 16 键盘上完成验证；这不代表 REST 帧会被转译到所有 OpenRazer 矩阵设备。
 - 矩阵尺寸和 manifest 事务只是能力元数据，不是硬件认证；连接端点和成功事务仍是最终依据。
 - 不支持或未验证的控件会被隐藏，不会伪装成可配置控件。

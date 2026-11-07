@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Lifecycle;
+using OpenSynapse.Windows.Lighting;
 using Velopack;
 using Velopack.Locators;
 using Velopack.Windows;
@@ -16,12 +17,12 @@ public static class Program
     {
         if (args.Contains("--install-service", StringComparer.OrdinalIgnoreCase))
         {
-            var ok = DedicatedGpuModeServiceInstaller.EnsureInstalled(Environment.ProcessPath);
+            var ok = OpenSynapseServiceInstaller.EnsureInstalled(Environment.ProcessPath);
             Console.WriteLine(ok
-                ? "OpenSynapseGpuMode service registered."
-                : !DedicatedGpuModeServiceInstaller.IsMachineInstallPath(Environment.ProcessPath)
-                    ? "OpenSynapseGpuMode service registration failed: install under Program Files first."
-                    : "OpenSynapseGpuMode service registration failed: run the command as administrator.");
+                ? "OpenSynapseService registered."
+                : !OpenSynapseServiceInstaller.IsMachineInstallPath(Environment.ProcessPath)
+                    ? "OpenSynapseService registration failed: install under Program Files first."
+                    : "OpenSynapseService registration failed: run the command as administrator.");
             Environment.Exit(ok ? 0 : 1);
         }
 
@@ -30,7 +31,7 @@ public static class Program
             Environment.Exit(ProbeDkmTable());
         }
 
-        if (GpuModeServiceHost.TryRun(args))
+        if (OpenSynapseServiceHost.TryRun(args))
         {
             return;
         }
@@ -52,29 +53,35 @@ public static class Program
             {
                 MigrateLegacyInstall();
                 RepairStartupRegistration();
-                EnsureGpuService();
+                EnsureOpenSynapseService();
                 EnsureMacroAgentTask();
+                MigrateChromaShim();
                 PreserveExistingShortcuts();
             })
             .OnAfterUpdateFastCallback(_ =>
             {
-                EnsureGpuService();
+                EnsureOpenSynapseService();
                 EnsureMacroAgentTask();
+                MigrateChromaShim();
                 RepairStartupRegistration();
                 PreserveExistingShortcuts();
             })
-            .OnBeforeUpdateFastCallback(_ => StopGpuService())
+            .OnBeforeUpdateFastCallback(_ => StopOpenSynapseService())
             .OnBeforeUninstallFastCallback(_ =>
             {
-                RemoveGpuService();
+                RemoveOpenSynapseService();
                 RemoveMacroAgentTask();
+                RemoveStartupRegistration();
+                MigrateChromaShim();
+                OfferUserDataCleanup();
             })
             .Run();
 
         if (ProcessIntegrityLevel.IsElevated(ProcessIntegrityLevel.Current()) &&
-            DedicatedGpuModeServiceInstaller.IsMachineInstallPath(Environment.ProcessPath))
+            OpenSynapseServiceInstaller.IsMachineInstallPath(Environment.ProcessPath))
         {
-            EnsureGpuService();
+            EnsureOpenSynapseService();
+            MigrateChromaShim();
         }
 
         MigrateLegacyUserData();
@@ -154,7 +161,7 @@ public static class Program
     {
         try
         {
-            if (DedicatedGpuModeServiceInstaller.IsMachineInstallPath(Environment.ProcessPath) &&
+            if (OpenSynapseServiceInstaller.IsMachineInstallPath(Environment.ProcessPath) &&
                 Environment.ProcessPath is string executablePath)
             {
                 _ = WindowsStartupManager.TryRepairStaleRegistration(executablePath);
@@ -165,11 +172,11 @@ public static class Program
         }
     }
 
-    private static void EnsureGpuService()
+    private static void EnsureOpenSynapseService()
     {
         try
         {
-            _ = DedicatedGpuModeServiceInstaller.EnsureInstalled(Environment.ProcessPath);
+            _ = OpenSynapseServiceInstaller.EnsureInstalled(Environment.ProcessPath);
         }
         catch (Exception)
         {
@@ -177,13 +184,13 @@ public static class Program
         }
     }
 
-    private static void StopGpuService()
+    private static void StopOpenSynapseService()
     {
         try
         {
-            if (DedicatedGpuModeServiceInstaller.IsMachineInstallPath(Environment.ProcessPath))
+            if (OpenSynapseServiceInstaller.IsMachineInstallPath(Environment.ProcessPath))
             {
-                _ = DedicatedGpuModeServiceInstaller.Stop();
+                _ = OpenSynapseServiceInstaller.Stop();
             }
         }
         catch (Exception)
@@ -225,13 +232,48 @@ public static class Program
         }
     }
 
-    private static void RemoveGpuService()
+    private static void RemoveStartupRegistration()
     {
         try
         {
-            if (DedicatedGpuModeServiceInstaller.IsMachineInstallPath(Environment.ProcessPath))
+            WindowsStartupManager.Remove();
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    private static void MigrateChromaShim()
+    {
+        try
+        {
+            LegacyChromaShimMigration.TryRestore();
+            LegacyChromaShimMigration.TryRemovePackagedShim();
+        }
+        catch (Exception)
+        {
+            // Install and uninstall must finish even when the SDK DLL is locked by a game.
+        }
+    }
+
+    private static void OfferUserDataCleanup()
+    {
+        try
+        {
+            UninstallUserDataPrompt.Offer();
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    private static void RemoveOpenSynapseService()
+    {
+        try
+        {
+            if (OpenSynapseServiceInstaller.IsMachineInstallPath(Environment.ProcessPath))
             {
-                _ = DedicatedGpuModeServiceInstaller.Remove();
+                _ = OpenSynapseServiceInstaller.Remove();
             }
         }
         catch (Exception)
@@ -279,7 +321,7 @@ public static class Program
     {
         var machineExecutable = Environment.ProcessPath;
         if (string.IsNullOrWhiteSpace(machineExecutable) ||
-            !DedicatedGpuModeServiceInstaller.IsMachineInstallPath(machineExecutable))
+            !OpenSynapseServiceInstaller.IsMachineInstallPath(machineExecutable))
         {
             return;
         }

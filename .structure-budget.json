@@ -8,9 +8,14 @@
       "maxPublicMembers": 95
     },
     {
+      "path": "src/OpenSynapse.App/ViewModels/RazerHidMappingViewModel.cs",
+      "maxLines": 960,
+      "maxPublicMembers": 40
+    },
+    {
       "path": "src/OpenSynapse.App/ViewModels/BladeWorkspace.cs",
       "maxLines": 3165,
-      "maxPublicMembers": 174
+      "maxPublicMembers": 182
     },
     {
       "path": "src/OpenSynapse.Windows/Devices/RazerHidDeviceService.cs",
@@ -19,6 +24,10 @@
     {
       "path": "src/OpenSynapse.App/MainWindow.xaml",
       "maxLines": 105
+    },
+    {
+      "path": "src/OpenSynapse.App/PerformanceOverlayWindow.xaml",
+      "maxLines": 650
     },
     {
       "path": "src/OpenSynapse.App/Views/SettingsPage.xaml.cs",
@@ -40,6 +49,10 @@
     {
       "path": "src/OpenSynapse.Windows/Input/MacroRuntime.cs",
       "maxLines": 1328
+    },
+    {
+      "path": "src/OpenSynapse.Windows/Input/RazerFilterMacroInputSink.cs",
+      "maxLines": 700
     },
     {
       "path": "src/OpenSynapse.App/App.xaml.cs",
@@ -92,12 +105,16 @@
       "maxLines": 875
     },
     {
+      "path": "src/OpenSynapse.Core/Devices/RazerDeviceTelemetry.cs",
+      "maxLines": 633
+    },
+    {
       "path": "src/OpenSynapse.Windows/Lighting/WindowsDisplayCaptureAdapter.cs",
       "maxLines": 846
     },
     {
       "path": "src/OpenSynapse.Core/Devices/BladeModelCapabilities.cs",
-      "maxLines": 925
+      "maxLines": 955
     },
     {
       "path": "src/OpenSynapse.Core/Lighting/StudioProjectCodec.cs",
@@ -204,7 +221,7 @@
     },
     {
       "path": "src/OpenSynapse.Windows/Devices/BladeTelemetryReader.cs",
-      "maxLines": 611
+      "maxLines": 685
     },
     {
       "path": "src/OpenSynapse.Windows/Protocols/RazerHeadsetAudioProtocol.cs",

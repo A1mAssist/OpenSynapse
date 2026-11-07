@@ -1013,6 +1013,12 @@
   <data name="RazerHidProtocolQueryFailed" xml:space="preserve">
     <value>The device channel could not be read.</value>
   </data>
+  <data name="RazerHidOnboardProfileRejected" xml:space="preserve">
+    <value>The device rejected the operation. Check that the profile id exists and that a slot is free.</value>
+  </data>
+  <data name="RazerHidOnboardProfileUnsupported" xml:space="preserve">
+    <value>This device does not support this onboard profile operation.</value>
+  </data>
   <data name="RazerHidMappingNoButtons" xml:space="preserve">
     <value>Device reported no mapping buttons</value>
   </data>
@@ -1369,13 +1375,16 @@
   <data name="BladeFnRuntimeStoppedBeforeAudioSync" xml:space="preserve"><value>The Blade Fn runtime stopped safely before audio synchronization completed.</value></data>
   <data name="PerformanceSamplingUnavailable" xml:space="preserve"><value>Sampling failed · showing the last value</value></data>
   <data name="ChromaRestTitle.Text" xml:space="preserve"><value>Chroma integration</value><comment>Chroma integration title</comment></data>
-  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>Allow compatible REST and SDK clients to control connected lighting locally. The SDK shim does not require Razer Synapse.</value><comment>Chroma integration description</comment></data>
+  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>Allow compatible REST and SDK clients to control connected lighting locally. The official Chroma DLL and broker do not require Razer Synapse.</value><comment>Chroma integration description</comment></data>
   <data name="ChromaRestToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Chroma integration</value><comment>Chroma integration toggle</comment></data>
   <data name="ChromaRestStatus.Text" xml:space="preserve"><value>Disabled</value></data>
   <data name="ChromaRestStatusDisabled" xml:space="preserve"><value>Disabled</value></data>
   <data name="ChromaRestStatusUnavailable" xml:space="preserve"><value>Unavailable</value></data>
   <data name="ChromaRestStatusReady" xml:space="preserve"><value>{0} · Ready</value></data>
   <data name="ChromaRestStatusSession" xml:space="preserve"><value>{0} · {1} · {2:0} fps · {3} skipped</value></data>
+  <data name="ChromaOfficialDllTitle.Text" xml:space="preserve"><value>Official Chroma DLL</value></data>
+  <data name="ChromaOfficialDllDescription.Text" xml:space="preserve"><value>Download only Razer's official RzChromaSDK64.dll and place it in C:\Windows\System32. Installed builds start the broker through the OpenSynapseService service, so no per-launch elevation is needed. The broker stands down while Razer's Chroma service is running.</value></data>
+  <data name="ChromaOfficialDllDownload.Content" xml:space="preserve"><value>Download DLL</value></data>
   <data name="ChromaRestoreTitle.Text" xml:space="preserve"><value>Restore lighting after external control</value></data>
   <data name="ChromaRestoreDescription.Text" xml:space="preserve"><value>Return to the OpenSynapse effect after the session ends or times out.</value></data>
   <data name="ChromaRestoreToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Restore lighting after external control</value></data>
@@ -1470,6 +1479,8 @@
   <data name="RazerHidScrollNotchedMode.Text" xml:space="preserve"><value>Notched</value></data>
   <data name="RazerHidScrollFreeSpinMode.Text" xml:space="preserve"><value>Free spin</value></data>
   <data name="RazerHidScrollModeLabel.Text" xml:space="preserve"><value>Scroll mode</value></data>
+  <data name="RazerHidScrollModeSmartReel" xml:space="preserve"><value>Smart scroll</value></data>
+  <data name="RazerHidScrollModeApplied" xml:space="preserve"><value>Scroll mode applied</value></data>
   <data name="RazerHidScrollAccelerationLabel.Text" xml:space="preserve"><value>Scroll acceleration</value></data>
   <data name="RazerHidSmartReelThresholdLabel.Text" xml:space="preserve"><value>Smart Reel threshold</value></data>
   <data name="RazerHidKeyswitchExpander.Header" xml:space="preserve"><value>Keyswitch optimization</value></data>
@@ -1670,15 +1681,18 @@
   <data name="TrayBatteryDescription.Text" xml:space="preserve"><value>Show battery percentages for connected mice and keyboards in the tray menu. Turning this off removes the battery rows.</value></data>
   <data name="TrayBatteryToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Tray menu peripheral battery</value></data>
   <data name="TaskbarStatusTitle.Text" xml:space="preserve"><value>Taskbar status strip</value></data>
-  <data name="TaskbarStatusDescription.Text" xml:space="preserve"><value>Show connected peripheral battery in the taskbar; also show the current performance mode when a Blade is detected.</value></data>
+  <data name="TaskbarStatusDescription.Text" xml:space="preserve"><value>Show connected peripheral battery in the taskbar. It does not show the performance mode or open the app window when clicked.</value></data>
   <data name="TaskbarStatusToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Taskbar status strip</value></data>
   <data name="PerformanceOverlayTitle" xml:space="preserve"><value>Performance overlay</value></data>
-  <data name="PerformanceOverlayDescription" xml:space="preserve"><value>Show performance mode, CPU/GPU temperatures and clocks, memory usage and clock, and fan speed above other windows. Drag it anywhere; its position is remembered.</value></data>
+  <data name="PerformanceOverlayDescription" xml:space="preserve"><value>Show performance mode, CPU/GPU temperatures and clocks, memory usage and clock, and fan speed on the desktop. Drag it anywhere; its position is remembered. Right-click to switch cards, reset the position, or close it.</value></data>
   <data name="PerformanceOverlayDetailedTitle" xml:space="preserve"><value>Detailed card</value></data>
   <data name="PerformanceOverlayDetailedDescription" xml:space="preserve"><value>Use the larger translucent card with a CPU/GPU load chart.</value></data>
   <data name="PerformanceOverlayDetailedToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Detailed performance overlay</value></data>
   <data name="PerformanceOverlayToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Performance overlay</value></data>
   <data name="PerformanceOverlayFanLabel" xml:space="preserve"><value>Fan</value></data>
+  <data name="PerformanceOverlayMenuResetPosition" xml:space="preserve"><value>Reset position</value></data>
+  <data name="PerformanceOverlayMenuSettings" xml:space="preserve"><value>Open settings</value></data>
+  <data name="PerformanceOverlayMenuClose" xml:space="preserve"><value>Close overlay</value></data>
   <data name="PeripheralLowBatteryTitle" xml:space="preserve"><value>Low peripheral battery</value></data>
   <data name="PeripheralLowBatteryBody" xml:space="preserve"><value>{0} has {1}% battery remaining.</value></data>
   <data name="ChromaSourcesTitle.Text" xml:space="preserve"><value>Chroma sources</value></data>
@@ -1751,6 +1765,8 @@
   <data name="RazerHidCapabilityBatteryDischargeCurveRead" xml:space="preserve"><value>Battery discharge curve read</value></data>
   <data name="RazerHidCapabilityBatteryDischargeCurveWrite" xml:space="preserve"><value>Battery discharge curve write</value></data>
   <data name="RazerHidCapabilityMacroStorageInfoRead" xml:space="preserve"><value>Onboard macro storage read</value></data>
+  <data name="RazerHidCapabilityMacroStorageDataWrite" xml:space="preserve"><value>Onboard macro data write</value></data>
+  <data name="RazerHidCapabilityMacroStorageNameWrite" xml:space="preserve"><value>Onboard macro name write</value></data>
   <data name="RazerHidCapabilityLkScrollWheelModeRead" xml:space="preserve"><value>Scroll wheel mode read</value></data>
   <data name="RazerHidCapabilityLkScrollWheelModeWrite" xml:space="preserve"><value>Scroll wheel mode write</value></data>
   <data name="RazerHidCapabilityMappingRead" xml:space="preserve"><value>Button mapping read</value></data>
@@ -1907,10 +1923,10 @@
     <value>Read again</value>
   </data>
   <data name="ThxHintNativeMissing" xml:space="preserve">
-    <value>The Razer THX control component is missing. Download it from Razer's official server with the button below; the file is verified before use. OpenSynapse does not bundle this component.</value>
+    <value>The Razer THX control component is missing. Use "Download and install THX components" to fetch it from Razer's official server; the file is verified before use. OpenSynapse does not bundle this component.</value>
   </data>
   <data name="ThxInstallButton.Content" xml:space="preserve">
-    <value>Install THX components</value>
+    <value>Download and install THX components</value>
   </data>
   <data name="ThxOutputLabel.Header" xml:space="preserve">
     <value>Output</value>
@@ -1944,6 +1960,30 @@
   </data>
   <data name="ThxApplyVoiceClarityButton.Content" xml:space="preserve">
     <value>Apply voice clarity</value>
+  </data>
+  <data name="ThxBassBoostLabel.Text" xml:space="preserve">
+    <value>Bass boost</value>
+    <comment>THX bass boost</comment>
+  </data>
+  <data name="ThxApplyBassBoostButton.Content" xml:space="preserve">
+    <value>Apply bass boost</value>
+    <comment>Apply THX bass boost</comment>
+  </data>
+  <data name="ThxBassBoostToggle.OnContent" xml:space="preserve">
+    <value>On</value>
+    <comment>On</comment>
+  </data>
+  <data name="ThxBassBoostToggle.OffContent" xml:space="preserve">
+    <value>Off</value>
+    <comment>Off</comment>
+  </data>
+  <data name="RazerHeadsetThxBassBoostToggle.Header" xml:space="preserve">
+    <value>Bass boost</value>
+    <comment>THX bass boost</comment>
+  </data>
+  <data name="RazerHeadsetThxBassBoostApply.Content" xml:space="preserve">
+    <value>Apply bass boost</value>
+    <comment>Apply THX bass boost</comment>
   </data>
   <data name="ThxSoundNormalizationLabel.Text" xml:space="preserve">
     <value>Volume normalization</value>
@@ -2077,9 +2117,6 @@
   <data name="ThxStatusInvalidRequest" xml:space="preserve">
     <value>The THX setting is invalid.</value>
   </data>
-  <data name="ThxDownloadComponentButton.Content" xml:space="preserve">
-    <value>Download THX control component</value>
-  </data>
   <data name="ThxStatusDownloading" xml:space="preserve">
     <value>Downloading and installing THX components...</value>
   </data>
@@ -2118,6 +2155,24 @@
   </data>
   <data name="BladeCpuPowerBoostDescription.Text" xml:space="preserve">
     <value>Allows the CPU to draw more power while the GPU is idle.</value>
+  </data>
+  <data name="BladeLegacySettingsTitle.Text" xml:space="preserve">
+    <value>Power and indicators</value>
+  </data>
+  <data name="BladeLegacySettingsDescription.Text" xml:space="preserve">
+    <value>Power, screen dim and indicator settings for older Blade models.</value>
+  </data>
+  <data name="BladeAutoSleepTitle.Text" xml:space="preserve">
+    <value>Automatic sleep</value>
+  </data>
+  <data name="BladeTimeToDimTitle.Text" xml:space="preserve">
+    <value>Screen dim (seconds)</value>
+  </data>
+  <data name="BladeIndicatorLedTitle.Text" xml:space="preserve">
+    <value>Indicator LED</value>
+  </data>
+  <data name="BladeGpuCardDetectionTitle.Text" xml:space="preserve">
+    <value>GPU card indicator</value>
   </data>
   <data name="ScanHidCommands" xml:space="preserve">
     <value>Scan HID commands</value>
@@ -2194,7 +2249,7 @@
   <data name="MacroMouseButton3" xml:space="preserve"><value>Middle</value></data>
   <data name="MacroMouseButton4" xml:space="preserve"><value>Side 1 (Mouse 4)</value></data>
   <data name="MacroMouseButton5" xml:space="preserve"><value>Side 2 (Mouse 5)</value></data>
-  <data name="MacroMouseSideCapture" xml:space="preserve"><value>Other side / multi-function (press to capture)</value></data>
+  <data name="MacroMouseSideCapture" xml:space="preserve"><value>Third / other multi-function (press to capture)</value></data>
   <data name="MacroNagaSideButton" xml:space="preserve"><value>Naga side {0}</value></data>
   <data name="MacroTriggerMouseSide.Text" xml:space="preserve"><value>Mouse side buttons</value></data>
   <data name="MacroTriggerNaga.Text" xml:space="preserve"><value>Naga side buttons</value></data>
@@ -2341,6 +2396,8 @@
   <data name="MacroTextDialogTitle" xml:space="preserve"><value>Insert text</value></data>
   <data name="MacroTriggerCleared" xml:space="preserve"><value>Trigger cleared.</value></data>
   <data name="MacroTriggerConflict" xml:space="preserve"><value>The trigger conflicts with "{0}".</value></data>
+  <data name="MacroTriggerMacroMissing" xml:space="preserve"><value>That macro no longer exists.</value></data>
+  <data name="MacroEditBusy" xml:space="preserve"><value>The trigger cannot be changed while recording or counting down.</value></data>
   <data name="MacroMediaMail" xml:space="preserve"><value>Mail</value></data>
   <data name="MacroMediaHomePage" xml:space="preserve"><value>Home</value></data>
   <data name="MacroImportButton.Content" xml:space="preserve"><value>Import…</value></data>
@@ -2485,13 +2542,12 @@
   <data name="RazerArgbDriverDescription.Text" xml:space="preserve"><value>Per-LED control needs Razer's 0F1F control driver. Install it, then refresh.</value></data>
   <data name="RazerArgbDriverButton.Content" xml:space="preserve"><value>Download ARGB driver</value></data>
   <data name="RazerHeadsetThxTitle.Text" xml:space="preserve"><value>THX Spatial Audio</value></data>
-  <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio needs the THX audio service and components. OpenSynapse downloads and installs the official THX package only; it does not install Synapse or require an activation code. Administrator rights are required.</value></data>
-  <data name="RazerHeadsetThxInstallButton.Content" xml:space="preserve"><value>Install THX components</value></data>
-  <data name="RazerHeadsetThxDownloadButton.Content" xml:space="preserve"><value>Download THX component</value></data>
+  <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio needs the THX audio service and components. One button fills in whatever is missing; OpenSynapse installs the official THX package only, without Synapse or an activation code. Administrator rights are required.</value></data>
+  <data name="RazerHeadsetThxInstallButton.Content" xml:space="preserve"><value>Download and install THX components</value></data>
   <data name="RazerHeadsetThxGameProfilesButton.Content" xml:space="preserve"><value>Update THX game profiles</value></data>
   <data name="RazerHeadsetThxPatcherButton.Content" xml:space="preserve"><value>Update THX patcher</value></data>
   <data name="RazerHeadsetThxServiceMissing" xml:space="preserve"><value>The THX service is not running. Install the official THX audio components here; Synapse is not included.</value></data>
-  <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>The THX service is ready, but the control component is missing. Download it above.</value></data>
+  <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>The THX service is ready, but the control component is missing. Install it above.</value></data>
   <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>Downloading and installing THX components...</value></data>
   <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>The THX components could not be downloaded, verified, or installed. Allow administrator rights and try again.</value></data>
   <data name="RazerHeadsetThxIncomplete" xml:space="preserve"><value>The installer finished but the THX service is still not ready. Restart and retry, or use "Download THX installer" to install it yourself.</value></data>
@@ -2499,6 +2555,8 @@
   <data name="RazerHeadsetThxReady" xml:space="preserve"><value>THX components are installed.</value></data>
   <data name="RazerHeadsetThxSpatialToggle.Header" xml:space="preserve"><value>Spatial audio</value></data>
   <data name="RazerHeadsetThxSpatialApply.Content" xml:space="preserve"><value>Apply spatial audio</value></data>
+  <data name="RazerHeadsetThxS3Baseline.Content" xml:space="preserve"><value>Synapse 3 baseline</value></data>
+  <data name="RazerHeadsetThxS3BaselineHint.Text" xml:space="preserve"><value>Turns spatial off and flattens THX; 0549 also gets the Synapse 3 Game curve.</value></data>
   <data name="RazerHeadsetThxPresetLabel.Header" xml:space="preserve"><value>Preset</value></data>
   <data name="RazerHeadsetThxPresetLabel.PlaceholderText" xml:space="preserve"><value>Default configuration</value></data>
   <data name="RazerHeadsetThxPresetApply.Content" xml:space="preserve"><value>Apply preset</value></data>
@@ -3306,12 +3364,41 @@
   <data name="LightingStudioMore" xml:space="preserve"><value>More</value></data>
   <data name="LightingStudioProfileTitle" xml:space="preserve"><value>Profile name</value></data>
   <data name="RazerMappingDeviceImageLabel" xml:space="preserve"><value>Device image</value></data>
+  <data name="RazerMappingModifierHeader" xml:space="preserve"><value>Modifier key</value></data>
+  <data name="RazerMappingMacroSlotHeader" xml:space="preserve"><value>Macro slot</value></data>
+  <data name="RazerMappingPlaybackHeader" xml:space="preserve"><value>Playback</value></data>
+  <data name="RazerMappingMacroTargetHeader" xml:space="preserve"><value>Execution</value></data>
+  <data name="RazerMappingMacroHeader" xml:space="preserve"><value>Macro</value></data>
+  <data name="RazerMappingMacroTargetSoftware" xml:space="preserve"><value>Software (OpenSynapse)</value></data>
+  <data name="RazerMappingMacroTargetOnboard" xml:space="preserve"><value>Device (onboard)</value></data>
+  <data name="RazerMappingSoftwareTriggerHeader" xml:space="preserve"><value>Trigger</value></data>
+  <data name="RazerMappingOnboardBehaviorHeader" xml:space="preserve"><value>Button behavior</value></data>
+  <data name="RazerMappingMacroPlaybackOnce" xml:space="preserve"><value>Run once</value></data>
+  <data name="RazerMappingMacroPlaybackRepeat" xml:space="preserve"><value>Repeat N times</value></data>
+  <data name="RazerMappingMacroPlaybackHold" xml:space="preserve"><value>Repeat while held</value></data>
+  <data name="RazerMappingMacroPlaybackToggle" xml:space="preserve"><value>Press to start / stop</value></data>
+  <data name="RazerMappingMacroPlaybackSequence" xml:space="preserve"><value>Run one step per press</value></data>
+  <data name="RazerMappingSoftwareMacroHint" xml:space="preserve"><value>Runs in OpenSynapse and stops working when the app is closed.</value></data>
+  <data name="RazerMappingOnboardMacroHint" xml:space="preserve"><value>Runs on the device and keeps working when OpenSynapse is closed.</value></data>
+  <data name="RazerMappingMacroUnsupported" xml:space="preserve"><value>This macro cannot be stored onboard: step {0}: {1}. Edit the macro and try again.</value></data>
+  <data name="RazerMappingMacroUnsupportedSoftware" xml:space="preserve"><value>This macro cannot be stored onboard: step {0}: {1}. Use a software macro or edit the macro.</value></data>
+  <data name="RazerMappingMacroSlotOverwrite" xml:space="preserve"><value>This slot already contains another macro; saving will overwrite it.</value></data>
+  <data name="RazerMappingMacroSoftwareApplied" xml:space="preserve"><value>{0} (software)</value></data>
+  <data name="RazerMappingMacroCurrentOnce" xml:space="preserve"><value>{0} · Run once</value></data>
+  <data name="RazerMappingMacroCurrentRepeat" xml:space="preserve"><value>{0} · Repeat {1} times</value></data>
+  <data name="RazerMappingMacroCurrentHold" xml:space="preserve"><value>{0} · Repeat while held</value></data>
+  <data name="RazerMappingMacroCurrentToggle" xml:space="preserve"><value>{0} · Press to start / stop</value></data>
+  <data name="RazerMappingMacroCurrentSequence" xml:space="preserve"><value>{0} · Run one step per press</value></data>
+  <data name="RazerMappingMacroOnboardUnavailable" xml:space="preserve"><value>This device can read onboard slots but cannot write them.</value></data>
+  <data name="RazerMappingMacroSoftwareUnavailable" xml:space="preserve"><value>This button cannot be used as a software macro trigger.</value></data>
+  <data name="RazerMappingCalloutHint" xml:space="preserve"><value>Select a button label beside the device to edit its mapping.</value></data>
   <data name="RazerMappingTitle" xml:space="preserve"><value>Button mapping</value></data>
   <data name="RazerMappingRead" xml:space="preserve"><value>Read</value></data>
   <data name="RazerMappingSave" xml:space="preserve"><value>Save</value></data>
   <data name="RazerMappingLayerNormal" xml:space="preserve"><value>Normal</value></data>
   <data name="RazerMappingLayerHyperShift" xml:space="preserve"><value>HyperShift</value></data>
   <data name="RazerMappingKeyboardButton" xml:space="preserve"><value>Key {0}</value></data>
+  <data name="RazerMappingNagaSideButton" xml:space="preserve"><value>Side button {0}</value></data>
   <data name="RazerMappingButtonColumn" xml:space="preserve"><value>Button</value></data>
   <data name="RazerMappingCurrentColumn" xml:space="preserve"><value>Current action</value></data>
   <data name="RazerMappingTypeColumn" xml:space="preserve"><value>Type</value></data>
@@ -3336,7 +3423,7 @@
   <data name="RazerMappingGroupRazerKey" xml:space="preserve"><value>Razer key</value></data>
   <data name="RazerMappingGroupWindowsShortcut" xml:space="preserve"><value>Windows shortcut</value></data>
   <data name="RazerMappingGroupHyperShiftToggle" xml:space="preserve"><value>HyperShift toggle</value></data>
-  <data name="RazerMappingGroupMacro" xml:space="preserve"><value>User macro</value></data>
+  <data name="RazerMappingGroupMacro" xml:space="preserve"><value>Macro</value></data>
   <data name="RazerMappingGroupTurboKey" xml:space="preserve"><value>Turbo key</value></data>
   <data name="RazerMappingGroupTurboButton" xml:space="preserve"><value>Turbo button</value></data>
   <data name="RazerMappingGroupDpiClutch" xml:space="preserve"><value>DPI clutch</value></data>
@@ -3347,4 +3434,31 @@
   <data name="RazerMappingDpiXHeader" xml:space="preserve"><value>DPI X</value></data>
   <data name="RazerMappingDpiYHeader" xml:space="preserve"><value>DPI Y</value></data>
   <data name="RazerMappingMacroRepeatHeader" xml:space="preserve"><value>Macro repeats</value></data>
+  <data name="RazerMappingKeyboardHint" xml:space="preserve"><value>Select a key to edit its mapping</value></data>
+  <data name="RazerMappingKeyboardStage" xml:space="preserve"><value>Keyboard</value></data>
+  <data name="RazerDriverTitle.Text" xml:space="preserve"><value>Razer driver</value></data>
+  <data name="RazerDriverDescription.Text" xml:space="preserve"><value>Install Razer's device filter driver so button mapping and macros use the same driver-level injection path as Synapse.</value></data>
+  <data name="RazerDriverInstall.Content" xml:space="preserve"><value>Install missing drivers</value></data>
+  <data name="RazerDriverInstallHint.Text" xml:space="preserve"><value>Packages come from Razer's official CDN and request administrator approval. Replug the device or restart after installation.</value></data>
+  <data name="RazerDriverChecking" xml:space="preserve"><value>Checking Razer drivers…</value></data>
+  <data name="RazerDriverAllReady" xml:space="preserve"><value>Every connected Razer peripheral already has its filter driver.</value></data>
+  <data name="RazerDriverMissingCount" xml:space="preserve"><value>{0} Razer peripheral(s) are missing a driver.</value></data>
+  <data name="RazerDriverCheckFailed" xml:space="preserve"><value>Razer driver check failed: {0}</value></data>
+  <data name="RazerDriverWaiting" xml:space="preserve"><value>Waiting to install</value></data>
+  <data name="RazerDriverInstalledRestart" xml:space="preserve"><value>Installed; replug the device or restart</value></data>
+  <data name="RazerDriverInstallSummary" xml:space="preserve"><value>Installed {0} Razer driver package(s). Replug the device or restart.</value></data>
+  <data name="RazerDriverInstallSummaryPartial" xml:space="preserve"><value>Installed {0}; {1} did not complete.</value></data>
+  <data name="RazerDriverInstallCancelled" xml:space="preserve"><value>Driver installation was cancelled.</value></data>
+  <data name="RazerDriverInstallFailed" xml:space="preserve"><value>Razer driver installation failed: {0}</value></data>
+  <data name="RazerDriverMissingStatus" xml:space="preserve"><value>Driver missing</value></data>
+  <data name="RazerDriverDetail" xml:space="preserve"><value>VID_1532 / PID_{0} · driver v{1}</value></data>
+  <data name="RazerDriverDownloading" xml:space="preserve"><value>Downloading the {0} driver…</value></data>
+  <data name="RazerDriverInstalling" xml:space="preserve"><value>Starting the {0} driver installer; approve it in UAC.</value></data>
+  <data name="RazerDriverInstallTimeout" xml:space="preserve"><value>Razer driver installation timed out.</value></data>
+  <data name="RazerDriverInstallExitCode" xml:space="preserve"><value>Razer driver installer returned {0}.</value></data>
+  <data name="RazerDriverInstallInvalidPackage" xml:space="preserve"><value>Razer driver package validation failed.</value></data>
+  <data name="RazerDriverDownloadFailed" xml:space="preserve"><value>The Razer driver package could not be downloaded or saved.</value></data>
+  <data name="RazerDriverInstallStartFailed" xml:space="preserve"><value>The Razer driver installer did not start.</value></data>
+  <data name="RazerDriverCommonDownloading" xml:space="preserve"><value>Downloading the Razer common control driver…</value></data>
+  <data name="RazerDriverCommonInstalling" xml:space="preserve"><value>Installing the Razer common control driver; approve it in UAC.</value></data>
 </root>

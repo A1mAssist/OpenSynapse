@@ -65,6 +65,8 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
     private double _voiceClarityLevel;
     private bool _normalizationEnabled;
     private double _normalizationLevel;
+    private bool _bassBoostEnabled;
+    private double _bassBoostLevel;
     private string? _errorCode;
 
     public ThxAudioViewModel(IThxAudioController? controller, bool isSupportedHost)
@@ -93,7 +95,6 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(CanEdit));
                 OnPropertyChanged(nameof(CanApplyEqualizer));
                 OnPropertyChanged(nameof(CanResetEqualizer));
-                OnPropertyChanged(nameof(CanDownloadComponent));
                 OnPropertyChanged(nameof(CanInstallComponents));
             }
         }
@@ -106,6 +107,8 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
     public Visibility UnavailableVisibility => ControlsVisibility == Visibility.Visible
         ? Visibility.Collapsed : Visibility.Visible;
     public Visibility SoundNormalizationVisibility => SelectedEndpoint.Endpoint == ThxAudioEndpoint.Speakers
+        ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility BassBoostVisibility => _state?.BassBoost is not null
         ? Visibility.Visible : Visibility.Collapsed;
     public Visibility EqualizerEditVisibility => IsEditablePreset ? Visibility.Visible : Visibility.Collapsed;
     public string StatusText { get => _statusText; private set => SetField(ref _statusText, value); }
@@ -152,11 +155,11 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
         _ when IsNativeMissingError => AppStrings.Text("ThxHintNativeMissing"),
         _ => AppStrings.Text("ThxHintGeneric"),
     };
-    public Visibility DownloadVisibility => IsNativeMissingError
-        ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility InstallVisibility => _errorCode == "ThxServiceMissing" && CanInstallComponents
-        ? Visibility.Visible : Visibility.Collapsed;
-    public bool CanDownloadComponent => !_busy && _controller is not null && IsNativeMissingError;
+    public Visibility InstallVisibility =>
+        (_errorCode == "ThxServiceMissing" || IsNativeMissingError) &&
+        _controller?.CanInstallComponents == true
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     public bool CanInstallComponents => !_busy && _controller?.CanInstallComponents == true;
     private bool IsNativeMissingError => _errorCode == "ThxNativeMissing" ||
         _errorCode?.StartsWith("ThxDownload", StringComparison.Ordinal) == true;
@@ -182,6 +185,7 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedEndpoint));
             OnPropertyChanged(nameof(SoundNormalizationVisibility));
+            OnPropertyChanged(nameof(BassBoostVisibility));
             OnPropertyChanged(nameof(HasEqualizerChanges));
             OnPropertyChanged(nameof(CanApplyEqualizer));
             OnPropertyChanged(nameof(CanResetEqualizer));
@@ -297,6 +301,32 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
 
     public string SoundNormalizationLevelText => $"{_normalizationLevel:0}%";
 
+    public bool BassBoostEnabled
+    {
+        get => _bassBoostEnabled;
+        set
+        {
+            if (SetField(ref _bassBoostEnabled, value) && !_applying)
+            {
+                _ = SetEnhancementAsync(ThxAudioEnhancementKind.BassBoost, value, null);
+            }
+        }
+    }
+
+    public double BassBoostLevel
+    {
+        get => _bassBoostLevel;
+        set
+        {
+            if (SetField(ref _bassBoostLevel, Math.Clamp(value, 0, 100)))
+            {
+                OnPropertyChanged(nameof(BassBoostLevelText));
+            }
+        }
+    }
+
+    public string BassBoostLevelText => $"{_bassBoostLevel:0}%";
+
     public Task EnsureLoadedAsync() => _loaded ? Task.CompletedTask : RefreshAsync();
 
     public async Task RefreshAsync()
@@ -310,20 +340,6 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
         StatusText = AppStrings.Text("ThxStatusReading");
         var endpoint = SelectedEndpoint.Endpoint;
         await ExecuteAsync(() => _controller.ReadAsync(endpoint));
-        _loaded = true;
-    }
-
-    public async Task InstallNativeComponentAsync()
-    {
-        if (_controller is not { } controller || !CanDownloadComponent)
-        {
-            return;
-        }
-
-        StatusText = AppStrings.Text("ThxStatusDownloading");
-        await ExecuteAsync(
-            () => controller.InstallNativeComponentAsync(SelectedEndpoint.Endpoint),
-            "ThxDownloadFailed");
         _loaded = true;
     }
 
@@ -392,6 +408,17 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
                 ThxAudioEnhancementKind.SoundNormalization,
                 true,
                 (int)Math.Round(SoundNormalizationLevel));
+        }
+    }
+
+    public async Task ApplyBassBoostAsync()
+    {
+        if (BassBoostEnabled)
+        {
+            await SetEnhancementAsync(
+                ThxAudioEnhancementKind.BassBoost,
+                true,
+                (int)Math.Round(BassBoostLevel));
         }
     }
 

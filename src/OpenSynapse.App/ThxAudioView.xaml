@@ -19,8 +19,7 @@
                     <TextBlock Text="THX Spatial Audio" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
                     <TextBlock Text="{Binding UnavailableHint}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                      <Button local:Localized.Uid="ThxDownloadComponentButton" Content="下载 THX 控制组件" Click="DownloadThxComponentClick" Style="{StaticResource PrimaryButtonStyle}" IsEnabled="{Binding CanDownloadComponent}" Visibility="{Binding DownloadVisibility}" />
-                      <Button local:Localized.Uid="ThxInstallButton" Content="安装 THX 组件" Click="OpenThxInstallClick" Style="{StaticResource SecondaryButtonStyle}" Visibility="{Binding InstallVisibility}" IsEnabled="{Binding CanInstallComponents}" />
+                      <Button local:Localized.Uid="ThxInstallButton" Content="下载并安装 THX 组件" Click="OpenThxInstallClick" Style="{StaticResource PrimaryButtonStyle}" Visibility="{Binding InstallVisibility}" IsEnabled="{Binding CanInstallComponents}" />
                     </StackPanel>
                   </StackPanel>
                 </Border>
@@ -63,7 +62,7 @@
                         </StackPanel>
                       </StackPanel>
                     </Grid>
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="18">
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="18" RowSpacing="18">
                       <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="4" Padding="12">
                         <StackPanel Spacing="8">
                           <TextBlock local:Localized.Uid="ThxVoiceClarityLabel" Text="人声清晰度" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
@@ -84,6 +83,17 @@
                             <TextBlock Grid.Column="1" Text="{Binding SoundNormalizationLevelText}" FontFamily="Cascadia Mono,Consolas" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
                           </Grid>
                           <Button local:Localized.Uid="ThxApplySoundNormalizationButton" Content="应用音量标准化" Click="ApplyThxSoundNormalizationClick" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" IsEnabled="{Binding SoundNormalizationEnabled}" />
+                        </StackPanel>
+                      </Border>
+                      <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="4" Padding="12" Visibility="{Binding BassBoostVisibility}">
+                        <StackPanel Spacing="8">
+                          <TextBlock local:Localized.Uid="ThxBassBoostLabel" Text="低音增强" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                          <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="12">
+                            <ToggleSwitch local:Localized.Uid="ThxBassBoostToggle" IsOn="{Binding BassBoostEnabled, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" OnContent="开启" OffContent="关闭" VerticalAlignment="Center" />
+                            <Slider Grid.Column="1" Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding BassBoostLevel, Mode=TwoWay}" IsThumbToolTipEnabled="False" IsEnabled="{Binding BassBoostEnabled}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="2" Text="{Binding BassBoostLevelText}" FontFamily="Cascadia Mono,Consolas" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                            <Button Grid.Column="3" local:Localized.Uid="ThxApplyBassBoostButton" Content="应用低音增强" Click="ApplyThxBassBoostClick" Style="{StaticResource SecondaryButtonStyle}" IsEnabled="{Binding BassBoostEnabled}" VerticalAlignment="Center" />
+                          </Grid>
                         </StackPanel>
                       </Border>
                     </Grid>

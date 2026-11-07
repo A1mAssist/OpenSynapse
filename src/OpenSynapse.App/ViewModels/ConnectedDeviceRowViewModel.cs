@@ -39,7 +39,12 @@ public sealed class ConnectedDeviceRowViewModel
                 : AppStrings.Text("Text_40985721");
         IconGlyph = source.IconGlyph;
         Category = source.HardwareCategory;
-        IsVisible = source.Connection.IsReady && source.Connection.Capabilities.Count > 0;
+        // A keyboard is wired and still present when its control channel fails, so keep
+        // the card and its error. A mouse may only be asleep behind its receiver, which
+        // is the case the protocol-response gate is meant to hide.
+        IsVisible = source.Connection.IsReady
+            ? source.Connection.Capabilities.Count > 0
+            : source.HardwareCategory == DeviceCategory.Keyboard;
     }
 
     public ConnectedDeviceRowViewModel(RazerHidKrakenDeviceRowViewModel source)
@@ -188,10 +193,15 @@ public sealed class ConnectedDeviceRowViewModel
     {
         DeviceRowViewModel row => row.Capability,
         RazerHidDeviceRowViewModel row => row.Status,
-        RazerHidKrakenDeviceRowViewModel row => row.Status,
+        RazerHidKrakenDeviceRowViewModel row => row.CapabilityText,
         RazerBleDeviceRowViewModel row => row.Status,
-        BlackSharkDeviceRowViewModel row => row.Status,
-        RazerGamepadDeviceRowViewModel row => row.Status,
+        RazerChromaDeviceRowViewModel row => row.Status,
+        RazerAwBleHeadsetRowViewModel row => row.Status,
+        BlackSharkDeviceRowViewModel row => row.CapabilityText,
+        RazerKeyboardDeviceRowViewModel row => row.Capability,
+        RazerGamepadDeviceRowViewModel row => row.CapabilityText,
+        RazerHeadsetAudioDeviceRowViewModel row => row.CapabilityText,
+        RazerKiyoViewModel row => row.CapabilityText,
         RazerCoolingPadViewModel row => row.CapabilityText,
         PhilipsHueViewModel row => row.IsConfigured ? AppStrings.Text("HuePaired") : string.Empty,
         _ => string.Empty,
@@ -200,6 +210,11 @@ public sealed class ConnectedDeviceRowViewModel
     {
         RazerHidDeviceRowViewModel row => row.Error,
         RazerHidKrakenDeviceRowViewModel row => row.Error,
+        RazerKeyboardDeviceRowViewModel row => row.Error,
+        RazerGamepadDeviceRowViewModel row => row.Error,
+        RazerChromaDeviceRowViewModel row => row.Error,
+        RazerHeadsetAudioDeviceRowViewModel row => row.Error,
+        RazerKiyoViewModel row => row.ErrorText,
         BlackSharkDeviceRowViewModel row => row.Error,
         RazerCoolingPadViewModel row => row.ErrorText,
         PhilipsHueViewModel row => row.ErrorText,

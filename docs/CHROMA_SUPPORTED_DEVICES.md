@@ -4,7 +4,24 @@ This document lists each concrete device entry that OpenSynapse can currently ex
 
 ## Runtime availability
 
-The device list is a manifest capability inventory. At runtime, OpenSynapse still requires the device endpoint to resolve and the transaction to be accepted before showing controls. A rejected or unavailable transaction hides that control. The 91-byte HID paths below are OpenRazer-derived protocol definitions. The separate OpenSynapse `RzChromaSDK64.dll` shim implements the Chroma SDK 4.0.1 ABI; see [Chroma SDK shim](CHROMA_SDK_SHIM.md).
+The device list is a manifest capability inventory. At runtime, OpenSynapse still requires the device endpoint to resolve and the transaction to be accepted before showing controls. A rejected or unavailable transaction hides that control. The 91-byte HID paths below are OpenRazer-derived protocol definitions. Razer's official `RzChromaSDK64.dll` is paired with the OpenSynapse `ChromaBroker` service.
+
+## Channel routing
+
+`ChromaDeviceCatalog` copies Razer's Chroma SDK Devices 4.1.0 `Devices.xml` (327 PIDs). When a device connects, that manifest decides which channel it joins:
+
+| Channel | Devices | Frame handling |
+|---|---|---|
+| keyboard | Keyboards and Blade laptops | The device's own matrix when it accepts frames; otherwise one static colour |
+| mouse | Mice | The device's own matrix when it accepts frames; otherwise one static colour |
+| headset | Kraken headsets | Static colour |
+| mousepad | Mouse mats plus the stands and accessories Razer maps to `mousemat` | The device's own matrix when it accepts frames; otherwise one static colour |
+| keypad | Orbweaver and Tartarus V2/Pro | The keypad matrix resized to the device |
+| chromalink | Aether lamps, docks, stands, ARGB controllers and Chroma modules | The frame's average colour |
+
+A connected device absent from that manifest still keeps its own lighting page, but Chroma clients do not address it.
+
+A manifest PID is admitted through the class 0x10 whole-device static path when Windows enumerates its 91-byte vendor feature interface and no richer native page owns it. That is the fallback for older mice, headsets and audio devices. A device that exposes no enumerable endpoint still needs captured protocol evidence before it can be added.
 
 ## Blade Chroma REST
 
@@ -220,7 +237,7 @@ These models use the separate Kraken 37-byte Output Report. Each USB PID is list
 
 ## Boundaries
 
-- OpenSynapse does not load Razer Synapse or Razer's signed `RzChromaConnectAPI.dll`; the optional `RzChromaSDK64.dll` is OpenSynapse's own ABI-compatible shim.
+- OpenSynapse does not load Razer Synapse or Razer's signed `RzChromaConnectAPI.dll`; Razer's official `RzChromaSDK64.dll` is bridged by the OpenSynapse `ChromaBroker` service.
 - Chroma REST is currently verified on the Blade 16 keyboard only. It is not a promise that a REST frame is translated to every OpenRazer matrix device.
 - Matrix dimensions and manifest transactions are capability metadata, not hardware certification. The connected endpoint and successful transaction remain the final authority.
 - Unsupported or unverified controls are hidden instead of being presented as configurable controls.

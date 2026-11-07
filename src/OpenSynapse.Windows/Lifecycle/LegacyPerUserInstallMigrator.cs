@@ -199,7 +199,7 @@ public static class LegacyPerUserInstallMigrator
     {
         fullPath = string.Empty;
         if (string.IsNullOrWhiteSpace(executablePath) ||
-            !DedicatedGpuModeServiceInstaller.IsMachineInstallPath(executablePath))
+            !OpenSynapseServiceInstaller.IsMachineInstallPath(executablePath))
         {
             return false;
         }

@@ -13,6 +13,82 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
 {
+    /// <summary>
+    /// The class 0x03 profile dialect (DeathAdder V4 Pro) has no reset command, so the
+    /// button would always fail with a device rejection.
+    /// </summary>
+    public Visibility OnboardProfileResetVisibility =>
+        VisibleWhen(Has(RazerHidBackendCapability.OnboardProfileWrite) &&
+            RazerHidDeviceService.SupportsOnboardProfileReset(Connection.Definition.ProductId));
+    public Visibility OnboardProfileVisibility => VisibleWhen(HasAny(
+        RazerHidBackendCapability.OnboardProfileRead, RazerHidBackendCapability.OnboardProfileWrite));
+    public Visibility OnboardProfileWriteVisibility =>
+        VisibleWhen(Has(RazerHidBackendCapability.OnboardProfileWrite));
+    public byte OnboardProfileCount
+    {
+        get => _onboardProfileCount;
+        set => SetOnboardProfileField(ref _onboardProfileCount, value, nameof(OnboardProfileCount),
+            nameof(CanCreateOnboardProfile), nameof(CanDeleteOnboardProfile));
+    }
+    public byte OnboardMaxProfiles
+    {
+        get => _onboardMaxProfiles;
+        set => SetOnboardProfileField(ref _onboardMaxProfiles, value, nameof(OnboardMaxProfiles),
+            nameof(OnboardProfileMaximumId), nameof(CanCreateOnboardProfile),
+            nameof(CanDeleteOnboardProfile));
+    }
+    public byte ActiveOnboardProfileId
+    {
+        get => _activeOnboardProfileId;
+        set => SetOnboardProfileField(ref _activeOnboardProfileId, value, nameof(ActiveOnboardProfileId),
+            nameof(CanApplyOnboardProfile));
+    }
+    public byte SelectedOnboardProfileId
+    {
+        get => _selectedOnboardProfileId;
+        set => SetOnboardProfileField(ref _selectedOnboardProfileId, value, nameof(SelectedOnboardProfileId),
+            nameof(CanApplyOnboardProfile));
+    }
+    public string OnboardProfileStatusText
+    {
+        get => _onboardProfileStatusText;
+        set => SetField(ref _onboardProfileStatusText, value);
+    }
+    /// <summary>
+    /// The highest profile id the device accepts. A device that reports a maximum of
+    /// one profile only knows id 0, so the picker must not offer id 1.
+    /// </summary>
+    public int OnboardProfileMaximumId => Math.Max(0, OnboardMaxProfiles - 1);
+    public bool CanApplyOnboardProfile => CanEditOnboardProfile &&
+        SelectedOnboardProfileId != ActiveOnboardProfileId;
+    public bool CanCreateOnboardProfile => CanEditOnboardProfile &&
+        OnboardProfileCount < OnboardMaxProfiles;
+    public bool CanDeleteOnboardProfile => CanEditOnboardProfile &&
+        OnboardProfileCount > 1;
+    public bool CanResetOnboardProfile => CanEditOnboardProfile &&
+        RazerHidDeviceService.SupportsOnboardProfileReset(Connection.Definition.ProductId);
+
+    /// <summary>
+    /// The onboard profile card enables its buttons from the profile counters, so a
+    /// changed counter has to refresh the dependent commands.
+    /// </summary>
+    private void SetOnboardProfileField<T>(
+        ref T field,
+        T value,
+        string propertyName,
+        params string[] dependentProperties)
+    {
+        if (!SetField(ref field, value, propertyName))
+        {
+            return;
+        }
+
+        foreach (var property in dependentProperties)
+        {
+            OnPropertyChanged(property);
+        }
+    }
+
     public async Task LoadScrollAsync(CancellationToken cancellationToken = default)
     {
         if (!IsReady || RequiresRescan || IsScrollLoading)
@@ -36,6 +112,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             await ReadOptionalAsync(RazerHidBackendCapability.ScrollAccelerationLevelRead,
                 async () => ScrollAccelerationLevel =
                     await _service.GetScrollVirtualAccelerationLevelAsync(Connection, cancellationToken));
+            RefreshScrollWheelModeSelection();
         }
         finally
         {
@@ -132,6 +209,14 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
         }
+        catch (RazerCommandRejectedException)
+        {
+            OnboardProfileStatusText = AppStrings.Text("RazerHidOnboardProfileRejected");
+        }
+        catch (NotSupportedException)
+        {
+            OnboardProfileStatusText = AppStrings.Text("RazerHidOnboardProfileUnsupported");
+        }
         catch (Exception exception)
         {
             OnboardProfileStatusText = exception.Message;
@@ -143,7 +228,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
     }
 
     public Task ApplyActiveOnboardProfileAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(RazerHidBackendCapability.OnboardProfileWrite,
+        RunOnboardProfileWriteAsync(
             () => IsOnboardProfileBusy, value => IsOnboardProfileBusy = value,
             async () =>
             {
@@ -153,7 +238,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             }, cancellationToken);
 
     public Task CreateOnboardProfileAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(RazerHidBackendCapability.OnboardProfileWrite,
+        RunOnboardProfileWriteAsync(
             () => IsOnboardProfileBusy, value => IsOnboardProfileBusy = value,
             async () =>
             {
@@ -163,7 +248,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             }, cancellationToken);
 
     public Task DeleteOnboardProfileAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(RazerHidBackendCapability.OnboardProfileWrite,
+        RunOnboardProfileWriteAsync(
             () => IsOnboardProfileBusy, value => IsOnboardProfileBusy = value,
             async () =>
             {
@@ -173,7 +258,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             }, cancellationToken);
 
     public Task ResetOnboardProfileAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(RazerHidBackendCapability.OnboardProfileWrite,
+        RunOnboardProfileWriteAsync(
             () => IsOnboardProfileBusy, value => IsOnboardProfileBusy = value,
             async () =>
             {
@@ -188,6 +273,48 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             await _service.GetOnboardProfileCountAsync(Connection, cancellationToken);
         ActiveOnboardProfileId =
             await _service.GetActiveOnboardProfileIdAsync(Connection, cancellationToken);
+    }
+
+    /// <summary>
+    /// A profile command the device refuses is a user-facing answer, not a transport
+    /// failure: the card keeps working and the reason is shown next to the buttons.
+    /// </summary>
+    private async Task RunOnboardProfileWriteAsync(
+        Func<bool> isBusy,
+        Action<bool> setBusy,
+        Func<Task> operation,
+        CancellationToken cancellationToken)
+    {
+        if (!CanUse(RazerHidBackendCapability.OnboardProfileWrite) || isBusy())
+        {
+            return;
+        }
+
+        setBusy(true);
+        try
+        {
+            await operation();
+            OnboardProfileStatusText = string.Empty;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (RazerCommandRejectedException)
+        {
+            OnboardProfileStatusText = AppStrings.Text("RazerHidOnboardProfileRejected");
+        }
+        catch (NotSupportedException)
+        {
+            OnboardProfileStatusText = AppStrings.Text("RazerHidOnboardProfileUnsupported");
+        }
+        catch (Exception exception)
+        {
+            OnboardProfileStatusText = exception.Message;
+        }
+        finally
+        {
+            setBusy(false);
+        }
     }
 
     public async Task LoadKeyswitchAsync(CancellationToken cancellationToken = default)

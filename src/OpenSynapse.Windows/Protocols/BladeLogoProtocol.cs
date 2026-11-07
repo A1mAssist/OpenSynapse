@@ -3,27 +3,26 @@ using OpenSynapse.Core.Devices;
 namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
-/// Source-backed Blade 02C6 lid-logo GET/SET reports and strict response parsing.
-/// Value 0x02 uses the generic LED-effect command; RazerHid documents it as
-/// technically unsupported on Blade laptops, so callers must keep it gated.
+/// Source-backed Blade lid-logo GET/SET reports and strict response parsing.
+/// The profile id comes from the device manifest: 0 for the blade-671 family
+/// and 1 for the newer blade-710 family. Value 0x02 uses the generic LED-effect
+/// command; RazerHid documents it as technically unsupported on Blade laptops.
 /// </summary>
 public static class BladeLogoProtocol
 {
     private const byte DataSize = 0x03;
     private const byte CommandClass = 0x03;
-    // RazerHid's VARSTORE for Blade logo state is the persistent slot 0x01.
-    private const byte RuntimeProfileId = 0x01;
     private const byte LogoLedId = 0x04;
     private const byte TransactionId = 0xFF;
 
-    public static byte[] CreateGetPowerRequest(byte profileId = RuntimeProfileId) => CreateRequest(0x80, 0x00, profileId);
+    public static byte[] CreateGetPowerRequest(byte profileId) => CreateRequest(0x80, 0x00, profileId);
 
-    public static byte[] CreateGetModeRequest(byte profileId = RuntimeProfileId) => CreateRequest(0x82, 0x00, profileId);
+    public static byte[] CreateGetModeRequest(byte profileId) => CreateRequest(0x82, 0x00, profileId);
 
-    public static byte[] CreateSetPowerRequest(bool powered, byte profileId = RuntimeProfileId) =>
+    public static byte[] CreateSetPowerRequest(bool powered, byte profileId) =>
         CreateRequest(0x00, powered ? (byte)0x01 : (byte)0x00, profileId);
 
-    public static byte[] CreateSetModeRequest(BladeLogoMode mode, byte profileId = RuntimeProfileId) =>
+    public static byte[] CreateSetModeRequest(BladeLogoMode mode, byte profileId) =>
         CreateRequest(
             0x02,
             mode switch
@@ -33,13 +32,13 @@ public static class BladeLogoProtocol
                 _ => throw new ArgumentOutOfRangeException(nameof(mode)),
             }, profileId);
 
-    public static bool ParsePower(ReadOnlySpan<byte> response, byte profileId = RuntimeProfileId)
+    public static bool ParsePower(ReadOnlySpan<byte> response, byte profileId)
         => ParsePower(response, CreateGetPowerRequest(profileId), profileId);
 
     internal static bool ParsePower(
         ReadOnlySpan<byte> response,
         ReadOnlySpan<byte> request,
-        byte profileId = RuntimeProfileId)
+        byte profileId)
     {
         var arguments = ValidateResponse(response, request, profileId);
         return arguments[2] switch
@@ -51,13 +50,13 @@ public static class BladeLogoProtocol
         };
     }
 
-    public static BladeLogoMode ParseMode(ReadOnlySpan<byte> response, byte profileId = RuntimeProfileId)
+    public static BladeLogoMode ParseMode(ReadOnlySpan<byte> response, byte profileId)
         => ParseMode(response, CreateGetModeRequest(profileId), profileId);
 
     internal static BladeLogoMode ParseMode(
         ReadOnlySpan<byte> response,
         ReadOnlySpan<byte> request,
-        byte profileId = RuntimeProfileId)
+        byte profileId)
     {
         var arguments = ValidateResponse(response, request, profileId);
         return arguments[2] switch

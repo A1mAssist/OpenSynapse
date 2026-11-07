@@ -1,6 +1,7 @@
 using System.Net.Sockets;
 using OpenSynapse.App.Runtime;
 using OpenSynapse.App.ViewModels;
+using OpenSynapse.Windows.Lifecycle;
 using OpenSynapse.Windows.Lighting;
 
 namespace OpenSynapse.App;
@@ -8,7 +9,9 @@ namespace OpenSynapse.App;
 public partial class App
 {
     private ChromaRestHost? _chromaRestHost;
-    private ChromaSdkBridgeHost? _chromaSdkBridge;
+    private ChromaBrokerHost? _chromaBrokerHost;
+    private Task? _chromaBrokerStartTask;
+    private ChromaDeviceRouter? _chromaDeviceRouter;
     internal bool IsChromaRestRunning => _chromaRestHost?.IsRunning == true;
 
     internal ChromaRestSnapshot GetChromaRestSnapshot() =>
@@ -39,36 +42,31 @@ public partial class App
 
     private void StartChromaHosts(MainViewModel viewModel)
     {
-        StartChromaSdkBridge(viewModel);
+        _chromaDeviceRouter ??= CreateChromaDeviceRouter(viewModel);
+        StartChromaBroker(viewModel);
         StartChromaRestHost(viewModel);
     }
 
-    private void StartChromaSdkBridge(MainViewModel viewModel)
-    {
-        if (!_behaviorSettings.ExperimentalChromaRestEnabled ||
-            _chromaSdkBridge is not null)
-        {
-            return;
-        }
+    private ChromaDeviceRouter CreateChromaDeviceRouter(MainViewModel viewModel) =>
+        new(
+            viewModel.RazerHid.DeviceService,
+            viewModel.RazerHid.SpecialLightingService,
+            () => viewModel.RazerHid.CurrentConnections,
+            () => viewModel.Accessories.KeyboardDevices
+                .Select(row => row.Connection)
+                .ToArray(),
+            () => viewModel.Accessories.ChromaDevices
+                .Select(row => row.Connection)
+                .ToArray(),
+            () => viewModel.RazerHid.KrakenConnections,
+            message => _diagnosticLog.TryWrite("chroma", message));
 
-        try
+    private async Task RestoreChromaAsync(MainViewModel viewModel)
+    {
+        await viewModel.RestoreLightingAfterExternalAsync().ConfigureAwait(false);
+        if (_chromaDeviceRouter is not null)
         {
-            var applier = new ChromaSdkEffectApplier(viewModel, _bladeLightingController);
-            var bridge = new ChromaSdkBridgeHost(
-                applier.ApplyAsync,
-                () => Volatile.Read(ref _closing) != 0 || !_behaviorSettings.RestoreLightingAfterChromaSession
-                    ? Task.CompletedTask
-                    : viewModel.RestoreLightingAfterExternalAsync(),
-                () => _behaviorSettings.RestoreLightingAfterChromaSession,
-                () => applier.SupportedDevices);
-            bridge.StartAsync();
-            _chromaSdkBridge = bridge;
-            _diagnosticLog.TryWrite("chroma-sdk", "Chroma SDK bridge listening on \\\\.\\pipe\\OpenSynapseChromaSdk.");
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
-        {
-            _chromaSdkBridge = null;
-            _diagnosticLog.TryWrite("chroma-sdk", $"Chroma SDK bridge unavailable: {exception.Message}");
+            await _chromaDeviceRouter.RestoreAsync().ConfigureAwait(false);
         }
     }
 
@@ -83,23 +81,127 @@ public partial class App
 
         try
         {
-            _chromaRestHost = new ChromaRestHost(
+            var host = new ChromaRestHost(
                 () => viewModel.CurrentDeviceDescriptors,
                 _bladeLightingController,
                 () => Volatile.Read(ref _closing) != 0 || !_behaviorSettings.RestoreLightingAfterChromaSession
                     ? Task.CompletedTask
-                    : viewModel.RestoreLightingAfterExternalAsync(),
+                    : RestoreChromaAsync(viewModel),
                 () => _behaviorSettings.RestoreLightingAfterChromaSession,
-                viewModel.RazerHid.ApplyChromaFrameAsync,
+                (kind, frame, rows, columns, token) =>
+                    _chromaDeviceRouter?.ApplyAsync(kind, frame, rows, columns, token) ?? Task.FromResult(false),
                 viewModel.Lighting.IsBladeChromaOverrideEnabled,
                 _behaviorSettings.ChromaBlockedSources);
-            _chromaRestHost.StartAsync();
-            _diagnosticLog.TryWrite("chroma-rest", "Chroma REST host listening on 127.0.0.1:54235.");
+            _chromaRestHost = host;
+            _ = StartChromaRestHostAsync(host);
         }
-        catch (SocketException exception)
+        catch (Exception exception)
         {
             _chromaRestHost = null;
             _diagnosticLog.TryWrite("chroma-rest", $"Chroma REST host unavailable: {exception.Message}");
+        }
+    }
+
+    private void StartChromaBroker(MainViewModel viewModel)
+    {
+        if (!_behaviorSettings.ExperimentalChromaRestEnabled || _chromaBrokerHost is not null)
+        {
+            return;
+        }
+        if (!ChromaBrokerLauncher.IsAvailable)
+        {
+            _diagnosticLog.TryWrite("chroma-broker", "broker executable is not packaged; skipped.");
+            return;
+        }
+        if (!ChromaBrokerLauncher.IsOfficialDllInstalled)
+        {
+            _diagnosticLog.TryWrite("chroma-broker", "official RzChromaSDK64.dll is not installed; broker skipped.");
+            return;
+        }
+
+        ChromaBrokerHost? host = null;
+        try
+        {
+            var applier = new ChromaSdkEffectApplier(viewModel, _bladeLightingController, _chromaDeviceRouter);
+            host = new ChromaBrokerHost(
+                applier.ApplyAsync,
+                () => Volatile.Read(ref _closing) != 0 || !_behaviorSettings.RestoreLightingAfterChromaSession
+                    ? Task.CompletedTask
+                    : RestoreChromaAsync(viewModel),
+                () => _behaviorSettings.RestoreLightingAfterChromaSession,
+                log: message => _diagnosticLog.TryWrite("chroma-broker", message));
+            host.StartAsync();
+            _chromaBrokerHost = host;
+            _diagnosticLog.TryWrite(
+                "chroma-broker",
+                "listening; asking the OpenSynapseService to start the official-DLL broker.");
+            _chromaBrokerStartTask = StartChromaBrokerServiceAsync();
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            _chromaBrokerHost = null;
+            if (host is not null)
+            {
+                _ = host.DisposeAsync();
+            }
+            _diagnosticLog.TryWrite("chroma-broker", $"unavailable: {exception.Message}");
+        }
+    }
+
+    private async Task StartChromaBrokerServiceAsync()
+    {
+        try
+        {
+            var started = await OpenSynapseServiceClient
+                .TryStartChromaBrokerAsync(Environment.ProcessId)
+                .ConfigureAwait(false);
+            _diagnosticLog.TryWrite(
+                "chroma-broker",
+                started
+                    ? "OpenSynapseService started the broker."
+                    : "broker service unavailable; the broker was not started.");
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+                InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            _diagnosticLog.TryWrite("chroma-broker", $"service start failed: {exception.Message}");
+        }
+    }
+
+    private async Task StartChromaRestHostAsync(ChromaRestHost host)
+    {
+        // A restart can briefly leave the previous instance holding the fixed port.
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                await host.StartAsync().ConfigureAwait(false);
+                if (!ReferenceEquals(_chromaRestHost, host))
+                {
+                    await host.DisposeAsync().ConfigureAwait(false);
+                    return;
+                }
+                _diagnosticLog.TryWrite("chroma-rest", "Chroma REST host listening on 127.0.0.1:54235.");
+                return;
+            }
+            catch (SocketException exception) when (
+                exception.SocketErrorCode == SocketError.AddressAlreadyInUse &&
+                attempt < 10 &&
+                ReferenceEquals(_chromaRestHost, host))
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(500)).ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                if (ReferenceEquals(_chromaRestHost, host))
+                {
+                    _chromaRestHost = null;
+                    _diagnosticLog.TryWrite("chroma-rest", $"Chroma REST host unavailable: {exception.Message}");
+                }
+                return;
+            }
         }
     }
 
@@ -118,17 +220,31 @@ public partial class App
             }
         }
 
-        var sdkBridge = Interlocked.Exchange(ref _chromaSdkBridge, null);
-        if (sdkBridge is not null)
+        var brokerHost = Interlocked.Exchange(ref _chromaBrokerHost, null);
+        if (brokerHost is not null)
         {
             try
             {
-                await sdkBridge.DisposeAsync().ConfigureAwait(false);
+                await brokerHost.DisposeAsync().ConfigureAwait(false);
             }
             catch (Exception exception)
             {
-                _diagnosticLog.TryWrite("chroma-sdk", $"stop failed: {exception}");
+                _diagnosticLog.TryWrite("chroma-broker", $"stop failed: {exception}");
             }
+        }
+
+        var startTask = Interlocked.Exchange(ref _chromaBrokerStartTask, null);
+        if (startTask is not null)
+        {
+            await startTask.ConfigureAwait(false);
+        }
+
+        var stopped = await OpenSynapseServiceClient
+            .TryStopChromaBrokerAsync()
+            .ConfigureAwait(false);
+        if (!stopped)
+        {
+            _diagnosticLog.TryWrite("chroma-broker", "broker service stop request failed.");
         }
     }
 }

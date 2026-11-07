@@ -4,14 +4,6 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerHeadsetAudioViewModel
 {
-    public async Task InstallThxNativeAsync(CancellationToken cancellationToken = default)
-    {
-        if (!CanDownloadThxComponent || !BeginOperation()) return;
-        await InstallThxAsync(
-            () => ThxHeadsetAdmission.InstallNativeComponentAsync(_connection.ProductId, cancellationToken),
-            cancellationToken);
-    }
-
     public async Task InstallThxComponentsAsync(CancellationToken cancellationToken = default)
     {
         if (!CanInstallThx || !BeginOperation()) return;

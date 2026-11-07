@@ -13,10 +13,10 @@
     <!-- Win10 22H2 without the 2024 CET update cannot launch a CET-marked apphost. -->
     <CetCompat>false</CetCompat>
     <ApplicationIcon>Assets\OpenSynapse.ico</ApplicationIcon>
-    <Version>1.6.1-beta.41</Version>
+    <Version>1.6.1-beta.51</Version>
     <AssemblyVersion>1.6.1.0</AssemblyVersion>
     <FileVersion>1.6.1.0</FileVersion>
-    <InformationalVersion>1.6.1-beta.41</InformationalVersion>
+    <InformationalVersion>1.6.1-beta.51</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <SatelliteResourceLanguages>zh-CN;en-US</SatelliteResourceLanguages>
     <DefaultLanguage>zh-CN</DefaultLanguage>
@@ -35,15 +35,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="..\..\LICENSE"
+             Link="LICENSE"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
     <Content Include="Assets\OpenSynapseLogo.svg" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\OpenSynapse.ico" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\LightingLayouts\*.json"
-             CopyToOutputDirectory="PreserveNewest"
-             CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="Assets\MappingLayouts\*.svg"
-             CopyToOutputDirectory="PreserveNewest"
-             CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="Assets\MappingLayouts\*.png"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
     <Content Include="Assets\LightingLayouts\studio-manifests.zip"
@@ -72,6 +70,26 @@
              Link="RyzenSMU-LICENSE.txt"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Native\Avif\avif.dll"
+             Link="avif.dll"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Native\Avif\dav1d.dll"
+             Link="dav1d.dll"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Native\Avif\vcruntime140.dll"
+             Link="vcruntime140.dll"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Native\Avif\libavif-LICENSE.txt"
+             Link="libavif-LICENSE.txt"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Native\Avif\dav1d-LICENSE.txt"
+             Link="dav1d-LICENSE.txt"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
@@ -84,6 +102,12 @@
     <ProjectReference Include="..\OpenSynapse.Windows\OpenSynapse.Windows.csproj" />
   </ItemGroup>
 
+  <Target Name="BuildChromaBroker" BeforeTargets="Build">
+    <MSBuild Projects="$(MSBuildProjectDirectory)\..\OpenSynapse.ChromaBroker\OpenSynapse.ChromaBroker.csproj"
+             Targets="Build"
+             Properties="Configuration=$(Configuration);Platform=$(Platform);RuntimeIdentifier=win-x64" />
+  </Target>
+
   <Target Name="CopyRecoveryHost" AfterTargets="Build">
     <PropertyGroup>
       <!-- The helper projects build without a Platform, so their output is bin\$(Configuration)\.
@@ -93,6 +117,7 @@
       <_RecoveryHostOutputDir Condition="'$(RuntimeIdentifier)' != ''">$(_RecoveryHostOutputDir)$(RuntimeIdentifier)\</_RecoveryHostOutputDir>
       <_ThxHelperOutputDir>$(MSBuildProjectDirectory)\..\OpenSynapse.ThxHelper\bin\$(_HelperPlatformDir)$(Configuration)\net10.0-windows10.0.26100.0\</_ThxHelperOutputDir>
       <_ThxHelperOutputDir Condition="'$(RuntimeIdentifier)' != ''">$(_ThxHelperOutputDir)$(RuntimeIdentifier)\</_ThxHelperOutputDir>
+      <_ChromaBrokerOutputDir>$(MSBuildProjectDirectory)\..\OpenSynapse.ChromaBroker\bin\$(_HelperPlatformDir)$(Configuration)\net10.0\win-x64\</_ChromaBrokerOutputDir>
     </PropertyGroup>
     <ItemGroup>
       <_RecoveryHostFile Include="$(_RecoveryHostOutputDir)OpenSynapse.RecoveryHost.exe" />
@@ -103,6 +128,11 @@
       <_ThxHelperFile Include="$(_ThxHelperOutputDir)OpenSynapse.ThxHelper.dll" />
       <_ThxHelperFile Include="$(_ThxHelperOutputDir)OpenSynapse.ThxHelper.deps.json" />
       <_ThxHelperFile Include="$(_ThxHelperOutputDir)OpenSynapse.ThxHelper.runtimeconfig.json" />
+      <_ChromaBrokerFile Include="$(_ChromaBrokerOutputDir)OpenSynapse.ChromaBroker.exe" />
+      <_ChromaBrokerFile Include="$(_ChromaBrokerOutputDir)OpenSynapse.ChromaBroker.dll" />
+      <_ChromaBrokerFile Include="$(_ChromaBrokerOutputDir)OpenSynapse.ChromaBroker.deps.json" />
+      <_ChromaBrokerFile Include="$(_ChromaBrokerOutputDir)OpenSynapse.ChromaBroker.runtimeconfig.json" />
+      <_ChromaBrokerFile Include="$(_ChromaBrokerOutputDir)OpenSynapse.ChromaSdk.Protocol.dll" />
       <!-- App notifications load this native satellite at runtime, but the MSIX content step that
            normally emits it is skipped here, so ship the checked-in copy instead. -->
       <_WinAppSdkRuntimeResource Include="$(MSBuildProjectDirectory)\Native\Microsoft.WindowsAppRuntime.Insights.Resource.dll" />
@@ -113,6 +143,9 @@
     <Copy SourceFiles="@(_ThxHelperFile)"
           DestinationFolder="$(TargetDir)"
           Condition="Exists('$(_ThxHelperOutputDir)OpenSynapse.ThxHelper.exe')"
+          SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(_ChromaBrokerFile)"
+          DestinationFolder="$(TargetDir)"
           SkipUnchangedFiles="true" />
     <Copy SourceFiles="@(_WinAppSdkRuntimeResource)"
           DestinationFolder="$(TargetDir)"
@@ -130,6 +163,11 @@
       <_ThxHelperPublishFile Include="$(_ThxHelperOutputDir)OpenSynapse.ThxHelper.dll" />
       <_ThxHelperPublishFile Include="$(_ThxHelperOutputDir)OpenSynapse.ThxHelper.deps.json" />
       <_ThxHelperPublishFile Include="$(_ThxHelperOutputDir)OpenSynapse.ThxHelper.runtimeconfig.json" />
+      <_ChromaBrokerPublishFile Include="$(_ChromaBrokerOutputDir)OpenSynapse.ChromaBroker.exe" />
+      <_ChromaBrokerPublishFile Include="$(_ChromaBrokerOutputDir)OpenSynapse.ChromaBroker.dll" />
+      <_ChromaBrokerPublishFile Include="$(_ChromaBrokerOutputDir)OpenSynapse.ChromaBroker.deps.json" />
+      <_ChromaBrokerPublishFile Include="$(_ChromaBrokerOutputDir)OpenSynapse.ChromaBroker.runtimeconfig.json" />
+      <_ChromaBrokerPublishFile Include="$(_ChromaBrokerOutputDir)OpenSynapse.ChromaSdk.Protocol.dll" />
     </ItemGroup>
     <Copy
       SourceFiles="@(_WinUiRuntimeResources)"
@@ -147,6 +185,10 @@
       SourceFiles="@(_ThxHelperPublishFile)"
       DestinationFolder="$(PublishDir)"
       Condition="Exists('$(_ThxHelperOutputDir)OpenSynapse.ThxHelper.exe')"
+      SkipUnchangedFiles="true" />
+    <Copy
+      SourceFiles="@(_ChromaBrokerPublishFile)"
+      DestinationFolder="$(PublishDir)"
       SkipUnchangedFiles="true" />
   </Target>
 

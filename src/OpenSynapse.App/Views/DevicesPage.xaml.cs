@@ -37,9 +37,12 @@ public sealed partial class DevicesPage : UserControl
     private MainViewModel ViewModel => (MainViewModel)DataContext;
     private CancellationToken Lifetime => Host.LifetimeToken;
 
+    private bool _razerDriversRequested;
+
     public DevicesPage()
     {
         InitializeComponent();
+        Loaded += DevicesPageLoaded;
         BladeBrightnessSlider.AddHandler(
             UIElement.PointerPressedEvent,
             new PointerEventHandler(BladeBrightnessPointerPressed),
@@ -55,9 +58,26 @@ public sealed partial class DevicesPage : UserControl
         Microsoft.Win32.SystemEvents.PowerModeChanged += SystemPowerModeChanged;
     }
 
+    private async void DevicesPageLoaded(object sender, RoutedEventArgs e)
+    {
+        if (_razerDriversRequested || DataContext is not MainViewModel viewModel)
+        {
+            return;
+        }
+
+        _razerDriversRequested = true;
+        await viewModel.RazerDrivers.RefreshAsync(Lifetime);
+    }
+
     private async void RefreshClick(object sender, RoutedEventArgs e)
     {
         await ViewModel.Refresh.RefreshDevicesAsync(Lifetime);
+        await ViewModel.RazerDrivers.RefreshAsync(Lifetime);
+    }
+
+    private async void InstallRazerDriversClick(object sender, RoutedEventArgs e)
+    {
+        await ViewModel.RazerDrivers.InstallAsync(Lifetime);
     }
 
     internal void SelectDevice(string device)

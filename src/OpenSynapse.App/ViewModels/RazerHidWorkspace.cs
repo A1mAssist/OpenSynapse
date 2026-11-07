@@ -25,6 +25,8 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
     private readonly LocalDiagnosticLog _diagnosticLog;
     private readonly Func<bool> _chromaIntegrationEnabled;
     private readonly Func<IReadOnlyList<MacroDefinition>> _localMacros;
+    private readonly Func<string, MacroInput, MacroTriggerMode, CancellationToken, Task<string?>>?
+        _softwareMacroBinder;
     private readonly Func<CancellationToken, Task> _refreshDevicesAsync;
     private readonly Action _refreshDeviceOverview;
     private readonly Action<string> _setDeviceOperationError;
@@ -51,6 +53,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         LocalDiagnosticLog diagnosticLog,
         Func<bool> chromaIntegrationEnabled,
         Func<IReadOnlyList<MacroDefinition>> localMacros,
+        Func<string, MacroInput, MacroTriggerMode, CancellationToken, Task<string?>>? softwareMacroBinder,
         Func<CancellationToken, Task> refreshDevicesAsync,
         Action refreshDeviceOverview,
         Action<string> setDeviceOperationError,
@@ -65,6 +68,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         _diagnosticLog = diagnosticLog;
         _chromaIntegrationEnabled = chromaIntegrationEnabled;
         _localMacros = localMacros;
+        _softwareMacroBinder = softwareMacroBinder;
         _refreshDevicesAsync = refreshDevicesAsync;
         _refreshDeviceOverview = refreshDeviceOverview;
         _setDeviceOperationError = setDeviceOperationError;
@@ -131,6 +135,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
     }
 
     internal RazerHidDeviceService? DeviceService => _deviceService;
+    internal IReadOnlyList<RazerHidSpecialLightingConnection> KrakenConnections => _krakenConnections;
 
     internal IReadOnlyList<RazerHidDeviceConnection> CurrentConnections =>
         Devices.Select(row => row.Connection).ToArray();

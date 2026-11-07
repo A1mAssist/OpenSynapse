@@ -46,14 +46,6 @@ public sealed partial class RazerHidKrakenViewModel
     public bool CanInstallThx =>
         !_thxBusy && ThxStatus.Availability != ThxHeadsetAvailability.Available;
 
-    public Visibility ThxDownloadVisibility =>
-        ThxStatus.Availability == ThxHeadsetAvailability.NativeMissing
-            ? Visibility.Visible
-            : Visibility.Collapsed;
-
-    public bool CanDownloadThxComponent =>
-        !_thxBusy && ThxStatus.Availability == ThxHeadsetAvailability.NativeMissing;
-
     public string ThxGameProfilesUri =>
         ThxHeadsetAdmission.GetProfile(Connection.ProductId)?.GameProfilesUri ?? string.Empty;
 
@@ -65,42 +57,6 @@ public sealed partial class RazerHidKrakenViewModel
 
     public Visibility ThxPatcherVisibility =>
         ThxPatcherUri.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
-
-    public async Task InstallThxNativeAsync(CancellationToken cancellationToken = default)
-    {
-        if (!CanDownloadThxComponent)
-        {
-            return;
-        }
-
-        _thxBusy = true;
-        _thxErrorText = string.Empty;
-        OnPropertyChanged(nameof(CanDownloadThxComponent));
-        OnPropertyChanged(nameof(CanInstallThx));
-        try
-        {
-            _thxStatus = await ThxHeadsetAdmission.InstallNativeComponentAsync(
-                Connection.ProductId, cancellationToken);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-        }
-        catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException or HttpRequestException or
-                InvalidOperationException)
-        {
-            _thxErrorText = AppStrings.Text("RazerHeadsetThxDownloadFailed");
-        }
-        finally
-        {
-            _thxBusy = false;
-            OnPropertyChanged(nameof(ThxStatusText));
-            OnPropertyChanged(nameof(ThxInstallerVisibility));
-            OnPropertyChanged(nameof(ThxDownloadVisibility));
-            OnPropertyChanged(nameof(CanDownloadThxComponent));
-            OnPropertyChanged(nameof(CanInstallThx));
-        }
-    }
 
     public async Task InstallThxComponentsAsync(CancellationToken cancellationToken = default)
     {
@@ -131,8 +87,6 @@ public sealed partial class RazerHidKrakenViewModel
             _thxBusy = false;
             OnPropertyChanged(nameof(ThxStatusText));
             OnPropertyChanged(nameof(ThxInstallerVisibility));
-            OnPropertyChanged(nameof(ThxDownloadVisibility));
-            OnPropertyChanged(nameof(CanDownloadThxComponent));
             OnPropertyChanged(nameof(CanInstallThx));
         }
     }
@@ -143,8 +97,6 @@ public sealed partial class RazerHidKrakenViewModel
         _thxStatus = ThxHeadsetAdmission.Check(Connection.ProductId);
         OnPropertyChanged(nameof(ThxStatusText));
         OnPropertyChanged(nameof(ThxInstallerVisibility));
-        OnPropertyChanged(nameof(ThxDownloadVisibility));
-        OnPropertyChanged(nameof(CanDownloadThxComponent));
         OnPropertyChanged(nameof(CanInstallThx));
     }
 }

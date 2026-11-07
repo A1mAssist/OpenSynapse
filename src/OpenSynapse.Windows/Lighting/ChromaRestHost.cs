@@ -4,11 +4,12 @@ using System.Text.Json.Serialization;
 using System.Text;
 using System.Text.Json;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Lighting;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Lighting;
 
-internal sealed class ChromaRestHost : IAsyncDisposable
+internal sealed partial class ChromaRestHost : IAsyncDisposable
 {
     private const int Port = 54235;
     private const int Success = 0;
@@ -26,7 +27,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
     private readonly IBladeLightingController _lighting;
     private readonly Func<Task> _restoreLighting;
     private readonly Func<bool> _bladeChromaOverrideEnabled;
-    private readonly Func<IReadOnlyList<RazerRgb>, CancellationToken, Task<bool>>? _additionalFrameSink;
+    private readonly Func<ChromaDeviceKind, IReadOnlyList<RazerRgb>, int, int, CancellationToken, Task<bool>>? _applyEffect;
     private readonly Func<bool> _restorePersistentEffect;
     private readonly Dictionary<string, Session> _sessions = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _blockedSources;
@@ -54,7 +55,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         IBladeLightingController lighting,
         Func<Task> restoreLighting,
         Func<bool>? restorePersistentEffect = null,
-        Func<IReadOnlyList<RazerRgb>, CancellationToken, Task<bool>>? additionalFrameSink = null,
+        Func<ChromaDeviceKind, IReadOnlyList<RazerRgb>, int, int, CancellationToken, Task<bool>>? applyEffect = null,
         Func<bool>? bladeChromaOverrideEnabled = null,
         IEnumerable<string>? blockedSources = null,
         int port = Port, TimeSpan? requestTimeout = null)
@@ -63,7 +64,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         _lighting = lighting ?? throw new ArgumentNullException(nameof(lighting));
         _restoreLighting = restoreLighting ?? throw new ArgumentNullException(nameof(restoreLighting));
         _bladeChromaOverrideEnabled = bladeChromaOverrideEnabled ?? (() => true);
-        _additionalFrameSink = additionalFrameSink;
+        _applyEffect = applyEffect;
         _restorePersistentEffect = restorePersistentEffect ?? (() => true);
         _blockedSources = new HashSet<string>(blockedSources ?? [], StringComparer.OrdinalIgnoreCase);
         _knownSources = new HashSet<string>(_blockedSources, StringComparer.OrdinalIgnoreCase);
@@ -315,11 +316,14 @@ internal sealed class ChromaRestHost : IAsyncDisposable
             }).ConfigureAwait(false);
             return;
         }
-        if (suffix.Equals("keyboard", StringComparison.OrdinalIgnoreCase) && (method.Equals("PUT", StringComparison.OrdinalIgnoreCase) || method.Equals("POST", StringComparison.OrdinalIgnoreCase)))
+        var endpoint = FindEffectEndpoint(suffix);
+        if (endpoint is { } target &&
+            (method.Equals("PUT", StringComparison.OrdinalIgnoreCase) ||
+             method.Equals("POST", StringComparison.OrdinalIgnoreCase)))
         {
             var createEffect = method.Equals("POST", StringComparison.OrdinalIgnoreCase);
-            var result = await ApplyKeyboardAsync(session, body, createEffect).ConfigureAwait(false);
-            await WriteResponseAsync(writer, 200, method.Equals("POST", StringComparison.OrdinalIgnoreCase)
+            var result = await ApplyEffectAsync(session, body, createEffect, target.Kind).ConfigureAwait(false);
+            await WriteResponseAsync(writer, 200, createEffect
                 ? new { result = result.Code, id = result.Id }
                 : new { result = result.Code }).ConfigureAwait(false);
             return;
@@ -332,18 +336,17 @@ internal sealed class ChromaRestHost : IAsyncDisposable
             (method.Equals("PUT", StringComparison.OrdinalIgnoreCase) ||
              method.Equals("POST", StringComparison.OrdinalIgnoreCase)))
         {
-            var result = await ApplyKeyboardAsync(session, body, createEffect: false).ConfigureAwait(false);
+            var result = await ApplyEffectAsync(
+                session, body, createEffect: false, ChromaDeviceKind.Keyboard).ConfigureAwait(false);
             await WriteResponseAsync(writer, 200, new { result = result.Code }).ConfigureAwait(false);
             return;
         }
-        if (method.Equals("DELETE", StringComparison.OrdinalIgnoreCase) &&
-            (suffix.Equals("keyboard", StringComparison.OrdinalIgnoreCase) ||
-             suffix.StartsWith("keyboard/", StringComparison.OrdinalIgnoreCase)))
+        if (method.Equals("DELETE", StringComparison.OrdinalIgnoreCase) && endpoint is { } deleteTarget)
         {
-            var effectId = suffix.Length > "keyboard/".Length
-                ? suffix["keyboard/".Length..]
+            var effectId = suffix.Length > deleteTarget.Name.Length + 1
+                ? suffix[(deleteTarget.Name.Length + 1)..]
                 : null;
-            var result = await ClearKeyboardEffectAsync(session, effectId).ConfigureAwait(false);
+            var result = await ClearEffectAsync(session, effectId, deleteTarget.Kind).ConfigureAwait(false);
             await WriteResponseAsync(writer, 200, new { result }).ConfigureAwait(false);
             return;
         }
@@ -359,7 +362,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
                 await WriteResponseAsync(writer, 200, new { result = InvalidParameter }).ConfigureAwait(false);
                 return;
             }
-            var result = await ClearKeyboardEffectAsync(session, effectId).ConfigureAwait(false);
+            var result = await ClearEffectAsync(session, effectId).ConfigureAwait(false);
             await WriteResponseAsync(writer, 200, new { result }).ConfigureAwait(false);
             return;
         }
@@ -383,7 +386,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
                 info.Author is null || string.IsNullOrWhiteSpace(info.Author.Name) || info.Author.Name.Length > 64 ||
                 info.Author.Contact is null || info.Author.Contact.Length > 64 ||
                 info.DeviceSupported is null || info.DeviceSupported.Count == 0 ||
-                !info.DeviceSupported.Any(device => device.Equals("keyboard", StringComparison.OrdinalIgnoreCase)) ||
+                !info.DeviceSupported.Any(device => ChromaDeviceNames.Contains(device)) ||
                 !(info.Category?.Equals("application", StringComparison.OrdinalIgnoreCase) == true ||
                   info.Category?.Equals("game", StringComparison.OrdinalIgnoreCase) == true))
             {
@@ -433,15 +436,16 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         }
     }
 
-    private async Task<(int Code, string? Id)> ApplyKeyboardAsync(
+    private async Task<(int Code, string? Id)> ApplyEffectAsync(
         Session session,
         string body,
-        bool createEffect)
+        bool createEffect,
+        ChromaDeviceKind kind)
     {
         await _effectGate.WaitAsync(_stop.Token).ConfigureAwait(false);
         try
         {
-            return await ApplyKeyboardCoreAsync(session, body, createEffect).ConfigureAwait(false);
+            return await ApplyEffectCoreAsync(session, body, createEffect, kind).ConfigureAwait(false);
         }
         finally
         {
@@ -449,10 +453,11 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         }
     }
 
-    private async Task<(int Code, string? Id)> ApplyKeyboardCoreAsync(
+    private async Task<(int Code, string? Id)> ApplyEffectCoreAsync(
         Session session,
         string body,
-        bool createEffect)
+        bool createEffect,
+        ChromaDeviceKind kind)
     {
         var claimedSession = false;
         string? effectId = null;
@@ -497,7 +502,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
                 {
                     return (InvalidParameter, null);
                 }
-                var parsed = ParseFrame(root, effectElement.GetString());
+                var parsed = ParseFrame(kind, root, effectElement.GetString());
                 if (parsed.Code != Success)
                 {
                     return (parsed.Code, null);
@@ -534,7 +539,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
                 session.Effects[effectId!] = frame;
             }
 
-            var changed = _frameSource.Publish(frame.BladeFrame);
+            var changed = frame.BladeFrame is null || _frameSource.Publish(frame.BladeFrame);
             if (!changed)
             {
                 Interlocked.Increment(ref _framesSkipped);
@@ -544,7 +549,8 @@ internal sealed class ChromaRestHost : IAsyncDisposable
             // the device back without restarting an already active runtime.
             var applied = false;
             var devices = _devices();
-            if (_bladeChromaOverrideEnabled() && devices.Any(device =>
+            if (frame.BladeFrame is not null &&
+                _bladeChromaOverrideEnabled() && devices.Any(device =>
                     device.ProtocolFamily is "blade-710" or "blade-710-chroma" &&
                     device.Access == DeviceAccessState.Available))
             {
@@ -557,14 +563,15 @@ internal sealed class ChromaRestHost : IAsyncDisposable
                         _stop.Token).ConfigureAwait(false);
                     applied = true;
                 }
-                catch (InvalidOperationException) when (_additionalFrameSink is not null)
+                catch (InvalidOperationException) when (_applyEffect is not null)
                 {
                     // RazerHid-only systems do not have a Blade target.
                 }
             }
-            if (_additionalFrameSink is not null)
+            if (_applyEffect is not null)
             {
-                applied |= await _additionalFrameSink(frame.ChromaFrame, _stop.Token)
+                applied |= await _applyEffect(
+                    frame.Kind, frame.ChromaFrame, frame.Rows, frame.Columns, _stop.Token)
                     .ConfigureAwait(false);
             }
             if (!applied)
@@ -645,14 +652,6 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         }
     }
 
-    private static JsonElement RequireObject(JsonElement parent, string propertyName)
-    {
-        if (!parent.TryGetProperty(propertyName, out var element) || element.ValueKind != JsonValueKind.Object)
-        {
-            throw new InvalidOperationException();
-        }
-        return element;
-    }
 
     private static bool TryReadEffectId(string body, out string? effectId)
     {
@@ -682,135 +681,32 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         }
     }
 
-    private static (int Code, ParsedFrame? Frame) ParseFrame(JsonElement root, string? effect)
-    {
-        switch (effect?.ToUpperInvariant())
-        {
-            case "CHROMA_NONE":
-                return (Success, new ParsedFrame(
-                    new RazerRgb[QuickLightingEngine.PixelCount],
-                    new RazerRgb[6 * 22]));
-            case "CHROMA_STATIC":
-                var staticParam = RequireObject(root, "param");
-                var staticColor = ChromaKeyboardFrameMapper.ToRgb(ParseColor(staticParam, "color"));
-                return (Success, new ParsedFrame(
-                    ChromaKeyboardFrameMapper.Static(staticColor),
-                    Enumerable.Repeat(staticColor, 6 * 22).ToArray()));
-            case "CHROMA_CUSTOM":
-                if (!root.TryGetProperty("param", out var custom))
-                {
-                    throw new InvalidOperationException();
-                }
-                var customMatrix = ParseMatrix(custom, 6, 22);
-                return (Success, new ParsedFrame(
-                    ChromaKeyboardFrameMapper.Custom(customMatrix),
-                    ToSourceFrame(customMatrix)));
-            case "CHROMA_CUSTOM2":
-                var custom2 = RequireObject(root, "param");
-                var custom2Colors = ParseMatrix(custom2, "color", 8, 24);
-                var custom2Keys = ParseMatrix(custom2, "key", 6, 22);
-                var custom2Source = ToSourceFrame(custom2Colors);
-                ApplySourceKeyOverrides(custom2Source, custom2Keys);
-                return (Success, new ParsedFrame(
-                    ChromaKeyboardFrameMapper.Custom2Key(custom2Colors, custom2Keys),
-                    custom2Source));
-            case "CHROMA_CUSTOM_KEY":
-                var parameter = RequireObject(root, "param");
-                var customKeyColors = ParseMatrix(parameter, "color", 6, 22);
-                var customKeyKeys = ParseMatrix(parameter, "key", 6, 22);
-                var customKeySource = ToSourceFrame(customKeyColors);
-                ApplySourceKeyOverrides(customKeySource, customKeyKeys);
-                return (Success, new ParsedFrame(
-                    ChromaKeyboardFrameMapper.CustomKey(customKeyColors, customKeyKeys),
-                    customKeySource));
-            default:
-                return (NotSupported, null);
-        }
-    }
 
-    private static RazerRgb[] ToSourceFrame(IReadOnlyList<IReadOnlyList<uint>> matrix)
+    private static readonly (string Name, ChromaDeviceKind Kind)[] EffectEndpoints =
+    [
+        ("keyboard", ChromaDeviceKind.Keyboard),
+        ("mouse", ChromaDeviceKind.Mouse),
+        ("headset", ChromaDeviceKind.Headset),
+        ("mousepad", ChromaDeviceKind.Mousepad),
+        ("keypad", ChromaDeviceKind.Keypad),
+        ("chromalink", ChromaDeviceKind.ChromaLink),
+    ];
+
+    private static readonly IReadOnlySet<string> ChromaDeviceNames = new HashSet<string>(
+        ["keyboard", "mouse", "headset", "mousepad", "mousemat", "keypad", "chromalink"],
+        StringComparer.OrdinalIgnoreCase);
+
+    private static (string Name, ChromaDeviceKind Kind)? FindEffectEndpoint(string suffix)
     {
-        var frame = new RazerRgb[6 * 22];
-        var rowOffset = matrix.Count == 8 ? 1 : 0;
-        var columnOffset = matrix[0].Count == 24 ? 1 : 0;
-        for (var row = 0; row < 6; row++)
+        foreach (var endpoint in EffectEndpoints)
         {
-            for (var column = 0; column < 22; column++)
+            if (suffix.Equals(endpoint.Name, StringComparison.OrdinalIgnoreCase) ||
+                suffix.StartsWith(endpoint.Name + "/", StringComparison.OrdinalIgnoreCase))
             {
-                frame[row * 22 + column] = ChromaKeyboardFrameMapper.ToRgb(
-                    matrix[row + rowOffset][column + columnOffset]);
+                return endpoint;
             }
         }
-        return frame;
-    }
-
-    private static void ApplySourceKeyOverrides(
-        RazerRgb[] frame,
-        IReadOnlyList<IReadOnlyList<uint>> keys)
-    {
-        const uint keyActiveMask = 0x01000000;
-        for (var row = 0; row < 6; row++)
-        {
-            for (var column = 0; column < 22; column++)
-            {
-                var encoded = keys[row][column];
-                if ((encoded & keyActiveMask) != 0)
-                {
-                    frame[row * 22 + column] = ChromaKeyboardFrameMapper.ToRgb(
-                        (~encoded) & 0x00FFFFFFu);
-                }
-            }
-        }
-    }
-
-    private static uint ParseColor(JsonElement parent, string propertyName)
-    {
-        if (!parent.TryGetProperty(propertyName, out var element) ||
-            element.ValueKind != JsonValueKind.Number ||
-            !element.TryGetUInt32(out var value) ||
-            value > 0x00FF_FFFFu)
-        {
-            throw new InvalidOperationException();
-        }
-        return value;
-    }
-
-    private static List<List<uint>> ParseMatrix(JsonElement parent, string propertyName, int rows, int columns)
-    {
-        if (!parent.TryGetProperty(propertyName, out var element))
-        {
-            throw new InvalidOperationException();
-        }
-        return ParseMatrix(element, rows, columns);
-    }
-
-    private static List<List<uint>> ParseMatrix(JsonElement element, int rows, int columns)
-    {
-        if (element.ValueKind != JsonValueKind.Array || element.GetArrayLength() != rows)
-        {
-            throw new InvalidOperationException();
-        }
-
-        var matrix = new List<List<uint>>();
-        foreach (var row in element.EnumerateArray())
-        {
-            if (row.ValueKind != JsonValueKind.Array || row.GetArrayLength() != columns)
-            {
-                throw new InvalidOperationException();
-            }
-
-            var values = new List<uint>();
-            foreach (var value in row.EnumerateArray())
-            {
-                if (value.ValueKind != JsonValueKind.Number || !value.TryGetUInt32(out var color))
-                {
-                    throw new InvalidOperationException();
-                }
-                values.Add(color);
-            }
-            matrix.Add(values);
-        }
-        return matrix;
+        return null;
     }
 
     private Session? FindSession(string path, out string suffix)
@@ -925,19 +821,27 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         }
     }
 
-    private async Task<int> ClearKeyboardEffectAsync(Session session, string? effectId)
+    private async Task<int> ClearEffectAsync(
+        Session session,
+        string? effectId,
+        ChromaDeviceKind? endpointKind = null)
     {
         await _effectGate.WaitAsync(CancellationToken.None).ConfigureAwait(false);
         try
         {
             bool removed;
             bool wasActive;
+            var clearedKind = endpointKind ?? ChromaDeviceKind.Keyboard;
             lock (_gate)
             {
                 removed = _sessions.ContainsKey(session.Id);
                 if (!removed)
                 {
                     return DeviceNotConnected;
+                }
+                if (effectId is not null && session.Effects.TryGetValue(effectId, out var stored))
+                {
+                    clearedKind = stored.Kind;
                 }
                 if (effectId is not null && !session.Effects.Remove(effectId))
                 {
@@ -955,6 +859,15 @@ internal sealed class ChromaRestHost : IAsyncDisposable
                 session.Active = false;
                 session.ActiveEffectId = null;
                 _frameSource.Clear();
+            }
+            if (wasActive && clearedKind != ChromaDeviceKind.Keyboard && _applyEffect is not null)
+            {
+                await _applyEffect(
+                    clearedKind,
+                    [default],
+                    1,
+                    1,
+                    CancellationToken.None).ConfigureAwait(false);
             }
             if (removed && wasActive && !HasActiveSession())
             {
@@ -1003,7 +916,7 @@ internal sealed class ChromaRestHost : IAsyncDisposable
         {
             await _lighting.StopAsync().ConfigureAwait(false);
         }
-        catch (InvalidOperationException) when (_additionalFrameSink is not null)
+        catch (InvalidOperationException) when (_applyEffect is not null)
         {
             // An RazerHid-only session has no Blade runtime to stop.
         }
@@ -1038,8 +951,11 @@ internal sealed class ChromaRestHost : IAsyncDisposable
     }
 
     private sealed record ParsedFrame(
-        RazerRgb[] BladeFrame,
-        RazerRgb[] ChromaFrame);
+        RazerRgb[] ChromaFrame,
+        int Rows,
+        int Columns,
+        ChromaDeviceKind Kind,
+        RazerRgb[]? BladeFrame = null);
 
     private sealed class ChromaAppInfo
     {

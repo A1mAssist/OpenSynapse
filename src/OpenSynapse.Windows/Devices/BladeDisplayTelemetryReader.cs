@@ -260,12 +260,13 @@ internal sealed class BladeDisplayTelemetryReader
         ResolvedRazerDevice device,
         CancellationToken cancellationToken)
     {
+        var profileId = GetLogoProfileId(device);
         var powerResponse = await _client.QueryAsync(device, CapabilityIds.LogoPowerGet, cancellationToken);
         var modeResponse = await _client.QueryAsync(device, CapabilityIds.LogoModeGet, cancellationToken);
         var power = BladeLogoProtocol.ParsePower(
-            powerResponse, RazerCapabilityClient.CreateRequest(device, CapabilityIds.LogoPowerGet));
+            powerResponse, RazerCapabilityClient.CreateRequest(device, CapabilityIds.LogoPowerGet), profileId);
         var poweredMode = BladeLogoProtocol.ParseMode(
-            modeResponse, RazerCapabilityClient.CreateRequest(device, CapabilityIds.LogoModeGet));
+            modeResponse, RazerCapabilityClient.CreateRequest(device, CapabilityIds.LogoModeGet), profileId);
         return new BladeLogoState(power, poweredMode);
     }
 
@@ -274,17 +275,18 @@ internal sealed class BladeDisplayTelemetryReader
         BladeLogoMode combinedMode,
         CancellationToken cancellationToken)
     {
+        var profileId = GetLogoProfileId(device);
         if (combinedMode == BladeLogoMode.Breathing)
         {
             await _client.QueryBuiltRequestAsync(
                 device,
                 CapabilityIds.LogoEffectSet,
-                BladeSynapsePolicyProtocol.CreateSetLogoEffectRequest(BladeLogoMode.Breathing),
+                BladeSynapsePolicyProtocol.CreateSetLogoEffectRequest(BladeLogoMode.Breathing, profileId),
                 cancellationToken);
             await _client.QueryBuiltRequestAsync(
                 device,
                 CapabilityIds.LogoStateSet,
-                BladeSynapsePolicyProtocol.CreateSetLogoStateRequest(BladeLogoMode.Breathing),
+                BladeSynapsePolicyProtocol.CreateSetLogoStateRequest(BladeLogoMode.Breathing, profileId),
                 cancellationToken);
             return;
         }
@@ -292,14 +294,14 @@ internal sealed class BladeDisplayTelemetryReader
         if (combinedMode == BladeLogoMode.Static)
         {
             await _client.QueryBuiltRequestAsync(
-                device, CapabilityIds.LogoModeSet, BladeLogoProtocol.CreateSetModeRequest(BladeLogoMode.Static), cancellationToken);
+                device, CapabilityIds.LogoModeSet, BladeLogoProtocol.CreateSetModeRequest(BladeLogoMode.Static, profileId), cancellationToken);
         }
         else if (combinedMode != BladeLogoMode.Off)
         {
             throw new ArgumentOutOfRangeException(nameof(combinedMode));
         }
 
-        var powerRequest = BladeLogoProtocol.CreateSetPowerRequest(combinedMode != BladeLogoMode.Off);
+        var powerRequest = BladeLogoProtocol.CreateSetPowerRequest(combinedMode != BladeLogoMode.Off, profileId);
         await _client.QueryBuiltRequestAsync(device, CapabilityIds.LogoPowerSet, powerRequest, cancellationToken);
     }
 
@@ -307,17 +309,18 @@ internal sealed class BladeDisplayTelemetryReader
         ResolvedRazerDevice device,
         BladeLogoState original)
     {
+        var profileId = GetLogoProfileId(device);
         try
         {
             await _client.QueryBuiltRequestAsync(
                 device,
                 CapabilityIds.LogoModeSet,
-                BladeLogoProtocol.CreateSetModeRequest(original.PoweredMode),
+                BladeLogoProtocol.CreateSetModeRequest(original.PoweredMode, profileId),
                 CancellationToken.None);
             await _client.QueryBuiltRequestAsync(
                 device,
                 CapabilityIds.LogoPowerSet,
-                BladeLogoProtocol.CreateSetPowerRequest(original.Powered),
+                BladeLogoProtocol.CreateSetPowerRequest(original.Powered, profileId),
                 CancellationToken.None);
             return await ReadLogoStateAsync(device, CancellationToken.None) == original;
         }
@@ -325,6 +328,17 @@ internal sealed class BladeDisplayTelemetryReader
         {
             return false;
         }
+    }
+
+    private static byte GetLogoProfileId(ResolvedRazerDevice device)
+    {
+        var profileId = device.GetCapability(CapabilityIds.LogoPowerGet).Arguments.Span[0];
+        if (profileId > 1)
+        {
+            throw new InvalidOperationException(
+                $"Blade Logo declares an unknown profile id: 0x{profileId:X2}.");
+        }
+        return profileId;
     }
 
     internal async Task<BladeStartupAnimationState> ReadStartupAnimationAsync(

@@ -1,6 +1,7 @@
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.ChromaSdk.Protocol;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Lighting;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
@@ -14,22 +15,33 @@ internal sealed class ChromaSdkEffectApplier
     private const uint KeyActiveMask = 0x01000000;
     private readonly MainViewModel _viewModel;
     private readonly IBladeLightingController? _lighting;
+    private readonly ChromaDeviceRouter? _router;
     private readonly ChromaExternalFrameSource _bladeFrame = new();
 
-    internal ChromaSdkEffectApplier(MainViewModel viewModel, IBladeLightingController? lighting)
+    internal ChromaSdkEffectApplier(
+        MainViewModel viewModel,
+        IBladeLightingController? lighting,
+        ChromaDeviceRouter? router = null)
     {
         _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
         _lighting = lighting;
+        _router = router;
     }
 
     internal uint SupportedDevices
     {
         get
         {
-            var mask = HasKeyboardTarget() ? ChromaSdkDeviceMask.Keyboard : 0u;
-            if (HasHidTarget(DeviceCategory.Mouse)) mask |= ChromaSdkDeviceMask.Mouse;
-            if (HasHidTarget(DeviceCategory.Headset)) mask |= ChromaSdkDeviceMask.Headset;
-            if (HasHidTarget(DeviceCategory.MouseMat)) mask |= ChromaSdkDeviceMask.Mousepad;
+            IReadOnlySet<ChromaDeviceKind> kinds =
+                _router?.SupportedKinds ?? new HashSet<ChromaDeviceKind>();
+            var mask = (HasKeyboardTarget() || kinds.Contains(ChromaDeviceKind.Keyboard))
+                ? ChromaSdkDeviceMask.Keyboard
+                : 0u;
+            if (kinds.Contains(ChromaDeviceKind.Mouse)) mask |= ChromaSdkDeviceMask.Mouse;
+            if (kinds.Contains(ChromaDeviceKind.Headset)) mask |= ChromaSdkDeviceMask.Headset;
+            if (kinds.Contains(ChromaDeviceKind.Mousepad)) mask |= ChromaSdkDeviceMask.Mousepad;
+            if (kinds.Contains(ChromaDeviceKind.Keypad)) mask |= ChromaSdkDeviceMask.Keypad;
+            if (kinds.Contains(ChromaDeviceKind.ChromaLink)) mask |= ChromaSdkDeviceMask.ChromaLink;
             return mask;
         }
     }
@@ -38,26 +50,38 @@ internal sealed class ChromaSdkEffectApplier
     {
         if (effect.DeviceType != ChromaSdkDeviceType.Keyboard)
         {
-            var category = effect.DeviceType switch
+            var kind = effect.DeviceType switch
             {
-                ChromaSdkDeviceType.Mouse => DeviceCategory.Mouse,
-                ChromaSdkDeviceType.Headset => DeviceCategory.Headset,
-                ChromaSdkDeviceType.Mousepad => DeviceCategory.MouseMat,
-                _ => (DeviceCategory?)null,
+                ChromaSdkDeviceType.Mouse => ChromaDeviceKind.Mouse,
+                ChromaSdkDeviceType.Headset => ChromaDeviceKind.Headset,
+                ChromaSdkDeviceType.Mousepad => ChromaDeviceKind.Mousepad,
+                ChromaSdkDeviceType.Keypad => ChromaDeviceKind.Keypad,
+                ChromaSdkDeviceType.ChromaLink => ChromaDeviceKind.ChromaLink,
+                _ => (ChromaDeviceKind?)null,
             };
-            if (category is null)
+            if (kind is null)
             {
-                // Keypad/ChromaLink have no OpenSynapse matrix target yet. The SDK
-                // still accepts their effects, just as it does with no device attached.
+                // The SDK still accepts an unknown device type with no target attached.
                 return true;
             }
 
+            var colors = effect.Colors.Select(ChromaKeyboardFrameMapper.ToRgb).ToArray();
+            if (_router is not null)
+            {
+                return await _router.ApplyAsync(
+                    kind.Value, colors, effect.Height, effect.Width, cancellationToken).ConfigureAwait(false);
+            }
+
+            var category = kind.Value switch
+            {
+                ChromaDeviceKind.Mouse => DeviceCategory.Mouse,
+                ChromaDeviceKind.Headset => DeviceCategory.Headset,
+                ChromaDeviceKind.Mousepad => DeviceCategory.MouseMat,
+                _ => (DeviceCategory?)null,
+            };
+            if (category is null) return true;
             _ = await _viewModel.RazerHid.ApplyChromaFrameAsync(
-                effect.Colors.Select(ChromaKeyboardFrameMapper.ToRgb).ToArray(),
-                effect.Height,
-                effect.Width,
-                category.Value,
-                cancellationToken).ConfigureAwait(false);
+                colors, effect.Height, effect.Width, category.Value, cancellationToken).ConfigureAwait(false);
             return true;
         }
 
@@ -93,6 +117,7 @@ internal sealed class ChromaSdkEffectApplier
             _ => throw new InvalidDataException("Unsupported keyboard effect."),
         };
 
+        var bladeApplied = false;
         if (_lighting is not null && HasBladeTarget() && _viewModel.Lighting.IsBladeChromaOverrideEnabled())
         {
             _bladeFrame.Publish(bladeFrame);
@@ -103,11 +128,19 @@ internal sealed class ChromaSdkEffectApplier
                     _bladeFrame,
                     restorePersistentEffect: false,
                     cancellationToken).ConfigureAwait(false);
+                bladeApplied = true;
             }
             catch (InvalidOperationException)
             {
                 // RazerHid-only systems have no Blade target.
             }
+        }
+
+        if (_router is not null)
+        {
+            return await _router.ApplyAsync(
+                ChromaDeviceKind.Keyboard, chromaFrame, sourceRows, sourceColumns, cancellationToken)
+                .ConfigureAwait(false) || bladeApplied;
         }
 
         _ = await _viewModel.RazerHid.ApplyChromaFrameAsync(

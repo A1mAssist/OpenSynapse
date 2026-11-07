@@ -11,7 +11,7 @@ namespace OpenSynapse.App.ViewModels;
 /// poll that keeps them live. Device telemetry stays with the shell because it drives the
 /// Blade and Viper controls.
 /// </summary>
-public sealed class TelemetryWorkspace : INotifyPropertyChanged
+public sealed partial class TelemetryWorkspace : INotifyPropertyChanged
 {
     private readonly IPerformanceMonitor _performanceMonitor;
     private readonly IPowerSourceProvider _powerSourceProvider;
@@ -41,6 +41,7 @@ public sealed class TelemetryWorkspace : INotifyPropertyChanged
 
     public event Action<DeviceBatteryReading>? BatteryObserved;
 
+    internal string TelemetryTimeText => _system.TelemetryTimeText;
     public string CpuName => _system.CpuName;
     public string CpuValue => _system.CpuValue;
     public double CpuPercent => _system.CpuPercent;

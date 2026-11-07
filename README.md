@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/A1mAssist/OpenSynapse/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/A1mAssist/OpenSynapse?style=flat-square"></a>
-  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-44D62C?style=flat-square"></a>
+  <a href="LICENSE"><img alt="AGPL-3.0 License" src="https://img.shields.io/badge/license-AGPL--3.0-44D62C?style=flat-square"></a>
   <img alt="Windows 11 x64" src="https://img.shields.io/badge/Windows-11%20x64-0078D4?style=flat-square">
 </p>
 
@@ -32,25 +32,25 @@ OpenSynapse reads connected devices first, then exposes only the controls resolv
 
 The list is grouped by device type and includes every recognized PID, so a Device Manager entry can be matched directly. Presence in the list does not mean every control has been physically verified on every model. An unresolved or busy endpoint stays read only until the next scan; OpenSynapse does not guess support from a product name or send a write through an unverified HID collection.
 
-### Notable controls
+### Controls by capability
 
-- **Blade:** telemetry, keyboard lighting, performance, fans, display, native panel mode, local dimming where supported, battery, touchpad, charge limit, and verified Fn/M3/M4/M5 behavior.
-- **Display:** an optional integrated-graphics-only mode disables the NVIDIA GPU through Windows PnP. It is not a MUX switch; external displays may stop working until the GPU is re-enabled. The machine-wide MSI install uses a LocalSystem service so the switch does not ask for UAC again; per-user and portable installs fall back to a UAC prompt.
-- **Blade THX audio:** spatial audio, EQ presets and bands, voice clarity, and speaker volume normalization on supported Blade 16 and Blade 14 models. The Blade device page opens a reusable THX control window. The signed Razer native component is not bundled; if missing, the app offers a verified download from Razer's official server.
-- **Viper:** battery, DPI, polling, sleep timeout, battery type, and onboard mappings.
-- **Headsets:** an audio page exposes EQ, microphone volume, sidetone, ANC, THX, and game/chat balance where the model and installed components support them. Kraken 7.1 models are lighting-only; THX V3/V4 installers are offered on supported models when the native component is missing.
-- **BlackShark V3 Pro:** battery, charging, sidetone, THX, ANC, and game/chat balance over its own HID channel. EQ, microphone gain, firmware updates, and indicator-LED modes are not included yet.
-- **Lighting Studio:** a dedicated sidebar page with an SVG device canvas and per-LED editing, regions, groups, profiles, 14 effects, `.ChromaEffects` import/export, Blade/HID multi-device matrix output, screen/audio inputs, and the non-AI Chroma Generate path. Controller hardware and real Chroma-client import still need validation.
+- **Device and power:** identity, firmware, serial number, battery, charging, sleep, charge limit, and low-battery behavior when the connected endpoint exposes them.
+- **Input and performance:** DPI, DPI stages, polling rate, scroll behavior, key actuation, Fn and key remapping, onboard profiles, and macro storage where the device protocol supports them.
+- **Lighting:** per-zone brightness and effects, matrix output, Chroma REST, and the official Chroma DLL broker. Lighting Studio adds an SVG device canvas, per-LED editing, regions, profiles, and effect composition.
+- **Thermals and display:** telemetry, performance modes, fan curves, panel and GPU modes, local dimming, and touchpad controls on supported laptops. Integrated-graphics-only mode disables the discrete GPU through Windows PnP; it is not a MUX switch, and external displays may stop working until the GPU is re-enabled.
+- **Audio:** EQ, microphone volume, sidetone, ANC, THX, and game/chat balance when the installed audio stack exposes them.
+
+Controls are resolved from the connected PID and HID endpoint. A control that is absent from the current endpoint is not guessed from the product name.
 
 ### Chroma REST
 
 See [Chroma-supported devices](docs/CHROMA_SUPPORTED_DEVICES.md) for the current device and transport matrix.
 
-Compatible games and integrations can send static, `CUSTOM`, `CUSTOM_KEY`, and `CUSTOM2` keyboard frames to `127.0.0.1:54235`. Frames use the verified Blade 16 key layout, and OpenSynapse restores the selected lighting effect after external control ends. Razer Synapse is not required.
+Compatible games and integrations can send static, `CUSTOM`, `CUSTOM_KEY`, and `CUSTOM2` frames to `127.0.0.1:54235` for keyboard, mouse, headset, mousepad, keypad and ChromaLink. Matrix channels use the device's own grid; whole-device channels receive the frame's average colour. ChromaLink reaches Aether lamps, docks, stands, ARGB controllers and Chroma accessories. OpenSynapse restores the effect each device had before external control. Razer Synapse is not required.
 
-### Chroma SDK shim
+### Chroma SDK broker
 
-The `OpenSynapse.ChromaSdk.Shim` project publishes an x64 `RzChromaSDK64.dll` that implements the Chroma SDK 4.0.1 ABI and routes keyboard effects to OpenSynapse over `\\.\pipe\OpenSynapseChromaSdk`. Keyboard `CUSTOM`, `CUSTOM_KEY`, and 8×24 `CUSTOM2`, plus mouse, headset, and mousepad custom/static effects, are decoded and applied when a matching matrix device is available. Generic `CreateEffect`, `QueryDevice`, keypad, ChromaLink, and deprecated effects are not implemented. See [Chroma SDK shim](docs/CHROMA_SDK_SHIM.md) for the ABI evidence and deployment steps.
+`OpenSynapse.ChromaBroker` reads the official Chroma SDK 4.x shared-memory protocol and decodes keyboard, mouse, headset, mousepad, keypad and ChromaLink frames. It runs as LocalSystem from the `OpenSynapseService` service registered at install time, so the app does not prompt for elevation on every launch. The only user-installed file is Razer's official `RzChromaSDK64.dll` in `C:\Windows\System32`; the settings page links the verified copy. When Razer's own Chroma service owns the arbitration mutex, the broker stands down and leaves game lighting to Razer. The retired self-developed shim is archived under `archive/OpenSynapse.ChromaSdk.Shim` and is not shipped or started.
 
 ## Screenshots
 
@@ -58,17 +58,20 @@ The `OpenSynapse.ChromaSdk.Shim` project publishes an x64 `RzChromaSDK64.dll` th
 |---|---|
 | ![OpenSynapse English overview page](screenshots/overview-en.png) | ![OpenSynapse English devices page](screenshots/devices-en.png) |
 
-| Blade controls | Settings |
+| Laptop controls | Settings |
 |---|---|
-| ![OpenSynapse English Blade controls](screenshots/blade-en.png) | ![OpenSynapse English settings page](screenshots/settings-en.png) |
+| ![OpenSynapse English laptop controls](screenshots/blade-en.png) | ![OpenSynapse English settings page](screenshots/settings-en.png) |
 
 ## Install
 
 Download one of these files from [GitHub Releases](https://github.com/A1mAssist/OpenSynapse/releases/latest).
 
-- `OpenSynapse-win.msi` installs for all users under `Program Files` and registers the GPU mode service with administrator approval. When registration succeeds, supported GPU switches use the service without another UAC prompt. If an older per-user Setup install is present, installation preserves its profiles and settings. The next unelevated launch verifies that every data file has a preserved copy, keeps conflicting versions as `.legacy-backup` files, and then removes the old install and repairs startup. Elevated launches leave the old uninstaller untouched.
-- `OpenSynapse-win-Setup.exe` installs for the current user and supports automatic updates. It does not install the machine-wide service; the GPU switch falls back to a UAC prompt for each change.
-- `OpenSynapse-win-Portable.zip` runs without installation. The GPU switch prompts for UAC when used.
+- `OpenSynapse-<version>-win-x64-Setup.msi` — **Recommended.** Installs for all users under `Program Files` and registers the GPU mode service with administrator approval. When registration succeeds, supported GPU switches use the service without another UAC prompt. If an older per-user install is present, installation preserves its profiles and settings. The next unelevated launch verifies that every data file has a preserved copy, keeps conflicting versions as `.legacy-backup` files, and then removes the old install and repairs startup. Elevated launches leave the old uninstaller untouched.
+- `OpenSynapse-<version>-win-Portable.zip` — Portable copy. It runs without installation; the GPU switch prompts for UAC when used.
+
+Advanced: `OpenSynapse-<version>-win-AutoUpdate-PerUser.exe` is the auto-update/per-user package. Do not download it for a normal install; use the MSI or Portable. It installs for the current user only and does not install the machine-wide service; use it only when you specifically need a per-user install or the auto-update path.
+
+`<version>` is the release version, for example `1.6.1`.
 
 The MSI service runs as `LocalSystem` and uses the protected executable under `Program Files`. It accepts fixed status, GPU enable/disable/restart, CPU power/Curve Optimizer and GPU clock operations, plus the fixed macro-agent launch request. The control pipe allows the configured installation-user SID, local Administrators and SYSTEM, and denies network logons. Available controls remain subject to model, driver and protocol admission; failed registration can still require the existing UAC fallback.
 
@@ -80,7 +83,7 @@ The release is not code signed. Windows SmartScreen may show a warning on first 
 
 ### Driver requirements
 
-The application does not require Razer Synapse, AppEngine, or `mapping_engine.dll` for its core device controls. Blade Fn, M3, M4, and M5 support still depends on the Product 710 Razer device drivers. THX audio requires the matching Razer THX stack and the signed native component offered by the Blade audio window.
+The application does not require Razer Synapse, AppEngine, or `mapping_engine.dll` for its core device controls. Some laptop Fn and multimedia keys still require the matching Razer device driver, which is not redistributed. THX audio requires the matching Razer THX stack and the signed native component offered by the audio window.
 
 ## Not included
 
@@ -97,9 +100,7 @@ The post-v1.5.1 source/test-build controls for peripheral low-battery notificati
 ```powershell
 dotnet restore OpenSynapse.slnx
 dotnet build OpenSynapse.slnx -c Release
-dotnet test OpenSynapse.slnx -c Release --no-build
 dotnet build src/OpenSynapse.App/OpenSynapse.App.csproj -c Release -p:Platform=x64
-dotnet publish src/OpenSynapse.ChromaSdk.Shim/OpenSynapse.ChromaSdk.Shim.csproj -c Release -r win-x64 -o artifacts/chroma-sdk-shim
 ```
 
 Run the local build with:
@@ -116,7 +117,7 @@ If you own a device that needs support, follow the [Device Adaptation Guide](doc
 
 ## License
 
-OpenSynapse is available under the [MIT License](LICENSE). Third-party components and bundled resources keep their own licenses and distribution terms.
+OpenSynapse is licensed under the [GNU Affero General Public License v3.0](LICENSE), AGPL-3.0-only. Copyright (c) 2026 A1mAssist. If you modify the program and let users interact with it over a network, those users must be offered the corresponding source. Third-party components and bundled resources keep their own licenses and distribution terms.
 
 The protocol implementation references [OpenRazer](https://github.com/openrazer/openrazer), [OpenRGB](https://gitlab.com/CalcProgrammer1/OpenRGB), and other public implementations. OpenSynapse is not affiliated with or endorsed by Razer Inc. Razer and related product names are trademarks of their respective owners.
 

@@ -9,7 +9,8 @@ public sealed partial class RazerKeyboardViewModel
 
     public OnboardMacroListViewModel Onboard =>
         _onboard ??= new OnboardMacroListViewModel(
-            RazerOnboardMacroDevices.Keyboards.Contains(_connection.ProductId));
+            RazerOnboardMacroDevices.Keyboards.Contains(_connection.ProductId),
+            canWrite: RazerOnboardMacroDevices.Keyboards.Contains(_connection.ProductId));
 
     public Task LoadOnboardMacrosAsync(CancellationToken cancellationToken = default) =>
         Onboard.LoadAsync(CreateService, cancellationToken);

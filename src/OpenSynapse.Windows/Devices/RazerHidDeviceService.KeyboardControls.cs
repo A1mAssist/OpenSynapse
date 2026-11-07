@@ -302,6 +302,34 @@ public sealed partial class RazerHidDeviceService
             cancellationToken);
     }
 
+    public async Task<RazerAnalogSnapTapState> GetAnalogSnapTapAsync(
+        RazerHidDeviceConnection connection,
+        byte profileId,
+        CancellationToken cancellationToken = default)
+    {
+        RequireReady(connection);
+        var request = RazerAnalogKeyProtocol.CreateGetAnalogSnapTapRequest(
+            MiddlewareTransactionId, profileId);
+        var response = await ExecuteAsync(connection,
+            new RazerHidRequest("razer_keyboard_get_snap_tap", request),
+            cancellationToken).ConfigureAwait(false);
+        return RazerAnalogKeyProtocol.ParseAnalogSnapTap(response);
+    }
+
+    public Task SetAnalogSnapTapAsync(
+        RazerHidDeviceConnection connection,
+        byte profileId,
+        bool enabled,
+        IReadOnlyList<RazerAnalogSnapTapPair> pairs,
+        CancellationToken cancellationToken = default)
+    {
+        RequireReady(connection);
+        return ExecuteWithoutResultAsync(connection,
+            new RazerHidRequest("razer_keyboard_set_snap_tap",
+                RazerAnalogKeyProtocol.CreateSetAnalogSnapTapRequest(
+                    MiddlewareTransactionId, profileId, enabled, pairs)),
+            cancellationToken);
+    }
     internal async Task ProbeKnobAsync(
         RazerHidDeviceDefinition definition,
         string devicePath,

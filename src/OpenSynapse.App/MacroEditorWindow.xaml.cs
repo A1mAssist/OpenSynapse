@@ -809,7 +809,7 @@ public sealed partial class MacroEditorWindow : Window
 
     private async void AddMacroLoopClick(object sender, RoutedEventArgs e) =>
         await _viewModel.Macros.AddMacroLoopStepAsync(_lifetime.Token);
-    private async void OnMacroEditorClosing(AppWindow sender, AppWindowClosingEventArgs args)
+    private void OnMacroEditorClosing(AppWindow sender, AppWindowClosingEventArgs args)
     {
         if (_allowClose)
         {
@@ -833,6 +833,14 @@ public sealed partial class MacroEditorWindow : Window
         }
 
         _closeSaveInProgress = true;
+        // Completing the close inside the closing callback re-enters WinUI's
+        // window teardown and can surface a native 0xc0000005. Let the event
+        // return, then save and close from the dispatcher.
+        DispatcherQueue.TryEnqueue(CompleteMacroEditorClose);
+    }
+
+    private async void CompleteMacroEditorClose()
+    {
         try
         {
             CancelPendingCapture();

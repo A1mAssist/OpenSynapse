@@ -34,7 +34,7 @@ public enum RazerChromaChannel
 /// Brightness and effect control over the class 0x10 Chroma channel shared by mice,
 /// keyboards, lamps, ARGB controllers and docks that the RazerHid catalogue does not cover.
 /// </summary>
-public sealed class RazerChromaStandardService
+public sealed partial class RazerChromaStandardService
 {
     private readonly IRazerFeatureTransport _transport;
     private readonly string _devicePath;
@@ -147,29 +147,6 @@ public sealed class RazerChromaStandardService
 
         return connections;
     }
-
-    internal static IReadOnlyList<RazerChromaDeviceConnection> SelectConnections(
-        IEnumerable<WindowsHidDiscovery.HidInterfaceDescriptor> interfaces) =>
-        interfaces
-            .Where(item => Products.ContainsKey(item.ProductId))
-            .Where(item => RazerHidDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
-            // A device with its own native page owns its card; Chroma never adds a second one.
-            .Where(item => RazerDeviceRegistry.BuiltIn.Find(0x1532, item.ProductId) is null)
-            .Where(item => !RazerHeadsetAudioService.IsSupported(item.ProductId))
-            .Where(item => !RazerKeyboardService.IsSupported(item.ProductId))
-            .GroupBy(item => item.PhysicalDeviceKey, StringComparer.OrdinalIgnoreCase)
-            .Select(group => group
-                .OrderByDescending(item => item.Access == DeviceAccessState.Available)
-                .ThenBy(item => item.DevicePath, StringComparer.OrdinalIgnoreCase)
-                .First())
-            .OrderBy(item => item.ProductId)
-            .ThenBy(item => item.DevicePath, StringComparer.OrdinalIgnoreCase)
-            .Select(item =>
-            {
-                var (name, category) = Products[item.ProductId];
-                return new RazerChromaDeviceConnection(item.DevicePath, item.ProductId, name, category);
-            })
-            .ToArray();
 
     public async Task<RazerChromaStandardState> ReadStateAsync(CancellationToken cancellationToken = default)
     {
@@ -387,16 +364,15 @@ public sealed class RazerChromaStandardService
         byte[] payload,
         CancellationToken cancellationToken)
     {
-        if (_productId == 0x02B3 && effect == RazerChromaEffect.Static)
+        // The rzDevice25LegacyHardwareEffect page overrides setChromaEffectCommon with the
+        // class 0x03 command 0x0A; the plain rzDevice25 page keeps the 0F:02 effect command.
+        if (_productId is { } productId && RazerKeyboardService.UsesMatrixChroma(productId))
         {
-            if (payload.Length != 3)
-            {
-                throw new ArgumentException("Matrix static takes one RGB colour.", nameof(payload));
-            }
-
+            var matrixFlags = effect == RazerChromaEffect.Breathing ? (byte)(payload.Length / 3) : (byte)0;
             await QueryAsync(
-                transaction => RazerLegacyChromaProtocol.SetMatrixStatic(transaction, payload),
-                "set matrix static effect",
+                transaction => RazerLegacyChromaProtocol.SetMatrixEffect(
+                    transaction, effect, payload, matrixFlags),
+                "set matrix effect",
                 cancellationToken).ConfigureAwait(false);
             return;
         }
