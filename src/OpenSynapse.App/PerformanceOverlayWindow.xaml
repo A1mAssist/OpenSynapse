@@ -1,7 +1,8 @@
 <Window
     x:Class="OpenSynapse.App.PerformanceOverlayWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:OpenSynapse.App.Controls">
   <Grid x:Name="DragRegion"
         Background="Transparent"
         PointerPressed="DragRegionPointerPressed"
@@ -313,12 +314,12 @@
         </StackPanel>
 
         <Grid Grid.Row="1"
-              ColumnDefinitions="190,194"
+              ColumnDefinitions="190,194,*"
               ColumnSpacing="12">
           <Grid RowDefinitions="Auto,Auto,Auto,Auto"
                 RowSpacing="4"
                 VerticalAlignment="Center">
-            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto"
+            <Grid ColumnDefinitions="Auto,Auto,Auto"
                   ColumnSpacing="5"
                   VerticalAlignment="Center">
               <Border Width="20"
@@ -343,22 +344,10 @@
                          FontSize="14"
                          Foreground="{StaticResource DataBrush}"
                          VerticalAlignment="Center" />
-              <TextBlock Grid.Column="3"
-                         Text="·"
-                         FontFamily="{StaticResource AppFontFamily}"
-                         FontSize="9"
-                         Foreground="#70FFFFFF"
-                         VerticalAlignment="Center" />
-              <TextBlock Grid.Column="4"
-                         Text="{Binding Telemetry.CpuClockText}"
-                         FontFamily="{StaticResource AppFontFamily}"
-                         FontSize="9"
-                         Foreground="#A8FFFFFF"
-                         VerticalAlignment="Center" />
             </Grid>
 
             <Grid Grid.Row="1"
-                  ColumnDefinitions="Auto,Auto,Auto,Auto,Auto"
+                  ColumnDefinitions="Auto,Auto,Auto"
                   ColumnSpacing="5"
                   VerticalAlignment="Center">
               <Border Width="20"
@@ -382,18 +371,6 @@
                          FontFamily="{StaticResource AppFontSemiBoldFamily}"
                          FontSize="14"
                          Foreground="{StaticResource DataBrush}"
-                         VerticalAlignment="Center" />
-              <TextBlock Grid.Column="3"
-                         Text="·"
-                         FontFamily="{StaticResource AppFontFamily}"
-                         FontSize="9"
-                         Foreground="#70FFFFFF"
-                         VerticalAlignment="Center" />
-              <TextBlock Grid.Column="4"
-                         Text="{Binding Telemetry.GpuClockText}"
-                         FontFamily="{StaticResource AppFontFamily}"
-                         FontSize="9"
-                         Foreground="#A8FFFFFF"
                          VerticalAlignment="Center" />
             </Grid>
 
@@ -626,6 +603,7 @@
               </Canvas>
             </Grid>
           </Border>
+          <controls:PerformanceOverlayMetrics Grid.Column="2" />
         </Grid>
       </Grid>
     </Border>

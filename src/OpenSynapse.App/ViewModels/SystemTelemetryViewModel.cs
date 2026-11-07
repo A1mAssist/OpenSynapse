@@ -27,7 +27,14 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
     private string _gpuPowerPeakText = "--";
     private string _gpuClockPeakText = "--";
     private string _gpuMemoryText = "--";
+    private string _gpuMemoryUsedText = "--";
+    private double _gpuMemoryPercent;
+    private bool _hasGpuUsage;
+    private bool _hasGpuMemory;
+    private bool _hasCpuUsage;
     private string _memoryValue = "--";
+    private string _memoryUsedText = "--";
+    private bool _hasMemory;
     private string _memoryDetail = "-- / -- GB";
     private string _memoryClockText = "--";
     private double _memoryPercent;
@@ -43,6 +50,7 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
     public string CpuName { get => _cpuName; private set => SetField(ref _cpuName, value); }
     public string CpuValue { get => _cpuValue; private set => SetField(ref _cpuValue, value); }
     public double CpuPercent { get => _cpuPercent; private set => SetField(ref _cpuPercent, value); }
+    public bool HasCpuUsage { get => _hasCpuUsage; private set => SetField(ref _hasCpuUsage, value); }
     public string CpuTemperatureText { get => _cpuTemperatureText; private set => SetField(ref _cpuTemperatureText, value); }
     public string CpuPowerText { get => _cpuPowerText; private set => SetField(ref _cpuPowerText, value); }
     public string CpuClockText { get => _cpuClockText; private set => SetField(ref _cpuClockText, value); }
@@ -52,6 +60,7 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
     public string GpuName { get => _gpuName; private set => SetField(ref _gpuName, value); }
     public string GpuValue { get => _gpuValue; private set => SetField(ref _gpuValue, value); }
     public double GpuPercent { get => _gpuPercent; private set => SetField(ref _gpuPercent, value); }
+    public bool HasGpuUsage { get => _hasGpuUsage; private set => SetField(ref _hasGpuUsage, value); }
     public string GpuTemperatureText { get => _gpuTemperatureText; private set => SetField(ref _gpuTemperatureText, value); }
     public string GpuPowerText { get => _gpuPowerText; private set => SetField(ref _gpuPowerText, value); }
     public string GpuClockText { get => _gpuClockText; private set => SetField(ref _gpuClockText, value); }
@@ -60,7 +69,12 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
     public string GpuClockPeakText { get => _gpuClockPeakText; private set => SetField(ref _gpuClockPeakText, value); }
     public string GpuMemoryLabel => AppStrings.Text("GpuMemoryLabel");
     public string GpuMemoryText { get => _gpuMemoryText; private set => SetField(ref _gpuMemoryText, value); }
+    public string GpuMemoryUsedText { get => _gpuMemoryUsedText; private set => SetField(ref _gpuMemoryUsedText, value); }
+    public double GpuMemoryPercent { get => _gpuMemoryPercent; private set => SetField(ref _gpuMemoryPercent, value); }
+    public bool HasGpuMemory { get => _hasGpuMemory; private set => SetField(ref _hasGpuMemory, value); }
     public string MemoryValue { get => _memoryValue; private set => SetField(ref _memoryValue, value); }
+    public string MemoryUsedText { get => _memoryUsedText; private set => SetField(ref _memoryUsedText, value); }
+    public bool HasMemory { get => _hasMemory; private set => SetField(ref _hasMemory, value); }
     public string MemoryDetail { get => _memoryDetail; private set => SetField(ref _memoryDetail, value); }
     public string MemoryClockText { get => _memoryClockText; private set => SetField(ref _memoryClockText, value); }
     public double MemoryPercent { get => _memoryPercent; private set => SetField(ref _memoryPercent, value); }
@@ -75,6 +89,7 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
         if (!string.IsNullOrWhiteSpace(snapshot.CpuName)) CpuName = snapshot.CpuName;
         CpuValue = FormatPercent(snapshot.CpuUsagePercent);
         CpuPercent = snapshot.CpuUsagePercent ?? 0;
+        HasCpuUsage = snapshot.CpuUsagePercent is not null;
         CpuTemperatureText = FormatNumber(snapshot.CpuTemperatureCelsius, "0", "°C");
         CpuPowerText = FormatNumber(snapshot.CpuPowerWatts, "0.0", " W");
         CpuClockText = FormatNumber(snapshot.CpuClockMegahertz, "0", " MHz");
@@ -87,6 +102,7 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
             GpuPowerText = "--";
             GpuClockText = "--";
             GpuMemoryText = "--";
+            GpuMemoryUsedText = "--";
         }
 
         _peaks.Apply(snapshot);
@@ -100,6 +116,7 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
 
         GpuValue = FormatPercent(snapshot.GpuUsagePercent);
         GpuPercent = snapshot.GpuUsagePercent ?? 0;
+        HasGpuUsage = snapshot.GpuUsagePercent is not null;
         GpuTemperatureText = FormatNumber(snapshot.GpuTemperatureCelsius, "0", "°C");
         GpuPowerText = FormatNumber(snapshot.GpuPowerWatts, "0.0", " W");
         GpuClockText = FormatNumber(snapshot.GpuClockMegahertz, "0", " MHz");
@@ -114,18 +131,27 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
                         snapshot.GpuMemoryTotalMebibytes is long total
             ? $"{used:N0} / {total:N0} MiB"
             : "--";
+        var gpuMemoryPercent = CalculatePercent(
+            snapshot.GpuMemoryUsedMebibytes,
+            snapshot.GpuMemoryTotalMebibytes);
+        GpuMemoryPercent = gpuMemoryPercent ?? 0;
+        HasGpuMemory = gpuMemoryPercent is not null;
+        GpuMemoryUsedText = FormatMebibytes(snapshot.GpuMemoryUsedMebibytes);
 
+        MemoryUsedText = FormatGigabytes(snapshot.MemoryUsedBytes);
         if (CalculatePercent(snapshot.MemoryUsedBytes, snapshot.MemoryTotalBytes) is double memoryPercent)
         {
             MemoryPercent = memoryPercent;
             MemoryValue = FormatPercent(memoryPercent);
             MemoryDetail = FormatBytePair(snapshot.MemoryUsedBytes, snapshot.MemoryTotalBytes);
+            HasMemory = true;
         }
         else
         {
             MemoryPercent = 0;
             MemoryValue = "--";
             MemoryDetail = "-- / -- GB";
+            HasMemory = false;
         }
 
         MemoryClockText = FormatNumber(snapshot.MemoryClockMegahertz, "0", " MHz");
@@ -194,6 +220,12 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
     }
 
     private static string FormatPercent(double? value) => value is null ? "--" : $"{value:0}%";
+
+    private static string FormatMebibytes(long? value) =>
+        value is null ? "--" : $"{value.Value / 1024.0:0.0} GB";
+
+    private static string FormatGigabytes(ulong? value) =>
+        value is null ? "--" : $"{value.Value / 1024.0 / 1024 / 1024:0.0} GB";
 
     private static string FormatNumber<T>(T? value, string format, string suffix) where T : struct, IFormattable =>
         value is null ? "--" : value.Value.ToString(format, null) + suffix;

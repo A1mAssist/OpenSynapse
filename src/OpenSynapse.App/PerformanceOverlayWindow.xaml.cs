@@ -36,8 +36,8 @@ public sealed partial class PerformanceOverlayWindow : Window
     private const byte OverlayAlpha = 232;
     private const double CompactWidthDip = 316;
     private const double CompactHeightDip = 104;
-    private const double DetailedWidthDip = 420;
-    private const double DetailedHeightDip = 160;
+    private const double DetailedWidthDip = 680;
+    private const double DetailedHeightDip = 176;
     private const double ScreenMarginDip = 16;
     private const int SparklineSamples = 24;
     private const double SparklineWidthDip = 178;
