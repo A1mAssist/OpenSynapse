@@ -87,6 +87,12 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                     continue;
                 }
 
+                // Only mice and keyboards use the RZCONTROL endpoint this driver adds.
+                if (!RazerFilterDriverAdmission.NeedsFilterDriver(productId))
+                {
+                    continue;
+                }
+
                 if (RazerDeviceRegistry.BuiltIn.Find(0x1532, productId)?.Category == DeviceCategory.Laptop)
                 {
                     // Blade models have their own Fn driver card with model-specific guidance.
