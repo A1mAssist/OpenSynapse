@@ -148,6 +148,7 @@ public sealed class RazerKeyboardService
         IReadOnlyList<WindowsHidDiscovery.HidInterfaceDescriptor> interfaces) =>
         interfaces
             .Where(item => Products.ContainsKey(RazerProductAliases.Canonical(item.ProductId)))
+            .Where(item => !RazerProductAliases.IsBleAlias(item.ProductId))
             // The RazerHid catalogue already owns these PIDs and shows its own page.
             .Where(item => RazerHidDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
             .GroupBy(item => item.PhysicalDeviceKey, StringComparer.OrdinalIgnoreCase)
