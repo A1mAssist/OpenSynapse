@@ -121,6 +121,48 @@
       "arguments": "",
       "allowRemainingPacketsMismatch": true
     },
+    "logo-power.get": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "80",
+      "arguments": "000400"
+    },
+    "logo-power.set": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "00",
+      "arguments": ""
+    },
+    "logo-mode.get": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "82",
+      "arguments": "000400"
+    },
+    "logo-mode.set": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "02",
+      "arguments": ""
+    },
+    "logo-effect.set": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "02",
+      "arguments": ""
+    },
+    "logo-state.set": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "00",
+      "arguments": ""
+    },
     "gaming-mode.set": {
       "transactionId": "00",
       "dataSize": "04",
