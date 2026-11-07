@@ -1391,7 +1391,6 @@
   <data name="ChromaShimStatusInstalled" xml:space="preserve"><value>Installed; game lighting is handled by OpenSynapse.</value></data>
   <data name="ChromaShimStatusUnavailable" xml:space="preserve"><value>Razer Chroma SDK not found.</value></data>
   <data name="ChromaShimStatusBusy" xml:space="preserve"><value>Working...</value></data>
-  <data name="ChromaSdkDownloadLink.Content" xml:space="preserve"><value>Download official Chroma SDK</value></data>
   <data name="ChromaShimInstallFailed" xml:space="preserve"><value>Install failed (code {0}). Close games and try again.</value></data>
   <data name="ChromaShimRestoreFailed" xml:space="preserve"><value>Restore failed (code {0}). Close games and try again.</value></data>
   <data name="ChromaRestoreTitle.Text" xml:space="preserve"><value>Restore lighting after external control</value></data>

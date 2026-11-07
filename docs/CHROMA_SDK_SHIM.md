@@ -315,11 +315,6 @@ OpenSynapse shim 当前校验：
 
 运行游戏前，OpenSynapse 必须已启动并开启 Chroma 集成；否则 `Init` 返回 1062。仅 x64，没有 x86 shim；shim 未签名，反作弊是否拦截需要按游戏实测。
 
-官方 Chroma SDK Core 安装包（包含 Razer 签名的 `RzChromaSDK64.dll`）：
-`https://app-assets.razer.com/files/synapse/Razer_Chroma_SDK_Core_v4.1.0.10151444.exe`
-
-设置页的“下载官方 Chroma SDK”链接指向同一个地址。安装官方 SDK Core 后，Razer 会注册自己的 Chroma 服务；如果后续改用共享内存 broker，需要先停掉 `Razer Chroma SDK Service` 和 `Razer Chroma SDK Server`，由 broker 接管。
-
 ## 9. 生命周期与安全
 
 - **一个活跃客户端**：`ChromaSdkBridgeHost` 最多允许 4 个管道连接，但同一时间只让一个 session 应用效果。其他 session 的 `SetEffect` 会被跳过并计入 `FramesSkipped`；shim 已经把调用方返回值置为 0，所以游戏不会知道被跳过。
