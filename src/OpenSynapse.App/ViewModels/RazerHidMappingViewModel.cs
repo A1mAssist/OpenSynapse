@@ -240,6 +240,14 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
         {
             await RefreshMacroContextAsync(cancellationToken).ConfigureAwait(true);
             var ids = await _transport.GetButtonIdsAsync(cancellationToken).ConfigureAwait(true);
+            if (ids.Count == 0)
+            {
+                // Razer's own UI keeps these ids in the product bundle; some firmware only
+                // answers the assignment table and never returns a button list.
+                var visual = await _assetService.GetAsync(_productId, _deviceKind, cancellationToken)
+                    .ConfigureAwait(true);
+                ids = visual.Mouse?.ButtonNames?.Keys.Order().ToArray() ?? [];
+            }
             ClearRows();
             SelectedRow = null;
             var defaults = _freeSlots.ToList();
