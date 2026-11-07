@@ -225,9 +225,13 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
 
             ApplyLighting(lighting);
             await RefreshMappingAvailabilityAsync(cancellationToken).ConfigureAwait(true);
+            // Keep the transport's own reason in the report: "did not respond" alone hides
+            // whether the device rejected, timed out or answered a different transaction.
             ErrorText = state.Firmware is null && state.Serial is null && state.BatteryPercent is null &&
                 state.GameModeEnabled is null && state.PollingRate is null
-                    ? AppStrings.Text("RazerHeadsetReadFailed")
+                    ? state.Errors.Count > 0
+                        ? $"{AppStrings.Text("RazerHeadsetReadFailed")} {state.Errors[0]}"
+                        : AppStrings.Text("RazerHeadsetReadFailed")
                     : string.Empty;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
