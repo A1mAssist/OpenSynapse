@@ -28,12 +28,20 @@ internal static class RazerHidKrakenV4Protocol
     /// <summary>Set Chroma Effect is C0 00 01 in the request.</summary>
     private const byte GetEffectCommandId = 0xC0;
 
+    /// <summary>Force Chroma Control is E8 00 01 in the request.</summary>
+    private const byte ForceChromaCommandId = 0xE8;
+
+    /// <summary>Set Chroma Brightness is C1 00 01 in the request.</summary>
+    private const byte BrightnessCommandId = 0xC1;
+
     /// <summary>
     /// Set Chroma Effect is C0 00 01 in the request; C0 01 01 is the expected
     /// response header. The bundle's command table declares C0 00 0xFF and the
     /// caller replaces the last byte with the payload length.
     /// </summary>
     private static readonly byte[] SetEffectHeader = [GetEffectCommandId, 0x00, 0x01];
+    private static readonly byte[] ForceChromaHeader = [ForceChromaCommandId, 0x00, 0x01];
+    private static readonly byte[] BrightnessHeader = [BrightnessCommandId, 0x00, 0x01];
 
     private const byte EffectOff = 0x00;
     private const byte EffectStatic = 0x01;
@@ -72,6 +80,26 @@ internal static class RazerHidKrakenV4Protocol
     ];
 
     /// <summary>
+    /// Takes the headset out of its onboard effect and gives the host control of
+    /// the Chroma ring. Billie T2 exposes this as E8 00 01.
+    /// </summary>
+    internal static byte[] CreateForceChroma(bool enabled, bool isDongle = false) =>
+        CreateGeneralReport(ForceChromaHeader, [enabled ? (byte)0x01 : (byte)0x00], isDongle);
+
+    /// <summary>
+    /// Sets the ring brightness as a percentage. Billie T2 maps it to one byte;
+    /// the ring renders nothing while that byte is zero.
+    /// </summary>
+    internal static byte[] CreateBrightness(int percent, bool isDongle = false)
+    {
+        var clamped = Math.Clamp(percent, 0, 100);
+        return CreateGeneralReport(
+            BrightnessHeader,
+            [checked((byte)Math.Round(255d * clamped / 100, MidpointRounding.AwayFromZero))],
+            isDongle);
+    }
+
+    /// <summary>
     /// Billie T2 answers every general command. Custom frames are fire-and-forget,
     /// so only the general shape has to have its reply drained.
     /// </summary>
@@ -79,14 +107,16 @@ internal static class RazerHidKrakenV4Protocol
         report.Length == ReportLength && report[7] == 0x00 && report[8] == 0x00;
 
     /// <summary>
-    /// Replies to C0 00 01 carry C0 01 01 in the command slot at bytes 10..12.
+    /// A general-command reply echoes the request's command byte at 10 and the
+    /// response id 0x01 at 11. The transaction id keeps audio replies out.
     /// </summary>
-    internal static bool IsEffectResponse(ReadOnlySpan<byte> report) =>
-        report.Length == ReportLength &&
-        report[0] == ReportId &&
-        report[2] == TransactionId &&
-        report[10] == GetEffectCommandId &&
-        report[11] == 0x01;
+    internal static bool IsCommandResponse(ReadOnlySpan<byte> request, ReadOnlySpan<byte> response) =>
+        request.Length == ReportLength &&
+        response.Length == ReportLength &&
+        response[0] == ReportId &&
+        response[2] == TransactionId &&
+        response[10] == request[10] &&
+        response[11] == 0x01;
 
     /// <summary>
     /// "Set Chroma Frame" takes the row and column bounds followed by the colour

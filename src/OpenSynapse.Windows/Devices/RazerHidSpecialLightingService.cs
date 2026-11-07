@@ -339,12 +339,15 @@ public sealed class RazerHidSpecialLightingService
         {
             var devicePath = connection.DevicePath!;
             var sendConnect = !_krakenV4Connected.ContainsKey(devicePath);
-            var reportsToSend = new List<byte[]>(reports.Count + (sendConnect ? 1 : 0));
+            var reportsToSend = new List<byte[]>(reports.Count + 3);
             if (sendConnect)
             {
                 reportsToSend.Add(RazerHidKrakenV4Protocol.CreateConnect(isDongle));
             }
 
+            // The Chroma bridge takes host control before it streams frames.
+            reportsToSend.Add(RazerHidKrakenV4Protocol.CreateForceChroma(enabled: true, isDongle));
+            reportsToSend.Add(RazerHidKrakenV4Protocol.CreateBrightness(100, isDongle));
             reportsToSend.AddRange(reports);
             foreach (var report in reportsToSend)
             {
@@ -393,7 +396,7 @@ public sealed class RazerHidSpecialLightingService
             if (RazerHidKrakenV4Protocol.ExpectsResponse(report))
             {
                 var response = await transport.QueryRawAsync(
-                    report, data => RazerHidKrakenV4Protocol.IsEffectResponse(data), cancellationToken)
+                    report, data => RazerHidKrakenV4Protocol.IsCommandResponse(report, data), cancellationToken)
                     .ConfigureAwait(false);
                 _diagnostic?.Invoke(response is null
                     ? "kraken lighting response=none"

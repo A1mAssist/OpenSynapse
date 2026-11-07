@@ -349,7 +349,9 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     }
 
     public IReadOnlyList<string> ThxPresetOptions =>
-        _thxState?.Presets.Select(preset => preset.DisplayName).ToArray() ?? [];
+        _thxState?.Presets.Select(preset => preset.Id == "default"
+            ? AppStrings.Text("ThxPresetDefault")
+            : preset.DisplayName).ToArray() ?? [];
 
     public int SelectedThxPresetIndex
     {
@@ -862,7 +864,9 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         {
             return Task.CompletedTask;
         }
-        var gains = ThxBands.Select(band => band.Level).ToArray();
+        var gains = preset.Id == "default"
+            ? Enumerable.Repeat(0d, ThxBands.Count).ToArray()
+            : ThxBands.Select(band => band.Level).ToArray();
         return RunThxAsync(
             (controller, token) => controller.SelectPresetAsync(
                 ThxAudioEndpoint.Headphones, preset.Id, gains, token),
