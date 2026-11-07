@@ -12,23 +12,56 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed class RazerKeyboardDeviceRowViewModel : INotifyPropertyChanged
 {
-    public RazerKeyboardDeviceRowViewModel(RazerKeyboardConnection connection)
+    private static readonly Brush ConnectedBrush =
+        new SolidColorBrush(Color.FromArgb(255, 153, 221, 114));
+    private static readonly Brush PartialBrush =
+        new SolidColorBrush(Color.FromArgb(255, 240, 185, 90));
+    private Task? _loadTask;
+
+    public RazerKeyboardDeviceRowViewModel(
+        RazerKeyboardConnection connection,
+        Action<string>? diagnostic = null)
     {
         Connection = connection;
+        Detail = new RazerKeyboardViewModel(connection, diagnostic);
+        Detail.PropertyChanged += DetailPropertyChanged;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public RazerKeyboardConnection Connection { get; }
+    public RazerKeyboardViewModel Detail { get; }
     public DeviceCategory HardwareCategory => DeviceCategory.Keyboard;
     public string Name => Connection.Name;
     public string Category => AppStrings.Text("RazerKeyboardCategory");
     public string Identity => $"VID_1532 / PID_{Connection.DisplayProductId:X4}";
     public string IconGlyph => "\uE765";
     public string Status => AppStrings.Text("BlackSharkStatusConnected");
-    public Brush StatusBrush { get; } = new SolidColorBrush(Color.FromArgb(255, 153, 221, 114));
+    public string Capability => Detail.CapabilityText;
+    public Brush StatusBrush => !Detail.HasCapabilityProbe ||
+        Detail.ProtocolAvailableCount == Detail.ProtocolTotalCount
+            ? ConnectedBrush
+            : PartialBrush;
     public string Error => string.Empty;
 
-    public void RefreshLocalization() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
+    public Task EnsureLoadedAsync(CancellationToken cancellationToken = default) =>
+        _loadTask ??= Detail.LoadAsync(cancellationToken);
+
+    private void DetailPropertyChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName is nameof(RazerKeyboardViewModel.CapabilityText) or
+            nameof(RazerKeyboardViewModel.ProtocolAvailableCount) or
+            nameof(RazerKeyboardViewModel.HasCapabilityProbe))
+        {
+            PropertyChanged?.Invoke(this, new(nameof(Capability)));
+            PropertyChanged?.Invoke(this, new(nameof(StatusBrush)));
+        }
+    }
+
+    public void RefreshLocalization()
+    {
+        Detail.RefreshLocalization();
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
+    }
 }
 
 public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
@@ -55,6 +88,10 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
     private Color _secondaryColor = Color.FromArgb(255, 255, 0, 0);
     private bool _hasPolling;
     private bool _hasBattery;
+    private bool _hasFirmware;
+    private bool _hasSerial;
+    private bool _hasMapping;
+    private bool _capabilityProbed;
     private RazerKeyboardService? _mappingService;
     private RazerHidMappingViewModel? _mapping;
     private Microsoft.UI.Xaml.Visibility _mappingVisibility = Microsoft.UI.Xaml.Visibility.Collapsed;
@@ -78,6 +115,20 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
     public string Identity => $"VID_1532 / PID_{_connection.DisplayProductId:X4}";
     public string DevicePath => _connection.DevicePath;
     public string StatusText => AppStrings.Text("BlackSharkStatusConnected");
+    public bool HasCapabilityProbe => _capabilityProbed;
+    // Firmware, serial, game mode, polling, lighting, brightness and mapping.
+    public int ProtocolTotalCount => 7;
+    public int ProtocolAvailableCount =>
+        (_hasFirmware ? 1 : 0) +
+        (_hasSerial ? 1 : 0) +
+        (_hasGameMode ? 1 : 0) +
+        (_hasPolling ? 1 : 0) +
+        (_hasLighting ? 1 : 0) +
+        (_hasBrightness ? 1 : 0) +
+        (_hasMapping ? 1 : 0);
+    public string CapabilityText => !_capabilityProbed
+        ? AppStrings.Text("BlackSharkStatusConnected")
+        : AppStrings.FormatText("ProtocolAvailableCount", ProtocolAvailableCount, ProtocolTotalCount);
 
     public string FirmwareText { get => _firmwareText; private set => SetField(ref _firmwareText, value); }
     public string SerialText { get => _serialText; private set => SetField(ref _serialText, value); }
@@ -244,6 +295,10 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
         finally
         {
             IsBusy = false;
+            _capabilityProbed = true;
+            OnPropertyChanged(nameof(HasCapabilityProbe));
+            OnPropertyChanged(nameof(ProtocolAvailableCount));
+            OnPropertyChanged(nameof(CapabilityText));
         }
     }
 
@@ -347,7 +402,8 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
         try
         {
             var ids = await MappingService.GetMappingButtonIdsAsync(cancellationToken).ConfigureAwait(true);
-            MappingVisibility = ids.Any(id => id != 0)
+            _hasMapping = ids.Any(id => id != 0);
+            MappingVisibility = _hasMapping
                 ? Microsoft.UI.Xaml.Visibility.Visible
                 : Microsoft.UI.Xaml.Visibility.Collapsed;
         }
@@ -389,7 +445,9 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
     private void ApplyState(RazerKeyboardState state)
     {
         FirmwareText = state.Firmware?.ToString() ?? "--";
+        _hasFirmware = state.Firmware is not null;
         SerialText = string.IsNullOrWhiteSpace(state.Serial) ? "--" : state.Serial;
+        _hasSerial = !string.IsNullOrWhiteSpace(state.Serial);
         if (state.BatteryPercent is byte battery)
         {
             BatteryText = $"{battery}%";
