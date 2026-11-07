@@ -68,6 +68,8 @@ public static class Program
             {
                 RemoveGpuService();
                 RemoveMacroAgentTask();
+                RemoveStartupRegistration();
+                OfferUserDataCleanup();
             })
             .Run();
 
@@ -219,6 +221,28 @@ public static class Program
         try
         {
             _ = ElevatedMacroTaskInstaller.Remove();
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    private static void RemoveStartupRegistration()
+    {
+        try
+        {
+            WindowsStartupManager.Remove();
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    private static void OfferUserDataCleanup()
+    {
+        try
+        {
+            UninstallUserDataPrompt.Offer();
         }
         catch (Exception)
         {
