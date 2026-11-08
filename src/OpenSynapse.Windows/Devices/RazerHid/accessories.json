@@ -1134,7 +1134,7 @@
       "pollRates": null,
       "matrixDimensions": [
         1,
-        16
+        15
       ],
       "waitMicroseconds": 600,
       "transactions": {
@@ -1292,8 +1292,8 @@
       "maximumDpi": null,
       "pollRates": null,
       "matrixDimensions": [
-        1,
-        20
+        4,
+        16
       ],
       "waitMicroseconds": 600,
       "transactions": {
@@ -1403,7 +1403,7 @@
       "pollRates": null,
       "matrixDimensions": [
         1,
-        8
+        10
       ],
       "waitMicroseconds": 600,
       "transactions": {
@@ -1453,7 +1453,7 @@
       "pollRates": null,
       "matrixDimensions": [
         1,
-        8
+        19
       ],
       "waitMicroseconds": 600,
       "transactions": {
@@ -1654,7 +1654,7 @@
       "pollRates": null,
       "matrixDimensions": [
         1,
-        12
+        18
       ],
       "waitMicroseconds": 31000,
       "transactions": {
@@ -1704,8 +1704,8 @@
       "maximumDpi": null,
       "pollRates": null,
       "matrixDimensions": [
-        1,
-        12
+        2,
+        14
       ],
       "waitMicroseconds": 31000,
       "transactions": {
@@ -1807,7 +1807,7 @@
       "pollRates": null,
       "matrixDimensions": [
         1,
-        12
+        8
       ],
       "waitMicroseconds": 31000,
       "transactions": {
