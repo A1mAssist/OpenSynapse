@@ -186,7 +186,6 @@ public sealed class KeyboardProfileSettings
     public string? SwitchType { get; set; }
     public bool? AnalogKeyEnabled { get; set; }
     public bool? SnapTapEnabled { get; set; }
-    public bool? FnKeyPrimary { get; set; }
     public int? DebounceMilliseconds { get; set; }
     public int? OledBrightness { get; set; }
     public string? OledLanguage { get; set; }

@@ -161,7 +161,6 @@ public sealed partial class ProfileDefinition
         SwitchType = source.SwitchType,
         AnalogKeyEnabled = source.AnalogKeyEnabled,
         SnapTapEnabled = source.SnapTapEnabled,
-        FnKeyPrimary = source.FnKeyPrimary,
         DebounceMilliseconds = source.DebounceMilliseconds,
         OledBrightness = source.OledBrightness,
         OledLanguage = source.OledLanguage,

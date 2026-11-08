@@ -161,7 +161,6 @@ public static partial class ProfileResolver
         SwitchType = power?.SwitchType ?? device?.SwitchType ?? global?.SwitchType,
         AnalogKeyEnabled = First(power?.AnalogKeyEnabled, device?.AnalogKeyEnabled, global?.AnalogKeyEnabled),
         SnapTapEnabled = First(power?.SnapTapEnabled, device?.SnapTapEnabled, global?.SnapTapEnabled),
-        FnKeyPrimary = First(power?.FnKeyPrimary, device?.FnKeyPrimary, global?.FnKeyPrimary),
         DebounceMilliseconds = First(
             power?.DebounceMilliseconds,
             device?.DebounceMilliseconds,
