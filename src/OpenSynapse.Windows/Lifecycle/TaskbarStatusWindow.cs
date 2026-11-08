@@ -200,8 +200,9 @@ public sealed partial class TaskbarStatusWindow : IDisposable
                 WsExToolWindow | WsExNoActivate,
                 _statusClassName,
                 string.Empty,
-                // Win11 paints its taskbar above child windows, so stay an owned popup.
-                WsPopup,
+                // A taskbar child disappears with the taskbar, including when a game
+                // covers it; the z-order pass below keeps it above Explorer's XAML host.
+                WsChild,
                 0, 0, 0, 0,
                 taskbar,
                 IntPtr.Zero,
@@ -263,11 +264,6 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     private void RepositionAndShow()
     {
         if (_statusWindow == IntPtr.Zero || !_contentAvailable) return;
-        if (IsFullscreenAppForeground())
-        {
-            Hide();
-            return;
-        }
         if (!TryGetLayout(out var x, out var y, out var width, out var height))
         {
             // Explorer briefly invalidates the taskbar while input methods and
@@ -285,7 +281,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
                       rect.Bottom != _lastStatusRect.Bottom;
         if (changed)
         {
-            var flags = SwpNoActivate | SwpNoZOrder;
+            var flags = SwpNoActivate;
             if (!_visible) flags |= SwpShowWindow;
             if (!SetWindowPos(
                     _statusWindow,
@@ -309,44 +305,15 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             ShowWindow(_statusWindow, SwShowNoActivate);
             _visible = true;
         }
-    }
 
-    /// <summary>
-    /// The strip is an owned popup, not a taskbar child, so it keeps painting when a
-    /// full-screen game hides the taskbar. Suppress it while the shell reports a busy
-    /// full-screen app, or when the foreground window covers the whole monitor.
-    /// </summary>
-    private static bool IsFullscreenAppForeground()
-    {
-        var foreground = GetForegroundWindow();
-        if (foreground == IntPtr.Zero || foreground == GetShellWindow())
+        // Explorer can insert its composition host above an already attached child.
+        // Re-assert the top of the taskbar's child band on every lifecycle tick.
+        if (!SetWindowPos(
+                _statusWindow, IntPtr.Zero, 0, 0, 0, 0,
+                SwpNoMove | SwpNoSize | SwpNoActivate))
         {
-            return false;
+            Hide();
         }
-
-        // QUNS_BUSY / QUNS_RUNNING_D3D_FULL_SCREEN / QUNS_PRESENTATION_MODE.
-        if (SHQueryUserNotificationState(out var state) == 0 && state is 2 or 3 or 4)
-        {
-            return true;
-        }
-
-        // Borderless games do not always set the shell state; their window still
-        // covers the monitor, taskbar included.
-        if (!GetWindowRect(foreground, out var window))
-        {
-            return false;
-        }
-        var monitor = MonitorFromWindow(foreground, MonitorDefaultToNearest);
-        var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
-        if (monitor == IntPtr.Zero || !GetMonitorInfoW(monitor, ref info))
-        {
-            return false;
-        }
-        const int tolerance = 2;
-        return window.Left <= info.Monitor.Left + tolerance &&
-               window.Top <= info.Monitor.Top + tolerance &&
-               window.Right >= info.Monitor.Right - tolerance &&
-               window.Bottom >= info.Monitor.Bottom - tolerance;
     }
 
     private bool TryGetLayout(out int x, out int y, out int width, out int height)
@@ -410,18 +377,10 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             return false;
         }
 
-        var origin = new Point
-        {
-            X = right - gap - width,
-            Y = Math.Max(0, (clientHeight - height) / 2),
-        };
-        if (!ClientToScreen(taskbar, ref origin))
-        {
-            return false;
-        }
-
-        x = origin.X;
-        y = origin.Y;
+        // A child window is positioned in taskbar client coordinates, not screen
+        // coordinates; ScreenToClient above already produced the tray anchor.
+        x = right - gap - width;
+        y = Math.Max(0, (clientHeight - height) / 2);
         return true;
     }
 
