@@ -98,9 +98,6 @@ public sealed partial class MainWindow
             _introductionStep = Math.Clamp(step, 0, steps.Count - 1);
             var definition = steps[_introductionStep];
             var target = await PrepareIntroductionStepAsync(definition);
-            IntroductionTip.PreferredPlacement = definition.Kind == IntroductionStepKind.DeviceControls
-                ? TeachingTipPlacementMode.Top
-                : TeachingTipPlacementMode.Bottom;
 
             RefreshIntroductionLocalization();
             IntroductionProgressText.Text = $"{_introductionStep + 1} / {steps.Count}";
@@ -117,12 +114,25 @@ public sealed partial class MainWindow
             RootLayout.UpdateLayout();
             if (definition.Kind == IntroductionStepKind.DeviceCards)
             {
-                // ItemsRepeater virtualizes its children; resolve the first real card after layout.
-                target = DevicesPage.DeviceCardsRepeaterElement.TryGetElement(0) as FrameworkElement
+                var cardIndex = 0;
+                if (definition.Device is { } device)
+                {
+                    var cards = _viewModel.PrimaryDevices;
+                    for (var index = 0; index < cards.Count; index++)
+                    {
+                        if (ReferenceEquals(cards[index], device))
+                        {
+                            cardIndex = index;
+                            break;
+                        }
+                    }
+                }
+                // ItemsRepeater virtualizes its children; resolve the real card after layout.
+                target = DevicesPage.DeviceCardsRepeaterElement.TryGetElement(cardIndex) as FrameworkElement
                     ?? target;
             }
 
-            if (definition.Kind == IntroductionStepKind.DeviceControls)
+            if (definition.Kind is IntroductionStepKind.DeviceControls or IntroductionStepKind.DeviceCards)
             {
                 DevicesPage.CenterOn(target);
             }
@@ -138,6 +148,7 @@ public sealed partial class MainWindow
             }
 
             RootLayout.UpdateLayout();
+            IntroductionTip.PreferredPlacement = ChooseIntroductionPlacement(target);
             SetIntroductionTarget(target);
             UpdateIntroductionOverlay();
             IntroductionOverlay.Visibility = Visibility.Visible;
@@ -180,13 +191,15 @@ public sealed partial class MainWindow
             IntroductionStepKind.Navigation,
             "IntroductionV2NavigationTitle",
             "IntroductionV2NavigationBody");
+        var peripheral = _viewModel.ConnectedDevices.FirstOrDefault(device =>
+            device.Category is DeviceCategory.Keyboard or DeviceCategory.Mouse);
+        var laptop = _viewModel.ConnectedDevices.FirstOrDefault(device =>
+            device.Category == DeviceCategory.Laptop);
         var devices = new IntroductionStep(
             IntroductionStepKind.DeviceCards,
             "IntroductionV2DevicesTitle",
-            "IntroductionV2DevicesBody");
-
-        var peripheral = _viewModel.ConnectedDevices.FirstOrDefault(device =>
-            device.Category is DeviceCategory.Keyboard or DeviceCategory.Mouse);
+            "IntroductionV2DevicesBody",
+            peripheral ?? laptop ?? _viewModel.ConnectedDevices.FirstOrDefault());
         if (peripheral is not null)
         {
             return
@@ -203,7 +216,7 @@ public sealed partial class MainWindow
             ];
         }
 
-        if (_viewModel.ConnectedDevices.Any(device => device.Category == DeviceCategory.Laptop))
+        if (laptop is not null)
         {
             return
             [
@@ -213,7 +226,7 @@ public sealed partial class MainWindow
                     IntroductionStepKind.DeviceControls,
                     "IntroductionV2BladeTitle",
                     "IntroductionV2BladeBody",
-                    _viewModel.ConnectedDevices.First(device => device.Category == DeviceCategory.Laptop)),
+                    laptop),
             ];
         }
 
@@ -286,6 +299,17 @@ public sealed partial class MainWindow
         {
             CompositionTarget.Rendering -= OnRendering;
         }
+    }
+
+    private TeachingTipPlacementMode ChooseIntroductionPlacement(FrameworkElement target)
+    {
+        var position = target.TransformToVisual(RootLayout)
+            .TransformPoint(new global::Windows.Foundation.Point(0, 0));
+        const double estimatedTipHeight = 240;
+        const double margin = 12;
+        return position.Y >= estimatedTipHeight + margin
+            ? TeachingTipPlacementMode.Top
+            : TeachingTipPlacementMode.Bottom;
     }
 
     private async Task CloseIntroductionTipAsync()

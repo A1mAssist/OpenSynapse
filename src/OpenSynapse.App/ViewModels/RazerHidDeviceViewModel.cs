@@ -652,9 +652,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         .Where(effect => NativeCounterpart(effect) is not { } native || !LightingEffects.Contains(native))
         .ToArray();
     public IReadOnlyList<string> LightingEffectOptions => LightingEffectChoices
-        .Select(effect => $"{FormatEffect(effect)} · {AppStrings.Text(IsSoftwareLightingEffect(effect)
-            ? "LightingRenderSoftware"
-            : "LightingRenderFirmware")}")
+        .Select(FormatEffect)
         .ToArray();
     public int SelectedLightingEffectIndex
     {

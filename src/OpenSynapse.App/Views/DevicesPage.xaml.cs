@@ -18,11 +18,11 @@ public sealed partial class DevicesPage : UserControl
     internal FrameworkElement IntroductionDeviceAnchor =>
         CurrentDeviceRoute() switch
         {
-            "keyboard" => KeyboardIntroductionCard.Visibility == Visibility.Visible
-                ? KeyboardIntroductionCard
+            "keyboard" => KeyboardControlsGrid.Visibility == Visibility.Visible
+                ? KeyboardControlsGrid
                 : KeyboardPanel,
-            "openrazer" => RazerHidIntroductionCard.Visibility == Visibility.Visible
-                ? RazerHidIntroductionCard
+            "openrazer" => RazerHidControlsGrid.Visibility == Visibility.Visible
+                ? RazerHidControlsGrid
                 : RazerHidDevicePanel,
             "viper" => ViperPollingRateCard,
             "blade" => BladeIntroductionAnchor,
