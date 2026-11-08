@@ -136,6 +136,8 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
 
         await RunDeviceOperationAsync(AppStrings.Text("Text_B98036FA"), async () =>
         {
+            var settings = Profile.Global.Viper;
+            var previous = settings.LowBatteryThresholdPercent;
             var percent = checked((int)Math.Round(
                 LowBatteryThresholdPercent, MidpointRounding.AwayFromZero));
             var actual = await _deviceTelemetryReader.SetViperLowBatteryThresholdAsync(
@@ -143,6 +145,12 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
             LowBatteryThresholdPercent = actual;
             _confirmedLowBatteryThresholdPercent = actual;
             LowBatteryThresholdText = $"{actual}%";
+            if (!ReferenceEquals(settings, Profile.Global.Viper)) throw ProfileSaveFailed();
+            settings.LowBatteryThresholdPercent = actual;
+            var saved = false;
+            try { saved = await _saveProfileAsync(cancellationToken); }
+            finally { if (!saved) settings.LowBatteryThresholdPercent = previous; }
+            if (!saved) throw ProfileSaveFailed();
         }, cancellationToken, () =>
         {
             LowBatteryThresholdPercent = _confirmedLowBatteryThresholdPercent;
@@ -176,6 +184,12 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
                     Y = stage.Y,
                 }).ToList(),
             };
+            var activeStage = actual.Stages.FirstOrDefault(stage => stage.Number == actual.ActiveStage);
+            if (activeStage is not null)
+            {
+                Profile.Global.Viper.DpiX = activeStage.X;
+                Profile.Global.Viper.DpiY = activeStage.Y;
+            }
             if (!await _saveProfileAsync(cancellationToken))
             {
                 _setProfile(previousProfile);

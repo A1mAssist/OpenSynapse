@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 
@@ -149,11 +150,16 @@ public sealed partial class RazerHidDeviceViewModel
         }
     }
 
+    [ProfileSetting("keyboard.analog-key", DeviceCategory.Keyboard, powerScoped: true)]
     public Task ApplyAnalogKeyAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(RazerHidBackendCapability.AnalogKeyWrite,
             () => IsAnalogKeyBusy, value => IsAnalogKeyBusy = value,
             async () =>
             {
+                var previousRapidTrigger = AnalogKeyContinuousRapidTrigger;
+                var previousDeadZone = AnalogKeyBottomDeadZone;
+                var previousReportMode = AnalogReportMode;
+                var previousProfile = ReadProfile(settings => settings.Keyboard.AnalogKeyEnabled);
                 await _service.SetAnalogKeyContinuousRapidTriggerAsync(
                     Connection, AnalogKeyClassId, AnalogKeyContinuousRapidTrigger, cancellationToken);
                 await _service.SetAnalogKeyBottomDeadZoneAsync(
@@ -163,6 +169,24 @@ public sealed partial class RazerHidDeviceViewModel
                 {
                     await RefreshAnalogKeyAsync(cancellationToken);
                 }
+                await SaveProfileAsync(
+                    settings => settings.Keyboard.AnalogKeyEnabled = AnalogKeyContinuousRapidTrigger,
+                    settings => settings.Keyboard.AnalogKeyEnabled = previousProfile,
+                    () =>
+                    {
+                        AnalogKeyContinuousRapidTrigger = previousRapidTrigger;
+                        AnalogKeyBottomDeadZone = previousDeadZone;
+                        AnalogReportMode = previousReportMode;
+                    },
+                    async token =>
+                    {
+                        await _service.SetAnalogKeyContinuousRapidTriggerAsync(
+                            Connection, AnalogKeyClassId, previousRapidTrigger, token);
+                        await _service.SetAnalogKeyBottomDeadZoneAsync(
+                            Connection, AnalogKeyClassId, previousDeadZone, token);
+                        await _service.SetAnalogReportModeAsync(Connection, previousReportMode, token);
+                    },
+                    cancellationToken);
             }, cancellationToken);
 
     public Task ApplyAnalogKeyToSelectionAsync(CancellationToken cancellationToken = default) =>

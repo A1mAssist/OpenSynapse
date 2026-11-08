@@ -208,6 +208,11 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             ErrorText = AppStrings.Text("RazerHidLightingProfileSaveFailed");
             return;
         }
+        if (exception is RazerHidSettingProfileSaveException)
+        {
+            ErrorText = AppStrings.Text("RazerHidSettingProfileSaveFailed");
+            return;
+        }
         if (exception is IOException or Win32Exception or UnauthorizedAccessException)
         {
             MarkRequiresRescan();

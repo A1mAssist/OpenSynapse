@@ -71,7 +71,11 @@ public sealed partial class MainViewModel
         }
 
         _selectedBleDevice = row;
-        SelectedBle = new RazerBleDeviceViewModel(row.Device, message => _diagnosticLog.TryWrite("ble", message));
+        SelectedBle = new RazerBleDeviceViewModel(
+            row.Device,
+            message => _diagnosticLog.TryWrite("ble", message),
+            () => _profile,
+            SaveProfileAsync);
         await SelectedBle.LoadAsync(cancellationToken);
     }
 

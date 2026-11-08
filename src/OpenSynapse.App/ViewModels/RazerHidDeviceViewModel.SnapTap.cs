@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 
@@ -47,11 +49,19 @@ public sealed partial class RazerHidDeviceViewModel
         }
     }
 
+    [ProfileSetting("keyboard.snap-tap", DeviceCategory.Keyboard, powerScoped: true)]
     public Task ApplyAnalogSnapTapAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(RazerHidBackendCapability.AnalogKeyWrite,
             () => IsAnalogKeyBusy, value => IsAnalogKeyBusy = value,
             async () =>
             {
+                var previousEnabled = AnalogSnapTapEnabled;
+                var previousProfile = ReadProfile(settings => settings.Keyboard.SnapTapEnabled);
+                var previousPairs = _analogSnapTapPairs
+                    .Where(pair => pair.Key1 is not null && pair.Key2 is not null)
+                    .Select(pair => new RazerAnalogSnapTapPair(
+                        pair.Key1!.KeyId, pair.Key2!.KeyId, pair.Mode))
+                    .ToArray();
                 var pairs = new List<RazerAnalogSnapTapPair>(_analogSnapTapPairs.Count);
                 var used = new HashSet<byte>();
                 foreach (var pair in _analogSnapTapPairs)
@@ -91,6 +101,13 @@ public sealed partial class RazerHidDeviceViewModel
                 await _service.SetAnalogSnapTapAsync(
                     Connection, AnalogKeyClassId, AnalogSnapTapEnabled, pairs, cancellationToken);
                 await RefreshAnalogSnapTapAsync(cancellationToken);
+                await SaveProfileAsync(
+                    settings => settings.Keyboard.SnapTapEnabled = AnalogSnapTapEnabled,
+                    settings => settings.Keyboard.SnapTapEnabled = previousProfile,
+                    () => AnalogSnapTapEnabled = previousEnabled,
+                    token => _service.SetAnalogSnapTapAsync(
+                        Connection, AnalogKeyClassId, previousEnabled, previousPairs, token),
+                    cancellationToken);
                 AnalogSnapTapStatusText =
                     $"\u5df2\u5e94\u7528 {pairs.Count} \u7ec4 Snap Tap \u5e76\u8bfb\u56de\u3002";
             }, cancellationToken);

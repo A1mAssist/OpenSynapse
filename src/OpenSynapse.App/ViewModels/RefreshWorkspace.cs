@@ -12,7 +12,7 @@ using static OpenSynapse.App.ViewModels.DeviceUiCatalog;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed class RefreshWorkspace : INotifyPropertyChanged
+public sealed partial class RefreshWorkspace : INotifyPropertyChanged
 {
     private readonly IDeviceDiscovery _discovery;
     private readonly IRazerDeviceTelemetryReader _deviceTelemetryReader;
@@ -50,6 +50,7 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
     private readonly Func<int> _accessoryErrorCount;
     private readonly Action _resetBlackShark;
     private readonly Action<string> _notifyPropertyChanged;
+    private readonly Func<PowerSourceKind, CancellationToken, Task>? _applyBleProfile;
     private readonly VerifiedProfileApplier _profileApplier = new();
     private readonly SemaphoreSlim _deviceWatchSignal = new(0, 1);
     private ApplicationProfileSwitcher _applicationProfileSwitcher = new();
@@ -102,7 +103,8 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
         Action<DeviceSnapshot, RazerDeviceTelemetry, IReadOnlyList<string>> rebuildDiagnostics,
         Func<int> accessoryErrorCount,
         Action resetBlackShark,
-        Action<string> notifyPropertyChanged)
+        Action<string> notifyPropertyChanged,
+        Func<PowerSourceKind, CancellationToken, Task>? applyBleProfile = null)
     {
         _discovery = discovery;
         _deviceTelemetryReader = deviceTelemetryReader;
@@ -140,6 +142,12 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
         _accessoryErrorCount = accessoryErrorCount;
         _resetBlackShark = resetBlackShark;
         _notifyPropertyChanged = notifyPropertyChanged;
+        _applyBleProfile = applyBleProfile;
+        if (openRazer.DeviceService is { } razerHidService)
+        {
+            _razerHidProfileApplier = new DeviceProfileApplyCoordinator(
+                [new RazerHidProfileApplier(razerHidService, openRazer.ResolveConnection)]);
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -455,12 +463,19 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
             if (applyDisplayProfile)
             {
                 await _openRazer.RestoreLightingAfterExternalAsync(cancellationToken);
-                _openRazer.SelectedDevice?.ApplyConfiguredLightingToEditor();
+                if (_openRazer.SelectedDevice is { } selectedRazerHid)
+                {
+                    await selectedRazerHid.ApplyConfiguredLightingAsync(cancellationToken);
+                }
             }
             var profileApply = await ApplyLoadedProfileAsync(
                 telemetry,
                 powerState,
                 cancellationToken);
+            if (applyDisplayProfile)
+            {
+                await ApplyBleProfileAsync(powerState, cancellationToken);
+            }
             if (profileApply is { AppliedCount: > 0 })
             {
                 telemetry = await _deviceTelemetryReader.ReadAsync(snapshot.Devices, cancellationToken);
@@ -606,28 +621,6 @@ public sealed class RefreshWorkspace : INotifyPropertyChanged
             _deviceOperationGate.Release();
             _firmware.NotifyDeviceStateChanged();
         }
-    }
-
-    private async Task<ProfileApplyResult?> ApplyLoadedProfileAsync(
-        RazerDeviceTelemetry telemetry,
-        PowerSourceKind powerState,
-        CancellationToken cancellationToken)
-    {
-        if (ActiveDescriptors.Count == 0)
-        {
-            return null;
-        }
-
-        return await _profileApplier.ApplyAsync(
-            Profile,
-            ActiveDescriptors,
-            telemetry,
-            _deviceTelemetryReader,
-            powerState,
-            cancellationToken,
-            applyKeyboardBrightness: IsDisplayAvailable,
-            coolingPadConnected: _blade.CoolingPadConnected,
-            padlessHyperBoostAccepted: _blade.PadlessHyperBoostAccepted);
     }
 
     private async Task<bool> TryEnterOperationAsync(CancellationToken cancellationToken)

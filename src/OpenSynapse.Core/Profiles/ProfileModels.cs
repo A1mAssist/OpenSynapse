@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Displays;
@@ -103,7 +104,7 @@ public sealed class ProfileDocument
     }
 }
 
-public sealed class ProfileDefinition
+public sealed partial class ProfileDefinition
 {
     public ProfileSettings Global { get; set; } = new();
     public Dictionary<string, DeviceProfileSettings> Devices { get; set; } = new(StringComparer.OrdinalIgnoreCase);
@@ -145,87 +146,6 @@ public sealed class ProfileDefinition
         Shortcuts.ApplySafeDefaults();
     }
 
-    internal ProfileDefinition Clone()
-    {
-        ApplySafeDefaults();
-        var clone = new ProfileDefinition
-        {
-            Global = new ProfileSettings
-            {
-                Blade = CloneBlade(Global.Blade),
-                Viper = CloneViper(Global.Viper),
-                Lighting = CloneLighting(Global.Lighting),
-            },
-            PluggedIn = ClonePower(PluggedIn),
-            LowPowerAdapter = ClonePower(LowPowerAdapter),
-            OnBattery = ClonePower(OnBattery),
-            Shortcuts = Shortcuts.Clone(),
-            LightingColorPresets = LightingColorPresets.Select(preset => preset.Clone()).ToList(),
-            Macros = Macros.Select(macro => macro.Clone()).ToList(),
-        };
-        foreach (var (key, settings) in Devices)
-        {
-            clone.Devices[key] = new DeviceProfileSettings
-            {
-                Blade = CloneBlade(settings.Blade),
-                Viper = CloneViper(settings.Viper),
-                Lighting = CloneLighting(settings.Lighting),
-                LightingEnabled = settings.LightingEnabled,
-                ChromaOverrideEnabled = settings.ChromaOverrideEnabled,
-            };
-        }
-
-        return clone;
-    }
-
-    private static PowerProfileOverrides ClonePower(PowerProfileOverrides source) => new()
-    {
-        Blade = CloneBlade(source.Blade),
-        Viper = CloneViper(source.Viper),
-        Lighting = CloneLighting(source.Lighting),
-        RazerHidLighting = source.RazerHidLighting.ToDictionary(
-            pair => pair.Key,
-            pair => CloneLighting(pair.Value),
-            StringComparer.OrdinalIgnoreCase),
-    };
-
-    private static BladeProfileSettings CloneBlade(BladeProfileSettings source) => new()
-    {
-        KeyboardBrightness = source.KeyboardBrightness,
-        PerformanceMode = source.PerformanceMode,
-        FanMode = source.FanMode,
-        FanTargetRpm = source.FanTargetRpm,
-        FanCurve = source.FanCurve?.Clone(),
-        ChargeLimitPercent = source.ChargeLimitPercent,
-        RefreshRateHertz = source.RefreshRateHertz,
-        MaxFanMode = source.MaxFanMode,
-        CpuBoostMode = source.CpuBoostMode,
-        GpuBoostMode = source.GpuBoostMode,
-        LogoMode = source.LogoMode,
-        GamingModeEnabled = source.GamingModeEnabled,
-        SnapTapEnabled = source.SnapTapEnabled,
-        MappingPreset = source.MappingPreset,
-        LightingEnabled = source.LightingEnabled,
-        ChromaOverrideEnabled = source.ChromaOverrideEnabled,
-        GpuMode = source.GpuMode,
-    };
-
-    private static ViperProfileSettings CloneViper(ViperProfileSettings source) => new()
-    {
-        DpiX = source.DpiX,
-        DpiY = source.DpiY,
-        PollingRateHertz = source.PollingRateHertz,
-        IdleSeconds = source.IdleSeconds,
-        BatteryChemistry = source.BatteryChemistry,
-        DpiStages = source.DpiStages?.Clone(),
-        ButtonAssignments = source.ButtonAssignments?.Select(assignment => assignment.Clone()).ToList(),
-    };
-
-    private static LightingProfile CloneLighting(LightingProfile source) => new()
-    {
-        Effect = source.Effect,
-        Parameters = new Dictionary<string, string>(source.Parameters, StringComparer.OrdinalIgnoreCase),
-    };
 }
 
 public sealed class ProfileShortcutSettings
@@ -294,44 +214,111 @@ public sealed class ProfileShortcutSettings
 public sealed class ProfileSettings
 {
     public BladeProfileSettings Blade { get; set; } = new();
-    public ViperProfileSettings Viper { get; set; } = new();
+    [JsonPropertyName("viper")]
+    public MouseProfileSettings Viper { get; set; } = new();
+    public KeyboardProfileSettings Keyboard { get; set; } = new();
+    public HeadsetProfileSettings Headset { get; set; } = new();
+    public CoolingPadProfileSettings CoolingPad { get; set; } = new();
+    public GamepadProfileSettings Gamepad { get; set; } = new();
+    public DisplayProfileSettings Display { get; set; } = new();
     public LightingProfile Lighting { get; set; } = new();
+    public Dictionary<string, LightingProfile> LightingZones { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase);
 
     internal void ApplySafeDefaults()
     {
         Blade ??= new BladeProfileSettings();
-        Viper ??= new ViperProfileSettings();
+        Viper ??= new MouseProfileSettings();
+        Keyboard ??= new KeyboardProfileSettings();
+        Headset ??= new HeadsetProfileSettings();
+        CoolingPad ??= new CoolingPadProfileSettings();
+        Gamepad ??= new GamepadProfileSettings();
+        Display ??= new DisplayProfileSettings();
         Lighting ??= new LightingProfile();
+        LightingZones = ProfileDictionary.Normalize(LightingZones);
         Blade.ApplySafeDefaults();
         Viper.ApplySafeDefaults();
+        Keyboard.ApplySafeDefaults();
+        Headset.ApplySafeDefaults();
+        CoolingPad.ApplySafeDefaults();
+        Gamepad.ApplySafeDefaults();
+        Display.ApplySafeDefaults();
         Lighting.ApplySafeDefaults();
+        foreach (var zone in LightingZones.Values)
+        {
+            zone.ApplySafeDefaults();
+        }
     }
 }
 
 public sealed class DeviceProfileSettings
 {
     public BladeProfileSettings Blade { get; set; } = new();
-    public ViperProfileSettings Viper { get; set; } = new();
+    [JsonPropertyName("viper")]
+    public MouseProfileSettings Viper { get; set; } = new();
+    public KeyboardProfileSettings Keyboard { get; set; } = new();
+    public HeadsetProfileSettings Headset { get; set; } = new();
+    public CoolingPadProfileSettings CoolingPad { get; set; } = new();
+    public GamepadProfileSettings Gamepad { get; set; } = new();
+    public DisplayProfileSettings Display { get; set; } = new();
     public LightingProfile Lighting { get; set; } = new();
+    public Dictionary<string, LightingProfile> LightingZones { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, DeviceSettingValue> Extras { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase);
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? ExtensionData { get; set; }
     public bool? LightingEnabled { get; set; }
     public bool? ChromaOverrideEnabled { get; set; }
 
     internal void ApplySafeDefaults()
     {
         Blade ??= new BladeProfileSettings();
-        Viper ??= new ViperProfileSettings();
+        Viper ??= new MouseProfileSettings();
+        Keyboard ??= new KeyboardProfileSettings();
+        Headset ??= new HeadsetProfileSettings();
+        CoolingPad ??= new CoolingPadProfileSettings();
+        Gamepad ??= new GamepadProfileSettings();
+        Display ??= new DisplayProfileSettings();
         Lighting ??= new LightingProfile();
+        LightingZones = ProfileDictionary.Normalize(LightingZones);
+        Extras = ProfileDictionary.Normalize(Extras);
         Blade.ApplySafeDefaults();
         Viper.ApplySafeDefaults();
+        Keyboard.ApplySafeDefaults();
+        Headset.ApplySafeDefaults();
+        CoolingPad.ApplySafeDefaults();
+        Gamepad.ApplySafeDefaults();
+        Display.ApplySafeDefaults();
         Lighting.ApplySafeDefaults();
+        foreach (var zone in LightingZones.Values)
+        {
+            zone.ApplySafeDefaults();
+        }
+        foreach (var value in Extras.Values)
+        {
+            value.ApplySafeDefaults();
+        }
     }
 }
 
 public sealed class PowerProfileOverrides
 {
     public BladeProfileSettings Blade { get; set; } = new();
-    public ViperProfileSettings Viper { get; set; } = new();
+    [JsonPropertyName("viper")]
+    public MouseProfileSettings Viper { get; set; } = new();
+    public KeyboardProfileSettings Keyboard { get; set; } = new();
+    public HeadsetProfileSettings Headset { get; set; } = new();
+    public CoolingPadProfileSettings CoolingPad { get; set; } = new();
+    public GamepadProfileSettings Gamepad { get; set; } = new();
+    public DisplayProfileSettings Display { get; set; } = new();
     public LightingProfile Lighting { get; set; } = new();
+    public Dictionary<string, LightingProfile> LightingZones { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase);
+    // RazerHid devices key their power-state zones by device so two mice do not
+    // share a per-zone override.
+    public Dictionary<string, Dictionary<string, LightingProfile>> RazerHidLightingZones { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase);
     public Dictionary<string, LightingProfile> RazerHidLighting { get; set; } =
         new(StringComparer.OrdinalIgnoreCase);
     // Profiles written before the RazerHid rename used this key; merge it once and save only the new key.
@@ -341,8 +328,15 @@ public sealed class PowerProfileOverrides
     internal void ApplySafeDefaults()
     {
         Blade ??= new BladeProfileSettings();
-        Viper ??= new ViperProfileSettings();
+        Viper ??= new MouseProfileSettings();
+        Keyboard ??= new KeyboardProfileSettings();
+        Headset ??= new HeadsetProfileSettings();
+        CoolingPad ??= new CoolingPadProfileSettings();
+        Gamepad ??= new GamepadProfileSettings();
+        Display ??= new DisplayProfileSettings();
         Lighting ??= new LightingProfile();
+        LightingZones = ProfileDictionary.Normalize(LightingZones);
+        RazerHidLightingZones = NormalizeRazerHidLightingZones(RazerHidLightingZones);
         RazerHidLighting = ProfileDictionary.Normalize(RazerHidLighting);
         foreach (var (key, value) in ProfileDictionary.Normalize(LegacyRazerHidLighting))
         {
@@ -351,7 +345,44 @@ public sealed class PowerProfileOverrides
         LegacyRazerHidLighting = null;
         Blade.ApplySafeDefaults();
         Viper.ApplySafeDefaults();
+        Keyboard.ApplySafeDefaults();
+        Headset.ApplySafeDefaults();
+        CoolingPad.ApplySafeDefaults();
+        Gamepad.ApplySafeDefaults();
+        Display.ApplySafeDefaults();
         Lighting.ApplySafeDefaults();
+        foreach (var zone in LightingZones.Values)
+        {
+            zone.ApplySafeDefaults();
+        }
+        foreach (var zones in RazerHidLightingZones.Values)
+        {
+            foreach (var zone in zones.Values)
+            {
+                zone.ApplySafeDefaults();
+            }
+        }
+    }
+
+    private static Dictionary<string, Dictionary<string, LightingProfile>> NormalizeRazerHidLightingZones(
+        IReadOnlyDictionary<string, Dictionary<string, LightingProfile>>? source)
+    {
+        var result = new Dictionary<string, Dictionary<string, LightingProfile>>(
+            StringComparer.OrdinalIgnoreCase);
+        if (source is null)
+        {
+            return result;
+        }
+
+        foreach (var (deviceKey, zones) in source)
+        {
+            if (!string.IsNullOrWhiteSpace(deviceKey))
+            {
+                result[deviceKey] = ProfileDictionary.Normalize(zones);
+            }
+        }
+
+        return result;
     }
 }
 
@@ -439,52 +470,6 @@ public sealed class BladeFanCurveProfile
     {
         CpuPoints ??= [];
         GpuPoints ??= [];
-    }
-}
-
-public sealed class ViperProfileSettings
-{
-    private static readonly byte[] Product184ButtonIds = [1, 2, 3, 4, 5, 9, 10, 96];
-
-    public int? DpiX { get; set; }
-    public int? DpiY { get; set; }
-    public int? PollingRateHertz { get; set; }
-    public int? IdleSeconds { get; set; }
-    public byte? BatteryChemistry { get; set; }
-    public ViperDpiStagesProfile? DpiStages { get; set; }
-    public List<ViperButtonAssignmentProfile>? ButtonAssignments { get; set; }
-
-    internal void ApplySafeDefaults()
-    {
-        if (BatteryChemistry is byte chemistry && chemistry > 2)
-        {
-            throw new InvalidDataException("Viper battery chemistry must be 0, 1, or 2.");
-        }
-        DpiStages?.ApplySafeDefaults();
-        if (ButtonAssignments is null)
-        {
-            return;
-        }
-        if (ButtonAssignments.Count != 16 || ButtonAssignments.Any(assignment => assignment is null))
-        {
-            throw new InvalidDataException("Viper button assignments must contain exactly 16 valid assignments.");
-        }
-
-        foreach (var assignment in ButtonAssignments)
-        {
-            assignment.ApplySafeDefaults();
-        }
-        var targets = ButtonAssignments
-            .Select(assignment => (assignment.ProfileId, assignment.ButtonId, assignment.Layer))
-            .ToHashSet();
-        if (targets.Count != ButtonAssignments.Count ||
-            Product184ButtonIds.Any(buttonId =>
-                !targets.Contains((1, buttonId, ViperButtonMappingLayer.Normal)) ||
-                !targets.Contains((1, buttonId, ViperButtonMappingLayer.HyperShift))))
-        {
-            throw new InvalidDataException(
-                "Viper button assignments must contain each Product 184 button and layer exactly once.");
-        }
     }
 }
 

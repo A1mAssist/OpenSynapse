@@ -1,4 +1,6 @@
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.App.ViewModels;
@@ -78,11 +80,18 @@ public sealed partial class RazerHidDeviceViewModel
         }
     }
 
+    [ProfileSetting("keyboard.oled", DeviceCategory.Keyboard)]
     public Task ApplyOledAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(RazerHidBackendCapability.OledWrite,
             () => IsOledBusy, value => IsOledBusy = value,
             async () =>
             {
+                var previousBrightness = OledBrightness;
+                var previousLanguageIndex = SelectedOledLanguageIndex;
+                var previousLanguage = OledLanguageValues[previousLanguageIndex];
+                var previousProfile = ReadProfile(settings => (
+                    settings.Keyboard.OledBrightness,
+                    settings.Keyboard.OledLanguage));
                 await _service.SetOledBrightnessAsync(Connection, OledBrightness, cancellationToken);
                 await _service.SetOledLanguageAsync(
                     Connection, OledLanguageValues[SelectedOledLanguageIndex], cancellationToken);
@@ -90,6 +99,29 @@ public sealed partial class RazerHidDeviceViewModel
                 {
                     await RefreshOledAsync(cancellationToken);
                 }
+                await SaveProfileAsync(
+                    settings =>
+                    {
+                        settings.Keyboard.OledBrightness = OledBrightness;
+                        settings.Keyboard.OledLanguage =
+                            ((KeyboardOledLanguage)OledLanguageValues[SelectedOledLanguageIndex]).ToString();
+                    },
+                    settings =>
+                    {
+                        settings.Keyboard.OledBrightness = previousProfile.OledBrightness;
+                        settings.Keyboard.OledLanguage = previousProfile.OledLanguage;
+                    },
+                    () =>
+                    {
+                        OledBrightness = previousBrightness;
+                        SelectedOledLanguageIndex = previousLanguageIndex;
+                    },
+                    async token =>
+                    {
+                        await _service.SetOledBrightnessAsync(Connection, previousBrightness, token);
+                        await _service.SetOledLanguageAsync(Connection, previousLanguage, token);
+                    },
+                    cancellationToken);
             }, cancellationToken);
 
     private async Task RefreshOledAsync(CancellationToken cancellationToken)

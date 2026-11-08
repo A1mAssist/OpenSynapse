@@ -264,6 +264,7 @@ public sealed class VerifiedProfileApplier
             }
 
             if (viperErrors.Count == 0 &&
+                profile.Viper.DpiStages is not { Stages.Count: > 0 } &&
                 (profile.Viper.DpiX is not null || profile.Viper.DpiY is not null))
             {
                 if (telemetry.ViperDpiX is not int currentX || telemetry.ViperDpiY is not int currentY)

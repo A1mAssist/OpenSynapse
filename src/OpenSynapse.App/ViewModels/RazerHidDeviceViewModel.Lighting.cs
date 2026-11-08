@@ -112,7 +112,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             return;
         }
 
-        var profile = _lightingProfileResolver(SelectedLightingPowerState);
+        var profile = _lightingProfileResolver(SelectedLightingPowerState, SelectedLightingZone);
         if (profile is null)
         {
             return;
@@ -467,7 +467,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
 
     internal void ApplyConfiguredLightingToEditor()
     {
-        var profile = _lightingProfileResolver?.Invoke(SelectedLightingPowerState);
+        var profile = _lightingProfileResolver?.Invoke(SelectedLightingPowerState, SelectedLightingZone);
         if (profile is not null)
         {
             ApplyLightingProfileToEditor(profile);
@@ -585,6 +585,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         {
             if (!await _lightingProfileSaver(
                 SelectedLightingPowerState,
+                SelectedLightingZone,
                 CreateLightingProfile(),
                 cancellationToken))
             {

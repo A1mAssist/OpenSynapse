@@ -140,6 +140,11 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
     internal IReadOnlyList<RazerHidDeviceConnection> CurrentConnections =>
         Devices.Select(row => row.Connection).ToArray();
 
+    internal RazerHidDeviceConnection? ResolveConnection(DeviceDescriptor descriptor) =>
+        CurrentConnections.FirstOrDefault(connection =>
+            connection.Definition.ProductId == descriptor.ProductId &&
+            connection.Definition.Category == descriptor.Category);
+
     internal Task<bool> ApplyChromaFrameAsync(
         IReadOnlyList<RazerRgb> sourceFrame,
         CancellationToken cancellationToken = default) =>
@@ -421,62 +426,6 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
                     connection.Definition.DisplayName, exception.Message));
             }
         }
-    }
-
-    private async Task<bool> SaveLightingAsync(
-        RazerHidDeviceConnection connection,
-        PowerSourceKind powerState,
-        LightingProfile profile,
-        CancellationToken cancellationToken)
-    {
-        var active = _getActiveProfile();
-        var key = ProfileResolver.GetDeviceKey(connection.ToDescriptor());
-        Dictionary<string, LightingProfile>? target = powerState switch
-        {
-            PowerSourceKind.FullPowerAdapter => active.PluggedIn.RazerHidLighting,
-            PowerSourceKind.LowPowerAdapter => active.LowPowerAdapter.RazerHidLighting,
-            PowerSourceKind.Battery => active.OnBattery.RazerHidLighting,
-            _ => null,
-        };
-
-        LightingProfile? previous = null;
-        var hadPrevious = false;
-        if (target is null)
-        {
-            if (!active.Devices.TryGetValue(key, out var settings))
-            {
-                settings = new DeviceProfileSettings();
-                active.Devices[key] = settings;
-            }
-
-            previous = CloneLightingProfile(settings.Lighting);
-            settings.Lighting = CloneLightingProfile(profile);
-        }
-        else
-        {
-            hadPrevious = target.TryGetValue(key, out previous);
-            target[key] = CloneLightingProfile(profile);
-        }
-
-        if (await _saveProfileAsync(cancellationToken))
-        {
-            return true;
-        }
-
-        if (target is null)
-        {
-            active.Devices[key].Lighting = previous ?? new LightingProfile();
-        }
-        else if (hadPrevious && previous is not null)
-        {
-            target[key] = previous;
-        }
-        else
-        {
-            target.Remove(key);
-        }
-
-        return false;
     }
 
     internal bool IsLightingEnabled(RazerHidDeviceConnection connection) =>
