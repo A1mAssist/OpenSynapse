@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Protocols;
 
@@ -100,14 +101,20 @@ public sealed partial class RazerHidDeviceService
                     definition, resolvedPath, cancellationToken).ConfigureAwait(false);
                 var probedCapabilities = await ProbeMiddlewareCapabilitiesAsync(
                     resolvedDefinition, resolvedPath, cancellationToken).ConfigureAwait(false);
+                var optionalCapabilities = await ProbeOptionalStateCapabilitiesAsync(
+                    resolvedDefinition, resolvedPath, cancellationToken).ConfigureAwait(false);
                 if (catalogued is null &&
                     !probedCapabilities.Contains(RazerHidBackendCapability.MappingRead))
                 {
                     continue;
                 }
+                var unsupportedOptional = OptionalStateCapabilities
+                    .Except(optionalCapabilities)
+                    .ToFrozenSet();
                 results.Add(CreateConnection(resolvedDefinition, resolvedPath, group.Key.PhysicalDeviceKey,
                     RazerHidEndpointState.Resolved, null,
-                    probedCapabilities.Count > 0 ? probedCapabilities : null));
+                    probedCapabilities.Count > 0 ? probedCapabilities : null,
+                    unsupportedOptional));
 
                 await AddLinkedConnectionsAsync(results, resolvedDefinition, resolvedPath, ordered,
                     group.Key.PhysicalDeviceKey, cancellationToken).ConfigureAwait(false);
