@@ -200,7 +200,8 @@ public sealed partial class TaskbarStatusWindow : IDisposable
                 WsExToolWindow | WsExNoActivate,
                 _statusClassName,
                 string.Empty,
-                WsChild,
+                // Win11 paints its taskbar above child windows, so stay an owned popup.
+                WsPopup,
                 0, 0, 0, 0,
                 taskbar,
                 IntPtr.Zero,
@@ -366,8 +367,18 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             return false;
         }
 
-        x = right - gap - width;
-        y = Math.Max(0, (clientHeight - height) / 2);
+        var origin = new Point
+        {
+            X = right - gap - width,
+            Y = Math.Max(0, (clientHeight - height) / 2),
+        };
+        if (!ClientToScreen(taskbar, ref origin))
+        {
+            return false;
+        }
+
+        x = origin.X;
+        y = origin.Y;
         return true;
     }
 
