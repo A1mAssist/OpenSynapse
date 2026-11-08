@@ -357,6 +357,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             _softwareLightingDelta = SoftwareLightingFrameInterval;
             _softwareAudioLevel = 0;
             var palette = CreateSoftwarePalette();
+            var matrix = Connection.Definition.MatrixDimensions!;
             var previousTimestamp = Stopwatch.GetTimestamp();
             await _softwareLightingRuntime.StartOrReplaceAsync(
                 token =>
@@ -368,28 +369,28 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                     var frame = effect switch
                     {
                         RazerHidLightingEffect.SoftwareSpectrum =>
-                            QuickLightingEngine.RenderSpectrum(_softwareLightingElapsed, 6, 22, palette),
+                            QuickLightingEngine.RenderSpectrum(_softwareLightingElapsed, matrix.Rows, matrix.Columns, palette),
                         RazerHidLightingEffect.SoftwareWave =>
                             QuickLightingEngine.RenderWave(
                                 _softwareLightingElapsed,
                                 LightingDirection == 1 ? BladeWaveDirection.Right : BladeWaveDirection.Left,
-                                6, 22, palette),
+                                matrix.Rows, matrix.Columns, palette),
                         RazerHidLightingEffect.SoftwareFire =>
-                            QuickLightingEngine.RenderFire(_softwareLightingElapsed, 710, 6, 22, palette),
+                            QuickLightingEngine.RenderFire(_softwareLightingElapsed, 710, matrix.Rows, matrix.Columns, palette),
                         RazerHidLightingEffect.SoftwareWheel =>
                             QuickLightingEngine.RenderWheel(
                                 _softwareLightingElapsed,
                                 LightingDirection == 1
                                     ? QuickLightingDirection.Clockwise
                                     : QuickLightingDirection.CounterClockwise,
-                                6, 22, palette, LightingSpeed),
+                                matrix.Rows, matrix.Columns, palette, LightingSpeed),
                         RazerHidLightingEffect.SoftwareAudioMeter => RenderSoftwareAudioFrame(palette),
                         _ => throw new InvalidOperationException("Unsupported software lighting effect."),
                     };
                     return ValueTask.FromResult<IReadOnlyList<RazerRgb>>(frame);
                 },
-                6,
-                22,
+                matrix.Rows,
+                matrix.Columns,
                 SoftwareLightingFrameInterval,
                 cancellationToken);
 
@@ -413,6 +414,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
 
     private IReadOnlyList<RazerRgb> RenderSoftwareAudioFrame(LightingPalette palette)
     {
+        var matrix = Connection.Definition.MatrixDimensions!;
         var level = _softwareAudioInput?.ReadLevel() ?? 0;
         _softwareAudioLevel = _softwareLightingElapsed <= SoftwareLightingFrameInterval
             ? level
@@ -423,8 +425,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         return QuickLightingEngine.RenderAudioMeter(
             _softwareAudioLevel,
             0,
-            6,
-            22,
+            matrix.Rows,
+            matrix.Columns,
             palette);
     }
 
