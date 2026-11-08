@@ -167,13 +167,10 @@ internal sealed partial class BladeTelemetryReader
             try
             {
                 // Always attempt the target read: some models keep a manual fan target
-                // without ever reporting the fan mode as manual. The value is only used
-                // in manual mode, so a failure elsewhere is expected, not an error.
-                var targetRpm = await _fan.ReadFanTargetRpmAsync(blade, cancellationToken);
-                if (bladeFanMode == BladeFanMode.Manual)
-                {
-                    bladeFanTargetRpm = targetRpm;
-                }
+                // without ever reporting the fan mode as manual. A failure in automatic
+                // mode is expected, so it stays out of the diagnostics, but a successful
+                // answer still proves the report works.
+                bladeFanTargetRpm = await _fan.ReadFanTargetRpmAsync(blade, cancellationToken);
             }
             catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
             {

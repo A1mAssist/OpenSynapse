@@ -161,6 +161,8 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
                 }
                 Add("DiagnosticBladeLogo", telemetry.BladeLogoMode);
                 Add("DiagnosticPerformanceFan", telemetry.BladeFanMode);
+                Add("BladeFanTargetRpmLabel", telemetry.BladeFanTargetRpm,
+                    telemetry.BladeFanTargetRpm is int targetRpm ? $"{targetRpm} RPM" : null);
                 Add("Text_5FCEEE13", telemetry.BladeCurrentFanCpuRpm,
                     telemetry.BladeCurrentFanCpuRpm is int cpuRpm ? $"{cpuRpm} RPM" : null);
                 Add("Text_737DBF87", telemetry.BladeCurrentFanGpuRpm,
@@ -174,6 +176,17 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
                     Add("Text_AA91A1FF", telemetry.BladeStartupAnimationEnabled);
                 }
                 Add("DiagnosticOneTimeCharge", telemetry.BladeOneTimeFullChargeEnabled);
+                Add("Text_9D1351CB", telemetry.BladeSkuHardwareConfiguration,
+                    telemetry.BladeSkuHardwareConfiguration is { } skuConfig ? $"0x{skuConfig.Raw:X2}" : null);
+                Add("DiagnosticAdapterPower", telemetry.BladeAdapterPower,
+                    telemetry.BladeAdapterPower is { } adapter
+                        ? $"{adapter.ActualWatts?.ToString() ?? "?"} W / {adapter.RecommendedWatts?.ToString() ?? "?"} W"
+                        : null);
+                Add("BladeFnKeyLabel", telemetry.BladeFnKeyMultimediaPrimary,
+                    telemetry.BladeFnKeyMultimediaPrimary is bool multimediaPrimary
+                        ? AppStrings.Text(multimediaPrimary ? "BladeFnKeyMultimediaPrimaryText" : "BladeFnKeyFunctionPrimaryText")
+                        : null);
+                Add("FirmwareMcuLabel", telemetry.BladeMcuVersion);
                 if (telemetry.BladeSkuHardwareConfiguration?.SupportsNativeDisplayMode == true)
                 {
                     Add("Text_24A8C247", telemetry.BladeNativeDisplayMode);

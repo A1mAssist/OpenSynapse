@@ -324,16 +324,6 @@ public static class DeviceCapabilitySummaryCalculator
         Row(Owns(CapabilityIds.TimeToDimGet), telemetry.BladeTimeToDim);
         Row(Owns(CapabilityIds.IndicatorLedGet), telemetry.BladeIndicatorLedEnabled);
         Row(Owns(CapabilityIds.GpuCardDetectionGet), telemetry.BladeGpuCardDetection);
-        // The MUX is read by its own control path, outside this telemetry pass, so
-        // it is a supported row without a value in this summary.
-        if (Owns(CapabilityIds.DisplayMuxGet) && Owns(CapabilityIds.DisplayMuxSet) &&
-            Owns(CapabilityIds.DisplayMuxCapabilitiesGet) ||
-            Owns(CapabilityIds.LegacyDisplayMuxGet) && Owns(CapabilityIds.LegacyDisplayMuxSet) &&
-            Owns(CapabilityIds.LegacyDisplayMuxCapabilitiesGet))
-        {
-            supported++;
-        }
-
         return new(available, supported);
     }
 
