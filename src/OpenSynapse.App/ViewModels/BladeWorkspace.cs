@@ -358,8 +358,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
                     {
                         throw new InvalidDataException("The .chroma file is unavailable or too large.");
                     }
-                    var bytes = await File.ReadAllBytesAsync(path, cancellationToken)
-                        .ConfigureAwait(false);
+                    var bytes = await File.ReadAllBytesAsync(path, cancellationToken);
                     animation = ChromaFileAnimationStore.Import(bytes);
                 }
                 catch (Exception exception) when (
@@ -374,7 +373,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
                     SetChromaAnimation(null);
                     await ApplyLightingEffectCoreAsync(
                         new BladeLightingEffect(BladeLightingMode.Static, animation.UniformColor),
-                        cancellationToken).ConfigureAwait(false);
+                        cancellationToken);
                     LightingModeIndex = Array.IndexOf(
                         ActiveBladeLightingModes.ToArray(),
                         BladeLightingMode.Static);
@@ -392,7 +391,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
                     new BladeLightingEffect(
                         BladeLightingMode.ChromaFile,
                         ChromaAnimation: animation),
-                    cancellationToken).ConfigureAwait(false);
+                    cancellationToken);
                 LightingModeIndex = Array.IndexOf(
                     ActiveBladeLightingModes.ToArray(),
                     BladeLightingMode.ChromaFile);
@@ -2087,7 +2086,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
                     await _lighting().ApplyLoadedProfileAsync(
                         blade,
                         CurrentPowerSource,
-                        cancellationToken).ConfigureAwait(false);
+                        cancellationToken);
                 }
                 RefreshLightingEditor();
             },

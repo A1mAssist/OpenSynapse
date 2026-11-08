@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 
 namespace OpenSynapse.App.ViewModels;
 
@@ -44,7 +45,7 @@ public sealed partial class MainViewModel
                     FormatOperationException(exception)));
             }
         }
-        catch (Exception exception) when (exception is Win32Exception or IOException or InvalidOperationException or NotSupportedException or ArgumentOutOfRangeException or OverflowException or AggregateException or ObjectDisposedException)
+        catch (Exception exception) when (exception is Win32Exception or IOException or InvalidOperationException or NotSupportedException or ArgumentOutOfRangeException or OverflowException or AggregateException or ObjectDisposedException or COMException)
         {
             restoreSelection?.Invoke();
             SetDeviceOperationError(AppStrings.FormatText("DeviceOperationFailed",
