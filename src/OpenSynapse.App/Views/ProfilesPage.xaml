@@ -6,9 +6,6 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
-  <UserControl.Resources>
-    <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
-  </UserControl.Resources>
   <ScrollViewer x:Name="PageScrollViewer" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
               <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
@@ -30,21 +27,6 @@
                     </Grid>
                     <TextBlock Text="{Binding Profiles.ProfileStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
                     <Border Height="1" Background="{StaticResource LineBrush}" />
-                    <StackPanel Spacing="7">
-                      <TextBlock local:Localized.Uid="ProfileSummaryTitle" Text="此配置包含" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <ItemsControl ItemsSource="{Binding Profiles.ProfileSummaryGroups}" Visibility="{Binding Profiles.HasProfileSummary, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <ItemsControl.ItemTemplate>
-                          <DataTemplate>
-                            <Grid ColumnDefinitions="96,*" ColumnSpacing="10" Margin="0,2">
-                              <TextBlock Text="{Binding Title}" Style="{StaticResource MetricLabelStyle}" TextWrapping="Wrap" />
-                              <TextBlock Grid.Column="1" Text="{Binding Summary}" FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource DataBrush}" />
-                            </Grid>
-                          </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
-                      <TextBlock local:Localized.Uid="ProfileSummaryEmpty" Text="此配置还没有设备设置。" Visibility="{Binding Profiles.IsProfileSummaryEmpty, Converter={StaticResource BoolToVisibilityConverter}}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
-                    </StackPanel>
-                    <TextBlock local:Localized.Uid="Loc_95B9EC6E0F" Text="前台应用或电源状态变化时会自动应用配置中的设备设置。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" />
                   </StackPanel>
                 </Border>
                 <Border Style="{StaticResource CardStyle}" Padding="16">
