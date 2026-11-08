@@ -147,6 +147,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 StatusText = string.Empty;
                 OnPropertyChanged(nameof(IsLoaded));
                 OnPropertyChanged(nameof(CanApply));
+                _ = ReadAsync();
             }
         }
     }
@@ -235,9 +236,31 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(TableVisibility));
     }
 
+    private bool _readQueued;
+
+    /// <summary>
+    /// Reads the current layer. A layer change while a read is running queues one
+    /// more read so the rows always end up on the layer the user selected.
+    /// </summary>
     public async Task ReadAsync(CancellationToken cancellationToken = default)
     {
+        if (IsBusy)
+        {
+            _readQueued = true;
+            return;
+        }
+
+        do
+        {
+            _readQueued = false;
+            await ReadCoreAsync(cancellationToken).ConfigureAwait(true);
+        } while (_readQueued && !cancellationToken.IsCancellationRequested);
+    }
+
+    private async Task ReadCoreAsync(CancellationToken cancellationToken)
+    {
         if (IsBusy) return;
+        var mode = Mode;
         IsBusy = true;
         ErrorText = string.Empty;
         try
@@ -269,7 +292,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 RazerHidDecodedMapping? decoded = null;
                 try
                 {
-                    var assignment = await _transport.GetAssignmentAsync(id, Mode, cancellationToken)
+                    var assignment = await _transport.GetAssignmentAsync(id, mode, cancellationToken)
                         .ConfigureAwait(true);
                     assignedSlot = MacroSlotOf(assignment.FunctionId, assignment.Data);
                     decoded = _catalog is RazerViperMappingActionCatalog
