@@ -46,6 +46,12 @@ public sealed partial class RazerHeadsetAudioViewModel
         var resolved = ProfileResolver.Resolve(document, descriptor, powerSource);
         if (!IsFeature91)
         {
+            // THX is a Windows-side component, so it replays through the applier even
+            // when the device settings themselves use a 37/64-byte transport.
+            var thxApplier = new HeadsetAudioProfileApplier(_ => _connection);
+            await thxApplier.ApplyAsync(
+                new DeviceProfileApplyContext(document, descriptor, powerSource, resolved),
+                cancellationToken);
             await ApplyPersistedTransportProfileAsync(resolved.Headset, cancellationToken);
             return;
         }

@@ -10,8 +10,9 @@ namespace OpenSynapse.Windows.Devices;
 
 /// <summary>
 /// Applies the persisted Feature91 headset settings through the same audio,
-/// THX and Chroma commands the device page uses. Unsupported settings stay out
-/// of the results instead of being reported as applied.
+/// THX and Chroma commands the device page uses. THX is Windows-side and also
+/// replays for the 37/64-byte transports; unsupported settings stay out of the
+/// results instead of being reported as applied.
 /// </summary>
 public sealed partial class HeadsetAudioProfileApplier : IDeviceProfileApplier
 {

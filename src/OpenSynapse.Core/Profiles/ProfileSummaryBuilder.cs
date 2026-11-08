@@ -327,7 +327,6 @@ public static class ProfileSummaryBuilder
         AddIf(group, settings.SwitchType, "ProfileSummary_Item_SwitchType", scope);
         AddIf(group, settings.AnalogKeyEnabled, "ProfileSummary_Item_AnalogKey", scope);
         AddIf(group, settings.SnapTapEnabled, "ProfileSummary_Item_SnapTap", scope);
-        AddIf(group, settings.FnKeyPrimary, "ProfileSummary_Item_FnPrimary", scope);
         AddIf(group, settings.DebounceMilliseconds, "ProfileSummary_Item_Debounce", scope);
         AddIf(group, settings.OledBrightness, "ProfileSummary_Item_OledBrightness", scope);
         AddIf(group, settings.OledLanguage, "ProfileSummary_Item_OledLanguage", scope);
