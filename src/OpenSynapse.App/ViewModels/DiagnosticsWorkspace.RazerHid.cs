@@ -12,7 +12,7 @@ public sealed partial class DiagnosticsWorkspace
     {
         foreach (var row in _openRazerRows) Rows.Remove(row);
         _openRazerRows.Clear();
-        if (Rows.Count == 1 && Rows[0].Device == "Windows HID") Rows.Clear();
+        if (Rows.Count == 1 && Rows[0].Device == AppStrings.Text("Text_CAF15352")) Rows.Clear();
         if (Rows.Count == 0) AddCurrentDeviceRows();
         AddRazerHidRows(
             new Dictionary<string, DiagnosticRowViewModel>(StringComparer.OrdinalIgnoreCase),
@@ -79,7 +79,7 @@ public sealed partial class DiagnosticsWorkspace
     }
 
     private void AddFallbackRow() => Rows.Add(new DiagnosticRowViewModel(
-        "Windows HID",
+        AppStrings.Text("Text_CAF15352"),
         AppStrings.Text("Text_DA035EAB"),
         AppStrings.Text("Text_76BEF6E0"),
         AppStrings.Text("Text_4DC4534C"),

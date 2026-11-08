@@ -174,7 +174,7 @@ internal sealed partial class BladeTelemetryReader
             }
             catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
             {
-                if (bladeFanMode == BladeFanMode.Manual)
+                if (bladeFanMode == BladeFanMode.Manual || exception is NotSupportedException)
                 {
                     errors.Add($"Fan target: {exception.Message}");
                 }
