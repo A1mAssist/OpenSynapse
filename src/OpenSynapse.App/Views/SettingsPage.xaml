@@ -112,7 +112,7 @@
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                       <StackPanel Spacing="4">
                         <TextBlock local:Localized.Uid="ChromaOfficialDllTitle" Text="官方 Chroma DLL" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                        <TextBlock local:Localized.Uid="ChromaOfficialDllDescription" Text="客户端直接下载官方 RzChromaSDK64.dll 并静默安装到 C:\Windows\System32：安装版由 OpenSynapse 服务写入，全程无浏览器、无授权弹窗；只有便携版才会请求一次管理员授权。OpenSynapse 的 broker 会接管游戏灯光，不需要安装完整 Chroma SDK 或雷云。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                        <TextBlock local:Localized.Uid="ChromaOfficialDllDescription" Text="安装官方 RzChromaSDK64.dll，让游戏通过 OpenSynapse 控制灯效；无需安装雷云或完整 Chroma SDK。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                         <TextBlock x:Name="ChromaOfficialDllStatusText" Text="" FontSize="12" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Visibility="Collapsed" />
                       </StackPanel>
                       <Button local:Localized.Uid="ChromaOfficialDllDownload" x:Name="ChromaOfficialDllButton" Grid.Column="1" Content="下载并安装" Click="ChromaOfficialDllClick" Style="{StaticResource SecondaryButtonStyle}" FontSize="12" VerticalAlignment="Center" />

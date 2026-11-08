@@ -1390,7 +1390,7 @@
   <data name="ChromaRestStatusReady" xml:space="preserve"><value>{0} · Ready</value></data>
   <data name="ChromaRestStatusSession" xml:space="preserve"><value>{0} · {1} · {2:0} fps · {3} skipped</value></data>
   <data name="ChromaOfficialDllTitle.Text" xml:space="preserve"><value>Official Chroma DLL</value></data>
-  <data name="ChromaOfficialDllDescription.Text" xml:space="preserve"><value>The app downloads Razer's official RzChromaSDK64.dll and installs it into C:\Windows\System32 silently: installed builds let the OpenSynapse service write the file, with no browser and no elevation prompt. Only the portable build asks for administrator rights once. The OpenSynapse broker then owns game lighting; no full Chroma SDK or Synapse install is needed.</value></data>
+  <data name="ChromaOfficialDllDescription.Text" xml:space="preserve"><value>Install Razer's official RzChromaSDK64.dll so games drive lighting through OpenSynapse. No Razer Synapse or full Chroma SDK needed.</value></data>
   <data name="ChromaOfficialDllDownload.Content" xml:space="preserve"><value>Download and install</value></data>
   <data name="ChromaOfficialDllInstalling" xml:space="preserve"><value>Installing...</value></data>
   <data name="ChromaOfficialDllInstalled" xml:space="preserve"><value>RzChromaSDK64.dll is installed.</value></data>

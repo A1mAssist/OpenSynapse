@@ -1766,7 +1766,7 @@
   <data name="ChromaRestStatusReady" xml:space="preserve"><value>{0} · 已就绪</value><comment>Chroma REST 已就绪</comment></data>
   <data name="ChromaRestStatusSession" xml:space="preserve"><value>{0} · {1} · {2:0} fps · 跳过 {3}</value><comment>Chroma REST 活动会话与帧统计</comment></data>
   <data name="ChromaOfficialDllTitle.Text" xml:space="preserve"><value>官方 Chroma DLL</value><comment>官方 DLL 与 broker 标题</comment></data>
-  <data name="ChromaOfficialDllDescription.Text" xml:space="preserve"><value>客户端直接下载官方 RzChromaSDK64.dll 并静默安装到 C:\Windows\System32：安装版由 OpenSynapse 服务写入，全程无浏览器、无授权弹窗；只有便携版才会请求一次管理员授权。OpenSynapse 的 broker 会接管游戏灯光，不需要安装完整 Chroma SDK 或雷云。</value><comment>官方 DLL 单文件与 broker 说明</comment></data>
+  <data name="ChromaOfficialDllDescription.Text" xml:space="preserve"><value>安装官方 RzChromaSDK64.dll，让游戏通过 OpenSynapse 控制灯效；无需安装雷云或完整 Chroma SDK。</value><comment>官方 DLL 与 broker 说明</comment></data>
   <data name="ChromaOfficialDllDownload.Content" xml:space="preserve"><value>下载并安装</value><comment>在客户端内下载并安装官方 RzChromaSDK64.dll</comment></data>
   <data name="ChromaOfficialDllInstalling" xml:space="preserve"><value>正在安装…</value><comment>官方 DLL 安装中</comment></data>
   <data name="ChromaOfficialDllInstalled" xml:space="preserve"><value>已安装 RzChromaSDK64.dll。</value><comment>官方 DLL 已安装</comment></data>
