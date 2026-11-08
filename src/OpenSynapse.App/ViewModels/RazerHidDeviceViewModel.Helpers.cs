@@ -299,12 +299,12 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         if (!LightingZones.Contains(_selectedLightingZone))
         {
             _selectedLightingZone = LightingZones.FirstOrDefault();
-            _selectedLightingEffect = LightingEffects.FirstOrDefault();
+            _selectedLightingEffect = DefaultLightingEffect;
             _brightnessKnown = false;
             _ledStateKnown = false;
         }
         if (!LightingEffects.Contains(_selectedLightingEffect))
-            _selectedLightingEffect = LightingEffects.FirstOrDefault();
+            _selectedLightingEffect = DefaultLightingEffect;
         OnPropertyChanged(nameof(LightingVisibility));
         OnPropertyChanged(nameof(LightingControlsVisibility));
         OnPropertyChanged(nameof(ChromaOverrideVisibility));

@@ -11,6 +11,8 @@ internal sealed record ThxInstallerPackage(
     string Sha256,
     string Arguments);
 
+internal sealed record ThxComponentInstallResult(string? Error, bool RebootRequired = false);
+
 /// <summary>
 /// Downloads the official per-device THX package and runs its silent installer.
 /// The package contains THX APO/SCU/service components only; it does not carry Synapse.
@@ -22,13 +24,14 @@ internal static class ThxComponentInstaller
         Timeout = TimeSpan.FromMinutes(5),
     };
 
-    internal static async Task<string?> InstallAsync(
+    internal static async Task<ThxComponentInstallResult> InstallAsync(
         ThxInstallerPackage package,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool repair = false)
     {
         if (package.Length <= 0 || package.Sha256.Length != 64)
         {
-            return "ThxInstallerVerificationFailed";
+            return new("ThxInstallerVerificationFailed");
         }
 
         var directory = Path.Combine(AppDataPaths.Combine("Temp"), "Thx");
@@ -44,7 +47,7 @@ internal static class ThxComponentInstaller
             if (response.Content.Headers.ContentLength is { } declaredLength &&
                 declaredLength != package.Length)
             {
-                return "ThxInstallerVerificationFailed";
+                return new("ThxInstallerVerificationFailed");
             }
 
             await using (var source = await response.Content
@@ -62,7 +65,7 @@ internal static class ThxComponentInstaller
 
             if (new FileInfo(temporary).Length != package.Length)
             {
-                return "ThxInstallerVerificationFailed";
+                return new("ThxInstallerVerificationFailed");
             }
 
             using (var stream = new FileStream(temporary, FileMode.Open, FileAccess.Read, FileShare.Read))
@@ -72,29 +75,21 @@ internal static class ThxComponentInstaller
                         package.Sha256,
                         StringComparison.OrdinalIgnoreCase))
                 {
-                    return "ThxInstallerVerificationFailed";
+                    return new("ThxInstallerVerificationFailed");
                 }
             }
 
             cancellationToken.ThrowIfCancellationRequested();
-            var startInfo = new ProcessStartInfo
+            var result = await RunAsync(
+                temporary,
+                repair ? $"/repair {package.Arguments}" : package.Arguments).ConfigureAwait(false);
+            if (repair && result.Error is not null)
             {
-                FileName = temporary,
-                Arguments = package.Arguments,
-                UseShellExecute = true,
-                Verb = "runas",
-                WindowStyle = ProcessWindowStyle.Hidden,
-            };
-            using var process = Process.Start(startInfo);
-            if (process is null)
-            {
-                return "ThxInstallerStartFailed";
+                // A leftover service with no registered bundle cannot be repaired:
+                // retry the cached installer as a plain install.
+                result = await RunAsync(temporary, package.Arguments).ConfigureAwait(false);
             }
-
-            await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
-            return process.ExitCode is 0 or 1641 or 3010
-                ? null
-                : "ThxInstallerFailed";
+            return result;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -102,23 +97,23 @@ internal static class ThxComponentInstaller
         }
         catch (HttpRequestException)
         {
-            return "ThxInstallerDownloadFailed";
+            return new("ThxInstallerDownloadFailed");
         }
         catch (IOException)
         {
-            return "ThxInstallerDownloadFailed";
+            return new("ThxInstallerDownloadFailed");
         }
         catch (UnauthorizedAccessException)
         {
-            return "ThxInstallerWriteFailed";
+            return new("ThxInstallerWriteFailed");
         }
         catch (Win32Exception exception) when (exception.NativeErrorCode == 1223)
         {
-            return "ThxInstallerCancelled";
+            return new("ThxInstallerCancelled");
         }
         catch (Win32Exception)
         {
-            return "ThxInstallerStartFailed";
+            return new("ThxInstallerStartFailed");
         }
         finally
         {
@@ -130,5 +125,30 @@ internal static class ThxComponentInstaller
             {
             }
         }
+    }
+
+    private static async Task<ThxComponentInstallResult> RunAsync(string path, string arguments)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = path,
+            Arguments = arguments,
+            UseShellExecute = true,
+            Verb = "runas",
+            WindowStyle = ProcessWindowStyle.Hidden,
+        };
+        using var process = Process.Start(startInfo);
+        if (process is null)
+        {
+            return new("ThxInstallerStartFailed");
+        }
+
+        await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
+        return process.ExitCode switch
+        {
+            0 => new(null),
+            1641 or 3010 => new(null, RebootRequired: true),
+            _ => new("ThxInstallerFailed"),
+        };
     }
 }

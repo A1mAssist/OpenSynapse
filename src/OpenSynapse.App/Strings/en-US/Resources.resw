@@ -3448,11 +3448,12 @@
   <data name="RazerMappingKeyboardStage" xml:space="preserve"><value>Keyboard</value></data>
   <data name="RazerDriverTitle.Text" xml:space="preserve"><value>Razer driver</value></data>
   <data name="RazerDriverDescription.Text" xml:space="preserve"><value>Install Razer's device filter driver so button mapping and macros use the same driver-level injection path as Synapse.</value></data>
-  <data name="RazerDriverInstall.Content" xml:space="preserve"><value>Install missing drivers</value></data>
+  <data name="RazerDriverInstall.Content" xml:space="preserve"><value>Install or repair drivers</value></data>
   <data name="RazerDriverInstallHint.Text" xml:space="preserve"><value>Packages come from Razer's official CDN and request administrator approval. Replug the device or restart after installation.</value></data>
   <data name="RazerDriverChecking" xml:space="preserve"><value>Checking Razer drivers…</value></data>
   <data name="RazerDriverAllReady" xml:space="preserve"><value>Every connected Razer peripheral already has its filter driver.</value></data>
   <data name="RazerDriverMissingCount" xml:space="preserve"><value>{0} Razer peripheral(s) are missing a driver.</value></data>
+  <data name="RazerDriverPendingCount" xml:space="preserve"><value>Installed {0} Razer driver package(s); waiting for a restart or replug.</value></data>
   <data name="RazerDriverCheckFailed" xml:space="preserve"><value>Razer driver check failed: {0}</value></data>
   <data name="RazerDriverWaiting" xml:space="preserve"><value>Waiting to install</value></data>
   <data name="RazerDriverInstalledRestart" xml:space="preserve"><value>Installed; replug the device or restart</value></data>

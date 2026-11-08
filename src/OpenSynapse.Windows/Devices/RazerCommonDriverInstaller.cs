@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using Microsoft.Win32;
+using OpenSynapse.Windows.Lifecycle;
 
 namespace OpenSynapse.Windows.Devices;
 
@@ -25,8 +26,71 @@ internal static class RazerCommonDriverInstaller
         Timeout = TimeSpan.FromMinutes(2),
     };
 
-    internal static bool IsInstalled =>
-        Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\RzCommon") is not null;
+    internal static bool IsInstalled
+    {
+        get
+        {
+            using var key = Registry.LocalMachine.OpenSubKey(
+                @"SYSTEM\CurrentControlSet\Services\RzCommon");
+            if (key?.GetValue("ImagePath") is not string imagePath ||
+                string.IsNullOrWhiteSpace(imagePath))
+            {
+                return false;
+            }
+
+            var path = imagePath.Trim();
+            if (path.StartsWith('"'))
+            {
+                var closingQuote = path.IndexOf('"', 1);
+                if (closingQuote > 1)
+                {
+                    path = path[1..closingQuote];
+                }
+            }
+
+            path = Environment.ExpandEnvironmentVariables(path);
+            var windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+            const string systemRootPrefix = @"\SystemRoot\";
+            if (path.StartsWith(systemRootPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                path = Path.Combine(windows, path[systemRootPrefix.Length..]);
+            }
+            else if (!Path.IsPathRooted(path))
+            {
+                path = Path.Combine(windows, path);
+            }
+
+            return File.Exists(path);
+        }
+    }
+
+    /// <summary>
+    /// Starts the common service after the INF is staged. A demand-start driver
+    /// can remain stopped until this is called, which leaves the RZCONTROL
+    /// child device absent even though the package is installed.
+    /// </summary>
+    internal static bool TryStartService(out string? error) =>
+        WindowsServiceControl.TryStart(
+            OpenSynapseServiceProtocol.RazerCommonServiceName,
+            out error);
+
+    /// <summary>
+    /// Starts RzCommon through the machine-wide host, which runs elevated, and
+    /// falls back to the in-process attempt for portable installs.
+    /// </summary>
+    internal static async Task<string?> EnsureStartedAsync(CancellationToken cancellationToken)
+    {
+        if (await OpenSynapseServiceClient.TryStartDriverServiceAsync(
+                OpenSynapseServiceProtocol.RazerCommonServiceName,
+                cancellationToken).ConfigureAwait(false))
+        {
+            return null;
+        }
+
+        return TryStartService(out var error)
+            ? null
+            : error ?? "The Razer common driver service did not start.";
+    }
 
     internal static async Task<RazerDriverInstallResult> InstallAsync(
         IProgress<RazerDriverInstallProgress>? progress = null,
@@ -34,6 +98,7 @@ internal static class RazerCommonDriverInstaller
     {
         if (IsInstalled)
         {
+            await EnsureStartedAsync(cancellationToken).ConfigureAwait(false);
             return new RazerDriverInstallResult(true);
         }
 
@@ -84,7 +149,13 @@ internal static class RazerCommonDriverInstaller
         progress?.Report(new RazerDriverInstallProgress(
             RazerDriverInstallStage.InstallingCommon,
             "RzCommon"));
-        return RunPnPUtil(infPath);
+        var result = RunPnPUtil(infPath);
+        if (result.Success)
+        {
+            await EnsureStartedAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        return result;
     }
 
     private static async Task DownloadCabAsync(string path, CancellationToken cancellationToken)

@@ -118,6 +118,26 @@ public static class OpenSynapseServiceClient
     }
 
     /// <summary>
+    /// Asks the machine-wide service to start a Razer driver service that is
+    /// installed but stopped. False means the privileged host is unavailable,
+    /// the installed host predates this operation, or the driver refused to start.
+    /// </summary>
+    public static async Task<bool> TryStartDriverServiceAsync(
+        string serviceName,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new OpenSynapseServiceRequest(
+            OpenSynapseServiceProtocol.Version,
+            OpenSynapseServiceProtocol.StartDriverServiceOperation,
+            Enabled: null,
+            ServiceName: serviceName);
+
+        var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
+        return response?.Handled == true &&
+            response.Outcome == DedicatedGpuSwitchOutcome.Success;
+    }
+
+    /// <summary>
     /// Asks the service whether the driver accepts GPU clock offsets. Null means the
     /// service is unavailable, so the caller keeps the offset controls hidden.
     /// </summary>

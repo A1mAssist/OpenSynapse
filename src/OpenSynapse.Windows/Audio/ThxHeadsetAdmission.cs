@@ -18,7 +18,10 @@ internal enum ThxNativeVersion
     V4,
 }
 
-internal sealed record ThxHeadsetStatus(ThxHeadsetAvailability Availability, string? ErrorCode);
+internal sealed record ThxHeadsetStatus(
+    ThxHeadsetAvailability Availability,
+    string? ErrorCode,
+    bool RebootRequired = false);
 
 internal sealed record ThxHeadsetProfile(
     ushort ProductId,
@@ -172,20 +175,47 @@ internal static class ThxHeadsetAdmission
             return new(ThxHeadsetAvailability.UnsupportedDevice, "ThxHeadsetUnsupported");
         }
 
-        if (profile.NativeVersion == ThxNativeVersion.V3 &&
-            !ThxAudioAdmission.HasRunningService(ServiceName))
+        if (profile.NativeVersion == ThxNativeVersion.V3)
         {
             if (profile.Installer is not { } installer)
             {
                 return new(ThxHeadsetAvailability.ServiceMissing, "ThxInstallerUnavailable");
             }
-            var error = await ThxComponentInstaller.InstallAsync(installer, cancellationToken)
-                .ConfigureAwait(false);
-            if (error is not null)
+            // A leftover VSSrv means the previous install is broken, not complete:
+            // repair it instead of silently skipping the package.
+            var install = await ThxComponentInstaller.InstallAsync(
+                installer,
+                cancellationToken,
+                repair: ThxAudioAdmission.HasService(ServiceName)).ConfigureAwait(false);
+            if (install.Error is not null)
             {
-                return new(ThxHeadsetAvailability.ServiceMissing, error);
+                return new(ThxHeadsetAvailability.ServiceMissing, install.Error);
             }
-            await WaitForServiceAsync(cancellationToken).ConfigureAwait(false);
+
+            if (install.RebootRequired &&
+                !ThxAudioAdmission.HasRunningService(ServiceName))
+            {
+                return new(
+                    ThxHeadsetAvailability.ServiceMissing,
+                    "ThxRebootRequired",
+                    RebootRequired: true);
+            }
+
+            if (!await WaitForServiceAsync(cancellationToken).ConfigureAwait(false))
+            {
+                // A freshly installed service often stays stopped until the next
+                // boot; report that instead of asking for the installer again.
+                if (ThxAudioAdmission.HasService(ServiceName))
+                {
+                    return new(
+                        ThxHeadsetAvailability.ServiceMissing,
+                        "ThxRebootRequired",
+                        RebootRequired: true);
+                }
+                return new(
+                    ThxHeadsetAvailability.ServiceMissing,
+                    "ThxServiceMissing");
+            }
         }
 
         return await InstallNativeComponentAsync(productId, cancellationToken).ConfigureAwait(false);
@@ -280,16 +310,18 @@ internal static class ThxHeadsetAdmission
         }
     }
 
-    private static async Task WaitForServiceAsync(CancellationToken cancellationToken)
+    private static async Task<bool> WaitForServiceAsync(CancellationToken cancellationToken)
     {
         for (var attempt = 0; attempt < 40; attempt++)
         {
             if (ThxAudioAdmission.HasRunningService(ServiceName))
             {
-                return;
+                return true;
             }
             await Task.Delay(500, cancellationToken).ConfigureAwait(false);
         }
+
+        return false;
     }
 
     private static IReadOnlyDictionary<ushort, ThxHeadsetProfile> BuildProfiles()
