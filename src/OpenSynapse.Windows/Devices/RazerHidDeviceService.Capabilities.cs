@@ -6,6 +6,11 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed partial class RazerHidDeviceService
 {
+    // The Huntsman V3 Pro bundles expose only brightness and game mode in deviceUI;
+    // the shared misc builders are not wired to these keyboards.
+    private static readonly FrozenSet<ushort> HuntsmanV3ProMiscSettingsUnsupported =
+        new ushort[] { 0x02A6, 0x02A7, 0x02B0, 0x02CF }.ToFrozenSet();
+
     internal static IReadOnlySet<RazerHidBackendCapability> GetCapabilities(RazerHidDeviceDefinition device)
     {
         var result = new HashSet<RazerHidBackendCapability>();
@@ -47,16 +52,25 @@ public sealed partial class RazerHidDeviceService
             Add(RazerHidBackendCapability.BatteryChargeLimiterRead, "get_battery_charge_limiter", "razer_chroma_misc_get_battery_charge_limiter");
             Add(RazerHidBackendCapability.BatteryChargeLimiterWrite, "set_battery_charge_limiter", "razer_chroma_misc_set_battery_charge_limiter");
         }
-        Add(RazerHidBackendCapability.AutoSleepRead, "get_auto_sleep", "razer_chroma_misc_get_auto_sleep");
-        Add(RazerHidBackendCapability.AutoSleepWrite, "set_auto_sleep", "razer_chroma_misc_set_auto_sleep");
-        Add(RazerHidBackendCapability.TimeToDimRead, "get_time_to_dim", "razer_chroma_misc_get_time_to_dim");
-        Add(RazerHidBackendCapability.TimeToDimWrite, "set_time_to_dim", "razer_chroma_misc_set_time_to_dim");
-        Add(RazerHidBackendCapability.IndicatorLedConfigurationRead, "get_indicator_led_configuration", "razer_chroma_misc_get_indicator_led_configuration");
-        Add(RazerHidBackendCapability.IndicatorLedConfigurationWrite, "set_indicator_led_configuration", "razer_chroma_misc_set_indicator_led_configuration");
-        Add(RazerHidBackendCapability.IndicatorLedConfigurationV2Read, "get_indicator_leds_configuration", "razer_chroma_misc_get_indicator_leds_configuration");
-        Add(RazerHidBackendCapability.IndicatorLedConfigurationV2Write, "set_indicator_leds_configuration", "razer_chroma_misc_set_indicator_leds_configuration");
-        Add(RazerHidBackendCapability.GpuCardDetectionRead, "get_gpu_card_detection", "razer_chroma_misc_get_gpu_card_detection");
-        Add(RazerHidBackendCapability.GpuCardDetectionWrite, "set_gpu_card_detection", "razer_chroma_misc_set_gpu_card_detection");
+        if (hasBatteryTelemetry)
+        {
+            Add(RazerHidBackendCapability.AutoSleepRead, "get_auto_sleep", "razer_chroma_misc_get_auto_sleep");
+            Add(RazerHidBackendCapability.AutoSleepWrite, "set_auto_sleep", "razer_chroma_misc_set_auto_sleep");
+        }
+        if (!HuntsmanV3ProMiscSettingsUnsupported.Contains(device.ProductId))
+        {
+            Add(RazerHidBackendCapability.TimeToDimRead, "get_time_to_dim", "razer_chroma_misc_get_time_to_dim");
+            Add(RazerHidBackendCapability.TimeToDimWrite, "set_time_to_dim", "razer_chroma_misc_set_time_to_dim");
+            Add(RazerHidBackendCapability.IndicatorLedConfigurationRead, "get_indicator_led_configuration", "razer_chroma_misc_get_indicator_led_configuration");
+            Add(RazerHidBackendCapability.IndicatorLedConfigurationWrite, "set_indicator_led_configuration", "razer_chroma_misc_set_indicator_led_configuration");
+            Add(RazerHidBackendCapability.IndicatorLedConfigurationV2Read, "get_indicator_leds_configuration", "razer_chroma_misc_get_indicator_leds_configuration");
+            Add(RazerHidBackendCapability.IndicatorLedConfigurationV2Write, "set_indicator_leds_configuration", "razer_chroma_misc_set_indicator_leds_configuration");
+        }
+        if (device.Category == DeviceCategory.Laptop)
+        {
+            Add(RazerHidBackendCapability.GpuCardDetectionRead, "get_gpu_card_detection", "razer_chroma_misc_get_gpu_card_detection");
+            Add(RazerHidBackendCapability.GpuCardDetectionWrite, "set_gpu_card_detection", "razer_chroma_misc_set_gpu_card_detection");
+        }
         Add(RazerHidBackendCapability.ForceChromaCtrlRead, "get_force_chroma_ctrl", "razer_chroma_misc_get_force_chroma_ctrl");
         Add(RazerHidBackendCapability.ForceChromaCtrlWrite, "set_force_chroma_ctrl", "razer_chroma_misc_set_force_chroma_ctrl");
         Add(RazerHidBackendCapability.ProfileDebounceTimeRead, "get_profile_debounce_time", "razer_chroma_misc_get_profile_debounce_time");
