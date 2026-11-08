@@ -11,6 +11,8 @@ internal static class TaskbarStatusNative
 
     public const int WsExToolWindow = 0x00000080;
     public const int WsExNoActivate = 0x08000000;
+    public const int WsExLayered = 0x00080000;
+    public const uint LwaColorKey = 0x00000001;
 
     public const uint WmDestroy = 0x0002;
     public const uint WmPaint = 0x000F;
@@ -165,6 +167,11 @@ internal static class TaskbarStatusNative
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool ShowWindow(IntPtr windowHandle, int command);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool SetLayeredWindowAttributes(
+        IntPtr windowHandle, uint colorKey, byte alpha, uint flags);
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]

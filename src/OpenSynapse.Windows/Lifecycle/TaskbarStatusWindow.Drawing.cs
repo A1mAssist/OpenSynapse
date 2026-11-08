@@ -155,9 +155,10 @@ public sealed partial class TaskbarStatusWindow
     private void Draw(IntPtr dc, Rect client)
     {
         var scale = _dpi / 96.0;
-        var background = _themeDark ? Rgb(36, 36, 36) : Rgb(243, 243, 243);
-        var primary = _themeDark ? Rgb(255, 255, 255) : Rgb(0, 0, 0);
-        var backgroundBrush = CreateSolidBrush(background);
+        // The window is layered with black as its color key, so only the badge and
+        // text survive; the taskbar background shows through the padding.
+        var primary = _themeDark ? Rgb(255, 255, 255) : Rgb(1, 1, 1);
+        var backgroundBrush = CreateSolidBrush(0);
         FillRect(dc, ref client, backgroundBrush);
         DeleteObject(backgroundBrush);
         SetBkMode(dc, Transparent);

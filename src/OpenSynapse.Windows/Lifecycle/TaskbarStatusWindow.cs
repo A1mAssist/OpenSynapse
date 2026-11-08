@@ -198,7 +198,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             var instance = GetModuleHandleW(null);
 
             var status = CreateWindowExW(
-                WsExToolWindow | WsExNoActivate,
+                WsExToolWindow | WsExNoActivate | WsExLayered,
                 _statusClassName,
                 string.Empty,
                 // Win11 paints its taskbar above child windows, so stay an owned popup.
@@ -217,6 +217,12 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             }
 
             ShowWindow(status, SwHide);
+            // Black is the transparent color key; the icon badge and text stay.
+            if (!SetLayeredWindowAttributes(status, 0, 255, LwaColorKey))
+            {
+                _log?.Invoke(
+                    $"taskbar-status: transparency failed ({Marshal.GetLastWin32Error()}).");
+            }
             SetLastError(0);
             if (GetParent(status) != taskbar)
             {
