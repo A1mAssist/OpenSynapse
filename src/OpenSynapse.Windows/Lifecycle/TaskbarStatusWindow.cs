@@ -13,6 +13,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
 {
     private const uint HostTimerId = 1;
     private const uint HostTimerInterval = 250;
+    private const uint GetAncestorRoot = 2;
     private const int BaseWidthDip = 64;
     private const int MaximumWidthDip = 120;
     private const int TargetHeightDip = 30;
@@ -200,9 +201,8 @@ public sealed partial class TaskbarStatusWindow : IDisposable
                 WsExToolWindow | WsExNoActivate,
                 _statusClassName,
                 string.Empty,
-                // A taskbar child disappears with the taskbar, including when a game
-                // covers it; the z-order pass below keeps it above Explorer's XAML host.
-                WsChild,
+                // Win11 paints its taskbar above child windows, so stay an owned popup.
+                WsPopup,
                 0, 0, 0, 0,
                 taskbar,
                 IntPtr.Zero,
@@ -264,6 +264,12 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     private void RepositionAndShow()
     {
         if (_statusWindow == IntPtr.Zero || !_contentAvailable) return;
+        var taskbar = FindWindowW("Shell_TrayWnd", null);
+        if (taskbar == IntPtr.Zero || IsTaskbarCovered(taskbar))
+        {
+            Hide();
+            return;
+        }
         if (!TryGetLayout(out var x, out var y, out var width, out var height))
         {
             // Explorer briefly invalidates the taskbar while input methods and
@@ -281,7 +287,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
                       rect.Bottom != _lastStatusRect.Bottom;
         if (changed)
         {
-            var flags = SwpNoActivate;
+            var flags = SwpNoActivate | SwpNoZOrder;
             if (!_visible) flags |= SwpShowWindow;
             if (!SetWindowPos(
                     _statusWindow,
@@ -305,15 +311,41 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             ShowWindow(_statusWindow, SwShowNoActivate);
             _visible = true;
         }
+    }
 
-        // Explorer can insert its composition host above an already attached child.
-        // Re-assert the top of the taskbar's child band on every lifecycle tick.
-        if (!SetWindowPos(
-                _statusWindow, IntPtr.Zero, 0, 0, 0, 0,
-                SwpNoMove | SwpNoSize | SwpNoActivate))
+    /// <summary>
+    /// True when the taskbar is hidden, slid off-screen, or covered by another
+    /// window. The strip is an owned popup, so it must stand down on its own.
+    /// </summary>
+    private static bool IsTaskbarCovered(IntPtr taskbar)
+    {
+        if (!IsWindowVisible(taskbar))
         {
-            Hide();
+            return true;
         }
+        if (!GetWindowRect(taskbar, out var rect))
+        {
+            return true;
+        }
+
+        var monitor = MonitorFromWindow(taskbar, MonitorDefaultToNearest);
+        var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
+        if (monitor == IntPtr.Zero || !GetMonitorInfoW(monitor, ref info) ||
+            rect.Top >= info.Monitor.Bottom - 4)
+        {
+            return true;
+        }
+
+        var y = rect.Top + rect.Height / 2;
+        foreach (var x in new[] { rect.Left + rect.Width / 4, rect.Left + rect.Width / 2 })
+        {
+            var hit = WindowFromPoint(new Point { X = x, Y = y });
+            if (hit == IntPtr.Zero || GetAncestor(hit, GetAncestorRoot) != taskbar)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private bool TryGetLayout(out int x, out int y, out int width, out int height)
@@ -377,10 +409,18 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             return false;
         }
 
-        // A child window is positioned in taskbar client coordinates, not screen
-        // coordinates; ScreenToClient above already produced the tray anchor.
-        x = right - gap - width;
-        y = Math.Max(0, (clientHeight - height) / 2);
+        var origin = new Point
+        {
+            X = right - gap - width,
+            Y = Math.Max(0, (clientHeight - height) / 2),
+        };
+        if (!ClientToScreen(taskbar, ref origin))
+        {
+            return false;
+        }
+
+        x = origin.X;
+        y = origin.Y;
         return true;
     }
 
