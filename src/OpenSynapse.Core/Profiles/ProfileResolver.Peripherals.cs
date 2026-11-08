@@ -55,7 +55,6 @@ public static partial class ProfileResolver
             power?.VibrationStrengthPercent,
             device?.VibrationStrengthPercent,
             global?.VibrationStrengthPercent),
-        MappingPreset = power?.MappingPreset ?? device?.MappingPreset ?? global?.MappingPreset,
         LeftStickDeadzone = First(power?.LeftStickDeadzone, device?.LeftStickDeadzone, global?.LeftStickDeadzone),
         RightStickDeadzone = First(
             power?.RightStickDeadzone,
@@ -84,7 +83,6 @@ public static partial class ProfileResolver
         TriggerMode = power?.TriggerMode ?? device?.TriggerMode ?? global?.TriggerMode,
         LeftTrigger = (power?.LeftTrigger ?? device?.LeftTrigger ?? global?.LeftTrigger)?.Clone(),
         RightTrigger = (power?.RightTrigger ?? device?.RightTrigger ?? global?.RightTrigger)?.Clone(),
-        DpadMode = power?.DpadMode ?? device?.DpadMode ?? global?.DpadMode,
         IgnoreDpadDiagonals = First(
             power?.IgnoreDpadDiagonals,
             device?.IgnoreDpadDiagonals,

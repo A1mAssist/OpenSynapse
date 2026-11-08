@@ -28,8 +28,8 @@ internal static class AccessoryProfileReplay
             viewModel.Accessories.SelectedGamepad!.ApplyPersistedProfileAsync(powerSource, cancellationToken));
         Add(viewModel.Accessories.SelectedChroma is not null, () =>
             viewModel.Accessories.SelectedChroma!.ApplyPersistedProfileAsync(powerSource, cancellationToken));
-        Add(viewModel.RazerHid.SelectedKraken is not null, () =>
-            viewModel.RazerHid.SelectedKraken!.ApplyPersistedProfileAsync(powerSource, cancellationToken));
+        Add(viewModel.RazerHid.KrakenDevices.Count > 0, () =>
+            viewModel.RazerHid.ApplyKrakenProfilesAsync(powerSource, cancellationToken));
         Add(viewModel.RazerHid.SelectedDevice?.Soundbar is not null, () =>
             viewModel.RazerHid.SelectedDevice!.Soundbar!.ApplyPersistedProfileAsync(powerSource, cancellationToken));
 

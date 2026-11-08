@@ -380,7 +380,6 @@ public static partial class ProfileResolver
         LightingEffect = power?.LightingEffect ?? device?.LightingEffect ?? global?.LightingEffect,
         LightingParameters = CloneMap(
             power?.LightingParameters ?? device?.LightingParameters ?? global?.LightingParameters),
-        PowerEnabled = First(power?.PowerEnabled, device?.PowerEnabled, global?.PowerEnabled),
     };
 
     private static DisplayProfileSettings ResolveDisplay(

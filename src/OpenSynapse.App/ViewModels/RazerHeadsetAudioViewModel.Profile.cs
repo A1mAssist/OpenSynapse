@@ -58,6 +58,7 @@ public sealed partial class RazerHeadsetAudioViewModel
 
     // The Feature91 applier cannot talk to the 64-byte Mxic/Valkyrie/KrakenBase
     // transports, so those headsets replay the settings their own services write.
+    // KrakenBase has no EQ writer and keeps its Chroma on the 37-byte lighting card.
     [NotProfileScoped]
     private async Task ApplyPersistedTransportProfileAsync(
         HeadsetProfileSettings profile,
@@ -79,11 +80,6 @@ public sealed partial class RazerHeadsetAudioViewModel
             }
         }
 
-        if (TryParseHexByte(profile.EqPreset) is { } preset)
-        {
-            await AttemptAsync("headset.eq.preset", token => WriteEqPresetHardwareAsync(preset, token));
-        }
-
         if (ReadBandLevels(profile.EqBands) is { } levels)
         {
             var bands = levels.Select(level => ToFirmwareBand(level)).ToArray();
@@ -95,7 +91,7 @@ public sealed partial class RazerHeadsetAudioViewModel
                     await service.SetEqBandsAsync(bands, token);
                 });
             }
-            else
+            else if (!IsKrakenBase)
             {
                 var customIndex = Array.FindIndex(ActivePresets, item => item.Key == "RazerHeadsetPresetCustom");
                 if (customIndex >= 0)
@@ -106,6 +102,13 @@ public sealed partial class RazerHeadsetAudioViewModel
                         token => WriteCustomEqHardwareAsync(customPreset, bands, token));
                 }
             }
+        }
+
+        // A custom-band write also selects the Custom preset, so the stored preset has
+        // to go last to reproduce whichever selection the user made last.
+        if (!IsKrakenBase && TryParseHexByte(profile.EqPreset) is { } preset)
+        {
+            await AttemptAsync("headset.eq.preset", token => WriteEqPresetHardwareAsync(preset, token));
         }
 
         if (IsValkyrie && ReadBandLevels(profile.MicEqBands) is { } micLevels)
@@ -132,39 +135,6 @@ public sealed partial class RazerHeadsetAudioViewModel
                 "headset.anc",
                 token => OpenService().SetAncAsync(DeviceAncStates[ancIndex], level, token));
         }
-
-        await ApplyPersistedChromaAsync(profile, AttemptAsync);
-    }
-
-    [NotProfileScoped]
-    private async Task ApplyPersistedChromaAsync(
-        HeadsetProfileSettings profile,
-        Func<string, Func<CancellationToken, Task>, Task> attempt)
-    {
-        if (profile.ChromaBrightness is { } brightness)
-        {
-            await attempt(
-                "headset.lighting.brightness",
-                token => OpenChromaService().SetBrightnessAsync(
-                    (byte)Math.Clamp(brightness, 0, 100), token));
-        }
-
-        if (!Enum.TryParse<RazerChromaEffect>(profile.ChromaEffect, ignoreCase: true, out var effect) ||
-            !LightingEffects.Contains(effect))
-        {
-            return;
-        }
-
-        if (!TryReadColor(profile.ChromaParameters, "primary", out var primary))
-        {
-            _diagnostic?.Invoke("profile headset.lighting.effect: the primary color is invalid.");
-            return;
-        }
-
-        TryReadColor(profile.ChromaParameters, "secondary", out var secondary);
-        await attempt(
-            "headset.lighting.effect",
-            token => WriteChromaEffectHardwareAsync(effect, primary, secondary, token));
     }
 
     private async Task WriteMicMuteAsync(bool muted, CancellationToken cancellationToken)
@@ -213,26 +183,6 @@ public sealed partial class RazerHeadsetAudioViewModel
             levels[index] = level;
         }
         return levels;
-    }
-
-    private static bool TryReadColor(
-        IReadOnlyDictionary<string, string>? parameters,
-        string key,
-        out Color color)
-    {
-        color = default;
-        if (parameters is null ||
-            !parameters.TryGetValue(key, out var value) ||
-            value.Length != 6 ||
-            !byte.TryParse(value.AsSpan(0, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var r) ||
-            !byte.TryParse(value.AsSpan(2, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var g) ||
-            !byte.TryParse(value.AsSpan(4, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var b))
-        {
-            return false;
-        }
-
-        color = Color.FromArgb(255, r, g, b);
-        return true;
     }
 
     private static Dictionary<string, int> ToBandMap(IEnumerable<double> levels) =>

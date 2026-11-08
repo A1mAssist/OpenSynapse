@@ -255,8 +255,6 @@ public sealed class CoolingPadProfileSettings
     public bool? LightingEnabled { get; set; }
     public string? LightingEffect { get; set; }
     public Dictionary<string, string>? LightingParameters { get; set; }
-    public bool? PowerEnabled { get; set; }
-
     internal void ApplySafeDefaults()
     {
         if (FanTargetRpm is < 0 or > 2600 || (FanTargetRpm is > 0 and < 150) ||

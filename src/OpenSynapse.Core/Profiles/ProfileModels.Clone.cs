@@ -242,14 +242,12 @@ public sealed partial class ProfileDefinition
         LightingEnabled = source.LightingEnabled,
         LightingEffect = source.LightingEffect,
         LightingParameters = CloneStringMap(source.LightingParameters),
-        PowerEnabled = source.PowerEnabled,
     };
 
     private static GamepadProfileSettings CloneGamepad(GamepadProfileSettings source) => new()
     {
         PollingRateHertz = source.PollingRateHertz,
         VibrationStrengthPercent = source.VibrationStrengthPercent,
-        MappingPreset = source.MappingPreset,
         LeftStickDeadzone = source.LeftStickDeadzone,
         RightStickDeadzone = source.RightStickDeadzone,
         LeftStickSensitivity = source.LeftStickSensitivity,
@@ -261,7 +259,6 @@ public sealed partial class ProfileDefinition
         TriggerMode = source.TriggerMode,
         LeftTrigger = source.LeftTrigger?.Clone(),
         RightTrigger = source.RightTrigger?.Clone(),
-        DpadMode = source.DpadMode,
         IgnoreDpadDiagonals = source.IgnoreDpadDiagonals,
         SocdModeIndex = source.SocdModeIndex,
         ButtonAssignments = source.ButtonAssignments?

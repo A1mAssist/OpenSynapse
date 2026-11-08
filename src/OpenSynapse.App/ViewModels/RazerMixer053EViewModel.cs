@@ -217,14 +217,80 @@ public sealed class RazerMixer053EViewModel : INotifyPropertyChanged, IAsyncDisp
             2,
             "mixer053e",
             DeviceCategory.Accessory);
-        var applier = new AccessoryProfileApplier(_diagnostic);
-        await applier.ApplyAsync(
-            new DeviceProfileApplyContext(
-                document,
-                descriptor,
-                powerSource,
-                ProfileResolver.Resolve(document, descriptor, powerSource)),
-            cancellationToken);
+
+        // Reuse the card's own service: AccessoryProfileApplier rediscovers the mixer
+        // and would open a second handle on a possibly different path while this one
+        // is still live.
+        RazerMixer053EState state;
+        try
+        {
+            state = await GetService().ReadStateAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            return;
+        }
+
+        if (!state.Available || state.Hardware is not { } hardware)
+        {
+            return;
+        }
+
+        var deviceKey = string.IsNullOrWhiteSpace(state.SerialNumber)
+            ? ProfileResolver.GetDeviceKey(descriptor)
+            : state.SerialNumber;
+        var settings = ProfileResolver.ResolveWithDeviceKey(document, descriptor, powerSource, deviceKey).Mixer;
+
+        async Task AttemptAsync(string key, Func<Task> write)
+        {
+            try
+            {
+                await write();
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception) when (IsExpected(exception))
+            {
+                _diagnostic?.Invoke($"profile {key}: {exception.Message}");
+            }
+        }
+
+        if (settings.ChannelMutes is { Count: 4 } mutes)
+        {
+            for (var channel = 1; channel <= 4; channel++)
+            {
+                var target = channel;
+                var desired = mutes[target - 1];
+                if (hardware.IsMuted(target) == desired)
+                {
+                    continue;
+                }
+
+                await AttemptAsync(
+                    $"mixer.channel-{target}-mute",
+                    () => GetService().SetChannelMuteAsync(target, desired, cancellationToken));
+            }
+        }
+
+        if (settings.MicMute is { } micMute && hardware.MicMute != micMute)
+        {
+            await AttemptAsync(
+                "mixer.mic-mute",
+                () => GetService().SetMicMuteAsync(micMute, cancellationToken));
+        }
+
+        if (settings.BrightnessPercent is { } brightness && state.Brightness != brightness)
+        {
+            await AttemptAsync(
+                "mixer.brightness",
+                () => GetService().SetBrightnessAsync((byte)brightness, cancellationToken: cancellationToken));
+        }
     }
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)

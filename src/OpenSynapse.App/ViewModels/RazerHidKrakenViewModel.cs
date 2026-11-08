@@ -55,12 +55,14 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
     public string? Serial { get => _serial; private set => SetField(ref _serial, value); }
     public Visibility SerialVisibility => string.IsNullOrWhiteSpace(Serial) ? Visibility.Collapsed : Visibility.Visible;
 
-    public async Task LoadSerialAsync(CancellationToken cancellationToken = default)
+    public async Task LoadSerialAsync(
+        CancellationToken cancellationToken = default,
+        PowerSourceKind powerSource = PowerSourceKind.Unknown)
     {
         try
         {
             Serial = await _service.TryReadSerialAsync(Connection, cancellationToken);
-            await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
+            await ApplyPersistedProfileAsync(powerSource, cancellationToken);
             OnPropertyChanged(nameof(SerialVisibility));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
