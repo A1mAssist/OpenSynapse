@@ -43,6 +43,8 @@ internal sealed class ChromaDeviceRouter
     private readonly HashSet<string> _baselineAttempted = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, RazerRgb[]> _lastFrames = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, RazerRgb> _lastColors = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, RazerHidDeviceConnection> _customEffectPrepared =
+        new(StringComparer.OrdinalIgnoreCase);
     private readonly SemaphoreSlim _gate = new(1, 1);
 
     internal ChromaDeviceRouter(
@@ -96,6 +98,10 @@ internal sealed class ChromaDeviceRouter
             {
                 _lastColors.Remove(staleId);
             }
+            foreach (var staleId in _customEffectPrepared.Keys.Where(id => !liveIds.Contains(id)).ToArray())
+            {
+                _customEffectPrepared.Remove(staleId);
+            }
 
             var applied = false;
             foreach (var target in targets)
@@ -137,6 +143,12 @@ internal sealed class ChromaDeviceRouter
             var connection = FindHid(target.InstanceId);
             if (connection is null || _hid is null) return false;
             var colors = resized.Select(color => new RazerHidColor(color.Red, color.Green, color.Blue)).ToArray();
+            if (!_customEffectPrepared.TryGetValue(target.InstanceId, out var prepared) ||
+                !ReferenceEquals(prepared, connection))
+            {
+                await _hid.SetCustomFrameEffectAsync(connection, cancellationToken).ConfigureAwait(false);
+                _customEffectPrepared[target.InstanceId] = connection;
+            }
             await _hid.SetCustomFrameAsync(connection, colors, cancellationToken).ConfigureAwait(false);
             _lastFrames[target.InstanceId] = resized;
             return true;
