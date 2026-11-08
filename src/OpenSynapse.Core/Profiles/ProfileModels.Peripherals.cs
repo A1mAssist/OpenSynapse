@@ -152,7 +152,6 @@ public sealed class GamepadProfileSettings
 {
     public int? PollingRateHertz { get; set; }
     public int? VibrationStrengthPercent { get; set; }
-    public string? MappingPreset { get; set; }
     public double? LeftStickDeadzone { get; set; }
     public double? RightStickDeadzone { get; set; }
     public int? LeftStickSensitivity { get; set; }
@@ -164,7 +163,6 @@ public sealed class GamepadProfileSettings
     public string? TriggerMode { get; set; }
     public GamepadTriggerProfileSettings? LeftTrigger { get; set; }
     public GamepadTriggerProfileSettings? RightTrigger { get; set; }
-    public string? DpadMode { get; set; }
     public bool? IgnoreDpadDiagonals { get; set; }
     public int? SocdModeIndex { get; set; }
     public List<GamepadButtonAssignmentProfile>? ButtonAssignments { get; set; }

@@ -66,16 +66,20 @@ public sealed partial class HeadsetAudioProfileApplier : IDeviceProfileApplier
                     "The headset audio connection is not available.")]);
         }
 
+        var profile = context.Profile.Headset;
+        var results = new List<ProfileSettingApplyResult>();
+
         if (connection.Transport != RazerHeadsetAudioTransport.Feature91)
         {
-            return new ProfileDeviceApplyResult(context.Device.Id, ProfileDeviceApplyStatus.Skipped, []);
+            // THX is a Windows-side component keyed by PID/container, so it still
+            // replays for headsets whose audio settings use a 37/64-byte transport.
+            await ApplyThxAsync(connection, profile, results, cancellationToken);
+            return CreateResult(context.Device.Id, results);
         }
 
-        var profile = context.Profile.Headset;
         var service = new RazerHeadsetAudioService(
             _transport, connection.DevicePath, _deviceWait);
         var state = await TryReadStateAsync(service, cancellationToken);
-        var results = new List<ProfileSettingApplyResult>();
 
         await ApplyThxAsync(connection, profile, results, cancellationToken);
         await ApplyEqualizerAsync(service, state, profile, results, cancellationToken);
@@ -83,13 +87,20 @@ public sealed partial class HeadsetAudioProfileApplier : IDeviceProfileApplier
         await ApplyChromaAsync(connection, profile, results, cancellationToken);
         await ApplyAncAndAdvancedAsync(service, state, profile, results, cancellationToken);
 
+        return CreateResult(context.Device.Id, results);
+    }
+
+    private static ProfileDeviceApplyResult CreateResult(
+        string deviceId,
+        List<ProfileSettingApplyResult> results)
+    {
         var status = results.Any(item => item.Status == ProfileSettingApplyStatus.Failed)
             ? ProfileDeviceApplyStatus.Failed
             : results.Any(item => item.Status is ProfileSettingApplyStatus.Applied or
                 ProfileSettingApplyStatus.AppliedUnverified)
                 ? ProfileDeviceApplyStatus.Applied
                 : ProfileDeviceApplyStatus.Skipped;
-        return new ProfileDeviceApplyResult(context.Device.Id, status, results);
+        return new ProfileDeviceApplyResult(deviceId, status, results);
     }
 
     private async Task ApplyChromaAsync(

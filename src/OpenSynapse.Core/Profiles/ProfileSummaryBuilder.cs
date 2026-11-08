@@ -404,7 +404,6 @@ public static class ProfileSummaryBuilder
         AddIf(group, settings.FanCurve, "ProfileSummary_Item_FanCurve", scope);
         AddIf(group, FirstPresent(settings.LightingEnabled, settings.LightingEffect, settings.LightingParameters),
             "ProfileSummary_Item_Lighting", scope);
-        AddIf(group, settings.PowerEnabled, "ProfileSummary_Item_Power", scope);
     }
 
     private static void AddGamepad(
@@ -419,11 +418,9 @@ public static class ProfileSummaryBuilder
 
         AddIf(group, settings.PollingRateHertz, "ProfileSummary_Item_PollingRate", scope);
         AddIf(group, settings.VibrationStrengthPercent, "ProfileSummary_Item_Vibration", scope);
-        AddIf(group, settings.MappingPreset, "ProfileSummary_Item_MappingPreset", scope);
         AddIf(group, settings.LeftStickDeadzone ?? settings.RightStickDeadzone,
             "ProfileSummary_Item_Deadzone", scope);
         AddIf(group, settings.TriggerMode, "ProfileSummary_Item_TriggerMode", scope);
-        AddIf(group, settings.DpadMode, "ProfileSummary_Item_Dpad", scope);
         AddIf(group, settings.IgnoreDpadDiagonals, "ProfileSummary_Item_Dpad", scope);
         AddIf(group, settings.SocdModeIndex, "ProfileSummary_Item_Socd", scope);
         AddIf(group, FirstPresent(settings.LightingEnabled, settings.LightingEffect, settings.LightingParameters),

@@ -318,6 +318,35 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         await SelectedKraken.LoadSerialAsync();
     }
 
+    [NotProfileScoped]
+    internal async Task ApplyKrakenProfilesAsync(
+        PowerSourceKind powerSource,
+        CancellationToken cancellationToken)
+    {
+        if (_specialLightingService is null)
+        {
+            return;
+        }
+
+        foreach (var row in KrakenDevices.ToArray())
+        {
+            try
+            {
+                var viewModel = new RazerHidKrakenViewModel(
+                    _specialLightingService, row.Connection, _getProfile, _saveProfileAsync);
+                await viewModel.LoadSerialAsync(cancellationToken, powerSource);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                _diagnosticLog.TryWrite("kraken", $"profile replay failed: {exception.Message}");
+            }
+        }
+    }
+
     /// <summary>
     /// Scans the selected RazerHid device, so a model the catalog does not describe
     /// can be mapped without touching another connected device.

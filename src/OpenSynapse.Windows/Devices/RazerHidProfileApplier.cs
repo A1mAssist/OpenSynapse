@@ -5,8 +5,8 @@ using OpenSynapse.Windows.Protocols;
 namespace OpenSynapse.Windows.Devices;
 
 /// <summary>
-/// Applies the persisted mouse and keyboard settings through the same RazerHid
-/// commands the device page uses. Lighting and mapping stay with their owners.
+/// Applies the persisted mouse, keyboard, and lighting settings through the same
+/// RazerHid commands the device page uses. Mapping stays with its owner.
 /// </summary>
 public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
 {
@@ -58,6 +58,8 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
             await ApplyKeyboardAsync(
                 context.Profile.Keyboard, context.Profile.Lighting, connection, results, cancellationToken);
         }
+
+        await ApplyLightingAsync(context, connection, results, cancellationToken);
 
         var status = results.Any(item => item.Status == ProfileSettingApplyStatus.Failed)
             ? ProfileDeviceApplyStatus.Failed
