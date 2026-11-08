@@ -6687,8 +6687,8 @@
       "maximumDpi": null,
       "pollRates": null,
       "matrixDimensions": [
-        6,
-        16
+        1,
+        1
       ],
       "waitMicroseconds": 600,
       "transactions": {
