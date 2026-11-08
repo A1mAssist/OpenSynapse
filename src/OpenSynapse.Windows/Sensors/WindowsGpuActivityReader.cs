@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -24,10 +23,14 @@ internal sealed partial class WindowsGpuActivityReader : IDisposable
     private const int DxgiErrorNotFound = unchecked((int)0x887A0002);
     private readonly Dictionary<string, GpuAdapter> _adapters = TryEnumerateAdapters()
         .ToDictionary(adapter => adapter.Luid, StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, PerformanceCounter> _engineCounters =
-        new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, MemoryCounters> _memoryCounters =
-        new(StringComparer.OrdinalIgnoreCase);
+    // Counter creation expands every GPU engine instance and costs seconds on the
+    // first call, so keep it on the sampling thread instead of the UI constructor.
+    private readonly Lazy<PdhWildcardCounter?> _engineUsage =
+        new(() => PdhWildcardCounter.TryCreate(@"\GPU Engine(*)\Utilization Percentage"));
+    private readonly Lazy<PdhWildcardCounter?> _memoryDedicated =
+        new(() => PdhWildcardCounter.TryCreate(@"\GPU Adapter Memory(*)\Dedicated Usage"));
+    private readonly Lazy<PdhWildcardCounter?> _memoryShared =
+        new(() => PdhWildcardCounter.TryCreate(@"\GPU Adapter Memory(*)\Shared Usage"));
 
     internal IReadOnlyList<WindowsGpuSample> Read()
     {
@@ -114,39 +117,37 @@ internal sealed partial class WindowsGpuActivityReader : IDisposable
 
     public void Dispose()
     {
-        foreach (var counter in _engineCounters.Values)
+        DisposeCounter(_engineUsage);
+        DisposeCounter(_memoryDedicated);
+        DisposeCounter(_memoryShared);
+    }
+
+    private static void DisposeCounter(Lazy<PdhWildcardCounter?> counter)
+    {
+        if (counter.IsValueCreated)
         {
-            counter.Dispose();
+            counter.Value?.Dispose();
         }
-        foreach (var counters in _memoryCounters.Values)
-        {
-            counters.Dispose();
-        }
-        _engineCounters.Clear();
-        _memoryCounters.Clear();
     }
 
     private Dictionary<string, Dictionary<string, EngineUsage>> ReadEngines()
     {
         var result = new Dictionary<string, Dictionary<string, EngineUsage>>(StringComparer.OrdinalIgnoreCase);
-        var instances = new PerformanceCounterCategory("GPU Engine").GetInstanceNames();
-        RemoveStale(_engineCounters, instances);
-        foreach (var instance in instances)
+        var engineUsage = _engineUsage.Value;
+        if (engineUsage is null)
         {
-            var parsed = ParseEngineInstance(instance);
+            return result;
+        }
+
+        foreach (var sample in engineUsage.Read())
+        {
+            var parsed = ParseEngineInstance(sample.Name);
             if (parsed is null || !_adapters.ContainsKey(parsed.Value.Luid))
             {
                 continue;
             }
 
-            if (!_engineCounters.TryGetValue(instance, out var counter))
-            {
-                counter = new PerformanceCounter(
-                    "GPU Engine", "Utilization Percentage", instance, readOnly: true);
-                _engineCounters.Add(instance, counter);
-            }
-
-            var value = Math.Max(0, counter.NextValue());
+            var value = Math.Max(0, sample.Value);
             var byEngine = result.GetValueOrDefault(parsed.Value.Luid);
             if (byEngine is null)
             {
@@ -164,11 +165,22 @@ internal sealed partial class WindowsGpuActivityReader : IDisposable
     private Dictionary<string, MemoryUsage> ReadMemory()
     {
         var result = new Dictionary<string, MemoryUsage>(StringComparer.OrdinalIgnoreCase);
-        var instances = new PerformanceCounterCategory("GPU Adapter Memory").GetInstanceNames();
-        RemoveStale(_memoryCounters, instances);
-        foreach (var instance in instances)
+        var dedicatedUsage = _memoryDedicated.Value;
+        if (dedicatedUsage is null)
         {
-            var match = LuidRegex().Match(instance);
+            return result;
+        }
+
+        var shared = _memoryShared.Value?.Read()
+            .GroupBy(sample => sample.Name, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                group => group.Key,
+                group => Math.Max(0, group.First().Value),
+                StringComparer.OrdinalIgnoreCase)
+            ?? new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+        foreach (var sample in dedicatedUsage.Read())
+        {
+            var match = LuidRegex().Match(sample.Name);
             if (!match.Success)
             {
                 continue;
@@ -179,14 +191,9 @@ internal sealed partial class WindowsGpuActivityReader : IDisposable
                 continue;
             }
 
-            if (!_memoryCounters.TryGetValue(instance, out var counters))
-            {
-                counters = new MemoryCounters(instance);
-                _memoryCounters.Add(instance, counters);
-            }
             result[luid] = new MemoryUsage(
-                Math.Max(0, counters.Dedicated.NextValue()),
-                Math.Max(0, counters.Shared.NextValue()));
+                Math.Max(0, sample.Value),
+                shared.GetValueOrDefault(sample.Name));
         }
         return result;
     }
@@ -208,17 +215,6 @@ internal sealed partial class WindowsGpuActivityReader : IDisposable
     private static string NormalizeLuid(Match match) =>
         $"luid_0x{uint.Parse(match.Groups["high"].Value, NumberStyles.HexNumber, CultureInfo.InvariantCulture):x8}_" +
         $"0x{uint.Parse(match.Groups["low"].Value, NumberStyles.HexNumber, CultureInfo.InvariantCulture):x8}";
-
-    private static void RemoveStale<T>(Dictionary<string, T> counters, IReadOnlyCollection<string> instances)
-        where T : IDisposable
-    {
-        var current = instances.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach (var stale in counters.Keys.Where(key => !current.Contains(key)).ToArray())
-        {
-            counters.Remove(stale, out var counter);
-            counter?.Dispose();
-        }
-    }
 
     private static long ToMebibytes(double bytes) => checked((long)Math.Round(bytes / 1048576d));
 
@@ -424,20 +420,6 @@ internal sealed partial class WindowsGpuActivityReader : IDisposable
     private readonly record struct EngineInstance(string Luid, string Engine, int ProcessId);
     private readonly record struct EngineUsage(double Total, double External);
     private readonly record struct MemoryUsage(double DedicatedBytes, double SharedBytes);
-
-    private sealed class MemoryCounters(string instance) : IDisposable
-    {
-        internal PerformanceCounter Dedicated { get; } =
-            new("GPU Adapter Memory", "Dedicated Usage", instance, readOnly: true);
-        internal PerformanceCounter Shared { get; } =
-            new("GPU Adapter Memory", "Shared Usage", instance, readOnly: true);
-
-        public void Dispose()
-        {
-            Dedicated.Dispose();
-            Shared.Dispose();
-        }
-    }
 
     private const int AdapterInfoType = 15;
     private const int AdapterPerformanceDataType = 62;
