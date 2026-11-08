@@ -1,12 +1,14 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using OpenSynapse.Core.Displays;
 using OpenSynapse.Core.Storage;
 
 namespace OpenSynapse.Core.Profiles;
 
 public sealed class ProfileStore
 {
-    public const int CurrentVersion = 3;
+    public const int CurrentVersion = 4;
+    private readonly MachineSettingsStore _machineSettings;
 
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.General)
     {
@@ -23,11 +25,14 @@ public sealed class ProfileStore
         },
     };
 
-    public ProfileStore(string? filePath = null)
+    public ProfileStore(string? filePath = null, MachineSettingsStore? machineSettings = null)
     {
         FilePath = string.IsNullOrWhiteSpace(filePath)
             ? AppDataPaths.Combine("profiles.json")
             : Path.GetFullPath(filePath);
+        _machineSettings = machineSettings ?? new MachineSettingsStore(Path.Combine(
+            Path.GetDirectoryName(FilePath) ?? AppDataPaths.Root,
+            "machine-settings.json"));
     }
 
     public string FilePath { get; }
@@ -61,7 +66,7 @@ public sealed class ProfileStore
             {
                 throw new InvalidDataException("Profile file is empty.");
             }
-            if (!TryUpgrade(document))
+            if (!TryUpgrade(document, moveLegacyMachineSettings: false, out _))
             {
                 throw new InvalidDataException(
                     $"Profile version {document.Version} is not supported; expected {CurrentVersion}.");
@@ -89,24 +94,36 @@ public sealed class ProfileStore
 
         try
         {
-            await using var stream = new FileStream(
+            ProfileDocument? document;
+            await using (var stream = new FileStream(
                 FilePath,
                 FileMode.Open,
                 FileAccess.Read,
                 FileShare.Read,
                 bufferSize: 4096,
-                options: FileOptions.SequentialScan | FileOptions.Asynchronous);
-            var document = await JsonSerializer.DeserializeAsync<ProfileDocument>(
-                stream,
-                SerializerOptions,
-                cancellationToken);
+                options: FileOptions.SequentialScan | FileOptions.Asynchronous))
+            {
+                document = await JsonSerializer.DeserializeAsync<ProfileDocument>(
+                    stream,
+                    SerializerOptions,
+                    cancellationToken);
+            }
 
-            if (document is null || !TryUpgrade(document))
+            if (document is null)
+            {
+                return ProfileDocument.CreateDefault();
+            }
+            var sourceVersion = document.Version;
+            if (!TryUpgrade(document, moveLegacyMachineSettings: true, out var legacyGpuMode))
             {
                 return ProfileDocument.CreateDefault();
             }
 
             document.ApplySafeDefaults();
+            if (sourceVersion == 3)
+            {
+                await CompleteV3MigrationAsync(document, legacyGpuMode, cancellationToken);
+            }
             return document;
         }
         catch (JsonException)
@@ -181,8 +198,43 @@ public sealed class ProfileStore
         }
     }
 
-    private static bool TryUpgrade(ProfileDocument document)
+    private async Task CompleteV3MigrationAsync(
+        ProfileDocument document,
+        BladeGpuMode? legacyGpuMode,
+        CancellationToken cancellationToken)
     {
+        try
+        {
+            if (File.Exists(FilePath))
+            {
+                var backupPath = $"{FilePath}.v3-backup-{DateTime.Now:yyyyMMddHHmmss}";
+                File.Copy(FilePath, backupPath, overwrite: true);
+            }
+
+            if (legacyGpuMode is BladeGpuMode gpuMode)
+            {
+                var machine = await _machineSettings.LoadAsync(cancellationToken);
+                if (machine.GpuMode is null)
+                {
+                    machine.GpuMode = gpuMode;
+                    await _machineSettings.SaveAsync(machine, cancellationToken);
+                }
+            }
+
+            await SaveAsync(document, cancellationToken);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            // The v3 file is still intact and the migrated document is usable in memory.
+        }
+    }
+
+    private static bool TryUpgrade(
+        ProfileDocument document,
+        bool moveLegacyMachineSettings,
+        out BladeGpuMode? legacyGpuMode)
+    {
+        legacyGpuMode = null;
         if (document.Version == CurrentVersion)
         {
             return true;
@@ -194,6 +246,88 @@ public sealed class ProfileStore
             return true;
         }
 
+        if (document.Version == 3)
+        {
+            document.EnsureProfileCatalog();
+            foreach (var profile in document.Profiles.Values)
+            {
+                MigrateLegacyLightingZones(profile);
+            }
+            if (moveLegacyMachineSettings)
+            {
+                foreach (var profile in document.Profiles.Values)
+                {
+                    var blade = profile.Global.Blade;
+                    if (blade.GpuMode is not BladeGpuMode mode)
+                    {
+                        continue;
+                    }
+                    legacyGpuMode ??= mode;
+                    blade.GpuMode = null;
+                }
+            }
+            document.Version = CurrentVersion;
+            return true;
+        }
+
         return false;
+    }
+
+    private static void MigrateLegacyLightingZones(ProfileDefinition profile)
+    {
+        MigratePower(profile.PluggedIn);
+        MigratePower(profile.LowPowerAdapter);
+        MigratePower(profile.OnBattery);
+        if (profile.Devices is not null)
+        {
+            foreach (var settings in profile.Devices.Values)
+            {
+                if (settings is null)
+                {
+                    continue;
+                }
+
+                var lighting = settings.Lighting;
+                if (lighting is null || lighting.Parameters is null ||
+                    !lighting.Parameters.TryGetValue("zone", out var zone) ||
+                    string.IsNullOrWhiteSpace(zone))
+                {
+                    continue;
+                }
+
+                settings.LightingZones ??= new Dictionary<string, LightingProfile>(
+                    StringComparer.OrdinalIgnoreCase);
+                settings.LightingZones.TryAdd(zone, lighting);
+                settings.Lighting = new LightingProfile();
+            }
+        }
+
+        static void MigratePower(PowerProfileOverrides? power)
+        {
+            if (power?.RazerHidLighting is null)
+            {
+                return;
+            }
+
+            foreach (var (key, lighting) in power.RazerHidLighting.ToArray())
+            {
+                if (lighting?.Parameters is null ||
+                    !lighting.Parameters.TryGetValue("zone", out var zone) ||
+                    string.IsNullOrWhiteSpace(zone))
+                {
+                    continue;
+                }
+
+                power.RazerHidLightingZones ??= new Dictionary<string, Dictionary<string, LightingProfile>>(
+                    StringComparer.OrdinalIgnoreCase);
+                if (!power.RazerHidLightingZones.TryGetValue(key, out var zones))
+                {
+                    zones = new Dictionary<string, LightingProfile>(StringComparer.OrdinalIgnoreCase);
+                    power.RazerHidLightingZones[key] = zones;
+                }
+                zones.TryAdd(zone, lighting);
+                power.RazerHidLighting.Remove(key);
+            }
+        }
     }
 }

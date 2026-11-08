@@ -26,6 +26,9 @@ public enum DeviceCategory
     MouseMat,
     Monitor,
     Gamepad,
+    CoolingPad,
+    Display,
+    Lighting,
 }
 
 public sealed record DeviceDescriptor(

@@ -1,3 +1,4 @@
+using System.Globalization;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
@@ -13,13 +14,16 @@ public sealed partial class RazerHidWorkspace
             _deviceService ?? throw new InvalidOperationException("RazerHid service is unavailable."),
             connection,
             _currentPowerSource,
-            powerState => ProfileResolver.ResolveRazerHidLighting(
+            (powerState, zone) => ProfileResolver.ResolveRazerHidLighting(
                 _getProfile(),
                 connection.ToDescriptor(),
-                powerState),
-            (powerState, profile, token) => SaveLightingAsync(
+                powerState,
+                ((byte)zone).ToString(CultureInfo.InvariantCulture),
+                ((byte)connection.Definition.DefaultLedZone).ToString(CultureInfo.InvariantCulture)),
+            (powerState, zone, profile, token) => SaveLightingAsync(
                 connection,
                 powerState,
+                zone,
                 profile,
                 token),
             () => IsLightingEnabled(connection),
@@ -30,7 +34,9 @@ public sealed partial class RazerHidWorkspace
                 chromaOverrideEnabled,
                 token),
             _chromaIntegrationEnabled(),
-            _localMacros);
+            _localMacros,
+            _getActiveProfile,
+            _saveProfileAsync);
         device.AttachMatrixLayout(_matrixLayoutLoader.LoadLayoutAsync, _dispatcherQueue);
         device.Onboard.LocalMacroProvider = _localMacros;
         device.SoftwareMacroBinder = _softwareMacroBinder;

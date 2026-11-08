@@ -983,6 +983,9 @@
   <data name="RazerHidOperationApplied" xml:space="preserve">
     <value>Applied to device</value>
   </data>
+  <data name="RazerHidOperationSaved" xml:space="preserve">
+    <value>Applied to the device and saved to this profile</value>
+  </data>
   <data name="RazerHidPollingRateMismatch" xml:space="preserve">
     <value>Device reports {0} Hz, expected {1} Hz</value>
   </data>
@@ -1003,6 +1006,9 @@
   </data>
   <data name="RazerHidLightingProfileSaveFailed" xml:space="preserve">
     <value>The lighting was applied, but the profile could not be saved; the device is still controllable.</value>
+  </data>
+  <data name="RazerHidSettingProfileSaveFailed" xml:space="preserve">
+    <value>The setting reached the device, but saving it to this profile failed; the previous device value was restored.</value>
   </data>
   <data name="RazerHidCapabilityUnanswered" xml:space="preserve">
     <value>The firmware did not answer "{0}" this time. Try again shortly.</value>

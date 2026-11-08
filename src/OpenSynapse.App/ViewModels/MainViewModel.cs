@@ -63,6 +63,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         bool thxAudioSupported = false,
         IMacroInputSink? macroInputSink = null)
     {
+        ProfileSettingsRegistration.EnsureRegistered();
         _deviceTelemetryReader = deviceTelemetryReader;
         _profileStore = profileStore ?? new ProfileStore();
         _powerSourceProvider = powerSourceProvider ?? UnknownPowerSourceProvider.Instance;
@@ -247,7 +248,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                 _selectedBlackSharkDevice = null;
                 SelectedBlackShark = null;
             },
-            OnPropertyChanged);
+            OnPropertyChanged,
+            (power, token) => SelectedBle?.ApplyPersistedProfileAsync(power, token) ?? Task.CompletedTask);
         Tray = new TrayWorkspace(() => Devices, RazerHid);
         CpuCurve = new CpuCurveWorkspace(
             (label, operation, token) => RunDeviceOperationAsync(label, operation, token));

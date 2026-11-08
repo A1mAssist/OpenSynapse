@@ -1,4 +1,6 @@
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
@@ -335,40 +337,69 @@ public sealed partial class RazerBleDeviceViewModel
         }
     }
 
+    [ProfileSetting("ble.power-plan", DeviceCategory.Mouse)]
     public Task ApplyPowerPlanAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(
             service => service.SetPowerPlanAsync(
                 (RazerBlePowerPlan)SelectedPowerPlanIndex, cancellationToken: cancellationToken),
-            plan => SelectedPowerPlanIndex = (int)plan);
+            plan => SelectedPowerPlanIndex = (int)plan,
+            (plan, token) => PersistMouseAsync(
+                mouse => mouse.PowerPlan = (plan switch
+                {
+                    RazerBlePowerPlan.PowerSave => MousePowerPlan.PowerSave,
+                    RazerBlePowerPlan.HighPerformance => MousePowerPlan.HighPerformance,
+                    _ => MousePowerPlan.Balance,
+                }).ToString(),
+                token),
+            token => _service!.ReadPowerPlanAsync(cancellationToken: token),
+            (previous, token) => _service!.SetPowerPlanAsync(previous, cancellationToken: token),
+            cancellationToken);
 
     /// <summary>Applies the three scroll settings the wheel card owns, in one go.</summary>
+    [ProfileSetting("ble.scroll-extras", DeviceCategory.Mouse)]
     public async Task ApplyScrollExtrasAsync(CancellationToken cancellationToken = default)
     {
         if (_scrollApplyFailed || cancellationToken.IsCancellationRequested) return;
-        await RunWriteAsync(async service =>
-        {
-            if (TactileModeVisibility == Visibility.Visible)
-                SelectedTactileModeIndex = (int)await service.SetScrollTactileModeAsync(
-                    (RazerBleScrollTactileMode)SelectedTactileModeIndex, cancellationToken);
-            if (AccelerationLevelVisibility == Visibility.Visible)
-                ScrollAccelerationLevel = await service.SetScrollAccelerationLevelAsync(
-                    (byte)Math.Round(ScrollAccelerationLevel), cancellationToken);
-            if (MaskingTimeVisibility == Visibility.Visible)
-                ScrollMaskingTime = await service.SetScrollMaskingTimeAsync(
-                    (byte)Math.Round(ScrollMaskingTime), cancellationToken);
-            if (HapticStageVisibility == Visibility.Visible)
-                SelectedHapticStage = await service.SetHapticStageAsync(
-                    (byte)Math.Round(SelectedHapticStage), HapticProfileId, cancellationToken);
-            return true;
-        }, _ => { });
+        await RunWriteAsync(
+            async service =>
+            {
+                RazerBleScrollTactileMode? tactile = null;
+                byte? acceleration = null;
+                byte? masking = null;
+                byte? haptic = null;
+                if (TactileModeVisibility == Visibility.Visible)
+                    tactile = await service.SetScrollTactileModeAsync(
+                        (RazerBleScrollTactileMode)SelectedTactileModeIndex, cancellationToken);
+                if (AccelerationLevelVisibility == Visibility.Visible)
+                    acceleration = await service.SetScrollAccelerationLevelAsync(
+                        (byte)Math.Round(ScrollAccelerationLevel), cancellationToken);
+                if (MaskingTimeVisibility == Visibility.Visible)
+                    masking = await service.SetScrollMaskingTimeAsync(
+                        (byte)Math.Round(ScrollMaskingTime), cancellationToken);
+                if (HapticStageVisibility == Visibility.Visible)
+                    haptic = await service.SetHapticStageAsync(
+                        (byte)Math.Round(SelectedHapticStage), HapticProfileId, cancellationToken);
+                return new ScrollExtrasState(tactile, acceleration, masking, haptic);
+            },
+            ApplyScrollExtras,
+            (state, token) => PersistMouseAsync(mouse => ApplyScrollExtrasToProfile(mouse, state), token),
+            ReadScrollExtrasAsync,
+            RestoreScrollExtrasAsync,
+            cancellationToken);
     }
 
+    [ProfileSetting("ble.battery-chemistry", DeviceCategory.Mouse)]
     public Task ApplyBatteryChemistryAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(
             service => service.SetBatteryChemistryAsync(
                 (RazerBleBatteryChemistry)SelectedBatteryChemistryIndex, cancellationToken),
-            state => SelectedBatteryChemistryIndex = (int)state);
+            state => SelectedBatteryChemistryIndex = (int)state,
+            (state, token) => PersistMouseAsync(mouse => mouse.BatteryChemistry = (byte)state, token),
+            token => _service!.ReadBatteryChemistryAsync(token),
+            (previous, token) => _service!.SetBatteryChemistryAsync(previous, token),
+            cancellationToken);
 
+    [ProfileSetting("ble.smart-illumination", DeviceCategory.Mouse)]
     public Task ApplySmartIlluminationAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(
             service => service.SetSmartIlluminationAsync(
@@ -379,14 +410,28 @@ public sealed partial class RazerBleDeviceViewModel
             {
                 SmartIlluminationEnabled = state.Status != 0;
                 SelectedSmartIlluminationModeIndex = state.Mode;
-            });
+            },
+            (state, token) => PersistMouseAsync(
+                mouse => mouse.SmartIlluminationEnabled = state.Status != 0,
+                token),
+            token => _service!.ReadSmartIlluminationAsync(cancellationToken: token),
+            (previous, token) => _service!.SetSmartIlluminationAsync(
+                previous.Status, previous.Mode, cancellationToken: token),
+            cancellationToken);
 
+    [ProfileSetting("ble.snap-tap", DeviceCategory.Mouse)]
     public Task ApplySnapTapAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(
             service => service.SetSnapTapAsync(SnapTapEnabled, cancellationToken: cancellationToken),
-            state => SnapTapEnabled = state.Enabled);
+            state => SnapTapEnabled = state.Enabled,
+            (state, token) => PersistMouseAsync(mouse => mouse.SnapTapEnabled = state.Enabled, token),
+            token => _service!.ReadSnapTapAsync(cancellationToken: token),
+            (previous, token) => _service!.SetSnapTapAsync(
+                previous.Enabled, cancellationToken: token),
+            cancellationToken);
 
     /// <summary>Only the two timings are editable; the masks are carried over from the read.</summary>
+    [ProfileSetting("ble.debounce", DeviceCategory.Mouse)]
     public Task ApplyDebounceAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(
             service => service.SetDebounceAsync(
@@ -396,7 +441,11 @@ public sealed partial class RazerBleDeviceViewModel
                     (byte)Math.Round(DebounceBreak),
                     _debounceBreakMask),
                 cancellationToken),
-            ApplyDebounce);
+            ApplyDebounce,
+            (state, token) => PersistMouseAsync(mouse => mouse.DebounceMilliseconds = state.Make, token),
+            token => _service!.ReadDebounceAsync(token),
+            (previous, token) => _service!.SetDebounceAsync(previous, token),
+            cancellationToken);
 
     private void ApplyDebounce(RazerBleDebounceState state)
     {
@@ -404,6 +453,71 @@ public sealed partial class RazerBleDeviceViewModel
         _debounceBreakMask = state.BreakMask;
         DebounceMake = state.Make;
         DebounceBreak = state.Break;
+    }
+
+    private sealed record ScrollExtrasState(
+        RazerBleScrollTactileMode? Tactile,
+        byte? AccelerationLevel,
+        byte? MaskingTime,
+        byte? HapticStage);
+
+    private void ApplyScrollExtras(ScrollExtrasState state)
+    {
+        if (state.Tactile is { } tactile) SelectedTactileModeIndex = (int)tactile;
+        if (state.AccelerationLevel is { } acceleration) ScrollAccelerationLevel = acceleration;
+        if (state.MaskingTime is { } masking) ScrollMaskingTime = masking;
+        if (state.HapticStage is { } haptic) SelectedHapticStage = haptic;
+    }
+
+    private async Task<ScrollExtrasState> ReadScrollExtrasAsync(CancellationToken cancellationToken)
+    {
+        var tactile = TactileModeVisibility == Visibility.Visible
+            ? await _service!.ReadScrollTactileModeAsync(cancellationToken)
+            : (RazerBleScrollTactileMode?)null;
+        var acceleration = AccelerationLevelVisibility == Visibility.Visible
+            ? await _service!.ReadScrollAccelerationLevelAsync(cancellationToken)
+            : (byte?)null;
+        var masking = MaskingTimeVisibility == Visibility.Visible
+            ? await _service!.ReadScrollMaskingTimeAsync(cancellationToken)
+            : (byte?)null;
+        var haptic = HapticStageVisibility == Visibility.Visible
+            ? (await _service!.ReadHapticStageAsync(HapticProfileId, cancellationToken)).Active
+            : (byte?)null;
+        return new ScrollExtrasState(tactile, acceleration, masking, haptic);
+    }
+
+    private async Task RestoreScrollExtrasAsync(
+        ScrollExtrasState state,
+        CancellationToken cancellationToken)
+    {
+        if (state.Tactile is { } tactile)
+        {
+            try { await _service!.SetScrollTactileModeAsync(tactile, cancellationToken); }
+            catch { /* The save error is the one the user must see. */ }
+        }
+        if (state.AccelerationLevel is { } acceleration)
+        {
+            try { await _service!.SetScrollAccelerationLevelAsync(acceleration, cancellationToken); }
+            catch { /* The save error is the one the user must see. */ }
+        }
+        if (state.MaskingTime is { } masking)
+        {
+            try { await _service!.SetScrollMaskingTimeAsync(masking, cancellationToken); }
+            catch { /* The save error is the one the user must see. */ }
+        }
+        if (state.HapticStage is { } haptic)
+        {
+            try { await _service!.SetHapticStageAsync(haptic, HapticProfileId, cancellationToken); }
+            catch { /* The save error is the one the user must see. */ }
+        }
+    }
+
+    private static void ApplyScrollExtrasToProfile(MouseProfileSettings mouse, ScrollExtrasState state)
+    {
+        if (state.Tactile is { } tactile) mouse.HapticMode = (int)tactile;
+        if (state.AccelerationLevel is { } acceleration) mouse.HapticAccelerationLevel = acceleration;
+        if (state.MaskingTime is { } masking) mouse.HapticMaskTime = masking;
+        if (state.HapticStage is { } haptic) mouse.HapticLevel = haptic;
     }
 
     private async Task LoadExtraAsync<T>(Func<Task<T>> read, Action<T> apply, Action hide)

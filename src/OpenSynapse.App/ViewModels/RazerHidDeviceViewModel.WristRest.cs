@@ -1,4 +1,6 @@
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 using Windows.UI;
@@ -32,6 +34,7 @@ public sealed partial class RazerHidDeviceViewModel
         CanWrite && HasWristRestLighting &&
         Has(RazerHidBackendCapability.MatrixFrameWrite) && !IsWristRestBusy;
 
+    [ProfileSetting("keyboard.wrist-rest", DeviceCategory.Keyboard)]
     public Task ApplyWristRestAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(
             RazerHidBackendCapability.MatrixFrameWrite,
@@ -39,8 +42,24 @@ public sealed partial class RazerHidDeviceViewModel
             value => IsWristRestBusy = value,
             async () =>
             {
+                var previousEnabled = WristRestEnabled;
+                var previousColor = WristRestColor;
+                var previousProfile = ReadProfile(settings => settings.Keyboard.WristRestLightingEnabled);
                 var color = WristRestEnabled ? ToRazerHidColor(WristRestColor) : default;
                 await _service.SetWristRestColorAsync(Connection, color, cancellationToken);
+                await SaveProfileAsync(
+                    settings => settings.Keyboard.WristRestLightingEnabled = WristRestEnabled,
+                    settings => settings.Keyboard.WristRestLightingEnabled = previousProfile,
+                    () =>
+                    {
+                        WristRestEnabled = previousEnabled;
+                        WristRestColor = previousColor;
+                    },
+                    token => _service.SetWristRestColorAsync(
+                        Connection,
+                        previousEnabled ? ToRazerHidColor(previousColor) : default,
+                        token),
+                    cancellationToken);
             },
             cancellationToken);
 }

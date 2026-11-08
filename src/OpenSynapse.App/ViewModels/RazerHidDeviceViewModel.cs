@@ -91,12 +91,15 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
     private bool _ledStateKnown;
     private bool _brightnessKnown;
     private readonly Func<PowerSourceKind>? _powerStateProvider;
-    private readonly Func<PowerSourceKind, LightingProfile?>? _lightingProfileResolver;
-    private readonly Func<PowerSourceKind, LightingProfile, CancellationToken, Task<bool>>? _lightingProfileSaver;
+    private readonly Func<PowerSourceKind, RazerHidLedZone, LightingProfile?>? _lightingProfileResolver;
+    private readonly Func<PowerSourceKind, RazerHidLedZone, LightingProfile, CancellationToken, Task<bool>>?
+        _lightingProfileSaver;
     private readonly Func<bool>? _lightingEnabledResolver;
     private readonly Func<bool>? _chromaOverrideResolver;
     private readonly Func<bool, bool, CancellationToken, Task<bool>>? _lightingSettingsSaver;
     private readonly Func<IReadOnlyList<MacroDefinition>>? _localMacros;
+    private readonly Func<ProfileDefinition>? _getActiveProfile;
+    private readonly Func<CancellationToken, Task<bool>>? _saveProfileAsync;
     private readonly RazerHidSoftwareLightingRuntime? _softwareLightingRuntime;
     private WasapiAudioMeterAdapter? _softwareAudioInput;
     private TimeSpan _softwareLightingElapsed;
@@ -115,13 +118,15 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         RazerHidDeviceService service,
         RazerHidDeviceConnection connection,
         Func<PowerSourceKind>? powerStateProvider = null,
-        Func<PowerSourceKind, LightingProfile?>? lightingProfileResolver = null,
-        Func<PowerSourceKind, LightingProfile, CancellationToken, Task<bool>>? lightingProfileSaver = null,
+        Func<PowerSourceKind, RazerHidLedZone, LightingProfile?>? lightingProfileResolver = null,
+        Func<PowerSourceKind, RazerHidLedZone, LightingProfile, CancellationToken, Task<bool>>? lightingProfileSaver = null,
         Func<bool>? lightingEnabledResolver = null,
         Func<bool>? chromaOverrideResolver = null,
         Func<bool, bool, CancellationToken, Task<bool>>? lightingSettingsSaver = null,
         bool chromaIntegrationEnabled = true,
-        Func<IReadOnlyList<MacroDefinition>>? localMacros = null)
+        Func<IReadOnlyList<MacroDefinition>>? localMacros = null,
+        Func<ProfileDefinition>? getActiveProfile = null,
+        Func<CancellationToken, Task<bool>>? saveProfileAsync = null)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
         Connection = connection ?? throw new ArgumentNullException(nameof(connection));
@@ -145,6 +150,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         _chromaOverrideResolver = chromaOverrideResolver;
         _lightingSettingsSaver = lightingSettingsSaver;
         _localMacros = localMacros;
+        _getActiveProfile = getActiveProfile;
+        _saveProfileAsync = saveProfileAsync;
         _lightingEnabled = lightingEnabledResolver?.Invoke() ?? true;
         _chromaOverrideEnabled = chromaOverrideResolver?.Invoke() ?? true;
         _chromaIntegrationEnabled = chromaIntegrationEnabled;
@@ -598,6 +605,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
             _ledStateKnown = false;
             SelectedLightingEffect = LightingEffects.FirstOrDefault();
             OnLightingSelectionChanged();
+            ApplyConfiguredLightingToEditor();
+            _ = ApplyConfiguredLightingAsync();
         }
     }
     public IReadOnlyList<RazerHidLightingEffect> LightingEffects =>

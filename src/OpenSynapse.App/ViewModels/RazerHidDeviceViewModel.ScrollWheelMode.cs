@@ -1,4 +1,6 @@
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 
@@ -183,6 +185,7 @@ public sealed partial class RazerHidDeviceViewModel
             ?? ScrollWheelModeChoices[0];
     }
 
+    [ProfileSetting("mouse.scroll-preset", DeviceCategory.Mouse, powerScoped: true)]
     public Task ApplySelectedScrollWheelModeAsync(CancellationToken cancellationToken = default)
     {
         if (!CanEditScrollWheelMode || SelectedScrollWheelMode is not { } choice)
@@ -204,6 +207,11 @@ public sealed partial class RazerHidDeviceViewModel
             value => IsScrollWheelModeBusy = value,
             async () =>
             {
+                var previousProfile = ReadProfile(settings => (
+                    settings.Viper.ScrollMode,
+                    settings.Viper.ScrollFreeNotched,
+                    settings.Viper.SmartReelEnabled));
+                var previousChoice = SelectedScrollWheelMode;
                 var isSmartReel = choice.Kind == RazerHidScrollWheelModeKind.SmartReel;
                 if (isSmartReel)
                 {
@@ -265,6 +273,33 @@ public sealed partial class RazerHidDeviceViewModel
                 }
 
                 RefreshScrollWheelModeSelection();
+                await SaveProfileAsync(
+                    settings =>
+                    {
+                        if (Has(RazerHidBackendCapability.ScrollModeWrite))
+                        {
+                            settings.Viper.ScrollMode = ToProfileScrollMode(ScrollMode);
+                        }
+                        if (Has(RazerHidBackendCapability.ScrollFreeNotchedModeWrite))
+                        {
+                            settings.Viper.ScrollFreeNotched =
+                                (RazerScrollFreeNotchedMode)ScrollFreeNotchedModeIndex ==
+                                RazerScrollFreeNotchedMode.FreeSpinMode;
+                        }
+                        if (Has(RazerHidBackendCapability.SmartReelWrite))
+                        {
+                            settings.Viper.SmartReelEnabled = SmartReelEnabled;
+                        }
+                    },
+                    settings =>
+                    {
+                        settings.Viper.ScrollMode = previousProfile.ScrollMode;
+                        settings.Viper.ScrollFreeNotched = previousProfile.ScrollFreeNotched;
+                        settings.Viper.SmartReelEnabled = previousProfile.SmartReelEnabled;
+                    },
+                    () => SelectedScrollWheelMode = previousChoice,
+                    null,
+                    cancellationToken);
                 ScrollWheelModeStatusText = AppStrings.Text("RazerHidScrollModeApplied");
             },
             cancellationToken);

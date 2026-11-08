@@ -2,6 +2,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 using Windows.UI;
@@ -67,6 +69,8 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
 
     private readonly RazerBleDevice _device;
     private readonly Action<string>? _diagnostic;
+    private readonly Func<ProfileDocument>? _getProfile;
+    private readonly Func<CancellationToken, Task<bool>>? _saveProfile;
     private RazerBleDeviceService? _service;
     private RazerHidMappingViewModel? _mapping;
     private bool _isBusy;
@@ -126,16 +130,40 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
     private IReadOnlyList<byte> _profileIds = [];
     private int _selectedProfileIndex;
     private string _profileStatusText = string.Empty;
-    public RazerBleDeviceViewModel(RazerBleDevice device, Action<string>? diagnostic = null)
+    static RazerBleDeviceViewModel()
+    {
+        Register("ble.polling-rate");
+        Register("ble.dpi");
+        Register("ble.dpi-stages");
+        Register("ble.lighting");
+        Register("ble.scroll");
+        Register("ble.power");
+        Register("ble.onboard-profile");
+        Register("ble.power-plan");
+        Register("ble.scroll-extras");
+        Register("ble.battery-chemistry");
+        Register("ble.smart-illumination");
+        Register("ble.snap-tap");
+        Register("ble.debounce");
+    }
+
+    public RazerBleDeviceViewModel(
+        RazerBleDevice device,
+        Action<string>? diagnostic = null,
+        Func<ProfileDocument>? getProfile = null,
+        Func<CancellationToken, Task<bool>>? saveProfile = null)
     {
         _device = device;
         _diagnostic = diagnostic;
+        _getProfile = getProfile;
+        _saveProfile = saveProfile;
     }
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public string Name => string.IsNullOrWhiteSpace(_device.Name) ? "Razer BLE" : _device.Name;
     public string Identity => AppStrings.Text("BleIdentity");
     public string DeviceId => _device.Id;
+    public string ProfileDeviceKey => $"ble:{_device.Id}";
     public bool CanEdit => !IsBusy && _service is not null;
 
     public string FirmwareText => _firmware ?? "—";
@@ -505,11 +533,18 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
         await LoadExtrasAsync(cancellationToken);
     }
 
+    [ProfileSetting("ble.polling-rate", DeviceCategory.Mouse)]
     public Task ApplyPollingRateAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(
             service => service.SetPollingRateAsync(PollingRates[SelectedPollingIndex], cancellationToken),
-            applied => SelectedPollingIndex = Math.Max(0, PollingRates.ToList().IndexOf(applied)));
+            applied => SelectedPollingIndex = Math.Max(0, PollingRates.ToList().IndexOf(applied)),
+            (applied, token) => PersistMouseAsync(mouse => mouse.PollingRateHertz = applied, token),
+            async token => (await _service!.ReadStateAsync(token)).PollingHertz
+                ?? throw new InvalidOperationException("The device did not report a polling rate."),
+            (previous, token) => _service!.SetPollingRateAsync(previous, token),
+            cancellationToken);
 
+    [ProfileSetting("ble.dpi", DeviceCategory.Mouse)]
     public Task ApplyDpiAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(
             service => service.SetDpiAsync((int)Math.Round(DpiX), (int)Math.Round(DpiY), cancellationToken),
@@ -517,7 +552,19 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
             {
                 DpiX = applied.X;
                 DpiY = applied.Y;
-            });
+            },
+            (applied, token) => PersistMouseAsync(
+                mouse =>
+                {
+                    mouse.DpiX = applied.X;
+                    mouse.DpiY = applied.Y;
+                },
+                token),
+            async token => (await _service!.ReadStateAsync(token)).Dpi is { } dpi
+                ? (dpi.X, dpi.Y)
+                : throw new InvalidOperationException("The device did not report DPI."),
+            (previous, token) => _service!.SetDpiAsync(previous.X, previous.Y, token),
+            cancellationToken);
 
     public async Task LoadLightingAsync(CancellationToken cancellationToken = default)
     {
@@ -539,6 +586,7 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
         }
     }
 
+    [ProfileSetting("ble.lighting", DeviceCategory.Mouse)]
     public Task ApplyLightingAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(
             async service =>
@@ -553,8 +601,16 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
             state =>
             {
                 ApplyLighting(state);
-                LightingStatusText = AppStrings.Text("BlackSharkSaved");
-            });
+            },
+            async (state, token) =>
+            {
+                var saved = await PersistLightingAsync(BuildLightingProfile(), token);
+                LightingStatusText = saved ? AppStrings.Text("BlackSharkSaved") : string.Empty;
+                return saved;
+            },
+            token => _service!.ReadLightingAsync(token),
+            RestoreLightingAsync,
+            cancellationToken);
 
     public async Task LoadMappingAsync(CancellationToken cancellationToken = default)
     {
@@ -587,6 +643,7 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
         }
     }
 
+    [NotProfileScoped]
     public async Task ApplyMappingAsync(CancellationToken cancellationToken = default)
     {
         if (_mapping is null) return;
@@ -623,6 +680,7 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
         }
     }
 
+    [ProfileSetting("ble.dpi-stages", DeviceCategory.Mouse)]
     public Task ApplyDpiStagesAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(
             async service =>
@@ -639,8 +697,17 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
             state =>
             {
                 ApplyDpiStages(state);
-                DpiStagesStatusText = AppStrings.Text("BlackSharkSaved");
-            });
+            },
+            async (state, token) =>
+            {
+                var saved = await PersistMouseAsync(
+                    mouse => ApplyDpiStagesToProfile(mouse, state), token);
+                DpiStagesStatusText = saved ? AppStrings.Text("BlackSharkSaved") : string.Empty;
+                return saved;
+            },
+            token => _service!.ReadDpiStagesAsync(token),
+            (previous, token) => _service!.SetDpiStagesAsync(previous, token),
+            cancellationToken);
 
     public async Task LoadScrollAsync(CancellationToken cancellationToken = default)
     {
@@ -662,6 +729,7 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
     }
 
     private bool _scrollApplyFailed;
+    [ProfileSetting("ble.scroll", DeviceCategory.Mouse)]
     public async Task ApplyScrollAsync(CancellationToken cancellationToken = default) =>
         _scrollApplyFailed = !await ApplyScrollCoreAsync(cancellationToken);
 
@@ -680,8 +748,22 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
             state =>
             {
                 ApplyScroll(state);
-                ScrollStatusText = AppStrings.Text("BlackSharkSaved");
-            });
+            },
+            async (state, token) =>
+            {
+                var saved = await PersistMouseAsync(
+                    mouse => ApplyScrollToProfile(mouse, state), token);
+                ScrollStatusText = saved ? AppStrings.Text("BlackSharkSaved") : string.Empty;
+                return saved;
+            },
+            token => _service!.ReadScrollAsync(token),
+            (previous, token) => _service!.SetScrollAsync(
+                previous.Mode,
+                previous.SmartReel,
+                previous.SmartReelThreshold,
+                previous.Acceleration,
+                token),
+            cancellationToken);
 
     public async Task LoadPowerAsync(CancellationToken cancellationToken = default)
     {
@@ -702,6 +784,7 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
         }
     }
 
+    [ProfileSetting("ble.power", DeviceCategory.Mouse)]
     public Task ApplyPowerAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(
             service => service.SetPowerAsync(
@@ -722,8 +805,22 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
             state =>
             {
                 ApplyPower(state);
-                PowerStatusText = AppStrings.Text("BlackSharkSaved");
-            });
+            },
+            async (state, token) =>
+            {
+                var saved = await PersistMouseAsync(
+                    mouse => ApplyPowerToProfile(mouse, state), token);
+                PowerStatusText = saved ? AppStrings.Text("BlackSharkSaved") : string.Empty;
+                return saved;
+            },
+            token => _service!.ReadPowerAsync(token),
+            (previous, token) => _service!.SetPowerAsync(
+                previous.LowBatteryPercent,
+                previous.AutoSleep,
+                previous.SleepMinutes,
+                previous.TimeToDim,
+                token),
+            cancellationToken);
 
     public async Task LoadProfilesAsync(CancellationToken cancellationToken = default)
     {
@@ -756,19 +853,50 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
         }
     }
 
+    [ProfileSetting("ble.onboard-profile", DeviceCategory.Mouse)]
     public async Task ApplyProfileAsync(CancellationToken cancellationToken = default)
     {
         if (_service is null || _profileIds.Count == 0 || !BeginOperation()) return;
         var profileId = _profileIds[Math.Clamp(SelectedProfileIndex, 0, _profileIds.Count - 1)];
+        RazerBleProfileState? previous = null;
+        try
+        {
+            previous = await _service.ReadProfilesAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            EndOperation();
+            return;
+        }
+        catch
+        {
+            // The active profile is still writable; only the rollback target is lost.
+        }
+
         var applied = false;
         try
         {
             await _service.SetActiveProfileAsync(profileId, cancellationToken);
             ProfileStatusText = AppStrings.Text("BlackSharkSaved");
+            if (!await PersistMouseAsync(mouse => mouse.ActiveOnboardProfileId = profileId, cancellationToken))
+            {
+                await RestorePreviousProfileAsync();
+                ProfileStatusText = string.Empty;
+                ErrorText = AppStrings.Text("ViperSettingAppliedProfileSaveFailed");
+                return;
+            }
+
             applied = true;
+        }
+        catch (OperationCanceledException)
+        {
+            await RestorePreviousProfileAsync();
+            ProfileStatusText = string.Empty;
         }
         catch (Exception exception) when (IsExpectedException(exception))
         {
+            await RestorePreviousProfileAsync();
+            ProfileStatusText = string.Empty;
             ErrorText = exception.Message;
         }
         finally
@@ -782,6 +910,20 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
         await LoadPowerAsync(cancellationToken);
         await LoadLightingAsync(cancellationToken);
         await LoadMappingAsync(cancellationToken);
+
+        async Task RestorePreviousProfileAsync()
+        {
+            if (previous?.ActiveId is not { } previousId) return;
+            SelectedProfileIndex = Math.Max(0, _profileIds.ToList().IndexOf(previousId));
+            try
+            {
+                await _service.SetActiveProfileAsync(previousId, CancellationToken.None);
+            }
+            catch
+            {
+                // The save failure is the error the user must see.
+            }
+        }
     }
 
     public async ValueTask DisposeAsync()
@@ -792,31 +934,6 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
     }
 
     public void RefreshLocalization() => OnPropertyChanged(string.Empty);
-
-    private async Task<bool> RunWriteAsync<T>(
-        Func<RazerBleDeviceService, Task<T>> write,
-        Action<T> apply)
-    {
-        if (_service is null || !BeginOperation()) return false;
-        try
-        {
-            apply(await write(_service));
-            OperationStatusText = AppStrings.Text("BlackSharkSaved");
-            ErrorText = string.Empty;
-            return true;
-        }
-        catch (OperationCanceledException) { OperationStatusText = string.Empty; return false; }
-        catch (Exception exception) when (IsExpectedException(exception))
-        {
-            ErrorText = exception.Message;
-            OperationStatusText = string.Empty;
-            return false;
-        }
-        finally
-        {
-            EndOperation();
-        }
-    }
 
     private void ApplyLighting(RazerBleLightingState state)
     {

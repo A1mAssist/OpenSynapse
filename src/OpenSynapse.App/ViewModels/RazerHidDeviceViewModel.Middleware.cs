@@ -1,4 +1,6 @@
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 
@@ -367,11 +369,17 @@ public sealed partial class RazerHidDeviceViewModel
                 });
             }, cancellationToken);
 
+    [ProfileSetting("keyboard.debounce", DeviceCategory.Keyboard)]
     public Task ApplyProfileDebounceAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(RazerHidBackendCapability.ProfileDebounceTimeWrite,
             () => IsProfileDebounceBusy, value => IsProfileDebounceBusy = value,
             async () =>
             {
+                var previousMake = ProfileDebounceMake;
+                var previousMakeMask = ProfileDebounceMakeMask;
+                var previousBreak = ProfileDebounceBreak;
+                var previousBreakMask = ProfileDebounceBreakMask;
+                var previousProfile = ReadProfile(settings => settings.Keyboard.DebounceMilliseconds);
                 await _service.SetProfileDebounceTimeAsync(Connection,
                     checked((byte)ProfileDebounceMake), checked((byte)ProfileDebounceMakeMask),
                     checked((byte)ProfileDebounceBreak), checked((byte)ProfileDebounceBreakMask),
@@ -384,6 +392,23 @@ public sealed partial class RazerHidDeviceViewModel
                         checked((byte)ProfileDebounceMake), checked((byte)ProfileDebounceMakeMask),
                         checked((byte)ProfileDebounceBreak), checked((byte)ProfileDebounceBreakMask)),
                 });
+                await SaveProfileAsync(
+                    settings => settings.Keyboard.DebounceMilliseconds = ProfileDebounceMake,
+                    settings => settings.Keyboard.DebounceMilliseconds = previousProfile,
+                    () => SetProfileDebounce(new RazerHidProfileDebounce(
+                        0,
+                        checked((byte)previousMake),
+                        checked((byte)previousMakeMask),
+                        checked((byte)previousBreak),
+                        checked((byte)previousBreakMask))),
+                    token => _service.SetProfileDebounceTimeAsync(
+                        Connection,
+                        checked((byte)previousMake),
+                        checked((byte)previousMakeMask),
+                        checked((byte)previousBreak),
+                        checked((byte)previousBreakMask),
+                        token),
+                    cancellationToken);
             }, cancellationToken);
 
     public Task ApplyLkScrollAsync(CancellationToken cancellationToken = default) =>

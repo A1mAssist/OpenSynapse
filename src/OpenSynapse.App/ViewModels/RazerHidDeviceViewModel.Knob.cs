@@ -2,6 +2,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 
@@ -59,6 +61,7 @@ public sealed partial class RazerHidDeviceViewModel
         }
     }
 
+    [ProfileSetting("keyboard.knob", DeviceCategory.Keyboard)]
     public Task ApplyKnobAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(RazerHidBackendCapability.KnobWrite,
             () => IsKnobBusy, value => IsKnobBusy = value,
@@ -71,6 +74,9 @@ public sealed partial class RazerHidDeviceViewModel
                     return;
                 }
 
+                var previousStages = KnobStages.Select(row => row.ToStage()).ToArray();
+                var previousStage = _knobCurrentStage;
+                var previousProfile = ReadProfile(settings => settings.Keyboard.KnobMode);
                 var stages = KnobStages.Select(row => row.ToStage()).ToArray();
                 await _service.SetKnobConfigurationAsync(
                     Connection, KnobLedClass, KnobLedId, stages, cancellationToken);
@@ -86,6 +92,24 @@ public sealed partial class RazerHidDeviceViewModel
                 if (Has(RazerHidBackendCapability.KnobRead))
                 {
                     await RefreshKnobAsync(cancellationToken);
+                }
+                if (_knobCurrentStage is { } appliedStage)
+                {
+                    await SaveProfileAsync(
+                        settings => settings.Keyboard.KnobMode = (int)appliedStage.Mode,
+                        settings => settings.Keyboard.KnobMode = previousProfile,
+                        null,
+                        async token =>
+                        {
+                            await _service.SetKnobConfigurationAsync(
+                                Connection, KnobLedClass, KnobLedId, previousStages, token);
+                            if (previousStage is { } previous)
+                            {
+                                await _service.SetKnobModeAsync(
+                                    Connection, KnobLedClass, KnobLedId, previous, token);
+                            }
+                        },
+                        cancellationToken);
                 }
             }, cancellationToken);
 

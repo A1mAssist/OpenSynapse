@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.App.ViewModels;
@@ -94,11 +96,18 @@ public sealed partial class RazerHidDeviceViewModel
         }
     }
 
+    [ProfileSetting("mouse.haptic-scroll-level", DeviceCategory.Mouse, powerScoped: true)]
     public Task ApplyHapticScrollAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(RazerHidBackendCapability.HapticScrollWrite,
             () => IsHapticScrollBusy, value => IsHapticScrollBusy = value,
             async () =>
             {
+                var previousIndex = SelectedHapticScrollStageIndex;
+                var previousStageIds = HapticScrollStages
+                    .Where(stage => stage.IsActive)
+                    .Select(stage => stage.Id)
+                    .ToArray();
+                var previousProfile = ReadProfile(settings => settings.Viper.HapticScrollLevel);
                 var stageIds = HapticScrollStages
                     .Where(stage => stage.IsActive)
                     .Select(stage => stage.Id)
@@ -114,6 +123,17 @@ public sealed partial class RazerHidDeviceViewModel
                     ApplyHapticScrollState(await _service
                         .GetHapticScrollStagesAsync(Connection, HapticScrollProfileId, cancellationToken));
                 }
+                await SaveProfileAsync(
+                    settings => settings.Viper.HapticScrollLevel = SelectedHapticScrollStageIndex + 1,
+                    settings => settings.Viper.HapticScrollLevel = previousProfile,
+                    () => SelectedHapticScrollStageIndex = previousIndex,
+                    token => _service.SetHapticScrollStagesAsync(
+                        Connection,
+                        HapticScrollProfileId,
+                        (byte)(previousIndex + 1),
+                        previousStageIds,
+                        token),
+                    cancellationToken);
             }, cancellationToken);
 
     private void ApplyHapticScrollState(
