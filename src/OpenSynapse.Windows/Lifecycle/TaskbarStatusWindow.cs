@@ -263,6 +263,11 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     private void RepositionAndShow()
     {
         if (_statusWindow == IntPtr.Zero || !_contentAvailable) return;
+        if (IsFullscreenAppForeground())
+        {
+            Hide();
+            return;
+        }
         if (!TryGetLayout(out var x, out var y, out var width, out var height))
         {
             // Explorer briefly invalidates the taskbar while input methods and
@@ -304,6 +309,44 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             ShowWindow(_statusWindow, SwShowNoActivate);
             _visible = true;
         }
+    }
+
+    /// <summary>
+    /// The strip is an owned popup, not a taskbar child, so it keeps painting when a
+    /// full-screen game hides the taskbar. Suppress it while the shell reports a busy
+    /// full-screen app, or when the foreground window covers the whole monitor.
+    /// </summary>
+    private static bool IsFullscreenAppForeground()
+    {
+        var foreground = GetForegroundWindow();
+        if (foreground == IntPtr.Zero || foreground == GetShellWindow())
+        {
+            return false;
+        }
+
+        // QUNS_BUSY / QUNS_RUNNING_D3D_FULL_SCREEN / QUNS_PRESENTATION_MODE.
+        if (SHQueryUserNotificationState(out var state) == 0 && state is 2 or 3 or 4)
+        {
+            return true;
+        }
+
+        // Borderless games do not always set the shell state; their window still
+        // covers the monitor, taskbar included.
+        if (!GetWindowRect(foreground, out var window))
+        {
+            return false;
+        }
+        var monitor = MonitorFromWindow(foreground, MonitorDefaultToNearest);
+        var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
+        if (monitor == IntPtr.Zero || !GetMonitorInfoW(monitor, ref info))
+        {
+            return false;
+        }
+        const int tolerance = 2;
+        return window.Left <= info.Monitor.Left + tolerance &&
+               window.Top <= info.Monitor.Top + tolerance &&
+               window.Right >= info.Monitor.Right - tolerance &&
+               window.Bottom >= info.Monitor.Bottom - tolerance;
     }
 
     private bool TryGetLayout(out int x, out int y, out int width, out int height)

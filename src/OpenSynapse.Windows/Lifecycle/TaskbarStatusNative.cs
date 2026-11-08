@@ -183,6 +183,15 @@ internal static class TaskbarStatusNative
     public static extern bool GetWindowRect(IntPtr windowHandle, out Rect rect);
 
     [DllImport("user32.dll")]
+    public static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetShellWindow();
+
+    [DllImport("shell32.dll")]
+    public static extern int SHQueryUserNotificationState(out int state);
+
+    [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool GetClientRect(IntPtr windowHandle, out Rect rect);
 
