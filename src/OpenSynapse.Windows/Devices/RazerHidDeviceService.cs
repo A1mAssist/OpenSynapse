@@ -1495,10 +1495,15 @@ public sealed partial class RazerHidDeviceService
         string? physicalDeviceKey,
         RazerHidEndpointState state,
         string? error,
-        IReadOnlySet<RazerHidBackendCapability>? extraCapabilities = null)
+        IReadOnlySet<RazerHidBackendCapability>? extraCapabilities = null,
+        IReadOnlySet<RazerHidBackendCapability>? excludedCapabilities = null)
     {
         var resolved = state == RazerHidEndpointState.Resolved;
         var capabilities = resolved ? GetCapabilities(definition) : FrozenSet<RazerHidBackendCapability>.Empty;
+        if (resolved && excludedCapabilities is not null)
+        {
+            capabilities = capabilities.Except(excludedCapabilities).ToFrozenSet();
+        }
         if (resolved && extraCapabilities is not null)
         {
             capabilities = capabilities.Union(extraCapabilities).ToFrozenSet();
