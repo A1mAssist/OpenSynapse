@@ -35,10 +35,17 @@ public sealed partial class RazerKeyboardViewModel
         if (keyboard.GamingModeEnabled is bool gameMode && _hasGameMode && gameMode != GameModeEnabled)
         {
             GameModeEnabled = gameMode;
-            await WriteProfileSettingAsync(
-                "keyboard.game-mode",
-                (service, token) => service.SetGameModeAsync(gameMode, token),
-                cancellationToken);
+            if (await WriteProfileSettingAsync(
+                    "keyboard.game-mode",
+                    (service, token) => service.SetGameModeAsync(gameMode, token),
+                    cancellationToken))
+            {
+                _appliedGameMode = gameMode;
+            }
+            else
+            {
+                GameModeEnabled = _appliedGameMode;
+            }
         }
 
         if (keyboard.PollingRateHertz is int rate && _hasPolling)
@@ -47,10 +54,17 @@ public sealed partial class RazerKeyboardViewModel
             if (index >= 0 && index != SelectedPollingIndex)
             {
                 SelectedPollingIndex = index;
-                await WriteProfileSettingAsync(
-                    "keyboard.polling-rate",
-                    (service, token) => service.SetPollingRateAsync(rate, token),
-                    cancellationToken);
+                if (await WriteProfileSettingAsync(
+                        "keyboard.polling-rate",
+                        (service, token) => service.SetPollingRateAsync(rate, token),
+                        cancellationToken))
+                {
+                    _appliedPollingIndex = index;
+                }
+                else
+                {
+                    SelectedPollingIndex = _appliedPollingIndex;
+                }
             }
         }
 
@@ -98,7 +112,7 @@ public sealed partial class RazerKeyboardViewModel
         }
     }
 
-    private async Task WriteProfileSettingAsync(
+    private async Task<bool> WriteProfileSettingAsync(
         string key,
         Func<RazerKeyboardService, CancellationToken, Task> write,
         CancellationToken cancellationToken)
@@ -106,6 +120,7 @@ public sealed partial class RazerKeyboardViewModel
         try
         {
             await write(OpenService(), cancellationToken);
+            return true;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -114,6 +129,7 @@ public sealed partial class RazerKeyboardViewModel
         catch (Exception exception) when (IsExpectedException(exception))
         {
             _diagnostic?.Invoke($"profile {key}: {exception.Message}");
+            return false;
         }
     }
 

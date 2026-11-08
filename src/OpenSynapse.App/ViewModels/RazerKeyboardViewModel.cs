@@ -85,6 +85,8 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
     private string _chargingText = "--";
     private bool _gameModeEnabled;
     private int _selectedPollingIndex;
+    private bool _appliedGameMode;
+    private int _appliedPollingIndex;
     private bool _hasGameMode;
     private bool _hasLighting;
     private bool _hasBrightness;
@@ -353,17 +355,22 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
     [ProfileSetting("keyboard.game-mode", DeviceCategory.Keyboard)]
     public async Task ApplyGameModeAsync(CancellationToken cancellationToken = default)
     {
-        var previous = GameModeEnabled;
+        var previous = _appliedGameMode;
         if (!await RunWriteResultAsync(
                 (service, token) => service.SetGameModeAsync(GameModeEnabled, token), cancellationToken))
         {
             return;
         }
 
+        _appliedGameMode = GameModeEnabled;
         await SaveKeyboardSettingAsync(
             settings => settings.GamingModeEnabled = GameModeEnabled,
             settings => settings.GamingModeEnabled = previous,
-            () => GameModeEnabled = previous,
+            () =>
+            {
+                GameModeEnabled = previous;
+                _appliedGameMode = previous;
+            },
             token => RunWriteResultAsync(
                 (service, rollbackToken) => service.SetGameModeAsync(previous, rollbackToken), token),
             cancellationToken);
@@ -391,18 +398,24 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
     [ProfileSetting("keyboard.polling-rate", DeviceCategory.Keyboard)]
     public async Task ApplyPollingAsync(CancellationToken cancellationToken = default)
     {
-        var previous = SelectedPollingIndex;
-        var rate = PollingRates[previous];
+        var previous = _appliedPollingIndex;
+        var index = SelectedPollingIndex;
+        var rate = PollingRates[index];
         if (!await RunWriteResultAsync(
                 (service, token) => service.SetPollingRateAsync(rate, token), cancellationToken))
         {
             return;
         }
 
+        _appliedPollingIndex = index;
         await SaveKeyboardSettingAsync(
             settings => settings.PollingRateHertz = rate,
             settings => settings.PollingRateHertz = PollingRates[previous],
-            () => SelectedPollingIndex = previous,
+            () =>
+            {
+                SelectedPollingIndex = previous;
+                _appliedPollingIndex = previous;
+            },
             token => RunWriteResultAsync(
                 (service, rollbackToken) => service.SetPollingRateAsync(PollingRates[previous], rollbackToken),
                 token),
@@ -550,6 +563,7 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
         if (state.GameModeEnabled is bool gameMode)
         {
             GameModeEnabled = gameMode;
+            _appliedGameMode = gameMode;
             _hasGameMode = true;
             OnPropertyChanged(nameof(GameModeVisibility));
         }
@@ -560,6 +574,7 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
             if (index >= 0)
             {
                 SelectedPollingIndex = index;
+                _appliedPollingIndex = index;
                 OnPropertyChanged(nameof(PollingRateText));
             }
 

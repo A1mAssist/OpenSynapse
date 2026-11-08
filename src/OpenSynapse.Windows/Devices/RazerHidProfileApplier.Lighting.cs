@@ -106,28 +106,10 @@ public sealed partial class RazerHidProfileApplier
         connection.LightingZones.TryGetValue(zone, out var capabilities);
         var parts = new List<ProfileSettingApplyResult>();
 
-        if (profile.Parameters.TryGetValue("enabled", out var rawEnabled))
-        {
-            if (!bool.TryParse(rawEnabled, out var enabled))
-            {
-                parts.Add(new ProfileSettingApplyResult(
-                    $"{key}.enabled", ProfileSettingApplyStatus.Failed,
-                    $"Invalid LED state '{rawEnabled}'."));
-            }
-            else
-            {
-                await ApplyLightingPartAsync(
-                    parts, $"{key}.enabled",
-                    canRead: capabilities?.CanReadState == true,
-                    canWrite: capabilities?.CanWriteState == true,
-                    token => _service.GetLedStateAsync(
-                        connection, connection.Definition.DefaultStorage, zone, token),
-                    (value, token) => _service.SetLedStateAsync(
-                        connection, connection.Definition.DefaultStorage, zone, value, token),
-                    enabled, (left, right) => left == right,
-                    "The zone does not support LED state writes.", cancellationToken);
-            }
-        }
+        // Match the device page: effect, then brightness, then the zone state.
+        // Some devices re-enable a zone when an effect is written.
+        await ApplyLightingEffectAsync(
+            connection, zone, capabilities, effect, profile, parts, key, cancellationToken);
 
         if (profile.Parameters.TryGetValue("brightness", out var rawBrightness))
         {
@@ -153,8 +135,29 @@ public sealed partial class RazerHidProfileApplier
             }
         }
 
-        await ApplyLightingEffectAsync(
-            connection, zone, capabilities, effect, profile, parts, key, cancellationToken);
+        if (profile.Parameters.TryGetValue("enabled", out var rawEnabled))
+        {
+            if (!bool.TryParse(rawEnabled, out var enabled))
+            {
+                parts.Add(new ProfileSettingApplyResult(
+                    $"{key}.enabled", ProfileSettingApplyStatus.Failed,
+                    $"Invalid LED state '{rawEnabled}'."));
+            }
+            else
+            {
+                await ApplyLightingPartAsync(
+                    parts, $"{key}.enabled",
+                    canRead: capabilities?.CanReadState == true,
+                    canWrite: capabilities?.CanWriteState == true,
+                    token => _service.GetLedStateAsync(
+                        connection, connection.Definition.DefaultStorage, zone, token),
+                    (value, token) => _service.SetLedStateAsync(
+                        connection, connection.Definition.DefaultStorage, zone, value, token),
+                    enabled, (left, right) => left == right,
+                    "The zone does not support LED state writes.", cancellationToken);
+            }
+        }
+
         results.Add(AggregateLightingResult(key, parts));
     }
 
