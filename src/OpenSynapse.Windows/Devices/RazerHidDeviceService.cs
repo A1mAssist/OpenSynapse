@@ -239,8 +239,9 @@ public sealed partial class RazerHidDeviceService
         await ReadAsync(RazerHidBackendCapability.BrightnessRead, "brightness",
             () => GetBrightnessAsync(connection, cancellationToken: cancellationToken), value => brightness = value);
 
-        if (battery is not null && !errors.ContainsKey(nameof(RazerHidBackendCapability.ChargingRead)))
+        if (battery is not null || charging is not null)
         {
+            // A timeout on one side must not suppress the reading that did arrive.
             BatteryObserved?.Invoke(new DeviceBatteryReading(
                 $"openrazer:{connection.InstanceId}", connection.Definition.DisplayName, battery, charging));
         }

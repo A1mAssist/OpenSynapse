@@ -112,29 +112,34 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         }
 
         _lastBatteryRefresh = DateTimeOffset.UtcNow;
-        int? battery = null;
-        bool? charging = null;
-        try
+        var battery = await TryReadAsync(
+            RazerHidBackendCapability.BatteryRead,
+            () => _service.GetBatteryPercentAsync(Connection, cancellationToken));
+        var charging = await TryReadAsync(
+            RazerHidBackendCapability.ChargingRead,
+            () => _service.GetChargingAsync(Connection, cancellationToken));
+
+        async Task<T?> TryReadAsync<T>(RazerHidBackendCapability capability, Func<Task<T>> read)
+            where T : struct
         {
-            if (Has(RazerHidBackendCapability.BatteryRead))
+            if (!Has(capability))
             {
-                battery = await _service.GetBatteryPercentAsync(Connection, cancellationToken);
+                return null;
             }
-            if (Has(RazerHidBackendCapability.ChargingRead))
+            try
             {
-                charging = await _service.GetChargingAsync(Connection, cancellationToken);
+                return await read();
             }
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception exception) when (exception is Win32Exception or IOException or
-            InvalidOperationException or NotSupportedException or InvalidDataException)
-        {
-            // Keep the last known values; the next poll can recover without turning the
-            // whole device page into an error.
-            return;
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception) when (exception is Win32Exception or IOException or
+                InvalidOperationException or NotSupportedException or InvalidDataException)
+            {
+                // One side timing out must not discard the other side's fresh reading.
+                return null;
+            }
         }
 
         if (battery is null && charging is null)
