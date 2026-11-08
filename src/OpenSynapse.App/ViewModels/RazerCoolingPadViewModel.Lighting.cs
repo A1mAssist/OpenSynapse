@@ -208,7 +208,7 @@ public sealed partial class RazerCoolingPadViewModel
                 }, cancellationToken))
             {
                 await RestoreLightingAsync(previous);
-                LightingStatusText = "profile save failed";
+                LightingStatusText = AppStrings.Text("RazerHidSettingProfileSaveFailed");
                 return;
             }
 

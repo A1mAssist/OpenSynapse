@@ -99,7 +99,7 @@ public sealed partial class RazerGamepadViewModel
                         cancellationToken))
                 {
                     await RestorePollingProfileAsync(previous);
-                    PollingProfileStatusText = "profile save failed";
+                    PollingProfileStatusText = AppStrings.Text("RazerHidSettingProfileSaveFailed");
                     return;
                 }
             }

@@ -4007,4 +4007,110 @@
   <data name="ProfileSummary_Item_MixerBrightness" xml:space="preserve"><value>混音器亮度</value></data>
   <data name="ProfileSummary_Item_KiyoWhiteBalance" xml:space="preserve"><value>白平衡</value></data>
   <data name="SavedToCurrentProfile" xml:space="preserve"><value>已保存到当前配置</value></data>
+  <data name="A11yChooseEffectColor3.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>灯效颜色 3</value></data>
+  <data name="A11yChooseEffectColor3.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>选择灯效颜色 3</value></data>
+  <data name="A11yClose.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>关闭</value></data>
+  <data name="A11yDeletePathPoint.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>删除轨迹点</value></data>
+  <data name="A11yDeviceImage.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>设备图</value></data>
+  <data name="A11yDeviceProbeStatus.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>设备探测状态</value></data>
+  <data name="A11yDeviceScrollArea.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>设备页滚动区域</value></data>
+  <data name="A11yEnableAdvancedFeatures.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>开启高级功能</value></data>
+  <data name="A11yFanTargetSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>风扇目标转速</value></data>
+  <data name="A11yKeyboardModifier.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>键盘修饰键</value></data>
+  <data name="A11yMacroExecutionTarget.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>宏运行位置</value></data>
+  <data name="A11yMacroSlot.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>宏槽</value></data>
+  <data name="A11yMappingLayer.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>映射层</value></data>
+  <data name="A11yMore.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>更多</value></data>
+  <data name="A11yMore.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>更多</value></data>
+  <data name="A11yNewMacro.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>新建宏</value></data>
+  <data name="A11yNewMacro.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>新建宏</value></data>
+  <data name="A11yOnboardButtonBehavior.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>板载按键行为</value></data>
+  <data name="A11ySaveBatteryType.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>保存电池类型</value></data>
+  <data name="A11ySoftwareMacroTriggerMode.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>软件宏触发方式</value></data>
+  <data name="A11yTargetMappingAction.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>目标映射动作</value></data>
+  <data name="A11yTargetMappingType.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>目标映射类型</value></data>
+  <data name="A11yTime.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>时间</value></data>
+  <data name="AnalogKeyActuationMm.Header" xml:space="preserve"><value>触发行程 (mm)</value></data>
+  <data name="AnalogKeyAddPair.Content" xml:space="preserve"><value>添加一组</value></data>
+  <data name="AnalogKeyApplyAll.Content" xml:space="preserve"><value>应用到全部</value></data>
+  <data name="AnalogKeyApplySelected.Content" xml:space="preserve"><value>应用到所选</value></data>
+  <data name="AnalogKeyApplySnapTap.Content" xml:space="preserve"><value>应用 Snap Tap</value></data>
+  <data name="AnalogKeyChoice1.PlaceholderText" xml:space="preserve"><value>按键 1</value></data>
+  <data name="AnalogKeyChoice2.PlaceholderText" xml:space="preserve"><value>按键 2</value></data>
+  <data name="AnalogKeyPairHelp.Text" xml:space="preserve"><value>两键一组，最多 4 组；同一键不能重复使用。</value></data>
+  <data name="AnalogKeyPerKey.Text" xml:space="preserve"><value>逐键触发</value></data>
+  <data name="AnalogKeyRapidTriggerMm.Header" xml:space="preserve"><value>RT 灵敏度 (mm)</value></data>
+  <data name="BleAccelerationLevel.Header" xml:space="preserve"><value>加速等级</value></data>
+  <data name="BleApplyBatteryType.Content" xml:space="preserve"><value>应用电池类型</value></data>
+  <data name="BleApplyDpiStages.Content" xml:space="preserve"><value>应用 DPI 档位</value></data>
+  <data name="BleApplyKeys.Content" xml:space="preserve"><value>应用按键设置</value></data>
+  <data name="BleApplyPower.Content" xml:space="preserve"><value>应用电源设置</value></data>
+  <data name="BleApplyProfile.Content" xml:space="preserve"><value>切换配置</value></data>
+  <data name="BleApplyScroll.Content" xml:space="preserve"><value>应用滚轮设置</value></data>
+  <data name="BleApplySmartIllumination.Content" xml:space="preserve"><value>应用照明设置</value></data>
+  <data name="BleBatteryTypeHelp.Text" xml:space="preserve"><value>电量百分比按电池类型换算；换电池后要选对，否则读数会偏。</value></data>
+  <data name="BleDebounceBreak.Header" xml:space="preserve"><value>释放 (ms)</value></data>
+  <data name="BleDebounceMake.Header" xml:space="preserve"><value>按下 (ms)</value></data>
+  <data name="BleHapticStage.Header" xml:space="preserve"><value>触感档位</value></data>
+  <data name="BleLightingDirection.Header" xml:space="preserve"><value>方向</value></data>
+  <data name="BlePowerPlan.Header" xml:space="preserve"><value>电源方案</value></data>
+  <data name="BleScrollMaskingTime.Header" xml:space="preserve"><value>滚轮屏蔽时间 (ms)</value></data>
+  <data name="BleScrollTitle.Text" xml:space="preserve"><value>滚轮</value></data>
+  <data name="BleSleepTime.Header" xml:space="preserve"><value>休眠时间 (分钟)</value></data>
+  <data name="BleSmartIllumination.Text" xml:space="preserve"><value>智能照明</value></data>
+  <data name="BleSmartIlluminationMode.Header" xml:space="preserve"><value>调暗档位</value></data>
+  <data name="BleSmartIlluminationToggle.Header" xml:space="preserve"><value>闲置时自动调暗</value></data>
+  <data name="BleTactileMode.Header" xml:space="preserve"><value>滚轮手感</value></data>
+  <data name="BleTimeToDimMinutes.Header" xml:space="preserve"><value>变暗时间 (分钟)</value></data>
+  <data name="BleTimeToDimPercent.Header" xml:space="preserve"><value>变暗 %</value></data>
+  <data name="CommonBatteryType.Header" xml:space="preserve"><value>电池类型</value></data>
+  <data name="CommonBatteryType.Text" xml:space="preserve"><value>电池类型</value></data>
+  <data name="CommonClear.Content" xml:space="preserve"><value>清空</value></data>
+  <data name="CommonClick.Header" xml:space="preserve"><value>点击</value></data>
+  <data name="CommonEnabled.Header" xml:space="preserve"><value>启用</value></data>
+  <data name="CommonFunction.Header" xml:space="preserve"><value>功能</value></data>
+  <data name="CommonMinutes.Header" xml:space="preserve"><value>分钟</value></data>
+  <data name="CommonProfile.Header" xml:space="preserve"><value>配置文件</value></data>
+  <data name="CommonProfile.Text" xml:space="preserve"><value>配置文件</value></data>
+  <data name="CommonRemove.Content" xml:space="preserve"><value>移除</value></data>
+  <data name="CommonSelectAll.Content" xml:space="preserve"><value>全选</value></data>
+  <data name="CommonStage.Text" xml:space="preserve"><value>档位</value></data>
+  <data name="CommonState.Header" xml:space="preserve"><value>状态</value></data>
+  <data name="DebounceBreak.Header" xml:space="preserve"><value>松手去抖 (ms)</value></data>
+  <data name="DebounceBreakMask.Header" xml:space="preserve"><value>松手掩码 (ms)</value></data>
+  <data name="DebounceMake.Header" xml:space="preserve"><value>按下去抖 (ms)</value></data>
+  <data name="DebounceMakeMask.Header" xml:space="preserve"><value>按下掩码 (ms)</value></data>
+  <data name="DeviceCollapse.Text" xml:space="preserve"><value>收起设备</value></data>
+  <data name="DeviceCollapse.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>收起设备</value></data>
+  <data name="DeviceExpandMore.Text" xml:space="preserve"><value>展开剩余设备</value></data>
+  <data name="DeviceExpandMore.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>展开剩余设备</value></data>
+  <data name="GpuModeReading.Text" xml:space="preserve"><value>正在读取显卡模式…</value></data>
+  <data name="HeadsetCompressorHelp.Text" xml:space="preserve"><value>压缩比、启动和释放时间按协议原始值显示，雷云没有公开单位。默认值取自设备，不改就不会写回。</value></data>
+  <data name="HeadsetParametricEqHelp.Text" xml:space="preserve"><value>按频段逐条读写。增益和 Q 按协议原始值显示，雷云没有公开换算。</value></data>
+  <data name="HeadsetSidetoneHelp.Text" xml:space="preserve"><value>把麦克风信号回送到耳机，也就是常说的侧音。</value></data>
+  <data name="HueBridgeAddressPlaceholder.PlaceholderText" xml:space="preserve"><value>手动输入桥地址，例如 192.168.1.2</value></data>
+  <data name="RazerGamepadApplyConnection.Content" xml:space="preserve"><value>应用连接设置</value></data>
+  <data name="RazerGamepadConnectionTitle.Text" xml:space="preserve"><value>连接</value></data>
+  <data name="RazerHidAutoSleepLabel.Header" xml:space="preserve"><value>自动休眠</value></data>
+  <data name="RazerHidLowBatteryLabel.Header" xml:space="preserve"><value>低电量提醒 (%)</value></data>
+  <data name="RazerHidOnboardProfileActiveLabel.Header" xml:space="preserve"><value>当前配置</value></data>
+  <data name="RazerHidPollingTitle.Header" xml:space="preserve"><value>轮询率</value></data>
+  <data name="RazerHidScrollAccelerationLabel.Header" xml:space="preserve"><value>滚轮加速</value></data>
+  <data name="RazerHidSmartReelThresholdLabel.Header" xml:space="preserve"><value>Smart Reel 阈值</value></data>
+  <data name="RazerHidTimeToDimLabel.Header" xml:space="preserve"><value>自动变暗</value></data>
+  <data name="UpdateStatusLoading" xml:space="preserve"><value>正在读取更新状态</value></data>
+  <data name="AnalogKeyLayoutPrompt" xml:space="preserve"><value>先在键盘图上选择要调整的键。</value></data>
+  <data name="AnalogKeyNoneSelected" xml:space="preserve"><value>未选择键</value></data>
+  <data name="AnalogKeySelectedCount" xml:space="preserve"><value>已选 {0} 个键</value></data>
+  <data name="AnalogKeyAppliedCount" xml:space="preserve"><value>已应用到 {0} 个键，并已读回。</value></data>
+  <data name="AnalogKeyReadCount" xml:space="preserve"><value>已读取 {0} 个键的触发与 Rapid Trigger 设置。</value></data>
+  <data name="SnapTapReading" xml:space="preserve"><value>正在读取 Snap Tap 设置…</value></data>
+  <data name="SnapTapNeedTwoKeys" xml:space="preserve"><value>每一组都要同时选两个键。</value></data>
+  <data name="SnapTapDuplicateInPair" xml:space="preserve"><value>同一组不能选两次同一个键。</value></data>
+  <data name="SnapTapDuplicateAcrossPairs" xml:space="preserve"><value>不能让不同组重复使用同一个键。</value></data>
+  <data name="SnapTapNeedPairBeforeEnable" xml:space="preserve"><value>开启 Snap Tap 前至少要配一组键。</value></data>
+  <data name="SnapTapAppliedCount" xml:space="preserve"><value>已应用 {0} 组 Snap Tap 并读回。</value></data>
+  <data name="SnapTapPairHint" xml:space="preserve"><value>选两个键组成一对，最多 4 组。Windows 与 Menu 键不参与。</value></data>
+  <data name="A11yClose.Content" xml:space="preserve"><value>✕</value></data>
+  <data name="A11yDeletePathPoint.Content" xml:space="preserve"><value>×</value></data>
 </root>

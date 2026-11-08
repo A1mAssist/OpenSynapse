@@ -161,7 +161,7 @@ public sealed partial class RazerGamepadViewModel
             {
                 await RestoreGamepadLightingAsync(previous, region.Region.RegionId);
                 await LoadLightingCoreAsync(CancellationToken.None);
-                ErrorText = "profile save failed";
+                ErrorText = AppStrings.Text("RazerHidSettingProfileSaveFailed");
                 OperationStatusText = string.Empty;
                 return;
             }
