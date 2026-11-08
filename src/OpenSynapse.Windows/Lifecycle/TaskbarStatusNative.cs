@@ -170,6 +170,10 @@ internal static class TaskbarStatusNative
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool IsWindow(IntPtr windowHandle);
 
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool IsWindowVisible(IntPtr windowHandle);
+
     [DllImport("user32.dll", SetLastError = true)]
     public static extern UIntPtr SetTimer(
         IntPtr windowHandle, UIntPtr timerId, uint interval, IntPtr timerProcedure);
@@ -181,6 +185,12 @@ internal static class TaskbarStatusNative
     [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool GetWindowRect(IntPtr windowHandle, out Rect rect);
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr WindowFromPoint(Point point);
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetAncestor(IntPtr windowHandle, uint flags);
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
