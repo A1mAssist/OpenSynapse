@@ -59,6 +59,13 @@
       "commandId": "10",
       "arguments": ""
     },
+    "fan-target.get": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "0D",
+      "commandId": "81",
+      "arguments": ""
+    },
     "thermal-state.get": {
       "transactionId": "01",
       "dataSize": "04",

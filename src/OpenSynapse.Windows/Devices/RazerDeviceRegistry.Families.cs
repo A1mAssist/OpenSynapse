@@ -113,6 +113,7 @@ internal sealed partial class RazerDeviceRegistry
             {
                 [CapabilityIds.ThermalStateGet] = new(0x04, 0x0D, 0x82, ""),
                 [CapabilityIds.ThermalStateSet] = new(0x04, 0x0D, 0x02, ""),
+                [CapabilityIds.FanTargetGet] = new(0x03, 0x0D, 0x81, ""),
                 [CapabilityIds.BoostGet] = new(0x03, 0x0D, 0x87, ""),
                 [CapabilityIds.BoostSet] = new(0x03, 0x0D, 0x07, ""),
                 [CapabilityIds.AdapterPowerGet] = new(0x02, 0x07, 0x8C, "0000", true, true),
