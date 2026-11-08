@@ -45,7 +45,6 @@ internal static partial class ProfileSettingsRegistration
         ProfileSettingCatalog.Register(new("mouse.onboard-profile", DeviceCategory.Mouse, true));
         ProfileSettingCatalog.Register(new("mouse.haptic-scroll-level", DeviceCategory.Mouse, true));
         ProfileSettingCatalog.Register(new("keyboard.keyswitch", DeviceCategory.Keyboard, false));
-        ProfileSettingCatalog.Register(new("keyboard.fn-primary", DeviceCategory.Keyboard, false));
         ProfileSettingCatalog.Register(new("keyboard.snap-tap", DeviceCategory.Keyboard, true));
         ProfileSettingCatalog.Register(new("keyboard.analog-key", DeviceCategory.Keyboard, true));
         ProfileSettingCatalog.Register(new("keyboard.oled", DeviceCategory.Keyboard, false));
