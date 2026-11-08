@@ -122,6 +122,10 @@ public sealed partial class DevicesPage : UserControl
         KiyoPanel.Visibility = device == "kiyo" ? Visibility.Visible : Visibility.Collapsed;
         HuePanel.Visibility = device == "hue" ? Visibility.Visible : Visibility.Collapsed;
         UpdateDeviceSelector(device);
+        if (device == "viper")
+        {
+            _ = ViewModel.Viper.Mapping.EnsureLoadedAsync(Lifetime);
+        }
         if (device == "blade")
         {
             RefreshDedicatedGpuMode();
