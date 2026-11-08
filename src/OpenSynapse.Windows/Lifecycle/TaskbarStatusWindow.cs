@@ -6,8 +6,8 @@ using static OpenSynapse.Windows.Lifecycle.TaskbarStatusNative;
 namespace OpenSynapse.Windows.Lifecycle;
 
 /// <summary>
-/// A small GDI child of the taskbar. The host window stays alive when Explorer
-/// restarts; the child is recreated and reparented by the host timer.
+/// A small GDI popup owned by the taskbar. The host window stays alive when
+/// Explorer restarts; the popup is recreated and reattached by the host timer.
 /// </summary>
 public sealed partial class TaskbarStatusWindow : IDisposable
 {
