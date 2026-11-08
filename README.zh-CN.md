@@ -16,7 +16,7 @@
 
 OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID 端点显示能够确认的控制项。当前可识别 389 个设备 ID，覆盖鼠标、键盘、笔记本、耳机、音箱、麦克风、鼠标垫、显示器、配件和网络灯光。
 
-> 当前版本 `v1.7.0` · Windows 11 x64 · 未签名
+> 当前版本 `v1.7.1` · Windows 11 x64 · 未签名
 
 完整版本记录见 [CHANGELOG.zh-CN.md](CHANGELOG.zh-CN.md)，英文版见 [CHANGELOG.md](CHANGELOG.md)。
 
@@ -71,7 +71,7 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 
 进阶用途：`OpenSynapse-<version>-win-AutoUpdate-PerUser.exe` 是自动更新用包（当前用户安装）。**普通安装不要下载，请用 MSI 或 Portable。** 它只安装到当前用户目录，不安装机器级服务，切换“仅核显”仍会逐次请求 UAC；只有明确需要当前用户安装或自动更新链路时才用它。
 
-`<version>` 是发布版本号，例如 `1.7.0`。
+`<version>` 是发布版本号，例如 `1.7.1`。
 
 MSI 服务以 `LocalSystem` 运行，使用 `Program Files` 内受保护的应用程序，接受固定的状态查询、GPU 启用／禁用／重启、CPU 功耗／Curve Optimizer、GPU 时钟操作及固定宏代理启动请求。控制管道允许配置的安装用户 SID、本机 Administrators 和 SYSTEM，并拒绝网络登录；各控制项仍受型号、驱动和协议准入限制。注册失败时仍可能需要既有 UAC 后备路径。
 
