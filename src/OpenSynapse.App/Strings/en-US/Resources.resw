@@ -3577,4 +3577,110 @@
   <data name="ProfileSummary_Item_MixerBrightness" xml:space="preserve"><value>Mixer brightness</value></data>
   <data name="ProfileSummary_Item_KiyoWhiteBalance" xml:space="preserve"><value>White balance</value></data>
   <data name="SavedToCurrentProfile" xml:space="preserve"><value>Saved to current profile</value></data>
+  <data name="A11yChooseEffectColor3.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Effect color 3</value></data>
+  <data name="A11yChooseEffectColor3.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Choose effect color 3</value></data>
+  <data name="A11yClose.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Close</value></data>
+  <data name="A11yDeletePathPoint.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Delete path point</value></data>
+  <data name="A11yDeviceImage.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Device image</value></data>
+  <data name="A11yDeviceProbeStatus.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Device probe status</value></data>
+  <data name="A11yDeviceScrollArea.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Device page scroll area</value></data>
+  <data name="A11yEnableAdvancedFeatures.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Enable advanced features</value></data>
+  <data name="A11yFanTargetSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Fan target speed</value></data>
+  <data name="A11yKeyboardModifier.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Keyboard modifier</value></data>
+  <data name="A11yMacroExecutionTarget.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Macro execution target</value></data>
+  <data name="A11yMacroSlot.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Macro slot</value></data>
+  <data name="A11yMappingLayer.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Mapping layer</value></data>
+  <data name="A11yMore.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>More</value></data>
+  <data name="A11yMore.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>More</value></data>
+  <data name="A11yNewMacro.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>New macro</value></data>
+  <data name="A11yNewMacro.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>New macro</value></data>
+  <data name="A11yOnboardButtonBehavior.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Onboard button behavior</value></data>
+  <data name="A11ySaveBatteryType.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Save battery type</value></data>
+  <data name="A11ySoftwareMacroTriggerMode.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Software macro trigger mode</value></data>
+  <data name="A11yTargetMappingAction.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Target mapping action</value></data>
+  <data name="A11yTargetMappingType.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Target mapping type</value></data>
+  <data name="A11yTime.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Time</value></data>
+  <data name="AnalogKeyActuationMm.Header" xml:space="preserve"><value>Actuation (mm)</value></data>
+  <data name="AnalogKeyAddPair.Content" xml:space="preserve"><value>Add pair</value></data>
+  <data name="AnalogKeyApplyAll.Content" xml:space="preserve"><value>Apply to all</value></data>
+  <data name="AnalogKeyApplySelected.Content" xml:space="preserve"><value>Apply to selected</value></data>
+  <data name="AnalogKeyApplySnapTap.Content" xml:space="preserve"><value>Apply Snap Tap</value></data>
+  <data name="AnalogKeyChoice1.PlaceholderText" xml:space="preserve"><value>Key 1</value></data>
+  <data name="AnalogKeyChoice2.PlaceholderText" xml:space="preserve"><value>Key 2</value></data>
+  <data name="AnalogKeyPairHelp.Text" xml:space="preserve"><value>Two keys per pair, up to 4 pairs; a key cannot be reused.</value></data>
+  <data name="AnalogKeyPerKey.Text" xml:space="preserve"><value>Per-key actuation</value></data>
+  <data name="AnalogKeyRapidTriggerMm.Header" xml:space="preserve"><value>RT sensitivity (mm)</value></data>
+  <data name="BleAccelerationLevel.Header" xml:space="preserve"><value>Acceleration level</value></data>
+  <data name="BleApplyBatteryType.Content" xml:space="preserve"><value>Apply battery type</value></data>
+  <data name="BleApplyDpiStages.Content" xml:space="preserve"><value>Apply DPI stages</value></data>
+  <data name="BleApplyKeys.Content" xml:space="preserve"><value>Apply key settings</value></data>
+  <data name="BleApplyPower.Content" xml:space="preserve"><value>Apply power settings</value></data>
+  <data name="BleApplyProfile.Content" xml:space="preserve"><value>Switch profile</value></data>
+  <data name="BleApplyScroll.Content" xml:space="preserve"><value>Apply scroll settings</value></data>
+  <data name="BleApplySmartIllumination.Content" xml:space="preserve"><value>Apply illumination settings</value></data>
+  <data name="BleBatteryTypeHelp.Text" xml:space="preserve"><value>The battery percentage depends on the selected chemistry. Pick the right one after replacing the batteries, or the reading will drift.</value></data>
+  <data name="BleDebounceBreak.Header" xml:space="preserve"><value>Release (ms)</value></data>
+  <data name="BleDebounceMake.Header" xml:space="preserve"><value>Press (ms)</value></data>
+  <data name="BleHapticStage.Header" xml:space="preserve"><value>Haptic stage</value></data>
+  <data name="BleLightingDirection.Header" xml:space="preserve"><value>Direction</value></data>
+  <data name="BlePowerPlan.Header" xml:space="preserve"><value>Power plan</value></data>
+  <data name="BleScrollMaskingTime.Header" xml:space="preserve"><value>Scroll masking time (ms)</value></data>
+  <data name="BleScrollTitle.Text" xml:space="preserve"><value>Scroll wheel</value></data>
+  <data name="BleSleepTime.Header" xml:space="preserve"><value>Sleep time (min)</value></data>
+  <data name="BleSmartIllumination.Text" xml:space="preserve"><value>Smart illumination</value></data>
+  <data name="BleSmartIlluminationMode.Header" xml:space="preserve"><value>Dim level</value></data>
+  <data name="BleSmartIlluminationToggle.Header" xml:space="preserve"><value>Dim automatically when idle</value></data>
+  <data name="BleTactileMode.Header" xml:space="preserve"><value>Scroll feel</value></data>
+  <data name="BleTimeToDimMinutes.Header" xml:space="preserve"><value>Dim time (min)</value></data>
+  <data name="BleTimeToDimPercent.Header" xml:space="preserve"><value>Dim %</value></data>
+  <data name="CommonBatteryType.Header" xml:space="preserve"><value>Battery type</value></data>
+  <data name="CommonBatteryType.Text" xml:space="preserve"><value>Battery type</value></data>
+  <data name="CommonClear.Content" xml:space="preserve"><value>Clear</value></data>
+  <data name="CommonClick.Header" xml:space="preserve"><value>Click</value></data>
+  <data name="CommonEnabled.Header" xml:space="preserve"><value>Enabled</value></data>
+  <data name="CommonFunction.Header" xml:space="preserve"><value>Function</value></data>
+  <data name="CommonMinutes.Header" xml:space="preserve"><value>min</value></data>
+  <data name="CommonProfile.Header" xml:space="preserve"><value>Profile</value></data>
+  <data name="CommonProfile.Text" xml:space="preserve"><value>Profile</value></data>
+  <data name="CommonRemove.Content" xml:space="preserve"><value>Remove</value></data>
+  <data name="CommonSelectAll.Content" xml:space="preserve"><value>Select all</value></data>
+  <data name="CommonStage.Text" xml:space="preserve"><value>Stage</value></data>
+  <data name="CommonState.Header" xml:space="preserve"><value>State</value></data>
+  <data name="DebounceBreak.Header" xml:space="preserve"><value>Break debounce (ms)</value></data>
+  <data name="DebounceBreakMask.Header" xml:space="preserve"><value>Break mask (ms)</value></data>
+  <data name="DebounceMake.Header" xml:space="preserve"><value>Make debounce (ms)</value></data>
+  <data name="DebounceMakeMask.Header" xml:space="preserve"><value>Make mask (ms)</value></data>
+  <data name="DeviceCollapse.Text" xml:space="preserve"><value>Hide devices</value></data>
+  <data name="DeviceCollapse.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Hide devices</value></data>
+  <data name="DeviceExpandMore.Text" xml:space="preserve"><value>Show remaining devices</value></data>
+  <data name="DeviceExpandMore.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Show remaining devices</value></data>
+  <data name="GpuModeReading.Text" xml:space="preserve"><value>Reading GPU mode...</value></data>
+  <data name="HeadsetCompressorHelp.Text" xml:space="preserve"><value>Ratio, attack, and release are shown as raw protocol values; Razer does not publish units. Defaults come from the device and are not written until changed.</value></data>
+  <data name="HeadsetParametricEqHelp.Text" xml:space="preserve"><value>Reads and writes each band. Gain and Q are shown as raw protocol values; Razer does not publish a conversion.</value></data>
+  <data name="HeadsetSidetoneHelp.Text" xml:space="preserve"><value>Routes the microphone signal back to the headset; this is the side tone.</value></data>
+  <data name="HueBridgeAddressPlaceholder.PlaceholderText" xml:space="preserve"><value>Enter the bridge address manually, e.g. 192.168.1.2</value></data>
+  <data name="RazerGamepadApplyConnection.Content" xml:space="preserve"><value>Apply connection settings</value></data>
+  <data name="RazerGamepadConnectionTitle.Text" xml:space="preserve"><value>Connection</value></data>
+  <data name="RazerHidAutoSleepLabel.Header" xml:space="preserve"><value>Auto sleep</value></data>
+  <data name="RazerHidLowBatteryLabel.Header" xml:space="preserve"><value>Low battery warning (%)</value></data>
+  <data name="RazerHidOnboardProfileActiveLabel.Header" xml:space="preserve"><value>Active</value></data>
+  <data name="RazerHidPollingTitle.Header" xml:space="preserve"><value>Polling rate</value></data>
+  <data name="RazerHidScrollAccelerationLabel.Header" xml:space="preserve"><value>Scroll acceleration</value></data>
+  <data name="RazerHidSmartReelThresholdLabel.Header" xml:space="preserve"><value>Smart Reel threshold</value></data>
+  <data name="RazerHidTimeToDimLabel.Header" xml:space="preserve"><value>Time to dim</value></data>
+  <data name="UpdateStatusLoading" xml:space="preserve"><value>Loading update status</value></data>
+  <data name="AnalogKeyLayoutPrompt" xml:space="preserve"><value>Select the keys to adjust on the keyboard layout first.</value></data>
+  <data name="AnalogKeyNoneSelected" xml:space="preserve"><value>No keys selected</value></data>
+  <data name="AnalogKeySelectedCount" xml:space="preserve"><value>{0} keys selected</value></data>
+  <data name="AnalogKeyAppliedCount" xml:space="preserve"><value>Applied to {0} keys and read back.</value></data>
+  <data name="AnalogKeyReadCount" xml:space="preserve"><value>Read trigger and Rapid Trigger settings for {0} keys.</value></data>
+  <data name="SnapTapReading" xml:space="preserve"><value>Reading Snap Tap settings…</value></data>
+  <data name="SnapTapNeedTwoKeys" xml:space="preserve"><value>Each pair needs two keys.</value></data>
+  <data name="SnapTapDuplicateInPair" xml:space="preserve"><value>A pair cannot use the same key twice.</value></data>
+  <data name="SnapTapDuplicateAcrossPairs" xml:space="preserve"><value>Different pairs cannot reuse the same key.</value></data>
+  <data name="SnapTapNeedPairBeforeEnable" xml:space="preserve"><value>Add at least one pair before enabling Snap Tap.</value></data>
+  <data name="SnapTapAppliedCount" xml:space="preserve"><value>Applied {0} Snap Tap pairs and read back.</value></data>
+  <data name="SnapTapPairHint" xml:space="preserve"><value>Pick two keys per pair, up to 4 pairs. Windows and Menu keys are excluded.</value></data>
+  <data name="A11yClose.Content" xml:space="preserve"><value>✕</value></data>
+  <data name="A11yDeletePathPoint.Content" xml:space="preserve"><value>×</value></data>
 </root>

@@ -43,8 +43,8 @@
                   <Grid ColumnDefinitions="*,*,*,30" ColumnSpacing="6" Padding="0,2">
                     <NumberBox Value="{Binding X, Mode=TwoWay}" Minimum="{Binding MinimumCoordinate}" Maximum="{Binding MaximumCoordinate}" SmallChange="1" SpinButtonPlacementMode="Compact" AutomationProperties.Name="X" />
                     <NumberBox Grid.Column="1" Value="{Binding Y, Mode=TwoWay}" Minimum="{Binding MinimumCoordinate}" Maximum="{Binding MaximumCoordinate}" SmallChange="1" SpinButtonPlacementMode="Compact" AutomationProperties.Name="Y" />
-                    <NumberBox Grid.Column="2" Value="{Binding TimeMilliseconds, Mode=TwoWay}" Minimum="0" Maximum="{Binding MaximumTime}" SmallChange="10" SpinButtonPlacementMode="Compact" AutomationProperties.Name="时间" />
-                    <Button Grid.Column="3" Content="×" Tag="{Binding}" Click="RemovePointRowClick" HorizontalAlignment="Right" VerticalAlignment="Center" Padding="0" MinWidth="28" Height="28" AutomationProperties.Name="删除轨迹点" />
+                    <NumberBox local:Localized.Uid="A11yTime" Grid.Column="2" Value="{Binding TimeMilliseconds, Mode=TwoWay}" Minimum="0" Maximum="{Binding MaximumTime}" SmallChange="10" SpinButtonPlacementMode="Compact" AutomationProperties.Name="时间" />
+                    <Button local:Localized.Uid="A11yDeletePathPoint" Grid.Column="3" Content="×" Tag="{Binding}" Click="RemovePointRowClick" HorizontalAlignment="Right" VerticalAlignment="Center" Padding="0" MinWidth="28" Height="28" AutomationProperties.Name="删除轨迹点" />
                   </Grid>
                 </DataTemplate>
               </ListView.ItemTemplate>

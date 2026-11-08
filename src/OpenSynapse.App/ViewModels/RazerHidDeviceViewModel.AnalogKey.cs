@@ -25,7 +25,7 @@ public sealed partial class RazerHidDeviceViewModel
     private double _analogKeyActuationPointMillimeters = 2.0;
     private bool _analogKeyRapidTriggerEnabled;
     private double _analogKeyRapidTriggerSensitivityMillimeters = 0.3;
-    private string _analogKeyLayoutStatusText = "\u5148\u5728\u952e\u76d8\u56fe\u4e0a\u9009\u62e9\u8981\u8c03\u6574\u7684\u952e\u3002";
+    private string _analogKeyLayoutStatusText = AppStrings.Text("AnalogKeyLayoutPrompt");
 
     public Visibility AnalogKeyVisibility => VisibleWhen(HasAny(
         RazerHidBackendCapability.AnalogKeyRead, RazerHidBackendCapability.AnalogKeyWrite));
@@ -78,8 +78,8 @@ public sealed partial class RazerHidDeviceViewModel
 
     public int SelectedAnalogKeyCount => _analogKeyKeys.Count(key => key.IsSelected);
     public string AnalogKeySelectionText => SelectedAnalogKeyCount == 0
-        ? "\u672a\u9009\u62e9\u952e"
-        : $"\u5df2\u9009 {SelectedAnalogKeyCount} \u4e2a\u952e";
+        ? AppStrings.Text("AnalogKeyNoneSelected")
+        : AppStrings.FormatText("AnalogKeySelectedCount", SelectedAnalogKeyCount);
     public bool CanApplyAnalogKeySelection => CanEditAnalogKey && SelectedAnalogKeyCount > 0;
 
     public bool IsAnalogKeyBusy
@@ -238,7 +238,7 @@ public sealed partial class RazerHidDeviceViewModel
 
                 await RefreshAnalogKeyLayoutAsync(cancellationToken);
                 AnalogKeyLayoutStatusText =
-                    $"\u5df2\u5e94\u7528\u5230 {keys.Count} \u4e2a\u952e\uff0c\u5e76\u5df2\u8bfb\u56de\u3002";
+                    AppStrings.FormatText("AnalogKeyAppliedCount", keys.Count);
             }, cancellationToken);
 
     private async Task RefreshAnalogKeyAsync(CancellationToken cancellationToken)
@@ -309,7 +309,7 @@ public sealed partial class RazerHidDeviceViewModel
 
         _analogKeyLayoutLoaded = true;
         AnalogKeyLayoutStatusText =
-            $"\u5df2\u8bfb\u53d6 {keyIds.Length} \u4e2a\u952e\u7684\u89e6\u53d1\u4e0e Rapid Trigger \u8bbe\u7f6e\u3002";
+            AppStrings.FormatText("AnalogKeyReadCount", keyIds.Length);
     }
 
     private void InitializeAnalogKeyLayout()

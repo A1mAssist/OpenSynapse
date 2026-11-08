@@ -32,7 +32,7 @@
                       <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="AdvancedFeaturesTitle" Text="高级功能（危险）" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
                       <TextBlock local:Localized.Uid="AdvancedFeaturesSettingDescription" Text="在设备页显示 GPU 超频、CPU 功耗墙和 Curve Optimizer 等直接写入硬件的设置。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                     </StackPanel>
-                    <ToggleSwitch x:Name="AdvancedFeaturesToggle" Grid.Column="1" Toggled="AdvancedFeaturesToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="开启高级功能" />
+                    <ToggleSwitch local:Localized.Uid="A11yEnableAdvancedFeatures" x:Name="AdvancedFeaturesToggle" Grid.Column="1" Toggled="AdvancedFeaturesToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="开启高级功能" />
                   </Grid>
                 </Border>
                 <Border Style="{StaticResource CardStyle}" Padding="16">
@@ -159,11 +159,11 @@
                     <Border Height="1" Background="{StaticResource LineBrush}" />
                     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                       <StackPanel Spacing="5" VerticalAlignment="Center">
-                        <TextBlock x:Name="UpdateStatusText" Text="正在读取更新状态" TextWrapping="Wrap" />
+                        <TextBlock x:Name="UpdateStatusText" local:Localized.Uid="UpdateStatusLoading" Text="正在读取更新状态" TextWrapping="Wrap" />
                         <ProgressBar x:Name="UpdateProgressBar" Minimum="0" Maximum="100" Height="3" Visibility="Collapsed" />
                       </StackPanel>
                       <Button local:Localized.Uid="CheckUpdateButton" x:Name="CheckUpdateButton" Grid.Column="1" Content="检查更新" Click="CheckForUpdatesClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
-                      <Button x:Name="UpdateActionButton" Grid.Column="2" Content="下载更新" Click="UpdateActionClick" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Center" Visibility="Collapsed" />
+                      <Button x:Name="UpdateActionButton" local:Localized.Uid="下载更新" Grid.Column="2" Content="下载更新" Click="UpdateActionClick" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Center" Visibility="Collapsed" />
                     </Grid>
                   </StackPanel>
                 </Border>

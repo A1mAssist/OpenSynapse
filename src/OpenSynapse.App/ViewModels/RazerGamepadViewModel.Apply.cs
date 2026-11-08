@@ -62,7 +62,7 @@ public sealed partial class RazerGamepadViewModel
             {
                 RestoreStickUi(row, previous);
                 await RestoreStickAsync(row.ControlId, previous);
-                ErrorText = "profile save failed";
+                ErrorText = AppStrings.Text("RazerHidSettingProfileSaveFailed");
                 OperationStatusText = string.Empty;
                 return;
             }
@@ -129,7 +129,7 @@ public sealed partial class RazerGamepadViewModel
             {
                 RestoreTriggerUi(row, previous);
                 await RestoreTriggerAsync(row.ControlId, previous);
-                ErrorText = "profile save failed";
+                ErrorText = AppStrings.Text("RazerHidSettingProfileSaveFailed");
                 OperationStatusText = string.Empty;
                 return;
             }
@@ -192,7 +192,7 @@ public sealed partial class RazerGamepadViewModel
                 }
 
                 await RestoreDpadAsync(previous);
-                ErrorText = "profile save failed";
+                ErrorText = AppStrings.Text("RazerHidSettingProfileSaveFailed");
                 OperationStatusText = string.Empty;
                 return;
             }
@@ -240,7 +240,7 @@ public sealed partial class RazerGamepadViewModel
                     }
                 }
 
-                ErrorText = "profile save failed";
+                ErrorText = AppStrings.Text("RazerHidSettingProfileSaveFailed");
                 OperationStatusText = string.Empty;
                 return;
             }

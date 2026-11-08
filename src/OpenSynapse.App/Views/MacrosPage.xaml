@@ -21,7 +21,7 @@
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
                           <Button local:Localized.Uid="MacroImportButton" Content="导入" Click="ImportMacroClick" Style="{StaticResource SecondaryButtonStyle}" Padding="8,0" MinHeight="28" FontSize="12" VerticalAlignment="Center" />
                           <Button local:Localized.Uid="MacroExportButtonShort" Content="导出" Click="ExportSelectedMacroClick" Style="{StaticResource SecondaryButtonStyle}" Padding="8,0" MinHeight="28" FontSize="12" VerticalAlignment="Center" IsEnabled="{Binding Macros.CanEditMacro}" />
-                          <Button x:Name="MacroNewButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" Click="CreateMacroClick" ToolTipService.ToolTip="新建宏" AutomationProperties.Name="新建宏"><FontIcon Glyph="&#xE710;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" /></Button>
+                          <Button local:Localized.Uid="A11yNewMacro" x:Name="MacroNewButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" Click="CreateMacroClick" ToolTipService.ToolTip="新建宏" AutomationProperties.Name="新建宏"><FontIcon Glyph="&#xE710;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" /></Button>
                         </StackPanel>
                       </Grid>
                       <ListView x:Name="MacroListView" Grid.Row="1" ItemsSource="{Binding Macros.Items}" SelectedItem="{Binding Macros.SelectedMacro, Mode=TwoWay}" SelectionMode="Single" Background="Transparent" BorderThickness="0" MinHeight="150">
@@ -34,7 +34,7 @@
                                 <TextBlock Text="{Binding TriggerText}" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" />
                               </StackPanel>
                               <ToggleSwitch local:Localized.Uid="MacroRowEnableToggle" Grid.Column="1" IsOn="{Binding Enabled, Mode=TwoWay}" Toggled="MacroRowEnabledToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
-                              <Button Grid.Column="2" Width="26" Height="26" MinWidth="26" MinHeight="26" Padding="0" Style="{StaticResource IconButtonStyle}" VerticalAlignment="Center" ToolTipService.ToolTip="更多" AutomationProperties.Name="更多"><TextBlock Text="&#x2026;" FontSize="14" />
+                              <Button local:Localized.Uid="A11yMore" Grid.Column="2" Width="26" Height="26" MinWidth="26" MinHeight="26" Padding="0" Style="{StaticResource IconButtonStyle}" VerticalAlignment="Center" ToolTipService.ToolTip="更多" AutomationProperties.Name="更多"><TextBlock Text="&#x2026;" FontSize="14" />
                                 <Button.Flyout>
                                   <MenuFlyout>
                                     <MenuFlyoutItem local:Localized.Uid="MacroRowCopyItem" Tag="{x:Bind}" Text="复制" Click="CopyMacroRowClick" Style="{StaticResource MacroMenuItemStyle}" />
