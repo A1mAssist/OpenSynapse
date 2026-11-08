@@ -48,7 +48,7 @@
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                     <StackPanel Spacing="4">
                       <TextBlock local:Localized.Uid="LowBatteryNotificationTitle" Text="外设低电量通知" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <TextBlock local:Localized.Uid="LowBatteryNotificationDescription" Text="读到外设电量降至 20% 和 10% 时发送 Windows 通知；不会额外轮询或唤醒设备。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="LowBatteryNotificationDescription" Text="读到外设电量降至 20% 和 10% 时发送 Windows 通知。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                     </StackPanel>
                     <ToggleSwitch local:Localized.Uid="LowBatteryNotificationToggle" x:Name="LowBatteryNotificationToggle" Grid.Column="1" Toggled="LowBatteryNotificationToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="外设低电量通知" />
                   </Grid>
@@ -57,7 +57,7 @@
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                     <StackPanel Spacing="4">
                       <TextBlock local:Localized.Uid="TrayBatteryTitle" Text="托盘菜单外设电量" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <TextBlock local:Localized.Uid="TrayBatteryDescription" Text="在右键菜单中显示已连接鼠标和键盘的电量；关闭后不再显示电量行。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="TrayBatteryDescription" Text="在右键菜单中显示已连接鼠标和键盘的电量。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                     </StackPanel>
                     <ToggleSwitch local:Localized.Uid="TrayBatteryToggle" x:Name="TrayBatteryToggle" Grid.Column="1" Toggled="TrayBatteryToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="托盘菜单外设电量" />
                   </Grid>
@@ -66,7 +66,7 @@
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                     <StackPanel Spacing="4">
                       <TextBlock local:Localized.Uid="TaskbarStatusTitle" Text="任务栏状态条" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <TextBlock local:Localized.Uid="TaskbarStatusDescription" Text="在任务栏显示已连接外设的电量；不显示性能模式，点击也不会打开主窗口。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="TaskbarStatusDescription" Text="在任务栏显示已连接外设的电量。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                     </StackPanel>
                     <ToggleSwitch local:Localized.Uid="TaskbarStatusToggle" x:Name="TaskbarStatusToggle" Grid.Column="1" Toggled="TaskbarStatusToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="任务栏状态条" />
                   </Grid>

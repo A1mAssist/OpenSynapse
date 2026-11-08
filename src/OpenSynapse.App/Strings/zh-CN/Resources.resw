@@ -2065,13 +2065,13 @@
     <value>更多设备</value>
   </data>
   <data name="LowBatteryNotificationTitle.Text" xml:space="preserve"><value>外设低电量通知</value></data>
-  <data name="LowBatteryNotificationDescription.Text" xml:space="preserve"><value>读到外设电量降至 20% 和 10% 时发送 Windows 通知；不会额外轮询或唤醒设备。</value></data>
+  <data name="LowBatteryNotificationDescription.Text" xml:space="preserve"><value>读到外设电量降至 20% 和 10% 时发送 Windows 通知。</value></data>
   <data name="LowBatteryNotificationToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>外设低电量通知</value></data>
   <data name="TrayBatteryTitle.Text" xml:space="preserve"><value>托盘菜单外设电量</value></data>
-  <data name="TrayBatteryDescription.Text" xml:space="preserve"><value>在右键菜单中显示已连接鼠标和键盘的电量；关闭后不再显示电量行。</value></data>
+  <data name="TrayBatteryDescription.Text" xml:space="preserve"><value>在右键菜单中显示已连接鼠标和键盘的电量。</value></data>
   <data name="TrayBatteryToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>托盘菜单外设电量</value></data>
   <data name="TaskbarStatusTitle.Text" xml:space="preserve"><value>任务栏状态条</value></data>
-  <data name="TaskbarStatusDescription.Text" xml:space="preserve"><value>在任务栏显示已连接外设的电量；不显示性能模式，点击也不会打开主窗口。</value></data>
+  <data name="TaskbarStatusDescription.Text" xml:space="preserve"><value>在任务栏显示已连接外设的电量。</value></data>
   <data name="TaskbarStatusToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>任务栏状态条</value></data>
   <data name="PerformanceOverlayTitle" xml:space="preserve"><value>性能悬浮窗</value></data>
   <data name="PerformanceOverlayDescription" xml:space="preserve"><value>在桌面显示性能模式、CPU/GPU 温度与频率、内存占用与频率，以及风扇转速；可拖动并记住位置，右键可切换卡片、重置位置或关闭。</value></data>
