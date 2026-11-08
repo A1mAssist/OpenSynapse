@@ -2052,7 +2052,7 @@
   <data name="LightingRenderModeLabel.Text" xml:space="preserve"><value>渲染方式</value></data>
   <data name="LightingRenderMode.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>灯效渲染方式</value></data>
   <data name="LightingRenderFirmware" xml:space="preserve"><value>固件</value></data>
-  <data name="LightingRenderSoftware" xml:space="preserve"><value>软件帧泵</value></data>
+  <data name="LightingRenderSoftware" xml:space="preserve"><value>软件渲染</value></data>
   <data name="LightingPresetFire" xml:space="preserve"><value>火焰</value></data>
   <data name="LightingPresetStarlight" xml:space="preserve"><value>星光</value></data>
   <data name="LightingPresetRainbow" xml:space="preserve"><value>彩虹</value></data>
@@ -3795,12 +3795,12 @@
   <data name="LightingStudioScreenBottom" xml:space="preserve"><value>底部</value></data>
   <data name="LightingStudioScreenCustom" xml:space="preserve"><value>自定义</value></data>
   <data name="IntroductionV2NavigationTitle" xml:space="preserve"><value>从这里开始</value></data>
-  <data name="IntroductionV2NavigationBody" xml:space="preserve"><value>左侧的“设备”集中管理鼠标、键盘、Blade 和耳机；宏和配置也在侧栏。</value></data>
+  <data name="IntroductionV2NavigationBody" xml:space="preserve"><value>左侧“设备”管理鼠标、键盘、Blade 和耳机；&#10;宏和配置也在侧栏。</value></data>
   <data name="IntroductionV2DevicesTitle" xml:space="preserve"><value>选择设备</value></data>
-  <data name="IntroductionV2DevicesBody" xml:space="preserve"><value>点设备卡片进入设置。没看到设备就点“重新探测”，并确认设备已经连接。</value></data>
+  <data name="IntroductionV2DevicesBody" xml:space="preserve"><value>点设备卡片进入设置。&#10;没看到设备就重新探测。</value></data>
   <data name="IntroductionV2DeviceSettingsTitle" xml:space="preserve"><value>设备设置</value></data>
-  <data name="IntroductionV2MouseBody" xml:space="preserve"><value>在这里调整 DPI、轮询率、灯光和设备支持的其他选项；无线鼠标还会显示电量。修改后按对应卡片里的“保存”或“应用”，不会自动写入设备。</value></data>
-  <data name="IntroductionV2KeyboardBody" xml:space="preserve"><value>在这里调整灯光、轮询率、游戏模式和设备支持的其他选项；无线键盘还会显示电量。修改后按对应卡片里的“保存”或“应用”，不会自动写入设备。</value></data>
+  <data name="IntroductionV2MouseBody" xml:space="preserve"><value>在这里调整 DPI、轮询率、灯光等选项；无线鼠标还会显示电量。&#10;修改后按卡片里的按钮保存，不会自动写入。</value></data>
+  <data name="IntroductionV2KeyboardBody" xml:space="preserve"><value>在这里调整灯光、轮询率、游戏模式等选项；无线键盘还会显示电量。&#10;修改后按卡片里的按钮保存，不会自动写入。</value></data>
   <data name="IntroductionV2BladeTitle" xml:space="preserve"><value>Blade 设置</value></data>
   <data name="IntroductionV2BladeBody" xml:space="preserve"><value>性能模式、风扇、显卡模式和键盘灯光都在这个页面；修改后按对应按钮保存或应用。</value></data>
   <data name="IntroductionV2NoDevicesTitle" xml:space="preserve"><value>还没有发现设备</value></data>

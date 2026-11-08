@@ -81,21 +81,27 @@
         x:Name="IntroductionTip"
         Grid.RowSpan="2"
         Canvas.ZIndex="200"
-        Width="340"
-        MaxWidth="340"
+        Width="480"
+        MaxWidth="480"
         HorizontalContentAlignment="Stretch"
         IsLightDismissEnabled="False"
         ShouldConstrainToRootBounds="True"
+        PlacementMargin="0,4,0,4"
         TailVisibility="Visible"
         CloseButtonClick="IntroductionTipCloseClick"
         AutomationProperties.Name="OpenSynapse 使用导览">
-      <StackPanel Spacing="14">
-        <TextBlock x:Name="IntroductionBodyText" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" />
-        <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
-          <TextBlock x:Name="IntroductionProgressText" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontFamily="Cascadia Mono,Consolas" FontSize="11" />
-          <Button local:Localized.Uid="Loc_870B386A8A" x:Name="IntroductionPreviousButton" Grid.Column="2" MinWidth="80" Content="上一步" FontFamily="Microsoft YaHei UI,Segoe UI" FontSize="14" FontWeight="Normal" Click="IntroductionPreviousClick" Style="{StaticResource SecondaryButtonStyle}" />
-          <Button local:Localized.Uid="Loc_0D81928209" x:Name="IntroductionNextButton" Grid.Column="3" MinWidth="80" Content="下一步" FontFamily="Microsoft YaHei UI,Segoe UI" FontSize="14" FontWeight="Normal" Click="IntroductionNextClick" Style="{StaticResource PrimaryButtonStyle}" />
-        </Grid>
+      <StackPanel Spacing="18">
+        <TextBlock x:Name="IntroductionBodyText" TextWrapping="WrapWholeWords" Foreground="{StaticResource MutedBrush}" FontFamily="Microsoft YaHei UI,Segoe UI" FontSize="14" LineHeight="22" />
+        <StackPanel Spacing="12">
+          <Border Height="1" Background="{StaticResource LineBrush}" />
+          <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+            <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="12" Padding="10,3" VerticalAlignment="Center">
+              <TextBlock x:Name="IntroductionProgressText" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontFamily="Cascadia Mono,Consolas" FontSize="11" />
+            </Border>
+            <Button local:Localized.Uid="Loc_870B386A8A" x:Name="IntroductionPreviousButton" Grid.Column="2" MinWidth="84" MinHeight="36" Content="上一步" FontFamily="Microsoft YaHei UI,Segoe UI" FontSize="14" FontWeight="Normal" Click="IntroductionPreviousClick" Style="{StaticResource SecondaryButtonStyle}" />
+            <Button local:Localized.Uid="Loc_0D81928209" x:Name="IntroductionNextButton" Grid.Column="3" MinWidth="84" MinHeight="36" Content="下一步" FontFamily="Microsoft YaHei UI,Segoe UI" FontSize="14" FontWeight="Normal" Click="IntroductionNextClick" Style="{StaticResource PrimaryButtonStyle}" />
+          </Grid>
+        </StackPanel>
       </StackPanel>
     </TeachingTip>
   </Grid>

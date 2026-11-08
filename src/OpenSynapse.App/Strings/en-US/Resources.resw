@@ -1676,7 +1676,7 @@
   <data name="LightingRenderModeLabel.Text" xml:space="preserve"><value>Render mode</value></data>
   <data name="LightingRenderMode.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Lighting render mode</value></data>
   <data name="LightingRenderFirmware" xml:space="preserve"><value>Firmware</value></data>
-  <data name="LightingRenderSoftware" xml:space="preserve"><value>Software frames</value></data>
+  <data name="LightingRenderSoftware" xml:space="preserve"><value>Software</value></data>
   <data name="LightingPresetFire" xml:space="preserve"><value>Fire</value></data>
   <data name="LightingPresetStarlight" xml:space="preserve"><value>Starlight</value></data>
   <data name="LightingPresetRainbow" xml:space="preserve"><value>Rainbow</value></data>
