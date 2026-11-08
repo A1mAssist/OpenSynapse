@@ -346,6 +346,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                 return;
             }
             await StopSoftwareLightingAsync(cancellationToken);
+            await _service.SetCustomFrameEffectAsync(Connection, cancellationToken);
             if (effect == RazerHidLightingEffect.SoftwareAudioMeter)
             {
                 _softwareAudioInput = new WasapiAudioMeterAdapter();

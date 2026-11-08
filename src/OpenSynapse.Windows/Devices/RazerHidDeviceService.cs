@@ -836,6 +836,28 @@ public sealed partial class RazerHidDeviceService
         }
     }
 
+    /// <summary>
+    /// Matrix rows only display while the device is on its custom-frame effect.
+    /// A firmware effect otherwise keeps running and the row writes are ignored.
+    /// </summary>
+    public async Task SetCustomFrameEffectAsync(
+        RazerHidDeviceConnection connection,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+        if (!connection.Definition.HasSourceCapability("set_custom_effect") ||
+            !connection.LightingZones.Values.Any(zone =>
+                zone.LightingEffects.Contains(RazerHidLightingEffect.Custom)))
+        {
+            return;
+        }
+
+        await SetLightingAsync(
+            connection,
+            new RazerHidLightingSettings(RazerHidLightingEffect.Custom),
+            cancellationToken).ConfigureAwait(false);
+    }
+
 
     public Task SetLedStateAsync(RazerHidDeviceConnection connection, RazerHidStorage storage, RazerHidLedZone ledId, bool enabled, CancellationToken cancellationToken = default)
     {

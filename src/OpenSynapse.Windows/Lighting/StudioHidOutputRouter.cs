@@ -245,6 +245,11 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                     output.Touched = true;
                     if (isMatrix)
                     {
+                        if (!output.CustomEffectAttempted)
+                        {
+                            await _service.SetCustomFrameEffectAsync(target, cancellationToken).ConfigureAwait(false);
+                            output.CustomEffectAttempted = true;
+                        }
                         await _service.SetCustomFrameAsync(target, frame, cancellationToken)
                             .ConfigureAwait(false);
                     }
@@ -448,6 +453,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
         internal long LayersVersion { get; set; } = -1;
         internal DeviceBaseline? Baseline { get; set; }
         internal bool BaselineAttempted { get; set; }
+        internal bool CustomEffectAttempted { get; set; }
         internal bool Touched { get; set; }
     }
 

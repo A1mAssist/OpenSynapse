@@ -31,6 +31,7 @@ public sealed partial class LightingStudioPage : UserControl
     private Border? _dropHint;
     private ComboBoxItem? _customZoomItem;
     private bool _canvasFitted;
+    private bool _savedProjectLoaded;
     private string? _fittedVisualSignature;
 #if DEBUG
     private StudioCanvasBenchmark? _studioBenchmark;
@@ -78,6 +79,7 @@ public sealed partial class LightingStudioPage : UserControl
         Func<Task>? restoreAfterExternal = null)
     {
         _viewModel?.Dispose();
+        _savedProjectLoaded = false;
         _inputSampler = inputSampler;
         _viewModel = new LightingStudioViewModel(
             lighting, devices, matrixDevices, hidRouter, inputSampler, argbRouter, restoreAfterExternal);
@@ -138,6 +140,11 @@ public sealed partial class LightingStudioPage : UserControl
     internal void OnNavigatedTo()
     {
         StudioTimingMark("navigate-enter");
+        if (!_savedProjectLoaded)
+        {
+            _savedProjectLoaded = true;
+            _ = LoadSavedProjectAsync();
+        }
         RefreshDevicesWithTiming("navigate");
         _ = RefreshDevicesFromHostAsync();
         _viewModel?.EnsureLayerRows();
@@ -153,6 +160,22 @@ public sealed partial class LightingStudioPage : UserControl
 #endif
         RenderPreview();
         StudioTimingMark("navigate-exit");
+    }
+
+    /// <summary>
+    /// The studio saves to a file on demand; without this the app always reopened
+    /// on the default project because nothing ever read the file back.
+    /// </summary>
+    private async Task LoadSavedProjectAsync()
+    {
+        if (_viewModel is null || !_viewModel.HasSavedProject)
+        {
+            return;
+        }
+
+        await _viewModel.LoadAsync();
+        BindInspector();
+        RenderPreview();
     }
 
     internal void OnNavigatedFrom()

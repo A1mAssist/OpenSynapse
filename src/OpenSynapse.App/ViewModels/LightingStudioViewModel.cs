@@ -541,6 +541,8 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         }
     }
 
+    public bool HasSavedProject => File.Exists(StudioPath());
+
     public async Task LoadAsync()
     {
         var path = StudioPath();

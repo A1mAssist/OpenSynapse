@@ -14,6 +14,8 @@ internal sealed class RazerHidChromaFrameSink
     private readonly Func<RazerHidDeviceConnection, bool> _chromaOverrideEnabled;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly Dictionary<string, FrameState> _lastFrames = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, RazerHidDeviceConnection> _customEffectPrepared =
+        new(StringComparer.OrdinalIgnoreCase);
     private long _latestFrameVersion;
 
     internal RazerHidChromaFrameSink(
@@ -80,6 +82,12 @@ internal sealed class RazerHidChromaFrameSink
             {
                 _lastFrames.Remove(staleId);
             }
+            foreach (var staleId in _customEffectPrepared.Keys
+                         .Where(id => !targetIds.Contains(id))
+                         .ToArray())
+            {
+                _customEffectPrepared.Remove(staleId);
+            }
 
             var writes = new List<(RazerHidDeviceConnection Target, RazerHidColor[] Frame)>();
             foreach (var target in targets)
@@ -106,6 +114,12 @@ internal sealed class RazerHidChromaFrameSink
 
             foreach (var (target, frame) in writes)
             {
+                if (!_customEffectPrepared.TryGetValue(target.InstanceId, out var prepared) ||
+                    !ReferenceEquals(prepared, target))
+                {
+                    await _service.SetCustomFrameEffectAsync(target, cancellationToken).ConfigureAwait(false);
+                    _customEffectPrepared[target.InstanceId] = target;
+                }
                 await _service.SetCustomFrameAsync(target, frame, cancellationToken).ConfigureAwait(false);
                 _lastFrames[target.InstanceId] = new FrameState(target, frame);
             }
