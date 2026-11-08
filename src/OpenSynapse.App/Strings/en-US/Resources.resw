@@ -677,6 +677,7 @@
     <value>Query failed</value>
   </data>
   <data name="DiagnosticPerformanceFan" xml:space="preserve"><value>Performance and fan state</value></data>
+  <data name="DiagnosticAdapterPower" xml:space="preserve"><value>Power adapter</value></data>
   <data name="DiagnosticPowerModeControl" xml:space="preserve"><value>Power mode control</value></data>
 <data name="DiagnosticKeyboardEffect" xml:space="preserve"><value>Keyboard effect</value></data>
   <data name="DiagnosticBladeLogo" xml:space="preserve"><value>Blade logo</value></data>
@@ -1389,8 +1390,15 @@
   <data name="ChromaRestStatusReady" xml:space="preserve"><value>{0} · Ready</value></data>
   <data name="ChromaRestStatusSession" xml:space="preserve"><value>{0} · {1} · {2:0} fps · {3} skipped</value></data>
   <data name="ChromaOfficialDllTitle.Text" xml:space="preserve"><value>Official Chroma DLL</value></data>
-  <data name="ChromaOfficialDllDescription.Text" xml:space="preserve"><value>Download only Razer's official RzChromaSDK64.dll and place it in C:\Windows\System32. Installed builds start the broker through the OpenSynapseService service, so no per-launch elevation is needed. The broker stands down while Razer's Chroma service is running.</value></data>
-  <data name="ChromaOfficialDllDownload.Content" xml:space="preserve"><value>Download DLL</value></data>
+  <data name="ChromaOfficialDllDescription.Text" xml:space="preserve"><value>The app downloads Razer's official RzChromaSDK64.dll and installs it into C:\Windows\System32 silently: installed builds let the OpenSynapse service write the file, with no browser and no elevation prompt. Only the portable build asks for administrator rights once. The OpenSynapse broker then owns game lighting; no full Chroma SDK or Synapse install is needed.</value></data>
+  <data name="ChromaOfficialDllDownload.Content" xml:space="preserve"><value>Download and install</value></data>
+  <data name="ChromaOfficialDllInstalling" xml:space="preserve"><value>Installing...</value></data>
+  <data name="ChromaOfficialDllInstalled" xml:space="preserve"><value>RzChromaSDK64.dll is installed.</value></data>
+  <data name="ChromaOfficialDllInstalledRestart" xml:space="preserve"><value>Installed. Restart OpenSynapse so the broker can start.</value></data>
+  <data name="ChromaOfficialDllCancelled" xml:space="preserve"><value>Installation was cancelled.</value></data>
+  <data name="ChromaOfficialDllDownloadFailed" xml:space="preserve"><value>The download failed. Check the network and try again.</value></data>
+  <data name="ChromaOfficialDllVerificationFailed" xml:space="preserve"><value>The downloaded file failed verification. Try again.</value></data>
+  <data name="ChromaOfficialDllFailed" xml:space="preserve"><value>Installation failed. Try again.</value></data>
   <data name="ChromaRestoreTitle.Text" xml:space="preserve"><value>Restore lighting after external control</value></data>
   <data name="ChromaRestoreDescription.Text" xml:space="preserve"><value>Return to the OpenSynapse effect after the session ends or times out.</value></data>
   <data name="ChromaRestoreToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Restore lighting after external control</value></data>

@@ -893,6 +893,7 @@
     <comment>查询失败</comment>
   </data>
   <data name="DiagnosticPerformanceFan" xml:space="preserve"><value>性能与风扇状态</value></data>
+  <data name="DiagnosticAdapterPower" xml:space="preserve"><value>电源适配器</value></data>
   <data name="DiagnosticPowerModeControl" xml:space="preserve"><value>性能模式控制</value></data>
 <data name="DiagnosticKeyboardEffect" xml:space="preserve"><value>键盘灯效</value></data>
   <data name="DiagnosticBladeLogo" xml:space="preserve"><value>Blade Logo</value></data>
@@ -1765,8 +1766,15 @@
   <data name="ChromaRestStatusReady" xml:space="preserve"><value>{0} · 已就绪</value><comment>Chroma REST 已就绪</comment></data>
   <data name="ChromaRestStatusSession" xml:space="preserve"><value>{0} · {1} · {2:0} fps · 跳过 {3}</value><comment>Chroma REST 活动会话与帧统计</comment></data>
   <data name="ChromaOfficialDllTitle.Text" xml:space="preserve"><value>官方 Chroma DLL</value><comment>官方 DLL 与 broker 标题</comment></data>
-  <data name="ChromaOfficialDllDescription.Text" xml:space="preserve"><value>只下载官方 RzChromaSDK64.dll，放到 C:\Windows\System32。安装版通过 OpenSynapseService 服务启动 broker，不需要每次授权；雷云 Chroma 服务运行时 broker 会自动让出。</value><comment>官方 DLL 单文件与 broker 说明</comment></data>
-  <data name="ChromaOfficialDllDownload.Content" xml:space="preserve"><value>下载 DLL</value><comment>下载 GitHub 托管的官方 RzChromaSDK64.dll</comment></data>
+  <data name="ChromaOfficialDllDescription.Text" xml:space="preserve"><value>客户端直接下载官方 RzChromaSDK64.dll 并静默安装到 C:\Windows\System32：安装版由 OpenSynapse 服务写入，全程无浏览器、无授权弹窗；只有便携版才会请求一次管理员授权。OpenSynapse 的 broker 会接管游戏灯光，不需要安装完整 Chroma SDK 或雷云。</value><comment>官方 DLL 单文件与 broker 说明</comment></data>
+  <data name="ChromaOfficialDllDownload.Content" xml:space="preserve"><value>下载并安装</value><comment>在客户端内下载并安装官方 RzChromaSDK64.dll</comment></data>
+  <data name="ChromaOfficialDllInstalling" xml:space="preserve"><value>正在安装…</value><comment>官方 DLL 安装中</comment></data>
+  <data name="ChromaOfficialDllInstalled" xml:space="preserve"><value>已安装 RzChromaSDK64.dll。</value><comment>官方 DLL 已安装</comment></data>
+  <data name="ChromaOfficialDllInstalledRestart" xml:space="preserve"><value>已安装。重启 OpenSynapse 后 broker 才会接管。</value><comment>官方 DLL 刚安装完成</comment></data>
+  <data name="ChromaOfficialDllCancelled" xml:space="preserve"><value>已取消安装。</value><comment>用户取消了管理员授权</comment></data>
+  <data name="ChromaOfficialDllDownloadFailed" xml:space="preserve"><value>下载失败，请检查网络后重试。</value><comment>官方 DLL 下载失败</comment></data>
+  <data name="ChromaOfficialDllVerificationFailed" xml:space="preserve"><value>下载的文件校验失败，请重试。</value><comment>官方 DLL 校验失败</comment></data>
+  <data name="ChromaOfficialDllFailed" xml:space="preserve"><value>安装失败，请重试。</value><comment>官方 DLL 写入失败</comment></data>
   <data name="ChromaRestoreTitle.Text" xml:space="preserve"><value>外部控制结束后恢复灯光</value><comment>恢复灯光标题</comment></data>
   <data name="ChromaRestoreDescription.Text" xml:space="preserve"><value>会话结束或超时后恢复 OpenSynapse 当前配置的灯效。</value><comment>恢复灯光说明</comment></data>
   <data name="ChromaRestoreToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>外部控制结束后恢复灯光</value><comment>恢复灯光开关</comment></data>

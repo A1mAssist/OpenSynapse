@@ -9,6 +9,7 @@ using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Lifecycle;
+using OpenSynapse.Windows.Lighting;
 
 namespace OpenSynapse.App;
 
@@ -195,11 +196,11 @@ internal static class OpenSynapseServiceHost
                 }
             }
 
-            var response = Execute(request, authorizedUser);
+            var response = await ExecuteAsync(request, authorizedUser).ConfigureAwait(false);
             await writer.WriteLineAsync(JsonSerializer.Serialize(response)).ConfigureAwait(false);
         }
 
-        private static OpenSynapseServiceResponse Execute(
+        private static async Task<OpenSynapseServiceResponse> ExecuteAsync(
             OpenSynapseServiceRequest? request,
             SecurityIdentifier? authorizedUser)
         {
@@ -253,6 +254,50 @@ internal static class OpenSynapseServiceHost
 
                 case OpenSynapseServiceAction.StopChromaBroker:
                     return StopChromaBroker();
+
+                case OpenSynapseServiceAction.InstallChromaDll:
+                    var dllOutcome = await ChromaOfficialDllInstaller
+                        .InstallAsServiceAsync(CancellationToken.None)
+                        .ConfigureAwait(false);
+                    var dllInstalled = dllOutcome == ChromaOfficialDllInstallOutcome.Installed;
+                    return new OpenSynapseServiceResponse(
+                        OpenSynapseServiceProtocol.Version,
+                        Handled: true,
+                        dllInstalled
+                            ? DedicatedGpuSwitchOutcome.Success
+                            : DedicatedGpuSwitchOutcome.Failed,
+                        ExitCode: dllInstalled ? 0 : 1,
+                        Status: null,
+                        Error: dllInstalled ? null : dllOutcome.ToString());
+
+                case OpenSynapseServiceAction.InstallRazerCommon:
+                    var commonResult = await RazerCommonDriverInstaller
+                        .InstallAsServiceAsync(CancellationToken.None)
+                        .ConfigureAwait(false);
+                    return new OpenSynapseServiceResponse(
+                        OpenSynapseServiceProtocol.Version,
+                        Handled: true,
+                        commonResult.Success
+                            ? DedicatedGpuSwitchOutcome.Success
+                            : DedicatedGpuSwitchOutcome.Failed,
+                        ExitCode: commonResult.Success ? 0 : 1,
+                        Status: null,
+                        Error: commonResult.Success ? null : commonResult.Failure.ToString());
+
+                case OpenSynapseServiceAction.BindFilter:
+                    var bindResult = await RazerFilterInfBinder
+                        .ApplyDirectAsync((ushort)request.ProductId!.Value, CancellationToken.None)
+                        .ConfigureAwait(false);
+                    var bindAccepted = bindResult.Error is null;
+                    return new OpenSynapseServiceResponse(
+                        OpenSynapseServiceProtocol.Version,
+                        Handled: true,
+                        bindAccepted
+                            ? DedicatedGpuSwitchOutcome.Success
+                            : DedicatedGpuSwitchOutcome.Failed,
+                        ExitCode: bindResult.Applied ? 0 : 2,
+                        Status: null,
+                        Error: bindResult.Error);
 
                 case OpenSynapseServiceAction.StartDriverService:
                     var driverStarted = WindowsServiceControl.TryStart(

@@ -138,6 +138,65 @@ public static class OpenSynapseServiceClient
     }
 
     /// <summary>
+    /// Asks the machine-wide service to attach the staged RzDev filter INF for one
+    /// product. Null means the service is unavailable, so the caller keeps its UAC
+    /// fallback. Applied is false when nothing was staged, which is not a failure.
+    /// </summary>
+    public static async Task<(bool Applied, string? Error)?> TryBindRazerFilterAsync(
+        ushort productId,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new OpenSynapseServiceRequest(
+            OpenSynapseServiceProtocol.Version,
+            OpenSynapseServiceProtocol.BindFilterOperation,
+            Enabled: null,
+            ProductId: productId);
+
+        var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
+        return response?.Handled == true
+            ? (response.Outcome == DedicatedGpuSwitchOutcome.Success &&
+                response.ExitCode == 0, response.Error)
+            : null;
+    }
+
+    /// <summary>
+    /// Asks the machine-wide service to install the WHQL Razer Common driver.
+    /// Null means the service is unavailable, so the caller keeps its UAC fallback.
+    /// </summary>
+    public static async Task<bool?> TryInstallRazerCommonAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var request = new OpenSynapseServiceRequest(
+            OpenSynapseServiceProtocol.Version,
+            OpenSynapseServiceProtocol.InstallRazerCommonOperation,
+            Enabled: null);
+
+        var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
+        return response?.Handled == true
+            ? response.Outcome == DedicatedGpuSwitchOutcome.Success
+            : null;
+    }
+
+    /// <summary>
+    /// Asks the machine-wide service to download and install the official Chroma
+    /// DLL. Null means the service is unavailable, so the caller keeps its own
+    /// elevated fallback; false means the service ran and the install failed.
+    /// </summary>
+    public static async Task<bool?> TryInstallChromaDllAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var request = new OpenSynapseServiceRequest(
+            OpenSynapseServiceProtocol.Version,
+            OpenSynapseServiceProtocol.InstallChromaDllOperation,
+            Enabled: null);
+
+        var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
+        return response?.Handled == true
+            ? response.Outcome == DedicatedGpuSwitchOutcome.Success
+            : null;
+    }
+
+    /// <summary>
     /// Asks the service whether the driver accepts GPU clock offsets. Null means the
     /// service is unavailable, so the caller keeps the offset controls hidden.
     /// </summary>

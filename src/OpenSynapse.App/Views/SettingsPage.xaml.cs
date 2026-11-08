@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Storage;
+using OpenSynapse.Windows.Lifecycle;
 using OpenSynapse.Windows.Lighting;
 using System.Net.Sockets;
 using System.Reflection;
@@ -65,6 +66,7 @@ public sealed partial class SettingsPage : UserControl
         ViewModel.Lighting.SetChromaIntegrationEnabled(settings.ExperimentalChromaRestEnabled);
         ChromaRestoreToggle.IsOn = settings.RestoreLightingAfterChromaSession;
         RefreshChromaRestStatus();
+        RefreshChromaOfficialDllUi();
         _behaviorUiReady = true;
     }
 
@@ -282,6 +284,65 @@ public sealed partial class SettingsPage : UserControl
         ChromaRestStatusText.Text = snapshot.ActiveSessionTitle is { Length: > 0 } title
             ? AppStrings.FormatText("ChromaRestStatusSession", endpoint, title, framesPerSecond, snapshot.FramesSkipped)
             : AppStrings.FormatText("ChromaRestStatusReady", endpoint);
+    }
+
+    private void RefreshChromaOfficialDllUi()
+    {
+        if (!ChromaBrokerLauncher.IsOfficialDllInstalled)
+        {
+            return;
+        }
+
+        ChromaOfficialDllButton.Visibility = Visibility.Collapsed;
+        ShowChromaOfficialDllStatus(AppStrings.Text("ChromaOfficialDllInstalled"));
+    }
+
+    private async void ChromaOfficialDllClick(object sender, RoutedEventArgs e)
+    {
+        ChromaOfficialDllButton.IsEnabled = false;
+        ChromaOfficialDllButton.Content = AppStrings.Text("ChromaOfficialDllInstalling");
+        ChromaOfficialDllStatusText.Visibility = Visibility.Collapsed;
+        try
+        {
+            var viaService = await OpenSynapseServiceClient
+                .TryInstallChromaDllAsync(Lifetime);
+            var outcome = viaService switch
+            {
+                true => ChromaOfficialDllInstallOutcome.Installed,
+                false => ChromaOfficialDllInstallOutcome.WriteFailed,
+                null => await ChromaOfficialDllInstaller.InstallAsync(Lifetime),
+            };
+            if (outcome == ChromaOfficialDllInstallOutcome.Installed)
+            {
+                ChromaOfficialDllButton.Visibility = Visibility.Collapsed;
+                ShowChromaOfficialDllStatus(AppStrings.Text("ChromaOfficialDllInstalledRestart"));
+                return;
+            }
+
+            Localized.Refresh(ChromaOfficialDllButton);
+            ShowChromaOfficialDllStatus(AppStrings.Text(outcome switch
+            {
+                ChromaOfficialDllInstallOutcome.Cancelled => "ChromaOfficialDllCancelled",
+                ChromaOfficialDllInstallOutcome.DownloadFailed => "ChromaOfficialDllDownloadFailed",
+                ChromaOfficialDllInstallOutcome.VerificationFailed =>
+                    "ChromaOfficialDllVerificationFailed",
+                _ => "ChromaOfficialDllFailed",
+            }));
+        }
+        catch (OperationCanceledException)
+        {
+            Localized.Refresh(ChromaOfficialDllButton);
+        }
+        finally
+        {
+            ChromaOfficialDllButton.IsEnabled = true;
+        }
+    }
+
+    private void ShowChromaOfficialDllStatus(string text)
+    {
+        ChromaOfficialDllStatusText.Text = text;
+        ChromaOfficialDllStatusText.Visibility = Visibility.Visible;
     }
 
     private void RefreshChromaSources()
