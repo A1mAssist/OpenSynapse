@@ -41,7 +41,11 @@ public sealed partial class DiagnosticsWorkspace
         foreach (var row in _accessoryRows) Rows.Remove(row);
         _accessoryRows.Clear();
         CaptureAccessorySnapshot();
-        if (_accessorySnapshots.Count > 0 && Rows.Count == 1 && Rows[0].Device == "Windows HID") Rows.Clear();
+        if (_accessorySnapshots.Count > 0 && Rows.Count == 1 &&
+            Rows[0].Device == AppStrings.Text("Text_CAF15352"))
+        {
+            Rows.Clear();
+        }
         foreach (var snapshot in _accessorySnapshots.Values)
         {
             var failed = !string.IsNullOrWhiteSpace(snapshot.Error);

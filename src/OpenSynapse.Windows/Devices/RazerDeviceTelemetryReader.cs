@@ -56,9 +56,20 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             : await _openRazerReader.ReadAsync(mouse, cancellationToken);
 
         var errors = new List<string>();
+        var rejectedCapabilities = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (bladeResult is not null)
         {
-            errors.AddRange(bladeResult.Errors);
+            foreach (var error in bladeResult.Errors)
+            {
+                if (BladeCapabilityErrors.TryGetUnsupportedCapability(error, out var capability))
+                {
+                    rejectedCapabilities.Add(capability);
+                }
+                else
+                {
+                    errors.Add(error);
+                }
+            }
         }
         if (mouseResult is not null)
         {
@@ -116,6 +127,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
         if (blade is not null)
         {
             var capabilities = blade.Manifest.Capabilities.Keys
+                .Where(capability => !rejectedCapabilities.Contains(capability))
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
             declaredCapabilities[blade.Descriptor.Id] = capabilities;
             capabilitySummaries[blade.Descriptor.Id] =
