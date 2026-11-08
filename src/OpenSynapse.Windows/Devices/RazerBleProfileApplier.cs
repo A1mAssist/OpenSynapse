@@ -71,6 +71,7 @@ public sealed partial class RazerBleProfileApplier : IDeviceProfileApplier
         await ApplyDpiAsync(service, settings, results, cancellationToken);
         await ApplyPollingAsync(service, settings, results, cancellationToken);
         await ApplyPowerAsync(service, settings, results, cancellationToken);
+        await ApplyOnboardProfileAsync(service, settings, results, cancellationToken);
         await ApplyScrollAsync(service, settings, results, cancellationToken);
         await ApplyPowerPlanAsync(service, settings, results, cancellationToken);
         await ApplyHapticAsync(service, settings, results, cancellationToken);
@@ -505,6 +506,29 @@ public sealed partial class RazerBleProfileApplier : IDeviceProfileApplier
                 results.Add(Failed(key, exception));
             }
         }
+    }
+
+    private static Task ApplyOnboardProfileAsync(
+        RazerBleDeviceService service,
+        MouseProfileSettings settings,
+        List<ProfileSettingApplyResult> results,
+        CancellationToken cancellationToken)
+    {
+        if (settings.ActiveOnboardProfileId is not { } profileId)
+        {
+            return Task.CompletedTask;
+        }
+
+        return ApplySettingAsync(
+            results,
+            "ble.onboard-profile",
+            async token => (int?)(await service.ReadProfilesAsync(token)).ActiveId,
+            (value, token) => value is int id
+                ? service.SetActiveProfileAsync((byte)id, token)
+                : Task.CompletedTask,
+            profileId,
+            (left, right) => left == right,
+            cancellationToken);
     }
 
     private static Task ApplySettingAsync<T>(

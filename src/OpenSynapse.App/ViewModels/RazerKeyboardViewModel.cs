@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Macros;
@@ -345,10 +346,28 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(ProtocolAvailableCount));
             OnPropertyChanged(nameof(CapabilityText));
         }
+
+        await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
     }
 
-    public Task ApplyGameModeAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync((service, token) => service.SetGameModeAsync(GameModeEnabled, token), cancellationToken);
+    [ProfileSetting("keyboard.game-mode", DeviceCategory.Keyboard)]
+    public async Task ApplyGameModeAsync(CancellationToken cancellationToken = default)
+    {
+        var previous = GameModeEnabled;
+        if (!await RunWriteResultAsync(
+                (service, token) => service.SetGameModeAsync(GameModeEnabled, token), cancellationToken))
+        {
+            return;
+        }
+
+        await SaveKeyboardSettingAsync(
+            settings => settings.GamingModeEnabled = GameModeEnabled,
+            settings => settings.GamingModeEnabled = previous,
+            () => GameModeEnabled = previous,
+            token => RunWriteResultAsync(
+                (service, rollbackToken) => service.SetGameModeAsync(previous, rollbackToken), token),
+            cancellationToken);
+    }
 
     public Task ApplyBrightnessAsync(CancellationToken cancellationToken = default) =>
         RunChromaWriteAsync(
@@ -369,10 +388,26 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
             await service.SetEffectAsync(effect, colors, token);
         }, cancellationToken);
 
-    public Task ApplyPollingAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(
-            (service, token) => service.SetPollingRateAsync(PollingRates[SelectedPollingIndex], token),
+    [ProfileSetting("keyboard.polling-rate", DeviceCategory.Keyboard)]
+    public async Task ApplyPollingAsync(CancellationToken cancellationToken = default)
+    {
+        var previous = SelectedPollingIndex;
+        var rate = PollingRates[previous];
+        if (!await RunWriteResultAsync(
+                (service, token) => service.SetPollingRateAsync(rate, token), cancellationToken))
+        {
+            return;
+        }
+
+        await SaveKeyboardSettingAsync(
+            settings => settings.PollingRateHertz = rate,
+            settings => settings.PollingRateHertz = PollingRates[previous],
+            () => SelectedPollingIndex = previous,
+            token => RunWriteResultAsync(
+                (service, rollbackToken) => service.SetPollingRateAsync(PollingRates[previous], rollbackToken),
+                token),
             cancellationToken);
+    }
 
     public void RefreshLocalization() => OnPropertyChanged(string.Empty);
 
@@ -464,14 +499,20 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
 
     private async Task RunWriteAsync(
         Func<RazerKeyboardService, CancellationToken, Task> write,
+        CancellationToken cancellationToken) =>
+        await RunWriteResultAsync(write, cancellationToken);
+
+    private async Task<bool> RunWriteResultAsync(
+        Func<RazerKeyboardService, CancellationToken, Task> write,
         CancellationToken cancellationToken)
     {
-        if (!BeginOperation()) return;
+        if (!BeginOperation()) return false;
         try
         {
             await write(OpenService(), cancellationToken);
             ErrorText = string.Empty;
             OperationStatusText = AppStrings.Text("BlackSharkSaved");
+            return true;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -485,6 +526,7 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
         {
             IsBusy = false;
         }
+        return false;
     }
 
     private void ApplyState(RazerKeyboardState state)
