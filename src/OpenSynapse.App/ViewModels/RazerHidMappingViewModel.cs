@@ -243,6 +243,9 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
     private bool _readQueued;
     private bool _hasReadAnyLayer;
 
+    public Task EnsureLoadedAsync(CancellationToken cancellationToken = default) =>
+        IsLoaded || IsBusy ? Task.CompletedTask : ReadAsync(cancellationToken);
+
     /// <summary>
     /// Reads the current layer. A layer change while a read is running queues one
     /// more read so the rows always end up on the layer the user selected.

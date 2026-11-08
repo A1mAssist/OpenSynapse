@@ -324,6 +324,10 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
 
             ApplyLighting(lighting);
             await RefreshMappingAvailabilityAsync(cancellationToken).ConfigureAwait(true);
+            if (MappingVisibility == Microsoft.UI.Xaml.Visibility.Visible && !Mapping.IsLoaded)
+            {
+                await Mapping.ReadAsync(cancellationToken).ConfigureAwait(true);
+            }
             // Keep the transport's own reason in the report: "did not respond" alone hides
             // whether the device rejected, timed out or answered a different transaction.
             ErrorText = state.Firmware is null && state.Serial is null && state.BatteryPercent is null &&
