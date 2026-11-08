@@ -72,6 +72,7 @@ public static class Program
                 RemoveOpenSynapseService();
                 RemoveMacroAgentTask();
                 RemoveStartupRegistration();
+                RemoveShortcuts();
                 MigrateChromaShim();
                 OfferUserDataCleanup();
             })
@@ -278,6 +279,64 @@ public static class Program
         }
         catch (Exception)
         {
+        }
+    }
+
+    private static void RemoveShortcuts()
+    {
+        // The machine-wide MSI shortcut points at the OpenSynapse.exe launcher, which
+        // Velopack's package-relative lookup does not own; remove those files by name.
+        foreach (var shortcut in ShortcutFiles())
+        {
+            TryDeleteShortcut(shortcut);
+        }
+    }
+
+    private static IEnumerable<string> ShortcutFiles()
+    {
+        var roots = new[]
+        {
+            Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), "Programs"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu), "Programs"),
+        };
+        foreach (var root in roots.Where(root => !string.IsNullOrWhiteSpace(root)))
+        {
+            foreach (var name in new[] { "OpenSynapse.lnk", "OpenSynapse.App.lnk" })
+            {
+                var path = Path.Combine(root, name);
+                if (File.Exists(path))
+                {
+                    yield return path;
+                }
+            }
+        }
+    }
+
+    private static void TryDeleteShortcut(string shortcutPath)
+    {
+        try
+        {
+            using var link = new ShellLink(shortcutPath);
+            if (link.Target is not string target ||
+                !Path.GetFileName(target).StartsWith("OpenSynapse", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+        }
+        catch (Exception)
+        {
+            return;
+        }
+
+        try
+        {
+            File.Delete(shortcutPath);
+        }
+        catch (Exception)
+        {
+            // A locked or protected shortcut must not block the uninstall.
         }
     }
 
