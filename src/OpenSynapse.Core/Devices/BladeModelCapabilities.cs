@@ -427,11 +427,10 @@ public static class BladeModelCapabilities
                     (BladePerformanceMode.Hyperboost, 3400, 5200, 4100)),
                 Modes: Modes02B7),
 
-            // The remaining rzDevice25LedMatrixBladeWattage bundles publish RPM
-            // ranges, but their 0D:81/0D:01 target is the legacy percentage report
-            // (0255 reads 0x35 as 53%), not BladeFanProtocol's rpm/100 target. Keep
-            // fixed RPM closed until a model-specific RPM capture exists. 0245 is
-            // the exception because its 0x35 readback is 5300 RPM.
+            // The remaining rzDevice25LedMatrixBladeWattage bundles publish RPM ranges and
+            // speak the same RPM/100 target, but no hardware capture has confirmed the
+            // write on 0233/0240/024A yet. Keep fixed RPM closed there until it does.
+            // 0245 is the exception because its 0x35 readback is 5300 RPM.
             [0x0233] = new(
                 MaxFan: false,
                 None,
@@ -744,11 +743,11 @@ public static class BladeModelCapabilities
 
             // Blade 15 Base (Early 2020) 1532:0255. Its middleware exposes Chroma
             // brightness, thermal, charge-limit, adapter-power and power-mode reports.
-            // Fixed RPM targets stay closed because 0x0D:0x81 reports a percentage,
-            // not the newer RPM layout.
+            // 0x0D:0x81/0x01 is RPM/100 (not %): wire = floor(rpm/100), info raw*100. Range 4200-5500 => 42-55.
             [0x0255] = new(
                 MaxFan: false,
                 None,
+                FixedFan: true,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 4200, 5500, 4900),
                     (BladePerformanceMode.Performance, 4900, 5500, 5200),
