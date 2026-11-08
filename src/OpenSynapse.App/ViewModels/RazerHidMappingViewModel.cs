@@ -147,6 +147,10 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 StatusText = string.Empty;
                 OnPropertyChanged(nameof(IsLoaded));
                 OnPropertyChanged(nameof(CanApply));
+            }
+
+            if (_hasReadAnyLayer)
+            {
                 _ = ReadAsync();
             }
         }
@@ -237,6 +241,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
     }
 
     private bool _readQueued;
+    private bool _hasReadAnyLayer;
 
     /// <summary>
     /// Reads the current layer. A layer change while a read is running queues one
@@ -355,6 +360,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             PopulateStageRows();
             StartVisualLoad();
             _loaded = true;
+            _hasReadAnyLayer = true;
             StatusText = Rows.Count == 0
                 ? AppStrings.Text("RazerHidMappingNoButtons")
                 : _macrosAvailable
