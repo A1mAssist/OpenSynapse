@@ -370,7 +370,6 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
         }
         OnPropertyChanged(nameof(ActiveProfileName));
         OnPropertyChanged(nameof(CanDeleteProfile));
-        RefreshProfileSummary();
     }
 
     private async Task RunProfileOperationAsync(

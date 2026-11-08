@@ -19,23 +19,6 @@ public sealed partial class ProfilesPage : UserControl
     public ProfilesPage()
     {
         InitializeComponent();
-        Loaded += (_, _) => RefreshProfileSummary();
-        DataContextChanged += (_, _) => RefreshProfileSummary();
-        RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) =>
-        {
-            if (Visibility == Visibility.Visible)
-            {
-                RefreshProfileSummary();
-            }
-        });
-    }
-
-    private void RefreshProfileSummary()
-    {
-        if (DataContext is MainViewModel viewModel)
-        {
-            viewModel.Profiles.RefreshProfileSummary();
-        }
     }
 
     internal void InitializeBehaviorSettingsUi()
