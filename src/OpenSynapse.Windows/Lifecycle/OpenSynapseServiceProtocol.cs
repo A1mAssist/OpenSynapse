@@ -33,6 +33,9 @@ public static class OpenSynapseServiceProtocol
     public const string SetCurveOptimizerOperation = "set-curve-optimizer";
     public const string StartChromaBrokerOperation = "start-chroma-broker";
     public const string StopChromaBrokerOperation = "stop-chroma-broker";
+    public const string InstallChromaDllOperation = "install-chroma-dll";
+    public const string InstallRazerCommonOperation = "install-razer-common";
+    public const string BindFilterOperation = "bind-filter";
     public const string StartDriverServiceOperation = "start-driver-service";
 
     /// <summary>
@@ -58,7 +61,8 @@ public sealed record OpenSynapseServiceRequest(
     double? Pl2Watts = null,
     int? CurveSteps = null,
     int? ParentProcessId = null,
-    string? ServiceName = null);
+    string? ServiceName = null,
+    int? ProductId = null);
 
 /// <summary>
 /// The operation a service request asks for. The decision lives here so the
@@ -120,8 +124,27 @@ public enum OpenSynapseServiceAction
     /// <summary>Stop the Chroma shared-memory broker.</summary>
     StopChromaBroker,
 
+    /// <summary>
+    /// Download and install the official RzChromaSDK64.dll. The service owns the
+    /// URL and the hash, so a local caller cannot point it at another file.
+    /// </summary>
+    InstallChromaDll,
+
     /// <summary>Start a Razer driver service that is installed but stopped.</summary>
     StartDriverService,
+
+    /// <summary>
+    /// Download, verify, and install the WHQL Razer Common driver. The service
+    /// owns the package URL, so the caller supplies no path.
+    /// </summary>
+    InstallRazerCommon,
+
+    /// <summary>
+    /// Attach the staged RzDev filter INF for one product to the present device
+    /// nodes. The service resolves the INF from the Windows INF directory, so the
+    /// caller passes a product id, never a path.
+    /// </summary>
+    BindFilter,
 
     /// <summary>The request does not match any known operation.</summary>
     Unsupported,
@@ -290,6 +313,28 @@ public static class OpenSynapseServiceRequestParser
                 OpenSynapseServiceProtocol.StopChromaBrokerOperation))
         {
             return OpenSynapseServiceAction.StopChromaBroker;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                OpenSynapseServiceProtocol.InstallChromaDllOperation))
+        {
+            return OpenSynapseServiceAction.InstallChromaDll;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                OpenSynapseServiceProtocol.BindFilterOperation) &&
+            request.ProductId is > 0 and <= 0xFFFF)
+        {
+            return OpenSynapseServiceAction.BindFilter;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                OpenSynapseServiceProtocol.InstallRazerCommonOperation))
+        {
+            return OpenSynapseServiceAction.InstallRazerCommon;
         }
 
         if (StringComparer.Ordinal.Equals(

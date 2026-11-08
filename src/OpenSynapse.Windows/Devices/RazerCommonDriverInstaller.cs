@@ -102,6 +102,58 @@ internal static class RazerCommonDriverInstaller
             return new RazerDriverInstallResult(true);
         }
 
+        var (infPath, failure) = await EnsurePackageAsync(progress, cancellationToken)
+            .ConfigureAwait(false);
+        if (failure is not null)
+        {
+            return failure;
+        }
+
+        progress?.Report(new RazerDriverInstallProgress(
+            RazerDriverInstallStage.InstallingCommon,
+            "RzCommon"));
+        var result = RunPnPUtil(infPath!);
+        if (result.Success)
+        {
+            await EnsureStartedAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Runs inside the machine-wide service, which is already elevated, so the
+    /// same common-driver install needs no UAC prompt.
+    /// </summary>
+    internal static async Task<RazerDriverInstallResult> InstallAsServiceAsync(
+        CancellationToken cancellationToken = default)
+    {
+        if (IsInstalled)
+        {
+            await EnsureStartedAsync(cancellationToken).ConfigureAwait(false);
+            return new RazerDriverInstallResult(true);
+        }
+
+        var (infPath, failure) = await EnsurePackageAsync(null, cancellationToken)
+            .ConfigureAwait(false);
+        if (failure is not null)
+        {
+            return failure;
+        }
+
+        var result = RunPnPUtilDirect(infPath!);
+        if (result.Success)
+        {
+            await EnsureStartedAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        return result;
+    }
+
+    private static async Task<(string? InfPath, RazerDriverInstallResult? Failure)> EnsurePackageAsync(
+        IProgress<RazerDriverInstallProgress>? progress,
+        CancellationToken cancellationToken)
+    {
         var folder = Path.Combine(RazerDriverInstaller.CacheDirectory, "RzCommon");
         Directory.CreateDirectory(folder);
         var cabPath = Path.Combine(folder, "RzCommon.cab");
@@ -134,28 +186,18 @@ internal static class RazerCommonDriverInstaller
                     "10.0.15063.0",
                     0,
                     CabUrl));
+            return (infPath, null);
         }
         catch (Exception exception) when (
             exception is IOException or HttpRequestException or InvalidOperationException or
                 CryptographicException)
         {
-            return new RazerDriverInstallResult(
+            return (null, new RazerDriverInstallResult(
                 false,
                 exception is InvalidDataException or CryptographicException
                     ? RazerDriverInstallFailure.InvalidPackage
-                    : RazerDriverInstallFailure.DownloadFailed);
+                    : RazerDriverInstallFailure.DownloadFailed));
         }
-
-        progress?.Report(new RazerDriverInstallProgress(
-            RazerDriverInstallStage.InstallingCommon,
-            "RzCommon"));
-        var result = RunPnPUtil(infPath);
-        if (result.Success)
-        {
-            await EnsureStartedAsync(cancellationToken).ConfigureAwait(false);
-        }
-
-        return result;
     }
 
     private static async Task DownloadCabAsync(string path, CancellationToken cancellationToken)
@@ -207,6 +249,44 @@ internal static class RazerCommonDriverInstaller
             throw new InvalidDataException("Razer Common Driver package could not be extracted.");
         }
     }
+    private static RazerDriverInstallResult RunPnPUtilDirect(string infPath)
+    {
+        const char quote = '"';
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = Path.Combine(Environment.SystemDirectory, "pnputil.exe"),
+            Arguments = string.Concat("/add-driver ", quote, infPath, quote, " /install"),
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+
+        Process? process;
+        try
+        {
+            process = Process.Start(startInfo);
+        }
+        catch (Win32Exception)
+        {
+            return new RazerDriverInstallResult(false, RazerDriverInstallFailure.StartFailed);
+        }
+
+        if (process is null)
+        {
+            return new RazerDriverInstallResult(false, RazerDriverInstallFailure.StartFailed);
+        }
+
+        using (process)
+        {
+            process.WaitForExit();
+            return process.ExitCode is 0 or 3010 or 1641
+                ? new RazerDriverInstallResult(true)
+                : new RazerDriverInstallResult(
+                    false,
+                    RazerDriverInstallFailure.ExitCode,
+                    process.ExitCode);
+        }
+    }
+
     private static RazerDriverInstallResult RunPnPUtil(string infPath)
     {
         var startInfo = new ProcessStartInfo

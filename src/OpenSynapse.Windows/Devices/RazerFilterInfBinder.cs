@@ -57,18 +57,12 @@ internal static class RazerFilterInfBinder
             return new(false, null);
         }
 
-        var quote = '"';
-        // Every argument is a drive path from the Windows INF directory, so no
-        // caller-controlled text reaches the elevated command line.
-        var command = string.Join(
-            " & ",
-            infs.Select(inf => $"pnputil /add-driver {quote}{inf}{quote} /install"));
         try
         {
             var startInfo = new ProcessStartInfo
             {
                 FileName = Path.Combine(Environment.SystemDirectory, "cmd.exe"),
-                Arguments = $"/s /c {quote}{command}{quote}",
+                Arguments = CommandLine(infs),
                 UseShellExecute = true,
                 Verb = "runas",
                 WindowStyle = ProcessWindowStyle.Hidden,
@@ -97,6 +91,65 @@ internal static class RazerFilterInfBinder
         {
             return new(false, exception.Message);
         }
+    }
+
+    /// <summary>
+    /// Runs inside the machine-wide service, which is already elevated, so the
+    /// same bind needs no UAC prompt.
+    /// </summary>
+    internal static async Task<RazerFilterBindResult> ApplyDirectAsync(
+        ushort productId,
+        CancellationToken cancellationToken)
+    {
+        var infs = FindStagedInfs(productId);
+        if (infs.Count == 0)
+        {
+            return new(false, null);
+        }
+
+        try
+        {
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = Path.Combine(Environment.SystemDirectory, "cmd.exe"),
+                Arguments = CommandLine(infs),
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
+            };
+
+            using var process = Process.Start(startInfo);
+            if (process is null)
+            {
+                return new(false, "The driver binder did not start.");
+            }
+
+            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+            return process.ExitCode is 0 or 3010 or 1641
+                ? new(true, null)
+                : new(false, string.Concat("pnputil returned ", process.ExitCode, "."));
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (
+            exception is Win32Exception or IOException or UnauthorizedAccessException)
+        {
+            return new(false, exception.Message);
+        }
+    }
+
+    private static string CommandLine(IReadOnlyList<string> infs)
+    {
+        const char quote = '"';
+        // Every argument is a drive path from the Windows INF directory, so no
+        // caller-controlled text reaches the command line.
+        var command = string.Join(
+            " & ",
+            infs.Select(inf => string.Concat(
+                "pnputil /add-driver ", quote, inf, quote, " /install")));
+        return string.Concat("/s /c ", quote, command, quote);
     }
 }
 

@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Windows.Lifecycle;
 
 namespace OpenSynapse.App.ViewModels;
 
@@ -170,9 +171,18 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                         AppStrings.Text("RazerDriverCommonDownloading"),
                     _ => AppStrings.Text("RazerDriverCommonInstalling"),
                 });
-            var common = await RazerCommonDriverInstaller
-                .InstallAsync(commonProgress, cancellationToken)
+            var commonViaService = await OpenSynapseServiceClient
+                .TryInstallRazerCommonAsync(cancellationToken)
                 .ConfigureAwait(true);
+            var common = commonViaService is { } commonInstalled
+                ? new RazerDriverInstallResult(
+                    commonInstalled,
+                    commonInstalled
+                        ? RazerDriverInstallFailure.None
+                        : RazerDriverInstallFailure.ExitCode)
+                : await RazerCommonDriverInstaller
+                    .InstallAsync(commonProgress, cancellationToken)
+                    .ConfigureAwait(true);
             if (!common.Success)
             {
                 var commonMessage = DescribeFailure(common);
@@ -237,9 +247,14 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                             // A silent vendor install only stages the filter INF. A staged
                             // INF never reaches the device stack, so bind it explicitly;
                             // a reboot alone cannot do this.
-                            var bind = await RazerFilterInfBinder
-                                .ApplyAsync(row.ProductIdValue, cancellationToken)
+                            var serviceBind = await OpenSynapseServiceClient
+                                .TryBindRazerFilterAsync(row.ProductIdValue, cancellationToken)
                                 .ConfigureAwait(true);
+                            var bind = serviceBind is { } bound
+                                ? new RazerFilterBindResult(bound.Applied, bound.Error)
+                                : await RazerFilterInfBinder
+                                    .ApplyAsync(row.ProductIdValue, cancellationToken)
+                                    .ConfigureAwait(true);
                             if (!bind.Applied && bind.Error is not null)
                             {
                                 _diagnosticLog.TryWrite(
