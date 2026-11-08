@@ -38,6 +38,7 @@ public sealed class MouseProfileSettings
     public int? HapticLevel { get; set; }
     public ViperDpiStagesProfile? DpiStages { get; set; }
     public List<ViperButtonAssignmentProfile>? ButtonAssignments { get; set; }
+    public List<ButtonMappingProfile>? ButtonMappings { get; set; }
 
     internal void ApplySafeDefaults()
     {
@@ -97,6 +98,7 @@ public sealed class MouseProfileSettings
             throw new InvalidDataException("Mouse haptic level must be between 1 and 6.");
         }
         DpiStages?.ApplySafeDefaults();
+        ValidateButtonMappings(ButtonMappings);
         if (ButtonAssignments is null)
         {
             return;
@@ -131,6 +133,43 @@ public sealed class MouseProfileSettings
         }
     }
 
+    internal static void ValidateRange(int? value, int minimum, int maximum, string name)
+    {
+        if (value < minimum || value > maximum)
+        {
+            throw new InvalidDataException($"{name} must be between {minimum} and {maximum}.");
+        }
+    }
+
+    internal static void ValidateNonNegative(int? value, string name)
+    {
+        if (value is < 0)
+        {
+            throw new InvalidDataException($"{name} cannot be negative.");
+        }
+    }
+
+    internal static void ValidateButtonMappings(IReadOnlyCollection<ButtonMappingProfile>? mappings)
+    {
+        if (mappings is null)
+        {
+            return;
+        }
+        if (mappings.Count > 64 || mappings.Any(mapping => mapping is null))
+        {
+            throw new InvalidDataException("Button mappings must contain at most 64 valid entries.");
+        }
+
+        foreach (var mapping in mappings)
+        {
+            mapping.ApplySafeDefaults();
+        }
+        if (mappings.Select(mapping => mapping.ButtonId).Distinct().Count() != mappings.Count)
+        {
+            throw new InvalidDataException("Button mappings must use each button ID at most once.");
+        }
+    }
+
     private static void ValidateByte(int? value, string name)
     {
         if (value is < 0 or > byte.MaxValue)
@@ -153,6 +192,7 @@ public sealed class KeyboardProfileSettings
     public string? OledLanguage { get; set; }
     public int? KnobMode { get; set; }
     public bool? WristRestLightingEnabled { get; set; }
+    public List<ButtonMappingProfile>? ButtonMappings { get; set; }
 
     internal void ApplySafeDefaults()
     {
@@ -179,6 +219,7 @@ public sealed class KeyboardProfileSettings
         {
             throw new InvalidDataException("Keyboard knob mode must be between 0 and 7.");
         }
+        MouseProfileSettings.ValidateButtonMappings(ButtonMappings);
     }
 }
 
@@ -206,60 +247,27 @@ public enum KeyboardOledLanguage
     French = 5,
 }
 
-public sealed class HeadsetProfileSettings
-{
-    public int? VolumePercent { get; set; }
-    public int? SideTone { get; set; }
-    public int? GameChatBalance { get; set; }
-    public bool? AncEnabled { get; set; }
-    public bool? ThxEnabled { get; set; }
-    public string? EqPreset { get; set; }
-    public int? MicrophoneVolumePercent { get; set; }
-    public bool? MicrophoneMute { get; set; }
-    public bool? HapticEnabled { get; set; }
-    public int? AutoShutdownMinutes { get; set; }
-
-    internal void ApplySafeDefaults()
-    {
-        MouseProfileSettings.ValidatePercent(VolumePercent, nameof(VolumePercent));
-        MouseProfileSettings.ValidatePercent(MicrophoneVolumePercent, nameof(MicrophoneVolumePercent));
-        MouseProfileSettings.ValidatePercent(GameChatBalance, nameof(GameChatBalance));
-        if (AutoShutdownMinutes is < 0)
-        {
-            throw new InvalidDataException("Headset auto-shutdown minutes cannot be negative.");
-        }
-    }
-}
-
 public sealed class CoolingPadProfileSettings
 {
     public string? FanMode { get; set; }
     public int? FanTargetRpm { get; set; }
     public BladeFanCurveProfile? FanCurve { get; set; }
+    public bool? LightingEnabled { get; set; }
+    public string? LightingEffect { get; set; }
+    public Dictionary<string, string>? LightingParameters { get; set; }
+    public bool? PowerEnabled { get; set; }
 
     internal void ApplySafeDefaults()
     {
-        if (FanTargetRpm is < 0)
+        if (FanTargetRpm is < 0 or > 2600 || (FanTargetRpm is > 0 and < 150) ||
+            (FanTargetRpm is > 0 && FanTargetRpm % 50 != 0))
         {
-            throw new InvalidDataException("Cooling pad fan target cannot be negative.");
+            throw new InvalidDataException("Cooling pad fan target must be 0 or 150-2600 RPM in 50 RPM steps.");
         }
         FanCurve?.ApplySafeDefaults();
-    }
-}
-
-public sealed class GamepadProfileSettings
-{
-    public int? PollingRateHertz { get; set; }
-    public int? VibrationStrengthPercent { get; set; }
-    public string? MappingPreset { get; set; }
-
-    internal void ApplySafeDefaults()
-    {
-        if (PollingRateHertz is <= 0)
-        {
-            throw new InvalidDataException("Gamepad polling rate must be positive.");
-        }
-        MouseProfileSettings.ValidatePercent(VibrationStrengthPercent, nameof(VibrationStrengthPercent));
+        LightingParameters = LightingParameters is null
+            ? null
+            : ProfileDictionary.Normalize(LightingParameters);
     }
 }
 

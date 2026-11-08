@@ -430,20 +430,45 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                     cancellationToken);
             }, cancellationToken);
 
-    [ProfileSetting("keyboard.fn-primary", DeviceCategory.Keyboard)]
+    [NotProfileScoped]
     public Task SetFnPrimaryAsync(bool fnFunctionsArePrimary, CancellationToken cancellationToken = default) =>
         RunWriteAsync(RazerHidBackendCapability.FnPrimaryWrite,
             () => IsFnBusy, value => IsFnBusy = value,
             async () =>
             {
-                var previous = ReadProfile(settings => settings.Keyboard.FnKeyPrimary);
                 await _service.SetFnPrimaryAsync(Connection, fnFunctionsArePrimary, cancellationToken);
-                await SaveProfileAsync(
-                    settings => settings.Keyboard.FnKeyPrimary = fnFunctionsArePrimary,
-                    settings => settings.Keyboard.FnKeyPrimary = previous,
-                    null,
-                    token => _service.SetFnPrimaryAsync(Connection, previous ?? !fnFunctionsArePrimary, token),
-                    cancellationToken);
+                var settings = _getMachineSettings?.Invoke();
+                if (settings is null || _saveMachineSettingsAsync is null)
+                {
+                    return;
+                }
+
+                var previous = settings.FnKeyPrimary;
+                settings.FnKeyPrimary = fnFunctionsArePrimary;
+                try
+                {
+                    if (!await _saveMachineSettingsAsync(cancellationToken))
+                    {
+                        throw new InvalidOperationException(
+                            AppStrings.Text("RazerHidSettingProfileSaveFailed"));
+                    }
+                }
+                catch
+                {
+                    settings.FnKeyPrimary = previous;
+                    try
+                    {
+                        await _service.SetFnPrimaryAsync(
+                            Connection,
+                            previous ?? !fnFunctionsArePrimary,
+                            CancellationToken.None);
+                    }
+                    catch
+                    {
+                        // The save failure is the error the user must see.
+                    }
+                    throw;
+                }
             },
             cancellationToken);
 

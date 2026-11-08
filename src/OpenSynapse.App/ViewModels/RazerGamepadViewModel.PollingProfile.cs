@@ -1,4 +1,6 @@
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.App.ViewModels;
@@ -71,11 +73,14 @@ public sealed partial class RazerGamepadViewModel
         }
     }
 
+    [ProfileSetting("gamepad.polling-rate", DeviceCategory.Gamepad)]
     public async Task ApplyPollingProfileAsync(CancellationToken cancellationToken = default)
     {
         if (!BeginOperation()) return;
+        RazerGamepadPollingProfileState? previous = null;
         try
         {
+            previous = await _service.ReadPollingProfileAsync(cancellationToken);
             if (ProfileVisibility == Visibility.Visible && _profileIds.Count > 0)
             {
                 var selected = _profileIds[SelectedProfileIndex];
@@ -87,8 +92,16 @@ public sealed partial class RazerGamepadViewModel
             }
             if (PollingVisibility == Visibility.Visible && PollingRates.Count > 0)
             {
-                await _service.SetPollingRateAsync(
-                    PollingRates[SelectedPollingIndex], cancellationToken);
+                var hertz = PollingRates[SelectedPollingIndex];
+                await _service.SetPollingRateAsync(hertz, cancellationToken);
+                if (!await SaveProfileAsync(
+                        profile => profile.PollingRateHertz = hertz,
+                        cancellationToken))
+                {
+                    await RestorePollingProfileAsync(previous);
+                    PollingProfileStatusText = "profile save failed";
+                    return;
+                }
             }
 
             await LoadPollingProfileCoreAsync(cancellationToken);

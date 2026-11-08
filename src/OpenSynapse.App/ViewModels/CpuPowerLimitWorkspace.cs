@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.App.ViewModels;
@@ -27,12 +28,18 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
     private bool _isRefreshingCpuPowerLimit;
     private readonly Func<bool> _isBusy;
     private readonly Func<string, Func<Task>, CancellationToken, Action?, Task> _runOperation;
+    private readonly Func<BladeProfileSettings> _getProfileSettings;
+    private readonly Func<CancellationToken, Task<bool>> _saveProfileAsync;
 
     internal CpuPowerLimitWorkspace(Func<bool> isBusy,
-        Func<string, Func<Task>, CancellationToken, Action?, Task> runOperation)
+        Func<string, Func<Task>, CancellationToken, Action?, Task> runOperation,
+        Func<BladeProfileSettings> getProfileSettings,
+        Func<CancellationToken, Task<bool>> saveProfileAsync)
     {
         _isBusy = isBusy;
         _runOperation = runOperation;
+        _getProfileSettings = getProfileSettings;
+        _saveProfileAsync = saveProfileAsync;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -149,6 +156,7 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
         }
     }
 
+    [ProfileSetting("blade.cpu-power-limit", DeviceCategory.Laptop, powerScoped: true)]
     public async Task ApplyCpuPowerLimitAsync(CancellationToken cancellationToken = default)
     {
         var requestedIndex = _cpuPowerLimitIndex;
@@ -157,6 +165,9 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
             return;
         }
 
+        var target = _getProfileSettings();
+        var previousProfile = target.CpuPowerLimitWatts;
+        var previousIndex = _cpuPowerLimitIndex;
         await _runOperation(
             AppStrings.Text("CpuPowerLimitTitle"),
             async () =>
@@ -166,14 +177,34 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
                         CpuPowerBaselineStore.Instance.Current,
                         cancellationToken)
                     : await ApplyCpuPowerLimitPresetAsync(requestedIndex, cancellationToken);
-                PublishCpuPowerLimit(report);
                 if (report.Availability != CpuPowerLimitAvailability.Available)
                 {
+                    PublishCpuPowerLimit(report);
                     throw new InvalidOperationException(
                         CpuPowerLimitDetailText is { Length: > 0 } reason
                             ? reason
                             : AppStrings.Text("CpuPowerLimitUnavailable"));
                 }
+
+                target.CpuPowerLimitWatts = requestedIndex == 0
+                    ? 0
+                    : (int)Math.Round(report.Pl1Watts, MidpointRounding.AwayFromZero);
+                try
+                {
+                    if (!await _saveProfileAsync(cancellationToken))
+                    {
+                        throw new InvalidOperationException(
+                            AppStrings.Text("CpuPowerLimitUnavailable"));
+                    }
+                }
+                catch
+                {
+                    target.CpuPowerLimitWatts = previousProfile;
+                    await RestorePowerPresetAsync(previousIndex);
+                    throw;
+                }
+
+                PublishCpuPowerLimit(report);
             },
             cancellationToken,
             () => RestoreCpuPowerLimitIndex(requestedIndex));
@@ -223,6 +254,27 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
                 CpuPowerLimit.MinimumTimeSeconds,
                 CpuPowerLimit.MaximumTimeSeconds),
             cancellationToken);
+    }
+
+    private static async Task RestorePowerPresetAsync(int index)
+    {
+        if (index < 0)
+        {
+            return;
+        }
+
+        try
+        {
+            _ = index == 0
+                ? await CpuPowerLimitBroker.RestoreAsync(
+                    CpuPowerBaselineStore.Instance.Current,
+                    CancellationToken.None)
+                : await ApplyCpuPowerLimitPresetAsync(index, CancellationToken.None);
+        }
+        catch
+        {
+            // The save failure is the error the caller must see.
+        }
     }
 
     private void PublishCpuPowerLimit(CpuPowerLimitReport report)

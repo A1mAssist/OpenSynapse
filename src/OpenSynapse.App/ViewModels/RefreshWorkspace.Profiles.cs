@@ -29,7 +29,9 @@ public sealed partial class RefreshWorkspace
             cancellationToken,
             applyKeyboardBrightness: IsDisplayAvailable,
             coolingPadConnected: _blade.CoolingPadConnected,
-            padlessHyperBoostAccepted: _blade.PadlessHyperBoostAccepted);
+            padlessHyperBoostAccepted: _blade.PadlessHyperBoostAccepted,
+            displayController: _display.Controller,
+            applyBladeTuningAsync: _blade.ApplyProfileTuningAsync);
         if (_razerHidProfileApplier is null)
         {
             return result;
@@ -76,6 +78,30 @@ public sealed partial class RefreshWorkspace
         catch (Exception exception)
         {
             _diagnosticLog.TryWrite("ble", $"profile apply failed: {exception.Message}");
+        }
+    }
+
+    [NotProfileScoped]
+    private async Task ApplyAccessoryProfilesAsync(
+        PowerSourceKind powerState,
+        CancellationToken cancellationToken)
+    {
+        if (_applyAccessoryProfiles is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _applyAccessoryProfiles(powerState, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _diagnosticLog.TryWrite("profile", $"accessory profile apply failed: {exception.Message}");
         }
     }
 }

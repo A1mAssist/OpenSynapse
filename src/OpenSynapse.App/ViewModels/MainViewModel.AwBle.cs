@@ -73,7 +73,9 @@ public sealed partial class MainViewModel
         _selectedAwBleHeadsetRow = row;
         SelectedAwBleHeadset = new RazerAwBleHeadsetViewModel(
             row.Device,
-            message => _diagnosticLog.TryWrite("aw-ble", message));
+            message => _diagnosticLog.TryWrite("aw-ble", message),
+            () => _profile,
+            SaveProfileAsync);
         await SelectedAwBleHeadset.LoadAsync(cancellationToken);
     }
 }

@@ -182,6 +182,7 @@ public sealed partial class RazerBleProfileApplier
         HapticMaskTime = First(power?.HapticMaskTime, device?.HapticMaskTime, global?.HapticMaskTime),
         HapticLevel = First(power?.HapticLevel, device?.HapticLevel, global?.HapticLevel),
         DpiStages = power?.DpiStages ?? device?.DpiStages ?? global?.DpiStages,
+        ButtonMappings = power?.ButtonMappings ?? device?.ButtonMappings ?? global?.ButtonMappings,
     };
 
     private static T? First<T>(T? power, T? device, T? global)

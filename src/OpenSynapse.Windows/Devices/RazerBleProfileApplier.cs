@@ -79,6 +79,10 @@ public sealed partial class RazerBleProfileApplier : IDeviceProfileApplier
         await ApplySnapTapAsync(service, settings, results, cancellationToken);
         await ApplyDebounceAsync(service, settings, results, cancellationToken);
         await ApplyLightingAsync(service, lighting, results, cancellationToken);
+        if (settings.ButtonMappings is { Count: > 0 } mappings)
+        {
+            await ApplyButtonMappingsAsync(service, mappings, results, cancellationToken);
+        }
 
         var status = results.Any(item => item.Status == ProfileSettingApplyStatus.Failed)
             ? ProfileDeviceApplyStatus.Failed
@@ -456,6 +460,50 @@ public sealed partial class RazerBleProfileApplier : IDeviceProfileApplier
         catch (Exception exception)
         {
             results.Add(Failed(key, exception));
+        }
+    }
+
+    private static async Task ApplyButtonMappingsAsync(
+        RazerBleDeviceService service,
+        IReadOnlyCollection<ButtonMappingProfile> mappings,
+        List<ProfileSettingApplyResult> results,
+        CancellationToken cancellationToken)
+    {
+        foreach (var mapping in mappings)
+        {
+            var mode = mapping.Mode ?? 0;
+            var key = $"mapping.{mode}.{mapping.ButtonId}";
+            if (mapping.FunctionId is not { } functionId)
+            {
+                results.Add(new ProfileSettingApplyResult(
+                    key, ProfileSettingApplyStatus.Skipped,
+                    "The mapping has no raw assignment to apply."));
+                continue;
+            }
+
+            try
+            {
+                var current = await service.GetButtonAssignmentAsync(
+                    mapping.ButtonId, mode, cancellationToken);
+                var data = mapping.FunctionData?.ToArray() ?? [];
+                if (current.FunctionId == functionId && current.Data.SequenceEqual(data))
+                {
+                    results.Add(Applied(key));
+                    continue;
+                }
+
+                await service.SetButtonAssignmentAsync(
+                    mapping.ButtonId, mode, functionId, data, cancellationToken);
+                results.Add(Applied(key));
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                results.Add(Failed(key, exception));
+            }
         }
     }
 

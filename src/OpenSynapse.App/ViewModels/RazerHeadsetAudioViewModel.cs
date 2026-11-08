@@ -4,6 +4,8 @@ using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Audio;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Audio;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
@@ -241,14 +243,22 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     public RazerHeadsetAudioViewModel(
         RazerHeadsetAudioConnection connection,
         Action<string>? diagnostic = null,
-        RazerHidKrakenViewModel? lighting = null)
+        RazerHidKrakenViewModel? lighting = null,
+        Func<ProfileDocument>? getActiveProfile = null,
+        Func<CancellationToken, Task<bool>>? saveProfileAsync = null)
     {
         _connection = connection;
         _diagnostic = diagnostic;
         Lighting = lighting;
+        _getActiveProfile = getActiveProfile;
+        _saveProfileAsync = saveProfileAsync;
         if (IsMixer053E)
         {
-            Mixer053E = new RazerMixer053EViewModel(connection.DevicePath, diagnostic);
+            Mixer053E = new RazerMixer053EViewModel(
+                connection.DevicePath,
+                diagnostic,
+                getActiveProfile,
+                saveProfileAsync);
         }
 
         if (ThxHeadsetAdmission.IsSupported(connection.ProductId))
@@ -812,6 +822,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             {
                 ApplyMatrixLighting(await OpenChromaService().ReadStateAsync(cancellationToken));
             }
+            await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
 
             ErrorText = state.Errors.Count > 0 && !HasAnyValue(state) && !_hasLighting
                 ? AppStrings.Text("RazerHeadsetReadFailed")
@@ -840,33 +851,88 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         OnPropertyChanged(nameof(CapabilityText));
     }
 
-    public Task ApplyThxSpatialAsync(CancellationToken cancellationToken = default) =>
-        RunThxAsync(
-            (controller, token) => controller.SetSpatialAsync(
-                ThxAudioEndpoint.Headphones, ThxSpatialEnabled, token),
-            cancellationToken);
-
-    public Task ApplyThxPresetAsync(CancellationToken cancellationToken = default)
+    [ProfileSetting("headset.thx.spatial", DeviceCategory.Headset, powerScoped: true)]
+    public async Task ApplyThxSpatialAsync(CancellationToken cancellationToken = default)
     {
-        if (_thxState?.Presets.ElementAtOrDefault(SelectedThxPresetIndex) is not { } preset)
+        var previous = ThxSpatialEnabled;
+        if (!await RunThxAsync(
+                (controller, token) => controller.SetSpatialAsync(
+                    ThxAudioEndpoint.Headphones, ThxSpatialEnabled, token),
+                cancellationToken))
         {
-            return Task.CompletedTask;
+            return;
         }
-        var gains = preset.Id == "default"
-            ? Enumerable.Repeat(0d, ThxBands.Count).ToArray()
-            : ThxBands.Select(band => band.Level).ToArray();
-        return RunThxAsync(
-            (controller, token) => controller.SelectPresetAsync(
-                ThxAudioEndpoint.Headphones, preset.Id, gains, token),
+
+        await SaveHeadsetSettingAsync(
+            settings => settings.ThxSpatialEnabled = ThxSpatialEnabled,
+            settings => settings.ThxSpatialEnabled = previous,
+            () => ThxSpatialEnabled = previous,
+            async token => await ThxController.SetSpatialAsync(
+                ThxAudioEndpoint.Headphones, previous, token),
             cancellationToken);
     }
 
-    public Task ApplyThxBandsAsync(CancellationToken cancellationToken = default)
+    [ProfileSetting("headset.thx.preset", DeviceCategory.Headset, powerScoped: true)]
+    public async Task ApplyThxPresetAsync(CancellationToken cancellationToken = default)
     {
+        if (_thxState?.Presets.ElementAtOrDefault(SelectedThxPresetIndex) is not { } preset)
+        {
+            return;
+        }
+        var previousIndex = SelectedThxPresetIndex;
+        var previousPreset = _thxState.Presets.ElementAtOrDefault(previousIndex);
+        var previousGains = ThxBands.Select(band => band.Level).ToArray();
+        var gains = preset.Id == "default"
+            ? Enumerable.Repeat(0d, ThxBands.Count).ToArray()
+            : ThxBands.Select(band => band.Level).ToArray();
+        if (!await RunThxAsync(
+                (controller, token) => controller.SelectPresetAsync(
+                    ThxAudioEndpoint.Headphones, preset.Id, gains, token),
+                cancellationToken))
+        {
+            return;
+        }
+
+        await SaveHeadsetSettingAsync(
+            settings => settings.ThxPreset = preset.Id,
+            settings => settings.ThxPreset = previousPreset?.Id,
+            () => SelectedThxPresetIndex = previousIndex,
+            async token =>
+            {
+                if (previousPreset is not null)
+                {
+                    await ThxController.SelectPresetAsync(
+                        ThxAudioEndpoint.Headphones, previousPreset.Id, previousGains, token);
+                }
+            },
+            cancellationToken);
+    }
+
+    [ProfileSetting("headset.thx.bands", DeviceCategory.Headset, powerScoped: true)]
+    public async Task ApplyThxBandsAsync(CancellationToken cancellationToken = default)
+    {
+        var previous = ThxBands.Select(band => band.Level).ToArray();
         var gains = ThxBands.Select(band => band.Level).ToArray();
-        return RunThxAsync(
-            (controller, token) => controller.SetGainsAsync(
-                ThxAudioEndpoint.Headphones, gains, token),
+        if (!await RunThxAsync(
+                (controller, token) => controller.SetGainsAsync(
+                    ThxAudioEndpoint.Headphones, gains, token),
+                cancellationToken))
+        {
+            return;
+        }
+
+        await SaveHeadsetSettingAsync(
+            settings => settings.ThxBands = ToBandMap(ThxBands.Select(band => band.Level)),
+            settings => settings.ThxBands = ToBandMap(previous),
+            () =>
+            {
+                for (var index = 0; index < previous.Length && index < ThxBands.Count; index++)
+                {
+                    ThxBands[index].Level = previous[index];
+                }
+            },
+            async token => await ThxController.SetGainsAsync(
+                ThxAudioEndpoint.Headphones, previous, token),
             cancellationToken);
     }
 
@@ -875,6 +941,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     /// the headset firmware. Synapse 4 keeps spatial on for the Kitty and uses a
     /// different Game curve, so restore both halves of the old baseline.
     /// </summary>
+    [NotProfileScoped]
     public async Task ApplyS3BaselineAsync(CancellationToken cancellationToken = default)
     {
         if (!SupportsS3Baseline(_connection.ProductId) || !CanApplyThx) return;
@@ -949,11 +1016,11 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         }
     }
 
-    private async Task RunThxAsync(
+    private async Task<bool> RunThxAsync(
         Func<WindowsThxHeadsetController, CancellationToken, Task<ThxAudioStatus>> action,
         CancellationToken cancellationToken)
     {
-        if (!CanApplyThx || !BeginOperation()) return;
+        if (!CanApplyThx || !BeginOperation()) return false;
         try
         {
             var status = await action(ThxController, cancellationToken).ConfigureAwait(true);
@@ -962,14 +1029,17 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             OperationStatusText = status.IsAvailable
                 ? AppStrings.Text("BlackSharkSaved")
                 : string.Empty;
+            return status.IsAvailable;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            return false;
         }
         catch (Exception exception) when (IsExpectedException(exception))
         {
             _thxErrorText = exception.Message;
             OperationStatusText = string.Empty;
+            return false;
         }
         finally
         {
@@ -1056,104 +1126,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         OnPropertyChanged(nameof(ThxSidetoneVisibility));
     }
 
-    public Task ApplyEqPresetAsync(CancellationToken cancellationToken = default)
-    {
-        if (IsKrakenBase) return Task.CompletedTask;
-        var preset = ActivePresets[SelectedEqPresetIndex].Value;
-        return _connection.Transport switch
-        {
-            RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64 =>
-                RunMxicWriteAsync((service, token) => service.SetEqPresetAsync(preset, token), cancellationToken),
-            RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
-                RunValkyrieWriteAsync((service, token) => service.SetEqPresetAsync(preset, token), cancellationToken),
-            _ => RunWriteAsync((service, token) => service.SetEqPresetAsync(preset, token), cancellationToken),
-        };
-    }
-
-    public async Task ApplyEqBandsAsync(CancellationToken cancellationToken = default)
-    {
-        var bands = EqBands.Select(band => ToFirmwareBand(band.Level)).ToArray();
-        var customIndex = Array.FindIndex(ActivePresets, preset => preset.Key == "RazerHeadsetPresetCustom");
-        var customPreset = customIndex >= 0 ? ActivePresets[customIndex].Value : (byte)0;
-        var applied = false;
-        switch (bands.Length)
-        {
-            case 10 when IsT3:
-                applied = await RunMxicWriteAsync((service, token) => service.SetEqBandsAsync(bands, token), cancellationToken);
-                break;
-            case 10 when IsMxic:
-                // The firmware only makes the edited curve audible when the selected preset
-                // is Custom; write that selection before the ten values, as Razer's UI does.
-                applied = await RunMxicWriteAsync((service, token) => service.SetCustomEqAsync(customPreset, bands, token), cancellationToken);
-                break;
-            case 10 when IsValkyrie:
-                applied = await RunValkyrieWriteAsync((service, token) => service.SetCustomEqAsync(customPreset, bands, token), cancellationToken);
-                break;
-            case 10 or 8 when IsFeature91:
-                applied = await RunWriteAsync((service, token) => service.SetCustomEqAsync(customPreset, bands, token), cancellationToken);
-                break;
-            default:
-                return;
-        }
-
-        if (applied && customIndex >= 0)
-        {
-            SelectedEqPresetIndex = customIndex;
-        }
-    }
-
-    public Task ApplyMatrixBrightnessAsync(CancellationToken cancellationToken = default) =>
-        RunChromaWriteAsync(
-            (service, token) => service.SetBrightnessAsync((byte)Math.Round(Brightness), token),
-            cancellationToken);
-
-    public Task ApplyMatrixLightingAsync(CancellationToken cancellationToken = default) =>
-        RunChromaWriteAsync(async (service, token) =>
-        {
-            var effect = LightingEffects[SelectedLightingEffectIndex];
-            var colors = effect switch
-            {
-                RazerChromaEffect.Static => new byte[] { PrimaryColor.R, PrimaryColor.G, PrimaryColor.B },
-                RazerChromaEffect.Breathing =>
-                    [PrimaryColor.R, PrimaryColor.G, PrimaryColor.B, SecondaryColor.R, SecondaryColor.G, SecondaryColor.B],
-                _ => [],
-            };
-            await service.SetEffectAsync(effect, colors, token);
-        }, cancellationToken);
-
-    public Task ApplyBassAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91
-            ? Task.CompletedTask
-            : RunWriteAsync((service, token) => service.SetBassAsync((byte)Math.Round(Bass), token), cancellationToken);
-
-    public Task ApplyMicrophoneAsync(CancellationToken cancellationToken = default) =>
-        _connection.Transport switch
-        {
-            RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64 =>
-                RunMxicWriteAsync((service, token) => service.SetMicMuteAsync(MicMuted, token), cancellationToken),
-            RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
-                RunValkyrieWriteAsync((service, token) => service.SetMicMuteAsync(MicMuted, token), cancellationToken),
-            _ => RunWriteAsync(async (service, token) =>
-            {
-                await service.SetMicMuteAsync(MicMuted, token);
-                await service.SetMicVolumeAsync((byte)Math.Round(MicVolume), token);
-            }, cancellationToken),
-        };
-
-    public Task ApplySourceAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91
-            ? Task.CompletedTask
-            : RunWriteAsync(
-                (service, token) => service.SetAudioSourceAsync(Sources[SelectedSourceIndex], token),
-                cancellationToken);
-
-    public Task ApplyMicMonitoringAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91
-            ? Task.CompletedTask
-            : RunWriteAsync(
-                (service, token) => service.SetMicReturnSwitchAsync(MicMonitoringEnabled, token),
-                cancellationToken);
-
     public async Task LoadParametricEqAsync(CancellationToken cancellationToken = default)
     {
         if (!IsFeature91 || !BeginOperation()) return;
@@ -1184,137 +1156,53 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         }
     }
 
-    public Task ApplyParametricEqAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91
-            ? Task.CompletedTask
-            : RunWriteAsync(
-                (service, token) => service.SetParametricEqAsync(
-                    new RazerParametricEqBand(
-                        _parametricEqProfile,
-                        _parametricEqDirection,
-                        (byte)ParametricEqBandIndex,
-                        ParametricEqEnabled ? (byte)1 : (byte)0,
-                        (ushort)Math.Round(ParametricEqFrequency),
-                        (sbyte)Math.Round(ParametricEqGain),
-                        (byte)Math.Round(ParametricEqQ),
-                        _parametricEqFilterType),
-                    token),
-                cancellationToken);
+    [ProfileSetting("headset.noise-suppression", DeviceCategory.Headset, powerScoped: true)]
+    public async Task ApplyNoiseSuppressionAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsFeature91) return;
+        var previous = NoiseSuppression;
+        if (!await RunWriteAsync((service, token) => service.SetNoiseSuppressionAsync(NoiseSuppression, token), cancellationToken)) return;
+        await SaveSettingAsync(previous, NoiseSuppression, value => NoiseSuppression = value,
+            (settings, value) => settings.NoiseSuppression = value,
+            token => OpenService().SetNoiseSuppressionAsync(previous, token), cancellationToken);
+    }
 
-    public Task ApplyMicCompressorAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91
-            ? Task.CompletedTask
-            : RunWriteAsync(
-                (service, token) => service.SetMicCompressorAsync(
-                    new RazerMicCompressor(
-                        _micCompressorProfile,
-                        MicCompressorEnabled ? (byte)1 : (byte)0,
-                        (sbyte)Math.Round(MicCompressorDb),
-                        (ushort)Math.Round(MicCompressorRatio),
-                        (ushort)Math.Round(MicCompressorAttack),
-                        (ushort)Math.Round(MicCompressorRelease)),
-                    token),
-                cancellationToken);
-
-    public Task ApplyHapticsAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91
-            ? Task.CompletedTask
-            : RunWriteAsync(
-                (service, token) => service.SetHapticsAsync(
-                    HapticsEnabled, (ushort)Math.Round(HapticsStrength), token),
-                cancellationToken);
-
-    public Task ApplyAdvancedAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91 ? Task.CompletedTask : RunWriteAsync(async (service, token) =>
+    [ProfileSetting("headset.anc", DeviceCategory.Headset, powerScoped: true)]
+    public async Task ApplyAncAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsFeature91 && !IsKrakenBase) return;
+        var previousIndex = SelectedAncIndex;
+        var previousLevel = AncLevel;
+        if (!await RunWriteAsync(
+                (service, token) => service.SetAncAsync(
+                    DeviceAncStates[SelectedAncIndex], (byte)Math.Round(AncLevel), token),
+                cancellationToken))
         {
-            if (_hasDnd) await service.SetAudioDndAsync(Dnd, token);
-            if (_hasAutoPause) await service.SetAudioAutoPauseAsync(AutoPause, token);
-            if (_hasGestureControl) await service.SetAudioGestureControlAsync(GestureControl, token);
-            if (_hasDolby) await service.SetDolbyStateAsync(Dolby, token);
-            if (_hasNightMode) await service.SetEqNightModeAsync(NightMode, token);
-            if (_hasVoicePrompts) await service.SetAudioVoicePromptsAsync(VoicePrompts, cancellationToken: token);
-        }, cancellationToken);
+            return;
+        }
 
-    public Task ApplyMicProcessingAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91 ? Task.CompletedTask : RunWriteAsync(async (service, token) =>
-        {
-            if (_hasMicDeEsser) await service.SetMicDeEsserAsync((byte)Math.Round(MicDeEsser), token);
-            if (_hasMicLimiter) await service.SetMicLimiterAsync((sbyte)Math.Round(MicLimiterDb), token);
-            if (_hasMicReverb) await service.SetMicReverbAsync(MicReverbModes[SelectedMicReverbIndex], (byte)Math.Round(MicReverbIntensity), token);
-        }, cancellationToken);
-
-    public Task ApplyDndAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91
-            ? Task.CompletedTask
-            : RunWriteAsync((service, token) => service.SetAudioDndAsync(Dnd, token), cancellationToken);
-
-    public Task ApplyAutoPauseAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91
-            ? Task.CompletedTask
-            : RunWriteAsync((service, token) => service.SetAudioAutoPauseAsync(AutoPause, token), cancellationToken);
-
-    public Task ApplyGestureControlAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91
-            ? Task.CompletedTask
-            : RunWriteAsync(
-                (service, token) => service.SetAudioGestureControlAsync(GestureControl, token),
-                cancellationToken);
-
-    public Task ApplyDolbyAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91
-            ? Task.CompletedTask
-            : RunWriteAsync((service, token) => service.SetDolbyStateAsync(Dolby, token), cancellationToken);
-
-    public Task ApplyNightModeAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91
-            ? Task.CompletedTask
-            : RunWriteAsync((service, token) => service.SetEqNightModeAsync(NightMode, token), cancellationToken);
-
-    public Task ApplyVoicePromptsAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91
-            ? Task.CompletedTask
-            : RunWriteAsync(
-                (service, token) => service.SetAudioVoicePromptsAsync(
-                    VoicePrompts, cancellationToken: token),
-                cancellationToken);
-
-    public Task ApplyMicDeEsserAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91
-            ? Task.CompletedTask
-            : RunWriteAsync(
-                (service, token) => service.SetMicDeEsserAsync(
-                    (byte)Math.Round(MicDeEsser), token),
-                cancellationToken);
-
-    public Task ApplyMicLimiterAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91
-            ? Task.CompletedTask
-            : RunWriteAsync(
-                (service, token) => service.SetMicLimiterAsync(
-                    (sbyte)Math.Round(MicLimiterDb), token),
-                cancellationToken);
-
-    public Task ApplyMicReverbAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91
-            ? Task.CompletedTask
-            : RunWriteAsync(
-                (service, token) => service.SetMicReverbAsync(
-                    MicReverbModes[SelectedMicReverbIndex],
-                    (byte)Math.Round(MicReverbIntensity),
-                    token),
-                cancellationToken);
-
-    public Task ApplyNoiseSuppressionAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91
-            ? Task.CompletedTask
-            : RunWriteAsync((service, token) => service.SetNoiseSuppressionAsync(NoiseSuppression, token), cancellationToken);
-
-    public Task ApplyAncAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91 && !IsKrakenBase
-            ? Task.CompletedTask
-            : RunWriteAsync(
-                (service, token) => service.SetAncAsync(DeviceAncStates[SelectedAncIndex], (byte)Math.Round(AncLevel), token),
-                cancellationToken);
+        await SaveHeadsetSettingAsync(
+            settings =>
+            {
+                settings.AncModeIndex = SelectedAncIndex;
+                settings.AncEnabled = DeviceAncStates[SelectedAncIndex] != RazerAncState.Off;
+                settings.AncLevel = (int)Math.Round(AncLevel);
+            },
+            settings =>
+            {
+                settings.AncModeIndex = previousIndex;
+                settings.AncEnabled = DeviceAncStates[previousIndex] != RazerAncState.Off;
+                settings.AncLevel = (int)Math.Round(previousLevel);
+            },
+            () =>
+            {
+                SelectedAncIndex = previousIndex;
+                AncLevel = previousLevel;
+            },
+            token => OpenService().SetAncAsync(
+                DeviceAncStates[previousIndex], (byte)Math.Round(previousLevel), token),
+            cancellationToken);
+    }
 
     public void RefreshLocalization()
     {

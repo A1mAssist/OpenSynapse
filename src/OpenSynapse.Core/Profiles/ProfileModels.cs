@@ -220,6 +220,9 @@ public sealed class ProfileSettings
     public HeadsetProfileSettings Headset { get; set; } = new();
     public CoolingPadProfileSettings CoolingPad { get; set; } = new();
     public GamepadProfileSettings Gamepad { get; set; } = new();
+    public ChromaProfileSettings Chroma { get; set; } = new();
+    public MixerProfileSettings Mixer { get; set; } = new();
+    public KiyoProfileSettings Kiyo { get; set; } = new();
     public DisplayProfileSettings Display { get; set; } = new();
     public LightingProfile Lighting { get; set; } = new();
     public Dictionary<string, LightingProfile> LightingZones { get; set; } =
@@ -233,6 +236,9 @@ public sealed class ProfileSettings
         Headset ??= new HeadsetProfileSettings();
         CoolingPad ??= new CoolingPadProfileSettings();
         Gamepad ??= new GamepadProfileSettings();
+        Chroma ??= new ChromaProfileSettings();
+        Mixer ??= new MixerProfileSettings();
+        Kiyo ??= new KiyoProfileSettings();
         Display ??= new DisplayProfileSettings();
         Lighting ??= new LightingProfile();
         LightingZones = ProfileDictionary.Normalize(LightingZones);
@@ -242,6 +248,9 @@ public sealed class ProfileSettings
         Headset.ApplySafeDefaults();
         CoolingPad.ApplySafeDefaults();
         Gamepad.ApplySafeDefaults();
+        Chroma.ApplySafeDefaults();
+        Mixer.ApplySafeDefaults();
+        Kiyo.ApplySafeDefaults();
         Display.ApplySafeDefaults();
         Lighting.ApplySafeDefaults();
         foreach (var zone in LightingZones.Values)
@@ -260,6 +269,9 @@ public sealed class DeviceProfileSettings
     public HeadsetProfileSettings Headset { get; set; } = new();
     public CoolingPadProfileSettings CoolingPad { get; set; } = new();
     public GamepadProfileSettings Gamepad { get; set; } = new();
+    public ChromaProfileSettings Chroma { get; set; } = new();
+    public MixerProfileSettings Mixer { get; set; } = new();
+    public KiyoProfileSettings Kiyo { get; set; } = new();
     public DisplayProfileSettings Display { get; set; } = new();
     public LightingProfile Lighting { get; set; } = new();
     public Dictionary<string, LightingProfile> LightingZones { get; set; } =
@@ -279,6 +291,9 @@ public sealed class DeviceProfileSettings
         Headset ??= new HeadsetProfileSettings();
         CoolingPad ??= new CoolingPadProfileSettings();
         Gamepad ??= new GamepadProfileSettings();
+        Chroma ??= new ChromaProfileSettings();
+        Mixer ??= new MixerProfileSettings();
+        Kiyo ??= new KiyoProfileSettings();
         Display ??= new DisplayProfileSettings();
         Lighting ??= new LightingProfile();
         LightingZones = ProfileDictionary.Normalize(LightingZones);
@@ -289,6 +304,9 @@ public sealed class DeviceProfileSettings
         Headset.ApplySafeDefaults();
         CoolingPad.ApplySafeDefaults();
         Gamepad.ApplySafeDefaults();
+        Chroma.ApplySafeDefaults();
+        Mixer.ApplySafeDefaults();
+        Kiyo.ApplySafeDefaults();
         Display.ApplySafeDefaults();
         Lighting.ApplySafeDefaults();
         foreach (var zone in LightingZones.Values)
@@ -311,6 +329,9 @@ public sealed class PowerProfileOverrides
     public HeadsetProfileSettings Headset { get; set; } = new();
     public CoolingPadProfileSettings CoolingPad { get; set; } = new();
     public GamepadProfileSettings Gamepad { get; set; } = new();
+    public ChromaProfileSettings Chroma { get; set; } = new();
+    public MixerProfileSettings Mixer { get; set; } = new();
+    public KiyoProfileSettings Kiyo { get; set; } = new();
     public DisplayProfileSettings Display { get; set; } = new();
     public LightingProfile Lighting { get; set; } = new();
     public Dictionary<string, LightingProfile> LightingZones { get; set; } =
@@ -333,6 +354,9 @@ public sealed class PowerProfileOverrides
         Headset ??= new HeadsetProfileSettings();
         CoolingPad ??= new CoolingPadProfileSettings();
         Gamepad ??= new GamepadProfileSettings();
+        Chroma ??= new ChromaProfileSettings();
+        Mixer ??= new MixerProfileSettings();
+        Kiyo ??= new KiyoProfileSettings();
         Display ??= new DisplayProfileSettings();
         Lighting ??= new LightingProfile();
         LightingZones = ProfileDictionary.Normalize(LightingZones);
@@ -349,6 +373,9 @@ public sealed class PowerProfileOverrides
         Headset.ApplySafeDefaults();
         CoolingPad.ApplySafeDefaults();
         Gamepad.ApplySafeDefaults();
+        Chroma.ApplySafeDefaults();
+        Mixer.ApplySafeDefaults();
+        Kiyo.ApplySafeDefaults();
         Display.ApplySafeDefaults();
         Lighting.ApplySafeDefaults();
         foreach (var zone in LightingZones.Values)
@@ -383,93 +410,6 @@ public sealed class PowerProfileOverrides
         }
 
         return result;
-    }
-}
-
-public sealed class BladeProfileSettings
-{
-    public const string Product710DefaultMappingPreset = "product710-default";
-
-    public byte? KeyboardBrightness { get; set; }
-    public byte? PerformanceMode { get; set; }
-    public byte? FanMode { get; set; }
-    public int? FanTargetRpm { get; set; }
-    public BladeFanCurveProfile? FanCurve { get; set; }
-    public int? ChargeLimitPercent { get; set; }
-    public int? RefreshRateHertz { get; set; }
-    public byte? MaxFanMode { get; set; }
-    public byte? CpuBoostMode { get; set; }
-    public byte? GpuBoostMode { get; set; }
-    public byte? LogoMode { get; set; }
-    public bool? GamingModeEnabled { get; set; }
-    public bool? SnapTapEnabled { get; set; }
-    public string? MappingPreset { get; set; }
-    public bool? LightingEnabled { get; set; }
-    public bool? ChromaOverrideEnabled { get; set; }
-    public BladeGpuMode? GpuMode { get; set; }
-
-    internal void ApplySafeDefaults()
-    {
-        FanCurve?.ApplySafeDefaults();
-        if (MappingPreset is not null &&
-            !StringComparer.Ordinal.Equals(MappingPreset, Product710DefaultMappingPreset))
-        {
-            throw new InvalidDataException($"Unsupported Blade mapping preset: {MappingPreset}.");
-        }
-    }
-}
-
-public sealed class BladeFanCurveProfile
-{
-    public BladeFanCurveTemperatureMode TemperatureMode { get; set; }
-    public List<BladeFanCurvePoint> CpuPoints { get; set; } = [];
-    public List<BladeFanCurvePoint> GpuPoints { get; set; } = [];
-    public int MinimumCpuTemperatureCelsius { get; set; } =
-        BladeFanCurve.DefaultMinimumCpuTemperatureCelsius;
-    public int MinimumGpuTemperatureCelsius { get; set; } =
-        BladeFanCurve.DefaultMinimumGpuTemperatureCelsius;
-    public int MinimumFanSpeedRpm { get; set; } = BladeFanCurve.DefaultMinimumFanSpeedRpm;
-
-    public BladeFanCurve CreateCurve() => new(
-        TemperatureMode,
-        CpuPoints,
-        GpuPoints,
-        MinimumCpuTemperatureCelsius,
-        MinimumGpuTemperatureCelsius,
-        MinimumFanSpeedRpm);
-
-    public static BladeFanCurveProfile FromCurve(BladeFanCurve curve)
-    {
-        ArgumentNullException.ThrowIfNull(curve);
-        return new()
-        {
-            TemperatureMode = curve.TemperatureMode,
-            CpuPoints = curve.CpuPoints.ToList(),
-            GpuPoints = curve.GpuPoints.ToList(),
-            MinimumCpuTemperatureCelsius = curve.MinimumCpuTemperatureCelsius,
-            MinimumGpuTemperatureCelsius = curve.MinimumGpuTemperatureCelsius,
-            MinimumFanSpeedRpm = curve.MinimumFanSpeedRpm,
-        };
-    }
-
-    internal BladeFanCurveProfile Clone()
-    {
-        ApplySafeDefaults();
-        return new()
-        {
-            TemperatureMode = TemperatureMode,
-            CpuPoints = CpuPoints.ToList(),
-            GpuPoints = GpuPoints.ToList(),
-            MinimumCpuTemperatureCelsius = MinimumCpuTemperatureCelsius,
-            MinimumGpuTemperatureCelsius = MinimumGpuTemperatureCelsius,
-            MinimumFanSpeedRpm = MinimumFanSpeedRpm,
-        };
-    }
-
-    internal void ApplySafeDefaults()
-    {
-        CpuPoints ??= [];
-        GpuPoints ??= [];
     }
 }
 

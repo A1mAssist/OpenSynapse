@@ -27,6 +27,8 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
     private readonly Func<IReadOnlyList<MacroDefinition>> _localMacros;
     private readonly Func<string, MacroInput, MacroTriggerMode, CancellationToken, Task<string?>>?
         _softwareMacroBinder;
+    private readonly Func<MachineSettings> _getMachineSettings;
+    private readonly Func<CancellationToken, Task<bool>> _saveMachineSettingsAsync;
     private readonly Func<CancellationToken, Task> _refreshDevicesAsync;
     private readonly Action _refreshDeviceOverview;
     private readonly Action<string> _setDeviceOperationError;
@@ -54,6 +56,8 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         Func<bool> chromaIntegrationEnabled,
         Func<IReadOnlyList<MacroDefinition>> localMacros,
         Func<string, MacroInput, MacroTriggerMode, CancellationToken, Task<string?>>? softwareMacroBinder,
+        Func<MachineSettings> getMachineSettings,
+        Func<CancellationToken, Task<bool>> saveMachineSettingsAsync,
         Func<CancellationToken, Task> refreshDevicesAsync,
         Action refreshDeviceOverview,
         Action<string> setDeviceOperationError,
@@ -69,6 +73,8 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         _chromaIntegrationEnabled = chromaIntegrationEnabled;
         _localMacros = localMacros;
         _softwareMacroBinder = softwareMacroBinder;
+        _getMachineSettings = getMachineSettings;
+        _saveMachineSettingsAsync = saveMachineSettingsAsync;
         _refreshDevicesAsync = refreshDevicesAsync;
         _refreshDeviceOverview = refreshDeviceOverview;
         _setDeviceOperationError = setDeviceOperationError;
@@ -250,7 +256,11 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
                     StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, selectedKrakenId));
                 SelectedKraken = selectedKraken is null
                     ? null
-                    : new RazerHidKrakenViewModel(_specialLightingService, selectedKraken.Connection);
+                    : new RazerHidKrakenViewModel(
+                        _specialLightingService,
+                        selectedKraken.Connection,
+                        _getProfile,
+                        _saveProfileAsync);
                 if (SelectedKraken is { } kraken)
                 {
                     await kraken.LoadSerialAsync(cancellationToken);
@@ -301,7 +311,11 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         }
         SelectedDevice = null;
         SelectedKraken = new RazerHidKrakenViewModel(
-            _specialLightingService, row.Connection);
+            _specialLightingService,
+            row.Connection,
+            _getProfile,
+            _saveProfileAsync);
+        await SelectedKraken.LoadSerialAsync();
     }
 
     /// <summary>
@@ -352,7 +366,11 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
     {
         if (_specialLightingService is null) return null;
         return _krakenConnections.FirstOrDefault(item => item.ProductId == productId) is { } kraken
-            ? new RazerHidKrakenViewModel(_specialLightingService, kraken)
+            ? new RazerHidKrakenViewModel(
+                _specialLightingService,
+                kraken,
+                _getProfile,
+                _saveProfileAsync)
             : null;
     }
 

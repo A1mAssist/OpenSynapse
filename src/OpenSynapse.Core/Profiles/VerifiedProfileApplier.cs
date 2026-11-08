@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Displays;
 using OpenSynapse.Core.Sensors;
 
 namespace OpenSynapse.Core.Profiles;
@@ -27,7 +28,9 @@ public sealed class VerifiedProfileApplier
         CancellationToken cancellationToken = default,
         bool applyKeyboardBrightness = true,
         bool coolingPadConnected = true,
-        bool padlessHyperBoostAccepted = false)
+        bool padlessHyperBoostAccepted = false,
+        IInternalDisplayController? displayController = null,
+        Func<BladeProfileSettings, CancellationToken, Task<int>>? applyBladeTuningAsync = null)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(devices);
@@ -69,6 +72,12 @@ public sealed class VerifiedProfileApplier
                 deviceErrors.Add($"{label}: {exception.Message}");
             }
         }
+
+        async ValueTask<int> SetTimeToDimAsync(int value, CancellationToken token) =>
+            (await reader.SetBladeTimeToDimAsync(devices, value, token)).Seconds;
+
+        async ValueTask<bool> SetGpuCardDetectionAsync(bool value, CancellationToken token) =>
+            (await reader.SetBladeGpuCardDetectionAsync(devices, value, token)).Enabled;
 
         var blade = devices.FirstOrDefault(device =>
             device.ProtocolFamily is "blade-710" or "blade-671" &&
@@ -188,6 +197,135 @@ public sealed class VerifiedProfileApplier
                             telemetry.BladeMaxFanMode,
                             (value, token) => reader.SetBladeMaxFanModeAsync(devices, value, token));
                     }
+                }
+            }
+
+            if (bladeErrors.Count == 0 && profile.Blade.StartupAnimationEnabled is bool startupAnimation)
+            {
+                await ApplyValueAsync(
+                    bladeErrors,
+                    "Blade startup animation",
+                    startupAnimation,
+                    telemetry.BladeStartupAnimationEnabled,
+                    (value, token) => reader.SetBladeStartupAnimationAsync(devices, value, token));
+            }
+            if (bladeErrors.Count == 0 && profile.Blade.AutoSleepSeconds is int autoSleepSeconds)
+            {
+                await ApplyValueAsync(
+                    bladeErrors,
+                    "Blade auto sleep",
+                    autoSleepSeconds > 0,
+                    telemetry.BladeAutoSleepEnabled,
+                    (value, token) => reader.SetBladeAutoSleepAsync(devices, value, token));
+            }
+            if (bladeErrors.Count == 0 && profile.Blade.TimeToDimSeconds is int timeToDimSeconds)
+            {
+                await ApplyValueAsync(
+                    bladeErrors,
+                    "Blade time to dim",
+                    timeToDimSeconds,
+                    telemetry.BladeTimeToDim?.Seconds,
+                    SetTimeToDimAsync);
+            }
+            if (bladeErrors.Count == 0 && profile.Blade.IndicatorLedEnabled is bool indicatorLed)
+            {
+                await ApplyValueAsync(
+                    bladeErrors,
+                    "Blade indicator LED",
+                    indicatorLed,
+                    telemetry.BladeIndicatorLedEnabled,
+                    (value, token) => reader.SetBladeIndicatorLedAsync(devices, value, token));
+            }
+            if (bladeErrors.Count == 0 && profile.Blade.GpuCardDetectionEnabled is bool gpuCardDetection)
+            {
+                await ApplyValueAsync(
+                    bladeErrors,
+                    "Blade GPU card detection",
+                    gpuCardDetection,
+                    telemetry.BladeGpuCardDetection?.Enabled,
+                    SetGpuCardDetectionAsync);
+            }
+            if (bladeErrors.Count == 0 && profile.Blade.NativeDisplayModeEnabled is bool nativeFullHd)
+            {
+                await ApplyValueAsync(
+                    bladeErrors,
+                    "Blade native display mode",
+                    nativeFullHd ? BladeNativeDisplayMode.Fhd : BladeNativeDisplayMode.Uhd,
+                    telemetry.BladeNativeDisplayMode,
+                    (value, token) => reader.SetBladeNativeDisplayModeAsync(devices, value, token));
+            }
+            if (bladeErrors.Count == 0 && profile.Blade.LocalDimmingEnabled is bool localDimming)
+            {
+                await ApplyValueAsync(
+                    bladeErrors,
+                    "Blade local dimming",
+                    localDimming,
+                    telemetry.BladeLocalDimmingEnabled,
+                    (value, token) => reader.SetBladeLocalDimmingAsync(devices, value, token));
+            }
+            if (bladeErrors.Count == 0 && profile.Blade.CpuPowerBoostMode is byte rawCpuPowerBoost)
+            {
+                if (rawCpuPowerBoost > 1)
+                {
+                    bladeErrors.Add($"Blade CPU power boost value is invalid: {rawCpuPowerBoost}.");
+                }
+                else
+                {
+                    await ApplyValueAsync(
+                        bladeErrors,
+                        "Blade CPU power boost",
+                        rawCpuPowerBoost != 0,
+                        telemetry.BladeCpuPowerBoostEnabled,
+                        (value, token) => reader.SetBladeCpuPowerBoostAsync(devices, value, token));
+                }
+            }
+
+            if (bladeErrors.Count == 0 && applyBladeTuningAsync is not null &&
+                (profile.Blade.GpuCoreClockOffsetMhz is not null ||
+                 profile.Blade.GpuMemoryClockOffsetMhz is not null ||
+                 profile.Blade.GpuCoreClockLimitMhz is not null ||
+                 profile.Blade.CpuCurveOffset is not null ||
+                 profile.Blade.CpuPowerLimitWatts is not null))
+            {
+                try
+                {
+                    applied += await applyBladeTuningAsync(profile.Blade, cancellationToken);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception exception) when (IsExpectedHardwareException(exception))
+                {
+                    bladeErrors.Add($"Blade tuning: {exception.Message}");
+                }
+            }
+
+            if (bladeErrors.Count == 0 && displayController is not null &&
+                profile.Blade.DisplayBrightnessPercent is int displayBrightness)
+            {
+                try
+                {
+                    var current = displayController.Read().BrightnessLevel;
+                    if (current is not double currentLevel)
+                    {
+                        bladeErrors.Add("Blade display brightness was not read back successfully; profile application was skipped.");
+                    }
+                    else if (Math.Abs(currentLevel * 100 - displayBrightness) >= 0.5)
+                    {
+                        await displayController.SetBrightnessAsync(
+                            displayBrightness / 100d,
+                            cancellationToken);
+                        applied++;
+                    }
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception exception) when (IsExpectedHardwareException(exception))
+                {
+                    bladeErrors.Add($"Blade display brightness: {exception.Message}");
                 }
             }
 
@@ -312,6 +450,42 @@ public sealed class VerifiedProfileApplier
                     idleSeconds,
                     telemetry.ViperIdleSeconds,
                     (value, token) => reader.SetViperIdleSecondsAsync(devices, value, token));
+            }
+
+            if (viperErrors.Count == 0 &&
+                profile.Viper.LowBatteryThresholdPercent is int lowBatteryPercent)
+            {
+                if (telemetry.ViperLowBatteryThresholdRaw is not byte currentRaw)
+                {
+                    viperErrors.Add(
+                        "Viper low battery threshold was not read back successfully; profile application was skipped.");
+                }
+                else
+                {
+                    var currentPercent = currentRaw * 100 / 255;
+                    if (currentPercent != lowBatteryPercent)
+                    {
+                        try
+                        {
+                            var actual = await reader.SetViperLowBatteryThresholdAsync(
+                                devices, lowBatteryPercent, cancellationToken);
+                            applied++;
+                            if (actual != lowBatteryPercent)
+                            {
+                                viperErrors.Add(
+                                    $"Viper low battery threshold read back as {actual}%.");
+                            }
+                        }
+                        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                        {
+                            throw;
+                        }
+                        catch (Exception exception) when (IsExpectedHardwareException(exception))
+                        {
+                            viperErrors.Add($"Viper low battery threshold: {exception.Message}");
+                        }
+                    }
+                }
             }
 
             if (viperErrors.Count == 0 && profile.Viper.BatteryChemistry is byte chemistry)

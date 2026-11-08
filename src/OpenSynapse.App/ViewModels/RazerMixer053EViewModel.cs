@@ -1,6 +1,9 @@
 using System.ComponentModel;
 using System.Globalization;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.App.ViewModels;
@@ -14,6 +17,8 @@ public sealed class RazerMixer053EViewModel : INotifyPropertyChanged, IAsyncDisp
 {
     private readonly string _devicePath;
     private readonly Action<string>? _diagnostic;
+    private readonly Func<ProfileDocument>? _getProfile;
+    private readonly Func<CancellationToken, Task<bool>>? _saveProfile;
     private RazerMixer053EService? _service;
     private bool _disposed;
     private bool _isBusy;
@@ -39,11 +44,17 @@ public sealed class RazerMixer053EViewModel : INotifyPropertyChanged, IAsyncDisp
     private bool _lineIn;
     private double _brightness;
 
-    public RazerMixer053EViewModel(string devicePath, Action<string>? diagnostic = null)
+    public RazerMixer053EViewModel(
+        string devicePath,
+        Action<string>? diagnostic = null,
+        Func<ProfileDocument>? getActiveProfile = null,
+        Func<CancellationToken, Task<bool>>? saveProfileAsync = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
         _devicePath = devicePath;
         _diagnostic = diagnostic;
+        _getProfile = getActiveProfile;
+        _saveProfile = saveProfileAsync;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -184,6 +195,38 @@ public sealed class RazerMixer053EViewModel : INotifyPropertyChanged, IAsyncDisp
 
     public void RefreshLocalization() => OnPropertyChanged(string.Empty);
 
+    [NotProfileScoped]
+    public async Task ApplyPersistedProfileAsync(
+        PowerSourceKind powerSource,
+        CancellationToken cancellationToken = default)
+    {
+        if (_getProfile?.Invoke() is not { } document)
+        {
+            return;
+        }
+
+        var descriptor = new DeviceDescriptor(
+            "1532:053E",
+            "Razer Audio Mixer",
+            0x1532,
+            0x053E,
+            DeviceAccessState.Available,
+            DeviceCapabilityState.PendingValidation,
+            64,
+            1,
+            2,
+            "mixer053e",
+            DeviceCategory.Accessory);
+        var applier = new AccessoryProfileApplier(_diagnostic);
+        await applier.ApplyAsync(
+            new DeviceProfileApplyContext(
+                document,
+                descriptor,
+                powerSource,
+                ProfileResolver.Resolve(document, descriptor, powerSource)),
+            cancellationToken);
+    }
+
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
         if (IsBusy)
@@ -195,6 +238,7 @@ public sealed class RazerMixer053EViewModel : INotifyPropertyChanged, IAsyncDisp
         try
         {
             await RefreshStateCoreAsync(cancellationToken);
+            await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
             OperationStatusText = string.Empty;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -211,28 +255,62 @@ public sealed class RazerMixer053EViewModel : INotifyPropertyChanged, IAsyncDisp
         }
     }
 
+    [ProfileSetting("mixer.channel-mutes", DeviceCategory.Accessory)]
     public Task ToggleMute1Async(CancellationToken cancellationToken = default) =>
         ToggleChannelAsync(1, !_mute1, cancellationToken);
 
+    [ProfileSetting("mixer.channel-mutes", DeviceCategory.Accessory)]
     public Task ToggleMute2Async(CancellationToken cancellationToken = default) =>
         ToggleChannelAsync(2, !_mute2, cancellationToken);
 
+    [ProfileSetting("mixer.channel-mutes", DeviceCategory.Accessory)]
     public Task ToggleMute3Async(CancellationToken cancellationToken = default) =>
         ToggleChannelAsync(3, !_mute3, cancellationToken);
 
+    [ProfileSetting("mixer.channel-mutes", DeviceCategory.Accessory)]
     public Task ToggleMute4Async(CancellationToken cancellationToken = default) =>
         ToggleChannelAsync(4, !_mute4, cancellationToken);
 
-    public Task ToggleMicMuteAsync(CancellationToken cancellationToken = default) =>
-        ExecuteWriteAsync(
-            (service, token) => service.SetMicMuteAsync(!_micMuted, token),
-            cancellationToken);
+    [ProfileSetting("mixer.mic-mute", DeviceCategory.Accessory)]
+    public Task ToggleMicMuteAsync(CancellationToken cancellationToken = default)
+    {
+        var previous = _micMuted;
+        var desired = !previous;
+        return ExecuteWriteAsync(
+            (service, token) => service.SetMicMuteAsync(desired, token),
+            cancellationToken,
+            settings =>
+            {
+                settings.Mixer ??= new MixerProfileSettings();
+                settings.Mixer.MicMute = desired;
+            },
+            (service, token) => service.SetMicMuteAsync(previous, token));
+    }
 
-    public Task ApplyBrightnessAsync(CancellationToken cancellationToken = default) =>
-        ExecuteWriteAsync(
-            (service, token) => service.SetBrightnessAsync(
-                (byte)Math.Round(Brightness), cancellationToken: token),
-            cancellationToken);
+    [ProfileSetting("mixer.brightness", DeviceCategory.Accessory)]
+    public async Task ApplyBrightnessAsync(CancellationToken cancellationToken = default)
+    {
+        if (!CanEdit) return;
+        var previous = (byte)Math.Round(Brightness);
+        try
+        {
+            previous = await GetService().ReadBrightnessAsync(cancellationToken: cancellationToken) ?? previous;
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+        }
+
+        var desired = (int)Math.Round(Brightness);
+        await ExecuteWriteAsync(
+            (service, token) => service.SetBrightnessAsync((byte)desired, cancellationToken: token),
+            cancellationToken,
+            settings =>
+            {
+                settings.Mixer ??= new MixerProfileSettings();
+                settings.Mixer.BrightnessPercent = desired;
+            },
+            (service, token) => service.SetBrightnessAsync(previous, cancellationToken: token));
+    }
 
     public async ValueTask DisposeAsync()
     {
@@ -248,14 +326,35 @@ public sealed class RazerMixer053EViewModel : INotifyPropertyChanged, IAsyncDisp
         }
     }
 
-    private Task ToggleChannelAsync(int channel, bool muted, CancellationToken cancellationToken) =>
-        ExecuteWriteAsync(
+    private Task ToggleChannelAsync(int channel, bool muted, CancellationToken cancellationToken)
+    {
+        var previous = channel switch
+        {
+            1 => _mute1,
+            2 => _mute2,
+            3 => _mute3,
+            _ => _mute4,
+        };
+        return ExecuteWriteAsync(
             (service, token) => service.SetChannelMuteAsync(channel, muted, token),
-            cancellationToken);
+            cancellationToken,
+            settings =>
+            {
+                settings.Mixer ??= new MixerProfileSettings();
+                var mutes = settings.Mixer.ChannelMutes is { Count: 4 } existing
+                    ? existing
+                    : Enumerable.Repeat(false, 4).ToList();
+                mutes[channel - 1] = muted;
+                settings.Mixer.ChannelMutes = mutes;
+            },
+            (service, token) => service.SetChannelMuteAsync(channel, previous, token));
+    }
 
     private async Task ExecuteWriteAsync(
         Func<RazerMixer053EService, CancellationToken, Task> write,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Action<DeviceProfileSettings>? mutateProfile = null,
+        Func<RazerMixer053EService, CancellationToken, Task>? rollbackHardware = null)
     {
         if (!CanEdit)
         {
@@ -265,7 +364,32 @@ public sealed class RazerMixer053EViewModel : INotifyPropertyChanged, IAsyncDisp
         IsBusy = true;
         try
         {
-            await write(GetService(), cancellationToken);
+            var service = GetService();
+            await write(service, cancellationToken);
+            if (mutateProfile is not null &&
+                !await PeripheralProfileStore.SaveAsync(
+                    _getProfile?.Invoke(),
+                    _saveProfile,
+                    ProfileDeviceKey,
+                    mutateProfile,
+                    cancellationToken))
+            {
+                if (rollbackHardware is not null)
+                {
+                    try
+                    {
+                        await rollbackHardware(service, CancellationToken.None);
+                    }
+                    catch (Exception exception) when (IsExpected(exception))
+                    {
+                        // The save failure is the actionable error; rollback is best effort.
+                    }
+                }
+
+                throw new InvalidOperationException(
+                    AppStrings.Text("RazerHidSettingProfileSaveFailed"));
+            }
+
             await RefreshStateCoreAsync(cancellationToken);
             OperationStatusText = AppStrings.Text("RazerMixer053ESaved");
             ErrorText = string.Empty;
@@ -305,6 +429,11 @@ public sealed class RazerMixer053EViewModel : INotifyPropertyChanged, IAsyncDisp
         ObjectDisposedException.ThrowIf(_disposed, this);
         return _service ??= new RazerMixer053EService(_devicePath, _diagnostic);
     }
+
+    private string ProfileDeviceKey => string.IsNullOrWhiteSpace(_serialNumberText) ||
+        string.Equals(_serialNumberText, "--", StringComparison.Ordinal)
+            ? "1532:053E"
+            : _serialNumberText;
 
     private void ApplyState(RazerMixer053EState state)
     {

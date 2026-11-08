@@ -32,6 +32,9 @@ public interface IRazerMappingActionCatalog
         IReadOnlyList<byte> data,
         IReadOnlyList<RazerHidMacroOption>? macros = null);
 
+    RazerHidDecodedMapping? Decode(byte functionId, IReadOnlyList<byte> data) =>
+        RazerHidMappingActions.Decode(functionId, data);
+
     string DescribeButton(byte buttonId);
 }
 

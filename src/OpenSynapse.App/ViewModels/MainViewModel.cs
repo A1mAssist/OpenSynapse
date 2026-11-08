@@ -23,6 +23,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 {
     private readonly IRazerDeviceTelemetryReader _deviceTelemetryReader;
     private readonly ProfileStore _profileStore;
+    private readonly MachineSettingsStore _machineSettingsStore;
     private readonly IPowerSourceProvider _powerSourceProvider;
     private readonly LocalDiagnosticLog _diagnosticLog;
     private HashSet<int>? _internalDisplayRefreshRateCycleHertz;
@@ -30,6 +31,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private IReadOnlyList<int>? _legacyRefreshRateCycleHertz;
     private readonly SemaphoreSlim _deviceOperationGate = new(1, 1);
     private ProfileDocument _profile = ProfileDocument.CreateDefault();
+    private MachineSettings _machineSettings = new();
     private string _deviceTelemetryTimeText = AppStrings.Text("Text_CF8B06AA");
     private string _deviceErrorText = string.Empty;
     private string _deviceQueryErrorText = string.Empty;
@@ -61,17 +63,24 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         RazerFirmwareUpdateClient? firmwareUpdateClient = null,
         IThxAudioController? thxAudioController = null,
         bool thxAudioSupported = false,
-        IMacroInputSink? macroInputSink = null)
+        IMacroInputSink? macroInputSink = null,
+        MachineSettingsStore? machineSettingsStore = null)
     {
         ProfileSettingsRegistration.EnsureRegistered();
         _deviceTelemetryReader = deviceTelemetryReader;
         _profileStore = profileStore ?? new ProfileStore();
+        _machineSettingsStore = machineSettingsStore ?? new MachineSettingsStore();
         _powerSourceProvider = powerSourceProvider ?? UnknownPowerSourceProvider.Instance;
         _diagnosticLog = diagnosticLog ?? new LocalDiagnosticLog();
         CoolingPad = new RazerCoolingPadViewModel(
             message => _diagnosticLog.TryWrite("cooling-pad", message),
-            performanceMonitor);
-        Kiyo = new RazerKiyoViewModel(message => _diagnosticLog.TryWrite("kiyo", message));
+            performanceMonitor,
+            () => _profile,
+            SaveProfileAsync);
+        Kiyo = new RazerKiyoViewModel(
+            message => _diagnosticLog.TryWrite("kiyo", message),
+            () => _profile,
+            SaveProfileAsync);
         Telemetry = new TelemetryWorkspace(
             performanceMonitor,
             _powerSourceProvider,
@@ -99,6 +108,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             () => _profile,
             document => _profile = document,
             SaveProfileAsync,
+            () => _machineSettings,
+            SaveMachineSettingsAsync,
             RunDeviceOperationAsync,
             () => _deviceDescriptors,
             () => CurrentPowerSource,
@@ -129,6 +140,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             () => _deviceDescriptors,
             _diagnosticLog,
             () => Volatile.Read(ref _disposed) != 0);
+        Display.AttachBrightnessProfile(() => Blade.EditablePlatformProfile);
         Profiles = new ProfilesWorkspace(
             _profileStore,
             () => _profile,
@@ -194,11 +206,14 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             () => Lighting.IsChromaIntegrationEnabled,
             () => Macros.Items.Select(macro => macro.Definition).ToArray(),
             Macros.TryBindMacroTriggerAsync,
+            () => _machineSettings,
+            SaveMachineSettingsAsync,
             ct => Refresh!.RefreshDevicesAsync(ct),
             RefreshDeviceOverviewVisibility,
             SetDeviceOperationError,
             DispatcherQueue.GetForCurrentThread());
-        Accessories = new UsbAccessoriesWorkspace(_diagnosticLog, RazerHid, Macros);
+        Accessories = new UsbAccessoriesWorkspace(
+            _diagnosticLog, RazerHid, Macros, () => _profile, SaveProfileAsync);
         Accessories.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Accessories));
         Diagnostics = new DiagnosticsWorkspace(
             RazerHid,
@@ -249,11 +264,18 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                 SelectedBlackShark = null;
             },
             OnPropertyChanged,
-            (power, token) => SelectedBle?.ApplyPersistedProfileAsync(power, token) ?? Task.CompletedTask);
+            (power, token) => SelectedBle?.ApplyPersistedProfileAsync(power, token) ?? Task.CompletedTask,
+            (power, token) => AccessoryProfileReplay.ApplyAsync(this, _diagnosticLog, power, token));
         Tray = new TrayWorkspace(() => Devices, RazerHid);
         CpuCurve = new CpuCurveWorkspace(
-            (label, operation, token) => RunDeviceOperationAsync(label, operation, token));
-        CpuPower = new CpuPowerLimitWorkspace(() => IsBusy, RunDeviceOperation);
+            (label, operation, token) => RunDeviceOperationAsync(label, operation, token),
+            () => Blade.EditablePlatformProfile,
+            SaveProfileAsync);
+        CpuPower = new CpuPowerLimitWorkspace(
+            () => IsBusy,
+            RunDeviceOperation,
+            () => Blade.EditablePlatformProfile,
+            SaveProfileAsync);
         ThxAudio = new ThxAudioViewModel(thxAudioController, thxAudioSupported);
     }
 
@@ -452,6 +474,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     internal async Task InitializeProfileAsync(CancellationToken cancellationToken = default)
     {
         await Profiles.LoadAsync(cancellationToken);
+        _machineSettings = await _machineSettingsStore.LoadAsync(cancellationToken);
         Macros.InitializeMacroRuntime();
         Firmware.RefreshVersions();
     }
@@ -477,6 +500,24 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         try
         {
             await _profileStore.SaveAsync(_profile, cancellationToken);
+            return true;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            SetDeviceOperationError(AppStrings.FormatText("ProfileSaveError", exception.Message));
+            return false;
+        }
+    }
+
+    private async Task<bool> SaveMachineSettingsAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _machineSettingsStore.SaveAsync(_machineSettings, cancellationToken);
             return true;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

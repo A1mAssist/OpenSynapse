@@ -51,7 +51,10 @@ public sealed partial class MainViewModel
         var row = new BlackSharkDeviceRowViewModel(connection);
         BlackSharkDevices.Add(row);
         var probe = new BlackSharkHeadsetViewModel(
-            connection, message => _diagnosticLog.TryWrite("blackshark", message));
+            connection,
+            message => _diagnosticLog.TryWrite("blackshark", message),
+            () => _profile,
+            SaveProfileAsync);
         await probe.LoadAsync(cancellationToken);
         row.SetCapabilityText(probe.CapabilityText);
         if (_selectedBlackSharkDevice is not null &&
@@ -83,7 +86,10 @@ public sealed partial class MainViewModel
 
         _selectedBlackSharkDevice = row;
         SelectedBlackShark = new BlackSharkHeadsetViewModel(
-            row.Connection, message => _diagnosticLog.TryWrite("blackshark", message));
+            row.Connection,
+            message => _diagnosticLog.TryWrite("blackshark", message),
+            () => _profile,
+            SaveProfileAsync);
         await SelectedBlackShark.LoadAsync(cancellationToken);
     }
 }

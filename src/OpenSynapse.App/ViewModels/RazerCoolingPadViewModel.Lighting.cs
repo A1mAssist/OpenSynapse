@@ -1,4 +1,7 @@
+using System.Globalization;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 using Windows.UI;
@@ -150,6 +153,7 @@ public sealed partial class RazerCoolingPadViewModel
         private set => SetField(ref _lightingStatusText, value);
     }
 
+    [ProfileSetting("coolingpad.lighting", DeviceCategory.CoolingPad)]
     public async Task ApplyLightingAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApplyLighting || _service is null || _lightingEffects.Count == 0)
@@ -158,8 +162,10 @@ public sealed partial class RazerCoolingPadViewModel
         }
 
         IsBusy = true;
+        RazerCoolingPadLightingState? previous = null;
         try
         {
+            previous = await _service.ReadLightingAsync(cancellationToken);
             var effect = _lightingEffects[SelectedLightingEffectIndex];
             byte[] colors;
             byte flags;
@@ -193,6 +199,19 @@ public sealed partial class RazerCoolingPadViewModel
                 rate,
                 colors,
                 cancellationToken);
+            if (!await SaveProfileAsync(profile =>
+                {
+                    profile.LightingEnabled = true;
+                    profile.LightingEffect = effect.ToString(CultureInfo.InvariantCulture);
+                    profile.LightingParameters = CreateLightingParameters(
+                        LightingBrightness, flags, rate, colors);
+                }, cancellationToken))
+            {
+                await RestoreLightingAsync(previous);
+                LightingStatusText = "profile save failed";
+                return;
+            }
+
             ApplyLightingState(state);
             LightingStatusText = AppStrings.Text("BlackSharkSaved");
         }

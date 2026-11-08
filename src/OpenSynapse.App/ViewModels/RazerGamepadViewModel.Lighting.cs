@@ -1,4 +1,7 @@
+using System.Globalization;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 using Windows.UI;
@@ -102,12 +105,19 @@ public sealed partial class RazerGamepadViewModel
         private set => SetField(ref _lightingStatusText, value);
     }
 
+    [ProfileSetting("gamepad.lighting", DeviceCategory.Gamepad)]
     public async Task ApplyLightingAsync(CancellationToken cancellationToken = default)
     {
         var region = CurrentLightingRegion;
         if (region is null || !BeginOperation()) return;
+        RazerGamepadLightingState? previous = null;
         try
         {
+            previous = await _service.ReadLightingAsync(cancellationToken);
+            byte? appliedEffect = null;
+            byte appliedFlags = 0;
+            byte appliedRate = 0;
+            IReadOnlyList<RazerRgb> appliedColors = [];
             if (LightingEffectIds.Count > 0)
             {
                 var effectId = LightingEffectIds[Math.Clamp(
@@ -120,14 +130,40 @@ public sealed partial class RazerGamepadViewModel
                     rate,
                     colors,
                     cancellationToken);
+                appliedEffect = effectId;
+                appliedFlags = flags;
+                appliedRate = rate;
+                appliedColors = colors;
             }
 
+            var brightness = (byte)Math.Round(LightingBrightness);
             if (region.Brightness is not null)
             {
                 await _service.SetLightingBrightnessAsync(
                     region.Region.RegionId,
-                    (byte)Math.Round(LightingBrightness),
+                    brightness,
                     cancellationToken);
+            }
+
+            if (appliedEffect is { } effect &&
+                !await SaveProfileAsync(profile =>
+                {
+                    profile.LightingEnabled = true;
+                    profile.LightingEffect = effect.ToString(CultureInfo.InvariantCulture);
+                    profile.LightingParameters = CreateLightingParameters(
+                        region.Region.RegionId,
+                        effect,
+                        appliedFlags,
+                        appliedRate,
+                        brightness,
+                        appliedColors.Count > 0 ? appliedColors[0] : null);
+                }, cancellationToken))
+            {
+                await RestoreGamepadLightingAsync(previous, region.Region.RegionId);
+                await LoadLightingCoreAsync(CancellationToken.None);
+                ErrorText = "profile save failed";
+                OperationStatusText = string.Empty;
+                return;
             }
 
             await LoadLightingCoreAsync(cancellationToken);

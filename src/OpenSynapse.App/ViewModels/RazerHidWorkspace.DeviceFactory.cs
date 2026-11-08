@@ -36,7 +36,10 @@ public sealed partial class RazerHidWorkspace
             _chromaIntegrationEnabled(),
             _localMacros,
             _getActiveProfile,
-            _saveProfileAsync);
+            _saveProfileAsync,
+            _getMachineSettings,
+            _saveMachineSettingsAsync,
+            _getProfile);
         device.AttachMatrixLayout(_matrixLayoutLoader.LoadLayoutAsync, _dispatcherQueue);
         device.Onboard.LocalMacroProvider = _localMacros;
         device.SoftwareMacroBinder = _softwareMacroBinder;

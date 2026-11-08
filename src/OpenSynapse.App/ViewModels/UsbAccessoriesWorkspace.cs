@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using OpenSynapse.Core.Diagnostics;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.App.ViewModels;
@@ -12,12 +13,21 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
     private readonly LocalDiagnosticLog _diagnosticLog;
     private readonly RazerHidWorkspace _openRazer;
     private readonly MacroWorkspace _macros;
+    private readonly Func<ProfileDocument>? _getProfile;
+    private readonly Func<CancellationToken, Task<bool>>? _saveProfile;
 
-    internal UsbAccessoriesWorkspace(LocalDiagnosticLog log, RazerHidWorkspace openRazer, MacroWorkspace macros)
+    internal UsbAccessoriesWorkspace(
+        LocalDiagnosticLog log,
+        RazerHidWorkspace openRazer,
+        MacroWorkspace macros,
+        Func<ProfileDocument>? getActiveProfile = null,
+        Func<CancellationToken, Task<bool>>? saveProfileAsync = null)
     {
         _diagnosticLog = log;
         _openRazer = openRazer;
         _macros = macros;
+        _getProfile = getActiveProfile;
+        _saveProfile = saveProfileAsync;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -71,7 +81,9 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
         var probe = new RazerHeadsetAudioViewModel(
             connection,
             message => _diagnosticLog.TryWrite("headset-audio", message),
-            _openRazer.CreateKrakenLighting(connection.ProductId));
+            _openRazer.CreateKrakenLighting(connection.ProductId),
+            _getProfile,
+            _saveProfile);
         await probe.LoadAsync(cancellationToken);
         row.SetCapabilityText(probe.CapabilityText);
         await probe.DisposeAsync();
@@ -107,7 +119,11 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
         }
 
         SelectedHeadsetAudio = new RazerHeadsetAudioViewModel(
-            row.Connection, message => _diagnosticLog.TryWrite("headset-audio", message), lighting);
+            row.Connection,
+            message => _diagnosticLog.TryWrite("headset-audio", message),
+            lighting,
+            _getProfile,
+            _saveProfile);
         await SelectedHeadsetAudio.LoadAsync(cancellationToken);
     }
 
@@ -159,7 +175,10 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
         foreach (var connection in connections)
         {
             KeyboardDevices.Add(new RazerKeyboardDeviceRowViewModel(
-                connection, message => _diagnosticLog.TryWrite("keyboard", message)));
+                connection,
+                message => _diagnosticLog.TryWrite("keyboard", message),
+                _getProfile,
+                _saveProfile));
         }
 
         foreach (var row in KeyboardDevices)
@@ -241,7 +260,10 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
         var row = new RazerGamepadDeviceRowViewModel(connection);
         GamepadDevices.Add(row);
         var probe = new RazerGamepadViewModel(
-            connection, message => _diagnosticLog.TryWrite("gamepad", message));
+            connection,
+            message => _diagnosticLog.TryWrite("gamepad", message),
+            _getProfile,
+            _saveProfile);
         await probe.LoadAsync(cancellationToken);
         row.SetCapabilityText(probe.CapabilityText);
         if (_selectedGamepadDevice is null ||
@@ -267,7 +289,10 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
 
         _selectedGamepadDevice = row;
         SelectedGamepad = new RazerGamepadViewModel(
-            row.Connection, message => _diagnosticLog.TryWrite("gamepad", message));
+            row.Connection,
+            message => _diagnosticLog.TryWrite("gamepad", message),
+            _getProfile,
+            _saveProfile);
         await SelectedGamepad.LoadAsync(cancellationToken);
     }
 
@@ -345,7 +370,9 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
         SelectedChroma = new RazerChromaViewModel(
             row.Connection,
             message => _diagnosticLog.TryWrite("chroma", message),
-            _openRazer.SpecialLightingService);
+            _openRazer.SpecialLightingService,
+            _getProfile,
+            _saveProfile);
         await SelectedChroma.LoadAsync(cancellationToken);
     }
     public async ValueTask DisposeAsync()

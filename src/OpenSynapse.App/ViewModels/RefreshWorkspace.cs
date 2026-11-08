@@ -51,6 +51,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
     private readonly Action _resetBlackShark;
     private readonly Action<string> _notifyPropertyChanged;
     private readonly Func<PowerSourceKind, CancellationToken, Task>? _applyBleProfile;
+    private readonly Func<PowerSourceKind, CancellationToken, Task>? _applyAccessoryProfiles;
     private readonly VerifiedProfileApplier _profileApplier = new();
     private readonly SemaphoreSlim _deviceWatchSignal = new(0, 1);
     private ApplicationProfileSwitcher _applicationProfileSwitcher = new();
@@ -104,7 +105,8 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
         Func<int> accessoryErrorCount,
         Action resetBlackShark,
         Action<string> notifyPropertyChanged,
-        Func<PowerSourceKind, CancellationToken, Task>? applyBleProfile = null)
+        Func<PowerSourceKind, CancellationToken, Task>? applyBleProfile = null,
+        Func<PowerSourceKind, CancellationToken, Task>? applyAccessoryProfiles = null)
     {
         _discovery = discovery;
         _deviceTelemetryReader = deviceTelemetryReader;
@@ -143,6 +145,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
         _resetBlackShark = resetBlackShark;
         _notifyPropertyChanged = notifyPropertyChanged;
         _applyBleProfile = applyBleProfile;
+        _applyAccessoryProfiles = applyAccessoryProfiles;
         if (openRazer.DeviceService is { } razerHidService)
         {
             _razerHidProfileApplier = new DeviceProfileApplyCoordinator(
@@ -475,6 +478,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
             if (applyDisplayProfile)
             {
                 await ApplyBleProfileAsync(powerState, cancellationToken);
+                await ApplyAccessoryProfilesAsync(powerState, cancellationToken);
             }
             if (profileApply is { AppliedCount: > 0 })
             {

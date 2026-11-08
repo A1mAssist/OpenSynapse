@@ -1,8 +1,10 @@
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Macros;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Input;
+using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
 
@@ -31,6 +33,7 @@ public sealed partial class RazerHidDeviceViewModel
                 ? RazerMappingDeviceKind.Keyboard
                 : RazerMappingDeviceKind.Mouse,
             actionCatalog: IsNagaMouse ? RazerNagaMappingActionCatalog.Instance : null,
+            mappingProfileSaver: PersistMappingProfileAsync,
             canWriteOnboardMacros:
                 Has(RazerHidBackendCapability.MacroStorageDataWrite) &&
                 Has(RazerHidBackendCapability.MacroStorageNameWrite),
@@ -61,6 +64,49 @@ public sealed partial class RazerHidDeviceViewModel
         }
 
         return IsNagaMouse ? RazerNagaSideButtonResolver.Resolve(buttonId) : null;
+    }
+
+    private async Task PersistMappingProfileAsync(
+        IReadOnlyList<ButtonMappingProfile> mappings,
+        CancellationToken cancellationToken)
+    {
+        if (mappings.Count == 0)
+        {
+            return;
+        }
+        if (_getActiveProfile is null || _saveProfileAsync is null)
+        {
+            return;
+        }
+
+        var settings = ResolveDeviceProfileSettings()!;
+        var mode = mappings[0].Mode ?? 0;
+        if (IsKeyboard)
+        {
+            var previous = settings.Keyboard.ButtonMappings;
+            settings.Keyboard.ButtonMappings = RazerHidMappingActions.MergeButtonMappings(
+                previous, mappings, mode);
+            if (await _saveProfileAsync(cancellationToken).ConfigureAwait(true))
+            {
+                return;
+            }
+
+            settings.Keyboard.ButtonMappings = previous;
+        }
+        else
+        {
+            var previous = settings.Viper.ButtonMappings;
+            settings.Viper.ButtonMappings = RazerHidMappingActions.MergeButtonMappings(
+                previous, mappings, mode);
+            if (await _saveProfileAsync(cancellationToken).ConfigureAwait(true))
+            {
+                return;
+            }
+
+            settings.Viper.ButtonMappings = previous;
+        }
+
+        throw new IOException("RazerHid mapping could not be saved to the profile.");
     }
 
     public Visibility MappingVisibility => VisibleWhen(Has(RazerHidBackendCapability.MappingRead));

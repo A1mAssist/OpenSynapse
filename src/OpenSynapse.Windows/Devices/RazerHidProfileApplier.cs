@@ -243,6 +243,66 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
         {
             await ApplyHapticScrollAsync(connection, (byte)hapticLevel, results, cancellationToken);
         }
+
+        if (profile.ButtonMappings is { Count: > 0 } mappings)
+        {
+            await ApplyButtonMappingsAsync(connection, mappings, results, cancellationToken);
+        }
+    }
+
+    private async Task ApplyButtonMappingsAsync(
+        RazerHidDeviceConnection connection,
+        IReadOnlyCollection<ButtonMappingProfile> mappings,
+        List<ProfileSettingApplyResult> results,
+        CancellationToken cancellationToken)
+    {
+        if (!Has(connection, RazerHidBackendCapability.MappingRead))
+        {
+            results.Add(Unsupported("mapping", RazerHidBackendCapability.MappingRead));
+            return;
+        }
+        if (!Has(connection, RazerHidBackendCapability.MappingWrite))
+        {
+            results.Add(Unsupported("mapping", RazerHidBackendCapability.MappingWrite));
+            return;
+        }
+
+        foreach (var mapping in mappings)
+        {
+            var mode = mapping.Mode ?? 0;
+            var key = $"mapping.{mode}.{mapping.ButtonId}";
+            if (mapping.FunctionId is not { } functionId)
+            {
+                results.Add(new ProfileSettingApplyResult(
+                    key, ProfileSettingApplyStatus.Skipped,
+                    "The mapping has no raw assignment to apply."));
+                continue;
+            }
+
+            try
+            {
+                var current = await _service.GetButtonAssignmentAsync(
+                    connection, mapping.ButtonId, mode, cancellationToken);
+                var data = mapping.FunctionData?.ToArray() ?? [];
+                if (current.FunctionId == functionId && current.Data.SequenceEqual(data))
+                {
+                    results.Add(Applied(key));
+                    continue;
+                }
+
+                await _service.SetButtonAssignmentAsync(
+                    connection, mapping.ButtonId, mode, functionId, data, cancellationToken);
+                results.Add(Applied(key));
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                results.Add(Failed(key, exception));
+            }
+        }
     }
 
     private async Task ApplyHapticScrollAsync(

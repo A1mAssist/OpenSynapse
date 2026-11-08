@@ -48,18 +48,6 @@ public sealed partial class RazerHidProfileApplier
             await ApplySnapTapAsync(connection, snapTap, results, cancellationToken);
         }
 
-        if (profile.FnKeyPrimary is { } fnPrimary)
-        {
-            await ApplySettingAsync(
-                results, "keyboard.fn-primary", connection,
-                RazerHidBackendCapability.FnPrimaryWrite,
-                RazerHidBackendCapability.FnPrimaryWrite,
-                _ => Task.FromException<bool>(new NotSupportedException()),
-                (value, token) => _service.SetFnPrimaryAsync(connection, value, token),
-                fnPrimary, (left, right) => left == right, cancellationToken,
-                hasRead: false);
-        }
-
         if (profile.DebounceMilliseconds is { } debounce)
         {
             await ApplyDebounceAsync(connection, (byte)debounce, results, cancellationToken);
@@ -103,6 +91,11 @@ public sealed partial class RazerHidProfileApplier
             // the existing colour source; lighting itself remains applied elsewhere.
             await ApplyWristRestAsync(
                 connection, wristRest, lighting, results, cancellationToken);
+        }
+
+        if (profile.ButtonMappings is { Count: > 0 } mappings)
+        {
+            await ApplyButtonMappingsAsync(connection, mappings, results, cancellationToken);
         }
     }
 
