@@ -4,7 +4,7 @@ English · [Chinese](CHANGELOG.zh-CN.md)
 
 All notable user-visible changes to OpenSynapse are documented here.
 
-## [Unreleased]
+## [1.7.0] - 2026-11-08
 
 ### Added
 
@@ -13,6 +13,21 @@ All notable user-visible changes to OpenSynapse are documented here.
 - Keyboards driven only by the protocol-25 page (Pro Type, Pro Type Ultra, Pikachu, Cynosapro, BlackWidow X Tenkeyless, Huntsman Essential, Tartarus V2 Pro) now accept Chroma frames through their whole-device effect channel.
 - The router snapshots each whole-device target before the first Chroma frame and restores its previous effect, colour and brightness when the session ends.
 - Older mice, headsets and audio devices in the Chroma manifest now fall back to the class 0x10 whole-device static path whenever their 91-byte control interface is present, instead of requiring a hand-maintained allowlist.
+- The Chroma SDK broker now reads the official Chroma SDK 4.x shared-memory protocol and is started by `OpenSynapseService`; the retired self-developed shim is archived and no longer starts with the app.
+- The mapping page now covers every HID/BLE device: device art, button hotspots, software macros and onboard macros share one Macro action, with keyboard key tables, Naga side buttons, Snap Tap, analog keys and scroll-wheel modes.
+- Driver-level macros are complete: the official Razer filter driver and RzCommon can be installed, and mouse and keyboard macros use the same driver injection path as Synapse; missing drivers are shown on the device page.
+- Settings can download and install Razer's official `RzChromaSDK64.dll` without a browser or a separate Chroma SDK install.
+- DeathAdder V4 Pro now uses its class 0x03 onboard profile dialect, fixing profile reads; BlackWidow V4 Pro wrist-rest lighting and Blade 2019-2023 logo controls are also covered.
+- The taskbar status strip and performance overlay were reworked: the strip shows only peripheral battery on a transparent background and disappears while the taskbar is hidden or covered; the overlay has compact and detailed cards, and borderless games no longer inherit a topmost window.
+- Kraken V4 wired lighting now keeps its HID session open, so changing colours does not require a second click.
+- The project is licensed under AGPL-3.0-only, and the uninstaller can optionally remove local settings.
+
+### Fixed
+
+- Fixed onboard profile rejection, mappings that saved but did not work, Naga side-button software macros, unpaired Hue bridges appearing in the list, a flickering taskbar battery readout, and the performance page jumping back to the top.
+- Fixed capability counts, keyboard and headset battery scaling, discrete-GPU fault states, and restoration of the previous lighting effect after a Chroma session.
+- The uninstaller now removes the desktop and Start-menu shortcuts instead of leaving them behind.
+- Blade Studio now uses the official per-model LED layout and frame cadence. Blade 16 2024 (7 x 15), Blade 18 2025 (8 x 18 logical / 7 x 19 device), the 2026 Blades and older 2019-2023 Blades no longer apply the wrong matrix, and static effects stay applied after the first frame.
 
 ## [1.6.0] - 2026-10-26
 
