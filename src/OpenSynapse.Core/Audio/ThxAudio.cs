@@ -51,7 +51,8 @@ public sealed record ThxAudioState(
 public sealed record ThxAudioStatus(
     ThxAudioAvailability Availability,
     string? Error,
-    ThxAudioState? State)
+    ThxAudioState? State,
+    bool RebootRequired = false)
 {
     public bool IsAvailable => Availability is
         ThxAudioAvailability.Available or ThxAudioAvailability.AvailableReadOnly;

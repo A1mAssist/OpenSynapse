@@ -530,6 +530,7 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
         "ThxHelperInvalidResponse" or "ThxHelperFailed" => AppStrings.Text("ThxStatusHelperFailed"),
         "ThxDeviceChanged" => AppStrings.Text("ThxStatusDeviceChanged"),
         "ThxServiceNotReady" => AppStrings.Text("ThxStatusServiceNotReady"),
+        "ThxRebootRequired" => AppStrings.Text("ThxStatusRebootRequired"),
         "ThxOperationRejected" => AppStrings.Text("ThxStatusOperationRejected"),
         "ThxNativeFailure" => AppStrings.Text("ThxStatusNativeFailure"),
         "ThxInvalidRequest" => AppStrings.Text("ThxStatusInvalidRequest"),

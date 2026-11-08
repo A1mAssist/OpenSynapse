@@ -29,6 +29,7 @@ public sealed partial class RazerHidKrakenViewModel
         {
             "ThxServiceMissing" => AppStrings.Text("RazerHeadsetThxServiceMissing"),
             "ThxNativeMissing" => AppStrings.Text("RazerHeadsetThxNativeMissing"),
+            "ThxRebootRequired" => AppStrings.Text("RazerHeadsetThxRebootRequired"),
             "ThxDownloadFailed" or "ThxDownloadVerificationFailed" =>
                 AppStrings.Text("RazerHeadsetThxDownloadFailed"),
             _ when ThxStatus.ErrorCode?.StartsWith("ThxInstaller", StringComparison.Ordinal) == true =>
