@@ -111,20 +111,29 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
 
         var capabilitySummaries = new Dictionary<string, DeviceCapabilitySummary>(
             StringComparer.OrdinalIgnoreCase);
+        var declaredCapabilities = new Dictionary<string, IReadOnlySet<string>>(
+            StringComparer.OrdinalIgnoreCase);
         if (blade is not null)
         {
+            var capabilities = blade.Manifest.Capabilities.Keys
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            declaredCapabilities[blade.Descriptor.Id] = capabilities;
             capabilitySummaries[blade.Descriptor.Id] =
                 DeviceCapabilitySummaryCalculator.Calculate(
                     blade.Descriptor,
                     telemetry,
-                    blade.Manifest.Capabilities.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase));
+                    capabilities);
         }
         if (mouse is not null)
         {
             capabilitySummaries[mouse.Descriptor.Id] =
                 DeviceCapabilitySummaryCalculator.Calculate(mouse.Descriptor, telemetry);
         }
-        return telemetry with { CapabilitySummaries = capabilitySummaries };
+        return telemetry with
+        {
+            CapabilitySummaries = capabilitySummaries,
+            DeclaredCapabilities = declaredCapabilities,
+        };
     }
 
     public ValueTask<byte> SetBladeKeyboardBrightnessAsync(

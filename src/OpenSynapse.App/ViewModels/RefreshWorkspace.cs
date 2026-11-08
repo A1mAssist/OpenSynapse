@@ -662,8 +662,9 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
                 return;
             }
 
+            var declaredCapabilities = telemetry.DeclaredCapabilities?.GetValueOrDefault(descriptor.Id);
             var summary = telemetry.CapabilitySummaries?.GetValueOrDefault(descriptor.Id)
-                ?? DeviceCapabilitySummaryCalculator.Calculate(descriptor, telemetry);
+                ?? DeviceCapabilitySummaryCalculator.Calculate(descriptor, telemetry, declaredCapabilities);
             if (row.CapabilitySummary != summary)
             {
                 PopulateDeviceRows(descriptors, telemetry);

@@ -217,10 +217,11 @@ public sealed partial class DiagnosticsWorkspace
         var mapping = rawCapability switch
         {
             "Keyboard brightness" => ("Text_5F0C27DB", bladeName),
+            "Keyboard effect" => ("DiagnosticKeyboardEffect", bladeName),
             "Performance and fan state" => ("DiagnosticPerformanceFan", bladeName),
             "Performance mode" => ("DiagnosticPerformanceFan", bladeName),
             "Fan mode" => ("DiagnosticPerformanceFan", bladeName),
-            "Fan target" => ("DiagnosticPerformanceFan", bladeName),
+            "Fan target" => ("BladeFanTargetRpmLabel", bladeName),
             "Current CPU fan speed" => ("Text_5FCEEE13", bladeName),
             "Current GPU fan speed" => ("Text_737DBF87", bladeName),
             "CPU advanced fan mode" => ("Text_BE0A43ED", bladeName),
@@ -232,13 +233,20 @@ public sealed partial class DiagnosticsWorkspace
             "Native display mode" => ("Text_24A8C247", bladeName),
             "SKU hardware configuration" => ("Text_9D1351CB", bladeName),
             "Blade Logo" => ("DiagnosticBladeLogo", bladeName),
+            "Gaming mode" => ("ProfileSummary_Item_GamingMode", bladeName), "Adapter power" => ("DiagnosticAdapterPower", bladeName),
+            "Auto sleep" => ("BladeAutoSleepTitle.Text", bladeName), "Time to dim" => ("BladeTimeToDimTitle.Text", bladeName),
+            "Indicator LED" => ("BladeIndicatorLedTitle.Text", bladeName), "GPU card detection" => ("BladeGpuCardDetectionTitle.Text", bladeName),
+            "Fn row behavior" => ("BladeFnKeyLabel", bladeName), "MCU firmware version" => ("FirmwareMcuLabel", bladeName),
             "Mouse battery" => ("Text_8B2E15F8", viperName),
             "Mouse polling rate" => ("DiagnosticMousePollingRate", viperName),
             "Mouse DPI" => ("Text_25083B1F", viperName),
             "Mouse idle timeout" => ("DiagnosticMouseIdleTimeout", viperName),
             "Mouse DPI stages" => ("Text_6D7EF7B5", viperName),
             "Mouse low-battery threshold" => ("Text_B98036FA", viperName),
-            _ => ("Text_DA035EAB", "Windows HID"),
+            _ => ("Text_D0003708",
+                rawCapability.StartsWith("Mouse ", StringComparison.OrdinalIgnoreCase)
+                    ? viperName
+                    : bladeName),
         };
         return (AppStrings.Text(mapping.Item1), mapping.Item2);
     }
@@ -246,7 +254,7 @@ public sealed partial class DiagnosticsWorkspace
     private static string LocalizeDiagnosticDetail(string detail) =>
         detail.StartsWith("The device timed out", StringComparison.OrdinalIgnoreCase)
             ? AppStrings.Text("DiagnosticDeviceTimedOut")
-            : detail;
+            : detail.Contains("does not support this command", StringComparison.OrdinalIgnoreCase) ? AppStrings.Text("Text_43154C61") : detail;
 
     private static int FindDiagnosticSeparator(string value)
     {
