@@ -39,10 +39,11 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
             _ => ("\uE772", AppStrings.Text("Text_CAF15352")),
         };
 
+        var declaredCapabilities = telemetry.DeclaredCapabilities?.GetValueOrDefault(descriptor.Id);
         var summary = telemetry.CapabilitySummaries?.GetValueOrDefault(descriptor.Id)
-            ?? DeviceCapabilitySummaryCalculator.Calculate(descriptor, telemetry);
+            ?? DeviceCapabilitySummaryCalculator.Calculate(descriptor, telemetry, declaredCapabilities);
         (_successful, _total) = (summary.Available, summary.Supported);
-        ProtocolDetails = CreateProtocolDetails(descriptor, telemetry);
+        ProtocolDetails = CreateProtocolDetails(descriptor, telemetry, declaredCapabilities);
 
         if (_telemetryPending)
         {
@@ -107,12 +108,22 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
 
     private static IReadOnlyList<DeviceProtocolDetailViewModel> CreateProtocolDetails(
         DeviceDescriptor descriptor,
-        RazerDeviceTelemetry telemetry)
+        RazerDeviceTelemetry telemetry,
+        IReadOnlySet<string>? declaredCapabilities)
     {
         var details = new List<DeviceProtocolDetailViewModel>();
 
-        void Add(string resourceKey, object? value, string? formattedValue = null)
+        void Add(
+            string resourceKey,
+            object? value,
+            string? formattedValue = null,
+            string? capability = null)
         {
+            if (capability is not null && declaredCapabilities is not null &&
+                !declaredCapabilities.Contains(capability))
+            {
+                return;
+            }
             details.Add(new DeviceProtocolDetailViewModel(
                 resourceKey,
                 value is not null,
@@ -126,71 +137,106 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
                 // rows are 02C6-only and would otherwise show as unsupported.
                 {
                     Add("Text_5F0C27DB", telemetry.BladeKeyboardBrightness,
-                        telemetry.BladeKeyboardBrightness is byte lit ? $"{lit}/255" : null);
-                    Add("DiagnosticKeyboardEffect", telemetry.BladeKeyboardEffect);
-                    Add("DiagnosticPowerModeControl", telemetry.BladePerformanceMode);
-                Add("Text_DEE979FD", telemetry.BladeChargeLimitPercent,
-                    telemetry.BladeChargeLimitPercent is int limit ? $"{limit}%" : null);
-                Add("DiagnosticCpuBoost", telemetry.BladeCpuBoostMode);
-                Add("DiagnosticGpuBoost", telemetry.BladeGpuBoostMode);
-                if (BladeModelCapabilities.SupportsMaxFan(descriptor.ProductId))
-                {
-                    Add("DiagnosticMaxFan", telemetry.BladeMaxFanMode);
-                }
-                Add("DiagnosticPerformanceFan", telemetry.BladeFanMode);
-                Add("Text_5FCEEE13", telemetry.BladeCurrentFanCpuRpm,
-                    telemetry.BladeCurrentFanCpuRpm is int cpuFanRpm ? $"{cpuFanRpm} RPM" : null);
-                Add("Text_737DBF87", telemetry.BladeCurrentFanGpuRpm,
-                    telemetry.BladeCurrentFanGpuRpm is int gpuFanRpm ? $"{gpuFanRpm} RPM" : null);
-                Add("DiagnosticOneTimeCharge", telemetry.BladeOneTimeFullChargeEnabled);
+                        telemetry.BladeKeyboardBrightness is byte lit ? $"{lit}/255" : null,
+                        CapabilityIds.KeyboardBrightnessGet);
+                    Add("DiagnosticKeyboardEffect", telemetry.BladeKeyboardEffect,
+                        capability: CapabilityIds.KeyboardEffectGet);
+                    Add("DiagnosticPowerModeControl", telemetry.BladePerformanceMode,
+                        capability: CapabilityIds.ThermalStateGet);
+                    Add("Text_DEE979FD", telemetry.BladeChargeLimitPercent,
+                        telemetry.BladeChargeLimitPercent is int limit ? $"{limit}%" : null,
+                        CapabilityIds.ChargeLimitGet);
+                    Add("DiagnosticCpuBoost", telemetry.BladeCpuBoostMode,
+                        capability: CapabilityIds.BoostGet);
+                    Add("DiagnosticGpuBoost", telemetry.BladeGpuBoostMode,
+                        capability: CapabilityIds.BoostGet);
+                    if (BladeModelCapabilities.SupportsMaxFan(descriptor.ProductId))
+                    {
+                        Add("DiagnosticMaxFan", telemetry.BladeMaxFanMode,
+                            capability: CapabilityIds.PowerModeGet);
+                    }
+                    Add("DiagnosticPerformanceFan", telemetry.BladeFanMode,
+                        capability: CapabilityIds.ThermalStateGet);
+                    Add("BladeFanTargetRpmLabel", telemetry.BladeFanTargetRpm,
+                        telemetry.BladeFanTargetRpm is int fanTarget ? $"{fanTarget} RPM" : null,
+                        CapabilityIds.FanTargetGet);
+                    Add("Text_5FCEEE13", telemetry.BladeCurrentFanCpuRpm,
+                        telemetry.BladeCurrentFanCpuRpm is int cpuFanRpm ? $"{cpuFanRpm} RPM" : null,
+                        CapabilityIds.CurrentFanRpmGet);
+                    Add("Text_737DBF87", telemetry.BladeCurrentFanGpuRpm,
+                        telemetry.BladeCurrentFanGpuRpm is int gpuFanRpm ? $"{gpuFanRpm} RPM" : null,
+                        CapabilityIds.CurrentFanRpmGet);
+                    Add("DiagnosticOneTimeCharge", telemetry.BladeOneTimeFullChargeEnabled,
+                        capability: CapabilityIds.PowerModeGet);
                 }
                 break;
 
             case "blade-710":
             case "blade-710-chroma":
                 Add("Text_5F0C27DB", telemetry.BladeKeyboardBrightness,
-                    telemetry.BladeKeyboardBrightness is byte brightness ? $"{brightness}/255" : null);
-                Add("DiagnosticPowerModeControl", telemetry.BladePerformanceMode);
+                    telemetry.BladeKeyboardBrightness is byte brightness ? $"{brightness}/255" : null,
+                    CapabilityIds.KeyboardBrightnessGet);
+                Add("DiagnosticPowerModeControl", telemetry.BladePerformanceMode,
+                    capability: CapabilityIds.ThermalStateGet);
                 Add("Text_DEE979FD", telemetry.BladeChargeLimitPercent,
-                    telemetry.BladeChargeLimitPercent is int charge ? $"{charge}%" : null);
-                Add("DiagnosticCpuBoost", telemetry.BladeCpuBoostMode);
-                Add("DiagnosticGpuBoost", telemetry.BladeGpuBoostMode);
+                    telemetry.BladeChargeLimitPercent is int charge ? $"{charge}%" : null,
+                    CapabilityIds.ChargeLimitGet);
+                Add("DiagnosticCpuBoost", telemetry.BladeCpuBoostMode,
+                    capability: CapabilityIds.BoostGet);
+                Add("DiagnosticGpuBoost", telemetry.BladeGpuBoostMode,
+                    capability: CapabilityIds.BoostGet);
                 if (BladeModelCapabilities.SupportsMaxFan(descriptor.ProductId))
                 {
-                    Add("DiagnosticMaxFan", telemetry.BladeMaxFanMode);
+                    Add("DiagnosticMaxFan", telemetry.BladeMaxFanMode,
+                        capability: CapabilityIds.PowerModeGet);
                 }
-                Add("DiagnosticBladeLogo", telemetry.BladeLogoMode);
-                Add("DiagnosticPerformanceFan", telemetry.BladeFanMode);
+                Add("DiagnosticBladeLogo", telemetry.BladeLogoMode,
+                    capability: CapabilityIds.LogoModeGet);
+                Add("DiagnosticPerformanceFan", telemetry.BladeFanMode,
+                    capability: CapabilityIds.ThermalStateGet);
                 Add("BladeFanTargetRpmLabel", telemetry.BladeFanTargetRpm,
-                    telemetry.BladeFanTargetRpm is int targetRpm ? $"{targetRpm} RPM" : null);
+                    telemetry.BladeFanTargetRpm is int targetRpm ? $"{targetRpm} RPM" : null,
+                    CapabilityIds.FanTargetGet);
                 Add("Text_5FCEEE13", telemetry.BladeCurrentFanCpuRpm,
-                    telemetry.BladeCurrentFanCpuRpm is int cpuRpm ? $"{cpuRpm} RPM" : null);
+                    telemetry.BladeCurrentFanCpuRpm is int cpuRpm ? $"{cpuRpm} RPM" : null,
+                    CapabilityIds.CurrentFanRpmGet);
                 Add("Text_737DBF87", telemetry.BladeCurrentFanGpuRpm,
-                    telemetry.BladeCurrentFanGpuRpm is int gpuRpm ? $"{gpuRpm} RPM" : null);
+                    telemetry.BladeCurrentFanGpuRpm is int gpuRpm ? $"{gpuRpm} RPM" : null,
+                    CapabilityIds.CurrentFanRpmGet);
                 Add("Text_BE0A43ED", telemetry.BladeAdvancedFanCpuModeRaw,
-                    telemetry.BladeAdvancedFanCpuModeRaw is byte cpuMode ? FormatRawByte(cpuMode) : null);
+                    telemetry.BladeAdvancedFanCpuModeRaw is byte cpuMode ? FormatRawByte(cpuMode) : null,
+                    CapabilityIds.AdvancedFanModeGet);
                 Add("Text_37B37761", telemetry.BladeAdvancedFanGpuModeRaw,
-                    telemetry.BladeAdvancedFanGpuModeRaw is byte gpuMode ? FormatRawByte(gpuMode) : null);
+                    telemetry.BladeAdvancedFanGpuModeRaw is byte gpuMode ? FormatRawByte(gpuMode) : null,
+                    CapabilityIds.AdvancedFanModeGet);
                 if (BladeModelCapabilities.SupportsStartupAnimation(descriptor.ProductId))
                 {
-                    Add("Text_AA91A1FF", telemetry.BladeStartupAnimationEnabled);
+                    Add("Text_AA91A1FF", telemetry.BladeStartupAnimationEnabled,
+                        capability: CapabilityIds.StartupAnimationGet);
                 }
-                Add("DiagnosticOneTimeCharge", telemetry.BladeOneTimeFullChargeEnabled);
+                Add("DiagnosticOneTimeCharge", telemetry.BladeOneTimeFullChargeEnabled,
+                    capability: CapabilityIds.PowerModeGet);
                 Add("Text_9D1351CB", telemetry.BladeSkuHardwareConfiguration,
-                    telemetry.BladeSkuHardwareConfiguration is { } skuConfig ? $"0x{skuConfig.Raw:X2}" : null);
+                    telemetry.BladeSkuHardwareConfiguration is { } skuConfig ? $"0x{skuConfig.Raw:X2}" : null,
+                    CapabilityIds.SkuHardwareConfigurationGet);
                 Add("DiagnosticAdapterPower", telemetry.BladeAdapterPower,
                     telemetry.BladeAdapterPower is { } adapter
                         ? $"{adapter.ActualWatts?.ToString() ?? "?"} W / {adapter.RecommendedWatts?.ToString() ?? "?"} W"
-                        : null);
+                        : null,
+                    CapabilityIds.AdapterPowerGet);
                 Add("BladeFnKeyLabel", telemetry.BladeFnKeyMultimediaPrimary,
                     telemetry.BladeFnKeyMultimediaPrimary is bool multimediaPrimary
                         ? AppStrings.Text(multimediaPrimary ? "BladeFnKeyMultimediaPrimaryText" : "BladeFnKeyFunctionPrimaryText")
-                        : null);
-                Add("FirmwareMcuLabel", telemetry.BladeMcuVersion);
+                        : null,
+                    CapabilityIds.FnKeyGet);
+                Add("FirmwareMcuLabel", telemetry.BladeMcuVersion,
+                    capability: CapabilityIds.McuVersionGet);
                 if (telemetry.BladeSkuHardwareConfiguration?.SupportsNativeDisplayMode == true)
                 {
-                    Add("Text_24A8C247", telemetry.BladeNativeDisplayMode);
-                    Add("DiagnosticLocalDimming", telemetry.BladeLocalDimmingEnabled);
+                    Add("Text_24A8C247", telemetry.BladeNativeDisplayMode,
+                        capability: CapabilityIds.NativeDisplayModeGet);
+                    Add("DiagnosticLocalDimming", telemetry.BladeLocalDimmingEnabled,
+                        capability: CapabilityIds.PowerModeGet);
                 }
                 break;
 

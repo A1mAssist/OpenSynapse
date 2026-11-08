@@ -174,9 +174,12 @@ internal sealed partial class RazerDeviceRegistry
                     CapabilityIds.GpuCardDetectionGet or CapabilityIds.GpuCardDetectionSet))
                 .ToHashSet(StringComparer.Ordinal),
             // Per-model reports are optional: 0270 rejects gaming-mode 00:08;
-            // 024C rejects Power Mode Control with 0x05.
+            // 024C rejects Power Mode Control with 0x05; 023A rejects Boost and
+            // Charge Limit as well.
             ["blade-671"] = FamilyCapabilities["blade-671"].Keys
-                .Where(capability => capability is not (CapabilityIds.AdapterPowerGet or
+                .Where(capability => capability is not (CapabilityIds.BoostGet or CapabilityIds.BoostSet or
+                    CapabilityIds.ChargeLimitGet or CapabilityIds.ChargeLimitSet or
+                    CapabilityIds.AdapterPowerGet or
                     CapabilityIds.PowerModeGet or CapabilityIds.PowerModeSet or
                     CapabilityIds.LogoPowerGet or CapabilityIds.LogoPowerSet or
                     CapabilityIds.LogoModeGet or CapabilityIds.LogoModeSet or

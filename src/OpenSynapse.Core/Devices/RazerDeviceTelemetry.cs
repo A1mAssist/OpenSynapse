@@ -348,8 +348,9 @@ public static class DeviceVisibilityPolicy
             return true;
         }
 
+        var declaredCapabilities = telemetry.DeclaredCapabilities?.GetValueOrDefault(descriptor.Id);
         var summary = telemetry.CapabilitySummaries?.GetValueOrDefault(descriptor.Id)
-            ?? DeviceCapabilitySummaryCalculator.Calculate(descriptor, telemetry);
+            ?? DeviceCapabilitySummaryCalculator.Calculate(descriptor, telemetry, declaredCapabilities);
         return summary.Supported == 0;
     }
 }
@@ -416,7 +417,8 @@ public sealed record RazerDeviceTelemetry(
     bool BladeAutoSleepWritable = false,
     bool BladeTimeToDimWritable = false,
     bool BladeIndicatorLedWritable = false,
-    bool BladeGpuCardDetectionWritable = false);
+    bool BladeGpuCardDetectionWritable = false,
+    IReadOnlyDictionary<string, IReadOnlySet<string>>? DeclaredCapabilities = null);
 
 public interface IRazerDeviceTelemetryReader
 {
