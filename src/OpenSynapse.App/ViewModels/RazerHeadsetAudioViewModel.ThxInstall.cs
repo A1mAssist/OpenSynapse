@@ -20,11 +20,12 @@ public sealed partial class RazerHeadsetAudioViewModel
         {
             OperationStatusText = AppStrings.Text("RazerHeadsetThxDownloading");
             _thxStatus = await install();
-            ErrorText =
-                (_thxStatus.ErrorCode is "ThxDownloadFailed" or "ThxDownloadVerificationFailed") ||
-                _thxStatus.ErrorCode?.StartsWith("ThxInstaller", StringComparison.Ordinal) == true
-                    ? AppStrings.Text("RazerHeadsetThxDownloadFailed")
-                    : string.Empty;
+            ErrorText = _thxStatus.RebootRequired
+                ? AppStrings.Text("RazerHeadsetThxRebootRequired")
+                : (_thxStatus.ErrorCode is "ThxDownloadFailed" or "ThxDownloadVerificationFailed") ||
+                    _thxStatus.ErrorCode?.StartsWith("ThxInstaller", StringComparison.Ordinal) == true
+                        ? AppStrings.Text("RazerHeadsetThxDownloadFailed")
+                        : string.Empty;
             // A silent installer that exits 0 without starting the service used to look
             // like a no-op: say what is still missing instead of resetting the card.
             if (_thxStatus.Availability != ThxHeadsetAvailability.Available &&
