@@ -53,6 +53,49 @@ public sealed partial class RazerKeyboardViewModel
                     cancellationToken);
             }
         }
+
+        if (keyboard.ButtonMappings is { Count: > 0 } mappings)
+        {
+            await ApplyPersistedMappingsAsync(mappings, cancellationToken);
+        }
+    }
+
+    [NotProfileScoped]
+    private async Task ApplyPersistedMappingsAsync(
+        IReadOnlyList<ButtonMappingProfile> mappings,
+        CancellationToken cancellationToken)
+    {
+        var transport = new RazerKeyboardMappingTransport(OpenService());
+        foreach (var mapping in mappings)
+        {
+            if (mapping.FunctionId is not { } functionId)
+            {
+                continue;
+            }
+
+            var mode = mapping.Mode ?? 0;
+            var key = $"keyboard.mapping.{mode}.{mapping.ButtonId}";
+            try
+            {
+                var data = mapping.FunctionData?.ToArray() ?? [];
+                var current = await transport.GetAssignmentAsync(mapping.ButtonId, mode, cancellationToken);
+                if (current.FunctionId == functionId && current.Data.SequenceEqual(data))
+                {
+                    continue;
+                }
+
+                await transport.SetAssignmentAsync(
+                    mapping.ButtonId, mode, functionId, data, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception) when (IsExpectedException(exception))
+            {
+                _diagnostic?.Invoke($"profile {key}: {exception.Message}");
+            }
+        }
     }
 
     private async Task WriteProfileSettingAsync(
