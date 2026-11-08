@@ -317,19 +317,33 @@ internal sealed class RazerHidSoftwareLightingRuntime : IAsyncDisposable
         var result = new RazerHidColor[checked(rows * columns)];
         for (var row = 0; row < rows; row++)
         {
-            var sourceRow = source.Rows == 1 || rows == 1
-                ? 0
-                : (int)Math.Round(row * (source.Rows - 1d) / (rows - 1d));
+            var sourceRow = ResolveSourceIndex(row, source.Rows, rows);
+            if (sourceRow < 0) continue;
             for (var column = 0; column < columns; column++)
             {
-                var sourceColumn = source.Columns == 1 || columns == 1
-                    ? 0
-                    : (int)Math.Round(column * (source.Columns - 1d) / (columns - 1d));
+                var sourceColumn = ResolveSourceIndex(column, source.Columns, columns);
+                if (sourceColumn < 0) continue;
                 var color = source[sourceRow, sourceColumn];
                 result[row * columns + column] = new RazerHidColor(color.Red, color.Green, color.Blue);
             }
         }
         return result;
+    }
+
+    /// <summary>
+    /// A sparse device matrix keeps the source rows/columns 1:1 instead of
+    /// stretching the picture into media or underglow rows it never had.
+    /// </summary>
+    private static int ResolveSourceIndex(int index, int sourceCount, int targetCount)
+    {
+        if (targetCount > sourceCount)
+        {
+            return index < sourceCount ? index : -1;
+        }
+
+        return sourceCount == 1 || targetCount == 1
+            ? 0
+            : (int)Math.Round(index * (sourceCount - 1d) / (targetCount - 1d));
     }
 
     private sealed record AppliedFrame(RazerHidDeviceConnection Connection, RazerHidColor[] Frame);
