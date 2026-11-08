@@ -13,10 +13,19 @@ public sealed class MachineSettings
 {
     public BladeGpuMode? GpuMode { get; set; }
     public bool? FnKeyPrimary { get; set; }
-    public bool? StartupEnabled { get; set; }
+    public bool? StartWithWindows { get; set; }
+    [JsonPropertyName("startupEnabled")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? LegacyStartupEnabled
+    {
+        get => null;
+        set => StartWithWindows ??= value;
+    }
     public bool? OverlayEnabled { get; set; }
+    public bool? TaskbarStripEnabled { get; set; }
     public string? Language { get; set; }
     public string? UpdateChannel { get; set; }
+    public bool? AutoUpdateEnabled { get; set; }
 
     internal void ApplySafeDefaults()
     {

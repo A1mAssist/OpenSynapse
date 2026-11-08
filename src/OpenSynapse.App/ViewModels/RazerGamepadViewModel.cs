@@ -4,6 +4,8 @@ using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 using Windows.UI;
@@ -278,6 +280,8 @@ public sealed partial class RazerGamepadViewModel : INotifyPropertyChanged
 {
     private readonly RazerGamepadConnection _connection;
     private readonly RazerGamepadService _service;
+    private readonly Func<ProfileDocument>? _getProfile;
+    private readonly Func<CancellationToken, Task<bool>>? _saveProfile;
     private bool _isBusy;
     private string _errorText = string.Empty;
     private string _operationStatusText = string.Empty;
@@ -295,7 +299,9 @@ public sealed partial class RazerGamepadViewModel : INotifyPropertyChanged
 
     public RazerGamepadViewModel(
         RazerGamepadConnection connection,
-        Action<string>? diagnostic = null)
+        Action<string>? diagnostic = null,
+        Func<ProfileDocument>? getProfile = null,
+        Func<CancellationToken, Task<bool>>? saveProfileAsync = null)
     {
         _connection = connection;
         _service = new RazerGamepadService(
@@ -304,6 +310,8 @@ public sealed partial class RazerGamepadViewModel : INotifyPropertyChanged
             TimeSpan.FromMilliseconds(20),
             diagnostic,
             connection.ProductId);
+        _getProfile = getProfile;
+        _saveProfile = saveProfileAsync;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -423,6 +431,7 @@ public sealed partial class RazerGamepadViewModel : INotifyPropertyChanged
             {
                 ApplyButtonAssignments([]);
             }
+            await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
             ErrorText = Sticks.All(row => !row.IsAvailable) &&
                 Triggers.All(row => !row.IsAvailable) &&
                 !_hasDpad && !_hasVibration && !_hasAdc && !_hasRaw
@@ -471,6 +480,7 @@ public sealed partial class RazerGamepadViewModel : INotifyPropertyChanged
         }
     }
 
+    [NotProfileScoped]
     public async Task ApplyButtonAssignmentAsync(
         RazerGamepadButtonAssignmentRowViewModel row,
         CancellationToken cancellationToken = default)
@@ -482,6 +492,7 @@ public sealed partial class RazerGamepadViewModel : INotifyPropertyChanged
             var preset = row.SelectedPreset;
             if (preset.IsUnchanged) return;
 
+            var previous = row.Assignment;
             var encoded = preset.Encode();
             await _service.SetButtonAssignmentAsync(
                 row.Assignment.ButtonId,
@@ -490,173 +501,37 @@ public sealed partial class RazerGamepadViewModel : INotifyPropertyChanged
                 cancellationToken);
 
             // The service only returns after its readback matched, so the encoded block is the device state.
-            row.UpdateAssignment(new RazerGamepadButtonAssignment(
+            var assignment = new RazerGamepadButtonAssignment(
                 row.Assignment.ButtonId,
                 row.Assignment.Mode,
                 encoded.Function,
                 encoded.Size,
-                encoded.Data.ToArray()));
-            ErrorText = string.Empty;
-            OperationStatusText = AppStrings.Text("BlackSharkSaved");
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-        }
-        catch (Exception exception) when (IsExpectedException(exception))
-        {
-            ErrorText = exception.Message;
-            OperationStatusText = string.Empty;
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    public async Task ApplyStickAsync(
-        RazerGamepadStickRowViewModel row,
-        CancellationToken cancellationToken = default)
-    {
-        if (!BeginOperation()) return;
-        try
-        {
-            if (row.HasSensitivity)
+                encoded.Data.ToArray());
+            row.UpdateAssignment(assignment);
+            if (!await SaveButtonAssignmentProfileAsync(assignment, cancellationToken))
             {
-                await _service.SetSensitivityAsync(
-                    row.ControlId,
-                    (byte)Math.Round(row.Sensitivity),
-                    cancellationToken);
+                try
+                {
+                    await _service.SetButtonAssignmentAsync(
+                        previous.ButtonId,
+                        previous.Mode,
+                        new RazerGamepadFunctionData(
+                            previous.Function,
+                            previous.DataSize,
+                            previous.Data.ToArray()),
+                        CancellationToken.None);
+                }
+                catch (Exception exception) when (IsExpectedException(exception))
+                {
+                    // The save error is the one the caller must see; rollback is best effort.
+                }
+
+                row.UpdateAssignment(previous);
+                ErrorText = AppStrings.Text("RazerHidSettingProfileSaveFailed");
+                OperationStatusText = string.Empty;
+                return;
             }
 
-            if (row.HasZones)
-            {
-                await _service.SetZonesAsync(
-                    row.ControlId,
-                    new RazerGamepadZones(
-                        (ushort)Math.Round(row.DeadZone),
-                        row.ZoneSoftBumper,
-                        row.ZoneDeltaThreshold,
-                        row.PreventDoubleDeadZone),
-                    cancellationToken);
-            }
-
-            if (row.HasCircularity)
-            {
-                await _service.SetCircularityAsync(
-                    row.ControlId,
-                    row.SelectedCircularityIndex == 1
-                        ? RazerGamepadCircularity.Circular
-                        : RazerGamepadCircularity.Standard,
-                    cancellationToken);
-            }
-
-            ErrorText = string.Empty;
-            OperationStatusText = AppStrings.Text("BlackSharkSaved");
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-        }
-        catch (Exception exception) when (IsExpectedException(exception))
-        {
-            ErrorText = exception.Message;
-            OperationStatusText = string.Empty;
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    public async Task ApplyTriggerAsync(
-        RazerGamepadTriggerRowViewModel row,
-        CancellationToken cancellationToken = default)
-    {
-        if (!BeginOperation()) return;
-        try
-        {
-            var mode = row.SelectedModeIndex == 1
-                ? RazerGamepadTriggerMode.Digital
-                : RazerGamepadTriggerMode.Analog;
-            if (row.HasMode)
-            {
-                await _service.SetTriggerModeAsync(row.ControlId, mode, cancellationToken);
-            }
-
-            if (mode == RazerGamepadTriggerMode.Analog && row.HasRange)
-            {
-                await _service.SetTriggerRangeAsync(
-                    row.ControlId,
-                    (byte)Math.Round(row.StartRange),
-                    (byte)Math.Round(row.EndRange),
-                    cancellationToken);
-            }
-            else if (mode == RazerGamepadTriggerMode.Digital && row.HasDigital)
-            {
-                await _service.SetDigitalTriggerAsync(
-                    row.ControlId,
-                    new RazerGamepadDigitalTrigger(
-                        (byte)row.SelectedActuationIndex,
-                        row.RapidTrigger),
-                    cancellationToken);
-            }
-
-            ErrorText = string.Empty;
-            OperationStatusText = AppStrings.Text("BlackSharkSaved");
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-        }
-        catch (Exception exception) when (IsExpectedException(exception))
-        {
-            ErrorText = exception.Message;
-            OperationStatusText = string.Empty;
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    public async Task ApplyDpadAsync(CancellationToken cancellationToken = default)
-    {
-        if (!BeginOperation()) return;
-        try
-        {
-            if (_hasIgnoreDPad)
-            {
-                await _service.SetIgnoreDPadDiagonalsAsync(IgnoreDPadDiagonals, cancellationToken);
-            }
-
-            if (_hasSocd)
-            {
-                await _service.SetSocdAsync((RazerGamepadSocdMode)SocdIndex, cancellationToken);
-            }
-
-            ErrorText = string.Empty;
-            OperationStatusText = AppStrings.Text("BlackSharkSaved");
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-        }
-        catch (Exception exception) when (IsExpectedException(exception))
-        {
-            ErrorText = exception.Message;
-            OperationStatusText = string.Empty;
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    public async Task ApplyVibrationAsync(CancellationToken cancellationToken = default)
-    {
-        if (!BeginOperation()) return;
-        try
-        {
-            await _service.SetVibrationScaleAsync(
-                RazerGamepadProtocol.ToVibrationScale((byte)VibrationIndex),
-                cancellationToken);
             ErrorText = string.Empty;
             OperationStatusText = AppStrings.Text("BlackSharkSaved");
         }

@@ -176,6 +176,7 @@ public sealed partial class DisplayWorkspace : INotifyPropertyChanged
             InternalDisplayRefreshRateHertz = _confirmedInternalDisplayRefreshRateHertz);
     }
 
+    [ProfileSetting("blade.display-brightness", DeviceCategory.Laptop, powerScoped: true)]
     internal Task QueueInternalDisplayBrightnessAsync(
         double percent,
         CancellationToken cancellationToken = default)

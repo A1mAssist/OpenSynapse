@@ -1,6 +1,9 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 
@@ -50,6 +53,8 @@ public sealed class LeviathanV2XAudioViewModel : INotifyPropertyChanged
     ];
 
     private readonly LeviathanV2XAudioService _service;
+    private readonly Func<ProfileDocument>? _getProfile;
+    private readonly Func<CancellationToken, Task<bool>>? _saveProfile;
     private bool _isBusy;
     private bool _hasState;
     private string _errorText = string.Empty;
@@ -59,9 +64,14 @@ public sealed class LeviathanV2XAudioViewModel : INotifyPropertyChanged
     private LeviathanV2XInputSource? _inputSource;
     private LeviathanV2XAudioIoStatus? _audioIo;
 
-    public LeviathanV2XAudioViewModel(LeviathanV2XAudioService service)
+    public LeviathanV2XAudioViewModel(
+        LeviathanV2XAudioService service,
+        Func<ProfileDocument>? getProfile = null,
+        Func<CancellationToken, Task<bool>>? saveProfile = null)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
+        _getProfile = getProfile;
+        _saveProfile = saveProfile;
         foreach (var frequency in LeviathanV2XProtocol.EqBandFrequencies)
         {
             EqBands.Add(new LeviathanV2XEqBandViewModel(frequency));
@@ -149,6 +159,7 @@ public sealed class LeviathanV2XAudioViewModel : INotifyPropertyChanged
         {
             var state = await _service.ReadStateAsync(cancellationToken);
             ApplyState(state);
+            await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
             ErrorText = state.Errors.Count == 0
                 ? string.Empty
                 : AppStrings.Text(HasState
@@ -178,14 +189,33 @@ public sealed class LeviathanV2XAudioViewModel : INotifyPropertyChanged
             return;
         }
 
+        if (!await SaveProfileAsync(
+                settings => settings.EqPreset = Presets[SelectedEqPresetIndex].Preset.ToString(),
+                cancellationToken))
+        {
+            ErrorText = AppStrings.Text("RazerHidSettingProfileSaveFailed");
+            return;
+        }
+
         await LoadAsync(cancellationToken);
         OperationStatusText = AppStrings.Text("LeviathanSaved");
     }
 
-    public async Task ApplyBassAsync(CancellationToken cancellationToken = default) =>
-        await RunWriteAsync(
-            () => _service.SetBassAsync((int)Math.Round(BassLevel), cancellationToken),
-            cancellationToken);
+    public async Task ApplyBassAsync(CancellationToken cancellationToken = default)
+    {
+        var bass = (int)Math.Round(BassLevel);
+        if (!await RunWriteAsync(
+                () => _service.SetBassAsync(bass, cancellationToken),
+                cancellationToken))
+        {
+            return;
+        }
+
+        if (!await SaveProfileAsync(settings => settings.Bass = bass, cancellationToken))
+        {
+            ErrorText = AppStrings.Text("RazerHidSettingProfileSaveFailed");
+        }
+    }
 
     public async Task ApplyEqBandsAsync(CancellationToken cancellationToken = default)
     {
@@ -193,8 +223,84 @@ public sealed class LeviathanV2XAudioViewModel : INotifyPropertyChanged
         if (await RunWriteAsync(() => _service.SetEqBandsAsync(bands, cancellationToken), cancellationToken))
         {
             SelectedEqPresetIndex = Array.FindIndex(Presets, item => item.Preset == LeviathanV2XEqPreset.Custom);
+            var saved = bands
+                .Select((level, index) => (Key: index.ToString(), Level: (int)level))
+                .ToDictionary(item => item.Key, item => item.Level, StringComparer.OrdinalIgnoreCase);
+            if (!await SaveProfileAsync(settings => settings.EqBands = saved, cancellationToken))
+            {
+                ErrorText = AppStrings.Text("RazerHidSettingProfileSaveFailed");
+            }
         }
     }
+
+    [NotProfileScoped]
+    public async Task ApplyPersistedProfileAsync(
+        PowerSourceKind powerSource,
+        CancellationToken cancellationToken = default)
+    {
+        if (_getProfile?.Invoke() is not { } document)
+        {
+            return;
+        }
+
+        var descriptor = new DeviceDescriptor(
+            ProfileKey,
+            "Razer Leviathan V2 X",
+            0x1532,
+            LeviathanV2XProtocol.ProductId,
+            DeviceAccessState.Available,
+            DeviceCapabilityState.PendingValidation,
+            0,
+            1,
+            2,
+            "leviathan-v2x",
+            DeviceCategory.Speaker);
+        var settings = ProfileResolver.Resolve(document, descriptor, powerSource).Headset;
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(settings.EqPreset) &&
+                Enum.TryParse<LeviathanV2XEqPreset>(settings.EqPreset, true, out var preset))
+            {
+                await _service.SetEqPresetAsync(preset, cancellationToken);
+            }
+
+            if (settings.EqBands is { Count: LeviathanV2XProtocol.EqBandCount } bands)
+            {
+                var values = Enumerable.Range(0, bands.Count)
+                    .Select(index => (byte)Math.Clamp(
+                        bands.TryGetValue(index.ToString(), out var value) ? value : 0, 0, 100))
+                    .ToArray();
+                await _service.SetEqBandsAsync(values, cancellationToken);
+            }
+
+            if (settings.Bass is int bass)
+            {
+                await _service.SetBassAsync(Math.Clamp(bass, 1, 7), cancellationToken);
+            }
+
+            ApplyState(await _service.ReadStateAsync(cancellationToken));
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (IsExpectedException(exception))
+        {
+            ErrorText = AppStrings.Text("LeviathanWriteFailed");
+        }
+    }
+
+    private string ProfileKey => $"1532:{LeviathanV2XProtocol.ProductId:X4}";
+
+    private Task<bool> SaveProfileAsync(
+        Action<HeadsetProfileSettings> mutate,
+        CancellationToken cancellationToken) =>
+        PeripheralProfileStore.SaveAsync(
+            _getProfile?.Invoke(),
+            _saveProfile,
+            ProfileKey,
+            device => mutate(device.Headset),
+            cancellationToken);
 
     public void RefreshLocalization()
     {

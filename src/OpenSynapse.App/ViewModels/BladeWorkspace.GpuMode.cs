@@ -11,9 +11,9 @@ public sealed partial class BladeWorkspace
 
     /// <summary>
     /// Only Auto has to survive a restart; the other three modes are read back from the
-    /// hardware state. Global rather than per-profile: the GPU route is machine-wide.
+    /// hardware state. Machine settings rather than a profile: the GPU route is machine-wide.
     /// </summary>
-    internal BladeGpuMode? StoredGpuMode => Profile.Global.Blade.GpuMode;
+    internal BladeGpuMode? StoredGpuMode => _getMachineSettings().GpuMode;
 
     private ValueTask<BladeDisplayMuxStatus> ReadDisplayMuxStatusAsync(
         CancellationToken cancellationToken = default) =>
@@ -155,20 +155,21 @@ public sealed partial class BladeWorkspace
         BladeGpuMode? mode,
         CancellationToken cancellationToken = default)
     {
-        var previous = Profile.Global.Blade.GpuMode;
-        Profile.Global.Blade.GpuMode = mode;
+        var settings = _getMachineSettings();
+        var previous = settings.GpuMode;
+        settings.GpuMode = mode;
         try
         {
-            if (await SaveProfileAsync(cancellationToken))
+            if (await _saveMachineSettingsAsync(cancellationToken))
             {
                 return true;
             }
-            Profile.Global.Blade.GpuMode = previous;
+            settings.GpuMode = previous;
             return false;
         }
         catch
         {
-            Profile.Global.Blade.GpuMode = previous;
+            settings.GpuMode = previous;
             throw;
         }
     }

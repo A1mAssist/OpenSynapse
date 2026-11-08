@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml.Media;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
@@ -16,6 +18,8 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
 {
     private readonly Func<CancellationToken, Task<RazerCoolingPadService?>> _connect;
     private readonly IPerformanceMonitor? _performanceMonitor;
+    private readonly Func<ProfileDocument>? _getProfile;
+    private readonly Func<CancellationToken, Task<bool>>? _saveProfile;
     private RazerCoolingPadService? _service;
     private bool _isConnected;
     private bool _isBusy;
@@ -27,17 +31,27 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
 
     public RazerCoolingPadViewModel(
         Action<string>? diagnostic = null,
-        IPerformanceMonitor? performanceMonitor = null)
-        : this(cancellationToken => RazerCoolingPadService.ConnectAsync(diagnostic, cancellationToken), performanceMonitor)
+        IPerformanceMonitor? performanceMonitor = null,
+        Func<ProfileDocument>? getProfile = null,
+        Func<CancellationToken, Task<bool>>? saveProfileAsync = null)
+        : this(
+            cancellationToken => RazerCoolingPadService.ConnectAsync(diagnostic, cancellationToken),
+            performanceMonitor,
+            getProfile,
+            saveProfileAsync)
     {
     }
 
     internal RazerCoolingPadViewModel(
         Func<CancellationToken, Task<RazerCoolingPadService?>> connect,
-        IPerformanceMonitor? performanceMonitor = null)
+        IPerformanceMonitor? performanceMonitor = null,
+        Func<ProfileDocument>? getProfile = null,
+        Func<CancellationToken, Task<bool>>? saveProfileAsync = null)
     {
         _connect = connect ?? throw new ArgumentNullException(nameof(connect));
         _performanceMonitor = performanceMonitor;
+        _getProfile = getProfile;
+        _saveProfile = saveProfileAsync;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -116,6 +130,7 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
             try
             {
                 await ReadCurrentAsync(cancellationToken);
+                await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
             }
             catch (Exception exception) when (IsExpected(exception))
             {
@@ -166,6 +181,7 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
         try
         {
             await ReadCurrentAsync(cancellationToken);
+            await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
         }
         catch (Exception exception) when (IsExpected(exception))
         {
@@ -173,6 +189,40 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
         }
     }
 
+    [NotProfileScoped]
+    public async Task ApplyPersistedProfileAsync(
+        PowerSourceKind powerSource,
+        CancellationToken cancellationToken = default)
+    {
+        if (_service is null || _getProfile?.Invoke() is not { } document)
+        {
+            return;
+        }
+
+        var descriptor = new DeviceDescriptor(
+            $"1532:{_service.ProductId:X4}",
+            Name,
+            0x1532,
+            _service.ProductId,
+            DeviceAccessState.Available,
+            DeviceCapabilityState.PendingValidation,
+            91,
+            1,
+            2,
+            "cooling-pad",
+            DeviceCategory.CoolingPad);
+        var applier = new CoolingPadProfileApplier(
+            (_, _) => Task.FromResult<RazerCoolingPadService?>(_service));
+        await applier.ApplyAsync(
+            new DeviceProfileApplyContext(
+                document,
+                descriptor,
+                powerSource,
+                ProfileResolver.Resolve(document, descriptor, powerSource)),
+            cancellationToken);
+    }
+
+    [ProfileSetting("coolingpad.fan-target", DeviceCategory.CoolingPad)]
     public async Task ApplyAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApply || _service is null)
@@ -187,8 +237,25 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
             await _curveTask;
             cancellationToken.ThrowIfCancellationRequested();
             if (_disposed || !IsConnected) return;
+            var previous = await ReadCoolingModeOrDefaultAsync(cancellationToken);
             var target = (int)Math.Round(TargetRpm);
             var actual = await _service.SetSpeedRpmAsync(target, cancellationToken);
+            if (!await SaveProfileAsync(profile =>
+                {
+                    profile.FanMode = "Manual";
+                    profile.FanTargetRpm = target;
+                }, cancellationToken))
+            {
+                await RestoreCoolingModeAsync(previous, CancellationToken.None);
+                if (previous is { ModeId: <= 2 or 6 } state)
+                {
+                    TargetRpm = NormalizeTarget(state.Rpm);
+                }
+
+                SetError(AppStrings.FormatText("CoolingPadErrorApply", "profile save failed"));
+                return;
+            }
+
             _currentRpmText = $"{actual} RPM";
             _operationStatusText = AppStrings.FormatText("CoolingPadStatusApplied", target, actual);
             SetError(string.Empty);

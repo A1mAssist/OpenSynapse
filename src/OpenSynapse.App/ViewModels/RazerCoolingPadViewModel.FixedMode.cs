@@ -1,4 +1,6 @@
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
@@ -36,6 +38,7 @@ public sealed partial class RazerCoolingPadViewModel
 
     public bool CanApplyFixedMode => IsConnected && !IsBusy && _hasFixedMode;
 
+    [ProfileSetting("coolingpad.fan-mode", DeviceCategory.CoolingPad)]
     public async Task ApplyFixedModeAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApplyFixedMode || _service is null)
@@ -50,6 +53,7 @@ public sealed partial class RazerCoolingPadViewModel
             await _curveTask;
             cancellationToken.ThrowIfCancellationRequested();
             if (_disposed || !IsConnected) return;
+            var previous = await ReadCoolingModeOrDefaultAsync(cancellationToken);
             var mode = SelectedFixedModeIndex switch
             {
                 0 => RazerCoolingPadFixedMode.Low,
@@ -58,6 +62,22 @@ public sealed partial class RazerCoolingPadViewModel
                 _ => RazerCoolingPadFixedMode.Mid,
             };
             var actual = await _service.SetFixedModeAsync(mode, cancellationToken);
+            if (!await SaveProfileAsync(profile =>
+                {
+                    profile.FanMode = mode.ToString();
+                    profile.FanTargetRpm = null;
+                }, cancellationToken))
+            {
+                await RestoreCoolingModeAsync(previous, CancellationToken.None);
+                if (previous is { } state && state.ModeId is 0 or 1 or 2 or 6)
+                {
+                    SelectedFixedModeIndex = state.ModeId == 6 ? 3 : Math.Min(state.ModeId, (byte)2);
+                }
+
+                SetError(AppStrings.FormatText("CoolingPadFixedModeError", "profile save failed"));
+                return;
+            }
+
             _fixedModeStatusText = AppStrings.FormatText(
                 "CoolingPadFixedModeStatus",
                 DescribeMode((byte)mode),

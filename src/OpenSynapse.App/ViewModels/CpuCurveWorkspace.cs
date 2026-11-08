@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Lifecycle;
 
@@ -16,15 +18,22 @@ public sealed class CpuCurveWorkspace : INotifyPropertyChanged
 
     private readonly bool _isAmd;
     private readonly Func<string, Func<Task>, CancellationToken, Task> _runOperation;
+    private readonly Func<BladeProfileSettings> _getProfileSettings;
+    private readonly Func<CancellationToken, Task<bool>> _saveProfileAsync;
     private int _steps;
     private int? _lastApplied;
     private bool _available;
     private bool _probed;
     private string _detail = string.Empty;
 
-    public CpuCurveWorkspace(Func<string, Func<Task>, CancellationToken, Task> runOperation)
+    public CpuCurveWorkspace(
+        Func<string, Func<Task>, CancellationToken, Task> runOperation,
+        Func<BladeProfileSettings> getProfileSettings,
+        Func<CancellationToken, Task<bool>> saveProfileAsync)
     {
         _runOperation = runOperation;
+        _getProfileSettings = getProfileSettings;
+        _saveProfileAsync = saveProfileAsync;
         _isAmd = CpuVendor.IsAmd(out _);
     }
 
@@ -100,6 +109,7 @@ public sealed class CpuCurveWorkspace : INotifyPropertyChanged
         NotifyAll();
     }
 
+    [ProfileSetting("blade.cpu-curve", DeviceCategory.Laptop, powerScoped: true)]
     public async Task ApplyAsync(CancellationToken cancellationToken = default)
     {
         if (!CanEdit)
@@ -108,6 +118,9 @@ public sealed class CpuCurveWorkspace : INotifyPropertyChanged
         }
 
         var steps = _steps;
+        var target = _getProfileSettings();
+        var previousProfile = target.CpuCurveOffset;
+        var previousApplied = _lastApplied;
         try
         {
             await _runOperation(
@@ -122,6 +135,22 @@ public sealed class CpuCurveWorkspace : INotifyPropertyChanged
                         {
                             throw new InvalidOperationException(
                                 result?.Error ?? AppStrings.Text("CpuCurveUnavailable"));
+                        }
+
+                        target.CpuCurveOffset = steps;
+                        try
+                        {
+                            if (!await _saveProfileAsync(cancellationToken))
+                            {
+                                throw new InvalidOperationException(
+                                    AppStrings.Text("CpuCurveApplyFailed"));
+                            }
+                        }
+                        catch
+                        {
+                            target.CpuCurveOffset = previousProfile;
+                            await RestoreAppliedAsync(previousApplied ?? 0);
+                            throw;
                         }
 
                         _lastApplied = steps;
@@ -167,6 +196,19 @@ public sealed class CpuCurveWorkspace : INotifyPropertyChanged
     private static string Format(int steps) => steps == 0
         ? AppStrings.Text("CpuCurveOff")
         : AppStrings.FormatText("CpuCurveStepsValue", steps);
+
+    private static async Task RestoreAppliedAsync(int steps)
+    {
+        try
+        {
+            await OpenSynapseServiceClient.TrySetCurveOptimizerAsync(
+                steps, CancellationToken.None);
+        }
+        catch
+        {
+            // The save failure is the error the caller must see.
+        }
+    }
 
     private void NotifyAll()
     {

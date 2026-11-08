@@ -370,6 +370,7 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
         }
         OnPropertyChanged(nameof(ActiveProfileName));
         OnPropertyChanged(nameof(CanDeleteProfile));
+        RefreshProfileSummary();
     }
 
     private async Task RunProfileOperationAsync(
@@ -388,7 +389,9 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
             await operation();
             await _profileStore.SaveAsync(_getProfile(), cancellationToken);
             _requestProfileApply();
-            ProfileStatusText = AppStrings.FormatText("ProfileOperationSucceeded", label, ActiveProfileName);
+            ProfileStatusText =
+                AppStrings.FormatText("ProfileOperationSucceeded", label, ActiveProfileName) +
+                " · " + AppStrings.Text("SavedToCurrentProfile");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

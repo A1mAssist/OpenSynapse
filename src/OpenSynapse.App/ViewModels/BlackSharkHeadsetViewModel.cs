@@ -1,6 +1,9 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 
@@ -13,6 +16,8 @@ public sealed class BlackSharkHeadsetViewModel : INotifyPropertyChanged
 
     private readonly BlackSharkHeadsetConnection _connection;
     private readonly Action<string>? _diagnostic;
+    private readonly Func<ProfileDocument>? _getProfile;
+    private readonly Func<CancellationToken, Task<bool>>? _saveProfile;
     private bool _isBusy;
     private string _errorText = string.Empty;
     private string _operationStatusText = string.Empty;
@@ -33,10 +38,14 @@ public sealed class BlackSharkHeadsetViewModel : INotifyPropertyChanged
 
     public BlackSharkHeadsetViewModel(
         BlackSharkHeadsetConnection connection,
-        Action<string>? diagnostic = null)
+        Action<string>? diagnostic = null,
+        Func<ProfileDocument>? getProfile = null,
+        Func<CancellationToken, Task<bool>>? saveProfile = null)
     {
         _connection = connection;
         _diagnostic = diagnostic;
+        _getProfile = getProfile;
+        _saveProfile = saveProfile;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -166,6 +175,7 @@ public sealed class BlackSharkHeadsetViewModel : INotifyPropertyChanged
 
             Serial ??= await WindowsHidDiscovery.TryReadSerialNumberAsync(
                 _connection.DevicePath, cancellationToken);
+            await ApplyPersistedProfileAsync(service, PowerSourceKind.Unknown, cancellationToken);
             OnPropertyChanged(nameof(SerialVisibility));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -183,27 +193,152 @@ public sealed class BlackSharkHeadsetViewModel : INotifyPropertyChanged
         }
     }
 
+    private string ProfileDeviceKey => string.IsNullOrWhiteSpace(Serial)
+        ? $"1532:{_connection.ProductId:X4}"
+        : Serial;
+
+    [NotProfileScoped]
+    public async Task ApplyPersistedProfileAsync(
+        PowerSourceKind powerSource,
+        CancellationToken cancellationToken = default)
+    {
+        await using var service = await BlackSharkHeadsetService.OpenAsync(
+            _connection, _diagnostic, cancellationToken);
+        await ApplyPersistedProfileAsync(service, powerSource, cancellationToken);
+    }
+
+    [NotProfileScoped]
+    private async Task ApplyPersistedProfileAsync(
+        BlackSharkHeadsetService service,
+        PowerSourceKind powerSource,
+        CancellationToken cancellationToken)
+    {
+        if (_getProfile?.Invoke() is not { } document)
+        {
+            return;
+        }
+
+        var descriptor = new DeviceDescriptor(
+            ProfileDeviceKey,
+            Name,
+            0x1532,
+            _connection.ProductId,
+            DeviceAccessState.Available,
+            DeviceCapabilityState.PendingValidation,
+            91,
+            1,
+            2,
+            "blackshark",
+            DeviceCategory.Headset);
+        var applier = new HeadsetPeripheralProfileApplier(
+            resolveBlackShark: (_, _) => Task.FromResult<BlackSharkHeadsetService?>(service));
+        await applier.ApplyAsync(
+            new DeviceProfileApplyContext(
+                document,
+                descriptor,
+                powerSource,
+                ProfileResolver.Resolve(document, descriptor, powerSource)),
+            cancellationToken);
+    }
+
+    [ProfileSetting("headset.sidetone", DeviceCategory.Headset, powerScoped: true)]
     public Task SetSidetoneAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(async (service, token) =>
         {
-            await service.SetSidetoneAsync((int)Math.Round(SidetoneLevel), token);
+            var previous = await service.ReadStateAsync(token);
+            var desired = (int)Math.Round(SidetoneLevel);
+            await service.SetSidetoneAsync(desired, token);
+            if (!await PersistHeadsetAsync(headset => headset.SideTone = desired, token))
+            {
+                if (previous.Sidetone is { } old)
+                {
+                    await service.SetSidetoneAsync(old, token);
+                    SidetoneLevel = old;
+                }
+
+                throw new InvalidOperationException(
+                    AppStrings.Text("RazerHidSettingProfileSaveFailed"));
+            }
         }, cancellationToken);
 
+    [ProfileSetting("headset.thx", DeviceCategory.Headset, powerScoped: true)]
     public Task SetThxAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync((service, token) => service.SetThxAsync(ThxEnabled, token), cancellationToken);
+        RunWriteAsync(async (service, token) =>
+        {
+            var previous = await service.ReadStateAsync(token);
+            var desired = ThxEnabled;
+            await service.SetThxAsync(desired, token);
+            if (!await PersistHeadsetAsync(headset => headset.ThxEnabled = desired, token))
+            {
+                if (previous.Thx is { } old)
+                {
+                    await service.SetThxAsync(old, token);
+                    ThxEnabled = old;
+                }
 
+                throw new InvalidOperationException(
+                    AppStrings.Text("RazerHidSettingProfileSaveFailed"));
+            }
+        }, cancellationToken);
+
+    [ProfileSetting("headset.anc", DeviceCategory.Headset, powerScoped: true)]
     public Task SetAncAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(async (service, token) =>
         {
+            var previous = await service.ReadStateAsync(token);
             var mode = AncModes[SelectedAncModeIndex];
-            await service.SetAncAsync(mode, (int)Math.Round(AncLevel), token);
+            var level = (int)Math.Round(AncLevel);
+            await service.SetAncAsync(mode, level, token);
+            if (!await PersistHeadsetAsync(
+                    headset =>
+                    {
+                        headset.AncEnabled = mode != BlackSharkAncMode.Off;
+                        headset.AncModeIndex = SelectedAncModeIndex;
+                        headset.AncLevel = level;
+                    },
+                    token))
+            {
+                if (previous.AncMode is { } old)
+                {
+                    await service.SetAncAsync(old, previous.AncLevel ?? 1, token);
+                    SelectedAncModeIndex = Array.IndexOf(AncModes, old);
+                    AncLevel = previous.AncLevel ?? AncLevel;
+                }
+
+                throw new InvalidOperationException(
+                    AppStrings.Text("RazerHidSettingProfileSaveFailed"));
+            }
         }, cancellationToken);
 
+    [ProfileSetting("headset.game-chat", DeviceCategory.Headset, powerScoped: true)]
     public Task SetGameChatAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(async (service, token) =>
         {
-            await service.SetGameChatAsync((int)Math.Round(GameChatBalance), token);
+            var previous = await service.ReadStateAsync(token);
+            var desired = (int)Math.Round(GameChatBalance);
+            await service.SetGameChatAsync(desired, token);
+            if (!await PersistHeadsetAsync(headset => headset.GameChatBalance = desired, token))
+            {
+                if (previous.GameChatBalance is { } old)
+                {
+                    await service.SetGameChatAsync(old, token);
+                    GameChatBalance = old;
+                }
+
+                throw new InvalidOperationException(
+                    AppStrings.Text("RazerHidSettingProfileSaveFailed"));
+            }
         }, cancellationToken);
+
+    private Task<bool> PersistHeadsetAsync(
+        Action<HeadsetProfileSettings> mutate,
+        CancellationToken cancellationToken) =>
+        HeadsetProfilePersistence.SaveAsync(
+            _getProfile?.Invoke(),
+            _saveProfile,
+            ProfileDeviceKey,
+            mutate,
+            cancellationToken);
 
     public void RefreshLocalization() => OnPropertyChanged(string.Empty);
 

@@ -100,6 +100,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
     private readonly Func<IReadOnlyList<MacroDefinition>>? _localMacros;
     private readonly Func<ProfileDefinition>? _getActiveProfile;
     private readonly Func<CancellationToken, Task<bool>>? _saveProfileAsync;
+    private readonly Func<MachineSettings>? _getMachineSettings;
+    private readonly Func<CancellationToken, Task<bool>>? _saveMachineSettingsAsync;
     private readonly RazerHidSoftwareLightingRuntime? _softwareLightingRuntime;
     private WasapiAudioMeterAdapter? _softwareAudioInput;
     private TimeSpan _softwareLightingElapsed;
@@ -126,12 +128,15 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         bool chromaIntegrationEnabled = true,
         Func<IReadOnlyList<MacroDefinition>>? localMacros = null,
         Func<ProfileDefinition>? getActiveProfile = null,
-        Func<CancellationToken, Task<bool>>? saveProfileAsync = null)
+        Func<CancellationToken, Task<bool>>? saveProfileAsync = null,
+        Func<MachineSettings>? getMachineSettings = null,
+        Func<CancellationToken, Task<bool>>? saveMachineSettingsAsync = null,
+        Func<ProfileDocument>? getProfileDocument = null)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
         Connection = connection ?? throw new ArgumentNullException(nameof(connection));
         Soundbar = service.CreateLeviathanV2XAudio(connection) is { } audio
-            ? new LeviathanV2XAudioViewModel(audio)
+            ? new LeviathanV2XAudioViewModel(audio, getProfileDocument, saveProfileAsync)
             : null;
         if (connection.Definition.MatrixDimensions is not null &&
             connection.Capabilities.Contains(RazerHidBackendCapability.MatrixFrameWrite))
@@ -152,6 +157,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         _localMacros = localMacros;
         _getActiveProfile = getActiveProfile;
         _saveProfileAsync = saveProfileAsync;
+        _getMachineSettings = getMachineSettings;
+        _saveMachineSettingsAsync = saveMachineSettingsAsync;
         _lightingEnabled = lightingEnabledResolver?.Invoke() ?? true;
         _chromaOverrideEnabled = chromaOverrideResolver?.Invoke() ?? true;
         _chromaIntegrationEnabled = chromaIntegrationEnabled;

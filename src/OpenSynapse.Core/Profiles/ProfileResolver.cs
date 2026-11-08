@@ -8,7 +8,7 @@ namespace OpenSynapse.Core.Profiles;
 /// This class only combines persisted values; hardware capability checks belong
 /// to the coordinator that applies the resolved values.
 /// </summary>
-public static class ProfileResolver
+public static partial class ProfileResolver
 {
     public static ResolvedProfile Resolve(
         ProfileDocument document,
@@ -25,13 +25,25 @@ public static class ProfileResolver
         ProfileDocument document,
         DeviceDescriptor device,
         PowerSourceKind powerSource)
+        => ResolveWithDeviceKey(document, device, powerSource, GetDeviceKey(device));
+
+    /// <summary>
+    /// Resolves a peripheral that stores its settings under a transport identity
+    /// such as a serial number instead of the shared VID:PID key.
+    /// </summary>
+    public static ResolvedProfile ResolveWithDeviceKey(
+        ProfileDocument document,
+        DeviceDescriptor device,
+        PowerSourceKind powerSource,
+        string deviceKey)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(device);
+        ArgumentException.ThrowIfNullOrWhiteSpace(deviceKey);
 
         var active = document.GetActiveProfileDefinition();
         var global = active.Global;
-        var deviceSettings = FindDeviceSettings(active.Devices, GetDeviceKey(device));
+        var deviceSettings = FindDeviceSettings(active.Devices, deviceKey);
         var powerSettings = powerSource switch
         {
             PowerSourceKind.FullPowerAdapter => active.PluggedIn,
@@ -48,6 +60,9 @@ public static class ProfileResolver
             ResolveHeadset(global?.Headset, deviceSettings?.Headset, powerSettings?.Headset),
             ResolveCoolingPad(global?.CoolingPad, deviceSettings?.CoolingPad, powerSettings?.CoolingPad),
             ResolveGamepad(global?.Gamepad, deviceSettings?.Gamepad, powerSettings?.Gamepad),
+            ResolveChroma(global?.Chroma, deviceSettings?.Chroma, powerSettings?.Chroma),
+            ResolveMixer(global?.Mixer, deviceSettings?.Mixer, powerSettings?.Mixer),
+            ResolveKiyo(global?.Kiyo, deviceSettings?.Kiyo, powerSettings?.Kiyo),
             ResolveDisplay(global?.Display, deviceSettings?.Display, powerSettings?.Display),
             ResolveLightingZones(
                 global?.LightingZones,
@@ -59,6 +74,33 @@ public static class ProfileResolver
     {
         ArgumentNullException.ThrowIfNull(device);
         return $"{device.VendorId:X4}:{device.ProductId:X4}";
+    }
+
+    /// <summary>
+    /// Resolves a headset stored under a transport-specific key such as
+    /// <c>ble:{id}</c> or a serial number. The shared resolver keys only on VID:PID,
+    /// which would make two Bluetooth headsets share one settings entry.
+    /// </summary>
+    public static HeadsetProfileSettings ResolveHeadset(
+        ProfileDocument document,
+        PowerSourceKind powerSource,
+        string deviceKey)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentException.ThrowIfNullOrWhiteSpace(deviceKey);
+
+        var active = document.GetActiveProfileDefinition();
+        var powerSettings = powerSource switch
+        {
+            PowerSourceKind.FullPowerAdapter => active.PluggedIn,
+            PowerSourceKind.LowPowerAdapter => active.LowPowerAdapter,
+            PowerSourceKind.Battery => active.OnBattery,
+            _ => null,
+        };
+        return ResolveHeadset(
+            active.Global.Headset,
+            FindDeviceSettings(active.Devices, deviceKey)?.Headset,
+            powerSettings?.Headset);
     }
 
     public static LightingProfile? ResolveRazerHidLighting(
@@ -178,131 +220,6 @@ public static class ProfileResolver
             : null;
     }
 
-    private static BladeProfileSettings ResolveBlade(
-        BladeProfileSettings? global,
-        BladeProfileSettings? device,
-        BladeProfileSettings? power)
-    {
-        return new BladeProfileSettings
-        {
-            KeyboardBrightness = First(power?.KeyboardBrightness, device?.KeyboardBrightness, global?.KeyboardBrightness),
-            PerformanceMode = First(power?.PerformanceMode, device?.PerformanceMode, global?.PerformanceMode),
-            FanMode = First(power?.FanMode, device?.FanMode, global?.FanMode),
-            FanTargetRpm = First(power?.FanTargetRpm, device?.FanTargetRpm, global?.FanTargetRpm),
-            FanCurve = (power?.FanCurve ?? device?.FanCurve ?? global?.FanCurve)?.Clone(),
-            ChargeLimitPercent = First(power?.ChargeLimitPercent, device?.ChargeLimitPercent, global?.ChargeLimitPercent),
-            RefreshRateHertz = First(power?.RefreshRateHertz, device?.RefreshRateHertz, global?.RefreshRateHertz),
-            MaxFanMode = First(power?.MaxFanMode, device?.MaxFanMode, global?.MaxFanMode),
-            CpuBoostMode = First(power?.CpuBoostMode, device?.CpuBoostMode, global?.CpuBoostMode),
-            GpuBoostMode = First(power?.GpuBoostMode, device?.GpuBoostMode, global?.GpuBoostMode),
-            LogoMode = First(power?.LogoMode, device?.LogoMode, global?.LogoMode),
-            GamingModeEnabled = First(
-                power?.GamingModeEnabled,
-                device?.GamingModeEnabled,
-                global?.GamingModeEnabled),
-            SnapTapEnabled = First(power?.SnapTapEnabled, device?.SnapTapEnabled, global?.SnapTapEnabled),
-            MappingPreset = power?.MappingPreset ?? device?.MappingPreset ?? global?.MappingPreset,
-            LightingEnabled = First(power?.LightingEnabled, device?.LightingEnabled, global?.LightingEnabled),
-            ChromaOverrideEnabled = First(
-                power?.ChromaOverrideEnabled,
-                device?.ChromaOverrideEnabled,
-                global?.ChromaOverrideEnabled),
-        };
-    }
-
-    private static MouseProfileSettings ResolveMouse(
-        MouseProfileSettings? global,
-        MouseProfileSettings? device,
-        MouseProfileSettings? power)
-    {
-        return new MouseProfileSettings
-        {
-            DpiX = First(power?.DpiX, device?.DpiX, global?.DpiX),
-            DpiY = First(power?.DpiY, device?.DpiY, global?.DpiY),
-            PollingRateHertz = First(power?.PollingRateHertz, device?.PollingRateHertz, global?.PollingRateHertz),
-            IdleSeconds = First(power?.IdleSeconds, device?.IdleSeconds, global?.IdleSeconds),
-            LowBatteryThresholdPercent = First(
-                power?.LowBatteryThresholdPercent,
-                device?.LowBatteryThresholdPercent,
-                global?.LowBatteryThresholdPercent),
-            AutoSleepSeconds = First(power?.AutoSleepSeconds, device?.AutoSleepSeconds, global?.AutoSleepSeconds),
-            ChargeLimitPercent = First(power?.ChargeLimitPercent, device?.ChargeLimitPercent, global?.ChargeLimitPercent),
-            BatteryChemistry = First(power?.BatteryChemistry, device?.BatteryChemistry, global?.BatteryChemistry),
-            ScrollMode = power?.ScrollMode ?? device?.ScrollMode ?? global?.ScrollMode,
-            ScrollFreeNotched = First(power?.ScrollFreeNotched, device?.ScrollFreeNotched, global?.ScrollFreeNotched),
-            ScrollAccelerationEnabled = First(
-                power?.ScrollAccelerationEnabled,
-                device?.ScrollAccelerationEnabled,
-                global?.ScrollAccelerationEnabled),
-            ScrollAccelerationLevel = First(
-                power?.ScrollAccelerationLevel,
-                device?.ScrollAccelerationLevel,
-                global?.ScrollAccelerationLevel),
-            SmartReelEnabled = First(power?.SmartReelEnabled, device?.SmartReelEnabled, global?.SmartReelEnabled),
-            SmartReelThreshold = First(
-                power?.SmartReelThreshold,
-                device?.SmartReelThreshold,
-                global?.SmartReelThreshold),
-            ActiveOnboardProfileId = First(
-                power?.ActiveOnboardProfileId,
-                device?.ActiveOnboardProfileId,
-                global?.ActiveOnboardProfileId),
-            HapticScrollLevel = First(
-                power?.HapticScrollLevel,
-                device?.HapticScrollLevel,
-                global?.HapticScrollLevel),
-            PowerPlan = power?.PowerPlan ?? device?.PowerPlan ?? global?.PowerPlan,
-            SmartIlluminationEnabled = First(
-                power?.SmartIlluminationEnabled,
-                device?.SmartIlluminationEnabled,
-                global?.SmartIlluminationEnabled),
-            SleepTimeoutSeconds = First(
-                power?.SleepTimeoutSeconds,
-                device?.SleepTimeoutSeconds,
-                global?.SleepTimeoutSeconds),
-            SnapTapEnabled = First(power?.SnapTapEnabled, device?.SnapTapEnabled, global?.SnapTapEnabled),
-            DebounceMilliseconds = First(
-                power?.DebounceMilliseconds,
-                device?.DebounceMilliseconds,
-                global?.DebounceMilliseconds),
-            HapticMode = First(power?.HapticMode, device?.HapticMode, global?.HapticMode),
-            HapticAccelerationLevel = First(
-                power?.HapticAccelerationLevel,
-                device?.HapticAccelerationLevel,
-                global?.HapticAccelerationLevel),
-            HapticMaskTime = First(power?.HapticMaskTime, device?.HapticMaskTime, global?.HapticMaskTime),
-            HapticLevel = First(power?.HapticLevel, device?.HapticLevel, global?.HapticLevel),
-            DpiStages = (power?.DpiStages ?? device?.DpiStages ?? global?.DpiStages)?.Clone(),
-            ButtonAssignments = (power?.ButtonAssignments ??
-                device?.ButtonAssignments ??
-                global?.ButtonAssignments)?.Select(assignment => assignment.Clone()).ToList(),
-        };
-    }
-
-    private static KeyboardProfileSettings ResolveKeyboard(
-        KeyboardProfileSettings? global,
-        KeyboardProfileSettings? device,
-        KeyboardProfileSettings? power) => new()
-    {
-        PollingRateHertz = First(power?.PollingRateHertz, device?.PollingRateHertz, global?.PollingRateHertz),
-        GamingModeEnabled = First(power?.GamingModeEnabled, device?.GamingModeEnabled, global?.GamingModeEnabled),
-        SwitchType = power?.SwitchType ?? device?.SwitchType ?? global?.SwitchType,
-        AnalogKeyEnabled = First(power?.AnalogKeyEnabled, device?.AnalogKeyEnabled, global?.AnalogKeyEnabled),
-        SnapTapEnabled = First(power?.SnapTapEnabled, device?.SnapTapEnabled, global?.SnapTapEnabled),
-        FnKeyPrimary = First(power?.FnKeyPrimary, device?.FnKeyPrimary, global?.FnKeyPrimary),
-        DebounceMilliseconds = First(
-            power?.DebounceMilliseconds,
-            device?.DebounceMilliseconds,
-            global?.DebounceMilliseconds),
-        OledBrightness = First(power?.OledBrightness, device?.OledBrightness, global?.OledBrightness),
-        OledLanguage = power?.OledLanguage ?? device?.OledLanguage ?? global?.OledLanguage,
-        KnobMode = First(power?.KnobMode, device?.KnobMode, global?.KnobMode),
-        WristRestLightingEnabled = First(
-            power?.WristRestLightingEnabled,
-            device?.WristRestLightingEnabled,
-            global?.WristRestLightingEnabled),
-    };
-
     private static HeadsetProfileSettings ResolveHeadset(
         HeadsetProfileSettings? global,
         HeadsetProfileSettings? device,
@@ -310,20 +227,145 @@ public static class ProfileResolver
     {
         VolumePercent = First(power?.VolumePercent, device?.VolumePercent, global?.VolumePercent),
         SideTone = First(power?.SideTone, device?.SideTone, global?.SideTone),
+        GameModeEnabled = First(
+            power?.GameModeEnabled,
+            device?.GameModeEnabled,
+            global?.GameModeEnabled),
         GameChatBalance = First(power?.GameChatBalance, device?.GameChatBalance, global?.GameChatBalance),
         AncEnabled = First(power?.AncEnabled, device?.AncEnabled, global?.AncEnabled),
+        AncModeIndex = First(power?.AncModeIndex, device?.AncModeIndex, global?.AncModeIndex),
+        AncLevel = First(power?.AncLevel, device?.AncLevel, global?.AncLevel),
         ThxEnabled = First(power?.ThxEnabled, device?.ThxEnabled, global?.ThxEnabled),
+        ThxSpatialEnabled = First(
+            power?.ThxSpatialEnabled,
+            device?.ThxSpatialEnabled,
+            global?.ThxSpatialEnabled),
+        ThxEqualizerEnabled = First(
+            power?.ThxEqualizerEnabled,
+            device?.ThxEqualizerEnabled,
+            global?.ThxEqualizerEnabled),
+        ThxPreset = power?.ThxPreset ?? device?.ThxPreset ?? global?.ThxPreset,
+        ThxBands = CloneMap(power?.ThxBands ?? device?.ThxBands ?? global?.ThxBands),
+        ThxNormalizationEnabled = First(
+            power?.ThxNormalizationEnabled,
+            device?.ThxNormalizationEnabled,
+            global?.ThxNormalizationEnabled),
+        ThxNormalizationLevel = First(
+            power?.ThxNormalizationLevel,
+            device?.ThxNormalizationLevel,
+            global?.ThxNormalizationLevel),
+        ThxVoiceClarityEnabled = First(
+            power?.ThxVoiceClarityEnabled,
+            device?.ThxVoiceClarityEnabled,
+            global?.ThxVoiceClarityEnabled),
+        ThxVoiceClarityLevel = First(
+            power?.ThxVoiceClarityLevel,
+            device?.ThxVoiceClarityLevel,
+            global?.ThxVoiceClarityLevel),
+        ThxBassBoostEnabled = First(
+            power?.ThxBassBoostEnabled,
+            device?.ThxBassBoostEnabled,
+            global?.ThxBassBoostEnabled),
+        ThxBassBoostLevel = First(
+            power?.ThxBassBoostLevel,
+            device?.ThxBassBoostLevel,
+            global?.ThxBassBoostLevel),
+        ThxSidetoneEnabled = First(
+            power?.ThxSidetoneEnabled,
+            device?.ThxSidetoneEnabled,
+            global?.ThxSidetoneEnabled),
+        ThxSidetoneLevel = First(
+            power?.ThxSidetoneLevel,
+            device?.ThxSidetoneLevel,
+            global?.ThxSidetoneLevel),
         EqPreset = power?.EqPreset ?? device?.EqPreset ?? global?.EqPreset,
+        EqBands = CloneMap(power?.EqBands ?? device?.EqBands ?? global?.EqBands),
+        MicEqPreset = power?.MicEqPreset ?? device?.MicEqPreset ?? global?.MicEqPreset,
+        MicEqBands = CloneMap(power?.MicEqBands ?? device?.MicEqBands ?? global?.MicEqBands),
+        Bass = First(power?.Bass, device?.Bass, global?.Bass),
         MicrophoneVolumePercent = First(
             power?.MicrophoneVolumePercent,
             device?.MicrophoneVolumePercent,
             global?.MicrophoneVolumePercent),
         MicrophoneMute = First(power?.MicrophoneMute, device?.MicrophoneMute, global?.MicrophoneMute),
+        NoiseSuppression = First(power?.NoiseSuppression, device?.NoiseSuppression, global?.NoiseSuppression),
+        AudioSourceIndex = First(power?.AudioSourceIndex, device?.AudioSourceIndex, global?.AudioSourceIndex),
+        Dolby = First(power?.Dolby, device?.Dolby, global?.Dolby),
+        NightMode = First(power?.NightMode, device?.NightMode, global?.NightMode),
+        VoicePrompts = First(power?.VoicePrompts, device?.VoicePrompts, global?.VoicePrompts),
+        MicDeEsser = First(power?.MicDeEsser, device?.MicDeEsser, global?.MicDeEsser),
+        MicLimiterDb = First(power?.MicLimiterDb, device?.MicLimiterDb, global?.MicLimiterDb),
+        MicReverbIndex = First(power?.MicReverbIndex, device?.MicReverbIndex, global?.MicReverbIndex),
+        MicReverbIntensity = First(
+            power?.MicReverbIntensity,
+            device?.MicReverbIntensity,
+            global?.MicReverbIntensity),
+        MicCompressorEnabled = First(
+            power?.MicCompressorEnabled,
+            device?.MicCompressorEnabled,
+            global?.MicCompressorEnabled),
+        MicCompressorProfile = First(
+            power?.MicCompressorProfile,
+            device?.MicCompressorProfile,
+            global?.MicCompressorProfile),
+        MicCompressorDb = First(power?.MicCompressorDb, device?.MicCompressorDb, global?.MicCompressorDb),
+        MicCompressorRatio = First(
+            power?.MicCompressorRatio,
+            device?.MicCompressorRatio,
+            global?.MicCompressorRatio),
+        MicCompressorAttack = First(
+            power?.MicCompressorAttack,
+            device?.MicCompressorAttack,
+            global?.MicCompressorAttack),
+        MicCompressorRelease = First(
+            power?.MicCompressorRelease,
+            device?.MicCompressorRelease,
+            global?.MicCompressorRelease),
+        MicMonitoringEnabled = First(
+            power?.MicMonitoringEnabled,
+            device?.MicMonitoringEnabled,
+            global?.MicMonitoringEnabled),
+        ParametricEqEnabled = First(
+            power?.ParametricEqEnabled,
+            device?.ParametricEqEnabled,
+            global?.ParametricEqEnabled),
+        ParametricEqBandIndex = First(
+            power?.ParametricEqBandIndex,
+            device?.ParametricEqBandIndex,
+            global?.ParametricEqBandIndex),
+        ParametricEqFrequency = First(
+            power?.ParametricEqFrequency,
+            device?.ParametricEqFrequency,
+            global?.ParametricEqFrequency),
+        ParametricEqGain = First(
+            power?.ParametricEqGain,
+            device?.ParametricEqGain,
+            global?.ParametricEqGain),
+        ParametricEqQ = First(power?.ParametricEqQ, device?.ParametricEqQ, global?.ParametricEqQ),
+        ParametricEqProfile = First(
+            power?.ParametricEqProfile,
+            device?.ParametricEqProfile,
+            global?.ParametricEqProfile),
+        ParametricEqDirection = First(
+            power?.ParametricEqDirection,
+            device?.ParametricEqDirection,
+            global?.ParametricEqDirection),
+        ParametricEqFilterType = First(
+            power?.ParametricEqFilterType,
+            device?.ParametricEqFilterType,
+            global?.ParametricEqFilterType),
         HapticEnabled = First(power?.HapticEnabled, device?.HapticEnabled, global?.HapticEnabled),
+        HapticsStrength = First(power?.HapticsStrength, device?.HapticsStrength, global?.HapticsStrength),
+        AutoPause = First(power?.AutoPause, device?.AutoPause, global?.AutoPause),
         AutoShutdownMinutes = First(
             power?.AutoShutdownMinutes,
             device?.AutoShutdownMinutes,
             global?.AutoShutdownMinutes),
+        Dnd = First(power?.Dnd, device?.Dnd, global?.Dnd),
+        GestureControl = First(power?.GestureControl, device?.GestureControl, global?.GestureControl),
+        ChromaBrightness = First(power?.ChromaBrightness, device?.ChromaBrightness, global?.ChromaBrightness),
+        ChromaEffect = power?.ChromaEffect ?? device?.ChromaEffect ?? global?.ChromaEffect,
+        ChromaParameters = CloneMap(power?.ChromaParameters ?? device?.ChromaParameters ?? global?.ChromaParameters),
     };
 
     private static CoolingPadProfileSettings ResolveCoolingPad(
@@ -334,19 +376,11 @@ public static class ProfileResolver
         FanMode = power?.FanMode ?? device?.FanMode ?? global?.FanMode,
         FanTargetRpm = First(power?.FanTargetRpm, device?.FanTargetRpm, global?.FanTargetRpm),
         FanCurve = (power?.FanCurve ?? device?.FanCurve ?? global?.FanCurve)?.Clone(),
-    };
-
-    private static GamepadProfileSettings ResolveGamepad(
-        GamepadProfileSettings? global,
-        GamepadProfileSettings? device,
-        GamepadProfileSettings? power) => new()
-    {
-        PollingRateHertz = First(power?.PollingRateHertz, device?.PollingRateHertz, global?.PollingRateHertz),
-        VibrationStrengthPercent = First(
-            power?.VibrationStrengthPercent,
-            device?.VibrationStrengthPercent,
-            global?.VibrationStrengthPercent),
-        MappingPreset = power?.MappingPreset ?? device?.MappingPreset ?? global?.MappingPreset,
+        LightingEnabled = First(power?.LightingEnabled, device?.LightingEnabled, global?.LightingEnabled),
+        LightingEffect = power?.LightingEffect ?? device?.LightingEffect ?? global?.LightingEffect,
+        LightingParameters = CloneMap(
+            power?.LightingParameters ?? device?.LightingParameters ?? global?.LightingParameters),
+        PowerEnabled = First(power?.PowerEnabled, device?.PowerEnabled, global?.PowerEnabled),
     };
 
     private static DisplayProfileSettings ResolveDisplay(
@@ -504,6 +538,16 @@ public static class ProfileResolver
 
     private static T? First<T>(T? power, T? device, T? global)
         where T : struct => power ?? device ?? global;
+
+    private static List<ButtonMappingProfile>? CloneMappings(
+        IReadOnlyCollection<ButtonMappingProfile>? source) =>
+        source?.Select(mapping => mapping.Clone()).ToList();
+
+    private static Dictionary<string, TValue>? CloneMap<TValue>(
+        IReadOnlyDictionary<string, TValue>? source) =>
+        source is null
+            ? null
+            : new Dictionary<string, TValue>(source, StringComparer.OrdinalIgnoreCase);
 }
 
 public sealed record ResolvedProfile(
@@ -514,5 +558,8 @@ public sealed record ResolvedProfile(
     HeadsetProfileSettings Headset,
     CoolingPadProfileSettings CoolingPad,
     GamepadProfileSettings Gamepad,
+    ChromaProfileSettings Chroma,
+    MixerProfileSettings Mixer,
+    KiyoProfileSettings Kiyo,
     DisplayProfileSettings Display,
     IReadOnlyDictionary<string, LightingProfile> LightingZones);

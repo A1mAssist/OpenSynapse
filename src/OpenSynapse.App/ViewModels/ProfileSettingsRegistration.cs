@@ -7,7 +7,7 @@ namespace OpenSynapse.App.ViewModels;
 /// Registers the settings the RazerHid device page now persists. The source
 /// audit checks the attributes; this registry gives the runtime its descriptors.
 /// </summary>
-internal static class ProfileSettingsRegistration
+internal static partial class ProfileSettingsRegistration
 {
     private static int _registered;
 
@@ -17,6 +17,16 @@ internal static class ProfileSettingsRegistration
         {
             return;
         }
+
+        RegisterPeripheralSettings();
+        RegisterBladeSettings();
+        RegisterAudioSettings();
+        RegisterOtherSettings();
+        RegisterMappingSettings();
+    }
+
+    private static void RegisterPeripheralSettings()
+    {
 
         ProfileSettingCatalog.Register(new("input.polling-rate", DeviceCategory.Unknown, true));
         ProfileSettingCatalog.Register(new("mouse.dpi", DeviceCategory.Mouse, true));
@@ -43,4 +53,9 @@ internal static class ProfileSettingsRegistration
         ProfileSettingCatalog.Register(new("keyboard.wrist-rest", DeviceCategory.Keyboard, false));
         ProfileSettingCatalog.Register(new("keyboard.debounce", DeviceCategory.Keyboard, false));
     }
+
+    static partial void RegisterBladeSettings();
+    static partial void RegisterAudioSettings();
+    static partial void RegisterOtherSettings();
+    static partial void RegisterMappingSettings();
 }

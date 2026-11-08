@@ -313,7 +313,7 @@
     <value>Rename</value>
   </data>
   <data name="Loc_95B9EC6E0F.Text" xml:space="preserve">
-    <value>Verified device settings are applied when the foreground app or power source changes.</value>
+    <value>Device settings in the profile are applied when the foreground app or power source changes.</value>
   </data>
   <data name="Loc_2A6762CB42.Text" xml:space="preserve">
     <value>App bindings</value>
@@ -1256,7 +1256,7 @@
   <data name="SilentStartupToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Silent startup</value></data>
   <data name="ActiveProfileShortcutsTitle.Text" xml:space="preserve"><value>Active profile shortcuts</value></data>
   <data name="ActiveProfileShortcutsScope.Text" xml:space="preserve"><value>Saved to the active profile:</value></data>
-  <data name="ActiveProfileDeviceSettingsDescription.Text" xml:space="preserve"><value>Snap Tap, the verified Blade shortcut preset, and Viper onboard mappings configured on the Devices page are also saved to the active profile.</value></data>
+  <data name="ActiveProfileDeviceSettingsDescription.Text" xml:space="preserve"><value>Profiles save and restore device settings, lighting, and mappings.</value></data>
   <data name="PerformanceCycleTitle.Text" xml:space="preserve"><value>Performance modes in the shortcut cycle</value></data>
   <data name="PerformanceCycleDescription.Text" xml:space="preserve"><value>Clear modes you do not want M4 or Fn+P to select. Manual selection is unaffected.</value></data>
   <data name="PerformanceCycleBalanced.Content" xml:space="preserve"><value>Balanced</value></data>
@@ -2114,6 +2114,9 @@
   <data name="ThxStatusServiceNotReady" xml:space="preserve">
     <value>The THX service is not ready.</value>
   </data>
+  <data name="ThxStatusRebootRequired" xml:space="preserve">
+    <value>THX components are installed; restart Windows to finish.</value>
+  </data>
   <data name="ThxStatusOperationRejected" xml:space="preserve">
     <value>THX did not accept this change.</value>
   </data>
@@ -2557,6 +2560,7 @@
   <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>Downloading and installing THX components...</value></data>
   <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>The THX components could not be downloaded, verified, or installed. Allow administrator rights and try again.</value></data>
   <data name="RazerHeadsetThxIncomplete" xml:space="preserve"><value>The installer finished but the THX service is still not ready. Restart and retry, or use "Download THX installer" to install it yourself.</value></data>
+  <data name="RazerHeadsetThxRebootRequired" xml:space="preserve"><value>THX components are installed; restart Windows to finish.</value></data>
   <data name="RazerHeadsetThxInstallerLinkButton.Content" xml:space="preserve"><value>Download THX installer</value></data>
   <data name="RazerHeadsetThxReady" xml:space="preserve"><value>THX components are installed.</value></data>
   <data name="RazerHeadsetThxSpatialToggle.Header" xml:space="preserve"><value>Spatial audio</value></data>
@@ -3452,6 +3456,7 @@
   <data name="RazerDriverCheckFailed" xml:space="preserve"><value>Razer driver check failed: {0}</value></data>
   <data name="RazerDriverWaiting" xml:space="preserve"><value>Waiting to install</value></data>
   <data name="RazerDriverInstalledRestart" xml:space="preserve"><value>Installed; replug the device or restart</value></data>
+  <data name="RazerDriverInstalledOnline" xml:space="preserve"><value>Installed and active</value></data>
   <data name="RazerDriverInstallSummary" xml:space="preserve"><value>Installed {0} Razer driver package(s). Replug the device or restart.</value></data>
   <data name="RazerDriverInstallSummaryPartial" xml:space="preserve"><value>Installed {0}; {1} did not complete.</value></data>
   <data name="RazerDriverInstallCancelled" xml:space="preserve"><value>Driver installation was cancelled.</value></data>
@@ -3467,4 +3472,108 @@
   <data name="RazerDriverInstallStartFailed" xml:space="preserve"><value>The Razer driver installer did not start.</value></data>
   <data name="RazerDriverCommonDownloading" xml:space="preserve"><value>Downloading the Razer common control driver…</value></data>
   <data name="RazerDriverCommonInstalling" xml:space="preserve"><value>Installing the Razer common control driver; approve it in UAC.</value></data>
+  <data name="ProfileSummaryTitle" xml:space="preserve"><value>This profile includes</value></data>
+  <data name="ProfileSummaryEmpty" xml:space="preserve"><value>This profile has no device settings yet.</value></data>
+  <data name="ProfileSummary_ScopeDevice" xml:space="preserve"><value>Device override</value></data>
+  <data name="ProfileSummary_Group_Blade" xml:space="preserve"><value>Blade</value></data>
+  <data name="ProfileSummary_Group_Mouse" xml:space="preserve"><value>Mouse</value></data>
+  <data name="ProfileSummary_Group_Keyboard" xml:space="preserve"><value>Keyboard</value></data>
+  <data name="ProfileSummary_Group_Headset" xml:space="preserve"><value>Headset</value></data>
+  <data name="ProfileSummary_Group_CoolingPad" xml:space="preserve"><value>Cooling pad</value></data>
+  <data name="ProfileSummary_Group_Gamepad" xml:space="preserve"><value>Gamepad</value></data>
+  <data name="ProfileSummary_Group_Mixer" xml:space="preserve"><value>Mixer</value></data>
+  <data name="ProfileSummary_Group_Kiyo" xml:space="preserve"><value>Camera</value></data>
+  <data name="ProfileSummary_Group_Display" xml:space="preserve"><value>Display</value></data>
+  <data name="ProfileSummary_Group_Lighting" xml:space="preserve"><value>Lighting</value></data>
+  <data name="ProfileSummary_Item_BladeKeyboardBrightness" xml:space="preserve"><value>Keyboard brightness</value></data>
+  <data name="ProfileSummary_Item_BladePerformanceMode" xml:space="preserve"><value>Performance mode</value></data>
+  <data name="ProfileSummary_Item_BladeLogo" xml:space="preserve"><value>Logo lighting</value></data>
+  <data name="ProfileSummary_Item_FanMode" xml:space="preserve"><value>Fan mode</value></data>
+  <data name="ProfileSummary_Item_FanTarget" xml:space="preserve"><value>Fixed fan speed</value></data>
+  <data name="ProfileSummary_Item_FanCurve" xml:space="preserve"><value>Fan curve</value></data>
+  <data name="ProfileSummary_Item_ChargeLimit" xml:space="preserve"><value>Charge limit</value></data>
+  <data name="ProfileSummary_Item_RefreshRate" xml:space="preserve"><value>Refresh rate</value></data>
+  <data name="ProfileSummary_Item_MaxFanMode" xml:space="preserve"><value>Maximum fan mode</value></data>
+  <data name="ProfileSummary_Item_CpuBoost" xml:space="preserve"><value>CPU Boost</value></data>
+  <data name="ProfileSummary_Item_GpuBoost" xml:space="preserve"><value>GPU Boost</value></data>
+  <data name="ProfileSummary_Item_GamingMode" xml:space="preserve"><value>Gaming mode</value></data>
+  <data name="ProfileSummary_Item_SnapTap" xml:space="preserve"><value>Snap Tap</value></data>
+  <data name="ProfileSummary_Item_MappingPreset" xml:space="preserve"><value>Button preset</value></data>
+  <data name="ProfileSummary_Item_LightingSwitch" xml:space="preserve"><value>Lighting switch</value></data>
+  <data name="ProfileSummary_Item_ChromaOverride" xml:space="preserve"><value>Chroma override</value></data>
+  <data name="ProfileSummary_Item_DisplayBrightness" xml:space="preserve"><value>Display brightness</value></data>
+  <data name="ProfileSummary_Item_StartupAnimation" xml:space="preserve"><value>Startup animation</value></data>
+  <data name="ProfileSummary_Item_AutoSleep" xml:space="preserve"><value>Auto sleep</value></data>
+  <data name="ProfileSummary_Item_TimeToDim" xml:space="preserve"><value>Time to dim</value></data>
+  <data name="ProfileSummary_Item_IndicatorLed" xml:space="preserve"><value>Indicator LED</value></data>
+  <data name="ProfileSummary_Item_GpuCardDetection" xml:space="preserve"><value>GPU detection LED</value></data>
+  <data name="ProfileSummary_Item_NativeDisplayMode" xml:space="preserve"><value>Panel mode</value></data>
+  <data name="ProfileSummary_Item_LocalDimming" xml:space="preserve"><value>Local dimming</value></data>
+  <data name="ProfileSummary_Item_CpuPowerBoost" xml:space="preserve"><value>CPU power boost</value></data>
+  <data name="ProfileSummary_Item_GpuClockOffset" xml:space="preserve"><value>GPU clock offset</value></data>
+  <data name="ProfileSummary_Item_CpuCurve" xml:space="preserve"><value>CPU Curve Optimizer</value></data>
+  <data name="ProfileSummary_Item_CpuPowerLimit" xml:space="preserve"><value>CPU power limit</value></data>
+  <data name="ProfileSummary_Item_Dpi" xml:space="preserve"><value>DPI</value></data>
+  <data name="ProfileSummary_Item_DpiStages" xml:space="preserve"><value>DPI stages</value></data>
+  <data name="ProfileSummary_Item_PollingRate" xml:space="preserve"><value>Polling rate</value></data>
+  <data name="ProfileSummary_Item_IdleTimeout" xml:space="preserve"><value>Idle timeout</value></data>
+  <data name="ProfileSummary_Item_LowBattery" xml:space="preserve"><value>Low battery alert</value></data>
+  <data name="ProfileSummary_Item_BatteryChemistry" xml:space="preserve"><value>Battery type</value></data>
+  <data name="ProfileSummary_Item_ScrollMode" xml:space="preserve"><value>Scroll wheel mode</value></data>
+  <data name="ProfileSummary_Item_ScrollAcceleration" xml:space="preserve"><value>Scroll acceleration</value></data>
+  <data name="ProfileSummary_Item_SmartReel" xml:space="preserve"><value>Smart reel</value></data>
+  <data name="ProfileSummary_Item_OnboardProfile" xml:space="preserve"><value>Onboard profile</value></data>
+  <data name="ProfileSummary_Item_HapticScroll" xml:space="preserve"><value>Haptic scroll level</value></data>
+  <data name="ProfileSummary_Item_PowerPlan" xml:space="preserve"><value>Power plan</value></data>
+  <data name="ProfileSummary_Item_SmartIllumination" xml:space="preserve"><value>Smart illumination</value></data>
+  <data name="ProfileSummary_Item_SleepTimeout" xml:space="preserve"><value>Sleep timeout</value></data>
+  <data name="ProfileSummary_Item_Debounce" xml:space="preserve"><value>Debounce</value></data>
+  <data name="ProfileSummary_Item_HapticFeedback" xml:space="preserve"><value>Haptic feedback</value></data>
+  <data name="ProfileSummary_Item_Mapping" xml:space="preserve"><value>Button mapping</value></data>
+  <data name="ProfileSummary_Item_SwitchType" xml:space="preserve"><value>Switch optimization</value></data>
+  <data name="ProfileSummary_Item_AnalogKey" xml:space="preserve"><value>Analog keys</value></data>
+  <data name="ProfileSummary_Item_FnPrimary" xml:space="preserve"><value>Fn primary function</value></data>
+  <data name="ProfileSummary_Item_OledBrightness" xml:space="preserve"><value>OLED brightness</value></data>
+  <data name="ProfileSummary_Item_OledLanguage" xml:space="preserve"><value>OLED language</value></data>
+  <data name="ProfileSummary_Item_KnobMode" xml:space="preserve"><value>Knob mode</value></data>
+  <data name="ProfileSummary_Item_WristRest" xml:space="preserve"><value>Wrist rest lighting</value></data>
+  <data name="ProfileSummary_Item_Volume" xml:space="preserve"><value>Volume</value></data>
+  <data name="ProfileSummary_Item_SideTone" xml:space="preserve"><value>Side tone</value></data>
+  <data name="ProfileSummary_Item_GameMode" xml:space="preserve"><value>Game mode</value></data>
+  <data name="ProfileSummary_Item_GameChat" xml:space="preserve"><value>Game / chat balance</value></data>
+  <data name="ProfileSummary_Item_Anc" xml:space="preserve"><value>Active noise cancellation</value></data>
+  <data name="ProfileSummary_Item_Thx" xml:space="preserve"><value>THX Spatial Audio</value></data>
+  <data name="ProfileSummary_Item_ThxPreset" xml:space="preserve"><value>THX preset / bands</value></data>
+  <data name="ProfileSummary_Item_ThxEnhancements" xml:space="preserve"><value>THX enhancements</value></data>
+  <data name="ProfileSummary_Item_EqPreset" xml:space="preserve"><value>Equalizer preset / bands</value></data>
+  <data name="ProfileSummary_Item_MicEq" xml:space="preserve"><value>Microphone equalizer</value></data>
+  <data name="ProfileSummary_Item_Bass" xml:space="preserve"><value>Bass boost</value></data>
+  <data name="ProfileSummary_Item_Microphone" xml:space="preserve"><value>Microphone volume / mute</value></data>
+  <data name="ProfileSummary_Item_NoiseSuppression" xml:space="preserve"><value>Noise suppression</value></data>
+  <data name="ProfileSummary_Item_AudioSource" xml:space="preserve"><value>Audio source</value></data>
+  <data name="ProfileSummary_Item_AdvancedAudio" xml:space="preserve"><value>Dolby / night mode / voice prompts</value></data>
+  <data name="ProfileSummary_Item_MicProcessing" xml:space="preserve"><value>Microphone processing</value></data>
+  <data name="ProfileSummary_Item_MicMonitoring" xml:space="preserve"><value>Microphone monitoring</value></data>
+  <data name="ProfileSummary_Item_ParametricEq" xml:space="preserve"><value>Parametric equalizer</value></data>
+  <data name="ProfileSummary_Item_Haptics" xml:space="preserve"><value>Haptics</value></data>
+  <data name="ProfileSummary_Item_AutoPause" xml:space="preserve"><value>Auto pause</value></data>
+  <data name="ProfileSummary_Item_AutoShutdown" xml:space="preserve"><value>Auto shutdown</value></data>
+  <data name="ProfileSummary_Item_Dnd" xml:space="preserve"><value>Do not disturb</value></data>
+  <data name="ProfileSummary_Item_Gesture" xml:space="preserve"><value>Gesture control</value></data>
+  <data name="ProfileSummary_Item_Chroma" xml:space="preserve"><value>Headset lighting</value></data>
+  <data name="ProfileSummary_Item_Power" xml:space="preserve"><value>Power</value></data>
+  <data name="ProfileSummary_Item_Vibration" xml:space="preserve"><value>Vibration strength</value></data>
+  <data name="ProfileSummary_Item_Deadzone" xml:space="preserve"><value>Stick deadzone</value></data>
+  <data name="ProfileSummary_Item_TriggerMode" xml:space="preserve"><value>Trigger mode</value></data>
+  <data name="ProfileSummary_Item_Dpad" xml:space="preserve"><value>D-pad settings</value></data>
+  <data name="ProfileSummary_Item_Socd" xml:space="preserve"><value>SOCD mode</value></data>
+  <data name="ProfileSummary_Item_Lighting" xml:space="preserve"><value>Lighting</value></data>
+  <data name="ProfileSummary_Item_LightingZone" xml:space="preserve"><value>Lighting zone {0}</value></data>
+  <data name="ProfileSummary_Item_DeviceLighting" xml:space="preserve"><value>Device {0} lighting</value></data>
+  <data name="ProfileSummary_Item_DeviceLightingZone" xml:space="preserve"><value>Device {0} · zone {1} lighting</value></data>
+  <data name="ProfileSummary_Item_MixerChannels" xml:space="preserve"><value>Channel mutes</value></data>
+  <data name="ProfileSummary_Item_MixerMicMute" xml:space="preserve"><value>Microphone mute</value></data>
+  <data name="ProfileSummary_Item_MixerBrightness" xml:space="preserve"><value>Mixer brightness</value></data>
+  <data name="ProfileSummary_Item_KiyoWhiteBalance" xml:space="preserve"><value>White balance</value></data>
+  <data name="SavedToCurrentProfile" xml:space="preserve"><value>Saved to current profile</value></data>
 </root>

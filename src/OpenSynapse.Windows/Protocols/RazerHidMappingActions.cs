@@ -1,3 +1,4 @@
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.Windows.Protocols;
@@ -30,6 +31,19 @@ public enum RazerHidMappingGroup
 
 public sealed record RazerHidMappingAction(string Name, byte FunctionId, byte[] Data);
 
+/// <summary>Raw assignment decoded back into the shared editor fields.</summary>
+public sealed record RazerHidDecodedMapping(
+    RazerHidMappingGroup Group,
+    int OptionIndex,
+    int ModifierIndex = 0,
+    double? TurboRate = null,
+    double? DpiClutchX = null,
+    double? DpiClutchY = null,
+    double? ProfileId = null,
+    int? MacroSlot = null,
+    RazerHidMacroPlayback? MacroPlayback = null,
+    int? MacroRepeatCount = null);
+
 public sealed record RazerHidMacroOption(byte Id, string Name);
 
 public enum RazerHidMacroPlayback
@@ -48,7 +62,7 @@ public enum RazerHidMacroPlayback
 /// available from this protocol. Macro slots are listed only when the caller supplies the
 /// ids read from the device.
 /// </summary>
-public static class RazerHidMappingActions
+public static partial class RazerHidMappingActions
 {
     public static IReadOnlyList<string> ModifierNames { get; } = ["None", "Ctrl", "Shift", "Alt", "Win"];
 
@@ -322,6 +336,139 @@ public static class RazerHidMappingActions
             : $" [{string.Join(' ', data.Select(value => value.ToString("X2")))}]"),
     };
 
+    /// <summary>Decodes a raw assignment; null means the catalog has no exact editor match.</summary>
+    public static RazerHidDecodedMapping? Decode(byte functionId, IReadOnlyList<byte> data)
+    {
+        switch (functionId)
+        {
+            case RazerHidMappingFunctions.Off:
+                return new(RazerHidMappingGroup.Off, 0);
+            case RazerHidMappingFunctions.ButtonCode when data.Count > 0:
+                return Map(RazerHidMappingGroup.MouseButton, MouseButtons, data[0]);
+            case RazerHidMappingFunctions.KeyCode when data.Count >= 2:
+                if (data[0] >= 224 && data[1] == 0)
+                {
+                    return Map(RazerHidMappingGroup.KeyboardKey, Keys, data[0]);
+                }
+
+                var modifier = ModifierIndex(data[0]);
+                var key = KeyIndex(data[1]);
+                return modifier >= 0 && key >= 0
+                    ? new(RazerHidMappingGroup.KeyboardKey, key, modifier)
+                    : null;
+            case RazerHidMappingFunctions.Dpi when data.Count >= 5 && data[0] == 0x05:
+                return new(
+                    RazerHidMappingGroup.DpiClutch,
+                    0,
+                    DpiClutchX: (data[1] << 8) | data[2],
+                    DpiClutchY: (data[3] << 8) | data[4]);
+            case RazerHidMappingFunctions.Dpi when data.Count > 0:
+                return MapCode(RazerHidMappingGroup.Dpi, DpiActions, data[0]);
+            case RazerHidMappingFunctions.Profile when data.Count >= 2 && data[0] == 0x03:
+                return new(RazerHidMappingGroup.ProfileSpecific, 0, ProfileId: data[1]);
+            case RazerHidMappingFunctions.Profile when data.Count > 0:
+                return MapCode(RazerHidMappingGroup.Profile, ProfileActions, data[0]);
+            case RazerHidMappingFunctions.MediaKeys when data.Count >= 2:
+                return MapCode(
+                    RazerHidMappingGroup.MediaKey,
+                    MediaKeys,
+                    (ushort)((data[0] << 8) | data[1]));
+            case RazerHidMappingFunctions.PowerKeys when data.Count > 0:
+                return MapCode(RazerHidMappingGroup.PowerKey, PowerKeys, data[0]);
+            case RazerHidMappingFunctions.DoubleClick:
+                return new(RazerHidMappingGroup.DoubleClick, 0);
+            case RazerHidMappingFunctions.ScrollWheelMode when data.Count > 0:
+                return MapCode(RazerHidMappingGroup.ScrollWheelMode, ScrollWheelModes, data[0]);
+            case RazerHidMappingFunctions.RazerKey when data.Count > 0:
+                return MapCode(RazerHidMappingGroup.RazerKey, RazerKeys, data[0]);
+            case RazerHidMappingFunctions.Win8ShortcutsKey when data.Count > 0:
+                return MapCode(RazerHidMappingGroup.WindowsShortcut, WindowsShortcuts, data[0]);
+            case RazerHidMappingFunctions.ModeButtonkey:
+                return new(RazerHidMappingGroup.HyperShiftToggle, 0);
+            case RazerHidMappingFunctions.TurboModeButton when data.Count > 0:
+                var turboButton = Map(RazerHidMappingGroup.TurboButton, MouseButtons, data[0]);
+                return turboButton is null
+                    ? null
+                    : turboButton with { TurboRate = IntervalRate(data, 1) };
+            case RazerHidMappingFunctions.TurboModeKey when data.Count >= 2:
+                var turboModifier = ModifierIndex(data[0]);
+                var turboKey = KeyIndex(data[1]);
+                return turboModifier >= 0 && turboKey >= 0
+                    ? new(
+                        RazerHidMappingGroup.TurboKey,
+                        turboKey,
+                        turboModifier,
+                        TurboRate: IntervalRate(data, 2))
+                    : null;
+            case RazerHidMappingFunctions.MacroTypeI:
+            case RazerHidMappingFunctions.MacroTypeII:
+            case RazerHidMappingFunctions.MacroTypeIII:
+            case RazerHidMappingFunctions.MacroTypeIV:
+                var slot = data.Count >= 2 ? (data[0] << 8) | data[1] : 0;
+                if (slot is < 1 or > byte.MaxValue)
+                {
+                    return null;
+                }
+
+                var playback = functionId switch
+                {
+                    RazerHidMappingFunctions.MacroTypeII => RazerHidMacroPlayback.Hold,
+                    RazerHidMappingFunctions.MacroTypeIII => RazerHidMacroPlayback.Toggle,
+                    RazerHidMappingFunctions.MacroTypeIV => RazerHidMacroPlayback.Sequence,
+                    _ => data.Count >= 3 && data[2] > 1
+                        ? RazerHidMacroPlayback.Repeat
+                        : RazerHidMacroPlayback.Once,
+                };
+                return new(
+                    RazerHidMappingGroup.Macro,
+                    -1,
+                    MacroSlot: slot,
+                    MacroPlayback: playback,
+                    MacroRepeatCount: playback == RazerHidMacroPlayback.Repeat && data.Count >= 3
+                        ? data[2]
+                        : 1);
+            default:
+                return null;
+        }
+    }
+
+    public static ButtonMappingProfile ToProfileMapping(
+        byte buttonId,
+        byte mode,
+        byte functionId,
+        IReadOnlyList<byte> data,
+        RazerHidDecodedMapping? decoded) => new()
+    {
+        ButtonId = buttonId,
+        Mode = mode,
+        Group = decoded?.Group.ToString(),
+        OptionIndex = decoded is { OptionIndex: >= 0 } ? decoded.OptionIndex : null,
+        ModifierIndex = decoded?.ModifierIndex,
+        TurboRate = decoded?.TurboRate,
+        ProfileId = decoded?.ProfileId,
+        DpiClutchX = decoded?.DpiClutchX,
+        DpiClutchY = decoded?.DpiClutchY,
+        MacroPlaybackIndex = decoded?.MacroPlayback is { } playback ? (int)playback : null,
+        MacroTargetIndex = decoded?.Group == RazerHidMappingGroup.Macro ? 1 : null,
+        MacroRepeatCount = decoded?.MacroRepeatCount,
+        FunctionId = functionId,
+        FunctionData = data.ToList(),
+    };
+
+    public static List<ButtonMappingProfile> MergeButtonMappings(
+        IReadOnlyCollection<ButtonMappingProfile>? existing,
+        IReadOnlyCollection<ButtonMappingProfile> updates,
+        byte mode)
+    {
+        var merged = existing?
+            .Where(mapping => (mapping.Mode ?? 0) != mode)
+            .Select(mapping => mapping.Clone())
+            .ToList() ?? [];
+        merged.AddRange(updates.Where(mapping => (mapping.Mode ?? 0) == mode)
+            .Select(mapping => mapping.Clone()));
+        return merged;
+    }
+
     public static string DescribeButton(byte buttonId) =>
         MouseButtons.FirstOrDefault(button => button.Id == buttonId).Name ?? $"Button {buttonId}";
 
@@ -368,6 +515,72 @@ public static class RazerHidMappingActions
             _ => $"{modifierMask:X2}",
         };
         return $"{modifier}+{name}";
+    }
+
+    private static RazerHidDecodedMapping? Map(
+        RazerHidMappingGroup group,
+        IReadOnlyList<(string Name, byte Code)> entries,
+        byte code)
+    {
+        for (var index = 0; index < entries.Count; index++)
+        {
+            if (entries[index].Code == code)
+            {
+                return new(group, index);
+            }
+        }
+
+        return null;
+    }
+    private static RazerHidDecodedMapping? MapCode<T>(
+        RazerHidMappingGroup group,
+        IReadOnlyList<(string Name, T Code)> entries,
+        T code)
+        where T : struct, IEquatable<T>
+    {
+        for (var index = 0; index < entries.Count; index++)
+        {
+            if (entries[index].Code.Equals(code))
+            {
+                return new(group, index);
+            }
+        }
+
+        return null;
+    }
+    private static int KeyIndex(byte hid)
+    {
+        for (var index = 0; index < Keys.Length; index++)
+        {
+            if (Keys[index].Hid == hid)
+            {
+                return index;
+            }
+        }
+
+        return -1;
+    }
+    private static int ModifierIndex(byte mask)
+    {
+        for (var index = 0; index < ModifierMasks.Count; index++)
+        {
+            if (ModifierMasks[index] == mask)
+            {
+                return index;
+            }
+        }
+
+        return -1;
+    }
+    private static double? IntervalRate(IReadOnlyList<byte> data, int offset)
+    {
+        if (data.Count < offset + 2)
+        {
+            return null;
+        }
+
+        var interval = (data[offset] << 8) | data[offset + 1];
+        return interval > 0 ? Math.Clamp(1000d / interval, 1, 50) : null;
     }
 
     private static IReadOnlyList<string> Names<T>(IReadOnlyList<(string Name, T Code)> entries) =>

@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Protocols;
 
@@ -66,6 +67,7 @@ public sealed partial class RazerCoolingPadViewModel
 
     public bool CanApplyCurve => IsConnected && !IsBusy && !_disposed;
 
+    [ProfileSetting("coolingpad.fan-curve", DeviceCategory.CoolingPad, powerScoped: true)]
     public async Task ApplyCurveAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApplyCurve)
@@ -88,6 +90,7 @@ public sealed partial class RazerCoolingPadViewModel
 
         IsBusy = true;
         StopCurveTimer();
+        var previous = await ReadCoolingModeOrDefaultAsync(cancellationToken);
         try
         {
             await _curveTask;
@@ -98,6 +101,20 @@ public sealed partial class RazerCoolingPadViewModel
             await _service.SetSmartModeAsync(
                 (RazerCoolingPadSmartMode)(SelectedCurveModeIndex + 2),
                 cancellationToken);
+            if (!await SaveProfileAsync(profile =>
+                {
+                    profile.FanMode = _activeCurveMode.ToString();
+                    profile.FanTargetRpm = null;
+                    profile.FanCurve = CreateCurveProfile(SelectedCurveSourceIndex);
+                }, cancellationToken))
+            {
+                await RestoreCoolingModeAsync(previous, CancellationToken.None);
+                SelectedCurveModeIndex = previous is { ModeId: 3 or 4 or 5 } state
+                    ? state.ModeId - 2
+                    : 0;
+                SetCurveStatus(AppStrings.FormatText("CoolingPadCurveError", "profile save failed"));
+                return;
+            }
         }
         catch (Exception exception) when (IsExpected(exception))
         {

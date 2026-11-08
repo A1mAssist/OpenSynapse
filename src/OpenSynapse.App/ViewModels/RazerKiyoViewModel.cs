@@ -3,6 +3,8 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.App.ViewModels;
@@ -15,6 +17,8 @@ namespace OpenSynapse.App.ViewModels;
 public sealed class RazerKiyoViewModel : INotifyPropertyChanged, IDisposable
 {
     private readonly Func<CancellationToken, Task<RazerKiyoService?>> _connect;
+    private readonly Func<ProfileDocument>? _getProfile;
+    private readonly Func<CancellationToken, Task<bool>>? _saveProfile;
     private RazerKiyoService? _service;
     private RazerKiyoValue? _brightness;
     private RazerKiyoValue? _contrast;
@@ -29,14 +33,25 @@ public sealed class RazerKiyoViewModel : INotifyPropertyChanged, IDisposable
     private string _statusText = string.Empty;
     private string _errorText = string.Empty;
 
-    public RazerKiyoViewModel(Action<string>? diagnostic = null)
-        : this(cancellationToken => RazerKiyoService.ConnectAsync(diagnostic, cancellationToken))
+    public RazerKiyoViewModel(
+        Action<string>? diagnostic = null,
+        Func<ProfileDocument>? getActiveProfile = null,
+        Func<CancellationToken, Task<bool>>? saveProfileAsync = null)
+        : this(
+            cancellationToken => RazerKiyoService.ConnectAsync(diagnostic, cancellationToken),
+            getActiveProfile,
+            saveProfileAsync)
     {
     }
 
-    internal RazerKiyoViewModel(Func<CancellationToken, Task<RazerKiyoService?>> connect)
+    internal RazerKiyoViewModel(
+        Func<CancellationToken, Task<RazerKiyoService?>> connect,
+        Func<ProfileDocument>? getActiveProfile = null,
+        Func<CancellationToken, Task<bool>>? saveProfileAsync = null)
     {
         _connect = connect ?? throw new ArgumentNullException(nameof(connect));
+        _getProfile = getActiveProfile;
+        _saveProfile = saveProfileAsync;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -128,6 +143,7 @@ public sealed class RazerKiyoViewModel : INotifyPropertyChanged, IDisposable
             OnPropertyChanged(nameof(Identity));
             var snapshot = await Task.Run(_service.ReadSnapshot, cancellationToken).ConfigureAwait(false);
             Apply(snapshot);
+            await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
             SetError(string.Empty);
             _statusText = AppStrings.Text("KiyoStatusRead");
             OnPropertyChanged(nameof(StatusText));
@@ -146,6 +162,7 @@ public sealed class RazerKiyoViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
+    [ProfileSetting("kiyo.white-balance", DeviceCategory.Accessory)]
     public async Task ApplyWhiteBalanceAsync(CancellationToken cancellationToken = default)
     {
         var service = _service;
@@ -156,14 +173,48 @@ public sealed class RazerKiyoViewModel : INotifyPropertyChanged, IDisposable
         }
 
         IsBusy = true;
+        var previous = _whiteBalance;
+        var previousAuto = _whiteBalanceAuto;
+        var desired = _whiteBalanceAuto;
         try
         {
             var updated = await Task.Run(
-                    () => service.SetWhiteBalanceAuto(_whiteBalanceAuto),
+                    () => service.SetWhiteBalanceAuto(desired),
                     cancellationToken)
                 .ConfigureAwait(false);
             _whiteBalance = updated;
             _whiteBalanceAuto = updated.IsAuto;
+            if (!await PeripheralProfileStore.SaveAsync(
+                    _getProfile?.Invoke(),
+                    _saveProfile,
+                    ProfileDeviceKey,
+                    device =>
+                    {
+                        device.Kiyo ??= new KiyoProfileSettings();
+                        device.Kiyo.WhiteBalanceAuto = updated.IsAuto;
+                        device.Kiyo.WhiteBalanceTemperature = updated.Value;
+                    },
+                    cancellationToken))
+            {
+                _whiteBalance = previous;
+                _whiteBalanceAuto = previousAuto;
+                NotifyWhiteBalance();
+                try
+                {
+                    if (previous is { } restore)
+                    {
+                        service.SetWhiteBalanceAuto(restore.IsAuto);
+                    }
+                }
+                catch (Exception exception) when (IsExpected(exception))
+                {
+                    // The save failure is the actionable error; rollback is best effort.
+                }
+
+                SetError(AppStrings.Text("RazerHidSettingProfileSaveFailed"));
+                return;
+            }
+
             OnPropertyChanged(nameof(WhiteBalanceText));
             OnPropertyChanged(nameof(IsWhiteBalanceAuto));
             _statusText = AppStrings.Text("KiyoWhiteBalanceApplied");
@@ -181,6 +232,50 @@ public sealed class RazerKiyoViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
+    [NotProfileScoped]
+    public async Task ApplyPersistedProfileAsync(
+        PowerSourceKind powerSource,
+        CancellationToken cancellationToken = default)
+    {
+        if (_service is null || _getProfile?.Invoke() is not { } document)
+        {
+            return;
+        }
+
+        var descriptor = new DeviceDescriptor(
+            ProfileDeviceKey,
+            Name,
+            0x1532,
+            _service.ProductId,
+            DeviceAccessState.Available,
+            DeviceCapabilityState.PendingValidation,
+            0,
+            1,
+            2,
+            "kiyo",
+            DeviceCategory.Accessory);
+        var applier = new AccessoryProfileApplier();
+        await applier.ApplyAsync(
+            new DeviceProfileApplyContext(
+                document,
+                descriptor,
+                powerSource,
+                ProfileResolver.Resolve(document, descriptor, powerSource)),
+            cancellationToken);
+    }
+
+    private string ProfileDeviceKey => string.IsNullOrWhiteSpace(_serialText) ||
+        string.Equals(_serialText, "--", StringComparison.Ordinal)
+            ? $"1532:{(_service?.ProductId ?? RazerKiyoDevices.DefaultProductId):X4}"
+            : _serialText;
+
+    private void NotifyWhiteBalance()
+    {
+        OnPropertyChanged(nameof(WhiteBalanceText));
+        OnPropertyChanged(nameof(IsWhiteBalanceAuto));
+    }
+
+    [NotProfileScoped]
     public async Task OpenSettingsAsync(CancellationToken cancellationToken = default)
     {
         if (_service is not { IsAvailable: true } || IsBusy)

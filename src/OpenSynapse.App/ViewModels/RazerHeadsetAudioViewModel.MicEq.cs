@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 
@@ -14,16 +16,40 @@ public sealed partial class RazerHeadsetAudioViewModel
     public Visibility MicEqBandsVisibility =>
         _hasMicEqBands ? Visibility.Visible : Visibility.Collapsed;
 
-    public Task ApplyMicEqBandsAsync(CancellationToken cancellationToken = default)
+    [ProfileSetting("headset.mic.eq-bands", DeviceCategory.Headset, powerScoped: true)]
+    public async Task ApplyMicEqBandsAsync(CancellationToken cancellationToken = default)
     {
         if (!IsValkyrie || MicEqBands.Count != RazerValkyrieHeadsetProtocol.TenBandCount)
         {
-            return Task.CompletedTask;
+            return;
         }
 
+        var previous = MicEqBands.Select(band => (int)Math.Round(band.Level)).ToArray();
         var bands = MicEqBands.Select(band => ToFirmwareBand(band.Level)).ToArray();
-        return RunValkyrieWriteAsync(
-            (service, token) => service.SetMicBandsAsync(bands, token),
+        if (!await RunValkyrieWriteAsync(
+                (service, token) => service.SetMicBandsAsync(bands, token),
+                cancellationToken))
+        {
+            return;
+        }
+
+        await SaveHeadsetSettingAsync(
+            settings => settings.MicEqBands = ToBandMap(MicEqBands.Select(band => band.Level)),
+            settings => settings.MicEqBands = ToBandMap(previous.Select(value => (double)value)),
+            () =>
+            {
+                for (var index = 0; index < previous.Length && index < MicEqBands.Count; index++)
+                {
+                    MicEqBands[index].Level = previous[index];
+                }
+            },
+            async token =>
+            {
+                await using var service = OpenValkyrieService();
+                await service.SetMicBandsAsync(
+                    previous.Select(value => ToFirmwareBand(value)).ToArray(),
+                    token);
+            },
             cancellationToken);
     }
 

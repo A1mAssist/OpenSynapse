@@ -8,13 +8,14 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Core.Lighting;
 using OpenSynapse.Core.Macros;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Macros;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
+public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
 {
     private static readonly MacroTriggerMode[] SoftwareTriggerModes =
     [
@@ -34,6 +35,7 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
     private readonly Func<RazerOnboardMacroService>? _macroServiceFactory;
     private readonly Func<IReadOnlyList<MacroDefinition>>? _localMacroProvider;
     private readonly Func<CancellationToken, Task>? _afterApplyAsync;
+    private readonly Func<IReadOnlyList<ButtonMappingProfile>, CancellationToken, Task>? _mappingProfileSaver;
     private readonly Action<string>? _log;
     private readonly ushort _productId;
     private readonly RazerMappingDeviceKind _deviceKind;
@@ -64,6 +66,7 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
         Action<string>? log = null,
         IRazerMappingActionCatalog? actionCatalog = null,
         Func<CancellationToken, Task>? afterApplyAsync = null,
+        Func<IReadOnlyList<ButtonMappingProfile>, CancellationToken, Task>? mappingProfileSaver = null,
         ushort productId = 0,
         RazerMappingDeviceKind deviceKind = RazerMappingDeviceKind.Mouse,
         RazerMappingAssetService? assetService = null,
@@ -80,6 +83,7 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
         _macroServiceFactory = macroServiceFactory;
         _localMacroProvider = localMacros;
         _afterApplyAsync = afterApplyAsync;
+        _mappingProfileSaver = mappingProfileSaver;
         _log = log;
         _productId = productId;
         _deviceKind = deviceKind;
@@ -262,11 +266,15 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
                     _catalog);
                 row.PropertyChanged += OnRowPropertyChanged;
                 byte? assignedSlot = null;
+                RazerHidDecodedMapping? decoded = null;
                 try
                 {
                     var assignment = await _transport.GetAssignmentAsync(id, Mode, cancellationToken)
                         .ConfigureAwait(true);
                     assignedSlot = MacroSlotOf(assignment.FunctionId, assignment.Data);
+                    decoded = _catalog is RazerViperMappingActionCatalog
+                        ? null
+                        : _catalog.Decode(assignment.FunctionId, assignment.Data);
                     row.CurrentActionText = DescribeAssignment(
                         assignment.FunctionId,
                         assignment.Data);
@@ -287,14 +295,19 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
                         .ToArray();
                 }
                 row.SetMacroSlots(slotOptions, assignedSlot, preferred);
+                var localMacroIndex = -1;
                 if (assignedSlot is { } assignedMacroSlot &&
                     _slotLocalMacroIds.TryGetValue(assignedMacroSlot, out var macroId))
                 {
-                    var macroIndex = LocalMacroIndex(macroId);
-                    if (macroIndex >= 0)
-                    {
-                        row.OptionIndex = macroIndex;
-                    }
+                    localMacroIndex = LocalMacroIndex(macroId);
+                }
+                if (decoded is not null)
+                {
+                    row.ApplyDecodedMapping(decoded, localMacroIndex);
+                }
+                else if (localMacroIndex >= 0)
+                {
+                    row.OptionIndex = localMacroIndex;
                 }
 
                 if (softwareTrigger is not null)
@@ -499,7 +512,6 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
                 row.CurrentActionText = AppStrings.FormatText(
                     "RazerMappingMacroSoftwareApplied",
                     _localMacros[row.OptionIndex].Name);
-                row.GroupIndex = 0;
             }
 
             foreach (var row in assignmentRows)
@@ -507,7 +519,19 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
                 var action = row.CreateAction();
                 if (action is null) continue;
                 row.CurrentActionText = DescribeAssignment(action.FunctionId, action.Data);
-                row.GroupIndex = 0;
+            }
+
+            if (assignmentRows.Length > 0 && _mappingProfileSaver is not null)
+            {
+                try
+                {
+                    await PersistMappingProfileAsync(cancellationToken).ConfigureAwait(true);
+                }
+                catch
+                {
+                    await RestoreAssignmentsAsync(backups).ConfigureAwait(true);
+                    throw;
+                }
             }
 
             if (applied > 0 && _afterApplyAsync is not null)
@@ -534,33 +558,6 @@ public sealed class RazerHidMappingViewModel : INotifyPropertyChanged
         {
             IsBusy = false;
             OnPropertyChanged(nameof(CanApply));
-        }
-    }
-
-    private sealed record AssignmentBackup(
-        RazerHidMappingRowViewModel Row,
-        RazerMappingAssignment Assignment);
-
-    private async Task RestoreAssignmentsAsync(IReadOnlyList<AssignmentBackup> backups)
-    {
-        using var restore = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        foreach (var backup in backups)
-        {
-            try
-            {
-                await _transport.SetAssignmentAsync(
-                    backup.Row.ButtonId,
-                    Mode,
-                    backup.Assignment.FunctionId,
-                    backup.Assignment.Data,
-                    restore.Token).ConfigureAwait(true);
-            }
-            catch (Exception exception) when (IsExpected(exception) ||
-                                               exception is OperationCanceledException)
-            {
-                _log?.Invoke(
-                    $"mapping button {backup.Row.ButtonId} restore failed: {exception.Message}");
-            }
         }
     }
 

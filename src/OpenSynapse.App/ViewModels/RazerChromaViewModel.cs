@@ -4,6 +4,8 @@ using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 using Windows.UI;
@@ -67,7 +69,7 @@ public sealed class RazerChromaDeviceRowViewModel : INotifyPropertyChanged
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
 }
 
-public sealed class RazerChromaViewModel : INotifyPropertyChanged
+public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
 {
     private static readonly RazerChromaEffect[] Effects =
         [RazerChromaEffect.Off, RazerChromaEffect.Static, RazerChromaEffect.Breathing, RazerChromaEffect.Spectrum];
@@ -78,6 +80,8 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
     private readonly RazerChromaDeviceConnection _connection;
     private readonly Action<string>? _diagnostic;
     private readonly RazerHidSpecialLightingService? _specialLighting;
+    private readonly Func<ProfileDocument>? _getProfile;
+    private readonly Func<CancellationToken, Task<bool>>? _saveProfile;
     private readonly Color[][] _argbPortColors = CreateArgbBuffers();
     private readonly int[] _argbLedCounts = ArgbStripSettings.Load();
     private RazerHidSpecialLightingConnection? _argbConnection;
@@ -99,11 +103,15 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
     public RazerChromaViewModel(
         RazerChromaDeviceConnection connection,
         Action<string>? diagnostic = null,
-        RazerHidSpecialLightingService? specialLighting = null)
+        RazerHidSpecialLightingService? specialLighting = null,
+        Func<ProfileDocument>? getActiveProfile = null,
+        Func<CancellationToken, Task<bool>>? saveProfileAsync = null)
     {
         _connection = connection;
         _diagnostic = diagnostic;
         _specialLighting = specialLighting;
+        _getProfile = getActiveProfile;
+        _saveProfile = saveProfileAsync;
         _argbLedCount = _argbLedCounts[0];
     }
 
@@ -287,6 +295,7 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
                 ? AppStrings.Text("RazerHeadsetReadFailed")
                 : string.Empty;
             await LoadArgbAsync(cancellationToken);
+            await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -301,24 +310,81 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
         }
     }
 
-    public Task ApplyBrightnessAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(
-            (service, token) => service.SetBrightnessAsync((byte)Math.Round(Brightness), token),
-            cancellationToken);
-
-    public Task ApplyEffectAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(async (service, token) =>
+    [ProfileSetting("chroma.brightness", DeviceCategory.Lighting)]
+    public async Task ApplyBrightnessAsync(CancellationToken cancellationToken = default)
+    {
+        if (IsBusy) return;
+        var previousUi = Brightness;
+        byte? previousHardware = null;
+        try
         {
-            var effect = Effects[SelectedLightingEffectIndex];
-            var colors = effect switch
+            previousHardware = (await OpenService().ReadStateAsync(cancellationToken)).BrightnessPercent;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception exception) when (IsExpectedException(exception))
+        {
+        }
+
+        var desired = (int)Math.Round(Brightness);
+        await RunWriteAsync(
+            (service, token) => service.SetBrightnessAsync((byte)desired, token),
+            cancellationToken,
+            device =>
             {
-                RazerChromaEffect.Static => new byte[] { PrimaryColor.R, PrimaryColor.G, PrimaryColor.B },
-                RazerChromaEffect.Breathing =>
-                    [PrimaryColor.R, PrimaryColor.G, PrimaryColor.B, SecondaryColor.R, SecondaryColor.G, SecondaryColor.B],
-                _ => [],
-            };
-            await service.SetEffectAsync(effect, colors, token);
-        }, cancellationToken);
+                device.Chroma ??= new ChromaProfileSettings();
+                device.Chroma.BrightnessPercent = desired;
+            },
+            previousHardware is { } previous
+                ? (service, token) => service.SetBrightnessAsync(previous, token)
+                : null,
+            () => Brightness = previousUi);
+    }
+
+    [ProfileSetting("chroma.effect", DeviceCategory.Lighting)]
+    public Task ApplyEffectAsync(CancellationToken cancellationToken = default)
+    {
+        var previousIndex = SelectedLightingEffectIndex;
+        var previousPrimary = PrimaryColor;
+        var previousSecondary = SecondaryColor;
+        var effect = Effects[SelectedLightingEffectIndex];
+        var colors = effect switch
+        {
+            RazerChromaEffect.Static => new byte[] { PrimaryColor.R, PrimaryColor.G, PrimaryColor.B },
+            RazerChromaEffect.Breathing =>
+                [PrimaryColor.R, PrimaryColor.G, PrimaryColor.B, SecondaryColor.R, SecondaryColor.G, SecondaryColor.B],
+            _ => [],
+        };
+
+        return RunWriteAsync(
+            (service, token) => service.SetEffectAsync(effect, colors, token),
+            cancellationToken,
+            device =>
+            {
+                device.Chroma ??= new ChromaProfileSettings();
+                device.Chroma.Effect = effect.ToString();
+                device.Chroma.PrimaryColor = ToHex(PrimaryColor);
+                device.Chroma.SecondaryColor = ToHex(SecondaryColor);
+            },
+            (service, token) => service.SetEffectAsync(Effects[previousIndex], PreviousColors(), token),
+            () =>
+            {
+                SelectedLightingEffectIndex = previousIndex;
+                PrimaryColor = previousPrimary;
+                SecondaryColor = previousSecondary;
+            });
+
+        byte[] PreviousColors() => Effects[previousIndex] switch
+        {
+            RazerChromaEffect.Static => [previousPrimary.R, previousPrimary.G, previousPrimary.B],
+            RazerChromaEffect.Breathing =>
+                [previousPrimary.R, previousPrimary.G, previousPrimary.B,
+                 previousSecondary.R, previousSecondary.G, previousSecondary.B],
+            _ => [],
+        };
+    }
 
     public void PaintArgbLed(ArgbLedViewModel led)
     {
@@ -341,10 +407,17 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
         RebuildArgbLeds();
     }
 
+    [ProfileSetting("chroma.argb-frame", DeviceCategory.Lighting)]
     public async Task ApplyArgbFrameAsync(CancellationToken cancellationToken = default)
     {
         if (_specialLighting is null || _argbConnection is not { } connection) return;
         if (!BeginOperation()) return;
+        var port = _selectedArgbPortIndex.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var document = _getProfile?.Invoke();
+        var previousFrame = document is not null &&
+            document.Devices.TryGetValue(ProfileDeviceKey, out var previousDevice)
+            ? previousDevice.Chroma?.ArgbFrames?.GetValueOrDefault(port)
+            : null;
         try
         {
             try
@@ -366,6 +439,25 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
                 (byte)_selectedArgbPortIndex,
                 colors,
                 cancellationToken);
+            var encoded = EncodeArgbFrame(colors);
+            if (!await PeripheralProfileStore.SaveAsync(
+                    _getProfile?.Invoke(),
+                    _saveProfile,
+                    ProfileDeviceKey,
+                    device =>
+                    {
+                        device.Chroma ??= new ChromaProfileSettings();
+                        device.Chroma.ArgbFrames ??= new Dictionary<string, string>(
+                            StringComparer.OrdinalIgnoreCase);
+                        device.Chroma.ArgbFrames[port] = encoded;
+                    },
+                    cancellationToken))
+            {
+                await RestoreArgbFrameAsync(connection, (byte)_selectedArgbPortIndex, previousFrame);
+                throw new InvalidOperationException(
+                    AppStrings.Text("RazerHidSettingProfileSaveFailed"));
+            }
+
             ErrorText = string.Empty;
             OperationStatusText = AppStrings.Text("BlackSharkSaved");
         }
@@ -426,12 +518,40 @@ public sealed class RazerChromaViewModel : INotifyPropertyChanged
 
     private async Task RunWriteAsync(
         Func<RazerChromaStandardService, CancellationToken, Task> write,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Action<DeviceProfileSettings>? mutateProfile = null,
+        Func<RazerChromaStandardService, CancellationToken, Task>? rollbackHardware = null,
+        Action? rollbackUi = null)
     {
         if (!BeginOperation()) return;
         try
         {
             await write(OpenService(), cancellationToken);
+            if (mutateProfile is not null &&
+                !await PeripheralProfileStore.SaveAsync(
+                    _getProfile?.Invoke(),
+                    _saveProfile,
+                    ProfileDeviceKey,
+                    mutateProfile,
+                    cancellationToken))
+            {
+                rollbackUi?.Invoke();
+                if (rollbackHardware is not null)
+                {
+                    try
+                    {
+                        await rollbackHardware(OpenService(), CancellationToken.None);
+                    }
+                    catch (Exception exception) when (IsExpectedException(exception))
+                    {
+                        // The save failure is the actionable error; a restore failure only loses the old look.
+                    }
+                }
+
+                throw new InvalidOperationException(
+                    AppStrings.Text("RazerHidSettingProfileSaveFailed"));
+            }
+
             ErrorText = string.Empty;
             OperationStatusText = AppStrings.Text("BlackSharkSaved");
         }

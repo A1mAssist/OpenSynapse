@@ -1,6 +1,10 @@
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 using Windows.UI;
@@ -10,6 +14,8 @@ namespace OpenSynapse.App.ViewModels;
 public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
 {
     private readonly RazerHidSpecialLightingService _service;
+    private readonly Func<ProfileDocument>? _getProfile;
+    private readonly Func<CancellationToken, Task<bool>>? _saveProfile;
     private readonly HashSet<RazerHidLightingEffect> _unsupported = [];
     private RazerHidLightingEffect _selectedEffect;
     private Color _primary = Color.FromArgb(255, 0, 255, 102);
@@ -23,9 +29,13 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
 
     public RazerHidKrakenViewModel(
         RazerHidSpecialLightingService service,
-        RazerHidSpecialLightingConnection connection)
+        RazerHidSpecialLightingConnection connection,
+        Func<ProfileDocument>? getProfile = null,
+        Func<CancellationToken, Task<bool>>? saveProfile = null)
     {
         _service = service;
+        _getProfile = getProfile;
+        _saveProfile = saveProfile;
         Connection = connection;
         _errorText = string.IsNullOrWhiteSpace(connection.Error)
             ? string.Empty
@@ -50,6 +60,7 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
         try
         {
             Serial = await _service.TryReadSerialAsync(Connection, cancellationToken);
+            await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
             OnPropertyChanged(nameof(SerialVisibility));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -111,20 +122,100 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
     public bool IsBusy { get => _isBusy; private set => SetField(ref _isBusy, value); }
     public bool CanApply => Connection.IsReady && !RequiresRescan && !IsBusy && Effects.Contains(SelectedEffect);
 
+    private string ProfileDeviceKey => string.IsNullOrWhiteSpace(Serial)
+        ? $"1532:{Connection.ProductId:X4}"
+        : Serial;
+
+    [NotProfileScoped]
+    public async Task ApplyPersistedProfileAsync(
+        PowerSourceKind powerSource,
+        CancellationToken cancellationToken = default)
+    {
+        if (_getProfile?.Invoke() is not { } document)
+        {
+            return;
+        }
+
+        var descriptor = new DeviceDescriptor(
+            ProfileDeviceKey,
+            Name,
+            0x1532,
+            Connection.ProductId,
+            DeviceAccessState.Available,
+            DeviceCapabilityState.PendingValidation,
+            0,
+            1,
+            2,
+            "kraken",
+            DeviceCategory.Headset);
+        var applier = new HeadsetPeripheralProfileApplier(
+            resolveKraken: (_, _) => Task.FromResult<(
+                RazerHidSpecialLightingService Service,
+                RazerHidSpecialLightingConnection Connection)?>((_service, Connection)));
+        await applier.ApplyAsync(
+            new DeviceProfileApplyContext(
+                document,
+                descriptor,
+                powerSource,
+                ProfileResolver.Resolve(document, descriptor, powerSource)),
+            cancellationToken);
+    }
+
+    [ProfileSetting("headset.chroma-effect", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApply) return;
         var effect = SelectedEffect;
+        var previous = new LightingSnapshot(
+            SelectedEffect,
+            Primary,
+            Secondary,
+            Tertiary,
+            Intensity);
         IsBusy = true;
         OnPropertyChanged(nameof(CanApply));
         try
         {
+            var intensity = effect is RazerHidLightingEffect.Static or RazerHidLightingEffect.Custom
+                ? (byte)Math.Clamp(Math.Round(Intensity), 0, 255)
+                : (byte?)null;
             await _service.SetKrakenLightingAsync(Connection, new RazerHidLightingSettings(
                 effect, Primary: ToColor(Primary), Secondary: ToColor(Secondary), Tertiary: ToColor(Tertiary)),
-                effect is RazerHidLightingEffect.Static or RazerHidLightingEffect.Custom
-                    ? (byte)Math.Clamp(Math.Round(Intensity), 0, 255)
-                    : null,
+                intensity,
                 cancellationToken);
+            if (!await PersistHeadsetAsync(headset =>
+                {
+                    headset.ChromaEffect = effect.ToString();
+                    headset.ChromaBrightness = (int)Math.Round(Intensity / 255d * 100d);
+                    headset.ChromaParameters = new Dictionary<string, string>(
+                        StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["primary"] = $"{Primary.R:X2}{Primary.G:X2}{Primary.B:X2}",
+                        ["secondary"] = $"{Secondary.R:X2}{Secondary.G:X2}{Secondary.B:X2}",
+                        ["tertiary"] = $"{Tertiary.R:X2}{Tertiary.G:X2}{Tertiary.B:X2}",
+                        ["intensity"] = Math.Round(Intensity).ToString(CultureInfo.InvariantCulture),
+                    };
+                },
+                cancellationToken))
+            {
+                ApplyLighting(previous);
+                try
+                {
+                    await _service.SetKrakenLightingAsync(
+                        Connection,
+                        BuildSettings(previous),
+                        previous.Intensity is >= 0 and <= 255 ? (byte)previous.Intensity : null,
+                        CancellationToken.None);
+                }
+                catch (Exception exception) when (exception is IOException or InvalidOperationException)
+                {
+                    // The save failure is the actionable error; a restore failure only loses the old look.
+                }
+
+                ErrorText = AppStrings.Text("RazerHidSettingProfileSaveFailed");
+                return;
+            }
+
             ErrorText = string.Empty;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -165,6 +256,32 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
 
     public void RefreshLocalization() => OnPropertyChanged(string.Empty);
 
+    private Task<bool> PersistHeadsetAsync(
+        Action<HeadsetProfileSettings> mutate,
+        CancellationToken cancellationToken) =>
+        HeadsetProfilePersistence.SaveAsync(
+            _getProfile?.Invoke(),
+            _saveProfile,
+            ProfileDeviceKey,
+            mutate,
+            cancellationToken);
+
+    private static RazerHidLightingSettings BuildSettings(LightingSnapshot state) =>
+        new(
+            state.Effect,
+            Primary: ToColor(state.Primary),
+            Secondary: ToColor(state.Secondary),
+            Tertiary: ToColor(state.Tertiary));
+
+    private void ApplyLighting(LightingSnapshot state)
+    {
+        SelectedEffect = state.Effect;
+        Primary = state.Primary;
+        Secondary = state.Secondary;
+        Tertiary = state.Tertiary;
+        Intensity = state.Intensity;
+    }
+
     private static Visibility VisibleWhen(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
     private static RazerHidColor ToColor(Color color) => new(color.R, color.G, color.B);
     private static string FormatEffect(RazerHidLightingEffect effect) => AppStrings.Text($"RazerHidEffect{effect}");
@@ -191,4 +308,11 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
     }
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>
         PropertyChanged?.Invoke(this, new(name));
+
+    private readonly record struct LightingSnapshot(
+        RazerHidLightingEffect Effect,
+        Color Primary,
+        Color Secondary,
+        Color Tertiary,
+        double Intensity);
 }

@@ -1,5 +1,7 @@
 using Microsoft.UI.Xaml;
 using Windows.UI;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
@@ -76,12 +78,17 @@ public sealed partial class RazerAwBleHeadsetViewModel
             ref _chromaSecondaryColorVisibility, value, nameof(ChromaSecondaryColorVisibility));
     }
 
+    [ProfileSetting("headset.chroma-brightness", DeviceCategory.Headset, powerScoped: true)]
     public Task ApplyChromaBrightnessAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(
             service => service.SetChromaBrightnessAsync(
                 (int)Math.Round(ChromaBrightness), cancellationToken),
-            applied => ChromaBrightness = applied);
+            applied => ChromaBrightness = applied,
+            PersistChromaBrightnessAsync,
+            ct => _service!.ReadChromaBrightnessAsync(ct),
+            (value, ct) => _service!.SetChromaBrightnessAsync(value, ct));
 
+    [ProfileSetting("headset.chroma-effect", DeviceCategory.Headset, powerScoped: true)]
     public Task ApplyChromaEffectAsync(CancellationToken cancellationToken = default)
     {
         var effect = ChromaEffects[
@@ -92,8 +99,18 @@ public sealed partial class RazerAwBleHeadsetViewModel
                 ToRgb(ChromaPrimaryColor),
                 ToRgb(ChromaSecondaryColor),
                 cancellationToken),
-            ApplyChromaState);
+            ApplyChromaState,
+            PersistChromaEffectAsync,
+            ReadChromaEffectAsync,
+            (previous, ct) => _service!.SetChromaEffectAsync(
+                previous.Effect,
+                previous.PrimaryColor,
+                previous.SecondaryColor,
+                ct));
     }
+
+    private Task<RazerAwChromaState> ReadChromaEffectAsync(CancellationToken cancellationToken) =>
+        _service!.ReadChromaEffectAsync(cancellationToken);
 
     private void ApplyChromaState(RazerAwChromaState state)
     {

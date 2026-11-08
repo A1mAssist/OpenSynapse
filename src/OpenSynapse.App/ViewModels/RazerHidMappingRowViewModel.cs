@@ -44,7 +44,7 @@ internal static class RazerMappingText
 /// <summary>One selectable onboard macro slot.</summary>
 public sealed record RazerMacroSlotOption(byte Id, string Name);
 
-public sealed class RazerHidMappingRowViewModel : INotifyPropertyChanged
+public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
 {
     private readonly IReadOnlyList<RazerHidMacroOption> _localMacros;
     private readonly bool _canUseSoftwareMacro;

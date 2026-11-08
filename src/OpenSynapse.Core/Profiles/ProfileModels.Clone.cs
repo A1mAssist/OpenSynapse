@@ -33,6 +33,9 @@ public sealed partial class ProfileDefinition
         Headset = CloneHeadset(source.Headset),
         CoolingPad = CloneCoolingPad(source.CoolingPad),
         Gamepad = CloneGamepad(source.Gamepad),
+        Chroma = source.Chroma.Clone(),
+        Mixer = source.Mixer.Clone(),
+        Kiyo = source.Kiyo.Clone(),
         Display = CloneDisplay(source.Display),
         Lighting = CloneLighting(source.Lighting),
         LightingZones = CloneZones(source.LightingZones),
@@ -46,6 +49,9 @@ public sealed partial class ProfileDefinition
         Headset = CloneHeadset(source.Headset),
         CoolingPad = CloneCoolingPad(source.CoolingPad),
         Gamepad = CloneGamepad(source.Gamepad),
+        Chroma = source.Chroma.Clone(),
+        Mixer = source.Mixer.Clone(),
+        Kiyo = source.Kiyo.Clone(),
         Display = CloneDisplay(source.Display),
         Lighting = CloneLighting(source.Lighting),
         LightingZones = CloneZones(source.LightingZones),
@@ -65,6 +71,9 @@ public sealed partial class ProfileDefinition
         Headset = CloneHeadset(source.Headset),
         CoolingPad = CloneCoolingPad(source.CoolingPad),
         Gamepad = CloneGamepad(source.Gamepad),
+        Chroma = source.Chroma.Clone(),
+        Mixer = source.Mixer.Clone(),
+        Kiyo = source.Kiyo.Clone(),
         Display = CloneDisplay(source.Display),
         Lighting = CloneLighting(source.Lighting),
         LightingZones = CloneZones(source.LightingZones),
@@ -96,6 +105,20 @@ public sealed partial class ProfileDefinition
         MappingPreset = source.MappingPreset,
         LightingEnabled = source.LightingEnabled,
         ChromaOverrideEnabled = source.ChromaOverrideEnabled,
+        DisplayBrightnessPercent = source.DisplayBrightnessPercent,
+        StartupAnimationEnabled = source.StartupAnimationEnabled,
+        AutoSleepSeconds = source.AutoSleepSeconds,
+        TimeToDimSeconds = source.TimeToDimSeconds,
+        IndicatorLedEnabled = source.IndicatorLedEnabled,
+        GpuCardDetectionEnabled = source.GpuCardDetectionEnabled,
+        NativeDisplayModeEnabled = source.NativeDisplayModeEnabled,
+        LocalDimmingEnabled = source.LocalDimmingEnabled,
+        CpuPowerBoostMode = source.CpuPowerBoostMode,
+        GpuCoreClockOffsetMhz = source.GpuCoreClockOffsetMhz,
+        GpuMemoryClockOffsetMhz = source.GpuMemoryClockOffsetMhz,
+        GpuCoreClockLimitMhz = source.GpuCoreClockLimitMhz,
+        CpuCurveOffset = source.CpuCurveOffset,
+        CpuPowerLimitWatts = source.CpuPowerLimitWatts,
         GpuMode = source.GpuMode,
     };
 
@@ -128,6 +151,7 @@ public sealed partial class ProfileDefinition
         HapticLevel = source.HapticLevel,
         DpiStages = source.DpiStages?.Clone(),
         ButtonAssignments = source.ButtonAssignments?.Select(assignment => assignment.Clone()).ToList(),
+        ButtonMappings = source.ButtonMappings?.Select(mapping => mapping.Clone()).ToList(),
     };
 
     private static KeyboardProfileSettings CloneKeyboard(KeyboardProfileSettings source) => new()
@@ -143,20 +167,71 @@ public sealed partial class ProfileDefinition
         OledLanguage = source.OledLanguage,
         KnobMode = source.KnobMode,
         WristRestLightingEnabled = source.WristRestLightingEnabled,
+        ButtonMappings = source.ButtonMappings?.Select(mapping => mapping.Clone()).ToList(),
     };
 
     private static HeadsetProfileSettings CloneHeadset(HeadsetProfileSettings source) => new()
     {
         VolumePercent = source.VolumePercent,
         SideTone = source.SideTone,
+        GameModeEnabled = source.GameModeEnabled,
         GameChatBalance = source.GameChatBalance,
         AncEnabled = source.AncEnabled,
+        AncModeIndex = source.AncModeIndex,
+        AncLevel = source.AncLevel,
         ThxEnabled = source.ThxEnabled,
+        ThxSpatialEnabled = source.ThxSpatialEnabled,
+        ThxEqualizerEnabled = source.ThxEqualizerEnabled,
+        ThxPreset = source.ThxPreset,
+        ThxBands = CloneIntMap(source.ThxBands),
+        ThxNormalizationEnabled = source.ThxNormalizationEnabled,
+        ThxNormalizationLevel = source.ThxNormalizationLevel,
+        ThxVoiceClarityEnabled = source.ThxVoiceClarityEnabled,
+        ThxVoiceClarityLevel = source.ThxVoiceClarityLevel,
+        ThxBassBoostEnabled = source.ThxBassBoostEnabled,
+        ThxBassBoostLevel = source.ThxBassBoostLevel,
+        ThxSidetoneEnabled = source.ThxSidetoneEnabled,
+        ThxSidetoneLevel = source.ThxSidetoneLevel,
         EqPreset = source.EqPreset,
+        EqBands = CloneIntMap(source.EqBands),
+        MicEqPreset = source.MicEqPreset,
+        MicEqBands = CloneIntMap(source.MicEqBands),
+        Bass = source.Bass,
         MicrophoneVolumePercent = source.MicrophoneVolumePercent,
         MicrophoneMute = source.MicrophoneMute,
+        NoiseSuppression = source.NoiseSuppression,
+        AudioSourceIndex = source.AudioSourceIndex,
+        Dolby = source.Dolby,
+        NightMode = source.NightMode,
+        VoicePrompts = source.VoicePrompts,
+        MicDeEsser = source.MicDeEsser,
+        MicLimiterDb = source.MicLimiterDb,
+        MicReverbIndex = source.MicReverbIndex,
+        MicReverbIntensity = source.MicReverbIntensity,
+        MicCompressorEnabled = source.MicCompressorEnabled,
+        MicCompressorProfile = source.MicCompressorProfile,
+        MicCompressorDb = source.MicCompressorDb,
+        MicCompressorRatio = source.MicCompressorRatio,
+        MicCompressorAttack = source.MicCompressorAttack,
+        MicCompressorRelease = source.MicCompressorRelease,
+        MicMonitoringEnabled = source.MicMonitoringEnabled,
+        ParametricEqEnabled = source.ParametricEqEnabled,
+        ParametricEqBandIndex = source.ParametricEqBandIndex,
+        ParametricEqFrequency = source.ParametricEqFrequency,
+        ParametricEqGain = source.ParametricEqGain,
+        ParametricEqQ = source.ParametricEqQ,
+        ParametricEqProfile = source.ParametricEqProfile,
+        ParametricEqDirection = source.ParametricEqDirection,
+        ParametricEqFilterType = source.ParametricEqFilterType,
         HapticEnabled = source.HapticEnabled,
+        HapticsStrength = source.HapticsStrength,
+        AutoPause = source.AutoPause,
         AutoShutdownMinutes = source.AutoShutdownMinutes,
+        Dnd = source.Dnd,
+        GestureControl = source.GestureControl,
+        ChromaBrightness = source.ChromaBrightness,
+        ChromaEffect = source.ChromaEffect,
+        ChromaParameters = CloneStringMap(source.ChromaParameters),
     };
 
     private static CoolingPadProfileSettings CloneCoolingPad(CoolingPadProfileSettings source) => new()
@@ -164,6 +239,10 @@ public sealed partial class ProfileDefinition
         FanMode = source.FanMode,
         FanTargetRpm = source.FanTargetRpm,
         FanCurve = source.FanCurve?.Clone(),
+        LightingEnabled = source.LightingEnabled,
+        LightingEffect = source.LightingEffect,
+        LightingParameters = CloneStringMap(source.LightingParameters),
+        PowerEnabled = source.PowerEnabled,
     };
 
     private static GamepadProfileSettings CloneGamepad(GamepadProfileSettings source) => new()
@@ -171,6 +250,26 @@ public sealed partial class ProfileDefinition
         PollingRateHertz = source.PollingRateHertz,
         VibrationStrengthPercent = source.VibrationStrengthPercent,
         MappingPreset = source.MappingPreset,
+        LeftStickDeadzone = source.LeftStickDeadzone,
+        RightStickDeadzone = source.RightStickDeadzone,
+        LeftStickSensitivity = source.LeftStickSensitivity,
+        RightStickSensitivity = source.RightStickSensitivity,
+        LeftStickCircularity = source.LeftStickCircularity,
+        RightStickCircularity = source.RightStickCircularity,
+        LeftStickPreventDoubleDeadzone = source.LeftStickPreventDoubleDeadzone,
+        RightStickPreventDoubleDeadzone = source.RightStickPreventDoubleDeadzone,
+        TriggerMode = source.TriggerMode,
+        LeftTrigger = source.LeftTrigger?.Clone(),
+        RightTrigger = source.RightTrigger?.Clone(),
+        DpadMode = source.DpadMode,
+        IgnoreDpadDiagonals = source.IgnoreDpadDiagonals,
+        SocdModeIndex = source.SocdModeIndex,
+        ButtonAssignments = source.ButtonAssignments?
+            .Select(assignment => assignment.Clone())
+            .ToList(),
+        LightingEnabled = source.LightingEnabled,
+        LightingEffect = source.LightingEffect,
+        LightingParameters = CloneStringMap(source.LightingParameters),
     };
 
     private static DisplayProfileSettings CloneDisplay(DisplayProfileSettings source) => new()
@@ -195,4 +294,15 @@ public sealed partial class ProfileDefinition
                 pair => pair.Key,
                 pair => CloneLighting(pair.Value),
                 StringComparer.OrdinalIgnoreCase);
+
+    private static Dictionary<string, int>? CloneIntMap(IReadOnlyDictionary<string, int>? source) =>
+        source is null
+            ? null
+            : new Dictionary<string, int>(source, StringComparer.OrdinalIgnoreCase);
+
+    private static Dictionary<string, string>? CloneStringMap(
+        IReadOnlyDictionary<string, string>? source) =>
+        source is null
+            ? null
+            : new Dictionary<string, string>(source, StringComparer.OrdinalIgnoreCase);
 }

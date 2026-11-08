@@ -1,4 +1,6 @@
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Lifecycle;
 
 namespace OpenSynapse.App.ViewModels;
@@ -268,6 +270,7 @@ public sealed partial class BladeWorkspace
         NotifyGpuClockDirty();
     }
 
+    [ProfileSetting("blade.gpu-clock-offset", DeviceCategory.Laptop, powerScoped: true)]
     public async Task ApplyGpuClockOffsetAsync(CancellationToken cancellationToken = default)
     {
         if (!CanEditGpuClockOffset)
@@ -278,6 +281,13 @@ public sealed partial class BladeWorkspace
         var core = (int)Math.Round(_blade._bladeCoreClockOffsetMhz);
         var memory = (int)Math.Round(_blade._bladeMemoryClockOffsetMhz);
         var limit = (int)Math.Round(_bladeGpuClockLimitMhz);
+        var target = EditablePlatformProfile;
+        var previousProfileCore = target.GpuCoreClockOffsetMhz;
+        var previousProfileMemory = target.GpuMemoryClockOffsetMhz;
+        var previousProfileLimit = target.GpuCoreClockLimitMhz;
+        var previousAppliedCore = _gpuClockAppliedCoreMhz;
+        var previousAppliedMemory = _gpuClockAppliedMemoryMhz;
+        var previousAppliedLimit = _gpuClockAppliedLimitMhz;
         _gpuClockApplying = true;
         NotifyGpuClockDirty();
         try
@@ -295,6 +305,22 @@ public sealed partial class BladeWorkspace
                         }
 
                         await ApplyGpuClockLimitAsync(limit, cancellationToken);
+                        target.GpuCoreClockOffsetMhz = core;
+                        target.GpuMemoryClockOffsetMhz = memory;
+                        target.GpuCoreClockLimitMhz = limit;
+                        if (!await SaveProfileAsync(cancellationToken))
+                        {
+                            target.GpuCoreClockOffsetMhz = previousProfileCore;
+                            target.GpuMemoryClockOffsetMhz = previousProfileMemory;
+                            target.GpuCoreClockLimitMhz = previousProfileLimit;
+                            await RestoreGpuClockHardwareAsync(
+                                previousAppliedCore,
+                                previousAppliedMemory,
+                                previousAppliedLimit,
+                                CancellationToken.None);
+                            throw new InvalidOperationException(
+                                AppStrings.Text("BladeGpuClockOffsetFailed"));
+                        }
                         _gpuClockAppliedCoreMhz = core;
                         _gpuClockAppliedMemoryMhz = memory;
                         _gpuClockAppliedLimitMhz = limit;
@@ -336,7 +362,24 @@ public sealed partial class BladeWorkspace
         }
     }
 
+    private async Task RestoreGpuClockHardwareAsync(
+        int core,
+        int memory,
+        int limit,
+        CancellationToken cancellationToken)
+    {
+        await OpenSynapseServiceClient.TrySetGpuClockOffsetAsync(
+            core, memory, cancellationToken);
+        if (_bladeGpuClockLimitAvailable)
+        {
+            var serviceValue = limit <= 0 ? NvApiGpuClockLimit.MaximumMhz : limit;
+            await OpenSynapseServiceClient.TrySetGpuClockLimitAsync(
+                serviceValue, cancellationToken);
+        }
+    }
+
     /// <summary>Puts the driver back to stock clocks on the user's explicit request.</summary>
+    [NotProfileScoped]
     public async Task ResetGpuClockOffsetDefaultsAsync(CancellationToken cancellationToken = default)
     {
         if (!CanEditGpuClockOffset) return;

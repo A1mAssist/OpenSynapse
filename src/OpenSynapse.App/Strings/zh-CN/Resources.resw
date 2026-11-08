@@ -412,8 +412,8 @@
     <comment>重命名</comment>
   </data>
   <data name="Loc_95B9EC6E0F.Text" xml:space="preserve">
-    <value>前台应用或供电状态变化时会自动应用已验证的设备设置。</value>
-    <comment>前台应用或供电状态变化时会自动应用已验证的设备设置。</comment>
+    <value>前台应用或电源状态变化时会自动应用配置中的设备设置。</value>
+    <comment>前台应用或电源状态变化时会自动应用配置中的设备设置。</comment>
   </data>
   <data name="Loc_2A6762CB42.Text" xml:space="preserve">
     <value>应用绑定</value>
@@ -1632,7 +1632,7 @@
   <data name="SilentStartupToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>静默启动</value><comment>静默启动</comment></data>
   <data name="ActiveProfileShortcutsTitle.Text" xml:space="preserve"><value>活动配置快捷键</value><comment>活动配置快捷键</comment></data>
   <data name="ActiveProfileShortcutsScope.Text" xml:space="preserve"><value>保存到当前活动配置：</value><comment>保存到当前活动配置：</comment></data>
-  <data name="ActiveProfileDeviceSettingsDescription.Text" xml:space="preserve"><value>设备页中的 Snap Tap、Blade 已验证快捷键预设和 Viper 板载映射也保存到当前活动配置。</value><comment>设备页中的 Snap Tap、Blade 已验证快捷键预设和 Viper 板载映射也保存到当前活动配置。</comment></data>
+  <data name="ActiveProfileDeviceSettingsDescription.Text" xml:space="preserve"><value>配置会保存并恢复设备设置、灯效和映射。</value><comment>配置会保存并恢复设备设置、灯效和映射。</comment></data>
   <data name="PerformanceCycleTitle.Text" xml:space="preserve"><value>按键循环包含的性能模式</value><comment>按键循环包含的性能模式</comment></data>
   <data name="PerformanceCycleDescription.Text" xml:space="preserve"><value>取消不想通过 M4/Fn+P 切换到的模式；手动选择不受影响。</value><comment>取消不想通过 M4/Fn+P 切换到的模式；手动选择不受影响。</comment></data>
   <data name="PerformanceCycleBalanced.Content" xml:space="preserve"><value>平衡</value><comment>平衡</comment></data>
@@ -2538,6 +2538,9 @@
   <data name="ThxStatusServiceNotReady" xml:space="preserve">
     <value>THX 服务尚未就绪。</value>
   </data>
+  <data name="ThxStatusRebootRequired" xml:space="preserve">
+    <value>THX 组件已安装，需要重启电脑后生效。</value>
+  </data>
   <data name="ThxStatusOperationRejected" xml:space="preserve">
     <value>THX 未接受这次设置。</value>
   </data>
@@ -2987,6 +2990,7 @@
   <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>正在下载并安装 THX 组件…</value></data>
   <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>THX 组件下载、校验或安装失败，请确认允许管理员权限后重试。</value></data>
   <data name="RazerHeadsetThxIncomplete" xml:space="preserve"><value>安装程序已结束，但 THX 服务仍未就绪。请重启后重试，或点“手动下载 THX 安装包”自行安装。</value></data>
+  <data name="RazerHeadsetThxRebootRequired" xml:space="preserve"><value>THX 组件已安装，需要重启电脑后生效。</value></data>
   <data name="RazerHeadsetThxInstallerLinkButton.Content" xml:space="preserve"><value>手动下载 THX 安装包</value></data>
   <data name="RazerHeadsetThxReady" xml:space="preserve"><value>THX 组件已安装。</value></data>
   <data name="RazerHeadsetThxSpatialToggle.Header" xml:space="preserve"><value>空间音效</value></data>
@@ -3882,6 +3886,7 @@
   <data name="RazerDriverCheckFailed" xml:space="preserve"><value>Razer 驱动检查失败：{0}</value></data>
   <data name="RazerDriverWaiting" xml:space="preserve"><value>等待安装</value></data>
   <data name="RazerDriverInstalledRestart" xml:space="preserve"><value>已安装，重启或重新插拔后生效</value></data>
+  <data name="RazerDriverInstalledOnline" xml:space="preserve"><value>已安装并生效</value></data>
   <data name="RazerDriverInstallSummary" xml:space="preserve"><value>已安装 {0} 个 Razer 驱动包，重启或重新插拔设备后生效。</value></data>
   <data name="RazerDriverInstallSummaryPartial" xml:space="preserve"><value>已安装 {0} 个，{1} 个未完成。</value></data>
   <data name="RazerDriverInstallCancelled" xml:space="preserve"><value>驱动安装已取消。</value></data>
@@ -3897,4 +3902,108 @@
   <data name="RazerDriverInstallStartFailed" xml:space="preserve"><value>Razer 驱动安装程序没有启动。</value></data>
   <data name="RazerDriverCommonDownloading" xml:space="preserve"><value>正在下载 Razer 通用控制驱动…</value></data>
   <data name="RazerDriverCommonInstalling" xml:space="preserve"><value>正在安装 Razer 通用控制驱动，请在 UAC 中允许。</value></data>
+  <data name="ProfileSummaryTitle" xml:space="preserve"><value>此配置包含</value></data>
+  <data name="ProfileSummaryEmpty" xml:space="preserve"><value>此配置还没有设备设置。</value></data>
+  <data name="ProfileSummary_ScopeDevice" xml:space="preserve"><value>设备覆盖</value></data>
+  <data name="ProfileSummary_Group_Blade" xml:space="preserve"><value>灵刃</value></data>
+  <data name="ProfileSummary_Group_Mouse" xml:space="preserve"><value>鼠标</value></data>
+  <data name="ProfileSummary_Group_Keyboard" xml:space="preserve"><value>键盘</value></data>
+  <data name="ProfileSummary_Group_Headset" xml:space="preserve"><value>耳机</value></data>
+  <data name="ProfileSummary_Group_CoolingPad" xml:space="preserve"><value>散热垫</value></data>
+  <data name="ProfileSummary_Group_Gamepad" xml:space="preserve"><value>手柄</value></data>
+  <data name="ProfileSummary_Group_Mixer" xml:space="preserve"><value>混音器</value></data>
+  <data name="ProfileSummary_Group_Kiyo" xml:space="preserve"><value>摄像头</value></data>
+  <data name="ProfileSummary_Group_Display" xml:space="preserve"><value>显示</value></data>
+  <data name="ProfileSummary_Group_Lighting" xml:space="preserve"><value>灯效</value></data>
+  <data name="ProfileSummary_Item_BladeKeyboardBrightness" xml:space="preserve"><value>键盘亮度</value></data>
+  <data name="ProfileSummary_Item_BladePerformanceMode" xml:space="preserve"><value>性能模式</value></data>
+  <data name="ProfileSummary_Item_BladeLogo" xml:space="preserve"><value>Logo 灯效</value></data>
+  <data name="ProfileSummary_Item_FanMode" xml:space="preserve"><value>风扇模式</value></data>
+  <data name="ProfileSummary_Item_FanTarget" xml:space="preserve"><value>固定风扇转速</value></data>
+  <data name="ProfileSummary_Item_FanCurve" xml:space="preserve"><value>风扇曲线</value></data>
+  <data name="ProfileSummary_Item_ChargeLimit" xml:space="preserve"><value>充电上限</value></data>
+  <data name="ProfileSummary_Item_RefreshRate" xml:space="preserve"><value>刷新率</value></data>
+  <data name="ProfileSummary_Item_MaxFanMode" xml:space="preserve"><value>风扇增强模式</value></data>
+  <data name="ProfileSummary_Item_CpuBoost" xml:space="preserve"><value>CPU Boost</value></data>
+  <data name="ProfileSummary_Item_GpuBoost" xml:space="preserve"><value>GPU Boost</value></data>
+  <data name="ProfileSummary_Item_GamingMode" xml:space="preserve"><value>游戏模式</value></data>
+  <data name="ProfileSummary_Item_SnapTap" xml:space="preserve"><value>Snap Tap</value></data>
+  <data name="ProfileSummary_Item_MappingPreset" xml:space="preserve"><value>按键预设</value></data>
+  <data name="ProfileSummary_Item_LightingSwitch" xml:space="preserve"><value>灯效总开关</value></data>
+  <data name="ProfileSummary_Item_ChromaOverride" xml:space="preserve"><value>Chroma 接管</value></data>
+  <data name="ProfileSummary_Item_DisplayBrightness" xml:space="preserve"><value>屏幕亮度</value></data>
+  <data name="ProfileSummary_Item_StartupAnimation" xml:space="preserve"><value>启动动画</value></data>
+  <data name="ProfileSummary_Item_AutoSleep" xml:space="preserve"><value>自动睡眠</value></data>
+  <data name="ProfileSummary_Item_TimeToDim" xml:space="preserve"><value>熄屏时间</value></data>
+  <data name="ProfileSummary_Item_IndicatorLed" xml:space="preserve"><value>指示灯</value></data>
+  <data name="ProfileSummary_Item_GpuCardDetection" xml:space="preserve"><value>显卡检测灯</value></data>
+  <data name="ProfileSummary_Item_NativeDisplayMode" xml:space="preserve"><value>面板模式</value></data>
+  <data name="ProfileSummary_Item_LocalDimming" xml:space="preserve"><value>局部调光</value></data>
+  <data name="ProfileSummary_Item_CpuPowerBoost" xml:space="preserve"><value>CPU 功耗增强</value></data>
+  <data name="ProfileSummary_Item_GpuClockOffset" xml:space="preserve"><value>GPU 频率偏移</value></data>
+  <data name="ProfileSummary_Item_CpuCurve" xml:space="preserve"><value>CPU Curve Optimizer</value></data>
+  <data name="ProfileSummary_Item_CpuPowerLimit" xml:space="preserve"><value>CPU 功耗上限</value></data>
+  <data name="ProfileSummary_Item_Dpi" xml:space="preserve"><value>DPI</value></data>
+  <data name="ProfileSummary_Item_DpiStages" xml:space="preserve"><value>DPI 档位</value></data>
+  <data name="ProfileSummary_Item_PollingRate" xml:space="preserve"><value>轮询率</value></data>
+  <data name="ProfileSummary_Item_IdleTimeout" xml:space="preserve"><value>空闲超时</value></data>
+  <data name="ProfileSummary_Item_LowBattery" xml:space="preserve"><value>低电量提醒</value></data>
+  <data name="ProfileSummary_Item_BatteryChemistry" xml:space="preserve"><value>电池类型</value></data>
+  <data name="ProfileSummary_Item_ScrollMode" xml:space="preserve"><value>滚轮模式</value></data>
+  <data name="ProfileSummary_Item_ScrollAcceleration" xml:space="preserve"><value>滚轮加速</value></data>
+  <data name="ProfileSummary_Item_SmartReel" xml:space="preserve"><value>智能滚轮</value></data>
+  <data name="ProfileSummary_Item_OnboardProfile" xml:space="preserve"><value>板载配置</value></data>
+  <data name="ProfileSummary_Item_HapticScroll" xml:space="preserve"><value>触觉滚轮档位</value></data>
+  <data name="ProfileSummary_Item_PowerPlan" xml:space="preserve"><value>电源计划</value></data>
+  <data name="ProfileSummary_Item_SmartIllumination" xml:space="preserve"><value>智能调光</value></data>
+  <data name="ProfileSummary_Item_SleepTimeout" xml:space="preserve"><value>休眠时间</value></data>
+  <data name="ProfileSummary_Item_Debounce" xml:space="preserve"><value>去抖</value></data>
+  <data name="ProfileSummary_Item_HapticFeedback" xml:space="preserve"><value>触觉反馈</value></data>
+  <data name="ProfileSummary_Item_Mapping" xml:space="preserve"><value>按键映射</value></data>
+  <data name="ProfileSummary_Item_SwitchType" xml:space="preserve"><value>轴体优化</value></data>
+  <data name="ProfileSummary_Item_AnalogKey" xml:space="preserve"><value>模拟键</value></data>
+  <data name="ProfileSummary_Item_FnPrimary" xml:space="preserve"><value>Fn 主功能</value></data>
+  <data name="ProfileSummary_Item_OledBrightness" xml:space="preserve"><value>OLED 亮度</value></data>
+  <data name="ProfileSummary_Item_OledLanguage" xml:space="preserve"><value>OLED 语言</value></data>
+  <data name="ProfileSummary_Item_KnobMode" xml:space="preserve"><value>旋钮模式</value></data>
+  <data name="ProfileSummary_Item_WristRest" xml:space="preserve"><value>腕托灯</value></data>
+  <data name="ProfileSummary_Item_Volume" xml:space="preserve"><value>音量</value></data>
+  <data name="ProfileSummary_Item_SideTone" xml:space="preserve"><value>侧音</value></data>
+  <data name="ProfileSummary_Item_GameMode" xml:space="preserve"><value>游戏模式</value></data>
+  <data name="ProfileSummary_Item_GameChat" xml:space="preserve"><value>游戏 / 语音平衡</value></data>
+  <data name="ProfileSummary_Item_Anc" xml:space="preserve"><value>主动降噪</value></data>
+  <data name="ProfileSummary_Item_Thx" xml:space="preserve"><value>THX 空间音效</value></data>
+  <data name="ProfileSummary_Item_ThxPreset" xml:space="preserve"><value>THX 预设 / 频段</value></data>
+  <data name="ProfileSummary_Item_ThxEnhancements" xml:space="preserve"><value>THX 增强</value></data>
+  <data name="ProfileSummary_Item_EqPreset" xml:space="preserve"><value>均衡器预设 / 频段</value></data>
+  <data name="ProfileSummary_Item_MicEq" xml:space="preserve"><value>麦克风均衡器</value></data>
+  <data name="ProfileSummary_Item_Bass" xml:space="preserve"><value>低音增强</value></data>
+  <data name="ProfileSummary_Item_Microphone" xml:space="preserve"><value>麦克风音量 / 静音</value></data>
+  <data name="ProfileSummary_Item_NoiseSuppression" xml:space="preserve"><value>麦克风降噪</value></data>
+  <data name="ProfileSummary_Item_AudioSource" xml:space="preserve"><value>音频输入源</value></data>
+  <data name="ProfileSummary_Item_AdvancedAudio" xml:space="preserve"><value>Dolby / 夜间模式 / 语音提示</value></data>
+  <data name="ProfileSummary_Item_MicProcessing" xml:space="preserve"><value>麦克风处理</value></data>
+  <data name="ProfileSummary_Item_MicMonitoring" xml:space="preserve"><value>麦克风监听</value></data>
+  <data name="ProfileSummary_Item_ParametricEq" xml:space="preserve"><value>参数均衡器</value></data>
+  <data name="ProfileSummary_Item_Haptics" xml:space="preserve"><value>触觉反馈</value></data>
+  <data name="ProfileSummary_Item_AutoPause" xml:space="preserve"><value>摘下自动暂停</value></data>
+  <data name="ProfileSummary_Item_AutoShutdown" xml:space="preserve"><value>自动关机</value></data>
+  <data name="ProfileSummary_Item_Dnd" xml:space="preserve"><value>勿扰模式</value></data>
+  <data name="ProfileSummary_Item_Gesture" xml:space="preserve"><value>手势控制</value></data>
+  <data name="ProfileSummary_Item_Chroma" xml:space="preserve"><value>耳机灯效</value></data>
+  <data name="ProfileSummary_Item_Power" xml:space="preserve"><value>电源</value></data>
+  <data name="ProfileSummary_Item_Vibration" xml:space="preserve"><value>振动强度</value></data>
+  <data name="ProfileSummary_Item_Deadzone" xml:space="preserve"><value>摇杆死区</value></data>
+  <data name="ProfileSummary_Item_TriggerMode" xml:space="preserve"><value>扳机模式</value></data>
+  <data name="ProfileSummary_Item_Dpad" xml:space="preserve"><value>方向键设置</value></data>
+  <data name="ProfileSummary_Item_Socd" xml:space="preserve"><value>SOCD 模式</value></data>
+  <data name="ProfileSummary_Item_Lighting" xml:space="preserve"><value>灯效</value></data>
+  <data name="ProfileSummary_Item_LightingZone" xml:space="preserve"><value>灯效区域 {0}</value></data>
+  <data name="ProfileSummary_Item_DeviceLighting" xml:space="preserve"><value>设备 {0} 灯效</value></data>
+  <data name="ProfileSummary_Item_DeviceLightingZone" xml:space="preserve"><value>设备 {0} · 区域 {1} 灯效</value></data>
+  <data name="ProfileSummary_Item_MixerChannels" xml:space="preserve"><value>声道静音</value></data>
+  <data name="ProfileSummary_Item_MixerMicMute" xml:space="preserve"><value>麦克风静音</value></data>
+  <data name="ProfileSummary_Item_MixerBrightness" xml:space="preserve"><value>混音器亮度</value></data>
+  <data name="ProfileSummary_Item_KiyoWhiteBalance" xml:space="preserve"><value>白平衡</value></data>
+  <data name="SavedToCurrentProfile" xml:space="preserve"><value>已保存到当前配置</value></data>
 </root>

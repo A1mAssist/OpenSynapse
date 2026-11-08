@@ -31,6 +31,8 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     private readonly Func<ProfileDocument> _getProfile;
     private readonly Action<ProfileDocument> _setProfile;
     private readonly Func<CancellationToken, Task<bool>> _saveProfileAsync;
+    private readonly Func<MachineSettings> _getMachineSettings;
+    private readonly Func<CancellationToken, Task<bool>> _saveMachineSettingsAsync;
     private readonly Func<string, Func<Task>, CancellationToken, Action?, string?, string?, Task> _runDeviceOperation;
     private readonly Func<IReadOnlyList<DeviceDescriptor>> _deviceDescriptors;
     private readonly Func<PowerSourceKind> _currentPowerSource;
@@ -85,6 +87,8 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         Func<ProfileDocument> getProfile,
         Action<ProfileDocument> setProfile,
         Func<CancellationToken, Task<bool>> saveProfileAsync,
+        Func<MachineSettings> getMachineSettings,
+        Func<CancellationToken, Task<bool>> saveMachineSettingsAsync,
         Func<string, Func<Task>, CancellationToken, Action?, string?, string?, Task> runDeviceOperation,
         Func<IReadOnlyList<DeviceDescriptor>> deviceDescriptors,
         Func<PowerSourceKind> currentPowerSource,
@@ -110,6 +114,8 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         _getProfile = getProfile;
         _setProfile = setProfile;
         _saveProfileAsync = saveProfileAsync;
+        _getMachineSettings = getMachineSettings;
+        _saveMachineSettingsAsync = saveMachineSettingsAsync;
         _runDeviceOperation = runDeviceOperation;
         _deviceDescriptors = deviceDescriptors;
         _currentPowerSource = currentPowerSource;
@@ -845,6 +851,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             GameModeEnabled = _blade._bladeGameModeState != 0);
     }
 
+    [ProfileSetting("blade.startup-animation", DeviceCategory.Laptop, powerScoped: true)]
     public async Task ApplyStartupAnimationAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApplyStartupAnimation)
@@ -854,8 +861,18 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
 
         await RunDeviceOperationAsync(AppStrings.Text("Text_AA91A1FF"), async () =>
         {
+            var target = EditablePlatformProfile;
+            var previousHardware = _blade._bladeStartupAnimationEnabled;
             var actual = await _deviceTelemetryReader.SetBladeStartupAnimationAsync(
                 ActiveDescriptors, StartupAnimationEnabled, cancellationToken);
+            await SavePlatformSettingAsync(
+                () => target.StartupAnimationEnabled,
+                value => target.StartupAnimationEnabled = value,
+                (bool?)actual,
+                (_, token) => previousHardware is { } previous
+                    ? RestoreStartupAnimationAsync(previous, token)
+                    : Task.CompletedTask,
+                cancellationToken);
             _blade._bladeStartupAnimationEnabled = actual;
             StartupAnimationText = FormatOptionalState(actual);
             StartupAnimationEnabled = actual;
@@ -864,6 +881,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             StartupAnimationEnabled = _blade._bladeStartupAnimationEnabled ?? false);
     }
 
+    [ProfileSetting("blade.auto-sleep", DeviceCategory.Laptop, powerScoped: true)]
     public async Task ApplyAutoSleepAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApplyAutoSleep)
@@ -873,14 +891,25 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
 
         await RunDeviceOperationAsync(AppStrings.Text("BladeAutoSleepTitle/Text"), async () =>
         {
+            var target = EditablePlatformProfile;
+            var previousHardware = _blade._bladeAutoSleepEnabled;
             var actual = await _deviceTelemetryReader.SetBladeAutoSleepAsync(
                 ActiveDescriptors, AutoSleepEnabled, cancellationToken);
+            await SavePlatformSettingAsync(
+                () => target.AutoSleepSeconds,
+                value => target.AutoSleepSeconds = value,
+                (int?)(actual ? 1 : 0),
+                (_, token) => previousHardware is { } previous
+                    ? RestoreAutoSleepAsync(previous ? 1 : 0, token)
+                    : Task.CompletedTask,
+                cancellationToken);
             SetAutoSleep(actual, _blade._bladeAutoSleepWritable);
             RequestDeviceRefresh();
         }, cancellationToken, () =>
             AutoSleepEnabled = _blade._bladeAutoSleepEnabled ?? false);
     }
 
+    [ProfileSetting("blade.time-to-dim", DeviceCategory.Laptop, powerScoped: true)]
     public async Task ApplyTimeToDimAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApplyTimeToDim)
@@ -890,14 +919,25 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
 
         await RunDeviceOperationAsync(AppStrings.Text("BladeTimeToDimTitle/Text"), async () =>
         {
+            var target = EditablePlatformProfile;
+            var previousHardware = _blade._bladeTimeToDim?.Seconds;
             var actual = await _deviceTelemetryReader.SetBladeTimeToDimAsync(
                 ActiveDescriptors, TimeToDimSeconds[TimeToDimIndex], cancellationToken);
+            await SavePlatformSettingAsync(
+                () => target.TimeToDimSeconds,
+                value => target.TimeToDimSeconds = value,
+                (int?)actual.Seconds,
+                (_, token) => previousHardware is { } previous
+                    ? RestoreTimeToDimAsync(previous, token)
+                    : Task.CompletedTask,
+                cancellationToken);
             SetTimeToDim(actual, _blade._bladeTimeToDimWritable);
             RequestDeviceRefresh();
         }, cancellationToken, () =>
             TimeToDimIndex = _blade.ConfirmedTimeToDimIndex);
     }
 
+    [ProfileSetting("blade.indicator-led", DeviceCategory.Laptop, powerScoped: true)]
     public async Task ApplyIndicatorLedAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApplyIndicatorLed)
@@ -907,14 +947,25 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
 
         await RunDeviceOperationAsync(AppStrings.Text("BladeIndicatorLedTitle/Text"), async () =>
         {
+            var target = EditablePlatformProfile;
+            var previousHardware = _blade._bladeIndicatorLedEnabled;
             var actual = await _deviceTelemetryReader.SetBladeIndicatorLedAsync(
                 ActiveDescriptors, IndicatorLedEnabled, cancellationToken);
+            await SavePlatformSettingAsync(
+                () => target.IndicatorLedEnabled,
+                value => target.IndicatorLedEnabled = value,
+                (bool?)actual,
+                (_, token) => previousHardware is { } previous
+                    ? RestoreIndicatorLedAsync(previous, token)
+                    : Task.CompletedTask,
+                cancellationToken);
             SetIndicatorLed(actual, _blade._bladeIndicatorLedWritable);
             RequestDeviceRefresh();
         }, cancellationToken, () =>
             IndicatorLedEnabled = _blade._bladeIndicatorLedEnabled ?? false);
     }
 
+    [ProfileSetting("blade.gpu-card-detection", DeviceCategory.Laptop, powerScoped: true)]
     public async Task ApplyGpuCardDetectionAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApplyGpuCardDetection)
@@ -924,14 +975,25 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
 
         await RunDeviceOperationAsync(AppStrings.Text("BladeGpuCardDetectionTitle/Text"), async () =>
         {
+            var target = EditablePlatformProfile;
+            var previousHardware = _blade._bladeGpuCardDetection?.Enabled;
             var actual = await _deviceTelemetryReader.SetBladeGpuCardDetectionAsync(
                 ActiveDescriptors, GpuCardDetectionEnabled, cancellationToken);
+            await SavePlatformSettingAsync(
+                () => target.GpuCardDetectionEnabled,
+                value => target.GpuCardDetectionEnabled = value,
+                (bool?)actual.Enabled,
+                (_, token) => previousHardware is { } previous
+                    ? RestoreGpuCardDetectionAsync(previous, token)
+                    : Task.CompletedTask,
+                cancellationToken);
             SetGpuCardDetection(actual, _blade._bladeGpuCardDetectionWritable);
             RequestDeviceRefresh();
         }, cancellationToken, () =>
             GpuCardDetectionEnabled = _blade._bladeGpuCardDetection?.Enabled ?? false);
     }
 
+    [ProfileSetting("blade.native-display-mode", DeviceCategory.Laptop, powerScoped: true)]
     public async Task ApplyNativeDisplayModeAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApplyNativeDisplayMode)
@@ -941,9 +1003,19 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
 
         await RunDeviceOperationAsync(AppStrings.Text("BladeNativeDisplayModeTitle/Text"), async () =>
         {
+            var target = EditablePlatformProfile;
+            var previousHardware = _blade._bladeNativeDisplayMode;
             var actual = await _deviceTelemetryReader.SetBladeNativeDisplayModeAsync(
                 ActiveDescriptors,
                 (BladeNativeDisplayMode)NativeDisplayModeIndex,
+                cancellationToken);
+            await SavePlatformSettingAsync(
+                () => target.NativeDisplayModeEnabled,
+                value => target.NativeDisplayModeEnabled = value,
+                (bool?)(actual == BladeNativeDisplayMode.Fhd),
+                (_, token) => previousHardware is { } previous
+                    ? RestoreNativeDisplayModeAsync(previous == BladeNativeDisplayMode.Fhd, token)
+                    : Task.CompletedTask,
                 cancellationToken);
             _blade._bladeNativeDisplayMode = actual;
             NativeDisplayModeIndex = (int)actual;
@@ -955,6 +1027,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             NativeDisplayModeIndex = (int)(_blade._bladeNativeDisplayMode ?? BladeNativeDisplayMode.Uhd));
     }
 
+    [ProfileSetting("blade.local-dimming", DeviceCategory.Laptop, powerScoped: true)]
     public async Task ApplyLocalDimmingAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApplyLocalDimming)
@@ -964,8 +1037,18 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
 
         await RunDeviceOperationAsync(AppStrings.Text("BladeLocalDimmingTitle/Text"), async () =>
         {
+            var target = EditablePlatformProfile;
+            var previousHardware = _blade._bladeLocalDimmingEnabled;
             var actual = await _deviceTelemetryReader.SetBladeLocalDimmingAsync(
                 ActiveDescriptors, LocalDimmingEnabled, cancellationToken);
+            await SavePlatformSettingAsync(
+                () => target.LocalDimmingEnabled,
+                value => target.LocalDimmingEnabled = value,
+                (bool?)actual,
+                (_, token) => previousHardware is { } previous
+                    ? RestoreLocalDimmingAsync(previous, token)
+                    : Task.CompletedTask,
+                cancellationToken);
             _blade._bladeLocalDimmingEnabled = actual;
             LocalDimmingEnabled = actual;
             OnPropertyChanged(nameof(CanSetLocalDimming));
@@ -976,6 +1059,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             LocalDimmingEnabled = _blade._bladeLocalDimmingEnabled ?? false);
     }
 
+    [ProfileSetting("blade.cpu-power-boost", DeviceCategory.Laptop, powerScoped: true)]
     public async Task ApplyCpuPowerBoostAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApplyCpuPowerBoost)
@@ -985,8 +1069,18 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
 
         await RunDeviceOperationAsync(AppStrings.Text("BladeCpuPowerBoostTitle/Text"), async () =>
         {
+            var target = EditablePlatformProfile;
+            var previousHardware = _blade._bladeCpuPowerBoostEnabled;
             var actual = await _deviceTelemetryReader.SetBladeCpuPowerBoostAsync(
                 ActiveDescriptors, CpuPowerBoostEnabled, cancellationToken);
+            await SavePlatformSettingAsync(
+                () => target.CpuPowerBoostMode,
+                value => target.CpuPowerBoostMode = value,
+                (byte?)(actual ? (byte)1 : (byte)0),
+                (_, token) => previousHardware is { } previous
+                    ? RestoreCpuPowerBoostAsync(previous ? (byte)1 : (byte)0, token)
+                    : Task.CompletedTask,
+                cancellationToken);
             _blade._bladeCpuPowerBoostEnabled = actual;
             CpuPowerBoostEnabled = actual;
             OnPropertyChanged(nameof(CanSetCpuPowerBoost));
@@ -1050,6 +1144,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         Math.Clamp(percent, 0, 100) * 255 / 100,
         MidpointRounding.AwayFromZero));
 
+    [NotProfileScoped]
     internal async Task ToggleOneTimeFullChargeAsync(
         CancellationToken cancellationToken = default)
     {
@@ -1069,6 +1164,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         }, cancellationToken);
     }
 
+    [NotProfileScoped]
     public async Task ApplyOneTimeFullChargeAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApplyOneTimeFullCharge)

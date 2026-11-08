@@ -4,6 +4,8 @@ using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
 using Windows.UI;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 
@@ -119,19 +121,6 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
     private Visibility _serialVisibility = Visibility.Collapsed;
     private Visibility _connectionVisibility = Visibility.Collapsed;
     private Visibility _chargingVisibility = Visibility.Collapsed;
-
-    public RazerAwBleHeadsetViewModel(RazerBleDevice device, Action<string>? diagnostic = null)
-        : this(device, cancellationToken => ConnectAsync(device, diagnostic, cancellationToken))
-    {
-    }
-
-    internal RazerAwBleHeadsetViewModel(
-        RazerBleDevice device,
-        Func<CancellationToken, Task<RazerAwBleHeadsetService?>> connect)
-    {
-        _device = device;
-        _connect = connect ?? throw new ArgumentNullException(nameof(connect));
-    }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -410,6 +399,7 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
 
             await LoadInfoAsync(cancellationToken);
             await LoadControlsAsync(cancellationToken);
+            await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
         }
         catch (Exception exception) when (IsExpected(exception))
         {
@@ -425,55 +415,87 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
         }
     }
 
+    [ProfileSetting("headset.volume", DeviceCategory.Headset, powerScoped: true)]
     public Task ApplyVolumeAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(
             service => service.SetVolumeAsync((int)Math.Round(Volume), cancellationToken),
-            applied => Volume = applied);
+            applied => Volume = applied,
+            PersistVolumeAsync,
+            ct => _service!.ReadVolumeAsync(ct),
+            (value, ct) => _service!.SetVolumeAsync(value, ct));
 
+    [ProfileSetting("headset.sidetone", DeviceCategory.Headset, powerScoped: true)]
     public Task ApplySidetoneAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(
             service => service.SetSidetoneAsync((int)Math.Round(Sidetone), cancellationToken),
-            applied => Sidetone = applied);
+            applied => Sidetone = applied,
+            PersistSidetoneAsync,
+            ct => _service!.ReadSidetoneAsync(ct),
+            (value, ct) => _service!.SetSidetoneAsync(value, ct));
 
+    [ProfileSetting("headset.game-mode", DeviceCategory.Headset, powerScoped: true)]
     public Task ApplyGameModeAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(
             service => service.SetGameModeAsync(GameMode, cancellationToken),
-            applied => GameMode = applied);
+            applied => GameMode = applied,
+            PersistGameModeAsync,
+            ct => _service!.ReadGameModeAsync(ct),
+            (value, ct) => _service!.SetGameModeAsync(value, ct));
 
+    [ProfileSetting("headset.eq-preset", DeviceCategory.Headset, powerScoped: true)]
     public Task ApplyEqPresetAsync(CancellationToken cancellationToken = default)
     {
         var preset = EqPresets[Math.Clamp(SelectedEqPresetIndex, 0, EqPresets.Length - 1)].Value;
         return RunWriteAsync(
             service => service.SetEqPresetAsync(preset, cancellationToken),
-            applied => SelectedEqPresetIndex = IndexOfPreset(applied));
+            applied => SelectedEqPresetIndex = IndexOfPreset(applied),
+            PersistEqPresetAsync,
+            ct => _service!.ReadEqPresetAsync(ct),
+            (value, ct) => _service!.SetEqPresetAsync(value, ct));
     }
 
+    [ProfileSetting("headset.auto-power-off", DeviceCategory.Headset, powerScoped: true)]
     public Task ApplyAutoPowerOffAsync(CancellationToken cancellationToken = default)
     {
         var minutes = RazerAwBleProtocol.AutoPowerOffMinuteOptions[SelectedAutoPowerOffIndex];
         return RunWriteAsync(
             service => service.SetAutoPowerOffMinutesAsync(minutes, cancellationToken),
             applied => SelectedAutoPowerOffIndex = Array.IndexOf(
-                RazerAwBleProtocol.AutoPowerOffMinuteOptions, applied));
+                RazerAwBleProtocol.AutoPowerOffMinuteOptions, applied),
+            PersistAutoPowerOffAsync,
+            ct => _service!.ReadAutoPowerOffMinutesAsync(ct),
+            (value, ct) => _service!.SetAutoPowerOffMinutesAsync(value, ct));
     }
 
+    [ProfileSetting("headset.bass", DeviceCategory.Headset, powerScoped: true)]
     public Task ApplyBassAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(
             service => service.SetBassAsync((int)Math.Round(BassLevel), cancellationToken),
-            applied => BassLevel = applied);
+            applied => BassLevel = applied,
+            PersistBassAsync,
+            ct => _service!.ReadBassAsync(ct),
+            (value, ct) => _service!.SetBassAsync(value, ct));
 
+    [ProfileSetting("headset.haptics", DeviceCategory.Headset, powerScoped: true)]
     public Task ApplyHapticsAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(
             service => service.SetHapticsAsync((int)Math.Round(HapticsLevel), cancellationToken),
-            applied => HapticsLevel = applied);
+            applied => HapticsLevel = applied,
+            PersistHapticsAsync,
+            ct => _service!.ReadHapticsAsync(ct),
+            (value, ct) => _service!.SetHapticsAsync(value, ct));
 
+    [ProfileSetting("headset.mic-eq-preset", DeviceCategory.Headset, powerScoped: true)]
     public Task ApplyMicEqPresetAsync(CancellationToken cancellationToken = default)
     {
         var preset = MicEqPresets[
             Math.Clamp(SelectedMicEqPresetIndex, 0, MicEqPresets.Length - 1)].Value;
         return RunWriteAsync(
             service => service.SetMicEqPresetAsync(preset, cancellationToken),
-            applied => SelectedMicEqPresetIndex = IndexOfMicPreset(applied));
+            applied => SelectedMicEqPresetIndex = IndexOfMicPreset(applied),
+            PersistMicEqPresetAsync,
+            ct => _service!.ReadMicEqPresetAsync(ct),
+            (value, ct) => _service!.SetMicEqPresetAsync(value, ct));
     }
 
     public async ValueTask DisposeAsync()
@@ -481,35 +503,6 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
         _service?.Dispose();
         _service = null;
         await Task.CompletedTask;
-    }
-
-    private async Task RunWriteAsync<T>(
-        Func<RazerAwBleHeadsetService, Task<T>> write,
-        Action<T> apply)
-    {
-        if (_service is null || _isBusy)
-        {
-            return;
-        }
-
-        _isBusy = true;
-        NotifyBusy();
-        try
-        {
-            apply(await write(_service));
-            OperationStatusText = AppStrings.Text("AwBleHeadsetSaved");
-            SetError(string.Empty);
-        }
-        catch (Exception exception) when (IsExpected(exception))
-        {
-            OperationStatusText = string.Empty;
-            SetError(AppStrings.FormatText("AwBleHeadsetErrorWrite", exception.Message));
-        }
-        finally
-        {
-            _isBusy = false;
-            NotifyBusy();
-        }
     }
 
     private static async Task<RazerAwBleHeadsetService?> ConnectAsync(

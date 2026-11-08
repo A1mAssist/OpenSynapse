@@ -622,7 +622,8 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
                 _mapping = new RazerHidMappingViewModel(
                     new RazerBleMappingTransport(_service),
                     canWrite: true,
-                    log: _diagnostic);
+                    log: _diagnostic,
+                    mappingProfileSaver: PersistMappingProfileAsync);
                 OnPropertyChanged(nameof(Mapping));
             }
 
@@ -640,6 +641,27 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
         finally
         {
             EndOperation();
+        }
+    }
+
+    private async Task PersistMappingProfileAsync(
+        IReadOnlyList<ButtonMappingProfile> mappings,
+        CancellationToken cancellationToken)
+    {
+        if (mappings.Count == 0)
+        {
+            return;
+        }
+
+        var mode = mappings[0].Mode ?? 0;
+        var saved = await PersistMouseAsync(mouse =>
+        {
+            mouse.ButtonMappings = RazerHidMappingActions.MergeButtonMappings(
+                mouse.ButtonMappings, mappings, mode);
+        }, cancellationToken).ConfigureAwait(true);
+        if (!saved)
+        {
+            throw new IOException("BLE mapping could not be saved to the profile.");
         }
     }
 

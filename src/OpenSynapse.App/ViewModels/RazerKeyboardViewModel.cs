@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Macros;
@@ -20,10 +21,12 @@ public sealed class RazerKeyboardDeviceRowViewModel : INotifyPropertyChanged
 
     public RazerKeyboardDeviceRowViewModel(
         RazerKeyboardConnection connection,
-        Action<string>? diagnostic = null)
+        Action<string>? diagnostic = null,
+        Func<ProfileDocument>? getProfile = null,
+        Func<CancellationToken, Task<bool>>? saveProfile = null)
     {
         Connection = connection;
-        Detail = new RazerKeyboardViewModel(connection, diagnostic);
+        Detail = new RazerKeyboardViewModel(connection, diagnostic, getProfile, saveProfile);
         Detail.PropertyChanged += DetailPropertyChanged;
     }
 
@@ -70,6 +73,8 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
 
     private readonly RazerKeyboardConnection _connection;
     private readonly Action<string>? _diagnostic;
+    private readonly Func<ProfileDocument>? _getProfile;
+    private readonly Func<CancellationToken, Task<bool>>? _saveProfile;
     private bool _isBusy;
     private string _errorText = string.Empty;
     private string _operationStatusText = string.Empty;
@@ -102,10 +107,14 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
 
     public RazerKeyboardViewModel(
         RazerKeyboardConnection connection,
-        Action<string>? diagnostic = null)
+        Action<string>? diagnostic = null,
+        Func<ProfileDocument>? getProfile = null,
+        Func<CancellationToken, Task<bool>>? saveProfile = null)
     {
         _connection = connection;
         _diagnostic = diagnostic;
+        _getProfile = getProfile;
+        _saveProfile = saveProfile;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -249,6 +258,7 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
             macroServiceFactory: CreateService,
             localMacros: () => Onboard.LocalMacroProvider?.Invoke() ?? [],
             actionCatalog: RazerKeyboardMappingActionCatalog.Instance,
+            mappingProfileSaver: PersistMappingProfileAsync,
             productId: _connection.DisplayProductId,
             deviceKind: RazerMappingDeviceKind.Keyboard,
             canWriteOnboardMacros:
@@ -258,6 +268,41 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
             softwareTriggerBinder: SoftwareMacroBinder);
 
     private RazerKeyboardService MappingService => _mappingService ??= OpenService();
+
+    private string ProfileDeviceKey =>
+        $"{0x1532:X4}:{RazerProductAliases.Canonical(_connection.ProductId):X4}";
+
+    private async Task PersistMappingProfileAsync(
+        IReadOnlyList<ButtonMappingProfile> mappings,
+        CancellationToken cancellationToken)
+    {
+        if (mappings.Count == 0 || _getProfile is null || _saveProfile is null)
+        {
+            return;
+        }
+
+        var document = _getProfile();
+        var created = !document.Devices.TryGetValue(ProfileDeviceKey, out var device);
+        device ??= new DeviceProfileSettings();
+        var previous = device.Keyboard.ButtonMappings;
+        device.Keyboard.ButtonMappings = RazerHidMappingActions.MergeButtonMappings(
+            previous, mappings, mappings[0].Mode ?? 0);
+        if (created)
+        {
+            document.Devices[ProfileDeviceKey] = device;
+        }
+        if (await _saveProfile(cancellationToken).ConfigureAwait(true))
+        {
+            return;
+        }
+
+        device.Keyboard.ButtonMappings = previous;
+        if (created)
+        {
+            document.Devices.Remove(ProfileDeviceKey);
+        }
+        throw new IOException("Keyboard mapping could not be saved to the profile.");
+    }
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {

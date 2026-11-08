@@ -1,5 +1,7 @@
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Audio;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
 
 namespace OpenSynapse.App.ViewModels;
 
@@ -94,43 +96,171 @@ public sealed partial class RazerHeadsetAudioViewModel
     public Visibility ThxSidetoneVisibility =>
         _thxState?.Sidetone is not null ? Visibility.Visible : Visibility.Collapsed;
 
-    public Task ApplyThxNormalizationAsync(CancellationToken cancellationToken = default) =>
-        RunThxAsync(
-            (controller, token) => controller.SetEnhancementAsync(
+    [ProfileSetting("headset.thx.normalization", DeviceCategory.Headset, powerScoped: true)]
+    public async Task ApplyThxNormalizationAsync(CancellationToken cancellationToken = default)
+    {
+        var previousEnabled = ThxNormalizationEnabled;
+        var previousLevel = ThxNormalizationLevel;
+        if (!await RunThxAsync(
+                (controller, token) => controller.SetEnhancementAsync(
+                    ThxAudioEndpoint.Headphones,
+                    ThxAudioEnhancementKind.SoundNormalization,
+                    ThxNormalizationEnabled,
+                    ThxNormalizationLevel,
+                    token),
+                cancellationToken))
+        {
+            return;
+        }
+
+        await SaveHeadsetSettingAsync(
+            settings =>
+            {
+                settings.ThxNormalizationEnabled = ThxNormalizationEnabled;
+                settings.ThxNormalizationLevel = ThxNormalizationLevel;
+            },
+            settings =>
+            {
+                settings.ThxNormalizationEnabled = previousEnabled;
+                settings.ThxNormalizationLevel = previousLevel;
+            },
+            () =>
+            {
+                ThxNormalizationEnabled = previousEnabled;
+                ThxNormalizationLevel = previousLevel;
+            },
+            async token => await ThxController.SetEnhancementAsync(
                 ThxAudioEndpoint.Headphones,
                 ThxAudioEnhancementKind.SoundNormalization,
-                ThxNormalizationEnabled,
-                ThxNormalizationLevel,
+                previousEnabled,
+                previousLevel,
                 token),
             cancellationToken);
+    }
 
-    public Task ApplyThxVoiceClarityAsync(CancellationToken cancellationToken = default) =>
-        RunThxAsync(
-            (controller, token) => controller.SetEnhancementAsync(
+    [ProfileSetting("headset.thx.voice-clarity", DeviceCategory.Headset, powerScoped: true)]
+    public async Task ApplyThxVoiceClarityAsync(CancellationToken cancellationToken = default)
+    {
+        var previousEnabled = ThxVoiceClarityEnabled;
+        var previousLevel = ThxVoiceClarityLevel;
+        if (!await RunThxAsync(
+                (controller, token) => controller.SetEnhancementAsync(
+                    ThxAudioEndpoint.Headphones,
+                    ThxAudioEnhancementKind.VoiceClarity,
+                    ThxVoiceClarityEnabled,
+                    ThxVoiceClarityLevel,
+                    token),
+                cancellationToken))
+        {
+            return;
+        }
+
+        await SaveHeadsetSettingAsync(
+            settings =>
+            {
+                settings.ThxVoiceClarityEnabled = ThxVoiceClarityEnabled;
+                settings.ThxVoiceClarityLevel = ThxVoiceClarityLevel;
+            },
+            settings =>
+            {
+                settings.ThxVoiceClarityEnabled = previousEnabled;
+                settings.ThxVoiceClarityLevel = previousLevel;
+            },
+            () =>
+            {
+                ThxVoiceClarityEnabled = previousEnabled;
+                ThxVoiceClarityLevel = previousLevel;
+            },
+            async token => await ThxController.SetEnhancementAsync(
                 ThxAudioEndpoint.Headphones,
                 ThxAudioEnhancementKind.VoiceClarity,
-                ThxVoiceClarityEnabled,
-                ThxVoiceClarityLevel,
+                previousEnabled,
+                previousLevel,
                 token),
             cancellationToken);
+    }
 
-    public Task ApplyThxBassBoostAsync(CancellationToken cancellationToken = default) =>
-        RunThxAsync(
-            (controller, token) => controller.SetEnhancementAsync(
+    [ProfileSetting("headset.thx.bass-boost", DeviceCategory.Headset, powerScoped: true)]
+    public async Task ApplyThxBassBoostAsync(CancellationToken cancellationToken = default)
+    {
+        var previousEnabled = ThxBassBoostEnabled;
+        var previousLevel = ThxBassBoostLevel;
+        if (!await RunThxAsync(
+                (controller, token) => controller.SetEnhancementAsync(
+                    ThxAudioEndpoint.Headphones,
+                    ThxAudioEnhancementKind.BassBoost,
+                    ThxBassBoostEnabled,
+                    ThxBassBoostLevel,
+                    token),
+                cancellationToken))
+        {
+            return;
+        }
+
+        await SaveHeadsetSettingAsync(
+            settings =>
+            {
+                settings.ThxBassBoostEnabled = ThxBassBoostEnabled;
+                settings.ThxBassBoostLevel = ThxBassBoostLevel;
+            },
+            settings =>
+            {
+                settings.ThxBassBoostEnabled = previousEnabled;
+                settings.ThxBassBoostLevel = previousLevel;
+            },
+            () =>
+            {
+                ThxBassBoostEnabled = previousEnabled;
+                ThxBassBoostLevel = previousLevel;
+            },
+            async token => await ThxController.SetEnhancementAsync(
                 ThxAudioEndpoint.Headphones,
                 ThxAudioEnhancementKind.BassBoost,
-                ThxBassBoostEnabled,
-                ThxBassBoostLevel,
+                previousEnabled,
+                previousLevel,
                 token),
             cancellationToken);
+    }
 
-    public Task ApplyThxSidetoneAsync(CancellationToken cancellationToken = default) =>
-        RunThxAsync(
-            (controller, token) => controller.SetEnhancementAsync(
+    [ProfileSetting("headset.thx.sidetone", DeviceCategory.Headset, powerScoped: true)]
+    public async Task ApplyThxSidetoneAsync(CancellationToken cancellationToken = default)
+    {
+        var previousEnabled = ThxSidetoneEnabled;
+        var previousLevel = ThxSidetoneLevel;
+        if (!await RunThxAsync(
+                (controller, token) => controller.SetEnhancementAsync(
+                    ThxAudioEndpoint.Headphones,
+                    ThxAudioEnhancementKind.Sidetone,
+                    ThxSidetoneEnabled,
+                    ThxSidetoneLevel,
+                    token),
+                cancellationToken))
+        {
+            return;
+        }
+
+        await SaveHeadsetSettingAsync(
+            settings =>
+            {
+                settings.ThxSidetoneEnabled = ThxSidetoneEnabled;
+                settings.ThxSidetoneLevel = ThxSidetoneLevel;
+            },
+            settings =>
+            {
+                settings.ThxSidetoneEnabled = previousEnabled;
+                settings.ThxSidetoneLevel = previousLevel;
+            },
+            () =>
+            {
+                ThxSidetoneEnabled = previousEnabled;
+                ThxSidetoneLevel = previousLevel;
+            },
+            async token => await ThxController.SetEnhancementAsync(
                 ThxAudioEndpoint.Headphones,
                 ThxAudioEnhancementKind.Sidetone,
-                ThxSidetoneEnabled,
-                ThxSidetoneLevel,
+                previousEnabled,
+                previousLevel,
                 token),
             cancellationToken);
+    }
 }
