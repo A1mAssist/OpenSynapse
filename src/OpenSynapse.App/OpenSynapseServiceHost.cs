@@ -254,6 +254,20 @@ internal static class OpenSynapseServiceHost
                 case OpenSynapseServiceAction.StopChromaBroker:
                     return StopChromaBroker();
 
+                case OpenSynapseServiceAction.StartDriverService:
+                    var driverStarted = WindowsServiceControl.TryStart(
+                        request.ServiceName!,
+                        out var driverError);
+                    return new OpenSynapseServiceResponse(
+                        OpenSynapseServiceProtocol.Version,
+                        Handled: true,
+                        driverStarted
+                            ? DedicatedGpuSwitchOutcome.Success
+                            : DedicatedGpuSwitchOutcome.Failed,
+                        ExitCode: driverStarted ? 0 : 1,
+                        Status: null,
+                        Error: driverError);
+
                 case OpenSynapseServiceAction.GpuClockOffsetStatus:
                     var clockRead = NvApiGpuClockOffset.TryRead(
                         out var clockCore, out var clockMemory, out var clockReadError);

@@ -33,6 +33,17 @@ public static class OpenSynapseServiceProtocol
     public const string SetCurveOptimizerOperation = "set-curve-optimizer";
     public const string StartChromaBrokerOperation = "start-chroma-broker";
     public const string StopChromaBrokerOperation = "stop-chroma-broker";
+    public const string StartDriverServiceOperation = "start-driver-service";
+
+    /// <summary>
+    /// The only driver service the privileged host will start. The name is fixed
+    /// here so a local caller cannot turn the service into a generic service launcher.
+    /// </summary>
+    public const string RazerCommonServiceName = "RzCommon";
+
+    public static bool IsManagedDriverService(string? name) =>
+        string.Equals(name, RazerCommonServiceName, StringComparison.Ordinal);
+
     public const int MaximumMessageLength = 4096;
 }
 
@@ -46,7 +57,8 @@ public sealed record OpenSynapseServiceRequest(
     double? Pl1Watts = null,
     double? Pl2Watts = null,
     int? CurveSteps = null,
-    int? ParentProcessId = null);
+    int? ParentProcessId = null,
+    string? ServiceName = null);
 
 /// <summary>
 /// The operation a service request asks for. The decision lives here so the
@@ -107,6 +119,9 @@ public enum OpenSynapseServiceAction
 
     /// <summary>Stop the Chroma shared-memory broker.</summary>
     StopChromaBroker,
+
+    /// <summary>Start a Razer driver service that is installed but stopped.</summary>
+    StartDriverService,
 
     /// <summary>The request does not match any known operation.</summary>
     Unsupported,
@@ -275,6 +290,14 @@ public static class OpenSynapseServiceRequestParser
                 OpenSynapseServiceProtocol.StopChromaBrokerOperation))
         {
             return OpenSynapseServiceAction.StopChromaBroker;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                OpenSynapseServiceProtocol.StartDriverServiceOperation) &&
+            OpenSynapseServiceProtocol.IsManagedDriverService(request.ServiceName))
+        {
+            return OpenSynapseServiceAction.StartDriverService;
         }
 
         if (StringComparer.Ordinal.Equals(

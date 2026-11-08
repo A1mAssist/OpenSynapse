@@ -132,14 +132,23 @@ internal static class ThxAudioAdmission
                 null);
         }
 
-        var error = await ThxComponentInstaller.InstallAsync(BladeInstaller, cancellationToken)
+        var install = await ThxComponentInstaller.InstallAsync(BladeInstaller, cancellationToken)
             .ConfigureAwait(false);
-        if (error is not null)
+        if (install.Error is not null)
         {
             return new ThxAudioStatus(
                 ThxAudioAvailability.ComponentsUnavailable,
-                error,
+                install.Error,
                 null);
+        }
+
+        if (install.RebootRequired && !HasRunningService(profile.ServiceName))
+        {
+            return new ThxAudioStatus(
+                ThxAudioAvailability.ComponentsUnavailable,
+                "ThxRebootRequired",
+                null,
+                RebootRequired: true);
         }
 
         for (var attempt = 0; attempt < 40; attempt++)
@@ -339,6 +348,33 @@ internal static class ThxAudioAdmission
             {
                 NativeMethods.CloseServiceHandle(service);
             }
+        }
+        finally
+        {
+            NativeMethods.CloseServiceHandle(manager);
+        }
+    }
+
+    /// <summary>
+    /// The service is registered even when it is still stopped, which is the
+    /// normal state between a silent install and the next reboot.
+    /// </summary>
+    internal static bool HasService(string serviceName)
+    {
+        var manager = NativeMethods.OpenSCManager(null, null, NativeMethods.ScManagerConnect);
+        if (manager == IntPtr.Zero)
+        {
+            return false;
+        }
+        try
+        {
+            var service = NativeMethods.OpenService(manager, serviceName, NativeMethods.ServiceQueryStatus);
+            if (service == IntPtr.Zero)
+            {
+                return false;
+            }
+            NativeMethods.CloseServiceHandle(service);
+            return true;
         }
         finally
         {

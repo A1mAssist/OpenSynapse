@@ -169,7 +169,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
                 : AppStrings.Text("RazerHidProtocolRescanRequired");
         _selectedLightingZone = LightingZones.Contains(connection.Definition.DefaultLedZone)
             ? connection.Definition.DefaultLedZone : LightingZones.FirstOrDefault();
-        _selectedLightingEffect = LightingEffects.FirstOrDefault();
+        _selectedLightingEffect = DefaultLightingEffect;
         _selectedPollingRate = PollingOptions.FirstOrDefault();
         InitializeMatrixEditor();
         RebuildScrollWheelModeChoices();
@@ -610,12 +610,18 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
             }
             _brightnessKnown = false;
             _ledStateKnown = false;
-            SelectedLightingEffect = LightingEffects.FirstOrDefault();
+            SelectedLightingEffect = DefaultLightingEffect;
             OnLightingSelectionChanged();
             ApplyConfiguredLightingToEditor();
             _ = ApplyConfiguredLightingAsync();
         }
     }
+    /// <summary>
+    /// A device that cannot report its current effect would otherwise open on Off,
+    /// so changing a colour would write Off and the card would look dead.
+    /// </summary>
+    private RazerHidLightingEffect DefaultLightingEffect =>
+        LightingEffects.FirstOrDefault(effect => effect != RazerHidLightingEffect.Off);
     public IReadOnlyList<RazerHidLightingEffect> LightingEffects =>
         (Has(RazerHidBackendCapability.LightingEffectWrite)
             ? SelectedZoneCapabilities?.LightingEffects
