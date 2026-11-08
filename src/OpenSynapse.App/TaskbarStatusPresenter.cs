@@ -92,9 +92,14 @@ internal sealed class TaskbarStatusPresenter : IDisposable
 
         if (battery is null)
         {
+            // Nothing to draw: keep the ten-second battery retry, not a one-second
+            // UI tick for a window that is not there.
+            SetTimerInterval(BatteryReadInterval);
             _statusWindow?.Hide();
             return;
         }
+
+        SetTimerInterval(TimeSpan.FromSeconds(1));
 
         var snapshot = new TaskbarStatusSnapshot(
             battery.Percent,
@@ -149,6 +154,14 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         var cancellation = new CancellationTokenSource();
         _batteryReadCancellation = cancellation;
         _ = ReadBatteriesAsync(cancellation);
+    }
+
+    private void SetTimerInterval(TimeSpan interval)
+    {
+        if (_timer is not null && _timer.Interval != interval)
+        {
+            _timer.Interval = interval;
+        }
     }
 
     private async Task ReadBatteriesAsync(CancellationTokenSource cancellation)

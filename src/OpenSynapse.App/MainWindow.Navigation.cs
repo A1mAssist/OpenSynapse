@@ -178,8 +178,14 @@ public sealed partial class MainWindow
 
     private void UpdatePerformanceSamplingState()
     {
-        // Peak tracking must keep sampling while the window is hidden.
-        _viewModel.Telemetry.SetPerformanceSamplingEnabled(true);
+        // The overlay is a separate window, so it keeps sampling while the main
+        // window is hidden. Without a visible consumer, the two-second sensor pass
+        // is pure background cost.
+        _viewModel.Telemetry.SetPerformanceSamplingEnabled(
+            _performanceOverlayEnabled ||
+            (AppWindow.IsVisible &&
+             (OverviewPage.Visibility == Visibility.Visible ||
+              (DevicesPage.Visibility == Visibility.Visible && DevicesPage.IsBladePanelVisible))));
         _viewModel.Refresh.SetDeviceReadoutSamplingEnabled(
             AppWindow.IsVisible &&
             (DevicesPage.Visibility == Visibility.Visible ||
