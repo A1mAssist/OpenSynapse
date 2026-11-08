@@ -26,6 +26,8 @@ internal static class AccessoryProfileReplay
             viewModel.SelectedBlackShark!.ApplyPersistedProfileAsync(powerSource, cancellationToken));
         Add(viewModel.Accessories.SelectedGamepad is not null, () =>
             viewModel.Accessories.SelectedGamepad!.ApplyPersistedProfileAsync(powerSource, cancellationToken));
+        Add(viewModel.Accessories.SelectedKeyboard is not null, () =>
+            viewModel.Accessories.SelectedKeyboard!.ApplyPersistedProfileAsync(powerSource, cancellationToken));
         Add(viewModel.Accessories.SelectedChroma is not null, () =>
             viewModel.Accessories.SelectedChroma!.ApplyPersistedProfileAsync(powerSource, cancellationToken));
         Add(viewModel.RazerHid.KrakenDevices.Count > 0, () =>
