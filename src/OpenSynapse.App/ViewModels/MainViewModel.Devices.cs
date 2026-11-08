@@ -234,21 +234,25 @@ public sealed partial class MainViewModel
         static string? Error(string path, string? selectedPath, string? error) =>
             StringComparer.OrdinalIgnoreCase.Equals(path, selectedPath) ? error : null;
         foreach (var row in BlackSharkDevices)
-            yield return new("blackshark:" + row.Connection.DevicePath, row.Name, "BlackShark",
+            yield return new("blackshark:" + row.Connection.DevicePath, row.Name,
+                AppStrings.Text("BlackSharkHeadsetCategory"),
                 row.Identity + " | " + row.Connection.DevicePath, row.Status,
                 Error(row.Connection.DevicePath, SelectedBlackShark?.DevicePath, SelectedBlackShark?.ErrorText));
         foreach (var row in Accessories.HeadsetAudioDevices)
-            yield return new("headset-audio:" + row.Connection.DevicePath, row.Name, "HeadsetAudio",
+            yield return new("headset-audio:" + row.Connection.DevicePath, row.Name,
+                AppStrings.Text("RazerHidHeadsetCategory"),
                 row.Identity + " | " + row.Connection.DevicePath, row.Status,
                 Error(row.Connection.DevicePath, Accessories.SelectedHeadsetAudio?.DevicePath,
                     string.Join(Environment.NewLine, new[] { Accessories.SelectedHeadsetAudio?.ErrorText,
                         Accessories.SelectedHeadsetAudio?.Mixer053E?.ErrorText }.Where(error => !string.IsNullOrWhiteSpace(error)))));
         foreach (var row in Accessories.KeyboardDevices)
-            yield return new("keyboard:" + row.Connection.DevicePath, row.Name, "Keyboard",
+            yield return new("keyboard:" + row.Connection.DevicePath, row.Name,
+                AppStrings.Text("RazerKeyboardCategory"),
                 row.Identity + " | " + row.Connection.DevicePath, row.Status,
                 Error(row.Connection.DevicePath, Accessories.SelectedKeyboard?.DevicePath, Accessories.SelectedKeyboard?.ErrorText));
         foreach (var row in Accessories.GamepadDevices)
-            yield return new("gamepad:" + row.Connection.DevicePath, row.Name, "Gamepad",
+            yield return new("gamepad:" + row.Connection.DevicePath, row.Name,
+                AppStrings.Text("RazerGamepadCategory"),
                 row.Identity + " | " + row.Connection.DevicePath, row.Status,
                 Error(row.Connection.DevicePath, Accessories.SelectedGamepad?.DevicePath, Accessories.SelectedGamepad?.ErrorText));
         foreach (var row in Accessories.ChromaDevices)
@@ -256,17 +260,22 @@ public sealed partial class MainViewModel
                 row.Identity + " | " + row.Connection.DevicePath, row.Status,
                 Error(row.Connection.DevicePath, Accessories.SelectedChroma?.DevicePath, Accessories.SelectedChroma?.ErrorText));
         foreach (var row in BleDevices)
-            yield return new("ble:" + row.Device.Id, row.Name, "BLE", row.Identity + " | " + row.Device.Id, row.Status,
+            yield return new("ble:" + row.Device.Id, row.Name,
+                AppStrings.Text("LeviathanBluetooth"), row.Identity + " | " + row.Device.Id, row.Status,
                 Error(row.Device.Id, SelectedBle?.DeviceId, SelectedBle?.ErrorText));
         foreach (var row in AwBleHeadsetDevices)
-            yield return new("aw-ble:" + row.Device.Id, row.Name, "AudioAWKittyBLE", row.Identity + " | " + row.Device.Id, row.Status,
+            yield return new("aw-ble:" + row.Device.Id, row.Name,
+                AppStrings.Text("RazerHidHeadsetCategory"), row.Identity + " | " + row.Device.Id, row.Status,
                 Error(row.Device.Id, SelectedAwBleHeadset?.Device.Id, SelectedAwBleHeadset?.ErrorText));
         if (CoolingPad.IsConnected || CoolingPad.HasError)
-            yield return new("cooling-pad", CoolingPad.Name, "CoolingPad", CoolingPad.Identity, CoolingPad.StatusText, CoolingPad.ErrorText);
+            yield return new("cooling-pad", CoolingPad.Name,
+                AppStrings.Text("CoolingPadCategory"), CoolingPad.Identity, CoolingPad.StatusText, CoolingPad.ErrorText);
         if (Kiyo.IsConnected || Kiyo.HasError)
-            yield return new("kiyo", Kiyo.Name, "Kiyo", Kiyo.Identity, Kiyo.StatusText, Kiyo.ErrorText);
+            yield return new("kiyo", Kiyo.Name,
+                AppStrings.Text("KiyoCategory"), Kiyo.Identity, Kiyo.StatusText, Kiyo.ErrorText);
         // Unpaired bridges are onboarding candidates, not devices yet.
         if (Hue.IsConfigured)
-            yield return new("hue:" + Hue.BridgeHost, "Philips Hue", "Hue", Hue.DeviceIdentity, Hue.DeviceStatusText, Hue.ErrorText);
+            yield return new("hue:" + Hue.BridgeHost, AppStrings.Text("HueTitle"),
+                AppStrings.Text("HueTitle"), Hue.DeviceIdentity, Hue.DeviceStatusText, Hue.ErrorText);
     }
 }
