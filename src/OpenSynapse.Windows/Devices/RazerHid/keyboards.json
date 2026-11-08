@@ -6110,8 +6110,8 @@
         8000
       ],
       "matrixDimensions": [
-        6,
-        16
+        7,
+        18
       ],
       "waitMicroseconds": 600,
       "transactions": {

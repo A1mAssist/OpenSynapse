@@ -145,12 +145,16 @@ internal sealed class RazerHidChromaFrameSink
         var result = new RazerRgb[rows * columns];
         for (var row = 0; row < rows; row++)
         {
-            var sourceRow = rows == 1 ? 0 : (int)Math.Round(row * (sourceRows - 1d) / (rows - 1d));
+            var sourceRow = rows > sourceRows
+                ? (row < sourceRows ? row : -1)
+                : (rows == 1 ? 0 : (int)Math.Round(row * (sourceRows - 1d) / (rows - 1d)));
+            if (sourceRow < 0) continue;
             for (var column = 0; column < columns; column++)
             {
-                var sourceColumn = columns == 1
-                    ? 0
-                    : (int)Math.Round(column * (sourceColumns - 1d) / (columns - 1d));
+                var sourceColumn = columns > sourceColumns
+                    ? (column < sourceColumns ? column : -1)
+                    : (columns == 1 ? 0 : (int)Math.Round(column * (sourceColumns - 1d) / (columns - 1d)));
+                if (sourceColumn < 0) continue;
                 result[row * columns + column] = source[sourceRow * sourceColumns + sourceColumn];
             }
         }
