@@ -4,6 +4,15 @@ English · [Chinese](CHANGELOG.zh-CN.md)
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [1.7.1] - 2026-11-09
+
+### Fixed
+
+- Blade diagnostics now list only the capabilities the connected model actually declares. Blade 15 (2019) Advanced (023A) no longer shows unsupported Boost, charge-limit, performance-mode and adapter rows, and a device that answers “does not support this command” is treated as unsupported instead of a failed read.
+- Diagnostics no longer expose internal backend identifiers such as `HeadsetAudio`, `AudioAWKittyBLE` and `Keyboard`; accessory rows use the same localized device labels as the rest of the app.
+- The onboarding guide is wider and better spaced, points at the device card the next step actually opens, and highlights the polling/DPI controls instead of the device-information card.
+- Lighting effect names no longer append `Firmware` or `Software frames`; the separate render-mode selector carries that choice. The Chinese label now reads `软件渲染` instead of `软件帧泵`.
+
 ## [1.7.0] - 2026-11-08
 
 ### Added
