@@ -87,6 +87,15 @@ public static class StudioBladeDevices
             }
         }
 
+        if (dialect == BladeLightingDialect.LedMatrixBlade2 &&
+            manifest.MatrixColumns == BladeLightingLayout16.DeviceColumns)
+        {
+            return new(
+                StudioBladeFrameMode.Sparse16,
+                BladeLightingLayout16.LogicalRows,
+                BladeLightingLayout16.LogicalColumns);
+        }
+
         if (dialect == BladeLightingDialect.LedMatrixBlade)
         {
             // Older Blade canvases are 6 x 15 or 7 x 15 with a 6 x 16 device

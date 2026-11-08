@@ -1,9 +1,9 @@
 namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
-/// Effect reports used by the older rzDevice25LedMatrixBlade generation (023A).
-/// The middleware sends 03:0A with the effect id first; unlike the 2026 protocol
-/// there is no store/region prefix.
+/// Effect reports used by the older rzDevice25LedMatrixBlade generations (023A and
+/// the 2024 Blade2 family). The middleware sends 03:0A with the effect id first;
+/// unlike the 2026 protocol there is no store/region prefix.
 /// </summary>
 public static class BladeLightingLedMatrixBladeProtocol
 {

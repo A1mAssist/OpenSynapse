@@ -172,7 +172,7 @@ public sealed partial class BladeLightingController : IBladeLightingController
             await ValidateCurrentPathAsync(device.Id, manifest, cancellationToken).ConfigureAwait(false);
             await StopCoreAsync().ConfigureAwait(false);
             _transactionId = 0;
-            if (_lightingDialect != BladeLightingDialect.LedMatrixBlade)
+            if (_lightingDialect is not (BladeLightingDialect.LedMatrixBlade or BladeLightingDialect.LedMatrixBlade2))
             {
                 _modeLease = await _modeCoordinator.AcquireAsync(
                     device.Id,
@@ -313,7 +313,7 @@ public sealed partial class BladeLightingController : IBladeLightingController
             await ValidateCurrentPathAsync(device.Id, manifest, cancellationToken).ConfigureAwait(false);
             await StopCoreAsync().ConfigureAwait(false);
             _transactionId = 0;
-            if (_lightingDialect != BladeLightingDialect.LedMatrixBlade)
+            if (_lightingDialect is not (BladeLightingDialect.LedMatrixBlade or BladeLightingDialect.LedMatrixBlade2))
             {
                 _modeLease = await _modeCoordinator.AcquireAsync(
                     device.Id,
@@ -625,7 +625,7 @@ public sealed partial class BladeLightingController : IBladeLightingController
             return false;
         }
 
-        if (_lightingDialect == BladeLightingDialect.LedMatrixBlade)
+        if (_lightingDialect is BladeLightingDialect.LedMatrixBlade or BladeLightingDialect.LedMatrixBlade2)
         {
             request = effect.Mode switch
             {
@@ -684,14 +684,14 @@ public sealed partial class BladeLightingController : IBladeLightingController
             : direction;
 
     private byte[] CreateOffRequest() =>
-        _lightingDialect == BladeLightingDialect.LedMatrixBlade
+        _lightingDialect is BladeLightingDialect.LedMatrixBlade or BladeLightingDialect.LedMatrixBlade2
             ? BladeLightingLedMatrixBladeProtocol.CreateOffRequest(NextTransactionId())
             : BladeLightingProtocol.CreateOffRequest();
 
     private Func<IReadOnlyList<RazerRgb>, int, int, byte[][]> CreateFrameRequestBuilder() =>
         _lightingDialect switch
         {
-            BladeLightingDialect.LedMatrixBlade =>
+            BladeLightingDialect.LedMatrixBlade or BladeLightingDialect.LedMatrixBlade2 =>
                 (frame, rows, columns) => BladeLightingLedMatrixBladeProtocol.CreateMatrixFrameRequests(
                     frame, rows, columns, NextTransactionId),
             _ => BladeLightingProtocol.CreateMatrixFrameRequests,
