@@ -354,7 +354,6 @@ public static partial class ProfileResolver
             power?.ParametricEqFilterType,
             device?.ParametricEqFilterType,
             global?.ParametricEqFilterType),
-        HapticEnabled = First(power?.HapticEnabled, device?.HapticEnabled, global?.HapticEnabled),
         HapticsStrength = First(power?.HapticsStrength, device?.HapticsStrength, global?.HapticsStrength),
         AutoPause = First(power?.AutoPause, device?.AutoPause, global?.AutoPause),
         AutoShutdownMinutes = First(

@@ -53,7 +53,6 @@ public sealed class HeadsetProfileSettings
     public int? ParametricEqProfile { get; set; }
     public int? ParametricEqDirection { get; set; }
     public int? ParametricEqFilterType { get; set; }
-    public bool? HapticEnabled { get; set; }
     public int? HapticsStrength { get; set; }
     public bool? AutoPause { get; set; }
     public int? AutoShutdownMinutes { get; set; }

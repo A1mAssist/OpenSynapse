@@ -222,7 +222,6 @@ public sealed partial class ProfileDefinition
         ParametricEqProfile = source.ParametricEqProfile,
         ParametricEqDirection = source.ParametricEqDirection,
         ParametricEqFilterType = source.ParametricEqFilterType,
-        HapticEnabled = source.HapticEnabled,
         HapticsStrength = source.HapticsStrength,
         AutoPause = source.AutoPause,
         AutoShutdownMinutes = source.AutoShutdownMinutes,

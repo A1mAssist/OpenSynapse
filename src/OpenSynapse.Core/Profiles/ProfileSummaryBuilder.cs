@@ -379,7 +379,7 @@ public static class ProfileSummaryBuilder
         AddIf(group, FirstPresent(settings.ParametricEqEnabled, settings.ParametricEqBandIndex,
             settings.ParametricEqFrequency, settings.ParametricEqGain, settings.ParametricEqQ),
             "ProfileSummary_Item_ParametricEq", scope);
-        AddIf(group, FirstPresent(settings.HapticEnabled, settings.HapticsStrength), "ProfileSummary_Item_Haptics", scope);
+        AddIf(group, settings.HapticsStrength, "ProfileSummary_Item_Haptics", scope);
         AddIf(group, settings.AutoPause, "ProfileSummary_Item_AutoPause", scope);
         AddIf(group, settings.AutoShutdownMinutes, "ProfileSummary_Item_AutoShutdown", scope);
         AddIf(group, settings.Dnd, "ProfileSummary_Item_Dnd", scope);
