@@ -13,6 +13,7 @@ internal sealed class CpuHardwareMonitor : IDisposable
     private readonly PdhWildcardCounter? _clockPerformance =
         PdhWildcardCounter.TryCreate(@"\Processor Information(*)\% Processor Performance");
     private readonly HwinfoSensorReader _hwinfo = new();
+    private readonly IntelMsrTemperatureReader _intelMsr = new();
     private readonly object _gate = new();
     private double? _lastAcpiTemperature;
     private DateTimeOffset _acpiTemperatureStableSince = DateTimeOffset.UtcNow;
@@ -38,6 +39,13 @@ internal sealed class CpuHardwareMonitor : IDisposable
                 _lastAcpiTemperature = null;
                 _acpiTemperatureSuppressed = false;
                 return hwinfoTemperature;
+            }
+
+            if (_intelMsr.ReadPackageTemperatureCelsius() is double packageTemperature)
+            {
+                _lastAcpiTemperature = null;
+                _acpiTemperatureSuppressed = false;
+                return packageTemperature;
             }
 
             var acpiTemperature = SelectTemperatureCelsius(
@@ -94,6 +102,7 @@ internal sealed class CpuHardwareMonitor : IDisposable
             _baseClock?.Dispose();
             _clockPerformance?.Dispose();
             _hwinfo.Dispose();
+            _intelMsr.Dispose();
         }
     }
 
