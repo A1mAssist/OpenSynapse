@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Displays;
 using OpenSynapse.Windows.Lighting;
@@ -10,6 +11,7 @@ internal sealed class BladeDisplayTelemetryReader
     private readonly RazerDeviceResolver _resolver;
     private readonly RazerCapabilityClient _client;
     private readonly BladeValidationState _validation;
+    private readonly ConcurrentDictionary<string, byte> _logoProfiles = new(StringComparer.OrdinalIgnoreCase);
 
     public BladeDisplayTelemetryReader(
         RazerDeviceResolver resolver,
@@ -260,14 +262,63 @@ internal sealed class BladeDisplayTelemetryReader
         ResolvedRazerDevice device,
         CancellationToken cancellationToken)
     {
+        var deviceId = device.Descriptor.Id;
+        if (_logoProfiles.TryGetValue(deviceId, out var cachedProfile))
+        {
+            try
+            {
+                return await ReadLogoStateWithProfileAsync(device, cachedProfile, cancellationToken);
+            }
+            catch
+            {
+                _logoProfiles.TryRemove(deviceId, out _);
+                throw;
+            }
+        }
+
         var profileId = GetLogoProfileId(device);
-        var powerResponse = await _client.QueryAsync(device, CapabilityIds.LogoPowerGet, cancellationToken);
-        var modeResponse = await _client.QueryAsync(device, CapabilityIds.LogoModeGet, cancellationToken);
-        var power = BladeLogoProtocol.ParsePower(
-            powerResponse, RazerCapabilityClient.CreateRequest(device, CapabilityIds.LogoPowerGet), profileId);
-        var poweredMode = BladeLogoProtocol.ParseMode(
-            modeResponse, RazerCapabilityClient.CreateRequest(device, CapabilityIds.LogoModeGet), profileId);
-        return new BladeLogoState(power, poweredMode);
+        try
+        {
+            var state = await ReadLogoStateWithProfileAsync(device, profileId, cancellationToken);
+            _logoProfiles[deviceId] = profileId;
+            return state;
+        }
+        catch (Exception exception) when (
+            (exception is InvalidOperationException or NotSupportedException) &&
+            exception is not RazerDeviceTimeoutException)
+        {
+            // A manifest can carry the wrong 0/1 profile while the command set is
+            // otherwise correct. Probe the other profile once, then cache it.
+            var alternate = (byte)(profileId ^ 1);
+            try
+            {
+                var state = await ReadLogoStateWithProfileAsync(device, alternate, cancellationToken);
+                _logoProfiles[deviceId] = alternate;
+                return state;
+            }
+            catch (Exception fallback) when (
+                fallback is InvalidOperationException or NotSupportedException)
+            {
+                throw new InvalidOperationException(
+                    $"Blade Logo read failed with profile {profileId} ({exception.Message}) " +
+                    $"and profile {alternate} ({fallback.Message}).",
+                    new AggregateException(exception, fallback));
+            }
+        }
+    }
+
+    private async Task<BladeLogoState> ReadLogoStateWithProfileAsync(
+        ResolvedRazerDevice device,
+        byte profileId,
+        CancellationToken cancellationToken)
+    {
+        var arguments = new byte[] { profileId, 0x04, 0x00 };
+        var powerResponse = await _client.QueryAsync(
+            device, CapabilityIds.LogoPowerGet, arguments, cancellationToken);
+        var power = BladeLogoProtocol.ParsePower(powerResponse, profileId);
+        var modeResponse = await _client.QueryAsync(
+            device, CapabilityIds.LogoModeGet, arguments, cancellationToken);
+        return new BladeLogoState(power, BladeLogoProtocol.ParseMode(modeResponse, profileId));
     }
 
     private async Task WriteLogoStateAsync(
@@ -330,8 +381,18 @@ internal sealed class BladeDisplayTelemetryReader
         }
     }
 
-    private static byte GetLogoProfileId(ResolvedRazerDevice device)
+    private byte GetLogoProfileId(ResolvedRazerDevice device)
     {
+        if (device is null)
+        {
+            throw new ArgumentNullException(nameof(device));
+        }
+
+        if (_logoProfiles.TryGetValue(device.Descriptor.Id, out var cached))
+        {
+            return cached;
+        }
+
         var profileId = device.GetCapability(CapabilityIds.LogoPowerGet).Arguments.Span[0];
         if (profileId > 1)
         {
