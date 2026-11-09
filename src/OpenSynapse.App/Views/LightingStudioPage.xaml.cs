@@ -20,6 +20,7 @@ public sealed partial class LightingStudioPage : UserControl
 {
     private const double CellSize = 28;
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(1000d / 60d) };
+    private readonly DispatcherTimer _historyTimer = new() { Interval = TimeSpan.FromMilliseconds(250) };
     private readonly Stopwatch _clock = new();
     private Rectangle[] _cells = [];
     private SolidColorBrush[] _brushes = [];
@@ -50,10 +51,17 @@ public sealed partial class LightingStudioPage : UserControl
         LayerList.AddHandler(DropEvent, new DragEventHandler(LayerDrop), true);
         Inspector.CaptureRegionChanged += OnCaptureRegionChanged;
         _timer.Tick += (_, _) => RenderPreview();
+        _historyTimer.Tick += (_, _) =>
+        {
+            _historyTimer.Stop();
+            _viewModel?.CommitHistory();
+        };
         _captureSaveTimer.Tick += (_, _) => SavePendingCaptureRegion();
         Unloaded += (_, _) =>
         {
             _timer.Stop();
+            _historyTimer.Stop();
+            _viewModel?.CommitHistory();
             SavePendingCaptureRegion();
         };
     }
@@ -113,8 +121,9 @@ public sealed partial class LightingStudioPage : UserControl
         };
         Inspector.Changed += (_, _) =>
         {
-            _viewModel?.NotifyEdited();
-            RenderPreview();
+            _viewModel?.NotifyEdited(captureHistory: false);
+            _historyTimer.Stop();
+            _historyTimer.Start();
         };
         DataContext = _viewModel;
         DeviceCanvas.DeviceMoved += OnDeviceMoved;
@@ -181,6 +190,8 @@ public sealed partial class LightingStudioPage : UserControl
     internal void OnNavigatedFrom()
     {
         _timer.Stop();
+        _historyTimer.Stop();
+        _viewModel?.CommitHistory();
 #if DEBUG
         _studioBenchmark?.Stop();
 #endif
@@ -412,9 +423,19 @@ public sealed partial class LightingStudioPage : UserControl
 
     private void RemoveProfileClick(object sender, RoutedEventArgs e) => _viewModel?.RemoveProfile();
 
-    private void UndoClick(object sender, RoutedEventArgs e) => _viewModel?.Undo();
+    private void UndoClick(object sender, RoutedEventArgs e)
+    {
+        _historyTimer.Stop();
+        _viewModel?.CommitHistory();
+        _viewModel?.Undo();
+    }
 
-    private void RedoClick(object sender, RoutedEventArgs e) => _viewModel?.Redo();
+    private void RedoClick(object sender, RoutedEventArgs e)
+    {
+        _historyTimer.Stop();
+        _viewModel?.CommitHistory();
+        _viewModel?.Redo();
+    }
 
     private void ToolChanged(object sender, SelectionChangedEventArgs e)
     {
