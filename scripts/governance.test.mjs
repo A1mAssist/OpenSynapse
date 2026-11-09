@@ -163,6 +163,13 @@ test('transport fully matching rows pass', t => {
   assert.equal(scan(t, [scanEntry('1001')]).code, 0);
   assert.equal(scan(t, [{ pid: '0A54', type: 'rzDevice25ValkyrieT3', bundleType: 'rzDevice25ValkyrieT3', channel: 'ValkyrieT3Feature64' }]).code, 0);
 });
+test('transport maps Billie and KrakenBase bundle types', t => {
+  const result = scan(t, [
+    { pid: '056E', type: 'AudioOdessaT2Wireless', bundleType: 'AudioOdessaT2Wireless', channel: 'Billie64' },
+    { pid: '0520', type: 'AudioKrakenTE', bundleType: 'AudioKrakenTE', channel: 'KrakenBase37' },
+  ]);
+  assert.equal(result.code, 0, result.output);
+});
 test('transport unverified rows are not counted as validation', t => {
   assert.equal(scan(t, [scanEntry('1001', null)]).code, 1);
   assert.equal(scan(t, [scanEntry('1001', 'AudioMxicDevice', 'Unsupported')]).code, 1);

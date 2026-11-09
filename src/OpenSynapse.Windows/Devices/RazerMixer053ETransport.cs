@@ -151,7 +151,9 @@ internal sealed class RazerMixer053ETransport : IRazerMixer053ETransport
             await Task.Run(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (!NativeMethods.HidD_SetOutputReport(_handle, report, report.Length))
+                // Synapse's AudioMixer uses hid.write for the 66-byte output report;
+                // WriteFile is the matching path (report id is already in report[0]).
+                if (!NativeMethods.WriteFile(_handle, report, report.Length, out _, IntPtr.Zero))
                 {
                     throw new Win32Exception(
                         Marshal.GetLastWin32Error(),
@@ -258,12 +260,14 @@ internal sealed class RazerMixer053ETransport : IRazerMixer053ETransport
             byte[] reportBuffer,
             int reportBufferLength);
 
-        [DllImport("hid.dll", SetLastError = true)]
+        [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool HidD_SetOutputReport(
+        internal static extern bool WriteFile(
             SafeFileHandle handle,
             byte[] reportBuffer,
-            int reportBufferLength);
+            int reportBufferLength,
+            out int bytesWritten,
+            IntPtr overlapped);
 
         [DllImport("hid.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]

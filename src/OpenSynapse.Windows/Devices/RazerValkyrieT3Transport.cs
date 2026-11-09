@@ -33,8 +33,10 @@ internal sealed class RazerValkyrieT3Transport : IRazerMxicHeadsetTransport
             if (report.Length != 64 || report[0] != 7)
                 throw new ArgumentException("A Valkyrie T3 feature64/report7 request is required.", nameof(report));
             var request = report.ToArray();
+            // rzDevice25ValkyrieT3 increments before sending and wraps 31 -> 1,
+            // so a transaction of 0 is never put on the wire.
+            _transaction = (byte)((_transaction % 31) + 1);
             request[2] = _transaction;
-            _transaction = (byte)((_transaction + 1) % 31);
             // Keep ownership until the synchronous HID call has actually completed.
             await Task.Run(() => { cancellationToken.ThrowIfCancellationRequested(); _io.Send(request); }, cancellationToken).ConfigureAwait(false);
             for (var attempt = 0; attempt < 10; attempt++)

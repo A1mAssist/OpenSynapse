@@ -14,6 +14,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
     private enum MxicDialect
     {
         Legacy,
+        MabelT1,
         Class18,
         ValkyrieT3,
         Protocol40,
@@ -28,7 +29,12 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
         : this(
             RazerMxicHeadsetProtocol.UsesValkyrieT3Commands(productId)
                 ? new RazerValkyrieT3Transport(devicePath)
-                : new RazerMxicHeadsetTransport(devicePath, RazerMxicHeadsetProtocol.ReportLength),
+                : new RazerMxicHeadsetTransport(
+                    devicePath,
+                    RazerMxicHeadsetProtocol.ReportLength,
+                    useControlStatusReport:
+                        !RazerProtocol40HeadsetProtocol.IsSupported(productId) &&
+                        !RazerMxicHeadsetProtocol.UsesMabelT1(productId)),
             productId,
             diagnostic)
     {
@@ -41,6 +47,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _dialect = RazerProtocol40HeadsetProtocol.IsSupported(productId) ? MxicDialect.Protocol40
+            : RazerMxicHeadsetProtocol.UsesMabelT1(productId) ? MxicDialect.MabelT1
             : RazerMxicHeadsetProtocol.UsesValkyrieT3Commands(productId) ? MxicDialect.ValkyrieT3
             : RazerMxicHeadsetProtocol.UsesClass18Commands(productId) ? MxicDialect.Class18
             : MxicDialect.Legacy;
@@ -51,9 +58,12 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
         RazerMxicHeadsetProtocol.IsSupported(productId) ||
         RazerProtocol40HeadsetProtocol.IsSupported(productId);
 
-    private byte ReportId => _dialect == MxicDialect.ValkyrieT3
-        ? RazerMxicHeadsetProtocol.ValkyrieReportId
-        : RazerMxicHeadsetProtocol.ReportId;
+    private byte ReportId => _dialect switch
+    {
+        MxicDialect.ValkyrieT3 => RazerMxicHeadsetProtocol.ValkyrieReportId,
+        MxicDialect.MabelT1 => RazerMxicHeadsetProtocol.MabelT1ReportId,
+        _ => RazerMxicHeadsetProtocol.ReportId,
+    };
 
     private byte[] CreateEqPresetRead() => _dialect switch
     {
@@ -69,9 +79,9 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
         _ => RazerMxicHeadsetProtocol.EqPresetHeader,
     };
 
-    private byte ReadEqPreset(ReadOnlySpan<byte> value) => _dialect == MxicDialect.Legacy
-        ? RazerMxicHeadsetProtocol.ReadEqPreset(value)
-        : RazerMxicHeadsetProtocol.ReadEqPresetClass18(value);
+    private byte ReadEqPreset(ReadOnlySpan<byte> value) => _dialect is MxicDialect.Class18 or MxicDialect.ValkyrieT3
+        ? RazerMxicHeadsetProtocol.ReadEqPresetClass18(value)
+        : RazerMxicHeadsetProtocol.ReadEqPreset(value);
 
     private byte[] CreateEqBandsRead() => _dialect switch
     {
@@ -91,7 +101,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
     {
         MxicDialect.ValkyrieT3 => RazerMxicHeadsetProtocol.CreateSetEqBandsValkyrie(bands),
         MxicDialect.Class18 => RazerMxicHeadsetProtocol.CreateSetEqBandsClass18(bands),
-        _ => RazerMxicHeadsetProtocol.CreateSetEqBands(bands),
+        _ => RazerMxicHeadsetProtocol.CreateSetEqBands(bands, ReportId),
     };
 
     // Each dialect requires its own command acknowledgement before readback.
@@ -101,19 +111,19 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
         _ => RazerMxicHeadsetProtocol.SetEqBandsHeader,
     };
 
-    private byte[] CreateMicMuteRead() => _dialect != MxicDialect.Legacy
+    private byte[] CreateMicMuteRead() => _dialect == MxicDialect.Class18
         ? RazerMxicHeadsetProtocol.CreateGetMicMuteClass18(ReportId)
         : RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetMicMute, reportId: ReportId);
 
-    private byte[] MicMuteHeader => _dialect != MxicDialect.Legacy
+    private byte[] MicMuteHeader => _dialect == MxicDialect.Class18
         ? RazerMxicHeadsetProtocol.MicMuteHeaderClass18
         : RazerMxicHeadsetProtocol.MicMuteHeader;
 
-    private byte[] CreateSetMicMute(bool muted) => _dialect != MxicDialect.Legacy
+    private byte[] CreateSetMicMute(bool muted) => _dialect == MxicDialect.Class18
         ? RazerMxicHeadsetProtocol.CreateSetMicMuteClass18(muted, ReportId)
-        : RazerMxicHeadsetProtocol.CreateSetMicMute(muted);
+        : RazerMxicHeadsetProtocol.CreateSetMicMute(muted, ReportId);
 
-    private byte[] SetMicMuteHeader => _dialect != MxicDialect.Legacy
+    private byte[] SetMicMuteHeader => _dialect == MxicDialect.Class18
         ? RazerMxicHeadsetProtocol.MicMuteHeaderClass18
         : RazerMxicHeadsetProtocol.SetMicMuteHeader;
 
@@ -121,7 +131,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
     {
         MxicDialect.ValkyrieT3 => RazerMxicHeadsetProtocol.CreateSetEqPresetValkyrie(preset),
         MxicDialect.Class18 => RazerMxicHeadsetProtocol.CreateSetEqPresetClass18(preset),
-        _ => RazerMxicHeadsetProtocol.CreateSetEqPreset(preset),
+        _ => RazerMxicHeadsetProtocol.CreateSetEqPreset(preset, ReportId),
     };
 
     private byte[] SetEqPresetHeader => _dialect switch
