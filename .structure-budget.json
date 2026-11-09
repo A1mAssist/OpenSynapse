@@ -35,7 +35,7 @@
     },
     {
       "path": "src/OpenSynapse.App/Views/DevicesPage.xaml",
-      "maxLines": 1550
+      "maxLines": 1585
     },
     {
       "path": "src/OpenSynapse.App/Views/DevicesPage.Blade.cs",

@@ -1026,6 +1026,54 @@
   <data name="RazerHidOnboardProfileUnsupported" xml:space="preserve">
     <value>This device does not support this onboard profile operation.</value>
   </data>
+  <data name="RazerHidOnboardProfileUnknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="RazerHidOnboardProfileNoFreeSlot" xml:space="preserve">
+    <value>No profile id is free. Delete a profile first.</value>
+  </data>
+  <data name="RazerHidOnboardProfileCreateNotApplied" xml:space="preserve">
+    <value>The device did not create the profile; the id may already exist or be unsupported.</value>
+  </data>
+  <data name="RazerHidOnboardProfileDeleteNotApplied" xml:space="preserve">
+    <value>The device did not delete the profile. Try again.</value>
+  </data>
+  <data name="RazerHidOnboardProfileIdsUnavailable" xml:space="preserve">
+    <value>Could not read the profile id list; showing the used count instead.</value>
+  </data>
+  <data name="RazerHidOnboardProfileTimeout" xml:space="preserve">
+    <value>The device did not respond in time. Try again.</value>
+  </data>
+  <data name="RazerHidOnboardProfileMismatch" xml:space="preserve">
+    <value>The device returned a mismatched report. Try again.</value>
+  </data>
+  <data name="RazerHidOnboardProfileInvalidResponse" xml:space="preserve">
+    <value>The device returned invalid profile data.</value>
+  </data>
+  <data name="RazerHidOnboardProfileFailed" xml:space="preserve">
+    <value>The onboard profile operation failed. Try again.</value>
+  </data>
+  <data name="RazerHidOnboardProfileDeleteTitle" xml:space="preserve">
+    <value>Delete onboard profile</value>
+  </data>
+  <data name="RazerHidOnboardProfileDeleteBody" xml:space="preserve">
+    <value>The profile's button, lighting and DPI settings will be lost. This cannot be undone.</value>
+  </data>
+  <data name="RazerHidOnboardProfileDeleteAction" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="RazerHidOnboardProfileResetTitle" xml:space="preserve">
+    <value>Reset onboard profile</value>
+  </data>
+  <data name="RazerHidOnboardProfileResetBody" xml:space="preserve">
+    <value>Reset clears every custom setting in this profile. This cannot be undone.</value>
+  </data>
+  <data name="RazerHidOnboardProfileResetAction" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="RazerHidOnboardProfileDeleteBlocked.Text" xml:space="preserve">
+    <value>The active profile cannot be deleted. Switch to another profile first.</value>
+  </data>
   <data name="RazerHidMappingNoButtons" xml:space="preserve">
     <value>Device reported no mapping buttons</value>
   </data>

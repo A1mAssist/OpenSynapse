@@ -232,13 +232,22 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
 
         if (profile.ActiveOnboardProfileId is { } onboardProfile)
         {
-            await ApplySettingAsync(
-                results, "mouse.onboard-profile", connection,
-                RazerHidBackendCapability.OnboardProfileRead,
-                RazerHidBackendCapability.OnboardProfileWrite,
-                token => _service.GetActiveOnboardProfileIdAsync(connection, token),
-                (value, token) => _service.SetActiveOnboardProfileIdAsync(connection, value, token),
-                (byte)onboardProfile, (left, right) => left == right, cancellationToken);
+            var ids = await TryReadOnboardProfileIdsAsync(connection, cancellationToken);
+            if (ids is { Count: > 0 } && !ids.Contains((byte)onboardProfile))
+            {
+                results.Add(new("mouse.onboard-profile", ProfileSettingApplyStatus.Skipped,
+                    $"Onboard profile {onboardProfile} is not present on this device."));
+            }
+            else
+            {
+                await ApplySettingAsync(
+                    results, "mouse.onboard-profile", connection,
+                    RazerHidBackendCapability.OnboardProfileRead,
+                    RazerHidBackendCapability.OnboardProfileWrite,
+                    token => _service.GetActiveOnboardProfileIdAsync(connection, token),
+                    (value, token) => _service.SetActiveOnboardProfileIdAsync(connection, value, token),
+                    (byte)onboardProfile, (left, right) => left == right, cancellationToken);
+            }
         }
 
         if (profile.HapticScrollLevel is { } hapticLevel)
@@ -249,6 +258,32 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
         if (profile.ButtonMappings is { Count: > 0 } mappings)
         {
             await ApplyButtonMappingsAsync(connection, mappings, results, cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// A persisted active id is advisory: after a profile is deleted it may no longer
+    /// exist. Treat an unavailable list as unknown so older devices keep working.
+    /// </summary>
+    private async Task<IReadOnlyList<byte>?> TryReadOnboardProfileIdsAsync(
+        RazerHidDeviceConnection connection,
+        CancellationToken cancellationToken)
+    {
+        if (!Has(connection, RazerHidBackendCapability.OnboardProfileRead))
+        {
+            return null;
+        }
+
+        try
+        {
+            return await _service.GetOnboardProfileIdsAsync(connection, cancellationToken);
+        }
+        catch (Exception exception) when (
+            exception is RazerDeviceTimeoutException or RazerCommandRejectedException or
+                RazerReportMismatchException or NotSupportedException or
+                InvalidOperationException or IOException)
+        {
+            return null;
         }
     }
 

@@ -11,6 +11,7 @@ public readonly record struct RazerProfileColor(
 /// Class 0x05 onboard profile commands from the shared Razer middleware profile table.
 /// The 0099 Basilisk V3 and 00B6 DeathAdder V3 Pro bundles both register the same tuples:
 /// get max profiles supported [1,5,138], get number of profiles [1,5,128],
+/// get profile id list [80,5,129],
 /// create new profile [1,5,2], delete profile [1,5,3], set profile reset [1,5,11],
 /// set active profile ID [1,5,4], get active profile ID [1,5,132],
 /// set profile color [4,5,12] and get profile color [4,5,140].
@@ -34,6 +35,7 @@ public static class RazerOnboardProfileProtocol
     private const byte AltGetActiveProfileIdCommand = 0x83;
     private const byte GetMaxProfilesSupportedCommand = 0x8A;
     private const byte GetNumberOfProfilesCommand = 0x80;
+    private const byte GetProfileIdsCommand = 0x81;
     private const byte CreateNewProfileCommand = 0x02;
     private const byte DeleteProfileCommand = 0x03;
     private const byte SetProfileResetCommand = 0x0B;
@@ -42,6 +44,7 @@ public static class RazerOnboardProfileProtocol
     private const byte SetProfileColorCommand = 0x0C;
     private const byte GetProfileColorCommand = 0x8C;
     private const byte ProfileIdSize = 1;
+    private const byte ProfileIdListSize = 80;
     private const byte ProfileColorSize = 4;
 
     public static byte[] CreateGetMaxProfilesSupportedRequest(byte transactionId) =>
@@ -111,6 +114,18 @@ public static class RazerOnboardProfileProtocol
             GetNumberOfProfilesCommand,
             []);
 
+    /// <summary>
+    /// The middleware asks for the id list with an 80-byte response buffer even though
+    /// only the first byte (count) and the following ids are meaningful.
+    /// </summary>
+    public static byte[] CreateGetProfileIdsRequest(byte transactionId) =>
+        RazerFeatureReport.CreateRequest(
+            transactionId,
+            ProfileIdListSize,
+            CommandClass,
+            GetProfileIdsCommand,
+            []);
+
     public static byte[] CreateNewProfileRequest(byte transactionId, byte profileId) =>
         CreateProfileIdRequest(transactionId, CreateNewProfileCommand, profileId);
 
@@ -161,6 +176,37 @@ public static class RazerOnboardProfileProtocol
 
     public static byte ParseProfileId(ReadOnlySpan<byte> response, ReadOnlySpan<byte> request) =>
         Arguments(response, request, ProfileIdSize, "Profile id")[0];
+
+    /// <summary>
+    /// Parses [count, id...] from the 0x81 response. Zero profiles is valid; duplicate
+    /// or zero ids, a truncated payload, and a non-zero tail are rejected as malformed.
+    /// </summary>
+    public static byte[] ParseProfileIds(ReadOnlySpan<byte> response, ReadOnlySpan<byte> request)
+    {
+        var arguments = Arguments(response, request, 1, "Profile id list");
+        var payload = arguments[..response[6]];
+        var count = payload[0];
+        if (count > payload.Length - 1)
+        {
+            throw new InvalidOperationException(
+                "Profile id list is shorter than its declared count.");
+        }
+
+        var ids = payload.Slice(1, count).ToArray();
+        if (ids.Contains((byte)0) || ids.Distinct().Count() != ids.Length)
+        {
+            throw new InvalidOperationException(
+                "Profile id list contains a zero or duplicate id.");
+        }
+
+        if (payload[(1 + count)..].ContainsAnyExcept((byte)0))
+        {
+            throw new InvalidOperationException(
+                "Profile id list has a non-zero trailing field.");
+        }
+
+        return ids;
+    }
 
     public static RazerProfileColor ParseProfileColor(ReadOnlySpan<byte> response, ReadOnlySpan<byte> request)
     {

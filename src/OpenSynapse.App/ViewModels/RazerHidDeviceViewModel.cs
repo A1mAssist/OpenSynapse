@@ -79,11 +79,6 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
     private byte _smartReelThreshold = 50;
     private int _scrollFreeNotchedModeIndex;
     private byte _scrollAccelerationLevel;
-    private byte _onboardProfileCount;
-    private byte _onboardMaxProfiles;
-    private byte _activeOnboardProfileId;
-    private byte _selectedOnboardProfileId = 1;
-    private string _onboardProfileStatusText = string.Empty;
     private RazerHidKeyswitchOptimization _keyswitchOptimization;
     private byte _activeDpiStage = 1;
     private byte _hyperPollingIndicatorMode = 1;

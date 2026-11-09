@@ -409,10 +409,42 @@ public sealed partial class DevicesPage : UserControl
         await (SelectedRazerHidDevice?.CreateOnboardProfileAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void RazerHidDeleteOnboardProfileClick(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidDevice?.DeleteOnboardProfileAsync(Lifetime) ?? Task.CompletedTask);
+        await ConfirmDeleteOnboardProfileAsync();
 
     private async void RazerHidResetOnboardProfileClick(object sender, RoutedEventArgs e) =>
+        await ConfirmResetOnboardProfileAsync();
+
+    private async Task ConfirmDeleteOnboardProfileAsync()
+    {
+        if (!await ConfirmOnboardProfileAsync(delete: true)) return;
+        await (SelectedRazerHidDevice?.DeleteOnboardProfileAsync(Lifetime) ?? Task.CompletedTask);
+    }
+
+    private async Task ConfirmResetOnboardProfileAsync()
+    {
+        if (!await ConfirmOnboardProfileAsync(delete: false)) return;
         await (SelectedRazerHidDevice?.ResetOnboardProfileAsync(Lifetime) ?? Task.CompletedTask);
+    }
+
+    private async Task<bool> ConfirmOnboardProfileAsync(bool delete)
+    {
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = AppStrings.Text(delete
+                ? "RazerHidOnboardProfileDeleteTitle"
+                : "RazerHidOnboardProfileResetTitle"),
+            Content = AppStrings.Text(delete
+                ? "RazerHidOnboardProfileDeleteBody"
+                : "RazerHidOnboardProfileResetBody"),
+            PrimaryButtonText = AppStrings.Text(delete
+                ? "RazerHidOnboardProfileDeleteAction"
+                : "RazerHidOnboardProfileResetAction"),
+            CloseButtonText = AppStrings.Text("Text_949856B3"),
+            DefaultButton = ContentDialogButton.Close,
+        };
+        return await dialog.ShowAsync() == ContentDialogResult.Primary;
+    }
 
     private async void RazerHidRefreshWirelessClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.LoadWirelessAsync(Lifetime) ?? Task.CompletedTask);
