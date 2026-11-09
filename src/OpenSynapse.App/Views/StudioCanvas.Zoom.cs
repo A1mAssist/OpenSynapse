@@ -1,38 +1,77 @@
+using OpenSynapse.Core.Lighting;
 using Windows.Foundation;
 
 namespace OpenSynapse.App.Views;
 
 public sealed partial class StudioCanvas
 {
+    private double _zoomViewX;
+    private double _zoomViewY;
+    private bool _zoomViewPending;
+    private int _zoomViewGeneration;
+
     public void SetZoom(double percent) => SetZoom(percent, null);
 
-    private void SetZoom(double percent, Point? anchor, bool animate = true)
+    private void SetZoom(double percent, Point? anchor, bool animate = false)
     {
         if (!double.IsFinite(percent)) return;
         var clamped = Math.Clamp(percent, MinZoom, MaxZoom);
         if (Math.Abs(clamped - _zoom) < 0.001) return;
         var viewportWidth = Scroller.ViewportWidth;
         var viewportHeight = Scroller.ViewportHeight;
-        var keepAnchor = viewportWidth > 0 && viewportHeight > 0;
-        var anchorX = keepAnchor ? Math.Clamp(anchor?.X ?? viewportWidth / 2, 0, viewportWidth) : 0;
-        var anchorY = keepAnchor ? Math.Clamp(anchor?.Y ?? viewportHeight / 2, 0, viewportHeight) : 0;
-        var factor = _zoom / 100;
-        var designX = keepAnchor ? (Scroller.HorizontalOffset + anchorX) / factor : 0;
-        var designY = keepAnchor ? (Scroller.VerticalOffset + anchorY) / factor : 0;
+        var offsetX = _zoomViewPending ? _zoomViewX : Scroller.HorizontalOffset;
+        var offsetY = _zoomViewPending ? _zoomViewY : Scroller.VerticalOffset;
+        var keepAnchor = StudioCanvasPlacement.TryGetAnchoredOffset(
+            offsetX,
+            offsetY,
+            anchor?.X ?? viewportWidth / 2,
+            anchor?.Y ?? viewportHeight / 2,
+            _zoom,
+            clamped,
+            viewportWidth,
+            viewportHeight,
+            out var targetX,
+            out var targetY);
         _zoom = clamped;
         ApplyZoom();
         if (keepAnchor)
         {
             // The scrollable extent only grows after layout; ChangeView would otherwise clamp to the old size.
             Scroller.UpdateLayout();
-            var newFactor = _zoom / 100;
-            Scroller.ChangeView(
-                Math.Max(0, designX * newFactor - anchorX),
-                Math.Max(0, designY * newFactor - anchorY),
-                null,
-                !animate);
+            Scroller.ChangeView(targetX, targetY, null, !animate);
+            _zoomViewX = targetX;
+            _zoomViewY = targetY;
+            _zoomViewPending = true;
+            var generation = ++_zoomViewGeneration;
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (generation != _zoomViewGeneration) return;
+                if (Math.Abs(Scroller.HorizontalOffset - targetX) < 0.5 &&
+                    Math.Abs(Scroller.VerticalOffset - targetY) < 0.5)
+                {
+                    _zoomViewPending = false;
+                    return;
+                }
+
+                Scroller.UpdateLayout();
+                Scroller.ChangeView(targetX, targetY, null, true);
+                _zoomViewPending =
+                    Math.Abs(Scroller.HorizontalOffset - targetX) >= 0.5 ||
+                    Math.Abs(Scroller.VerticalOffset - targetY) >= 0.5;
+            });
+        }
+        else
+        {
+            _zoomViewPending = false;
+            _zoomViewGeneration++;
         }
         ZoomChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    internal void CancelPendingZoomView()
+    {
+        _zoomViewGeneration++;
+        _zoomViewPending = false;
     }
 
     /// <summary>Selects a preset stop: 10, 25, 50, 100, 200, 300 or 400 percent.</summary>

@@ -33,6 +33,9 @@ public sealed partial class LightingStudioPage : UserControl
     private ComboBoxItem? _customZoomItem;
     private bool _canvasFitted;
     private bool _savedProjectLoaded;
+    private bool _fitting;
+    private bool _userZoomed;
+    private bool _syncingZoomPicker;
     private string? _fittedVisualSignature;
 #if DEBUG
     private StudioCanvasBenchmark? _studioBenchmark;
@@ -88,6 +91,7 @@ public sealed partial class LightingStudioPage : UserControl
     {
         _viewModel?.Dispose();
         _savedProjectLoaded = false;
+        ResetCanvasFit();
         _inputSampler = inputSampler;
         _viewModel = new LightingStudioViewModel(
             lighting, devices, matrixDevices, hidRouter, inputSampler, argbRouter, restoreAfterExternal);
@@ -135,7 +139,11 @@ public sealed partial class LightingStudioPage : UserControl
                 DeviceCanvas.SelectLeds(cells);
             }
         };
-        DeviceCanvas.ZoomChanged += (_, _) => SyncZoomPicker();
+        DeviceCanvas.ZoomChanged += (_, _) =>
+        {
+            if (!_fitting) _userZoomed = true;
+            SyncZoomPicker();
+        };
         UpdatePlayButton();
         if (_inputSampler is not null && Host is not null)
         {
@@ -182,6 +190,7 @@ public sealed partial class LightingStudioPage : UserControl
             return;
         }
 
+        ResetCanvasFit();
         await _viewModel.LoadAsync();
         BindInspector();
         RenderPreview();
@@ -278,11 +287,36 @@ public sealed partial class LightingStudioPage : UserControl
         if (!needsFit) return;
         _canvasFitted = true;
         _fittedVisualSignature = visualSignature;
+        if (_userZoomed) return;
+        void FitCanvas()
+        {
+            if (_userZoomed) return;
+            _fitting = true;
+            try
+            {
+                DeviceCanvas.CancelPendingZoomView();
+                DeviceCanvas.FitToView();
+                DeviceCanvas.CancelPendingZoomView();
+            }
+            finally
+            {
+                _fitting = false;
+            }
+        }
+
         DispatcherQueue.TryEnqueue(() =>
         {
-            DeviceCanvas.FitToView();
-            DispatcherQueue.TryEnqueue(() => DeviceCanvas.FitToView());
+            FitCanvas();
+            DispatcherQueue.TryEnqueue(FitCanvas);
         });
+    }
+
+    private void ResetCanvasFit()
+    {
+        _canvasFitted = false;
+        _fittedVisualSignature = null;
+        _userZoomed = false;
+        DeviceCanvas.CancelPendingZoomView();
     }
 
     private void RenderPreview()
@@ -452,6 +486,7 @@ public sealed partial class LightingStudioPage : UserControl
 
     private void ZoomStepChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (_syncingZoomPicker) return;
         // The toolbar may initialize before the canvas it controls.
         if (sender is not ComboBox picker || DeviceCanvas is null) return;
         if (ReferenceEquals(picker.SelectedItem, _customZoomItem)) return;
@@ -460,24 +495,33 @@ public sealed partial class LightingStudioPage : UserControl
 
     private void SyncZoomPicker()
     {
-        var step = DeviceCanvas.ZoomStepIndex;
-        if (step >= 0)
+        if (_syncingZoomPicker) return;
+        _syncingZoomPicker = true;
+        try
         {
-            if (_customZoomItem is not null)
+            var step = DeviceCanvas.ZoomStepIndex;
+            if (step >= 0)
             {
-                // Removing the selected item leaves the ComboBox in a broken state.
-                if (ReferenceEquals(ZoomPicker.SelectedItem, _customZoomItem)) ZoomPicker.SelectedIndex = -1;
-                ZoomPicker.Items.Remove(_customZoomItem);
-                _customZoomItem = null;
+                if (_customZoomItem is not null)
+                {
+                    // Removing the selected item leaves the ComboBox in a broken state.
+                    if (ReferenceEquals(ZoomPicker.SelectedItem, _customZoomItem)) ZoomPicker.SelectedIndex = -1;
+                    ZoomPicker.Items.Remove(_customZoomItem);
+                    _customZoomItem = null;
+                }
+                if (ZoomPicker.SelectedIndex != step) ZoomPicker.SelectedIndex = step;
+                return;
             }
-            if (ZoomPicker.SelectedIndex != step) ZoomPicker.SelectedIndex = step;
-            return;
-        }
 
-        _customZoomItem ??= new ComboBoxItem();
-        _customZoomItem.Content = $"{DeviceCanvas.ZoomPercent:0.#}%";
-        if (!ZoomPicker.Items.Contains(_customZoomItem)) ZoomPicker.Items.Add(_customZoomItem);
-        if (!ReferenceEquals(ZoomPicker.SelectedItem, _customZoomItem)) ZoomPicker.SelectedItem = _customZoomItem;
+            _customZoomItem ??= new ComboBoxItem();
+            _customZoomItem.Content = $"{DeviceCanvas.ZoomPercent:0.#}%";
+            if (!ZoomPicker.Items.Contains(_customZoomItem)) ZoomPicker.Items.Add(_customZoomItem);
+            if (!ReferenceEquals(ZoomPicker.SelectedItem, _customZoomItem)) ZoomPicker.SelectedItem = _customZoomItem;
+        }
+        finally
+        {
+            _syncingZoomPicker = false;
+        }
     }
 
     private void OnDeviceMoved(string instanceId, double x, double y) =>
@@ -498,6 +542,7 @@ public sealed partial class LightingStudioPage : UserControl
     private async void LoadClick(object sender, RoutedEventArgs e)
     {
         if (_viewModel is null) return;
+        ResetCanvasFit();
         await _viewModel.LoadAsync();
         BindInspector();
         RenderPreview();
@@ -518,6 +563,7 @@ public sealed partial class LightingStudioPage : UserControl
         var file = await picker.PickSingleFileAsync();
         if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
         {
+            ResetCanvasFit();
             var imported = await _viewModel.ImportChromaAsync(file.Path);
             RefreshCanvas();
             RenderPreview();
