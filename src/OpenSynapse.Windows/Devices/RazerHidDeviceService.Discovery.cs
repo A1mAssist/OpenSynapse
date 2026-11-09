@@ -112,6 +112,12 @@ public sealed partial class RazerHidDeviceService
                     .Except(optionalCapabilities)
                     .ToFrozenSet();
                 var extraCapabilities = probedCapabilities.ToHashSet();
+                if (optionalCapabilities.Contains(RazerHidBackendCapability.ProximitySensorRead) &&
+                    optionalCapabilities.Contains(RazerHidBackendCapability.ProximitySensorWrite))
+                {
+                    extraCapabilities.Add(RazerHidBackendCapability.ProximitySensorRead);
+                    extraCapabilities.Add(RazerHidBackendCapability.ProximitySensorWrite);
+                }
                 if (optionalCapabilities.Contains(RazerHidBackendCapability.SensorRotationRead) &&
                     optionalCapabilities.Contains(RazerHidBackendCapability.SensorRotationWrite))
                 {

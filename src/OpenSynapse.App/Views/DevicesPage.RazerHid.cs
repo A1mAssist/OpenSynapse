@@ -204,6 +204,9 @@ public sealed partial class DevicesPage : UserControl
     private async void RazerHidApplySensorRotationClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.ApplySensorRotationAsync(Lifetime) ?? Task.CompletedTask);
 
+    private async void RazerHidApplySmartTrackingClick(object sender, RoutedEventArgs e) =>
+        await (SelectedRazerHidDevice?.ApplySmartTrackingAsync(Lifetime) ?? Task.CompletedTask);
+
     private async void RazerHidApplyDpiStagesClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.ApplyDpiStagesAsync(Lifetime) ?? Task.CompletedTask);
 

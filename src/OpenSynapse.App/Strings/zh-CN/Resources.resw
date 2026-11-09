@@ -1944,6 +1944,15 @@
   <data name="RazerHidSensorRotationEnabled.Header" xml:space="preserve"><value>启用</value></data>
   <data name="RazerHidSensorRotationAngle.Header" xml:space="preserve"><value>角度</value></data>
   <data name="RazerHidSensorRotationApplied" xml:space="preserve"><value>已应用</value></data>
+  <data name="RazerHidSmartTrackingTitle.Text" xml:space="preserve"><value>智能追踪</value></data>
+  <data name="RazerHidSmartTrackingDescription.Text" xml:space="preserve"><value>无论使用何种表面，都可以根据你的喜好设置单个中止点。</value></data>
+  <data name="RazerHidSmartTrackingAsymmetric.Content" xml:space="preserve"><value>启用非对称中止</value></data>
+  <data name="RazerHidSmartTrackingDistance.Text" xml:space="preserve"><value>追踪距离</value></data>
+  <data name="RazerHidSmartTrackingLow" xml:space="preserve"><value>低</value></data>
+  <data name="RazerHidSmartTrackingMedium" xml:space="preserve"><value>中等</value></data>
+  <data name="RazerHidSmartTrackingHigh" xml:space="preserve"><value>高</value></data>
+  <data name="RazerHidSmartTrackingApplied" xml:space="preserve"><value>已应用</value></data>
+  <data name="RazerHidSmartTrackingResetHint.Text" xml:space="preserve"><value>通过同时按住左键、右键和滚轮 7 秒钟，可以手动重置你的鼠标。</value></data>
   <data name="RazerHidActiveDpiStage.Header" xml:space="preserve"><value>当前档位</value></data>
   <data name="RazerHidDpiStageLabel" xml:space="preserve"><value>档位 {0}</value></data>
   <data name="RazerHidHyperPollingDescription.Text" xml:space="preserve"><value>管理接收器指示灯和鼠标配对。配对操作会再次确认。</value></data>
