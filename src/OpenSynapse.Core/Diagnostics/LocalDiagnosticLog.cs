@@ -7,6 +7,16 @@ public sealed class LocalDiagnosticLog
 {
     public const long DefaultMaxFileBytes = 1024 * 1024;
 
+    /// <summary>
+    /// Successful HID requests are normally silent: a 60 Hz frame pump would otherwise
+    /// append two lines per row. Set OPENSSYNAPSE_HID_TRACE=1 to opt in.
+    /// </summary>
+    public static bool TraceSuccessfulHidRequests { get; } =
+        string.Equals(
+            Environment.GetEnvironmentVariable("OPENSSYNAPSE_HID_TRACE"),
+            "1",
+            StringComparison.Ordinal);
+
     private readonly object _gate = new();
     private readonly long _maxFileBytes;
 
