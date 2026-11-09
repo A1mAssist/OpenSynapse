@@ -433,15 +433,23 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
 
     /// <summary>Called by the inspector for bindings that do not raise layer notifications.</summary>
     // Regions own their params after creation; later layer edits stay on the layer.
-    public void NotifyEdited()
+    public void NotifyEdited(bool captureHistory = true)
     {
         _selectedLayer?.NotifyColorChanged();
-        _history?.Capture();
+        if (captureHistory) _history?.Capture();
         OnPropertyChanged(nameof(CanUndo));
         OnPropertyChanged(nameof(CanRedo));
         NotifyDocumentChanged();
         _ = EnsureMediaSamplerAsync();
         _ = EnsureInputAsync();
+    }
+
+    /// <summary>Commits the current edit as one undo step after the gesture settles.</summary>
+    public void CommitHistory()
+    {
+        _history?.Capture();
+        OnPropertyChanged(nameof(CanUndo));
+        OnPropertyChanged(nameof(CanRedo));
     }
 
     public async Task ApplyAsync()
@@ -741,11 +749,23 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         NotifyDocumentChanged();
     }
 
-    private void OnLayerPropertyChanged(object? sender, PropertyChangedEventArgs args) =>
+    private void OnLayerPropertyChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        // The color and effect forwarders are raised by the view-model's own
+        // edit path, which already calls NotifyDocumentChanged once.
+        if (args.PropertyName is nameof(StudioLayerItem.PrimaryColor)
+            or nameof(StudioLayerItem.SecondaryColor)
+            or nameof(StudioLayerItem.Effect))
+        {
+            return;
+        }
+
         NotifyDocumentChanged();
+    }
 
     private void NotifyDocumentChanged()
     {
+        _layerCache.Clear();
         if (_source is not null && _appliedBlade is not null) _source.Update(BuildLayersFor(_appliedBlade));
         if (IsApplied && _hidRouter is not null) RefreshHidSnapshots();
         if (IsApplied && _argbRouter is not null) RefreshArgbSnapshots(_argbRouter.GetTargets());

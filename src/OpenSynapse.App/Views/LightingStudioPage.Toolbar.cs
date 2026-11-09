@@ -79,6 +79,8 @@ public sealed partial class LightingStudioPage
     private async void ApplyClick(object sender, RoutedEventArgs e)
     {
         if (_viewModel is null) return;
+        _historyTimer.Stop();
+        _viewModel.CommitHistory();
         await _viewModel.ApplyAsync();
     }
 

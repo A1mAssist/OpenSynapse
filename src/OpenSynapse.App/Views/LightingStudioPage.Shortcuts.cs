@@ -10,6 +10,8 @@ public sealed partial class LightingStudioPage
     private void UndoAcceleratorInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
         if (IsTextInputFocused()) return;
+        _historyTimer.Stop();
+        _viewModel?.CommitHistory();
         _viewModel?.Undo();
         args.Handled = true;
     }
@@ -17,6 +19,8 @@ public sealed partial class LightingStudioPage
     private void RedoAcceleratorInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
         if (IsTextInputFocused()) return;
+        _historyTimer.Stop();
+        _viewModel?.CommitHistory();
         _viewModel?.Redo();
         args.Handled = true;
     }

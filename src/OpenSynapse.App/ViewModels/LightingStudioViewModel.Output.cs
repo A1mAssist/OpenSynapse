@@ -12,6 +12,9 @@ public sealed record StudioOutputFailure(string DeviceName, string Error, bool R
 /// <summary>Per-device layer snapshots and the HID frame pump.</summary>
 public sealed partial class LightingStudioViewModel
 {
+    private readonly Dictionary<(ushort ProductId, string InstanceId, int Rows, int Columns), StudioLayerRender[]>
+        _layerCache = new();
+
     /// <summary>Latest failure per device and operation, observable without hiding the global status.</summary>
     public ObservableCollection<StudioOutputFailure> OutputFailures { get; } = new();
 
@@ -35,6 +38,9 @@ public sealed partial class LightingStudioViewModel
     private StudioLayerRender[] BuildLayersFor(
         ushort productId, string? instanceId, int rows, int columns)
     {
+        var key = (productId, instanceId ?? string.Empty, rows, columns);
+        if (_layerCache.TryGetValue(key, out var cached)) return cached;
+
         var profile = _project.SelectedProfile;
         if (profile is null || rows <= 0 || columns <= 0) return [];
 
@@ -51,6 +57,30 @@ public sealed partial class LightingStudioViewModel
 
             foreach (var region in layer.Regions)
             {
+                if (region.Devices.Count == 0)
+                {
+                    // A mask of all 100 is the same as no mask.
+                    layers.Add(new StudioLayerRender(
+                        region.Params, null, layer.Opacity, layer.Blend, layer.Visible, layer.Id));
+                    continue;
+                }
+
+                var targetsDevice = false;
+                foreach (var target in region.Devices)
+                {
+                    if (target.ProductId != productId) continue;
+                    if (!string.IsNullOrWhiteSpace(target.InstanceId) &&
+                        !string.Equals(target.InstanceId, instanceId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    targetsDevice = true;
+                    break;
+                }
+
+                if (!targetsDevice) continue;
+
                 var mask = StudioMaskBuilder.BuildRegion(region, productId, instanceId, rows, columns);
                 if (!HasMask(mask)) continue;
                 layers.Add(new StudioLayerRender(
@@ -58,7 +88,9 @@ public sealed partial class LightingStudioViewModel
             }
         }
 
-        return layers.ToArray();
+        var result = layers.ToArray();
+        _layerCache[key] = result;
+        return result;
     }
 
     private static bool HasMask(byte[] mask)
