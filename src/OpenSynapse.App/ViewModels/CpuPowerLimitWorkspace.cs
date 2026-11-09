@@ -286,13 +286,7 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
             ? Math.Max(0, Array.IndexOf(CpuPowerLimitPresets, report.Pl1Watts))
             : -1;
         SetCpuPowerLimitIndex(index);
-        OnPropertyChanged(nameof(CpuPowerLimitText));
-        OnPropertyChanged(nameof(CpuPowerLimitDetailText));
-        OnPropertyChanged(nameof(CpuPowerLimitDetailVisibility));
-        OnPropertyChanged(nameof(CpuPowerLimitAmdDownloadVisibility));
-        OnPropertyChanged(nameof(CpuPowerLimitPawnIoInstallVisibility));
-        OnPropertyChanged(nameof(CanInstallCpuPowerLimitPawnIo));
-        OnPropertyChanged(nameof(CanSetCpuPowerLimit));
+        NotifyStateChanged();
     }
 
     private void RestoreCpuPowerLimitIndex(int index) => SetCpuPowerLimitIndex(index);
@@ -330,4 +324,6 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
 
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+    private void NotifyStateChanged() => OnPropertyChanged(string.Empty);
 }

@@ -563,4 +563,6 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+    private void NotifyStateChanged() => OnPropertyChanged(string.Empty);
 }

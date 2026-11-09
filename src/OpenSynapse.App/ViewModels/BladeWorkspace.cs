@@ -1622,50 +1622,13 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         _blade._bladePerformanceModeIndex = -1;
         _blade._confirmedBladePerformanceModeIndex = -1;
         _performanceModeCards = null;
-        OnPropertyChanged(nameof(PerformanceModeIndex));
-        OnPropertyChanged(nameof(PerformanceModeCards));
         _bladePerformanceCycleModes.RemoveWhere(mode => !performanceModes.Contains(mode));
         if (_bladePerformanceCycleModes.Count == 0)
         {
             _bladePerformanceCycleModes = [.. performanceModes];
         }
-        OnPropertyChanged(nameof(PerformanceCycleModes));
-        OnPropertyChanged(nameof(CanWriteBrightness));
-        OnPropertyChanged(nameof(CanWritePerformanceMode));
-        OnPropertyChanged(nameof(HyperboostOptionVisibility));
-        OnPropertyChanged(nameof(HyperboostNeedsCoolingPadWarning));
-        OnPropertyChanged(nameof(CanSetGamingMode));
-        OnPropertyChanged(nameof(GamingModeVisibility));
-        OnPropertyChanged(nameof(CustomPerformanceVisibility));
-        OnPropertyChanged(nameof(CpuBoostOptions));
-        OnPropertyChanged(nameof(LightingCardVisibility));
-        OnPropertyChanged(nameof(LightingModeOptions));
-        OnPropertyChanged(nameof(LightingEffectVisibility));
-        OnPropertyChanged(nameof(LightingRenderModeVisibility));
-        OnPropertyChanged(nameof(LightingPresetVisibility));
-        OnPropertyChanged(nameof(LightingColorVisibility));
-        OnPropertyChanged(nameof(LightingSecondColorVisibility));
-        OnPropertyChanged(nameof(LightingTertiaryColorVisibility));
         _lighting().RaiseChromaVisibilityChanged();
-        OnPropertyChanged(nameof(WaveDirectionVisibility));
-        OnPropertyChanged(nameof(LightingColorVisibility));
-        OnPropertyChanged(nameof(LightingSecondColorVisibility));
-        OnPropertyChanged(nameof(LightingTertiaryColorVisibility));
-        OnPropertyChanged(nameof(CanSetLighting));
-        OnPropertyChanged(nameof(MaxFanVisibility));
-        OnPropertyChanged(nameof(CanSetMaxFan));
-        OnPropertyChanged(nameof(CanSetCpuBoost));
-        OnPropertyChanged(nameof(CpuBoostVisibility));
-        OnPropertyChanged(nameof(CanSetCpuPowerBoost));
-        OnPropertyChanged(nameof(CanApplyCpuPowerBoost));
-        OnPropertyChanged(nameof(CpuPowerBoostVisibility));
-        OnPropertyChanged(nameof(GpuBoostVisibility));
-        OnPropertyChanged(nameof(PerformanceModeCardVisibility));
-        OnPropertyChanged(nameof(FanCardVisibility));
-        OnPropertyChanged(nameof(FanControlVisibility));
-        OnPropertyChanged(nameof(ChargeLimitCardVisibility));
-        OnPropertyChanged(nameof(LogoCardVisibility));
-        OnPropertyChanged(nameof(CanSetLightingSettings));
+        NotifyStateChanged();
         _fan().RaiseCurveStateChanged();
     }
 
@@ -2595,6 +2558,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
                 ? AppStrings.Text("Text_A98448E8")
                 : AppStrings.Text("Text_874ADE24");
         }
+        NotifyStateChanged();
     }
 
     internal void ResetTelemetry()
@@ -2675,9 +2639,16 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         OnPropertyChanged(nameof(CanSetCpuBoost));
         OnPropertyChanged(nameof(CanSetGpuBoost));
         OnPropertyChanged(nameof(CanSetMaxFan));
+        NotifyStateChanged();
     }
 
     internal void RefreshLocalization() => OnPropertyChanged(string.Empty);
+
+    /// <summary>
+    /// Re-evaluates every binding after a low-frequency state change (mode, device,
+    /// capability probe). High-frequency paths must keep notifying individual properties.
+    /// </summary>
+    private void NotifyStateChanged() => OnPropertyChanged(string.Empty);
 
     private void SetBrightness(byte brightness, bool confirm = true)
     {
@@ -2709,6 +2680,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         OnPropertyChanged(nameof(CanSetGpuBoost));
         OnPropertyChanged(nameof(CanSetMaxFan));
         OnPropertyChanged(nameof(CustomPerformanceVisibility));
+        NotifyStateChanged();
     }
 
     private void SetGameMode(BladeGameModeTelemetry? gameMode)
@@ -2803,6 +2775,8 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         OnPropertyChanged(nameof(CpuBoostText));
         OnPropertyChanged(nameof(CpuBoostIndex));
         OnPropertyChanged(nameof(CanSetCpuBoost));
+        OnPropertyChanged(nameof(CpuBoostVisibility));
+        OnPropertyChanged(nameof(CustomPerformanceVisibility));
     }
 
     private void SetGpuBoost(BladeGpuBoostMode mode)
@@ -2811,6 +2785,8 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         OnPropertyChanged(nameof(GpuBoostText));
         OnPropertyChanged(nameof(GpuBoostIndex));
         OnPropertyChanged(nameof(CanSetGpuBoost));
+        OnPropertyChanged(nameof(GpuBoostVisibility));
+        OnPropertyChanged(nameof(CustomPerformanceVisibility));
     }
 
     private void SetMaxFan(BladeMaxFanMode mode, bool confirm = true)
@@ -2819,6 +2795,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         OnPropertyChanged(nameof(MaxFanText));
         OnPropertyChanged(nameof(MaxFanEnabled));
         OnPropertyChanged(nameof(CanSetMaxFan));
+        OnPropertyChanged(nameof(CustomPerformanceVisibility));
     }
 
     private void SetLogo(BladeLogoMode mode, bool confirm = true)
@@ -2893,6 +2870,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         {
             ProbeGpuClockOffset();
         }
+        NotifyStateChanged();
     }
 
     internal void SetControlDevice(DeviceDescriptor? blade)

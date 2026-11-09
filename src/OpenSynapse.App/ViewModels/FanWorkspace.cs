@@ -618,6 +618,7 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
         OnPropertyChanged(nameof(BladeFanFixedVisibility));
         OnPropertyChanged(nameof(BladeFanFixedRpmVisibility));
         OnPropertyChanged(nameof(BladeFanCurvePanelVisibility));
+        NotifyStateChanged();
     }
 
     private int SnapBladeFanFixedRpm(int value)
@@ -644,6 +645,8 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+    private void NotifyStateChanged() => OnPropertyChanged(string.Empty);
 }
 
 internal readonly record struct BladeFanProfileApplyResult(string? Error, bool Changed);

@@ -8,6 +8,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
+- Switching to the Custom performance mode now shows the GPU performance level and refreshes the CPU/GPU Boost and max-fan controls.
+- Sensor rotation, analog-key layout, THX install state, fan mode and CPU power panels now refresh their derived visibility after state changes; low-frequency transitions use one workspace-wide state notification.
 - MSI installs can now update from inside the app: **Update and restart** hands the package to the service registered at install time, which verifies it, applies it through Task Scheduler, and restarts the app without a UAC prompt.
 
 ## [1.7.1] - 2026-11-09

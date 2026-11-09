@@ -554,6 +554,12 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+    /// <summary>
+    /// Re-evaluates every binding after a low-frequency state change. High-frequency
+    /// paths (lighting frames, polling) must keep notifying individual properties.
+    /// </summary>
+    private void NotifyStateChanged() => OnPropertyChanged(string.Empty);
 }
 
 internal sealed class RazerHidProfileSaveException(string message) : IOException(message);

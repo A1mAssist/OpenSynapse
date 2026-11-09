@@ -346,6 +346,9 @@ public sealed partial class RazerHidDeviceViewModel
         OnPropertyChanged(nameof(AnalogKeyRows));
         OnPropertyChanged(nameof(AnalogKeyLayoutName));
         OnPropertyChanged(nameof(AnalogKeyLayoutVisibility));
+        // AnalogSnapTapVisibility also depends on _analogKeyLayout; keep it in
+        // sync even when the snap-tap probe has already completed.
+        NotifyStateChanged();
     }
 
     private void SetAnalogKeySelection(bool selected)
