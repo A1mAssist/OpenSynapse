@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using Microsoft.Win32;
 using OpenSynapse.Core.Audio;
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Windows.Lifecycle;
 
 namespace OpenSynapse.Windows.Audio;
 
@@ -132,8 +133,10 @@ internal static class ThxAudioAdmission
                 null);
         }
 
-        var install = await ThxComponentInstaller.InstallAsync(BladeInstaller, cancellationToken)
-            .ConfigureAwait(false);
+        var install = await ThxComponentInstaller.InstallAsync(
+            BladeInstaller,
+            cancellationToken,
+            startService: profile.ServiceName).ConfigureAwait(false);
         if (install.Error is not null)
         {
             return new ThxAudioStatus(
@@ -142,7 +145,9 @@ internal static class ThxAudioAdmission
                 null);
         }
 
-        if (install.RebootRequired && !HasRunningService(profile.ServiceName))
+        var running = await EnsureServiceRunningAsync(profile.ServiceName, cancellationToken)
+            .ConfigureAwait(false);
+        if (install.RebootRequired)
         {
             return new ThxAudioStatus(
                 ThxAudioAvailability.ComponentsUnavailable,
@@ -150,14 +155,18 @@ internal static class ThxAudioAdmission
                 null,
                 RebootRequired: true);
         }
-
-        for (var attempt = 0; attempt < 40; attempt++)
+        if (!running)
         {
-            if (HasRunningService(profile.ServiceName))
-            {
-                break;
-            }
-            await Task.Delay(500, cancellationToken).ConfigureAwait(false);
+            return HasService(profile.ServiceName)
+                ? new ThxAudioStatus(
+                    ThxAudioAvailability.ComponentsUnavailable,
+                    "ThxRebootRequired",
+                    null,
+                    RebootRequired: true)
+                : new ThxAudioStatus(
+                    ThxAudioAvailability.ComponentsUnavailable,
+                    "ThxServiceMissing",
+                    null);
         }
         return Check().Status;
     }
@@ -356,6 +365,46 @@ internal static class ThxAudioAdmission
     }
 
     /// <summary>
+    /// Starts a registered THX service without requiring a reboot. The app runs
+    /// asInvoker, so the direct SCM call is tried first and the machine-wide
+    /// service host is the fallback that supplies elevation.
+    /// </summary>
+    internal static async Task<bool> EnsureServiceRunningAsync(
+        string serviceName,
+        CancellationToken cancellationToken = default)
+    {
+        if (HasRunningService(serviceName))
+        {
+            return true;
+        }
+
+        _ = WindowsServiceControl.TryStart(serviceName, out _);
+        if (HasRunningService(serviceName))
+        {
+            return true;
+        }
+
+        if (await OpenSynapseServiceClient
+                .TryStartDriverServiceAsync(serviceName, cancellationToken)
+                .ConfigureAwait(false) &&
+            HasRunningService(serviceName))
+        {
+            return true;
+        }
+
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            await Task.Delay(250, cancellationToken).ConfigureAwait(false);
+            if (HasRunningService(serviceName))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// The service is registered even when it is still stopped, which is the
     /// normal state between a silent install and the next reboot.
     /// </summary>
@@ -381,6 +430,9 @@ internal static class ThxAudioAdmission
             NativeMethods.CloseServiceHandle(manager);
         }
     }
+
+    internal static bool HasRegisteredHostService() =>
+        FindHostProfile() is { } profile && HasService(profile.ServiceName);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct ServiceStatusProcess

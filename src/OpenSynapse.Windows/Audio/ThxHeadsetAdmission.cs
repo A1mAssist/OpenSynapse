@@ -186,39 +186,57 @@ internal static class ThxHeadsetAdmission
             var install = await ThxComponentInstaller.InstallAsync(
                 installer,
                 cancellationToken,
-                repair: ThxAudioAdmission.HasService(ServiceName)).ConfigureAwait(false);
+                repair: ThxAudioAdmission.HasService(ServiceName),
+                startService: ServiceName).ConfigureAwait(false);
             if (install.Error is not null)
             {
                 return new(ThxHeadsetAvailability.ServiceMissing, install.Error);
             }
 
-            if (install.RebootRequired &&
-                !ThxAudioAdmission.HasRunningService(ServiceName))
-            {
-                return new(
-                    ThxHeadsetAvailability.ServiceMissing,
-                    "ThxRebootRequired",
-                    RebootRequired: true);
-            }
-
-            if (!await WaitForServiceAsync(cancellationToken).ConfigureAwait(false))
-            {
-                // A freshly installed service often stays stopped until the next
-                // boot; report that instead of asking for the installer again.
-                if (ThxAudioAdmission.HasService(ServiceName))
-                {
-                    return new(
-                        ThxHeadsetAvailability.ServiceMissing,
-                        "ThxRebootRequired",
-                        RebootRequired: true);
-                }
-                return new(
-                    ThxHeadsetAvailability.ServiceMissing,
-                    "ThxServiceMissing");
-            }
+            // The native DLL is a plain file. Stage it even when the service still
+            // needs a reboot, so one click never leaves a second install step.
+            var nativeError = await InstallNativeFileAsync(profile, cancellationToken)
+                .ConfigureAwait(false);
+            var running = await ThxAudioAdmission
+                .EnsureServiceRunningAsync(ServiceName, cancellationToken)
+                .ConfigureAwait(false);
+            return CombineInstallResult(
+                install.RebootRequired,
+                nativeError,
+                running,
+                ThxAudioAdmission.HasService(ServiceName));
         }
 
         return await InstallNativeComponentAsync(productId, cancellationToken).ConfigureAwait(false);
+    }
+
+    internal static ThxHeadsetStatus CombineInstallResult(
+        bool rebootRequired,
+        string? nativeError,
+        bool serviceRunning,
+        bool serviceRegistered)
+    {
+        if (nativeError is not null)
+        {
+            return new(ThxHeadsetAvailability.NativeMissing, nativeError);
+        }
+        if (rebootRequired)
+        {
+            return new(
+                ThxHeadsetAvailability.ServiceMissing,
+                "ThxRebootRequired",
+                RebootRequired: true);
+        }
+        if (serviceRunning)
+        {
+            return new(ThxHeadsetAvailability.Available, null);
+        }
+        return serviceRegistered
+            ? new(
+                ThxHeadsetAvailability.ServiceMissing,
+                "ThxRebootRequired",
+                RebootRequired: true)
+            : new(ThxHeadsetAvailability.ServiceMissing, "ThxServiceMissing");
     }
 
     internal static async Task<ThxHeadsetStatus> InstallNativeComponentAsync(
@@ -230,9 +248,20 @@ internal static class ThxHeadsetAdmission
         {
             return new(ThxHeadsetAvailability.UnsupportedDevice, "ThxHeadsetUnsupported");
         }
+
+        var error = await InstallNativeFileAsync(profile, cancellationToken).ConfigureAwait(false);
+        return error is null
+            ? Check(productId)
+            : new(ThxHeadsetAvailability.NativeMissing, error);
+    }
+
+    private static async Task<string?> InstallNativeFileAsync(
+        ThxHeadsetProfile profile,
+        CancellationToken cancellationToken)
+    {
         if (HasVerifiedNativeClient(profile))
         {
-            return Check(productId);
+            return null;
         }
 
         var destination = NativeDllPath(profile);
@@ -253,7 +282,7 @@ internal static class ThxHeadsetAdmission
             if (response.Content.Headers.ContentLength is { } declaredLength &&
                 declaredLength != profile.NativeDllLength)
             {
-                return new(ThxHeadsetAvailability.NativeMissing, "ThxDownloadVerificationFailed");
+                return "ThxDownloadVerificationFailed";
             }
 
             await using (var source = await response.Content
@@ -271,7 +300,7 @@ internal static class ThxHeadsetAdmission
 
             if (new FileInfo(temporary).Length != profile.NativeDllLength)
             {
-                return new(ThxHeadsetAvailability.NativeMissing, "ThxDownloadVerificationFailed");
+                return "ThxDownloadVerificationFailed";
             }
 
             using (var stream = new FileStream(temporary, FileMode.Open, FileAccess.Read, FileShare.Read))
@@ -281,22 +310,22 @@ internal static class ThxHeadsetAdmission
                         profile.NativeDllSha256,
                         StringComparison.OrdinalIgnoreCase))
                 {
-                    return new(ThxHeadsetAvailability.NativeMissing, "ThxDownloadVerificationFailed");
+                    return "ThxDownloadVerificationFailed";
                 }
             }
 
             Directory.CreateDirectory(directory);
             File.Move(temporary, destination, overwrite: true);
-            return Check(productId);
+            return null;
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return new(ThxHeadsetAvailability.NativeMissing, "ThxDownloadFailed");
+            return "ThxDownloadFailed";
         }
         catch (Exception exception) when (
             exception is HttpRequestException or IOException or UnauthorizedAccessException)
         {
-            return new(ThxHeadsetAvailability.NativeMissing, "ThxDownloadFailed");
+            return "ThxDownloadFailed";
         }
         finally
         {
@@ -308,20 +337,6 @@ internal static class ThxHeadsetAdmission
             {
             }
         }
-    }
-
-    private static async Task<bool> WaitForServiceAsync(CancellationToken cancellationToken)
-    {
-        for (var attempt = 0; attempt < 40; attempt++)
-        {
-            if (ThxAudioAdmission.HasRunningService(ServiceName))
-            {
-                return true;
-            }
-            await Task.Delay(500, cancellationToken).ConfigureAwait(false);
-        }
-
-        return false;
     }
 
     private static IReadOnlyDictionary<ushort, ThxHeadsetProfile> BuildProfiles()

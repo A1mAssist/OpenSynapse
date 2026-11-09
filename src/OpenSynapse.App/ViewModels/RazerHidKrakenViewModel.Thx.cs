@@ -40,12 +40,13 @@ public sealed partial class RazerHidKrakenViewModel
         };
 
     public Visibility ThxInstallerVisibility =>
-        ThxStatus.Availability == ThxHeadsetAvailability.Available
+        ThxStatus.Availability == ThxHeadsetAvailability.Available || ThxStatus.RebootRequired
             ? Visibility.Collapsed
             : ThxVisibility;
 
     public bool CanInstallThx =>
-        !_thxBusy && ThxStatus.Availability != ThxHeadsetAvailability.Available;
+        !_thxBusy && ThxStatus.Availability != ThxHeadsetAvailability.Available &&
+        !ThxStatus.RebootRequired;
 
     public string ThxGameProfilesUri =>
         ThxHeadsetAdmission.GetProfile(Connection.ProductId)?.GameProfilesUri ?? string.Empty;

@@ -40,13 +40,19 @@ public static class OpenSynapseServiceProtocol
     public const string ApplyUpdateOperation = "apply-update";
 
     /// <summary>
-    /// The only driver service the privileged host will start. The name is fixed
-    /// here so a local caller cannot turn the service into a generic service launcher.
+    /// The services the privileged host will start. They are fixed here so a local
+    /// caller cannot turn the service into a generic service launcher.
     /// </summary>
     public const string RazerCommonServiceName = "RzCommon";
+    public const string ThxServiceName = "VSSrv";
+    public const string ThxBladeServiceName11 = "thx_rznb11_service";
+    public const string ThxBladeServiceName12 = "thx_rznb12_service";
 
     public static bool IsManagedDriverService(string? name) =>
-        string.Equals(name, RazerCommonServiceName, StringComparison.Ordinal);
+        string.Equals(name, RazerCommonServiceName, StringComparison.Ordinal) ||
+        string.Equals(name, ThxServiceName, StringComparison.Ordinal) ||
+        string.Equals(name, ThxBladeServiceName11, StringComparison.Ordinal) ||
+        string.Equals(name, ThxBladeServiceName12, StringComparison.Ordinal);
 
     public const int MaximumMessageLength = 4096;
 }
