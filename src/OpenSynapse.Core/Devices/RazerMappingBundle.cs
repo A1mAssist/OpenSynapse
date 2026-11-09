@@ -60,6 +60,14 @@ public static class RazerMappingBundleParser
         """counter:\s*(?:"(?<text>[^"]*)"|(?<number>-?\d+))""",
         RegexOptions.CultureInvariant);
 
+    private static readonly Regex FwIdRegex = new(
+        """fwID:\s*(?<number>\d+)""",
+        RegexOptions.CultureInvariant);
+
+    private static readonly Regex DkmKeyRegex = new(
+        """\{inputID:"(?<input>DKM_[^"]+)"[^{}]*?[,{]key:\s*(?<number>\d+)""",
+        RegexOptions.CultureInvariant);
+
     private static readonly Regex KeyNumberRegex = new(
         """(?:^|[,{])key:\s*(?<number>\d+)""",
         RegexOptions.CultureInvariant);
@@ -106,6 +114,7 @@ public static class RazerMappingBundleParser
         var dotRadius = ReadPositive(DotRadiusRegex, canvasText) ??
             ReadPositive(DotRadiusRegex, mainJs) ?? DefaultDotRadius;
         var buttons = ParseButtons(mainJs);
+        var dkmKeyIds = ParseDkmKeyIds(mainJs);
         var keyIds = ParseKeyIds(mainJs, buttons);
         var anchors = new List<RazerMappingBundleAnchor>();
         var seenButtonIds = new HashSet<byte>();
@@ -153,7 +162,7 @@ public static class RazerMappingBundleParser
             }
 
             var button = buttons[drawLine.ButtonIndex];
-            if (button.ResolveButtonId() is not { } buttonId || !seenButtonIds.Add(buttonId))
+            if (button.ResolveButtonId(dkmKeyIds) is not { } buttonId || !seenButtonIds.Add(buttonId))
             {
                 continue;
             }
@@ -181,7 +190,7 @@ public static class RazerMappingBundleParser
             anchors,
             keyIds)
         {
-            ButtonNamesById = BuildButtonNames(buttons),
+            ButtonNamesById = BuildButtonNames(buttons, dkmKeyIds),
         };
     }
 
@@ -312,10 +321,26 @@ public static class RazerMappingBundleParser
                 MatchByte(match.Value, HidRegex),
                 MatchText(match.Value, InputIdRegex),
                 MatchText(match.Value, ButtonPosRegex),
-                MatchInt(match.Value, KeyNumberRegex)));
+                MatchInt(match.Value, KeyNumberRegex),
+                MatchInt(match.Value, FwIdRegex)));
         }
 
         return buttons;
+    }
+
+    private static Dictionary<string, byte> ParseDkmKeyIds(string text)
+    {
+        var keyIds = new Dictionary<string, byte>(StringComparer.Ordinal);
+        foreach (Match match in DkmKeyRegex.Matches(text))
+        {
+            if (byte.TryParse(match.Groups["number"].Value, NumberStyles.None, CultureInfo.InvariantCulture,
+                    out var key) && key > 0)
+            {
+                keyIds.TryAdd(match.Groups["input"].Value, key);
+            }
+        }
+
+        return keyIds;
     }
 
     private static Dictionary<string, byte> ParseKeyIds(string text, List<ButtonObject> buttons)
@@ -354,12 +379,14 @@ public static class RazerMappingBundleParser
         return keyIds;
     }
 
-    private static Dictionary<byte, string> BuildButtonNames(List<ButtonObject> buttons)
+    private static Dictionary<byte, string> BuildButtonNames(
+        List<ButtonObject> buttons,
+        IReadOnlyDictionary<string, byte> dkmKeyIds)
     {
         var names = new Dictionary<byte, string>();
         foreach (var button in buttons)
         {
-            if (button.ResolveButtonId() is not { } buttonId)
+            if (button.ResolveButtonId(dkmKeyIds) is not { } buttonId)
             {
                 continue;
             }
@@ -401,17 +428,31 @@ public static class RazerMappingBundleParser
         }
 
         if (inputId.StartsWith("DKM_M_", StringComparison.Ordinal) &&
-            int.TryParse(inputId.AsSpan(6), NumberStyles.None, CultureInfo.InvariantCulture, out var mouse) &&
-            mouse is >= 1 and <= 8)
+            int.TryParse(inputId.AsSpan(6), NumberStyles.None, CultureInfo.InvariantCulture, out var mouse))
         {
-            return (byte)(31 + mouse);
+            if (mouse is >= 1 and <= 8)
+            {
+                return (byte)(31 + mouse);
+            }
+
+            if (mouse is > 8 and <= byte.MaxValue)
+            {
+                return (byte)mouse;
+            }
         }
 
         if (inputId.StartsWith("DKM_SB_", StringComparison.Ordinal) &&
-            int.TryParse(inputId.AsSpan(7), NumberStyles.None, CultureInfo.InvariantCulture, out var side) &&
-            side is >= 1 and <= 4)
+            int.TryParse(inputId.AsSpan(7), NumberStyles.None, CultureInfo.InvariantCulture, out var side))
         {
-            return (byte)(79 + side);
+            if (side is >= 1 and <= 4)
+            {
+                return (byte)(79 + side);
+            }
+
+            if (side is > 4 and <= byte.MaxValue)
+            {
+                return (byte)side;
+            }
         }
 
         return null;
@@ -502,13 +543,26 @@ public static class RazerMappingBundleParser
         byte? Hid,
         string? InputId,
         string? ButtonPos,
-        int? KeyNumber)
+        int? KeyNumber,
+        int? FwId)
     {
-        public byte? ResolveButtonId()
+        public byte? ResolveButtonId(IReadOnlyDictionary<string, byte> dkmKeyIds)
         {
             if (StandardMouseButtonId(Key) is { } standard)
             {
                 return standard;
+            }
+
+            if (InputId is { Length: > 0 } inputId &&
+                dkmKeyIds.TryGetValue(inputId, out var explicitId) &&
+                explicitId > 0)
+            {
+                return explicitId;
+            }
+
+            if (FwId is > 0 and <= byte.MaxValue)
+            {
+                return (byte)FwId.Value;
             }
 
             if (DkmButtonId(InputId) is { } dkm)
@@ -519,12 +573,6 @@ public static class RazerMappingBundleParser
             if (KeyNumber is > 0 and <= byte.MaxValue)
             {
                 return (byte)KeyNumber.Value;
-            }
-
-            if (byte.TryParse(Counter, NumberStyles.None, CultureInfo.InvariantCulture, out var counter) &&
-                counter > 0)
-            {
-                return counter;
             }
 
             return Hid is > 0 ? Hid : null;

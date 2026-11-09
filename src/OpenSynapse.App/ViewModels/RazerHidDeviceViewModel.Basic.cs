@@ -33,6 +33,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                 _unsupported.UnionWith(state.UnsupportedCapabilities);
                 if (state.UnsupportedCapabilities.Contains(RazerHidBackendCapability.BrightnessRead))
                     _unsupportedBrightnessReads.Add(SelectedLightingZone);
+                if (state.UnsupportedCapabilities.Contains(RazerHidBackendCapability.SensorRotationRead))
+                    ClearSensorRotation();
             }
             if (state.PollingRate is { } polling) SelectedPollingRate = polling;
             if (state.DpiX is { } x) DpiX = x;

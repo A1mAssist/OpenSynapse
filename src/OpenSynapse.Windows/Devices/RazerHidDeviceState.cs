@@ -116,6 +116,8 @@ public enum RazerHidBackendCapability
     WirelessConnectionStateRead,
     ProximitySensorRead,
     ProximitySensorWrite,
+    SensorRotationRead,
+    SensorRotationWrite,
     KnobRead,
     KnobWrite,
     AnalogKeyRead,
@@ -274,4 +276,5 @@ public sealed record RazerHidBasicState(
     byte? Brightness,
     IReadOnlyDictionary<string, string> Errors,
     IReadOnlySet<RazerHidBackendCapability> UnsupportedCapabilities,
-    RazerHidIndicatorLedConfigurationV2? IndicatorLedConfigurationV2 = null);
+    RazerHidIndicatorLedConfigurationV2? IndicatorLedConfigurationV2 = null,
+    RazerHidSensorRotation? SensorRotation = null);

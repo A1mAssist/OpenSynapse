@@ -29,6 +29,11 @@ public readonly record struct RazerProximitySensorControl(
     byte Type,
     byte Stage);
 
+public readonly record struct RazerHidSensorRotation(
+    byte ProfileId,
+    bool Enabled,
+    byte Angle);
+
 /// <summary>
 /// Protocol 25 class 0x0B proximity and lift-off commands from the mouse middleware.
 /// The command tuples are get configuration [10,11,133], set configuration [10,11,5],
@@ -47,11 +52,16 @@ public static class RazerProximitySensorProtocol
     private const byte SetLiftSettingCommand = 0x0B;
     private const byte GetControlCommand = 0x89;
     private const byte SetControlCommand = 0x09;
+    private const byte GetAngleTuneCommand = 0x94;
+    private const byte SetAngleTuneCommand = 0x14;
     private const int ConfigurationSize = 10;
     private const int StateSize = 3;
     private const int ThresholdSize = 8;
     private const int LiftSettingSize = 4;
     private const int ControlSize = 4;
+    private const int AngleTuneSize = 3;
+
+    public const byte DefaultAngleTuneProfileId = 0x01;
 
     public static byte[] CreateGetProximitySensorConfigurationRequest(
         byte transactionId,
@@ -174,6 +184,28 @@ public static class RazerProximitySensorProtocol
             SetControlCommand,
             new byte[] { classId, sensorId, type, stage });
 
+    public static byte[] CreateGetSensorRotationRequest(
+        byte transactionId,
+        byte profileId = DefaultAngleTuneProfileId) =>
+        RazerFeatureReport.CreateRequest(
+            transactionId,
+            AngleTuneSize,
+            CommandClass,
+            GetAngleTuneCommand,
+            new byte[] { profileId, 0x00, 0x00 });
+
+    public static byte[] CreateSetSensorRotationRequest(
+        byte transactionId,
+        bool enabled,
+        byte angle,
+        byte profileId = DefaultAngleTuneProfileId) =>
+        RazerFeatureReport.CreateRequest(
+            transactionId,
+            AngleTuneSize,
+            CommandClass,
+            SetAngleTuneCommand,
+            new byte[] { profileId, enabled ? (byte)0x01 : (byte)0x00, angle });
+
     public static RazerProximitySensorConfiguration ParseConfiguration(
         ReadOnlySpan<byte> response,
         ReadOnlySpan<byte> request)
@@ -228,6 +260,17 @@ public static class RazerProximitySensorProtocol
             arguments[1],
             arguments[2],
             arguments[3]);
+    }
+
+    public static RazerHidSensorRotation ParseSensorRotation(
+        ReadOnlySpan<byte> response,
+        ReadOnlySpan<byte> request)
+    {
+        var arguments = Payload(response, request, AngleTuneSize);
+        return new RazerHidSensorRotation(
+            arguments[0],
+            arguments[1] != 0,
+            arguments[2]);
     }
 
     private static ushort ReadBigEndianUInt16(ReadOnlySpan<byte> source, int offset) =>
