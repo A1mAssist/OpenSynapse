@@ -11,7 +11,7 @@
 | Velopack 更新包 | 保持 `vpk` 生成的 `OpenSynapse-<version>-full.nupkg` |
 | Velopack 清单 | 保持 `RELEASES`、`releases.win.json`、`assets.win.json` |
 
-当前用户安装包单独上传：`OpenSynapse-<version>-win-AutoUpdate-PerUser.exe`。它不放进上面的推荐安装列表；普通安装不要下载，只有明确需要当前用户安装时才用它。MSI 同样支持应用内更新，安装时会请求一次管理员权限。
+当前用户安装包单独上传：`OpenSynapse-<version>-win-AutoUpdate-PerUser.exe`。它不放进上面的推荐安装列表；普通安装不要下载，只有明确需要当前用户安装时才用它。MSI 同样支持应用内更新，更新由安装时注册的 OpenSynapse 服务执行，不再请求管理员权限。
 
 `<version>` 使用不带 `v` 的包版本，例如 `1.6.1`。改名后的安装包和原文件大小、SHA-256 必须一致。
 
