@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Macros;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Protocols;
@@ -20,6 +21,9 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
     private readonly Func<DeviceRowViewModel?> _deviceRow;
     private readonly Func<string, Func<Task>, CancellationToken, Action?, string?, string?, Task> _runDeviceOperation;
     private readonly Action<DeviceBatteryReading> _notifyBatteryObserved;
+    private readonly Func<IReadOnlyList<MacroDefinition>>? _localMacros;
+    private readonly Func<string, MacroInput, MacroTriggerMode, CancellationToken, Task<string?>>?
+        _softwareMacroBinder;
     private string _deviceName = "Razer Viper V3 HyperSpeed";
     private Visibility _deviceVisibility = Visibility.Collapsed;
     private string _statusText = AppStrings.Text("Text_DB0974DC");
@@ -63,7 +67,10 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
         Func<PowerSourceKind> currentPowerSource,
         Func<DeviceRowViewModel?> deviceRow,
         Func<string, Func<Task>, CancellationToken, Action?, string?, string?, Task> runDeviceOperation,
-        Action<DeviceBatteryReading> notifyBatteryObserved)
+        Action<DeviceBatteryReading> notifyBatteryObserved,
+        Func<IReadOnlyList<MacroDefinition>>? localMacros = null,
+        Func<string, MacroInput, MacroTriggerMode, CancellationToken, Task<string?>>?
+            softwareMacroBinder = null)
     {
         _deviceTelemetryReader = deviceTelemetryReader;
         _getProfile = getProfile;
@@ -74,6 +81,8 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
         _deviceRow = deviceRow;
         _runDeviceOperation = runDeviceOperation;
         _notifyBatteryObserved = notifyBatteryObserved;
+        _localMacros = localMacros;
+        _softwareMacroBinder = softwareMacroBinder;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -125,6 +134,11 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
             actionCatalog: RazerViperMappingActionCatalog.Instance,
             productId: 0x00B8,
             deviceKind: RazerMappingDeviceKind.Mouse,
+            localMacros: _localMacros,
+            softwareTriggerResolver: buttonId => buttonId is 4 or 5
+                ? new MacroInput { Kind = MacroInputKind.MouseButton, MouseButton = buttonId }
+                : null,
+            softwareTriggerBinder: _softwareMacroBinder,
             afterApplyAsync: PersistMappingProfileAsync);
 
     public async Task ApplyLowBatteryThresholdAsync(CancellationToken cancellationToken = default)
