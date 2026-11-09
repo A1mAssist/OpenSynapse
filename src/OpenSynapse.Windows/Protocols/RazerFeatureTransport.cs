@@ -390,7 +390,10 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
             {
                 // The firmware answers a successful command without echoing the payload, so
                 // the response arguments are the only evidence of what it actually stored.
-                diagnostic?.Invoke($"attempt {attempt}: success, status=0x02, {DescribeResponseArguments(response)}");
+                if (LocalDiagnosticLog.TraceSuccessfulHidRequests)
+                {
+                    diagnostic?.Invoke($"attempt {attempt}: success, status=0x02, {DescribeResponseArguments(response)}");
+                }
                 return response;
             }
             else if (response[1] == 0x01)
@@ -407,7 +410,10 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
                 else
                 {
                     // RazerHid treats BUSY as an accepted command for writes.
-                    diagnostic?.Invoke($"attempt {attempt}: accepted, status=0x01 (busy)");
+                    if (LocalDiagnosticLog.TraceSuccessfulHidRequests)
+                    {
+                        diagnostic?.Invoke($"attempt {attempt}: accepted, status=0x01 (busy)");
+                    }
                     return response;
                 }
             }

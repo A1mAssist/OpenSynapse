@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
@@ -14,15 +15,26 @@ internal sealed class RazerHidRequestExecutor
     private readonly IRazerFeatureTransport _transport;
     private readonly ConcurrentDictionary<string, string> _endpointCache;
     private readonly Action<ushort, string> _diagnostic;
+    private readonly bool _traceSuccessfulSends;
 
     public RazerHidRequestExecutor(
         IRazerFeatureTransport transport,
         ConcurrentDictionary<string, string> endpointCache,
         Action<ushort, string> diagnostic)
+        : this(transport, endpointCache, diagnostic, traceSuccessfulSends: null)
+    {
+    }
+
+    internal RazerHidRequestExecutor(
+        IRazerFeatureTransport transport,
+        ConcurrentDictionary<string, string> endpointCache,
+        Action<ushort, string> diagnostic,
+        bool? traceSuccessfulSends)
     {
         _transport = transport;
         _endpointCache = endpointCache;
         _diagnostic = diagnostic;
+        _traceSuccessfulSends = traceSuccessfulSends ?? LocalDiagnosticLog.TraceSuccessfulHidRequests;
     }
 
     public async Task<byte[]> ExecuteAsync(
@@ -32,10 +44,13 @@ internal sealed class RazerHidRequestExecutor
     {
         RequireReady(connection);
         // The transport log only records a request once it reaches the HID layer, so a
-        // command dropped before that point would be invisible. Record the application
-        // side as well to tell "never sent" apart from "sent and refused".
-        _diagnostic(connection.Definition.ProductId,
-            $"send {request.BuilderName}: txn=0x{request.Report[2]:X2}, size={request.Report[6]}, class=0x{request.Report[7]:X2}, command=0x{request.Report[8]:X2}, args={Convert.ToHexString(request.Report.AsSpan(RazerFeatureReport.ArgumentsOffset, request.Report[6]))}");
+        // command dropped before that point would be invisible. This application-side
+        // trace is opt-in: at 60 Hz it would append to disk for every frame row.
+        if (_traceSuccessfulSends)
+        {
+            _diagnostic(connection.Definition.ProductId,
+                $"send {request.BuilderName}: txn=0x{request.Report[2]:X2}, size={request.Report[6]}, class=0x{request.Report[7]:X2}, command=0x{request.Report[8]:X2}, args={Convert.ToHexString(request.Report.AsSpan(RazerFeatureReport.ArgumentsOffset, request.Report[6]))}");
+        }
         try
         {
             return await _transport.QueryPreparedAsync(

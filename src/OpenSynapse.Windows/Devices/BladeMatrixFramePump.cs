@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.ExceptionServices;
+using System.Runtime.InteropServices;
 using System.Threading.Channels;
 using OpenSynapse.Windows.Protocols;
 
@@ -24,6 +25,7 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
     private readonly int _matrixRows;
     private readonly int _matrixColumns;
     private readonly TimeSpan _identicalFrameKeepAlive;
+    private readonly bool _raiseTimerResolution;
     private readonly Channel<RazerRgb[]> _frames = Channel.CreateBounded<RazerRgb[]>(
         new BoundedChannelOptions(1)
         {
@@ -49,7 +51,8 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         int matrixRows = BladeLightingProtocol.Rows,
         int matrixColumns = BladeLightingProtocol.Columns,
         Func<IReadOnlyList<RazerRgb>, int, int, byte[][]>? createFrameRequests = null,
-        TimeSpan? identicalFrameKeepAlive = null)
+        TimeSpan? identicalFrameKeepAlive = null,
+        bool raiseTimerResolution = true)
     {
         ArgumentNullException.ThrowIfNull(transport);
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
@@ -66,6 +69,7 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         _matrixRows = matrixRows;
         _matrixColumns = matrixColumns;
         _identicalFrameKeepAlive = identicalFrameKeepAlive ?? IdenticalFrameKeepAlive;
+        _raiseTimerResolution = raiseTimerResolution;
         if (_identicalFrameKeepAlive < TimeSpan.Zero)
         {
             throw new ArgumentOutOfRangeException(nameof(identicalFrameKeepAlive));
@@ -129,6 +133,24 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
     }
 
     private async Task RunAsync()
+    {
+        var timerResolutionRaised = false;
+        try
+        {
+            if (_raiseTimerResolution)
+            {
+                timerResolutionRaised = BeginTimerResolution();
+            }
+
+            await RunCoreAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            if (timerResolutionRaised) EndTimerResolution();
+        }
+    }
+
+    private async Task RunCoreAsync()
     {
         Exception? failure = null;
         var restoreRequired = false;
@@ -248,19 +270,13 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
             ScaleFrame(frame),
             _matrixRows,
             _matrixColumns);
-        // Every row write is answered by the EC. Sending the batch without reading
-        // those replies leaves them queued, and the next telemetry query decodes the
-        // stale 03:0B frame instead of its own response. Consume each ack before the
-        // next row so the single feature-report queue stays in step.
+        // Every row write is answered by the EC. The transport consumes that ack and
+        // waits for the device before returning, so the pump must not add a second wait.
         if (session is null)
         {
             foreach (var request in requests)
             {
                 await QueryAsync(_transport, _devicePath, request, cancellationToken).ConfigureAwait(false);
-                if (DeviceWait > TimeSpan.Zero)
-                {
-                    await Task.Delay(DeviceWait, cancellationToken).ConfigureAwait(false);
-                }
             }
             return;
         }
@@ -268,10 +284,6 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         foreach (var request in requests)
         {
             await QueryAsync(session, request, cancellationToken).ConfigureAwait(false);
-            if (DeviceWait > TimeSpan.Zero)
-            {
-                await Task.Delay(DeviceWait, cancellationToken).ConfigureAwait(false);
-            }
         }
     }
 
@@ -348,4 +360,35 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
             return null;
         }
     }
+
+    private const uint TimerResolutionMilliseconds = 1;
+
+    private static bool BeginTimerResolution()
+    {
+        try
+        {
+            return TimeBeginPeriod(TimerResolutionMilliseconds) == 0;
+        }
+        catch (Exception exception) when (exception is DllNotFoundException or EntryPointNotFoundException)
+        {
+            return false;
+        }
+    }
+
+    private static void EndTimerResolution()
+    {
+        try
+        {
+            _ = TimeEndPeriod(TimerResolutionMilliseconds);
+        }
+        catch (Exception exception) when (exception is DllNotFoundException or EntryPointNotFoundException)
+        {
+        }
+    }
+
+    [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod")]
+    private static extern uint TimeBeginPeriod(uint period);
+
+    [DllImport("winmm.dll", EntryPoint = "timeEndPeriod")]
+    private static extern uint TimeEndPeriod(uint period);
 }
