@@ -412,7 +412,8 @@ public sealed class RazerHidSpecialLightingService
             var created = new RazerMxicHeadsetTransport(
                 devicePath,
                 RazerHidKrakenV4Protocol.ReportLength,
-                useSetOutputReport: true);
+                useSetOutputReport: true,
+                useControlStatusReport: false);
             if (_krakenV4Transports.TryAdd(devicePath, created))
             {
                 transport = created;

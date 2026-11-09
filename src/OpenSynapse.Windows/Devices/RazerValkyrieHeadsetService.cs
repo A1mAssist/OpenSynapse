@@ -23,6 +23,8 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
     private readonly HeadsetProfile _profile;
     private readonly byte _direction;
     private readonly bool _eqBandsWithProfile;
+    private readonly bool _usesRollingTransaction;
+    private int _transactionCounter;
 
     public RazerValkyrieHeadsetService(
         ushort productId,
@@ -43,6 +45,7 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
             ? (byte)0x80
             : (byte)0x00;
         _eqBandsWithProfile = UsesProfilePrefixedEqBands(productId);
+        _usesRollingTransaction = _profile == HeadsetProfile.OdessaT2Wireless;
         _diagnostic = diagnostic;
     }
 
@@ -284,9 +287,22 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
         string label,
         CancellationToken cancellationToken)
     {
+        // AudioOdessaT2Wireless advances 1..31 on top of 0x60; every other profile
+        // keeps the bundle's fixed 0x60 transaction.
+        var transactionId = _usesRollingTransaction
+            ? (byte)(0x61 + _transactionCounter)
+            : RazerValkyrieHeadsetProtocol.TransactionId;
+        if (_usesRollingTransaction)
+        {
+            _transactionCounter = (_transactionCounter + 1) % 31;
+            report[2] = transactionId;
+        }
         if (_direction != 0)
         {
             report[9] = _direction;
+        }
+        if (_usesRollingTransaction || _direction != 0)
+        {
             report[62] = RazerValkyrieHeadsetProtocol.Checksum(report);
         }
 
@@ -297,7 +313,7 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
             var response = await _transport.QueryAsync(
                 report,
                 candidate => RazerValkyrieHeadsetProtocol.TryReadResponse(
-                    candidate, expectedHeader, out _, out _),
+                    candidate, expectedHeader, transactionId, out _, out _),
                 cancellationToken).ConfigureAwait(false);
             if (response is null)
             {
@@ -305,7 +321,7 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
             }
 
             if (!RazerValkyrieHeadsetProtocol.TryReadResponse(
-                response, expectedHeader, out var status, out var data))
+                response, expectedHeader, transactionId, out var status, out var data))
             {
                 throw new InvalidDataException(
                     $"AudioValkyrie {label} response did not match the request.");

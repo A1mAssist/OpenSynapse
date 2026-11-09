@@ -51,14 +51,13 @@ internal sealed class BlackSharkHeadsetTransport : IAsyncDisposable
             {
             }
 
-            await Task.Run(() =>
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (!NativeMethods.HidD_SetOutputReport(_stream.SafeFileHandle, report, report.Length))
-                {
-                    throw new Win32Exception(Marshal.GetLastWin32Error(), "BlackShark HID output report failed.");
-                }
-            }, cancellationToken).ConfigureAwait(false);
+            // AudioValkyrie uses hid.write for this 64-byte channel. Keep the write on
+            // the vendor OUT endpoint; HidD_SetOutputReport does not reach it reliably.
+            await RandomAccess.WriteAsync(
+                _stream.SafeFileHandle,
+                report.AsMemory(),
+                fileOffset: 0,
+                cancellationToken).ConfigureAwait(false);
 
             if (!expectResponse)
             {
@@ -109,7 +108,8 @@ internal sealed class BlackSharkHeadsetTransport : IAsyncDisposable
                     break;
                 }
 
-                _reports.Writer.TryWrite(buffer[..read]);
+                // The next ReadAsync overwrites this buffer, so hand the consumer a copy.
+                _reports.Writer.TryWrite(buffer[..read].ToArray());
             }
         }
         catch (Exception) when (_disposed)
@@ -173,11 +173,5 @@ internal sealed class BlackSharkHeadsetTransport : IAsyncDisposable
             uint flagsAndAttributes,
             IntPtr templateFile);
 
-        [DllImport("hid.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool HidD_SetOutputReport(
-            SafeFileHandle handle,
-            byte[] reportBuffer,
-            int reportBufferLength);
     }
 }

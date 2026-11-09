@@ -43,8 +43,17 @@ $channelByDeviceType = @{
     AudioBillieT1 = 'Billie64'
     AudioBillieT2 = 'Billie64'
     AudioBastetT1 = 'Billie64'
+    AudioOdessaT2Wireless = 'Billie64'
+    AudioOdessaT2WirelessUSB = 'Billie64'
     AudioMixer = 'Mixer053E'
     rzDevice40HeadsetAiroha = 'Mxic64'
+    AudioKrakenTE = 'KrakenBase37'
+    AudioKrakenKitty = 'KrakenBase37'
+    AudioKrakenXUSB = 'KrakenBase37'
+    AudioKrakenUltimate = 'KrakenBase37'
+    AudioKrakenOdessaT2 = 'KrakenBase37'
+    AudioKittyV2Pro = 'KrakenBase37'
+    AudioKrakenKittyT3 = 'KrakenBase37'
 }
 $dedicatedBlackSharkPids = @('0576', '0577', '101B', '101C')
 

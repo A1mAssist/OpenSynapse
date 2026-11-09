@@ -3,7 +3,8 @@ using System.Collections.Frozen;
 namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
-/// Razer's MXIC audio channel, used by the 2023 BlackShark V2 Pro (1532:0555).
+/// Razer's MXIC audio channel, used by the 2023 BlackShark V2 Pro (1532:0555)
+/// and the Barracuda Pro identities (0539/053B, report id 1 / short envelope).
 /// Requests are 64-byte output reports with a 50 41 sync word and a little-endian
 /// payload length. Responses use 50 49 sync words and may carry several sub-responses.
 /// </summary>
@@ -11,6 +12,12 @@ public static class RazerMxicHeadsetProtocol
 {
     public const ushort ProductId = 0x0555;
     public const byte ReportId = 2;
+    /// <summary>
+    /// Mabel T1 (0539/053B) drops the two zero bytes before the 50 41 sync word and
+    /// sends report id 1, so its command starts at 8 instead of 10. Its response
+    /// scanner already tolerates the extra length byte, so only the request changes.
+    /// </summary>
+    public const byte MabelT1ReportId = 1;
     public const int ReportLength = 64;
     public const byte StatusOk = 0x4F;
     public const byte RazerCommand = 8;
@@ -67,6 +74,14 @@ public static class RazerMxicHeadsetProtocol
     }.ToFrozenSet();
 
     public static bool IsSupported(ushort productId) => ProductIds.Contains(productId);
+
+    private static readonly FrozenSet<ushort> MabelT1ProductIds = new ushort[]
+    {
+        0x0539,
+        0x053B,
+    }.ToFrozenSet();
+
+    public static bool UsesMabelT1(ushort productId) => MabelT1ProductIds.Contains(productId);
 
     /// <summary>
     /// The Hammerhead V3 dongles select the rzDevice40 audio chunk. Its command tuple is
@@ -198,21 +213,21 @@ public static class RazerMxicHeadsetProtocol
         return Create(reportId, RazerCommand, command, data);
     }
 
-    public static byte[] CreateSetEqPreset(byte preset) =>
-        CreateRequest(SetEqPresetCommand, [preset]);
+    public static byte[] CreateSetEqPreset(byte preset, byte reportId = ReportId) =>
+        CreateRequest(SetEqPresetCommand, [preset], reportId);
 
-    public static byte[] CreateSetEqBands(ReadOnlySpan<byte> bands)
+    public static byte[] CreateSetEqBands(ReadOnlySpan<byte> bands, byte reportId = ReportId)
     {
         if (bands.Length != TenBandCount)
         {
             throw new ArgumentException("Equalizer data must contain 10 bands.", nameof(bands));
         }
 
-        return CreateRequest(SetEqBandsCommand, bands);
+        return CreateRequest(SetEqBandsCommand, bands, reportId);
     }
 
-    public static byte[] CreateSetMicMute(bool muted) =>
-        CreateRequest(SetMicMuteCommand, [muted ? (byte)1 : (byte)0]);
+    public static byte[] CreateSetMicMute(bool muted, byte reportId = ReportId) =>
+        CreateRequest(SetMicMuteCommand, [muted ? (byte)1 : (byte)0], reportId);
 
     public static bool TryReadValue(
         ReadOnlySpan<byte> report,
@@ -320,12 +335,25 @@ public static class RazerMxicHeadsetProtocol
         report[0] = reportId;
         report[1] = 0x80;
         report[2] = (byte)(total + 5);
-        report[5] = 0x50;
-        report[6] = 0x41;
-        report[7] = commandType;
-        report[9] = (byte)total;
-        command.CopyTo(report.AsSpan(10));
-        data.CopyTo(report.AsSpan(10 + command.Length));
+        var offset = 10;
+        if (reportId == MabelT1ReportId)
+        {
+            report[3] = 0x50;
+            report[4] = 0x41;
+            report[5] = commandType;
+            report[6] = 8;
+            report[7] = (byte)total;
+            offset = 8;
+        }
+        else
+        {
+            report[5] = 0x50;
+            report[6] = 0x41;
+            report[7] = commandType;
+            report[9] = (byte)total;
+        }
+        command.CopyTo(report.AsSpan(offset));
+        data.CopyTo(report.AsSpan(offset + command.Length));
         return report;
     }
 

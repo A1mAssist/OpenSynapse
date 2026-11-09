@@ -5,16 +5,16 @@ namespace OpenSynapse.Windows.Protocols;
 /// <c>rzDevice25</c> thermal class.
 ///
 /// This is deliberately separate from the 0F3C Razer PWM PC Fan Controller,
-/// which uses the <c>rzDevice25PWMPCFanController</c> 16-bit layout.
+/// which exposes its own fan-info and max-speed commands.
 /// <list type="bullet">
-/// <item>set speed: class 0x0D, command 0x01, dataSize 3,
-/// arguments <c>[classId, thermalId, speed]</c></item>
-/// <item>get speed: class 0x0D, command 0x81, dataSize 3,
+/// <item>set speed: class 0x0D, command 0x01, dataSize 6,
+/// arguments <c>[classId, thermalId, speedHi, speedLo]</c></item>
+/// <item>get speed: class 0x0D, command 0x81, dataSize 6,
 /// arguments <c>[classId, thermalId]</c></item>
 /// <item>fan information: class 0x0D, command 0x83, dataSize 12,
 /// arguments <c>[classId]</c></item>
 /// </list>
-/// The speed byte is an 8-bit protocol unit; one unit is 50 RPM.
+/// The speed is a big-endian 16-bit RPM value, as in rzDevice25FiverV2.
 /// The fan-information pairs are big-endian 16-bit values.
 /// </summary>
 public static partial class RazerCoolingPadProtocol
@@ -60,8 +60,8 @@ public static partial class RazerCoolingPadProtocol
     private const byte GetCoolingModeCommandId = 0x90;
     private const byte CoolingModeSourceFirmware = 0x00;
     private const byte CoolingModeSourceSynapse = 0x01;
-    private const byte SetSpeedDataSize = 0x03;
-    private const byte GetSpeedDataSize = 0x03;
+    private const byte SetSpeedDataSize = 0x06;
+    private const byte GetSpeedDataSize = 0x06;
     private const byte GetFanInformationDataSize = 0x0C;
     private const byte CoolingModeDataSize = 0x03;
 
@@ -75,13 +75,8 @@ public static partial class RazerCoolingPadProtocol
 
     public static byte[] CreateSetSpeedRequest(int rpm)
     {
-        var units = ToUnits(rpm);
-        return RazerFeatureReport.CreateRequest(
-            TransactionId,
-            SetSpeedDataSize,
-            CommandClass,
-            SetSpeedCommandId,
-            new[] { ClassId, ThermalId, (byte)units });
+        _ = ToUnits(rpm); // range and 50-RPM step validation
+        return CreateSpeedRequest(rpm);
     }
 
     /// <summary>
@@ -99,13 +94,16 @@ public static partial class RazerCoolingPadProtocol
                 $"Cooling pad curve speed must be {MinimumCurveRpm}..{MaximumCurveRpm} RPM in {RpmPerUnit} RPM steps.");
         }
 
-        return RazerFeatureReport.CreateRequest(
+        return CreateSpeedRequest(rpm);
+    }
+
+    private static byte[] CreateSpeedRequest(int rpm) =>
+        RazerFeatureReport.CreateRequest(
             TransactionId,
             SetSpeedDataSize,
             CommandClass,
             SetSpeedCommandId,
-            new[] { ClassId, ThermalId, (byte)(rpm / RpmPerUnit) });
-    }
+            new[] { ClassId, ThermalId, (byte)(rpm >> 8), (byte)rpm });
 
     public static byte[] CreateGetFanInformationRequest() =>
         RazerFeatureReport.CreateRequest(
@@ -192,12 +190,11 @@ public static partial class RazerCoolingPadProtocol
     }
 
     /// <summary>
-    /// Reads the fan speed byte at data[2]. Unlike 0F3C, this is one byte,
-    /// not a big-endian 16-bit value.
+    /// Reads the fan speed as a big-endian 16-bit value at data[2..3].
     /// </summary>
     public static int ParseSpeedRpm(ReadOnlySpan<byte> response)
     {
-        ValidateResponse(response, CreateGetSpeedRequest(), expectedArguments: 3);
+        ValidateResponse(response, CreateGetSpeedRequest(), expectedArguments: 4);
         var arguments = response[RazerFeatureReport.ArgumentsOffset..];
         if (arguments[0] != ClassId || arguments[1] != ThermalId)
         {
@@ -205,7 +202,7 @@ public static partial class RazerCoolingPadProtocol
                 "Cooling pad returned an unexpected thermal object; expected class 1, Fan1 (thermal id 5).");
         }
 
-        return FromUnits(arguments[2]);
+        return ReadBigEndianUInt16(arguments, 2);
     }
 
     /// <summary>
@@ -249,17 +246,6 @@ public static partial class RazerCoolingPadProtocol
         }
 
         return units;
-    }
-
-    private static int FromUnits(int units)
-    {
-        if (units is < 0 or > byte.MaxValue)
-        {
-            throw new InvalidOperationException(
-                $"Cooling pad reported an invalid 8-bit speed unit ({units}).");
-        }
-
-        return units * RpmPerUnit;
     }
 
     private static int ReadBigEndianUInt16(ReadOnlySpan<byte> source, int offset) =>

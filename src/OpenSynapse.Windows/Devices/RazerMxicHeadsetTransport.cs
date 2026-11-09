@@ -28,16 +28,19 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
     private readonly Task _readLoop;
     private readonly int _inputReportLength;
     private readonly bool _useSetOutputReport;
+    private readonly bool _useControlStatusReport;
     private bool _disposed;
 
     internal RazerMxicHeadsetTransport(
         string devicePath,
         int inputReportLength,
-        bool useSetOutputReport = false)
+        bool useSetOutputReport = false,
+        bool useControlStatusReport = true)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
         _inputReportLength = Math.Max(inputReportLength, RazerMxicHeadsetProtocol.ReportLength);
         _useSetOutputReport = useSetOutputReport;
+        _useControlStatusReport = useControlStatusReport;
         var handle = NativeMethods.CreateFile(
             devicePath,
             NativeMethods.GenericRead | NativeMethods.GenericWrite,
@@ -99,7 +102,7 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
                 return null;
             }
 
-            if (expectedHeader is not null)
+            if (expectedHeader is not null && _useControlStatusReport)
             {
                 var control = await ReadControlReportAsync(
                     report,
@@ -265,7 +268,8 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
                     break;
                 }
 
-                _reports.Writer.TryWrite(buffer[..read]);
+                // The next ReadAsync overwrites this buffer, so hand the consumer a copy.
+                _reports.Writer.TryWrite(buffer[..read].ToArray());
             }
         }
         catch (Exception) when (_disposed)

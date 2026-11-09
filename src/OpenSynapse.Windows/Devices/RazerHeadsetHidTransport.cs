@@ -66,16 +66,13 @@ internal sealed class RazerHeadsetHidTransport : IRazerHeadsetHidTransport
             {
             }
 
-            await Task.Run(() =>
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (!NativeMethods.HidD_SetOutputReport(_stream.SafeFileHandle, report, report.Length))
-                {
-                    throw new Win32Exception(
-                        Marshal.GetLastWin32Error(),
-                        "Headset HID output report failed.");
-                }
-            }, cancellationToken).ConfigureAwait(false);
+            // AudioValkyrie/Billie bundles use hid.write, not HidD_SetOutputReport.
+            // The latter can report success without reaching the vendor OUT endpoint.
+            await RandomAccess.WriteAsync(
+                _stream.SafeFileHandle,
+                report.AsMemory(),
+                fileOffset: 0,
+                cancellationToken).ConfigureAwait(false);
 
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(ResponseTimeout);
@@ -118,7 +115,8 @@ internal sealed class RazerHeadsetHidTransport : IRazerHeadsetHidTransport
                     break;
                 }
 
-                _reports.Writer.TryWrite(buffer[..read]);
+                // The next ReadAsync overwrites this buffer, so hand the consumer a copy.
+                _reports.Writer.TryWrite(buffer[..read].ToArray());
             }
         }
         catch (Exception) when (_disposed)
@@ -177,11 +175,5 @@ internal sealed class RazerHeadsetHidTransport : IRazerHeadsetHidTransport
             uint flagsAndAttributes,
             IntPtr templateFile);
 
-        [DllImport("hid.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool HidD_SetOutputReport(
-            SafeFileHandle handle,
-            byte[] reportBuffer,
-            int reportBufferLength);
     }
 }
