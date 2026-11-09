@@ -166,6 +166,11 @@
     </Grid>
 
     <RadioButtons local:Localized.Uid="A11yMappingLayer" ItemsSource="{Binding LayerNames}" SelectedIndex="{Binding LayerIndex, Mode=TwoWay}" MaxColumns="2" AutomationProperties.Name="映射层" />
+    <TextBlock Text="{Binding HyperShiftSoftwareUnavailableText}"
+               Visibility="{Binding HyperShiftSoftwareUnavailableVisibility}"
+               Foreground="{StaticResource MutedBrush}"
+               FontSize="11"
+               TextWrapping="Wrap" />
 
     <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
 

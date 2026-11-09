@@ -12,6 +12,7 @@ public sealed partial class MacroWorkspace
         string macroId,
         MacroInput input,
         MacroTriggerMode mode,
+        bool hyperShiftLayer = false,
         CancellationToken cancellationToken = default)
     {
         var row = Items.FirstOrDefault(item =>
@@ -30,6 +31,7 @@ public sealed partial class MacroWorkspace
         {
             Input = input.Clone(),
             Mode = mode,
+            HyperShiftLayer = hyperShiftLayer,
         };
         if (FindTriggerConflict(row.Definition, trigger, row) is { } conflict)
         {

@@ -536,6 +536,8 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
     internal void SetMacroOwnWindowForegroundPredicate(Func<bool>? predicate) =>
         _macroRuntime.SetOwnWindowForegroundPredicate(predicate);
 
+    internal void SetHyperShiftHeld(bool held) => _macroRuntime.SetHyperShiftHeld(held);
+
     internal void RefreshMacroState()
     {
         CancelMacroCapture();
@@ -2269,6 +2271,7 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
             other.Definition.Trigger is { } otherTrigger &&
             otherTrigger.Input.Matches(trigger.Input) &&
             otherTrigger.Modifiers == trigger.Modifiers &&
+            otherTrigger.HyperShiftLayer == trigger.HyperShiftLayer &&
             StringComparer.Ordinal.Equals(otherTrigger.DeviceId, trigger.DeviceId) &&
             StringComparer.Ordinal.Equals(otherTrigger.ControlId, trigger.ControlId));
 

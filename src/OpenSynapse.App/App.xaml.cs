@@ -689,6 +689,7 @@ public partial class App : Application
                     _audioMuteViewModel?.Blade.ActiveMappingPreset ??
                         OpenSynapse.Core.Profiles.BladeProfileSettings.Product710DefaultMappingPreset,
                     _audioMuteViewModel?.Blade.ActiveSnapTapEnabled == true, enabled => PersistBladeSnapTap(enabled, generation),
+                    enabled => _audioMuteViewModel?.Macros.SetHyperShiftHeld(enabled),
                     message => _diagnosticLog.TryWrite("blade-input", message));
                 await fnRuntime.StartAsync().ConfigureAwait(false);
                 fnRuntime.SetGameModeEnabled(_audioMuteViewModel?.Blade.GameModeEnabled == true);
