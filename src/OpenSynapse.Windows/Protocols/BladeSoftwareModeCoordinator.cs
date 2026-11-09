@@ -6,6 +6,12 @@ internal sealed class BladeSoftwareModeCoordinator
 {
     private readonly ConcurrentDictionary<string, DeviceState> _devices =
         new(StringComparer.OrdinalIgnoreCase);
+    private readonly Action<string>? _diagnostic;
+
+    internal BladeSoftwareModeCoordinator(Action<string>? diagnostic = null)
+    {
+        _diagnostic = diagnostic;
+    }
 
     internal async Task<BladeSoftwareModeLease> AcquireAsync(
         string devicePath,
@@ -22,11 +28,24 @@ internal sealed class BladeSoftwareModeCoordinator
         await state.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (state.OwnerCount == 0)
+            var ownerCount = state.OwnerCount;
+            if (ownerCount == 0)
             {
-                await enterSoftwareMode(cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    await enterSoftwareMode(cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception exception)
+                {
+                    Log($"acquire {devicePath}: software mode failed; owner=0: {Describe(exception)}");
+                    throw;
+                }
             }
-            state.OwnerCount++;
+
+            state.OwnerCount = ownerCount + 1;
+            Log(ownerCount == 0
+                ? $"acquire {devicePath}: owner=1; software mode"
+                : $"acquire {devicePath}: owner={state.OwnerCount}; software mode already active");
 
             return new BladeSoftwareModeLease(this, devicePath, state);
         }
@@ -48,9 +67,23 @@ internal sealed class BladeSoftwareModeCoordinator
         await lease.State.Gate.WaitAsync().ConfigureAwait(false);
         try
         {
-            if (--lease.State.OwnerCount == 0)
+            var remaining = --lease.State.OwnerCount;
+            if (remaining == 0)
             {
-                await restoreNormalMode().ConfigureAwait(false);
+                try
+                {
+                    await restoreNormalMode().ConfigureAwait(false);
+                    Log($"release {lease.DevicePath}: owner=0; normal mode");
+                }
+                catch (Exception exception)
+                {
+                    Log($"release {lease.DevicePath}: normal mode failed; owner=0; device may still be in software mode: {Describe(exception)}");
+                    throw;
+                }
+            }
+            else
+            {
+                Log($"release {lease.DevicePath}: owner={remaining}; software mode remains");
             }
         }
         finally
@@ -58,6 +91,21 @@ internal sealed class BladeSoftwareModeCoordinator
             lease.State.Gate.Release();
         }
     }
+
+    private void Log(string message)
+    {
+        try
+        {
+            _diagnostic?.Invoke(message);
+        }
+        catch
+        {
+            // Diagnostics must not interfere with mode ownership.
+        }
+    }
+
+    private static string Describe(Exception exception) =>
+        $"{exception.GetType().Name}: {exception.Message}";
 
     internal sealed class DeviceState
     {

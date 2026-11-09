@@ -34,7 +34,7 @@ public partial class App : Application
     private WindowsPerformanceMonitor? _performanceMonitor;
     private BladeLightingController? _bladeLightingController;
     private WindowsThxAudioController? _thxAudioController;
-    private readonly BladeSoftwareModeCoordinator _bladeModeCoordinator = new();
+    private readonly BladeSoftwareModeCoordinator _bladeModeCoordinator;
     private readonly SemaphoreSlim _audioMuteRuntimeGate = new(1, 1);
     private BladeAudioMuteRuntime? _audioMuteRuntime;
     private BladeFnRuntime? _bladeFnRuntime;
@@ -58,6 +58,8 @@ public partial class App : Application
 
     public App()
     {
+        _bladeModeCoordinator = new BladeSoftwareModeCoordinator(
+            message => _diagnosticLog.TryWrite("blade-mode", message));
         try
         {
             AppLanguageSettings.ApplySaved();

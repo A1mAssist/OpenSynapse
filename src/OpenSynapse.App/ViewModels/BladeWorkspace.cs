@@ -2492,6 +2492,10 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         {
             SetFnKey(fnKeyMultimediaPrimary);
         }
+        else if (_blade._bladeFnKeyMultimediaPrimary is not null)
+        {
+            SetFnKey(null);
+        }
         SetAutoSleep(
             telemetry.BladeAutoSleepEnabled ?? _blade._bladeAutoSleepEnabled,
             telemetry.BladeAutoSleepWritable);
@@ -2718,7 +2722,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         OnPropertyChanged(nameof(GamingModeVisibility));
     }
 
-    private void SetFnKey(bool multimediaPrimary)
+    private void SetFnKey(bool? multimediaPrimary)
     {
         _blade.SetFnKey(multimediaPrimary);
         OnPropertyChanged(nameof(FnKeyText));

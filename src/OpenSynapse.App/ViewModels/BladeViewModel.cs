@@ -163,12 +163,14 @@ internal sealed class BladeViewModel
                 : "--";
     }
 
-    internal void SetFnKey(bool multimediaPrimary)
+    internal void SetFnKey(bool? multimediaPrimary)
     {
         _bladeFnKeyMultimediaPrimary = multimediaPrimary;
-        _bladeFnKeyText = AppStrings.Text(multimediaPrimary
-            ? "BladeFnKeyMultimediaPrimaryText"
-            : "BladeFnKeyFunctionPrimaryText");
+        _bladeFnKeyText = multimediaPrimary is bool value
+            ? AppStrings.Text(value
+                ? "BladeFnKeyMultimediaPrimaryText"
+                : "BladeFnKeyFunctionPrimaryText")
+            : "--";
     }
 
     internal void SetChargeLimit(int percent)
