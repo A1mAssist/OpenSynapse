@@ -3584,8 +3584,8 @@
   <data name="ViperBatteryChemistryInput.PlaceholderText" xml:space="preserve"><value>请选择电池类型</value></data>
   <data name="ViperBatteryChemistryInput.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>电池类型</value></data>
   <data name="ViperSettingAppliedProfileSaveFailed" xml:space="preserve"><value>鼠标设置已在设备上生效，但配置保存失败，已恢复内存中的对应配置字段。</value></data>
-  <data name="FirmwareUpdatePartial" xml:space="preserve"><value>检查未完成，无法比较：{0}。请到对应型号的 Razer 支持页核对。</value></data>
-  <data name="FirmwareUpdateAvailablePartial" xml:space="preserve"><value>发现组件更新：{0}。仍无法比较：{1}。</value></data>
+  <data name="FirmwareUpdatePartial" xml:space="preserve"><value>可比较的组件版本不低于当前发布数据；以下组件没有可对照的发布版本：{0}。可到 Razer 支持页核对。</value></data>
+  <data name="FirmwareUpdateAvailablePartial" xml:space="preserve"><value>发现组件更新：{0}。以下组件没有可对照的发布版本：{1}。</value></data>
   <data name="FirmwareUpdateComparedCurrent" xml:space="preserve"><value>可比较的组件版本不低于当前发布数据。请到 Razer 支持页确认是否有更新。</value></data>
   <data name="RazerHeadsetReverbSmall" xml:space="preserve"><value>小型</value></data>
   <data name="RazerHeadsetReverbMedium" xml:space="preserve"><value>中型</value></data>

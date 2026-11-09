@@ -317,7 +317,19 @@
     "firmware": {
       "latest": {
         "version": "1.0.0.0",
-        "url": "https://rzr.to/9vg4q6"
+        "url": "https://rzr.to/9vg4q6",
+        "additional": [
+          {
+            "type": "bios",
+            "version": "1.06",
+            "url": "https://rzr.to/o3ee7h"
+          },
+          {
+            "type": "ec",
+            "version": "1.02",
+            "url": "https://rzr.to/kmblw5"
+          }
+        ]
       },
       "driver": {
         "version": "24.0.1.0",
