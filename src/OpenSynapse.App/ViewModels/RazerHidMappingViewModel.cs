@@ -139,16 +139,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             if (_layerIndex == value) return;
             _layerIndex = value;
             OnPropertyChanged();
-            if (_loaded)
-            {
-                ClearRows();
-                _loaded = false;
-                SelectedRow = null;
-                StatusText = string.Empty;
-                OnPropertyChanged(nameof(IsLoaded));
-                OnPropertyChanged(nameof(CanApply));
-            }
-
+            // Keep the old rows visible until the read completes to avoid a layout jump.
             if (_hasReadAnyLayer)
             {
                 _ = ReadAsync();
@@ -206,38 +197,53 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         Rows.Clear();
         LeftRows.Clear();
         RightRows.Clear();
+        SelectedRow = null;
         OnPropertyChanged(nameof(TableVisibility));
+        OnPropertyChanged(nameof(CanApply));
     }
-
-    private void AddRow(RazerHidMappingRowViewModel row) => Rows.Add(row);
 
     private void PopulateStageRows()
     {
         LeftRows.Clear();
         RightRows.Clear();
-        if (_layout is null)
+        if (_layout is not null)
         {
-            return;
-        }
-
-        var ordered = Rows
-            .Where(row => _layout.Hotspots.ContainsKey(row.ButtonId))
-            .Select(row => (Row: row, Hotspot: _layout.Hotspots[row.ButtonId]))
-            .OrderBy(item => item.Hotspot.Y)
-            .ToArray();
-        foreach (var (row, hotspot) in ordered)
-        {
-            if (hotspot.IsLeft)
+            var ordered = Rows
+                .Where(row => _layout.Hotspots.ContainsKey(row.ButtonId))
+                .Select(row => (Row: row, Hotspot: _layout.Hotspots[row.ButtonId]))
+                .OrderBy(item => item.Hotspot.Y)
+                .ToArray();
+            foreach (var (row, hotspot) in ordered)
             {
-                LeftRows.Add(row);
-            }
-            else
-            {
-                RightRows.Add(row);
+                if (hotspot.IsLeft)
+                {
+                    LeftRows.Add(row);
+                }
+                else
+                {
+                    RightRows.Add(row);
+                }
             }
         }
 
         OnPropertyChanged(nameof(TableVisibility));
+    }
+
+    private void ReplaceRows(
+        IReadOnlyList<RazerHidMappingRowViewModel> rows,
+        byte? selectedButtonId)
+    {
+        Rows.Clear();
+        foreach (var row in rows)
+        {
+            Rows.Add(row);
+        }
+
+        PopulateStageRows();
+        SelectedRow = selectedButtonId is { } id
+            ? rows.FirstOrDefault(row => row.ButtonId == id)
+            : null;
+        OnPropertyChanged(nameof(CanApply));
     }
 
     private bool _readQueued;
@@ -269,6 +275,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
     {
         if (IsBusy) return;
         var mode = Mode;
+        var selectedButtonId = _selectedRow?.ButtonId;
         IsBusy = true;
         ErrorText = string.Empty;
         try
@@ -283,8 +290,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                     .ConfigureAwait(true);
                 ids = visual.Mouse?.ButtonNames?.Keys.Order().ToArray() ?? [];
             }
-            ClearRows();
-            SelectedRow = null;
+            var rows = new List<RazerHidMappingRowViewModel>(ids.Count);
             var defaults = _freeSlots.ToList();
             foreach (var id in ids.Where(id => id != 0))
             {
@@ -357,10 +363,10 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
 
                 UpdateMacroValidation(row);
                 UpdateMacroSlotWarning(row);
-                AddRow(row);
+                rows.Add(row);
             }
 
-            PopulateStageRows();
+            ReplaceRows(rows, selectedButtonId);
             StartVisualLoad();
             _loaded = true;
             _hasReadAnyLayer = true;
