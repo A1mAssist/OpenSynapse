@@ -186,7 +186,9 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
                 telemetry.BladeFnKeyMultimediaPrimary is bool multimediaPrimary
                     ? AppStrings.Text(multimediaPrimary ? "BladeFnKeyMultimediaPrimaryText" : "BladeFnKeyFunctionPrimaryText")
                     : null,
-                CapabilityIds.FnKeyGet);
+                declaredCapabilities?.Contains(CapabilityIds.FnKeyGet) == true
+                    ? CapabilityIds.FnKeyGet
+                    : CapabilityIds.FnKeySwapGet);
             Add("FirmwareMcuLabel", telemetry.BladeMcuVersion,
                 capability: CapabilityIds.McuVersionGet);
             Add("BladeAutoSleepTitle.Text", telemetry.BladeAutoSleepEnabled,
