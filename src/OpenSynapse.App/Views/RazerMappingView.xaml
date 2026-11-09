@@ -260,7 +260,7 @@
       </StackPanel>
     </Border>
 
-    <Grid Visibility="{Binding TableVisibility}">
+    <Grid MinHeight="120" Visibility="{Binding TableVisibility}">
       <StackPanel Spacing="8">
         <Grid ColumnDefinitions="110,1.2*,150,1.3*,*" ColumnSpacing="10">
           <TextBlock local:Localized.Uid="RazerMappingButtonColumn" Text="按键" Style="{StaticResource MetricLabelStyle}" />
