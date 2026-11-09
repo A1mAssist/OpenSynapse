@@ -232,7 +232,7 @@
       "dataSize": "03",
       "commandClass": "03",
       "commandId": "80",
-      "arguments": "010400"
+      "arguments": "000400"
     },
     "logo-power.set": {
       "transactionId": "FF",
@@ -246,7 +246,7 @@
       "dataSize": "03",
       "commandClass": "03",
       "commandId": "82",
-      "arguments": "010400"
+      "arguments": "000400"
     },
     "logo-mode.set": {
       "transactionId": "FF",
