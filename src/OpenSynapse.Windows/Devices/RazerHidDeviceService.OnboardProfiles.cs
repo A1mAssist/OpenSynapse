@@ -13,6 +13,21 @@ public sealed partial class RazerHidDeviceService
     private static readonly IReadOnlySet<ushort> AltProfileClassProducts =
         new HashSet<ushort> { 0x00BE, 0x00BF };
 
+    /// <summary>
+    /// These mice report the shared five-profile firmware limit but Razer's own device
+    /// definitions give them a single onboard slot. Creating id 2 is silently ignored.
+    /// </summary>
+    private static readonly IReadOnlySet<ushort> SingleOnboardProfileProducts = new HashSet<ushort>
+    {
+        0x0065, 0x0076, 0x0077, 0x0078, 0x0080, 0x0082, 0x0083, 0x008A,
+        0x0094, 0x0095, 0x0098, 0x009A, 0x009B, 0x009E, 0x009F, 0x00A3,
+        0x00A5, 0x00A6, 0x00B4, 0x00B5, 0x00B6, 0x00B7, 0x00B8, 0x00B9,
+        0x00BA, 0x00BE, 0x00BF, 0x00C0, 0x00C1, 0x00C2, 0x00C3, 0x00C4,
+        0x00C5, 0x00D3, 0x00D4, 0x00D5, 0x00DD, 0x00DE, 0x00DF, 0x00E0,
+        0x00E1, 0x00E5, 0x00E6, 0x00EF, 0x00F0, 0xB005, 0xB006, 0xB007,
+        0xB008,
+    };
+
     private static bool UsesAltProfileClass(RazerHidDeviceConnection connection) =>
         AltProfileClassProducts.Contains(connection.Definition.ProductId);
 
@@ -45,7 +60,10 @@ public sealed partial class RazerHidDeviceService
             : RazerOnboardProfileProtocol.CreateGetMaxProfilesSupportedRequest(MiddlewareTransactionId);
         var response = await ExecuteAsync(connection,
             new RazerHidRequest("razer_onboard_get_max_profiles", request), cancellationToken).ConfigureAwait(false);
-        return RazerOnboardProfileProtocol.ParseMaxProfilesSupported(response, request);
+        var max = RazerOnboardProfileProtocol.ParseMaxProfilesSupported(response, request);
+        return SingleOnboardProfileProducts.Contains(connection.Definition.ProductId)
+            ? (byte)1
+            : max;
     }
 
     public async Task<byte> GetActiveOnboardProfileIdAsync(

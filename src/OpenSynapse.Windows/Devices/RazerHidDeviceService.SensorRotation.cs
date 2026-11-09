@@ -24,7 +24,7 @@ public sealed partial class RazerHidDeviceService
     public Task SetSensorRotationAsync(
         RazerHidDeviceConnection connection,
         bool enabled,
-        byte angle,
+        int angle,
         CancellationToken cancellationToken = default)
     {
         var request = RazerProximitySensorProtocol.CreateSetSensorRotationRequest(
