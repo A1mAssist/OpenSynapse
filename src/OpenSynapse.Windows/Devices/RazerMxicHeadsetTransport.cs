@@ -19,18 +19,25 @@ internal interface IRazerMxicHeadsetTransport : IAsyncDisposable
 internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
 {
     private static readonly TimeSpan ResponseTimeout = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan ControlReportTimeout = TimeSpan.FromMilliseconds(250);
+    private static readonly TimeSpan ControlReportRetryDelay = TimeSpan.FromMilliseconds(10);
     private readonly FileStream _stream;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly Channel<byte[]> _reports = Channel.CreateUnbounded<byte[]>();
     private readonly CancellationTokenSource _readCancellation = new();
     private readonly Task _readLoop;
     private readonly int _inputReportLength;
+    private readonly bool _useSetOutputReport;
     private bool _disposed;
 
-    internal RazerMxicHeadsetTransport(string devicePath, int inputReportLength)
+    internal RazerMxicHeadsetTransport(
+        string devicePath,
+        int inputReportLength,
+        bool useSetOutputReport = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
         _inputReportLength = Math.Max(inputReportLength, RazerMxicHeadsetProtocol.ReportLength);
+        _useSetOutputReport = useSetOutputReport;
         var handle = NativeMethods.CreateFile(
             devicePath,
             NativeMethods.GenericRead | NativeMethods.GenericWrite,
@@ -85,20 +92,23 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
             {
             }
 
-            await Task.Run(() =>
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (!NativeMethods.HidD_SetOutputReport(_stream.SafeFileHandle, report, report.Length))
-                {
-                    throw new Win32Exception(
-                        Marshal.GetLastWin32Error(),
-                        "MXIC HID output report failed.");
-                }
-            }, cancellationToken).ConfigureAwait(false);
+            await SendReportAsync(report, cancellationToken).ConfigureAwait(false);
 
             if (expectedHeader is null && rawMatches is null)
             {
                 return null;
+            }
+
+            if (expectedHeader is not null)
+            {
+                var control = await ReadControlReportAsync(
+                    report,
+                    expectedHeader,
+                    cancellationToken).ConfigureAwait(false);
+                if (control is not null)
+                {
+                    return control;
+                }
             }
 
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -153,6 +163,93 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
         {
             _gate.Release();
         }
+    }
+
+    private async Task SendReportAsync(byte[] report, CancellationToken cancellationToken)
+    {
+        if (_useSetOutputReport)
+        {
+            await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!NativeMethods.HidD_SetOutputReport(_stream.SafeFileHandle, report, report.Length))
+                {
+                    throw new Win32Exception(
+                        Marshal.GetLastWin32Error(),
+                        "MXIC HID output report failed.");
+                }
+            }, cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        // Synapse's AudioMxicDevice uses hid.write for this family. WriteFile delivers
+        // the report to the vendor OUT endpoint; HidD_SetOutputReport is not equivalent
+        // for 0555 and leaves the device waiting for a command.
+        await RandomAccess.WriteAsync(
+            _stream.SafeFileHandle,
+            report.AsMemory(),
+            fileOffset: 0,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<byte[]?> ReadControlReportAsync(
+        byte[] request,
+        byte[] expectedHeader,
+        CancellationToken cancellationToken)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(ControlReportTimeout);
+        while (!timeout.IsCancellationRequested)
+        {
+            var candidate = new byte[_inputReportLength];
+            candidate[0] = request[0];
+            try
+            {
+                if (await Task.Run(
+                        () => NativeMethods.HidD_GetInputReport(
+                            _stream.SafeFileHandle,
+                            candidate,
+                            candidate.Length),
+                        timeout.Token).ConfigureAwait(false) &&
+                    TryMatch(candidate, request, expectedHeader, out var value))
+                {
+                    return value;
+                }
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+
+            try
+            {
+                await Task.Delay(ControlReportRetryDelay, timeout.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool TryMatch(
+        byte[] data,
+        byte[] request,
+        byte[] expectedHeader,
+        out byte[] value)
+    {
+        if (expectedHeader.Length == 0)
+        {
+            return RazerProtocol40HeadsetProtocol.TryReadValue(data, request, out value);
+        }
+
+        return RazerMxicHeadsetProtocol.TryReadValue(
+            data,
+            request[0],
+            expectedHeader,
+            out value);
     }
 
     private async Task ReadLoopAsync()
@@ -230,6 +327,13 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
         [DllImport("hid.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool HidD_SetOutputReport(
+            SafeFileHandle handle,
+            byte[] reportBuffer,
+            int reportBufferLength);
+
+        [DllImport("hid.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool HidD_GetInputReport(
             SafeFileHandle handle,
             byte[] reportBuffer,
             int reportBufferLength);
