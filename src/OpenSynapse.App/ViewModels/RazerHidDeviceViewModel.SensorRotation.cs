@@ -22,7 +22,10 @@ public sealed partial class RazerHidDeviceViewModel
     public double SensorRotationAngle
     {
         get => _sensorRotationAngle;
-        set => SetField(ref _sensorRotationAngle, Math.Clamp(value, 0, 359));
+        set => SetField(ref _sensorRotationAngle, Math.Clamp(
+            value,
+            RazerProximitySensorProtocol.MinimumSensorRotationAngle,
+            RazerProximitySensorProtocol.MaximumSensorRotationAngle));
     }
 
     public string SensorRotationStatusText
@@ -58,6 +61,15 @@ public sealed partial class RazerHidDeviceViewModel
         _sensorRotationKnown = true;
         SensorRotationEnabled = rotation.Enabled;
         SensorRotationAngle = rotation.Angle;
+        if (!rotation.IsAngleValid)
+        {
+            SensorRotationStatusText = string.Format(
+                AppStrings.Text("RazerHidSensorRotationInvalid"), rotation.RawAngle);
+        }
+        else
+        {
+            SensorRotationStatusText = string.Empty;
+        }
     }
 
     private void ClearSensorRotation()
@@ -74,7 +86,7 @@ public sealed partial class RazerHidDeviceViewModel
             value => IsSensorRotationBusy = value,
             async () =>
             {
-                var angle = (byte)Math.Clamp((int)Math.Round(SensorRotationAngle), 0, 359);
+                var angle = (int)Math.Round(SensorRotationAngle);
                 await _service.SetSensorRotationAsync(
                     Connection, SensorRotationEnabled, angle, cancellationToken).ConfigureAwait(false);
                 try
@@ -88,7 +100,8 @@ public sealed partial class RazerHidDeviceViewModel
                     ApplySensorRotation(new RazerHidSensorRotation(
                         RazerProximitySensorProtocol.DefaultAngleTuneProfileId,
                         SensorRotationEnabled,
-                        angle));
+                        angle,
+                        unchecked((byte)angle)));
                 }
                 SensorRotationStatusText = AppStrings.Text("RazerHidSensorRotationApplied");
             },

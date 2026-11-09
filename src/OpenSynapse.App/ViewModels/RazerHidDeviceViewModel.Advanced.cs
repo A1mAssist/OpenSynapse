@@ -55,10 +55,9 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         set => SetField(ref _onboardProfileStatusText, value);
     }
     /// <summary>
-    /// The highest profile id the device accepts. A device that reports a maximum of
-    /// one profile only knows id 0, so the picker must not offer id 1.
+    /// Profile ids are one-based; a device that reports one profile only knows id 1.
     /// </summary>
-    public int OnboardProfileMaximumId => Math.Max(0, OnboardMaxProfiles - 1);
+    public int OnboardProfileMaximumId => Math.Max(1, (int)OnboardMaxProfiles);
     public bool CanApplyOnboardProfile => CanEditOnboardProfile &&
         SelectedOnboardProfileId != ActiveOnboardProfileId;
     public bool CanCreateOnboardProfile => CanEditOnboardProfile &&

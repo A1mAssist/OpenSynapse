@@ -32,7 +32,13 @@ public readonly record struct RazerProximitySensorControl(
 public readonly record struct RazerHidSensorRotation(
     byte ProfileId,
     bool Enabled,
-    byte Angle);
+    int Angle,
+    byte RawAngle)
+{
+    public bool IsAngleValid =>
+        RawAngle <= RazerProximitySensorProtocol.MaximumSensorRotationAngle ||
+        RawAngle >= RazerProximitySensorProtocol.NegativeSensorRotationAngleBase;
+}
 
 /// <summary>
 /// Protocol 25 class 0x0B proximity and lift-off commands from the mouse middleware.
@@ -66,6 +72,13 @@ public static class RazerProximitySensorProtocol
     private const int AngleTuneSize = 3;
 
     public const byte DefaultAngleTuneProfileId = 0x01;
+    /// <summary>
+    /// Angle tune is a signed offset wrapped into one byte: raw 0..44 is 0..44 degrees,
+    /// raw 212..255 is -44..-1. The firmware accepts no wider range.
+    /// </summary>
+    public const int MinimumSensorRotationAngle = -44;
+    public const int MaximumSensorRotationAngle = 44;
+    public const byte NegativeSensorRotationAngleBase = 212;
 
     public static byte[] CreateGetProximitySensorConfigurationRequest(
         byte transactionId,
@@ -201,14 +214,24 @@ public static class RazerProximitySensorProtocol
     public static byte[] CreateSetSensorRotationRequest(
         byte transactionId,
         bool enabled,
-        byte angle,
-        byte profileId = DefaultAngleTuneProfileId) =>
-        RazerFeatureReport.CreateRequest(
+        int angle,
+        byte profileId = DefaultAngleTuneProfileId)
+    {
+        if (angle is < MinimumSensorRotationAngle or > MaximumSensorRotationAngle)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(angle),
+                angle,
+                $"Sensor rotation must be {MinimumSensorRotationAngle}..{MaximumSensorRotationAngle} degrees.");
+        }
+
+        return RazerFeatureReport.CreateRequest(
             transactionId,
             AngleTuneSize,
             CommandClass,
             SetAngleTuneCommand,
-            new byte[] { profileId, enabled ? (byte)0x01 : (byte)0x00, angle });
+            new byte[] { profileId, enabled ? (byte)0x01 : (byte)0x00, unchecked((byte)angle) });
+    }
 
     public static RazerProximitySensorConfiguration ParseConfiguration(
         ReadOnlySpan<byte> response,
@@ -271,10 +294,12 @@ public static class RazerProximitySensorProtocol
         ReadOnlySpan<byte> request)
     {
         var arguments = Payload(response, request, AngleTuneSize);
+        var rawAngle = arguments[2];
         return new RazerHidSensorRotation(
             arguments[0],
             arguments[1] != 0,
-            arguments[2]);
+            rawAngle >= NegativeSensorRotationAngleBase ? rawAngle - 256 : rawAngle,
+            rawAngle);
     }
 
     private static ushort ReadBigEndianUInt16(ReadOnlySpan<byte> source, int offset) =>
