@@ -857,11 +857,7 @@
                       <TextBlock local:Localized.Uid="RazerHidSmartTrackingTitle" Text="智能追踪" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
                       <TextBlock local:Localized.Uid="RazerHidSmartTrackingDescription" Text="无论使用何种表面，都可以根据你的喜好设置单个中止点。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                       <CheckBox local:Localized.Uid="RazerHidSmartTrackingAsymmetric" Content="启用非对称中止" IsChecked="{Binding SmartTrackingAsymmetric, Mode=TwoWay}" IsEnabled="{Binding CanEditSmartTracking}" />
-                      <StackPanel Spacing="4">
-                        <TextBlock local:Localized.Uid="RazerHidSmartTrackingDistance" Text="追踪距离" />
-                        <Slider Minimum="0" Maximum="2" StepFrequency="1" Value="{Binding SmartTrackingDistance, Mode=TwoWay}" IsEnabled="{Binding CanEditSmartTracking}" />
-                        <TextBlock Text="{Binding SmartTrackingDistanceText}" Foreground="{StaticResource MutedBrush}" />
-                      </StackPanel>
+                      <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock local:Localized.Uid="RazerHidSmartTrackingDistance" Text="追踪距离" VerticalAlignment="Center" /><Slider Width="220" Minimum="0" Maximum="2" StepFrequency="1" Value="{Binding SmartTrackingDistance, Mode=TwoWay}" IsEnabled="{Binding CanEditSmartTracking}" /><TextBlock Text="{Binding SmartTrackingDistanceText}" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" /></StackPanel>
                       <Button local:Localized.Uid="RazerHidSaveButton" Content="保存" Click="RazerHidApplySmartTrackingClick" IsEnabled="{Binding CanApplySmartTracking}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
                       <TextBlock Text="{Binding SmartTrackingStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
                       <TextBlock local:Localized.Uid="RazerHidSmartTrackingResetHint" Text="通过同时按住左键、右键和滚轮 7 秒钟，可以手动重置你的鼠标。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
