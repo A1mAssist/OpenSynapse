@@ -550,7 +550,7 @@ internal sealed partial class RazerDeviceRegistry
             }
             if (dataSize != contract.DataSize || commandClass != contract.CommandClass ||
                 commandId != contract.CommandId ||
-                !arguments.AsSpan().SequenceEqual(Convert.FromHexString(contract.Arguments)) ||
+                !LogoArgumentsMatch(source.ProtocolFamily, capabilityId, arguments, contract) ||
                 request.AllowRemainingPacketsMismatch != contract.AllowRemainingPacketsMismatch)
             {
                 throw new InvalidOperationException(
@@ -639,6 +639,24 @@ internal sealed partial class RazerDeviceRegistry
 
     private static byte[] ParseBytes(string value, string field) =>
         ParseHex(value, field, expectedCharacters: null, allowEmpty: true);
+
+    private static bool LogoArgumentsMatch(
+        string protocolFamily,
+        string capabilityId,
+        byte[] arguments,
+        CapabilityContract contract)
+    {
+        if (arguments.AsSpan().SequenceEqual(Convert.FromHexString(contract.Arguments)))
+        {
+            return true;
+        }
+
+        // 02B6 keeps the 710 command set but addresses the lid logo through
+        // profile 0 unless persistentInHardware.logoLighting is enabled.
+        return protocolFamily == "blade-710-chroma" &&
+            capabilityId is CapabilityIds.LogoPowerGet or CapabilityIds.LogoModeGet &&
+            arguments.AsSpan().SequenceEqual(new byte[] { 0, 4, 0 });
+    }
 
     private static byte[] ParseHex(string? value, string field, int? expectedCharacters, bool allowEmpty)
     {

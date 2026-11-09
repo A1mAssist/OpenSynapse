@@ -4,8 +4,8 @@ namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
 /// Source-backed Blade lid-logo GET/SET reports and strict response parsing.
-/// The profile id comes from the device manifest: 0 for the blade-671 family
-/// and 1 for the newer blade-710 family. Value 0x02 uses the generic LED-effect
+/// The profile id comes from the device manifest and is not implied by the
+/// protocol family. Value 0x02 uses the generic LED-effect
 /// command; RazerHid documents it as technically unsupported on Blade laptops.
 /// </summary>
 public static class BladeLogoProtocol
