@@ -1237,6 +1237,8 @@
   <data name="AutomaticUpdatesToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Automatic updates</value></data>
   <data name="CheckUpdateButton.Content" xml:space="preserve"><value>Check for updates</value></data>
   <data name="UpdateInstallerRequired" xml:space="preserve"><value>This is an older portable build. Install the new setup package to enable automatic updates.</value></data>
+  <data name="UpdateMachineWideRequired" xml:space="preserve"><value>This is an MSI installation. In-app updates are unavailable; download the new MSI and install it over this version.</value></data>
+  <data name="UpdateDownloadInstaller" xml:space="preserve"><value>Download MSI</value></data>
   <data name="UpdateReady" xml:space="preserve"><value>Version {0} is downloaded and ready.</value></data>
   <data name="UpdateAvailable" xml:space="preserve"><value>Version {0} is available.</value></data>
   <data name="CurrentVersion" xml:space="preserve"><value>Current version: {0}.</value></data>
