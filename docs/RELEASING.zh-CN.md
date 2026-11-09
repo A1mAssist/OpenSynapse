@@ -17,7 +17,7 @@
 
 ## 为什么只改安装包名
 
-`releases.win.json` 和 `RELEASES` 只引用 `*.nupkg`。MSI、AutoUpdate 包、Portable.zip 是初次安装资产；重命名它们不会影响客户端更新链路。MSI 安装也会下载同一个 `*.nupkg`，由 `Update.exe` 通过 UAC 完成更新并重启。不要改 `*.nupkg`、`RELEASES`、`releases.win.json`、`assets.win.json` 的文件名或内容。
+`releases.win.json` 和 `RELEASES` 只引用 `*.nupkg`。MSI、AutoUpdate 包、Portable.zip 是初次安装资产；重命名它们不会影响客户端更新链路。MSI 安装也会下载同一个 `*.nupkg`，由安装时注册的 OpenSynapse 服务校验后通过任务计划执行 `Update.exe`，再以普通权限重启应用；服务不可用时才回退 UAC。不要改 `*.nupkg`、`RELEASES`、`releases.win.json`、`assets.win.json` 的文件名或内容。
 
 发布资产和 Release 正文不要出现容易让人以为这是默认安装包的字样，避免用户误下当前用户包。普通安装只推荐 MSI，AutoUpdate 包放在最后。
 

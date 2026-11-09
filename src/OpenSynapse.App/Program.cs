@@ -4,6 +4,7 @@ using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Lifecycle;
 using OpenSynapse.Windows.Lighting;
+using System.Security.Principal;
 using Velopack;
 using Velopack.Locators;
 using Velopack.Windows;
@@ -60,11 +61,16 @@ public static class Program
             })
             .OnAfterUpdateFastCallback(_ =>
             {
-                EnsureOpenSynapseService();
-                EnsureMacroAgentTask();
                 MigrateChromaShim();
-                RepairStartupRegistration();
-                PreserveExistingShortcuts();
+                // The machine-wide updater runs this hook as LocalSystem. Re-running the
+                // per-user setup would rewrite the service and tasks with SYSTEM's SID.
+                if (!IsRunningAsSystem())
+                {
+                    EnsureOpenSynapseService();
+                    EnsureMacroAgentTask();
+                    RepairStartupRegistration();
+                    PreserveExistingShortcuts();
+                }
             })
             .OnBeforeUpdateFastCallback(_ => StopOpenSynapseService())
             .OnBeforeUninstallFastCallback(_ =>
@@ -265,6 +271,21 @@ public static class Program
         }
         catch (Exception)
         {
+        }
+    }
+
+    private static bool IsRunningAsSystem()
+    {
+        try
+        {
+            using var identity = WindowsIdentity.GetCurrent();
+            return identity.User?.IsWellKnown(WellKnownSidType.LocalSystemSid) == true;
+        }
+        catch (Exception exception) when (
+            exception is InvalidOperationException or UnauthorizedAccessException or
+                System.Security.SecurityException)
+        {
+            return false;
         }
     }
 

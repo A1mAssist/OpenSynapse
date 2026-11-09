@@ -13,7 +13,7 @@ using OpenSynapse.Windows.Lighting;
 
 namespace OpenSynapse.App;
 
-internal static class OpenSynapseServiceHost
+internal static partial class OpenSynapseServiceHost
 {
     private const int IdleStopSeconds = 5;
     private static readonly TimeSpan RequestReadTimeout = TimeSpan.FromSeconds(5);
@@ -312,6 +312,10 @@ internal static class OpenSynapseServiceHost
                         ExitCode: driverStarted ? 0 : 1,
                         Status: null,
                         Error: driverError);
+
+                case OpenSynapseServiceAction.ApplyUpdate:
+                    return await ApplyUpdateAsync(request, authorizedUser, CancellationToken.None)
+                        .ConfigureAwait(false);
 
                 case OpenSynapseServiceAction.GpuClockOffsetStatus:
                     var clockRead = NvApiGpuClockOffset.TryRead(

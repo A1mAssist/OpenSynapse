@@ -37,6 +37,7 @@ public static class OpenSynapseServiceProtocol
     public const string InstallRazerCommonOperation = "install-razer-common";
     public const string BindFilterOperation = "bind-filter";
     public const string StartDriverServiceOperation = "start-driver-service";
+    public const string ApplyUpdateOperation = "apply-update";
 
     /// <summary>
     /// The only driver service the privileged host will start. The name is fixed
@@ -62,7 +63,11 @@ public sealed record OpenSynapseServiceRequest(
     int? CurveSteps = null,
     int? ParentProcessId = null,
     string? ServiceName = null,
-    int? ProductId = null);
+    int? ProductId = null,
+    string? PackageFileName = null,
+    int? WaitProcessId = null,
+    string? PackagePath = null,
+    string? PackageVersion = null);
 
 /// <summary>
 /// The operation a service request asks for. The decision lives here so the
@@ -132,6 +137,9 @@ public enum OpenSynapseServiceAction
 
     /// <summary>Start a Razer driver service that is installed but stopped.</summary>
     StartDriverService,
+
+    /// <summary>Apply a downloaded Velopack update through the machine service.</summary>
+    ApplyUpdate,
 
     /// <summary>
     /// Download, verify, and install the WHQL Razer Common driver. The service
@@ -343,6 +351,17 @@ public static class OpenSynapseServiceRequestParser
             OpenSynapseServiceProtocol.IsManagedDriverService(request.ServiceName))
         {
             return OpenSynapseServiceAction.StartDriverService;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                OpenSynapseServiceProtocol.ApplyUpdateOperation) &&
+            !string.IsNullOrWhiteSpace(request.PackageFileName) &&
+            !string.IsNullOrWhiteSpace(request.PackagePath) &&
+            !string.IsNullOrWhiteSpace(request.PackageVersion) &&
+            request.WaitProcessId is > 0)
+        {
+            return OpenSynapseServiceAction.ApplyUpdate;
         }
 
         if (StringComparer.Ordinal.Equals(
