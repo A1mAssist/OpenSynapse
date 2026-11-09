@@ -13,6 +13,44 @@ public static class StudioCanvasPlacement
         return available <= 0 ? 0 : Math.Floor(available / GridStep) * GridStep;
     }
 
+    /// <summary>Maps a viewport anchor through a zoom change, clamped to the new scrollable extent.</summary>
+    public static bool TryGetAnchoredOffset(
+        double offsetX,
+        double offsetY,
+        double anchorX,
+        double anchorY,
+        double oldZoomPercent,
+        double newZoomPercent,
+        double viewportWidth,
+        double viewportHeight,
+        out double targetX,
+        out double targetY)
+    {
+        targetX = 0;
+        targetY = 0;
+        if (!double.IsFinite(offsetX) || !double.IsFinite(offsetY) ||
+            !double.IsFinite(anchorX) || !double.IsFinite(anchorY) ||
+            !double.IsFinite(oldZoomPercent) || !double.IsFinite(newZoomPercent) ||
+            !double.IsFinite(viewportWidth) || !double.IsFinite(viewportHeight) ||
+            oldZoomPercent <= 0 || newZoomPercent <= 0 ||
+            viewportWidth <= 0 || viewportHeight <= 0)
+        {
+            return false;
+        }
+
+        var oldFactor = oldZoomPercent / 100;
+        var newFactor = newZoomPercent / 100;
+        var clampedAnchorX = Math.Clamp(anchorX, 0, viewportWidth);
+        var clampedAnchorY = Math.Clamp(anchorY, 0, viewportHeight);
+        var designX = (offsetX + clampedAnchorX) / oldFactor;
+        var designY = (offsetY + clampedAnchorY) / oldFactor;
+        var maxX = Math.Max(0, DesignSize * newFactor - viewportWidth);
+        var maxY = Math.Max(0, DesignSize * newFactor - viewportHeight);
+        targetX = Math.Clamp(designX * newFactor - clampedAnchorX, 0, maxX);
+        targetY = Math.Clamp(designY * newFactor - clampedAnchorY, 0, maxY);
+        return true;
+    }
+
     public static double Snap(double value, double extent)
     {
         var target = double.IsFinite(value) ? value : 0;

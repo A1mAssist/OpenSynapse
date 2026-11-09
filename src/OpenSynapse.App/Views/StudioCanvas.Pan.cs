@@ -45,6 +45,7 @@ public sealed partial class StudioCanvas
     {
         _panActive = true;
         _panStart = position;
+        CancelPendingZoomView();
         _panOffsetX = Scroller.HorizontalOffset;
         _panOffsetY = Scroller.VerticalOffset;
 #if DEBUG
