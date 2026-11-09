@@ -276,47 +276,18 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         {
             foreach (var request in requests)
             {
-                await QueryAsync(_transport, _devicePath, request, cancellationToken).ConfigureAwait(false);
+                await _transport.QueryPreparedAsync(
+                    _devicePath,
+                    request,
+                    DeviceWait,
+                    cancellationToken,
+                    allowRemainingPacketsMismatch: true).ConfigureAwait(false);
             }
             return;
         }
 
-        foreach (var request in requests)
-        {
-            await QueryAsync(session, request, cancellationToken).ConfigureAwait(false);
-        }
+        await session.SendBatchFastAsync(requests, DeviceWait, cancellationToken).ConfigureAwait(false);
     }
-
-    private static Task<byte[]> QueryAsync(
-        IRazerFeatureTransport transport,
-        string devicePath,
-        byte[] request,
-        CancellationToken cancellationToken) =>
-        transport.QueryAsync(
-            devicePath,
-            request[2],
-            request[6],
-            request[7],
-            request[8],
-            request.AsMemory(RazerFeatureReport.ArgumentsOffset, request[6]),
-            DeviceWait,
-            cancellationToken,
-            allowRemainingPacketsMismatch: true);
-
-    private static Task<byte[]> QueryAsync(
-        IRazerFeatureSession session,
-        byte[] request,
-        CancellationToken cancellationToken) =>
-        session.QueryAsync(
-            request[2],
-            request[6],
-            request[7],
-            request[8],
-            request.AsMemory(RazerFeatureReport.ArgumentsOffset, request[6]),
-            DeviceWait,
-            responseReportId: request[0],
-            cancellationToken,
-            allowRemainingPacketsMismatch: true);
 
     private RazerRgb[] ScaleFrame(IReadOnlyList<RazerRgb> frame) =>
         ScaleFrame(frame, _matrixRows, _matrixColumns);

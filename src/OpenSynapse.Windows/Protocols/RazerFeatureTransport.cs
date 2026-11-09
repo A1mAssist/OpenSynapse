@@ -85,6 +85,69 @@ public interface IRazerFeatureSession : IAsyncDisposable
         byte responseReportId,
         CancellationToken cancellationToken,
         bool allowRemainingPacketsMismatch = false);
+
+    /// <summary>
+    /// Uses a prebuilt report and runs the HID exchange on the caller's thread. Frame pumps
+    /// use this to avoid rebuilding the report and hopping through the thread pool per row.
+    /// </summary>
+    Task<byte[]> QueryPreparedFastAsync(
+        ReadOnlyMemory<byte> request,
+        TimeSpan deviceWait,
+        byte responseReportId,
+        CancellationToken cancellationToken,
+        bool allowRemainingPacketsMismatch = false)
+    {
+        if (request.Length != RazerFeatureReport.Length)
+        {
+            throw new ArgumentException("A Razer feature report must be 91 bytes.", nameof(request));
+        }
+
+        var report = request.Span;
+        return QueryAsync(
+            report[2],
+            report[6],
+            report[7],
+            report[8],
+            request.Slice(RazerFeatureReport.ArgumentsOffset, report[6]),
+            deviceWait,
+            responseReportId,
+            cancellationToken,
+            allowRemainingPacketsMismatch);
+    }
+
+    /// <summary>
+    /// Writes a frame's reports without waiting for every intermediate acknowledgement.
+    /// The final report is queried normally, which also drains any replies the device kept.
+    /// </summary>
+    Task SendBatchFastAsync(
+        IReadOnlyList<byte[]> requests,
+        TimeSpan deviceWait,
+        CancellationToken cancellationToken)
+    {
+        if (requests.Count == 0)
+        {
+            throw new ArgumentException("The HID report batch cannot be empty.", nameof(requests));
+        }
+
+        async Task SendAsync()
+        {
+            foreach (var request in requests)
+            {
+                await QueryAsync(
+                    request[2],
+                    request[6],
+                    request[7],
+                    request[8],
+                    request.AsMemory(RazerFeatureReport.ArgumentsOffset, request[6]),
+                    deviceWait,
+                    request[0],
+                    cancellationToken,
+                    allowRemainingPacketsMismatch: true).ConfigureAwait(false);
+            }
+        }
+
+        return SendAsync();
+    }
 }
 
 internal sealed class RazerCommandRejectedException(string message) : InvalidOperationException(message);
@@ -267,6 +330,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
                     cancellationToken,
                     allowRemainingPacketsMismatch,
                     usesLeviathanReportId,
+                    directIo: false,
                     message => WriteDiagnostic(devicePath, request, message)).ConfigureAwait(false);
             }
             catch (Exception exception) when (exception is Win32Exception or IOException or InvalidOperationException or NotSupportedException)
@@ -314,6 +378,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
         CancellationToken cancellationToken,
         bool allowRemainingPacketsMismatch,
         bool usesLeviathanReportId,
+        bool directIo = false,
         Action<string>? diagnostic = null)
     {
         string? lastError = null;
@@ -324,36 +389,30 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
         for (var attempt = 1; attempt <= MaxQueryAttempts; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var setResult = await Task.Run(() =>
-            {
-                var success = NativeMethods.HidD_SetFeature(handle, request, request.Length);
-                return (Success: success, Error: Marshal.GetLastWin32Error());
-            }, cancellationToken).ConfigureAwait(false);
+            var setResult = await SetFeatureAsync(handle, request, directIo, cancellationToken)
+                .ConfigureAwait(false);
             if (!setResult.Success)
             {
                 lastError = new Win32Exception(setResult.Error).Message;
                 diagnostic?.Invoke($"attempt {attempt}: HidD_SetFeature failed, win32={setResult.Error} ({lastError})");
-                await Task.Delay(QueryRetryDelay, cancellationToken).ConfigureAwait(false);
+                await WaitAsync(QueryRetryDelay, directIo, cancellationToken).ConfigureAwait(false);
                 continue;
             }
 
-            await Task.Delay(deviceWait, cancellationToken).ConfigureAwait(false);
+            await WaitAsync(deviceWait, directIo, cancellationToken).ConfigureAwait(false);
             byte[]? response = null;
             string? readError = null;
             for (var readAttempt = 1; readAttempt <= MaxReadAttempts; readAttempt++)
             {
                 if (readAttempt > 1)
                 {
-                    await Task.Delay(ReadRetryDelay, cancellationToken).ConfigureAwait(false);
+                    await WaitAsync(ReadRetryDelay, directIo, cancellationToken).ConfigureAwait(false);
                 }
 
                 var candidate = new byte[RazerFeatureReport.Length];
                 candidate[0] = responseReportId;
-                var getResult = await Task.Run(() =>
-                {
-                    var success = NativeMethods.HidD_GetFeature(handle, candidate, candidate.Length);
-                    return (Success: success, Error: Marshal.GetLastWin32Error());
-                }, cancellationToken).ConfigureAwait(false);
+                var getResult = await GetFeatureAsync(handle, candidate, directIo, cancellationToken)
+                    .ConfigureAwait(false);
                 if (!getResult.Success)
                 {
                     readError = new Win32Exception(getResult.Error).Message;
@@ -382,7 +441,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
                 lastValidationError = string.IsNullOrWhiteSpace(readError) ? "No reply matched the request." : readError;
                 lastError = "The device returned an incorrect report ID, an out-of-order report, or a report that failed validation; close Synapse and retry.";
                 diagnostic?.Invoke($"attempt {attempt}: response validation failed after {MaxReadAttempts} reads ({lastValidationError})");
-                await Task.Delay(QueryRetryDelay, cancellationToken).ConfigureAwait(false);
+                await WaitAsync(QueryRetryDelay, directIo, cancellationToken).ConfigureAwait(false);
                 continue;
             }
 
@@ -443,7 +502,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
                 diagnostic?.Invoke($"attempt {attempt}: {lastError}");
             }
 
-            await Task.Delay(QueryRetryDelay, cancellationToken).ConfigureAwait(false);
+            await WaitAsync(QueryRetryDelay, directIo, cancellationToken).ConfigureAwait(false);
         }
 
         if (rejectedResponses == MaxQueryAttempts)
@@ -459,6 +518,67 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
             throw new RazerReportMismatchException($"The device returned a report that did not match the request: {lastValidationError}");
 
         throw new InvalidOperationException(lastError ?? "Razer feature query failed.");
+    }
+
+    private static async Task<(bool Success, int Error)> SetFeatureAsync(
+        SafeFileHandle handle,
+        byte[] request,
+        bool directIo,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (directIo)
+        {
+            var success = NativeMethods.HidD_SetFeature(handle, request, request.Length);
+            return (success, Marshal.GetLastWin32Error());
+        }
+
+        return await Task.Run(() =>
+        {
+            var success = NativeMethods.HidD_SetFeature(handle, request, request.Length);
+            return (Success: success, Error: Marshal.GetLastWin32Error());
+        }, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task<(bool Success, int Error)> GetFeatureAsync(
+        SafeFileHandle handle,
+        byte[] request,
+        bool directIo,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (directIo)
+        {
+            var success = NativeMethods.HidD_GetFeature(handle, request, request.Length);
+            return (success, Marshal.GetLastWin32Error());
+        }
+
+        return await Task.Run(() =>
+        {
+            var success = NativeMethods.HidD_GetFeature(handle, request, request.Length);
+            return (Success: success, Error: Marshal.GetLastWin32Error());
+        }, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task WaitAsync(
+        TimeSpan delay,
+        bool directIo,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (delay <= TimeSpan.Zero)
+        {
+            return;
+        }
+
+        if (directIo)
+        {
+            Thread.Sleep(delay);
+            cancellationToken.ThrowIfCancellationRequested();
+            return;
+        }
+
+        await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
     }
 
     private void WriteDiagnostic(string devicePath, byte[] request, string message)
@@ -488,130 +608,6 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
         return $"len={response[6]}, args={Convert.ToHexString(response[RazerFeatureReport.ArgumentsOffset..(RazerFeatureReport.ArgumentsOffset + length)])}";
     }
 
-    private sealed class RazerFeatureSession(
-        SafeFileHandle handle,
-        SemaphoreSlim gate,
-        string devicePath) : IRazerFeatureSession
-    {
-        private readonly object _transactionSync = new();
-        private byte _transactionId;
-        private int _disposed;
-
-        public byte NextTransactionId()
-        {
-            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
-            lock (_transactionSync)
-            {
-                var current = _transactionId;
-                _transactionId = current == 30 ? (byte)0 : (byte)(current + 1);
-                return current;
-            }
-        }
-
-        public async Task SendAsync(
-            ReadOnlyMemory<byte> request,
-            CancellationToken cancellationToken)
-        {
-            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
-            if (request.Length != RazerFeatureReport.Length)
-            {
-                throw new ArgumentException("A Razer feature report must be 91 bytes.", nameof(request));
-            }
-
-            var report = request.ToArray();
-            await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
-            try
-            {
-                if (UsesMouseDockLinker(devicePath)) PrepareStandardTransaction(devicePath, report);
-                var result = await Task.Run(() =>
-                {
-                    var success = NativeMethods.HidD_SetFeature(handle, report, report.Length);
-                    return (Success: success, Error: Marshal.GetLastWin32Error());
-                }, cancellationToken).ConfigureAwait(false);
-                if (!result.Success)
-                {
-                    throw new Win32Exception(result.Error, "Razer feature session handshake failed.");
-                }
-            }
-            finally
-            {
-                gate.Release();
-            }
-        }
-
-        public async Task SendBatchAsync(
-            IReadOnlyList<byte[]> requests,
-            TimeSpan rowDelay,
-            CancellationToken cancellationToken)
-        {
-            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
-            ArgumentNullException.ThrowIfNull(requests);
-            if (requests.Count == 0 || requests.Any(request => request.Length != RazerFeatureReport.Length))
-            {
-                throw new ArgumentException("A Razer feature report batch must contain at least one 91-byte report.", nameof(requests));
-            }
-
-            foreach (var request in requests)
-            {
-                await QueryAsync(
-                    request[2],
-                    request[6],
-                    request[7],
-                    request[8],
-                    request.AsMemory(RazerFeatureReport.ArgumentsOffset, request[6]),
-                    rowDelay,
-                    request[0],
-                    cancellationToken,
-                    allowRemainingPacketsMismatch: true).ConfigureAwait(false);
-            }
-        }
-
-        public async Task<byte[]> QueryAsync(
-            byte transactionId,
-            byte dataSize,
-            byte commandClass,
-            byte commandId,
-            ReadOnlyMemory<byte> arguments,
-            TimeSpan deviceWait,
-            byte responseReportId,
-            CancellationToken cancellationToken,
-            bool allowRemainingPacketsMismatch = false)
-        {
-            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
-            var request = RazerFeatureReport.CreateRequest(
-                transactionId,
-                dataSize,
-                commandClass,
-                commandId,
-                arguments.Span);
-            await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
-            try
-            {
-                if (UsesMouseDockLinker(devicePath)) PrepareStandardTransaction(devicePath, request);
-                return await ExecuteOnHandleAsync(
-                    handle,
-                    request,
-                    deviceWait,
-                    responseReportId,
-                    cancellationToken,
-                    allowRemainingPacketsMismatch,
-                    usesLeviathanReportId: false).ConfigureAwait(false);
-            }
-            finally
-            {
-                gate.Release();
-            }
-        }
-
-        public ValueTask DisposeAsync()
-        {
-            if (Interlocked.Exchange(ref _disposed, 1) == 0)
-            {
-                handle.Dispose();
-            }
-            return ValueTask.CompletedTask;
-        }
-    }
 
     private static class NativeMethods
     {
