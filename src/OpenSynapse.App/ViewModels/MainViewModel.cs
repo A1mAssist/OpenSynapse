@@ -90,6 +90,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         Firmware = new FirmwareWorkspace(
             firmwareUpdateClient ?? new RazerFirmwareUpdateClient(),
             () => _deviceDescriptors);
+        Macros = new MacroWorkspace(() => GetActiveProfile(), SaveProfileAsync, _diagnosticLog, macroInputSink);
         Viper = new ViperWorkspace(
             deviceTelemetryReader,
             () => _profile,
@@ -99,7 +100,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             () => CurrentPowerSource,
             () => Devices.FirstOrDefault(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper),
             RunDeviceOperationAsync,
-            reading => Telemetry.NotifyBatteryObserved(reading));
+            reading => Telemetry.NotifyBatteryObserved(reading),
+            () => Macros.Items.Select(macro => macro.Definition).ToArray(),
+            Macros.TryBindMacroTriggerAsync);
         Blade = new BladeWorkspace(
             deviceTelemetryReader,
             bladeLightingController,
@@ -127,7 +130,6 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             () => Lighting!,
             () => Devices.FirstOrDefault(device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily)),
             GetDeviceSerialAsync);
-        Macros = new MacroWorkspace(() => GetActiveProfile(), SaveProfileAsync, _diagnosticLog, macroInputSink);
         RazerDrivers = new RazerDriverWorkspace(_diagnosticLog);
         Display = new DisplayWorkspace(
             internalDisplayController,
