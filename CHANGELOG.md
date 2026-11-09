@@ -8,6 +8,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
+- Razer driver setup now matches the connected device, catalog key and installer PID, reads the ProgramData uninstaller, binds the staged INF by hardware ID, starts `RzDev_*`, treats 3010/1641 as success, and installs the per-device package through the machine service without UAC.
 - Analog keys now appear on Huntsman V3 Pro TKL (02A7), Mini (02B0) and 8KHz (02CF): the capability probe uses the per-key actuation command, optional setting reads can no longer remove the card, and the TKL/Mini/full-size layouts are covered.
 - Onboard profiles now read the device's real id list and create the first free id; delete and reset ask for confirmation, the active profile cannot be deleted, and failures use readable messages.
 - Switching to the Custom performance mode now shows the GPU performance level and refreshes the CPU/GPU Boost and max-fan controls.

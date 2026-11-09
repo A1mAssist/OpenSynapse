@@ -102,7 +102,10 @@ internal static class RazerCommonDriverInstaller
             return new RazerDriverInstallResult(true);
         }
 
-        var (infPath, failure) = await EnsurePackageAsync(progress, cancellationToken)
+        var (infPath, failure) = await EnsurePackageAsync(
+                RazerDriverInstaller.CacheDirectory,
+                progress,
+                cancellationToken)
             .ConfigureAwait(false);
         if (failure is not null)
         {
@@ -134,7 +137,20 @@ internal static class RazerCommonDriverInstaller
             return new RazerDriverInstallResult(true);
         }
 
-        var (infPath, failure) = await EnsurePackageAsync(null, cancellationToken)
+        try
+        {
+            RazerDriverInstaller.EnsureServiceCacheDirectory();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return new RazerDriverInstallResult(
+                false, RazerDriverInstallFailure.StartFailed, Error: exception.Message);
+        }
+
+        var (infPath, failure) = await EnsurePackageAsync(
+                RazerDriverInstaller.ServiceCacheDirectory,
+                progress: null,
+                cancellationToken)
             .ConfigureAwait(false);
         if (failure is not null)
         {
@@ -151,10 +167,11 @@ internal static class RazerCommonDriverInstaller
     }
 
     private static async Task<(string? InfPath, RazerDriverInstallResult? Failure)> EnsurePackageAsync(
+        string cacheDirectory,
         IProgress<RazerDriverInstallProgress>? progress,
         CancellationToken cancellationToken)
     {
-        var folder = Path.Combine(RazerDriverInstaller.CacheDirectory, "RzCommon");
+        var folder = Path.Combine(cacheDirectory, "RzCommon");
         Directory.CreateDirectory(folder);
         var cabPath = Path.Combine(folder, "RzCommon.cab");
         var infPath = Path.Combine(folder, "RzCommonU.inf");
@@ -181,6 +198,7 @@ internal static class RazerCommonDriverInstaller
             RazerDriverInstaller.VerifyPackage(
                 sysPath,
                 new RazerDriverPackage(
+                    "RZCOMMON",
                     "RZCOMMON",
                     "Razer Common Driver",
                     "10.0.15063.0",

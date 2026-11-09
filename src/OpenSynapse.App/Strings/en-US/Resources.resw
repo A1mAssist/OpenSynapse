@@ -3529,7 +3529,7 @@
   <data name="RazerDriverTitle.Text" xml:space="preserve"><value>Razer driver</value></data>
   <data name="RazerDriverDescription.Text" xml:space="preserve"><value>Install Razer's device filter driver so button mapping and macros use the same driver-level injection path as Synapse.</value></data>
   <data name="RazerDriverInstall.Content" xml:space="preserve"><value>Install or repair drivers</value></data>
-  <data name="RazerDriverInstallHint.Text" xml:space="preserve"><value>Packages come from Razer's official CDN and request administrator approval. Replug the device or restart after installation.</value></data>
+  <data name="RazerDriverInstallHint.Text" xml:space="preserve"><value>Packages come from Razer's official CDN. The OpenSynapse service installs them silently; portable builds request administrator approval. Replug the device or restart after installation.</value></data>
   <data name="RazerDriverChecking" xml:space="preserve"><value>Checking Razer drivers…</value></data>
   <data name="RazerDriverAllReady" xml:space="preserve"><value>Every connected Razer peripheral already has its filter driver.</value></data>
   <data name="RazerDriverMissingCount" xml:space="preserve"><value>{0} Razer peripheral(s) are missing a driver.</value></data>
@@ -3545,14 +3545,17 @@
   <data name="RazerDriverMissingStatus" xml:space="preserve"><value>Driver missing</value></data>
   <data name="RazerDriverDetail" xml:space="preserve"><value>VID_1532 / PID_{0} · driver v{1}</value></data>
   <data name="RazerDriverDownloading" xml:space="preserve"><value>Downloading the {0} driver…</value></data>
-  <data name="RazerDriverInstalling" xml:space="preserve"><value>Starting the {0} driver installer; approve it in UAC.</value></data>
+  <data name="RazerDriverInstalling" xml:space="preserve"><value>Installing the {0} driver…</value></data>
   <data name="RazerDriverInstallTimeout" xml:space="preserve"><value>Razer driver installation timed out.</value></data>
   <data name="RazerDriverInstallExitCode" xml:space="preserve"><value>Razer driver installer returned {0}.</value></data>
   <data name="RazerDriverInstallInvalidPackage" xml:space="preserve"><value>Razer driver package validation failed.</value></data>
   <data name="RazerDriverDownloadFailed" xml:space="preserve"><value>The Razer driver package could not be downloaded or saved.</value></data>
   <data name="RazerDriverInstallStartFailed" xml:space="preserve"><value>The Razer driver installer did not start.</value></data>
+  <data name="RazerDriverNoStagedInf" xml:space="preserve"><value>The driver is installed, but no matching filter INF was found. Restart and retry, or reinstall the package.</value></data>
+  <data name="RazerDriverBindFailed" xml:space="preserve"><value>The driver filter INF could not be bound: {0}</value></data>
+  <data name="RazerDriverInstallUncertain" xml:space="preserve"><value>The driver install was submitted, but the service did not return a result. Wait a minute and refresh; do not reinstall.</value></data>
   <data name="RazerDriverCommonDownloading" xml:space="preserve"><value>Downloading the Razer common control driver…</value></data>
-  <data name="RazerDriverCommonInstalling" xml:space="preserve"><value>Installing the Razer common control driver; approve it in UAC.</value></data>
+  <data name="RazerDriverCommonInstalling" xml:space="preserve"><value>Installing the Razer common control driver…</value></data>
   <data name="ProfileSummaryTitle" xml:space="preserve"><value>This profile includes</value></data>
   <data name="ProfileSummaryEmpty" xml:space="preserve"><value>This profile has no device settings yet.</value></data>
   <data name="ProfileSummary_ScopeDevice" xml:space="preserve"><value>Device override</value></data>

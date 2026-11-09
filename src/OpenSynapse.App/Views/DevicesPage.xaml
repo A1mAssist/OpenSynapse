@@ -70,7 +70,7 @@
                     </ItemsControl>
                     <TextBlock Text="{Binding RazerDrivers.StatusText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                     <Button local:Localized.Uid="RazerDriverInstall" Content="安装或修复驱动" Click="InstallRazerDriversClick" IsEnabled="{Binding RazerDrivers.CanInstall}" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Left" />
-                    <TextBlock local:Localized.Uid="RazerDriverInstallHint" Text="安装包来自 Razer 官方 CDN，会请求管理员权限。安装完成后重新插拔设备或重启。" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
+                    <TextBlock local:Localized.Uid="RazerDriverInstallHint" Text="安装包来自 Razer 官方 CDN。已安装 OpenSynapse 服务时由服务静默安装；便携版会请求管理员权限。安装完成后重新插拔设备或重启。" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
                   </StackPanel>
                 </Border>
                 <StackPanel Spacing="8">

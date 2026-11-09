@@ -74,17 +74,13 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                 cancellationToken).ConfigureAwait(true);
             var endpoints = await RazerFilterEndpointDiscovery.DiscoverAllAsync(cancellationToken)
                 .ConfigureAwait(true);
-            var ready = endpoints
-                .Select(TryGetProductId)
-                .Where(static id => id is not null)
-                .Select(static id => id!.Value)
-                .ToHashSet();
+            var ready = BuildReadySet(endpoints);
 
             var rows = new List<RazerDriverRowViewModel>();
             foreach (var group in interfaces.GroupBy(static item => item.ProductId))
             {
                 var productId = group.Key;
-                if (productId == RazerFilterDriverAdmission.ArgbProductId || ready.Contains(productId))
+                if (productId == RazerFilterDriverAdmission.ArgbProductId)
                 {
                     continue;
                 }
@@ -106,10 +102,16 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                     continue;
                 }
 
+                var candidates = RazerDriverPackageCatalog.GetCandidateProductIds(productId, package);
+                if (candidates.Any(ready.Contains))
+                {
+                    continue;
+                }
+
                 var name = group.Select(static item => item.ProductName)
                     .FirstOrDefault(static value => !string.IsNullOrWhiteSpace(value));
-                var row = new RazerDriverRowViewModel(name ?? package.Name, productId, package);
-                if (_installedProductIds.Contains(productId) || IsPackageInstalled(productId))
+                var row = new RazerDriverRowViewModel(name ?? package.Name, productId, package, candidates);
+                if (_installedProductIds.Overlaps(candidates) || IsPackageInstalled(candidates))
                 {
                     // The package is staged but the endpoint has not appeared yet:
                     // report that state instead of claiming the driver is missing.
@@ -162,6 +164,7 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
         IsBusy = true;
         var installed = 0;
         var failed = 0;
+        var bindFailed = 0;
         try
         {
             var commonProgress = new Progress<RazerDriverInstallProgress>(update =>
@@ -229,19 +232,31 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                             AppStrings.Text("RazerDriverCommonInstalling"),
                         _ => AppStrings.FormatText("RazerDriverInstalling", update.PackageName),
                     });
-                var result = await RazerDriverInstaller.InstallAsync(package, progress, cancellationToken)
+                var rowsForPackage = _missing.Where(row =>
+                        string.Equals(row.Package?.Url, package.Url, StringComparison.OrdinalIgnoreCase))
+                    .ToArray();
+                StatusText = AppStrings.FormatText("RazerDriverInstalling", package.Name);
+                var serviceResult = await OpenSynapseServiceClient
+                    .TryInstallRazerDeviceDriverAsync(rowsForPackage[0].ProductIdValue, cancellationToken)
                     .ConfigureAwait(true);
+                var result = serviceResult ??
+                    await RazerDriverInstaller.InstallAsync(package, progress, cancellationToken)
+                        .ConfigureAwait(true);
                 if (result.Success)
                 {
                     installed++;
-                    foreach (var row in _missing.Where(row =>
-                                 string.Equals(row.Package?.Url, package.Url, StringComparison.OrdinalIgnoreCase))
-                             .ToArray())
+                    foreach (var row in rowsForPackage)
                     {
                         row.IsInstalled = true;
-                        _installedProductIds.Add(row.ProductIdValue);
+                        foreach (var productId in row.CandidateProductIds)
+                        {
+                            _installedProductIds.Add(productId);
+                        }
+
+                        await EnsureDriverServicesStartedAsync(
+                            row.CandidateProductIds, cancellationToken).ConfigureAwait(true);
                         row.EndpointVerified = await WaitForEndpointAsync(
-                            row.ProductIdValue, cancellationToken).ConfigureAwait(true);
+                            row.CandidateProductIds, cancellationToken).ConfigureAwait(true);
                         if (!row.EndpointVerified)
                         {
                             // A silent vendor install only stages the filter INF. A staged
@@ -250,22 +265,32 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                             var serviceBind = await OpenSynapseServiceClient
                                 .TryBindRazerFilterAsync(row.ProductIdValue, cancellationToken)
                                 .ConfigureAwait(true);
-                            var bind = serviceBind is { } bound
-                                ? new RazerFilterBindResult(bound.Applied, bound.Error)
-                                : await RazerFilterInfBinder
-                                    .ApplyAsync(row.ProductIdValue, cancellationToken)
-                                    .ConfigureAwait(true);
-                            if (!bind.Applied && bind.Error is not null)
+                            var bind = serviceBind ?? await RazerFilterInfBinder
+                                .ApplyAsync(row.ProductIdValue, cancellationToken)
+                                .ConfigureAwait(true);
+                            if (bind.Status == RazerFilterBindStatus.NoStagedInf)
                             {
+                                bindFailed++;
+                                row.StatusText = AppStrings.Text("RazerDriverNoStagedInf");
+                                continue;
+                            }
+
+                            if (bind.Status == RazerFilterBindStatus.Failed)
+                            {
+                                bindFailed++;
                                 _diagnosticLog.TryWrite(
                                     "razer-driver",
-                                    $"Razer filter bind {row.ProductId}: {bind.Error}");
+                                    $"Razer filter bind {row.ProductId}: {bind.Error ?? "unknown"}");
+                                row.StatusText = AppStrings.FormatText(
+                                    "RazerDriverBindFailed",
+                                    bind.Error ?? string.Empty);
+                                continue;
                             }
-                            if (bind.Applied)
-                            {
-                                row.EndpointVerified = await WaitForEndpointAsync(
-                                    row.ProductIdValue, cancellationToken).ConfigureAwait(true);
-                            }
+
+                            await EnsureDriverServicesStartedAsync(
+                                row.CandidateProductIds, cancellationToken).ConfigureAwait(true);
+                            row.EndpointVerified = await WaitForEndpointAsync(
+                                row.CandidateProductIds, cancellationToken).ConfigureAwait(true);
                         }
                         if (row.EndpointVerified)
                         {
@@ -279,17 +304,16 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                 {
                     failed++;
                     var message = DescribeFailure(result);
-                    foreach (var row in _missing.Where(row =>
-                                 string.Equals(row.Package?.Url, package.Url, StringComparison.OrdinalIgnoreCase)))
+                    foreach (var row in rowsForPackage)
                     {
                         row.StatusText = message;
                     }
                 }
             }
 
-            StatusText = failed == 0
+            StatusText = failed == 0 && bindFailed == 0
                 ? AppStrings.FormatText("RazerDriverInstallSummary", installed)
-                : AppStrings.FormatText("RazerDriverInstallSummaryPartial", installed, failed);
+                : AppStrings.FormatText("RazerDriverInstallSummaryPartial", installed, failed + bindFailed);
             OnPropertyChanged(nameof(HasMissing));
             OnPropertyChanged(nameof(CanInstall));
             _diagnosticLog.TryWrite("razer-driver", StatusText);
@@ -297,6 +321,11 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
         catch (OperationCanceledException)
         {
             StatusText = AppStrings.Text("RazerDriverInstallCancelled");
+        }
+        catch (DedicatedGpuOperationUncertainException)
+        {
+            StatusText = AppStrings.Text("RazerDriverInstallUncertain");
+            _diagnosticLog.TryWrite("razer-driver", StatusText);
         }
         catch (Exception exception) when (
             exception is IOException or InvalidOperationException or
@@ -319,7 +348,9 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
             RazerDriverInstallFailure.Timeout =>
                 AppStrings.Text("RazerDriverInstallTimeout"),
             RazerDriverInstallFailure.ExitCode =>
-                AppStrings.FormatText("RazerDriverInstallExitCode", $"0x{result.ExitCode:X8}"),
+                result.Error is { Length: > 0 } error
+                    ? AppStrings.FormatText("RazerDriverInstallFailed", error)
+                    : AppStrings.FormatText("RazerDriverInstallExitCode", $"0x{result.ExitCode:X8}"),
             RazerDriverInstallFailure.InvalidPackage =>
                 AppStrings.Text("RazerDriverInstallInvalidPackage"),
             RazerDriverInstallFailure.DownloadFailed =>
@@ -332,45 +363,64 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
     /// <summary>
     /// The vendor package keeps its uninstaller under this per-product folder,
     /// which is the only durable trace of an install whose endpoint is still
-    /// pending a restart.
+    /// pending a restart. Synapse 3 writes ProgramData; the old per-user folder
+    /// stays as a compatibility fallback.
     /// </summary>
-    private static bool IsPackageInstalled(ushort productId) => File.Exists(Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "Razer",
-        "Synapse3",
-        "Uninstall",
-        $"PID{productId:X4}Drv",
-        $"PID{productId:X4}DrvUninstaller.exe"));
+    private static bool IsPackageInstalled(IReadOnlyList<ushort> candidates) =>
+        RazerDriverIdentity.IsPackageInstalled(
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            candidates);
 
-    private static ushort? TryGetProductId(string path)
+    private static HashSet<ushort> BuildReadySet(IEnumerable<string> endpoints) =>
+        RazerDriverIdentity.ExpandReady(
+            endpoints
+                .Select(RazerDriverIdentity.TryParseEndpointProductId)
+                .Where(static id => id is not null)
+                .Select(static id => id!.Value));
+
+    private static async Task EnsureDriverServicesStartedAsync(
+        IReadOnlyList<ushort> candidates,
+        CancellationToken cancellationToken)
     {
-        const string marker = "PID_";
-        var index = path.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
-        if (index < 0 || index + marker.Length + 4 > path.Length)
+        foreach (var productId in candidates)
         {
-            return null;
-        }
+            var serviceName = $"RzDev_{productId:X4}";
+            try
+            {
+                if (await OpenSynapseServiceClient
+                        .TryStartDriverServiceAsync(serviceName, cancellationToken)
+                        .ConfigureAwait(true))
+                {
+                    return;
+                }
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                // The service did not answer in time; try the in-process start.
+            }
 
-        return ushort.TryParse(
-            path.AsSpan(index + marker.Length, 4),
-            System.Globalization.NumberStyles.HexNumber,
-            null,
-            out var productId)
-            ? productId
-            : null;
+            if (WindowsServiceControl.TryStart(serviceName, out _))
+            {
+                return;
+            }
+        }
     }
 
     private static async Task<bool> WaitForEndpointAsync(
-        ushort productId,
+        IReadOnlyList<ushort> candidates,
         CancellationToken cancellationToken)
     {
         for (var attempt = 0; attempt < 6; attempt++)
         {
-            var endpoint = await RazerFilterEndpointDiscovery.DiscoverAsync(
-                productId, cancellationToken).ConfigureAwait(false);
-            if (!string.IsNullOrWhiteSpace(endpoint))
+            foreach (var productId in candidates)
             {
-                return true;
+                var endpoint = await RazerFilterEndpointDiscovery.DiscoverAsync(
+                    productId, cancellationToken).ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(endpoint))
+                {
+                    return true;
+                }
             }
 
             if (attempt < 5)
@@ -393,12 +443,14 @@ public sealed class RazerDriverRowViewModel : INotifyPropertyChanged
     internal RazerDriverRowViewModel(
         string name,
         ushort productId,
-        RazerDriverPackage package)
+        RazerDriverPackage package,
+        IReadOnlyList<ushort> candidateProductIds)
     {
         Name = name;
         ProductId = productId.ToString("X4");
         ProductIdValue = productId;
         Package = package;
+        CandidateProductIds = candidateProductIds;
         Detail = AppStrings.FormatText("RazerDriverDetail", ProductId, package.Version);
     }
 
@@ -409,6 +461,7 @@ public sealed class RazerDriverRowViewModel : INotifyPropertyChanged
     public string Detail { get; }
     internal ushort ProductIdValue { get; }
     internal RazerDriverPackage? Package { get; }
+    internal IReadOnlyList<ushort> CandidateProductIds { get; }
     internal bool IsInstalled { get; set; }
     internal bool EndpointVerified { get; set; }
 
