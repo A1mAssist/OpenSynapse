@@ -106,7 +106,7 @@ public sealed partial class RazerHidDeviceViewModel
     public bool CanApplyOnboardProfile => CanEditOnboardProfile && _activeOnboardProfileKnown &&
         SelectedOnboardProfileId != 0 && !IsOnboardProfileActiveSelected;
     public bool CanCreateOnboardProfile => CanEditOnboardProfile && FindFreeOnboardProfileId() is not null;
-    public bool CanDeleteOnboardProfile => CanEditOnboardProfile &&
+    public bool CanDeleteOnboardProfile => CanEditOnboardProfile && _activeOnboardProfileKnown &&
         _onboardProfileIds.Count > 1 && !IsOnboardProfileActiveSelected;
     public bool CanResetOnboardProfile => CanEditOnboardProfile &&
         RazerHidDeviceService.SupportsOnboardProfileReset(Connection.Definition.ProductId);
@@ -287,13 +287,14 @@ public sealed partial class RazerHidDeviceViewModel
                     return;
                 }
 
+                var requested = SelectedOnboardProfileId;
                 var previous = ActiveOnboardProfileId;
                 var previousProfile = ReadProfile(settings => settings.Viper.ActiveOnboardProfileId);
                 await _service.SetActiveOnboardProfileIdAsync(
-                    Connection, SelectedOnboardProfileId, cancellationToken);
+                    Connection, requested, cancellationToken);
                 await ReadOnboardProfilesAsync(cancellationToken);
                 await SaveProfileAsync(
-                    settings => settings.Viper.ActiveOnboardProfileId = ActiveOnboardProfileId,
+                    settings => settings.Viper.ActiveOnboardProfileId = requested,
                     settings => settings.Viper.ActiveOnboardProfileId = previousProfile,
                     () =>
                     {
@@ -341,7 +342,7 @@ public sealed partial class RazerHidDeviceViewModel
             async () =>
             {
                 var deleted = SelectedOnboardProfileId;
-                if (deleted == 0 || IsOnboardProfileActiveSelected)
+                if (!_activeOnboardProfileKnown || deleted == 0 || IsOnboardProfileActiveSelected)
                 {
                     return;
                 }
