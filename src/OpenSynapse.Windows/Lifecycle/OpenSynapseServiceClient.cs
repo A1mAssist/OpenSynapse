@@ -12,7 +12,7 @@ namespace OpenSynapse.Windows.Lifecycle;
 /// service, or a confirmed protocol rejection returns null for the UAC helper.
 /// A PnP write with no trustworthy terminal response is uncertain, never a fallback.
 /// </summary>
-public static class OpenSynapseServiceClient
+public static partial class OpenSynapseServiceClient
 {
     private static readonly TimeSpan ServiceStartTimeout = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan PipeConnectTimeout = TimeSpan.FromSeconds(3);
@@ -136,46 +136,6 @@ public static class OpenSynapseServiceClient
         var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
         return response?.Handled == true &&
             response.Outcome == DedicatedGpuSwitchOutcome.Success;
-    }
-
-    /// <summary>
-    /// Asks the machine-wide service to attach the staged RzDev filter INF for one
-    /// product. Null means the service is unavailable, so the caller keeps its UAC
-    /// fallback. Applied is false when nothing was staged, which is not a failure.
-    /// </summary>
-    public static async Task<(bool Applied, string? Error)?> TryBindRazerFilterAsync(
-        ushort productId,
-        CancellationToken cancellationToken = default)
-    {
-        var request = new OpenSynapseServiceRequest(
-            OpenSynapseServiceProtocol.Version,
-            OpenSynapseServiceProtocol.BindFilterOperation,
-            Enabled: null,
-            ProductId: productId);
-
-        var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
-        return response?.Handled == true
-            ? (response.Outcome == DedicatedGpuSwitchOutcome.Success &&
-                response.ExitCode == 0, response.Error)
-            : null;
-    }
-
-    /// <summary>
-    /// Asks the machine-wide service to install the WHQL Razer Common driver.
-    /// Null means the service is unavailable, so the caller keeps its UAC fallback.
-    /// </summary>
-    public static async Task<bool?> TryInstallRazerCommonAsync(
-        CancellationToken cancellationToken = default)
-    {
-        var request = new OpenSynapseServiceRequest(
-            OpenSynapseServiceProtocol.Version,
-            OpenSynapseServiceProtocol.InstallRazerCommonOperation,
-            Enabled: null);
-
-        var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
-        return response?.Handled == true
-            ? response.Outcome == DedicatedGpuSwitchOutcome.Success
-            : null;
     }
 
     /// <summary>
@@ -541,7 +501,10 @@ public static class OpenSynapseServiceClient
     {
         var pnpWrite = request.Operation is OpenSynapseServiceProtocol.SetOperation or
             OpenSynapseServiceProtocol.RestartOperation or
-            OpenSynapseServiceProtocol.ApplyUpdateOperation;
+            OpenSynapseServiceProtocol.ApplyUpdateOperation or
+            OpenSynapseServiceProtocol.InstallRazerCommonOperation or
+            OpenSynapseServiceProtocol.InstallRazerDeviceDriverOperation or
+            OpenSynapseServiceProtocol.BindFilterOperation;
         var dispatched = false;
         try
         {

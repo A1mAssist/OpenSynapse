@@ -35,6 +35,7 @@ public static class OpenSynapseServiceProtocol
     public const string StopChromaBrokerOperation = "stop-chroma-broker";
     public const string InstallChromaDllOperation = "install-chroma-dll";
     public const string InstallRazerCommonOperation = "install-razer-common";
+    public const string InstallRazerDeviceDriverOperation = "install-razer-device-driver";
     public const string BindFilterOperation = "bind-filter";
     public const string StartDriverServiceOperation = "start-driver-service";
     public const string ApplyUpdateOperation = "apply-update";
@@ -48,11 +49,36 @@ public static class OpenSynapseServiceProtocol
     public const string ThxBladeServiceName11 = "thx_rznb11_service";
     public const string ThxBladeServiceName12 = "thx_rznb12_service";
 
-    public static bool IsManagedDriverService(string? name) =>
-        string.Equals(name, RazerCommonServiceName, StringComparison.Ordinal) ||
-        string.Equals(name, ThxServiceName, StringComparison.Ordinal) ||
-        string.Equals(name, ThxBladeServiceName11, StringComparison.Ordinal) ||
-        string.Equals(name, ThxBladeServiceName12, StringComparison.Ordinal);
+    public static bool IsManagedDriverService(string? name)
+    {
+        if (string.Equals(name, RazerCommonServiceName, StringComparison.Ordinal) ||
+            string.Equals(name, ThxServiceName, StringComparison.Ordinal) ||
+            string.Equals(name, ThxBladeServiceName11, StringComparison.Ordinal) ||
+            string.Equals(name, ThxBladeServiceName12, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        // The per-device RzDev filter service is the only generated name allowed
+        // through. Keep the fixed prefix and four hex digits so this cannot become
+        // a generic service launcher.
+        if (name is null ||
+            name.Length != 10 ||
+            !name.StartsWith("RzDev_", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        for (var index = 6; index < name.Length; index++)
+        {
+            if (!char.IsAsciiHexDigit(name[index]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     public const int MaximumMessageLength = 4096;
 }
@@ -152,6 +178,12 @@ public enum OpenSynapseServiceAction
     /// owns the package URL, so the caller supplies no path.
     /// </summary>
     InstallRazerCommon,
+
+    /// <summary>
+    /// Download, verify, and install the official per-device RzDev filter package
+    /// through the elevated service, so a standard user gets no UAC prompt.
+    /// </summary>
+    InstallRazerDeviceDriver,
 
     /// <summary>
     /// Attach the staged RzDev filter INF for one product to the present device
@@ -349,6 +381,14 @@ public static class OpenSynapseServiceRequestParser
                 OpenSynapseServiceProtocol.InstallRazerCommonOperation))
         {
             return OpenSynapseServiceAction.InstallRazerCommon;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                request.Operation,
+                OpenSynapseServiceProtocol.InstallRazerDeviceDriverOperation) &&
+            request.ProductId is > 0 and <= 0xFFFF)
+        {
+            return OpenSynapseServiceAction.InstallRazerDeviceDriver;
         }
 
         if (StringComparer.Ordinal.Equals(

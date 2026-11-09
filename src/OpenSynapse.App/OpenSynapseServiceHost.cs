@@ -210,7 +210,8 @@ internal static partial class OpenSynapseServiceHost
                 return Invalid("Unsupported OpenSynapse service request.");
             }
 
-            switch (OpenSynapseServiceRequestParser.Parse(request))
+            var action = OpenSynapseServiceRequestParser.Parse(request);
+            switch (action)
             {
                 case OpenSynapseServiceAction.Status:
                     return new OpenSynapseServiceResponse(
@@ -271,47 +272,10 @@ internal static partial class OpenSynapseServiceHost
                         Error: dllInstalled ? null : dllOutcome.ToString());
 
                 case OpenSynapseServiceAction.InstallRazerCommon:
-                    var commonResult = await RazerCommonDriverInstaller
-                        .InstallAsServiceAsync(CancellationToken.None)
-                        .ConfigureAwait(false);
-                    return new OpenSynapseServiceResponse(
-                        OpenSynapseServiceProtocol.Version,
-                        Handled: true,
-                        commonResult.Success
-                            ? DedicatedGpuSwitchOutcome.Success
-                            : DedicatedGpuSwitchOutcome.Failed,
-                        ExitCode: commonResult.Success ? 0 : 1,
-                        Status: null,
-                        Error: commonResult.Success ? null : commonResult.Failure.ToString());
-
+                case OpenSynapseServiceAction.InstallRazerDeviceDriver:
                 case OpenSynapseServiceAction.BindFilter:
-                    var bindResult = await RazerFilterInfBinder
-                        .ApplyDirectAsync((ushort)request.ProductId!.Value, CancellationToken.None)
-                        .ConfigureAwait(false);
-                    var bindAccepted = bindResult.Error is null;
-                    return new OpenSynapseServiceResponse(
-                        OpenSynapseServiceProtocol.Version,
-                        Handled: true,
-                        bindAccepted
-                            ? DedicatedGpuSwitchOutcome.Success
-                            : DedicatedGpuSwitchOutcome.Failed,
-                        ExitCode: bindResult.Applied ? 0 : 2,
-                        Status: null,
-                        Error: bindResult.Error);
-
                 case OpenSynapseServiceAction.StartDriverService:
-                    var driverStarted = WindowsServiceControl.TryStart(
-                        request.ServiceName!,
-                        out var driverError);
-                    return new OpenSynapseServiceResponse(
-                        OpenSynapseServiceProtocol.Version,
-                        Handled: true,
-                        driverStarted
-                            ? DedicatedGpuSwitchOutcome.Success
-                            : DedicatedGpuSwitchOutcome.Failed,
-                        ExitCode: driverStarted ? 0 : 1,
-                        Status: null,
-                        Error: driverError);
+                    return await ExecuteRazerDriverAsync(action, request).ConfigureAwait(false);
 
                 case OpenSynapseServiceAction.ApplyUpdate:
                     return await ApplyUpdateAsync(request, authorizedUser, CancellationToken.None)

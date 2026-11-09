@@ -4,6 +4,7 @@ namespace OpenSynapse.Windows.Devices;
 
 internal sealed record RazerDriverPackage(
     string ProductId,
+    string InstallProductId,
     string Name,
     string Version,
     long Size,
@@ -28,22 +29,59 @@ internal static class RazerDriverPackageCatalog
         var data = Data.Value;
         if (!data.Packages.TryGetValue(key, out var entry))
         {
-            if (!data.Aliases.TryGetValue(key, out var baseProductId) ||
-                !data.Packages.TryGetValue(baseProductId, out entry))
+            if (data.Aliases.TryGetValue(key, out var baseProductId) ||
+                data.InstallPackages.TryGetValue(key, out baseProductId))
+            {
+                entry = data.Packages[baseProductId];
+                key = baseProductId;
+            }
+            else
             {
                 return false;
             }
-
-            key = baseProductId;
         }
 
         package = new RazerDriverPackage(
             key,
+            entry.InstallProductId,
             entry.Name,
             entry.Version,
             entry.Size,
             entry.Url);
         return true;
+    }
+
+    /// <summary>
+    /// A connected wireless dongle, the catalog key and the PID in the official
+    /// installer file name are three different identities. Every install-state,
+    /// INF and service lookup must try all of them.
+    /// </summary>
+    internal static IReadOnlyList<ushort> GetCandidateProductIds(
+        ushort connectedProductId,
+        RazerDriverPackage package)
+    {
+        var candidates = new List<ushort>(3);
+        Add(connectedProductId);
+        Add(Parse(package.ProductId));
+        Add(Parse(package.InstallProductId));
+        return candidates;
+
+        void Add(ushort? productId)
+        {
+            if (productId is { } value && !candidates.Contains(value))
+            {
+                candidates.Add(value);
+            }
+        }
+
+        static ushort? Parse(string value) =>
+            ushort.TryParse(
+                value,
+                System.Globalization.NumberStyles.HexNumber,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var productId)
+                ? productId
+                : null;
     }
 
     private static CatalogData Load()
@@ -77,10 +115,18 @@ internal static class RazerDriverPackageCatalog
                     $"Razer driver package {pair.Key} has invalid metadata.");
             }
 
+            pair.Value.InstallProductId = ResolveInstallProductId(pair.Value.Url);
+            if (pair.Value.InstallProductId.Length == 0)
+            {
+                throw new InvalidOperationException(
+                    $"Razer driver package {pair.Key} has no PID in its installer file name.");
+            }
+
             packages[pair.Key.ToUpperInvariant()] = pair.Value;
         }
 
         var aliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var installPackages = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var pair in source.Aliases)
         {
             if (pair.Key.Length != 4 ||
@@ -104,12 +150,37 @@ internal static class RazerDriverPackageCatalog
             aliases[pair.Key.ToUpperInvariant()] = pair.Value.ToUpperInvariant();
         }
 
-        return new CatalogData(packages, aliases);
+        foreach (var pair in packages)
+        {
+            installPackages.TryAdd(pair.Value.InstallProductId, pair.Key);
+        }
+
+        return new CatalogData(packages, aliases, installPackages);
+    }
+
+    private static string ResolveInstallProductId(string url)
+    {
+        var fileName = Path.GetFileName(new Uri(url).AbsolutePath);
+        var marker = fileName.IndexOf("PID", StringComparison.OrdinalIgnoreCase);
+        if (marker < 0 || marker + 7 > fileName.Length)
+        {
+            return string.Empty;
+        }
+
+        var candidate = fileName.AsSpan(marker + 3, 4);
+        return ushort.TryParse(
+            candidate,
+            System.Globalization.NumberStyles.HexNumber,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out _)
+            ? candidate.ToString().ToUpperInvariant()
+            : string.Empty;
     }
 
     private sealed record CatalogData(
         IReadOnlyDictionary<string, PackageJson> Packages,
-        IReadOnlyDictionary<string, string> Aliases);
+        IReadOnlyDictionary<string, string> Aliases,
+        IReadOnlyDictionary<string, string> InstallPackages);
 
     private sealed class CatalogJson
     {
@@ -121,6 +192,7 @@ internal static class RazerDriverPackageCatalog
     {
         public string Name { get; init; } = string.Empty;
         public string Version { get; init; } = string.Empty;
+        public string InstallProductId { get; set; } = string.Empty;
         public long Size { get; init; }
         public string Url { get; init; } = string.Empty;
     }

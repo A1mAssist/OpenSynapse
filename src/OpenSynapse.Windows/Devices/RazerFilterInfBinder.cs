@@ -1,6 +1,19 @@
 using System.ComponentModel;
 using System.Diagnostics;
+
 namespace OpenSynapse.Windows.Devices;
+
+internal enum RazerFilterBindStatus
+{
+    Applied,
+    NoStagedInf,
+    Failed,
+}
+
+internal sealed record RazerFilterBindResult(RazerFilterBindStatus Status, string? Error)
+{
+    internal bool Applied => Status == RazerFilterBindStatus.Applied;
+}
 
 /// <summary>
 /// The vendor package stages RzDevU_&lt;pid&gt;_*.inf into the DriverStore when it
@@ -10,9 +23,12 @@ namespace OpenSynapse.Windows.Devices;
 /// </summary>
 internal static class RazerFilterInfBinder
 {
+    private static string WindowsInfDirectory => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+        "INF");
+
     internal static IReadOnlyList<string> FindStagedInfs(ushort productId) =>
-        FindStagedInfs(productId, Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.Windows), "INF"));
+        FindStagedInfs(productId, WindowsInfDirectory);
 
     internal static IReadOnlyList<string> FindStagedInfs(ushort productId, string infDirectory)
     {
@@ -21,29 +37,18 @@ internal static class RazerFilterInfBinder
             return [];
         }
 
-        var baseProductId = ResolveBaseProductId(productId);
-        // The vendor INF keeps its original file name in the comment block,
-        // which survives the rename to oem<nn>.inf.
-        var marker = $"; RzDevU_{baseProductId:X4}_";
+        var candidates = GetCandidateProductIds(productId);
         var matches = new List<string>();
         foreach (var path in Directory.EnumerateFiles(infDirectory, "oem*.inf"))
         {
             try
             {
-                using var reader = new StreamReader(path);
-                for (var lineIndex = 0; lineIndex < 8; lineIndex++)
+                var contents = File.ReadAllText(path);
+                if (candidates.Any(candidate =>
+                        contents.Contains($"Pid_{candidate:X4}", StringComparison.OrdinalIgnoreCase) ||
+                        contents.Contains($"; RzDevU_{candidate:X4}_", StringComparison.OrdinalIgnoreCase)))
                 {
-                    var line = reader.ReadLine();
-                    if (line is null)
-                    {
-                        break;
-                    }
-
-                    if (line.StartsWith(marker, StringComparison.OrdinalIgnoreCase))
-                    {
-                        matches.Add(path);
-                        break;
-                    }
+                    matches.Add(path);
                 }
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
@@ -55,29 +60,15 @@ internal static class RazerFilterInfBinder
         return matches;
     }
 
-    private static ushort ResolveBaseProductId(ushort productId)
-    {
-        if (RazerDriverPackageCatalog.TryResolve(productId, out var package) &&
-            ushort.TryParse(
-                package.ProductId,
-                System.Globalization.NumberStyles.HexNumber,
-                System.Globalization.CultureInfo.InvariantCulture,
-                out var baseProductId))
-        {
-            return baseProductId;
-        }
-
-        return productId;
-    }
-
     internal static async Task<RazerFilterBindResult> ApplyAsync(
         ushort productId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? infDirectory = null)
     {
-        var infs = FindStagedInfs(productId);
+        var infs = FindStagedInfs(productId, infDirectory ?? WindowsInfDirectory);
         if (infs.Count == 0)
         {
-            return new(false, null);
+            return new(RazerFilterBindStatus.NoStagedInf, null);
         }
 
         try
@@ -94,13 +85,13 @@ internal static class RazerFilterInfBinder
             using var process = Process.Start(startInfo);
             if (process is null)
             {
-                return new(false, "The driver binder did not start.");
+                return new(RazerFilterBindStatus.Failed, "The driver binder did not start.");
             }
 
             await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
             return process.ExitCode is 0 or 3010 or 1641
-                ? new(true, null)
-                : new(false, $"pnputil returned {process.ExitCode}.");
+                ? new(RazerFilterBindStatus.Applied, null)
+                : new(RazerFilterBindStatus.Failed, $"pnputil returned {process.ExitCode}.");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -108,11 +99,11 @@ internal static class RazerFilterInfBinder
         }
         catch (Win32Exception exception) when (exception.NativeErrorCode == 1223)
         {
-            return new(false, "The driver binder was cancelled.");
+            return new(RazerFilterBindStatus.Failed, "The driver binder was cancelled.");
         }
         catch (Exception exception) when (exception is Win32Exception or IOException or UnauthorizedAccessException)
         {
-            return new(false, exception.Message);
+            return new(RazerFilterBindStatus.Failed, exception.Message);
         }
     }
 
@@ -122,12 +113,13 @@ internal static class RazerFilterInfBinder
     /// </summary>
     internal static async Task<RazerFilterBindResult> ApplyDirectAsync(
         ushort productId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? infDirectory = null)
     {
-        var infs = FindStagedInfs(productId);
+        var infs = FindStagedInfs(productId, infDirectory ?? WindowsInfDirectory);
         if (infs.Count == 0)
         {
-            return new(false, null);
+            return new(RazerFilterBindStatus.NoStagedInf, null);
         }
 
         try
@@ -144,13 +136,13 @@ internal static class RazerFilterInfBinder
             using var process = Process.Start(startInfo);
             if (process is null)
             {
-                return new(false, "The driver binder did not start.");
+                return new(RazerFilterBindStatus.Failed, "The driver binder did not start.");
             }
 
             await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
             return process.ExitCode is 0 or 3010 or 1641
-                ? new(true, null)
-                : new(false, string.Concat("pnputil returned ", process.ExitCode, "."));
+                ? new(RazerFilterBindStatus.Applied, null)
+                : new(RazerFilterBindStatus.Failed, string.Concat("pnputil returned ", process.ExitCode, "."));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -159,9 +151,14 @@ internal static class RazerFilterInfBinder
         catch (Exception exception) when (
             exception is Win32Exception or IOException or UnauthorizedAccessException)
         {
-            return new(false, exception.Message);
+            return new(RazerFilterBindStatus.Failed, exception.Message);
         }
     }
+
+    private static IReadOnlyList<ushort> GetCandidateProductIds(ushort productId) =>
+        RazerDriverPackageCatalog.TryResolve(productId, out var package)
+            ? RazerDriverPackageCatalog.GetCandidateProductIds(productId, package)
+            : [productId];
 
     private static string CommandLine(IReadOnlyList<string> infs)
     {
@@ -175,5 +172,3 @@ internal static class RazerFilterInfBinder
         return string.Concat("/s /c ", quote, command, quote);
     }
 }
-
-internal sealed record RazerFilterBindResult(bool Applied, string? Error);

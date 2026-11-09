@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Security.AccessControl;
+using System.Security.Principal;
 
 namespace OpenSynapse.Windows.Devices;
 
@@ -30,12 +32,15 @@ internal enum RazerDriverInstallFailure
 internal sealed record RazerDriverInstallResult(
     bool Success,
     RazerDriverInstallFailure Failure = RazerDriverInstallFailure.None,
-    int ExitCode = 0);
+    int ExitCode = 0,
+    bool RequiresRestart = false,
+    string? Error = null);
 
 /// <summary>
 /// Downloads an official Razer per-device driver package, verifies its
-/// Authenticode signature and runs the NSIS installer elevated. The package is
-/// the same one Synapse uses; no third-party driver is accepted.
+/// Authenticode signature and runs the NSIS installer through the machine
+/// service or the elevated app fallback. The package is the same one Synapse
+/// uses; no third-party driver is accepted.
 /// </summary>
 internal static class RazerDriverInstaller
 {
@@ -50,8 +55,14 @@ internal static class RazerDriverInstaller
     };
 
     internal static string CacheDirectory => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "OpenSynapse",
+        "DriverCache");
+
+    internal static string ServiceCacheDirectory => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
         "OpenSynapse",
+        "Service",
         "DriverCache");
 
     internal static async Task<RazerDriverInstallResult> InstallAsync(
@@ -63,13 +74,14 @@ internal static class RazerDriverInstaller
         string path;
         try
         {
-            path = await EnsurePackageAsync(package, progress, cancellationToken)
+            path = await EnsurePackageAsync(package, CacheDirectory, progress, cancellationToken)
                 .ConfigureAwait(false);
             VerifyPackage(path, package);
         }
-        catch (InvalidDataException)
+        catch (InvalidDataException exception)
         {
-            return new RazerDriverInstallResult(false, RazerDriverInstallFailure.InvalidPackage);
+            return new RazerDriverInstallResult(
+                false, RazerDriverInstallFailure.InvalidPackage, Error: exception.Message);
         }
         catch (HttpRequestException)
         {
@@ -79,64 +91,94 @@ internal static class RazerDriverInstaller
         {
             return new RazerDriverInstallResult(false, RazerDriverInstallFailure.DownloadFailed);
         }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return new RazerDriverInstallResult(false, RazerDriverInstallFailure.Timeout);
+        }
 
         progress?.Report(new RazerDriverInstallProgress(
             RazerDriverInstallStage.Installing,
             package.Name));
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = path,
-            Arguments = "/S",
-            WorkingDirectory = Path.GetDirectoryName(path)!,
-            UseShellExecute = true,
-            Verb = "runas",
-        };
+        return await RunInstallerAsync(path, elevated: true, cancellationToken)
+            .ConfigureAwait(false);
+    }
 
-        Process process;
+    /// <summary>
+    /// Runs inside the machine-wide service, which is already elevated, so the
+    /// vendor package is executed without a UAC prompt.
+    /// </summary>
+    internal static async Task<RazerDriverInstallResult> InstallAsServiceAsync(
+        ushort productId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!RazerDriverPackageCatalog.TryResolve(productId, out var package))
+        {
+            return new RazerDriverInstallResult(
+                false,
+                RazerDriverInstallFailure.InvalidPackage,
+                Error: $"No Razer driver package is catalogued for PID {productId:X4}.");
+        }
+
+        string path;
         try
         {
-            process = Process.Start(startInfo)
-                ?? throw new InvalidOperationException("Razer driver installer did not start.");
+            EnsureServiceCacheDirectory();
+            path = await EnsurePackageAsync(
+                    package,
+                    ServiceCacheDirectory,
+                    progress: null,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            VerifyPackage(path, package);
         }
-        catch (Win32Exception exception) when (exception.NativeErrorCode == 1223)
+        catch (InvalidDataException exception)
         {
-            return new RazerDriverInstallResult(false, RazerDriverInstallFailure.Cancelled);
+            return new RazerDriverInstallResult(
+                false, RazerDriverInstallFailure.InvalidPackage, Error: exception.Message);
         }
-        catch (Win32Exception)
+        catch (HttpRequestException exception)
         {
-            return new RazerDriverInstallResult(false, RazerDriverInstallFailure.StartFailed);
+            return new RazerDriverInstallResult(
+                false, RazerDriverInstallFailure.DownloadFailed, Error: exception.Message);
+        }
+        catch (IOException exception)
+        {
+            return new RazerDriverInstallResult(
+                false, RazerDriverInstallFailure.DownloadFailed, Error: exception.Message);
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return new RazerDriverInstallResult(
+                false, RazerDriverInstallFailure.StartFailed, Error: exception.Message);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return new RazerDriverInstallResult(
+                false,
+                RazerDriverInstallFailure.Timeout,
+                Error: "The Razer driver package download timed out.");
         }
 
-        using (process)
-        {
-            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeout.CancelAfter(TimeSpan.FromMinutes(5));
-            try
-            {
-                await process.WaitForExitAsync(timeout.Token).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-            {
-                return new RazerDriverInstallResult(false, RazerDriverInstallFailure.Timeout);
-            }
-
-            return process.ExitCode == 0
-                ? new RazerDriverInstallResult(true)
-                : new RazerDriverInstallResult(
-                    false,
-                    RazerDriverInstallFailure.ExitCode,
-                    process.ExitCode);
-        }
+        return await RunInstallerAsync(path, elevated: false, cancellationToken)
+            .ConfigureAwait(false);
     }
 
     internal static async Task<string> EnsurePackageAsync(
         RazerDriverPackage package,
         IProgress<RazerDriverInstallProgress>? progress = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        await EnsurePackageAsync(package, CacheDirectory, progress, cancellationToken)
+            .ConfigureAwait(false);
+
+    private static async Task<string> EnsurePackageAsync(
+        RazerDriverPackage package,
+        string cacheDirectory,
+        IProgress<RazerDriverInstallProgress>? progress,
+        CancellationToken cancellationToken)
     {
-        Directory.CreateDirectory(CacheDirectory);
+        Directory.CreateDirectory(cacheDirectory);
         var fileName = Path.GetFileName(new Uri(package.Url).AbsolutePath);
-        var path = Path.Combine(CacheDirectory, fileName);
+        var path = Path.Combine(cacheDirectory, fileName);
         if (File.Exists(path) &&
             (package.Size <= 0 || new FileInfo(path).Length == package.Size) &&
             TryVerifyPackage(path, package, out _))
@@ -180,6 +222,88 @@ internal static class RazerDriverInstaller
 
         File.Move(temporary, path, overwrite: true);
         return path;
+    }
+
+    internal static bool IsSuccessfulExitCode(int exitCode) => exitCode is 0 or 3010 or 1641;
+
+    internal static void EnsureServiceCacheDirectory()
+    {
+        Directory.CreateDirectory(ServiceCacheDirectory);
+        var security = new DirectorySecurity();
+        security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+        const InheritanceFlags inheritance =
+            InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit;
+        security.AddAccessRule(new FileSystemAccessRule(
+            new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null),
+            FileSystemRights.FullControl,
+            inheritance,
+            PropagationFlags.None,
+            AccessControlType.Allow));
+        security.AddAccessRule(new FileSystemAccessRule(
+            new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null),
+            FileSystemRights.FullControl,
+            inheritance,
+            PropagationFlags.None,
+            AccessControlType.Allow));
+        new DirectoryInfo(ServiceCacheDirectory).SetAccessControl(security);
+    }
+
+    private static async Task<RazerDriverInstallResult> RunInstallerAsync(
+        string path,
+        bool elevated,
+        CancellationToken cancellationToken)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = path,
+            Arguments = "/S",
+            WorkingDirectory = Path.GetDirectoryName(path)!,
+            UseShellExecute = elevated,
+            Verb = elevated ? "runas" : string.Empty,
+            CreateNoWindow = !elevated,
+            WindowStyle = ProcessWindowStyle.Hidden,
+        };
+
+        Process process;
+        try
+        {
+            process = Process.Start(startInfo)
+                ?? throw new InvalidOperationException("Razer driver installer did not start.");
+        }
+        catch (Win32Exception exception) when (exception.NativeErrorCode == 1223)
+        {
+            return new RazerDriverInstallResult(false, RazerDriverInstallFailure.Cancelled);
+        }
+        catch (Win32Exception exception)
+        {
+            return new RazerDriverInstallResult(
+                false, RazerDriverInstallFailure.StartFailed, Error: exception.Message);
+        }
+
+        using (process)
+        {
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(TimeSpan.FromMinutes(5));
+            try
+            {
+                await process.WaitForExitAsync(timeout.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                return new RazerDriverInstallResult(false, RazerDriverInstallFailure.Timeout);
+            }
+
+            return IsSuccessfulExitCode(process.ExitCode)
+                ? new RazerDriverInstallResult(
+                    true,
+                    RazerDriverInstallFailure.None,
+                    process.ExitCode,
+                    RequiresRestart: process.ExitCode is 3010 or 1641)
+                : new RazerDriverInstallResult(
+                    false,
+                    RazerDriverInstallFailure.ExitCode,
+                    process.ExitCode);
+        }
     }
 
     internal static void VerifyPackage(string path, RazerDriverPackage package)

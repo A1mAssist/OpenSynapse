@@ -3959,7 +3959,7 @@
   <data name="RazerDriverTitle.Text" xml:space="preserve"><value>Razer 驱动</value></data>
   <data name="RazerDriverDescription.Text" xml:space="preserve"><value>安装雷云的设备过滤驱动后，按键映射与宏可以走驱动级注入，和雷云同一条路径。</value></data>
   <data name="RazerDriverInstall.Content" xml:space="preserve"><value>安装或修复驱动</value></data>
-  <data name="RazerDriverInstallHint.Text" xml:space="preserve"><value>安装包来自 Razer 官方 CDN，会请求管理员权限。安装完成后重新插拔设备或重启。</value></data>
+  <data name="RazerDriverInstallHint.Text" xml:space="preserve"><value>安装包来自 Razer 官方 CDN。已安装 OpenSynapse 服务时由服务静默安装；便携版会请求管理员权限。安装完成后重新插拔设备或重启。</value></data>
   <data name="RazerDriverChecking" xml:space="preserve"><value>正在检查 Razer 驱动…</value></data>
   <data name="RazerDriverAllReady" xml:space="preserve"><value>所有已连接的 Razer 外设都已具备过滤驱动。</value></data>
   <data name="RazerDriverMissingCount" xml:space="preserve"><value>发现 {0} 个 Razer 外设缺少驱动。</value></data>
@@ -3975,14 +3975,17 @@
   <data name="RazerDriverMissingStatus" xml:space="preserve"><value>缺少驱动</value></data>
   <data name="RazerDriverDetail" xml:space="preserve"><value>VID_1532 / PID_{0} · 驱动 v{1}</value></data>
   <data name="RazerDriverDownloading" xml:space="preserve"><value>正在下载 {0} 驱动…</value></data>
-  <data name="RazerDriverInstalling" xml:space="preserve"><value>正在启动 {0} 驱动安装程序，请在 UAC 中允许。</value></data>
+  <data name="RazerDriverInstalling" xml:space="preserve"><value>正在安装 {0} 驱动…</value></data>
   <data name="RazerDriverInstallTimeout" xml:space="preserve"><value>Razer 驱动安装超时。</value></data>
   <data name="RazerDriverInstallExitCode" xml:space="preserve"><value>Razer 驱动安装程序返回 {0}。</value></data>
   <data name="RazerDriverInstallInvalidPackage" xml:space="preserve"><value>Razer 驱动包校验失败。</value></data>
   <data name="RazerDriverDownloadFailed" xml:space="preserve"><value>Razer 驱动包下载或保存失败。</value></data>
   <data name="RazerDriverInstallStartFailed" xml:space="preserve"><value>Razer 驱动安装程序没有启动。</value></data>
+  <data name="RazerDriverNoStagedInf" xml:space="preserve"><value>驱动已安装，但没有找到匹配的过滤 INF。请重启后重试，或重新安装驱动包。</value></data>
+  <data name="RazerDriverBindFailed" xml:space="preserve"><value>驱动过滤 INF 绑定失败：{0}</value></data>
+  <data name="RazerDriverInstallUncertain" xml:space="preserve"><value>驱动安装已提交，但服务没有返回结果。请等待一分钟后重新检查，不要重复安装。</value></data>
   <data name="RazerDriverCommonDownloading" xml:space="preserve"><value>正在下载 Razer 通用控制驱动…</value></data>
-  <data name="RazerDriverCommonInstalling" xml:space="preserve"><value>正在安装 Razer 通用控制驱动，请在 UAC 中允许。</value></data>
+  <data name="RazerDriverCommonInstalling" xml:space="preserve"><value>正在安装 Razer 通用控制驱动…</value></data>
   <data name="ProfileSummaryTitle" xml:space="preserve"><value>此配置包含</value></data>
   <data name="ProfileSummaryEmpty" xml:space="preserve"><value>此配置还没有设备设置。</value></data>
   <data name="ProfileSummary_ScopeDevice" xml:space="preserve"><value>设备覆盖</value></data>
