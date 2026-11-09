@@ -11,12 +11,6 @@ public sealed partial class RazerHidDeviceService
     private static readonly FrozenSet<ushort> HuntsmanV3ProMiscSettingsUnsupported =
         new ushort[] { 0x02A6, 0x02A7, 0x02B0, 0x02CF }.ToFrozenSet();
 
-    // These mice expose the 0x0B/0x14 sensor-angle-tune pair. 00C4 only answers it on
-    // firmware that predates the mapping-engine fallback, so the capability is probed
-    // and dropped on the first rejected read.
-    private static readonly FrozenSet<ushort> SensorRotationMice =
-        new ushort[] { 0x00C4, 0x00C7, 0x00CB, 0x00D0 }.ToFrozenSet();
-
     internal static IReadOnlySet<RazerHidBackendCapability> GetCapabilities(RazerHidDeviceDefinition device)
     {
         var result = new HashSet<RazerHidBackendCapability>();
@@ -47,11 +41,6 @@ public sealed partial class RazerHidDeviceService
             "razer_chroma_misc_get_dpi_xy", "razer_chroma_misc_get_dpi_xy_byte");
         AddAnySource(RazerHidBackendCapability.DpiWrite, ["set_dpi_xy", "set_dpi_xy_byte"],
             "razer_chroma_misc_set_dpi_xy", "razer_chroma_misc_set_dpi_xy_byte");
-        if (SensorRotationMice.Contains(device.ProductId))
-        {
-            result.Add(RazerHidBackendCapability.SensorRotationRead);
-            result.Add(RazerHidBackendCapability.SensorRotationWrite);
-        }
         Add(RazerHidBackendCapability.DpiStagesRead, "get_dpi_stages", "razer_chroma_misc_get_dpi_stages");
         Add(RazerHidBackendCapability.DpiStagesWrite, "set_dpi_stages", "razer_chroma_misc_set_dpi_stages");
         Add(RazerHidBackendCapability.IdleTimeoutRead, "get_idle_time", "razer_chroma_misc_get_idle_time");

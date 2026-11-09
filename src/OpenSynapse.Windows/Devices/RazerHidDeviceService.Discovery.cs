@@ -111,9 +111,16 @@ public sealed partial class RazerHidDeviceService
                 var unsupportedOptional = OptionalStateCapabilities
                     .Except(optionalCapabilities)
                     .ToFrozenSet();
+                var extraCapabilities = probedCapabilities.ToHashSet();
+                if (optionalCapabilities.Contains(RazerHidBackendCapability.SensorRotationRead) &&
+                    optionalCapabilities.Contains(RazerHidBackendCapability.SensorRotationWrite))
+                {
+                    extraCapabilities.Add(RazerHidBackendCapability.SensorRotationRead);
+                    extraCapabilities.Add(RazerHidBackendCapability.SensorRotationWrite);
+                }
                 results.Add(CreateConnection(resolvedDefinition, resolvedPath, group.Key.PhysicalDeviceKey,
                     RazerHidEndpointState.Resolved, null,
-                    probedCapabilities.Count > 0 ? probedCapabilities : null,
+                    extraCapabilities.Count > 0 ? extraCapabilities.ToFrozenSet() : null,
                     unsupportedOptional));
 
                 await AddLinkedConnectionsAsync(results, resolvedDefinition, resolvedPath, ordered,
