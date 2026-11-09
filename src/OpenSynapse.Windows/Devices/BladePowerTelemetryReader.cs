@@ -311,7 +311,38 @@ internal sealed class BladePowerTelemetryReader
                 swapRequest.AsMemory(RazerFeatureReport.ArgumentsOffset, swapRequest[6]),
                 cancellationToken,
                 swapRequest[6]);
-            return BladeSynapsePolicyProtocol.ParseFnKeySwap(swapResponse, swapRequest).MultiFunctionPrimary;
+            try
+            {
+                return BladeSynapsePolicyProtocol.ParseFnKeySwap(swapResponse, swapRequest).MultiFunctionPrimary;
+            }
+            catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
+            {
+                // Some 023A firmware acknowledges the write without echoing the value.
+            }
+
+            if (blade.Owns(CapabilityIds.FnKeySwapGet))
+            {
+                try
+                {
+                    var getRequest = RazerCapabilityClient.CreateConfiguredRequest(
+                        blade,
+                        CapabilityIds.FnKeySwapGet,
+                        BladeSynapsePolicyProtocol.CreateGetFnKeySwapRequest());
+                    var getResponse = await _client.QueryAsync(
+                        blade,
+                        CapabilityIds.FnKeySwapGet,
+                        getRequest.AsMemory(RazerFeatureReport.ArgumentsOffset, getRequest[6]),
+                        cancellationToken,
+                        getRequest[6]);
+                    return BladeSynapsePolicyProtocol.ParseFnKeySwap(getResponse, getRequest).MultiFunctionPrimary;
+                }
+                catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
+                {
+                    // The write landed; a slow read-back must not turn it into a failure.
+                }
+            }
+
+            return multiFunctionPrimary;
         }
 
         if (!blade.Owns(CapabilityIds.FnKeySet))
