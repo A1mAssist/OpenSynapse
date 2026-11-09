@@ -48,7 +48,7 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
         if (_telemetryPending)
         {
             _capabilityState = 4;
-            StatusBrush = new SolidColorBrush(Color.FromArgb(255, 153, 221, 114));
+            StatusBrush = new SolidColorBrush(Color.FromArgb(255, 68, 214, 44));
         }
         else if (descriptor.Access != DeviceAccessState.Available ||
             descriptor.Capability != DeviceCapabilityState.PendingValidation)
@@ -59,7 +59,7 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
         else if (_successful == _total && _total > 0)
         {
             _capabilityState = 1;
-            StatusBrush = new SolidColorBrush(Color.FromArgb(255, 153, 221, 114));
+            StatusBrush = new SolidColorBrush(Color.FromArgb(255, 68, 214, 44));
         }
         else if (_successful > 0)
         {
@@ -283,7 +283,7 @@ public sealed class DeviceProtocolDetailViewModel : INotifyPropertyChanged
         StatusBrush = new SolidColorBrush(failed
             ? Color.FromArgb(255, 255, 107, 107)
             : isAvailable
-            ? Color.FromArgb(255, 153, 221, 114)
+            ? Color.FromArgb(255, 68, 214, 44)
             : Color.FromArgb(255, 255, 181, 71));
     }
 
@@ -308,7 +308,7 @@ public sealed class DeviceProtocolDetailViewModel : INotifyPropertyChanged
         StatusBrush = new SolidColorBrush(_failed
             ? Color.FromArgb(255, 255, 107, 107)
             : IsAvailable
-                ? Color.FromArgb(255, 153, 221, 114)
+                ? Color.FromArgb(255, 68, 214, 44)
                 : Color.FromArgb(255, 255, 181, 71));
         PropertyChanged?.Invoke(this, new(string.Empty));
     }

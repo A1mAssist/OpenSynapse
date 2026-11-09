@@ -49,7 +49,7 @@ public sealed partial class DiagnosticsWorkspace
         foreach (var snapshot in _accessorySnapshots.Values)
         {
             var failed = !string.IsNullOrWhiteSpace(snapshot.Error);
-            var brush = new SolidColorBrush(failed ? Color.FromArgb(255, 255, 107, 107) : Color.FromArgb(255, 153, 221, 114));
+            var brush = new SolidColorBrush(failed ? Color.FromArgb(255, 255, 107, 107) : Color.FromArgb(255, 68, 214, 44));
             var group = new DiagnosticRowViewModel(snapshot.Name, snapshot.Backend,
                 snapshot.Status, snapshot.Identity, brush);
             if (failed) group.AddIssue(new DiagnosticRowViewModel(snapshot.Name, snapshot.Backend,

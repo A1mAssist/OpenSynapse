@@ -345,14 +345,14 @@
                 <Grid.Clip>
                   <RectangleGeometry Rect="0,0,79.5,76" />
                 </Grid.Clip>
-                <FontIcon Glyph="&#xE962;" FontFamily="{StaticResource IconFontFamily}" FontSize="150" Foreground="#99DD72"
+                <FontIcon Glyph="&#xE962;" FontFamily="{StaticResource IconFontFamily}" FontSize="150" Foreground="#44D62C"
                           HorizontalAlignment="Center" VerticalAlignment="Center" />
               </Grid>
               <Grid x:Name="MacroMouseRightHighlight" Width="168" Height="200" Opacity="0" IsHitTestVisible="False">
                 <Grid.Clip>
                   <RectangleGeometry Rect="79.5,0,88.5,76" />
                 </Grid.Clip>
-                <FontIcon Glyph="&#xE962;" FontFamily="{StaticResource IconFontFamily}" FontSize="150" Foreground="#99DD72"
+                <FontIcon Glyph="&#xE962;" FontFamily="{StaticResource IconFontFamily}" FontSize="150" Foreground="#44D62C"
                           HorizontalAlignment="Center" VerticalAlignment="Center" />
               </Grid>
               <Button Tag="0" Style="{StaticResource MacroMouseRegionStyle}" Click="MacroKeyOptionClick"

@@ -8,7 +8,7 @@ namespace OpenSynapse.App.ViewModels;
 public sealed class ConnectedDeviceRowViewModel
 {
     private static readonly Brush ConnectedBrush =
-        new SolidColorBrush(Color.FromArgb(255, 153, 221, 114));
+        new SolidColorBrush(Color.FromArgb(255, 68, 214, 44));
     private static readonly Brush NeutralBrush =
         new SolidColorBrush(Color.FromArgb(255, 255, 181, 71));
 

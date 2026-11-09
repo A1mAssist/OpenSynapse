@@ -15,7 +15,7 @@ namespace OpenSynapse.App.ViewModels;
 public sealed class RazerKeyboardDeviceRowViewModel : INotifyPropertyChanged
 {
     private static readonly Brush ConnectedBrush =
-        new SolidColorBrush(Color.FromArgb(255, 153, 221, 114));
+        new SolidColorBrush(Color.FromArgb(255, 68, 214, 44));
     private static readonly Brush PartialBrush =
         new SolidColorBrush(Color.FromArgb(255, 240, 185, 90));
     private Task? _loadTask;

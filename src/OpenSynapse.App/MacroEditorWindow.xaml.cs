@@ -257,7 +257,7 @@ public sealed partial class MacroEditorWindow : Window
     private static readonly SolidColorBrush MouseWheelFill = new(Color.FromArgb(0xFF, 0x24, 0x24, 0x24));
     private static readonly SolidColorBrush MouseWheelHoverFill = new(Color.FromArgb(0xFF, 0x32, 0x45, 0x2F));
     private static readonly SolidColorBrush MouseWheelStroke = new(Color.FromArgb(0xFF, 0x5C, 0x5C, 0x5C));
-    private static readonly SolidColorBrush MouseWheelHoverStroke = new(Color.FromArgb(0xFF, 0x99, 0xDD, 0x72));
+    private static readonly SolidColorBrush MouseWheelHoverStroke = new(Color.FromArgb(0xFF, 0x44, 0xD6, 0x2C));
 
     /// <summary>
     /// Binds the drawn mouse to the picker. The art is static, so each region

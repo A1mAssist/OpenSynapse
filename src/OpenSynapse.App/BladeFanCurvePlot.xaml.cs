@@ -44,7 +44,7 @@ public sealed partial class BladeFanCurvePlot : UserControl
     private readonly SolidColorBrush[] _seriesBrushes =
     [
         new(global::Windows.UI.Color.FromArgb(0xFF, 0x2D, 0x9C, 0xDB)),
-        new(global::Windows.UI.Color.FromArgb(0xFF, 0x99, 0xDD, 0x72)),
+        new(global::Windows.UI.Color.FromArgb(0xFF, 0x44, 0xD6, 0x2C)),
     ];
 
     private BladeFanCurveEditorViewModel? _editor;
