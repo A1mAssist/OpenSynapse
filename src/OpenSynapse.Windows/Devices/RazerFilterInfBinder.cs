@@ -44,6 +44,13 @@ internal static class RazerFilterInfBinder
             try
             {
                 var contents = File.ReadAllText(path);
+                // The base device INF also names the Pid_XXXX hardware id; only
+                // RzDev filter INFs are safe to attach with pnputil.
+                if (!contents.Contains("RzDev", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 if (candidates.Any(candidate =>
                         contents.Contains($"Pid_{candidate:X4}", StringComparison.OrdinalIgnoreCase) ||
                         contents.Contains($"; RzDevU_{candidate:X4}_", StringComparison.OrdinalIgnoreCase)))
