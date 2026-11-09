@@ -16,6 +16,7 @@ using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
 using OpenSynapse.Windows.Sensors;
 using Velopack;
+using Velopack.Locators;
 namespace OpenSynapse.App;
 
 public partial class App : Application
@@ -317,6 +318,23 @@ public partial class App : Application
         if (_audioMuteViewModel is null)
         {
             throw new InvalidOperationException("OpenSynapse is not ready to restart for an update.");
+        }
+
+        if (OpenSynapseServiceInstaller.IsMachineInstallPath(Environment.ProcessPath))
+        {
+            var locator = VelopackLocator.Current;
+            var root = locator.RootAppDir
+                ?? throw new InvalidOperationException("The OpenSynapse install root is unavailable.");
+            var packages = locator.PackagesDir
+                ?? throw new InvalidOperationException("The OpenSynapse package directory is unavailable.");
+            _ = MachineWideUpdateLauncher.Start(
+                Path.Combine(root, "Update.exe"),
+                Path.Combine(packages, release.FileName),
+                root,
+                packages,
+                Environment.ProcessId);
+            await GetShutdownTask(_audioMuteViewModel);
+            Environment.Exit(0);
         }
 
         await GetShutdownTask(_audioMuteViewModel);

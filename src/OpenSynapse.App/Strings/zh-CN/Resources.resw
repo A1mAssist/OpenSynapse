@@ -1613,8 +1613,8 @@
   <data name="AutomaticUpdatesToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>自动更新</value><comment>自动更新</comment></data>
   <data name="CheckUpdateButton.Content" xml:space="preserve"><value>检查更新</value><comment>检查更新</comment></data>
   <data name="UpdateInstallerRequired" xml:space="preserve"><value>当前为旧版便携包；安装新版安装包后可使用自动更新。</value><comment>当前为旧版便携包；安装新版安装包后可使用自动更新。</comment></data>
-  <data name="UpdateMachineWideRequired" xml:space="preserve"><value>当前为 MSI 安装，应用内自动更新不可用；请下载新版 MSI 覆盖安装。</value><comment>当前为 Program Files 机器级安装，应用内更新不支持。</comment></data>
-  <data name="UpdateDownloadInstaller" xml:space="preserve"><value>下载新版 MSI</value><comment>打开 GitHub Releases 下载新版 MSI。</comment></data>
+  <data name="UpdateReadyElevated" xml:space="preserve"><value>版本 {0} 已下载；更新会请求管理员权限，安装后自动重启。</value><comment>MSI 机器级安装的更新提示。</comment></data>
+  <data name="UpdateElevationCancelled" xml:space="preserve"><value>已取消管理员授权，未安装更新。</value><comment>用户取消 UAC。</comment></data>
   <data name="UpdateReady" xml:space="preserve"><value>版本 {0} 已下载，可以更新。</value><comment>版本 {0} 已下载，可以更新。</comment></data>
   <data name="UpdateAvailable" xml:space="preserve"><value>发现版本 {0}。</value><comment>发现版本 {0}。</comment></data>
   <data name="CurrentVersion" xml:space="preserve"><value>当前版本 {0}。</value><comment>当前版本 {0}。</comment></data>

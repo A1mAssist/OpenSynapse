@@ -69,7 +69,7 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 - `OpenSynapse-<version>-win-x64-Setup.msi` — **推荐。** 安装到 `Program Files`，并在取得管理员权限后为所有用户注册 GPU 模式服务。注册成功后，受支持的显卡切换通过服务执行，不再重复弹 UAC。检测到旧的当前用户安装时，安装阶段先保全配置和设置；下一次非提升启动确认所有数据文件已有保留副本后才卸载旧版并修复启动项。内容冲突保留为 `.legacy-backup` 版本副本；提升启动不执行旧用户卸载器。
 - `OpenSynapse-<version>-win-Portable.zip` — 便携版，解压后即可运行；使用“仅核显”时会请求 UAC。
 
-进阶用途：`OpenSynapse-<version>-win-AutoUpdate-PerUser.exe` 是自动更新用包（当前用户安装）。**普通安装不要下载，请用 MSI 或 Portable。** 它只安装到当前用户目录，不安装机器级服务，切换“仅核显”仍会逐次请求 UAC；只有明确需要当前用户安装或自动更新链路时才用它。
+进阶用途：`OpenSynapse-<version>-win-AutoUpdate-PerUser.exe` 是当前用户安装包。**普通安装不要下载，请用 MSI 或 Portable。** 它只安装到当前用户目录，不安装机器级服务，切换“仅核显”仍会逐次请求 UAC；只有明确需要当前用户安装时才用它。MSI 同样支持应用内更新，应用更新时会请求一次 UAC。
 
 `<version>` 是发布版本号，例如 `1.7.1`。
 

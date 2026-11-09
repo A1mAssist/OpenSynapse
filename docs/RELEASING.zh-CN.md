@@ -11,13 +11,13 @@
 | Velopack 更新包 | 保持 `vpk` 生成的 `OpenSynapse-<version>-full.nupkg` |
 | Velopack 清单 | 保持 `RELEASES`、`releases.win.json`、`assets.win.json` |
 
-自动更新/当前用户包单独上传：`OpenSynapse-<version>-win-AutoUpdate-PerUser.exe`。它不放进上面的推荐安装列表；普通安装不要下载，只有明确需要当前用户安装或自动更新链路时才用它。
+当前用户安装包单独上传：`OpenSynapse-<version>-win-AutoUpdate-PerUser.exe`。它不放进上面的推荐安装列表；普通安装不要下载，只有明确需要当前用户安装时才用它。MSI 同样支持应用内更新，安装时会请求一次管理员权限。
 
 `<version>` 使用不带 `v` 的包版本，例如 `1.6.1`。改名后的安装包和原文件大小、SHA-256 必须一致。
 
 ## 为什么只改安装包名
 
-`releases.win.json` 和 `RELEASES` 只引用 `*.nupkg`。MSI、AutoUpdate 包、Portable.zip 不参与客户端自动更新，重命名这三个文件不会影响更新链路。不要改 `*.nupkg`、`RELEASES`、`releases.win.json`、`assets.win.json` 的文件名或内容。
+`releases.win.json` 和 `RELEASES` 只引用 `*.nupkg`。MSI、AutoUpdate 包、Portable.zip 是初次安装资产；重命名它们不会影响客户端更新链路。MSI 安装也会下载同一个 `*.nupkg`，由 `Update.exe` 通过 UAC 完成更新并重启。不要改 `*.nupkg`、`RELEASES`、`releases.win.json`、`assets.win.json` 的文件名或内容。
 
 发布资产和 Release 正文不要出现容易让人以为这是默认安装包的字样，避免用户误下当前用户包。普通安装只推荐 MSI，AutoUpdate 包放在最后。
 
@@ -42,7 +42,7 @@
 | `OpenSynapse-<version>-win-Portable.zip` | 便携版，解压即用；切换显卡时会请求 UAC。 |
 ```
 
-自动更新/当前用户包：`OpenSynapse-<version>-win-AutoUpdate-PerUser.exe`。**普通安装不要下载；只有明确需要当前用户安装或自动更新链路时才用它。**
+当前用户安装包：`OpenSynapse-<version>-win-AutoUpdate-PerUser.exe`。**普通安装不要下载；只有明确需要当前用户安装时才用它。MSI 也支持应用内更新。**
 
 English:
 
@@ -55,6 +55,6 @@ English:
 | `OpenSynapse-<version>-win-Portable.zip` | Portable copy. The GPU switch prompts for UAC. |
 ```
 
-Auto-update/per-user package: `OpenSynapse-<version>-win-AutoUpdate-PerUser.exe`. **Do not download it for a normal install; use it only when you specifically need a per-user install or the auto-update path.**
+Per-user package: `OpenSynapse-<version>-win-AutoUpdate-PerUser.exe`. **Do not download it for a normal install; use it only when you specifically need a per-user install. The MSI also supports in-app updates.**
 
 把这段放进传给 `vpk pack --releaseNotes` 的发布说明文件，再同步到 GitHub Release 正文。这样应用内更新提示和 Release 页面都会先引导用户使用 MSI。
