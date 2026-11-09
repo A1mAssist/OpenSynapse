@@ -24,7 +24,7 @@ internal static class RazerPrivateKeyCatalog
         "0203,0221|32=M1;33=M2;34=M3;35=M4;36=M5",
         "0287,0293|32=M1;33=M2;34=M3;35=M4;36=M5;37=M6;82=DIAL_CLICK;83=MEDIA_NEXT;84=MEDIA_PREV;85=MEDIA_PAUSE_PLAY",
         "00E2,00E3,00EB|80=CycleUpProfile",
-        "0085,0086|32=SensitivityStageUp;33=SensitivityStageDown;80=CycleUpProfile;81=SensitivityClutch",
+        "0085,0086,0088|32=SensitivityStageUp;33=SensitivityStageDown;80=CycleUpProfile;81=SensitivityClutch",
         "00C7,00D0|210=AI_Launcher;82=CycleUpSensitivityStages",
         "0096|2=Key1;3=Key2;4=Key3;5=Key4;6=Key5;7=Key6;8=Key7;80=CycleUpProfile;82=CycleUpSensitivityStages",
         "0065|32=CycleUpSensitivityStages;81=SensitivityClutch",

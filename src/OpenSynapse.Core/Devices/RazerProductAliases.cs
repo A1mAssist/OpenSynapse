@@ -12,6 +12,9 @@ public static class RazerProductAliases
     private static readonly IReadOnlyDictionary<ushort, ushort> CanonicalProductIds =
         new Dictionary<ushort, ushort>
         {
+            // Razer Basilisk Ultimate: 134/0086 owns the product UI and both driver packages;
+            // 0088 is the wireless receiver identity.
+            [0x0088] = 0x0086,
             // Razer BlackWidow V4 Low-profile HyperSpeed
             [0x02C9] = 0x02CC,
             [0x02CA] = 0x02CC,

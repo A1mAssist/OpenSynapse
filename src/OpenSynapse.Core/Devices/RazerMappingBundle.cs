@@ -60,6 +60,10 @@ public static class RazerMappingBundleParser
         """counter:\s*(?:"(?<text>[^"]*)"|(?<number>-?\d+))""",
         RegexOptions.CultureInvariant);
 
+    private static readonly Regex KeyNumberRegex = new(
+        """(?:^|[,{])key:\s*(?<number>\d+)""",
+        RegexOptions.CultureInvariant);
+
     private static readonly Regex HidRegex = new(
         """HID:\s*(?:"(?<text>[^"]*)"|(?<number>-?\d+))""",
         RegexOptions.CultureInvariant);
@@ -307,7 +311,8 @@ public static class RazerMappingBundleParser
                 MatchText(match.Value, CounterRegex),
                 MatchByte(match.Value, HidRegex),
                 MatchText(match.Value, InputIdRegex),
-                MatchText(match.Value, ButtonPosRegex)));
+                MatchText(match.Value, ButtonPosRegex),
+                MatchInt(match.Value, KeyNumberRegex)));
         }
 
         return buttons;
@@ -379,10 +384,38 @@ public static class RazerMappingBundleParser
         "MouseButton8" or "Button8" => 0x08,
         "ScrollUp" => 0x09,
         "ScrollDown" => 0x0A,
+        "ScrollLeft" or "RepeatScrollLeft" => 0x34,
+        "ScrollRight" or "RepeatScrollRight" => 0x35,
         "CycleUpSensitivityStages" => 0x60,
         "CycleDownSensitivityStages" => 0x61,
         _ => null,
     };
+
+    // DKM_M_01..08 and DKM_SB_01..04 are the firmware ids the device reports,
+    // independent of the bundle's UI-only counter.
+    private static byte? DkmButtonId(string? inputId)
+    {
+        if (string.IsNullOrEmpty(inputId))
+        {
+            return null;
+        }
+
+        if (inputId.StartsWith("DKM_M_", StringComparison.Ordinal) &&
+            int.TryParse(inputId.AsSpan(6), NumberStyles.None, CultureInfo.InvariantCulture, out var mouse) &&
+            mouse is >= 1 and <= 8)
+        {
+            return (byte)(31 + mouse);
+        }
+
+        if (inputId.StartsWith("DKM_SB_", StringComparison.Ordinal) &&
+            int.TryParse(inputId.AsSpan(7), NumberStyles.None, CultureInfo.InvariantCulture, out var side) &&
+            side is >= 1 and <= 4)
+        {
+            return (byte)(79 + side);
+        }
+
+        return null;
+    }
 
     private static string DisplayName(string key) => key switch
     {
@@ -398,6 +431,12 @@ public static class RazerMappingBundleParser
         "MouseButton8" or "Button8" => "Button 8",
         "CycleUpSensitivityStages" => "DPI cycle up",
         "CycleDownSensitivityStages" => "DPI cycle down",
+        "SensitivityStageUp" => "DPI +",
+        "SensitivityStageDown" => "DPI -",
+        "SensitivityClutch" => "Sniper",
+        "CycleUpProfile" => "Profile switch",
+        "RepeatScrollLeft" => "Scroll left",
+        "RepeatScrollRight" => "Scroll right",
         _ => key,
     };
 
@@ -436,6 +475,14 @@ public static class RazerMappingBundleParser
             : null;
     }
 
+    private static int? MatchInt(string text, Regex regex)
+    {
+        var value = MatchText(text, regex);
+        return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : null;
+    }
+
     private static double? ReadNumber(Match match)
     {
         if (!match.Success)
@@ -454,13 +501,24 @@ public static class RazerMappingBundleParser
         string? Counter,
         byte? Hid,
         string? InputId,
-        string? ButtonPos)
+        string? ButtonPos,
+        int? KeyNumber)
     {
         public byte? ResolveButtonId()
         {
             if (StandardMouseButtonId(Key) is { } standard)
             {
                 return standard;
+            }
+
+            if (DkmButtonId(InputId) is { } dkm)
+            {
+                return dkm;
+            }
+
+            if (KeyNumber is > 0 and <= byte.MaxValue)
+            {
+                return (byte)KeyNumber.Value;
             }
 
             if (byte.TryParse(Counter, NumberStyles.None, CultureInfo.InvariantCulture, out var counter) &&

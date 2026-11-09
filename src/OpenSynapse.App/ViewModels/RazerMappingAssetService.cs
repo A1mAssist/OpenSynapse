@@ -98,13 +98,16 @@ public sealed partial class RazerMappingAssetService
 
     private async Task<RazerMappingVisual> LoadMouseOrKeyboardAsync(ushort productId)
     {
-        var mouse = await LoadBundleAsync(productId, CancellationToken.None).ConfigureAwait(false);
+        // The wireless receiver shares the wired model's product page. 0086 owns
+        // the mapping art and button keys; 0088 only adds a battery endpoint.
+        var assetProductId = RazerProductAliases.Canonical(productId);
+        var mouse = await LoadBundleAsync(assetProductId, CancellationToken.None).ConfigureAwait(false);
         if (mouse is not null)
         {
             return new RazerMappingVisual(mouse, null, null);
         }
 
-        var keyboard = await LoadKeyboardAsync(productId, CancellationToken.None).ConfigureAwait(false);
+        var keyboard = await LoadKeyboardAsync(assetProductId, CancellationToken.None).ConfigureAwait(false);
         return keyboard is null
             ? RazerMappingVisual.Empty
             : new RazerMappingVisual(null, keyboard, null);
