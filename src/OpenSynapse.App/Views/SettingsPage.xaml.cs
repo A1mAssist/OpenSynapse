@@ -6,6 +6,8 @@ using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Storage;
 using OpenSynapse.Windows.Lifecycle;
 using OpenSynapse.Windows.Lighting;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Net.Sockets;
 using System.Reflection;
 using Velopack;
@@ -16,6 +18,7 @@ namespace OpenSynapse.App.Views;
 public sealed partial class SettingsPage : UserControl
 {
     private const string UpdateRepositoryUrl = "https://github.com/A1mAssist/OpenSynapse";
+    private const string ReleasesPageUrl = UpdateRepositoryUrl + "/releases/latest";
     private readonly UpdateManager _updateManager = new(
         new GithubSource(UpdateRepositoryUrl, null, prerelease: false));
     private readonly DispatcherQueueTimer _chromaRestStatusTimer;
@@ -32,7 +35,11 @@ public sealed partial class SettingsPage : UserControl
 
     internal MainWindow Host { get; set; } = null!;
 
-    internal bool AutomaticUpdatesEnabled => AutomaticUpdatesToggle.IsOn;
+    internal bool AutomaticUpdatesEnabled =>
+        !IsMachineWideInstall && AutomaticUpdatesToggle.IsOn;
+
+    private static bool IsMachineWideInstall =>
+        OpenSynapseServiceInstaller.IsMachineInstallPath(Environment.ProcessPath);
 
     private MainViewModel ViewModel => (MainViewModel)DataContext;
     private CancellationToken Lifetime => Host.LifetimeToken;
@@ -72,7 +79,8 @@ public sealed partial class SettingsPage : UserControl
 
     internal void InitializeUpdateUi()
     {
-        AutomaticUpdatesToggle.IsOn = AppUpdateSettings.AutomaticUpdatesEnabled;
+        AutomaticUpdatesToggle.IsOn =
+            !IsMachineWideInstall && AppUpdateSettings.AutomaticUpdatesEnabled;
         _downloadedUpdate = _updateManager.UpdatePendingRestart;
         _updateUiReady = true;
         RefreshUpdateUiText();
@@ -86,6 +94,17 @@ public sealed partial class SettingsPage : UserControl
             CheckUpdateButton.IsEnabled = false;
             AutomaticUpdatesToggle.IsEnabled = false;
             UpdateActionButton.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        if (IsMachineWideInstall)
+        {
+            UpdateStatusText.Text = AppStrings.Text("UpdateMachineWideRequired");
+            CheckUpdateButton.IsEnabled = false;
+            AutomaticUpdatesToggle.IsEnabled = false;
+            UpdateActionButton.Content = AppStrings.Text("UpdateDownloadInstaller");
+            UpdateActionButton.Visibility = Visibility.Visible;
+            UpdateActionButton.IsEnabled = true;
             return;
         }
 
@@ -539,7 +558,7 @@ public sealed partial class SettingsPage : UserControl
 
     private async void AutomaticUpdatesToggled(object sender, RoutedEventArgs e)
     {
-        if (!_updateUiReady || sender is not ToggleSwitch toggle)
+        if (!_updateUiReady || IsMachineWideInstall || sender is not ToggleSwitch toggle)
         {
             return;
         }
@@ -569,6 +588,12 @@ public sealed partial class SettingsPage : UserControl
 
     private async void UpdateActionClick(object sender, RoutedEventArgs e)
     {
+        if (IsMachineWideInstall)
+        {
+            OpenReleasesPage();
+            return;
+        }
+
         if (_updateBusy)
         {
             return;
@@ -610,6 +635,18 @@ public sealed partial class SettingsPage : UserControl
             SetUpdateBusy(false);
             UpdateStatusText.Text = AppStrings.FormatText("UpdateApplyFailed",
                 exception.Message);
+        }
+    }
+
+    private void OpenReleasesPage()
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(ReleasesPageUrl) { UseShellExecute = true });
+        }
+        catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+        {
+            UpdateStatusText.Text = AppStrings.FormatText("UpdateCheckFailed", exception.Message);
         }
     }
 
