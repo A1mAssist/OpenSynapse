@@ -318,7 +318,8 @@ public static class DeviceCapabilitySummaryCalculator
             telemetry.BladeNativeDisplayMode);
         Row(sku, telemetry.BladeSkuHardwareConfiguration);
         Row(Owns(CapabilityIds.AdapterPowerGet), telemetry.BladeAdapterPower);
-        Row(Owns(CapabilityIds.FnKeyGet), telemetry.BladeFnKeyMultimediaPrimary);
+        Row(Owns(CapabilityIds.FnKeyGet) || Owns(CapabilityIds.FnKeySwapGet),
+            telemetry.BladeFnKeyMultimediaPrimary);
         Row(Owns(CapabilityIds.McuVersionGet), telemetry.BladeMcuVersion);
         Row(Owns(CapabilityIds.AutoSleepGet), telemetry.BladeAutoSleepEnabled);
         Row(Owns(CapabilityIds.TimeToDimGet), telemetry.BladeTimeToDim);

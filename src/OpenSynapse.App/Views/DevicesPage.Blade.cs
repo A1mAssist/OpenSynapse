@@ -22,6 +22,7 @@ public sealed partial class DevicesPage : UserControl
     private bool _touchpadToggleInFlight;
     private bool _bladeLightingSettingsInFlight;
     private bool _bladePerformanceApplyInFlight;
+    private bool _bladeFnKeyApplyInFlight;
     private bool _bladeBrightnessPointerActive;
     private Color? _lightingColorBeforeEdit;
     private ColorPicker? _activeLightingColorPicker;
@@ -253,6 +254,33 @@ public sealed partial class DevicesPage : UserControl
         finally
         {
             _bladePerformanceApplyInFlight = false;
+        }
+    }
+
+    private async void BladeFnFunctionPrimaryClick(object sender, RoutedEventArgs e) =>
+        await ApplyBladeFnPrimaryAsync(multimediaPrimary: false);
+
+    private async void BladeFnMultimediaPrimaryClick(object sender, RoutedEventArgs e) =>
+        await ApplyBladeFnPrimaryAsync(multimediaPrimary: true);
+
+    private async Task ApplyBladeFnPrimaryAsync(bool multimediaPrimary)
+    {
+        if (_bladeFnKeyApplyInFlight ||
+            !ViewModel.Blade.CanSetFnKey ||
+            ViewModel.Blade.FnKeyMultimediaPrimary == multimediaPrimary)
+        {
+            return;
+        }
+
+        ViewModel.Blade.FnKeyMultimediaPrimary = multimediaPrimary;
+        _bladeFnKeyApplyInFlight = true;
+        try
+        {
+            await ViewModel.Blade.ApplyFnKeyAsync(Lifetime);
+        }
+        finally
+        {
+            _bladeFnKeyApplyInFlight = false;
         }
     }
 

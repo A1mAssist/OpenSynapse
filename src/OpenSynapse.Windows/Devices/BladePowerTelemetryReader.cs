@@ -299,6 +299,21 @@ internal sealed class BladePowerTelemetryReader
     {
         var blade = _resolver.FindReadyBlade(devices)
             ?? throw new InvalidOperationException("The Blade Fn primary-function control channel is unavailable.");
+        if (blade.Owns(CapabilityIds.FnKeySwapSet))
+        {
+            var swapRequest = RazerCapabilityClient.CreateConfiguredRequest(
+                blade,
+                CapabilityIds.FnKeySwapSet,
+                BladeSynapsePolicyProtocol.CreateSetFnKeySwapRequest(multiFunctionPrimary));
+            var swapResponse = await _client.QueryAsync(
+                blade,
+                CapabilityIds.FnKeySwapSet,
+                swapRequest.AsMemory(RazerFeatureReport.ArgumentsOffset, swapRequest[6]),
+                cancellationToken,
+                swapRequest[6]);
+            return BladeSynapsePolicyProtocol.ParseFnKeySwap(swapResponse, swapRequest).MultiFunctionPrimary;
+        }
+
         if (!blade.Owns(CapabilityIds.FnKeySet))
         {
             throw new InvalidOperationException(

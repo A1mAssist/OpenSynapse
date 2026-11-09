@@ -1051,6 +1051,16 @@
                       <TextBlock local:Localized.Uid="BladeFilterDriverCommand" Text="pnputil /add-driver &quot;&lt;DriverStore 里的 inf&gt;&quot; /install" FontFamily="Cascadia Mono,Consolas" FontSize="12" IsTextSelectionEnabled="True" TextWrapping="Wrap" />
                     </StackPanel>
                   </Border>
+                  <Border Visibility="{Binding Blade.FnKeyCardVisibility}" Style="{StaticResource CardStyle}" Padding="16">
+                    <StackPanel Spacing="10">
+                      <TextBlock local:Localized.Uid="BladeFnRowTitle" Text="主功能按键" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="BladeFnRowDescription" Text="选择功能键或多媒体键作为第一层。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <StackPanel Orientation="Horizontal" Spacing="24">
+                        <RadioButton local:Localized.Uid="BladeFnRowFunction" Content="功能按键" GroupName="BladeFnRow" IsChecked="{Binding Blade.FnKeyFunctionPrimarySelected, Mode=OneWay}" Click="BladeFnFunctionPrimaryClick" IsEnabled="{Binding Blade.CanSetFnKey}" />
+                        <RadioButton local:Localized.Uid="BladeFnRowMultimedia" Content="多媒体按键" GroupName="BladeFnRow" IsChecked="{Binding Blade.FnKeyMultimediaPrimary, Mode=OneWay}" Click="BladeFnMultimediaPrimaryClick" IsEnabled="{Binding Blade.CanSetFnKey}" />
+                      </StackPanel>
+                    </StackPanel>
+                  </Border>
                   <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
                     <Border Style="{StaticResource CardStyle}" Padding="20" MinHeight="92">
                       <StackPanel Spacing="6">

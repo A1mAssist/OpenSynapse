@@ -1508,10 +1508,14 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             if (SetField(ref _blade._bladeFnKeySelection, value))
             {
                 OnPropertyChanged(nameof(CanApplyFnKey));
+                OnPropertyChanged(nameof(FnKeyFunctionPrimarySelected));
             }
         }
     }
     public bool CanSetFnKey => _blade._bladeFnKeyMultimediaPrimary is not null;
+    public bool FnKeyFunctionPrimarySelected => CanSetFnKey && !FnKeyMultimediaPrimary;
+    public Visibility FnKeyCardVisibility =>
+        CanSetFnKey ? Visibility.Visible : Visibility.Collapsed;
     public bool CanApplyFnKey =>
         CanSetFnKey && FnKeyMultimediaPrimary != _blade._bladeFnKeyMultimediaPrimary;
     public bool LocalDimmingEnabled
@@ -2629,6 +2633,8 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         OnPropertyChanged(nameof(FnKeyMultimediaPrimary));
         OnPropertyChanged(nameof(CanSetFnKey));
         OnPropertyChanged(nameof(CanApplyFnKey));
+        OnPropertyChanged(nameof(FnKeyCardVisibility));
+        OnPropertyChanged(nameof(FnKeyFunctionPrimarySelected));
         _blade._bladeNativeDisplayMode = null;
         _blade._bladeSkuHardwareConfiguration = null;
         NativeDisplayModeIndex = -1;
@@ -2719,6 +2725,8 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         OnPropertyChanged(nameof(FnKeyMultimediaPrimary));
         OnPropertyChanged(nameof(CanSetFnKey));
         OnPropertyChanged(nameof(CanApplyFnKey));
+        OnPropertyChanged(nameof(FnKeyCardVisibility));
+        OnPropertyChanged(nameof(FnKeyFunctionPrimarySelected));
     }
 
     private void SetAutoSleep(bool? enabled, bool writable)

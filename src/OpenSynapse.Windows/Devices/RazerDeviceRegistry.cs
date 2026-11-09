@@ -537,7 +537,8 @@ internal sealed partial class RazerDeviceRegistry
                     "blade-671" => capabilityId is not (CapabilityIds.AdapterPowerGet or CapabilityIds.ChargeLimitGet or CapabilityIds.PowerModeGet or
                         CapabilityIds.NativeDisplayModeGet or CapabilityIds.SkuHardwareConfigurationGet or
                         CapabilityIds.KeyboardBrightnessGet or CapabilityIds.KeyboardBrightnessSet or
-                        CapabilityIds.KeyboardEffectGet or CapabilityIds.KeyboardEffectSet),
+                        CapabilityIds.KeyboardEffectGet or CapabilityIds.KeyboardEffectSet or
+                        CapabilityIds.FnKeySwapGet),
                     "blade-597" => capabilityId is not (CapabilityIds.KeyboardBrightnessGet or
                         CapabilityIds.AdapterPowerGet or CapabilityIds.ChargeLimitGet or CapabilityIds.PowerModeGet or
                         CapabilityIds.NativeDisplayModeGet or CapabilityIds.SkuHardwareConfigurationGet),

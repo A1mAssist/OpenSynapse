@@ -313,7 +313,20 @@ internal sealed partial class BladeTelemetryReader
             }
         }
 
-        if (owns(CapabilityIds.FnKeyGet))
+        if (owns(CapabilityIds.FnKeySwapGet))
+        {
+            try
+            {
+                var response = await _client.QueryAsync(blade, CapabilityIds.FnKeySwapGet, cancellationToken);
+                bladeFnKeyMultimediaPrimary = BladeSynapsePolicyProtocol.ParseFnKeySwap(
+                    response, RazerCapabilityClient.CreateRequest(blade, CapabilityIds.FnKeySwapGet)).MultiFunctionPrimary;
+            }
+            catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
+            {
+                errors.Add($"Fn row behavior (swap): {exception.Message}");
+            }
+        }
+        else if (owns(CapabilityIds.FnKeyGet))
         {
             try
             {
