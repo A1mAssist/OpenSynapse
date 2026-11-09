@@ -496,6 +496,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(OledVisibility));
         OnPropertyChanged(nameof(OledWriteVisibility));
         OnPropertyChanged(nameof(CanEditOled));
+        NotifySmartTrackingChanged();
         OnLightingSelectionChanged();
     }
 

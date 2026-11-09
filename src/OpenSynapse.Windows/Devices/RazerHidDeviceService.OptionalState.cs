@@ -15,6 +15,8 @@ public sealed partial class RazerHidDeviceService
             RazerHidBackendCapability.TimeToDimWrite,
             RazerHidBackendCapability.IndicatorLedConfigurationRead,
             RazerHidBackendCapability.IndicatorLedConfigurationWrite,
+            RazerHidBackendCapability.ProximitySensorRead,
+            RazerHidBackendCapability.ProximitySensorWrite,
             RazerHidBackendCapability.SensorRotationRead,
             RazerHidBackendCapability.SensorRotationWrite,
         }.ToFrozenSet();
@@ -37,6 +39,13 @@ public sealed partial class RazerHidDeviceService
 
         if (definition.Category == DeviceCategory.Mouse)
         {
+            if (await ProbeProximitySensorAsync(definition, devicePath, cancellationToken)
+                    .ConfigureAwait(false))
+            {
+                result.Add(RazerHidBackendCapability.ProximitySensorRead);
+                result.Add(RazerHidBackendCapability.ProximitySensorWrite);
+            }
+
             if (await ProbeSensorRotationAsync(definition, devicePath, cancellationToken)
                     .ConfigureAwait(false))
             {
@@ -91,6 +100,29 @@ public sealed partial class RazerHidDeviceService
         }
 
         return result.ToFrozenSet();
+    }
+
+    private Task<bool> ProbeProximitySensorAsync(
+        RazerHidDeviceDefinition definition,
+        string devicePath,
+        CancellationToken cancellationToken)
+    {
+        var request = RazerProximitySensorProtocol.CreateGetProximitySensorConfigurationRequest(
+            MiddlewareTransactionId,
+            RazerProximitySensorProtocol.DefaultProximityClassId,
+            RazerProximitySensorProtocol.AvagoProximitySensorId);
+        return ProbeMiddlewareAsync(
+            definition.ProductId,
+            devicePath,
+            definition.DeviceWait,
+            "mouse.proximitySensor",
+            request,
+            response =>
+            {
+                _ = RazerProximitySensorProtocol.ParseConfiguration(response, request);
+                return true;
+            },
+            cancellationToken);
     }
 
     private Task<bool> ProbeSensorRotationAsync(

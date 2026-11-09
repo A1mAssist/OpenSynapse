@@ -43,6 +43,10 @@ public readonly record struct RazerHidSensorRotation(
 public static class RazerProximitySensorProtocol
 {
     public const int MaximumConfigurationBytes = 8;
+    public const byte DefaultProximityClassId = 0x00;
+    public const byte AvagoProximitySensorId = 0x04;
+    public const byte UniversalLiftCutOffMode = 0x01;
+    public const byte PresetCalibrationHysteresisMode = 0x04;
 
     private const byte CommandClass = 0x0B;
     private const byte GetConfigurationCommand = 0x85;
