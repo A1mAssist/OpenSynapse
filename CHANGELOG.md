@@ -8,7 +8,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
-- MSI installs can now update from inside the app: **Update and restart** asks for administrator permission once, then `Update.exe` replaces the copy under `Program Files` and restarts. Cancelling the UAC prompt keeps the current version and shows a clear message.
+- MSI installs can now update from inside the app: **Update and restart** hands the package to the service registered at install time, which verifies it, applies it through Task Scheduler, and restarts the app without a UAC prompt.
 
 ## [1.7.1] - 2026-11-09
 

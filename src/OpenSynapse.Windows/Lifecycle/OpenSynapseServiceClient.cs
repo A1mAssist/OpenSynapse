@@ -17,6 +17,7 @@ public static class OpenSynapseServiceClient
     private static readonly TimeSpan ServiceStartTimeout = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan PipeConnectTimeout = TimeSpan.FromSeconds(3);
     private static readonly TimeSpan ResponseTimeout = TimeSpan.FromSeconds(20);
+    private static readonly TimeSpan ApplyUpdateResponseTimeout = TimeSpan.FromMinutes(2);
 
     public static async Task<DedicatedGpuSwitchResult?> TrySetEnabledAsync(
         bool enabled,
@@ -110,7 +111,7 @@ public static class OpenSynapseServiceClient
                 request,
                 cancellationToken,
                 _ => Task.FromResult(IsServiceRunning()),
-                SendAsync,
+                (value, token) => ExchangeAsync(value, token, ConnectAsync),
                 Task.Delay)
             .ConfigureAwait(false);
         return response?.Handled == true &&
@@ -191,6 +192,41 @@ public static class OpenSynapseServiceClient
             Enabled: null);
 
         var response = await SendForResponseAsync(request, cancellationToken).ConfigureAwait(false);
+        return response?.Handled == true
+            ? response.Outcome == DedicatedGpuSwitchOutcome.Success
+            : null;
+    }
+
+    /// <summary>Applies a downloaded Velopack package through the machine service.</summary>
+    public static async Task<bool?> TryApplyUpdateAsync(
+        string packageFileName,
+        string packagePath,
+        string packageVersion,
+        int waitProcessId,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(packageFileName) ||
+            string.IsNullOrWhiteSpace(packagePath) ||
+            string.IsNullOrWhiteSpace(packageVersion) ||
+            waitProcessId <= 0)
+        {
+            return false;
+        }
+
+        var request = new OpenSynapseServiceRequest(
+            OpenSynapseServiceProtocol.Version,
+            OpenSynapseServiceProtocol.ApplyUpdateOperation,
+            Enabled: null,
+            PackageFileName: packageFileName,
+            WaitProcessId: waitProcessId,
+            PackagePath: packagePath,
+            PackageVersion: packageVersion);
+
+        var response = await SendForResponseAsync(
+                request,
+                cancellationToken,
+                ApplyUpdateResponseTimeout)
+            .ConfigureAwait(false);
         return response?.Handled == true
             ? response.Outcome == DedicatedGpuSwitchOutcome.Success
             : null;
@@ -380,8 +416,14 @@ public static class OpenSynapseServiceClient
 
     private static Task<OpenSynapseServiceResponse?> SendForResponseAsync(
         OpenSynapseServiceRequest request,
-        CancellationToken cancellationToken) =>
-        SendForResponseAsync(request, cancellationToken, TryEnsureServiceRunningAsync, SendAsync, Task.Delay);
+        CancellationToken cancellationToken,
+        TimeSpan? responseTimeout = null) =>
+        SendForResponseAsync(
+            request,
+            cancellationToken,
+            TryEnsureServiceRunningAsync,
+            (value, token) => ExchangeAsync(value, token, ConnectAsync, responseTimeout),
+            Task.Delay);
 
     internal static async Task<OpenSynapseServiceResponse?> SendForResponseAsync(
         OpenSynapseServiceRequest request, CancellationToken cancellationToken,
@@ -477,26 +519,29 @@ public static class OpenSynapseServiceClient
         }
     }
 
-    private static Task<OpenSynapseServiceResponse?> SendAsync(
-        OpenSynapseServiceRequest request,
-        CancellationToken cancellationToken) => ExchangeAsync(request, cancellationToken, async token =>
+    private static async Task<Stream> ConnectAsync(CancellationToken cancellationToken)
+    {
+        var pipe = new NamedPipeClientStream(
+            ".", OpenSynapseServiceProtocol.PipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
+        try
         {
-            var pipe = new NamedPipeClientStream(
-                ".", OpenSynapseServiceProtocol.PipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
-            try
-            {
-                await pipe.ConnectAsync((int)PipeConnectTimeout.TotalMilliseconds, token).ConfigureAwait(false);
-                return pipe;
-            }
-            catch { pipe.Dispose(); throw; }
-        });
+            await pipe.ConnectAsync((int)PipeConnectTimeout.TotalMilliseconds, cancellationToken).ConfigureAwait(false);
+            return pipe;
+        }
+        catch
+        {
+            pipe.Dispose();
+            throw;
+        }
+    }
 
     internal static async Task<OpenSynapseServiceResponse?> ExchangeAsync(
         OpenSynapseServiceRequest request, CancellationToken cancellationToken,
         Func<CancellationToken, Task<Stream>> connect, TimeSpan? responseTimeout = null)
     {
         var pnpWrite = request.Operation is OpenSynapseServiceProtocol.SetOperation or
-            OpenSynapseServiceProtocol.RestartOperation;
+            OpenSynapseServiceProtocol.RestartOperation or
+            OpenSynapseServiceProtocol.ApplyUpdateOperation;
         var dispatched = false;
         try
         {

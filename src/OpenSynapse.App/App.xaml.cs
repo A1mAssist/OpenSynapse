@@ -327,9 +327,29 @@ public partial class App : Application
                 ?? throw new InvalidOperationException("The OpenSynapse install root is unavailable.");
             var packages = locator.PackagesDir
                 ?? throw new InvalidOperationException("The OpenSynapse package directory is unavailable.");
+            var packagePath = Path.Combine(packages, release.FileName);
+            var viaService = await OpenSynapseServiceClient
+                .TryApplyUpdateAsync(
+                    release.FileName,
+                    packagePath,
+                    release.Version.ToString(),
+                    Environment.ProcessId)
+                .ConfigureAwait(false);
+            if (viaService is true)
+            {
+                await GetShutdownTask(_audioMuteViewModel);
+                Environment.Exit(0);
+            }
+
+            if (viaService is false)
+            {
+                throw new InvalidOperationException(
+                    "The OpenSynapse service could not start the update task.");
+            }
+
             _ = MachineWideUpdateLauncher.Start(
                 Path.Combine(root, "Update.exe"),
-                Path.Combine(packages, release.FileName),
+                packagePath,
                 root,
                 packages,
                 Environment.ProcessId);

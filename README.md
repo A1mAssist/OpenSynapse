@@ -69,7 +69,7 @@ Download one of these files from [GitHub Releases](https://github.com/A1mAssist/
 - `OpenSynapse-<version>-win-x64-Setup.msi` — **Recommended.** Installs for all users under `Program Files` and registers the GPU mode service with administrator approval. When registration succeeds, supported GPU switches use the service without another UAC prompt. If an older per-user install is present, installation preserves its profiles and settings. The next unelevated launch verifies that every data file has a preserved copy, keeps conflicting versions as `.legacy-backup` files, and then removes the old install and repairs startup. Elevated launches leave the old uninstaller untouched.
 - `OpenSynapse-<version>-win-Portable.zip` — Portable copy. It runs without installation; the GPU switch prompts for UAC when used.
 
-Advanced: `OpenSynapse-<version>-win-AutoUpdate-PerUser.exe` is the per-user package. Do not download it for a normal install; use the MSI or Portable. It installs for the current user only and does not install the machine-wide service; use it only when you specifically need a per-user install. The MSI also supports in-app updates, with one UAC prompt when the update is applied.
+Advanced: `OpenSynapse-<version>-win-AutoUpdate-PerUser.exe` is the per-user package. Do not download it for a normal install; use the MSI or Portable. It installs for the current user only and does not install the machine-wide service; use it only when you specifically need a per-user install. The MSI also supports in-app updates through the service registered at install time, without a UAC prompt.
 
 `<version>` is the release version, for example `1.7.1`.
 

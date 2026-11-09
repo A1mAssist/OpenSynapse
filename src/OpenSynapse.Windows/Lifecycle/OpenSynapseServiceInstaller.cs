@@ -106,7 +106,7 @@ public static class OpenSynapseServiceInstaller
         if (!current.MatchesDacl(ServiceSddl) &&
             run(["sdset", OpenSynapseServiceProtocol.ServiceName, ServiceSddl]).ExitCode != 0) return false;
         if (run(["description", OpenSynapseServiceProtocol.ServiceName,
-            "Provides OpenSynapse privileged features: GPU and CPU controls, the macro agent, and the Chroma broker."]).ExitCode != 0) return false;
+            "Provides OpenSynapse privileged features: GPU and CPU controls, the macro agent, the Chroma broker, and update execution."]).ExitCode != 0) return false;
         if (read()?.Matches(command, ServiceSddl) != true) return false;
         RemoveLegacy(run);
         return true;
