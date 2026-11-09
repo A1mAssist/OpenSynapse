@@ -24,6 +24,8 @@ public sealed partial class RazerHidDeviceService
 
         if (asymmetric)
         {
+            // shortcut: one tracking-distance value drives both lift-off and landing
+            // distances; split them if real-device testing shows they differ.
             await ExecuteWithoutResultAsync(
                 connection,
                 new RazerHidRequest(
