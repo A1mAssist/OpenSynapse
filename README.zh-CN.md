@@ -73,7 +73,7 @@ OpenSynapse 会先识别已经连接的设备，再按具体 USB 设备和 HID �
 
 `<version>` 是发布版本号，例如 `1.7.1`。
 
-MSI 服务以 `LocalSystem` 运行，使用 `Program Files` 内受保护的应用程序，接受固定的状态查询、GPU 启用／禁用／重启、CPU 功耗／Curve Optimizer、GPU 时钟操作及固定宏代理启动请求。控制管道允许配置的安装用户 SID、本机 Administrators 和 SYSTEM，并拒绝网络登录；各控制项仍受型号、驱动和协议准入限制。注册失败时仍可能需要既有 UAC 后备路径。
+MSI 服务以 `LocalSystem` 运行，使用 `Program Files` 内受保护的应用程序，接受固定的状态查询、GPU 启用／禁用／重启、CPU 功耗／Curve Optimizer、GPU 时钟操作、固定宏代理启动请求及校验后的更新执行。控制管道允许配置的安装用户 SID、本机 Administrators 和 SYSTEM，并拒绝网络登录；各控制项仍受型号、驱动和协议准入限制。注册失败时仍可能需要既有 UAC 后备路径。
 
 配置、日志和设备清单保存在 `%LOCALAPPDATA%\A1mAssist\OpenSynapse`。用户数据与 Velopack 管理的目录分离，避免 MSI 升级或卸载时被清理。
 

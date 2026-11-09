@@ -73,7 +73,7 @@ Advanced: `OpenSynapse-<version>-win-AutoUpdate-PerUser.exe` is the per-user pac
 
 `<version>` is the release version, for example `1.7.1`.
 
-The MSI service runs as `LocalSystem` and uses the protected executable under `Program Files`. It accepts fixed status, GPU enable/disable/restart, CPU power/Curve Optimizer and GPU clock operations, plus the fixed macro-agent launch request. The control pipe allows the configured installation-user SID, local Administrators and SYSTEM, and denies network logons. Available controls remain subject to model, driver and protocol admission; failed registration can still require the existing UAC fallback.
+The MSI service runs as `LocalSystem` and uses the protected executable under `Program Files`. It accepts fixed status, GPU enable/disable/restart, CPU power/Curve Optimizer and GPU clock operations, the fixed macro-agent launch request, and verified update execution. The control pipe allows the configured installation-user SID, local Administrators and SYSTEM, and denies network logons. Available controls remain subject to model, driver and protocol admission; failed registration can still require the existing UAC fallback.
 
 Profiles, logs, and device manifests live in `%LOCALAPPDATA%\A1mAssist\OpenSynapse`. Keeping user data outside the Velopack-managed directory prevents an MSI upgrade or uninstall from deleting it.
 
