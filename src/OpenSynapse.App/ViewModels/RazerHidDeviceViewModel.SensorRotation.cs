@@ -70,12 +70,16 @@ public sealed partial class RazerHidDeviceViewModel
         {
             SensorRotationStatusText = string.Empty;
         }
+        // Low-frequency device state: refresh the visibility/editability derived
+        // from _sensorRotationKnown in one go.
+        NotifyStateChanged();
     }
 
     private void ClearSensorRotation()
     {
         _sensorRotationKnown = false;
         SensorRotationStatusText = string.Empty;
+        NotifyStateChanged();
     }
 
     [NotProfileScoped]

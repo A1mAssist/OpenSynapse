@@ -54,6 +54,7 @@ public sealed partial class ThxAudioViewModel
             OnPropertyChanged(nameof(CanApplyEqualizer));
             OnPropertyChanged(nameof(CanResetEqualizer));
             StatusText = LocalizeError(status);
+            NotifyStateChanged();
             return;
         }
 
@@ -123,6 +124,7 @@ public sealed partial class ThxAudioViewModel
         OnPropertyChanged(nameof(CanApplyEqualizer));
         OnPropertyChanged(nameof(CanResetEqualizer));
         StatusText = AppStrings.Text("ThxStatusReady");
+        NotifyStateChanged();
     }
 
 }

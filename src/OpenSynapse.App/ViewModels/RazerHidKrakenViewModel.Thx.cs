@@ -87,9 +87,7 @@ public sealed partial class RazerHidKrakenViewModel
         finally
         {
             _thxBusy = false;
-            OnPropertyChanged(nameof(ThxStatusText));
-            OnPropertyChanged(nameof(ThxInstallerVisibility));
-            OnPropertyChanged(nameof(CanInstallThx));
+            NotifyStateChanged();
         }
     }
 
@@ -97,8 +95,6 @@ public sealed partial class RazerHidKrakenViewModel
     {
         _thxErrorText = string.Empty;
         _thxStatus = ThxHeadsetAdmission.Check(Connection.ProductId);
-        OnPropertyChanged(nameof(ThxStatusText));
-        OnPropertyChanged(nameof(ThxInstallerVisibility));
-        OnPropertyChanged(nameof(CanInstallThx));
+        NotifyStateChanged();
     }
 }

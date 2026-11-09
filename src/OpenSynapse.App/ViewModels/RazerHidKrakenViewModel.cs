@@ -311,6 +311,8 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>
         PropertyChanged?.Invoke(this, new(name));
 
+    private void NotifyStateChanged() => OnPropertyChanged(string.Empty);
+
     private readonly record struct LightingSnapshot(
         RazerHidLightingEffect Effect,
         Color Primary,
