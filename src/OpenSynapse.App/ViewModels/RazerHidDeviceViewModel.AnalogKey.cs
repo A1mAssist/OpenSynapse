@@ -31,6 +31,7 @@ public sealed partial class RazerHidDeviceViewModel
         RazerHidBackendCapability.AnalogKeyRead, RazerHidBackendCapability.AnalogKeyWrite));
     public Visibility AnalogKeyWriteVisibility => VisibleWhen(Has(RazerHidBackendCapability.AnalogKeyWrite));
     public Visibility AnalogKeyLayoutVisibility => VisibleWhen(_analogKeyLayout is not null);
+    public Visibility AnalogKeyLayoutMissingVisibility => VisibleWhen(_analogKeyLayout is null);
     public string AnalogKeyLayoutName => _analogKeyLayout?.Name ?? string.Empty;
     public IReadOnlyList<AnalogKeyRowViewModel> AnalogKeyRows => _analogKeyRows;
 
@@ -243,11 +244,23 @@ public sealed partial class RazerHidDeviceViewModel
 
     private async Task RefreshAnalogKeyAsync(CancellationToken cancellationToken)
     {
-        AnalogKeyContinuousRapidTrigger =
-            (await _service.GetAnalogKeyContinuousRapidTriggerAsync(Connection, AnalogKeyClassId, cancellationToken)).Enabled;
-        AnalogKeyBottomDeadZone =
-            (await _service.GetAnalogKeyBottomDeadZoneAsync(Connection, AnalogKeyClassId, cancellationToken)).Value;
-        AnalogReportMode = await _service.GetAnalogReportModeAsync(Connection, cancellationToken);
+        // These three are optional settings. A firmware that does not answer one must
+        // not remove the whole analog card; keep the last value and let the per-key
+        // actuation/Rapid Trigger read below decide whether the layout is usable.
+        var continuous = await ReadOrKeepAsync(
+            token => _service.GetAnalogKeyContinuousRapidTriggerAsync(Connection, AnalogKeyClassId, token),
+            new RazerAnalogKeyContinuousRapidTrigger(AnalogKeyClassId, AnalogKeyContinuousRapidTrigger),
+            cancellationToken);
+        AnalogKeyContinuousRapidTrigger = continuous.Enabled;
+        var deadZone = await ReadOrKeepAsync(
+            token => _service.GetAnalogKeyBottomDeadZoneAsync(Connection, AnalogKeyClassId, token),
+            new RazerAnalogKeyBottomDeadZone(AnalogKeyClassId, AnalogKeyBottomDeadZone),
+            cancellationToken);
+        AnalogKeyBottomDeadZone = deadZone.Value;
+        AnalogReportMode = await ReadOrKeepAsync(
+            token => _service.GetAnalogReportModeAsync(Connection, token),
+            AnalogReportMode,
+            cancellationToken);
         if (_analogKeyLayout is not null && !_analogKeyLayoutLoaded)
         {
             try
@@ -263,6 +276,25 @@ public sealed partial class RazerHidDeviceViewModel
             {
                 AnalogKeyLayoutStatusText = LocalizeProtocolError(exception);
             }
+        }
+    }
+
+    private async Task<T> ReadOrKeepAsync<T>(
+        Func<CancellationToken, Task<T>> read,
+        T fallback,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await read(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            return fallback;
         }
     }
 

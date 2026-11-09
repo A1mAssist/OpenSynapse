@@ -4184,6 +4184,7 @@
   <data name="AnalogKeySelectedCount" xml:space="preserve"><value>已选 {0} 个键</value></data>
   <data name="AnalogKeyAppliedCount" xml:space="preserve"><value>已应用到 {0} 个键，并已读回。</value></data>
   <data name="AnalogKeyReadCount" xml:space="preserve"><value>已读取 {0} 个键的触发与 Rapid Trigger 设置。</value></data>
+  <data name="AnalogKeyLayoutMissing.Text" xml:space="preserve"><value>已检测到模拟键，但这个型号的逐键布局尚未收录。</value></data>
   <data name="SnapTapReading" xml:space="preserve"><value>正在读取 Snap Tap 设置…</value></data>
   <data name="SnapTapNeedTwoKeys" xml:space="preserve"><value>每一组都要同时选两个键。</value></data>
   <data name="SnapTapDuplicateInPair" xml:space="preserve"><value>同一组不能选两次同一个键。</value></data>

@@ -3754,6 +3754,7 @@
   <data name="AnalogKeySelectedCount" xml:space="preserve"><value>{0} keys selected</value></data>
   <data name="AnalogKeyAppliedCount" xml:space="preserve"><value>Applied to {0} keys and read back.</value></data>
   <data name="AnalogKeyReadCount" xml:space="preserve"><value>Read trigger and Rapid Trigger settings for {0} keys.</value></data>
+  <data name="AnalogKeyLayoutMissing.Text" xml:space="preserve"><value>Analog keys responded, but this model has no per-key layout yet.</value></data>
   <data name="SnapTapReading" xml:space="preserve"><value>Reading Snap Tap settings…</value></data>
   <data name="SnapTapNeedTwoKeys" xml:space="preserve"><value>Each pair needs two keys.</value></data>
   <data name="SnapTapDuplicateInPair" xml:space="preserve"><value>A pair cannot use the same key twice.</value></data>
