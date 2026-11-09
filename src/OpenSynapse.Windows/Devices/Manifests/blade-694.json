@@ -315,7 +315,14 @@
     "firmware": {
       "latest": {
         "version": "1.3.0.0",
-        "url": "https://rzr.to/5gx7l8"
+        "url": "https://rzr.to/5gx7l8",
+        "additional": [
+          {
+            "type": "bios",
+            "version": "1.06",
+            "url": "https://rzr.to/lhc30p"
+          }
+        ]
       },
       "driver": {
         "version": "24.0.0.0",

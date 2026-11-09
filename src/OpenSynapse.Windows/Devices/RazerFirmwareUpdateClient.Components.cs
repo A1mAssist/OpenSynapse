@@ -14,8 +14,7 @@ public sealed partial class RazerFirmwareUpdateClient
         var ec = SingleVersion(components, "ec");
         var mcu = SingleVersion(components, "mcu");
         var newer = new List<string>();
-        // A package version is not proof of the MCU version installed on this machine.
-        var uncheckedComponents = new List<string> { "Firmware package" };
+        var uncheckedComponents = new List<string>();
         CompareComponent("BIOS", installed.Bios, bios, newer, uncheckedComponents);
         CompareComponent("EC", installed.Ec, ec, newer, uncheckedComponents);
         CompareComponent("MCU", installed.Mcu, mcu, newer, uncheckedComponents);

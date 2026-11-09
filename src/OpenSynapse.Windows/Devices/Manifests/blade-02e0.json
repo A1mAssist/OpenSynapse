@@ -280,13 +280,18 @@
         "additional": [
           {
             "type": "ec",
-            "version": "1.03",
-            "url": "https://rzr.to/2787wk"
+            "version": "1.04",
+            "url": "https://rzr.to/nel9jx"
+          },
+          {
+            "type": "mcu",
+            "version": "1.07.00",
+            "url": "https://rzr.to/530xjf"
           },
           {
             "type": "bios",
-            "version": "1.04",
-            "url": "https://rzr.to/2787wk"
+            "version": "4.01",
+            "url": "https://rzr.to/41u15v"
           }
         ]
       },

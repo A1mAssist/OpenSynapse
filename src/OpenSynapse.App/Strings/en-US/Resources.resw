@@ -3154,8 +3154,8 @@
   <data name="ViperBatteryChemistryInput.PlaceholderText" xml:space="preserve"><value>Choose battery type</value></data>
   <data name="ViperBatteryChemistryInput.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Battery type</value></data>
   <data name="ViperSettingAppliedProfileSaveFailed" xml:space="preserve"><value>The mouse setting was applied to the device, but the profile could not be saved. The in-memory profile field was restored.</value></data>
-  <data name="FirmwareUpdatePartial" xml:space="preserve"><value>Check incomplete; could not compare: {0}. Check the model's Razer support page.</value></data>
-  <data name="FirmwareUpdateAvailablePartial" xml:space="preserve"><value>Component update available: {0}. Could not compare: {1}.</value></data>
+  <data name="FirmwareUpdatePartial" xml:space="preserve"><value>Compared components are not older than the published versions. No published version to compare: {0}.</value></data>
+  <data name="FirmwareUpdateAvailablePartial" xml:space="preserve"><value>Component update available: {0}. No published version to compare: {1}.</value></data>
   <data name="FirmwareUpdateComparedCurrent" xml:space="preserve"><value>Comparable component versions match or exceed the published data. Check Razer support for newer releases.</value></data>
   <data name="RazerHeadsetReverbSmall" xml:space="preserve"><value>Small</value></data>
   <data name="RazerHeadsetReverbMedium" xml:space="preserve"><value>Medium</value></data>

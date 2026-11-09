@@ -276,7 +276,14 @@
     "firmware": {
       "latest": {
         "version": "0.0.1.0",
-        "url": "https://rzr.to/c0q4iz"
+        "url": "https://rzr.to/gagumw",
+        "additional": [
+          {
+            "type": "mcu",
+            "version": "1.05.00",
+            "url": "https://rzr.to/gagumw"
+          }
+        ]
       },
       "driver": {
         "version": "26.0.2.0",

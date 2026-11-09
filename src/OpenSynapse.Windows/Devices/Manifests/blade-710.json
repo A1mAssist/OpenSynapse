@@ -281,6 +281,11 @@
             "url": "https://rzr.to/k1kflh"
           },
           {
+            "type": "mcu",
+            "version": "1.09",
+            "url": "https://rzr.to/k1kflh"
+          },
+          {
             "type": "bios",
             "version": "2.02",
             "url": "https://rzr.to/k1kflh"
@@ -295,6 +300,12 @@
             "type": "vbios",
             "version": "98.3.5c.40.15",
             "model": "RTX 5090",
+            "url": "https://rzr.to/k1kflh"
+          },
+          {
+            "type": "vbios",
+            "version": "98.05.31.00.63",
+            "model": "RTX 5070 Ti",
             "url": "https://rzr.to/k1kflh"
           }
         ]

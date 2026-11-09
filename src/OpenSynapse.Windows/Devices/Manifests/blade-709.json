@@ -334,12 +334,17 @@
           {
             "type": "ec",
             "version": "1.03",
-            "url": "https://rzr.to/k1kflh"
+            "url": "https://rzr.to/3a4kti"
+          },
+          {
+            "type": "mcu",
+            "version": "1.04.00",
+            "url": "https://rzr.to/l4diqc"
           },
           {
             "type": "bios",
             "version": "1.06",
-            "url": "https://rzr.to/k1kflh"
+            "url": "https://rzr.to/zxl1v0"
           }
         ]
       },
