@@ -50,6 +50,28 @@ public sealed partial class RazerHidDeviceService
         return RazerOnboardProfileProtocol.ParseNumberOfProfiles(response, request);
     }
 
+    /// <summary>
+    /// Reads the exact profile ids present on the device. The class 0x03 dialect used
+    /// by 00BE/00BF has no JS-confirmed 0x81 command yet, so those devices return null
+    /// and the UI falls back to the count/max range instead of sending a class 0x05
+    /// frame the firmware is known to reject.
+    /// </summary>
+    public async Task<IReadOnlyList<byte>?> GetOnboardProfileIdsAsync(
+        RazerHidDeviceConnection connection,
+        CancellationToken cancellationToken = default)
+    {
+        RequireReady(connection);
+        if (UsesAltProfileClass(connection))
+        {
+            return null;
+        }
+
+        var request = RazerOnboardProfileProtocol.CreateGetProfileIdsRequest(MiddlewareTransactionId);
+        var response = await ExecuteAsync(connection,
+            new RazerHidRequest("razer_onboard_get_profile_ids", request), cancellationToken).ConfigureAwait(false);
+        return RazerOnboardProfileProtocol.ParseProfileIds(response, request);
+    }
+
     public async Task<byte> GetMaxOnboardProfilesAsync(
         RazerHidDeviceConnection connection,
         CancellationToken cancellationToken = default)

@@ -1346,6 +1346,54 @@
     <value>该设备不支持这项板载配置操作。</value>
     <comment>板载配置命令不支持</comment>
   </data>
+  <data name="RazerHidOnboardProfileUnknown" xml:space="preserve">
+    <value>未知</value>
+  </data>
+  <data name="RazerHidOnboardProfileNoFreeSlot" xml:space="preserve">
+    <value>没有空闲的配置编号，请先删除一个配置。</value>
+  </data>
+  <data name="RazerHidOnboardProfileCreateNotApplied" xml:space="preserve">
+    <value>设备没有创建配置；该编号可能已存在或设备不支持。</value>
+  </data>
+  <data name="RazerHidOnboardProfileDeleteNotApplied" xml:space="preserve">
+    <value>设备没有删除该配置，请重试。</value>
+  </data>
+  <data name="RazerHidOnboardProfileIdsUnavailable" xml:space="preserve">
+    <value>无法读取配置编号列表，已按已用数量显示。</value>
+  </data>
+  <data name="RazerHidOnboardProfileTimeout" xml:space="preserve">
+    <value>设备在规定时间内没有响应，请重试。</value>
+  </data>
+  <data name="RazerHidOnboardProfileMismatch" xml:space="preserve">
+    <value>设备返回了不匹配的报文，请重试。</value>
+  </data>
+  <data name="RazerHidOnboardProfileInvalidResponse" xml:space="preserve">
+    <value>设备返回了无效的配置数据。</value>
+  </data>
+  <data name="RazerHidOnboardProfileFailed" xml:space="preserve">
+    <value>板载配置操作失败，请重试。</value>
+  </data>
+  <data name="RazerHidOnboardProfileDeleteTitle" xml:space="preserve">
+    <value>删除板载配置</value>
+  </data>
+  <data name="RazerHidOnboardProfileDeleteBody" xml:space="preserve">
+    <value>删除后该配置中的按键、灯光和 DPI 设置会丢失，且无法撤销。</value>
+  </data>
+  <data name="RazerHidOnboardProfileDeleteAction" xml:space="preserve">
+    <value>删除</value>
+  </data>
+  <data name="RazerHidOnboardProfileResetTitle" xml:space="preserve">
+    <value>重置板载配置</value>
+  </data>
+  <data name="RazerHidOnboardProfileResetBody" xml:space="preserve">
+    <value>重置会清除该配置里的所有自定义设置，且无法撤销。</value>
+  </data>
+  <data name="RazerHidOnboardProfileResetAction" xml:space="preserve">
+    <value>重置</value>
+  </data>
+  <data name="RazerHidOnboardProfileDeleteBlocked.Text" xml:space="preserve">
+    <value>当前激活的配置不能删除，请先切换到其他配置。</value>
+  </data>
   <data name="RazerHidMappingNoButtons" xml:space="preserve">
     <value>设备未报告任何映射按键</value>
     <comment>设备未报告任何映射按键</comment>
