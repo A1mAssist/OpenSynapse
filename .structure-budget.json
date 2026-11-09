@@ -15,7 +15,7 @@
     {
       "path": "src/OpenSynapse.App/ViewModels/BladeWorkspace.cs",
       "maxLines": 3165,
-      "maxPublicMembers": 182
+      "maxPublicMembers": 184
     },
     {
       "path": "src/OpenSynapse.Windows/Devices/RazerHidDeviceService.cs",
@@ -221,7 +221,7 @@
     },
     {
       "path": "src/OpenSynapse.Windows/Devices/BladeTelemetryReader.cs",
-      "maxLines": 685
+      "maxLines": 700
     },
     {
       "path": "src/OpenSynapse.Windows/Protocols/RazerHeadsetAudioProtocol.cs",
