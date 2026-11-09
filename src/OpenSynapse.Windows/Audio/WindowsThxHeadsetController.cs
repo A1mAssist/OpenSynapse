@@ -91,7 +91,8 @@ public sealed class WindowsThxHeadsetController : IThxAudioController, IAsyncDis
             return new ThxAudioStatus(
                 ThxAudioAvailability.ComponentsUnavailable,
                 installed.ErrorCode,
-                null);
+                null,
+                installed.RebootRequired);
         }
         return await ReadAsync(endpoint, cancellationToken).ConfigureAwait(false);
     }
@@ -102,7 +103,8 @@ public sealed class WindowsThxHeadsetController : IThxAudioController, IAsyncDis
     {
         var status = ThxHeadsetAdmission.Check(_productId);
         if (status.Availability == ThxHeadsetAvailability.UnsupportedDevice ||
-            status.Availability == ThxHeadsetAvailability.ServiceMissing)
+            (status.Availability == ThxHeadsetAvailability.ServiceMissing &&
+             !ThxAudioAdmission.HasService(ThxHeadsetAdmission.ServiceName)))
         {
             return new ThxAudioStatus(ThxAudioAvailability.ComponentsUnavailable, status.ErrorCode, null);
         }
@@ -119,7 +121,8 @@ public sealed class WindowsThxHeadsetController : IThxAudioController, IAsyncDis
             return new ThxAudioStatus(
                 ThxAudioAvailability.ComponentsUnavailable,
                 installed.ErrorCode,
-                null);
+                null,
+                installed.RebootRequired);
         }
         return await ReadAsync(endpoint, cancellationToken).ConfigureAwait(false);
     }

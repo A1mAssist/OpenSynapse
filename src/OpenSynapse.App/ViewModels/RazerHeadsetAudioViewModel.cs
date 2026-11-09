@@ -295,13 +295,14 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         : Visibility.Collapsed;
 
     public Visibility ThxInstallerVisibility =>
-        _thxStatus.Availability == ThxHeadsetAvailability.Available
+        _thxStatus.Availability == ThxHeadsetAvailability.Available || _thxStatus.RebootRequired
             ? Visibility.Collapsed
             : ThxVisibility;
 
     public bool CanInstallThx =>
         !IsBusy && ThxVisibility == Visibility.Visible &&
-        _thxStatus.Availability != ThxHeadsetAvailability.Available;
+        _thxStatus.Availability != ThxHeadsetAvailability.Available &&
+        !_thxStatus.RebootRequired;
 
     public string ThxGameProfilesUri =>
         ThxHeadsetAdmission.GetProfile(_connection.ProductId)?.GameProfilesUri ?? string.Empty;

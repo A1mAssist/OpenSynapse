@@ -27,7 +27,8 @@ internal static class ThxComponentInstaller
     internal static async Task<ThxComponentInstallResult> InstallAsync(
         ThxInstallerPackage package,
         CancellationToken cancellationToken,
-        bool repair = false)
+        bool repair = false,
+        string? startService = null)
     {
         if (package.Length <= 0 || package.Sha256.Length != 64)
         {
@@ -82,12 +83,14 @@ internal static class ThxComponentInstaller
             cancellationToken.ThrowIfCancellationRequested();
             var result = await RunAsync(
                 temporary,
-                repair ? $"/repair {package.Arguments}" : package.Arguments).ConfigureAwait(false);
+                repair ? $"/repair {package.Arguments}" : package.Arguments,
+                startService).ConfigureAwait(false);
             if (repair && result.Error is not null)
             {
                 // A leftover service with no registered bundle cannot be repaired:
                 // retry the cached installer as a plain install.
-                result = await RunAsync(temporary, package.Arguments).ConfigureAwait(false);
+                result = await RunAsync(temporary, package.Arguments, startService)
+                    .ConfigureAwait(false);
             }
             return result;
         }
@@ -127,28 +130,65 @@ internal static class ThxComponentInstaller
         }
     }
 
-    private static async Task<ThxComponentInstallResult> RunAsync(string path, string arguments)
+    private static async Task<ThxComponentInstallResult> RunAsync(
+        string path,
+        string arguments,
+        string? startService)
     {
-        var startInfo = new ProcessStartInfo
+        string? commandFile = null;
+        try
         {
-            FileName = path,
-            Arguments = arguments,
-            UseShellExecute = true,
-            Verb = "runas",
-            WindowStyle = ProcessWindowStyle.Hidden,
-        };
-        using var process = Process.Start(startInfo);
-        if (process is null)
-        {
-            return new("ThxInstallerStartFailed");
-        }
+            var fileName = path;
+            var commandArguments = arguments;
+            if (startService is not null)
+            {
+                // Run the installer and sc start under the same elevated token, so
+                // a stopped service does not force a second UAC prompt or a reboot.
+                commandFile = Path.Combine(
+                    Path.GetDirectoryName(path)!,
+                    $"thx-{Guid.NewGuid():N}.cmd");
+                await File.WriteAllTextAsync(
+                    commandFile,
+                    $"@echo off\r\n\"{path}\" {arguments}\r\nset RC=%ERRORLEVEL%\r\nsc start {startService} >nul 2>&1\r\nexit /b %RC%\r\n",
+                    CancellationToken.None).ConfigureAwait(false);
+                fileName = Environment.GetEnvironmentVariable("ComSpec") ?? "cmd.exe";
+                commandArguments = $"/d /c call \"{commandFile}\"";
+            }
 
-        await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
-        return process.ExitCode switch
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = fileName,
+                Arguments = commandArguments,
+                UseShellExecute = true,
+                Verb = "runas",
+                WindowStyle = ProcessWindowStyle.Hidden,
+            };
+            using var process = Process.Start(startInfo);
+            if (process is null)
+            {
+                return new("ThxInstallerStartFailed");
+            }
+
+            await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
+            return process.ExitCode switch
+            {
+                0 => new(null),
+                1641 or 3010 => new(null, RebootRequired: true),
+                _ => new("ThxInstallerFailed"),
+            };
+        }
+        finally
         {
-            0 => new(null),
-            1641 or 3010 => new(null, RebootRequired: true),
-            _ => new("ThxInstallerFailed"),
-        };
+            if (commandFile is not null)
+            {
+                try
+                {
+                    File.Delete(commandFile);
+                }
+                catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+                {
+                }
+            }
+        }
     }
 }

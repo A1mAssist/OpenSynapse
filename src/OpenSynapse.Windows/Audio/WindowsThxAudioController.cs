@@ -83,11 +83,18 @@ public sealed class WindowsThxAudioController : IThxAudioController, IAsyncDispo
     {
         var service = await ThxAudioAdmission.InstallServiceAsync(cancellationToken)
             .ConfigureAwait(false);
-        if (service.Error is not (null or "ThxNativeMissing"))
+        if (service.Error is not (null or "ThxNativeMissing" or "ThxRebootRequired"))
         {
             return service;
         }
-        return await InstallNativeComponentAsync(endpoint, cancellationToken).ConfigureAwait(false);
+
+        var native = await InstallNativeComponentAsync(endpoint, cancellationToken)
+            .ConfigureAwait(false);
+        if (native.IsAvailable || native.Error is not null)
+        {
+            return native;
+        }
+        return service.RebootRequired ? service : native;
     }
 
     public async Task<ThxAudioStatus> InstallNativeComponentAsync(
@@ -99,7 +106,14 @@ public sealed class WindowsThxAudioController : IThxAudioController, IAsyncDispo
         {
             return await ReadAsync(endpoint, cancellationToken).ConfigureAwait(false);
         }
-        if (admission.Status.Error != "ThxNativeMissing")
+        var awaitingReboot = admission.Status.Error == "ThxServiceMissing" &&
+            ThxAudioAdmission.HasRegisteredHostService();
+        if (admission.Status.Error is not (null or "ThxNativeMissing" or "ThxServiceMissing"))
+        {
+            return admission.Status;
+        }
+        if (admission.Status.Error == "ThxServiceMissing" &&
+            !awaitingReboot)
         {
             return admission.Status;
         }
@@ -155,6 +169,14 @@ public sealed class WindowsThxAudioController : IThxAudioController, IAsyncDispo
             }
 
             File.Move(temporary, destination, overwrite: true);
+            if (awaitingReboot)
+            {
+                return new ThxAudioStatus(
+                    ThxAudioAvailability.ComponentsUnavailable,
+                    "ThxRebootRequired",
+                    null,
+                    RebootRequired: true);
+            }
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
