@@ -15,6 +15,8 @@ public sealed partial class RazerHidDeviceService
             RazerHidBackendCapability.TimeToDimWrite,
             RazerHidBackendCapability.IndicatorLedConfigurationRead,
             RazerHidBackendCapability.IndicatorLedConfigurationWrite,
+            RazerHidBackendCapability.SensorRotationRead,
+            RazerHidBackendCapability.SensorRotationWrite,
         }.ToFrozenSet();
 
     /// <summary>
@@ -32,6 +34,17 @@ public sealed partial class RazerHidDeviceService
         }
 
         var result = new HashSet<RazerHidBackendCapability>();
+
+        if (definition.Category == DeviceCategory.Mouse)
+        {
+            if (await ProbeSensorRotationAsync(definition, devicePath, cancellationToken)
+                    .ConfigureAwait(false))
+            {
+                result.Add(RazerHidBackendCapability.SensorRotationRead);
+                result.Add(RazerHidBackendCapability.SensorRotationWrite);
+            }
+        }
+
         if (definition.HasSourceCapability("get_auto_sleep") &&
             definition.Transactions.ContainsKey("razer_chroma_misc_get_auto_sleep") &&
             await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
@@ -78,5 +91,26 @@ public sealed partial class RazerHidDeviceService
         }
 
         return result.ToFrozenSet();
+    }
+
+    private Task<bool> ProbeSensorRotationAsync(
+        RazerHidDeviceDefinition definition,
+        string devicePath,
+        CancellationToken cancellationToken)
+    {
+        var request = RazerProximitySensorProtocol.CreateGetSensorRotationRequest(
+            MiddlewareTransactionId);
+        return ProbeMiddlewareAsync(
+            definition.ProductId,
+            devicePath,
+            definition.DeviceWait,
+            "mouse.sensorRotation",
+            request,
+            response =>
+            {
+                _ = RazerProximitySensorProtocol.ParseSensorRotation(response, request);
+                return true;
+            },
+            cancellationToken);
     }
 }

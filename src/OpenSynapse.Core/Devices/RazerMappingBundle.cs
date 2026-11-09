@@ -18,7 +18,7 @@ public sealed record RazerMappingBundle(
         new Dictionary<byte, string>();
 }
 
-public static class RazerMappingBundleParser
+public static partial class RazerMappingBundleParser
 {
     private const double DefaultCanvasWidth = 310;
     private const double DefaultImageWidth = 300;
@@ -62,10 +62,6 @@ public static class RazerMappingBundleParser
 
     private static readonly Regex FwIdRegex = new(
         """fwID:\s*(?<number>\d+)""",
-        RegexOptions.CultureInvariant);
-
-    private static readonly Regex DkmKeyRegex = new(
-        """\{inputID:"(?<input>DKM_[^"]+)"[^{}]*?[,{]key:\s*(?<number>\d+)""",
         RegexOptions.CultureInvariant);
 
     private static readonly Regex KeyNumberRegex = new(
@@ -113,8 +109,9 @@ public static class RazerMappingBundleParser
             ReadPositive(CanvasHeightRegex, mainJs) ?? DefaultImageHeight;
         var dotRadius = ReadPositive(DotRadiusRegex, canvasText) ??
             ReadPositive(DotRadiusRegex, mainJs) ?? DefaultDotRadius;
-        var buttons = ParseButtons(mainJs);
-        var dkmKeyIds = ParseDkmKeyIds(mainJs);
+        var buttonScope = FindButtonListScope(mainJs);
+        var buttons = ParseButtonObjects(buttonScope);
+        var explicitButtonIds = ParseExplicitButtonIds(mainJs);
         var keyIds = ParseKeyIds(mainJs, buttons);
         var anchors = new List<RazerMappingBundleAnchor>();
         var seenButtonIds = new HashSet<byte>();
@@ -162,7 +159,7 @@ public static class RazerMappingBundleParser
             }
 
             var button = buttons[drawLine.ButtonIndex];
-            if (button.ResolveButtonId(dkmKeyIds) is not { } buttonId || !seenButtonIds.Add(buttonId))
+            if (button.ResolveButtonId(explicitButtonIds) is not { } buttonId || !seenButtonIds.Add(buttonId))
             {
                 continue;
             }
@@ -190,7 +187,7 @@ public static class RazerMappingBundleParser
             anchors,
             keyIds)
         {
-            ButtonNamesById = BuildButtonNames(buttons, dkmKeyIds),
+            ButtonNamesById = BuildButtonNames(buttons, explicitButtonIds),
         };
     }
 
@@ -304,7 +301,7 @@ public static class RazerMappingBundleParser
         return null;
     }
 
-    private static List<ButtonObject> ParseButtons(string text)
+    private static List<ButtonObject> ParseButtonObjects(string text)
     {
         var buttons = new List<ButtonObject>();
         var seenOffsets = new HashSet<int>();
@@ -326,21 +323,6 @@ public static class RazerMappingBundleParser
         }
 
         return buttons;
-    }
-
-    private static Dictionary<string, byte> ParseDkmKeyIds(string text)
-    {
-        var keyIds = new Dictionary<string, byte>(StringComparer.Ordinal);
-        foreach (Match match in DkmKeyRegex.Matches(text))
-        {
-            if (byte.TryParse(match.Groups["number"].Value, NumberStyles.None, CultureInfo.InvariantCulture,
-                    out var key) && key > 0)
-            {
-                keyIds.TryAdd(match.Groups["input"].Value, key);
-            }
-        }
-
-        return keyIds;
     }
 
     private static Dictionary<string, byte> ParseKeyIds(string text, List<ButtonObject> buttons)
@@ -381,12 +363,12 @@ public static class RazerMappingBundleParser
 
     private static Dictionary<byte, string> BuildButtonNames(
         List<ButtonObject> buttons,
-        IReadOnlyDictionary<string, byte> dkmKeyIds)
+        IReadOnlyDictionary<string, byte> explicitButtonIds)
     {
         var names = new Dictionary<byte, string>();
         foreach (var button in buttons)
         {
-            if (button.ResolveButtonId(dkmKeyIds) is not { } buttonId)
+            if (button.ResolveButtonId(explicitButtonIds) is not { } buttonId)
             {
                 continue;
             }
@@ -546,16 +528,16 @@ public static class RazerMappingBundleParser
         int? KeyNumber,
         int? FwId)
     {
-        public byte? ResolveButtonId(IReadOnlyDictionary<string, byte> dkmKeyIds)
+        public byte? ResolveButtonId(IReadOnlyDictionary<string, byte> explicitButtonIds)
         {
-            if (StandardMouseButtonId(Key) is { } standard)
+            if (InputId is { Length: > 0 } inputId &&
+                explicitButtonIds.TryGetValue(inputId, out var explicitId) &&
+                explicitId > 0)
             {
-                return standard;
+                return explicitId;
             }
 
-            if (InputId is { Length: > 0 } inputId &&
-                dkmKeyIds.TryGetValue(inputId, out var explicitId) &&
-                explicitId > 0)
+            if (explicitButtonIds.TryGetValue(Key, out explicitId) && explicitId > 0)
             {
                 return explicitId;
             }
@@ -563,6 +545,11 @@ public static class RazerMappingBundleParser
             if (FwId is > 0 and <= byte.MaxValue)
             {
                 return (byte)FwId.Value;
+            }
+
+            if (StandardMouseButtonId(Key) is { } standard)
+            {
+                return standard;
             }
 
             if (DkmButtonId(InputId) is { } dkm)

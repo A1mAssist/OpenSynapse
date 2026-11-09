@@ -281,7 +281,9 @@ public static class RazerProximitySensorProtocol
         ReadOnlySpan<byte> request,
         byte minimumArguments)
     {
-        if (!RazerFeatureReport.Matches(request, response) ||
+        // The transport rotates the transaction id, so compare the command rather than
+        // the request's placeholder id.
+        if (!RazerFeatureReport.MatchesCommand(request, response) ||
             !RazerFeatureReport.IsAcceptedStatus(response[1]) ||
             response[6] < minimumArguments ||
             response[6] > 80)
