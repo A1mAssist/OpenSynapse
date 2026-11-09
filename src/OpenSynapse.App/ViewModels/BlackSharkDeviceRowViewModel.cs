@@ -22,7 +22,7 @@ public sealed class BlackSharkDeviceRowViewModel : INotifyPropertyChanged
     public string IconGlyph => "\uE7F6";
     public string Status => AppStrings.Text("BlackSharkStatusConnected");
     public string CapabilityText { get; private set; } = AppStrings.Text("BlackSharkStatusConnected");
-    public Brush StatusBrush { get; } = new SolidColorBrush(Color.FromArgb(255, 153, 221, 114));
+    public Brush StatusBrush { get; } = new SolidColorBrush(Color.FromArgb(255, 68, 214, 44));
     public string Error => string.Empty;
 
     internal void SetCapabilityText(string text)

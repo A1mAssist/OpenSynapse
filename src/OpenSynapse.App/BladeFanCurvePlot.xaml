@@ -14,7 +14,7 @@
         <TextBlock local:Localized.Uid="BladeFanCurveColumnCpu" Text="CPU 风扇" Foreground="{StaticResource MutedBrush}" FontSize="12" VerticalAlignment="Center" />
       </StackPanel>
       <StackPanel Orientation="Horizontal" Spacing="6">
-        <Border Width="10" Height="10" CornerRadius="5" Background="#99DD72" VerticalAlignment="Center" />
+        <Border Width="10" Height="10" CornerRadius="5" Background="#44D62C" VerticalAlignment="Center" />
         <TextBlock local:Localized.Uid="BladeFanCurveColumnGpu" Text="GPU 风扇" Foreground="{StaticResource MutedBrush}" FontSize="12" VerticalAlignment="Center" />
       </StackPanel>
     </StackPanel>

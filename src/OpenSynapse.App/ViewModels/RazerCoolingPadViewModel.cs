@@ -60,7 +60,7 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
     public string Identity => _service is null ? string.Empty : $"VID_1532 / PID_{_service.ProductId:X4}";
     public string IconGlyph => "\uE7F8";
     public string StatusText => AppStrings.Text(IsConnected ? "CoolingPadStatusConnected" : "CoolingPadStatusNotConnected");
-    public Brush StatusBrush { get; } = new SolidColorBrush(Color.FromArgb(255, 153, 221, 114));
+    public Brush StatusBrush { get; } = new SolidColorBrush(Color.FromArgb(255, 68, 214, 44));
     public int ProtocolTotalCount => 3;
     public int ProtocolAvailableCount =>
         (IsConnected ? 1 : 0) +

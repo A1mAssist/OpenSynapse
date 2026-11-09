@@ -82,7 +82,7 @@ public sealed class PhilipsHueViewModel : INotifyPropertyChanged, IDisposable
     private PhilipsHueLightRowViewModel? _selectedColorLight;
     private PhilipsHueBridge? _selectedBridge;
     private global::Windows.UI.Color _hueColor = global::Windows.UI.Color.FromArgb(255, 255, 255, 255);
-    private static readonly Brush ReadyBrush = CreateStatusBrush(153, 221, 114);
+    private static readonly Brush ReadyBrush = CreateStatusBrush(68, 214, 44);
     private static readonly Brush DiscoveredBrush = CreateStatusBrush(255, 181, 71);
     private static readonly Brush NotConnectedBrush = CreateStatusBrush(255, 107, 107);
 

@@ -22,7 +22,7 @@ public sealed class RazerBleDeviceRowViewModel(RazerBleDevice device) : INotifyP
     // shortcut: protocol 30 is the middleware's mouse class; revisit when a BLE keyboard appears.
     public OpenSynapse.Core.Devices.DeviceCategory HardwareCategory => OpenSynapse.Core.Devices.DeviceCategory.Mouse;
     public Microsoft.UI.Xaml.Media.Brush StatusBrush { get; } =
-        new Microsoft.UI.Xaml.Media.SolidColorBrush(global::Windows.UI.Color.FromArgb(255, 153, 221, 114));
+        new Microsoft.UI.Xaml.Media.SolidColorBrush(global::Windows.UI.Color.FromArgb(255, 68, 214, 44));
 
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
 }

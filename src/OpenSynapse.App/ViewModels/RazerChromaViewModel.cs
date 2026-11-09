@@ -63,7 +63,7 @@ public sealed class RazerChromaDeviceRowViewModel : INotifyPropertyChanged
     public string Identity => $"VID_1532 / PID_{Connection.ProductId:X4}";
     public string IconGlyph => Connection.Category == DeviceCategory.Mouse ? "\uE962" : "\uE7F4";
     public string Status => AppStrings.Text("BlackSharkStatusConnected");
-    public Brush StatusBrush { get; } = new SolidColorBrush(Color.FromArgb(255, 153, 221, 114));
+    public Brush StatusBrush { get; } = new SolidColorBrush(Color.FromArgb(255, 68, 214, 44));
     public string Error => string.Empty;
 
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));

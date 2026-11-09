@@ -12,7 +12,7 @@ public sealed class RazerHidKrakenDeviceRowViewModel : INotifyPropertyChanged
     {
         Connection = connection;
         StatusBrush = new SolidColorBrush(connection.IsReady
-            ? Color.FromArgb(255, 153, 221, 114)
+            ? Color.FromArgb(255, 68, 214, 44)
             : Color.FromArgb(255, 240, 185, 90));
     }
 

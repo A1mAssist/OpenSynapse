@@ -64,7 +64,7 @@ public sealed partial class MousePathPlot : UserControl
     {
         var gridBrush = new SolidColorBrush(global::Windows.UI.Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF));
         var axisBrush = new SolidColorBrush(global::Windows.UI.Color.FromArgb(0x70, 0xFF, 0xFF, 0xFF));
-        var accent = new SolidColorBrush(global::Windows.UI.Color.FromArgb(0xFF, 0x99, 0xDD, 0x72));
+        var accent = new SolidColorBrush(global::Windows.UI.Color.FromArgb(0xFF, 0x44, 0xD6, 0x2C));
         var handleSurface = new SolidColorBrush(global::Windows.UI.Color.FromArgb(0xFF, 0x20, 0x20, 0x20));
 
         _plotBackground.Fill = new SolidColorBrush(global::Windows.UI.Color.FromArgb(0x08, 0xFF, 0xFF, 0xFF));
@@ -295,7 +295,7 @@ public sealed partial class MousePathPlot : UserControl
             {
                 Width = PointMarkerSize,
                 Height = PointMarkerSize,
-                Fill = new SolidColorBrush(global::Windows.UI.Color.FromArgb(0xFF, 0x99, 0xDD, 0x72)),
+                Fill = new SolidColorBrush(global::Windows.UI.Color.FromArgb(0xFF, 0x44, 0xD6, 0x2C)),
                 Stroke = new SolidColorBrush(global::Windows.UI.Color.FromArgb(0xFF, 0x20, 0x20, 0x20)),
                 StrokeThickness = 1.5,
                 IsHitTestVisible = false,

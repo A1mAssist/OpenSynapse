@@ -33,7 +33,7 @@
       <SolidColorBrush x:Key="AccentBrush" Color="#44D62C" />
       <SolidColorBrush x:Key="AccentHoverBrush" Color="#5BE547" />
       <SolidColorBrush x:Key="AccentPressedBrush" Color="#36B522" />
-      <SolidColorBrush x:Key="OnlineBrush" Color="#99DD72" />
+      <SolidColorBrush x:Key="OnlineBrush" Color="#44D62C" />
       <SolidColorBrush x:Key="GpuBrush" Color="#59C7D9" />
       <SolidColorBrush x:Key="ThermalBrush" Color="#F0B95A" />
       <SolidColorBrush x:Key="WarningBrush" Color="#F0B95A" />
