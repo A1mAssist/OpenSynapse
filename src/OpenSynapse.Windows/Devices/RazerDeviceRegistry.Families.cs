@@ -194,7 +194,8 @@ internal sealed partial class RazerDeviceRegistry
                     CapabilityIds.AutoSleepGet or CapabilityIds.AutoSleepSet or
                     CapabilityIds.TimeToDimGet or CapabilityIds.TimeToDimSet or
                     CapabilityIds.IndicatorLedGet or CapabilityIds.IndicatorLedSet or
-                    CapabilityIds.GpuCardDetectionGet or CapabilityIds.GpuCardDetectionSet))
+                    CapabilityIds.GpuCardDetectionGet or CapabilityIds.GpuCardDetectionSet or
+                    CapabilityIds.FnKeySwapGet or CapabilityIds.FnKeySwapSet))
                 .ToHashSet(StringComparer.Ordinal),
             ["blade-597"] = FamilyCapabilities["blade-597"].Keys
                 .Where(capability => capability is not (CapabilityIds.BoostGet or CapabilityIds.BoostSet or
