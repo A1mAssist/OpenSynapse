@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 
 namespace OpenSynapse.Windows.Protocols;
@@ -266,15 +267,45 @@ public sealed class BladeRecoveryClient : IAsyncDisposable
         return true;
     }
 
-    private static bool IsOriginalOwnerAlive(BladeRecoveryMarker marker)
+    private static bool IsOriginalOwnerAlive(BladeRecoveryMarker marker) =>
+        IsOwnerProcessAlive(marker.OwnerPid, marker.StartedAtUtc.UtcDateTime);
+
+    internal static bool IsOwnerProcessAlive(int ownerPid, DateTime startedAtUtc)
     {
+        return IsOwnerProcessAlive(ownerPid, startedAtUtc, static pid =>
+        {
+            using var process = Process.GetProcessById(pid);
+            return (process.ProcessName, process.StartTime.ToUniversalTime());
+        });
+    }
+
+    internal static bool IsOwnerProcessAlive(
+        int ownerPid,
+        DateTime startedAtUtc,
+        Func<int, (string? ProcessName, DateTime StartTimeUtc)> readProcess)
+    {
+        ArgumentNullException.ThrowIfNull(readProcess);
         try
         {
-            using var process = Process.GetProcessById(marker.OwnerPid);
-            return !process.HasExited &&
-                   process.StartTime.ToUniversalTime() <= marker.StartedAtUtc.UtcDateTime;
+            var (processName, processStartTimeUtc) = readProcess(ownerPid);
+            return IsOwnerProcess(processName, processStartTimeUtc, startedAtUtc);
         }
-        catch (ArgumentException) { return false; }
-        catch (InvalidOperationException) { return false; }
+        catch (Exception exception) when (
+            exception is ArgumentException or InvalidOperationException or Win32Exception or
+            NotSupportedException or UnauthorizedAccessException)
+        {
+            // A process that vanished, denied access, or cannot be identified is not the owner.
+            return false;
+        }
     }
+
+    internal static bool IsOwnerProcess(
+        string? processName,
+        DateTime processStartTimeUtc,
+        DateTime markerStartedAtUtc) =>
+        IsOwnerProcessName(processName) && processStartTimeUtc <= markerStartedAtUtc;
+
+    internal static bool IsOwnerProcessName(string? processName) =>
+        string.Equals(processName, "OpenSynapse.App", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(processName, "OpenSynapse.RecoveryHost", StringComparison.OrdinalIgnoreCase);
 }
