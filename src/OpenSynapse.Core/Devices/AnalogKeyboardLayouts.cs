@@ -9,7 +9,8 @@ public sealed record AnalogKeyboardLayout(
 
 /// <summary>
 /// Per-key analog layouts taken from the middleware key table in bundle 7795.
-/// only product ids with an observed protocol-2 analog capability are listed.
+/// Only product ids that the RazerHid analog page can reach are listed; the
+/// protocol-25 keyboards expose a different page and have no analog editor yet.
 /// </summary>
 public static class AnalogKeyboardLayouts
 {
@@ -24,14 +25,12 @@ public static class AnalogKeyboardLayouts
         {
             [0x02A6] = Create(0x02A6, "Huntsman V3 Pro", includeFunctionRow: true,
                 includeNavigation: true, includeNumpad: true),
-            [0x02D0] = Create(0x02D0, "Huntsman V3 Pro TKL", includeFunctionRow: true,
+            [0x02A7] = Create(0x02A7, "Huntsman V3 Pro TKL", includeFunctionRow: true,
                 includeNavigation: true, includeNumpad: false),
-            [0x02D1] = Create(0x02D1, "Huntsman V3 Pro Mini", includeFunctionRow: false,
+            [0x02B0] = Create(0x02B0, "Huntsman V3 Pro Mini", includeFunctionRow: false,
                 includeNavigation: false, includeNumpad: false),
-            [0x02E4] = Create(0x02E4, "Huntsman V3 HE Mini 65%", includeFunctionRow: false,
-                includeNavigation: true, includeNumpad: false),
-            [0x02EA] = Create(0x02EA, "Huntsman V3 HE TKL", includeFunctionRow: true,
-                includeNavigation: true, includeNumpad: false),
+            [0x02CF] = Create(0x02CF, "Huntsman V3 Pro 8KHz", includeFunctionRow: true,
+                includeNavigation: true, includeNumpad: true),
         };
         return layouts;
     }

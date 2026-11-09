@@ -8,6 +8,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
+- Analog keys now appear on Huntsman V3 Pro TKL (02A7), Mini (02B0) and 8KHz (02CF): the capability probe uses the per-key actuation command, optional setting reads can no longer remove the card, and the TKL/Mini/full-size layouts are covered.
 - Onboard profiles now read the device's real id list and create the first free id; delete and reset ask for confirmation, the active profile cannot be deleted, and failures use readable messages.
 - Switching to the Custom performance mode now shows the GPU performance level and refreshes the CPU/GPU Boost and max-fan controls.
 - Sensor rotation, analog-key layout, THX install state, fan mode and CPU power panels now refresh their derived visibility after state changes; low-frequency transitions use one workspace-wide state notification.

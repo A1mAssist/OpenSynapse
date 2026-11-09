@@ -366,13 +366,14 @@ public sealed partial class RazerHidDeviceService
             return;
         }
 
-        var request = RazerAnalogKeyProtocol.CreateGetAnalogReportModeRequest(MiddlewareTransactionId);
+        // Probe the core per-key actuation GET, not report mode: report mode is an
+        // 8KHz-era command that some analog keyboards do not answer, and a successful
+        // reply with an empty payload still means the firmware understands analog keys.
+        var request = RazerAnalogKeyProtocol.CreateGetMultiAnalogKeyActuationPointRequest(
+            MiddlewareTransactionId, dataType: 0x00, classId: 0x01, keyIds: [0x1F]);
         if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
-                "keyboard.analogKey", request, response =>
-                {
-                    _ = RazerAnalogKeyProtocol.ParseAnalogReportMode(response);
-                    return true;
-                }, cancellationToken).ConfigureAwait(false))
+                "keyboard.analogKey", request, _ => true,
+                cancellationToken).ConfigureAwait(false))
         {
             result.Add(RazerHidBackendCapability.AnalogKeyRead);
             result.Add(RazerHidBackendCapability.AnalogKeyWrite);
