@@ -841,6 +841,17 @@
                       </StackPanel>
                     </Border>
                   </Grid>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding SensorRotationVisibility}">
+                    <StackPanel Spacing="12">
+                      <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="RazerHidSensorRotationTitle" Text="传感器旋转" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
+                      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                        <ToggleSwitch local:Localized.Uid="RazerHidSensorRotationEnabled" Header="启用" IsOn="{Binding SensorRotationEnabled, Mode=TwoWay}" IsEnabled="{Binding CanEditSensorRotation}" OnContent="" OffContent="" />
+                        <NumberBox Grid.Column="1" local:Localized.Uid="RazerHidSensorRotationAngle" Header="角度" Value="{Binding SensorRotationAngle, Mode=TwoWay}" Minimum="0" Maximum="359" SmallChange="1" SpinButtonPlacementMode="Compact" IsEnabled="{Binding CanEditSensorRotation}" />
+                        <Button Grid.Column="2" local:Localized.Uid="RazerHidSaveButton" Content="保存" Click="RazerHidApplySensorRotationClick" IsEnabled="{Binding CanApplySensorRotation}" Style="{StaticResource RazerHidSaveButtonStyle}" VerticalAlignment="Bottom" Visibility="{Binding SensorRotationWriteVisibility}" />
+                      </Grid>
+                      <TextBlock Text="{Binding SensorRotationStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding DpiStagesVisibility}">
                     <StackPanel Spacing="12">
                       <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="RazerHidDpiStagesTitle" Text="DPI 档位" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>

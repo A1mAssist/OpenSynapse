@@ -1940,6 +1940,10 @@
   <data name="Text_8FF04F66" xml:space="preserve"><value>充电中</value></data>
   <data name="Text_EC17E7E7" xml:space="preserve"><value>未充电</value></data>
   <data name="RazerHidDpiStagesTitle.Text" xml:space="preserve"><value>DPI 档位</value></data>
+  <data name="RazerHidSensorRotationTitle.Text" xml:space="preserve"><value>传感器旋转</value></data>
+  <data name="RazerHidSensorRotationEnabled.Header" xml:space="preserve"><value>启用</value></data>
+  <data name="RazerHidSensorRotationAngle.Header" xml:space="preserve"><value>角度</value></data>
+  <data name="RazerHidSensorRotationApplied" xml:space="preserve"><value>已应用</value></data>
   <data name="RazerHidActiveDpiStage.Header" xml:space="preserve"><value>当前档位</value></data>
   <data name="RazerHidDpiStageLabel" xml:space="preserve"><value>档位 {0}</value></data>
   <data name="RazerHidHyperPollingDescription.Text" xml:space="preserve"><value>管理接收器指示灯和鼠标配对。配对操作会再次确认。</value></data>
@@ -2173,6 +2177,8 @@
   <data name="RazerHidCapabilityWirelessConnectionStateRead" xml:space="preserve"><value>无线连接状态读取</value></data>
   <data name="RazerHidCapabilityProximitySensorRead" xml:space="preserve"><value>接近传感器读取</value></data>
   <data name="RazerHidCapabilityProximitySensorWrite" xml:space="preserve"><value>接近传感器写入</value></data>
+  <data name="RazerHidCapabilitySensorRotationRead" xml:space="preserve"><value>传感器角度读取</value></data>
+  <data name="RazerHidCapabilitySensorRotationWrite" xml:space="preserve"><value>传感器角度写入</value></data>
   <data name="RazerHidCapabilityKnobRead" xml:space="preserve"><value>旋钮读取</value></data>
   <data name="RazerHidCapabilityKnobWrite" xml:space="preserve"><value>旋钮写入</value></data>
   <data name="RazerHidCapabilityAnalogKeyRead" xml:space="preserve"><value>模拟键读取</value></data>

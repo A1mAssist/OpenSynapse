@@ -95,6 +95,7 @@ public sealed partial class RazerHidDeviceService
         int? pollingRate = null;
         int? dpiX = null;
         int? dpiY = null;
+        RazerHidSensorRotation? sensorRotation = null;
         int? idle = null;
         int? threshold = null;
         bool? autoSleep = null;
@@ -203,6 +204,13 @@ public sealed partial class RazerHidDeviceService
             () => GetPollingRateAsync(connection, cancellationToken), value => pollingRate = value);
         await ReadAsync(RazerHidBackendCapability.DpiRead, "dpi",
             () => GetDpiAsync(connection, cancellationToken), value => (dpiX, dpiY) = value);
+        await ReadAsync(RazerHidBackendCapability.SensorRotationRead, "sensorRotation",
+            () => GetSensorRotationAsync(connection, cancellationToken), value => sensorRotation = value);
+        if (unsupported.Contains(RazerHidBackendCapability.SensorRotationRead))
+        {
+            // The write only makes sense once the same profile answered a read.
+            unsupported.Add(RazerHidBackendCapability.SensorRotationWrite);
+        }
         await ReadAsync(RazerHidBackendCapability.IdleTimeoutRead, "idleTimeout",
             () => GetIdleTimeoutAsync(connection, cancellationToken), value => idle = value);
         await ReadAsync(RazerHidBackendCapability.LowBatteryThresholdRead, "lowBatteryThreshold",
@@ -255,7 +263,7 @@ public sealed partial class RazerHidDeviceService
             profileDebounce, chromaTap, batteryDischargeCurve, macroStorageInfo,
             lkScrollWheelModeMask,
             brightness, errors,
-            unsupported.ToFrozenSet(), indicatorLedConfigurationV2);
+            unsupported.ToFrozenSet(), indicatorLedConfigurationV2, sensorRotation);
     }
 
     /// <summary>

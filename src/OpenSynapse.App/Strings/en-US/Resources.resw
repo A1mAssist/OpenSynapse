@@ -1564,6 +1564,10 @@
   <data name="Text_8FF04F66" xml:space="preserve"><value>Charging</value></data>
   <data name="Text_EC17E7E7" xml:space="preserve"><value>Not charging</value></data>
   <data name="RazerHidDpiStagesTitle.Text" xml:space="preserve"><value>DPI stages</value></data>
+  <data name="RazerHidSensorRotationTitle.Text" xml:space="preserve"><value>Sensor rotation</value></data>
+  <data name="RazerHidSensorRotationEnabled.Header" xml:space="preserve"><value>Enable</value></data>
+  <data name="RazerHidSensorRotationAngle.Header" xml:space="preserve"><value>Angle</value></data>
+  <data name="RazerHidSensorRotationApplied" xml:space="preserve"><value>Applied</value></data>
   <data name="RazerHidActiveDpiStage.Header" xml:space="preserve"><value>Active stage</value></data>
   <data name="RazerHidDpiStageLabel" xml:space="preserve"><value>Stage {0}</value></data>
   <data name="RazerHidHyperPollingDescription.Text" xml:space="preserve"><value>Manage the receiver indicator and mouse pairing. Pairing actions require confirmation.</value></data>
@@ -1797,6 +1801,8 @@
   <data name="RazerHidCapabilityWirelessConnectionStateRead" xml:space="preserve"><value>Wireless connection state read</value></data>
   <data name="RazerHidCapabilityProximitySensorRead" xml:space="preserve"><value>Proximity sensor read</value></data>
   <data name="RazerHidCapabilityProximitySensorWrite" xml:space="preserve"><value>Proximity sensor write</value></data>
+  <data name="RazerHidCapabilitySensorRotationRead" xml:space="preserve"><value>Sensor rotation read</value></data>
+  <data name="RazerHidCapabilitySensorRotationWrite" xml:space="preserve"><value>Sensor rotation write</value></data>
   <data name="RazerHidCapabilityKnobRead" xml:space="preserve"><value>Knob read</value></data>
   <data name="RazerHidCapabilityKnobWrite" xml:space="preserve"><value>Knob write</value></data>
   <data name="RazerHidCapabilityAnalogKeyRead" xml:space="preserve"><value>Analog key read</value></data>

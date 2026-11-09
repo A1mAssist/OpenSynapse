@@ -441,6 +441,7 @@ public sealed partial class RazerHidDeviceViewModel
             SelectedChromaTapModeIndex = tap.TapMode;
             SelectedChromaTapFunctionIndex = Math.Clamp(tap.FunctionId - 1, 0, 3);
         }
+        if (state.SensorRotation is { } rotation) ApplySensorRotation(rotation);
         if (state.LkScrollWheelModeMask is { } mask) SetLkScrollMask(mask);
         RefreshScrollWheelModeSelection();
     }
@@ -488,6 +489,7 @@ public sealed partial class RazerHidDeviceViewModel
         OnPropertyChanged(nameof(LkScrollText));
         OnPropertyChanged(nameof(CanWriteLkScroll));
         OnPropertyChanged(nameof(CanEditLkScroll));
+        NotifySensorRotationChanged();
     }
 
     private byte LkScrollMask =>
