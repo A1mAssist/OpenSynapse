@@ -2871,7 +2871,7 @@
   <data name="MacroImportButton.Content" xml:space="preserve"><value>导入…</value></data>
   <data name="MacroRowCopyItem.Text" xml:space="preserve"><value>复制</value></data>
   <data name="MacroRowExportItem.Text" xml:space="preserve"><value>导出…</value></data>
-  <data name="MacroHint.Text" xml:space="preserve"><value>宏仅在 OpenSynapse 运行时生效，触发键会全局拦截，F9 停止录制并保存；播放快捷键可在宏编辑器中设置。</value></data>
+  <data name="MacroHint.Text" xml:space="preserve"><value>宏仅在 OpenSynapse 运行时生效，触发键会全局拦截，F9 停止录制并保存；播放快捷键可在宏编辑器中设置。按住 HyperShift 再按目标键，可把触发绑定到 HyperShift 层（需要设备上报 HyperShift）。</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>绑定触发键</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>绑定触发键</value></data>
   <data name="MacroKeyPickerKeyboard.Text" xml:space="preserve"><value>键盘</value></data>
@@ -3866,6 +3866,7 @@
   <data name="RazerMappingSave" xml:space="preserve"><value>保存</value></data>
   <data name="RazerMappingLayerNormal" xml:space="preserve"><value>普通层</value></data>
   <data name="RazerMappingLayerHyperShift" xml:space="preserve"><value>HyperShift 层</value></data>
+  <data name="RazerMappingHyperShiftSoftwareUnavailable" xml:space="preserve"><value>OpenSynapse 无法观测该设备的 HyperShift 层（多数设备由固件处理）。软件宏在这里不可用；如果设备支持 HyperShift，请在 HyperShift 层使用板载宏。</value></data>
   <data name="RazerMappingKeyboardButton" xml:space="preserve"><value>键位 {0}</value></data>
   <data name="RazerMappingNagaSideButton" xml:space="preserve"><value>侧键 {0}</value></data>
   <data name="RazerMappingButtonColumn" xml:space="preserve"><value>按键</value></data>

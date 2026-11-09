@@ -71,6 +71,15 @@ internal static class RazerPrivateKeyCatalog
         Mappings.TryGetValue(productId, out var mapping) &&
         mapping.Values.Any(label => label == "MultiFunctionTrigger");
 
+    internal static bool HasHyperShiftKey(ushort productId) =>
+        Mappings.TryGetValue(productId, out var mapping) &&
+        mapping.Values.Any(label => label == "HyperShift");
+
+    internal static bool IsHyperShift(ushort productId, int keyCode) =>
+        Mappings.TryGetValue(productId, out var mapping) &&
+        mapping.TryGetValue(keyCode, out var label) &&
+        label == "HyperShift";
+
     private static string Friendly(string label) => label switch
     {
         "SensitivityStageUp" => "DPI +",

@@ -10,6 +10,7 @@ using OpenSynapse.Core.Lighting;
 using OpenSynapse.Core.Macros;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Macros;
 using OpenSynapse.Windows.Protocols;
 
@@ -30,7 +31,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
     private readonly bool _canWrite;
     private readonly bool _canWriteOnboardMacros;
     private readonly Func<byte, MacroInput?>? _softwareTriggerResolver;
-    private readonly Func<string, MacroInput, MacroTriggerMode, CancellationToken, Task<string?>>?
+    private readonly Func<string, MacroInput, MacroTriggerMode, bool, CancellationToken, Task<string?>>?
         _softwareTriggerBinder;
     private readonly Func<RazerOnboardMacroService>? _macroServiceFactory;
     private readonly Func<IReadOnlyList<MacroDefinition>>? _localMacroProvider;
@@ -39,6 +40,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
     private readonly Action<string>? _log;
     private readonly ushort _productId;
     private readonly RazerMappingDeviceKind _deviceKind;
+    private readonly bool _canObserveHyperShiftLayer;
     private readonly RazerMappingAssetService _assetService;
     private ImageSource? _layoutImage;
     private RazerMappingImageLayout? _layout;
@@ -72,7 +74,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         RazerMappingAssetService? assetService = null,
         bool canWriteOnboardMacros = false,
         Func<byte, MacroInput?>? softwareTriggerResolver = null,
-        Func<string, MacroInput, MacroTriggerMode, CancellationToken, Task<string?>>? softwareTriggerBinder = null)
+        Func<string, MacroInput, MacroTriggerMode, bool, CancellationToken, Task<string?>>? softwareTriggerBinder = null)
     {
         _transport = transport;
         _catalog = actionCatalog ?? RazerHidMappingActionCatalog.Instance;
@@ -87,6 +89,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         _log = log;
         _productId = productId;
         _deviceKind = deviceKind;
+        _canObserveHyperShiftLayer = RazerPrivateKeyCatalog.HasHyperShiftKey(productId);
         _assetService = assetService ?? RazerMappingAssetService.Shared;
     }
 
@@ -139,6 +142,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             if (_layerIndex == value) return;
             _layerIndex = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(HyperShiftSoftwareUnavailableVisibility));
             // Keep the old rows visible until the read completes to avoid a layout jump.
             if (_hasReadAnyLayer)
             {
@@ -299,7 +303,9 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                     id,
                     _localMacroOptions,
                     _macrosAvailable && _onboardWritable,
-                    softwareTrigger is not null && _softwareTriggerBinder is not null,
+                    softwareTrigger is not null &&
+                    _softwareTriggerBinder is not null &&
+                    (LayerIndex == 0 || _canObserveHyperShiftLayer),
                     _catalog);
                 row.PropertyChanged += OnRowPropertyChanged;
                 byte? assignedSlot = null;
@@ -347,9 +353,13 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                     row.OptionIndex = localMacroIndex;
                 }
 
-                if (softwareTrigger is not null)
+                if (softwareTrigger is not null &&
+                    (LayerIndex == 0 || _canObserveHyperShiftLayer))
                 {
-                    var softwareMacroIndex = FindSoftwareMacro(softwareTrigger, out var triggerMode);
+                    var softwareMacroIndex = FindSoftwareMacro(
+                        softwareTrigger,
+                        LayerIndex == 1,
+                        out var triggerMode);
                     if (softwareMacroIndex >= 0)
                     {
                         row.MacroTargetIndex = (int)MacroExecutionTarget.Software;
@@ -527,7 +537,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 string? error;
                 try
                 {
-                    error = await _softwareTriggerBinder!(macro.Id, input, mode, cancellationToken)
+                    error = await _softwareTriggerBinder!(
+                            macro.Id, input, mode, LayerIndex == 1, cancellationToken)
                         .ConfigureAwait(true);
                 }
                 catch
@@ -873,7 +884,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         };
     }
 
-    private int FindSoftwareMacro(MacroInput input, out MacroTriggerMode mode)
+    private int FindSoftwareMacro(MacroInput input, bool hyperShiftLayer, out MacroTriggerMode mode)
     {
         for (var index = 0; index < _localMacros.Count; index++)
         {
@@ -881,6 +892,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             if (trigger is null ||
                 !string.IsNullOrEmpty(trigger.DeviceId) ||
                 trigger.Modifiers != MacroModifierKeys.None ||
+                trigger.HyperShiftLayer != hyperShiftLayer ||
                 !trigger.Input.Matches(input))
             {
                 continue;

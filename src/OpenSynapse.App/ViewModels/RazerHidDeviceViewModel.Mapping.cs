@@ -12,7 +12,7 @@ public sealed partial class RazerHidDeviceViewModel
 {
     private RazerHidMappingViewModel? _mapping;
 
-    public Func<string, MacroInput, MacroTriggerMode, CancellationToken, Task<string?>>?
+    public Func<string, MacroInput, MacroTriggerMode, bool, CancellationToken, Task<string?>>?
         SoftwareMacroBinder { get; set; }
 
     public Func<byte, MacroInput?>? SoftwareMacroTriggerResolver { get; set; }

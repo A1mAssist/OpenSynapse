@@ -174,6 +174,7 @@ public sealed class MacroTrigger
     public MacroInput Input { get; set; } = new();
     public MacroModifierKeys Modifiers { get; set; }
     public MacroTriggerMode Mode { get; set; }
+    public bool HyperShiftLayer { get; set; }
     public string? DeviceId { get; set; }
     public string? ControlId { get; set; }
 
@@ -201,6 +202,7 @@ public sealed class MacroTrigger
         Input = Input.Clone(),
         Modifiers = Modifiers,
         Mode = Mode,
+        HyperShiftLayer = HyperShiftLayer,
         DeviceId = DeviceId,
         ControlId = ControlId,
     };

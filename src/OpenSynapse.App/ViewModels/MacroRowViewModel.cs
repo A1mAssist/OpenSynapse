@@ -247,7 +247,9 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
     public static string DescribeTrigger(MacroTrigger trigger)
     {
         ArgumentNullException.ThrowIfNull(trigger);
-        var input = DescribeInput(trigger.Input);
+        var input = trigger.HyperShiftLayer
+            ? AppStrings.Text("RazerMappingLayerHyperShift") + " + " + DescribeInput(trigger.Input)
+            : DescribeInput(trigger.Input);
         if (trigger.Modifiers == MacroModifierKeys.None)
         {
             return input;

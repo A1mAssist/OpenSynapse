@@ -25,7 +25,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
     private readonly LocalDiagnosticLog _diagnosticLog;
     private readonly Func<bool> _chromaIntegrationEnabled;
     private readonly Func<IReadOnlyList<MacroDefinition>> _localMacros;
-    private readonly Func<string, MacroInput, MacroTriggerMode, CancellationToken, Task<string?>>?
+    private readonly Func<string, MacroInput, MacroTriggerMode, bool, CancellationToken, Task<string?>>?
         _softwareMacroBinder;
     private readonly Func<MachineSettings> _getMachineSettings;
     private readonly Func<CancellationToken, Task<bool>> _saveMachineSettingsAsync;
@@ -55,7 +55,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         LocalDiagnosticLog diagnosticLog,
         Func<bool> chromaIntegrationEnabled,
         Func<IReadOnlyList<MacroDefinition>> localMacros,
-        Func<string, MacroInput, MacroTriggerMode, CancellationToken, Task<string?>>? softwareMacroBinder,
+        Func<string, MacroInput, MacroTriggerMode, bool, CancellationToken, Task<string?>>? softwareMacroBinder,
         Func<MachineSettings> getMachineSettings,
         Func<CancellationToken, Task<bool>> saveMachineSettingsAsync,
         Func<CancellationToken, Task> refreshDevicesAsync,

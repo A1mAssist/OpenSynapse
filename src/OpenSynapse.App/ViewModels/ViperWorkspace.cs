@@ -22,7 +22,7 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
     private readonly Func<string, Func<Task>, CancellationToken, Action?, string?, string?, Task> _runDeviceOperation;
     private readonly Action<DeviceBatteryReading> _notifyBatteryObserved;
     private readonly Func<IReadOnlyList<MacroDefinition>>? _localMacros;
-    private readonly Func<string, MacroInput, MacroTriggerMode, CancellationToken, Task<string?>>?
+    private readonly Func<string, MacroInput, MacroTriggerMode, bool, CancellationToken, Task<string?>>?
         _softwareMacroBinder;
     private string _deviceName = "Razer Viper V3 HyperSpeed";
     private Visibility _deviceVisibility = Visibility.Collapsed;
@@ -69,7 +69,7 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
         Func<string, Func<Task>, CancellationToken, Action?, string?, string?, Task> runDeviceOperation,
         Action<DeviceBatteryReading> notifyBatteryObserved,
         Func<IReadOnlyList<MacroDefinition>>? localMacros = null,
-        Func<string, MacroInput, MacroTriggerMode, CancellationToken, Task<string?>>?
+        Func<string, MacroInput, MacroTriggerMode, bool, CancellationToken, Task<string?>>?
             softwareMacroBinder = null)
     {
         _deviceTelemetryReader = deviceTelemetryReader;

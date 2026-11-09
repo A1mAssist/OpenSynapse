@@ -33,6 +33,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
     private readonly string _mappingPreset;
     private readonly bool _initialSnapTapEnabled;
     private readonly Action<bool> _snapTapChanged;
+    private readonly Action<bool>? _hyperShiftChanged;
     private readonly Channel<BladeMappingInputEvent> _queue =
         Channel.CreateUnbounded<BladeMappingInputEvent>(new UnboundedChannelOptions
         {
@@ -61,6 +62,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
         string mappingPreset,
         bool initialSnapTapEnabled,
         Action<bool> snapTapChanged,
+        Action<bool>? hyperShiftChanged = null,
         Action<string>? diagnostic = null)
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
@@ -75,6 +77,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
         _mappingPreset = mappingPreset;
         _initialSnapTapEnabled = initialSnapTapEnabled;
         _snapTapChanged = snapTapChanged ?? throw new ArgumentNullException(nameof(snapTapChanged));
+        _hyperShiftChanged = hyperShiftChanged;
     }
 
     internal Task Completion => _consumer ?? Task.CompletedTask;
@@ -243,6 +246,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
 
         var errors = new List<Exception>();
         _stop.Cancel();
+        _hyperShiftChanged?.Invoke(false);
         var filter = Interlocked.Exchange(ref _filter, null);
         var filterStop = filter?.DisposeAsync().AsTask();
         if (filterStop is not null)
@@ -324,7 +328,12 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
             {
                 _inputObserver(input);
                 var snapTapBefore = mapping.SnapTapEnabled;
+                var hyperShiftBefore = mapping.HyperShiftEnabled;
                 var outputs = mapping.Process(input, out var action, out var passThrough);
+                if (hyperShiftBefore != mapping.HyperShiftEnabled)
+                {
+                    _hyperShiftChanged?.Invoke(mapping.HyperShiftEnabled);
+                }
                 if (input.Kind == BladeMappingInputKind.RazerKey &&
                     _diagnostic is not null &&
                     _diagnosticRazerKeys.Add((input.Code, input.IsDown)))
@@ -462,6 +471,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
 
         var errors = new List<Exception> { failure };
         _stop.Cancel();
+        _hyperShiftChanged?.Invoke(false);
         _queue.Writer.TryComplete(failure);
         await TryAsync(filter.DisposeAsync, errors).ConfigureAwait(false);
         await TryAsync(() => new ValueTask(inputConsumer), errors).ConfigureAwait(false);

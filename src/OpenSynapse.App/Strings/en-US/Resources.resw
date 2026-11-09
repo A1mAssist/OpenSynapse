@@ -2441,7 +2441,7 @@
   <data name="MacroImportButton.Content" xml:space="preserve"><value>Import…</value></data>
   <data name="MacroRowCopyItem.Text" xml:space="preserve"><value>Duplicate</value></data>
   <data name="MacroRowExportItem.Text" xml:space="preserve"><value>Export…</value></data>
-  <data name="MacroHint.Text" xml:space="preserve"><value>Macros work while OpenSynapse is running. Trigger keys are intercepted globally. Press F9 to stop recording and save; set playback shortcuts in the macro editor.</value></data>
+  <data name="MacroHint.Text" xml:space="preserve"><value>Macros work while OpenSynapse is running. Trigger keys are intercepted globally. Press F9 to stop recording and save; set playback shortcuts in the macro editor. Hold HyperShift while pressing the target key to bind the trigger to the HyperShift layer (the device must report HyperShift).</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Bind trigger key</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Bind trigger key</value></data>
   <data name="MacroKeyPickerKeyboard.Text" xml:space="preserve"><value>Keyboard</value></data>
@@ -3436,6 +3436,7 @@
   <data name="RazerMappingSave" xml:space="preserve"><value>Save</value></data>
   <data name="RazerMappingLayerNormal" xml:space="preserve"><value>Normal</value></data>
   <data name="RazerMappingLayerHyperShift" xml:space="preserve"><value>HyperShift</value></data>
+  <data name="RazerMappingHyperShiftSoftwareUnavailable" xml:space="preserve"><value>OpenSynapse cannot observe the HyperShift layer on this device (most devices handle it in firmware). Software macros are unavailable here; if the device supports HyperShift, use an onboard macro on that layer.</value></data>
   <data name="RazerMappingKeyboardButton" xml:space="preserve"><value>Key {0}</value></data>
   <data name="RazerMappingNagaSideButton" xml:space="preserve"><value>Side button {0}</value></data>
   <data name="RazerMappingButtonColumn" xml:space="preserve"><value>Button</value></data>

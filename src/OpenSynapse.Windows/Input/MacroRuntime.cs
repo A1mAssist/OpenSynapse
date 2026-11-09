@@ -39,6 +39,7 @@ internal sealed class MacroRuntime : IDisposable
     private MacroInput _playbackStopShortcut = CreateDefaultStopShortcut();
     private bool _playbackStartHotkeyHeld;
     private bool _playbackStopHotkeyHeld;
+    private bool _hyperShiftHeld;
 
     internal MacroRuntime(
         Func<MacroInput, bool>? isPhysicallyDown = null,
@@ -452,6 +453,33 @@ internal sealed class MacroRuntime : IDisposable
         PlaybackStateChanged?.Invoke();
     }
 
+    public void SetHyperShiftHeld(bool held)
+    {
+        var stopPlayback = false;
+        lock (_gate)
+        {
+            if (_hyperShiftHeld == held)
+            {
+                return;
+            }
+
+            _hyperShiftHeld = held;
+            if (_isPlaying &&
+                _activePlaybackMacroId is { } activeId &&
+                _macroMap.TryGetValue(activeId, out var active) &&
+                active.Trigger is { } trigger &&
+                trigger.HyperShiftLayer != held)
+            {
+                stopPlayback = true;
+            }
+        }
+
+        if (stopPlayback)
+        {
+            StopPlayback();
+        }
+    }
+
     public void PausePlayback()
     {
         var changed = false;
@@ -506,6 +534,7 @@ internal sealed class MacroRuntime : IDisposable
             _stepCapture?.TrySetResult(null);
             _stepCapture = null;
             _recording = null;
+            _hyperShiftHeld = false;
             _isPaused = false;
             _resumePlayback?.TrySetResult();
             _resumePlayback = null;
@@ -541,6 +570,15 @@ internal sealed class MacroRuntime : IDisposable
                     value.WindowHeight);
             }
             return false;
+        }
+
+        if (value.Input.Kind == MacroInputKind.RazerKey &&
+            value.Input.DeviceId is > 0 and <= 0xFFFF &&
+            RazerPrivateKeyCatalog.IsHyperShift(
+                (ushort)value.Input.DeviceId,
+                value.Input.RazerKeyCode))
+        {
+            SetHyperShiftHeld(value.IsDown);
         }
 
         MacroDefinition? playMacro = null;
@@ -693,6 +731,15 @@ internal sealed class MacroRuntime : IDisposable
 
             if (_triggerCapture is { } capture)
             {
+                if (value.Input.Kind == MacroInputKind.RazerKey &&
+                    value.Input.DeviceId is > 0 and <= 0xFFFF &&
+                    RazerPrivateKeyCatalog.IsHyperShift(
+                        (ushort)value.Input.DeviceId,
+                        value.Input.RazerKeyCode))
+                {
+                    return false;
+                }
+
                 if (!value.IsDown ||
                     !value.Input.IsValid(
                         allowPrimaryMouseButton: false,
@@ -717,6 +764,7 @@ internal sealed class MacroRuntime : IDisposable
                 {
                     Input = value.Input.Clone(),
                     Modifiers = modifiers,
+                    HyperShiftLayer = _hyperShiftHeld,
                 });
                 return true;
             }
@@ -775,6 +823,7 @@ internal sealed class MacroRuntime : IDisposable
                 if (!macro.Enabled ||
                     macro.Steps.Count == 0 ||
                     macro.Trigger is not { } trigger ||
+                    trigger.HyperShiftLayer != _hyperShiftHeld ||
                     !trigger.Matches(value.Input, value.Modifiers))
                 {
                     continue;
