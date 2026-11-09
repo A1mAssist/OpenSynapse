@@ -15,6 +15,9 @@ public static class BladeSynapsePolicyProtocol
     public const byte FnCommandClass = 0x02;
     public const byte FnSetCommandId = 0x06;
     public const byte FnGetCommandId = 0x86;
+    public const byte FnSwapCommandClass = 0x07;
+    public const byte FnSwapSetCommandId = 0x0B;
+    public const byte FnSwapGetCommandId = 0x8B;
     public const byte LedCommandClass = 0x03;
     public const byte LedEffectSetCommandId = 0x02;
     public const byte LedStateSetCommandId = 0x00;
@@ -42,6 +45,45 @@ public static class BladeSynapsePolicyProtocol
             FnCommandClass,
             FnGetCommandId,
             new byte[] { 0x01, 0x00 });
+
+    public static byte[] CreateGetFnKeySwapRequest() =>
+        RazerFeatureReport.CreateRequest(
+            SynapseTransactionId,
+            0x00,
+            FnSwapCommandClass,
+            FnSwapGetCommandId,
+            []);
+
+    // The legacy EC swap flag: 0 puts F1-F12 on the first layer, 1 swaps in
+    // the multimedia row. The middleware stores this as functionKeyPrimary
+    // "func" / "multi".
+    public static byte[] CreateSetFnKeySwapRequest(bool multiFunctionPrimary) =>
+        RazerFeatureReport.CreateRequest(
+            SynapseTransactionId,
+            0x01,
+            FnSwapCommandClass,
+            FnSwapSetCommandId,
+            new[] { multiFunctionPrimary ? (byte)0x01 : (byte)0x00 });
+
+    public static BladeFnKeyState ParseFnKeySwap(
+        ReadOnlySpan<byte> response,
+        ReadOnlySpan<byte> request)
+    {
+        if (!RazerFeatureReport.IsSuccessfulResponse(
+                request, response, minimumArguments: 1, allowRemainingPacketsMismatch: true))
+        {
+            throw new InvalidOperationException("Blade Fn swap returned an invalid or out-of-order feature report.");
+        }
+
+        var swap = response[RazerFeatureReport.ArgumentsOffset];
+        return swap switch
+        {
+            0x00 => new BladeFnKeyState(0, false),
+            0x01 => new BladeFnKeyState(0, true),
+            _ => throw new InvalidOperationException(
+                $"Blade Fn swap returned an unknown state: 0x{swap:X2}."),
+        };
+    }
 
     public static BladeFnKeyState ParseFnKeyState(ReadOnlySpan<byte> response) =>
         ParseFnKeyState(response, CreateSetFnKeyStateRequest(multiFunctionPrimary: false));

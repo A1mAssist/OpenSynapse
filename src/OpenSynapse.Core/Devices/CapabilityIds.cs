@@ -30,6 +30,8 @@ public static class CapabilityIds
     public const string FanTargetGet = "fan-target.get";
     public const string FnKeyGet = "fn-key.get";
     public const string FnKeySet = "fn-key.set";
+    public const string FnKeySwapGet = "fn-key-swap.get";
+    public const string FnKeySwapSet = "fn-key-swap.set";
     public const string GamingModeGet = "gaming-mode.get";
     public const string GamingModeSet = "gaming-mode.set";
     public const string GpuCardDetectionGet = "gpu-card-detection.get";
@@ -96,6 +98,8 @@ public static class CapabilityIds
         FanTargetGet,
         FnKeyGet,
         FnKeySet,
+        FnKeySwapGet,
+        FnKeySwapSet,
         GamingModeGet,
         GamingModeSet,
         GpuCardDetectionGet,

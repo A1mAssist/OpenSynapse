@@ -106,6 +106,8 @@ internal sealed partial class RazerDeviceRegistry
                 [CapabilityIds.LegacyDisplayMuxCapabilitiesGet] = new(0x02, 0x0D, 0x8B, "0000"),
                 [CapabilityIds.NativeDisplayModeGet] = new(0x01, 0x0D, 0x8E, "00", true),
                 [CapabilityIds.NativeDisplayModeSet] = new(0x01, 0x0D, 0x0E, ""),
+                [CapabilityIds.FnKeySwapGet] = new(0x00, 0x07, 0x8B, "", AllowRemainingPacketsMismatch: true),
+                [CapabilityIds.FnKeySwapSet] = new(0x01, 0x07, 0x0B, ""),
             },
             // 0255 answers only 0D thermal, Chroma brightness and 07:92 charge; its
             // middleware declares no hasGPUmode or SKU report and the other reports fail.
@@ -171,7 +173,8 @@ internal sealed partial class RazerDeviceRegistry
                     CapabilityIds.AutoSleepGet or CapabilityIds.AutoSleepSet or
                     CapabilityIds.TimeToDimGet or CapabilityIds.TimeToDimSet or
                     CapabilityIds.IndicatorLedGet or CapabilityIds.IndicatorLedSet or
-                    CapabilityIds.GpuCardDetectionGet or CapabilityIds.GpuCardDetectionSet))
+                    CapabilityIds.GpuCardDetectionGet or CapabilityIds.GpuCardDetectionSet or
+                    CapabilityIds.FnKeySwapGet or CapabilityIds.FnKeySwapSet))
                 .ToHashSet(StringComparer.Ordinal),
             // Per-model reports are optional: 0270 rejects gaming-mode 00:08;
             // 024C rejects Power Mode Control with 0x05; 023A rejects Boost and

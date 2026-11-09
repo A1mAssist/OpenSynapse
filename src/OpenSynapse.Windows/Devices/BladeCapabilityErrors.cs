@@ -23,6 +23,7 @@ internal static class BladeCapabilityErrors
             ["Gaming mode"] = CapabilityIds.GamingModeGet,
             ["Startup animation"] = CapabilityIds.StartupAnimationGet,
             ["Fn row behavior"] = CapabilityIds.FnKeyGet,
+            ["Fn row behavior (swap)"] = CapabilityIds.FnKeySwapGet,
             ["MCU firmware version"] = CapabilityIds.McuVersionGet,
             ["Adapter power"] = CapabilityIds.AdapterPowerGet,
             ["Auto sleep"] = CapabilityIds.AutoSleepGet,
