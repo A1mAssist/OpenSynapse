@@ -21,30 +21,53 @@ internal static class RazerFilterInfBinder
             return [];
         }
 
-        // The vendor INF keeps its original file name in the first comment line,
+        var baseProductId = ResolveBaseProductId(productId);
+        // The vendor INF keeps its original file name in the comment block,
         // which survives the rename to oem<nn>.inf.
-        var marker = $"; RzDevU_{productId:X4}_";
+        var marker = $"; RzDevU_{baseProductId:X4}_";
         var matches = new List<string>();
         foreach (var path in Directory.EnumerateFiles(infDirectory, "oem*.inf"))
         {
-            string? first;
             try
             {
                 using var reader = new StreamReader(path);
-                first = reader.ReadLine();
+                for (var lineIndex = 0; lineIndex < 8; lineIndex++)
+                {
+                    var line = reader.ReadLine();
+                    if (line is null)
+                    {
+                        break;
+                    }
+
+                    if (line.StartsWith(marker, StringComparison.OrdinalIgnoreCase))
+                    {
+                        matches.Add(path);
+                        break;
+                    }
+                }
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
                 continue;
             }
-
-            if (first is not null && first.StartsWith(marker, StringComparison.OrdinalIgnoreCase))
-            {
-                matches.Add(path);
-            }
         }
 
         return matches;
+    }
+
+    private static ushort ResolveBaseProductId(ushort productId)
+    {
+        if (RazerDriverPackageCatalog.TryResolve(productId, out var package) &&
+            ushort.TryParse(
+                package.ProductId,
+                System.Globalization.NumberStyles.HexNumber,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var baseProductId))
+        {
+            return baseProductId;
+        }
+
+        return productId;
     }
 
     internal static async Task<RazerFilterBindResult> ApplyAsync(
