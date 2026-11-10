@@ -227,7 +227,8 @@ public sealed partial class BladeLightingController : IBladeLightingController
                     token => RestoreAsync(device.Id, device.Name, reportFallback: false, token),
                     _matrixRows,
                     _matrixColumns,
-                    CreateFrameRequestBuilder());
+                    CreateFrameRequestBuilder(),
+                    writeOnlyFrames: _lightingDialect == BladeLightingDialect.LedMatrixBlade2);
                 ILightingInputAdapter? inputAdapter = null;
                 ISoftwareLightingFrameSource source;
                 if (effect.Mode is BladeLightingMode.Reactive or BladeLightingMode.Ripple)
@@ -335,7 +336,8 @@ public sealed partial class BladeLightingController : IBladeLightingController
                         : token => ReleaseModeLeaseAsync(CancellationToken.None),
                     _matrixRows,
                     _matrixColumns,
-                    CreateFrameRequestBuilder());
+                    CreateFrameRequestBuilder(),
+                    writeOnlyFrames: _lightingDialect == BladeLightingDialect.LedMatrixBlade2);
                 await StartRuntimeAsync(pump, source, null, cancellationToken).ConfigureAwait(false);
                 _externalSource = source;
             }
@@ -617,16 +619,6 @@ public sealed partial class BladeLightingController : IBladeLightingController
         BladeLightingEffect effect,
         out byte[] request)
     {
-        // The 029D/2024 Blade2 firmware accepts color-bearing 03:0A effects but does
-        // not visibly render them; Lighting Studio uses the 03:0B frame path. Keep
-        // Off/Spectrum/Wave native and route the color effects through frames.
-        if (_lightingDialect == BladeLightingDialect.LedMatrixBlade2 &&
-            effect.Mode is BladeLightingMode.Static or BladeLightingMode.Breathing or BladeLightingMode.Reactive)
-        {
-            request = Array.Empty<byte>();
-            return false;
-        }
-
         if (_lightingDialect != BladeLightingDialect.LedMatrixBlade &&
             effect.Palette is not null &&
             effect.Mode is BladeLightingMode.Spectrum or BladeLightingMode.Wave)
@@ -838,30 +830,12 @@ public sealed partial class BladeLightingController : IBladeLightingController
     }
 
     /// <summary>
-    /// The 2026 matrix dialect has no 0F:02 lighting-engine gate. Sending the 2025
-    /// gate makes the device reject the whole apply with 0x05 and leaves the old frame.
+    /// Only the 710/2025 path sends the 0F:02 lighting-engine gate. The Blade2
+    /// bundle has no backlight or lighting-engine gate before its effect command.
     /// </summary>
     private async Task SendLightingEngineGateAsync(string devicePath, CancellationToken cancellationToken)
     {
-        if (_lightingDialect == BladeLightingDialect.LedMatrixBlade2)
-        {
-            try
-            {
-                await SendAsync(
-                    devicePath,
-                    BladeLightingProtocol.CreateBacklightOnRequest(NextTransactionId()),
-                    cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
-            {
-                // The 029D/2024 bundle does not send this backlight gate. Keep it
-                // best-effort so a rejected state report cannot block the effect.
-            }
-
-            return;
-        }
-
-        if (_lightingDialect is BladeLightingDialect.LedMatrixBlade or BladeLightingDialect.LedMatrix2026)
+        if (_lightingDialect is not BladeLightingDialect.LedMatrix710)
         {
             return;
         }
