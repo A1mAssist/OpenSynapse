@@ -139,12 +139,12 @@ public sealed partial class RazerHidDeviceService
                     return;
                 }
 
-                if (exception is RazerDeviceTimeoutException)
+                if (exception is RazerDeviceTimeoutException or RazerReportMismatchException)
                 {
-                    // A silent device is transient; retry on the next poll instead of hiding the
-                    // capability until the next scan.
+                    // A silent or stale busy reply is transient; retry on the next poll
+                    // instead of hiding the capability until the next scan.
                     WriteDiagnostic(connection.Definition.ProductId,
-                        $"state read '{key}' timed out and will retry: {exception.Message}");
+                        $"state read '{key}' was unanswered and will retry: {exception.Message}");
                     return;
                 }
 

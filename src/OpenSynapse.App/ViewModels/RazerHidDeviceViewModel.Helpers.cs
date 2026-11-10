@@ -190,9 +190,11 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         _operationSucceeded = false;
         _operationStatusOverride = null;
         OnPropertyChanged(nameof(OperationStatusText));
-        if (exception is RazerDeviceTimeoutException && capability is { } unanswered)
+        if (exception is (RazerDeviceTimeoutException or RazerReportMismatchException) &&
+            capability is { } unanswered)
         {
-            // A silent read is transient; keep the capability enabled so the next poll retries it.
+            // A silent read or a stale busy receipt is transient; keep the capability
+            // enabled so the next poll retries it.
             ErrorText = AppStrings.FormatText("RazerHidCapabilityUnanswered",
                 AppStrings.Text($"RazerHidCapability{unanswered}"));
             return;
@@ -234,7 +236,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
     /// </summary>
     private void HandleOptionalFailure(Exception exception, RazerHidBackendCapability capability)
     {
-        if (exception is RazerDeviceTimeoutException)
+        if (exception is RazerDeviceTimeoutException or RazerReportMismatchException)
         {
             HandleFailure(exception, capability);
             return;
@@ -257,6 +259,11 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             {
                 InvalidDataException => AppStrings.Text("RazerHidProtocolMalformedResponse"),
                 NotSupportedException => AppStrings.Text("RazerHidProtocolUnsupported"),
+                RazerDeviceTimeoutException or RazerReportMismatchException when capability is { } unanswered =>
+                    AppStrings.FormatText("RazerHidCapabilityUnanswered",
+                        AppStrings.Text($"RazerHidCapability{unanswered}")),
+                RazerDeviceTimeoutException or RazerReportMismatchException =>
+                    AppStrings.Text("RazerHidProtocolQueryFailed"),
                 _ => $"{AppStrings.Text("RazerHidProtocolQueryFailed")} " +
                     $"{exception.GetType().Name}: {exception.Message}".TrimEnd(),
             };
