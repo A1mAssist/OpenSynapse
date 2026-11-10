@@ -18,6 +18,10 @@ internal interface IRazerMxicHeadsetTransport : IAsyncDisposable
     Task<byte?> SendAndReadStatusAsync(byte[] report, CancellationToken cancellationToken);
 }
 
+/// <summary>
+/// HID handles are not seekable. Never use RandomAccess with an offset on these handles;
+/// use a write handle with WriteFile or an OVERLAPPED same-handle write.
+/// </summary>
 internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
 {
     private static readonly TimeSpan ResponseTimeout = TimeSpan.FromSeconds(1);
@@ -29,6 +33,8 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
     private readonly CancellationTokenSource _readCancellation = new();
     private readonly Task _readLoop;
     private readonly int _inputReportLength;
+    private readonly string _devicePath;
+    private readonly RazerHidHidReportTransport _output = new();
     private readonly bool _useSetOutputReport;
     private readonly bool _useControlStatusReport;
     private bool _disposed;
@@ -40,6 +46,7 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
         bool useControlStatusReport = true)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
+        _devicePath = devicePath;
         _inputReportLength = Math.Max(inputReportLength, RazerMxicHeadsetProtocol.ReportLength);
         _useSetOutputReport = useSetOutputReport;
         _useControlStatusReport = useControlStatusReport;
@@ -208,14 +215,10 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
             return;
         }
 
-        // Synapse's AudioMxicDevice uses hid.write for this family. WriteFile delivers
-        // the report to the vendor OUT endpoint; HidD_SetOutputReport is not equivalent
-        // for 0555 and leaves the device waiting for a command.
-        await RandomAccess.WriteAsync(
-            _stream.SafeFileHandle,
-            report.AsMemory(),
-            fileOffset: 0,
-            cancellationToken).ConfigureAwait(false);
+        // Synapse's AudioMxicDevice uses hid.write for this family. HID handles are not
+        // seekable, so RandomAccess cannot be used; a separate write handle reaches the
+        // vendor OUT endpoint without disturbing the read loop.
+        await _output.SendOutputAsync(_devicePath, report, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<byte[]?> ReadControlReportAsync(
