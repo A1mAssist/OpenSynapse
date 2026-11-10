@@ -5,8 +5,9 @@ namespace OpenSynapse.Windows.Protocols;
 /// <summary>
 /// Source-backed Blade lid-logo GET/SET reports and strict response parsing.
 /// The profile id comes from the device manifest and is not implied by the
-/// protocol family. Value 0x02 uses the generic LED-effect
-/// command; RazerHid documents it as technically unsupported on Blade laptops.
+/// protocol family. The mode read returns a Chroma effect id; the writable
+/// Logo subset uses 0x00 for static, 0x02 for breathing, with power held by
+/// the companion LED-state command.
 /// </summary>
 public static class BladeLogoProtocol
 {
@@ -77,8 +78,36 @@ public static class BladeLogoProtocol
 
     public static BladeLogoMode? MapMode(byte value) => value switch
     {
-        0x00 => BladeLogoMode.Static,
+        0x00 or 0x01 => BladeLogoMode.Static,
         0x02 => BladeLogoMode.Breathing,
+        _ => null,
+    };
+
+    /// <summary>
+    /// Maps the Logo effect read to the Chroma quick-effect ids published by the
+    /// 029D-family Synapse bundle. 0x00 and 0x01 are both written/read as static;
+    /// the power report distinguishes off from on.
+    /// </summary>
+    public static BladeLogoEffect? MapEffect(byte value) => value switch
+    {
+        0x00 or 0x01 => BladeLogoEffect.Static,
+        0x02 => BladeLogoEffect.Breathing,
+        0x03 => BladeLogoEffect.Spectrum,
+        0x04 => BladeLogoEffect.Wave,
+        0x05 => BladeLogoEffect.Reactive,
+        0x06 => BladeLogoEffect.Ripple,
+        0x07 => BladeLogoEffect.Starlight,
+        0x08 => BladeLogoEffect.Fire,
+        0x0B => BladeLogoEffect.Ambient,
+        0x0C => BladeLogoEffect.AudioMeter,
+        0x0D => BladeLogoEffect.Wheel,
+        0x0E => BladeLogoEffect.BatteryLevel,
+        0x10 => BladeLogoEffect.Lamborghini,
+        0x11 => BladeLogoEffect.Radiate,
+        0x13 => BladeLogoEffect.Tidal,
+        0x30 => BladeLogoEffect.CustomFrame,
+        0x50 => BladeLogoEffect.Destiny2,
+        0xC2 => BladeLogoEffect.ExtendedBreathing,
         _ => null,
     };
 
