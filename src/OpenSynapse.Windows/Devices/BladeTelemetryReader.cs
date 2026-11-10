@@ -43,6 +43,7 @@ internal sealed partial class BladeTelemetryReader
         byte? bladeAdvancedFanCpuModeRaw = null;
         byte? bladeAdvancedFanGpuModeRaw = null;
         BladeLogoMode? bladeLogoMode = null;
+        byte? bladeLogoEffectRaw = null;
         BladeGameModeTelemetry? bladeGameMode = null;
         bool? bladeStartupAnimationEnabled = null;
         BladeNativeDisplayMode? bladeNativeDisplayMode = null;
@@ -463,7 +464,9 @@ internal sealed partial class BladeTelemetryReader
         {
             if (owns(CapabilityIds.LogoPowerGet))
             {
-                bladeLogoMode = (await _display.ReadLogoStateAsync(blade, cancellationToken)).CombinedMode;
+                var logo = await _display.ReadLogoStateAsync(blade, cancellationToken);
+                bladeLogoMode = logo.CombinedMode;
+                bladeLogoEffectRaw = logo is { Powered: true, PoweredMode: null } ? logo.RawMode : null;
                 _validation.LogoPath = blade.Descriptor.Id;
             }
         }
@@ -488,6 +491,7 @@ internal sealed partial class BladeTelemetryReader
             bladeAdvancedFanCpuModeRaw,
             bladeAdvancedFanGpuModeRaw,
             bladeLogoMode,
+            bladeLogoEffectRaw,
             bladeGameMode, blade.Owns(CapabilityIds.GamingModeSet),
             bladeStartupAnimationEnabled,
             bladeNativeDisplayMode,
@@ -675,6 +679,7 @@ internal sealed record BladeTelemetryReadResult(
     byte? BladeAdvancedFanCpuModeRaw,
     byte? BladeAdvancedFanGpuModeRaw,
     BladeLogoMode? BladeLogoMode,
+    byte? BladeLogoEffectRaw,
     BladeGameModeTelemetry? BladeGameMode, bool BladeGamingModeWritable,
     bool? BladeStartupAnimationEnabled,
     BladeNativeDisplayMode? BladeNativeDisplayMode,

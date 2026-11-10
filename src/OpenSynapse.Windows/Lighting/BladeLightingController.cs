@@ -227,7 +227,8 @@ public sealed partial class BladeLightingController : IBladeLightingController
                     token => RestoreAsync(device.Id, device.Name, reportFallback: false, token),
                     _matrixRows,
                     _matrixColumns,
-                    CreateFrameRequestBuilder());
+                    CreateFrameRequestBuilder(),
+                    writeOnlyFrames: _lightingDialect == BladeLightingDialect.LedMatrixBlade2);
                 ILightingInputAdapter? inputAdapter = null;
                 ISoftwareLightingFrameSource source;
                 if (effect.Mode is BladeLightingMode.Reactive or BladeLightingMode.Ripple)
@@ -335,7 +336,8 @@ public sealed partial class BladeLightingController : IBladeLightingController
                         : token => ReleaseModeLeaseAsync(CancellationToken.None),
                     _matrixRows,
                     _matrixColumns,
-                    CreateFrameRequestBuilder());
+                    CreateFrameRequestBuilder(),
+                    writeOnlyFrames: _lightingDialect == BladeLightingDialect.LedMatrixBlade2);
                 await StartRuntimeAsync(pump, source, null, cancellationToken).ConfigureAwait(false);
                 _externalSource = source;
             }
@@ -828,23 +830,21 @@ public sealed partial class BladeLightingController : IBladeLightingController
     }
 
     /// <summary>
-    /// The 2026 matrix dialect has no 0F:02 lighting-engine gate. Sending the 2025
-    /// gate makes the device reject the whole apply with 0x05 and leaves the old frame.
+    /// Only the 710/2025 path sends the 0F:02 lighting-engine gate. The Blade2
+    /// bundle has no backlight or lighting-engine gate before its effect command.
     /// </summary>
-    private Task SendLightingEngineGateAsync(string devicePath, CancellationToken cancellationToken) =>
-        _lightingDialect switch
+    private async Task SendLightingEngineGateAsync(string devicePath, CancellationToken cancellationToken)
+    {
+        if (_lightingDialect is not BladeLightingDialect.LedMatrix710)
         {
-            BladeLightingDialect.LedMatrixBlade2 => SendAsync(
-                devicePath,
-                BladeLightingProtocol.CreateBacklightOnRequest(NextTransactionId()),
-                cancellationToken),
-            BladeLightingDialect.LedMatrixBlade or BladeLightingDialect.LedMatrix2026 =>
-                Task.CompletedTask,
-            _ => SendAsync(
-                devicePath,
-                BladeLightingProtocol.CreateLightingEngineGateRequest(NextTransactionId()),
-                cancellationToken),
-        };
+            return;
+        }
+
+        await SendAsync(
+            devicePath,
+            BladeLightingProtocol.CreateLightingEngineGateRequest(NextTransactionId()),
+            cancellationToken).ConfigureAwait(false);
+    }
 
     private byte NextTransactionId()
     {

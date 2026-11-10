@@ -25,6 +25,18 @@ public static class RazerMouseMacroTriggerResolver
             return naga;
         }
 
+        // The mapping page reports its own button id; the private key stream reports
+        // the DKM code. Resolve through the per-product bundle map first.
+        if (RazerSpecialKeyMap.TryResolve(productId, buttonId, out var razerKeyCode))
+        {
+            return new MacroInput
+            {
+                Kind = MacroInputKind.RazerKey,
+                DeviceId = productId,
+                RazerKeyCode = razerKeyCode,
+            };
+        }
+
         return RazerPrivateKeyCatalog.IsPrivate(productId, buttonId)
             ? new MacroInput
             {

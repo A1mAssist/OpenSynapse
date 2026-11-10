@@ -100,4 +100,5 @@ internal static class BladeLightingDialectPresentation
         BladeLightingMode.ChromaFile => "BladeLightingModeChromaFile",
         _ => throw new ArgumentOutOfRangeException(nameof(mode)),
     };
+
 }

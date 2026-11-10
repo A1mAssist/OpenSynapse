@@ -296,6 +296,24 @@ public enum RazerHidLightingEffect
     SoftwareFire,
     SoftwareAudioMeter,
     SoftwareWheel,
+    SoftwareGradient,
+    SoftwareRipple,
+    SoftwareTidal,
+    SoftwareRadiate,
+}
+
+internal static class RazerHidLightingEffects
+{
+    internal static bool IsSoftware(RazerHidLightingEffect effect) => effect is
+        RazerHidLightingEffect.SoftwareSpectrum or
+        RazerHidLightingEffect.SoftwareWave or
+        RazerHidLightingEffect.SoftwareFire or
+        RazerHidLightingEffect.SoftwareAudioMeter or
+        RazerHidLightingEffect.SoftwareWheel or
+        RazerHidLightingEffect.SoftwareGradient or
+        RazerHidLightingEffect.SoftwareRipple or
+        RazerHidLightingEffect.SoftwareTidal or
+        RazerHidLightingEffect.SoftwareRadiate;
 }
 
 public sealed record RazerHidLightingSettings(

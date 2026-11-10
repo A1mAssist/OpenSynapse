@@ -40,6 +40,8 @@
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
     <Content Include="Assets\OpenSynapseLogo.svg" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\SynapseFanLow.svg" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\SynapseFanHigh.svg" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\OpenSynapse.ico" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\LightingLayouts\*.json"
              CopyToOutputDirectory="PreserveNewest"

@@ -303,6 +303,13 @@ internal sealed class BladeViewModel
         }
     }
 
+    internal void SetLogoUnavailable()
+    {
+        _bladeLogoText = "--";
+        _bladeLogoIndex = -1;
+        _confirmedBladeLogoIndex = -1;
+    }
+
     private static readonly int[] TimeToDimPresetSeconds = [15, 30, 60, 120];
 
     /// <summary>Preset delays plus the firmware's own value when it is not one of them.</summary>

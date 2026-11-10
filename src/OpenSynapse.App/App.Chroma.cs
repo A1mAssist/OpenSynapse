@@ -1,4 +1,5 @@
 using System.Net.Sockets;
+using System.Security.Principal;
 using OpenSynapse.App.Runtime;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.Windows.Lifecycle;
@@ -11,6 +12,7 @@ public partial class App
     private ChromaRestHost? _chromaRestHost;
     private ChromaBrokerHost? _chromaBrokerHost;
     private Task? _chromaBrokerStartTask;
+    private bool _chromaBrokerLaunched;
     private ChromaDeviceRouter? _chromaDeviceRouter;
     internal bool IsChromaRestRunning => _chromaRestHost?.IsRunning == true;
 
@@ -138,6 +140,13 @@ public partial class App
                 log: message => _diagnosticLog.TryWrite("chroma-broker", message));
             host.StartAsync();
             _chromaBrokerHost = host;
+            if (host.IsServingElsewhere)
+            {
+                _diagnosticLog.TryWrite(
+                    "chroma-broker",
+                    "another OpenSynapse instance owns the broker pipe; leaving it in charge.");
+                return;
+            }
             _diagnosticLog.TryWrite(
                 "chroma-broker",
                 "listening; asking the OpenSynapseService to start the official-DLL broker.");
@@ -162,11 +171,12 @@ public partial class App
             var started = await OpenSynapseServiceClient
                 .TryStartChromaBrokerAsync(Environment.ProcessId)
                 .ConfigureAwait(false);
-            _diagnosticLog.TryWrite(
-                "chroma-broker",
-                started
-                    ? "OpenSynapseService started the broker."
-                    : "broker service unavailable; the broker was not started.");
+            if (started)
+            {
+                _chromaBrokerLaunched = true;
+                _diagnosticLog.TryWrite("chroma-broker", "OpenSynapseService started the broker.");
+                return;
+            }
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or
@@ -174,6 +184,23 @@ public partial class App
         {
             _diagnosticLog.TryWrite("chroma-broker", $"service start failed: {exception.Message}");
         }
+
+        StartChromaBrokerElevated();
+    }
+
+    private void StartChromaBrokerElevated()
+    {
+        var userSid = WindowsIdentity.GetCurrent().User?.Value;
+        if (ChromaBrokerLauncher.TryStartElevated(Environment.ProcessId, userSid, out var error))
+        {
+            _chromaBrokerLaunched = true;
+            _diagnosticLog.TryWrite(
+                "chroma-broker",
+                "OpenSynapseService was unavailable; the broker started with administrator approval.");
+            return;
+        }
+
+        _diagnosticLog.TryWrite("chroma-broker", $"the broker could not be started: {error}");
     }
 
     private async Task StartChromaRestHostAsync(ChromaRestHost host)
@@ -245,6 +272,12 @@ public partial class App
             await startTask.ConfigureAwait(false);
         }
 
+        if (!_chromaBrokerLaunched)
+        {
+            return;
+        }
+
+        _chromaBrokerLaunched = false;
         var stopped = await OpenSynapseServiceClient
             .TryStopChromaBrokerAsync()
             .ConfigureAwait(false);

@@ -204,7 +204,7 @@ public static partial class StudioEffectRenderer
     /// The renderer's visible cycle, shared with the playback clock so an
     /// "after N cycles" stop lands on the same frame the user sees.
     /// </summary>
-    internal static double CycleSeconds(StudioEffectParams parameters, int rows, int columns)
+    public static double CycleSeconds(StudioEffectParams parameters, int rows, int columns)
     {
         var seconds = parameters.Effect switch
         {

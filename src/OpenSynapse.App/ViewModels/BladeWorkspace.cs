@@ -2382,6 +2382,13 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             SetLogo(logo);
             CanSetLogo = true;
         }
+        else if (telemetry.BladeLogoEffectRaw is not null)
+        {
+            _blade.SetLogoUnavailable();
+            OnPropertyChanged(nameof(LogoText));
+            OnPropertyChanged(nameof(LogoIndex));
+            CanSetLogo = true;
+        }
         if (telemetry.BladeFanMode is BladeFanMode fanMode)
         {
             _blade._bladeTelemetryFanMode = fanMode;

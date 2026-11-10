@@ -310,16 +310,19 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                     _macrosAvailable && _onboardWritable,
                     softwareTrigger is not null &&
                     _softwareTriggerBinder is not null &&
+                    (_canWrite || !RazerSoftwareMacroAssignmentPolicy.NeedsOff(softwareTrigger)) &&
                     (LayerIndex == 0 || _canObserveHyperShiftLayer),
                     _catalog);
                 row.PropertyChanged += OnRowPropertyChanged;
                 byte? assignedSlot = null;
+                bool? assignmentIsOff = null;
                 RazerHidDecodedMapping? decoded = null;
                 try
                 {
                     var assignment = await _transport.GetAssignmentAsync(id, mode, cancellationToken)
                         .ConfigureAwait(true);
                     assignedSlot = MacroSlotOf(assignment.FunctionId, assignment.Data);
+                    assignmentIsOff = assignment.FunctionId == RazerHidMappingFunctions.Off;
                     decoded = _catalog is RazerViperMappingActionCatalog
                         ? null
                         : _catalog.Decode(assignment.FunctionId, assignment.Data);
@@ -358,10 +361,11 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                     row.OptionIndex = localMacroIndex;
                 }
 
+                var softwareMacroIndex = -1;
                 if (softwareTrigger is not null &&
                     (LayerIndex == 0 || _canObserveHyperShiftLayer))
                 {
-                    var softwareMacroIndex = FindSoftwareMacro(
+                    softwareMacroIndex = FindSoftwareMacro(
                         softwareTrigger,
                         LayerIndex == 1,
                         out var triggerMode);
@@ -378,6 +382,12 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
 
                 UpdateMacroValidation(row);
                 UpdateMacroSlotWarning(row);
+                if (softwareMacroIndex >= 0 && assignmentIsOff == false &&
+                    RazerSoftwareMacroAssignmentPolicy.NeedsOff(softwareTrigger!))
+                {
+                    row.SetMacroSlotWarning(
+                        AppStrings.Text("RazerMappingMacroAssignmentNotOff"));
+                }
                 rows.Add(row);
             }
 
@@ -493,8 +503,13 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 }
             }
 
-            var backups = new List<AssignmentBackup>(assignmentRows.Length);
-            foreach (var row in assignmentRows)
+            var offRows = softwareRows
+                .Where(row => _softwareTriggerResolver?.Invoke(row.ButtonId) is { } input &&
+                    RazerSoftwareMacroAssignmentPolicy.NeedsOff(input))
+                .ToArray();
+
+            var backups = new List<AssignmentBackup>(assignmentRows.Length + offRows.Length);
+            foreach (var row in assignmentRows.Concat(offRows))
             {
                 backups.Add(new AssignmentBackup(
                     row,
@@ -531,6 +546,21 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 }
 
                 applied++;
+            }
+
+            foreach (var row in offRows)
+            {
+                try
+                {
+                    await _transport.SetAssignmentAsync(
+                        row.ButtonId, Mode, RazerHidMappingFunctions.Off, Array.Empty<byte>(),
+                        cancellationToken).ConfigureAwait(true);
+                }
+                catch
+                {
+                    await RestoreAssignmentsAsync(backups).ConfigureAwait(true);
+                    throw;
+                }
             }
 
             foreach (var row in softwareRows)

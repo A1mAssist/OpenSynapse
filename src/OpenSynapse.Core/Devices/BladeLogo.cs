@@ -1,7 +1,8 @@
 namespace OpenSynapse.Core.Devices;
 
 /// <summary>
-/// Logo states supported by the source-backed 02C6 protocol.
+/// Writable Logo states. A read can return any Chroma effect id; the reader
+/// keeps that raw byte so the current effect does not hide the whole control.
 /// </summary>
 public enum BladeLogoMode
 {
@@ -9,3 +10,4 @@ public enum BladeLogoMode
     Static,
     Breathing,
 }
+

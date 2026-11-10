@@ -5,8 +5,9 @@ namespace OpenSynapse.Windows.Protocols;
 /// <summary>
 /// Source-backed Blade lid-logo GET/SET reports and strict response parsing.
 /// The profile id comes from the device manifest and is not implied by the
-/// protocol family. Value 0x02 uses the generic LED-effect
-/// command; RazerHid documents it as technically unsupported on Blade laptops.
+/// protocol family. The mode read returns a Chroma effect id; the writable
+/// Logo subset uses 0x00 for static, 0x02 for breathing, with power held by
+/// the companion LED-state command.
 /// </summary>
 public static class BladeLogoProtocol
 {
@@ -58,26 +59,38 @@ public static class BladeLogoProtocol
         ReadOnlySpan<byte> request,
         byte profileId)
     {
-        var arguments = ValidateResponse(response, request, profileId);
-        return arguments[2] switch
-        {
-            0x00 => BladeLogoMode.Static,
-            0x02 => BladeLogoMode.Breathing,
-            var value => throw new InvalidOperationException(
-                $"Blade Logo returned an unknown lighting mode: 0x{value:X2}."),
-        };
+        var raw = ParseModeRaw(response, request, profileId);
+        return MapMode(raw) ?? throw new InvalidOperationException(
+            $"Blade Logo returned an unknown lighting mode: 0x{raw:X2}.");
     }
 
-    public static BladeLogoMode Combine(bool power, BladeLogoMode poweredMode)
+    public static byte ParseModeRaw(ReadOnlySpan<byte> response, byte profileId)
+        => ParseModeRaw(response, CreateGetModeRequest(profileId), profileId);
+
+    internal static byte ParseModeRaw(
+        ReadOnlySpan<byte> response,
+        ReadOnlySpan<byte> request,
+        byte profileId)
+    {
+        var arguments = ValidateResponse(response, request, profileId);
+        return arguments[2];
+    }
+
+    public static BladeLogoMode? MapMode(byte value) => value switch
+    {
+        0x00 or 0x01 => BladeLogoMode.Static,
+        0x02 => BladeLogoMode.Breathing,
+        _ => null,
+    };
+
+    public static BladeLogoMode? Combine(bool power, BladeLogoMode? poweredMode)
     {
         if (!power)
         {
             return BladeLogoMode.Off;
         }
 
-        return poweredMode is BladeLogoMode.Static or BladeLogoMode.Breathing
-            ? poweredMode
-            : throw new ArgumentOutOfRangeException(nameof(poweredMode));
+        return poweredMode;
     }
 
     private static ReadOnlySpan<byte> ValidateResponse(

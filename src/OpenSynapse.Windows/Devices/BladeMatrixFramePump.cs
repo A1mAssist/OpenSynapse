@@ -26,6 +26,7 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
     private readonly int _matrixColumns;
     private readonly TimeSpan _identicalFrameKeepAlive;
     private readonly bool _raiseTimerResolution;
+    private readonly bool _writeOnlyFrames;
     private readonly Channel<RazerRgb[]> _frames = Channel.CreateBounded<RazerRgb[]>(
         new BoundedChannelOptions(1)
         {
@@ -52,7 +53,8 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         int matrixColumns = BladeLightingProtocol.Columns,
         Func<IReadOnlyList<RazerRgb>, int, int, byte[][]>? createFrameRequests = null,
         TimeSpan? identicalFrameKeepAlive = null,
-        bool raiseTimerResolution = true)
+        bool raiseTimerResolution = true,
+        bool writeOnlyFrames = false)
     {
         ArgumentNullException.ThrowIfNull(transport);
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
@@ -70,6 +72,7 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
         _matrixColumns = matrixColumns;
         _identicalFrameKeepAlive = identicalFrameKeepAlive ?? IdenticalFrameKeepAlive;
         _raiseTimerResolution = raiseTimerResolution;
+        _writeOnlyFrames = writeOnlyFrames;
         if (_identicalFrameKeepAlive < TimeSpan.Zero)
         {
             throw new ArgumentOutOfRangeException(nameof(identicalFrameKeepAlive));
@@ -282,6 +285,21 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
                     DeviceWait,
                     cancellationToken,
                     allowRemainingPacketsMismatch: true).ConfigureAwait(false);
+            }
+            return;
+        }
+
+        if (_writeOnlyFrames)
+        {
+            // Bundle: setChromaFrame uses checkUSBTransferIn:false, then yields 1 ms
+            // between rows. The final 03:0A latch is also write-only.
+            for (var index = 0; index < requests.Length; index++)
+            {
+                await session.SendAsync(requests[index], cancellationToken).ConfigureAwait(false);
+                if (index < requests.Length - 1 && DeviceWait > TimeSpan.Zero)
+                {
+                    await Task.Delay(DeviceWait, cancellationToken).ConfigureAwait(false);
+                }
             }
             return;
         }
