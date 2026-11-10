@@ -51,15 +51,15 @@ public sealed partial class MacrosPage : UserControl
         var nameBox = new TextBox
         {
             Text = row.Name,
-            Header = AppStrings.Text("MacroNameLabel.Text"),
-            PlaceholderText = AppStrings.Text("MacroNamePlaceholder.PlaceholderText"),
+            Header = AppStrings.Text("MacroRenameNameLabel"),
+            PlaceholderText = AppStrings.Text("MacroRenameNamePlaceholder"),
             MaxLength = 64,
         };
         var dialog = new ContentDialog
         {
             Title = AppStrings.Text("MacroRenameTitle"),
             Content = nameBox,
-            PrimaryButtonText = AppStrings.Text("MacroSaveButton.Content"),
+            PrimaryButtonText = AppStrings.Text("MacroRenameSave"),
             CloseButtonText = AppStrings.Text("MacroCancel"),
             DefaultButton = ContentDialogButton.Primary,
             XamlRoot = XamlRoot,

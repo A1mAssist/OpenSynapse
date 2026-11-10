@@ -2494,6 +2494,9 @@
   <data name="MacroRowRenameItem.Text" xml:space="preserve"><value>Rename</value></data>
   <data name="MacroRowExportItem.Text" xml:space="preserve"><value>Export…</value></data>
   <data name="MacroRenameTitle" xml:space="preserve"><value>Rename macro</value></data>
+  <data name="MacroRenameNameLabel" xml:space="preserve"><value>Name</value></data>
+  <data name="MacroRenameNamePlaceholder" xml:space="preserve"><value>Macro name</value></data>
+  <data name="MacroRenameSave" xml:space="preserve"><value>Save</value></data>
   <data name="MacroHint.Text" xml:space="preserve"><value>Macros work while OpenSynapse is running. Trigger keys are intercepted globally. Press F9 to stop recording and save; set playback shortcuts in the macro editor. Hold HyperShift while pressing the target key to bind the trigger to the HyperShift layer (the device must report HyperShift).</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Bind trigger key</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Bind trigger key</value></data>
