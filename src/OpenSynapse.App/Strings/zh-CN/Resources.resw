@@ -3116,6 +3116,7 @@
   <data name="RazerHeadsetAncOn" xml:space="preserve"><value>开启</value></data>
   <data name="RazerHeadsetAncAmbient" xml:space="preserve"><value>环境音</value></data>
   <data name="RazerHeadsetReadFailed" xml:space="preserve"><value>读取失败，设备没有响应。</value></data>
+  <data name="RazerHeadsetTransportUnavailable" xml:space="preserve"><value>耳机暂时没有回应，请重新连接后重试。</value></data>
   <data name="RazerHeadsetReadFailedDetail" xml:space="preserve"><value>读取失败：{0}</value></data>
   <data name="RazerKeyboardCategory" xml:space="preserve"><value>游戏键盘</value></data>
   <data name="RazerGamepadCategory" xml:space="preserve"><value>游戏手柄</value></data>
