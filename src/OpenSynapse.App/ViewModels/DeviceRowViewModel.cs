@@ -151,8 +151,12 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
                 Add("DiagnosticMaxFan", telemetry.BladeMaxFanMode,
                     capability: CapabilityIds.PowerModeGet);
             }
-            Add("DiagnosticBladeLogo", telemetry.BladeLogoMode,
-                capability: CapabilityIds.LogoModeGet);
+            Add("DiagnosticBladeLogo",
+                telemetry.BladeLogoMode ?? (object?)telemetry.BladeLogoUnsupportedModeRaw,
+                telemetry.BladeLogoUnsupportedModeRaw is byte rawLogoMode
+                    ? AppStrings.FormatText("BladeLogoUnsupportedMode", $"0x{rawLogoMode:X2}")
+                    : null,
+                CapabilityIds.LogoModeGet);
             Add("DiagnosticPerformanceFan", telemetry.BladeFanMode,
                 capability: CapabilityIds.ThermalStateGet);
             Add("BladeFanTargetRpmLabel", telemetry.BladeFanTargetRpm,

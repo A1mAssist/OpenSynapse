@@ -1,7 +1,8 @@
 namespace OpenSynapse.Core.Devices;
 
 /// <summary>
-/// Logo states supported by the source-backed 02C6 protocol.
+/// Writable Logo states. A read can return another firmware effect; the reader
+/// keeps that raw byte so an unsupported mode does not hide the whole control.
 /// </summary>
 public enum BladeLogoMode
 {

@@ -310,7 +310,8 @@ public static class DeviceCapabilitySummaryCalculator
         Row(powerMode && sku &&
             telemetry.BladeSkuHardwareConfiguration?.MiniLedResolution == true,
             telemetry.BladeLocalDimmingEnabled);
-        Row(Owns(CapabilityIds.LogoModeGet), telemetry.BladeLogoMode);
+        Row(Owns(CapabilityIds.LogoModeGet),
+            telemetry.BladeLogoMode ?? (object?)telemetry.BladeLogoUnsupportedModeRaw);
         Row(Owns(CapabilityIds.GamingModeGet), telemetry.BladeGameMode);
         Row(Owns(CapabilityIds.StartupAnimationGet), telemetry.BladeStartupAnimationEnabled);
         Row(Owns(CapabilityIds.NativeDisplayModeGet) &&
@@ -398,6 +399,7 @@ public sealed record RazerDeviceTelemetry(
     ViperDpiStagesTelemetry? ViperDpiStages = null,
     byte? ViperLowBatteryThresholdRaw = null,
     BladeLogoMode? BladeLogoMode = null,
+    byte? BladeLogoUnsupportedModeRaw = null,
     BladeGameModeTelemetry? BladeGameMode = null,
     bool BladeGamingModeWritable = false,
     bool? BladeStartupAnimationEnabled = null,
