@@ -70,7 +70,7 @@
           <Image local:Localized.Uid="Loc_BA196502D0" Width="70" Height="70" Stretch="Uniform" AutomationProperties.Name="OpenSynapse 标志"><Image.Source><SvgImageSource UriSource="ms-appx:///Assets/OpenSynapseLogo.svg" /></Image.Source></Image>
         </Grid>
         <TextBlock Text="OpenSynapse" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontSize="32" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" HorizontalAlignment="Center" />
-        <TextBlock Text="LOCAL DEVICE CONTROL" FontFamily="Cascadia Mono,Consolas" FontSize="10" CharacterSpacing="100" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
+        <TextBlock Text="LOCAL DEVICE CONTROL" FontFamily="Cascadia Mono,Consolas" FontSize="10" CharacterSpacing="40" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
         <TextBlock local:Localized.Uid="Loc_D21D65F64A" x:Name="LaunchStatusText" Text="正在准备本机控制" FontSize="14" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
       </StackPanel>
     </Grid>
