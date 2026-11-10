@@ -2063,6 +2063,10 @@
   <data name="RazerHidEffectSoftwareFire" xml:space="preserve"><value>软件火焰</value></data>
   <data name="RazerHidEffectSoftwareAudioMeter" xml:space="preserve"><value>音频律动</value></data>
   <data name="RazerHidEffectSoftwareWheel" xml:space="preserve"><value>软件色轮</value></data>
+  <data name="RazerHidEffectSoftwareGradient" xml:space="preserve"><value>渐变</value></data>
+  <data name="RazerHidEffectSoftwareRipple" xml:space="preserve"><value>涟漪</value></data>
+  <data name="RazerHidEffectSoftwareTidal" xml:space="preserve"><value>潮汐</value></data>
+  <data name="RazerHidEffectSoftwareRadiate" xml:space="preserve"><value>辐射</value></data>
   <data name="RazerHidLedStateLabel.Text" xml:space="preserve"><value>区域灯光</value></data>
   <data name="RazerHidReactiveTriggerButton.Content" xml:space="preserve"><value>触发响应灯效</value></data>
   <data name="RazerHidMatrixExpander.Header" xml:space="preserve"><value>矩阵自定义灯光</value></data>

@@ -1687,6 +1687,10 @@
   <data name="RazerHidEffectSoftwareFire" xml:space="preserve"><value>Software fire</value></data>
   <data name="RazerHidEffectSoftwareAudioMeter" xml:space="preserve"><value>Audio reactive</value></data>
   <data name="RazerHidEffectSoftwareWheel" xml:space="preserve"><value>Software wheel</value></data>
+  <data name="RazerHidEffectSoftwareGradient" xml:space="preserve"><value>Gradient</value></data>
+  <data name="RazerHidEffectSoftwareRipple" xml:space="preserve"><value>Ripple</value></data>
+  <data name="RazerHidEffectSoftwareTidal" xml:space="preserve"><value>Tidal</value></data>
+  <data name="RazerHidEffectSoftwareRadiate" xml:space="preserve"><value>Radiate</value></data>
   <data name="RazerHidLedStateLabel.Text" xml:space="preserve"><value>Zone lighting</value></data>
   <data name="RazerHidReactiveTriggerButton.Content" xml:space="preserve"><value>Trigger reactive effect</value></data>
   <data name="RazerHidMatrixExpander.Header" xml:space="preserve"><value>Custom matrix lighting</value></data>
