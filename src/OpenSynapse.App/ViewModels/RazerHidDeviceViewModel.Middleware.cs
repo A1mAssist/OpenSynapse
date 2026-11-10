@@ -517,6 +517,19 @@ public sealed partial class RazerHidDeviceViewModel
         IndicatorLed3Index = value.Led3;
     }
 
+    /// <summary>
+    /// Re-applies the read configuration after the card has been realized. A ComboBox
+    /// that initializes before its items can push its default index back through the
+    /// two-way binding; the read values in the basic state stay authoritative.
+    /// </summary>
+    internal void ReapplyIndicatorLedV2Selection()
+    {
+        if (_basicState?.IndicatorLedConfigurationV2 is { } value)
+        {
+            SetIndicatorLedV2(value);
+        }
+    }
+
     private void SetProfileDebounce(RazerHidProfileDebounce value)
     {
         ProfileDebounceMake = value.MakeDebounceTimeMs;
