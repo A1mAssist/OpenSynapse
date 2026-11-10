@@ -380,25 +380,6 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
             cancellationToken);
     }
 
-    public Task ApplyBrightnessAsync(CancellationToken cancellationToken = default) =>
-        RunChromaWriteAsync(
-            (service, token) => service.SetBrightnessAsync((byte)Math.Round(Brightness), token),
-            cancellationToken);
-
-    public Task ApplyLightingAsync(CancellationToken cancellationToken = default) =>
-        RunChromaWriteAsync(async (service, token) =>
-        {
-            var effect = Effects[SelectedLightingEffectIndex];
-            var colors = effect switch
-            {
-                RazerChromaEffect.Static => new byte[] { PrimaryColor.R, PrimaryColor.G, PrimaryColor.B },
-                RazerChromaEffect.Breathing =>
-                    [PrimaryColor.R, PrimaryColor.G, PrimaryColor.B, SecondaryColor.R, SecondaryColor.G, SecondaryColor.B],
-                _ => [],
-            };
-            await service.SetEffectAsync(effect, colors, token);
-        }, cancellationToken);
-
     [ProfileSetting("keyboard.polling-rate", DeviceCategory.Keyboard)]
     public async Task ApplyPollingAsync(CancellationToken cancellationToken = default)
     {
@@ -437,36 +418,12 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
             _connection.UsesLegacyChroma ? RazerChromaChannel.Legacy : RazerChromaChannel.Standard,
             _connection.ProductId);
 
-    private async Task RunChromaWriteAsync(
-        Func<RazerChromaStandardService, CancellationToken, Task> write,
-        CancellationToken cancellationToken)
-    {
-        if (!BeginOperation()) return;
-        try
-        {
-            await write(OpenChromaService(), cancellationToken);
-            ErrorText = string.Empty;
-            OperationStatusText = AppStrings.Text("BlackSharkSaved");
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-        }
-        catch (Exception exception) when (IsExpectedException(exception))
-        {
-            ErrorText = exception.Message;
-            OperationStatusText = string.Empty;
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
     private void ApplyLighting(RazerChromaStandardState state)
     {
         if (state.BrightnessPercent is byte brightness)
         {
             Brightness = brightness;
+            _appliedBrightness = brightness;
             _hasLighting = true;
             _hasBrightness = true;
             OnPropertyChanged(nameof(BrightnessVisibility));
@@ -489,6 +446,13 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
             {
                 SecondaryColor = Color.FromArgb(255, state.Colors[3], state.Colors[4], state.Colors[5]);
             }
+
+            _appliedEffectIndex = SelectedLightingEffectIndex;
+            _hasAppliedEffect = index >= 0 &&
+                (effect is RazerChromaEffect.Off or RazerChromaEffect.Spectrum ||
+                 state.Colors.Count >= (effect == RazerChromaEffect.Static ? 3 : 6));
+            _appliedPrimaryColor = PrimaryColor;
+            _appliedSecondaryColor = SecondaryColor;
         }
 
         OnPropertyChanged(nameof(LightingVisibility));

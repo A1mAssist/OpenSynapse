@@ -1852,7 +1852,7 @@
   <data name="Text_RazerHidIndicatorV2Connection" xml:space="preserve"><value>连接质量</value></data>
   <data name="Text_RazerHidIndicatorV2Polling" xml:space="preserve"><value>轮询率</value></data>
   <data name="Text_RazerHidIndicatorV2Dpi" xml:space="preserve"><value>DPI 档位</value></data>
-  <data name="RazerHidBatteryCurveLabel.Text" xml:space="preserve"><value>电池放电曲线</value></data>
+  <data name="RazerHidBatteryCurveLabel.Text" xml:space="preserve"><value>电池类型</value></data>
   <data name="RazerHidGpuCardLabel.Text" xml:space="preserve"><value>GPU 卡检测</value></data>
   <data name="RazerHidForceChromaLabel.Text" xml:space="preserve"><value>强制 Chroma 控制</value></data>
   <data name="RazerHidChromaTapLabel.Text" xml:space="preserve"><value>Chroma Tap</value></data>
