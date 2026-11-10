@@ -32,6 +32,9 @@ public sealed partial class RazerHeadsetAudioViewModel
             () => SelectedEqPresetIndex = previousIndex,
             token => WriteEqPresetHardwareAsync(previous, token),
             cancellationToken);
+        // The ten-band card shows the active preset's curve, so switching
+        // presets has to reload it or Custom keeps the previous preset's bands.
+        await RefreshEqBandsAsync(cancellationToken);
     }
 
     [ProfileSetting("headset.eq.bands", DeviceCategory.Headset, powerScoped: true)]
