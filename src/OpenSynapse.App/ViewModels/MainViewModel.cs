@@ -64,9 +64,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         IThxAudioController? thxAudioController = null,
         bool thxAudioSupported = false,
         IMacroInputSink? macroInputSink = null,
-        MachineSettingsStore? machineSettingsStore = null)
+        MachineSettingsStore? machineSettingsStore = null,
+        bool liteMode = false)
     {
         ProfileSettingsRegistration.EnsureRegistered();
+        IsLiteMode = liteMode;
         _deviceTelemetryReader = deviceTelemetryReader;
         _profileStore = profileStore ?? new ProfileStore();
         _machineSettingsStore = machineSettingsStore ?? new MachineSettingsStore();
@@ -267,7 +269,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             },
             OnPropertyChanged,
             (power, token) => SelectedBle?.ApplyPersistedProfileAsync(power, token) ?? Task.CompletedTask,
-            (power, token) => AccessoryProfileReplay.ApplyAsync(this, _diagnosticLog, power, token));
+            (power, token) => AccessoryProfileReplay.ApplyAsync(this, _diagnosticLog, power, token),
+            liteMode: liteMode);
         Tray = new TrayWorkspace(() => Devices, RazerHid);
         CpuCurve = new CpuCurveWorkspace(
             (label, operation, token) => RunDeviceOperationAsync(label, operation, token),
@@ -288,6 +291,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
     public ObservableCollection<DeviceRowViewModel> Devices { get; } = new();
     public ObservableCollection<DeviceSelectorItemViewModel> DeviceSelectorItems { get; } = new();
+    public bool IsLiteMode { get; }
     public RazerCoolingPadViewModel CoolingPad { get; }
     public RazerKiyoViewModel Kiyo { get; }
     public FirmwareWorkspace Firmware { get; }

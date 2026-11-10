@@ -39,6 +39,7 @@ public sealed partial class DevicesPage : UserControl
 
     private bool _razerDriversRequested;
     private bool _bladeFanTelemetryHooked;
+    private bool _liteMode;
 
     public DevicesPage()
     {
@@ -94,6 +95,10 @@ public sealed partial class DevicesPage : UserControl
 
     internal void SelectDevice(string device)
     {
+        if (_liteMode && device == "blade")
+        {
+            device = "none";
+        }
         if (device == "blade" &&
             !ViewModel.CurrentDeviceDescriptors.Any(item =>
                 DeviceProtocolFamilies.IsBlade(item.ProtocolFamily)))
@@ -285,8 +290,18 @@ public sealed partial class DevicesPage : UserControl
 
     internal void ScrollToTop() => PageScrollViewer.ChangeView(null, 0, null, disableAnimation: true);
 
+    internal void SetLiteMode(bool liteMode)
+    {
+        _liteMode = liteMode;
+        if (liteMode)
+        {
+            BladeDevicePanel.Visibility = Visibility.Collapsed;
+            AdvancedFeaturesPanel.Visibility = Visibility.Collapsed;
+        }
+    }
+
     internal void RefreshAdvancedFeaturesVisibility() =>
-        AdvancedFeaturesPanel.Visibility = Host.BehaviorSettings.AdvancedFeaturesEnabled
+        AdvancedFeaturesPanel.Visibility = !_liteMode && Host.BehaviorSettings.AdvancedFeaturesEnabled
             ? Visibility.Visible
             : Visibility.Collapsed;
 

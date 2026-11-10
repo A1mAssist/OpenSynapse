@@ -130,6 +130,9 @@ public partial class App : Application
         }
 
         LoadBehaviorSettings();
+        _startupArguments = Environment.GetCommandLineArgs().Skip(1).ToArray();
+        var liteMode = _behaviorSettings.LiteModeEnabled;
+        LogLiteModeState(liteMode);
         try
         {
             if (Environment.ProcessPath is string executablePath &&
@@ -153,7 +156,8 @@ public partial class App : Application
 
         try
         {
-            if (Environment.ProcessPath is string executablePath &&
+            if (!liteMode &&
+                Environment.ProcessPath is string executablePath &&
                 WindowsGpuPreference.EnsureMinimumPower(executablePath))
             {
                 _diagnosticLog.TryWrite(
@@ -176,12 +180,15 @@ public partial class App : Application
         {
             _diagnosticLog.TryWrite("device-manifest", error);
         }
-        _bladeLightingController = new BladeLightingController(
-            razerTransport,
-            registryLoad.Registry,
-            _bladeModeCoordinator);
-        _bladeLightingController.MappingInputObserved += input =>
-            _window?.ForwardBladeMappingInput(input);
+        if (LiteModePolicy.ShouldCreateBladeLighting(liteMode))
+        {
+            _bladeLightingController = new BladeLightingController(
+                razerTransport,
+                registryLoad.Registry,
+                _bladeModeCoordinator);
+            _bladeLightingController.MappingInputObserved += input =>
+                _window?.ForwardBladeMappingInput(input);
+        }
         _thxAudioController = new WindowsThxAudioController();
         _elevatedMacroClient = new ElevatedMacroClient();
         _elevatedMacroSink = new ElevatedMacroInputSink(_elevatedMacroClient);
@@ -200,18 +207,19 @@ public partial class App : Application
             new WindowsPowerSourceProvider(),
             new WindowsActiveApplicationProvider(),
             _diagnosticLog,
-            new WindowsInternalDisplayController(),
+            liteMode ? null : new WindowsInternalDisplayController(),
             _bladeLightingController,
             new WindowsStartupManager(),
             Environment.ProcessPath,
             registryLoad.Errors,
-            new WindowsTouchpadController(),
+            liteMode ? null : new WindowsTouchpadController(),
             _openRazerDeviceService,
             new RazerHidSpecialLightingService(
                 message => _diagnosticLog.TryWrite("kraken-lighting", message)),
             thxAudioController: _thxAudioController,
             thxAudioSupported: WindowsThxAudioController.IsSupportedModel(),
-            macroInputSink: _razerFilterMacroSink);
+            macroInputSink: _razerFilterMacroSink,
+            liteMode: liteMode);
         _ = EnsureMacroAgentAsync();
         _audioMuteViewModel = viewModel;
         viewModel.Blade.ControlDeviceChanged += OnBladeControlDeviceChanged;
@@ -245,6 +253,10 @@ public partial class App : Application
         InitializeTray(window, viewModel);
         _taskbarStatusPresenter = new TaskbarStatusPresenter(
             viewModel, _behaviorSettings, _diagnosticLog);
+        if (liteMode)
+        {
+            _taskbarStatusPresenter.SetEnabled(false);
+        }
         if (silentLaunch)
         {
             window.AppWindow.IsShownInSwitchers = false;
@@ -257,7 +269,10 @@ public partial class App : Application
         {
             window.Activate();
         }
-        window.RestorePerformanceOverlay();
+        if (!liteMode)
+        {
+            window.RestorePerformanceOverlay();
+        }
 
         _activationCancellation = new CancellationTokenSource();
         _ = ObserveActivationRequestsAsync(_activationCancellation.Token);

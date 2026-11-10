@@ -29,6 +29,7 @@ public sealed class AppBehaviorSettings
     public bool LowBatteryNotificationsEnabled { get; set; } = true;
     public bool TrayBatteryLevelsEnabled { get; set; } = true;
     public bool TaskbarStatusEnabled { get; set; }
+    public bool LiteModeEnabled { get; set; }
     public bool PerformanceOverlayEnabled { get; set; }
     public bool PerformanceOverlayDetailed { get; set; }
     public int? PerformanceOverlayX { get; set; }

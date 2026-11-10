@@ -191,7 +191,9 @@ public sealed partial class MainWindow
         var navigation = new IntroductionStep(
             IntroductionStepKind.Navigation,
             "IntroductionV2NavigationTitle",
-            "IntroductionV2NavigationBody");
+            _viewModel.IsLiteMode
+                ? "IntroductionV2NavigationBodyLite"
+                : "IntroductionV2NavigationBody");
         var peripheral = _viewModel.ConnectedDevices.FirstOrDefault(device =>
             device.Category is DeviceCategory.Keyboard or DeviceCategory.Mouse);
         var laptop = _viewModel.ConnectedDevices.FirstOrDefault(device =>
@@ -253,7 +255,9 @@ public sealed partial class MainWindow
         switch (step.Kind)
         {
             case IntroductionStepKind.Navigation:
-                RootNavigationView.SelectedItem = OverviewNavigationItem;
+                RootNavigationView.SelectedItem = _viewModel.IsLiteMode
+                    ? DevicesNavigationItem
+                    : OverviewNavigationItem;
                 return DevicesNavigationItem;
             case IntroductionStepKind.DeviceCards:
                 RootNavigationView.SelectedItem = DevicesNavigationItem;

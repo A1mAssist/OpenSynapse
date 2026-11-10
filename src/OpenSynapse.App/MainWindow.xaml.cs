@@ -99,6 +99,7 @@ public sealed partial class MainWindow : Window
             CreateStudioArgbRouter(_studioInputSampler),
             _viewModel.RestoreLightingAfterExternalAsync);
         DevicesPage.RefreshAdvancedFeaturesVisibility();
+        ApplyLiteMode();
         MacrosPage.OpenEditorRequested += (_, _) => OpenMacroEditorWindow();
         OverviewPage.DeviceRequested += OnOverviewDeviceRequested;
         _viewModel.Hue.Configure(_behaviorSettings.HueBridgeHost, _behaviorSettings.HueAppKey);
@@ -379,9 +380,12 @@ public sealed partial class MainWindow : Window
             // Start the cheap system sampler before profile and device work so CPU,
             // memory and storage have a first frame while the launch overlay is up.
             UpdatePerformanceSamplingState();
-            _ = ObserveBackgroundLoopAsync(
-                () => _viewModel.Telemetry.RunPerformanceLoopAsync(_lifetime.Token),
-                AppStrings.Text("Text_79DA5816"));
+            if (LiteModePolicy.ShouldStartPerformanceSampling(_viewModel.IsLiteMode))
+            {
+                _ = ObserveBackgroundLoopAsync(
+                    () => _viewModel.Telemetry.RunPerformanceLoopAsync(_lifetime.Token),
+                    AppStrings.Text("Text_79DA5816"));
+            }
             await _viewModel.InitializeProfileAsync(_lifetime.Token);
             LaunchStatusText.Text = AppStrings.Text("Text_C2463C0F");
             _viewModel.Refresh.SetDeviceWatchActive(AppWindow.IsVisible);

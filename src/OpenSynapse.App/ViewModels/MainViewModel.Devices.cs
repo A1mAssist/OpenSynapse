@@ -67,7 +67,8 @@ public sealed partial class MainViewModel
     private void RefreshDeviceSelectorItems()
     {
         DeviceSelectorItems.Clear();
-        if (_deviceDescriptors.Any(device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily)))
+        if (!IsLiteMode &&
+            _deviceDescriptors.Any(device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily)))
         {
             DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
                 DeviceSelectorItemKind.Blade,

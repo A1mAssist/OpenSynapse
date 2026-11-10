@@ -15,14 +15,19 @@ public sealed partial class RefreshWorkspace
         PowerSourceKind powerState,
         CancellationToken cancellationToken)
     {
-        if (ActiveDescriptors.Count == 0)
+        var devices = _liteMode
+            ? ActiveDescriptors
+                .Where(device => !DeviceProtocolFamilies.IsBlade(device.ProtocolFamily))
+                .ToArray()
+            : ActiveDescriptors;
+        if (devices.Count == 0)
         {
             return null;
         }
 
         var result = await _profileApplier.ApplyAsync(
             Profile,
-            ActiveDescriptors,
+            devices,
             telemetry,
             _deviceTelemetryReader,
             powerState,
@@ -30,14 +35,14 @@ public sealed partial class RefreshWorkspace
             applyKeyboardBrightness: IsDisplayAvailable,
             coolingPadConnected: _blade.CoolingPadConnected,
             padlessHyperBoostAccepted: _blade.PadlessHyperBoostAccepted,
-            displayController: _display.Controller,
-            applyBladeTuningAsync: _blade.ApplyProfileTuningAsync);
+            displayController: _liteMode ? null : _display.Controller,
+            applyBladeTuningAsync: _liteMode ? null : _blade.ApplyProfileTuningAsync);
         if (_razerHidProfileApplier is null)
         {
             return result;
         }
 
-        var razerHidDevices = ActiveDescriptors
+        var razerHidDevices = devices
             .Where(device => device.Category is DeviceCategory.Mouse or DeviceCategory.Keyboard)
             .Where(device => device.ProtocolFamily != DeviceProtocolFamilies.Viper)
             .Where(device => _openRazer.ResolveConnection(device) is not null)

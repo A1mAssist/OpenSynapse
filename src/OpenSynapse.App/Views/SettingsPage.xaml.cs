@@ -58,6 +58,7 @@ public sealed partial class SettingsPage : UserControl
     {
         var settings = Host.BehaviorSettings;
         _behaviorUiReady = false;
+        LiteModeToggle.IsOn = settings.LiteModeEnabled;
         AdvancedFeaturesToggle.IsOn = settings.AdvancedFeaturesEnabled;
         ModeNotificationToggle.IsOn = settings.ModeChangeNotificationsEnabled;
         LowBatteryNotificationToggle.IsOn = settings.LowBatteryNotificationsEnabled;

@@ -190,7 +190,7 @@ internal sealed class DisplayPowerNotification
     /// </summary>
     private async void ReplayCpuPowerLimitAfterResume()
     {
-        if (_lifetime.IsCancellationRequested)
+        if (_viewModel.IsLiteMode || _lifetime.IsCancellationRequested)
         {
             return;
         }

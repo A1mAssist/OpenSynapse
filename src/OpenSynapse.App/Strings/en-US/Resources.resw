@@ -3463,6 +3463,7 @@
   <data name="LightingStudioScreenCustom" xml:space="preserve"><value>Custom</value></data>
   <data name="IntroductionV2NavigationTitle" xml:space="preserve"><value>Start here</value></data>
   <data name="IntroductionV2NavigationBody" xml:space="preserve"><value>The Devices page in the sidebar manages mice, keyboards, Blades, and headsets; Macros and Profiles are in the sidebar too.</value></data>
+  <data name="IntroductionV2NavigationBodyLite" xml:space="preserve"><value>The Devices page in the sidebar manages every peripheral; Macros and Profiles are in the sidebar too.</value></data>
   <data name="IntroductionV2DevicesTitle" xml:space="preserve"><value>Choose a device</value></data>
   <data name="IntroductionV2DevicesBody" xml:space="preserve"><value>Select a device card to open its settings. If nothing appears, select Rescan and check that the device is connected.</value></data>
   <data name="IntroductionV2DeviceSettingsTitle" xml:space="preserve"><value>Device settings</value></data>
@@ -3796,4 +3797,11 @@
   <data name="SnapTapPairHint" xml:space="preserve"><value>Pick two keys per pair, up to 4 pairs. Windows and Menu keys are excluded.</value></data>
   <data name="A11yClose.Content" xml:space="preserve"><value>✕</value></data>
   <data name="A11yDeletePathPoint.Content" xml:space="preserve"><value>×</value></data>
+  <data name="LiteModeTitle.Text" xml:space="preserve"><value>Lite mode (peripherals only)</value></data>
+  <data name="LiteModeDescription.Text" xml:space="preserve"><value>Hides laptop controls, performance panels, and advanced settings. Restart required after switching.</value></data>
+  <data name="LiteModeRestartTitle.Text" xml:space="preserve"><value>Switch to Lite mode</value></data>
+  <data name="LiteModeRestartPrompt.Text" xml:space="preserve"><value>Switching Lite mode restarts OpenSynapse.&#10;Unsaved macro edits will be lost.</value></data>
+  <data name="LiteModeRestartElevated.Text" xml:space="preserve"><value>This process is running as administrator; the restarted app will stay elevated.</value></data>
+  <data name="LiteModeRestartConfirm.Text" xml:space="preserve"><value>Restart and switch</value></data>
+  <data name="LiteModeRestartCancel.Text" xml:space="preserve"><value>Cancel</value></data>
 </root>
