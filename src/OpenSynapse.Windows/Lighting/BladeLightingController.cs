@@ -617,18 +617,6 @@ public sealed partial class BladeLightingController : IBladeLightingController
         BladeLightingEffect effect,
         out byte[] request)
     {
-        // The Blade2 family (Blade 14/16 2024) reports rzDevice25LedMatrixSkipSetEffect:
-        // once Synapse leaves the lighting engine off, color-bearing 03:0A effects
-        // accept but do not visibly apply. The 03:0B frame path is what Lighting Studio
-        // uses and still works. Keep native Off and palette-free effects.
-        if (_lightingDialect == BladeLightingDialect.LedMatrixBlade2 &&
-            effect.Mode is BladeLightingMode.Static or BladeLightingMode.Breathing or
-                BladeLightingMode.Reactive)
-        {
-            request = Array.Empty<byte>();
-            return false;
-        }
-
         if (_lightingDialect != BladeLightingDialect.LedMatrixBlade &&
             effect.Palette is not null &&
             effect.Mode is BladeLightingMode.Spectrum or BladeLightingMode.Wave)
@@ -637,6 +625,9 @@ public sealed partial class BladeLightingController : IBladeLightingController
             return false;
         }
 
+        // Blade2 inherits rzDevice25LedMatrix.setChromaEffectCommon. The middleware
+        // sends Set LED Matrix RGB Effect (0x03:0x0A) for firmware effects; custom
+        // palettes and frames are the only paths that use 0x03:0x0B.
         if (_lightingDialect is BladeLightingDialect.LedMatrixBlade or BladeLightingDialect.LedMatrixBlade2)
         {
             request = effect.Mode switch
