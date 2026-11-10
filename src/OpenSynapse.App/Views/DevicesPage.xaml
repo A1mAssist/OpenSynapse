@@ -1192,12 +1192,12 @@
                           <RadioButton Content="固定风扇转速" local:Localized.Uid="BladeFanModeFixed" FontSize="14" IsChecked="{Binding Fan.BladeFanFixedModeSelected, Mode=OneWay}" Click="BladeFanFixedModeClick" GroupName="BladeFanControl" Visibility="{Binding Fan.BladeFanFixedVisibility}" />
                           <RadioButton Content="手动风扇曲线" local:Localized.Uid="BladeFanModeCurve" FontSize="14" IsChecked="{Binding Fan.BladeFanCurveModeSelected, Mode=OneWay}" Click="BladeFanCurveModeClick" GroupName="BladeFanControl" Visibility="{Binding Fan.BladeFanCurveVisibility}" />
                           <StackPanel Spacing="6" Visibility="{Binding Fan.BladeFanFixedRpmVisibility}">
-                            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                               <TextBlock local:Localized.Uid="BladeFanTargetRpmLabel" Text="目标转速" Foreground="{StaticResource MutedBrush}" FontSize="11" VerticalAlignment="Center" />
                               <TextBlock Grid.Column="1" Text="{Binding Fan.BladeFanFixedRpmText}" FontFamily="Cascadia Mono,Consolas" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource GpuBrush}" VerticalAlignment="Center" />
-                              <Button Grid.Column="2" local:Localized.Uid="BladeFanCurveApply" Content="应用" Click="ApplyBladeFanFixedRpmClick" Style="{StaticResource PrimaryButtonStyle}" />
                             </Grid>
-                            <Slider local:Localized.Uid="A11yFanTargetSpeed" x:Name="BladeFanFixedRpmSlider" AutomationProperties.Name="风扇目标转速" Minimum="{Binding Fan.BladeFanFixedMinimumRpm}" Maximum="{Binding Fan.BladeFanFixedMaximumRpm}" StepFrequency="{Binding Fan.BladeFanFixedStepRpm}" Value="{Binding Fan.BladeFanFixedRpmSlider, Mode=TwoWay}" IsThumbToolTipEnabled="False" Loaded="BladeFanFixedRpmSliderLoaded" />
+                            <Slider local:Localized.Uid="A11yFanTargetSpeed" x:Name="BladeFanFixedRpmSlider" AutomationProperties.Name="风扇目标转速" Minimum="{Binding Fan.BladeFanFixedMinimumRpm}" Maximum="{Binding Fan.BladeFanFixedMaximumRpm}" StepFrequency="{Binding Fan.BladeFanFixedStepRpm}" Value="{Binding Fan.BladeFanFixedRpmSlider, Mode=TwoWay}" IsThumbToolTipEnabled="False" Loaded="BladeFanFixedRpmSliderLoaded" PointerReleased="BladeFanFixedRpmSliderPointerReleased" KeyUp="BladeFanFixedRpmSliderKeyUp" />
+                            <TextBlock local:Localized.Uid="BladeFanFixedAutoApplyHint" Text="松开滑块后自动应用" Foreground="{StaticResource MutedBrush}" FontSize="11" />
                           </StackPanel>
                           <Button local:Localized.Uid="BladeFanCurveEdit" Content="编辑" Click="OpenBladeFanCurveWindowClick" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" Visibility="{Binding Fan.BladeFanCurvePanelVisibility}" />
                         </StackPanel>

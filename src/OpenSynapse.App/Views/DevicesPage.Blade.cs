@@ -289,7 +289,7 @@ public sealed partial class DevicesPage : UserControl
 
     private async void BladeFanFixedModeClick(object sender, RoutedEventArgs e)
     {
-        ViewModel.Fan.ShowBladeFanFixedMode();
+        await ViewModel.Fan.SelectBladeFanFixedModeAsync(Lifetime);
         await Task.Delay(150);
         SyncBladeFanFixedRpmSlider();
     }
@@ -313,8 +313,25 @@ public sealed partial class DevicesPage : UserControl
     private void BladeFanCurveModeClick(object sender, RoutedEventArgs e) =>
         ViewModel.Fan.ShowBladeFanCurveMode();
 
-    private async void ApplyBladeFanFixedRpmClick(object sender, RoutedEventArgs e) =>
-        await ViewModel.Fan.SelectBladeFanFixedModeAsync(Lifetime);
+    private async void BladeFanFixedRpmSliderPointerReleased(object sender, PointerRoutedEventArgs e) =>
+        await ApplyBladeFanFixedRpmFromSliderAsync();
+
+    private async void BladeFanFixedRpmSliderKeyUp(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key is VirtualKey.Left or VirtualKey.Right or VirtualKey.Up or VirtualKey.Down or
+            VirtualKey.Home or VirtualKey.End or VirtualKey.PageUp or VirtualKey.PageDown)
+        {
+            await ApplyBladeFanFixedRpmFromSliderAsync();
+        }
+    }
+
+    private async Task ApplyBladeFanFixedRpmFromSliderAsync()
+    {
+        if (ViewModel.Fan.BladeFanFixedModeSelected)
+        {
+            await ViewModel.Fan.SelectBladeFanFixedModeAsync(Lifetime);
+        }
+    }
 
     private async void AutoApplyMaxFanToggled(object sender, RoutedEventArgs e)
     {

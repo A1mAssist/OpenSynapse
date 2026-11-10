@@ -2382,6 +2382,9 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         }
         if (telemetry.BladeFanMode is BladeFanMode fanMode)
         {
+            _blade._bladeTelemetryFanMode = fanMode;
+            _blade._bladeTelemetryFanTargetRpm = telemetry.BladeFanTargetRpm;
+            _fan().ObserveFanTelemetry(fanMode, telemetry.BladeFanTargetRpm);
             CanSetFan = true;
             FanText = fanMode switch
             {
