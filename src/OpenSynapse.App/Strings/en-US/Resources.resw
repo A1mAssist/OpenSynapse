@@ -1281,7 +1281,7 @@
   <data name="Text_04AABB92" xml:space="preserve"><value>Razer feature query failed.</value></data>
   <data name="Text_5DBCDF6D" xml:space="preserve"><value>Off</value></data>
   <data name="UpdateTitle.Text" xml:space="preserve"><value>Automatic updates</value></data>
-  <data name="UpdateDescription.Text" xml:space="preserve"><value>Check and download at startup; you confirm before installation.</value></data>
+  <data name="UpdateDescription.Text" xml:space="preserve"><value>Check at startup and ask before downloading an update.</value></data>
   <data name="AutomaticUpdatesToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Automatic updates</value></data>
   <data name="CheckUpdateButton.Content" xml:space="preserve"><value>Check for updates</value></data>
   <data name="UpdateInstallerRequired" xml:space="preserve"><value>This is an older portable build. Install the new setup package to enable automatic updates.</value></data>
@@ -1300,6 +1300,16 @@
   <data name="UpdateCheckFailed" xml:space="preserve"><value>Could not check for updates: {0}</value></data>
   <data name="UpdateDownloadFailed" xml:space="preserve"><value>Could not download the update: {0}</value></data>
   <data name="UpdateApplyFailed" xml:space="preserve"><value>Could not start the update. Reopen OpenSynapse and try again: {0}</value></data>
+  <data name="UpdatePromptTitle" xml:space="preserve"><value>Version {0} is available</value></data>
+  <data name="UpdatePromptBody" xml:space="preserve"><value>You are on {0}. The update will download and install; OpenSynapse will need to restart afterwards.</value></data>
+  <data name="UpdatePromptBodyElevated" xml:space="preserve"><value>You are on {0}. The update will download and install; OpenSynapse will need to restart afterwards. A machine-wide install may ask for administrator confirmation once.</value></data>
+  <data name="UpdatePromptNow" xml:space="preserve"><value>Update now</value></data>
+  <data name="UpdatePromptLater" xml:space="preserve"><value>Later</value></data>
+  <data name="UpdatePromptSkip" xml:space="preserve"><value>Skip this version</value></data>
+  <data name="UpdateRestartTitle" xml:space="preserve"><value>Update downloaded</value></data>
+  <data name="UpdateRestartBody" xml:space="preserve"><value>Version {0} is ready. Restart OpenSynapse to finish installing it?</value></data>
+  <data name="UpdateRestartNow" xml:space="preserve"><value>Restart now</value></data>
+  <data name="UpdateRestartLater" xml:space="preserve"><value>Later</value></data>
   <data name="ModeNotificationTitle.Text" xml:space="preserve"><value>Mode change notifications</value></data>
   <data name="ModeNotificationDescription.Text" xml:space="preserve"><value>Send a Windows notification after a performance or gaming mode change succeeds.</value></data>
   <data name="ModeNotificationToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Mode change notifications</value></data>

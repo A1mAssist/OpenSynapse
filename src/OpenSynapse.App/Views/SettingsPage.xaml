@@ -153,7 +153,7 @@
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                       <StackPanel Spacing="4">
                         <TextBlock local:Localized.Uid="UpdateTitle" Text="自动更新" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                        <TextBlock local:Localized.Uid="UpdateDescription" Text="启动时自动检查并下载；安装前由你确认。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                        <TextBlock local:Localized.Uid="UpdateDescription" Text="启动时自动检查；发现新版本会提示你下载安装。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                       </StackPanel>
                       <ToggleSwitch local:Localized.Uid="AutomaticUpdatesToggle" x:Name="AutomaticUpdatesToggle" Grid.Column="1" Toggled="AutomaticUpdatesToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="自动更新" />
                     </Grid>

@@ -217,6 +217,7 @@ public sealed partial class MainWindow : Window
         UpdatePerformanceSamplingState();
         _viewModel.Refresh.SetDeviceWatchActive(true);
         _viewModel.Refresh.RequestDeviceRefresh();
+        TryPromptForStartupUpdate();
     }
 
     [DllImport("user32.dll")]
@@ -389,10 +390,7 @@ public sealed partial class MainWindow : Window
                 AppStrings.Text("Text_C2463C0F"));
             _viewModel.Refresh.RequestDeviceRefresh();
             LaunchStatusText.Text = AppStrings.Text("Text_470691B2");
-            if (SettingsPage.AutomaticUpdatesEnabled && AppUpdateSettings.AutomaticCheckDue)
-            {
-                _ = SettingsPage.CheckForUpdatesAsync(downloadAutomatically: true);
-            }
+            SettingsPage.StartStartupUpdateCheck();
         }
         catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
         {

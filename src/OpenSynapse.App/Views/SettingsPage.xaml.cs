@@ -6,7 +6,6 @@ using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Storage;
 using OpenSynapse.Windows.Lifecycle;
 using OpenSynapse.Windows.Lighting;
-using System.ComponentModel;
 using System.Net.Sockets;
 using System.Reflection;
 using Velopack;
@@ -554,7 +553,7 @@ public sealed partial class SettingsPage : UserControl
             AppUpdateSettings.AutomaticUpdatesEnabled = toggle.IsOn;
             if (toggle.IsOn && _updateManager.IsInstalled && _availableUpdate is null && _downloadedUpdate is null)
             {
-                await CheckForUpdatesAsync(downloadAutomatically: true);
+                await CheckForUpdatesAsync(downloadAutomatically: false);
             }
         }
         catch (Exception exception) when (
@@ -581,46 +580,11 @@ public sealed partial class SettingsPage : UserControl
 
         if (_downloadedUpdate is null)
         {
-            SetUpdateBusy(true, AppStrings.Text("Text_07BF2232"));
-            try
-            {
-                await DownloadUpdateAsync();
-                SetUpdateBusy(false);
-                RefreshUpdateUiText();
-            }
-            catch (OperationCanceledException) when (Lifetime.IsCancellationRequested)
-            {
-            }
-            catch (Exception exception)
-            {
-                UpdateStatusText.Text = AppStrings.FormatText("UpdateDownloadFailed",
-                    exception.Message);
-            }
-            finally
-            {
-                SetUpdateBusy(false);
-            }
+            await DownloadUpdateFromUiAsync();
             return;
         }
 
-        SetUpdateBusy(true, AppStrings.Text("Text_B1A6427D"));
-        try
-        {
-            await ((App)Application.Current).ApplyUpdateAndRestartAsync(
-                _updateManager,
-                _downloadedUpdate);
-        }
-        catch (Win32Exception exception) when (exception.NativeErrorCode == 1223)
-        {
-            SetUpdateBusy(false);
-            UpdateStatusText.Text = AppStrings.Text("UpdateElevationCancelled");
-        }
-        catch (Exception exception)
-        {
-            SetUpdateBusy(false);
-            UpdateStatusText.Text = AppStrings.FormatText("UpdateApplyFailed",
-                exception.Message);
-        }
+        await ApplyDownloadedUpdateAsync();
     }
 
     private async Task DownloadUpdateAsync()
