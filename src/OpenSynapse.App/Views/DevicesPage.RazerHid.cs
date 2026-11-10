@@ -231,11 +231,21 @@ public sealed partial class DevicesPage : UserControl
     private async void RazerHidApplyIndicatorLedV2Click(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.ApplyIndicatorLedV2Async(Lifetime) ?? Task.CompletedTask);
 
-    private void RazerHidIndicatorLedV2Loaded(object sender, RoutedEventArgs e)
+    private void RazerHidIndicatorLedV2Loaded(object sender, RoutedEventArgs e) =>
+        QueueIndicatorLedV2Reapply(sender);
+
+    private void RazerHidIndicatorLedV2DataContextChanged(
+        FrameworkElement sender,
+        DataContextChangedEventArgs args) =>
+        QueueIndicatorLedV2Reapply(sender);
+
+    private void QueueIndicatorLedV2Reapply(object sender)
     {
         if (sender is not FrameworkElement { DataContext: RazerHidDeviceViewModel device }) return;
         // Let the card finish its first measure/bind pass before restoring the read values.
-        DispatcherQueue.TryEnqueue(device.ReapplyIndicatorLedV2Selection);
+        DispatcherQueue.TryEnqueue(
+            Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+            device.ReapplyIndicatorLedV2Selection);
     }
 
     private async void RazerHidApplyBatteryCurveClick(object sender, RoutedEventArgs e) =>
