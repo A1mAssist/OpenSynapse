@@ -115,12 +115,12 @@ public static class BladeLightingProtocol
             new byte[] { 0x06, color.Red, color.Green, color.Blue });
 
     public static byte[] CreateBreathingRandomRequest() =>
-        CreateEffectRequest(0x08, new byte[] { 0x03, 0x03, 0, 0, 0, 0, 0, 0 });
+        CreateEffectRequest(0x02, new byte[] { 0x03, 0x03 });
 
     public static byte[] CreateBreathingSingleRequest(RazerRgb color) =>
         CreateEffectRequest(
-            0x08,
-            new byte[] { 0x03, 0x01, color.Red, color.Green, color.Blue, 0, 0, 0 });
+            0x05,
+            new byte[] { 0x03, 0x01, color.Red, color.Green, color.Blue });
 
     public static byte[] CreateBreathingDualRequest(RazerRgb first, RazerRgb second) =>
         CreateEffectRequest(

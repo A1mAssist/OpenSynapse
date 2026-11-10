@@ -194,9 +194,9 @@ internal static class RazerHidLightingProtocol
                 [0x19, 0x01, Math.Clamp(value.Speed, (byte)1, (byte)3), value.Primary.Red, value.Primary.Green, value.Primary.Blue, 0, 0, 0],
             RazerHidLightingEffect.StarlightDual =>
                 [0x19, 0x02, Math.Clamp(value.Speed, (byte)1, (byte)3), value.Primary.Red, value.Primary.Green, value.Primary.Blue, value.Secondary.Red, value.Secondary.Green, value.Secondary.Blue],
-            RazerHidLightingEffect.BreathingRandom => [0x03, 0x03, 0, 0, 0, 0, 0, 0],
+            RazerHidLightingEffect.BreathingRandom => [0x03, 0x03],
             RazerHidLightingEffect.BreathingSingle =>
-                [0x03, 0x01, value.Primary.Red, value.Primary.Green, value.Primary.Blue, 0, 0, 0],
+                [0x03, 0x01, value.Primary.Red, value.Primary.Green, value.Primary.Blue],
             RazerHidLightingEffect.BreathingDual =>
                 [0x03, 0x02, value.Primary.Red, value.Primary.Green, value.Primary.Blue, value.Secondary.Red, value.Secondary.Green, value.Secondary.Blue],
             RazerHidLightingEffect.Custom => [0x05, (byte)storage],

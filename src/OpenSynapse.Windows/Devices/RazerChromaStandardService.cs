@@ -175,9 +175,9 @@ public sealed partial class RazerChromaStandardService
                 var legacy = RazerLegacyChromaProtocol.ReadEffect(
                     await QueryAsync(RazerLegacyChromaProtocol.GetEffect, "read effect", cancellationToken)
                         .ConfigureAwait(false));
-                // Class 0x0F uses the same ids for the four UI effects; 4 is Wave there,
-                // not the class 0x10 AudioMeter, so anything above 3 stays unknown.
-                effect = legacy.EffectId <= (byte)RazerChromaEffect.Spectrum
+                // Class 0x0F and 0x10 share the Kw effect ids; 4 is Wave, while
+                // AudioMeter is 10 and is not part of the legacy UI set.
+                effect = legacy.EffectId <= (byte)RazerChromaEffect.Wave
                     ? (RazerChromaEffect)legacy.EffectId
                     : null;
                 colors = legacy.Colors;
