@@ -24,6 +24,10 @@ internal sealed class RazerValkyrieT3Transport : IRazerMxicHeadsetTransport
     public async Task SendAsync(byte[] report, CancellationToken cancellationToken) =>
         _ = await QueryAsync(report, [], cancellationToken).ConfigureAwait(false);
 
+    public Task<byte?> SendAndReadStatusAsync(byte[] report, CancellationToken cancellationToken) =>
+        Task.FromException<byte?>(new NotSupportedException(
+            "Valkyrie T3 does not use the MXIC remote-mode handshake."));
+
     public async Task<byte[]?> QueryAsync(byte[] report, byte[] expectedHeader, CancellationToken cancellationToken)
     {
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);

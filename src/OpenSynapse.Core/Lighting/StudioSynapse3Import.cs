@@ -354,6 +354,7 @@ internal static class StudioSynapse3Import
                 parameters.DurationMs = ReadDuration(region, 500, 1_700, 3_000);
                 break;
             case StudioEffectKind.Fire:
+                // Razer's Synapse 3 migrator reads only Colors for Fire; Seed/Rate stay at the native defaults.
                 ApplyColors(parameters, region, 2);
                 break;
             case StudioEffectKind.Ambient:

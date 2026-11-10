@@ -6,8 +6,6 @@ public static partial class StudioEffectRenderer
     private const int FireHeight = 7;
     private const int FirePixels = FireWidth * FireHeight;
     private const int FireFramesPerSecond = 25;
-    private const int FireDefaultSeed = 100;
-    private const int FireDefaultRate = 160;
 
     // CFireEffect 0x1f52c0: row-wise attenuation for the 7x23 heat field.
     private static readonly byte[] FireAttenuation =

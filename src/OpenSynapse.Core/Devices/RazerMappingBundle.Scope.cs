@@ -13,6 +13,10 @@ public static partial class RazerMappingBundleParser
         """groupList\s*=\s*\[""",
         RegexOptions.CultureInvariant);
 
+    private static readonly Regex ExportedButtonListRegex = new(
+        """BUTTON_LIST\s*:\s*\(\s*\)\s*=>\s*(?<name>[A-Za-z_$][\w$]*)""",
+        RegexOptions.CultureInvariant);
+
     private static readonly Regex ExplicitButtonIdRegex = new(
         """\{(?=[^{}]*?(?:inputID|buttonKey):")[^{}]*?\bkey:\s*(?<number>\d+)[^{}]*\}""",
         RegexOptions.CultureInvariant);
@@ -39,7 +43,7 @@ public static partial class RazerMappingBundleParser
         return buttonIds;
     }
 
-    private static string FindButtonListScope(string text)
+    private static (string Scope, bool IncludeInputIdOnly) FindButtonListScope(string text)
     {
         var match = ButtonListScopeRegex.Match(text);
         if (!match.Success)
@@ -49,12 +53,39 @@ public static partial class RazerMappingBundleParser
 
         if (!match.Success)
         {
-            return text;
+            return FindExportedButtonListScope(text);
         }
 
         var open = match.Index + match.Length - 1;
         var close = FindMatchingBracket(text, open);
-        return close > open ? text[open..(close + 1)] : text;
+        return close > open ? (text[open..(close + 1)], false) : (text, false);
+    }
+
+    /// <summary>
+    /// 0098-style bundles export BUTTON_LIST from a plain inputID array instead of
+    /// passing it to drawLines. Follow the export alias so unrelated DKM objects do
+    /// not become fallback mapping rows.
+    /// </summary>
+    private static (string Scope, bool IncludeInputIdOnly) FindExportedButtonListScope(string text)
+    {
+        var export = ExportedButtonListRegex.Match(text);
+        if (!export.Success)
+        {
+            return (text, false);
+        }
+
+        var name = export.Groups["name"].Value;
+        var assignment = new Regex(
+            $"""(?<![\w$]){Regex.Escape(name)}\s*=\s*\[""",
+            RegexOptions.CultureInvariant).Match(text, export.Index);
+        if (!assignment.Success)
+        {
+            return (text, false);
+        }
+
+        var open = assignment.Index + assignment.Length - 1;
+        var close = FindMatchingBracket(text, open);
+        return close > open ? (text[open..(close + 1)], true) : (text, false);
     }
 
     private static int FindMatchingBracket(string text, int open)

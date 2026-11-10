@@ -18,14 +18,14 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
 {
-    private static readonly MacroTriggerMode[] SoftwareTriggerModes =
-    [
+    private static readonly MacroTriggerMode[] SoftwareTriggerModes = [
+        // Persisted by position; append new modes only.
         MacroTriggerMode.Press,
         MacroTriggerMode.Toggle,
         MacroTriggerMode.Hold,
         MacroTriggerMode.Sequence,
+        MacroTriggerMode.HoldRepeat,
     ];
-
     private readonly IRazerMappingTransport _transport;
     private readonly IRazerMappingActionCatalog _catalog;
     private readonly bool _canWrite;
@@ -914,8 +914,9 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
     private static int SoftwareTriggerModeIndex(MacroTriggerMode mode) => mode switch
     {
         MacroTriggerMode.Toggle => 1,
-        MacroTriggerMode.Hold or MacroTriggerMode.HoldRepeat => 2,
+        MacroTriggerMode.Hold => 2,
         MacroTriggerMode.Sequence => 3,
+        MacroTriggerMode.HoldRepeat => 4,
         _ => 0,
     };
 

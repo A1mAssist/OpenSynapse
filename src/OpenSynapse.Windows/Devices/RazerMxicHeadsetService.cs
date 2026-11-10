@@ -429,9 +429,34 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
             return;
         }
 
-        await _transport.SendAsync(
-            RazerMxicHeadsetProtocol.CreateRemoteMode(true, ReportId), cancellationToken).ConfigureAwait(false);
-        _remoteMode = true;
+        var request = RazerMxicHeadsetProtocol.CreateRemoteMode(true, ReportId);
+        if (_dialect != MxicDialect.Legacy)
+        {
+            await _transport.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            _remoteMode = true;
+            return;
+        }
+
+        // AudioMxicDevice sends the remote-mode command up to three times and only
+        // continues when the input report's first payload byte is STATUS_OK (0x4F).
+        byte? lastStatus = null;
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            lastStatus = await _transport
+                .SendAndReadStatusAsync(request, cancellationToken)
+                .ConfigureAwait(false);
+            if (lastStatus == RazerMxicHeadsetProtocol.StatusOk)
+            {
+                _remoteMode = true;
+                return;
+            }
+
+            await Task.Delay(10 * (attempt + 1), cancellationToken).ConfigureAwait(false);
+        }
+
+        throw new InvalidOperationException(lastStatus is { } status
+            ? $"MXIC remote mode was not acknowledged after 3 attempts (status 0x{status:X2})."
+            : "MXIC remote mode was not acknowledged after 3 attempts.");
     }
 
     private static bool IsExpected(Exception exception) =>

@@ -691,8 +691,11 @@ public sealed partial class RazerHidDeviceService
     {
         try
         {
-            return RazerHidMappingProtocol.ParseButtonList(await ExecuteAsync(connection,
-                RazerHidMappingProtocol.GetButtonList(), cancellationToken).ConfigureAwait(false));
+            var response = await ExecuteAsync(connection,
+                RazerHidMappingProtocol.GetButtonList(), cancellationToken).ConfigureAwait(false);
+            // The middleware only builds a button list when the reply declares data; a
+            // zero-length success means the firmware stores no table, not that the read failed.
+            return response[6] == 0 ? [] : RazerHidMappingProtocol.ParseButtonList(response);
         }
         catch (Exception exception) when (exception is NotSupportedException or RazerDeviceTimeoutException)
         {

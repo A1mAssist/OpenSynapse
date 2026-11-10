@@ -69,6 +69,22 @@ public sealed class StudioEffectParams
     /// <summary>Starlight max-star density, 1..10.</summary>
     public double Density { get; set; } = 50;
 
+    /// <summary>
+    /// CFireEffect seed/rate. Native defaults are 100/160, Seed 0 maps to 50 and
+    /// Rate below 40 maps to 40; the upper bounds cap the generated frame table.
+    /// </summary>
+    public const int FireSeedMinimum = 1;
+    public const int FireSeedMaximum = 1_000;
+    public const int FireRateMinimum = 40;
+    public const int FireRateMaximum = 1_000;
+    public const int FireDefaultSeed = 100;
+    public const int FireDefaultRate = 160;
+
+    public int FireSeed { get; set; } = FireDefaultSeed;
+
+    /// <summary>CFireEffect frame rate; native frames = Seed * (Rate / 40 + 1).</summary>
+    public int FireRate { get; set; } = FireDefaultRate;
+
     /// <summary>Audio boost, 0.25..4.</summary>
     public double Boost { get; set; } = 1;
 
@@ -170,6 +186,8 @@ public sealed class StudioEffectParams
         Angle = Math.Clamp(Angle, 0, 359);
         Split = Math.Clamp(Split, 0, 100);
         Density = Math.Clamp(Density, 0, 10);
+        FireSeed = Math.Clamp(FireSeed, FireSeedMinimum, FireSeedMaximum);
+        FireRate = Math.Clamp(FireRate, FireRateMinimum, FireRateMaximum);
         Boost = Math.Clamp(Boost, 0.25, 4);
         Decay = Math.Clamp(Decay, 0.1, 2);
         Blur = Math.Clamp(Blur, 0, 9);
@@ -206,6 +224,8 @@ public sealed class StudioEffectParams
             Angle = Angle,
             Split = Split,
             Density = Density,
+            FireSeed = FireSeed,
+            FireRate = FireRate,
             Boost = Boost,
             AutoBoost = AutoBoost,
             Decay = Decay,

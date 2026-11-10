@@ -54,16 +54,10 @@ public sealed partial class RazerHidDeviceViewModel
             return null;
         }
 
-        if (buttonId is 4 or 5)
-        {
-            return new MacroInput
-            {
-                Kind = MacroInputKind.MouseButton,
-                MouseButton = buttonId,
-            };
-        }
-
-        return IsNagaMouse ? RazerNagaSideButtonResolver.Resolve(buttonId) : null;
+        return RazerMouseMacroTriggerResolver.Resolve(
+            Connection.Definition.ProductId,
+            buttonId,
+            IsNagaMouse);
     }
 
     private async Task PersistMappingProfileAsync(

@@ -14,6 +14,8 @@ internal interface IRazerMxicHeadsetTransport : IAsyncDisposable
         byte[] report,
         byte[] expectedHeader,
         CancellationToken cancellationToken);
+
+    Task<byte?> SendAndReadStatusAsync(byte[] report, CancellationToken cancellationToken);
 }
 
 internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
@@ -70,6 +72,27 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
         byte[] expectedHeader,
         CancellationToken cancellationToken) =>
         ExecuteAsync(report, expectedHeader, null, cancellationToken);
+
+    public async Task<byte?> SendAndReadStatusAsync(
+        byte[] report,
+        CancellationToken cancellationToken)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            while (_reports.Reader.TryRead(out _))
+            {
+            }
+
+            await SendReportAsync(report, cancellationToken).ConfigureAwait(false);
+            return await ReadControlStatusAsync(report[0], cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
 
     /// <summary>
     /// Sends a report and returns the first reply that satisfies <paramref name="matches"/>.
@@ -235,6 +258,32 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
         }
 
         return null;
+    }
+
+    private async Task<byte?> ReadControlStatusAsync(
+        byte reportId,
+        CancellationToken cancellationToken)
+    {
+        if (!_useControlStatusReport)
+        {
+            return null;
+        }
+
+        var candidate = new byte[_inputReportLength];
+        candidate[0] = reportId;
+        if (!await Task.Run(
+                () => NativeMethods.HidD_GetInputReport(
+                    _stream.SafeFileHandle,
+                    candidate,
+                    candidate.Length),
+                cancellationToken).ConfigureAwait(false))
+        {
+            return null;
+        }
+
+        // HidD_GetInputReport returns the report id followed by the payload. Synapse
+        // strips the id and uses the next byte as the STATUS_OK/STATUS_FAIL flag.
+        return candidate.Length > 1 ? candidate[1] : null;
     }
 
     private static bool TryMatch(

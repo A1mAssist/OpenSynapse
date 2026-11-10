@@ -77,6 +77,8 @@ public sealed partial class StudioEffectInspector : UserControl
         StudioParameterField.CenterPoint => BuildCenterPointRow(),
         StudioParameterField.Counterclockwise => BuildToggle("LightingStudioParamCounterclockwise", nameof(StudioEffectParams.Counterclockwise)),
         StudioParameterField.Density => BuildRangeSlider("LightingStudioParamDensity", nameof(StudioEffectParams.Density), descriptor.Ranges[StudioParameterField.Density]),
+        StudioParameterField.Seed => BuildRangeSlider("LightingStudioParamSeed", nameof(StudioEffectParams.FireSeed), descriptor.Ranges[StudioParameterField.Seed], new RoundedIntConverter()),
+        StudioParameterField.Rate => BuildRangeSlider("LightingStudioParamRate", nameof(StudioEffectParams.FireRate), descriptor.Ranges[StudioParameterField.Rate], new RoundedIntConverter()),
         StudioParameterField.Boost => BuildRangeSlider("LightingStudioParamBoost", nameof(StudioEffectParams.Boost), descriptor.Ranges[StudioParameterField.Boost]),
         StudioParameterField.AutoBoost => BuildToggle("LightingStudioParamAutoBoost", nameof(StudioEffectParams.AutoBoost)),
         StudioParameterField.Decay => BuildRangeSlider("LightingStudioParamDecay", nameof(StudioEffectParams.Decay), descriptor.Ranges[StudioParameterField.Decay]),

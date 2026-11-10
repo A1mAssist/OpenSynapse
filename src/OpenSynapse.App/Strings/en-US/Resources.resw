@@ -319,7 +319,7 @@
     <value>App bindings</value>
   </data>
   <data name="Loc_0EAF4E604F.Text" xml:space="preserve">
-    <value>Switches to the current profile when an app moves to the foreground.</value>
+    <value>Switches to the current profile when an app moves to the foreground. For example, create Game and Daily profiles, then bind the game executable to Game; bind the actual game process, not its launcher.</value>
   </data>
   <data name="Loc_EB8ED8250D.Content" xml:space="preserve">
     <value>Add app</value>
@@ -2666,6 +2666,7 @@
   <data name="RazerHeadsetThxContainerMissing" xml:space="preserve"><value>The headset audio endpoint container ID is not available, so THX cannot be addressed. Reconnect the headset and refresh.</value></data>
   <data name="RazerHeadsetThxHelperFailed" xml:space="preserve"><value>The THX helper process could not be started. Reopen the app and try again.</value></data>
   <data name="RazerHeadsetThxFailed" xml:space="preserve"><value>The THX component did not accept this change. Install or repair the THX package, then refresh.</value></data>
+  <data name="RazerHeadsetThxOperationRejected" xml:space="preserve"><value>THX is installed, but the helper rejected this change. Try another preset or reconnect the headset.</value></data>
   <data name="RazerHeadsetPresetDefault" xml:space="preserve"><value>Default</value></data>
   <data name="RazerHeadsetPresetGame" xml:space="preserve"><value>Game</value></data>
   <data name="RazerHeadsetPresetMusic" xml:space="preserve"><value>Music</value></data>
@@ -2683,6 +2684,7 @@
   <data name="RazerHeadsetAncOn" xml:space="preserve"><value>On</value></data>
   <data name="RazerHeadsetAncAmbient" xml:space="preserve"><value>Ambient</value></data>
   <data name="RazerHeadsetReadFailed" xml:space="preserve"><value>Read failed; the device did not respond.</value></data>
+  <data name="RazerHeadsetReadFailedDetail" xml:space="preserve"><value>Read failed: {0}</value></data>
   <data name="RazerKeyboardCategory" xml:space="preserve"><value>Gaming keyboard</value></data>
   <data name="RazerGamepadCategory" xml:space="preserve"><value>Gamepad</value></data>
   <data name="RazerGamepadLeftStick" xml:space="preserve"><value>Left stick</value></data>
@@ -3171,7 +3173,7 @@
   <data name="HueLightsHelp" xml:space="preserve"><value>Lists the lights on the Hue bridge. Toggle them, set brightness, or apply a color to the selected light; changes are sent when you click Apply.</value></data>
   <data name="RazerHidKrakenLightingHelp" xml:space="preserve"><value>Set the Kraken lighting effect, primary/secondary colors, and brightness; click Apply lighting to write them to the device.</value></data>
   <data name="BlackSharkBatteryHelp" xml:space="preserve"><value>Shows the headset's reported battery level and charging state; read-only.</value></data>
-  <data name="BlackSharkThxHelp" xml:space="preserve"><value>Turns THX Spatial Audio on the headset on or off; Save writes it to the device.</value></data>
+  <data name="BlackSharkThxHelp" xml:space="preserve"><value>Turns THX Spatial Audio on the headset on or off; Save writes it to the device. It does not change the Windows output format or left/right channels; if stereo sounds wrong, check the default device and output format in Windows sound settings.</value></data>
   <data name="BlackSharkSidetoneHelp" xml:space="preserve"><value>Sets how much of your microphone is fed back into the headset (0–15); Save applies it.</value></data>
   <data name="BlackSharkGameChatHelp" xml:space="preserve"><value>Balances game audio against voice chat; Save writes the mix to the headset.</value></data>
   <data name="BlackSharkAncHelp" xml:space="preserve"><value>Selects the active noise cancellation mode and level; Save writes it to the headset.</value></data>
@@ -3391,6 +3393,8 @@
   <data name="LightingStudioParamCenterCol" xml:space="preserve"><value>Column</value></data>
   <data name="LightingStudioParamCounterclockwise" xml:space="preserve"><value>Inward (counterclockwise)</value></data>
   <data name="LightingStudioParamDensity" xml:space="preserve"><value>Density</value></data>
+  <data name="LightingStudioParamSeed" xml:space="preserve"><value>Seed</value></data>
+  <data name="LightingStudioParamRate" xml:space="preserve"><value>Rate</value></data>
   <data name="LightingStudioParamBoost" xml:space="preserve"><value>Boost</value></data>
   <data name="LightingStudioParamAutoBoost" xml:space="preserve"><value>Auto boost</value></data>
   <data name="LightingStudioParamDecay" xml:space="preserve"><value>Decay</value></data>
@@ -3472,6 +3476,8 @@
   <data name="RazerMappingMacroPlaybackOnce" xml:space="preserve"><value>Run once</value></data>
   <data name="RazerMappingMacroPlaybackRepeat" xml:space="preserve"><value>Repeat N times</value></data>
   <data name="RazerMappingMacroPlaybackHold" xml:space="preserve"><value>Repeat while held</value></data>
+  <data name="RazerMappingMacroTriggerHold" xml:space="preserve"><value>Hold</value></data>
+  <data name="RazerMappingMacroPlaybackHoldRepeat" xml:space="preserve"><value>Hold to loop</value></data>
   <data name="RazerMappingMacroPlaybackToggle" xml:space="preserve"><value>Press to start / stop</value></data>
   <data name="RazerMappingMacroPlaybackSequence" xml:space="preserve"><value>Run one step per press</value></data>
   <data name="RazerMappingSoftwareMacroHint" xml:space="preserve"><value>Runs in OpenSynapse and stops working when the app is closed.</value></data>

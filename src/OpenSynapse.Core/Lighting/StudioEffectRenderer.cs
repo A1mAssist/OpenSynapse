@@ -1,6 +1,6 @@
 namespace OpenSynapse.Core.Lighting;
 
-/// <summary>Per-frame inputs that are not part of the serialized effect parameters.</summary>
+/// <summary>Per-frame inputs; FireSeed/FireRate override the serialized Fire values.</summary>
 /// <param name="AudioLevel">Normalized 0..1 audio level.</param>
 /// <param name="ScreenSampler">
 /// Samples the screen for one matrix cell. Arguments are (column, row); the
@@ -61,8 +61,8 @@ public static partial class StudioEffectRenderer
                 rows,
                 columns,
                 time,
-                input.FireSeed ?? FireDefaultSeed,
-                input.FireRate ?? FireDefaultRate),
+                input.FireSeed ?? parameters.FireSeed,
+                input.FireRate ?? parameters.FireRate),
             StudioEffectKind.Reactive => RenderReactive(parameters, rows, columns, time),
             StudioEffectKind.Ripple => RenderRipple(parameters, rows, columns, time),
             StudioEffectKind.Starlight => RenderStarlight(parameters, rows, columns, time, input.StarlightSeed),

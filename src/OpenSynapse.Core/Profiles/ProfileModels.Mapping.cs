@@ -37,10 +37,11 @@ public sealed class ButtonMappingProfile
         ValidateFiniteRange(DpiClutchY, 100, 30_000, nameof(DpiClutchY));
         MouseProfileSettings.ValidateRange(MacroPlaybackIndex, 0, 4, nameof(MacroPlaybackIndex));
         MouseProfileSettings.ValidateRange(MacroTargetIndex, 0, 1, nameof(MacroTargetIndex));
+        // 0..3 keep their original order; 4 is HoldRepeat.
         MouseProfileSettings.ValidateRange(
             SoftwareTriggerModeIndex,
             0,
-            3,
+            4,
             nameof(SoftwareTriggerModeIndex));
         ValidateFiniteRange(MacroRepeatCount, 1, byte.MaxValue, nameof(MacroRepeatCount));
         MouseProfileSettings.ValidateRange(

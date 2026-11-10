@@ -301,7 +301,8 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
 
     public IReadOnlyList<string> SoftwareTriggerOptions => AppStrings.Texts(
         "RazerMappingMacroPlaybackOnce", "RazerMappingMacroPlaybackToggle",
-        "RazerMappingMacroPlaybackHold", "RazerMappingMacroPlaybackSequence");
+        "RazerMappingMacroTriggerHold", "RazerMappingMacroPlaybackSequence",
+        "RazerMappingMacroPlaybackHoldRepeat");
 
     public int SoftwareTriggerModeIndex
     {
