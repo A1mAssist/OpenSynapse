@@ -827,7 +827,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
 
             ErrorText = state.Errors.Count > 0 && !HasAnyValue(state) && !_hasLighting
-                ? AppStrings.FormatText("RazerHeadsetReadFailedDetail", state.Errors[0])
+                ? LocalizeHeadsetReadFailure(state.Errors[0])
                 : string.Empty;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -835,7 +835,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         }
         catch (Exception exception) when (IsExpectedException(exception))
         {
-            ErrorText = exception.Message;
+            ErrorText = LocalizeHeadsetReadFailure(exception.Message);
         }
         finally
         {
@@ -1547,6 +1547,15 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         }
         if (state.AncLevel is byte level) AncLevel = level;
     }
+
+    private static string LocalizeHeadsetReadFailure(string raw) =>
+        raw.Contains("does not support seeking", StringComparison.OrdinalIgnoreCase) ||
+        raw.Contains("does not support", StringComparison.OrdinalIgnoreCase) ||
+        raw.Contains("no matching response", StringComparison.OrdinalIgnoreCase) ||
+        raw.Contains("timed out", StringComparison.OrdinalIgnoreCase) ||
+        raw.Contains("busy", StringComparison.OrdinalIgnoreCase)
+            ? AppStrings.Text("RazerHeadsetTransportUnavailable")
+            : AppStrings.Text("RazerHeadsetReadFailed");
 
     private static bool HasAnyValue(RazerHeadsetAudioState state) =>
         state.Firmware is not null || state.AncState is not null ||
