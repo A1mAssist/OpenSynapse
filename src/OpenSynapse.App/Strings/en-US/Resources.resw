@@ -1702,6 +1702,8 @@
   <data name="BladeLogoPowerProfileLabel.Text" xml:space="preserve"><value>Logo power profile</value></data>
   <data name="Text_046A57B8" xml:space="preserve"><value>Keyboard device</value></data>
   <data name="DiagnosticsReportTitle" xml:space="preserve"><value>OpenSynapse diagnostics</value></data>
+  <data name="DiagnosticsReportGenerated" xml:space="preserve"><value>Generated: {0}</value></data>
+  <data name="DiagnosticsReportVersion" xml:space="preserve"><value>Version: {0}</value></data>
   <data name="DiagnosticsReportDeviceRefresh" xml:space="preserve"><value>Device refresh: {0}</value></data>
   <data name="DiagnosticsReportDeviceTelemetry" xml:space="preserve"><value>Device telemetry: {0}</value></data>
   <data name="Text_07BF2232" xml:space="preserve"><value>Downloading update</value></data>

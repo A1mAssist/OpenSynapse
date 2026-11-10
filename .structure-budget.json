@@ -258,7 +258,7 @@
     },
     {
       "path": "src/OpenSynapse.App/ViewModels/DiagnosticsWorkspace.cs",
-      "maxLines": 266,
+      "maxLines": 273,
       "maxPublicMembers": 2
     },
     {
