@@ -6,6 +6,7 @@ using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Macros;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Sensors;
+using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
@@ -135,9 +136,17 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
             productId: 0x00B8,
             deviceKind: RazerMappingDeviceKind.Mouse,
             localMacros: _localMacros,
-            softwareTriggerResolver: buttonId => buttonId is 4 or 5
-                ? new MacroInput { Kind = MacroInputKind.MouseButton, MouseButton = buttonId }
-                : null,
+            softwareTriggerResolver: buttonId =>
+                buttonId is 4 or 5
+                    ? new MacroInput { Kind = MacroInputKind.MouseButton, MouseButton = buttonId }
+                    : RazerPrivateKeyCatalog.IsPrivate(0x00B8, buttonId)
+                        ? new MacroInput
+                        {
+                            Kind = MacroInputKind.RazerKey,
+                            DeviceId = 0x00B8,
+                            RazerKeyCode = buttonId,
+                        }
+                        : null,
             softwareTriggerBinder: _softwareMacroBinder,
             afterApplyAsync: PersistMappingProfileAsync);
 
