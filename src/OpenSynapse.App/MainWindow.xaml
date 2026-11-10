@@ -16,8 +16,8 @@
             <Image.Source><SvgImageSource UriSource="ms-appx:///Assets/OpenSynapseLogo.svg" /></Image.Source>
           </Image>
           <StackPanel Spacing="0" VerticalAlignment="Center">
-            <TextBlock Text="OpenSynapse" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
-            <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Text="LOCAL DEVICE CONTROL" FontFamily="Cascadia Mono,Consolas" FontSize="8" Foreground="{StaticResource MutedBrush}" CharacterSpacing="70" /><TextBlock x:Name="LiteModeBadge" Text="LITE" Visibility="Collapsed" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="8" FontWeight="SemiBold" CharacterSpacing="100" Foreground="{StaticResource AccentBrush}" AutomationProperties.Name="Lite 模式" /></StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Text="OpenSynapse" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" /><TextBlock x:Name="LiteModeBadge" Text="LITE" Visibility="Collapsed" VerticalAlignment="Bottom" Margin="0,0,0,2" FontFamily="Cascadia Mono,Consolas" FontSize="8" FontWeight="SemiBold" CharacterSpacing="100" Foreground="{StaticResource AccentBrush}" AutomationProperties.Name="Lite 模式" /></StackPanel>
+            <TextBlock Text="LOCAL DEVICE CONTROL" FontFamily="Cascadia Mono,Consolas" FontSize="8" Foreground="{StaticResource MutedBrush}" CharacterSpacing="70" />
           </StackPanel>
         </StackPanel>
       </Grid>
