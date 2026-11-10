@@ -10,6 +10,10 @@ OpenSynapse is licensed under AGPL-3.0-only. By submitting a contribution, you a
 
 If you own a device that needs new or additional support, read [docs/DEVICE_ADAPTATION.md](docs/DEVICE_ADAPTATION.md) and use the [device support issue form](https://github.com/A1mAssist/OpenSynapse/issues/new?template=device-support.yml). The top of the guide is a three-step owner checklist; the lower sections are maintainer reference.
 
+### Protocol verification
+
+Before changing a Razer capability, report, parser, or macro, lighting, battery, or mapping behavior, read the local extracted JS bundle for the device PID under `artifacts/razer-mw-full-cdn/bundles/<PID>/`. Check the device-level `main*.js` (`runtimeData`, `deviceUI`, `useFeature`), `onLoad*.js`, and the branch that loads any shared chunk. A shared chunk present in the bundle does not mean that device enables the capability. Record the PID, files, fields or branch checked, and whether real hardware verified the change.
+
 ## What belongs in Git
 
 Commit only files needed to build, test, document, or license the project:
