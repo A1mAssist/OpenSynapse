@@ -43,7 +43,6 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     private Rect _lastStatusRect;
     private TaskbarStatusSnapshot _snapshot = new(null, null);
     private string _automationText = string.Empty;
-    private bool _visible;
     private bool _themeDark = true;
     private bool _attachFailed;
     private bool _contentAvailable;
@@ -125,13 +124,17 @@ public sealed partial class TaskbarStatusWindow : IDisposable
 
     public void Hide()
     {
-        _contentAvailable = false;
-        _visible = false;
         _layoutFailures = 0;
         if (_statusWindow != IntPtr.Zero)
         {
             ShowWindow(_statusWindow, SwHide);
         }
+    }
+
+    public void Clear()
+    {
+        _contentAvailable = false;
+        Hide();
     }
 
     public void Dispose()
@@ -263,7 +266,6 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             DestroyWindow(_statusWindow);
             _statusWindow = IntPtr.Zero;
         }
-        _visible = false;
         _lastStatusRect = default;
     }
 
@@ -287,6 +289,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         _layoutFailures = 0;
 
         var rect = new Rect { Left = x, Top = y, Right = x + width, Bottom = y + height };
+        var visible = IsWindowVisible(_statusWindow);
         var changed = rect.Left != _lastStatusRect.Left ||
                       rect.Top != _lastStatusRect.Top ||
                       rect.Right != _lastStatusRect.Right ||
@@ -294,7 +297,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         if (changed)
         {
             var flags = SwpNoActivate | SwpNoZOrder;
-            if (!_visible) flags |= SwpShowWindow;
+            if (!visible) flags |= SwpShowWindow;
             if (!SetWindowPos(
                     _statusWindow,
                     IntPtr.Zero,
@@ -308,14 +311,12 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             }
 
             _lastStatusRect = rect;
-            _visible = true;
             return;
         }
 
-        if (!_visible)
+        if (!visible)
         {
             ShowWindow(_statusWindow, SwShowNoActivate);
-            _visible = true;
         }
     }
 
