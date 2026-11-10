@@ -1195,7 +1195,7 @@
                             <TextBlock local:Localized.Uid="BladeFanFixedAutoApplyHint" Text="松开滑块立即应用所选转速" Foreground="{StaticResource MutedBrush}" FontSize="11" />
                             <Grid ColumnDefinitions="36,*,36" ColumnSpacing="6">
                               <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center" IsHitTestVisible="False">
-                                <TextBlock Text="❋" FontFamily="Segoe UI Symbol" FontSize="18" Foreground="#C46A33" HorizontalAlignment="Center" />
+                                <Image Width="18" Height="18" HorizontalAlignment="Center" Stretch="Uniform"><Image.Source><SvgImageSource UriSource="ms-appx:///Assets/SynapseFanLow.svg" /></Image.Source></Image>
                                 <TextBlock local:Localized.Uid="BladeFanSliderLow" Text="低" Foreground="{StaticResource MutedBrush}" FontSize="10" HorizontalAlignment="Center" />
                               </StackPanel>
                               <Grid x:Name="BladeFanSliderVisual" Grid.Column="1" Height="66" SizeChanged="BladeFanFixedRpmSliderVisualSizeChanged">
@@ -1227,7 +1227,7 @@
                               </Grid>
                               <StackPanel Grid.Column="2" Spacing="2" VerticalAlignment="Center" IsHitTestVisible="False">
                                 <StackPanel Orientation="Horizontal" Spacing="1" HorizontalAlignment="Center">
-                                  <TextBlock Text="❋" FontFamily="Segoe UI Symbol" FontSize="18" Foreground="#5B7FD1" />
+                                  <Image Width="18" Height="18" Stretch="Uniform"><Image.Source><SvgImageSource UriSource="ms-appx:///Assets/SynapseFanHigh.svg" /></Image.Source></Image>
                                   <Path Data="M0,0 L4,0 M0,3 L5,3 M0,6 L4,6" Stroke="#5B7FD1" StrokeThickness="1" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <TextBlock local:Localized.Uid="BladeFanSliderHigh" Text="高" Foreground="{StaticResource MutedBrush}" FontSize="10" HorizontalAlignment="Center" />
