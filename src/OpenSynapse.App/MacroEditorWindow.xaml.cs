@@ -156,7 +156,7 @@ public sealed partial class MacroEditorWindow : Window
         var logicalWorkAreaWidth = workArea.Width / scale;
         var logicalWorkAreaHeight = workArea.Height / scale;
         var width = (int)Math.Round(Math.Min(1080, logicalWorkAreaWidth) * scale);
-        var height = (int)Math.Round(Math.Min(760, logicalWorkAreaHeight) * scale);
+        var height = (int)Math.Round(Math.Min(960, logicalWorkAreaHeight) * scale);
         AppWindow.MoveAndResize(new RectInt32(
             workArea.X + Math.Max(0, (workArea.Width - width) / 2),
             workArea.Y + Math.Max(0, (workArea.Height - height) / 2),

@@ -44,11 +44,17 @@
 
         <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="0" MinHeight="120" Margin="0,10,0,0">
           <Grid RowDefinitions="*,Auto">
-            <Grid Grid.Row="0" MinHeight="120">
-              <ListView x:Name="MacroStepList" ItemsSource="{Binding Macros.Steps}" SelectedItem="{Binding Macros.SelectedStep, Mode=TwoWay}" SelectionMode="Single" Background="Transparent" BorderThickness="0" MinHeight="120" Padding="0,4,0,8" KeyDown="MacroStepListKeyDown">
+            <Grid Grid.Row="0" MinHeight="320">
+              <ListView x:Name="MacroStepList" AutomationProperties.AutomationId="MacroStepList" ItemsSource="{Binding Macros.Steps}" SelectedItem="{Binding Macros.SelectedStep, Mode=TwoWay}" SelectionMode="Single" Background="Transparent" BorderThickness="0" MinHeight="320" Padding="0,4,0,8" KeyDown="MacroStepListKeyDown">
+                <ListView.ItemContainerStyle>
+                  <Style TargetType="ListViewItem">
+                    <Setter Property="MinHeight" Value="0" />
+                    <Setter Property="Padding" Value="0" />
+                  </Style>
+                </ListView.ItemContainerStyle>
                 <ListView.ItemTemplate>
                   <DataTemplate>
-                    <Grid ColumnDefinitions="56,20,Auto,*,Auto,Auto" ColumnSpacing="8" Padding="2,7" Margin="{Binding IndentMargin}">
+                    <Grid ColumnDefinitions="56,20,Auto,*,Auto,Auto" ColumnSpacing="8" Padding="2,2" Margin="{Binding IndentMargin}">
                       <TextBlock Text="{Binding DelayText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
                       <FontIcon Grid.Column="1" Glyph="{Binding StepGlyph}" FontFamily="{StaticResource IconFontFamily}" FontSize="13" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
                       <Border Grid.Column="2" Visibility="{Binding GroupVisibility}" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="3" Padding="5,1" VerticalAlignment="Center">

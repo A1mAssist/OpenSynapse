@@ -54,7 +54,9 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         _getActiveProfile = getActiveProfile;
         _saveProfileAsync = saveProfileAsync;
         _diagnosticLog = diagnosticLog;
-        _macroRuntime = new MacroRuntime(sink: macroInputSink);
+        _macroRuntime = new MacroRuntime(
+            sink: macroInputSink,
+            log: message => _diagnosticLog.TryWrite("macro-input", message));
         _macroRuntime.Error += SetMacroRuntimeError;
     }
 
@@ -1195,7 +1197,7 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
                 cancellationToken: capture.Token);
             if (trigger is null)
             {
-                StatusText = AppStrings.Text("MacroCaptureCanceled");
+                StatusText = AppStrings.Text("MacroCaptureDeviceHint");
                 return;
             }
 
@@ -1248,6 +1250,7 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         }
 
         CancelMacroCapture();
+        var clearedInput = selected.Definition.Trigger?.Input;
         selected.SetTrigger(null);
         MarkMacroDirty(selected);
         if (!await TrySaveMacroProfileAsync(cancellationToken))
@@ -1257,7 +1260,10 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
 
         RefreshMacroRuntime();
         NotifySelectedMacroChanged();
-        StatusText = AppStrings.Text("MacroTriggerCleared");
+        StatusText = AppStrings.Text(clearedInput is { } input &&
+            RazerSoftwareMacroAssignmentPolicy.NeedsOff(input)
+                ? "MacroTriggerClearedRestoreAssignment"
+                : "MacroTriggerCleared");
     }
 
     public Task CaptureMacroPlaybackStartShortcutAsync(CancellationToken cancellationToken = default) =>
