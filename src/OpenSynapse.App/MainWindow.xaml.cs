@@ -79,9 +79,8 @@ public sealed partial class MainWindow : Window
             ?? throw new InvalidOperationException(AppStrings.Text("Text_693F327E"));
         _viewModel.Refresh.SetDeviceWatchActive(false);
         InitializeComponent();
-        // The card needs a real value on first open without delaying the window.
-        _ = _viewModel.CpuPower.RefreshCpuPowerLimitSafelyAsync();
-        _ = _viewModel.CpuCurve.RefreshSafelyAsync();
+        // Lite hides CPU advanced controls; skip startup reads that touch PawnIO/the service.
+        if (!_viewModel.IsLiteMode) { _ = _viewModel.CpuPower.RefreshCpuPowerLimitSafelyAsync(); _ = _viewModel.CpuCurve.RefreshSafelyAsync(); }
         RootNavigationView.DataContext = _viewModel;
         DiagnosticsPage.Host = this;
         SettingsPage.Host = this;
