@@ -303,6 +303,13 @@ internal sealed class BladeViewModel
         }
     }
 
+    internal void SetLogoUnsupported(byte rawMode)
+    {
+        _bladeLogoText = AppStrings.FormatText("BladeLogoUnsupportedMode", $"0x{rawMode:X2}");
+        _bladeLogoIndex = -1;
+        _confirmedBladeLogoIndex = -1;
+    }
+
     private static readonly int[] TimeToDimPresetSeconds = [15, 30, 60, 120];
 
     /// <summary>Preset delays plus the firmware's own value when it is not one of them.</summary>

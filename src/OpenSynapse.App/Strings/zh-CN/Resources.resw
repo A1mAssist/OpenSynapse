@@ -897,6 +897,7 @@
   <data name="DiagnosticPowerModeControl" xml:space="preserve"><value>性能模式控制</value></data>
 <data name="DiagnosticKeyboardEffect" xml:space="preserve"><value>键盘灯效</value></data>
   <data name="DiagnosticBladeLogo" xml:space="preserve"><value>Blade Logo</value></data>
+  <data name="BladeLogoUnsupportedMode" xml:space="preserve"><value>其他效果（{0}）</value></data>
   <data name="DiagnosticMousePollingRate" xml:space="preserve"><value>鼠标轮询率</value></data>
   <data name="DiagnosticMouseIdleTimeout" xml:space="preserve"><value>鼠标空闲休眠</value></data>
   <data name="Text_6D7EF7B5" xml:space="preserve"><value>鼠标 DPI 档位</value></data>
