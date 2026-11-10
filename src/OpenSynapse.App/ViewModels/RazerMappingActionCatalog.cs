@@ -116,7 +116,8 @@ public sealed class RazerViperMappingActionCatalog : IRazerMappingActionCatalog
         RazerHidMappingGroup group,
         IReadOnlyList<RazerHidMacroOption>? macros = null) => group switch
     {
-        RazerHidMappingGroup.Keep or RazerHidMappingGroup.Macro => [],
+        RazerHidMappingGroup.Keep => [],
+        RazerHidMappingGroup.Macro => RazerHidMappingActions.OptionNames(group, macros),
         RazerHidMappingGroup.KeyboardKey or RazerHidMappingGroup.TurboKey =>
             RazerHidMappingActions.OptionNames(group),
         RazerHidMappingGroup.TurboButton => TurboButtonNames(),
@@ -135,9 +136,16 @@ public sealed class RazerViperMappingActionCatalog : IRazerMappingActionCatalog
         RazerHidMacroPlayback macroPlayback = RazerHidMacroPlayback.Once,
         int macroRepeatCount = 1)
     {
-        if (group is RazerHidMappingGroup.Keep or RazerHidMappingGroup.Macro)
+        if (group == RazerHidMappingGroup.Keep)
         {
             return null;
+        }
+
+        if (group == RazerHidMappingGroup.Macro)
+        {
+            return RazerHidMappingActions.CreateAction(
+                group, optionIndex, modifierMask, macros, turboRate, profileId,
+                dpiClutchX, dpiClutchY, macroPlayback, macroRepeatCount);
         }
 
         if (group is RazerHidMappingGroup.KeyboardKey or RazerHidMappingGroup.TurboKey)
@@ -187,7 +195,9 @@ public sealed class RazerViperMappingActionCatalog : IRazerMappingActionCatalog
         RazerHidMappingActions.Describe(functionId, data, macros);
 
     public string DescribeButton(byte buttonId) =>
-        RazerHidMappingActions.DescribeButton(buttonId);
+        RazerPrivateKeyCatalog.IsPrivate(0x00B8, buttonId)
+            ? RazerPrivateKeyCatalog.Describe(0x00B8, buttonId)
+            : RazerHidMappingActions.DescribeButton(buttonId);
 
     private static readonly byte[] TurboButtons = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
