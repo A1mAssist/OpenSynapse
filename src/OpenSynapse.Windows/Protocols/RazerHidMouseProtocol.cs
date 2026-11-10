@@ -377,7 +377,7 @@ internal static class RazerHidMouseProtocol
     /// </summary>
     internal static RazerHidMacroStorageInfo ParseMacroStorageInfo(ReadOnlySpan<byte> response)
     {
-        var arguments = RazerHidStandardProtocol.Arguments(response, 14);
+        var arguments = RazerHidStandardProtocol.RawArguments(response); // some keyboards omit data_size
         return new RazerHidMacroStorageInfo(
             (arguments[0] << 8) | arguments[1],
             (arguments[2] << 8) | arguments[3],

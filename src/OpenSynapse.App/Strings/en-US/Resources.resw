@@ -3070,6 +3070,7 @@
   <data name="BladePerformanceModeHelp" xml:space="preserve"><value>Switching applies the mode and reads it back.</value></data>
   <data name="BladeFanSummaryHelp" xml:space="preserve"><value>Current fan mode, target, and measured speed.</value></data>
   <data name="BladeFanTargetRpmLabel" xml:space="preserve"><value>Target speed</value></data>
+  <data name="BladeFanFixedAutoApplyHint" xml:space="preserve"><value>Applied when you release the slider</value></data>
   <data name="BladeChromaOverride.OffContent" xml:space="preserve"><value>Off</value></data>
   <data name="BladeChromaOverride.OnContent" xml:space="preserve"><value>On</value></data>
   <data name="BladeLightingEnabled.OffContent" xml:space="preserve"><value>Off</value></data>
@@ -3482,6 +3483,7 @@
   <data name="RazerMappingMacroSoftwareUnavailable" xml:space="preserve"><value>This button cannot be used as a software macro trigger.</value></data>
   <data name="RazerMappingCalloutHint" xml:space="preserve"><value>Select a button label beside the device to edit its mapping.</value></data>
   <data name="RazerMappingTitle" xml:space="preserve"><value>Button mapping</value></data>
+  <data name="RazerMappingBusy" xml:space="preserve"><value>Syncing…</value></data>
   <data name="RazerMappingRead" xml:space="preserve"><value>Read</value></data>
   <data name="RazerMappingSave" xml:space="preserve"><value>Save</value></data>
   <data name="RazerMappingLayerNormal" xml:space="preserve"><value>Normal</value></data>

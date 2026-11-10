@@ -42,6 +42,7 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
     private BladeFanCurveEditorViewModel? _bladeFanCurveEditor;
     private int _bladeFanFixedRpm = BladeFanLimits.MinimumRpm;
     private BladeFanControlMode? _pendingMode;
+    private BladeFanMode? _lastTelemetryFanMode;
     private string _bladeFanControlFingerprint = string.Empty;
     private Task? _bladeFanControlCompletion;
 
@@ -186,11 +187,20 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
     }
 
     private BladeFanControlMode StoredBladeFanControlMode =>
-        _editablePerformanceBladeProfile().FanCurve is not null
-            ? BladeFanControlMode.Curve
-            : _editablePerformanceBladeProfile().FanMode is byte rawMode && rawMode == (byte)BladeFanMode.Manual
-                ? BladeFanControlMode.Fixed
-                : BladeFanControlMode.Automatic;
+        _blade._bladeTelemetryFanMode switch
+        {
+            // The device is authoritative. A stale profile must not show Manual while
+            // the firmware is running the fans automatically (or the reverse).
+            BladeFanMode.Automatic => BladeFanControlMode.Automatic,
+            BladeFanMode.Manual => _editablePerformanceBladeProfile().FanCurve is not null
+                ? BladeFanControlMode.Curve
+                : BladeFanControlMode.Fixed,
+            _ => _editablePerformanceBladeProfile().FanCurve is not null
+                ? BladeFanControlMode.Curve
+                : _editablePerformanceBladeProfile().FanMode is byte rawMode && rawMode == (byte)BladeFanMode.Manual
+                    ? BladeFanControlMode.Fixed
+                    : BladeFanControlMode.Automatic,
+        };
 
     /// <summary>
     /// Synapse publishes a separate fixed-speed range per performance mode, so the slider
@@ -328,10 +338,17 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
     /// <summary>Hands the fans back to firmware automatic control.</summary>
     public async Task SelectBladeFanAutomaticModeAsync(CancellationToken cancellationToken = default)
     {
-        _pendingMode = null;
-        await ApplyBladeFanFixedAsync(BladeFanMode.Automatic, null, cancellationToken);
-        RaiseBladeFanModeSelection();
-        OnPropertyChanged(nameof(BladeFanCurveActive));
+        _pendingMode = BladeFanControlMode.Automatic;
+        try
+        {
+            await ApplyBladeFanFixedAsync(BladeFanMode.Automatic, null, cancellationToken);
+        }
+        finally
+        {
+            _pendingMode = null;
+            RaiseBladeFanModeSelection();
+            OnPropertyChanged(nameof(BladeFanCurveActive));
+        }
     }
 
     /// <summary>
@@ -345,10 +362,17 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
             return;
         }
 
-        _pendingMode = null;
-        await ApplyBladeFanFixedAsync(BladeFanMode.Manual, BladeFanFixedRpm, cancellationToken);
-        RaiseBladeFanModeSelection();
-        OnPropertyChanged(nameof(BladeFanCurveActive));
+        _pendingMode = BladeFanControlMode.Fixed;
+        try
+        {
+            await ApplyBladeFanFixedAsync(BladeFanMode.Manual, BladeFanFixedRpm, cancellationToken);
+        }
+        finally
+        {
+            _pendingMode = null;
+            RaiseBladeFanModeSelection();
+            OnPropertyChanged(nameof(BladeFanCurveActive));
+        }
     }
 
     /// <summary>Drops a pending radio selection after the stored profile cleared the curve.</summary>
@@ -619,6 +643,25 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
         OnPropertyChanged(nameof(BladeFanFixedRpmVisibility));
         OnPropertyChanged(nameof(BladeFanCurvePanelVisibility));
         NotifyStateChanged();
+    }
+
+    /// <summary>
+    /// Mirrors the mode and target the firmware reports. The target is only adopted when
+    /// the device first enters Manual, so a telemetry tick cannot pull the slider away
+    /// from a value the user is currently dragging.
+    /// </summary>
+    internal void ObserveFanTelemetry(BladeFanMode mode, int? targetRpm)
+    {
+        var changed = _lastTelemetryFanMode != mode;
+        _lastTelemetryFanMode = mode;
+        if (changed && _pendingMode is null && mode == BladeFanMode.Manual && targetRpm is int rpm)
+        {
+            BladeFanFixedRpm = rpm;
+        }
+        if (changed)
+        {
+            RaiseBladeFanModeSelection();
+        }
     }
 
     private int SnapBladeFanFixedRpm(int value)

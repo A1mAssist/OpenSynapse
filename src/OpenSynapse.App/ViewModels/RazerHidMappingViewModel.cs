@@ -109,8 +109,12 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             OnPropertyChanged(nameof(CanRead));
             OnPropertyChanged(nameof(CanApply));
+            OnPropertyChanged(nameof(BusyVisibility));
+            OnPropertyChanged(nameof(ContentOpacity));
         }
     }
+    public Visibility BusyVisibility => IsBusy ? Visibility.Visible : Visibility.Collapsed;
+    public double ContentOpacity => IsBusy ? 0.55 : 1;
     public bool CanRead => !IsBusy;
     public bool CanApply => !IsBusy && _loaded && Rows.Any(row =>
         row.CanApply &&
