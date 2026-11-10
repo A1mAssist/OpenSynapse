@@ -7,14 +7,17 @@ internal static class RazerValkyrieT3Protocol
     internal const int ReportLength = 64;
     internal const byte ReportId = 7;
 
-    internal static byte[] Create(byte command, ReadOnlySpan<byte> payload)
+    internal static byte[] Create(byte command, ReadOnlySpan<byte> payload) =>
+        Create(0x18, command, payload);
+
+    internal static byte[] Create(byte commandClass, byte command, ReadOnlySpan<byte> payload)
     {
         if (payload.Length > 53) throw new ArgumentOutOfRangeException(nameof(payload));
         var report = new byte[ReportLength];
         report[0] = ReportId;
         report[2] = 1; // Replaced by the serialized transport for each exchange.
         report[6] = (byte)payload.Length;
-        report[7] = 0x18;
+        report[7] = commandClass;
         report[8] = command;
         payload.CopyTo(report.AsSpan(9));
         for (var i = 3; i < 62; i++) report[62] ^= report[i];

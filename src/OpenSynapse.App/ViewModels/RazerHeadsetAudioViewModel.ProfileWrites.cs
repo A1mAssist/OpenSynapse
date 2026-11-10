@@ -18,7 +18,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         var preset = ActivePresets[SelectedEqPresetIndex].Value;
         var applied = _connection.Transport switch
         {
-            RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64 =>
+            RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64 or RazerHeadsetAudioTransport.Jolie64 =>
                 await RunMxicWriteAsync((service, token) => service.SetEqPresetAsync(preset, token), cancellationToken),
             RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
                 await RunValkyrieWriteAsync((service, token) => service.SetEqPresetAsync(preset, token), cancellationToken),
@@ -177,11 +177,16 @@ public sealed partial class RazerHeadsetAudioViewModel
     [ProfileSetting("headset.bass", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyBassAsync(CancellationToken cancellationToken = default)
     {
-        if (!IsFeature91) return;
+        if (!IsFeature91 && !IsJolie) return;
         var previous = Bass;
-        if (!await RunWriteAsync(
+        var applied = IsJolie
+            ? await RunMxicWriteAsync(
                 (service, token) => service.SetBassAsync((byte)Math.Round(Bass), token),
-                cancellationToken))
+                cancellationToken)
+            : await RunWriteAsync(
+                (service, token) => service.SetBassAsync((byte)Math.Round(Bass), token),
+                cancellationToken);
+        if (!applied)
         {
             return;
         }
@@ -190,18 +195,30 @@ public sealed partial class RazerHeadsetAudioViewModel
             settings => settings.Bass = (int)Math.Round(Bass),
             settings => settings.Bass = (int)Math.Round(previous),
             () => Bass = previous,
-            token => OpenService().SetBassAsync((byte)Math.Round(previous), token),
+            async token =>
+            {
+                if (IsJolie)
+                {
+                    await using var service = OpenMxicService();
+                    await service.SetBassAsync((byte)Math.Round(previous), token);
+                }
+                else
+                {
+                    await OpenService().SetBassAsync((byte)Math.Round(previous), token);
+                }
+            },
             cancellationToken);
     }
 
     [ProfileSetting("headset.microphone", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyMicrophoneAsync(CancellationToken cancellationToken = default)
     {
+        if (IsJolie) return;
         var previousMuted = MicMuted;
         var previousVolume = MicVolume;
         var applied = _connection.Transport switch
         {
-            RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64 =>
+            RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64 or RazerHeadsetAudioTransport.Jolie64 =>
                 await RunMxicWriteAsync((service, token) => service.SetMicMuteAsync(MicMuted, token), cancellationToken),
             RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
                 await RunValkyrieWriteAsync((service, token) => service.SetMicMuteAsync(MicMuted, token), cancellationToken),
