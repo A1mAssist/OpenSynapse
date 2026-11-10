@@ -242,7 +242,7 @@ internal sealed class BladeDisplayTelemetryReader
                     $"Logo readback mismatch: wrote {mode}, read {actual.CombinedMode}/{actual.PoweredMode}.");
             }
 
-            return actual.CombinedMode;
+            return actual.CombinedMode!.Value;
         }
         catch (Exception exception) when (
             RazerCapabilityClient.IsExpectedHardwareException(exception) || exception is OperationCanceledException)
@@ -318,7 +318,8 @@ internal sealed class BladeDisplayTelemetryReader
         var power = BladeLogoProtocol.ParsePower(powerResponse, profileId);
         var modeResponse = await _client.QueryAsync(
             device, CapabilityIds.LogoModeGet, arguments, cancellationToken);
-        return new BladeLogoState(power, BladeLogoProtocol.ParseMode(modeResponse, profileId));
+        var rawMode = BladeLogoProtocol.ParseModeRaw(modeResponse, profileId);
+        return new BladeLogoState(power, BladeLogoProtocol.MapMode(rawMode), rawMode);
     }
 
     private async Task WriteLogoStateAsync(
@@ -363,11 +364,14 @@ internal sealed class BladeDisplayTelemetryReader
         var profileId = GetLogoProfileId(device);
         try
         {
-            await _client.QueryBuiltRequestAsync(
-                device,
-                CapabilityIds.LogoModeSet,
-                BladeLogoProtocol.CreateSetModeRequest(original.PoweredMode, profileId),
-                CancellationToken.None);
+            if (original.PoweredMode is { } poweredMode)
+            {
+                await _client.QueryBuiltRequestAsync(
+                    device,
+                    CapabilityIds.LogoModeSet,
+                    BladeLogoProtocol.CreateSetModeRequest(poweredMode, profileId),
+                    CancellationToken.None);
+            }
             await _client.QueryBuiltRequestAsync(
                 device,
                 CapabilityIds.LogoPowerSet,
@@ -582,7 +586,8 @@ internal sealed class BladeDisplayTelemetryReader
 
 internal sealed record BladeLogoState(
     bool Powered,
-    BladeLogoMode PoweredMode)
+    BladeLogoMode? PoweredMode,
+    byte RawMode)
 {
-    internal BladeLogoMode CombinedMode => BladeLogoProtocol.Combine(Powered, PoweredMode);
+    internal BladeLogoMode? CombinedMode => BladeLogoProtocol.Combine(Powered, PoweredMode);
 }

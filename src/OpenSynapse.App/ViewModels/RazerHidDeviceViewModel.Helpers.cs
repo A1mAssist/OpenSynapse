@@ -359,7 +359,11 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         RazerHidLightingEffect.SoftwareWave or
         RazerHidLightingEffect.SoftwareFire or
         RazerHidLightingEffect.SoftwareAudioMeter or
-        RazerHidLightingEffect.SoftwareWheel;
+        RazerHidLightingEffect.SoftwareWheel or
+        RazerHidLightingEffect.SoftwareGradient or
+        RazerHidLightingEffect.SoftwareRipple or
+        RazerHidLightingEffect.SoftwareTidal or
+        RazerHidLightingEffect.SoftwareRadiate;
 
     private static RazerHidLightingEffect? SoftwareCounterpart(RazerHidLightingEffect effect) => effect switch
     {

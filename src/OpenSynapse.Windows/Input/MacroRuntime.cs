@@ -10,6 +10,7 @@ internal sealed class MacroRuntime : IDisposable
     private readonly object _gate = new();
     private readonly IMacroInputSink _sink;
     private readonly bool _installInputHooks;
+    private readonly Action<string>? _log;
     private readonly Func<MacroInput, bool> _isPhysicallyDown;
     private readonly Dictionary<InputKey, SuppressedInput> _suppressedInputs = [];
     private readonly HashSet<int> _physicalModifierKeys = [];
@@ -43,11 +44,13 @@ internal sealed class MacroRuntime : IDisposable
 
     internal MacroRuntime(
         Func<MacroInput, bool>? isPhysicallyDown = null,
-        IMacroInputSink? sink = null, bool installInputHooks = true)
+        IMacroInputSink? sink = null, bool installInputHooks = true,
+        Action<string>? log = null)
     {
         _isPhysicallyDown = isPhysicallyDown ?? MacroInputHook.IsPhysicallyDown;
         _sink = sink ?? new WindowsMacroInputSink();
         _installInputHooks = installInputHooks;
+        _log = log;
     }
 
     public event Action<string>? Error;
@@ -1281,7 +1284,7 @@ internal sealed class MacroRuntime : IDisposable
 
         try
         {
-            var hook = new MacroInputHook(HandleInput);
+            var hook = new MacroInputHook(HandleInput, _log);
             hook.Start();
             _hook = hook;
             return true;

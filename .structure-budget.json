@@ -9,7 +9,7 @@
     },
     {
       "path": "src/OpenSynapse.App/ViewModels/RazerHidMappingViewModel.cs",
-      "maxLines": 1010,
+      "maxLines": 1040,
       "maxPublicMembers": 40
     },
     {
@@ -134,7 +134,7 @@
     },
     {
       "path": "src/OpenSynapse.Windows/Input/MacroInputHook.cs",
-      "maxLines": 788
+      "maxLines": 790
     },
     {
       "path": "src/OpenSynapse.Windows/Devices/RazerHidDeviceCatalog.cs",

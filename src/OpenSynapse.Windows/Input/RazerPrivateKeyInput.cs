@@ -20,18 +20,22 @@ internal sealed class RazerPrivateKeyInput : IDisposable
     private const byte DevicePutDownKey = 94;
 
     private readonly Action<MacroInput, bool> _handler;
+    private readonly Action<string>? _log;
     private readonly CancellationTokenSource _stop = new();
     private readonly Dictionary<string, HashSet<int>> _pressed =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly List<FileStream> _streams = [];
+    private readonly HashSet<string> _loggedOpenFailures = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _gate = new();
+    private bool _loggedNoCollections;
     private Task? _completion;
     private bool _started;
     private bool _disposed;
 
-    internal RazerPrivateKeyInput(Action<MacroInput, bool> handler)
+    internal RazerPrivateKeyInput(Action<MacroInput, bool> handler, Action<string>? log = null)
     {
         _handler = handler ?? throw new ArgumentNullException(nameof(handler));
+        _log = log;
     }
 
     public void Start()
@@ -108,7 +112,17 @@ internal sealed class RazerPrivateKeyInput : IDisposable
         var candidates = interfaces
             .Where(IsPrivateCollection)
             .GroupBy(device => device.DevicePath, StringComparer.OrdinalIgnoreCase)
-            .Select(group => group.First());
+            .Select(group => group.First())
+            .ToArray();
+        if (candidates.Length == 0)
+        {
+            if (!_loggedNoCollections)
+            {
+                _loggedNoCollections = true;
+                _log?.Invoke("Razer private key input: no readable VID_1532 collections");
+            }
+            return;
+        }
         var readers = new List<Task>();
         try
         {
@@ -134,10 +148,16 @@ internal sealed class RazerPrivateKeyInput : IDisposable
                     }
                     readers.Add(ReadLoopAsync(device, stream, cancellationToken));
                 }
-                catch
+                catch (Exception exception) when (
+                    exception is Win32Exception or IOException or UnauthorizedAccessException or InvalidOperationException)
                 {
                     // A collection may be present but not readable. Skip it and
                     // keep the other collections on the same device available.
+                    if (_loggedOpenFailures.Add(device.DevicePath))
+                    {
+                        _log?.Invoke(
+                            $"Razer private key input: {device.DevicePath} open failed: {exception.Message}");
+                    }
                 }
             }
 

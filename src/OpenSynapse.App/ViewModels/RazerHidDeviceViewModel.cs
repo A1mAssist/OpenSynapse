@@ -628,15 +628,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
                 .Order()
                 .ToArray() ?? []
             : [])
-        .Concat(SupportsSoftwareLighting
-            ? [
-                RazerHidLightingEffect.SoftwareAudioMeter,
-                RazerHidLightingEffect.SoftwareSpectrum,
-                RazerHidLightingEffect.SoftwareWave,
-                RazerHidLightingEffect.SoftwareFire,
-                RazerHidLightingEffect.SoftwareWheel,
-            ]
-            : [])
+        .Concat(SupportsSoftwareLighting ? SoftwareLightingEffects : [])
         .ToArray();
     public Visibility LightingEffectVisibility => VisibleWhen(LightingEffects.Count > 0);
     public Visibility LightingPowerProfileVisibility => VisibleWhen(LightingZones.Any(zone =>
@@ -751,23 +743,29 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         RazerHidLightingEffect.StarlightSingle or RazerHidLightingEffect.StarlightDual or
         RazerHidLightingEffect.SoftwareAudioMeter or RazerHidLightingEffect.SoftwareSpectrum or
         RazerHidLightingEffect.SoftwareWave or RazerHidLightingEffect.SoftwareFire or
-        RazerHidLightingEffect.SoftwareWheel);
+        RazerHidLightingEffect.SoftwareWheel or RazerHidLightingEffect.SoftwareGradient or
+        RazerHidLightingEffect.SoftwareRipple or RazerHidLightingEffect.SoftwareTidal or
+        RazerHidLightingEffect.SoftwareRadiate);
     public Visibility SecondaryColorVisibility => VisibleWhen(LightingEffects.Contains(SelectedLightingEffect) &&
         SelectedLightingEffect is
         RazerHidLightingEffect.BreathingDual or RazerHidLightingEffect.StarlightDual or
         RazerHidLightingEffect.SoftwareAudioMeter or RazerHidLightingEffect.SoftwareSpectrum or
         RazerHidLightingEffect.SoftwareWave or RazerHidLightingEffect.SoftwareFire or
-        RazerHidLightingEffect.SoftwareWheel);
+        RazerHidLightingEffect.SoftwareWheel or RazerHidLightingEffect.SoftwareGradient or
+        RazerHidLightingEffect.SoftwareRipple or RazerHidLightingEffect.SoftwareTidal or
+        RazerHidLightingEffect.SoftwareRadiate);
     public Visibility TertiaryColorVisibility => VisibleWhen(LightingEffects.Contains(SelectedLightingEffect) &&
         SelectedLightingEffect is
         RazerHidLightingEffect.SoftwareAudioMeter or RazerHidLightingEffect.SoftwareSpectrum or
         RazerHidLightingEffect.SoftwareWave or RazerHidLightingEffect.SoftwareFire or
-        RazerHidLightingEffect.SoftwareWheel);
+        RazerHidLightingEffect.SoftwareWheel or RazerHidLightingEffect.SoftwareRipple or
+        RazerHidLightingEffect.SoftwareTidal or RazerHidLightingEffect.SoftwareRadiate);
     public Visibility LightingSpeedVisibility => VisibleWhen(LightingEffects.Contains(SelectedLightingEffect) &&
         SelectedLightingEffect is
         RazerHidLightingEffect.Reactive or
         RazerHidLightingEffect.StarlightRandom or RazerHidLightingEffect.StarlightSingle or
-        RazerHidLightingEffect.StarlightDual or RazerHidLightingEffect.SoftwareWheel);
+        RazerHidLightingEffect.StarlightDual or RazerHidLightingEffect.SoftwareWheel or
+        RazerHidLightingEffect.SoftwareRipple or RazerHidLightingEffect.SoftwareTidal);
     public byte MaximumLightingSpeed => SelectedLightingEffect == RazerHidLightingEffect.Reactive ? (byte)4 : (byte)3;
     public Visibility LightingDirectionVisibility => VisibleWhen(LightingEffects.Contains(SelectedLightingEffect) &&
         SelectedLightingEffect is

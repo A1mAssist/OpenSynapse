@@ -39,13 +39,25 @@ internal sealed class ChromaBrokerHost : IAsyncDisposable
 
     internal bool IsRunning => _acceptLoop is not null;
     internal bool IsConnected => Volatile.Read(ref _connected) != 0;
+    internal bool IsServingElsewhere { get; private set; }
 
     internal Task StartAsync()
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         if (_acceptLoop is not null) return Task.CompletedTask;
-        _listener = CreateListener();
-        _acceptLoop = AcceptLoopAsync(_listener);
+        try
+        {
+            _listener = CreateListener();
+            _acceptLoop = AcceptLoopAsync(_listener);
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or IOException)
+        {
+            // A previous or elevated instance may still own the machine-wide pipe while
+            // it is handing over. Starting a second broker would fail on the same name.
+            IsServingElsewhere = true;
+            _acceptLoop = Task.CompletedTask;
+            _log?.Invoke($"pipe {_pipeName} is already in use; another instance owns the Chroma broker.");
+        }
         return Task.CompletedTask;
     }
 
