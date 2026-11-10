@@ -18,6 +18,7 @@ public sealed partial class MainWindow
         AppDataPaths.Combine("introduction-v1.done");
     private bool _introductionTransitioning;
     private bool _introductionPendingAfterLaunch;
+    private bool _startupPromptPending = true;
     private int _introductionStep = -1;
     private FrameworkElement? _introductionTarget;
     private IReadOnlyList<IntroductionStep>? _introductionSteps;
@@ -497,11 +498,25 @@ public sealed partial class MainWindow
     {
         if (!_introductionPendingAfterLaunch)
         {
+            TryPromptForStartupUpdate();
             return;
         }
 
         _introductionPendingAfterLaunch = false;
         _ = ShowIntroductionStepAsync(0);
+    }
+
+    private void TryPromptForStartupUpdate()
+    {
+        if (!_startupPromptPending || _introductionPendingAfterLaunch ||
+            _introductionTransitioning ||
+            _introductionStep >= 0 || !AppWindow.IsVisible)
+        {
+            return;
+        }
+
+        _startupPromptPending = false;
+        _ = SettingsPage.PromptForStartupUpdateAsync();
     }
 
     private void RefreshIntroductionLocalization()
