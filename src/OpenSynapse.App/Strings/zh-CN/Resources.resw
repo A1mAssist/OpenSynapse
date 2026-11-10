@@ -420,8 +420,8 @@
     <comment>应用绑定</comment>
   </data>
   <data name="Loc_0EAF4E604F.Text" xml:space="preserve">
-    <value>应用进入前台时自动切换到当前配置。</value>
-    <comment>应用进入前台时自动切换到当前配置。</comment>
+    <value>应用进入前台时自动切换到当前配置。例如新建“游戏”和“日常”两套配置，再把游戏 exe 绑定到“游戏”；绑定的应是实际运行的游戏程序，不是启动器。</value>
+    <comment>应用进入前台时自动切换到当前配置。例如新建“游戏”和“日常”两套配置，再把游戏 exe 绑定到“游戏”；绑定的应是实际运行的游戏程序，不是启动器。</comment>
   </data>
   <data name="Loc_EB8ED8250D.Content" xml:space="preserve">
     <value>添加应用</value>
@@ -3096,6 +3096,7 @@
   <data name="RazerHeadsetThxContainerMissing" xml:space="preserve"><value>没有拿到耳机音频端点的容器 ID，无法定位 THX。重新连接耳机后刷新。</value></data>
   <data name="RazerHeadsetThxHelperFailed" xml:space="preserve"><value>THX 辅助进程启动失败。重新打开应用后再试。</value></data>
   <data name="RazerHeadsetThxFailed" xml:space="preserve"><value>THX 组件没有接受这次修改。重新安装 THX 组件后刷新。</value></data>
+  <data name="RazerHeadsetThxOperationRejected" xml:space="preserve"><value>THX 组件已安装，但辅助进程拒绝了这次修改。请换一个预设或重新连接耳机。</value></data>
   <data name="RazerHeadsetPresetDefault" xml:space="preserve"><value>默认</value></data>
   <data name="RazerHeadsetPresetGame" xml:space="preserve"><value>游戏</value></data>
   <data name="RazerHeadsetPresetMusic" xml:space="preserve"><value>音乐</value></data>
@@ -3113,6 +3114,7 @@
   <data name="RazerHeadsetAncOn" xml:space="preserve"><value>开启</value></data>
   <data name="RazerHeadsetAncAmbient" xml:space="preserve"><value>环境音</value></data>
   <data name="RazerHeadsetReadFailed" xml:space="preserve"><value>读取失败，设备没有响应。</value></data>
+  <data name="RazerHeadsetReadFailedDetail" xml:space="preserve"><value>读取失败：{0}</value></data>
   <data name="RazerKeyboardCategory" xml:space="preserve"><value>游戏键盘</value></data>
   <data name="RazerGamepadCategory" xml:space="preserve"><value>游戏手柄</value></data>
   <data name="RazerGamepadLeftStick" xml:space="preserve"><value>左摇杆</value></data>
@@ -3601,7 +3603,7 @@
   <data name="HueLightsHelp" xml:space="preserve"><value>列出 Hue 桥上的灯，可开关、调亮度，或选中一盏灯应用颜色；点“应用”后发送到桥。</value></data>
   <data name="RazerHidKrakenLightingHelp" xml:space="preserve"><value>设置 Kraken 的灯效、主色/副色和亮度，点“应用灯效”后写入设备。</value></data>
   <data name="BlackSharkBatteryHelp" xml:space="preserve"><value>只读显示耳机报告的电量和充电状态。</value></data>
-  <data name="BlackSharkThxHelp" xml:space="preserve"><value>开关耳机的 THX Spatial Audio，保存后写入设备。</value></data>
+  <data name="BlackSharkThxHelp" xml:space="preserve"><value>开关耳机的 THX Spatial Audio，保存后写入设备。它只影响 THX 空间音效，不改变 Windows 的默认输出格式或左右声道；若立体声异常，请检查 Windows 声音设置中的输出格式与默认设备。</value></data>
   <data name="BlackSharkSidetoneHelp" xml:space="preserve"><value>设置麦克风回送到耳机的侧音强度（0–15），保存后生效。</value></data>
   <data name="BlackSharkGameChatHelp" xml:space="preserve"><value>调整游戏声与语音通话的混合比例，保存后写入耳机。</value></data>
   <data name="BlackSharkAncHelp" xml:space="preserve"><value>选择主动降噪模式并设置强度，保存后写入耳机。</value></data>
@@ -3821,6 +3823,8 @@
   <data name="LightingStudioParamCenterCol" xml:space="preserve"><value>列</value></data>
   <data name="LightingStudioParamCounterclockwise" xml:space="preserve"><value>向内（逆时针）</value></data>
   <data name="LightingStudioParamDensity" xml:space="preserve"><value>密度</value></data>
+  <data name="LightingStudioParamSeed" xml:space="preserve"><value>种子</value></data>
+  <data name="LightingStudioParamRate" xml:space="preserve"><value>速率</value></data>
   <data name="LightingStudioParamBoost" xml:space="preserve"><value>增强</value></data>
   <data name="LightingStudioParamAutoBoost" xml:space="preserve"><value>自动增强</value></data>
   <data name="LightingStudioParamDecay" xml:space="preserve"><value>衰减</value></data>
@@ -3902,6 +3906,8 @@
   <data name="RazerMappingMacroPlaybackOnce" xml:space="preserve"><value>执行一次</value></data>
   <data name="RazerMappingMacroPlaybackRepeat" xml:space="preserve"><value>重复 N 次</value></data>
   <data name="RazerMappingMacroPlaybackHold" xml:space="preserve"><value>按住循环</value></data>
+  <data name="RazerMappingMacroTriggerHold" xml:space="preserve"><value>按住</value></data>
+  <data name="RazerMappingMacroPlaybackHoldRepeat" xml:space="preserve"><value>按住循环</value></data>
   <data name="RazerMappingMacroPlaybackToggle" xml:space="preserve"><value>按一下开始 / 再按停止</value></data>
   <data name="RazerMappingMacroPlaybackSequence" xml:space="preserve"><value>每次执行下一步</value></data>
   <data name="RazerMappingSoftwareMacroHint" xml:space="preserve"><value>由 OpenSynapse 执行，软件关闭后不生效。</value></data>

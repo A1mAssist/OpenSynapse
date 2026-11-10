@@ -56,6 +56,10 @@ public static partial class RazerMappingBundleParser
         """\{buttonKey:"(?<key>[^"]+)"(?:[^{}]|\{[^{}]*\})*\}""",
         RegexOptions.CultureInvariant);
 
+    private static readonly Regex InputIdObjectRegex = new(
+        """\{inputID:\s*"(?<input>[^"]+)"(?:[^{}]|\{[^{}]*\})*\}""",
+        RegexOptions.CultureInvariant);
+
     private static readonly Regex CounterRegex = new(
         """counter:\s*(?:"(?<text>[^"]*)"|(?<number>-?\d+))""",
         RegexOptions.CultureInvariant);
@@ -109,8 +113,8 @@ public static partial class RazerMappingBundleParser
             ReadPositive(CanvasHeightRegex, mainJs) ?? DefaultImageHeight;
         var dotRadius = ReadPositive(DotRadiusRegex, canvasText) ??
             ReadPositive(DotRadiusRegex, mainJs) ?? DefaultDotRadius;
-        var buttonScope = FindButtonListScope(mainJs);
-        var buttons = ParseButtonObjects(buttonScope);
+        var (buttonScope, includeInputIdOnly) = FindButtonListScope(mainJs);
+        var buttons = ParseButtonObjects(buttonScope, includeInputIdOnly);
         var explicitButtonIds = ParseExplicitButtonIds(mainJs);
         var keyIds = ParseKeyIds(mainJs, buttons);
         var anchors = new List<RazerMappingBundleAnchor>();
@@ -301,7 +305,7 @@ public static partial class RazerMappingBundleParser
         return null;
     }
 
-    private static List<ButtonObject> ParseButtonObjects(string text)
+    private static List<ButtonObject> ParseButtonObjects(string text, bool includeInputIdOnly)
     {
         var buttons = new List<ButtonObject>();
         var seenOffsets = new HashSet<int>();
@@ -320,6 +324,26 @@ public static partial class RazerMappingBundleParser
                 MatchText(match.Value, ButtonPosRegex),
                 MatchInt(match.Value, KeyNumberRegex),
                 MatchInt(match.Value, FwIdRegex)));
+        }
+
+        if (includeInputIdOnly)
+        {
+            foreach (Match match in InputIdObjectRegex.Matches(text))
+            {
+                if (!seenOffsets.Add(match.Index))
+                {
+                    continue;
+                }
+
+                buttons.Add(new ButtonObject(
+                    match.Groups["key"].Value,
+                    MatchText(match.Value, CounterRegex),
+                    MatchByte(match.Value, HidRegex),
+                    MatchText(match.Value, InputIdRegex),
+                    MatchText(match.Value, ButtonPosRegex),
+                    MatchInt(match.Value, KeyNumberRegex),
+                    MatchInt(match.Value, FwIdRegex)));
+            }
         }
 
         return buttons;
@@ -373,7 +397,8 @@ public static partial class RazerMappingBundleParser
                 continue;
             }
 
-            names.TryAdd(buttonId, DisplayName(button.Key));
+            names.TryAdd(buttonId, DisplayName(
+                string.IsNullOrEmpty(button.Key) ? button.InputId ?? string.Empty : button.Key));
         }
 
         return names;
@@ -385,7 +410,7 @@ public static partial class RazerMappingBundleParser
     {
         "LeftClick" => 0x01,
         "RightClick" => 0x02,
-        "ScrollClick" or "MiddleClick" => 0x03,
+        "ScrollClick" or "MiddleClick" or "ScrollButton" => 0x03,
         "MouseButton4" or "Button4" => 0x04,
         "MouseButton5" or "Button5" => 0x05,
         "MouseButton6" or "Button6" => 0x06,
@@ -444,7 +469,7 @@ public static partial class RazerMappingBundleParser
     {
         "LeftClick" => "Left",
         "RightClick" => "Right",
-        "ScrollClick" or "MiddleClick" => "Middle",
+        "ScrollClick" or "MiddleClick" or "ScrollButton" => "Middle",
         "ScrollUp" => "Scroll up",
         "ScrollDown" => "Scroll down",
         "MouseButton4" or "Button4" => "Button 4",
@@ -547,7 +572,7 @@ public static partial class RazerMappingBundleParser
                 return (byte)FwId.Value;
             }
 
-            if (StandardMouseButtonId(Key) is { } standard)
+            if ((StandardMouseButtonId(Key) ?? StandardMouseButtonId(InputId ?? string.Empty)) is { } standard)
             {
                 return standard;
             }

@@ -83,12 +83,15 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken)
     {
         var analog = definition.ProductId is 0x0266 or 0x0282;
-        // 0244's bundle maps KEY_1 (the first keypad key) to firmware key id 2.
+        // 0244/022B keypads map the first art key to SPAD_NUM_1, firmware key id 64 (0x40).
+        // 0x02 is the generic keyboard "1" output key, not a keypad table entry.
+        var keypad = definition.ProductId is 0x022B or 0x0244;
+        var keyId = (byte)(keypad ? 0x40 : 0x02);
         var assignment = analog
             ? RazerHidMappingProtocol.GetAnalogKeyAssignment(
-                0x02, RazerHidMappingProtocol.NormalMode)
+                keyId, RazerHidMappingProtocol.NormalMode)
             : RazerHidMappingProtocol.GetKeyAssignment(
-                0x02, RazerHidMappingProtocol.NormalMode);
+                keyId, RazerHidMappingProtocol.NormalMode);
         return await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
             "mapping.keyAssignment", assignment.Report,
             response =>

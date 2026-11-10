@@ -61,10 +61,14 @@ internal sealed class RazerHidRequestExecutor
         {
             throw new NotSupportedException(exception.Message, exception);
         }
-        catch (RazerDeviceTimeoutException)
+        catch (RazerDeviceTimeoutException exception)
         {
             // Busy/silent is a capability result, not a dead endpoint.
-            throw;
+            throw new RazerDeviceTimeoutException(
+                exception.IsRetryableBusy
+                    ? $"The device is busy (0x01) for {request.BuilderName} (command 0x{request.Report[7]:X2}:0x{request.Report[8]:X2})."
+                    : $"{request.BuilderName} did not answer (command 0x{request.Report[7]:X2}:0x{request.Report[8]:X2}): {exception.Message}",
+                exception.IsRetryableBusy);
         }
         catch (Exception exception) when (exception is Win32Exception or IOException or COMException or InvalidOperationException)
         {

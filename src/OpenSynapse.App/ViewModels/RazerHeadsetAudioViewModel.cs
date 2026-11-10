@@ -320,8 +320,8 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     public Visibility ThxInstallerLinkVisibility =>
         ThxVisibility == Visibility.Visible &&
         ThxInstallerUri.Length > 0 &&
-        (_thxErrorText.Length > 0 ||
-         _thxStatus.ErrorCode is "ThxDownloadFailed" or "ThxDownloadVerificationFailed" ||
+        ((_thxStatus.ErrorCode is "ThxServiceMissing" or "ThxNativeMissing" or
+             "ThxDownloadFailed" or "ThxDownloadVerificationFailed") ||
          _thxStatus.ErrorCode?.StartsWith("ThxInstaller", StringComparison.Ordinal) == true)
             ? Visibility.Visible
             : Visibility.Collapsed;
@@ -337,6 +337,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             "ThxNativeMissing" => AppStrings.Text("RazerHeadsetThxNativeMissing"),
             "ThxDownloadFailed" or "ThxDownloadVerificationFailed" =>
                 AppStrings.Text("RazerHeadsetThxDownloadFailed"),
+            "ThxRebootRequired" => AppStrings.Text("RazerHeadsetThxRebootRequired"),
             _ when _thxStatus.ErrorCode?.StartsWith("ThxInstaller", StringComparison.Ordinal) == true =>
                 AppStrings.Text("RazerHeadsetThxDownloadFailed"),
             _ when _thxStatus.Availability == ThxHeadsetAvailability.Available =>
@@ -826,7 +827,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
 
             ErrorText = state.Errors.Count > 0 && !HasAnyValue(state) && !_hasLighting
-                ? AppStrings.Text("RazerHeadsetReadFailed")
+                ? AppStrings.FormatText("RazerHeadsetReadFailedDetail", state.Errors[0])
                 : string.Empty;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -1061,9 +1062,14 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         {
             _thxState = null;
             _thxStatus = new ThxHeadsetStatus(
-                status.Error is "ThxServiceMissing"
-                    ? ThxHeadsetAvailability.ServiceMissing
-                    : ThxHeadsetAvailability.NativeMissing,
+                status.Error switch
+                {
+                    "ThxServiceMissing" => ThxHeadsetAvailability.ServiceMissing,
+                    "ThxNativeMissing" => ThxHeadsetAvailability.NativeMissing,
+                    // The helper only runs after admission, so a failure here means the
+                    // components are present; do not offer a reinstall for it.
+                    _ => ThxHeadsetAvailability.Available,
+                },
                 status.Error);
             _thxErrorText = ThxMessage(status.Error);
         }
@@ -1106,6 +1112,9 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         "ThxContainerMissing" => AppStrings.Text("RazerHeadsetThxContainerMissing"),
         "ThxHelperMissing" or "ThxHelperStartFailed" or "ThxHelperExited" =>
             AppStrings.Text("RazerHeadsetThxHelperFailed"),
+        "ThxOperationRejected" or "ThxNativeFailure" or "ThxInvalidRequest" =>
+            AppStrings.Text("RazerHeadsetThxOperationRejected"),
+        "ThxRebootRequired" => AppStrings.Text("RazerHeadsetThxRebootRequired"),
         _ when error?.StartsWith("ThxHelperFailed", StringComparison.Ordinal) == true =>
             AppStrings.Text("RazerHeadsetThxHelperFailed"),
         _ => AppStrings.Text("RazerHeadsetThxFailed"),

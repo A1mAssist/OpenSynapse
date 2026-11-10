@@ -223,6 +223,8 @@ public static partial class StudioProjectCodec
         parameters.Speed = ReadDouble(element, "speed", 1);
         parameters.Split = ReadSplit(element);
         parameters.Density = ReadDouble(element, "density", 50);
+        parameters.FireSeed = ReadInt(element, "seed", StudioEffectParams.FireDefaultSeed);
+        parameters.FireRate = ReadInt(element, "rate", StudioEffectParams.FireDefaultRate);
         parameters.Boost = ReadDouble(element, "boost", 1);
         parameters.Decay = ReadDouble(element, "decay", 50);
         parameters.AutoBoost = ReadBool(element, "autoBoost");

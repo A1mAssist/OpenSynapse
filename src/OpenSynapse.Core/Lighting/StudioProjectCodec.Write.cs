@@ -223,6 +223,8 @@ public static partial class StudioProjectCodec
         if (p.Speed != 1) dto.Speed = p.Speed;
         if (p.Effect is StudioEffectKind.Wave or StudioEffectKind.Tidal) dto.Split = p.Split >= 50;
         if (p.Density != 50) dto.Density = p.Density;
+        if (p.FireSeed != StudioEffectParams.FireDefaultSeed) dto.Seed = p.FireSeed;
+        if (p.FireRate != StudioEffectParams.FireDefaultRate) dto.Rate = p.FireRate;
         if (p.Boost != 1) dto.Boost = p.Boost;
         if (p.Decay != 50) dto.Decay = p.Decay;
         if (p.AutoBoost) dto.AutoBoost = true;
@@ -361,6 +363,8 @@ public static partial class StudioProjectCodec
         public double? Speed { get; set; }
         public bool? Split { get; set; }
         public double? Density { get; set; }
+        public int? Seed { get; set; }
+        public int? Rate { get; set; }
         public double? Boost { get; set; }
         public double? Decay { get; set; }
         public bool? AutoBoost { get; set; }

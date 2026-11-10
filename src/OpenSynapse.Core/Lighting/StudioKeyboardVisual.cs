@@ -15,7 +15,11 @@ public sealed record StudioKeyboardVisual(
     double Width,
     double Height,
     IReadOnlyList<StudioSvgPath> Paths,
-    IReadOnlyList<StudioKeyboardKey> Keys);
+    IReadOnlyList<StudioKeyboardKey> Keys)
+{
+    /// <summary>True when the keys came from numbered keypad selection paths.</summary>
+    public bool IsKeypad { get; init; }
+}
 
 /// <summary>
 /// Builds a keyboard visual from a Chroma studio SVG. Product shell, lettering
@@ -31,7 +35,7 @@ public static class StudioKeyboardVisualBuilder
     public static StudioKeyboardVisual Build(string svg)
     {
         var layout = StudioSvgLayoutParser.Parse(svg);
-        return new StudioKeyboardVisual(layout.Width, layout.Height, layout.Paths, ReadKeys(layout.Paths));
+        return BuildVisual(layout);
     }
 
     public static StudioKeyboardVisual? Build(StudioManifestDevice manifest)
@@ -42,7 +46,7 @@ public static class StudioKeyboardVisualBuilder
         try
         {
             var svg = Encoding.UTF8.GetString(Convert.FromBase64String(manifest.SvgBase64));
-            return Build(svg);
+            return BuildVisual(StudioSvgLayoutParser.Parse(svg));
         }
         catch (Exception ex) when (ex is FormatException or ArgumentException)
         {
@@ -63,30 +67,78 @@ public static class StudioKeyboardVisualBuilder
         {
             var svg = Encoding.UTF8.GetString(Convert.FromBase64String(manifest.SvgBase64));
             var layout = StudioSvgLayoutParser.Parse(svg);
-            var keys = new List<StudioKeyboardKey>();
-            var keyIndex = 0;
-            foreach (var path in layout.Paths)
-            {
-                if (path.Role != StudioSvgRole.Selection ||
-                    !KeypadSelectionRegex.IsMatch(path.Id))
-                {
-                    continue;
-                }
-
-                var isScroll = path.SelectionGroup?.Contains("scroll", StringComparison.OrdinalIgnoreCase) == true ||
-                    path.Id.Contains("scroll", StringComparison.OrdinalIgnoreCase);
-                var keyName = isScroll ? "scroll" : $"key{++keyIndex}";
-                keys.Add(new StudioKeyboardKey(keyName, path.Id, path.Data, path.SelectionGroup));
-            }
-
-            return keys.Count == 0
-                ? null
-                : new StudioKeyboardVisual(layout.Width, layout.Height, layout.Paths, keys);
+            return BuildKeypad(layout);
         }
         catch (Exception ex) when (ex is FormatException or ArgumentException or System.Xml.XmlException)
         {
             return null;
         }
+    }
+
+    private static StudioKeyboardVisual BuildVisual(StudioSvgLayout layout)
+    {
+        var keys = ReadKeys(layout.Paths);
+        // 0244 ships no category, so its keypad must be recognised from the SVG itself:
+        // 21 numbered selection paths, one of them the scroll click.
+        if (keys.Count == 0 && LooksLikeKeypad(layout.Paths) && BuildKeypad(layout) is { } keypad)
+        {
+            return keypad;
+        }
+
+        return new StudioKeyboardVisual(layout.Width, layout.Height, layout.Paths, keys);
+    }
+
+    private static bool LooksLikeKeypad(IReadOnlyList<StudioSvgPath> paths)
+    {
+        var numbered = 0;
+        var hasScroll = false;
+        foreach (var path in paths)
+        {
+            if (path.Role != StudioSvgRole.Selection ||
+                !KeypadSelectionRegex.IsMatch(path.Id))
+            {
+                continue;
+            }
+
+            numbered++;
+            hasScroll |= path.SelectionGroup?.Contains("scroll", StringComparison.OrdinalIgnoreCase) == true ||
+                path.Id.Contains("scroll", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return numbered == 21 && hasScroll;
+    }
+
+    private static StudioKeyboardVisual? BuildKeypad(StudioSvgLayout layout)
+    {
+        var keys = new List<StudioKeyboardKey>();
+        var keyNames = new Dictionary<string, string>(StringComparer.Ordinal);
+        var keyIndex = 0;
+        foreach (var path in layout.Paths)
+        {
+            if (path.Role != StudioSvgRole.Selection ||
+                !KeypadSelectionRegex.IsMatch(path.Id))
+            {
+                continue;
+            }
+
+            var isScroll = path.SelectionGroup?.Contains("scroll", StringComparison.OrdinalIgnoreCase) == true ||
+                path.Id.Contains("scroll", StringComparison.OrdinalIgnoreCase);
+            var keyName = isScroll ? "scroll" : $"key{++keyIndex}";
+            keyNames[path.Id] = keyName;
+            keys.Add(new StudioKeyboardKey(keyName, path.Id, path.Data, path.SelectionGroup));
+        }
+
+        if (keys.Count == 0)
+        {
+            return null;
+        }
+
+        var paths = layout.Paths
+            .Select(path => keyNames.TryGetValue(path.Id, out var keyName)
+                ? path with { KeyName = keyName }
+                : path)
+            .ToArray();
+        return new StudioKeyboardVisual(layout.Width, layout.Height, paths, keys) { IsKeypad = true };
     }
 
     private static IReadOnlyList<StudioKeyboardKey> ReadKeys(IReadOnlyList<StudioSvgPath> paths)

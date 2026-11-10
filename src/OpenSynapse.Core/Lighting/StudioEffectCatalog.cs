@@ -20,6 +20,8 @@ public enum StudioParameterField
     CenterPoint,
     Counterclockwise,
     Density,
+    Seed,
+    Rate,
     Boost,
     AutoBoost,
     Decay,
@@ -108,6 +110,8 @@ public static class StudioEffectCatalog
         parameters.Angle = defaults.Angle;
         parameters.Split = defaults.Split;
         parameters.Density = defaults.Density;
+        parameters.FireSeed = defaults.FireSeed;
+        parameters.FireRate = defaults.FireRate;
         parameters.Boost = defaults.Boost;
         parameters.AutoBoost = defaults.AutoBoost;
         parameters.Decay = defaults.Decay;
@@ -186,6 +190,8 @@ public static class StudioEffectCatalog
             case StudioEffectKind.Fire:
                 parameters.Primary = Red;
                 parameters.Secondary = Orange;
+                parameters.FireSeed = StudioEffectParams.FireDefaultSeed;
+                parameters.FireRate = StudioEffectParams.FireDefaultRate;
                 break;
             case StudioEffectKind.Ambient:
                 parameters.Screen = "full";
@@ -303,10 +309,20 @@ public static class StudioEffectCatalog
                 (Duration, new StudioParameterRange(500, 3_000, 1, 1_700)))),
 
         Describe(StudioEffectKind.Fire,
-            Fields(Color, Color2),
+            Fields(Color, Color2, Seed, Rate),
             Ranges(
                 (Color, ColorRange(Red)),
-                (Color2, ColorRange(Orange)))),
+                (Color2, ColorRange(Orange)),
+                (Seed, new StudioParameterRange(
+                    StudioEffectParams.FireSeedMinimum,
+                    StudioEffectParams.FireSeedMaximum,
+                    1,
+                    StudioEffectParams.FireDefaultSeed)),
+                (Rate, new StudioParameterRange(
+                    StudioEffectParams.FireRateMinimum,
+                    StudioEffectParams.FireRateMaximum,
+                    1,
+                    StudioEffectParams.FireDefaultRate)))),
 
         Describe(StudioEffectKind.Ambient,
             Fields(Screen, ScreenRect, Blur),
