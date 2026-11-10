@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Storage;
 using Windows.Graphics;
 using Windows.UI;
 
@@ -18,6 +19,11 @@ public sealed partial class MainWindow
 
     internal void RequestNavigation(string page) => _dispatcherQueue.TryEnqueue(() =>
     {
+        if (_viewModel.IsLiteMode && page is "overview" or "studio")
+        {
+            page = "devices";
+        }
+
         if (StringComparer.Ordinal.Equals(page, "about"))
         {
             RestoreAndActivate();
@@ -36,6 +42,30 @@ public sealed partial class MainWindow
 
         RestoreAndActivate();
     });
+
+    private void ApplyLiteMode()
+    {
+        var liteMode = _viewModel.IsLiteMode;
+        var visiblePages = LiteModePolicy.VisibleNavigationPages(liteMode);
+        OverviewNavigationItem.Visibility = visiblePages.Contains("overview")
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        LightingStudioNavigationItem.Visibility = visiblePages.Contains("studio")
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        DevicesPage.SetLiteMode(liteMode);
+        SettingsPage.SetLiteMode(liteMode);
+        if (!liteMode)
+        {
+            return;
+        }
+
+        RootNavigationView.SelectedItem = DevicesNavigationItem;
+        OverviewPage.Visibility = Visibility.Collapsed;
+        LightingStudioPage.Visibility = Visibility.Collapsed;
+        DevicesPage.Visibility = Visibility.Visible;
+        DevicesPage.RefreshAdvancedFeaturesVisibility();
+    }
 
     internal void RequestDeviceNavigation(object source)
     {

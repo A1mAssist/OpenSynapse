@@ -52,6 +52,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
     private readonly Action<string> _notifyPropertyChanged;
     private readonly Func<PowerSourceKind, CancellationToken, Task>? _applyBleProfile;
     private readonly Func<PowerSourceKind, CancellationToken, Task>? _applyAccessoryProfiles;
+    private readonly bool _liteMode;
     private readonly VerifiedProfileApplier _profileApplier = new();
     private readonly SemaphoreSlim _deviceWatchSignal = new(0, 1);
     private ApplicationProfileSwitcher _applicationProfileSwitcher = new();
@@ -106,7 +107,8 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
         Action resetBlackShark,
         Action<string> notifyPropertyChanged,
         Func<PowerSourceKind, CancellationToken, Task>? applyBleProfile = null,
-        Func<PowerSourceKind, CancellationToken, Task>? applyAccessoryProfiles = null)
+        Func<PowerSourceKind, CancellationToken, Task>? applyAccessoryProfiles = null,
+        bool liteMode = false)
     {
         _discovery = discovery;
         _deviceTelemetryReader = deviceTelemetryReader;
@@ -146,6 +148,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
         _notifyPropertyChanged = notifyPropertyChanged;
         _applyBleProfile = applyBleProfile;
         _applyAccessoryProfiles = applyAccessoryProfiles;
+        _liteMode = liteMode;
         if (openRazer.DeviceService is { } razerHidService)
         {
             _razerHidProfileApplier = new DeviceProfileApplyCoordinator(
@@ -221,7 +224,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
             _telemetry.NotifySamplingStateChanged();
         }
         Interlocked.Exchange(ref _displayBrightnessRestorePending, 1);
-        if (!available)
+        if (!available && !_liteMode)
         {
             _blade.OnDisplayAvailabilityChanged(false);
         }
@@ -229,122 +232,6 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
 
     public Task RefreshDevicesAsync(CancellationToken cancellationToken = default) =>
         RefreshDevicesCoreAsync(null, cancellationToken);
-
-    public async Task RunDeviceWatchLoopAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            while (true)
-            {
-                var interval = Volatile.Read(ref _deviceWatchActive) != 0 &&
-                               IsDisplayAvailable
-                    ? TimeSpan.FromSeconds(1)
-                    : Profile.ApplicationBindings.Count > 0
-                        ? TimeSpan.FromSeconds(10)
-                        : Timeout.InfiniteTimeSpan;
-                await _deviceWatchSignal.WaitAsync(interval, cancellationToken);
-                try
-                {
-                    var powerState = _currentPowerSource();
-                    var executablePath = Profile.ApplicationBindings.Count == 0
-                        ? null
-                        : _activeApplicationProvider.ExecutablePath;
-                    var applicationBindings = Profile.ApplicationBindings.Count == 0
-                        ? string.Empty
-                        : string.Join(
-                            '\n',
-                            Profile.ApplicationBindings
-                                .OrderBy(binding => binding.Key, StringComparer.OrdinalIgnoreCase)
-                                .Select(binding => $"{binding.Key}\0{binding.Value}"));
-                    var profileChanged = false;
-                    if (_lastObservedApplicationBindings is null ||
-                        !StringComparer.OrdinalIgnoreCase.Equals(
-                            _lastObservedForegroundExecutablePath, executablePath) ||
-                        !StringComparer.Ordinal.Equals(
-                            _lastObservedApplicationBindings, applicationBindings) ||
-                        !StringComparer.OrdinalIgnoreCase.Equals(
-                            _lastObservedActiveProfileName, Profile.ActiveProfileName))
-                    {
-                        var previousProfile = Profile.Clone();
-                        var previousProfileSwitcher = _applicationProfileSwitcher.Clone();
-                        profileChanged = _applicationProfileSwitcher.Update(Profile, executablePath);
-                        _lastObservedForegroundExecutablePath = executablePath;
-                        _lastObservedApplicationBindings = applicationBindings;
-                        _lastObservedActiveProfileName = Profile.ActiveProfileName;
-                        if (profileChanged)
-                        {
-                            _profiles.RefreshProfileState();
-                            try
-                            {
-                                await _profileStore.SaveAsync(Profile, cancellationToken);
-                                _profiles.ProfileStatusText = AppStrings.FormatText("ProfileAutoSwitched", _profiles.ActiveProfileName);
-                            }
-                            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                            {
-                                throw;
-                            }
-                            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-                            {
-                                _setProfile(previousProfile);
-                                _applicationProfileSwitcher = previousProfileSwitcher;
-                                _lastObservedApplicationBindings = null;
-                                _profiles.RefreshProfileState();
-                                _setDeviceOperationError(AppStrings.FormatText("AutomaticProfileSaveError",
-                                    exception.Message));
-                                profileChanged = false;
-                            }
-                        }
-                    }
-
-                    // Discovery is event-driven: startup, device notifications, resume,
-                    // and explicit refresh requests set this flag. A request arriving
-                    // during a scan remains queued for the next loop iteration.
-                    var refreshRequested = Interlocked.Exchange(ref _deviceRefreshRequested, 0) != 0;
-                    if (!IsDisplayAvailable)
-                    {
-                        if (refreshRequested || profileChanged)
-                        {
-                            Interlocked.Exchange(ref _deviceRefreshRequested, 1);
-                        }
-                        continue;
-                    }
-
-                    var powerChanged = _lastPowerState != powerState;
-                    var displayProfileRequested =
-                        Interlocked.Exchange(ref _displayProfileApplyRequested, 0) != 0;
-                    if (refreshRequested || powerChanged || profileChanged || displayProfileRequested)
-                    {
-                        var snapshot = refreshRequested
-                            ? await _discovery.DiscoverAsync(cancellationToken)
-                            : new DeviceSnapshot(ActiveDescriptors, DateTimeOffset.UtcNow);
-                        await RefreshDevicesCoreAsync(
-                            snapshot,
-                            cancellationToken,
-                            applyDisplayProfile: powerChanged || profileChanged || displayProfileRequested);
-                    }
-                    else
-                    {
-                        // Nothing asked for a rescan, but the readouts on the device page are
-                        // live numbers such as fan speed, so they still need a periodic read.
-                        // This path only reads; it never writes a setting back to the device.
-                        await RefreshDeviceReadoutsAsync(cancellationToken);
-                    }
-                }
-                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                {
-                    throw;
-                }
-                catch (Exception exception)
-                {
-                    _diagnosticLog.TryWrite("device-watch", exception.ToString());
-                    _setDeviceQueryError(AppStrings.FormatText("DeviceWatchError", exception.Message));
-                }
-            }
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-        }
-    }
 
     /// <summary>
     /// Reads the device telemetry again so the live readouts on the device page keep up.
@@ -369,7 +256,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
             {
                 return;
             }
-            var telemetry = await _deviceTelemetryReader.ReadAsync(ActiveDescriptors, cancellationToken);
+            var telemetry = await _deviceTelemetryReader.ReadAsync(PeripheralDescriptors, cancellationToken);
             _applyDeviceTelemetry(telemetry);
             // The first row set is painted before the slow probes finish. If that full
             // refresh then fails, the rows stay at their empty-telemetry counts; rebuild
@@ -435,18 +322,23 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
             await _openRazer.RefreshAsync(cancellationToken);
             await _refreshAccessoriesAsync(cancellationToken);
 
-            var blade = snapshot.Devices.FirstOrDefault(device =>
-                DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
+            var blade = _liteMode
+                ? null
+                : snapshot.Devices.FirstOrDefault(device =>
+                    DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
             var viper = snapshot.Devices.FirstOrDefault(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper);
-            await _blade.RefreshCoolingPadPresenceAsync(cancellationToken);
-            _blade.UpdateDevice(blade, FormatDeviceStatus(blade));
-            _blade.SetSerial(await _readSerialAsync(blade, cancellationToken));
+            if (!_liteMode)
+            {
+                await _blade.RefreshCoolingPadPresenceAsync(cancellationToken);
+                _blade.UpdateDevice(blade, FormatDeviceStatus(blade));
+                _blade.SetSerial(await _readSerialAsync(blade, cancellationToken));
+            }
             _viper.SetDevice(
                 viper,
                 await _readSerialAsync(viper, cancellationToken),
                 FormatDeviceStatus(viper));
 
-            var telemetry = await _deviceTelemetryReader.ReadAsync(snapshot.Devices, cancellationToken);
+            var telemetry = await _deviceTelemetryReader.ReadAsync(PeripheralDescriptors, cancellationToken);
             _applyDeviceTelemetry(telemetry);
             var observedPowerState = PowerSourceResolver.Resolve(
                 _powerSourceProvider.IsPluggedIn,
@@ -460,9 +352,14 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
                 await _telemetry.RefreshBatteryHealthAsync(cancellationToken);
             }
             _lastPowerState = powerState;
-            var applyEcoDisplay = await _blade.RefreshGpuDisplayPolicyAsync(powerState, cancellationToken);
+            var applyEcoDisplay = _liteMode
+                ? false
+                : await _blade.RefreshGpuDisplayPolicyAsync(powerState, cancellationToken);
             _notifyPropertyChanged(nameof(MainViewModel.ActivePowerSourceText));
-            _display.RefreshInternalDisplay(powerState, applyDisplayProfile || applyEcoDisplay);
+            if (!_liteMode)
+            {
+                _display.RefreshInternalDisplay(powerState, applyDisplayProfile || applyEcoDisplay);
+            }
             if (applyDisplayProfile)
             {
                 await _openRazer.RestoreLightingAfterExternalAsync(cancellationToken);
@@ -482,34 +379,41 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
             }
             if (profileApply is { AppliedCount: > 0 })
             {
-                telemetry = await _deviceTelemetryReader.ReadAsync(snapshot.Devices, cancellationToken);
+                telemetry = await _deviceTelemetryReader.ReadAsync(PeripheralDescriptors, cancellationToken);
                 _applyDeviceTelemetry(telemetry);
             }
-            _blade.RefreshLightingEditor();
-            _blade.RefreshPerformanceEditor();
-            _blade.RefreshLogoEditor();
+            if (!_liteMode)
+            {
+                _blade.RefreshLightingEditor();
+                _blade.RefreshPerformanceEditor();
+                _blade.RefreshLogoEditor();
+            }
             var viperPresent = viper is not null;
             // The Viper mapping channel can answer while battery/DPI telemetry is asleep.
             // Presence decides whether its page and mapping editor stay reachable.
             var viperAvailable = viperPresent;
             var bladeProfileBlocked = profileApply?.Errors.Any(error =>
                 error.StartsWith("Blade", StringComparison.OrdinalIgnoreCase)) == true;
-            var fanApply = bladeProfileBlocked
-                ? new BladeFanProfileApplyResult(
-                    await _fan.StopAsync("profile-error"),
-                    Changed: true)
-                : await _fan.ApplyProfileAsync(blade, powerState, cancellationToken, writeStoredTarget: false);
+            var fanApply = _liteMode
+                ? new BladeFanProfileApplyResult(null, Changed: false)
+                : bladeProfileBlocked
+                    ? new BladeFanProfileApplyResult(
+                        await _fan.StopAsync("profile-error"),
+                        Changed: true)
+                    : await _fan.ApplyProfileAsync(blade, powerState, cancellationToken, writeStoredTarget: false);
             var viperMappingError = await _viper.ApplyProfileMappingAsync(
                 viperAvailable ? viper : null, powerState, cancellationToken);
             if (fanApply.Changed && blade is { Access: DeviceAccessState.Available })
             {
-                telemetry = await _deviceTelemetryReader.ReadAsync(snapshot.Devices, cancellationToken);
+                telemetry = await _deviceTelemetryReader.ReadAsync(PeripheralDescriptors, cancellationToken);
                 _applyDeviceTelemetry(telemetry);
             }
-            var lightingError = profileApply?.Errors.Any(error =>
-                    error.StartsWith("Blade", StringComparison.OrdinalIgnoreCase)) == true
+            var lightingError = _liteMode
                 ? null
-                : await _lighting.ApplyLoadedProfileAsync(blade, powerState, cancellationToken);
+                : profileApply?.Errors.Any(error =>
+                        error.StartsWith("Blade", StringComparison.OrdinalIgnoreCase)) == true
+                    ? null
+                    : await _lighting.ApplyLoadedProfileAsync(blade, powerState, cancellationToken);
             var profileOperationErrors = profileApply?.Errors
                 .Where(error => viperPresent ||
                     !error.StartsWith("Viper", StringComparison.OrdinalIgnoreCase))
@@ -562,7 +466,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
 
             var openRazerErrorCount = _openRazer.ErrorCount;
 
-            if (IsDisplayAvailable &&
+            if (!_liteMode && IsDisplayAvailable &&
                 Interlocked.Exchange(ref _displayBrightnessRestorePending, 0) != 0)
             {
                 _blade.RefreshLightingEditor();
@@ -591,30 +495,33 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
             var hadViper = ActiveDescriptors.Any(device => device.ProtocolFamily == DeviceProtocolFamilies.Viper);
             // Keep last descriptors so a transient query failure cannot blank device pages.
             _resetBlackShark();
-            _blade.SetSerial(null);
             _viper.SetUnavailable(hadViper);
             _refreshDeviceSelector();
-            if (_bladeLightingController is not null && _lighting.LightingDevicePath.Length > 0)
+            if (!_liteMode)
             {
-                try
+                _blade.SetSerial(null);
+                if (_bladeLightingController is not null && _lighting.LightingDevicePath.Length > 0)
                 {
-                    await _bladeLightingController.StopAsync();
+                    try
+                    {
+                        await _bladeLightingController.StopAsync();
+                    }
+                    catch (Exception restoreException) when (IsExpectedRuntimeException(restoreException))
+                    {
+                        _diagnosticLog.TryWrite(
+                            "keyboard-lighting",
+                            $"refresh-failure restore failed: {restoreException}");
+                    }
                 }
-                catch (Exception restoreException) when (IsExpectedRuntimeException(restoreException))
-                {
-                    _diagnosticLog.TryWrite(
-                        "keyboard-lighting",
-                        $"refresh-failure restore failed: {restoreException}");
-                }
+                _ = await _fan.StopAsync("refresh-failure");
+                _blade.SetControlDevice(null);
+                _lighting.ShadowFingerprint = string.Empty;
+                _lighting.LightingDevicePath = string.Empty;
+                _display.RefreshInternalDisplay(powerState, applyDisplayProfile);
+                _blade.SetStatus(hadBlade ? AppStrings.Text("Text_A70924BE") : AppStrings.Text("Text_DB0974DC"));
             }
-            _ = await _fan.StopAsync("refresh-failure");
-            _blade.SetControlDevice(null);
-            _lighting.ShadowFingerprint = string.Empty;
-            _lighting.LightingDevicePath = string.Empty;
             _lastPowerState = powerState;
             _notifyPropertyChanged(nameof(MainViewModel.ActivePowerSourceText));
-            _display.RefreshInternalDisplay(powerState, applyDisplayProfile);
-            _blade.SetStatus(hadBlade ? AppStrings.Text("Text_A70924BE") : AppStrings.Text("Text_DB0974DC"));
             _setDeviceQueryError(exception.Message);
             LastRefreshText = AppStrings.Text("Text_F9E7EDEF");
             _notifyPropertyChanged(nameof(MainViewModel.EmptyStateText));
@@ -641,7 +548,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
     }
     private void RefreshDeviceRowsIfStale(RazerDeviceTelemetry telemetry)
     {
-        var descriptors = ActiveDescriptors;
+        var descriptors = PeripheralDescriptors;
         var rowIds = _devices.Select(row => row.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var descriptor in descriptors)
         {
@@ -678,7 +585,12 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
         var pending = telemetry is null;
         telemetry ??= new(null, null, null, null, null, null, null, null, null, null, [], DateTimeOffset.UtcNow);
         _devices.Clear();
-        foreach (var device in devices.Where(device => DeviceVisibilityPolicy.IsVisible(device, telemetry)).OrderBy(device => DeviceUiCatalog.DeviceCategoryOrder(device.Category)).ThenBy(device => device.Name, StringComparer.OrdinalIgnoreCase)) _devices.Add(new DeviceRowViewModel(device, telemetry, pending));
+        foreach (var device in devices
+                     .Where(device => !_liteMode || !DeviceProtocolFamilies.IsBlade(device.ProtocolFamily))
+                     .Where(device => DeviceVisibilityPolicy.IsVisible(device, telemetry))
+                     .OrderBy(device => DeviceUiCatalog.DeviceCategoryOrder(device.Category))
+                     .ThenBy(device => device.Name, StringComparer.OrdinalIgnoreCase))
+            _devices.Add(new DeviceRowViewModel(device, telemetry, pending));
         _refreshDeviceOverview();
     }
 
@@ -698,6 +610,12 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
     private ProfileDocument Profile => _getProfile();
 
     private IReadOnlyList<DeviceDescriptor> ActiveDescriptors => _deviceDescriptors();
+
+    private IReadOnlyList<DeviceDescriptor> PeripheralDescriptors => _liteMode
+        ? ActiveDescriptors
+            .Where(device => !DeviceProtocolFamilies.IsBlade(device.ProtocolFamily))
+            .ToArray()
+        : ActiveDescriptors;
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

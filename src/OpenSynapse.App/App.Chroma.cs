@@ -42,6 +42,12 @@ public partial class App
 
     private void StartChromaHosts(MainViewModel viewModel)
     {
+        if (!OpenSynapse.Core.Storage.LiteModePolicy.ShouldStartChromaRest(
+                _behaviorSettings.LiteModeEnabled))
+        {
+            return;
+        }
+
         _chromaDeviceRouter ??= CreateChromaDeviceRouter(viewModel);
         StartChromaBroker(viewModel);
         StartChromaRestHost(viewModel);

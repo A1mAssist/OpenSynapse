@@ -3893,6 +3893,7 @@
   <data name="LightingStudioScreenCustom" xml:space="preserve"><value>自定义</value></data>
   <data name="IntroductionV2NavigationTitle" xml:space="preserve"><value>从这里开始</value></data>
   <data name="IntroductionV2NavigationBody" xml:space="preserve"><value>左侧“设备”管理鼠标、键盘、Blade 和耳机；&#10;宏和配置也在侧栏。</value></data>
+  <data name="IntroductionV2NavigationBodyLite" xml:space="preserve"><value>左侧“设备”管理所有外设；&#10;宏和配置也在侧栏。</value></data>
   <data name="IntroductionV2DevicesTitle" xml:space="preserve"><value>选择设备</value></data>
   <data name="IntroductionV2DevicesBody" xml:space="preserve"><value>点设备卡片进入设置。&#10;没看到设备就重新探测。</value></data>
   <data name="IntroductionV2DeviceSettingsTitle" xml:space="preserve"><value>设备设置</value></data>
@@ -4226,4 +4227,11 @@
   <data name="SnapTapPairHint" xml:space="preserve"><value>选两个键组成一对，最多 4 组。Windows 与 Menu 键不参与。</value></data>
   <data name="A11yClose.Content" xml:space="preserve"><value>✕</value></data>
   <data name="A11yDeletePathPoint.Content" xml:space="preserve"><value>×</value></data>
+  <data name="LiteModeTitle.Text" xml:space="preserve"><value>Lite 模式（仅外设控制）</value></data>
+  <data name="LiteModeDescription.Text" xml:space="preserve"><value>隐藏笔记本控制、性能面板和高级设置；切换后需要重启。</value></data>
+  <data name="LiteModeRestartTitle.Text" xml:space="preserve"><value>切换 Lite 模式</value></data>
+  <data name="LiteModeRestartPrompt.Text" xml:space="preserve"><value>切换 Lite 模式需要重启 OpenSynapse。&#10;未保存的宏编辑会丢失。</value></data>
+  <data name="LiteModeRestartElevated.Text" xml:space="preserve"><value>当前进程以管理员权限运行，重启后仍是管理员权限。</value></data>
+  <data name="LiteModeRestartConfirm.Text" xml:space="preserve"><value>重启并切换</value></data>
+  <data name="LiteModeRestartCancel.Text" xml:space="preserve"><value>取消</value></data>
 </root>

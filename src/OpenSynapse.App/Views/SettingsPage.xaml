@@ -26,7 +26,16 @@
                     </Grid>
                   </StackPanel>
                 </Border>
-                <Border Style="{StaticResource CardStyle}" Padding="16">
+                <Border x:Name="LiteModeCard" Style="{StaticResource CardStyle}" Padding="16">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                    <StackPanel Spacing="4">
+                      <TextBlock local:Localized.Uid="LiteModeTitle" Text="Lite 模式（仅外设控制）" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="LiteModeDescription" Text="隐藏笔记本控制、性能面板和高级设置；切换后需要重启。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch x:Name="LiteModeToggle" Grid.Column="1" Toggled="LiteModeToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="Lite 模式" />
+                  </Grid>
+                </Border>
+                <Border x:Name="AdvancedFeaturesCard" Style="{StaticResource CardStyle}" Padding="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                     <StackPanel Spacing="4">
                       <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="AdvancedFeaturesTitle" Text="高级功能（危险）" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
@@ -35,7 +44,7 @@
                     <ToggleSwitch local:Localized.Uid="A11yEnableAdvancedFeatures" x:Name="AdvancedFeaturesToggle" Grid.Column="1" Toggled="AdvancedFeaturesToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="开启高级功能" />
                   </Grid>
                 </Border>
-                <Border Style="{StaticResource CardStyle}" Padding="16">
+                <Border x:Name="ModeNotificationCard" Style="{StaticResource CardStyle}" Padding="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                     <StackPanel Spacing="4">
                       <TextBlock local:Localized.Uid="ModeNotificationTitle" Text="模式切换通知" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
@@ -62,7 +71,7 @@
                     <ToggleSwitch local:Localized.Uid="TrayBatteryToggle" x:Name="TrayBatteryToggle" Grid.Column="1" Toggled="TrayBatteryToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="托盘菜单外设电量" />
                   </Grid>
                 </Border>
-                <Border Style="{StaticResource CardStyle}" Padding="16">
+                <Border x:Name="TaskbarStatusCard" Style="{StaticResource CardStyle}" Padding="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                     <StackPanel Spacing="4">
                       <TextBlock local:Localized.Uid="TaskbarStatusTitle" Text="任务栏状态条" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
@@ -71,7 +80,7 @@
                     <ToggleSwitch local:Localized.Uid="TaskbarStatusToggle" x:Name="TaskbarStatusToggle" Grid.Column="1" Toggled="TaskbarStatusToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="任务栏状态条" />
                   </Grid>
                 </Border>
-                <Border Style="{StaticResource CardStyle}" Padding="16">
+                <Border x:Name="PerformanceOverlayCard" Style="{StaticResource CardStyle}" Padding="16">
                   <StackPanel Spacing="12">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                       <StackPanel Spacing="4">
@@ -90,7 +99,7 @@
                     </Grid>
                   </StackPanel>
                 </Border>
-                <Border Style="{StaticResource CardStyle}" Padding="16">
+                <Border x:Name="ChromaRestCard" Style="{StaticResource CardStyle}" Padding="16">
                   <StackPanel Spacing="12">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                       <StackPanel Spacing="4">
