@@ -83,20 +83,6 @@ public static class BladeLogoProtocol
         _ => null,
     };
 
-    /// <summary>
-    /// Maps the Logo effect read to the device LED-effect ids. The Logo UI only
-    /// owns 0x00 (static) and 0x02 (breathing); 0x08 is the lighting-engine
-    /// CustomFrame state. Fire is 0x09 in this device map, not 0x08.
-    /// </summary>
-    public static BladeLogoEffect? MapEffect(byte value) => value switch
-    {
-        0x00 or 0x01 => BladeLogoEffect.Static,
-        0x02 => BladeLogoEffect.Breathing,
-        0x08 => BladeLogoEffect.CustomFrame,
-        0x09 => BladeLogoEffect.Fire,
-        _ => null,
-    };
-
     public static BladeLogoMode? Combine(bool power, BladeLogoMode? poweredMode)
     {
         if (!power)

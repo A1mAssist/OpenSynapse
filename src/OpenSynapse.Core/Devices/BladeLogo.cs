@@ -11,28 +11,3 @@ public enum BladeLogoMode
     Breathing,
 }
 
-/// <summary>
-/// Chroma effect ids returned by the Blade Logo effect read. The writable
-/// subset is <see cref="BladeLogoMode"/>; other values are read-only state.
-/// </summary>
-public enum BladeLogoEffect
-{
-    Static,
-    Breathing,
-    Spectrum,
-    Wave,
-    Reactive,
-    Ripple,
-    Starlight,
-    Fire,
-    Ambient,
-    AudioMeter,
-    Wheel,
-    BatteryLevel,
-    Lamborghini,
-    Radiate,
-    Tidal,
-    CustomFrame,
-    Destiny2,
-    ExtendedBreathing,
-}

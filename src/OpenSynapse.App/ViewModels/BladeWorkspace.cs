@@ -2382,9 +2382,9 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             SetLogo(logo);
             CanSetLogo = true;
         }
-        else if (telemetry.BladeLogoEffectRaw is byte rawLogoMode)
+        else if (telemetry.BladeLogoEffectRaw is not null)
         {
-            _blade.SetLogoEffect(rawLogoMode);
+            _blade.SetLogoUnavailable();
             OnPropertyChanged(nameof(LogoText));
             OnPropertyChanged(nameof(LogoIndex));
             CanSetLogo = true;
