@@ -149,6 +149,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         {
             case RazerHeadsetAudioTransport.Mxic64:
             case RazerHeadsetAudioTransport.ValkyrieT3Feature64:
+            case RazerHeadsetAudioTransport.Jolie64:
                 await using (var service = OpenMxicService())
                 {
                     await service.SetMicMuteAsync(muted, cancellationToken);
@@ -202,6 +203,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         {
             case RazerHeadsetAudioTransport.Mxic64:
             case RazerHeadsetAudioTransport.ValkyrieT3Feature64:
+            case RazerHeadsetAudioTransport.Jolie64:
                 await using (var service = OpenMxicService())
                 {
                     await service.SetEqPresetAsync(preset, cancellationToken);
@@ -229,6 +231,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         {
             case RazerHeadsetAudioTransport.Mxic64:
             case RazerHeadsetAudioTransport.ValkyrieT3Feature64:
+            case RazerHeadsetAudioTransport.Jolie64:
                 await using (var service = OpenMxicService())
                 {
                     await service.SetCustomEqAsync(preset, bands, cancellationToken);

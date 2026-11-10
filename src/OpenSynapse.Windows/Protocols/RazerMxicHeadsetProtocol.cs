@@ -71,6 +71,7 @@ public static class RazerMxicHeadsetProtocol
         0x0A81,
         0x0A54,
         0x1022,
+        0x05AD,
     }.ToFrozenSet();
 
     public static bool IsSupported(ushort productId) => ProductIds.Contains(productId);
@@ -112,6 +113,18 @@ public static class RazerMxicHeadsetProtocol
     }.ToFrozenSet();
 
     public static bool UsesValkyrieT3Commands(ushort productId) => ValkyrieT3ProductIds.Contains(productId);
+
+    /// <summary>
+    /// Razer Mako X (05AD) selects rzDeviceJolie. It uses the same 64-byte report-id-7
+    /// feature channel as rzDevice25ValkyrieT3, but its ten-band setter carries the
+    /// group and preset before the bands.
+    /// </summary>
+    private static readonly FrozenSet<ushort> JolietProductIds = new ushort[]
+    {
+        0x05AD,
+    }.ToFrozenSet();
+
+    public static bool UsesJolietCommands(ushort productId) => JolietProductIds.Contains(productId);
 
     // rzDevice40 constants: He=[2,24,128] Be=[4,24,0] [12,24,129] Ve=[12,24,1]
     // Ye=[2,24,132] Xe=[3,24,4]. TD={Speaker:1,Mic:2}; the bundle reads and writes the
@@ -188,6 +201,54 @@ public static class RazerMxicHeadsetProtocol
         payload[1] = 0x01;
         bands.CopyTo(payload.AsSpan(2));
         return RazerValkyrieT3Protocol.Create(0x01, payload);
+    }
+
+    // rzDeviceJolie.setEQSetting allocates 14 bytes:
+    // [profile, speaker, group, preset, ten unsigned/0x80|abs band levels].
+    public static readonly byte[] JolietBassHeader = [LiveProfile];
+
+    public static byte[] CreateGetEqPresetJoliet() =>
+        RazerValkyrieT3Protocol.Create(0x80, [LiveProfile, 0x00]);
+
+    public static byte[] CreateSetEqPresetJoliet(byte preset) =>
+        RazerValkyrieT3Protocol.Create(0x00, [LiveProfile, SpeakerSource, 0x00, preset]);
+
+    public static byte[] CreateGetEqBandsJoliet()
+    {
+        var payload = new byte[EqBandsRequestClass18[0]];
+        payload[0] = LiveProfile;
+        return RazerValkyrieT3Protocol.Create(0x81, payload);
+    }
+
+    public static byte[] CreateSetEqBandsJoliet(byte preset, ReadOnlySpan<byte> bands)
+    {
+        if (bands.Length != TenBandCount)
+        {
+            throw new ArgumentException("Equalizer data must contain 10 bands.", nameof(bands));
+        }
+
+        var payload = new byte[14];
+        payload[0] = LiveProfile;
+        payload[1] = SpeakerSource;
+        payload[2] = 0x00;
+        payload[3] = preset;
+        bands.CopyTo(payload.AsSpan(4));
+        return RazerValkyrieT3Protocol.Create(0x01, payload);
+    }
+
+    public static byte[] CreateGetBassJoliet() =>
+        RazerValkyrieT3Protocol.Create(0x87, [LiveProfile, 0x00]);
+
+    public static byte[] CreateSetBassJoliet(byte level)
+    {
+        if (level > 100) throw new ArgumentOutOfRangeException(nameof(level));
+        return RazerValkyrieT3Protocol.Create(0x07, [LiveProfile, level]);
+    }
+
+    public static byte ReadBass(ReadOnlySpan<byte> value)
+    {
+        Require(value, 1);
+        return value[0];
     }
 
     /// <summary>The class 0x18 EQ-preset reply carries [profile, source, group, preset].</summary>
