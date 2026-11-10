@@ -84,30 +84,16 @@ public static class BladeLogoProtocol
     };
 
     /// <summary>
-    /// Maps the Logo effect read to the Chroma quick-effect ids published by the
-    /// 029D-family Synapse bundle. 0x00 and 0x01 are both written/read as static;
-    /// the power report distinguishes off from on.
+    /// Maps the Logo effect read to the device LED-effect ids. The Logo UI only
+    /// owns 0x00 (static) and 0x02 (breathing); 0x08 is the lighting-engine
+    /// CustomFrame state. Fire is 0x09 in this device map, not 0x08.
     /// </summary>
     public static BladeLogoEffect? MapEffect(byte value) => value switch
     {
         0x00 or 0x01 => BladeLogoEffect.Static,
         0x02 => BladeLogoEffect.Breathing,
-        0x03 => BladeLogoEffect.Spectrum,
-        0x04 => BladeLogoEffect.Wave,
-        0x05 => BladeLogoEffect.Reactive,
-        0x06 => BladeLogoEffect.Ripple,
-        0x07 => BladeLogoEffect.Starlight,
-        0x08 => BladeLogoEffect.Fire,
-        0x0B => BladeLogoEffect.Ambient,
-        0x0C => BladeLogoEffect.AudioMeter,
-        0x0D => BladeLogoEffect.Wheel,
-        0x0E => BladeLogoEffect.BatteryLevel,
-        0x10 => BladeLogoEffect.Lamborghini,
-        0x11 => BladeLogoEffect.Radiate,
-        0x13 => BladeLogoEffect.Tidal,
-        0x30 => BladeLogoEffect.CustomFrame,
-        0x50 => BladeLogoEffect.Destiny2,
-        0xC2 => BladeLogoEffect.ExtendedBreathing,
+        0x08 => BladeLogoEffect.CustomFrame,
+        0x09 => BladeLogoEffect.Fire,
         _ => null,
     };
 
