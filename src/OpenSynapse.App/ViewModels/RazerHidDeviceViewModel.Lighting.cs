@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Lighting;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
@@ -385,6 +386,14 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                                     : QuickLightingDirection.CounterClockwise,
                                 matrix.Rows, matrix.Columns, palette, LightingSpeed),
                         RazerHidLightingEffect.SoftwareAudioMeter => RenderSoftwareAudioFrame(palette),
+                        RazerHidLightingEffect.SoftwareGradient =>
+                            RenderStudioSoftwareFrame(StudioEffectKind.Gradient, palette, matrix.Rows, matrix.Columns),
+                        RazerHidLightingEffect.SoftwareRipple =>
+                            RenderStudioSoftwareFrame(StudioEffectKind.Ripple, palette, matrix.Rows, matrix.Columns),
+                        RazerHidLightingEffect.SoftwareTidal =>
+                            RenderStudioSoftwareFrame(StudioEffectKind.Tidal, palette, matrix.Rows, matrix.Columns),
+                        RazerHidLightingEffect.SoftwareRadiate =>
+                            RenderStudioSoftwareFrame(StudioEffectKind.Radiate, palette, matrix.Rows, matrix.Columns),
                         _ => throw new InvalidOperationException("Unsupported software lighting effect."),
                     };
                     return ValueTask.FromResult<IReadOnlyList<RazerRgb>>(frame);

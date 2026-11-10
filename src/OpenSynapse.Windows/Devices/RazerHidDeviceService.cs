@@ -1637,11 +1637,7 @@ public sealed partial class RazerHidDeviceService
         var effects = new Dictionary<RazerHidLedZone, HashSet<RazerHidLightingEffect>>();
         foreach (var effect in Enum.GetValues<RazerHidLightingEffect>())
         {
-            if (effect is RazerHidLightingEffect.SoftwareSpectrum or
-                RazerHidLightingEffect.SoftwareWave or
-                RazerHidLightingEffect.SoftwareFire or
-                RazerHidLightingEffect.SoftwareAudioMeter or
-                RazerHidLightingEffect.SoftwareWheel)
+            if (RazerHidLightingEffects.IsSoftware(effect))
             {
                 continue;
             }
