@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Reflection;
 using System.Text;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Core.Devices;
@@ -32,12 +33,19 @@ public sealed partial class DiagnosticsWorkspace
 
     public ObservableCollection<DiagnosticRowViewModel> Rows { get; } = new();
 
+    private static string CurrentVersion =>
+        typeof(DiagnosticsWorkspace).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+        ?? typeof(DiagnosticsWorkspace).Assembly.GetName().Version?.ToString(3) ?? "--";
+
     public string CreateReport()
     {
         EnsureRazerHidRows();
         RefreshAccessoryRows();
         var report = new StringBuilder();
         report.AppendLine(AppStrings.Text("DiagnosticsReportTitle"));
+        report.AppendLine(AppStrings.FormatText("DiagnosticsReportGenerated",
+            DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm")));
+        report.AppendLine(AppStrings.FormatText("DiagnosticsReportVersion", CurrentVersion));
         report.AppendLine(AppStrings.FormatText("DiagnosticsReportDeviceRefresh", _lastRefreshText()));
         report.AppendLine(AppStrings.FormatText("DiagnosticsReportDeviceTelemetry", _telemetryTimeText()));
         report.AppendLine();
