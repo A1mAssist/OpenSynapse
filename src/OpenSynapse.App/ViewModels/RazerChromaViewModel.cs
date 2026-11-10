@@ -141,7 +141,7 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
     public string StatusText => AppStrings.Text("BlackSharkStatusConnected");
 
     public string BatterySummary => _batteryPercent is { } percent
-        ? _isCharging == true
+        ? _isCharging == true && _connection.ProductId is not (0x0094 or 0x0095 or 0x00E0)
             ? $"{percent}% · {AppStrings.Text("BlackSharkCharging")}"
             : $"{percent}%"
         : string.Empty;

@@ -299,7 +299,10 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
     public Visibility BatteryBasicVisibility => VisibleWhen(HasBatteryData && !HasPollingSection);
     public Visibility BatteryPollingVisibility => VisibleWhen(HasBatteryData && HasPollingSection);
     public Visibility BatteryPercentVisibility => VisibleWhen(Has(RazerHidBackendCapability.BatteryRead));
-    public Visibility ChargingVisibility => VisibleWhen(Has(RazerHidBackendCapability.ChargingRead));
+    public Visibility ChargingVisibility => VisibleWhen(
+        Has(RazerHidBackendCapability.ChargingRead) && !IsOrochiV2);
+    // The Orochi V2 runs on AA batteries, so its charging report is always "not charging".
+    private bool IsOrochiV2 => Connection.Definition.ProductId is 0x0094 or 0x0095;
     public bool IsBasicBusy { get => _isBasicBusy; private set => SetField(ref _isBasicBusy, value); }
     public IReadOnlyDictionary<string, string> BasicErrors =>
         _basicState?.Errors ?? new Dictionary<string, string>();

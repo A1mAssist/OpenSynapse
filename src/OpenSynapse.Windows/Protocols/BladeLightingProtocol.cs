@@ -32,6 +32,14 @@ public static class BladeLightingProtocol
             0x02,
             new byte[] { 0x00, 0x00, 0x08, 0x00, 0x00, 0x00 });
 
+    public static byte[] CreateBacklightOnRequest(byte transactionId) =>
+        RazerFeatureReport.CreateRequest(
+            transactionId,
+            0x03,
+            0x03,
+            0x00,
+            new byte[] { 0x00, 0x05, 0x01 });
+
     public static byte[] CreateCustomFrameEffectRequest(byte transactionId) =>
         RazerFeatureReport.CreateRequest(
             ValidateMatrixTransactionId(transactionId),

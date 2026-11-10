@@ -1476,7 +1476,7 @@
   <data name="Text_RazerHidIndicatorV2Connection" xml:space="preserve"><value>Connection quality</value></data>
   <data name="Text_RazerHidIndicatorV2Polling" xml:space="preserve"><value>Polling rate</value></data>
   <data name="Text_RazerHidIndicatorV2Dpi" xml:space="preserve"><value>DPI stage</value></data>
-  <data name="RazerHidBatteryCurveLabel.Text" xml:space="preserve"><value>Battery discharge curve</value></data>
+  <data name="RazerHidBatteryCurveLabel.Text" xml:space="preserve"><value>Battery type</value></data>
   <data name="RazerHidGpuCardLabel.Text" xml:space="preserve"><value>GPU card detection</value></data>
   <data name="RazerHidForceChromaLabel.Text" xml:space="preserve"><value>Force Chroma control</value></data>
   <data name="RazerHidChromaTapLabel.Text" xml:space="preserve"><value>Chroma Tap</value></data>
