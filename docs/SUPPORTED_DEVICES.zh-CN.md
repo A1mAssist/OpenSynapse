@@ -327,6 +327,8 @@ Blade 16 (2023) 只提供固件渲染的关闭、呼吸、光谱和波浪效果�
 | Razer Barracuda Pro | `1532:0539` | 音频页 |
 | Razer Barracuda Pro | `1532:0583` | 音频页 |
 | Razer Barracuda V2 Pro | `1532:0593` | 音频页（电量/充电）；提供 THX V4 安装入口 |
+| Razer Barracuda X Chroma | `1532:0574` | 音频页与 6 灯灯光 |
+| Razer Hammerhead V3 | `1532:058C` | 音频页 |
 | Razer BlackShark V2 HyperSpeed | `1532:0565` | 音频页（2.4 GHz 接收器端点） |
 | Razer BlackShark V2 HyperSpeed | `1532:056E` | 音频页 |
 | Razer BlackShark V2 Pro (2020) | `1532:0528` | 音频页；提供 THX 安装入口 |
@@ -352,7 +354,7 @@ Blade 16 (2023) 只提供固件渲染的关闭、呼吸、光谱和波浪效果�
 | Razer Kraken V3 | `1532:0549` | 音频页 |
 | Razer Kraken V3 HyperSense | `1532:0533` | 音频页 |
 | Razer Kraken V3 Pro | `1532:052D` | 不显示：串口音频 transport 未实现 |
-| Razer Kraken V3 X | `1532:0537` | 音频页 |
+| Razer Kraken V3 X | `1532:0537`、`1532:0582` | 音频页 |
 | Razer Kraken V4 | `1532:056B` | 灯光页（有线） |
 | Razer Kraken V4 | `1532:056C` | 灯光页（2.4 GHz 接收器） |
 | Razer Kraken V4 Pro | `1532:0567` | 音频页 |
@@ -372,8 +374,9 @@ Kraken 7.1 使用 37-byte output-report 通道；Kraken V4 有线版及其 2.4 G
 
 | 设备 | USB VID:PID | 说明 |
 |---|---|---|
-| Razer Leviathan V2 | `1532:0532` | 音频页 |
-| Razer Leviathan V2 Pro | `1532:0548` | 音频页 |
+| Razer Leviathan V2 | `1532:0532` | 音频页（Protocol 25，65 字节 Feature Report） |
+| Razer Leviathan V2 Pro | `1532:0548` | 音频页（Protocol 25，65 字节 Feature Report） |
+| Razer Leviathan V2 ECR | `1532:05A3` | 音频页（Protocol 25，64 字节 Feature Report） |
 | Razer Leviathan V2 X | `1532:054A` | 声霸音频与灯光；仍待实机验证 |
 | Razer Nommo Chroma | `1532:0517` | Chroma 灯光 |
 | Razer Nommo Pro | `1532:0518` | Chroma 灯光 |
@@ -390,9 +393,12 @@ Leviathan V2 X（`054A`）覆盖 edition ID 0（标准版）、128（Pikachu）�
 | 设备 | USB VID:PID | 说明 |
 |---|---|---|
 | Razer Seiren Emote | `1532:0F1B` | 音频页；0F1B bundle 没有帧命令，因此不开放 8×8 点阵 |
-| Razer Seiren V2 Pro | `1532:0542` | 音频页 |
-| Razer Seiren V2 X | `1532:0543` | 音频页 |
-| Razer Seiren V3 Mini | `1532:056A` | 音频页 |
+| Razer Seiren V2 Pro | `1532:0542` | 需要雷蛇音频组件；没有 HID 控制 |
+| Razer Seiren V2 X | `1532:0543` | 需要雷蛇音频组件；没有 HID 控制 |
+| Razer Seiren V3 Mini | `1532:056A` | 音频页（Protocol 25，65 字节 Feature Report） |
+| Razer Seiren V3 Chroma | `1532:056F` | 音频页（Protocol 25，65 字节 Feature Report） |
+| Razer Seiren V3 Pro | `1532:058E` | 音频页（Protocol 25，65 字节 Feature Report） |
+| Razer Seiren V3 Chroma 32-Bit DSP | `1532:05A6` | 音频页（Protocol 25，65 字节 Feature Report） |
 
 ## 鼠标垫
 

@@ -7,9 +7,11 @@ namespace OpenSynapse.Windows.Devices;
 public enum RazerHeadsetAudioTransport
 {
     Feature91,
+    AvneraFeature65,
+    Protocol25Feature65,
     Mxic64,
     Valkyrie64,
-    Billie64, Mixer053E, ValkyrieT3Feature64, KrakenBase37,
+    Billie64, Mixer053E, ValkyrieT3Feature64, KrakenBase37, NativeDll,
 }
 
 public sealed record RazerHeadsetAudioConnection(
@@ -20,36 +22,6 @@ public sealed record RazerHeadsetAudioConnection(
     string? ContainerId = null,
     RazerHeadsetAudioTransport Transport = RazerHeadsetAudioTransport.Feature91);
 
-public sealed record RazerHeadsetAudioState(
-    Version? Firmware,
-    byte? BatteryPercent,
-    bool? Charging,
-    byte? EqPreset,
-    IReadOnlyList<byte>? EqBands,
-    byte? Bass,
-    bool? MicMuted,
-    byte? MicVolume,
-    RazerAudioSource? AudioSource,
-    bool? NoiseSuppression,
-    RazerAncState? AncState,
-    byte? AncLevel,
-    IReadOnlyList<string> Errors)
-{
-    public RazerParametricEqBand? ParametricEq { get; init; }
-    public RazerMicCompressor? MicCompressor { get; init; }
-    public byte? MicDeEsser { get; init; }
-    public (RazerMicReverbRoomMode RoomMode, byte Intensity)? MicReverb { get; init; }
-    public sbyte? MicLimiter { get; init; }
-    public bool? Dnd { get; init; }
-    public (byte PromptIndex, bool Enabled)? VoicePrompts { get; init; }
-    public bool? AutoPause { get; init; }
-    public bool? GestureControl { get; init; }
-    public bool? Dolby { get; init; }
-    public bool? NightMode { get; init; }
-    public RazerHapticsControlState? Haptics { get; init; }
-    public bool? MicReturnSwitch { get; init; }
-    public IReadOnlyList<byte>? MicBands { get; init; }
-}
 
 /// <summary>
 /// Audio controls for the Razer headset families (Nari, Kraken, Barracuda, BlackShark,
@@ -125,6 +97,13 @@ public sealed partial class RazerHeadsetAudioService
             [0x0543] = "Razer Seiren V2 X",
             [0x056A] = "Razer Seiren V3 Mini",
             [0x0548] = "Razer Leviathan V2 Pro",
+            [0x056F] = "Razer Seiren V3 Chroma",
+            [0x058E] = "Razer Seiren V3 Pro",
+            [0x05A3] = "Razer Leviathan V2 ECR",
+            [0x05A6] = "Razer Seiren V3 Chroma 32-Bit DSP",
+            [0x058C] = "Razer Hammerhead V3",
+            [0x0574] = "Razer Barracuda X Chroma",
+            [0x0582] = "Razer Kraken V3 X",
             [0x056D] = "Razer Kraken V4 X",
             [0x0F66] = "Razer Marci",
             // The Seiren Emote shares the Camyt3 middleware bundle; its LED matrix uses the
@@ -133,16 +112,18 @@ public sealed partial class RazerHeadsetAudioService
         };
 
     private static readonly IReadOnlySet<ushort> SpeakerProductIds =
-        new HashSet<ushort> { 0x0532, 0x055A, 0x055C, 0x055E, 0x0548 };
+        new HashSet<ushort> { 0x0532, 0x055A, 0x055C, 0x055E, 0x0548, 0x05A3 };
 
     private static readonly IReadOnlySet<ushort> MicrophoneProductIds =
-        new HashSet<ushort> { 0x0542, 0x0543, 0x056A, 0x0F1B };
+        new HashSet<ushort> { 0x0542, 0x0543, 0x056A, 0x0F1B, 0x056F, 0x058E, 0x05A6 };
 
     private readonly IRazerFeatureTransport _transport;
     private readonly string _devicePath;
     private readonly TimeSpan _deviceWait;
     private readonly Action<string>? _diagnostic;
     private readonly RazerHeadsetAudioTransport _transportKind;
+    private readonly ushort _productId;
+    private readonly IRazerProtocol25FeatureTransport? _protocol25Transport;
     private readonly RazerHidHidReportTransport _hidReports = new();
     private byte _transactionId = 0x1F;
 
@@ -151,7 +132,9 @@ public sealed partial class RazerHeadsetAudioService
         string devicePath,
         TimeSpan deviceWait,
         Action<string>? diagnostic = null,
-        RazerHeadsetAudioTransport transportKind = RazerHeadsetAudioTransport.Feature91)
+        RazerHeadsetAudioTransport transportKind = RazerHeadsetAudioTransport.Feature91,
+        ushort productId = 0,
+        IRazerProtocol25FeatureTransport? protocol25Transport = null)
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _devicePath = string.IsNullOrWhiteSpace(devicePath)
@@ -160,9 +143,20 @@ public sealed partial class RazerHeadsetAudioService
         _deviceWait = deviceWait;
         _diagnostic = diagnostic;
         _transportKind = transportKind;
+        _productId = productId;
+        // Both 64- and 65-byte protocol-25 channels resolve to this transport kind
+        // (see ToTransport); the report length comes from the product id.
+        _protocol25Transport = protocol25Transport ??
+            (transportKind == RazerHeadsetAudioTransport.Protocol25Feature65
+                ? new RazerProtocol25FeatureTransport(_devicePath)
+                : null);
     }
 
-    public static bool IsSupported(ushort productId) => Products.ContainsKey(productId);
+    public static bool IsKnown(ushort productId) => Products.ContainsKey(productId);
+
+    public static bool IsSupported(ushort productId) =>
+        IsKnown(productId) && RazerHeadsetChannelCatalog.Resolve(productId) is not
+            (RazerHeadsetChannel.Unsupported or RazerHeadsetChannel.NativeDll);
 
     private static string? ToContainerId(string physicalDeviceKey)
     {
@@ -260,6 +254,9 @@ public sealed partial class RazerHeadsetAudioService
         channel switch
         {
             RazerHeadsetChannel.Feature91 => item.FeatureReportByteLength == RazerFeatureReport.Length,
+            RazerHeadsetChannel.AvneraFeature65 => item.FeatureReportByteLength == RazerAvnera65Protocol.ReadLength,
+            RazerHeadsetChannel.Protocol25Feature65 => item.FeatureReportByteLength == 65,
+            RazerHeadsetChannel.Protocol25Feature64 => item.FeatureReportByteLength == 64,
             RazerHeadsetChannel.KrakenBase37 =>
                 item.OutputReportByteLength >= RazerKrakenBaseProtocol.ReportLength &&
                 item.InputReportByteLength >= 33,
@@ -272,16 +269,37 @@ public sealed partial class RazerHeadsetAudioService
     private static RazerHeadsetAudioTransport ToTransport(RazerHeadsetChannel channel) =>
         channel switch
         {
+            RazerHeadsetChannel.Feature91 => RazerHeadsetAudioTransport.Feature91,
             RazerHeadsetChannel.Mxic64 => RazerHeadsetAudioTransport.Mxic64,
             RazerHeadsetChannel.ValkyrieT3Feature64 => RazerHeadsetAudioTransport.ValkyrieT3Feature64,
             RazerHeadsetChannel.Valkyrie64 => RazerHeadsetAudioTransport.Valkyrie64,
             RazerHeadsetChannel.Billie64 => RazerHeadsetAudioTransport.Billie64,
             RazerHeadsetChannel.KrakenBase37 => RazerHeadsetAudioTransport.KrakenBase37,
-            _ => channel == RazerHeadsetChannel.Mixer053E ? RazerHeadsetAudioTransport.Mixer053E : RazerHeadsetAudioTransport.Feature91,
+            RazerHeadsetChannel.AvneraFeature65 => RazerHeadsetAudioTransport.AvneraFeature65,
+            RazerHeadsetChannel.Protocol25Feature65 or RazerHeadsetChannel.Protocol25Feature64 =>
+                RazerHeadsetAudioTransport.Protocol25Feature65,
+            RazerHeadsetChannel.NativeDll => RazerHeadsetAudioTransport.NativeDll,
+            RazerHeadsetChannel.Mixer053E => RazerHeadsetAudioTransport.Mixer053E,
+            // Keep the dedicated BlackShark panel's historical fallback transport.
+            RazerHeadsetChannel.DedicatedBlackShark => RazerHeadsetAudioTransport.Feature91,
+            _ => throw new NotSupportedException(
+                $"Headset channel {channel} has no audio transport."),
         };
 
     public async Task<RazerHeadsetAudioState> ReadStateAsync(CancellationToken cancellationToken = default)
     {
+        if (_transportKind == RazerHeadsetAudioTransport.NativeDll)
+        {
+            return new RazerHeadsetAudioState(
+                null, null, null, null, null, null, null, null, null, null, null, null,
+                ["Razer audio component required."]);
+        }
+
+        if (_protocol25Transport is not null)
+        {
+            return await ReadProtocol25StateAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         if (_transportKind == RazerHeadsetAudioTransport.KrakenBase37)
         {
             return await ReadKrakenBaseStateAsync(cancellationToken).ConfigureAwait(false);
@@ -499,50 +517,6 @@ public sealed partial class RazerHeadsetAudioService
                 txn => RazerHeadsetAudioProtocol.GetParametricEqSetting(txn, band),
                 "read parametric EQ",
                 cancellationToken).ConfigureAwait(false));
-
-    public Task SetBassAsync(byte level, CancellationToken cancellationToken = default)
-    {
-        if (level > 100)
-        {
-            throw new ArgumentOutOfRangeException(nameof(level), "Bass level must be between 0 and 100.");
-        }
-
-        return WriteAsync(
-            txn => RazerHeadsetAudioProtocol.GetBass(txn),
-            RazerHeadsetAudioProtocol.ReadBass,
-            level,
-            (value, txn) => RazerHeadsetAudioProtocol.SetBass(txn, value),
-            value => value == level,
-            "bass",
-            cancellationToken);
-    }
-
-    public Task SetMicMuteAsync(bool muted, CancellationToken cancellationToken = default) =>
-        WriteAsync(
-            txn => RazerHeadsetAudioProtocol.GetMicMute(txn),
-            RazerHeadsetAudioProtocol.ReadMicMute,
-            muted,
-            (value, txn) => RazerHeadsetAudioProtocol.SetMicMute(txn, value),
-            value => value == muted,
-            "microphone mute",
-            cancellationToken);
-
-    public Task SetMicVolumeAsync(byte volume, CancellationToken cancellationToken = default)
-    {
-        if (volume > 100)
-        {
-            throw new ArgumentOutOfRangeException(nameof(volume), "Microphone volume must be between 0 and 100.");
-        }
-
-        return WriteAsync(
-            txn => RazerHeadsetAudioProtocol.GetMicVolume(txn),
-            RazerHeadsetAudioProtocol.ReadMicVolume,
-            volume,
-            (value, txn) => RazerHeadsetAudioProtocol.SetMicVolume(txn, value),
-            value => value == volume,
-            "microphone volume",
-            cancellationToken);
-    }
 
     public Task SetAudioSourceAsync(RazerAudioSource source, CancellationToken cancellationToken = default)
     {
@@ -793,34 +767,6 @@ public sealed partial class RazerHeadsetAudioService
             value => value == enabled,
             "EQ night mode",
             cancellationToken);
-
-    private async Task SetNoiseSuppressionCoreAsync(bool enabled, CancellationToken cancellationToken)
-    {
-        // The switch is the audio-input control state (08:16, source 3); 08:1C only carries
-        // the amount, where 1 would mean 1% suppression. Enable first, then raise the level.
-        await WriteAsync(
-            txn => RazerHeadsetAudioProtocol.GetAudioInputControlState(txn),
-            RazerHeadsetAudioProtocol.ReadAudioInputControlState,
-            enabled,
-            (value, txn) => RazerHeadsetAudioProtocol.SetAudioInputControlState(txn, value),
-            value => value == enabled,
-            "noise suppression",
-            cancellationToken).ConfigureAwait(false);
-
-        if (!enabled)
-        {
-            return;
-        }
-
-        await WriteAsync(
-            txn => RazerHeadsetAudioProtocol.GetNoiseSuppression(txn),
-            RazerHeadsetAudioProtocol.ReadNoiseSuppression,
-            true,
-            (value, txn) => RazerHeadsetAudioProtocol.SetNoiseSuppression(txn, value),
-            value => value,
-            "noise suppression level",
-            cancellationToken).ConfigureAwait(false);
-    }
 
     private async Task WriteAsync<T>(
         Func<byte, byte[]> readRequest,

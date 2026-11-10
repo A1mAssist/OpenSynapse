@@ -20,6 +20,14 @@ public sealed partial class RazerHeadsetAudioService
         if (requested.Length is not (8 or 10)) throw new ArgumentException("Invalid EQ band count.", nameof(bands));
         return ExecuteEqAsync(async token =>
         {
+            if (_protocol25Transport is not null)
+            {
+                RequireProtocol25Support(
+                    RazerProtocol25FeatureProtocol.SupportsHidEqualizer(_productId), "custom EQ");
+                await SetProtocol25CustomEqAsync(preset, requested, token).ConfigureAwait(false);
+                return;
+            }
+
             var previousPreset = RazerHeadsetAudioProtocol.ReadEqPreset(await QueryAsync(
                 txn => RazerHeadsetAudioProtocol.GetEqPreset(txn), "snapshot EQ preset", token).ConfigureAwait(false));
             var previousBands = await ReadEqBandsRequiredAsync(requested.Length == 10, token).ConfigureAwait(false);
@@ -65,6 +73,13 @@ public sealed partial class RazerHeadsetAudioService
             throw new ArgumentOutOfRangeException(nameof(preset));
         }
 
+        if (_protocol25Transport is not null)
+        {
+            RequireProtocol25Support(
+                RazerProtocol25FeatureProtocol.SupportsHidEqualizer(_productId), "EQ preset");
+            return SetProtocol25EqPresetAsync(preset, cancellationToken);
+        }
+
         return WriteAsync(
             txn => RazerHeadsetAudioProtocol.GetEqPreset(txn),
             RazerHeadsetAudioProtocol.ReadEqPreset,
@@ -84,6 +99,14 @@ public sealed partial class RazerHeadsetAudioService
         if (!tenBand && bands.Count != RazerHeadsetAudioProtocol.EightBandCount)
         {
             throw new ArgumentException("Equalizer data must contain 10 or 8 bands.", nameof(bands));
+        }
+
+        if (_protocol25Transport is not null)
+        {
+            RequireProtocol25Support(
+                RazerProtocol25FeatureProtocol.SupportsHidEqualizer(_productId), "EQ bands");
+            await SetProtocol25EqBandsAsync(bands, cancellationToken).ConfigureAwait(false);
+            return;
         }
 
         var previous = await ReadEqBandsRequiredAsync(tenBand, cancellationToken).ConfigureAwait(false);

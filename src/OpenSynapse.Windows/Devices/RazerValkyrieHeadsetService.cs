@@ -51,7 +51,7 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
 
     public static bool IsSupported(ushort productId) => productId is
         0x0579 or 0x0A4E or 0x0A51 or 0x101E or 0x101F or
-        0x0567 or 0x056B or 0x0587 or
+        0x0567 or 0x056B or 0x0574 or 0x0587 or
         BlackSharkV3ProProtocol.HyperSpeedWirelessProductId or
         BlackSharkV3ProProtocol.HyperSpeedUsbProductId;
 
@@ -60,6 +60,10 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
         0x0567 => HeadsetProfile.BillieT1Wired,
         0x056B => HeadsetProfile.BillieT2,
         0x0587 => HeadsetProfile.BillieT2,
+        // AudioMabelT3C (Barracuda X Chroma) extends AudioBillieT2 without
+        // overriding an audio command: same report id 2, 64-byte frame,
+        // transaction 0x60 and zero direction byte.
+        0x0574 => HeadsetProfile.BillieT2,
         BlackSharkV3ProProtocol.HyperSpeedWirelessProductId or
             BlackSharkV3ProProtocol.HyperSpeedUsbProductId => HeadsetProfile.OdessaT2Wireless,
         0x0579 or 0x0A4E or 0x0A51 or 0x101E or 0x101F => HeadsetProfile.Valkyrie,

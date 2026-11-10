@@ -5,7 +5,8 @@ namespace OpenSynapse.Windows.Protocols;
 /// implementation in Razer's own product bundle. Every frame is an output report
 /// with the report id in byte 0, the audio transaction id in byte 2, the command
 /// class and id in bytes 7 and 8, and the payload from byte 10. The bundle's
-/// general commands carry an XOR checksum in byte 62.
+/// general commands carry an XOR checksum in byte 62; its custom frames use the
+/// 0F:03 class and leave that slot zero.
 /// </summary>
 internal static class RazerHidKrakenV4Protocol
 {
@@ -30,10 +31,18 @@ internal static class RazerHidKrakenV4Protocol
 
     private const byte EffectOff = 0x00;
     private const byte EffectStatic = 0x01;
+    // AudioMabelT3C and AudioBillieT2 both read these ids from the bundle's
+    // {Off:0, Static:1, Breathing:2, SpectrumCycling:3, Wave:4, CustomFrame:8} table.
+    private const byte EffectBreathing = 0x02;
+    private const byte EffectSpectrumCycling = 0x03;
     private const byte EffectWave = 0x04;
 
+    private const byte FrameCommandClass = 0x0F;
+    private const byte FrameCommandId = 0x03;
+    private const int FrameCommandLength = 5;
     private const int PayloadOffset = 10;
     private const int ChecksumOffset = ReportLength - 2;
+    private const int MaxFrameLeds = (ReportLength - PayloadOffset - FrameCommandLength) / 3;
 
     internal static IReadOnlyList<byte[]> CreateOff(bool isDongle = false) =>
     [
@@ -61,6 +70,58 @@ internal static class RazerHidKrakenV4Protocol
     [
         CreateEffect(EffectWave, isDongle),
     ];
+
+    internal static IReadOnlyList<byte[]> CreateBreathing(
+        RazerHidColor color,
+        byte? intensity = null,
+        bool isDongle = false) =>
+    [
+        CreateEffect(EffectBreathing, isDongle, Scale(color, intensity)),
+    ];
+
+    internal static IReadOnlyList<byte[]> CreateSpectrum(bool isDongle = false) =>
+    [
+        CreateEffect(EffectSpectrumCycling, isDongle),
+    ];
+
+    /// <summary>
+    /// AudioMabelT3C sends a single row: the bundle's frame command is
+    /// [0, 0, rows - 1, 0, cols - 1] followed by the RGB triples, sent on the
+    /// 0F:03 class without a checksum. A headset ring is one row, so the LED
+    /// count is the column count.
+    /// </summary>
+    internal static IReadOnlyList<byte[]> CreateCustomFrame(
+        RazerHidColor color,
+        int ledCount,
+        byte? intensity = null,
+        bool isDongle = false)
+    {
+        if (ledCount is < 1 or > MaxFrameLeds)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(ledCount), ledCount, $"A frame carries between 1 and {MaxFrameLeds} LEDs.");
+        }
+
+        var scaled = Scale(color, intensity);
+        var data = new byte[checked(ledCount * 3)];
+        for (var index = 0; index < data.Length; index += 3)
+        {
+            data[index] = scaled.Red;
+            data[index + 1] = scaled.Green;
+            data[index + 2] = scaled.Blue;
+        }
+
+        return
+        [
+            CreateReport(
+                [0x00, 0x00, 0x00, 0x00, checked((byte)(ledCount - 1))],
+                data,
+                isDongle,
+                FrameCommandClass,
+                FrameCommandId,
+                checksum: false),
+        ];
+    }
 
     /// <summary>
     /// Takes the headset out of its onboard effect and gives the host control of
@@ -117,12 +178,23 @@ internal static class RazerHidKrakenV4Protocol
     private static byte[] CreateGeneralReport(
         IReadOnlyList<byte> command,
         IReadOnlyList<byte> data,
-        bool isDongle)
+        bool isDongle) =>
+        CreateReport(command, data, isDongle, commandClass: 0x00, commandId: 0x00, checksum: true);
+
+    private static byte[] CreateReport(
+        IReadOnlyList<byte> command,
+        IReadOnlyList<byte> data,
+        bool isDongle,
+        byte commandClass,
+        byte commandId,
+        bool checksum)
     {
         var report = new byte[ReportLength];
         report[0] = ReportId;
         report[2] = TransactionId;
         report[6] = checked((byte)(command.Count + data.Count + 1));
+        report[7] = commandClass;
+        report[8] = commandId;
         for (var index = 0; index < command.Count; index++)
         {
             report[PayloadOffset + index] = command[index];
@@ -134,7 +206,11 @@ internal static class RazerHidKrakenV4Protocol
         }
 
         report[9] = isDongle ? DongleFlag : WiredFlag;
-        report[ChecksumOffset] = CalculateChecksum(report);
+        if (checksum)
+        {
+            report[ChecksumOffset] = CalculateChecksum(report);
+        }
+
         return report;
     }
 

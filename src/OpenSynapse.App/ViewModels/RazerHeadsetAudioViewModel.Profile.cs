@@ -253,6 +253,14 @@ public sealed partial class RazerHeadsetAudioViewModel
         Color secondary,
         CancellationToken cancellationToken)
     {
+        if (IsAvnera65)
+        {
+            await using var service = OpenAvneraService();
+            await service.SetChromaEffectAsync(
+                effect, primary.R, primary.G, primary.B, cancellationToken);
+            return;
+        }
+
         var colors = effect switch
         {
             RazerChromaEffect.Static => new byte[] { primary.R, primary.G, primary.B },
@@ -261,6 +269,20 @@ public sealed partial class RazerHeadsetAudioViewModel
             _ => [],
         };
         await OpenChromaService().SetEffectAsync(effect, colors, cancellationToken);
+    }
+
+    private async Task WriteChromaBrightnessHardwareAsync(
+        double brightness,
+        CancellationToken cancellationToken)
+    {
+        if (IsAvnera65)
+        {
+            await using var service = OpenAvneraService();
+            await service.SetChromaBrightnessAsync((byte)Math.Round(brightness), cancellationToken);
+            return;
+        }
+
+        await OpenChromaService().SetBrightnessAsync((byte)Math.Round(brightness), cancellationToken);
     }
 
     private RazerParametricEqBand CurrentParametricEq() =>

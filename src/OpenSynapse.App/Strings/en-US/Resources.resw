@@ -967,6 +967,21 @@
   <data name="ProtocolAvailableCount" xml:space="preserve">
     <value>Capabilities available {0}/{1}</value>
   </data>
+  <data name="ProtocolAvailableCountPartial" xml:space="preserve">
+    <value>Capabilities available {0}/{1} (partially read)</value>
+  </data>
+  <data name="BlackSharkCapabilityReading" xml:space="preserve">
+    <value>Reading…</value>
+  </data>
+  <data name="BlackSharkCapabilityReadFailed" xml:space="preserve">
+    <value>Read failed</value>
+  </data>
+  <data name="BlackSharkComponentRequired" xml:space="preserve">
+    <value>Razer audio component required</value>
+  </data>
+  <data name="BlackSharkStatusPartial" xml:space="preserve">
+    <value>Partially available</value>
+  </data>
   <data name="ActivePowerSource" xml:space="preserve">
     <value>Active power source: {0}</value>
   </data>
@@ -3144,6 +3159,13 @@
   <data name="RazerHeadsetHapticsStrength.Header" xml:space="preserve"><value>Level</value></data>
   <data name="RazerHeadsetHapticsTitle.Text" xml:space="preserve"><value>Haptics</value></data>
   <data name="RazerHeadsetHapticsToggle.Header" xml:space="preserve"><value>Enable haptics</value></data>
+  <data name="RazerHeadsetEditionLabel.Text" xml:space="preserve"><value>Edition</value></data>
+  <data name="RazerHeadsetInfoTitle.Text" xml:space="preserve"><value>Device information</value></data>
+  <data name="RazerHeadsetLinkStatusLabel.Text" xml:space="preserve"><value>Connection status</value></data>
+  <data name="RazerHeadsetDockTitle.Text" xml:space="preserve"><value>Charging dock</value></data>
+  <data name="RazerHeadsetDockFirmwareLabel.Text" xml:space="preserve"><value>Dock firmware</value></data>
+  <data name="RazerHeadsetDockSerialLabel.Text" xml:space="preserve"><value>Dock serial number</value></data>
+  <data name="RazerHeadsetDockEditionLabel.Text" xml:space="preserve"><value>Dock edition</value></data>
   <data name="RazerHeadsetLimiterLabel.Text" xml:space="preserve"><value>Limiter threshold</value></data>
   <data name="RazerHeadsetMicApply.Content" xml:space="preserve"><value>Apply microphone settings</value></data>
   <data name="RazerHeadsetMicMonitoringApply.Content" xml:space="preserve"><value>Apply monitoring</value></data>

@@ -1269,6 +1269,21 @@
     <value>能力可用 {0}/{1}</value>
     <comment>能力可用 {0}/{1}</comment>
   </data>
+  <data name="ProtocolAvailableCountPartial" xml:space="preserve">
+    <value>能力可用 {0}/{1}（部分读取失败）</value>
+  </data>
+  <data name="BlackSharkCapabilityReading" xml:space="preserve">
+    <value>正在读取…</value>
+  </data>
+  <data name="BlackSharkCapabilityReadFailed" xml:space="preserve">
+    <value>读取失败</value>
+  </data>
+  <data name="BlackSharkComponentRequired" xml:space="preserve">
+    <value>需要安装雷蛇音频组件</value>
+  </data>
+  <data name="BlackSharkStatusPartial" xml:space="preserve">
+    <value>部分可用</value>
+  </data>
   <data name="ActivePowerSource" xml:space="preserve">
     <value>当前生效供电：{0}</value>
     <comment>当前生效供电</comment>
@@ -3574,6 +3589,13 @@
   <data name="RazerHeadsetHapticsStrength.Header" xml:space="preserve"><value>强度</value></data>
   <data name="RazerHeadsetHapticsTitle.Text" xml:space="preserve"><value>触觉反馈</value></data>
   <data name="RazerHeadsetHapticsToggle.Header" xml:space="preserve"><value>启用触觉反馈</value></data>
+  <data name="RazerHeadsetEditionLabel.Text" xml:space="preserve"><value>Edition</value></data>
+  <data name="RazerHeadsetInfoTitle.Text" xml:space="preserve"><value>设备信息</value></data>
+  <data name="RazerHeadsetLinkStatusLabel.Text" xml:space="preserve"><value>连接状态</value></data>
+  <data name="RazerHeadsetDockTitle.Text" xml:space="preserve"><value>充电底座</value></data>
+  <data name="RazerHeadsetDockFirmwareLabel.Text" xml:space="preserve"><value>底座固件</value></data>
+  <data name="RazerHeadsetDockSerialLabel.Text" xml:space="preserve"><value>底座序列号</value></data>
+  <data name="RazerHeadsetDockEditionLabel.Text" xml:space="preserve"><value>底座 Edition</value></data>
   <data name="RazerHeadsetLimiterLabel.Text" xml:space="preserve"><value>限幅阈值</value></data>
   <data name="RazerHeadsetMicApply.Content" xml:space="preserve"><value>应用麦克风</value></data>
   <data name="RazerHeadsetMicMonitoringApply.Content" xml:space="preserve"><value>应用监听</value></data>

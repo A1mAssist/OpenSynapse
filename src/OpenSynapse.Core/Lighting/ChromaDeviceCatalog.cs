@@ -292,7 +292,7 @@ public static class ChromaDeviceCatalog
             [0x057E] = ChromaDeviceKind.Headset,
             [0x057F] = ChromaDeviceKind.Headset,
             [0x0580] = ChromaDeviceKind.Headset,
-            [0x0582] = ChromaDeviceKind.ChromaLink,
+            [0x0582] = ChromaDeviceKind.Headset,
             [0x0587] = ChromaDeviceKind.Headset,
             [0x0588] = ChromaDeviceKind.Headset,
             [0x058A] = ChromaDeviceKind.ChromaLink,
