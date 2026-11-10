@@ -207,18 +207,18 @@ public static class RazerMxicHeadsetProtocol
     // [profile, speaker, group, preset, ten unsigned/0x80|abs band levels].
     public static readonly byte[] JolietBassHeader = [LiveProfile];
 
+    // rzDevice40.getEQPreset(profile, speaker, group) sends all three bytes and
+    // replies [profile, speaker, group, preset].
     public static byte[] CreateGetEqPresetJoliet() =>
-        RazerValkyrieT3Protocol.Create(0x80, [LiveProfile, 0x00]);
+        RazerValkyrieT3Protocol.CreateMakoX(0x80, [LiveProfile, SpeakerSource, 0x00]);
 
     public static byte[] CreateSetEqPresetJoliet(byte preset) =>
-        RazerValkyrieT3Protocol.Create(0x00, [LiveProfile, SpeakerSource, 0x00, preset]);
+        RazerValkyrieT3Protocol.CreateMakoX(0x00, [LiveProfile, SpeakerSource, 0x00, preset]);
 
-    public static byte[] CreateGetEqBandsJoliet()
-    {
-        var payload = new byte[EqBandsRequestClass18[0]];
-        payload[0] = LiveProfile;
-        return RazerValkyrieT3Protocol.Create(0x81, payload);
-    }
+    // rzDevice40.getEQSetting(profile, speaker) sends two bytes, not the
+    // twelve-byte staging buffer used by the legacy class-0x18 setter.
+    public static byte[] CreateGetEqBandsJoliet() =>
+        RazerValkyrieT3Protocol.CreateMakoX(0x81, [LiveProfile, SpeakerSource]);
 
     public static byte[] CreateSetEqBandsJoliet(byte preset, ReadOnlySpan<byte> bands)
     {
@@ -233,16 +233,17 @@ public static class RazerMxicHeadsetProtocol
         payload[2] = 0x00;
         payload[3] = preset;
         bands.CopyTo(payload.AsSpan(4));
-        return RazerValkyrieT3Protocol.Create(0x01, payload);
+        return RazerValkyrieT3Protocol.CreateMakoX(0x01, payload);
     }
 
+    // Joliet inherits rzDevice40's bass commands, which live on class 0x08.
     public static byte[] CreateGetBassJoliet() =>
-        RazerValkyrieT3Protocol.Create(0x87, [LiveProfile, 0x00]);
+        RazerValkyrieT3Protocol.CreateMakoX(0x08, 0x87, [LiveProfile]);
 
     public static byte[] CreateSetBassJoliet(byte level)
     {
         if (level > 100) throw new ArgumentOutOfRangeException(nameof(level));
-        return RazerValkyrieT3Protocol.Create(0x07, [LiveProfile, level]);
+        return RazerValkyrieT3Protocol.CreateMakoX(0x08, 0x07, [LiveProfile, level]);
     }
 
     public static byte ReadBass(ReadOnlySpan<byte> value)
