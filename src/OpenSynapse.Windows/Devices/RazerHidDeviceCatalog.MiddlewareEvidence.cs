@@ -41,11 +41,11 @@ public sealed partial class RazerHidDeviceCatalog
             bool supportsIndependentDpi) => new(
                 productId, displayName, sibling.Category, capabilities, maximumDpi,
                 Array.AsReadOnly(IsMiddlewareMouseReadOnly(productId) ? Array.Empty<int>() : pollingRates),
-                sibling.MatrixDimensions, sibling.DeviceWait,
+                IsRzDevice30Family(productId) ? null : sibling.MatrixDimensions, sibling.DeviceWait,
                 copiedTransactions, copiedPrefixes, sibling.DefaultStorage, sibling.DefaultLedZone,
                 copiedSequences, copiedSizes, supportsIndependentDpi);
 
-        bool ExcludeLighting(string name) => productId == 0x00E0 &&
+        bool ExcludeLighting(string name) => (productId == 0x00E0 || IsRzDevice30Family(productId)) &&
             (name.Contains("brightness", StringComparison.Ordinal) || name.Contains("effect", StringComparison.Ordinal) ||
              name.Contains("led", StringComparison.Ordinal) || name.Contains("matrix", StringComparison.Ordinal) ||
              name == "set_key_row");
@@ -70,6 +70,12 @@ public sealed partial class RazerHidDeviceCatalog
     }).ToFrozenSet(StringComparer.Ordinal);
 
     internal static bool IsMiddlewareMouseReadOnly(ushort productId) => productId == 0x00A2;
+
+    // rzDevice30 drives the Basilisk V4 family through 0x10:0x03/0x04. The 0x0F matrix
+    // frame inherited from the 35K sibling is answered with busy and leaves a receipt that
+    // poisons later reads, so matrix lighting stays off until 0x10 is verified on hardware.
+    internal static bool IsRzDevice30Family(ushort productId) =>
+        productId is 0x00E2 or 0x00E3 or 0x00EA or 0x00EB;
 
     private static bool IsWriteCapability(string capability) =>
         capability.StartsWith("set_", StringComparison.Ordinal) || capability is "add_macro" or "delete_macro";

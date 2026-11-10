@@ -165,6 +165,13 @@ internal sealed class RazerDeviceTimeoutException(string message, bool retryable
 /// <summary>A reply did not match the request's transaction id, command, length or checksum.</summary>
 internal sealed class RazerReportMismatchException(string message) : InvalidOperationException(message);
 
+internal enum RazerResponseMatch
+{
+    Matched,
+    BusyReceipt,
+    Mismatched,
+}
+
 public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
 {
     private readonly LocalDiagnosticLog? _diagnosticLog;
@@ -402,6 +409,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
             await WaitAsync(deviceWait, directIo, cancellationToken).ConfigureAwait(false);
             byte[]? response = null;
             string? readError = null;
+            var staleBusy = false;
             for (var readAttempt = 1; readAttempt <= MaxReadAttempts; readAttempt++)
             {
                 if (readAttempt > 1)
@@ -419,14 +427,20 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
                     break;
                 }
 
-                var matches = usesLeviathanReportId
-                    ? RazerFeatureReport.MatchesLeviathanResponse(request, candidate, allowRemainingPacketsMismatch)
-                    : RazerFeatureReport.Matches(request, candidate, allowRemainingPacketsMismatch);
-                // The 1354 middleware never checks the reply's report id; the feature
-                // collection only has one feature report and the transaction plus command
-                // already identify the exchange. Keep the id gate for other devices.
-                if ((!usesLeviathanReportId && !RazerFeatureReport.MatchesReportId(candidate, responseReportId)) ||
-                    !matches)
+                var classification = ClassifyResponse(request, candidate, responseReportId,
+                    usesLeviathanReportId, allowRemainingPacketsMismatch);
+                if (classification == RazerResponseMatch.BusyReceipt)
+                {
+                    // A busy receipt left by an earlier command must not be reported as a
+                    // mismatch: it says nothing about the request we just sent. Re-send it.
+                    busyResponses++;
+                    silentResponses++;
+                    staleBusy = true;
+                    lastError = $"The device is busy (0x01). want txn=0x{request[2]:X2}, class=0x{request[7]:X2}, command=0x{request[8]:X2}; received txn=0x{candidate[2]:X2}, class=0x{candidate[7]:X2}, command=0x{candidate[8]:X2}, len={candidate[6]}.";
+                    diagnostic?.Invoke($"attempt {attempt}: stale busy receipt ({lastError})");
+                    break;
+                }
+                if (classification == RazerResponseMatch.Mismatched)
                 {
                     readError = $"status=0x{candidate[1]:X2}, txn=0x{candidate[2]:X2} (want 0x{request[2]:X2}), class=0x{candidate[7]:X2} (want 0x{request[7]:X2}), command=0x{candidate[8]:X2} (want 0x{request[8]:X2}), len={candidate[6]} (want {request[6]}), crc=0x{candidate[89]:X2}, computed=0x{RazerFeatureReport.CalculateCrc(candidate):X2}";
                     continue;
@@ -438,9 +452,12 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
 
             if (response is null)
             {
-                lastValidationError = string.IsNullOrWhiteSpace(readError) ? "No reply matched the request." : readError;
-                lastError = "The device returned an incorrect report ID, an out-of-order report, or a report that failed validation; close Synapse and retry.";
-                diagnostic?.Invoke($"attempt {attempt}: response validation failed after {MaxReadAttempts} reads ({lastValidationError})");
+                if (!staleBusy)
+                {
+                    lastValidationError = string.IsNullOrWhiteSpace(readError) ? "No reply matched the request." : readError;
+                    lastError = "The device returned an incorrect report ID, an out-of-order report, or a report that failed validation; close Synapse and retry.";
+                    diagnostic?.Invoke($"attempt {attempt}: response validation failed after {MaxReadAttempts} reads ({lastValidationError})");
+                }
                 await WaitAsync(QueryRetryDelay, directIo, cancellationToken).ConfigureAwait(false);
                 continue;
             }
@@ -510,6 +527,10 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
 
         // A dead endpoint fails every command on its path, so busy/silent means the
         // firmware does not answer this command, not that the transport is gone.
+        if (busyResponses > 0)
+            throw new RazerDeviceTimeoutException(lastError ?? "The device is busy (0x01).",
+                retryableBusy: true);
+
         if (silentResponses == MaxQueryAttempts)
             throw new RazerDeviceTimeoutException(lastError ?? "The device did not answer this command.",
                 busyResponses > 0);
@@ -590,6 +611,27 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
 
     internal static bool IsRetryableBusyResponse(byte status, byte commandId) =>
         status == 0x01 && (commandId & 0x80) != 0;
+
+    internal static RazerResponseMatch ClassifyResponse(
+        ReadOnlySpan<byte> request,
+        byte[] candidate,
+        byte responseReportId,
+        bool usesLeviathanReportId,
+        bool allowRemainingPacketsMismatch)
+    {
+        var matches = usesLeviathanReportId
+            ? RazerFeatureReport.MatchesLeviathanResponse(request, candidate, allowRemainingPacketsMismatch)
+            : RazerFeatureReport.Matches(request, candidate, allowRemainingPacketsMismatch);
+        // The 1354 middleware never checks the reply's report id; the feature collection
+        // only has one feature report and the transaction plus command identify it.
+        if (!usesLeviathanReportId && !RazerFeatureReport.MatchesReportId(candidate, responseReportId))
+        {
+            matches = false;
+        }
+        if (matches)
+            return RazerResponseMatch.Matched;
+        return candidate[1] == 0x01 ? RazerResponseMatch.BusyReceipt : RazerResponseMatch.Mismatched;
+    }
 
     internal static string DescribeDevicePath(string devicePath)
     {

@@ -121,3 +121,7 @@ Every write path must have:
 - no arbitrary raw-HID console, command enumeration, or guessed value range.
 
 Before closing the adaptation, confirm that unsupported controls are absent from the UI, the owner has tested the relevant build, and the documentation describes the support boundary accurately.
+
+### Clone rule
+
+A new device must not inherit a sibling's command table without evidence. Record the bundle path and the `[dataSize, class, command]` triples that back each read and write path. Lighting is the easiest place to copy the wrong generation: a matrix frame belongs only to a device whose bundle uses that matrix family, and `rzDevice30` lighting uses `0x10:0x03` / `0x10:0x04` instead. Write capabilities stay off until a readback probe succeeds. Cross-family clones must state the protocol family explicitly.
