@@ -29,7 +29,10 @@ internal static class RazerHidDongleIndicatorProtocol
 
     internal static RazerHidIndicatorLedConfigurationV2 Parse(ReadOnlySpan<byte> response)
     {
-        var arguments = RazerHidStandardProtocol.Arguments(response, 3);
+        // The dongle answers this read with data_size 0 on some firmware revisions even
+        // though the three modes are present at the normal argument offset. Razer's own
+        // reader does not gate on the declared size, so follow the payload, not byte 6.
+        var arguments = RazerHidStandardProtocol.RawArguments(response);
         if (arguments[0] > 4 || arguments[1] > 4 || arguments[2] > 4)
         {
             throw new InvalidDataException("Device returned an invalid indicator LED mode.");

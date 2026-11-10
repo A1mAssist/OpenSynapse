@@ -912,7 +912,7 @@
                           </Grid>
                           <Button local:Localized.Uid="RazerHidSaveButton" Content="保存" Visibility="{Binding TimeToDimWriteVisibility}" Click="RazerHidApplyTimeToDimClick" IsEnabled="{Binding CanEditTimeToDim}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
                         </StackPanel>
-                        <StackPanel Grid.Column="1" Visibility="{Binding IndicatorLedV2Visibility}" Spacing="8"><TextBlock local:Localized.Uid="RazerHidIndicatorLedV2Title" Text="接收器指示灯" Style="{StaticResource MetricLabelStyle}" />
+                        <StackPanel Grid.Column="1" Visibility="{Binding IndicatorLedV2Visibility}" Spacing="8" Loaded="RazerHidIndicatorLedV2Loaded"><TextBlock local:Localized.Uid="RazerHidIndicatorLedV2Title" Text="接收器指示灯" Style="{StaticResource MetricLabelStyle}" />
                           <TextBlock Text="{Binding IndicatorLedV2Text}" FontFamily="Cascadia Mono,Consolas" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                           <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8" Visibility="{Binding IndicatorLedV2WriteVisibility}">
                             <ComboBox local:Localized.Uid="RazerHidIndicatorLed1Label" Header="LED 1" ItemsSource="{Binding IndicatorLedModeOptions}" SelectedIndex="{Binding IndicatorLed1Index, Mode=TwoWay}" IsEnabled="{Binding CanWriteIndicatorLedV2}" />
