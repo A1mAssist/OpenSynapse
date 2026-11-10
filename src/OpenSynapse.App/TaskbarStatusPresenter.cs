@@ -95,7 +95,7 @@ internal sealed class TaskbarStatusPresenter : IDisposable
             // Nothing to draw: keep the ten-second battery retry, not a one-second
             // UI tick for a window that is not there.
             SetTimerInterval(BatteryReadInterval);
-            _statusWindow?.Hide();
+            _statusWindow?.Clear();
             return;
         }
 
@@ -108,7 +108,7 @@ internal sealed class TaskbarStatusPresenter : IDisposable
             battery.Name);
         if (!TaskbarStatusPolicy.ShouldShow(snapshot, enabled: true))
         {
-            _statusWindow?.Hide();
+            _statusWindow?.Clear();
             return;
         }
 
