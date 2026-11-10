@@ -1172,6 +1172,13 @@ public sealed partial class RazerHidDeviceService
         {
             result.UnionWith(MappingCapabilities);
         }
+        else if (definition.Category == DeviceCategory.Keyboard &&
+                 await ProbeKeyAssignmentAsync(definition, devicePath, cancellationToken).ConfigureAwait(false))
+        {
+            // Keypads such as 0244 keep their key ids in the product bundle and only answer
+            // the key-assignment table, not the button-list GET.
+            result.UnionWith(MappingCapabilities);
+        }
         else
         {
             // 0083 and other OBM mice answer the assignment table even when the button
