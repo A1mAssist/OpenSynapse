@@ -682,11 +682,6 @@
 <data name="DiagnosticKeyboardEffect" xml:space="preserve"><value>Keyboard effect</value></data>
   <data name="DiagnosticBladeLogo" xml:space="preserve"><value>Blade logo</value></data>
   <data name="BladeLogoUnsupportedMode" xml:space="preserve"><value>Unknown effect ({0})</value></data>
-  <data name="BladeLogoEffectBatteryLevel" xml:space="preserve"><value>Battery level</value></data>
-  <data name="BladeLogoEffectLamborghini" xml:space="preserve"><value>Lamborghini</value></data>
-  <data name="BladeLogoEffectCustomFrame" xml:space="preserve"><value>Custom frame</value></data>
-  <data name="BladeLogoEffectDestiny2" xml:space="preserve"><value>Destiny 2</value></data>
-  <data name="BladeLogoEffectExtendedBreathing" xml:space="preserve"><value>Extended breathing</value></data>
   <data name="DiagnosticMousePollingRate" xml:space="preserve"><value>Mouse polling rate</value></data>
   <data name="DiagnosticMouseIdleTimeout" xml:space="preserve"><value>Mouse idle timeout</value></data>
   <data name="Text_6D7EF7B5" xml:space="preserve"><value>Mouse DPI stages</value></data>

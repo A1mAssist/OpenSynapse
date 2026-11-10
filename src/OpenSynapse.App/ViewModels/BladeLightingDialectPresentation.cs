@@ -101,26 +101,4 @@ internal static class BladeLightingDialectPresentation
         _ => throw new ArgumentOutOfRangeException(nameof(mode)),
     };
 
-    public static string LogoEffectTextKey(BladeLogoEffect effect) => effect switch
-    {
-        BladeLogoEffect.Static => "Text_6295D9CB",
-        BladeLogoEffect.Breathing => "Text_7EDA32B9",
-        BladeLogoEffect.Spectrum => "Text_21BE26F0",
-        BladeLogoEffect.Wave => "Text_165FCE9D",
-        BladeLogoEffect.Reactive => "Text_E2309DE4",
-        BladeLogoEffect.Ripple => "Text_D1D985CC",
-        BladeLogoEffect.Starlight => "Text_51212D25",
-        BladeLogoEffect.Fire => "Text_5DCB722E",
-        BladeLogoEffect.Ambient => "Text_33F4E277",
-        BladeLogoEffect.AudioMeter => "Text_F3845B2A",
-        BladeLogoEffect.Wheel => "Text_2A3A07A1",
-        BladeLogoEffect.BatteryLevel => "BladeLogoEffectBatteryLevel",
-        BladeLogoEffect.Lamborghini => "BladeLogoEffectLamborghini",
-        BladeLogoEffect.Radiate => "LightingStudioEffectRadiate",
-        BladeLogoEffect.Tidal => "Text_388555B3",
-        BladeLogoEffect.CustomFrame => "BladeLogoEffectCustomFrame",
-        BladeLogoEffect.Destiny2 => "BladeLogoEffectDestiny2",
-        BladeLogoEffect.ExtendedBreathing => "BladeLogoEffectExtendedBreathing",
-        _ => throw new ArgumentOutOfRangeException(nameof(effect)),
-    };
 }

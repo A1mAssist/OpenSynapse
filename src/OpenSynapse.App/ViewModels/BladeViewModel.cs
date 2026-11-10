@@ -1,7 +1,6 @@
 using Windows.UI;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Lighting;
-using OpenSynapse.Windows.Protocols;
 using static OpenSynapse.App.ViewModels.DeviceUiCatalog;
 
 namespace OpenSynapse.App.ViewModels;
@@ -304,11 +303,9 @@ internal sealed class BladeViewModel
         }
     }
 
-    internal void SetLogoEffect(byte rawMode)
+    internal void SetLogoUnavailable()
     {
-        _bladeLogoText = BladeLogoProtocol.MapEffect(rawMode) is { } effect
-            ? AppStrings.Text(BladeLightingDialectPresentation.LogoEffectTextKey(effect))
-            : AppStrings.FormatText("BladeLogoUnsupportedMode", $"0x{rawMode:X2}");
+        _bladeLogoText = "--";
         _bladeLogoIndex = -1;
         _confirmedBladeLogoIndex = -1;
     }

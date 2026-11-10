@@ -898,11 +898,6 @@
 <data name="DiagnosticKeyboardEffect" xml:space="preserve"><value>键盘灯效</value></data>
   <data name="DiagnosticBladeLogo" xml:space="preserve"><value>Blade Logo</value></data>
   <data name="BladeLogoUnsupportedMode" xml:space="preserve"><value>未知效果（{0}）</value></data>
-  <data name="BladeLogoEffectBatteryLevel" xml:space="preserve"><value>电量指示</value></data>
-  <data name="BladeLogoEffectLamborghini" xml:space="preserve"><value>兰博基尼</value></data>
-  <data name="BladeLogoEffectCustomFrame" xml:space="preserve"><value>自定义帧</value></data>
-  <data name="BladeLogoEffectDestiny2" xml:space="preserve"><value>Destiny 2</value></data>
-  <data name="BladeLogoEffectExtendedBreathing" xml:space="preserve"><value>扩展呼吸</value></data>
   <data name="DiagnosticMousePollingRate" xml:space="preserve"><value>鼠标轮询率</value></data>
   <data name="DiagnosticMouseIdleTimeout" xml:space="preserve"><value>鼠标空闲休眠</value></data>
   <data name="Text_6D7EF7B5" xml:space="preserve"><value>鼠标 DPI 档位</value></data>

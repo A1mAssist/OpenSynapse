@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Core.Devices;
-using OpenSynapse.Windows.Protocols;
 using Windows.UI;
 
 namespace OpenSynapse.App.ViewModels;
@@ -155,9 +154,7 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
             Add("DiagnosticBladeLogo",
                 telemetry.BladeLogoMode ?? (object?)telemetry.BladeLogoEffectRaw,
                 telemetry.BladeLogoEffectRaw is byte rawLogoMode
-                    ? BladeLogoProtocol.MapEffect(rawLogoMode) is { } effect
-                        ? AppStrings.Text(BladeLightingDialectPresentation.LogoEffectTextKey(effect))
-                        : AppStrings.FormatText("BladeLogoUnsupportedMode", $"0x{rawLogoMode:X2}")
+                    ? AppStrings.FormatText("BladeLogoUnsupportedMode", $"0x{rawLogoMode:X2}")
                     : null,
                 CapabilityIds.LogoModeGet);
             Add("DiagnosticPerformanceFan", telemetry.BladeFanMode,
