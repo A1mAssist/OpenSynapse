@@ -2428,8 +2428,8 @@
   <data name="MacroInsertButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Insert</value></data>
   <data name="MacroKeyPickerMouseHint.Text" xml:space="preserve"><value>Hover a region to see it, click to add a step.</value></data>
   <data name="MacroMouseSideButtons.Text" xml:space="preserve"><value>Optional side keys</value></data>
-  <data name="MacroMouseSide1.Content" xml:space="preserve"><value>Side 1 (Mouse 4)</value></data>
-  <data name="MacroMouseSide2.Content" xml:space="preserve"><value>Side 2 (Mouse 5)</value></data>
+  <data name="MacroMouseSide1.Content" xml:space="preserve"><value>Side 1</value></data>
+  <data name="MacroMouseSide2.Content" xml:space="preserve"><value>Side 2</value></data>
   <data name="MacroAdd" xml:space="preserve"><value>Add</value></data>
   <data name="MacroCancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="MacroComboDialogTitle" xml:space="preserve"><value>Insert key combination</value></data>
@@ -2453,7 +2453,8 @@
   <data name="MacroImported" xml:space="preserve"><value>Macro imported.</value></data>
   <data name="MacroBundleImported" xml:space="preserve"><value>Imported {0} macros, including referenced macros.</value></data>
   <data name="MacroImportedName" xml:space="preserve"><value>Imported macro</value></data>
-  <data name="MacroImportFailed" xml:space="preserve"><value>Could not import the macro: {0}</value></data>
+  <data name="MacroImporting" xml:space="preserve"><value>Importing {0}…</value></data>
+  <data name="MacroImportFailed" xml:space="preserve"><value>Could not import {0}: {1}</value></data>
   <data name="MacroJsonFileType" xml:space="preserve"><value>OpenSynapse macro</value></data>
   <data name="MacroLoopStepName" xml:space="preserve"><value>Repeat {0} times</value></data>
   <data name="MacroPaused" xml:space="preserve"><value>Macro paused.</value></data>
@@ -2490,7 +2491,9 @@
   <data name="MacroMediaHomePage" xml:space="preserve"><value>Home</value></data>
   <data name="MacroImportButton.Content" xml:space="preserve"><value>Import…</value></data>
   <data name="MacroRowCopyItem.Text" xml:space="preserve"><value>Duplicate</value></data>
+  <data name="MacroRowRenameItem.Text" xml:space="preserve"><value>Rename</value></data>
   <data name="MacroRowExportItem.Text" xml:space="preserve"><value>Export…</value></data>
+  <data name="MacroRenameTitle" xml:space="preserve"><value>Rename macro</value></data>
   <data name="MacroHint.Text" xml:space="preserve"><value>Macros work while OpenSynapse is running. Trigger keys are intercepted globally. Press F9 to stop recording and save; set playback shortcuts in the macro editor. Hold HyperShift while pressing the target key to bind the trigger to the HyperShift layer (the device must report HyperShift).</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Bind trigger key</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Bind trigger key</value></data>

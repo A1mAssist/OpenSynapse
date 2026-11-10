@@ -38,6 +38,7 @@
                                 <Button.Flyout>
                                   <MenuFlyout>
                                     <MenuFlyoutItem local:Localized.Uid="MacroRowCopyItem" Tag="{x:Bind}" Text="复制" Click="CopyMacroRowClick" Style="{StaticResource MacroMenuItemStyle}" />
+                                    <MenuFlyoutItem local:Localized.Uid="MacroRowRenameItem" Tag="{x:Bind}" Text="重命名" Click="RenameMacroRowClick" Style="{StaticResource MacroMenuItemStyle}" />
                                     <MenuFlyoutItem local:Localized.Uid="MacroRowExportItem" Tag="{x:Bind}" Text="导出…" Click="ExportMacroRowClick" Style="{StaticResource MacroMenuItemStyle}" />
                                     <MenuFlyoutSeparator />
                                     <MenuFlyoutItem local:Localized.Uid="MacroRowDeleteItem" Tag="{x:Bind}" Text="删除" Click="DeleteMacroRowClick" Style="{StaticResource MacroMenuItemStyle}" />

@@ -2858,8 +2858,8 @@
   <data name="MacroInsertButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>插入</value></data>
   <data name="MacroKeyPickerMouseHint.Text" xml:space="preserve"><value>悬停查看按键，点击即可添加动作。</value></data>
   <data name="MacroMouseSideButtons.Text" xml:space="preserve"><value>可选侧键</value></data>
-  <data name="MacroMouseSide1.Content" xml:space="preserve"><value>侧键 1 (Mouse 4)</value></data>
-  <data name="MacroMouseSide2.Content" xml:space="preserve"><value>侧键 2 (Mouse 5)</value></data>
+  <data name="MacroMouseSide1.Content" xml:space="preserve"><value>侧键 1</value></data>
+  <data name="MacroMouseSide2.Content" xml:space="preserve"><value>侧键 2</value></data>
   <data name="MacroAdd" xml:space="preserve"><value>添加</value></data>
   <data name="MacroCancel" xml:space="preserve"><value>取消</value></data>
   <data name="MacroComboDialogTitle" xml:space="preserve"><value>插入组合键</value></data>
@@ -2883,7 +2883,8 @@
   <data name="MacroImported" xml:space="preserve"><value>已导入宏。</value></data>
   <data name="MacroBundleImported" xml:space="preserve"><value>已导入 {0} 个宏（包含引用的宏）。</value></data>
   <data name="MacroImportedName" xml:space="preserve"><value>导入的宏</value></data>
-  <data name="MacroImportFailed" xml:space="preserve"><value>导入宏失败：{0}</value></data>
+  <data name="MacroImporting" xml:space="preserve"><value>正在导入 {0}…</value></data>
+  <data name="MacroImportFailed" xml:space="preserve"><value>导入 {0} 失败：{1}</value></data>
   <data name="MacroJsonFileType" xml:space="preserve"><value>OpenSynapse 宏</value></data>
   <data name="MacroLoopStepName" xml:space="preserve"><value>循环 {0} 次</value></data>
   <data name="MacroPaused" xml:space="preserve"><value>宏已暂停。</value></data>
@@ -2920,7 +2921,9 @@
   <data name="MacroMediaHomePage" xml:space="preserve"><value>主页</value></data>
   <data name="MacroImportButton.Content" xml:space="preserve"><value>导入…</value></data>
   <data name="MacroRowCopyItem.Text" xml:space="preserve"><value>复制</value></data>
+  <data name="MacroRowRenameItem.Text" xml:space="preserve"><value>重命名</value></data>
   <data name="MacroRowExportItem.Text" xml:space="preserve"><value>导出…</value></data>
+  <data name="MacroRenameTitle" xml:space="preserve"><value>重命名宏</value></data>
   <data name="MacroHint.Text" xml:space="preserve"><value>宏仅在 OpenSynapse 运行时生效，触发键会全局拦截，F9 停止录制并保存；播放快捷键可在宏编辑器中设置。按住 HyperShift 再按目标键，可把触发绑定到 HyperShift 层（需要设备上报 HyperShift）。</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>绑定触发键</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>绑定触发键</value></data>
