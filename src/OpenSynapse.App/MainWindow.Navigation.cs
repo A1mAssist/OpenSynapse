@@ -53,6 +53,7 @@ public sealed partial class MainWindow
         LightingStudioNavigationItem.Visibility = visiblePages.Contains("studio")
             ? Visibility.Visible
             : Visibility.Collapsed;
+        LiteModeBadge.Visibility = liteMode ? Visibility.Visible : Visibility.Collapsed;
         DevicesPage.SetLiteMode(liteMode);
         SettingsPage.SetLiteMode(liteMode);
         if (!liteMode)
