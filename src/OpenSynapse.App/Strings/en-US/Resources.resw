@@ -3080,7 +3080,9 @@
   <data name="BladePerformanceModeHelp" xml:space="preserve"><value>Switching applies the mode and reads it back.</value></data>
   <data name="BladeFanSummaryHelp" xml:space="preserve"><value>Current fan mode, target, and measured speed.</value></data>
   <data name="BladeFanTargetRpmLabel" xml:space="preserve"><value>Target speed</value></data>
-  <data name="BladeFanFixedAutoApplyHint" xml:space="preserve"><value>Applied when you release the slider</value></data>
+  <data name="BladeFanFixedAutoApplyHint" xml:space="preserve"><value>Applies the selected speed when you release</value></data>
+  <data name="BladeFanSliderLow" xml:space="preserve"><value>Low</value></data>
+  <data name="BladeFanSliderHigh" xml:space="preserve"><value>High</value></data>
   <data name="BladeChromaOverride.OffContent" xml:space="preserve"><value>Off</value></data>
   <data name="BladeChromaOverride.OnContent" xml:space="preserve"><value>On</value></data>
   <data name="BladeLightingEnabled.OffContent" xml:space="preserve"><value>Off</value></data>

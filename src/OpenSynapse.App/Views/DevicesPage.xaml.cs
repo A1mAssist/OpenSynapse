@@ -38,6 +38,7 @@ public sealed partial class DevicesPage : UserControl
     private CancellationToken Lifetime => Host.LifetimeToken;
 
     private bool _razerDriversRequested;
+    private bool _bladeFanTelemetryHooked;
 
     public DevicesPage()
     {
@@ -60,7 +61,18 @@ public sealed partial class DevicesPage : UserControl
 
     private async void DevicesPageLoaded(object sender, RoutedEventArgs e)
     {
-        if (_razerDriversRequested || DataContext is not MainViewModel viewModel)
+        if (DataContext is not MainViewModel viewModel)
+        {
+            return;
+        }
+
+        if (!_bladeFanTelemetryHooked)
+        {
+            _bladeFanTelemetryHooked = true;
+            viewModel.Blade.PropertyChanged += BladeFanTelemetryChanged;
+        }
+
+        if (_razerDriversRequested)
         {
             return;
         }

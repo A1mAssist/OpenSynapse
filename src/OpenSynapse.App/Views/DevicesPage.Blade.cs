@@ -23,6 +23,7 @@ public sealed partial class DevicesPage : UserControl
     private bool _bladeLightingSettingsInFlight;
     private bool _bladePerformanceApplyInFlight;
     private bool _bladeFnKeyApplyInFlight;
+    private bool _bladeFanSliderApplyInFlight;
     private bool _bladeBrightnessPointerActive;
     private Color? _lightingColorBeforeEdit;
     private ColorPicker? _activeLightingColorPicker;
@@ -294,8 +295,11 @@ public sealed partial class DevicesPage : UserControl
         SyncBladeFanFixedRpmSlider();
     }
 
-    private void BladeFanFixedRpmSliderLoaded(object sender, RoutedEventArgs e) =>
+    private void BladeFanFixedRpmSliderLoaded(object sender, RoutedEventArgs e)
+    {
         SyncBladeFanFixedRpmSlider();
+        UpdateBladeFanFixedRpmVisual();
+    }
 
     private void SyncBladeFanFixedRpmSlider()
     {
@@ -308,12 +312,88 @@ public sealed partial class DevicesPage : UserControl
         BladeFanFixedRpmSlider.Minimum = fan.BladeFanFixedMinimumRpm;
         BladeFanFixedRpmSlider.Maximum = fan.BladeFanFixedMaximumRpm;
         BladeFanFixedRpmSlider.Value = fan.BladeFanFixedRpmSlider;
+        UpdateBladeFanFixedRpmVisual();
+    }
+
+    private void BladeFanFixedRpmSliderValueChanged(object sender, RangeBaseValueChangedEventArgs e) =>
+        UpdateBladeFanFixedRpmVisual();
+
+    private void BladeFanFixedRpmSliderVisualSizeChanged(object sender, SizeChangedEventArgs e) =>
+        UpdateBladeFanFixedRpmVisual();
+
+    private void UpdateBladeFanFixedRpmVisual()
+    {
+        if (BladeFanFixedRpmSlider is null ||
+            BladeFanSliderVisual is null ||
+            BladeFanFixedRpmThumb is null ||
+            BladeFanFixedRpmThumbTransform is null)
+        {
+            return;
+        }
+
+        var width = BladeFanSliderVisual.ActualWidth;
+        var range = BladeFanFixedRpmSlider.Maximum - BladeFanFixedRpmSlider.Minimum;
+        var ratio = range > 0
+            ? Math.Clamp(
+                (BladeFanFixedRpmSlider.Value - BladeFanFixedRpmSlider.Minimum) / range,
+                0,
+                1)
+            : 0;
+        var travel = Math.Max(0, width - BladeFanFixedRpmThumb.Width);
+        BladeFanFixedRpmThumbTransform.X = ratio * travel;
+
+        if (BladeFanFixedRpmBadge is not null && BladeFanFixedRpmBadgeTransform is not null)
+        {
+            var badgeWidth = BladeFanFixedRpmBadge.ActualWidth;
+            BladeFanFixedRpmBadgeTransform.X = Math.Clamp(
+                ratio * travel + (BladeFanFixedRpmThumb.Width - badgeWidth) / 2,
+                0,
+                Math.Max(0, width - badgeWidth));
+        }
+
+        UpdateBladeFanCurrentMarker(range, width);
+    }
+
+    private void UpdateBladeFanCurrentMarker(double range, double width)
+    {
+        if (BladeFanFixedRpmCurrentMarker is null ||
+            BladeFanFixedRpmCurrentMarkerTransform is null ||
+            DataContext is not MainViewModel viewModel)
+        {
+            return;
+        }
+
+        double? current = viewModel.Blade.CurrentFanCpuRpm is int cpuRpm
+            ? viewModel.Blade.CurrentFanGpuRpm is int gpuRpm ? (cpuRpm + gpuRpm) / 2.0 : (double?)cpuRpm
+            : viewModel.Blade.CurrentFanGpuRpm;
+        if (current is double rpm && range > 0)
+        {
+            var markerRatio = Math.Clamp((rpm - BladeFanFixedRpmSlider.Minimum) / range, 0, 1);
+            BladeFanFixedRpmCurrentMarkerTransform.X =
+                markerRatio * Math.Max(0, width - BladeFanFixedRpmCurrentMarker.Width);
+            BladeFanFixedRpmCurrentMarker.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            BladeFanFixedRpmCurrentMarker.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private void BladeFanTelemetryChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(BladeWorkspace.CurrentFanCpuRpmText) or nameof(BladeWorkspace.CurrentFanGpuRpmText))
+        {
+            DispatcherQueue.TryEnqueue(UpdateBladeFanFixedRpmVisual);
+        }
     }
 
     private void BladeFanCurveModeClick(object sender, RoutedEventArgs e) =>
         ViewModel.Fan.ShowBladeFanCurveMode();
 
     private async void BladeFanFixedRpmSliderPointerReleased(object sender, PointerRoutedEventArgs e) =>
+        await ApplyBladeFanFixedRpmFromSliderAsync();
+
+    private async void BladeFanFixedRpmSliderPointerCaptureLost(object sender, PointerRoutedEventArgs e) =>
         await ApplyBladeFanFixedRpmFromSliderAsync();
 
     private async void BladeFanFixedRpmSliderKeyUp(object sender, KeyRoutedEventArgs e)
@@ -327,9 +407,19 @@ public sealed partial class DevicesPage : UserControl
 
     private async Task ApplyBladeFanFixedRpmFromSliderAsync()
     {
-        if (ViewModel.Fan.BladeFanFixedModeSelected)
+        if (_bladeFanSliderApplyInFlight || !ViewModel.Fan.BladeFanFixedModeSelected)
+        {
+            return;
+        }
+
+        _bladeFanSliderApplyInFlight = true;
+        try
         {
             await ViewModel.Fan.SelectBladeFanFixedModeAsync(Lifetime);
+        }
+        finally
+        {
+            _bladeFanSliderApplyInFlight = false;
         }
     }
 

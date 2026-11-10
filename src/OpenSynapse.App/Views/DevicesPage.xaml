@@ -1192,12 +1192,47 @@
                           <RadioButton Content="固定风扇转速" local:Localized.Uid="BladeFanModeFixed" FontSize="14" IsChecked="{Binding Fan.BladeFanFixedModeSelected, Mode=OneWay}" Click="BladeFanFixedModeClick" GroupName="BladeFanControl" Visibility="{Binding Fan.BladeFanFixedVisibility}" />
                           <RadioButton Content="手动风扇曲线" local:Localized.Uid="BladeFanModeCurve" FontSize="14" IsChecked="{Binding Fan.BladeFanCurveModeSelected, Mode=OneWay}" Click="BladeFanCurveModeClick" GroupName="BladeFanControl" Visibility="{Binding Fan.BladeFanCurveVisibility}" />
                           <StackPanel Spacing="6" Visibility="{Binding Fan.BladeFanFixedRpmVisibility}">
-                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                              <TextBlock local:Localized.Uid="BladeFanTargetRpmLabel" Text="目标转速" Foreground="{StaticResource MutedBrush}" FontSize="11" VerticalAlignment="Center" />
-                              <TextBlock Grid.Column="1" Text="{Binding Fan.BladeFanFixedRpmText}" FontFamily="Cascadia Mono,Consolas" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource GpuBrush}" VerticalAlignment="Center" />
+                            <TextBlock local:Localized.Uid="BladeFanFixedAutoApplyHint" Text="松开滑块立即应用所选转速" Foreground="{StaticResource MutedBrush}" FontSize="11" />
+                            <Grid ColumnDefinitions="36,*,36" ColumnSpacing="6">
+                              <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center" IsHitTestVisible="False">
+                                <TextBlock Text="❋" FontFamily="Segoe UI Symbol" FontSize="18" Foreground="#C46A33" HorizontalAlignment="Center" />
+                                <TextBlock local:Localized.Uid="BladeFanSliderLow" Text="低" Foreground="{StaticResource MutedBrush}" FontSize="10" HorizontalAlignment="Center" />
+                              </StackPanel>
+                              <Grid x:Name="BladeFanSliderVisual" Grid.Column="1" Height="66" SizeChanged="BladeFanFixedRpmSliderVisualSizeChanged">
+                                <Grid.RowDefinitions>
+                                  <RowDefinition Height="24" />
+                                  <RowDefinition Height="26" />
+                                  <RowDefinition Height="16" />
+                                </Grid.RowDefinitions>
+                                <Border x:Name="BladeFanFixedRpmBadge" Grid.Row="0" HorizontalAlignment="Left" VerticalAlignment="Bottom" Background="#4D44D62C" CornerRadius="8" Padding="7,2" SizeChanged="BladeFanFixedRpmSliderVisualSizeChanged">
+                                  <Border.RenderTransform><TranslateTransform x:Name="BladeFanFixedRpmBadgeTransform" /></Border.RenderTransform>
+                                  <TextBlock Text="{Binding Fan.BladeFanFixedRpm}" FontFamily="Cascadia Mono,Consolas" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
+                                </Border>
+                                <Border Grid.Row="1" Height="7" CornerRadius="3.5" VerticalAlignment="Center" IsHitTestVisible="False">
+                                  <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                      <GradientStop Color="#7A3A1D" Offset="0" />
+                                      <GradientStop Color="#2C3F6B" Offset="1" />
+                                    </LinearGradientBrush>
+                                  </Border.Background>
+                                </Border>
+                                <Grid x:Name="BladeFanFixedRpmThumb" Grid.Row="1" Width="16" Height="16" HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False">
+                                  <Grid.RenderTransform><TranslateTransform x:Name="BladeFanFixedRpmThumbTransform" /></Grid.RenderTransform>
+                                  <Ellipse Fill="{StaticResource AccentBrush}" />
+                                </Grid>
+                                <Slider local:Localized.Uid="A11yFanTargetSpeed" x:Name="BladeFanFixedRpmSlider" Grid.Row="1" AutomationProperties.Name="风扇目标转速" Minimum="{Binding Fan.BladeFanFixedMinimumRpm}" Maximum="{Binding Fan.BladeFanFixedMaximumRpm}" StepFrequency="{Binding Fan.BladeFanFixedStepRpm}" Value="{Binding Fan.BladeFanFixedRpmSlider, Mode=TwoWay}" IsThumbToolTipEnabled="False" Opacity="0" Loaded="BladeFanFixedRpmSliderLoaded" ValueChanged="BladeFanFixedRpmSliderValueChanged" PointerReleased="BladeFanFixedRpmSliderPointerReleased" PointerCaptureLost="BladeFanFixedRpmSliderPointerCaptureLost" KeyUp="BladeFanFixedRpmSliderKeyUp" />
+                                <Path x:Name="BladeFanFixedRpmCurrentMarker" Grid.Row="2" Width="8" Height="6" HorizontalAlignment="Left" VerticalAlignment="Top" Stretch="Fill" Fill="{StaticResource AccentBrush}" Data="M0,0 L8,0 L4,6 Z" IsHitTestVisible="False">
+                                  <Path.RenderTransform><TranslateTransform x:Name="BladeFanFixedRpmCurrentMarkerTransform" /></Path.RenderTransform>
+                                </Path>
+                              </Grid>
+                              <StackPanel Grid.Column="2" Spacing="2" VerticalAlignment="Center" IsHitTestVisible="False">
+                                <StackPanel Orientation="Horizontal" Spacing="1" HorizontalAlignment="Center">
+                                  <TextBlock Text="❋" FontFamily="Segoe UI Symbol" FontSize="18" Foreground="#5B7FD1" />
+                                  <Path Data="M0,0 L4,0 M0,3 L5,3 M0,6 L4,6" Stroke="#5B7FD1" StrokeThickness="1" VerticalAlignment="Center" />
+                                </StackPanel>
+                                <TextBlock local:Localized.Uid="BladeFanSliderHigh" Text="高" Foreground="{StaticResource MutedBrush}" FontSize="10" HorizontalAlignment="Center" />
+                              </StackPanel>
                             </Grid>
-                            <Slider local:Localized.Uid="A11yFanTargetSpeed" x:Name="BladeFanFixedRpmSlider" AutomationProperties.Name="风扇目标转速" Minimum="{Binding Fan.BladeFanFixedMinimumRpm}" Maximum="{Binding Fan.BladeFanFixedMaximumRpm}" StepFrequency="{Binding Fan.BladeFanFixedStepRpm}" Value="{Binding Fan.BladeFanFixedRpmSlider, Mode=TwoWay}" IsThumbToolTipEnabled="False" Loaded="BladeFanFixedRpmSliderLoaded" PointerReleased="BladeFanFixedRpmSliderPointerReleased" KeyUp="BladeFanFixedRpmSliderKeyUp" />
-                            <TextBlock local:Localized.Uid="BladeFanFixedAutoApplyHint" Text="松开滑块后自动应用" Foreground="{StaticResource MutedBrush}" FontSize="11" />
                           </StackPanel>
                           <Button local:Localized.Uid="BladeFanCurveEdit" Content="编辑" Click="OpenBladeFanCurveWindowClick" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" Visibility="{Binding Fan.BladeFanCurvePanelVisibility}" />
                         </StackPanel>

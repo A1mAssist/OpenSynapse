@@ -3510,7 +3510,9 @@
   <data name="BladePerformanceModeHelp" xml:space="preserve"><value>切换后会立即写入并回读当前供电配置。</value></data>
   <data name="BladeFanSummaryHelp" xml:space="preserve"><value>当前风扇模式、目标转速与实测转速。</value></data>
   <data name="BladeFanTargetRpmLabel" xml:space="preserve"><value>目标转速</value></data>
-  <data name="BladeFanFixedAutoApplyHint" xml:space="preserve"><value>松开滑块后自动应用</value></data>
+  <data name="BladeFanFixedAutoApplyHint" xml:space="preserve"><value>松开滑块立即应用所选转速</value></data>
+  <data name="BladeFanSliderLow" xml:space="preserve"><value>低</value></data>
+  <data name="BladeFanSliderHigh" xml:space="preserve"><value>高</value></data>
   <data name="BladeChromaOverride.OffContent" xml:space="preserve"><value>关闭</value></data>
   <data name="BladeChromaOverride.OnContent" xml:space="preserve"><value>开启</value></data>
   <data name="BladeLightingEnabled.OffContent" xml:space="preserve"><value>关闭</value></data>
