@@ -23,11 +23,6 @@ public sealed class ButtonMappingProfile
 
     internal void ApplySafeDefaults()
     {
-        if (ButtonId > 64)
-        {
-            throw new InvalidDataException("Button mapping IDs must be 64 or lower.");
-        }
-
         Group = string.IsNullOrWhiteSpace(Group) ? null : Group;
         MouseProfileSettings.ValidateRange(Mode, 0, 1, nameof(Mode));
         if (FunctionData is { Count: > 5 })

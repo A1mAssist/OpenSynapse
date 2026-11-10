@@ -76,4 +76,31 @@ public sealed partial class RazerHidDeviceService
                 "receiver or USB cable, then retry; Bluetooth links cannot write onboard mappings.");
         }
     }
+
+    private async Task<bool> ProbeKeyAssignmentAsync(
+        RazerHidDeviceDefinition definition,
+        string devicePath,
+        CancellationToken cancellationToken)
+    {
+        var analog = definition.ProductId is 0x0266 or 0x0282;
+        var assignment = analog
+            ? RazerHidMappingProtocol.GetAnalogKeyAssignment(
+                RazerHidMappingProtocol.ProfileId, RazerHidMappingProtocol.NormalMode)
+            : RazerHidMappingProtocol.GetKeyAssignment(
+                RazerHidMappingProtocol.ProfileId, RazerHidMappingProtocol.NormalMode);
+        return await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
+            "mapping.keyAssignment", assignment.Report,
+            response =>
+            {
+                if (analog)
+                {
+                    _ = RazerHidMappingProtocol.ParseAnalogAssignment(response);
+                }
+                else
+                {
+                    _ = RazerHidMappingProtocol.ParseAssignment(response);
+                }
+                return true;
+            }, cancellationToken).ConfigureAwait(false);
+    }
 }
