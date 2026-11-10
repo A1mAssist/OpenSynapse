@@ -71,6 +71,7 @@ tools/
 !tools/
 tools/*
 !tools/Collect-RazerProductBundle.ps1
+!tools/Extract-RazerSpecialKeyMap.ps1
 *.ghidra
 *.gpr
 *.rep/

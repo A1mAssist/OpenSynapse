@@ -2799,6 +2799,7 @@
   <data name="MacroRecording" xml:space="preserve"><value>正在录制动作，按“停止录制”结束。</value></data>
   <data name="MacroCapturePrompt" xml:space="preserve"><value>请按下要绑定的键或鼠标侧键（侧键 1 = Mouse 4，侧键 2 = Mouse 5）。</value></data>
   <data name="MacroCaptureCanceled" xml:space="preserve"><value>已取消触发键捕获。</value></data>
+  <data name="MacroCaptureDeviceHint" xml:space="preserve"><value>没有捕获到按键。如果是 DPI、Profile、Sniper 等特殊键，请到设备映射页用“宏”动作绑定；固件已把它映射成普通按键时，这里无法反推出物理键。</value></data>
   <data name="MacroTriggerCaptured" xml:space="preserve"><value>触发键已设为 {0}。</value></data>
   <data name="MacroEmpty" xml:space="preserve"><value>这个宏还没有动作。</value></data>
   <data name="MacroPlaying" xml:space="preserve"><value>正在播放宏。</value></data>
@@ -2930,6 +2931,7 @@
   <data name="MacroTextDialogPlaceholder" xml:space="preserve"><value>输入要发送的文本</value></data>
   <data name="MacroTextDialogTitle" xml:space="preserve"><value>输入文本</value></data>
   <data name="MacroTriggerCleared" xml:space="preserve"><value>已清除触发键。</value></data>
+  <data name="MacroTriggerClearedRestoreAssignment" xml:space="preserve"><value>已清除触发键。这个按键的设备原生功能仍是关闭状态，请到设备映射页重新设置。</value></data>
   <data name="MacroTriggerConflict" xml:space="preserve"><value>触发键与“{0}”冲突。</value></data>
   <data name="MacroTriggerMacroMissing" xml:space="preserve"><value>找不到这个宏，可能已被删除。</value></data>
   <data name="MacroEditBusy" xml:space="preserve"><value>正在录制或倒计时，暂时不能修改触发键。</value></data>
@@ -3935,6 +3937,7 @@
   <data name="RazerMappingMacroUnsupportedSoftware" xml:space="preserve"><value>这个宏不能写入板载：第 {0} 步：{1}。请改用软件宏，或返回宏编辑器修改。</value></data>
   <data name="RazerMappingMacroSlotOverwrite" xml:space="preserve"><value>槽位里已有其他宏，保存会覆盖。</value></data>
   <data name="RazerMappingMacroSoftwareApplied" xml:space="preserve"><value>{0}（软件）</value></data>
+  <data name="RazerMappingMacroAssignmentNotOff" xml:space="preserve"><value>这个按键已有软件宏，但设备原生功能没有关闭，可能重复触发。重新应用一次即可修复。</value></data>
   <data name="RazerMappingMacroCurrentOnce" xml:space="preserve"><value>{0} · 执行一次</value></data>
   <data name="RazerMappingMacroCurrentRepeat" xml:space="preserve"><value>{0} · 重复 {1} 次</value></data>
   <data name="RazerMappingMacroCurrentHold" xml:space="preserve"><value>{0} · 按住循环</value></data>

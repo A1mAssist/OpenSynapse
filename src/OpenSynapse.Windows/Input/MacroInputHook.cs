@@ -65,6 +65,7 @@ public sealed class MacroInputHook : IDisposable
     private static readonly MacroInput MouseMovePlaceholder = new();
 
     private readonly Func<MacroInputEvent, bool> _handler;
+    private readonly Action<string>? _log;
     private readonly LowLevelKeyboardProc _keyboardProc;
     private readonly LowLevelMouseProc _mouseProc;
     private readonly ManualResetEventSlim _ready = new(false);
@@ -86,9 +87,10 @@ public sealed class MacroInputHook : IDisposable
     private bool _started;
     private volatile bool _disposed;
 
-    public MacroInputHook(Func<MacroInputEvent, bool> handler)
+    public MacroInputHook(Func<MacroInputEvent, bool> handler, Action<string>? log = null)
     {
         _handler = handler ?? throw new ArgumentNullException(nameof(handler));
+        _log = log;
         _keyboardProc = KeyboardHook;
         _mouseProc = MouseHook;
     }
@@ -229,7 +231,7 @@ public sealed class MacroInputHook : IDisposable
                 razerDeviceButtons.Dispose();
             }
 
-            var razerPrivateKeys = new RazerPrivateKeyInput(HandleRazerDeviceButton);
+            var razerPrivateKeys = new RazerPrivateKeyInput(HandleRazerDeviceButton, _log);
             try
             {
                 razerPrivateKeys.Start();

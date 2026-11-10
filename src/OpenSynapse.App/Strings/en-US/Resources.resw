@@ -2369,6 +2369,7 @@
   <data name="MacroRecording" xml:space="preserve"><value>Recording actions. Select Stop recording to finish.</value></data>
   <data name="MacroCapturePrompt" xml:space="preserve"><value>Press the key or mouse side button to bind (Side 1 = Mouse 4, Side 2 = Mouse 5).</value></data>
   <data name="MacroCaptureCanceled" xml:space="preserve"><value>Trigger capture canceled.</value></data>
+  <data name="MacroCaptureDeviceHint" xml:space="preserve"><value>No key was captured. For DPI, Profile, Sniper and other special keys, bind the macro from the device mapping page; if the firmware already maps the key to a normal key, this capture cannot recover the physical key.</value></data>
   <data name="MacroTriggerCaptured" xml:space="preserve"><value>Trigger set to {0}.</value></data>
   <data name="MacroEmpty" xml:space="preserve"><value>This macro has no actions.</value></data>
   <data name="MacroPlaying" xml:space="preserve"><value>Playing macro.</value></data>
@@ -2500,6 +2501,7 @@
   <data name="MacroTextDialogPlaceholder" xml:space="preserve"><value>Text to send</value></data>
   <data name="MacroTextDialogTitle" xml:space="preserve"><value>Insert text</value></data>
   <data name="MacroTriggerCleared" xml:space="preserve"><value>Trigger cleared.</value></data>
+  <data name="MacroTriggerClearedRestoreAssignment" xml:space="preserve"><value>Trigger cleared. The device action for this key is still off; set it again on the device mapping page.</value></data>
   <data name="MacroTriggerConflict" xml:space="preserve"><value>The trigger conflicts with "{0}".</value></data>
   <data name="MacroTriggerMacroMissing" xml:space="preserve"><value>That macro no longer exists.</value></data>
   <data name="MacroEditBusy" xml:space="preserve"><value>The trigger cannot be changed while recording or counting down.</value></data>
@@ -3505,6 +3507,7 @@
   <data name="RazerMappingMacroUnsupportedSoftware" xml:space="preserve"><value>This macro cannot be stored onboard: step {0}: {1}. Use a software macro or edit the macro.</value></data>
   <data name="RazerMappingMacroSlotOverwrite" xml:space="preserve"><value>This slot already contains another macro; saving will overwrite it.</value></data>
   <data name="RazerMappingMacroSoftwareApplied" xml:space="preserve"><value>{0} (software)</value></data>
+  <data name="RazerMappingMacroAssignmentNotOff" xml:space="preserve"><value>This key has a software macro, but the device action is still active, so it may fire twice. Apply again to fix it.</value></data>
   <data name="RazerMappingMacroCurrentOnce" xml:space="preserve"><value>{0} · Run once</value></data>
   <data name="RazerMappingMacroCurrentRepeat" xml:space="preserve"><value>{0} · Repeat {1} times</value></data>
   <data name="RazerMappingMacroCurrentHold" xml:space="preserve"><value>{0} · Repeat while held</value></data>
