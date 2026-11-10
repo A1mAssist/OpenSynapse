@@ -74,11 +74,14 @@
               </Border>
             </Grid>
             <Border Grid.Row="1" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="12,8">
-              <Grid x:Name="MacroPlaybackBar" ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="8" Visibility="{Binding Macros.MacroEditorVisibility}">
-                <Button x:Name="MacroPlayButton" Content="{Binding Macros.MacroPlayButtonText}" Click="PlayMacroClick" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding Macros.CanPlayMacro}" />
-                <Button Grid.Column="1" Content="{Binding Macros.MacroPauseButtonText}" Click="TogglePauseMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding Macros.IsMacroPlaying}" />
-                <Button Grid.Column="2" local:Localized.Uid="MacroStopPlaybackButton" Content="停止" Click="StopMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding Macros.CanStopMacro}" />
-                <Grid Grid.Column="3" ColumnDefinitions="*,Auto" ColumnSpacing="4" Margin="4,0">
+              <Grid x:Name="MacroPlaybackBar" RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto" ColumnSpacing="8" RowSpacing="6" Visibility="{Binding Macros.MacroEditorVisibility}">
+                <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                  <Button x:Name="MacroPlayButton" Content="{Binding Macros.MacroPlayButtonText}" Click="PlayMacroClick" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding Macros.CanPlayMacro}" />
+                  <Button Content="{Binding Macros.MacroPauseButtonText}" Click="TogglePauseMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding Macros.IsMacroPlaying}" />
+                  <Button local:Localized.Uid="MacroStopPlaybackButton" Content="停止" Click="StopMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding Macros.CanStopMacro}" />
+                </StackPanel>
+                <Button Grid.Row="0" Grid.Column="1" local:Localized.Uid="MacroSaveButton" Content="保存" Click="SaveMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding Macros.CanEditMacro}" />
+                <Grid Grid.Row="1" Grid.Column="0" ColumnDefinitions="*,Auto" ColumnSpacing="6">
                   <TextBlock Text="{Binding Macros.MacroPlaybackShortcutText}" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{Binding Macros.MacroPlaybackShortcutText}" />
                   <Button Grid.Column="1" x:Name="MacroPlaybackShortcutButton" local:Localized.Uid="MacroPlaybackShortcutButton" Width="34" Height="34" MinWidth="34" MinHeight="34" Padding="0" Style="{StaticResource IconButtonStyle}" VerticalAlignment="Center">
                     <FontIcon Glyph="&#xE713;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
@@ -93,12 +96,13 @@
                     </Button.Flyout>
                   </Button>
                 </Grid>
-                <StackPanel Grid.Column="4" x:Name="MacroDurationChip" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                  <FontIcon Glyph="&#xE823;" FontFamily="{StaticResource IconFontFamily}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
-                  <TextBlock Text="{Binding Macros.MacroTotalDurationText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                  <TextBlock local:Localized.Uid="MacroUnsaved" Text="未保存" Foreground="{StaticResource ThermalBrush}" FontSize="11" VerticalAlignment="Center" Visibility="{Binding Macros.MacroUnsavedVisibility}" />
+                  <StackPanel x:Name="MacroDurationChip" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <FontIcon Glyph="&#xE823;" FontFamily="{StaticResource IconFontFamily}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                    <TextBlock Text="{Binding Macros.MacroTotalDurationText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                  </StackPanel>
                 </StackPanel>
-                <TextBlock Grid.Column="5" local:Localized.Uid="MacroUnsaved" Text="未保存" Foreground="{StaticResource ThermalBrush}" FontSize="11" VerticalAlignment="Center" Visibility="{Binding Macros.MacroUnsavedVisibility}" />
-                <Button Grid.Column="6" local:Localized.Uid="MacroSaveButton" Content="保存" Click="SaveMacroClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" IsEnabled="{Binding Macros.CanEditMacro}" />
               </Grid>
             </Border>
           </Grid>

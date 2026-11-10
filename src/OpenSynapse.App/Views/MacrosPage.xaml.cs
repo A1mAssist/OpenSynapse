@@ -41,6 +41,45 @@ public sealed partial class MacrosPage : UserControl
         }
     }
 
+    private async void RenameMacroRowClick(object sender, RoutedEventArgs e)
+    {
+        if (MacroRowFromSender(sender) is not { } row)
+        {
+            return;
+        }
+
+        var nameBox = new TextBox
+        {
+            Text = row.Name,
+            Header = AppStrings.Text("MacroNameLabel.Text"),
+            PlaceholderText = AppStrings.Text("MacroNamePlaceholder.PlaceholderText"),
+            MaxLength = 64,
+        };
+        var dialog = new ContentDialog
+        {
+            Title = AppStrings.Text("MacroRenameTitle"),
+            Content = nameBox,
+            PrimaryButtonText = AppStrings.Text("MacroSaveButton.Content"),
+            CloseButtonText = AppStrings.Text("MacroCancel"),
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = XamlRoot,
+        };
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary)
+        {
+            return;
+        }
+
+        var name = nameBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return;
+        }
+
+        ViewModel.Macros.SelectedMacro = row;
+        row.Name = name;
+        await ViewModel.Macros.SaveSelectedMacroAsync(Lifetime);
+    }
+
     private async void DeleteMacroRowClick(object sender, RoutedEventArgs e)
     {
         if (MacroRowFromSender(sender) is not { } row)

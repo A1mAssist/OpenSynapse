@@ -2041,6 +2041,8 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         string filePath,
         CancellationToken cancellationToken = default)
     {
+        var fileName = Path.GetFileName(filePath);
+        StatusText = AppStrings.FormatText("MacroImporting", fileName);
         IReadOnlyList<MacroDefinition> imported;
         try
         {
@@ -2053,7 +2055,7 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         catch (Exception exception) when (
             exception is ArgumentException or IOException or UnauthorizedAccessException or InvalidDataException)
         {
-            StatusText = AppStrings.FormatText("MacroImportFailed", exception.Message);
+            StatusText = AppStrings.FormatText("MacroImportFailed", fileName, exception.Message);
             return;
         }
 
