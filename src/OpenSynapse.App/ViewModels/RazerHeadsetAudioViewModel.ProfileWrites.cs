@@ -60,6 +60,9 @@ public sealed partial class RazerHeadsetAudioViewModel
             case 10 or 8 when IsFeature91:
                 applied = await RunWriteAsync((service, token) => service.SetCustomEqAsync(customPreset, bands, token), cancellationToken);
                 break;
+            case 10 or 8 when IsProtocol25:
+                applied = await RunWriteAsync((service, token) => service.SetCustomEqAsync(customPreset, bands, token), cancellationToken);
+                break;
             default:
                 return;
         }
@@ -99,88 +102,14 @@ public sealed partial class RazerHeadsetAudioViewModel
             cancellationToken);
     }
 
-    [ProfileSetting("headset.lighting.brightness", DeviceCategory.Headset, powerScoped: true)]
-    public async Task ApplyMatrixBrightnessAsync(CancellationToken cancellationToken = default)
-    {
-        var previous = Brightness;
-        var applied = false;
-        await RunChromaWriteAsync(
-            async (service, token) =>
-            {
-                await service.SetBrightnessAsync((byte)Math.Round(Brightness), token);
-                applied = true;
-            },
-            cancellationToken);
-        if (!applied) return;
-
-        await SaveHeadsetSettingAsync(
-            settings => settings.ChromaBrightness = (int)Math.Round(Brightness),
-            settings => settings.ChromaBrightness = (int)Math.Round(previous),
-            () => Brightness = previous,
-            token => OpenChromaService().SetBrightnessAsync((byte)Math.Round(previous), token),
-            cancellationToken);
-    }
-
-    [ProfileSetting("headset.lighting.effect", DeviceCategory.Headset, powerScoped: true)]
-    public async Task ApplyMatrixLightingAsync(CancellationToken cancellationToken = default)
-    {
-        var previousEffectIndex = SelectedLightingEffectIndex;
-        var previousPrimary = PrimaryColor;
-        var previousSecondary = SecondaryColor;
-        var applied = false;
-        await RunChromaWriteAsync(async (service, token) =>
-        {
-            var effect = LightingEffects[SelectedLightingEffectIndex];
-            var colors = effect switch
-            {
-                RazerChromaEffect.Static => new byte[] { PrimaryColor.R, PrimaryColor.G, PrimaryColor.B },
-                RazerChromaEffect.Breathing =>
-                    [PrimaryColor.R, PrimaryColor.G, PrimaryColor.B, SecondaryColor.R, SecondaryColor.G, SecondaryColor.B],
-                _ => [],
-            };
-            await service.SetEffectAsync(effect, colors, token);
-            applied = true;
-        }, cancellationToken);
-        if (!applied) return;
-
-        var effect = LightingEffects[SelectedLightingEffectIndex];
-        await SaveHeadsetSettingAsync(
-            settings =>
-            {
-                settings.ChromaEffect = effect.ToString();
-                settings.ChromaParameters = new Dictionary<string, string>
-                {
-                    ["primary"] = $"{PrimaryColor.R:X2}{PrimaryColor.G:X2}{PrimaryColor.B:X2}",
-                    ["secondary"] = $"{SecondaryColor.R:X2}{SecondaryColor.G:X2}{SecondaryColor.B:X2}",
-                };
-            },
-            settings =>
-            {
-                settings.ChromaEffect = LightingEffects[previousEffectIndex].ToString();
-                settings.ChromaParameters = new Dictionary<string, string>
-                {
-                    ["primary"] = $"{previousPrimary.R:X2}{previousPrimary.G:X2}{previousPrimary.B:X2}",
-                    ["secondary"] = $"{previousSecondary.R:X2}{previousSecondary.G:X2}{previousSecondary.B:X2}",
-                };
-            },
-            () =>
-            {
-                SelectedLightingEffectIndex = previousEffectIndex;
-                PrimaryColor = previousPrimary;
-                SecondaryColor = previousSecondary;
-            },
-            token => WriteChromaEffectHardwareAsync(
-                LightingEffects[previousEffectIndex], previousPrimary, previousSecondary, token),
-            cancellationToken);
-    }
 
     [ProfileSetting("headset.bass", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyBassAsync(CancellationToken cancellationToken = default)
     {
-        if (!IsFeature91) return;
+        if (!IsFeature91 && !IsProtocol25) return;
         var previous = Bass;
         if (!await RunWriteAsync(
-                (service, token) => service.SetBassAsync((byte)Math.Round(Bass), token),
+                (service, token) => service.SetBassAsync(ToFirmwareBass(Bass), token),
                 cancellationToken))
         {
             return;
@@ -190,7 +119,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             settings => settings.Bass = (int)Math.Round(Bass),
             settings => settings.Bass = (int)Math.Round(previous),
             () => Bass = previous,
-            token => OpenService().SetBassAsync((byte)Math.Round(previous), token),
+            token => OpenService().SetBassAsync(ToFirmwareBass(previous), token),
             cancellationToken);
     }
 
@@ -199,12 +128,31 @@ public sealed partial class RazerHeadsetAudioViewModel
     {
         var previousMuted = MicMuted;
         var previousVolume = MicVolume;
+        var writesVolume = IsFeature91 ||
+            (IsProtocol25 && RazerProtocol25FeatureProtocol.SupportsHidMicVolume(_connection.ProductId));
         var applied = _connection.Transport switch
         {
             RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64 =>
                 await RunMxicWriteAsync((service, token) => service.SetMicMuteAsync(MicMuted, token), cancellationToken),
             RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
                 await RunValkyrieWriteAsync((service, token) => service.SetMicMuteAsync(MicMuted, token), cancellationToken),
+            RazerHeadsetAudioTransport.Protocol25Feature65 =>
+                await RunWriteAsync(async (service, token) =>
+                {
+                    await service.SetMicMuteAsync(MicMuted, token);
+                    if (writesVolume)
+                    {
+                        try
+                        {
+                            await service.SetMicVolumeAsync((byte)Math.Round(MicVolume), token);
+                        }
+                        catch
+                        {
+                            await service.SetMicMuteAsync(previousMuted, CancellationToken.None);
+                            throw;
+                        }
+                    }
+                }, cancellationToken),
             _ => await RunWriteAsync(async (service, token) =>
                 {
                     await service.SetMicMuteAsync(MicMuted, token);
@@ -216,7 +164,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         await SaveHeadsetSettingAsync(
             settings =>
             {
-                if (IsFeature91)
+                if (writesVolume)
                 {
                     settings.MicrophoneVolumePercent = (int)Math.Round(MicVolume);
                 }
@@ -224,7 +172,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             },
             settings =>
             {
-                if (IsFeature91)
+                if (writesVolume)
                 {
                     settings.MicrophoneVolumePercent = (int)Math.Round(previousVolume);
                 }
@@ -242,6 +190,15 @@ public sealed partial class RazerHeadsetAudioViewModel
                     var service = OpenService();
                     await service.SetMicMuteAsync(previousMuted, token);
                     await service.SetMicVolumeAsync((byte)Math.Round(previousVolume), token);
+                }
+                else if (IsProtocol25)
+                {
+                    var service = OpenService();
+                    await service.SetMicMuteAsync(previousMuted, token);
+                    if (writesVolume)
+                    {
+                        await service.SetMicVolumeAsync((byte)Math.Round(previousVolume), token);
+                    }
                 }
                 else if (IsMxic)
                 {
@@ -280,6 +237,38 @@ public sealed partial class RazerHeadsetAudioViewModel
     [ProfileSetting("headset.mic-monitoring", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyMicMonitoringAsync(CancellationToken cancellationToken = default)
     {
+        if (IsAvnera65)
+        {
+            var previousEnabled = MicMonitoringEnabled;
+            var previousPercent = _sidetonePercent;
+            var target = MicMonitoringEnabled
+                ? (byte)Math.Max(1, (int)previousPercent)
+                : (byte)0;
+            if (!await RunAvneraWriteAsync(
+                    (service, token) => service.SetSidetoneAsync(target, token),
+                    cancellationToken))
+            {
+                return;
+            }
+
+            _sidetonePercent = target;
+            await SaveHeadsetSettingAsync(
+                settings => settings.MicMonitoringEnabled = MicMonitoringEnabled,
+                settings => settings.MicMonitoringEnabled = previousEnabled,
+                () =>
+                {
+                    MicMonitoringEnabled = previousEnabled;
+                    _sidetonePercent = previousPercent;
+                },
+                async token =>
+                {
+                    await using var service = OpenAvneraService();
+                    await service.SetSidetoneAsync(previousPercent, token);
+                },
+                cancellationToken);
+            return;
+        }
+
         if (!IsFeature91) return;
         var previous = MicMonitoringEnabled;
         if (!await RunWriteAsync(
@@ -339,7 +328,12 @@ public sealed partial class RazerHeadsetAudioViewModel
 
     [NotProfileScoped]
     public Task ApplyHapticsAsync(CancellationToken cancellationToken = default) =>
-        !IsFeature91
+        IsAvnera65
+            ? RunAvneraWriteAsync(
+                (service, token) => service.SetHapticsAsync(
+                    HapticsEnabled, (ushort)Math.Round(HapticsStrength), token),
+                cancellationToken)
+            : !IsFeature91
             ? Task.CompletedTask
             : RunWriteAsync(
                 (service, token) => service.SetHapticsAsync(
@@ -349,6 +343,12 @@ public sealed partial class RazerHeadsetAudioViewModel
     [ProfileSetting("headset.advanced", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyAdvancedAsync(CancellationToken cancellationToken = default)
     {
+        if (IsAvnera65)
+        {
+            await SaveAvneraAutoPauseAsync(cancellationToken);
+            return;
+        }
+
         if (!IsFeature91) return;
         var previous = (Dnd, AutoPause, GestureControl, Dolby, NightMode, VoicePrompts);
         if (!await RunWriteAsync(
@@ -425,11 +425,41 @@ public sealed partial class RazerHeadsetAudioViewModel
     [ProfileSetting("headset.auto-pause", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyAutoPauseAsync(CancellationToken cancellationToken = default)
     {
+        if (IsAvnera65)
+        {
+            await SaveAvneraAutoPauseAsync(cancellationToken);
+            return;
+        }
+
         if (!IsFeature91) return;
         var previous = AutoPause;
         if (!await RunWriteAsync((service, token) => service.SetAudioAutoPauseAsync(AutoPause, token), cancellationToken)) return;
         await SaveSettingAsync(previous, AutoPause, value => AutoPause = value, (settings, value) => settings.AutoPause = value,
             token => OpenService().SetAudioAutoPauseAsync(previous, token), cancellationToken);
+    }
+
+    private async Task SaveAvneraAutoPauseAsync(CancellationToken cancellationToken)
+    {
+        var previous = AutoPause;
+        if (!await RunAvneraWriteAsync(
+                (service, token) => service.SetAutoPauseAsync(
+                    AutoPause, _silenceDetectionPeriod, token),
+                cancellationToken))
+        {
+            return;
+        }
+
+        await SaveSettingAsync(
+            previous,
+            AutoPause,
+            value => AutoPause = value,
+            (settings, value) => settings.AutoPause = value,
+            async token =>
+            {
+                await using var service = OpenAvneraService();
+                await service.SetAutoPauseAsync(previous, _silenceDetectionPeriod, token);
+            },
+            cancellationToken);
     }
 
     [ProfileSetting("headset.gesture-control", DeviceCategory.Headset, powerScoped: true)]

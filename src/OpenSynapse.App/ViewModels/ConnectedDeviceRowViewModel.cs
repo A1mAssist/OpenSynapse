@@ -152,7 +152,7 @@ public sealed class ConnectedDeviceRowViewModel
         Access = AppStrings.Text("Text_5965520A");
         IconGlyph = source.IconGlyph;
         Category = source.HardwareCategory;
-        IsReady = true;
+        IsReady = string.IsNullOrEmpty(source.Error);
         IsVisible = true;
     }
 

@@ -21,6 +21,19 @@ public sealed partial class RazerHeadsetAudioService
             errors.Add($"firmware: {exception.Message}");
         }
 
+        string? serial = null;
+        try
+        {
+            serial = RazerKrakenBaseProtocol.ParseSerialNumber(
+                await QueryKrakenBaseAsync(
+                        RazerKrakenBaseProtocol.CreateSerialNumberRequest(), cancellationToken)
+                    .ConfigureAwait(false));
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            errors.Add($"serial number: {exception.Message}");
+        }
+
         bool? anc = null;
         try
         {
@@ -47,7 +60,10 @@ public sealed partial class RazerHeadsetAudioService
             null,
             anc is null ? null : anc.Value ? RazerAncState.On : RazerAncState.Off,
             null,
-            errors);
+            errors)
+        {
+            SerialNumber = serial,
+        };
     }
 
     private Task<byte[]> QueryKrakenBaseAsync(

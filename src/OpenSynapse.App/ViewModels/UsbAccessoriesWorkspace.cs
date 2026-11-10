@@ -85,7 +85,7 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
             _getProfile,
             _saveProfile);
         await probe.LoadAsync(cancellationToken);
-        row.SetCapabilityText(probe.CapabilityText);
+        row.SetProbeResult(probe.ProbeState, probe.CapabilityText, probe.ErrorText);
         await probe.DisposeAsync();
         if (_selectedHeadsetAudioDevice is null ||
             !StringComparer.OrdinalIgnoreCase.Equals(

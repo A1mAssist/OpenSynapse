@@ -8,6 +8,14 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed class RazerHeadsetAudioDeviceRowViewModel : INotifyPropertyChanged
 {
+    private static readonly Brush ConnectedBrush = new SolidColorBrush(Color.FromArgb(255, 68, 214, 44));
+    private static readonly Brush PartialBrush = new SolidColorBrush(Color.FromArgb(255, 255, 185, 0));
+    private static readonly Brush FailedBrush = new SolidColorBrush(Color.FromArgb(255, 232, 80, 80));
+    private string _capabilityText = AppStrings.Text("BlackSharkStatusConnected");
+    private string _status = AppStrings.Text("BlackSharkStatusConnected");
+    private Brush _statusBrush = ConnectedBrush;
+    private string _error = string.Empty;
+
     public RazerHeadsetAudioDeviceRowViewModel(RazerHeadsetAudioConnection connection)
     {
         Connection = connection;
@@ -25,15 +33,29 @@ public sealed class RazerHeadsetAudioDeviceRowViewModel : INotifyPropertyChanged
     });
     public string Identity => $"VID_1532 / PID_{Connection.ProductId:X4}";
     public string IconGlyph => "\uE7F6";
-    public string Status => AppStrings.Text("BlackSharkStatusConnected");
-    public string CapabilityText { get; private set; } = AppStrings.Text("BlackSharkStatusConnected");
-    public Brush StatusBrush { get; } = new SolidColorBrush(Color.FromArgb(255, 68, 214, 44));
-    public string Error => string.Empty;
+    public string Status => _status;
+    public string CapabilityText => _capabilityText;
+    public Brush StatusBrush => _statusBrush;
+    public string Error => _error;
 
-    internal void SetCapabilityText(string text)
+    internal void SetProbeResult(RazerHeadsetProbeState state, string capabilityText, string error)
     {
-        CapabilityText = text;
+        _capabilityText = capabilityText;
+        _error = error;
+        (_status, _statusBrush) = state switch
+        {
+            RazerHeadsetProbeState.Failed =>
+                (AppStrings.Text("BlackSharkCapabilityReadFailed"), FailedBrush),
+            RazerHeadsetProbeState.Partial =>
+                (AppStrings.Text("BlackSharkStatusPartial"), PartialBrush),
+            RazerHeadsetProbeState.NotAvailable =>
+                (AppStrings.Text("BlackSharkComponentRequired"), PartialBrush),
+            _ => (AppStrings.Text("BlackSharkStatusConnected"), ConnectedBrush),
+        };
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CapabilityText)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Status)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(StatusBrush)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Error)));
     }
 
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));

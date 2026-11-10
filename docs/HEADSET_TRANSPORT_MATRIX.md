@@ -20,6 +20,15 @@ means there is no bundle or hardware to decide.
 | 053E | Audio Mixer | AudioMixer | `hid.write` + feature report | `RazerMixer053ETransport` | 66 / varies | CODE_ONLY | `bundles/053E/AudioMixer.*.js` |
 | 0A54, 1022 | Valkyrie T3 | rzDevice25ValkyrieT3 | feature report | `RazerValkyrieT3Transport` | 64 / 7 | CODE_ONLY | `bundles/0A54/rzDevice25ValkyrieT3.*.js` |
 | 056B lighting | Kraken V4 lighting | AudioKrakenBase | `HidD_SetOutputReport` | `RazerMxicHeadsetTransport(useSetOutputReport: true)` | 64 / 2 | CODE_ONLY | shared Kraken chunk |
+| 0532, 0548 | Leviathan V2 / V2 Pro | rzDevice25Noa | feature report | `RazerProtocol25FeatureTransport` | 65 / 8 | CODE_ONLY | `bundles/0532/rzDevice25Noa.*.js` |
+| 05A3 | Leviathan V2 ECR | rzDevice25NoaT2ECR | feature report | `RazerProtocol25FeatureTransport` | 64 / 8 | CODE_ONLY | `bundles/05A3/rzDevice25NoaT2ECR.*.js` |
+| 056A, 056F, 05A6 | Seiren V3 Mini / Chroma / DSP | rzDevice25AudioCamy* | feature report | `RazerProtocol25FeatureTransport` | 65 / 7 | CODE_ONLY | `bundles/056F/rzDevice25AudioCamy.*.js` |
+| 058E | Seiren V3 Pro | rzDevice25AudioMarieT1 | feature report | `RazerProtocol25FeatureTransport` | 65 / 7 | CODE_ONLY | `bundles/058E/rzDevice25AudioMarieT1.*.js` |
+| 058C | Hammerhead V3 | AudioLindaT3 | feature report | `RazerProtocol25FeatureTransport` | 65 / 7 | CODE_ONLY | `bundles/058C/AudioLindaT3.*.js` |
+| 0574 | Barracuda X Chroma | AudioMabelT3C | `hid.write` / `hid.read` | `RazerHeadsetHidTransport` audio, Kraken V4 64B lighting | 64 / 2 | CODE_ONLY | `bundles/0574/AudioMabelT3C.*.js` |
+| 0582 | Kraken V3 X | AudioKrystalT3 | `hid.write` / `hid.read` | `RazerHeadsetAudioService.KrakenBase37` audio | 37 | CODE_ONLY | `bundles/0582/AudioKrystalT3.*.js` |
+| 0542, 0543 | Seiren V2 Pro / X | AudioCamyT1 / T2 | official `RzNative_*.dll` only | `NativeDll` status row | n/a | COMPONENT_REQUIRED | `bundles/0542`, `bundles/0543` |
+| 052D | Kraken V3 Pro | AudioNXPDevice | `serial.write` + notification | blocked until a real serial endpoint is captured | 28 | PENDING | `bundles/052D/AudioNXPDevice.*.js` |
 
 The only family where the bundle names a different report type than the current code is
 `rzDevice40` (0A61 / 0A64 / 0A68 / 0A6C / 0A81). Do not switch it to feature reports until a

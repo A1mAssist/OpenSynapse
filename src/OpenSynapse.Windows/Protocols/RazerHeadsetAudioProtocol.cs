@@ -59,7 +59,7 @@ public enum RazerMicReverbRoomMode : byte
 /// 91-byte Windows report (report id prefix) and reads arguments from
 /// <see cref="RazerFeatureReport.ArgumentsOffset"/>.
 /// </summary>
-public static class RazerHeadsetAudioProtocol
+public static partial class RazerHeadsetAudioProtocol
 {
     public const byte ReadProfile = 0x00;
     public const byte WriteProfile = 0x00;
@@ -557,10 +557,10 @@ public static class RazerHeadsetAudioProtocol
 
     private static ReadOnlySpan<byte> Arguments(ReadOnlySpan<byte> response)
     {
-        if (response.Length != RazerFeatureReport.Length)
+        if (response.Length is not (64 or 65 or RazerFeatureReport.Length))
         {
             throw new InvalidDataException(
-                $"Razer feature reports are {RazerFeatureReport.Length} bytes; got {response.Length}.");
+                $"Razer audio reports must be 64, 65 or {RazerFeatureReport.Length} bytes; got {response.Length}.");
         }
 
         return response[RazerFeatureReport.ArgumentsOffset..];

@@ -98,6 +98,18 @@ public sealed class RazerHidSpecialLightingService
                 Effects(RazerHidLightingEffect.Off, RazerHidLightingEffect.Static, RazerHidLightingEffect.Wave),
                 true,
                 RazerHidSpecialLightingKind.KrakenV4),
+            // AudioMabelT3C (Barracuda X Chroma) inherits the AudioBillieT2 frame and
+            // adds Breathing, SpectrumCycling and CustomFrame; it declares NUM_LEDS=6,
+            // so a custom frame fills six LEDs instead of the Billie T2 ring's nine.
+            [0x0574] = new(
+                "Razer Barracuda X Chroma",
+                RazerHidKrakenLayout.Kylie,
+                Effects(RazerHidLightingEffect.Off, RazerHidLightingEffect.Static,
+                    RazerHidLightingEffect.BreathingSingle, RazerHidLightingEffect.Spectrum,
+                    RazerHidLightingEffect.Wave, RazerHidLightingEffect.Custom),
+                true,
+                RazerHidSpecialLightingKind.KrakenV4,
+                LedCount: 6),
         }.ToFrozenDictionary();
 
     /// <summary>
@@ -337,12 +349,18 @@ public sealed class RazerHidSpecialLightingService
         }
 
         var isDongle = connection.ProductId == 0x056C;
+        var device = KrakenDevices[connection.ProductId];
         IReadOnlyList<byte[]> reports = settings.Effect switch
         {
             RazerHidLightingEffect.Off => RazerHidKrakenV4Protocol.CreateOff(isDongle),
             RazerHidLightingEffect.Static => RazerHidKrakenV4Protocol.CreateStatic(
                 settings.Primary, intensity, isDongle),
             RazerHidLightingEffect.Wave => RazerHidKrakenV4Protocol.CreateWave(intensity, isDongle),
+            RazerHidLightingEffect.BreathingSingle => RazerHidKrakenV4Protocol.CreateBreathing(
+                settings.Primary, intensity, isDongle),
+            RazerHidLightingEffect.Spectrum => RazerHidKrakenV4Protocol.CreateSpectrum(isDongle),
+            RazerHidLightingEffect.Custom => RazerHidKrakenV4Protocol.CreateCustomFrame(
+                settings.Primary, device.LedCount, intensity, isDongle),
             _ => throw new NotSupportedException(),
         };
 
@@ -516,5 +534,6 @@ public sealed class RazerHidSpecialLightingService
         RazerHidKrakenLayout Layout,
         FrozenSet<RazerHidLightingEffect> Effects,
         bool WritesColor,
-        RazerHidSpecialLightingKind Kind = RazerHidSpecialLightingKind.Kraken37);
+        RazerHidSpecialLightingKind Kind = RazerHidSpecialLightingKind.Kraken37,
+        int LedCount = 0);
 }

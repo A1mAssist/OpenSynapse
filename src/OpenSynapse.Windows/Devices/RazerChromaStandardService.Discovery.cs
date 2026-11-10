@@ -14,7 +14,7 @@ public sealed partial class RazerChromaStandardService
             .Where(item => RazerHidDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
             // A device with its own native page owns its card; Chroma never adds a second one.
             .Where(item => RazerDeviceRegistry.BuiltIn.Find(0x1532, item.ProductId) is null)
-            .Where(item => !RazerHeadsetAudioService.IsSupported(item.ProductId))
+            .Where(item => !RazerHeadsetAudioService.IsKnown(item.ProductId))
             .Where(item => !RazerKeyboardService.IsSupported(item.ProductId))
             .GroupBy(item => item.PhysicalDeviceKey, StringComparer.OrdinalIgnoreCase)
             .Select(group => group

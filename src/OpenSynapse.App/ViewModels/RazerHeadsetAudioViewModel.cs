@@ -153,6 +153,11 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     private bool _hapticsEnabled;
     private double _hapticsStrength;
     private bool _hasHaptics;
+    private bool _hasFirmware;
+    private bool _hasBattery;
+    private bool _hasCharging;
+    private byte _sidetonePercent;
+    private ushort _silenceDetectionPeriod = 15;
     private byte _micCompressorProfile;
     private bool _micCompressorEnabled;
     private double _micCompressorDb;
@@ -183,7 +188,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     private bool _hasBass;
     private bool _hasAnc;
     private bool _hasLighting;
-    private bool _capabilityProbed;
     private ThxHeadsetStatus _thxStatus = new(ThxHeadsetAvailability.UnsupportedDevice, null);
     private ThxAudioState? _thxState;
     private WindowsThxHeadsetController? _thxController;
@@ -200,14 +204,19 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         [RazerChromaEffect.Off, RazerChromaEffect.Static, RazerChromaEffect.Breathing, RazerChromaEffect.Spectrum];
 
     private bool IsKrakenBase => _connection.Transport == RazerHeadsetAudioTransport.KrakenBase37;
+    private bool IsAvnera65 => _connection.Transport == RazerHeadsetAudioTransport.AvneraFeature65;
+    private bool IsProtocol25 => _connection.Transport == RazerHeadsetAudioTransport.Protocol25Feature65;
+    private bool IsNoaBass => IsProtocol25 &&
+        _connection.ProductId is 0x0532 or 0x0548 or 0x05A3;
     private bool IsT3 => _connection.Transport == RazerHeadsetAudioTransport.ValkyrieT3Feature64;
     private bool IsMxic => _connection.Transport is RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64;
     private bool IsMixer053E => _connection.Transport == RazerHeadsetAudioTransport.Mixer053E;
     private bool IsProtocol40 => RazerProtocol40HeadsetProtocol.IsSupported(_connection.ProductId);
     private bool IsValkyrie => _connection.Transport is
         RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64;
-    private bool IsFeature91 => !IsMxic && !IsValkyrie && !IsMixer053E && !IsKrakenBase;
-    private (byte Value, string Key)[] ActivePresets => IsT3 ? Presets[..4] : IsFeature91 ? Presets : MxicPresets;
+    private bool IsFeature91 => !IsMxic && !IsValkyrie && !IsMixer053E && !IsKrakenBase && !IsAvnera65 && !IsProtocol25;
+    private (byte Value, string Key)[] ActivePresets =>
+        IsT3 ? Presets[..4] : IsFeature91 || IsProtocol25 ? Presets : MxicPresets;
 
     private static bool SupportsS3Baseline(ushort productId) =>
         productId is 0x0521 or 0x0549;
@@ -228,6 +237,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         RazerHeadsetAudioTransport.ValkyrieT3Feature64 => RazerValkyrieHeadsetProtocol.EncodeEqBandLevel((sbyte)Math.Round(level)),
         RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
             RazerValkyrieHeadsetProtocol.EncodeEqBandLevel((sbyte)Math.Round(level)),
+        RazerHeadsetAudioTransport.Protocol25Feature65 => unchecked((byte)(sbyte)Math.Round(level)),
         _ => (byte)Math.Round(level),
     };
 
@@ -237,8 +247,18 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         RazerHeadsetAudioTransport.ValkyrieT3Feature64 => RazerValkyrieHeadsetProtocol.DecodeEqBandLevel(level),
         RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
             RazerValkyrieHeadsetProtocol.DecodeEqBandLevel(level),
+        RazerHeadsetAudioTransport.Protocol25Feature65 => unchecked((sbyte)level),
         _ => level,
     };
+
+    // Noa firmware stores bass as 1..7; the shared slider stays 0..100.
+    private byte ToFirmwareBass(double percent) => IsNoaBass
+        ? (byte)Math.Clamp(1 + (int)Math.Round(percent * 6 / 100), 1, 7)
+        : (byte)Math.Round(percent);
+
+    private double FromFirmwareBass(byte value) => IsNoaBass
+        ? Math.Clamp((value - 1) * 100d / 6, 0, 100)
+        : value;
 
     public RazerHeadsetAudioViewModel(
         RazerHeadsetAudioConnection connection,
@@ -279,10 +299,11 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
     public Visibility Mixer053EVisibility => Mixer053E is null ? Visibility.Collapsed : Visibility.Visible;
 
-    public Visibility GenericStatusVisibility => IsMixer053E ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility GenericStatusVisibility =>
+        _hasFirmware || _hasBattery || _hasCharging ? Visibility.Visible : Visibility.Collapsed;
 
     public Microsoft.UI.Xaml.Visibility LightingVisibility =>
-        (IsFeature91 || IsKrakenBase) && Lighting is not null
+        _hasLighting && (IsFeature91 || IsKrakenBase || IsProtocol25) && Lighting is not null
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
 
@@ -443,38 +464,18 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         });
     public string Identity => $"VID_1532 / PID_{_connection.ProductId:X4}";
     public string DevicePath => _connection.DevicePath;
-    public string StatusText => AppStrings.Text("BlackSharkStatusConnected");
-    public bool HasCapabilityProbe => _capabilityProbed;
-    public int ProtocolTotalCount => 20;
-    public int ProtocolAvailableCount =>
-        (_hasEqBands ? 1 : 0) +
-        (_hasBass ? 1 : 0) +
-        (_hasMicMuted || _hasMicVolume ? 1 : 0) +
-        (_hasAudioSource ? 1 : 0) +
-        (_hasNoiseSuppression ? 1 : 0) +
-        (_hasAnc ? 1 : 0) +
-        (_hasLighting ? 1 : 0) +
-        (_hasHaptics ? 1 : 0) +
-        (_hasParametricEq ? 1 : 0) +
-        (_hasMicCompressor ? 1 : 0) +
-        (_hasMicMonitoring ? 1 : 0) +
-        (_hasDnd ? 1 : 0) +
-        (_hasAutoPause ? 1 : 0) +
-        (_hasGestureControl ? 1 : 0) +
-        (_hasDolby ? 1 : 0) +
-        (_hasNightMode ? 1 : 0) +
-        (_hasVoicePrompts ? 1 : 0) +
-        (_hasMicDeEsser ? 1 : 0) +
-        (_hasMicLimiter ? 1 : 0) +
-        (_hasMicReverb ? 1 : 0);
-    public string CapabilityText => !_capabilityProbed
-        ? AppStrings.Text("BlackSharkStatusConnected")
-        : AppStrings.FormatText("ProtocolAvailableCount", ProtocolAvailableCount, ProtocolTotalCount);
+    public string StatusText => _probeState switch
+    {
+        RazerHeadsetProbeState.Probing => AppStrings.Text("BlackSharkCapabilityReading"),
+        RazerHeadsetProbeState.Partial => AppStrings.Text("BlackSharkStatusPartial"),
+        RazerHeadsetProbeState.Failed => AppStrings.Text("BlackSharkCapabilityReadFailed"),
+        RazerHeadsetProbeState.NotAvailable => AppStrings.Text("BlackSharkComponentRequired"),
+        _ => AppStrings.Text("BlackSharkStatusConnected"),
+    };
 
     public string FirmwareText { get => _firmwareText; private set => SetField(ref _firmwareText, value); }
     public string BatteryText { get => _batteryText; private set => SetField(ref _batteryText, value); }
     public string ChargingText { get => _chargingText; private set => SetField(ref _chargingText, value); }
-
     public IReadOnlyList<string> EqPresetOptions =>
         ActivePresets.Select(preset => AppStrings.Text(preset.Key)).ToArray();
 
@@ -488,9 +489,10 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
     public Visibility EqBandsVisibility => _hasEqBands ? Visibility.Visible : Visibility.Collapsed;
 
-    public Visibility EqPresetVisibility => IsMixer053E || IsProtocol40 || IsKrakenBase
-        ? Visibility.Collapsed
-        : Visibility.Visible;
+    public Visibility EqPresetVisibility => _hasEqPreset &&
+        !(IsMixer053E || IsProtocol40 || IsKrakenBase || IsAvnera65)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
 
     public double Bass
     {
@@ -529,7 +531,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
     public string MicVolumeText => $"{Math.Round(MicVolume)}";
     public Visibility MicVolumeVisibility =>
-        IsFeature91 && _hasMicVolume ? Visibility.Visible : Visibility.Collapsed;
+        (IsFeature91 || IsProtocol25) && _hasMicVolume ? Visibility.Visible : Visibility.Collapsed;
 
     public IReadOnlyList<string> AudioSourceOptions =>
     [
@@ -541,7 +543,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     ];
 
     public Visibility AudioSourceVisibility =>
-        IsFeature91 && _hasAudioSource ? Visibility.Visible : Visibility.Collapsed;
+        (IsFeature91 || IsProtocol25) && _hasAudioSource ? Visibility.Visible : Visibility.Collapsed;
 
     public int SelectedSourceIndex
     {
@@ -556,7 +558,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     }
 
     public Visibility NoiseSuppressionVisibility =>
-        IsFeature91 && _hasNoiseSuppression ? Visibility.Visible : Visibility.Collapsed;
+        (IsFeature91 || IsProtocol25) && _hasNoiseSuppression ? Visibility.Visible : Visibility.Collapsed;
 
     public bool Dnd { get => _dnd; set => SetField(ref _dnd, value); }
     public Visibility DndVisibility => _hasDnd ? Visibility.Visible : Visibility.Collapsed;
@@ -776,12 +778,16 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         {
             if (!SetField(ref _isBusy, value)) return;
             OnPropertyChanged(nameof(CanEdit));
+            OnPropertyChanged(nameof(CanRefresh));
+            OnPropertyChanged(nameof(CanApplyLighting));
             OnPropertyChanged(nameof(CanInstallThx));
             OnPropertyChanged(nameof(CanApplyThx));
         }
     }
 
-    public bool CanEdit => !IsBusy;
+    public bool CanEdit => !IsBusy && _probeState is RazerHeadsetProbeState.Ready or RazerHeadsetProbeState.Partial;
+    public bool CanRefresh => !IsBusy;
+    public bool CanApplyLighting => CanEdit && Lighting is { CanApply: true };
     public string ErrorText { get => _errorText; private set => SetField(ref _errorText, value); }
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);
 
@@ -799,11 +805,22 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             return;
         }
 
+        if (_connection.Transport == RazerHeadsetAudioTransport.NativeDll)
+        {
+            ErrorText = AppStrings.Text("BlackSharkComponentRequired");
+            SetProbeState(RazerHeadsetProbeState.NotAvailable);
+            return;
+        }
+
         if (!BeginOperation()) return;
+        SetProbeState(RazerHeadsetProbeState.Probing);
+        ClearCapabilityFlags();
         try
         {
             Task<RazerHeadsetAudioState> ReadStateOnceAsync() => _connection.Transport switch
             {
+                RazerHeadsetAudioTransport.AvneraFeature65 =>
+                    ReadAvneraStateAsync(cancellationToken),
                 RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64 =>
                     ReadMxicStateAsync(cancellationToken),
                 RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
@@ -826,16 +843,24 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             }
             await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
 
-            ErrorText = state.Errors.Count > 0 && !HasAnyValue(state) && !_hasLighting
+            var hasAnyValue = HasAnyValue(state);
+            ErrorText = state.Errors.Count > 0
                 ? LocalizeHeadsetReadFailure(state.Errors[0])
                 : string.Empty;
+            SetProbeState(hasAnyValue
+                ? state.Errors.Count > 0
+                    ? RazerHeadsetProbeState.Partial
+                    : RazerHeadsetProbeState.Ready
+                : RazerHeadsetProbeState.Failed);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            SetProbeState(RazerHeadsetProbeState.NotProbed);
         }
         catch (Exception exception) when (IsExpectedException(exception))
         {
             ErrorText = LocalizeHeadsetReadFailure(exception.Message);
+            SetProbeState(RazerHeadsetProbeState.Failed);
         }
         finally
         {
@@ -847,10 +872,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             await RefreshThxAsync(cancellationToken);
         }
 
-        _capabilityProbed = true;
-        OnPropertyChanged(nameof(HasCapabilityProbe));
-        OnPropertyChanged(nameof(ProtocolAvailableCount));
-        OnPropertyChanged(nameof(CapabilityText));
     }
 
     [ProfileSetting("headset.thx.spatial", DeviceCategory.Headset, powerScoped: true)]
@@ -1169,7 +1190,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     [ProfileSetting("headset.noise-suppression", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyNoiseSuppressionAsync(CancellationToken cancellationToken = default)
     {
-        if (!IsFeature91) return;
+        if (!IsFeature91 && !IsProtocol25) return;
         var previous = NoiseSuppression;
         if (!await RunWriteAsync((service, token) => service.SetNoiseSuppressionAsync(NoiseSuppression, token), cancellationToken)) return;
         await SaveSettingAsync(previous, NoiseSuppression, value => NoiseSuppression = value,
@@ -1239,10 +1260,28 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     private RazerHeadsetAudioService OpenService() =>
         new(new RazerFeatureTransport(), _connection.DevicePath,
             IsKrakenBase ? TimeSpan.FromMilliseconds(250) : TimeSpan.FromMilliseconds(20),
-            _diagnostic, _connection.Transport);
+            _diagnostic, _connection.Transport, _connection.ProductId);
 
     private RazerMxicHeadsetService OpenMxicService() =>
         new(_connection.ProductId, _connection.DevicePath, _diagnostic);
+
+    private RazerAvneraHeadsetService OpenAvneraService() =>
+        new(_connection.DevicePath, _diagnostic);
+
+    private async Task<RazerHeadsetAudioState> ReadAvneraStateAsync(CancellationToken cancellationToken)
+    {
+        await using var service = OpenAvneraService();
+        return await service.ReadStateAsync(cancellationToken);
+    }
+
+    private Task<bool> RunAvneraWriteAsync(
+        Func<RazerAvneraHeadsetService, CancellationToken, Task> write,
+        CancellationToken cancellationToken) =>
+        RunWriteCoreAsync(async token =>
+        {
+            await using var service = OpenAvneraService();
+            await write(service, token);
+        }, cancellationToken);
 
     private async Task<RazerHeadsetAudioState> ReadMxicStateAsync(CancellationToken cancellationToken)
     {
@@ -1366,13 +1405,22 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
     private void ApplyState(RazerHeadsetAudioState state)
     {
-        if (state.Firmware is { } firmware) FirmwareText = firmware.ToString();
-        if (state.BatteryPercent is byte battery) BatteryText = $"{battery}%";
+        if (state.Firmware is { } firmware)
+        {
+            FirmwareText = firmware.ToString();
+            _hasFirmware = true;
+        }
+        if (state.BatteryPercent is byte battery)
+        {
+            BatteryText = $"{battery}%";
+            _hasBattery = true;
+        }
         if (state.Charging is bool charging)
         {
             ChargingText = AppStrings.Text(charging ? "BlackSharkCharging" : "BlackSharkNotCharging");
+            _hasCharging = true;
         }
-
+        ApplyAvneraInfo(state);
         if (state.EqPreset is byte preset)
         {
             var index = Array.FindIndex(ActivePresets, item => item.Value == preset);
@@ -1380,6 +1428,9 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             {
                 SelectedEqPresetIndex = index;
             }
+
+            _hasEqPreset = true;
+            OnPropertyChanged(nameof(EqPresetVisibility));
         }
 
         if (state.EqBands is { Count: 8 or 10 } bands)
@@ -1394,6 +1445,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
                     (RazerHeadsetEqScale.MinimumDb, RazerHeadsetEqScale.MaximumDb, RazerHeadsetEqScale.StepDb),
                 RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
                     (-12d, 12d, 1d),
+                RazerHeadsetAudioTransport.Protocol25Feature65 => (-12d, 12d, 1d),
                 _ => (0d, 100d, 1d),
             };
             EqBands.Clear();
@@ -1417,7 +1469,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
         if (state.Bass is byte bass)
         {
-            Bass = bass;
+            Bass = FromFirmwareBass(bass);
             _hasBass = true;
             OnPropertyChanged(nameof(BassVisibility));
         }
@@ -1429,6 +1481,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             OnPropertyChanged(nameof(MicCardVisibility));
         }
         if (state.Dnd is bool dnd) { Dnd = dnd; _hasDnd = true; OnPropertyChanged(nameof(DndVisibility)); }
+        if (state.SilenceDetectionPeriod is ushort period) _silenceDetectionPeriod = period;
         if (state.AutoPause is bool autoPause)
         {
             AutoPause = autoPause;
@@ -1485,7 +1538,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         {
             HapticsEnabled = haptics.Enabled;
             HapticsStrength = haptics.Strength;
-            _hasHaptics = false; // No independently verified per-product 91-byte write channel.
+            _hasHaptics = IsAvnera65;
             OnPropertyChanged(nameof(HapticsVisibility));
         }
 
@@ -1501,6 +1554,12 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             OnPropertyChanged(nameof(MicCompressorVisibility));
         }
 
+        if (state.SidetonePercent is byte sidetone)
+        {
+            _sidetonePercent = sidetone;
+            _hasMicMonitoring = true;
+            OnPropertyChanged(nameof(MicMonitoringVisibility));
+        }
         if (state.MicReturnSwitch is bool monitoring)
         {
             MicMonitoringEnabled = monitoring;
@@ -1556,12 +1615,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         raw.Contains("busy", StringComparison.OrdinalIgnoreCase)
             ? AppStrings.Text("RazerHeadsetTransportUnavailable")
             : AppStrings.Text("RazerHeadsetReadFailed");
-
-    private static bool HasAnyValue(RazerHeadsetAudioState state) =>
-        state.Firmware is not null || state.AncState is not null ||
-        state.BatteryPercent is not null || state.EqPreset is not null || state.EqBands is not null ||
-        state.MicBands is not null ||
-        state.Bass is not null || state.MicMuted is not null || state.AudioSource is not null;
 
     private bool BeginOperation()
     {

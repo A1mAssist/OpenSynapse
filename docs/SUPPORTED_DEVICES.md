@@ -327,6 +327,8 @@ The audio page covers EQ, microphone volume, sidetone, ANC, THX and game/chat ba
 | Razer Barracuda Pro | `1532:0539` | Audio page |
 | Razer Barracuda Pro | `1532:0583` | Audio page |
 | Razer Barracuda V2 Pro | `1532:0593` | Audio page (battery/charging); THX V4 installer |
+| Razer Barracuda X Chroma | `1532:0574` | Audio page and 6-LED lighting |
+| Razer Hammerhead V3 | `1532:058C` | Audio page |
 | Razer BlackShark V2 HyperSpeed | `1532:0565` | Audio page (2.4 GHz dongle endpoint) |
 | Razer BlackShark V2 HyperSpeed | `1532:056E` | Audio page |
 | Razer BlackShark V2 Pro (2020) | `1532:0528` | Audio page; THX installer |
@@ -352,7 +354,7 @@ The audio page covers EQ, microphone volume, sidetone, ANC, THX and game/chat ba
 | Razer Kraken V3 | `1532:0549` | Audio page |
 | Razer Kraken V3 HyperSense | `1532:0533` | Audio page |
 | Razer Kraken V3 Pro | `1532:052D` | Not shown: serial audio transport not implemented |
-| Razer Kraken V3 X | `1532:0537` | Audio page |
+| Razer Kraken V3 X | `1532:0537`, `1532:0582` | Audio page |
 | Razer Kraken V4 | `1532:056B` | Lighting page (wired) |
 | Razer Kraken V4 | `1532:056C` | Lighting page (2.4 GHz receiver) |
 | Razer Kraken V4 Pro | `1532:0567` | Audio page |
@@ -372,8 +374,9 @@ Speaker controls cover EQ presets, bands, bass, input source and lighting where 
 
 | Device | USB VID:PID | Notes |
 |---|---|---|
-| Razer Leviathan V2 | `1532:0532` | Audio page |
-| Razer Leviathan V2 Pro | `1532:0548` | Audio page |
+| Razer Leviathan V2 | `1532:0532` | Audio page (Protocol 25, 65-byte feature reports) |
+| Razer Leviathan V2 Pro | `1532:0548` | Audio page (Protocol 25, 65-byte feature reports) |
+| Razer Leviathan V2 ECR | `1532:05A3` | Audio page (Protocol 25, 64-byte feature reports) |
 | Razer Leviathan V2 X | `1532:054A` | Soundbar audio and lighting; physical validation still pending |
 | Razer Nommo Chroma | `1532:0517` | Chroma lighting |
 | Razer Nommo Pro | `1532:0518` | Chroma lighting |
@@ -390,9 +393,12 @@ Microphone controls cover EQ, microphone volume and LED effects where available.
 | Device | USB VID:PID | Notes |
 |---|---|---|
 | Razer Seiren Emote | `1532:0F1B` | Audio page; the 8x8 matrix is not exposed because the 0F1B bundle has no frame command |
-| Razer Seiren V2 Pro | `1532:0542` | Audio page |
-| Razer Seiren V2 X | `1532:0543` | Audio page |
-| Razer Seiren V3 Mini | `1532:056A` | Audio page |
+| Razer Seiren V2 Pro | `1532:0542` | Needs the Razer audio component; no HID controls |
+| Razer Seiren V2 X | `1532:0543` | Needs the Razer audio component; no HID controls |
+| Razer Seiren V3 Mini | `1532:056A` | Audio page (Protocol 25, 65-byte feature reports) |
+| Razer Seiren V3 Chroma | `1532:056F` | Audio page (Protocol 25, 65-byte feature reports) |
+| Razer Seiren V3 Pro | `1532:058E` | Audio page (Protocol 25, 65-byte feature reports) |
+| Razer Seiren V3 Chroma 32-Bit DSP | `1532:05A6` | Audio page (Protocol 25, 65-byte feature reports) |
 
 ## Mouse pads
 
