@@ -2924,6 +2924,9 @@
   <data name="MacroRowRenameItem.Text" xml:space="preserve"><value>重命名</value></data>
   <data name="MacroRowExportItem.Text" xml:space="preserve"><value>导出…</value></data>
   <data name="MacroRenameTitle" xml:space="preserve"><value>重命名宏</value></data>
+  <data name="MacroRenameNameLabel" xml:space="preserve"><value>名称</value></data>
+  <data name="MacroRenameNamePlaceholder" xml:space="preserve"><value>宏名称</value></data>
+  <data name="MacroRenameSave" xml:space="preserve"><value>保存</value></data>
   <data name="MacroHint.Text" xml:space="preserve"><value>宏仅在 OpenSynapse 运行时生效，触发键会全局拦截，F9 停止录制并保存；播放快捷键可在宏编辑器中设置。按住 HyperShift 再按目标键，可把触发绑定到 HyperShift 层（需要设备上报 HyperShift）。</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>绑定触发键</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>绑定触发键</value></data>
