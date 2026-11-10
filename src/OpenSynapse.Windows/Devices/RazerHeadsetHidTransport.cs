@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Threading.Channels;
 using Microsoft.Win32.SafeHandles;
+using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
 
@@ -16,7 +17,8 @@ internal interface IRazerHeadsetHidTransport : IAsyncDisposable
 /// <summary>
 /// 64-byte HID output/input channel for the AudioValkyrie / AudioBillie family.
 /// The caller owns response matching so each protocol can decide which report and
-/// header identify its reply.
+/// header identify its reply. HID handles are not seekable: never use RandomAccess with
+/// an offset on them; use a write handle with WriteFile or an OVERLAPPED same-handle write.
 /// </summary>
 internal sealed class RazerHeadsetHidTransport : IRazerHeadsetHidTransport
 {
@@ -27,11 +29,14 @@ internal sealed class RazerHeadsetHidTransport : IRazerHeadsetHidTransport
     private readonly Channel<byte[]> _reports = Channel.CreateUnbounded<byte[]>();
     private readonly CancellationTokenSource _readCancellation = new();
     private readonly Task _readLoop;
+    private readonly string _devicePath;
+    private readonly RazerHidHidReportTransport _output = new();
     private bool _disposed;
 
     internal RazerHeadsetHidTransport(string devicePath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
+        _devicePath = devicePath;
         var handle = NativeMethods.CreateFile(
             devicePath,
             NativeMethods.GenericRead | NativeMethods.GenericWrite,
@@ -67,12 +72,9 @@ internal sealed class RazerHeadsetHidTransport : IRazerHeadsetHidTransport
             }
 
             // AudioValkyrie/Billie bundles use hid.write, not HidD_SetOutputReport.
-            // The latter can report success without reaching the vendor OUT endpoint.
-            await RandomAccess.WriteAsync(
-                _stream.SafeFileHandle,
-                report.AsMemory(),
-                fileOffset: 0,
-                cancellationToken).ConfigureAwait(false);
+            // HID handles are not seekable, so a separate write handle is used while the
+            // read loop keeps the original overlapped handle.
+            await _output.SendOutputAsync(_devicePath, report, cancellationToken).ConfigureAwait(false);
 
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(ResponseTimeout);

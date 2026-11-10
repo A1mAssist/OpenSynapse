@@ -6,6 +6,10 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
 
+/// <summary>
+/// HID handles are not seekable. Never use RandomAccess with an offset on these handles;
+/// use a write handle with WriteFile or an OVERLAPPED same-handle write.
+/// </summary>
 internal sealed class BlackSharkHeadsetTransport : IAsyncDisposable
 {
     private static readonly TimeSpan ResponseTimeout = TimeSpan.FromSeconds(1);
@@ -15,11 +19,14 @@ internal sealed class BlackSharkHeadsetTransport : IAsyncDisposable
     private readonly CancellationTokenSource _readCancellation = new();
     private readonly Task _readLoop;
     private readonly int _inputReportLength;
+    private readonly string _devicePath;
+    private readonly RazerHidHidReportTransport _output = new();
     private bool _disposed;
 
     internal BlackSharkHeadsetTransport(string devicePath, int inputReportLength)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
+        _devicePath = devicePath;
         _inputReportLength = Math.Max(inputReportLength, BlackSharkV3ProProtocol.ReportLength);
         var handle = NativeMethods.CreateFile(
             devicePath,
@@ -51,13 +58,10 @@ internal sealed class BlackSharkHeadsetTransport : IAsyncDisposable
             {
             }
 
-            // AudioValkyrie uses hid.write for this 64-byte channel. Keep the write on
-            // the vendor OUT endpoint; HidD_SetOutputReport does not reach it reliably.
-            await RandomAccess.WriteAsync(
-                _stream.SafeFileHandle,
-                report.AsMemory(),
-                fileOffset: 0,
-                cancellationToken).ConfigureAwait(false);
+            // AudioValkyrie uses hid.write for this 64-byte channel. HID handles are not
+            // seekable, so RandomAccess cannot be used; a separate write handle reaches
+            // the vendor OUT endpoint while the read loop keeps the original handle.
+            await _output.SendOutputAsync(_devicePath, report, cancellationToken).ConfigureAwait(false);
 
             if (!expectResponse)
             {
