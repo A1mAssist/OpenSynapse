@@ -223,7 +223,10 @@ public sealed partial class LightingStudioViewModel
         _outputClock.Restart();
         _outputTask = Task.Run(async () =>
         {
-            using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(1000d / 60d));
+            // Razer's Studio engine and its native effects tick at 25 fps. The
+            // matrix HID endpoints cannot sustain the old 60 fps pump.
+            using var timer = new PeriodicTimer(
+                TimeSpan.FromSeconds(1d / StudioEffectRenderer.NativeFramesPerSecond));
             try
             {
                 while (await timer.WaitForNextTickAsync(token).ConfigureAwait(false))

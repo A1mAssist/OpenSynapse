@@ -31,7 +31,8 @@ public static partial class StudioEffectRenderer
     private const double DefaultSpectrumSeconds = 10;
     private const double DefaultReactiveSeconds = 1;
     private const double DefaultStarlightSeconds = 1.2;
-    private const double NativeFramesPerSecond = 25;
+    /// <summary>Chroma Studio's native playback rate in frames per second.</summary>
+    public const double NativeFramesPerSecond = 25;
 
     public static StudioRgb[] Render(
         StudioEffectParams parameters,
