@@ -3708,7 +3708,6 @@
         "razer_chroma_misc_set_time_to_dim": "1F",
         "razer_chroma_misc_get_gpu_card_detection": "1F",
         "razer_chroma_misc_set_gpu_card_detection": "1F",
-        "razer_chroma_misc_get_macro_storage_info": "1F",
         "razer_chroma_misc_get_auto_sleep": "1F",
         "razer_chroma_misc_set_auto_sleep": "1F",
         "razer_chroma_misc_get_battery_charge_limiter": "1F",
