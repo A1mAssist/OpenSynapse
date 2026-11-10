@@ -1365,6 +1365,8 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     public string FanTargetRpmText { get => _blade._bladeFanTargetRpmText; private set => SetField(ref _blade._bladeFanTargetRpmText, value); }
     public string CurrentFanCpuRpmText { get => _blade._bladeCurrentFanCpuRpmText; private set => SetField(ref _blade._bladeCurrentFanCpuRpmText, value); }
     public string CurrentFanGpuRpmText { get => _blade._bladeCurrentFanGpuRpmText; private set => SetField(ref _blade._bladeCurrentFanGpuRpmText, value); }
+    internal int? CurrentFanCpuRpm { get; private set; }
+    internal int? CurrentFanGpuRpm { get; private set; }
     public string AdvancedFanCpuModeRawText { get => _blade._bladeAdvancedFanCpuModeRawText; private set => SetField(ref _blade._bladeAdvancedFanCpuModeRawText, value); }
     public string AdvancedFanGpuModeRawText { get => _blade._bladeAdvancedFanGpuModeRawText; private set => SetField(ref _blade._bladeAdvancedFanGpuModeRawText, value); }
     public string GameModeText { get => _blade._bladeGameModeText; private set => SetField(ref _blade._bladeGameModeText, value); }
@@ -2415,10 +2417,12 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         }
         if (telemetry.BladeCurrentFanCpuRpm is int cpuRpm)
         {
+            CurrentFanCpuRpm = cpuRpm;
             CurrentFanCpuRpmText = $"{cpuRpm:N0} RPM";
         }
         if (telemetry.BladeCurrentFanGpuRpm is int gpuRpm)
         {
+            CurrentFanGpuRpm = gpuRpm;
             CurrentFanGpuRpmText = $"{gpuRpm:N0} RPM";
         }
         if (telemetry.BladeAdvancedFanCpuModeRaw is byte cpuFanMode)
@@ -2583,6 +2587,8 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         FanTargetRpmText = "--";
         CurrentFanCpuRpmText = "--";
         CurrentFanGpuRpmText = "--";
+        CurrentFanCpuRpm = null;
+        CurrentFanGpuRpm = null;
         AdvancedFanCpuModeRawText = "--";
         AdvancedFanGpuModeRawText = "--";
         SetGameMode(null);
