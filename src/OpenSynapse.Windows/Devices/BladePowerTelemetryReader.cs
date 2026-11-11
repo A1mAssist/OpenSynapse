@@ -351,7 +351,7 @@ internal sealed class BladePowerTelemetryReader
                 "The Fn primary-function control is not available on this Blade model.");
         }
 
-        var builtRequest = BladeSynapsePolicyProtocol.CreateSetFnKeyStateRequest(multiFunctionPrimary, blade.FnKeyProfileId);
+        var builtRequest = BladeSynapsePolicyProtocol.CreateSetFnKeyStateRequest(multiFunctionPrimary);
         var request = RazerCapabilityClient.CreateConfiguredRequest(blade, CapabilityIds.FnKeySet, builtRequest);
         var response = await _client.QueryAsync(
             blade,
@@ -366,7 +366,7 @@ internal sealed class BladePowerTelemetryReader
             var getRequest = RazerCapabilityClient.CreateConfiguredRequest(
                 blade,
                 CapabilityIds.FnKeyGet,
-                BladeSynapsePolicyProtocol.CreateGetFnKeyStateRequest(request[RazerFeatureReport.ArgumentsOffset]));
+                BladeSynapsePolicyProtocol.CreateGetFnKeyStateRequest());
             var getResponse = await _client.QueryAsync(
                 blade,
                 CapabilityIds.FnKeyGet,

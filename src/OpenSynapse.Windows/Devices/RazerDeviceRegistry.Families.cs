@@ -30,7 +30,7 @@ internal sealed partial class RazerDeviceRegistry
                 [CapabilityIds.TimeToDimGet] = new(0x05, 0x07, 0x8B, "00"),
                 [CapabilityIds.TimeToDimSet] = new(0x05, 0x07, 0x0B, ""),
                 [CapabilityIds.GamingModeSet] = new(0x04, 0x00, 0x08, "", AllowZeroTransactionId: true),
-                [CapabilityIds.FnKeyGet] = new(0x02, 0x02, 0x86, "0100", AllowZeroTransactionId: true),
+                [CapabilityIds.FnKeyGet] = new(0x02, 0x02, 0x86, "0000", AllowZeroTransactionId: true),
                 [CapabilityIds.McuVersionGet] = new(0x04, 0x00, 0x87, "00000000", AllowZeroTransactionId: true),
                 [CapabilityIds.FnKeySet] = new(0x02, 0x02, 0x06, "", AllowZeroTransactionId: true),
                 [CapabilityIds.StartupAnimationGet] = new(0x01, 0x0F, 0x98, "00"),
@@ -52,11 +52,7 @@ internal sealed partial class RazerDeviceRegistry
     private static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, CapabilityContract>> FamilyCapabilities =
         new Dictionary<string, IReadOnlyDictionary<string, CapabilityContract>>(StringComparer.Ordinal)
         {
-            // 02C6 has no persistentInHardware.functionKeyState; read the live profile.
-            ["blade-710"] = new Dictionary<string, CapabilityContract>(Blade710Capabilities, StringComparer.Ordinal)
-            {
-                [CapabilityIds.FnKeyGet] = new(0x02, 0x02, 0x86, "0000", AllowZeroTransactionId: true),
-            },
+            ["blade-710"] = Blade710Capabilities,
             // Later Blade middleware moved keyboard brightness from 0E:84/04 to the
             // 03:83/03 Chroma region command. All other reports remain 710-compatible.
             ["blade-710-chroma"] = new Dictionary<string, CapabilityContract>(Blade710Capabilities, StringComparer.Ordinal)
