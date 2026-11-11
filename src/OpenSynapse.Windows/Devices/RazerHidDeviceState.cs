@@ -11,6 +11,18 @@ public enum RazerHidEndpointState
     BusyOrUnavailable,
 }
 
+public enum RazerSmartTrackingMode
+{
+    Adaptive,
+    Adjustable,
+}
+
+public readonly record struct RazerSmartTrackingState(
+    RazerSmartTrackingMode Mode,
+    int TrackingDistance,
+    int LiftOffDistance,
+    int LandingDistance);
+
 /// <summary>Onboard button-assignment function ids used by the middleware.</summary>
 public static class RazerHidMappingFunctions
 {

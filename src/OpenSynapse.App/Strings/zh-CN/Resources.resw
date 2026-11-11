@@ -2024,13 +2024,19 @@
   <data name="RazerHidSensorRotationApplied" xml:space="preserve"><value>已应用</value></data>
   <data name="RazerHidSensorRotationInvalid" xml:space="preserve"><value>设备里的角度原始值 {0} 超出有效范围，请重新探测后再设置。</value></data>
   <data name="RazerHidSmartTrackingTitle.Text" xml:space="preserve"><value>智能追踪</value></data>
-  <data name="RazerHidSmartTrackingDescription.Text" xml:space="preserve"><value>无论使用何种表面，都可以根据你的喜好设置单个中止点。</value></data>
-  <data name="RazerHidSmartTrackingAsymmetric.Content" xml:space="preserve"><value>启用非对称中止</value></data>
+  <data name="RazerHidSmartTrackingDescription.Text" xml:space="preserve"><value>选择自适应高低，或分别设置抬起与落下距离。</value></data>
+  <data name="RazerHidSmartTrackingMode.Header" xml:space="preserve"><value>模式</value></data>
+  <data name="RazerHidSmartTrackingModeAdaptive" xml:space="preserve"><value>自适应高低</value></data>
+  <data name="RazerHidSmartTrackingModeAdjustable" xml:space="preserve"><value>可调高低</value></data>
   <data name="RazerHidSmartTrackingDistance.Text" xml:space="preserve"><value>追踪距离</value></data>
+  <data name="RazerHidSmartTrackingLiftOff.Header" xml:space="preserve"><value>抬起距离</value></data>
+  <data name="RazerHidSmartTrackingLanding.Header" xml:space="preserve"><value>落下距离</value></data>
   <data name="RazerHidSmartTrackingLow" xml:space="preserve"><value>低</value></data>
   <data name="RazerHidSmartTrackingMedium" xml:space="preserve"><value>中等</value></data>
   <data name="RazerHidSmartTrackingHigh" xml:space="preserve"><value>高</value></data>
   <data name="RazerHidSmartTrackingApplied" xml:space="preserve"><value>已应用</value></data>
+  <data name="RazerHidSmartTrackingReadbackUnavailable" xml:space="preserve"><value>已写入，但当前无法回读。</value></data>
+  <data name="RazerHidSmartTrackingReadbackMismatch" xml:space="preserve"><value>已写入，但回读值与写入值不一致。</value></data>
   <data name="RazerHidSmartTrackingResetHint.Text" xml:space="preserve"><value>通过同时按住左键、右键和滚轮 7 秒钟，可以手动重置你的鼠标。</value></data>
   <data name="RazerHidActiveDpiStage.Header" xml:space="preserve"><value>当前档位</value></data>
   <data name="RazerHidDpiStageLabel" xml:space="preserve"><value>档位 {0}</value></data>

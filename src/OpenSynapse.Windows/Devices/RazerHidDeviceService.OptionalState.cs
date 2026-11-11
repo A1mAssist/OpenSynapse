@@ -21,6 +21,9 @@ public sealed partial class RazerHidDeviceService
             RazerHidBackendCapability.SensorRotationWrite,
         }.ToFrozenSet();
 
+    internal static bool ShouldExposeProximity(ushort productId, bool probeSucceeded) =>
+        probeSucceeded || RazerProximitySensorProfiles.TryGet(productId, out _);
+
     /// <summary>
     /// Probes the optional power/indicator settings that otherwise leak from the shared
     /// middleware command table onto devices whose firmware does not implement them.
@@ -39,8 +42,10 @@ public sealed partial class RazerHidDeviceService
 
         if (definition.Category == DeviceCategory.Mouse)
         {
-            if (await ProbeProximitySensorAsync(definition, devicePath, cancellationToken)
-                    .ConfigureAwait(false))
+            var proximityProbeSucceeded = await ProbeProximitySensorAsync(
+                    definition, devicePath, cancellationToken)
+                .ConfigureAwait(false);
+            if (ShouldExposeProximity(definition.ProductId, proximityProbeSucceeded))
             {
                 result.Add(RazerHidBackendCapability.ProximitySensorRead);
                 result.Add(RazerHidBackendCapability.ProximitySensorWrite);
@@ -107,10 +112,19 @@ public sealed partial class RazerHidDeviceService
         string devicePath,
         CancellationToken cancellationToken)
     {
+        var classId = RazerProximitySensorProtocol.DefaultProximityClassId;
+        var sensorId = RazerProximitySensorProtocol.AvagoProximitySensorId;
+        if (RazerProximitySensorProfiles.TryGet(definition.ProductId, out var profile))
+        {
+            classId = profile.ClassId;
+            sensorId = profile.SensorId;
+        }
+
         var request = RazerProximitySensorProtocol.CreateGetProximitySensorConfigurationRequest(
             MiddlewareTransactionId,
-            RazerProximitySensorProtocol.DefaultProximityClassId,
-            RazerProximitySensorProtocol.AvagoProximitySensorId);
+            classId,
+            sensorId);
+        var requestHex = Convert.ToHexString(request);
         return ProbeMiddlewareAsync(
             definition.ProductId,
             devicePath,
@@ -122,7 +136,20 @@ public sealed partial class RazerHidDeviceService
                 _ = RazerProximitySensorProtocol.ParseConfiguration(response, request);
                 return true;
             },
-            cancellationToken);
+            cancellationToken,
+            (response, error) =>
+            {
+                if (response is not null)
+                {
+                    WriteDiagnostic(definition.ProductId,
+                        $"mouse.proximitySensor request={requestHex} response {RazerFeatureResponseDiagnostics.DescribeResponsePrefix(response)}");
+                }
+                else
+                {
+                    WriteDiagnostic(definition.ProductId,
+                        $"mouse.proximitySensor request={requestHex} failed before a response: {error?.GetType().Name}: {error?.Message}");
+                }
+            });
     }
 
     private Task<bool> ProbeSensorRotationAsync(
@@ -143,6 +170,19 @@ public sealed partial class RazerHidDeviceService
                 _ = RazerProximitySensorProtocol.ParseSensorRotation(response, request);
                 return true;
             },
-            cancellationToken);
+            cancellationToken,
+            (response, error) =>
+            {
+                if (response is not null)
+                {
+                    WriteDiagnostic(definition.ProductId,
+                        $"mouse.sensorRotation response {RazerFeatureResponseDiagnostics.DescribeResponsePrefix(response)}");
+                }
+                else
+                {
+                    WriteDiagnostic(definition.ProductId,
+                        $"mouse.sensorRotation failed before a response: {error?.GetType().Name}: {error?.Message}");
+                }
+            });
     }
 }

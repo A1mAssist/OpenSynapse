@@ -44,7 +44,7 @@ public readonly record struct RazerHidSensorRotation(
 /// Protocol 25 class 0x0B proximity and lift-off commands from the mouse middleware.
 /// The command tuples are get configuration [10,11,133], set configuration [10,11,5],
 /// set state [3,11,3], set threshold [8,11,2], set lift setting [4,11,11],
-/// get control [4,11,137] and set control [4,11,9].
+/// get lift setting [4,11,139], get control [4,11,137] and set control [4,11,9].
 /// </summary>
 public static class RazerProximitySensorProtocol
 {
@@ -59,6 +59,7 @@ public static class RazerProximitySensorProtocol
     private const byte SetConfigurationCommand = 0x05;
     private const byte SetStateCommand = 0x03;
     private const byte SetThresholdCommand = 0x02;
+    private const byte GetLiftSettingCommand = 0x8B;
     private const byte SetLiftSettingCommand = 0x0B;
     private const byte GetControlCommand = 0x89;
     private const byte SetControlCommand = 0x09;
@@ -171,6 +172,22 @@ public static class RazerProximitySensorProtocol
             CommandClass,
             SetLiftSettingCommand,
             new byte[] { classId, sensorId, liftMode, liftHeight });
+
+    public static byte[] CreateGetProximitySensorLiftSettingRequest(
+        byte transactionId,
+        byte classId,
+        byte sensorId)
+    {
+        Span<byte> arguments = stackalloc byte[LiftSettingSize];
+        arguments[0] = classId;
+        arguments[1] = sensorId;
+        return RazerFeatureReport.CreateRequest(
+            transactionId,
+            LiftSettingSize,
+            CommandClass,
+            GetLiftSettingCommand,
+            arguments);
+    }
 
     public static byte[] CreateGetProximitySensorControlRequest(
         byte transactionId,

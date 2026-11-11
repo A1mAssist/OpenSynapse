@@ -1257,7 +1257,8 @@ public sealed partial class RazerHidDeviceService
         string probe,
         byte[] request,
         Func<byte[], bool> accepts,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Action<byte[]?, Exception?>? observed = null)
     {
         var now = DateTimeOffset.UtcNow;
         var key = (devicePath.ToUpperInvariant(), probe);
@@ -1267,9 +1268,11 @@ public sealed partial class RazerHidDeviceService
         }
 
         var supported = false;
+        byte[]? response = null;
+        Exception? error = null;
         try
         {
-            var response = await _transport.QueryPreparedAsync(
+            response = await _transport.QueryPreparedAsync(
                 devicePath, request, deviceWait, cancellationToken).ConfigureAwait(false);
             supported = accepts(response);
         }
@@ -1277,9 +1280,11 @@ public sealed partial class RazerHidDeviceService
             InvalidOperationException or NotSupportedException or InvalidDataException or
             UnauthorizedAccessException or TimeoutException)
         {
+            error = exception;
             WriteDiagnostic(productId, $"{probe} probe failed: {exception.GetType().Name}: {exception.Message}");
         }
 
+        observed?.Invoke(response, error);
         if (supported)
         {
             _middlewareProbeCache[key] = now + MiddlewareProbePositiveTtl;
