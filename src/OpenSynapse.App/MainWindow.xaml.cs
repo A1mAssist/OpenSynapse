@@ -82,25 +82,8 @@ public sealed partial class MainWindow : Window
         // Lite hides CPU advanced controls; skip startup reads that touch PawnIO/the service.
         if (!_viewModel.IsLiteMode) { _ = _viewModel.CpuPower.RefreshCpuPowerLimitSafelyAsync(); _ = _viewModel.CpuCurve.RefreshSafelyAsync(); }
         RootNavigationView.DataContext = _viewModel;
-        DiagnosticsPage.Host = this;
-        SettingsPage.Host = this;
-        MacrosPage.Host = this;
-        ProfilesPage.Host = this;
-        DevicesPage.Host = this;
-        LightingStudioPage.Host = this;
         _studioInputSampler = new StudioInputSampler();
-        LightingStudioPage.Initialize(
-            _bladeLightingController,
-            () => _viewModel.CurrentDeviceDescriptors,
-            BuildStudioDevices,
-            CreateStudioHidRouter(_studioInputSampler),
-            _studioInputSampler,
-            CreateStudioArgbRouter(_studioInputSampler),
-            _viewModel.RestoreLightingAfterExternalAsync);
-        DevicesPage.RefreshAdvancedFeaturesVisibility();
         ApplyLiteMode();
-        MacrosPage.OpenEditorRequested += (_, _) => OpenMacroEditorWindow();
-        OverviewPage.DeviceRequested += OnOverviewDeviceRequested;
         _viewModel.Hue.Configure(_behaviorSettings.HueBridgeHost, _behaviorSettings.HueAppKey);
         _viewModel.Hue.Persist = (host, appKey) =>
         {
@@ -111,9 +94,10 @@ public sealed partial class MainWindow : Window
         var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
         _viewModel.Macros.SetMacroDispatcher(_dispatcherQueue);
         _viewModel.Macros.SetMacroOwnWindowForegroundPredicate(() => IsOwnForegroundWindow(windowHandle));
-        _viewModel.Blade.SetPadlessHyperBoostConfirmation(DevicesPage.ConfirmPadlessHyperBoostAsync);
+        _viewModel.Blade.SetPadlessHyperBoostConfirmation(
+            () => DevicesPage.ConfirmPadlessHyperBoostAsync());
         _viewModel.Blade.SetPadlessHyperBoostAccepted(_behaviorSettings.PadlessHyperBoostAccepted);
-        DevicesPage.RefreshLightingPresetOptions();
+        InitializePageHost();
         Localized.RefreshTree(RootLayout);
         RootLayout.Loaded += (_, _) =>
         {
@@ -126,10 +110,6 @@ public sealed partial class MainWindow : Window
             // to the minimum size for the rest of the session.
             ResizeForCurrentDisplay();
         };
-        SettingsPage.Initialize();
-        SettingsPage.InitializeBehaviorSettingsUi();
-        ProfilesPage.InitializeBehaviorSettingsUi();
-        SettingsPage.InitializeUpdateUi();
         var appIconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "OpenSynapse.ico");
         if (File.Exists(appIconPath))
         {
@@ -157,14 +137,14 @@ public sealed partial class MainWindow : Window
             _setBladeIndicatorDisplayAvailable,
             _lifetime.Token);
         _displayPowerNotification.Initialize();
-        SettingsPage.UpdateChromaRestStatusTimer(AppWindow.IsVisible);
+        _settingsPage?.UpdateChromaRestStatusTimer(AppWindow.IsVisible);
     }
 
     internal void RefreshLocalizationAfterLanguageChange()
     {
         Localized.RefreshTree(RootLayout);
-        DevicesPage.RefreshLightingPresetOptions();
-        DevicesPage.RefreshDedicatedGpuMode();
+        _devicesPage?.RefreshLightingPresetOptions();
+        _devicesPage?.RefreshDedicatedGpuMode();
         _aboutWindow?.RefreshLocalization();
         _macroEditorWindow?.RefreshLocalization();
         ((App)Application.Current).RefreshTrayLocalization();
@@ -172,9 +152,9 @@ public sealed partial class MainWindow : Window
         _performanceOverlayWindow?.RefreshLocalization();
     }
 
-    internal void RefreshLightingPresetOptions() => DevicesPage.RefreshLightingPresetOptions();
+    internal void RefreshLightingPresetOptions() => _devicesPage?.RefreshLightingPresetOptions();
 
-    internal void RefreshAdvancedFeaturesVisibility() => DevicesPage.RefreshAdvancedFeaturesVisibility();
+    internal void RefreshAdvancedFeaturesVisibility() => _devicesPage?.RefreshAdvancedFeaturesVisibility();
 
     internal void InitializePicker(object picker) =>
         WinRT.Interop.InitializeWithWindow.Initialize(
@@ -271,7 +251,7 @@ public sealed partial class MainWindow : Window
         {
             UpdatePerformanceSamplingState();
             _viewModel.Refresh.SetDeviceWatchActive(sender.IsVisible);
-            SettingsPage.UpdateChromaRestStatusTimer(sender.IsVisible);
+            _settingsPage?.UpdateChromaRestStatusTimer(sender.IsVisible);
             if (sender.IsVisible)
             {
                 _viewModel.Refresh.RequestDeviceRefresh();
@@ -569,12 +549,12 @@ public sealed partial class MainWindow : Window
     internal void ForwardBladeMappingInput(BladeMappingInputEvent input)
     {
         if (!input.IsDown) return;
-        _dispatcherQueue.TryEnqueue(() => LightingStudioPage.HandleMappingInput(input));
+        _dispatcherQueue.TryEnqueue(() => _lightingStudioPage?.HandleMappingInput(input));
     }
     private void OnClosed(object sender, WindowEventArgs args)
     {
         SaveWindowSize();
-        SettingsPage.Shutdown();
+        _settingsPage?.Shutdown();
         _aboutWindow?.Close();
         _aboutWindow = null;
         CloseThxAudioWindow();

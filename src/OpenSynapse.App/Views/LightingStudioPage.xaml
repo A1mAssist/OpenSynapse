@@ -368,7 +368,7 @@
                           AutomationProperties.AutomationId="StudioZoomOut">
                     <FontIcon Glyph="&#xE1A4;" FontFamily="{StaticResource IconFontFamily}" FontSize="14" />
                   </Button>
-                  <ComboBox x:Name="ZoomPicker" SelectedIndex="3" Width="86"
+                  <ComboBox x:Name="ZoomPicker" SelectedIndex="3" MinWidth="100"
                             VerticalAlignment="Center"
                             AutomationProperties.AutomationId="StudioZoomPicker"
                             SelectionChanged="ZoomStepChanged">

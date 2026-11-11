@@ -47,15 +47,7 @@
         <NavigationViewItem local:Localized.Uid="SettingsNavigationItem" x:Name="SettingsNavigationItem" AutomationProperties.AutomationId="SettingsNavigationItem" Content="设置" Tag="settings"><NavigationViewItem.Icon><FontIcon Glyph="&#xE713;" FontFamily="{StaticResource IconFontFamily}" FontSize="16" /></NavigationViewItem.Icon></NavigationViewItem>
       </NavigationView.FooterMenuItems>
       <NavigationView.Content>
-        <Grid>
-            <views:OverviewPage x:Name="OverviewPage" />
-            <views:DevicesPage x:Name="DevicesPage" Visibility="Collapsed" />
-            <views:LightingStudioPage x:Name="LightingStudioPage" Visibility="Collapsed" />
-            <views:ProfilesPage x:Name="ProfilesPage" Visibility="Collapsed" />
-            <views:MacrosPage x:Name="MacrosPage" Visibility="Collapsed" />
-            <views:SettingsPage x:Name="SettingsPage" Visibility="Collapsed" />
-            <views:DiagnosticsPage x:Name="DiagnosticsPage" Visibility="Collapsed" />
-        </Grid>
+        <Grid x:Name="PageHost" />
       </NavigationView.Content>
     </NavigationView>
     <Grid x:Name="LaunchOverlay" Grid.RowSpan="2" Canvas.ZIndex="100" Background="{StaticResource CanvasBrush}">

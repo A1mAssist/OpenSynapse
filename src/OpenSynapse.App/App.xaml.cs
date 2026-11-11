@@ -70,22 +70,7 @@ public partial class App : Application
         }
 
         InitializeComponent();
-        UnhandledException += (_, args) =>
-        {
-            _diagnosticLog.TryWrite("unhandled", args.Exception.ToString());
-            EmergencyStopBladeLighting();
-            EmergencyStopBladeMapping();
-        };
-        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
-        {
-            if (args.ExceptionObject is Exception exception)
-            {
-                _diagnosticLog.TryWrite("unhandled", exception.ToString());
-            }
-
-            EmergencyStopBladeLighting();
-            EmergencyStopBladeMapping();
-        };
+        ConfigureDiagnostics();
         AppDomain.CurrentDomain.ProcessExit += (_, _) =>
         {
             EmergencyStopBladeLighting();
