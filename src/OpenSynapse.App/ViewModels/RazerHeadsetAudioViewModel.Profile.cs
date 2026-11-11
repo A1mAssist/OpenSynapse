@@ -86,6 +86,12 @@ public sealed partial class RazerHeadsetAudioViewModel
             }
         }
 
+        if (IsJolie)
+        {
+            await ApplyPersistedJolietEqAsync(profile, cancellationToken);
+            return;
+        }
+
         if (ReadBandLevels(profile.EqBands) is { } levels)
         {
             var bands = levels.Select(level => ToFirmwareBand(level)).ToArray();
@@ -149,6 +155,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         {
             case RazerHeadsetAudioTransport.Mxic64:
             case RazerHeadsetAudioTransport.ValkyrieT3Feature64:
+            case RazerHeadsetAudioTransport.Jolie64:
                 await using (var service = OpenMxicService())
                 {
                     await service.SetMicMuteAsync(muted, cancellationToken);
@@ -202,6 +209,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         {
             case RazerHeadsetAudioTransport.Mxic64:
             case RazerHeadsetAudioTransport.ValkyrieT3Feature64:
+            case RazerHeadsetAudioTransport.Jolie64:
                 await using (var service = OpenMxicService())
                 {
                     await service.SetEqPresetAsync(preset, cancellationToken);
@@ -229,6 +237,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         {
             case RazerHeadsetAudioTransport.Mxic64:
             case RazerHeadsetAudioTransport.ValkyrieT3Feature64:
+            case RazerHeadsetAudioTransport.Jolie64:
                 await using (var service = OpenMxicService())
                 {
                     await service.SetCustomEqAsync(preset, bands, cancellationToken);

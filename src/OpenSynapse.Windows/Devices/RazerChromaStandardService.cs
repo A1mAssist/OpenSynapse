@@ -21,6 +21,18 @@ public sealed record RazerChromaStandardState(
     bool? IsCharging,
     IReadOnlyList<string> Errors);
 
+/// <summary>Brightness and four-effect lighting surface shared by the audio card's
+/// 91-byte class 0x10 path and the Mako X 64-byte class 0x0F path.</summary>
+public interface IRazerHeadsetLightingService
+{
+    Task<RazerChromaStandardState> ReadStateAsync(CancellationToken cancellationToken = default);
+    Task SetBrightnessAsync(byte percent, CancellationToken cancellationToken = default);
+    Task SetEffectAsync(
+        RazerChromaEffect effect,
+        IReadOnlyList<byte> colors,
+        CancellationToken cancellationToken = default);
+}
+
 /// <summary>
 /// Class 0x10 carries effect and brightness; the older class 0x0F keyboards carry the
 /// same four UI effects without a brightness command.
@@ -37,7 +49,7 @@ public enum RazerChromaChannel
 /// Brightness and effect control over the class 0x10 Chroma channel shared by mice,
 /// keyboards, lamps, ARGB controllers and docks, plus the class 0x0F/0x03 legacy paths.
 /// </summary>
-public sealed partial class RazerChromaStandardService
+public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingService
 {
     private readonly IRazerFeatureTransport _transport;
     private readonly string _devicePath;

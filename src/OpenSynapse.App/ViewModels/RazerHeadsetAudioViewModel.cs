@@ -111,6 +111,15 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         (0xFF, "RazerHeadsetPresetCustom"),
     ];
 
+    private static readonly (byte Value, string Key)[] JolietPresets =
+    [
+        (0x00, "RazerHeadsetPresetDefault"),
+        (0x01, "RazerHeadsetPresetGame"),
+        (0x02, "RazerHeadsetPresetMusic"),
+        (0x03, "RazerHeadsetPresetMovie"),
+        (0x10, "RazerHeadsetPresetCustom"),
+    ];
+
     private static readonly RazerAudioSource[] Sources =
         [RazerAudioSource.None, RazerAudioSource.Spdif, RazerAudioSource.Aux, RazerAudioSource.Bluetooth, RazerAudioSource.Usb];
 
@@ -209,14 +218,17 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     private bool IsNoaBass => IsProtocol25 &&
         _connection.ProductId is 0x0532 or 0x0548 or 0x05A3;
     private bool IsT3 => _connection.Transport == RazerHeadsetAudioTransport.ValkyrieT3Feature64;
-    private bool IsMxic => _connection.Transport is RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64;
+    private bool IsJolie => _connection.Transport == RazerHeadsetAudioTransport.Jolie64;
+    private bool IsMxic => _connection.Transport is RazerHeadsetAudioTransport.Mxic64 or
+        RazerHeadsetAudioTransport.ValkyrieT3Feature64 or RazerHeadsetAudioTransport.Jolie64;
     private bool IsMixer053E => _connection.Transport == RazerHeadsetAudioTransport.Mixer053E;
     private bool IsProtocol40 => RazerProtocol40HeadsetProtocol.IsSupported(_connection.ProductId);
     private bool IsValkyrie => _connection.Transport is
         RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64;
-    private bool IsFeature91 => !IsMxic && !IsValkyrie && !IsMixer053E && !IsKrakenBase && !IsAvnera65 && !IsProtocol25;
+    private bool IsFeature91 => !IsMxic && !IsValkyrie && !IsMixer053E && !IsKrakenBase &&
+        !IsAvnera65 && !IsProtocol25;
     private (byte Value, string Key)[] ActivePresets =>
-        IsT3 ? Presets[..4] : IsFeature91 || IsProtocol25 ? Presets : MxicPresets;
+        IsJolie ? JolietPresets : IsT3 ? Presets[..4] : IsFeature91 || IsProtocol25 ? Presets : MxicPresets;
 
     private static bool SupportsS3Baseline(ushort productId) =>
         productId is 0x0521 or 0x0549;
@@ -235,6 +247,9 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     {
         RazerHeadsetAudioTransport.Mxic64 => RazerHeadsetEqScale.ToStep(level),
         RazerHeadsetAudioTransport.ValkyrieT3Feature64 => RazerValkyrieHeadsetProtocol.EncodeEqBandLevel((sbyte)Math.Round(level)),
+        RazerHeadsetAudioTransport.Jolie64 => (byte)(level < 0
+            ? 0x80 | (byte)Math.Abs(Math.Round(level))
+            : (byte)Math.Round(level)),
         RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
             RazerValkyrieHeadsetProtocol.EncodeEqBandLevel((sbyte)Math.Round(level)),
         RazerHeadsetAudioTransport.Protocol25Feature65 => unchecked((byte)(sbyte)Math.Round(level)),
@@ -245,6 +260,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     {
         RazerHeadsetAudioTransport.Mxic64 => RazerHeadsetEqScale.ToDecibels(level),
         RazerHeadsetAudioTransport.ValkyrieT3Feature64 => RazerValkyrieHeadsetProtocol.DecodeEqBandLevel(level),
+        RazerHeadsetAudioTransport.Jolie64 => (level & 0x80) != 0 ? -(level & 0x7F) : level,
         RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
             RazerValkyrieHeadsetProtocol.DecodeEqBandLevel(level),
         RazerHeadsetAudioTransport.Protocol25Feature65 => unchecked((sbyte)level),
@@ -821,7 +837,9 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             {
                 RazerHeadsetAudioTransport.AvneraFeature65 =>
                     ReadAvneraStateAsync(cancellationToken),
-                RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64 =>
+                RazerHeadsetAudioTransport.Mxic64 or
+                    RazerHeadsetAudioTransport.ValkyrieT3Feature64 or
+                    RazerHeadsetAudioTransport.Jolie64 =>
                     ReadMxicStateAsync(cancellationToken),
                 RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
                     ReadValkyrieStateAsync(cancellationToken),
@@ -837,7 +855,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
                 state = await ReadStateOnceAsync();
             }
             ApplyState(state);
-            if (IsFeature91 && !IsSeirenEmote)
+            if ((IsFeature91 || IsJolie) && !IsSeirenEmote)
             {
                 ApplyMatrixLighting(await OpenChromaService().ReadStateAsync(cancellationToken));
             }
@@ -1298,11 +1316,14 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         return await service.ReadStateAsync(cancellationToken);
     }
 
-    private RazerChromaStandardService OpenChromaService() =>
-        new(new RazerFeatureTransport(), _connection.DevicePath, TimeSpan.FromMilliseconds(20), _diagnostic);
+    private IRazerHeadsetLightingService OpenChromaService() =>
+        IsJolie
+            ? new RazerMakoXChromaService(_connection.DevicePath, _diagnostic)
+            : new RazerChromaStandardService(
+                new RazerFeatureTransport(), _connection.DevicePath, TimeSpan.FromMilliseconds(20), _diagnostic);
 
     private async Task RunChromaWriteAsync(
-        Func<RazerChromaStandardService, CancellationToken, Task> write,
+        Func<IRazerHeadsetLightingService, CancellationToken, Task> write,
         CancellationToken cancellationToken)
     {
         if (!BeginOperation()) return;
@@ -1433,37 +1454,13 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             OnPropertyChanged(nameof(EqPresetVisibility));
         }
 
-        if (state.EqBands is { Count: 8 or 10 } bands)
+        if (IsJolie)
         {
-            var frequencies = bands.Count == 10
-                ? RazerHeadsetAudioProtocol.TenBandFrequencies
-                : RazerHeadsetAudioProtocol.EightBandFrequencies;
-            var (minimum, maximum, step) = _connection.Transport switch
-            {
-                RazerHeadsetAudioTransport.ValkyrieT3Feature64 => (-6d, 6d, 1d),
-                RazerHeadsetAudioTransport.Mxic64 =>
-                    (RazerHeadsetEqScale.MinimumDb, RazerHeadsetEqScale.MaximumDb, RazerHeadsetEqScale.StepDb),
-                RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
-                    (-12d, 12d, 1d),
-                RazerHeadsetAudioTransport.Protocol25Feature65 => (-12d, 12d, 1d),
-                _ => (0d, 100d, 1d),
-            };
-            EqBands.Clear();
-            for (var index = 0; index < bands.Count; index++)
-            {
-                EqBands.Add(new RazerHeadsetEqBandViewModel(
-                    frequencies[index],
-                    minimum,
-                    maximum,
-                    step,
-                    decibels: _connection.Transport != RazerHeadsetAudioTransport.Feature91)
-                {
-                    Level = FromFirmwareBand(bands[index]),
-                });
-            }
-
-            _hasEqBands = true;
-            OnPropertyChanged(nameof(EqBandsVisibility));
+            ApplyJolietEqState(state.EqPreset, state.EqBands);
+        }
+        else if (state.EqBands is { Count: 8 or 10 } bands)
+        {
+            ApplyEqBands(bands);
         }
         ApplyMicEqBands(state);
 

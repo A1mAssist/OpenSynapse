@@ -11,7 +11,7 @@ public enum RazerHeadsetAudioTransport
     Protocol25Feature65,
     Mxic64,
     Valkyrie64,
-    Billie64, Mixer053E, ValkyrieT3Feature64, KrakenBase37, NativeDll,
+    Billie64, Mixer053E, ValkyrieT3Feature64, Jolie64, KrakenBase37, NativeDll,
 }
 
 public sealed record RazerHeadsetAudioConnection(
@@ -106,13 +106,14 @@ public sealed partial class RazerHeadsetAudioService
             [0x0582] = "Razer Kraken V3 X",
             [0x056D] = "Razer Kraken V4 X",
             [0x0F66] = "Razer Marci",
+            [0x05AD] = "Razer Mako X",
             // The Seiren Emote shares the Camyt3 middleware bundle; its LED matrix uses the
             // class 0x10 Chroma commands, while EQ and mic volume match this family.
             [0x0F1B] = "Razer Seiren Emote",
         };
 
     private static readonly IReadOnlySet<ushort> SpeakerProductIds =
-        new HashSet<ushort> { 0x0532, 0x055A, 0x055C, 0x055E, 0x0548, 0x05A3 };
+        new HashSet<ushort> { 0x0532, 0x055A, 0x055C, 0x055E, 0x0548, 0x05A3, 0x05AD };
 
     private static readonly IReadOnlySet<ushort> MicrophoneProductIds =
         new HashSet<ushort> { 0x0542, 0x0543, 0x056A, 0x0F1B, 0x056F, 0x058E, 0x05A6 };
@@ -261,6 +262,7 @@ public sealed partial class RazerHeadsetAudioService
                 item.OutputReportByteLength >= RazerKrakenBaseProtocol.ReportLength &&
                 item.InputReportByteLength >= 33,
             RazerHeadsetChannel.ValkyrieT3Feature64 => item.FeatureReportByteLength == 64,
+            RazerHeadsetChannel.Jolie64 => item.FeatureReportByteLength == 64,
             RazerHeadsetChannel.Mxic64 or RazerHeadsetChannel.Valkyrie64 or RazerHeadsetChannel.Billie64 => item.OutputReportByteLength == RazerMxicHeadsetProtocol.ReportLength && item.InputReportByteLength >= RazerMxicHeadsetProtocol.ReportLength,
             RazerHeadsetChannel.Mixer053E => item.FeatureReportByteLength == RazerMixer053EProtocol.FeatureReportLength && item.InputReportByteLength == RazerMixer053EProtocol.StatusReportLength && item.OutputReportByteLength == RazerMixer053EProtocol.OutputReportLength,
             _ => false,
@@ -272,6 +274,7 @@ public sealed partial class RazerHeadsetAudioService
             RazerHeadsetChannel.Feature91 => RazerHeadsetAudioTransport.Feature91,
             RazerHeadsetChannel.Mxic64 => RazerHeadsetAudioTransport.Mxic64,
             RazerHeadsetChannel.ValkyrieT3Feature64 => RazerHeadsetAudioTransport.ValkyrieT3Feature64,
+            RazerHeadsetChannel.Jolie64 => RazerHeadsetAudioTransport.Jolie64,
             RazerHeadsetChannel.Valkyrie64 => RazerHeadsetAudioTransport.Valkyrie64,
             RazerHeadsetChannel.Billie64 => RazerHeadsetAudioTransport.Billie64,
             RazerHeadsetChannel.KrakenBase37 => RazerHeadsetAudioTransport.KrakenBase37,
