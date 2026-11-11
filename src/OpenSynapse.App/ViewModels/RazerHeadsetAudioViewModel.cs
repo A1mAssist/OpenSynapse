@@ -1396,6 +1396,12 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         {
             ApplyEqBands(bands);
         }
+        else if (IsJolie)
+        {
+            // The Mako X keeps the curve in the profile. Keep the ten-band
+            // card usable when the device does not answer the band getter.
+            ApplyEqBands(new byte[10]);
+        }
         ApplyMicEqBands(state);
 
         if (state.Bass is byte bass)
