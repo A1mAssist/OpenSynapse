@@ -3,7 +3,7 @@ using OpenSynapse.Windows.Protocols;
 namespace OpenSynapse.Windows.Devices;
 
 /// <summary>
-/// Mako X lighting over the rzDeviceJolie class 0x0F commands on the same 65-byte
+/// Mako X lighting over the rzDeviceJolie class 0x0F commands on the same 64-byte
 /// feature report as its audio page. Ten LEDs are exposed as one region.
 /// </summary>
 internal sealed class RazerMakoXChromaService : IRazerHeadsetLightingService
@@ -49,11 +49,11 @@ internal sealed class RazerMakoXChromaService : IRazerHeadsetLightingService
     }
 
     private static byte[] Create(byte command, ReadOnlySpan<byte> payload) =>
-        RazerValkyrieT3Protocol.CreateMakoX(0x0F, command, payload);
+        RazerValkyrieT3Protocol.Create(0x0F, command, payload);
 
     private async Task SendAsync(byte[] report, string label, CancellationToken cancellationToken)
     {
-        await using var transport = new RazerValkyrieT3Transport(_devicePath, makoX: true);
+        await using var transport = new RazerValkyrieT3Transport(_devicePath);
         _diagnostic?.Invoke($"mako-x lighting {label}: class=0x{report[7]:X2} id=0x{report[8]:X2} size=0x{report[6]:X2}");
         await transport.SendAsync(report, cancellationToken).ConfigureAwait(false);
     }
@@ -64,7 +64,7 @@ internal sealed class RazerMakoXChromaService : IRazerHeadsetLightingService
         string label,
         CancellationToken cancellationToken)
     {
-        await using var transport = new RazerValkyrieT3Transport(_devicePath, makoX: true);
+        await using var transport = new RazerValkyrieT3Transport(_devicePath);
         _diagnostic?.Invoke($"mako-x lighting {label}: class=0x{report[7]:X2} id=0x{report[8]:X2}");
         return await transport.QueryAsync(report, header, cancellationToken).ConfigureAwait(false) ??
             throw new InvalidOperationException($"Mako X {label} returned no matching response.");
