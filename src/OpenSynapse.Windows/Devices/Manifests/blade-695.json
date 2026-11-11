@@ -132,7 +132,7 @@
       "dataSize": "02",
       "commandClass": "02",
       "commandId": "86",
-      "arguments": "0100"
+      "arguments": "0000"
     },
     "mcu-version.get": {
       "transactionId": "00",

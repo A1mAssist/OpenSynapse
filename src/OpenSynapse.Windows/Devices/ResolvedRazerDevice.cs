@@ -1,5 +1,4 @@
 using OpenSynapse.Core.Devices;
-using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
 
@@ -15,12 +14,6 @@ internal sealed record ResolvedRazerDevice(
         Manifest.ProtocolFamily.StartsWith("blade-", StringComparison.Ordinal);
 
     public ushort? BladeProductId => IsBlade ? Descriptor.ProductId : null;
-
-    /// <summary>The live EC slot; 0x01 is Synapse's opt-in persistent slot.</summary>
-    public byte FnKeyProfileId =>
-        Descriptor.ProtocolFamily == "blade-710-chroma"
-            ? BladeSynapsePolicyProtocol.FnKeyPersistentProfileId
-            : BladeSynapsePolicyProtocol.FnKeyProfileId;
 
     public bool Owns(string capabilityId) => Manifest.Capabilities.ContainsKey(capabilityId);
 

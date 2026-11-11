@@ -16,7 +16,7 @@ public static class BladeSynapsePolicyProtocol
     public const byte FnSetCommandId = 0x06;
     public const byte FnGetCommandId = 0x86;
     // 0x00 is the live EC profile. 0x01 is Synapse's optional
-    // persistentInHardware.functionKeyState slot, which 02C6 does not enable.
+    // persistentInHardware.functionKeyState slot; no admitted Blade enables it.
     public const byte FnKeyProfileId = 0x00;
     public const byte FnKeyPersistentProfileId = 0x01;
     public const byte FnSwapCommandClass = 0x07;
