@@ -3600,12 +3600,11 @@
   <data name="RazerDriverChecking" xml:space="preserve"><value>Checking Razer drivers…</value></data>
   <data name="RazerDriverAllReady" xml:space="preserve"><value>Every connected Razer peripheral already has its filter driver.</value></data>
   <data name="RazerDriverMissingCount" xml:space="preserve"><value>{0} Razer peripheral(s) are missing a driver.</value></data>
-  <data name="RazerDriverPendingCount" xml:space="preserve"><value>Installed {0} Razer driver package(s); waiting for a restart or replug.</value></data>
+  <data name="RazerDriverPendingCount" xml:space="preserve"><value>Installed {0} Razer driver package(s); some devices are still inactive.</value></data>
   <data name="RazerDriverCheckFailed" xml:space="preserve"><value>Razer driver check failed: {0}</value></data>
   <data name="RazerDriverWaiting" xml:space="preserve"><value>Waiting to install</value></data>
-  <data name="RazerDriverInstalledRestart" xml:space="preserve"><value>Installed; replug the device or restart</value></data>
   <data name="RazerDriverInstalledOnline" xml:space="preserve"><value>Installed and active</value></data>
-  <data name="RazerDriverInstallSummary" xml:space="preserve"><value>Installed {0} Razer driver package(s). Replug the device or restart.</value></data>
+  <data name="RazerDriverInstallSummary" xml:space="preserve"><value>Installed {0} Razer driver package(s).</value></data>
   <data name="RazerDriverInstallSummaryPartial" xml:space="preserve"><value>Installed {0}; {1} did not complete.</value></data>
   <data name="RazerDriverInstallCancelled" xml:space="preserve"><value>Driver installation was cancelled.</value></data>
   <data name="RazerDriverInstallFailed" xml:space="preserve"><value>Razer driver installation failed: {0}</value></data>
@@ -3619,7 +3618,8 @@
   <data name="RazerDriverDownloadFailed" xml:space="preserve"><value>The Razer driver package could not be downloaded or saved.</value></data>
   <data name="RazerDriverInstallStartFailed" xml:space="preserve"><value>The Razer driver installer did not start.</value></data>
   <data name="RazerDriverNoStagedInf" xml:space="preserve"><value>The driver is installed, but no matching filter INF was found. Restart and retry, or reinstall the package.</value></data>
-  <data name="RazerDriverBindFailed" xml:space="preserve"><value>The driver filter INF could not be bound: {0}</value></data>
+  <data name="RazerDriverFilterMissing" xml:space="preserve"><value>The package is installed, but the filter driver is not attached to the device. Click Install or repair driver to retry.</value></data>
+  <data name="RazerDriverEndpointPending" xml:space="preserve"><value>The filter driver is attached, but the device endpoint did not appear. Replug the device; restart only if that does not help.</value></data>
   <data name="RazerDriverInstallUncertain" xml:space="preserve"><value>The driver install was submitted, but the service did not return a result. Wait a minute and refresh; do not reinstall.</value></data>
   <data name="RazerDriverCommonDownloading" xml:space="preserve"><value>Downloading the Razer common control driver…</value></data>
   <data name="RazerDriverCommonInstalling" xml:space="preserve"><value>Installing the Razer common control driver…</value></data>
