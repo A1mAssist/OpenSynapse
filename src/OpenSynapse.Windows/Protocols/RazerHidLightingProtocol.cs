@@ -571,14 +571,10 @@ internal static class RazerHidLightingProtocol
         RazerHidDeviceDefinition device,
         RazerHidLightingSettings settings)
     {
-        if (settings.Effect == RazerHidLightingEffect.BreathingTriple)
-        {
-            return false;
-        }
-        if (!device.HasSourceCapability(GetGenericEffectCapability(settings.Effect)))
-        {
-            return false;
-        }
+        string capability;
+        try { capability = GetGenericEffectCapability(settings.Effect); }
+        catch (ArgumentOutOfRangeException) { return false; }
+        if (!device.HasSourceCapability(capability)) return false;
         var storage = settings.Storage ?? device.DefaultStorage;
         var zone = settings.Zone ?? device.DefaultLedZone;
         var builders = settings.Effect switch

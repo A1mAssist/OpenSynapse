@@ -238,10 +238,6 @@ public partial class App : Application
         InitializeTray(window, viewModel);
         _taskbarStatusPresenter = new TaskbarStatusPresenter(
             viewModel, _behaviorSettings, _diagnosticLog);
-        if (liteMode)
-        {
-            _taskbarStatusPresenter.SetEnabled(false);
-        }
         if (silentLaunch)
         {
             window.AppWindow.IsShownInSwitchers = false;

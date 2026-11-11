@@ -287,8 +287,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     public Task ApplySelectedLightingEffectAsync(CancellationToken cancellationToken = default)
     {
         var modes = ActiveBladeLightingModes;
-        if (LightingModeIndex < 0 || LightingModeIndex >= modes.Count ||
-            WaveDirectionIndex < 0 || WaveDirectionIndex >= BladeWaveDirections.Length)
+        if (LightingModeIndex < 0 || LightingModeIndex >= modes.Count)
         {
             return Task.CompletedTask;
         }
@@ -323,7 +322,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         var effect = new BladeLightingEffect(
             mode,
             color,
-            BladeWaveDirections[WaveDirectionIndex],
+            BladeWaveDirections[Math.Clamp(WaveDirectionIndex, 0, BladeWaveDirections.Length - 1)],
             secondColor,
             BladeReactiveSpeeds[Math.Clamp(ReactiveSpeedIndex, 0, BladeReactiveSpeeds.Length - 1)],
             BladeStarlightSpeeds[Math.Clamp(StarlightSpeedIndex, 0, BladeStarlightSpeeds.Length - 1)],
@@ -1097,10 +1096,13 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             return;
         }
 
+        // A refresh can arrive while this operation waits for the device gate.
+        // Keep the value the user clicked, not whatever the refresh restored.
+        var requested = FnKeyMultimediaPrimary;
         await RunDeviceOperationAsync(AppStrings.Text("BladeFnKeyLabel"), async () =>
         {
             var actual = await _deviceTelemetryReader.SetBladeFnKeyStateAsync(
-                ActiveDescriptors, FnKeyMultimediaPrimary, cancellationToken);
+                ActiveDescriptors, requested, cancellationToken);
             SetFnKey(actual);
             RequestDeviceRefresh();
         }, cancellationToken, () =>
@@ -1869,7 +1871,11 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         get => _blade._bladeLightingRenderModeIndex;
         set
         {
-            if (value is not (0 or 1)) return;
+            if (value is not (0 or 1))
+            {
+                OnPropertyChanged();
+                return;
+            }
             if (SetField(ref _blade._bladeLightingRenderModeIndex, value))
             {
                 OnPropertyChanged(nameof(LightingColorVisibility));
@@ -1940,7 +1946,21 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     public IReadOnlyList<string> AnimationSpeedOptions => AppStrings.Texts("BladeAnimationSpeedSlow", "BladeAnimationSpeedMedium", "BladeAnimationSpeedFast");
     public int AnimationSpeedIndex { get => _blade._bladeAnimationSpeedIndex; set => SetField(ref _blade._bladeAnimationSpeedIndex, value); }
     public IReadOnlyList<string> WaveDirectionOptions => AppStrings.Texts("Text_FB3FF0D8", "Text_883A50D7");
-    public int WaveDirectionIndex { get => _blade._bladeWaveDirectionIndex; set => SetField(ref _blade._bladeWaveDirectionIndex, value); }
+    public int WaveDirectionIndex
+    {
+        get => _blade._bladeWaveDirectionIndex;
+        set
+        {
+            if (value >= 0 && value < BladeWaveDirections.Length)
+            {
+                SetField(ref _blade._bladeWaveDirectionIndex, value);
+            }
+            else
+            {
+                OnPropertyChanged();
+            }
+        }
+    }
     public IReadOnlyList<string> ReactiveSpeedOptions => AppStrings.Texts("BladeReactiveSpeedLevel1", "BladeReactiveSpeedLevel2", "BladeReactiveSpeedLevel3", "BladeReactiveSpeedLevel4");
     public int ReactiveSpeedIndex { get => _blade._bladeReactiveSpeedIndex; set => SetField(ref _blade._bladeReactiveSpeedIndex, value); }
     public IReadOnlyList<string> StarlightSpeedOptions => AnimationSpeedOptions;
@@ -2713,6 +2733,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     private void SetFnKey(bool? multimediaPrimary)
     {
         _blade.SetFnKey(multimediaPrimary);
+        _blade._bladeFnKeySelection = multimediaPrimary ?? false;
         OnPropertyChanged(nameof(FnKeyText));
         OnPropertyChanged(nameof(FnKeyMultimediaPrimary));
         OnPropertyChanged(nameof(CanSetFnKey));
