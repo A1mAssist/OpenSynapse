@@ -401,6 +401,13 @@ internal static class ThxHeadsetAdmission
             "https://app-assets.razer.com/files/synapse/devices/1401/714-patcher/thx_razer_blacksharkv3_pc_v4.2.38-a844df5a-714_patcher_config_updater-v14-20260420.exe",
             installerLength: 51479760,
             installerSha256: "9E1FB4C9F15C88928DBBD3189680AF301408E76699CE2F7F16F92B3BB55D1BDB");
+        AddV4(profiles, 0x057A, "Razer BlackShark V3", V4Dll113Name, V4Dll113Uri,
+            V4Dll113Sha256, "razer_blacksharkv3_pc", "headphones_game",
+            "https://app-assets.razer.com/files/synapse/devices/1401/THXAPO_razer_blacksharkv3_pc_v4.1.28.1054-75fb4b2-i1878n_MSSIGN-e6a07c7f.284bc2f0.exe",
+            "https://app-assets.razer.com/files/synapse/devices/1401/properties-updater/thx_razer_blacksharkv3_pc_properties_updater-v4.1.28-f19f37d9-Razer-4.1.28-prod.exe",
+            "https://app-assets.razer.com/files/synapse/devices/1401/714-patcher/thx_razer_blacksharkv3_pc_v4.2.38-a844df5a-714_patcher_config_updater-v14-20260420.exe",
+            installerLength: 51479760,
+            installerSha256: "9E1FB4C9F15C88928DBBD3189680AF301408E76699CE2F7F16F92B3BB55D1BDB");
         AddV4(profiles, 0x0587, "Razer Kraken Kitty V3 Pro", V4Dll112Name, V4Dll112Uri,
             V4Dll112Sha256, "razer_krakenkittyv3pro", "headphones_game",
             "https://app-assets.razer.com/files/synapse/devices/1415/THXAPO_razer_krakenkittyv3pro_v4.1.28.1060-75fb4b2-i1882n_MSSIGN-e6a07c7f.d1e76a8f.exe",

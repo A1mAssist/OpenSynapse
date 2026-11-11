@@ -41,7 +41,10 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _profile = GetProfile(productId);
-        _direction = productId == BlackSharkV3ProProtocol.HyperSpeedWirelessProductId
+        // Dongle-forwarded commands set byte 9; wired cables leave it zero.
+        _direction = productId is
+            BlackSharkV3ProProtocol.HyperSpeedWirelessProductId or
+            0x0568 or 0x056C or 0x0588 or 0x057A or 0x0A55 or 0x0A58
             ? (byte)0x80
             : (byte)0x00;
         _eqBandsWithProfile = UsesProfilePrefixedEqBands(productId);
@@ -50,23 +53,27 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
     }
 
     public static bool IsSupported(ushort productId) => productId is
-        0x0579 or 0x0A4E or 0x0A51 or 0x101E or 0x101F or
-        0x0567 or 0x056B or 0x0574 or 0x0587 or
+        0x0579 or 0x057A or 0x0A4E or 0x0A51 or 0x0A55 or 0x0A58 or 0x101E or 0x101F or
+        0x0567 or 0x0568 or 0x056B or 0x056C or 0x0574 or 0x0587 or 0x0588 or
         BlackSharkV3ProProtocol.HyperSpeedWirelessProductId or
         BlackSharkV3ProProtocol.HyperSpeedUsbProductId;
 
     private static HeadsetProfile GetProfile(ushort productId) => productId switch
     {
         0x0567 => HeadsetProfile.BillieT1Wired,
+        0x0568 => HeadsetProfile.BillieT1Wired,
         0x056B => HeadsetProfile.BillieT2,
+        0x056C => HeadsetProfile.BillieT2,
         0x0587 => HeadsetProfile.BillieT2,
+        0x0588 => HeadsetProfile.BillieT2,
         // AudioMabelT3C (Barracuda X Chroma) extends AudioBillieT2 without
         // overriding an audio command: same report id 2, 64-byte frame,
         // transaction 0x60 and zero direction byte.
         0x0574 => HeadsetProfile.BillieT2,
         BlackSharkV3ProProtocol.HyperSpeedWirelessProductId or
             BlackSharkV3ProProtocol.HyperSpeedUsbProductId => HeadsetProfile.OdessaT2Wireless,
-        0x0579 or 0x0A4E or 0x0A51 or 0x101E or 0x101F => HeadsetProfile.Valkyrie,
+        0x0579 or 0x057A or 0x0A4E or 0x0A51 or 0x0A55 or 0x0A58 or 0x101E or 0x101F =>
+            HeadsetProfile.Valkyrie,
         _ => throw new NotSupportedException(
             $"AudioValkyrie is not supported on product 0x{productId:X4}."),
     };

@@ -325,19 +325,26 @@ The audio page covers EQ, microphone volume, sidetone, ANC, THX and game/chat ba
 | Razer Barracuda | `1532:053C` | Not shown: no bundle evidence for the protocol family |
 | Razer Barracuda 2.4 | `1532:053B` | Audio page |
 | Razer Barracuda 2.4 | `1532:0584` | Audio page |
-| Razer Barracuda Pro | `1532:0539` | Audio page |
+| Razer Barracuda Pro | `1532:0539`, `1532:053A` | Audio page; `053A` is the 2.4 GHz receiver |
 | Razer Barracuda Pro | `1532:0583` | Audio page |
-| Razer Barracuda V2 Pro | `1532:0593` | Audio page (battery/charging); THX V4 installer |
+| Razer Barracuda V2 Pro | `1532:0593`, `1532:0592` | Audio page (battery/charging); THX V4 installer; `0592` is the 2.4 GHz receiver |
 | Razer Barracuda X Chroma | `1532:0574` | Audio page and 6-LED lighting |
 | Razer Hammerhead V3 | `1532:058C` | Audio page |
+| Razer Hammerhead V3 Chroma | `1532:05B9` | Audio page (`rzDevice40`, class 0x18) |
 | Razer BlackShark V2 HyperSpeed | `1532:0565` | Audio page (2.4 GHz dongle endpoint) |
 | Razer BlackShark V2 HyperSpeed | `1532:056E` | Audio page |
 | Razer BlackShark V2 Pro (2020) | `1532:0528` | Audio page; THX installer |
 | Razer BlackShark V2 Pro (2023) | `1532:0555` | Audio page; THX installer |
-| Razer BlackShark V3 | `1532:0579` | Audio page |
+| Razer BlackShark V3 | `1532:0579`, `1532:057A` | Audio page; `057A` is the 2.4 GHz receiver; the BLE identity (`0578`) is not shown |
 | Razer BlackShark V3 Pro (0x0576 interface) | `1532:0576` | Audio page; wired BlackShark V3 Pro interface |
 | Razer BlackShark V3 Pro (2.4 GHz) | `1532:101B` | Audio, ANC, THX and game/chat balance (2.4 GHz) |
-| Razer BlackShark V3 Pro (USB) | `1532:101C` | Audio, ANC, THX and game/chat balance (USB) |
+| Razer BlackShark V3 Pro (USB) | `1532:101C` | Audio, ANC, THX and game/chat balance (USB); the BLE identity (`101D`) is not shown |
+| Razer BlackShark V3 Pro for Xbox | `1532:0A4E`, `1532:0A55` | Audio page; `0A55` is the 2.4 GHz receiver |
+| Razer BlackShark V3 for Xbox | `1532:0A51`, `1532:0A58` | Audio page; `0A58` is the 2.4 GHz receiver |
+| Razer BlackShark V3 for PlayStation | `1532:101E`, `1532:101F` | Audio page (wired and wireless endpoints) |
+| Razer BlackShark V3 X | `1532:057C`, `1532:057D` | Audio page (`rzDevice25ValkyrieT3`); `057D` is the 2.4 GHz receiver |
+| Razer BlackShark V3 X for Xbox | `1532:0A54`, `1532:0A5B` | Audio page; `0A5B` is the 2.4 GHz receiver |
+| Razer BlackShark V3 X for PlayStation | `1532:1022`, `1532:1021` | Audio page; `1021` is the 2.4 GHz receiver |
 | Razer Kraken 7.1 | `1532:0501` | Lighting only |
 | Razer Kraken 7.1 | `1532:0506` | Lighting only |
 | Razer Kraken 7.1 Chroma | `1532:0504` | Lighting only |
@@ -349,17 +356,19 @@ The audio page covers EQ, microphone volume, sidetone, ANC, THX and game/chat ba
 | Razer Kraken Kitty V2 | `1532:0560` | Audio page plus lighting |
 | Razer Kraken Kitty V2 BT Quartz Edition | `1532:0562` | BLE page: battery/charging, volume, sidetone, game mode, bass, haptics, speaker/mic EQ, auto power-off and Chroma |
 | Razer Kraken Kitty V2 Pro | `1532:0554` | Audio page |
-| Razer Kraken Kitty V3 Pro | `1532:0587` | Audio page (EQ/battery/charging); THX V4 installer |
+| Razer Kraken Kitty V3 | `1532:05B6` | Audio page (`rzDevice25ValkyrieT3`) |
+| Razer Kraken Kitty V3 Pro | `1532:0587`, `1532:0588` | Audio page (EQ/battery/charging); THX V4 installer; `0588` is the 2.4 GHz receiver; the BLE identity (`0589`) is not shown |
 | Razer Kraken Tournament Edition | `1532:0520` | Audio page plus lighting; THX installer for Kraken TE |
 | Razer Kraken Ultimate | `1532:0527` | Audio page plus lighting; THX installer |
 | Razer Kraken V3 | `1532:0549` | Audio page |
 | Razer Kraken V3 HyperSense | `1532:0533` | Audio page |
 | Razer Kraken V3 Pro | `1532:052D` | Not shown: serial audio transport not implemented |
 | Razer Kraken V3 X | `1532:0537`, `1532:0582` | Audio page |
-| Razer Kraken V4 | `1532:056B` | Lighting page (wired) |
-| Razer Kraken V4 | `1532:056C` | Lighting page (2.4 GHz receiver) |
-| Razer Kraken V4 Pro | `1532:0567` | Audio page |
+| Razer Kraken V4 | `1532:056B` | Audio page and lighting (wired) |
+| Razer Kraken V4 | `1532:056C` | Audio page and lighting (2.4 GHz receiver) |
+| Razer Kraken V4 Pro | `1532:0567`, `1532:0568` | Audio page; `0568` is the 2.4 GHz receiver |
 | Razer Kraken V4 X | `1532:056D` | Audio page |
+| Razer Kraken V4 X Sensa HD Haptics | `1532:059F` | Audio page (`rzDevice40BillieT3H`, class 0x18); sidetone/haptics remain limited |
 | Razer Kraken X USB | `1532:0526` | Audio page |
 | Razer Marci | `1532:0F66` | Audio page |
 | Razer Nari | `1532:051C` | Audio page |
@@ -379,6 +388,7 @@ Speaker controls cover EQ presets, bands, bass, input source and lighting where 
 | Razer Leviathan V2 Pro | `1532:0548` | Audio page (Protocol 25, 65-byte feature reports) |
 | Razer Leviathan V2 ECR | `1532:05A3` | Audio page (Protocol 25, 64-byte feature reports) |
 | Razer Leviathan V2 X | `1532:054A` | Soundbar audio and lighting; physical validation still pending |
+| Razer Mako | `1532:05AB` | Audio page (`rzDeviceJolie`); Mako X remains `1532:05AD` |
 | Razer Nommo Chroma | `1532:0517` | Chroma lighting |
 | Razer Nommo Pro | `1532:0518` | Chroma lighting |
 | Razer Nommo V2 | `1532:055C` | Audio page |

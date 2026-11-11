@@ -35,17 +35,24 @@ public static class RazerHeadsetChannelCatalog
             // Mxic64: 64-byte report-id-2 HID channel. AudioMxicDevice uses the
             // 50 41 envelope; 0593 uses the protocol40 header on the same channel.
             [0x0539] = new("AudioMxicDevice", RazerHeadsetChannel.Mxic64),
+            [0x053A] = new("AudioMxicDevice", RazerHeadsetChannel.Mxic64),
             [0x053B] = new("AudioMxicDevice", RazerHeadsetChannel.Mxic64),
             [0x0555] = new("AudioMxicDevice", RazerHeadsetChannel.Mxic64),
             [0x0583] = new("AudioMxicDevice", RazerHeadsetChannel.Mxic64),
             [0x0584] = new("AudioMxicDevice", RazerHeadsetChannel.Mxic64),
 
             // rzDevice25ValkyrieT3: class 0x18 triplets on 64-byte report id 7.
+            [0x057C] = new("rzDevice25ValkyrieT3", RazerHeadsetChannel.ValkyrieT3Feature64),
+            [0x057D] = new("rzDevice25ValkyrieT3", RazerHeadsetChannel.ValkyrieT3Feature64),
+            [0x05B6] = new("rzDevice25ValkyrieT3", RazerHeadsetChannel.ValkyrieT3Feature64),
             [0x0A54] = new("rzDevice25ValkyrieT3", RazerHeadsetChannel.ValkyrieT3Feature64),
+            [0x0A5B] = new("rzDevice25ValkyrieT3", RazerHeadsetChannel.ValkyrieT3Feature64),
+            [0x1021] = new("rzDevice25ValkyrieT3", RazerHeadsetChannel.ValkyrieT3Feature64),
             [0x1022] = new("rzDevice25ValkyrieT3", RazerHeadsetChannel.ValkyrieT3Feature64),
 
             // rzDeviceJolie (Razer Mako X): class 0x18 EQ and class 0x0F Chroma on
             // 64-byte report id 7. The ten-band setter adds group and preset bytes.
+            [0x05AB] = new("rzDeviceJolie", RazerHeadsetChannel.Jolie64),
             [0x05AD] = new("rzDeviceJolie", RazerHeadsetChannel.Jolie64),
 
             // rzDevice40: class 0x18 triplets inside the 64-byte 50 41 envelope.
@@ -55,25 +62,43 @@ public static class RazerHeadsetChannelCatalog
             [0x0A6C] = new("rzDevice40", RazerHeadsetChannel.Mxic64),
             [0x0A81] = new("rzDevice40", RazerHeadsetChannel.Mxic64),
 
-            // AudioValkyrie: the 64-byte Valkyrie channel.
+            // AudioValkyrie: the 64-byte Valkyrie channel. The BLE identities use
+            // a different transport that this app does not implement; keeping them
+            // known prevents the generic Chroma page from claiming them.
+            [0x0575] = new("AudioValkyrieBle", RazerHeadsetChannel.Unsupported),
+            [0x0578] = new("AudioValkyrieBle", RazerHeadsetChannel.Unsupported),
             [0x0579] = new("AudioValkyrie", RazerHeadsetChannel.Valkyrie64),
+            [0x057A] = new("AudioValkyrie", RazerHeadsetChannel.Valkyrie64),
             [0x0A4E] = new("AudioValkyrie", RazerHeadsetChannel.Valkyrie64),
+            [0x0A4F] = new("AudioValkyrieBle", RazerHeadsetChannel.Unsupported),
             [0x0A51] = new("AudioValkyrie", RazerHeadsetChannel.Valkyrie64),
+            [0x0A52] = new("AudioValkyrieBle", RazerHeadsetChannel.Unsupported),
+            [0x0A55] = new("AudioValkyrie", RazerHeadsetChannel.Valkyrie64),
+            [0x0A56] = new("rzDevice25ValkyrieT3Ble", RazerHeadsetChannel.Unsupported),
+            [0x0A58] = new("AudioValkyrie", RazerHeadsetChannel.Valkyrie64),
+            [0x101D] = new("AudioValkyrieBle", RazerHeadsetChannel.Unsupported),
             [0x101E] = new("AudioValkyrie", RazerHeadsetChannel.Valkyrie64),
             [0x101F] = new("AudioValkyrie", RazerHeadsetChannel.Valkyrie64),
 
             // AudioBillieT1/T2: the 64-byte Billie channel.
             [0x0567] = new("AudioBillieT1", RazerHeadsetChannel.Billie64),
+            [0x0568] = new("AudioBillieT1Dongle", RazerHeadsetChannel.Billie64),
             [0x056B] = new("AudioBillieT2", RazerHeadsetChannel.Billie64),
+            [0x056C] = new("AudioBillieT2Dongle", RazerHeadsetChannel.Billie64),
 
             // AudioBastetT1: same 64-byte report-id-2 frame and shared 56555 command
             // table as AudioBillieT2.
             [0x0587] = new("AudioBastetT1", RazerHeadsetChannel.Billie64),
+            [0x0588] = new("AudioBastetT1Dongle", RazerHeadsetChannel.Billie64),
+            [0x0589] = new("AudioBastetT1Ble", RazerHeadsetChannel.Unsupported),
 
             // rzDevice40HeadsetAiroha: 64-byte report-id-2 frame with the protocol40
             // header (class/id/size at 5..8), selected as the Mxic64 HID channel and
             // dispatched by the Protocol40 dialect in RazerMxicHeadsetService.
+            [0x0592] = new("rzDevice40HeadsetAiroha", RazerHeadsetChannel.Mxic64),
             [0x0593] = new("rzDevice40HeadsetAiroha", RazerHeadsetChannel.Mxic64),
+            [0x059F] = new("rzDevice40BillieT3H", RazerHeadsetChannel.Mxic64),
+            [0x05B9] = new("rzDevice40", RazerHeadsetChannel.Mxic64),
 
             // BlackShark V3 Pro keeps its own THX panel instead of the generic headset page.
             // 0576 and 101C declare AudioValkyrie, but that channel belongs to the dedicated

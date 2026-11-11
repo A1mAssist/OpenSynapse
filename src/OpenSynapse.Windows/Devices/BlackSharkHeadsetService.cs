@@ -379,22 +379,20 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
             return false;
         }
 
-        // Catalog-declared identities must be the dedicated V3 Pro panel; unknown PIDs keep
-        // the product-name fallback for unlisted SKUs, but known non-dedicated BlackShark
-        // devices (0528, 0A4E, 101E, ...) must not be pulled into the V3 Pro protocol.
+        // Only the dedicated V3 Pro panel's catalog entries are admitted. An unlisted
+        // V3 Pro revision may still use the product-name fallback; V3/V3 X siblings
+        // must not, or they render with the wrong command map.
         var channel = RazerHeadsetChannelCatalog.Resolve(productId);
-        var namedBlackShark =
-            productName?.Contains("BlackShark", StringComparison.OrdinalIgnoreCase) == true;
-        // A known catalog entry that resolves Unsupported is a deliberate exclusion, not an
-        // unknown SKU; do not let the product-name fallback pull it into the V3 Pro protocol.
         if (channel == RazerHeadsetChannel.Unsupported &&
             RazerHeadsetChannelCatalog.IsKnown(productId))
         {
             return false;
         }
 
+        var namedV3Pro = productName?.Contains(
+            "BlackShark V3 Pro", StringComparison.OrdinalIgnoreCase) == true;
         if (channel != RazerHeadsetChannel.DedicatedBlackShark &&
-            (channel != RazerHeadsetChannel.Unsupported || !namedBlackShark))
+            !(channel == RazerHeadsetChannel.Unsupported && namedV3Pro))
         {
             return false;
         }
@@ -405,8 +403,7 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
             return false;
         }
 
-        return namedBlackShark ||
-            channel == RazerHeadsetChannel.DedicatedBlackShark;
+        return true;
     }
 
     // Only the wireless dongle pid answers on the active link; prefer it so a plugged-in USB
