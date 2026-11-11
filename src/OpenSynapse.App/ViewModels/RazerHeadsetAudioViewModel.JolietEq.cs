@@ -72,6 +72,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         return 0x10;
     }
 
+    [NotProfileScoped]
     private async Task ApplyPersistedJolietEqAsync(
         HeadsetProfileSettings profile,
         CancellationToken cancellationToken)
