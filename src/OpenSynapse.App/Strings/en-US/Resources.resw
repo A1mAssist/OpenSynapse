@@ -1648,13 +1648,19 @@
   <data name="RazerHidSensorRotationApplied" xml:space="preserve"><value>Applied</value></data>
   <data name="RazerHidSensorRotationInvalid" xml:space="preserve"><value>The stored angle raw value {0} is outside the valid range. Re-detect the device, then set the angle again.</value></data>
   <data name="RazerHidSmartTrackingTitle.Text" xml:space="preserve"><value>Smart tracking</value></data>
-  <data name="RazerHidSmartTrackingDescription.Text" xml:space="preserve"><value>Set a single lift-off point for any surface.</value></data>
-  <data name="RazerHidSmartTrackingAsymmetric.Content" xml:space="preserve"><value>Enable asymmetric lift-off</value></data>
+  <data name="RazerHidSmartTrackingDescription.Text" xml:space="preserve"><value>Choose adaptive lift-off, or set lift-off and landing distances independently.</value></data>
+  <data name="RazerHidSmartTrackingMode.Header" xml:space="preserve"><value>Mode</value></data>
+  <data name="RazerHidSmartTrackingModeAdaptive" xml:space="preserve"><value>Adaptive lift-off</value></data>
+  <data name="RazerHidSmartTrackingModeAdjustable" xml:space="preserve"><value>Adjustable lift-off</value></data>
   <data name="RazerHidSmartTrackingDistance.Text" xml:space="preserve"><value>Tracking distance</value></data>
+  <data name="RazerHidSmartTrackingLiftOff.Header" xml:space="preserve"><value>Lift-off distance</value></data>
+  <data name="RazerHidSmartTrackingLanding.Header" xml:space="preserve"><value>Landing distance</value></data>
   <data name="RazerHidSmartTrackingLow" xml:space="preserve"><value>Low</value></data>
   <data name="RazerHidSmartTrackingMedium" xml:space="preserve"><value>Medium</value></data>
   <data name="RazerHidSmartTrackingHigh" xml:space="preserve"><value>High</value></data>
   <data name="RazerHidSmartTrackingApplied" xml:space="preserve"><value>Applied</value></data>
+  <data name="RazerHidSmartTrackingReadbackUnavailable" xml:space="preserve"><value>Applied, but the current value could not be read back.</value></data>
+  <data name="RazerHidSmartTrackingReadbackMismatch" xml:space="preserve"><value>Applied, but the read-back value does not match the requested value.</value></data>
   <data name="RazerHidSmartTrackingResetHint.Text" xml:space="preserve"><value>Hold left, right, and the wheel for 7 seconds to reset the mouse.</value></data>
   <data name="RazerHidActiveDpiStage.Header" xml:space="preserve"><value>Active stage</value></data>
   <data name="RazerHidDpiStageLabel" xml:space="preserve"><value>Stage {0}</value></data>

@@ -442,7 +442,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
                 }
                 if (classification == RazerResponseMatch.Mismatched)
                 {
-                    readError = $"status=0x{candidate[1]:X2}, txn=0x{candidate[2]:X2} (want 0x{request[2]:X2}), class=0x{candidate[7]:X2} (want 0x{request[7]:X2}), command=0x{candidate[8]:X2} (want 0x{request[8]:X2}), len={candidate[6]} (want {request[6]}), crc=0x{candidate[89]:X2}, computed=0x{RazerFeatureReport.CalculateCrc(candidate):X2}";
+                    readError = $"status=0x{candidate[1]:X2}, txn=0x{candidate[2]:X2} (want 0x{request[2]:X2}), class=0x{candidate[7]:X2} (want 0x{request[7]:X2}), command=0x{candidate[8]:X2} (want 0x{request[8]:X2}), len={candidate[6]} (want {request[6]}), crc=0x{candidate[89]:X2}, computed=0x{RazerFeatureReport.CalculateCrc(candidate):X2}, {RazerFeatureResponseDiagnostics.DescribeResponsePrefix(candidate)}";
                     continue;
                 }
 
@@ -495,12 +495,13 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
             }
             else if (response[1] == 0x05)
             {
-                throw new NotSupportedException("The device does not support this command.");
+                throw new NotSupportedException(
+                    $"The device does not support this command. {RazerFeatureResponseDiagnostics.DescribeResponsePrefix(response)}");
             }
             else if (response[1] == 0x03)
             {
                 rejectedResponses++;
-                lastError = "The device rejected the query (0x03).";
+                lastError = $"The device rejected the query (0x03), {RazerFeatureResponseDiagnostics.DescribeResponsePrefix(response)}.";
                 diagnostic?.Invoke($"attempt {attempt}: {lastError}");
             }
             else
@@ -516,6 +517,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
                     0x04 => $"The device did not answer this command (0x04).",
                     _ => $"Device response status: 0x{response[1]:X2}.",
                 };
+                lastError += $" {RazerFeatureResponseDiagnostics.DescribeResponsePrefix(response)}";
                 diagnostic?.Invoke($"attempt {attempt}: {lastError}");
             }
 
@@ -649,7 +651,6 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
         var length = Math.Min(8, response.Length - RazerFeatureReport.ArgumentsOffset);
         return $"len={response[6]}, args={Convert.ToHexString(response[RazerFeatureReport.ArgumentsOffset..(RazerFeatureReport.ArgumentsOffset + length)])}";
     }
-
 
     private static class NativeMethods
     {
