@@ -30,9 +30,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
         : this(
             RazerMxicHeadsetProtocol.UsesValkyrieT3Commands(productId) ||
             RazerMxicHeadsetProtocol.UsesJolietCommands(productId)
-                ? new RazerValkyrieT3Transport(
-                    devicePath,
-                    makoX: RazerMxicHeadsetProtocol.UsesJolietCommands(productId))
+                ? new RazerValkyrieT3Transport(devicePath)
                 : new RazerMxicHeadsetTransport(
                     devicePath,
                     RazerMxicHeadsetProtocol.ReportLength,
