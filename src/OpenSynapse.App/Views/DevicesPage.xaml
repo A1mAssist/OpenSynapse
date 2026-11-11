@@ -18,8 +18,8 @@
       <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
     </Style>
     <Style x:Key="BladeModeCardStyle" TargetType="Button" BasedOn="{StaticResource QuickActionButtonStyle}">
-      <Setter Property="Width" Value="170" />
-      <Setter Property="MinHeight" Value="148" />
+      <Setter Property="Width" Value="150" />
+      <Setter Property="MinHeight" Value="128" />
       <Setter Property="Padding" Value="10" />
       <Setter Property="Margin" Value="0,0,8,8" />
       <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -1155,7 +1155,7 @@
 
                         </Grid>
                         <StackPanel Spacing="6">
-                          <TextBlock local:Localized.Uid="BladePerformancePowerProfileLabel" Text="性能模式供电配置" Foreground="{StaticResource MutedBrush}" FontSize="12" />
+                          <TextBlock local:Localized.Uid="BladePerformancePowerProfileLabel" Text="性能模式供电配置" Foreground="{StaticResource MutedBrush}" FontSize="11" />
                           <ComboBox ItemsSource="{Binding Blade.PerformancePowerProfileOptions}" SelectedIndex="{Binding Blade.PerformancePowerProfileIndex, Mode=TwoWay}" IsEnabled="{Binding Blade.CanSetPerformancePowerProfile}" HorizontalAlignment="Stretch" />
                         </StackPanel>
                         <TextBlock Text="{Binding Blade.PerformanceModeText}" FontSize="24" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
@@ -1173,7 +1173,7 @@
                                     <FontIcon Glyph="{Binding IconGlyph}" FontFamily="{StaticResource IconFontFamily}" FontSize="16" Foreground="{StaticResource AccentBrush}" />
                                   </Border>
                                   <TextBlock Grid.Row="1" Text="{Binding Name}" Margin="0,7,0,0" FontSize="14" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
-                                  <TextBlock Grid.Row="2" Text="{Binding Description}" Margin="0,4,0,0" FontSize="12" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
+                                  <TextBlock Grid.Row="2" Text="{Binding Description}" Margin="0,4,0,0" FontSize="11" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
                                   <FontIcon Grid.Row="3" Glyph="&#xE73E;" FontFamily="{StaticResource IconFontFamily}" FontSize="14" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" Visibility="{Binding IsSelected, Converter={StaticResource BoolToVisibilityConverter}}" />
                                 </Grid>
                               </Button>
