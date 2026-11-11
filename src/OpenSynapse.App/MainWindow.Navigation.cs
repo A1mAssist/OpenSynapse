@@ -54,18 +54,18 @@ public sealed partial class MainWindow
             ? Visibility.Visible
             : Visibility.Collapsed;
         LiteModeBadgeRun.Text = liteMode ? "  Lite" : string.Empty;
-        DevicesPage.SetLiteMode(liteMode);
-        SettingsPage.SetLiteMode(liteMode);
+        _devicesPage?.SetLiteMode(liteMode);
+        _settingsPage?.SetLiteMode(liteMode);
         if (!liteMode)
         {
             return;
         }
 
         RootNavigationView.SelectedItem = DevicesNavigationItem;
-        OverviewPage.Visibility = Visibility.Collapsed;
-        LightingStudioPage.Visibility = Visibility.Collapsed;
-        DevicesPage.Visibility = Visibility.Visible;
-        DevicesPage.RefreshAdvancedFeaturesVisibility();
+        if (PageHost is not null)
+        {
+            ShowPage("devices");
+        }
     }
 
     internal void RequestDeviceNavigation(object source)
@@ -86,8 +86,8 @@ public sealed partial class MainWindow
         {
             RequestStudioDeviceRefresh();
         }
-        ProfilesPage.OnViewModelPropertyChanged(args.PropertyName);
-        DevicesPage.OnViewModelPropertyChanged(args.PropertyName);
+        _profilesPage?.OnViewModelPropertyChanged(args.PropertyName);
+        _devicesPage?.OnViewModelPropertyChanged(args.PropertyName);
     }
 
     private void OnRazerHidDevicesChanged(object? sender, NotifyCollectionChangedEventArgs args) =>
@@ -104,7 +104,7 @@ public sealed partial class MainWindow
     {
         Interlocked.Exchange(ref _studioRefreshQueued, 0);
         if (_lifetime.IsCancellationRequested) return;
-        if (LightingStudioPage.Visibility != Visibility.Visible || !AppWindow.IsVisible)
+        if (_lightingStudioPage is not { Visibility: Visibility.Visible } || !AppWindow.IsVisible)
         {
             // A hidden page only records the change; navigation refreshes once on entry.
             _studioDevicesDirty = true;
@@ -170,13 +170,12 @@ public sealed partial class MainWindow
     private void NavigationChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
         var page = (args.SelectedItemContainer as NavigationViewItem)?.Tag as string;
-        OverviewPage.Visibility = page == "overview" ? Visibility.Visible : Visibility.Collapsed;
-        DevicesPage.Visibility = page == "devices" ? Visibility.Visible : Visibility.Collapsed;
-        LightingStudioPage.Visibility = page == "studio" ? Visibility.Visible : Visibility.Collapsed;
-        MacrosPage.Visibility = page == "macros" ? Visibility.Visible : Visibility.Collapsed;
-        ProfilesPage.Visibility = page == "profiles" ? Visibility.Visible : Visibility.Collapsed;
-        SettingsPage.Visibility = page == "settings" ? Visibility.Visible : Visibility.Collapsed;
-        DiagnosticsPage.Visibility = page == "diagnostics" ? Visibility.Visible : Visibility.Collapsed;
+        if (string.IsNullOrWhiteSpace(page) || PageHost is null)
+        {
+            return;
+        }
+
+        ShowPage(page);
         if (page == "studio")
         {
             LightingStudioPage.OnNavigatedTo();
@@ -186,19 +185,20 @@ public sealed partial class MainWindow
         }
         else
         {
-            LightingStudioPage.OnNavigatedFrom();
+            _lightingStudioPage?.OnNavigatedFrom();
         }
         if (page == "devices")
         {
-            DevicesPage.RefreshAdvancedFeaturesVisibility();
+            var devices = DevicesPage;
+            devices.RefreshAdvancedFeaturesVisibility();
+            if (devices.IsBladePanelVisible)
+            {
+                devices.RefreshDedicatedGpuMode();
+            }
         }
         UpdatePerformanceSamplingState();
-        SettingsPage.UpdateChromaRestStatusTimer(AppWindow.IsVisible);
-        if (DevicesPage.Visibility == Visibility.Visible && DevicesPage.IsBladePanelVisible)
-        {
-            DevicesPage.RefreshDedicatedGpuMode();
-        }
-        if (DiagnosticsPage.Visibility == Visibility.Visible)
+        _settingsPage?.UpdateChromaRestStatusTimer(AppWindow.IsVisible);
+        if (page == "diagnostics")
         {
             // The rebuild is skipped while this page is hidden, so entering it must refresh
             // once or the list would show whatever was captured before the user left.
@@ -215,21 +215,20 @@ public sealed partial class MainWindow
         _viewModel.Telemetry.SetPerformanceSamplingEnabled(
             _performanceOverlayEnabled ||
             (AppWindow.IsVisible &&
-             (OverviewPage.Visibility == Visibility.Visible ||
-              (DevicesPage.Visibility == Visibility.Visible && DevicesPage.IsBladePanelVisible))));
+             (IsPageCurrent("overview") ||
+              (IsPageCurrent("devices") && _devicesPage?.IsBladePanelVisible == true))));
         _viewModel.Refresh.SetDeviceReadoutSamplingEnabled(
             AppWindow.IsVisible &&
-            (DevicesPage.Visibility == Visibility.Visible ||
-             DiagnosticsPage.Visibility == Visibility.Visible));
+            (IsPageCurrent("devices") || IsPageCurrent("diagnostics")));
         _viewModel.Refresh.SetDiagnosticsRebuildEnabled(
-            AppWindow.IsVisible && DiagnosticsPage.Visibility == Visibility.Visible);
+            AppWindow.IsVisible && IsPageCurrent("diagnostics"));
     }
 
     private void ApplyDarkTheme()
     {
         RootNavigationView.RequestedTheme = ElementTheme.Dark;
         ApplyTitleBarColors();
-        DevicesPage.RefreshSelectorHighlight();
+        _devicesPage?.RefreshSelectorHighlight();
     }
 
     private void ApplyTitleBarColors(bool launchOverlayActive = false)

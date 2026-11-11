@@ -31,12 +31,12 @@ public sealed partial class MainWindow
             var window = new PerformanceOverlayWindow(_viewModel, _behaviorSettings);
             window.SettingsRequested += () =>
             {
-                SettingsPage.InitializeBehaviorSettingsUi();
+                _settingsPage?.InitializeBehaviorSettingsUi();
                 RequestNavigation("settings");
             };
             window.CloseRequested += () =>
             {
-                SettingsPage.InitializeBehaviorSettingsUi();
+                _settingsPage?.InitializeBehaviorSettingsUi();
                 SetPerformanceOverlayEnabled(false);
             };
             window.Closed += (_, _) =>
