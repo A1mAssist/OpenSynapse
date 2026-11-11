@@ -24,7 +24,7 @@
 ## 发布步骤
 
 1. 用同一次 `vpk pack` 生成全套资产。
-   生成 MSI 后运行 `scripts/patch-msi-service.ps1 -MsiPath <msi>`；Velopack 的安装回调以当前用户身份执行，无法注册 LocalSystem 服务，这个补丁会追加一个 deferred no-impersonate 的自定义动作。
+   生成 MSI 后运行 `scripts/patch-msi-service.ps1 -MsiPath <msi>`；Velopack 的安装回调以当前用户身份执行，无法注册 LocalSystem 服务，这个补丁会追加一个 deferred no-impersonate 的自定义动作。它还会把 `WIX_UPGRADE_DETECTED` 的版本上限改为包含同版本，并给 `RemoveExistingProducts` 加 `NOT Installed`，避免多个 beta 共用 `ProductVersion=1.7.2.0` 时叠加安装、卸载后留下 `MSI:OpenSynapse` ARP 残留。
 2. 把三个安装包复制为本文列出的版本化名字，保留原文件用于校验。
 3. 校验改名后的文件大小和 SHA-256 与原文件一致。
 4. 上传版本化安装包，外加原样的 `*.nupkg`、`RELEASES`、`releases.win.json`、`assets.win.json`；不要再上传未改名的三个安装包。
