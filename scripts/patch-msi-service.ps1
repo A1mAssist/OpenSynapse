@@ -35,6 +35,56 @@ try {
         throw 'OpenSynapse.App.exe is missing from the MSI File table.'
     }
 
+    $upgradeRows = @()
+    $view = Open-View 'SELECT `UpgradeCode`, `VersionMin`, `VersionMax`, `Language`, `Attributes`, `Remove`, `ActionProperty` FROM `Upgrade`'
+    while ($null -ne ($record = $view.GetType().InvokeMember('Fetch', 'InvokeMethod', $null, $view, $null))) {
+        $upgradeRows += [pscustomobject]@{
+            UpgradeCode = $record.GetType().InvokeMember('StringData', 'GetProperty', $null, $record, @(1))
+            VersionMin = $record.GetType().InvokeMember('StringData', 'GetProperty', $null, $record, @(2))
+            VersionMax = $record.GetType().InvokeMember('StringData', 'GetProperty', $null, $record, @(3))
+            Language = $record.GetType().InvokeMember('StringData', 'GetProperty', $null, $record, @(4))
+            Attributes = $record.GetType().InvokeMember('IntegerData', 'GetProperty', $null, $record, @(5))
+            Remove = $record.GetType().InvokeMember('StringData', 'GetProperty', $null, $record, @(6))
+            ActionProperty = $record.GetType().InvokeMember('StringData', 'GetProperty', $null, $record, @(7))
+        }
+    }
+    $view.GetType().InvokeMember('Close', 'InvokeMethod', $null, $view, $null)
+
+    foreach ($row in $upgradeRows) {
+        if ($row.ActionProperty -ne 'WIX_UPGRADE_DETECTED' -or [string]::IsNullOrWhiteSpace($row.VersionMax)) {
+            continue
+        }
+        $attributes = [int]$row.Attributes -bor 2
+        $deleteSql = "DELETE FROM ``Upgrade`` WHERE ``UpgradeCode`` = '$($row.UpgradeCode)' " +
+            "AND ``VersionMin`` = '$($row.VersionMin)' AND ``VersionMax`` = '$($row.VersionMax)' " +
+            "AND ``Language`` = '$($row.Language)' AND ``Attributes`` = $($row.Attributes) " +
+            "AND ``Remove`` = '$($row.Remove)' AND ``ActionProperty`` = 'WIX_UPGRADE_DETECTED'"
+        $view = Open-View $deleteSql
+        $view.GetType().InvokeMember('Close', 'InvokeMethod', $null, $view, $null)
+
+        $insertSql = "INSERT INTO ``Upgrade`` (``UpgradeCode``, ``VersionMin``, ``VersionMax``, ``Language``, ``Attributes``, ``Remove``, ``ActionProperty``) " +
+            "VALUES ('$($row.UpgradeCode)', '$($row.VersionMin)', '$($row.VersionMax)', '$($row.Language)', $attributes, '$($row.Remove)', 'WIX_UPGRADE_DETECTED')"
+        $view = Open-View $insertSql
+        $view.GetType().InvokeMember('Close', 'InvokeMethod', $null, $view, $null)
+    }
+
+    $view = Open-View "UPDATE ``InstallExecuteSequence`` SET ``Condition`` = 'NOT Installed' WHERE ``Action`` = 'RemoveExistingProducts'"
+    $view.GetType().InvokeMember('Close', 'InvokeMethod', $null, $view, $null)
+
+    $verified = $false
+    $view = Open-View "SELECT ``Attributes``, ``VersionMax`` FROM ``Upgrade`` WHERE ``ActionProperty`` = 'WIX_UPGRADE_DETECTED'"
+    while ($null -ne ($record = $view.GetType().InvokeMember('Fetch', 'InvokeMethod', $null, $view, $null))) {
+        $versionMax = $record.GetType().InvokeMember('StringData', 'GetProperty', $null, $record, @(2))
+        if (-not [string]::IsNullOrWhiteSpace($versionMax) -and
+            (([int]$record.GetType().InvokeMember('IntegerData', 'GetProperty', $null, $record, @(1))) -band 2) -ne 0) {
+            $verified = $true
+        }
+    }
+    $view.GetType().InvokeMember('Close', 'InvokeMethod', $null, $view, $null)
+    if (-not $verified) {
+        throw 'The MSI Upgrade table still excludes same-version products.'
+    }
+
     foreach ($sql in @(
         "DELETE FROM ``CustomAction`` WHERE ``Action`` = 'InstallOpenSynapseService'",
         "DELETE FROM ``InstallExecuteSequence`` WHERE ``Action`` = 'InstallOpenSynapseService'"
@@ -67,6 +117,12 @@ try {
 }
 finally {
     # Closing the database without Commit discards a partially written transaction.
+    if ($null -ne $record) {
+        [void][Runtime.InteropServices.Marshal]::ReleaseComObject($record)
+    }
+    if ($null -ne $view) {
+        [void][Runtime.InteropServices.Marshal]::ReleaseComObject($view)
+    }
     if ($null -ne $database) {
         [void][Runtime.InteropServices.Marshal]::ReleaseComObject($database)
     }

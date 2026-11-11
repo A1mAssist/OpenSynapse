@@ -78,6 +78,10 @@ settings survive, the old directory no longer contains `current`, and the HKCU
 startup entry points to the Program Files executable. User data must stay in
 `%LOCALAPPDATA%\A1mAssist\OpenSynapse`, not under the Velopack-managed
 `%LOCALAPPDATA%\OpenSynapse` directory, because MSI cleanup removes the latter.
+The patch script also makes same-version products eligible for
+`RemoveExistingProducts` and guards the action with `NOT Installed`, so beta
+builds sharing the numeric `ProductVersion` replace each other instead of
+stacking and leaving a stale `MSI:OpenSynapse` ARP entry.
 
 Velopack release assets must be generated as one set. Keep the generated feed
 files (`*.nupkg`, `RELEASES`, `releases.win.json`, `assets.win.json`) unchanged.
