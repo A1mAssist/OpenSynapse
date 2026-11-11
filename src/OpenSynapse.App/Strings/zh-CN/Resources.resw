@@ -2076,6 +2076,8 @@
   <data name="RazerHidEffectStarlightSingle" xml:space="preserve"><value>单色星光</value></data>
   <data name="RazerHidEffectStarlightDual" xml:space="preserve"><value>双色星光</value></data>
   <data name="RazerHidEffectWheel" xml:space="preserve"><value>色轮</value></data>
+  <data name="RazerHidEffectFire" xml:space="preserve"><value>火焰</value></data>
+  <data name="RazerHidEffectAudioMeter" xml:space="preserve"><value>音频律动</value></data>
   <data name="RazerHidEffectCustom" xml:space="preserve"><value>自定义</value></data>
   <data name="RazerHidEffectSoftwareSpectrum" xml:space="preserve"><value>软件光谱</value></data>
   <data name="RazerHidEffectSoftwareWave" xml:space="preserve"><value>软件波浪</value></data>

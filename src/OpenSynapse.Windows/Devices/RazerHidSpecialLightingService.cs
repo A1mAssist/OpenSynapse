@@ -89,15 +89,25 @@ public sealed class RazerHidSpecialLightingService
             [0x056B] = new(
                 "Razer Kraken V4 (Wired)",
                 RazerHidKrakenLayout.Kylie,
-                Effects(RazerHidLightingEffect.Off, RazerHidLightingEffect.Static, RazerHidLightingEffect.Wave),
+                Effects(RazerHidLightingEffect.Off, RazerHidLightingEffect.Static,
+                    RazerHidLightingEffect.BreathingSingle, RazerHidLightingEffect.Spectrum,
+                    RazerHidLightingEffect.Wave, RazerHidLightingEffect.StarlightRandom,
+                    RazerHidLightingEffect.Fire, RazerHidLightingEffect.AudioMeter,
+                    RazerHidLightingEffect.Wheel),
                 true,
-                RazerHidSpecialLightingKind.KrakenV4),
+                RazerHidSpecialLightingKind.KrakenV4,
+                LedCount: 9),
             [0x056C] = new(
                 "Razer Kraken V4 (2.4 GHz)",
                 RazerHidKrakenLayout.Kylie,
-                Effects(RazerHidLightingEffect.Off, RazerHidLightingEffect.Static, RazerHidLightingEffect.Wave),
+                Effects(RazerHidLightingEffect.Off, RazerHidLightingEffect.Static,
+                    RazerHidLightingEffect.BreathingSingle, RazerHidLightingEffect.Spectrum,
+                    RazerHidLightingEffect.Wave, RazerHidLightingEffect.StarlightRandom,
+                    RazerHidLightingEffect.Fire, RazerHidLightingEffect.AudioMeter,
+                    RazerHidLightingEffect.Wheel),
                 true,
-                RazerHidSpecialLightingKind.KrakenV4),
+                RazerHidSpecialLightingKind.KrakenV4,
+                LedCount: 9),
             // AudioMabelT3C (Barracuda X Chroma) inherits the AudioBillieT2 frame and
             // adds Breathing, SpectrumCycling and CustomFrame; it declares NUM_LEDS=6,
             // so a custom frame fills six LEDs instead of the Billie T2 ring's nine.
@@ -360,6 +370,10 @@ public sealed class RazerHidSpecialLightingService
             RazerHidLightingEffect.BreathingSingle => RazerHidKrakenV4Protocol.CreateBreathing(
                 settings.Primary, intensity, isDongle),
             RazerHidLightingEffect.Spectrum => RazerHidKrakenV4Protocol.CreateSpectrum(isDongle),
+            RazerHidLightingEffect.StarlightRandom => RazerHidKrakenV4Protocol.CreateStarlight(isDongle),
+            RazerHidLightingEffect.Fire => RazerHidKrakenV4Protocol.CreateFire(isDongle),
+            RazerHidLightingEffect.AudioMeter => RazerHidKrakenV4Protocol.CreateAudioMeter(isDongle),
+            RazerHidLightingEffect.Wheel => RazerHidKrakenV4Protocol.CreateWheel(isDongle),
             RazerHidLightingEffect.Custom => RazerHidKrakenV4Protocol.CreateCustomFrame(
                 settings.Primary, device.LedCount, intensity, isDongle),
             _ => throw new NotSupportedException(),

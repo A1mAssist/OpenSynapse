@@ -300,6 +300,8 @@ public enum RazerHidLightingEffect
     SoftwareRipple,
     SoftwareTidal,
     SoftwareRadiate,
+    Fire,
+    AudioMeter,
 }
 
 internal static class RazerHidLightingEffects
