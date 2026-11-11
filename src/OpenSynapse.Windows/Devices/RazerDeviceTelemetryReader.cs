@@ -45,7 +45,8 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
         ArgumentNullException.ThrowIfNull(devices);
         _bladeReader.ResetValidation();
         _openRazerReader.ResetValidation();
-        _viperReader.ResetValidation();
+        // Viper mapping reads establish their own validation; the periodic
+        // telemetry poll must not clear it before the user saves.
         var blade = _resolver.FindReadyBlade(devices);
         var mouse = _resolver.FindReadyDevice(devices, "viper-184");
         var bladeResult = blade is null
