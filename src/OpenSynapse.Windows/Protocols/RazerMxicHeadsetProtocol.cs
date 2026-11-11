@@ -215,10 +215,15 @@ public static class RazerMxicHeadsetProtocol
     public static byte[] CreateSetEqPresetJoliet(byte preset) =>
         RazerValkyrieT3Protocol.Create(0x00, [LiveProfile, SpeakerSource, 0x00, preset]);
 
-    // rzDevice40.getEQSetting(profile, speaker) sends two bytes, not the
-    // twelve-byte staging buffer used by the legacy class-0x18 setter.
-    public static byte[] CreateGetEqBandsJoliet() =>
-        RazerValkyrieT3Protocol.Create(0x81, [LiveProfile, SpeakerSource]);
+    // 05AD answers the staged twelve-byte getter. The two-byte
+    // [profile, speaker] form returns no matching ACK on the same unit.
+    public static byte[] CreateGetEqBandsJoliet()
+    {
+        var payload = new byte[EqBandsRequestClass18[0]];
+        payload[0] = LiveProfile;
+        payload[1] = SpeakerSource;
+        return RazerValkyrieT3Protocol.Create(0x81, payload);
+    }
 
     public static byte[] CreateSetEqBandsJoliet(byte preset, ReadOnlySpan<byte> bands)
     {

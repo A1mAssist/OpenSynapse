@@ -361,14 +361,12 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
                 throw new ArgumentOutOfRangeException(nameof(bands), "Joliet bands must encode -6..6 dB.");
             var preset = ReadEqPreset(await QueryReportAsync(
                 CreateEqPresetRead(), EqPresetHeader, "read EQ preset", cancellationToken).ConfigureAwait(false));
-            await WriteAsync(
-                CreateEqBandsRead(),
-                EqBandsHeader,
-                RazerMxicHeadsetProtocol.ReadEqBands,
-                requested,
-                value => RazerMxicHeadsetProtocol.CreateSetEqBandsJoliet(preset, value),
+            // setEQSetting already carries the preset and the new curve. Reading
+            // the curve back here can return the previous values and make the
+            // restore path undo a write the device accepted.
+            await WriteReportAsync(
+                RazerMxicHeadsetProtocol.CreateSetEqBandsJoliet(preset, requested),
                 SetEqBandsHeader,
-                actual => actual.SequenceEqual(requested),
                 "EQ bands",
                 cancellationToken).ConfigureAwait(false);
             return;

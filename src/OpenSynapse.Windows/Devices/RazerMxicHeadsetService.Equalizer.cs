@@ -22,6 +22,18 @@ public sealed partial class RazerMxicHeadsetService
         {
             if (_dialect == MxicDialect.Protocol40)
                 throw new InvalidOperationException("The protocol40 bundle does not expose EQ writes.");
+            if (_dialect == MxicDialect.Joliet)
+            {
+                // Select Custom before storing its curve. The firmware does not
+                // echo the curve reliably enough to read it back here.
+                await SetEqPresetCoreAsync(preset, token).ConfigureAwait(false);
+                await WriteReportAsync(
+                    RazerMxicHeadsetProtocol.CreateSetEqBandsJoliet(preset, requested),
+                    SetEqBandsHeader,
+                    "custom EQ",
+                    token).ConfigureAwait(false);
+                return;
+            }
             var previousPreset = ReadEqPreset(await QueryReportAsync(
                 CreateEqPresetRead(), EqPresetHeader, "snapshot EQ preset", token).ConfigureAwait(false));
             var previousBands = RazerMxicHeadsetProtocol.ReadEqBands(await QueryReportAsync(
