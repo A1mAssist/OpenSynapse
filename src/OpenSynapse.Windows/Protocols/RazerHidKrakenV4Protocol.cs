@@ -29,7 +29,6 @@ internal static class RazerHidKrakenV4Protocol
     private static readonly byte[] ForceChromaHeader = [ForceChromaCommandId, 0x00, 0x01];
     private static readonly byte[] BrightnessHeader = [BrightnessCommandId, 0x00, 0x01];
 
-    private const byte EffectOff = 0x00;
     private const byte EffectStatic = 0x01;
     // AudioMabelT3C and AudioBillieT2 both read these ids from the bundle's
     // {Off:0, Static:1, Breathing:2, SpectrumCycling:3, Wave:4, CustomFrame:8} table.
@@ -44,10 +43,16 @@ internal static class RazerHidKrakenV4Protocol
     private const int ChecksumOffset = ReportLength - 2;
     private const int MaxFrameLeds = (ReportLength - PayloadOffset - FrameCommandLength) / 3;
 
+    /// <summary>The Kraken V4 ring carries nine LEDs.</summary>
+    private const int LedCount = 9;
+
     internal static IReadOnlyList<byte[]> CreateOff(bool isDongle = false) =>
     [
-        // Billie T2 only changes the effect mode; the frame engine is not involved.
-        CreateEffect(EffectOff, isDongle),
+        // The firmware's Off effect starts a transition that swallows the next
+        // static frame. Render black through Static so the next colour is a
+        // normal static-to-static update.
+        CreateCustomFrame(new RazerHidColor(0, 0, 0), LedCount, isDongle: isDongle)[0],
+        CreateEffect(EffectStatic, isDongle),
     ];
 
     /// <summary>
@@ -62,8 +67,10 @@ internal static class RazerHidKrakenV4Protocol
         byte? intensity = null,
         bool isDongle = false) =>
     [
-        // The official static path carries the colour in the effect command itself.
-        CreateEffect(EffectStatic, isDongle, Scale(color, intensity)),
+        // The bundle writes the colour through the frame buffer, then switches the
+        // ring to the static effect. Static mode reads the frame, not C0's payload.
+        CreateCustomFrame(color, LedCount, intensity, isDongle)[0],
+        CreateEffect(EffectStatic, isDongle),
     ];
 
     internal static IReadOnlyList<byte[]> CreateWave(byte? intensity = null, bool isDongle = false) =>
