@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Macros;
+using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
@@ -87,6 +88,7 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
         _groupOptions = RazerMappingText.GroupOptions(_canUseOnboardMacro || _canUseSoftwareMacro);
         ButtonId = buttonId;
         ButtonName = catalog.DescribeButton(buttonId);
+        ButtonNameIsFallback = ButtonName.StartsWith("Button ", StringComparison.Ordinal);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -105,15 +107,23 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
 
     internal void SetButtonName(string name) => ButtonName = name;
 
+    internal bool ButtonNameIsFallback { get; }
+
     internal static void ApplyButtonNames(
         IEnumerable<RazerHidMappingRowViewModel> rows,
-        IReadOnlyDictionary<byte, string>? names)
+        IReadOnlyDictionary<byte, string>? names,
+        ushort productId = 0)
     {
-        if (names is not { Count: > 0 }) return;
-
         foreach (var row in rows)
         {
-            if (names.TryGetValue(row.ButtonId, out var name))
+            if (productId != 0 && RazerPrivateKeyCatalog.IsPrivate(productId, row.ButtonId))
+            {
+                row.SetButtonName(RazerPrivateKeyCatalog.Describe(productId, row.ButtonId));
+                continue;
+            }
+
+            if (!row.ButtonNameIsFallback) continue;
+            if (names is not null && names.TryGetValue(row.ButtonId, out var name))
             {
                 row.SetButtonName(name);
             }

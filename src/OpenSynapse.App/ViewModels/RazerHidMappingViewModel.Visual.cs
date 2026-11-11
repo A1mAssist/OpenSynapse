@@ -32,7 +32,7 @@ public sealed partial class RazerHidMappingViewModel
                     OnPropertyChanged(nameof(Layout));
                     OnPropertyChanged(nameof(StageVisibility));
                     OnPropertyChanged(nameof(TableVisibility));
-                    RazerHidMappingRowViewModel.ApplyButtonNames(Rows, mouse.ButtonNames);
+                    RazerHidMappingRowViewModel.ApplyButtonNames(Rows, mouse.ButtonNames, _productId);
                     PopulateStageRows();
                 }
             }
