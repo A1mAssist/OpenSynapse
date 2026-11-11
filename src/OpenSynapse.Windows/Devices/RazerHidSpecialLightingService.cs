@@ -467,11 +467,14 @@ public sealed class RazerHidSpecialLightingService
 
             if (sendHandshake)
             {
-                // The takeover animation drops the first effect; repeat it on the
-                // same session so the first click sticks without a second click.
+                // The takeover animation drops the first effect; repeat the frame
+                // and effect pair on the same session so the first click sticks.
                 await Task.Delay(TimeSpan.FromMilliseconds(1500), cancellationToken).ConfigureAwait(false);
                 _diagnostic?.Invoke("kraken lighting retry=1");
-                await SendKrakenV4ReportAsync(transport, reports[^1], cancellationToken).ConfigureAwait(false);
+                foreach (var report in reports.Skip(Math.Max(0, reports.Count - 2)))
+                {
+                    await SendKrakenV4ReportAsync(transport, report, cancellationToken).ConfigureAwait(false);
+                }
             }
         }
         catch
