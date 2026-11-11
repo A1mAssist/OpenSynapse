@@ -303,6 +303,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             }
             var rows = new List<RazerHidMappingRowViewModel>(ids.Count);
             var defaults = _freeSlots.ToList();
+            var unreadable = 0;
             foreach (var id in ids.Where(id => id != 0))
             {
                 var softwareTrigger = _softwareTriggerResolver?.Invoke(id);
@@ -319,23 +320,49 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 byte? assignedSlot = null;
                 bool? assignmentIsOff = null;
                 RazerHidDecodedMapping? decoded = null;
-                try
+                RazerMappingAssignment? assignment = null;
+                Exception? readError = null;
+                for (var attempt = 0; attempt < 3; attempt++)
                 {
-                    var assignment = await _transport.GetAssignmentAsync(id, mode, cancellationToken)
-                        .ConfigureAwait(true);
-                    assignedSlot = MacroSlotOf(assignment.FunctionId, assignment.Data);
-                    assignmentIsOff = assignment.FunctionId == RazerHidMappingFunctions.Off;
+                    try
+                    {
+                        assignment = await _transport.GetAssignmentAsync(id, mode, cancellationToken)
+                            .ConfigureAwait(true);
+                        readError = null;
+                        break;
+                    }
+                    catch (Exception exception) when (IsExpected(exception))
+                    {
+                        readError = exception;
+                        if (!IsRetryableMappingRead(exception) || attempt == 2)
+                        {
+                            break;
+                        }
+
+                        await Task.Delay(
+                                TimeSpan.FromMilliseconds(40 * (attempt + 1)),
+                                cancellationToken)
+                            .ConfigureAwait(true);
+                    }
+                }
+
+                if (assignment is { } readAssignment)
+                {
+                    assignedSlot = MacroSlotOf(readAssignment.FunctionId, readAssignment.Data);
+                    assignmentIsOff = readAssignment.FunctionId == RazerHidMappingFunctions.Off;
                     decoded = _catalog is RazerViperMappingActionCatalog
                         ? null
-                        : _catalog.Decode(assignment.FunctionId, assignment.Data);
+                        : _catalog.Decode(readAssignment.FunctionId, readAssignment.Data);
                     row.CurrentActionText = DescribeAssignment(
-                        assignment.FunctionId,
-                        assignment.Data);
+                        readAssignment.FunctionId,
+                        readAssignment.Data);
                 }
-                catch (Exception exception) when (IsExpected(exception))
+                else
                 {
+                    unreadable++;
                     row.CurrentActionText = AppStrings.Text("RazerHidMappingUnreadable");
-                    _log?.Invoke($"mapping button {id} read failed: {exception.Message}");
+                    _log?.Invoke(
+                        $"mapping button {id} read failed ({readError?.GetType().Name}): {readError?.Message}");
                 }
 
                 var preferred = defaults.Count > 0 ? defaults[0] : (byte?)null;
@@ -401,10 +428,16 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             _hasReadAnyLayer = true;
             StatusText = Rows.Count == 0
                 ? AppStrings.Text("RazerHidMappingNoButtons")
-                : _macrosAvailable
+                : unreadable > 0
                     ? AppStrings.FormatText(
-                        "RazerHidMappingReadCountWithMacros", Rows.Count, _slotChoices.Count)
-                    : AppStrings.FormatText("RazerHidMappingReadCount", Rows.Count);
+                        "RazerHidMappingReadCountPartial",
+                        Rows.Count - unreadable,
+                        Rows.Count,
+                        unreadable)
+                    : _macrosAvailable
+                        ? AppStrings.FormatText(
+                            "RazerHidMappingReadCountWithMacros", Rows.Count, _slotChoices.Count)
+                        : AppStrings.FormatText("RazerHidMappingReadCount", Rows.Count);
         }
         catch (Exception exception) when (IsExpected(exception))
         {
@@ -967,6 +1000,10 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         exception is InvalidOperationException or InvalidDataException or NotSupportedException or
             IOException or TimeoutException or UnauthorizedAccessException or
             System.ComponentModel.Win32Exception;
+
+    private static bool IsRetryableMappingRead(Exception exception) =>
+        exception is RazerDeviceTimeoutException { IsRetryableBusy: true } or
+            TimeoutException or IOException;
 
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
