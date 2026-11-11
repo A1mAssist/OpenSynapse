@@ -76,7 +76,7 @@ internal static class RazerDriverInstaller
         {
             path = await EnsurePackageAsync(package, CacheDirectory, progress, cancellationToken)
                 .ConfigureAwait(false);
-            VerifyPackage(path, package);
+            VerifyPackage(path);
         }
         catch (InvalidDataException exception)
         {
@@ -129,7 +129,7 @@ internal static class RazerDriverInstaller
                     progress: null,
                     cancellationToken)
                 .ConfigureAwait(false);
-            VerifyPackage(path, package);
+            VerifyPackage(path);
         }
         catch (InvalidDataException exception)
         {
@@ -179,9 +179,7 @@ internal static class RazerDriverInstaller
         Directory.CreateDirectory(cacheDirectory);
         var fileName = Path.GetFileName(new Uri(package.Url).AbsolutePath);
         var path = Path.Combine(cacheDirectory, fileName);
-        if (File.Exists(path) &&
-            (package.Size <= 0 || new FileInfo(path).Length == package.Size) &&
-            TryVerifyPackage(path, package, out _))
+        if (File.Exists(path) && TryVerifyPackage(path, out _))
         {
             return path;
         }
@@ -196,11 +194,6 @@ internal static class RazerDriverInstaller
                    cancellationToken).ConfigureAwait(false))
         {
             response.EnsureSuccessStatusCode();
-            if (package.Size > 0 && response.Content.Headers.ContentLength is long length &&
-                length != package.Size)
-            {
-                throw new InvalidDataException("Razer driver package size does not match the catalog.");
-            }
 
             await using var source = await response.Content
                 .ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
@@ -212,12 +205,6 @@ internal static class RazerDriverInstaller
                 81920,
                 useAsync: true);
             await source.CopyToAsync(target, cancellationToken).ConfigureAwait(false);
-        }
-
-        if (package.Size > 0 && new FileInfo(temporary).Length != package.Size)
-        {
-            File.Delete(temporary);
-            throw new InvalidDataException("Razer driver package download is incomplete.");
         }
 
         File.Move(temporary, path, overwrite: true);
@@ -306,32 +293,16 @@ internal static class RazerDriverInstaller
         }
     }
 
-    internal static void VerifyPackage(string path, RazerDriverPackage package)
+    internal static void VerifyPackage(string path)
     {
-        if (!TryVerifyPackage(path, package, out var error))
+        if (!TryVerifyPackage(path, out var error))
         {
             throw new InvalidDataException(error);
         }
     }
 
-    private static bool TryVerifyPackage(
-        string path,
-        RazerDriverPackage package,
-        out string error)
+    private static bool TryVerifyPackage(string path, out string error)
     {
-        if (package.Size > 0 && new FileInfo(path).Length != package.Size)
-        {
-            error = "Razer driver package size does not match the catalog.";
-            return false;
-        }
-
-        var company = FileVersionInfo.GetVersionInfo(path).CompanyName;
-        if (company?.Contains("Razer", StringComparison.OrdinalIgnoreCase) != true)
-        {
-            error = "Razer driver package publisher is not Razer.";
-            return false;
-        }
-
         var action = new Guid("00AAC56B-CD44-11d0-8CC2-00C04FC295EE");
         var file = new WinTrustFileInfo
         {

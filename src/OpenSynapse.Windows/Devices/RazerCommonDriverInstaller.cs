@@ -195,15 +195,7 @@ internal static class RazerCommonDriverInstaller
                 ExtractCab(cabPath, folder);
             }
 
-            RazerDriverInstaller.VerifyPackage(
-                sysPath,
-                new RazerDriverPackage(
-                    "RZCOMMON",
-                    "RZCOMMON",
-                    "Razer Common Driver",
-                    "10.0.15063.0",
-                    0,
-                    CabUrl));
+            RazerDriverInstaller.VerifyPackage(sysPath);
             return (infPath, null);
         }
         catch (Exception exception) when (
