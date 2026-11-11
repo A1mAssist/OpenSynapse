@@ -17,15 +17,15 @@ internal sealed class CpuHardwareMonitor : IDisposable
     private readonly object _gate = new();
     private double? _lastAcpiTemperature;
     private DateTimeOffset _acpiTemperatureStableSince = DateTimeOffset.UtcNow;
-    private bool _acpiTemperatureSuppressed;
 
     internal CpuHardwareSample Read()
     {
         lock (_gate)
         {
+            var power = SelectPackagePowerWatts(_power?.Read() ?? []);
             return new CpuHardwareSample(
-                ReadTemperatureCelsius(),
-                SelectPackagePowerWatts(_power?.Read() ?? []),
+                ReadTemperatureCelsiusCore(power),
+                power,
                 ReadWindowsClock());
         }
     }
@@ -34,46 +34,49 @@ internal sealed class CpuHardwareMonitor : IDisposable
     {
         lock (_gate)
         {
-            if (_hwinfo.ReadCpuTemperatureCelsius() is double hwinfoTemperature)
-            {
-                _lastAcpiTemperature = null;
-                _acpiTemperatureSuppressed = false;
-                return hwinfoTemperature;
-            }
-
-            if (_intelMsr.ReadPackageTemperatureCelsius() is double packageTemperature)
-            {
-                _lastAcpiTemperature = null;
-                _acpiTemperatureSuppressed = false;
-                return packageTemperature;
-            }
-
-            var acpiTemperature = SelectTemperatureCelsius(
-                _temperature?.Read().Select(sample => sample.Value) ?? []);
-            if (acpiTemperature is not double value)
-            {
-                _lastAcpiTemperature = null;
-                _acpiTemperatureSuppressed = false;
-                return null;
-            }
-
-            var now = DateTimeOffset.UtcNow;
-            if (value != _lastAcpiTemperature)
-            {
-                _lastAcpiTemperature = value;
-                _acpiTemperatureStableSince = now;
-                _acpiTemperatureSuppressed = false;
-                return value;
-            }
-
-            if (!_acpiTemperatureSuppressed &&
-                ShouldSuppressAcpiTemperature(value, _lastAcpiTemperature, _acpiTemperatureStableSince, now))
-            {
-                _acpiTemperatureSuppressed = true;
-            }
-
-            return _acpiTemperatureSuppressed ? null : value;
+            return ReadTemperatureCelsiusCore(SelectPackagePowerWatts(_power?.Read() ?? []));
         }
+    }
+
+    private double? ReadTemperatureCelsiusCore(double? packagePowerWatts)
+    {
+        if (_hwinfo.ReadCpuTemperatureCelsius() is double hwinfoTemperature)
+        {
+            _lastAcpiTemperature = null;
+            return hwinfoTemperature;
+        }
+
+        if (_intelMsr.ReadPackageTemperatureCelsius() is double packageTemperature)
+        {
+            _lastAcpiTemperature = null;
+            return packageTemperature;
+        }
+
+        var acpiTemperature = SelectTemperatureCelsius(
+            _temperature?.Read().Select(sample => sample.Value) ?? []);
+        if (acpiTemperature is not double value)
+        {
+            _lastAcpiTemperature = null;
+            return null;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        if (value != _lastAcpiTemperature)
+        {
+            _lastAcpiTemperature = value;
+            _acpiTemperatureStableSince = now;
+            return value;
+        }
+
+        // ACPI can stick near 28 C under load; that range is normal at idle.
+        return ShouldSuppressAcpiTemperature(
+            value,
+            _lastAcpiTemperature,
+            _acpiTemperatureStableSince,
+            now,
+            packagePowerWatts)
+            ? null
+            : value;
     }
 
     internal double? ReadGpuTemperatureCelsius(string? vendorHint)
@@ -88,7 +91,9 @@ internal sealed class CpuHardwareMonitor : IDisposable
         double value,
         double? previousValue,
         DateTimeOffset stableSince,
-        DateTimeOffset now) =>
+        DateTimeOffset now,
+        double? packagePowerWatts) =>
+        packagePowerWatts is >= 35 &&
         value == previousValue &&
         value is > 0 and <= 30 &&
         now - stableSince >= TimeSpan.FromSeconds(10);
