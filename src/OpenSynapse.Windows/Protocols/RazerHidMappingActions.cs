@@ -72,7 +72,7 @@ public static partial class RazerHidMappingActions
     [
         ("Left", 0x01), ("Right", 0x02), ("Middle", 0x03), ("Back", 0x04), ("Forward", 0x05),
         ("Button 6", 0x06), ("Button 7", 0x07), ("Button 8", 0x08), ("Scroll up", 0x09),
-        ("Scroll down", 0x0A), ("DPI up", 0x0B), ("DPI down", 0x0C), ("User select", 0x0D),
+        ("Scroll down", 0x0A), ("Scroll left", 0x34), ("Scroll right", 0x35), ("DPI up", 0x0B), ("DPI down", 0x0C), ("User select", 0x0D),
         ("Profile switch", 0x0E), ("Sniper", 0x0F), ("DPI cycle up", 0x60),
         ("DPI cycle down", 0x61), ("Previous page", 0x63), ("Next page", 0x64),
         ("Volume up", 0x65), ("Volume down", 0x66), ("Mute", 0x67), ("Scroll left", 0x68),

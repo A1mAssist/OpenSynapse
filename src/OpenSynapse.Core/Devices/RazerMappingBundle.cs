@@ -472,6 +472,8 @@ public static partial class RazerMappingBundleParser
         "ScrollClick" or "MiddleClick" or "ScrollButton" => "Middle",
         "ScrollUp" => "Scroll up",
         "ScrollDown" => "Scroll down",
+        "ScrollLeft" => "Scroll left",
+        "ScrollRight" => "Scroll right",
         "MouseButton4" or "Button4" => "Button 4",
         "MouseButton5" or "Button5" => "Button 5",
         "MouseButton6" or "Button6" => "Button 6",
