@@ -14,7 +14,7 @@ public static partial class RazerMappingBundleParser
         RegexOptions.CultureInvariant);
 
     private static readonly Regex ExportedButtonListRegex = new(
-        """BUTTON_LIST\s*:\s*\(\s*\)\s*=>\s*(?<name>[A-Za-z_$][\w$]*)""",
+        """BUTTON_LIST\s*:\s*(?:\(\s*\)\s*=>|function\s*\(\s*\)\s*\{\s*return)\s*(?<name>[A-Za-z_$][\w$]*)""",
         RegexOptions.CultureInvariant);
 
     private static readonly Regex ExplicitButtonIdRegex = new(
@@ -85,7 +85,17 @@ public static partial class RazerMappingBundleParser
 
         var open = assignment.Index + assignment.Length - 1;
         var close = FindMatchingBracket(text, open);
-        return close > open ? (text[open..(close + 1)], true) : (text, false);
+        if (close > open)
+        {
+            var scope = text[open..(close + 1)];
+            if (scope.Contains("inputID", StringComparison.Ordinal) ||
+                scope.Contains("buttonKey", StringComparison.Ordinal))
+            {
+                return (scope, true);
+            }
+        }
+
+        return (text, false);
     }
 
     private static int FindMatchingBracket(string text, int open)
