@@ -18,7 +18,14 @@ public sealed partial class RazerHeadsetAudioViewModel
         var preset = ActivePresets[SelectedEqPresetIndex].Value;
         var applied = _connection.Transport switch
         {
-            RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64 or RazerHeadsetAudioTransport.Jolie64 =>
+            RazerHeadsetAudioTransport.Jolie64 =>
+                await RunMxicWriteAsync(
+                    (service, token) => service.SetCustomEqAsync(
+                        preset,
+                        JolietCurveForPreset(preset).Select(ToFirmwareBand).ToArray(),
+                        token),
+                    cancellationToken),
+            RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64 =>
                 await RunMxicWriteAsync((service, token) => service.SetEqPresetAsync(preset, token), cancellationToken),
             RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
                 await RunValkyrieWriteAsync((service, token) => service.SetEqPresetAsync(preset, token), cancellationToken),
@@ -26,15 +33,33 @@ public sealed partial class RazerHeadsetAudioViewModel
         };
         if (!applied) return;
 
-        await SaveHeadsetSettingAsync(
+        var saved = await SaveHeadsetSettingAsync(
             settings => settings.EqPreset = preset.ToString("X2"),
             settings => settings.EqPreset = previous.ToString("X2"),
-            () => SelectedEqPresetIndex = previousIndex,
-            token => WriteEqPresetHardwareAsync(previous, token),
+            () =>
+            {
+                SelectedEqPresetIndex = previousIndex;
+                if (IsJolie) ApplyJolietCurve(JolietCurveForPreset(previous));
+            },
+            token => IsJolie
+                ? WriteCustomEqHardwareAsync(
+                    previous,
+                    JolietCurveForPreset(previous).Select(ToFirmwareBand).ToArray(),
+                    token)
+                : WriteEqPresetHardwareAsync(previous, token),
             cancellationToken);
-        // The ten-band card shows the active preset's curve, so switching
-        // presets has to reload it or Custom keeps the previous preset's bands.
-        await RefreshEqBandsAsync(cancellationToken);
+        if (!saved) return;
+
+        if (IsJolie)
+        {
+            ApplyJolietCurve(JolietCurveForPreset(preset));
+        }
+        else
+        {
+            // The ten-band card shows the active preset's curve, so switching
+            // presets has to reload it or Custom keeps the previous preset's bands.
+            await RefreshEqBandsAsync(cancellationToken);
+        }
     }
 
     [ProfileSetting("headset.eq.bands", DeviceCategory.Headset, powerScoped: true)]
@@ -73,7 +98,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         }
         if (!applied) return;
 
-        await SaveHeadsetSettingAsync(
+        var saved = await SaveHeadsetSettingAsync(
             settings =>
             {
                 settings.EqBands = ToBandMap(EqBands.Select(band => band.Level));
@@ -100,6 +125,11 @@ public sealed partial class RazerHeadsetAudioViewModel
                 previousBands.Select(value => ToFirmwareBand(value)).ToArray(),
                 token),
             cancellationToken);
+        if (saved && IsJolie)
+        {
+            _jolietCustomBands = EqBands.Select(band => band.Level).ToArray();
+            _hasJolietCustomBands = true;
+        }
     }
 
     [ProfileSetting("headset.lighting.brightness", DeviceCategory.Headset, powerScoped: true)]

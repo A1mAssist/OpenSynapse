@@ -86,6 +86,12 @@ public sealed partial class RazerHeadsetAudioViewModel
             }
         }
 
+        if (IsJolie)
+        {
+            await ApplyPersistedJolietEqAsync(profile, cancellationToken);
+            return;
+        }
+
         if (ReadBandLevels(profile.EqBands) is { } levels)
         {
             var bands = levels.Select(level => ToFirmwareBand(level)).ToArray();
