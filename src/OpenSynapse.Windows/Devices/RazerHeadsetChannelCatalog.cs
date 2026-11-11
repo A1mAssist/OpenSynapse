@@ -16,6 +16,7 @@ public enum RazerHeadsetChannel
     Unsupported,
     NativeDll,
     ValkyrieT3Feature64,
+    Jolie64,
     KrakenBase37,
 }
 
@@ -42,6 +43,10 @@ public static class RazerHeadsetChannelCatalog
             // rzDevice25ValkyrieT3: class 0x18 triplets on 64-byte report id 7.
             [0x0A54] = new("rzDevice25ValkyrieT3", RazerHeadsetChannel.ValkyrieT3Feature64),
             [0x1022] = new("rzDevice25ValkyrieT3", RazerHeadsetChannel.ValkyrieT3Feature64),
+
+            // rzDeviceJolie (Razer Mako X): class 0x18 EQ and class 0x0F Chroma on
+            // 64-byte report id 7. The ten-band setter adds group and preset bytes.
+            [0x05AD] = new("rzDeviceJolie", RazerHeadsetChannel.Jolie64),
 
             // rzDevice40: class 0x18 triplets inside the 64-byte 50 41 envelope.
             [0x0A61] = new("rzDevice40", RazerHeadsetChannel.Mxic64),

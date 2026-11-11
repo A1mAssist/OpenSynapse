@@ -17,6 +17,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
         MabelT1,
         Class18,
         ValkyrieT3,
+        Joliet,
         Protocol40,
     }
 
@@ -27,7 +28,8 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
 
     public RazerMxicHeadsetService(ushort productId, string devicePath, Action<string>? diagnostic = null)
         : this(
-            RazerMxicHeadsetProtocol.UsesValkyrieT3Commands(productId)
+            RazerMxicHeadsetProtocol.UsesValkyrieT3Commands(productId) ||
+            RazerMxicHeadsetProtocol.UsesJolietCommands(productId)
                 ? new RazerValkyrieT3Transport(devicePath)
                 : new RazerMxicHeadsetTransport(
                     devicePath,
@@ -49,6 +51,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
         _dialect = RazerProtocol40HeadsetProtocol.IsSupported(productId) ? MxicDialect.Protocol40
             : RazerMxicHeadsetProtocol.UsesMabelT1(productId) ? MxicDialect.MabelT1
             : RazerMxicHeadsetProtocol.UsesValkyrieT3Commands(productId) ? MxicDialect.ValkyrieT3
+            : RazerMxicHeadsetProtocol.UsesJolietCommands(productId) ? MxicDialect.Joliet
             : RazerMxicHeadsetProtocol.UsesClass18Commands(productId) ? MxicDialect.Class18
             : MxicDialect.Legacy;
         _diagnostic = diagnostic;
@@ -61,6 +64,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
     private byte ReportId => _dialect switch
     {
         MxicDialect.ValkyrieT3 => RazerMxicHeadsetProtocol.ValkyrieReportId,
+        MxicDialect.Joliet => RazerMxicHeadsetProtocol.ValkyrieReportId,
         MxicDialect.MabelT1 => RazerMxicHeadsetProtocol.MabelT1ReportId,
         _ => RazerMxicHeadsetProtocol.ReportId,
     };
@@ -69,6 +73,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
     {
         MxicDialect.ValkyrieT3 => RazerMxicHeadsetProtocol.CreateGetEqPresetValkyrie(),
         MxicDialect.Class18 => RazerMxicHeadsetProtocol.CreateGetEqPresetClass18(),
+        MxicDialect.Joliet => RazerMxicHeadsetProtocol.CreateGetEqPresetJoliet(),
         _ => RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetEqPreset, reportId: ReportId),
     };
 
@@ -76,10 +81,11 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
     {
         MxicDialect.ValkyrieT3 => RazerMxicHeadsetProtocol.EqHeaderValkyrie,
         MxicDialect.Class18 => RazerMxicHeadsetProtocol.EqPresetHeaderClass18,
+        MxicDialect.Joliet => RazerMxicHeadsetProtocol.EqPresetHeaderClass18,
         _ => RazerMxicHeadsetProtocol.EqPresetHeader,
     };
 
-    private byte ReadEqPreset(ReadOnlySpan<byte> value) => _dialect is MxicDialect.Class18 or MxicDialect.ValkyrieT3
+    private byte ReadEqPreset(ReadOnlySpan<byte> value) => _dialect is MxicDialect.Class18 or MxicDialect.ValkyrieT3 or MxicDialect.Joliet
         ? RazerMxicHeadsetProtocol.ReadEqPresetClass18(value)
         : RazerMxicHeadsetProtocol.ReadEqPreset(value);
 
@@ -87,6 +93,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
     {
         MxicDialect.ValkyrieT3 => RazerMxicHeadsetProtocol.CreateGetEqBandsValkyrie(),
         MxicDialect.Class18 => RazerMxicHeadsetProtocol.CreateGetEqBandsClass18(),
+        MxicDialect.Joliet => RazerMxicHeadsetProtocol.CreateGetEqBandsJoliet(),
         _ => RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetEqBands, reportId: ReportId),
     };
 
@@ -94,6 +101,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
     {
         MxicDialect.ValkyrieT3 => RazerMxicHeadsetProtocol.EqHeaderValkyrie,
         MxicDialect.Class18 => RazerMxicHeadsetProtocol.EqBandsHeaderClass18,
+        MxicDialect.Joliet => RazerMxicHeadsetProtocol.EqBandsHeaderClass18,
         _ => RazerMxicHeadsetProtocol.EqBandsHeader,
     };
 
@@ -101,6 +109,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
     {
         MxicDialect.ValkyrieT3 => RazerMxicHeadsetProtocol.CreateSetEqBandsValkyrie(bands),
         MxicDialect.Class18 => RazerMxicHeadsetProtocol.CreateSetEqBandsClass18(bands),
+        MxicDialect.Joliet => throw new NotSupportedException("Joliet bands need the selected preset."),
         _ => RazerMxicHeadsetProtocol.CreateSetEqBands(bands, ReportId),
     };
 
@@ -108,6 +117,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
     private byte[] SetEqBandsHeader => _dialect switch
     {
         MxicDialect.Class18 => RazerMxicHeadsetProtocol.EqBandsHeaderClass18,
+        MxicDialect.Joliet => RazerMxicHeadsetProtocol.EqBandsHeaderClass18,
         _ => RazerMxicHeadsetProtocol.SetEqBandsHeader,
     };
 
@@ -131,12 +141,14 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
     {
         MxicDialect.ValkyrieT3 => RazerMxicHeadsetProtocol.CreateSetEqPresetValkyrie(preset),
         MxicDialect.Class18 => RazerMxicHeadsetProtocol.CreateSetEqPresetClass18(preset),
+        MxicDialect.Joliet => RazerMxicHeadsetProtocol.CreateSetEqPresetJoliet(preset),
         _ => RazerMxicHeadsetProtocol.CreateSetEqPreset(preset, ReportId),
     };
 
     private byte[] SetEqPresetHeader => _dialect switch
     {
         MxicDialect.Class18 => RazerMxicHeadsetProtocol.EqPresetHeaderClass18,
+        MxicDialect.Joliet => RazerMxicHeadsetProtocol.EqPresetHeaderClass18,
         _ => RazerMxicHeadsetProtocol.SetEqPresetHeader,
     };
 
@@ -146,6 +158,11 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
         if (_dialect == MxicDialect.Protocol40)
         {
             return await ReadProtocol40StateAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        if (_dialect == MxicDialect.Joliet)
+        {
+            return await ReadJolietStateAsync(cancellationToken).ConfigureAwait(false);
         }
 
         var errors = new List<string>();
@@ -258,6 +275,48 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
             Errors: errors);
     }
 
+    private async Task<RazerHeadsetAudioState> ReadJolietStateAsync(
+        CancellationToken cancellationToken)
+    {
+        var errors = new List<string>();
+        var preset = await ProbeAsync(
+            "EQ preset",
+            CreateEqPresetRead(),
+            EqPresetHeader,
+            ReadEqPreset,
+            errors,
+            cancellationToken).ConfigureAwait(false);
+        var bands = await ProbeAsync(
+            "EQ bands",
+            CreateEqBandsRead(),
+            EqBandsHeader,
+            RazerMxicHeadsetProtocol.ReadEqBands,
+            errors,
+            cancellationToken).ConfigureAwait(false);
+        var bass = await ProbeAsync(
+            "bass",
+            RazerMxicHeadsetProtocol.CreateGetBassJoliet(),
+            RazerMxicHeadsetProtocol.JolietBassHeader,
+            RazerMxicHeadsetProtocol.ReadBass,
+            errors,
+            cancellationToken).ConfigureAwait(false);
+
+        return new RazerHeadsetAudioState(
+            Firmware: null,
+            BatteryPercent: null,
+            Charging: null,
+            EqPreset: preset.Ok ? preset.Value : null,
+            EqBands: bands.Ok ? bands.Value : null,
+            Bass: bass.Ok ? bass.Value : null,
+            MicMuted: null,
+            MicVolume: null,
+            AudioSource: null,
+            NoiseSuppression: null,
+            AncState: null,
+            AncLevel: null,
+            Errors: errors);
+    }
+
     private Task SetEqPresetCoreAsync(byte preset, CancellationToken cancellationToken = default) =>
         _dialect == MxicDialect.ValkyrieT3 && preset > 3
             ? Task.FromException(new ArgumentOutOfRangeException(nameof(preset), "T3 exposes presets 0..3."))
@@ -295,6 +354,24 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
         if (_dialect == MxicDialect.ValkyrieT3 && bands.Any(value => value > 6 && value is not (>= 129 and <= 134)))
             throw new ArgumentOutOfRangeException(nameof(bands), "Valkyrie T3 bands must encode -6..6 dB.");
         var requested = bands.ToArray();
+
+        if (_dialect == MxicDialect.Joliet)
+        {
+            if (requested.Any(value => value > 6 && value is not (>= 129 and <= 134)))
+                throw new ArgumentOutOfRangeException(nameof(bands), "Joliet bands must encode -6..6 dB.");
+            var preset = ReadEqPreset(await QueryReportAsync(
+                CreateEqPresetRead(), EqPresetHeader, "read EQ preset", cancellationToken).ConfigureAwait(false));
+            // setEQSetting already carries the preset and the new curve. Reading
+            // the curve back here can return the previous values and make the
+            // restore path undo a write the device accepted.
+            await WriteReportAsync(
+                RazerMxicHeadsetProtocol.CreateSetEqBandsJoliet(preset, requested),
+                SetEqBandsHeader,
+                "EQ bands",
+                cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
         await WriteAsync(
             CreateEqBandsRead(),
             EqBandsHeader,
@@ -305,6 +382,26 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
             actual => actual.SequenceEqual(requested),
             "EQ bands",
             cancellationToken).ConfigureAwait(false);
+    }
+
+    public Task SetBassAsync(byte level, CancellationToken cancellationToken = default)
+    {
+        if (_dialect != MxicDialect.Joliet)
+        {
+            return Task.FromException(new NotSupportedException(
+                "This audio dialect does not expose a hardware bass level."));
+        }
+
+        return WriteAsync(
+            RazerMxicHeadsetProtocol.CreateGetBassJoliet(),
+            RazerMxicHeadsetProtocol.JolietBassHeader,
+            RazerMxicHeadsetProtocol.ReadBass,
+            level,
+            RazerMxicHeadsetProtocol.CreateSetBassJoliet,
+            [],
+            value => value == level,
+            "bass",
+            cancellationToken);
     }
 
     public Task SetMicMuteAsync(bool muted, CancellationToken cancellationToken = default) =>
@@ -424,7 +521,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
 
     private async Task EnsureRemoteModeAsync(CancellationToken cancellationToken)
     {
-        if (_remoteMode || _dialect is MxicDialect.Protocol40 or MxicDialect.ValkyrieT3)
+        if (_remoteMode || _dialect is MxicDialect.Protocol40 or MxicDialect.ValkyrieT3 or MxicDialect.Joliet)
         {
             return;
         }
