@@ -46,12 +46,12 @@ internal static class RazerHidKrakenV4Protocol
     /// <summary>The Kraken V4 ring carries nine LEDs.</summary>
     private const int LedCount = 9;
 
-    internal static IReadOnlyList<byte[]> CreateOff(bool isDongle = false) =>
+    internal static IReadOnlyList<byte[]> CreateOff(bool isDongle = false, int ledCount = LedCount) =>
     [
         // The firmware's Off effect starts a transition that swallows the next
         // static frame. Render black through Static so the next colour is a
         // normal static-to-static update.
-        CreateCustomFrame(new RazerHidColor(0, 0, 0), LedCount, isDongle: isDongle)[0],
+        CreateCustomFrame(new RazerHidColor(0, 0, 0), ledCount, isDongle: isDongle)[0],
         CreateEffect(EffectStatic, isDongle),
     ];
 
@@ -65,11 +65,12 @@ internal static class RazerHidKrakenV4Protocol
     internal static IReadOnlyList<byte[]> CreateStatic(
         RazerHidColor color,
         byte? intensity = null,
-        bool isDongle = false) =>
+        bool isDongle = false,
+        int ledCount = LedCount) =>
     [
         // The bundle writes the colour through the frame buffer, then switches the
         // ring to the static effect. Static mode reads the frame, not C0's payload.
-        CreateCustomFrame(color, LedCount, intensity, isDongle)[0],
+        CreateCustomFrame(color, ledCount, intensity, isDongle)[0],
         CreateEffect(EffectStatic, isDongle),
     ];
 
