@@ -546,7 +546,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
             ?? throw new InvalidDataException($"Product {productId} mapping root is invalid.");
         var graph = root["defaultMappings"]?["appEngine"] as JsonObject
             ?? throw new InvalidDataException($"Product {productId} default mapping graph is missing.");
-        BladeMappingInputRuntime.ApplyFunctionRowPrimary(graph, functionPrimary);
+        BladeFunctionRowMapping.ApplyPrimary(graph, functionPrimary);
         return BladeMappingInputRuntime.FromGraph(graph);
     }
 
