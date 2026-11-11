@@ -58,6 +58,7 @@ public sealed class LeviathanV2XAudioViewModel : INotifyPropertyChanged
     private bool _isBusy;
     private bool _hasState;
     private string _errorText = string.Empty;
+    private string _partialReadText = string.Empty;
     private string _operationStatusText = string.Empty;
     private int _selectedEqPresetIndex;
     private double _bassLevel = 1;
@@ -142,6 +143,18 @@ public sealed class LeviathanV2XAudioViewModel : INotifyPropertyChanged
     public bool CanEdit => !IsBusy && HasState;
     public string ErrorText { get => _errorText; private set => SetField(ref _errorText, value); }
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);
+    public string PartialReadText
+    {
+        get => _partialReadText;
+        private set
+        {
+            if (SetField(ref _partialReadText, value))
+            {
+                OnPropertyChanged(nameof(HasPartialRead));
+            }
+        }
+    }
+    public bool HasPartialRead => !string.IsNullOrWhiteSpace(PartialReadText);
     public string OperationStatusText
     {
         get => _operationStatusText;
@@ -160,11 +173,13 @@ public sealed class LeviathanV2XAudioViewModel : INotifyPropertyChanged
             var state = await _service.ReadStateAsync(cancellationToken);
             ApplyState(state);
             await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
-            ErrorText = state.Errors.Count == 0
-                ? string.Empty
-                : AppStrings.Text(HasState
-                    ? "LeviathanPartialRead"
-                    : "LeviathanReadFailed");
+            var hasErrors = state.Errors.Count > 0;
+            PartialReadText = hasErrors && HasState
+                ? AppStrings.Text("LeviathanPartialRead")
+                : string.Empty;
+            ErrorText = hasErrors && !HasState
+                ? AppStrings.Text("LeviathanReadFailed")
+                : string.Empty;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -172,6 +187,7 @@ public sealed class LeviathanV2XAudioViewModel : INotifyPropertyChanged
         catch (Exception exception) when (IsExpectedException(exception))
         {
             HasState = false;
+            PartialReadText = string.Empty;
             ErrorText = AppStrings.Text("LeviathanReadFailed");
         }
         finally
