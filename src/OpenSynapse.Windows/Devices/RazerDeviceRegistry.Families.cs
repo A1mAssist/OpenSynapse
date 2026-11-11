@@ -52,7 +52,11 @@ internal sealed partial class RazerDeviceRegistry
     private static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, CapabilityContract>> FamilyCapabilities =
         new Dictionary<string, IReadOnlyDictionary<string, CapabilityContract>>(StringComparer.Ordinal)
         {
-            ["blade-710"] = Blade710Capabilities,
+            // 02C6 has no persistentInHardware.functionKeyState; read the live profile.
+            ["blade-710"] = new Dictionary<string, CapabilityContract>(Blade710Capabilities, StringComparer.Ordinal)
+            {
+                [CapabilityIds.FnKeyGet] = new(0x02, 0x02, 0x86, "0000", AllowZeroTransactionId: true),
+            },
             // Later Blade middleware moved keyboard brightness from 0E:84/04 to the
             // 03:83/03 Chroma region command. All other reports remain 710-compatible.
             ["blade-710-chroma"] = new Dictionary<string, CapabilityContract>(Blade710Capabilities, StringComparer.Ordinal)
