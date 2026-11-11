@@ -25,6 +25,7 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
     private readonly Func<IReadOnlyList<MacroDefinition>>? _localMacros;
     private readonly Func<string, MacroInput, MacroTriggerMode, bool, CancellationToken, Task<string?>>?
         _softwareMacroBinder;
+    private readonly Func<string, CancellationToken, Task<string?>>? _softwareMacroClearer;
     private string _deviceName = "Razer Viper V3 HyperSpeed";
     private Visibility _deviceVisibility = Visibility.Collapsed;
     private string _statusText = AppStrings.Text("Text_DB0974DC");
@@ -71,7 +72,8 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
         Action<DeviceBatteryReading> notifyBatteryObserved,
         Func<IReadOnlyList<MacroDefinition>>? localMacros = null,
         Func<string, MacroInput, MacroTriggerMode, bool, CancellationToken, Task<string?>>?
-            softwareMacroBinder = null)
+            softwareMacroBinder = null,
+        Func<string, CancellationToken, Task<string?>>? softwareMacroClearer = null)
     {
         _deviceTelemetryReader = deviceTelemetryReader;
         _getProfile = getProfile;
@@ -84,6 +86,7 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
         _notifyBatteryObserved = notifyBatteryObserved;
         _localMacros = localMacros;
         _softwareMacroBinder = softwareMacroBinder;
+        _softwareMacroClearer = softwareMacroClearer;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -148,6 +151,7 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
                         }
                         : null,
             softwareTriggerBinder: _softwareMacroBinder,
+            softwareTriggerClearer: _softwareMacroClearer,
             afterApplyAsync: PersistMappingProfileAsync);
 
     public async Task ApplyLowBatteryThresholdAsync(CancellationToken cancellationToken = default)

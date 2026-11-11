@@ -2875,9 +2875,9 @@
   <data name="MacroListEmpty.Text" xml:space="preserve"><value>还没有宏，点击 + 新建。</value></data>
   <data name="MacroNoMacroSelected.Text" xml:space="preserve"><value>未选择宏</value></data>
   <data name="MacroEmptyEditorHint.Text" xml:space="preserve"><value>点击"录制"开始录制动作序列，或直接点击下方键盘添加单个动作。</value></data>
-  <data name="MacroKeyBindsTitle.Text" xml:space="preserve"><value>键位绑定</value></data>
+  <data name="MacroKeyBindsTitle.Text" xml:space="preserve"><value>触发键（宏优先）</value></data>
   <data name="MacroKeyBindsNoMacro.Text" xml:space="preserve"><value>选择一个宏以查看它的键位绑定。</value></data>
-  <data name="MacroTriggerUnsetHint.Text" xml:space="preserve"><value>还没有绑定触发键，点击 + 绑定。</value></data>
+  <data name="MacroTriggerUnsetHint.Text" xml:space="preserve"><value>还没有绑定触发键，点击 + 绑定。同一个键在按键页会显示为“宏：名称”；在按键页改动作会清除这里的触发键。</value></data>
   <data name="MacroProperties.Text" xml:space="preserve"><value>属性</value></data>
   <data name="MacroStepProperties.Text" xml:space="preserve"><value>动作属性</value></data>
   <data name="MacroRecordMenu.Text" xml:space="preserve"><value>录制</value></data>
@@ -3967,7 +3967,7 @@
   <data name="RazerMappingMacroUnsupported" xml:space="preserve"><value>这个宏不能写入板载：第 {0} 步：{1}。请返回宏编辑器修改。</value></data>
   <data name="RazerMappingMacroUnsupportedSoftware" xml:space="preserve"><value>这个宏不能写入板载：第 {0} 步：{1}。请改用软件宏，或返回宏编辑器修改。</value></data>
   <data name="RazerMappingMacroSlotOverwrite" xml:space="preserve"><value>槽位里已有其他宏，保存会覆盖。</value></data>
-  <data name="RazerMappingMacroSoftwareApplied" xml:space="preserve"><value>{0}（软件）</value></data>
+  <data name="RazerMappingMacroSoftwareApplied" xml:space="preserve"><value>宏：{0}</value></data>
   <data name="RazerMappingMacroAssignmentNotOff" xml:space="preserve"><value>这个按键已有软件宏，但设备原生功能没有关闭，可能重复触发。重新应用一次即可修复。</value></data>
   <data name="RazerMappingMacroCurrentOnce" xml:space="preserve"><value>{0} · 执行一次</value></data>
   <data name="RazerMappingMacroCurrentRepeat" xml:space="preserve"><value>{0} · 重复 {1} 次</value></data>

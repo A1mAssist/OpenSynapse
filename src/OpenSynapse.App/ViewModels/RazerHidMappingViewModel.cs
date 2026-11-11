@@ -74,7 +74,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         RazerMappingAssetService? assetService = null,
         bool canWriteOnboardMacros = false,
         Func<byte, MacroInput?>? softwareTriggerResolver = null,
-        Func<string, MacroInput, MacroTriggerMode, bool, CancellationToken, Task<string?>>? softwareTriggerBinder = null)
+        Func<string, MacroInput, MacroTriggerMode, bool, CancellationToken, Task<string?>>? softwareTriggerBinder = null,
+        Func<string, CancellationToken, Task<string?>>? softwareTriggerClearer = null)
     {
         _transport = transport;
         _catalog = actionCatalog ?? RazerHidMappingActionCatalog.Instance;
@@ -82,6 +83,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         _canWriteOnboardMacros = canWriteOnboardMacros;
         _softwareTriggerResolver = softwareTriggerResolver;
         _softwareTriggerBinder = softwareTriggerBinder;
+        _softwareTriggerClearer = softwareTriggerClearer;
         _macroServiceFactory = macroServiceFactory;
         _localMacroProvider = localMacros;
         _afterApplyAsync = afterApplyAsync;
@@ -371,9 +373,11 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                         out var triggerMode);
                     if (softwareMacroIndex >= 0)
                     {
+                        row.GroupIndex = (int)RazerHidMappingGroup.Macro;
                         row.MacroTargetIndex = (int)MacroExecutionTarget.Software;
                         row.OptionIndex = softwareMacroIndex;
                         row.SoftwareTriggerModeIndex = SoftwareTriggerModeIndex(triggerMode);
+                        row.SoftwareMacroId = _localMacros[softwareMacroIndex].Id;
                         row.CurrentActionText = AppStrings.FormatText(
                             "RazerMappingMacroSoftwareApplied",
                             _localMacros[softwareMacroIndex].Name);
@@ -424,6 +428,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         IsBusy = true;
         ErrorText = string.Empty;
         var applied = 0;
+        ClearedSoftwareTrigger[] clears = [];
         try
         {
             var invalidMacro = Rows.FirstOrDefault(row =>
@@ -503,6 +508,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 }
             }
 
+            clears = SoftwareTriggersToClear(pending, softwareRows);
+
             var offRows = softwareRows
                 .Where(row => _softwareTriggerResolver?.Invoke(row.ButtonId) is { } input &&
                     RazerSoftwareMacroAssignmentPolicy.NeedsOff(input))
@@ -515,6 +522,16 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                     row,
                     await _transport.GetAssignmentAsync(row.ButtonId, Mode, cancellationToken)
                         .ConfigureAwait(true)));
+            }
+
+            try
+            {
+                await ClearSoftwareTriggersAsync(clears, cancellationToken).ConfigureAwait(true);
+            }
+            catch
+            {
+                await RestoreSoftwareTriggersAsync(clears).ConfigureAwait(true);
+                throw;
             }
 
             foreach (var row in onboardRows)
@@ -541,7 +558,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 }
                 catch
                 {
-                    await RestoreAssignmentsAsync(backups).ConfigureAwait(true);
+                    await RestoreAsync(clears, backups).ConfigureAwait(true);
                     throw;
                 }
 
@@ -558,7 +575,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 }
                 catch
                 {
-                    await RestoreAssignmentsAsync(backups).ConfigureAwait(true);
+                    await RestoreAsync(clears, backups).ConfigureAwait(true);
                     throw;
                 }
             }
@@ -578,13 +595,13 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 }
                 catch
                 {
-                    await RestoreAssignmentsAsync(backups).ConfigureAwait(true);
+                    await RestoreAsync(clears, backups).ConfigureAwait(true);
                     throw;
                 }
 
                 if (error is not null)
                 {
-                    await RestoreAssignmentsAsync(backups).ConfigureAwait(true);
+                    await RestoreAsync(clears, backups).ConfigureAwait(true);
                     throw new InvalidOperationException(error);
                 }
 
@@ -596,6 +613,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 row.CurrentActionText = AppStrings.FormatText(
                     "RazerMappingMacroSoftwareApplied",
                     _localMacros[row.OptionIndex].Name);
+                row.SoftwareMacroId = _localMacros[row.OptionIndex].Id;
             }
 
             foreach (var row in assignmentRows)
@@ -603,6 +621,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 var action = row.CreateAction();
                 if (action is null) continue;
                 row.CurrentActionText = DescribeAssignment(action.FunctionId, action.Data);
+                row.SoftwareMacroId = null;
             }
 
             if (assignmentRows.Length > 0 && _mappingProfileSaver is not null)
@@ -613,7 +632,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 }
                 catch
                 {
-                    await RestoreAssignmentsAsync(backups).ConfigureAwait(true);
+                    await RestoreAsync(clears, backups).ConfigureAwait(true);
                     throw;
                 }
             }
@@ -629,6 +648,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         }
         catch (OnboardMacroVerificationException exception)
         {
+            await RestoreSoftwareTriggersAsync(clears).ConfigureAwait(true);
             DisableOnboardForSession();
             ErrorText = exception.Message;
             _log?.Invoke($"mapping apply disabled onboard writes: {exception}");
@@ -654,62 +674,6 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         }
 
         OnPropertyChanged(nameof(CanApply));
-    }
-
-    private void StartVisualLoad()
-    {
-        if (_visualLoadStarted || _productId == 0)
-        {
-            return;
-        }
-
-        _visualLoadStarted = true;
-        _ = LoadVisualAsync();
-    }
-
-    private async Task LoadVisualAsync()
-    {
-        try
-        {
-            var visual = await _assetService.GetAsync(_productId, _deviceKind).ConfigureAwait(true);
-            if (visual.Mouse is { } mouse)
-            {
-                var image = await RazerMappingImageLoader.LoadAsync(mouse.ImageUri).ConfigureAwait(true);
-                if (image is null)
-                {
-                    _log?.Invoke($"mapping image decode failed: {mouse.ImageUri}");
-                }
-                else
-                {
-                    _layout = mouse;
-                    LayoutImage = image;
-                    OnPropertyChanged(nameof(Layout));
-                    OnPropertyChanged(nameof(StageVisibility));
-                    OnPropertyChanged(nameof(TableVisibility));
-                    RazerHidMappingRowViewModel.ApplyButtonNames(Rows, mouse.ButtonNames);
-                    PopulateStageRows();
-                }
-            }
-
-            if (visual.Keyboard is { } keyboard)
-            {
-                _keyboardLayout = keyboard;
-                OnPropertyChanged(nameof(KeyboardLayout));
-                OnPropertyChanged(nameof(KeyboardStageVisibility));
-                OnPropertyChanged(nameof(KeyboardWidth));
-                OnPropertyChanged(nameof(KeyboardHeight));
-                OnPropertyChanged(nameof(TableVisibility));
-            }
-
-            if (!string.IsNullOrWhiteSpace(visual.Error))
-            {
-                _log?.Invoke($"mapping visual unavailable: {visual.Error}");
-            }
-        }
-        catch (Exception exception) when (IsExpected(exception) || exception is ArgumentException)
-        {
-            _log?.Invoke($"mapping visual failed: {exception.Message}");
-        }
     }
 
     internal void SetLoadError(string message)
@@ -918,37 +882,6 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             _ => AppStrings.FormatText("RazerMappingMacroCurrentSequence", name),
         };
     }
-
-    private int FindSoftwareMacro(MacroInput input, bool hyperShiftLayer, out MacroTriggerMode mode)
-    {
-        for (var index = 0; index < _localMacros.Count; index++)
-        {
-            var trigger = _localMacros[index].Trigger;
-            if (trigger is null ||
-                !string.IsNullOrEmpty(trigger.DeviceId) ||
-                trigger.Modifiers != MacroModifierKeys.None ||
-                trigger.HyperShiftLayer != hyperShiftLayer ||
-                !trigger.Input.Matches(input))
-            {
-                continue;
-            }
-
-            mode = trigger.Mode;
-            return index;
-        }
-
-        mode = MacroTriggerMode.Press;
-        return -1;
-    }
-
-    private static int SoftwareTriggerModeIndex(MacroTriggerMode mode) => mode switch
-    {
-        MacroTriggerMode.Toggle => 1,
-        MacroTriggerMode.Hold => 2,
-        MacroTriggerMode.Sequence => 3,
-        MacroTriggerMode.HoldRepeat => 4,
-        _ => 0,
-    };
 
     private bool UpdateMacroValidation(RazerHidMappingRowViewModel row)
     {

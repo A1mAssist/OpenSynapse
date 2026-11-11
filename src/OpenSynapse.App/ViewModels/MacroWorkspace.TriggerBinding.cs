@@ -58,4 +58,40 @@ public sealed partial class MacroWorkspace
             MacroRowViewModel.DescribeTrigger(trigger));
         return null;
     }
+
+    /// <summary>
+    /// Removes one macro's trigger by id without changing the editor selection.
+    /// Returns null on success, or the user-facing error when the profile was not changed.
+    /// </summary>
+    public async Task<string?> TryClearMacroTriggerAsync(
+        string macroId,
+        CancellationToken cancellationToken = default)
+    {
+        var row = Items.FirstOrDefault(item =>
+            StringComparer.Ordinal.Equals(item.Id, macroId));
+        if (row?.Definition.Trigger is not { } trigger)
+        {
+            return null;
+        }
+
+        if (IsMacroRecording || IsMacroCountdown)
+        {
+            return AppStrings.Text("MacroEditBusy");
+        }
+
+        var wasDirty = _dirtyMacroIds.Contains(row.Id);
+        var previous = trigger.Clone();
+        row.SetTrigger(null);
+        MarkMacroDirty(row);
+        if (!await TrySaveMacroProfileAsync(cancellationToken).ConfigureAwait(true))
+        {
+            row.SetTrigger(previous);
+            RestoreMacroDirtyState(row.Id, wasDirty);
+            return AppStrings.Text("MacroSaveFailed");
+        }
+
+        RefreshMacroRuntime();
+        NotifySelectedMacroChanged();
+        return null;
+    }
 }

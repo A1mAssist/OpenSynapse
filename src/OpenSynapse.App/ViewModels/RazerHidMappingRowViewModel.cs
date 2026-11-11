@@ -379,6 +379,9 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
 
     public byte? AssignedMacroSlot { get; private set; }
 
+    /// <summary>The software macro this row showed on the last read.</summary>
+    internal string? SoftwareMacroId { get; set; }
+
     public byte SelectedMacroSlotId => MacroSlots.Count == 0
         ? (byte)0
         : MacroSlots[Math.Clamp(_selectedMacroSlotIndex, 0, MacroSlots.Count - 1)].Id;
