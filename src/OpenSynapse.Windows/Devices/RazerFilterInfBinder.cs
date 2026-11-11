@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using Microsoft.Win32;
 
 namespace OpenSynapse.Windows.Devices;
 
@@ -131,25 +132,35 @@ internal static class RazerFilterInfBinder
 
         try
         {
-            var startInfo = new ProcessStartInfo
+            var exitCodes = new List<string>(infs.Count);
+            var succeeded = true;
+            foreach (var inf in infs)
             {
-                FileName = Path.Combine(Environment.SystemDirectory, "cmd.exe"),
-                Arguments = CommandLine(infs),
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Hidden,
-            };
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = Path.Combine(Environment.SystemDirectory, "pnputil.exe"),
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                };
+                startInfo.ArgumentList.Add("/add-driver");
+                startInfo.ArgumentList.Add(inf);
+                startInfo.ArgumentList.Add("/install");
 
-            using var process = Process.Start(startInfo);
-            if (process is null)
-            {
-                return new(RazerFilterBindStatus.Failed, "The driver binder did not start.");
+                using var process = Process.Start(startInfo);
+                if (process is null)
+                {
+                    return new(RazerFilterBindStatus.Failed, "The driver binder did not start.");
+                }
+
+                await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+                exitCodes.Add($"{Path.GetFileName(inf)} returned {process.ExitCode}");
+                succeeded &= RazerDriverInstaller.IsSuccessfulExitCode(process.ExitCode);
             }
 
-            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
-            return process.ExitCode is 0 or 3010 or 1641
+            return succeeded
                 ? new(RazerFilterBindStatus.Applied, null)
-                : new(RazerFilterBindStatus.Failed, string.Concat("pnputil returned ", process.ExitCode, "."));
+                : new(RazerFilterBindStatus.Failed, string.Join("; ", exitCodes));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -167,13 +178,142 @@ internal static class RazerFilterInfBinder
             ? RazerDriverPackageCatalog.GetCandidateProductIds(productId, package)
             : [productId];
 
+    private const string HidEnumPath = @"SYSTEM\CurrentControlSet\Enum\HID";
+
+    /// <summary>
+    /// True when a present device instance of the product really carries the
+    /// per-device RzDev filter in UpperFilters. A staged INF in the DriverStore
+    /// is not enough: the filter only runs once it is attached to the device stack.
+    /// </summary>
+    internal static bool IsAttached(
+        IReadOnlyList<ushort> productIds,
+        RegistryKey? enumRoot = null)
+    {
+        ArgumentNullException.ThrowIfNull(productIds);
+        var ownsRoot = enumRoot is null;
+        var root = enumRoot ?? Registry.LocalMachine.OpenSubKey(HidEnumPath);
+        if (root is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            foreach (var productId in productIds)
+            {
+                var filter = $"RzDev_{productId:X4}";
+                foreach (var (deviceName, instanceName) in InstanceNames(root, productId))
+                {
+                    using var instance = root.OpenSubKey($@"{deviceName}\{instanceName}");
+                    if (instance is null)
+                    {
+                        continue;
+                    }
+
+                    if (ContainsFilter(instance.GetValue("UpperFilters"), filter))
+                    {
+                        return true;
+                    }
+
+                    using var parameters = instance.OpenSubKey("Device Parameters");
+                    if (ContainsFilter(parameters?.GetValue("UpperFilters"), filter))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+        finally
+        {
+            if (ownsRoot)
+            {
+                root.Dispose();
+            }
+        }
+    }
+
+    internal static IReadOnlyList<string> FindInstances(
+        IReadOnlyList<ushort> productIds,
+        RegistryKey? enumRoot = null)
+    {
+        ArgumentNullException.ThrowIfNull(productIds);
+        var ownsRoot = enumRoot is null;
+        var root = enumRoot ?? Registry.LocalMachine.OpenSubKey(HidEnumPath);
+        if (root is null)
+        {
+            return [];
+        }
+
+        try
+        {
+            var instances = new List<string>();
+            foreach (var productId in productIds)
+            {
+                foreach (var (deviceName, instanceName) in InstanceNames(root, productId))
+                {
+                    instances.Add($@"HID\{deviceName}\{instanceName}");
+                }
+            }
+
+            return instances;
+        }
+        finally
+        {
+            if (ownsRoot)
+            {
+                root.Dispose();
+            }
+        }
+    }
+
+    private static IEnumerable<(string DeviceName, string InstanceName)> InstanceNames(
+        RegistryKey root,
+        ushort productId)
+    {
+        var marker = $"VID_1532&PID_{productId:X4}&MI_";
+        foreach (var deviceName in root.GetSubKeyNames())
+        {
+            if (!deviceName.Contains(marker, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            string[] instances;
+            using (var device = root.OpenSubKey(deviceName))
+            {
+                if (device is null)
+                {
+                    continue;
+                }
+
+                instances = device.GetSubKeyNames();
+            }
+
+            foreach (var instanceName in instances)
+            {
+                yield return (deviceName, instanceName);
+            }
+        }
+    }
+
+    private static bool ContainsFilter(object? value, string filter) =>
+        value switch
+        {
+            string[] names => names.Any(name =>
+                name.Contains(filter, StringComparison.OrdinalIgnoreCase)),
+            string name => name.Contains(filter, StringComparison.OrdinalIgnoreCase),
+            _ => false,
+        };
+
     private static string CommandLine(IReadOnlyList<string> infs)
     {
         const char quote = '"';
         // Every argument is a drive path from the Windows INF directory, so no
         // caller-controlled text reaches the command line.
         var command = string.Join(
-            " & ",
+            " && ",
             infs.Select(inf => string.Concat(
                 "pnputil /add-driver ", quote, inf, quote, " /install")));
         return string.Concat("/s /c ", quote, command, quote);

@@ -113,10 +113,15 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                 var row = new RazerDriverRowViewModel(name ?? package.Name, productId, package, candidates);
                 if (_installedProductIds.Overlaps(candidates) || IsPackageInstalled(candidates))
                 {
-                    // The package is staged but the endpoint has not appeared yet:
-                    // report that state instead of claiming the driver is missing.
+                    // The package is installed but the endpoint is still missing. Start
+                    // the per-device service once, then report whether the filter is
+                    // actually attached or only staged.
                     row.IsInstalled = true;
-                    row.StatusText = AppStrings.Text("RazerDriverInstalledRestart");
+                    await EnsureDriverServicesStartedAsync(candidates, cancellationToken)
+                        .ConfigureAwait(true);
+                    row.StatusText = RazerFilterInfBinder.IsAttached(candidates)
+                        ? AppStrings.Text("RazerDriverEndpointPending")
+                        : AppStrings.Text("RazerDriverFilterMissing");
                 }
                 rows.Add(row);
             }
@@ -163,8 +168,6 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
 
         IsBusy = true;
         var installed = 0;
-        var failed = 0;
-        var bindFailed = 0;
         try
         {
             var commonProgress = new Progress<RazerDriverInstallProgress>(update =>
@@ -270,39 +273,51 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                                 .ConfigureAwait(true);
                             if (bind.Status == RazerFilterBindStatus.NoStagedInf)
                             {
-                                bindFailed++;
                                 row.StatusText = AppStrings.Text("RazerDriverNoStagedInf");
+                                _diagnosticLog.TryWrite(
+                                    "razer-driver",
+                                    $"Razer filter bind {row.ProductId}: no staged INF");
                                 continue;
                             }
 
                             if (bind.Status == RazerFilterBindStatus.Failed)
                             {
-                                bindFailed++;
+                                // Another staged INF may still have attached; the
+                                // attachment check below decides what to tell the user.
                                 _diagnosticLog.TryWrite(
                                     "razer-driver",
                                     $"Razer filter bind {row.ProductId}: {bind.Error ?? "unknown"}");
-                                row.StatusText = AppStrings.FormatText(
-                                    "RazerDriverBindFailed",
-                                    bind.Error ?? string.Empty);
-                                continue;
                             }
 
                             await EnsureDriverServicesStartedAsync(
                                 row.CandidateProductIds, cancellationToken).ConfigureAwait(true);
+                            var attached = RazerFilterInfBinder.IsAttached(row.CandidateProductIds);
+                            _diagnosticLog.TryWrite(
+                                "razer-driver",
+                                $"Razer filter {row.ProductId} attached={attached}; " +
+                                $"instances: {string.Join(", ", RazerFilterInfBinder.FindInstances(row.CandidateProductIds))}");
+                            if (!attached)
+                            {
+                                row.StatusText = AppStrings.Text("RazerDriverFilterMissing");
+                                continue;
+                            }
+
                             row.EndpointVerified = await WaitForEndpointAsync(
-                                row.CandidateProductIds, cancellationToken).ConfigureAwait(true);
+                                row.CandidateProductIds, cancellationToken, attempts: 10)
+                                .ConfigureAwait(true);
+                            if (!row.EndpointVerified)
+                            {
+                                row.StatusText = AppStrings.Text("RazerDriverEndpointPending");
+                                continue;
+                            }
                         }
-                        if (row.EndpointVerified)
-                        {
-                            _missing.Remove(row);
-                            continue;
-                        }
-                        row.StatusText = AppStrings.Text("RazerDriverInstalledRestart");
+
+                        row.StatusText = AppStrings.Text("RazerDriverInstalledOnline");
+                        _missing.Remove(row);
                     }
                 }
                 else
                 {
-                    failed++;
                     var message = DescribeFailure(result);
                     foreach (var row in rowsForPackage)
                     {
@@ -311,9 +326,9 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                 }
             }
 
-            StatusText = failed == 0 && bindFailed == 0
+            StatusText = _missing.Count == 0
                 ? AppStrings.FormatText("RazerDriverInstallSummary", installed)
-                : AppStrings.FormatText("RazerDriverInstallSummaryPartial", installed, failed + bindFailed);
+                : AppStrings.FormatText("RazerDriverInstallSummaryPartial", installed, _missing.Count);
             OnPropertyChanged(nameof(HasMissing));
             OnPropertyChanged(nameof(CanInstall));
             _diagnosticLog.TryWrite("razer-driver", StatusText);
@@ -409,21 +424,20 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
 
     private static async Task<bool> WaitForEndpointAsync(
         IReadOnlyList<ushort> candidates,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int attempts = 6)
     {
-        for (var attempt = 0; attempt < 6; attempt++)
+        for (var attempt = 0; attempt < attempts; attempt++)
         {
-            foreach (var productId in candidates)
+            var endpoints = await RazerFilterEndpointDiscovery
+                .DiscoverAllAsync(cancellationToken).ConfigureAwait(false);
+            if (endpoints.Any(path => candidates.Any(productId =>
+                    RazerFilterEndpointDiscovery.MatchesProduct(path, productId))))
             {
-                var endpoint = await RazerFilterEndpointDiscovery.DiscoverAsync(
-                    productId, cancellationToken).ConfigureAwait(false);
-                if (!string.IsNullOrWhiteSpace(endpoint))
-                {
-                    return true;
-                }
+                return true;
             }
 
-            if (attempt < 5)
+            if (attempt < attempts - 1)
             {
                 await Task.Delay(500, cancellationToken).ConfigureAwait(false);
             }

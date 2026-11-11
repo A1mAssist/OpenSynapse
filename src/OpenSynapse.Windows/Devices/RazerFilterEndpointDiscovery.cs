@@ -17,6 +17,9 @@ public static class RazerFilterEndpointDiscovery
     internal static string BuildPathFragment(ushort productId) =>
         $"RZCONTROL#VID_1532&PID_{productId:X4}&MI_00#";
 
+    internal static bool MatchesProduct(string path, ushort productId) =>
+        path.Contains(BuildPathFragment(productId), StringComparison.OrdinalIgnoreCase);
+
     public static ValueTask<string?> DiscoverProduct710Async(
         ushort productId = Product710ProductId,
         CancellationToken cancellationToken = default) =>
