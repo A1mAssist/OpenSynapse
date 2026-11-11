@@ -27,10 +27,9 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
     private static readonly TimeSpan ResponseTimeout = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan ControlReportTimeout = TimeSpan.FromMilliseconds(250);
     private static readonly TimeSpan ControlReportRetryDelay = TimeSpan.FromMilliseconds(10);
-    private readonly FileStream _stream;
+    private readonly SafeFileHandle _handle;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly Channel<byte[]> _reports = Channel.CreateUnbounded<byte[]>();
-    private readonly CancellationTokenSource _readCancellation = new();
     private readonly Task _readLoop;
     private readonly int _inputReportLength;
     private readonly string _devicePath;
@@ -56,7 +55,7 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
             NativeMethods.FileShareRead | NativeMethods.FileShareWrite,
             IntPtr.Zero,
             NativeMethods.OpenExisting,
-            NativeMethods.FileFlagOverlapped,
+            0,
             IntPtr.Zero);
         if (handle.IsInvalid)
         {
@@ -65,8 +64,12 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
                 "Could not open the MXIC headset HID control channel.");
         }
 
-        _stream = new FileStream(handle, FileAccess.ReadWrite, _inputReportLength, isAsync: true);
-        _readLoop = Task.Run(ReadLoopAsync);
+        _handle = handle;
+        _readLoop = Task.Factory.StartNew(
+            ReadLoop,
+            CancellationToken.None,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default);
     }
 
     public async Task SendAsync(byte[] report, CancellationToken cancellationToken)
@@ -205,7 +208,7 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
             await Task.Run(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (!NativeMethods.HidD_SetOutputReport(_stream.SafeFileHandle, report, report.Length))
+                if (!NativeMethods.HidD_SetOutputReport(_handle, report, report.Length))
                 {
                     throw new Win32Exception(
                         Marshal.GetLastWin32Error(),
@@ -236,7 +239,7 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
             {
                 if (await Task.Run(
                         () => NativeMethods.HidD_GetInputReport(
-                            _stream.SafeFileHandle,
+                            _handle,
                             candidate,
                             candidate.Length),
                         timeout.Token).ConfigureAwait(false) &&
@@ -276,7 +279,7 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
         candidate[0] = reportId;
         if (!await Task.Run(
                 () => NativeMethods.HidD_GetInputReport(
-                    _stream.SafeFileHandle,
+                    _handle,
                     candidate,
                     candidate.Length),
                 cancellationToken).ConfigureAwait(false))
@@ -307,27 +310,45 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
             out value);
     }
 
-    private async Task ReadLoopAsync()
+    private void ReadLoop()
     {
         var buffer = new byte[_inputReportLength];
         try
         {
             while (!_disposed)
             {
-                var read = await _stream.ReadAsync(buffer, _readCancellation.Token).ConfigureAwait(false);
-                if (read <= 0)
+                if (!NativeMethods.ReadFile(
+                        _handle,
+                        buffer,
+                        (uint)buffer.Length,
+                        out var read,
+                        IntPtr.Zero))
+                {
+                    if (_disposed)
+                    {
+                        break;
+                    }
+
+                    throw new Win32Exception(
+                        Marshal.GetLastWin32Error(),
+                        "MXIC headset input report read failed.");
+                }
+                if (read == 0)
                 {
                     break;
                 }
 
-                // The next ReadAsync overwrites this buffer, so hand the consumer a copy.
-                _reports.Writer.TryWrite(buffer[..read].ToArray());
+                // The next ReadFile overwrites this buffer, so hand the consumer a copy.
+                _reports.Writer.TryWrite(buffer[..(int)read].ToArray());
             }
         }
         catch (Exception) when (_disposed)
         {
         }
         catch (ObjectDisposedException)
+        {
+        }
+        catch (Win32Exception)
         {
         }
         finally
@@ -345,11 +366,10 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
 
         _disposed = true;
         _reports.Writer.TryComplete();
-        await _readCancellation.CancelAsync().ConfigureAwait(false);
 
         var teardown = Task.Run(async () =>
         {
-            await _stream.DisposeAsync().ConfigureAwait(false);
+            _handle.Dispose();
             await _readLoop.ConfigureAwait(false);
         });
         try
@@ -368,7 +388,6 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
         internal const uint FileShareRead = 0x00000001;
         internal const uint FileShareWrite = 0x00000002;
         internal const uint OpenExisting = 3;
-        internal const uint FileFlagOverlapped = 0x40000000;
 
         [DllImport("kernel32.dll", EntryPoint = "CreateFileW", SetLastError = true, CharSet = CharSet.Unicode)]
         internal static extern SafeFileHandle CreateFile(
@@ -393,5 +412,14 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
             SafeFileHandle handle,
             byte[] reportBuffer,
             int reportBufferLength);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool ReadFile(
+            SafeFileHandle handle,
+            byte[] buffer,
+            uint bytesToRead,
+            out uint bytesRead,
+            IntPtr overlapped);
     }
 }

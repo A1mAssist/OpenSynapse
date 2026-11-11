@@ -13,10 +13,9 @@ namespace OpenSynapse.Windows.Devices;
 internal sealed class BlackSharkHeadsetTransport : IAsyncDisposable
 {
     private static readonly TimeSpan ResponseTimeout = TimeSpan.FromSeconds(1);
-    private readonly FileStream _stream;
+    private readonly SafeFileHandle _handle;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly Channel<byte[]> _reports = Channel.CreateUnbounded<byte[]>();
-    private readonly CancellationTokenSource _readCancellation = new();
     private readonly Task _readLoop;
     private readonly int _inputReportLength;
     private readonly string _devicePath;
@@ -34,15 +33,19 @@ internal sealed class BlackSharkHeadsetTransport : IAsyncDisposable
             NativeMethods.FileShareRead | NativeMethods.FileShareWrite,
             IntPtr.Zero,
             NativeMethods.OpenExisting,
-            NativeMethods.FileFlagOverlapped,
+            0,
             IntPtr.Zero);
         if (handle.IsInvalid)
         {
             throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not open the BlackShark HID control channel.");
         }
 
-        _stream = new FileStream(handle, FileAccess.ReadWrite, _inputReportLength, isAsync: true);
-        _readLoop = Task.Run(ReadLoopAsync);
+        _handle = handle;
+        _readLoop = Task.Factory.StartNew(
+            ReadLoop,
+            CancellationToken.None,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default);
     }
 
     internal async Task<BlackSharkV3ProResponse?> SendAsync(
@@ -99,27 +102,45 @@ internal sealed class BlackSharkHeadsetTransport : IAsyncDisposable
         }
     }
 
-    private async Task ReadLoopAsync()
+    private void ReadLoop()
     {
         var buffer = new byte[_inputReportLength];
         try
         {
             while (!_disposed)
             {
-                var read = await _stream.ReadAsync(buffer, _readCancellation.Token).ConfigureAwait(false);
-                if (read <= 0)
+                if (!NativeMethods.ReadFile(
+                        _handle,
+                        buffer,
+                        (uint)buffer.Length,
+                        out var read,
+                        IntPtr.Zero))
+                {
+                    if (_disposed)
+                    {
+                        break;
+                    }
+
+                    throw new Win32Exception(
+                        Marshal.GetLastWin32Error(),
+                        "BlackShark headset input report read failed.");
+                }
+                if (read == 0)
                 {
                     break;
                 }
 
-                // The next ReadAsync overwrites this buffer, so hand the consumer a copy.
-                _reports.Writer.TryWrite(buffer[..read].ToArray());
+                // The next ReadFile overwrites this buffer, so hand the consumer a copy.
+                _reports.Writer.TryWrite(buffer[..(int)read].ToArray());
             }
         }
         catch (Exception) when (_disposed)
         {
         }
         catch (ObjectDisposedException)
+        {
+        }
+        catch (Win32Exception)
         {
         }
         finally
@@ -137,13 +158,12 @@ internal sealed class BlackSharkHeadsetTransport : IAsyncDisposable
 
         _disposed = true;
         _reports.Writer.TryComplete();
-        await _readCancellation.CancelAsync().ConfigureAwait(false);
 
         // A HID read and the matching handle close can both outlive every driver-side timeout, so
         // cap the whole teardown instead of making the caller stall until the device speaks.
         var teardown = Task.Run(async () =>
         {
-            await _stream.DisposeAsync().ConfigureAwait(false);
+            _handle.Dispose();
             await _readLoop.ConfigureAwait(false);
         });
         try
@@ -165,7 +185,6 @@ internal sealed class BlackSharkHeadsetTransport : IAsyncDisposable
         internal const uint FileShareRead = 0x00000001;
         internal const uint FileShareWrite = 0x00000002;
         internal const uint OpenExisting = 3;
-        internal const uint FileFlagOverlapped = 0x40000000;
 
         [DllImport("kernel32.dll", EntryPoint = "CreateFileW", SetLastError = true, CharSet = CharSet.Unicode)]
         internal static extern SafeFileHandle CreateFile(
@@ -176,6 +195,15 @@ internal sealed class BlackSharkHeadsetTransport : IAsyncDisposable
             uint creationDisposition,
             uint flagsAndAttributes,
             IntPtr templateFile);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool ReadFile(
+            SafeFileHandle handle,
+            byte[] buffer,
+            uint bytesToRead,
+            out uint bytesRead,
+            IntPtr overlapped);
 
     }
 }
