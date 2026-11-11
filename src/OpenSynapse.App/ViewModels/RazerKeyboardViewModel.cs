@@ -108,6 +108,8 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
         OpenSynapse.Core.Macros.MacroTriggerMode, bool, CancellationToken, Task<string?>>?
         SoftwareMacroBinder { get; set; }
 
+    public Func<string, CancellationToken, Task<string?>>? SoftwareMacroClearer { get; set; }
+
     public RazerKeyboardViewModel(
         RazerKeyboardConnection connection,
         Action<string>? diagnostic = null,
@@ -268,7 +270,8 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
                 RazerOnboardMacroDevices.Keyboards.Contains(_connection.ProductId),
             softwareTriggerResolver: buttonId =>
                 RazerKeyboardMacroTriggerResolver.Resolve(buttonId, _connection.ProductId),
-            softwareTriggerBinder: SoftwareMacroBinder);
+            softwareTriggerBinder: SoftwareMacroBinder,
+            softwareTriggerClearer: SoftwareMacroClearer);
 
     private RazerKeyboardService MappingService => _mappingService ??= OpenService();
 

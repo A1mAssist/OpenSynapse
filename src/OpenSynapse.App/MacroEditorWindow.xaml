@@ -117,7 +117,7 @@
         <Border Grid.Row="2" Style="{StaticResource CardStyle}" Padding="0" Margin="0,10,0,0">
           <StackPanel>
             <Grid Padding="12,10" ColumnDefinitions="*,Auto" ColumnSpacing="4">
-              <TextBlock local:Localized.Uid="MacroKeyBindsTitle" Text="键位绑定" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+              <TextBlock local:Localized.Uid="MacroKeyBindsTitle" Text="触发键（宏优先）" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
               <Button Grid.Column="1" x:Name="MacroTriggerCaptureButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" IsEnabled="{Binding Macros.CanEditMacro}">
                 <FontIcon Glyph="&#xE710;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
                 <Button.Flyout>
@@ -140,7 +140,7 @@
                   <TextBlock Text="{Binding Macros.SelectedMacro.TriggerText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" />
                 </StackPanel>
                 <TextBlock local:Localized.Uid="MacroKeyBindsNoMacro" Text="选择一个宏以查看它的键位绑定。" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Visibility="{Binding Macros.MacroNoSelectionVisibility}" />
-                <TextBlock local:Localized.Uid="MacroTriggerUnsetHint" Text="还没有绑定触发键，点击 + 绑定。" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Visibility="{Binding Macros.MacroTriggerUnsetVisibility}" />
+                <TextBlock local:Localized.Uid="MacroTriggerUnsetHint" Text="还没有绑定触发键，点击 + 绑定。同一个键在按键页会显示为“宏：名称”；在按键页改动作会清除这里的触发键。" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Visibility="{Binding Macros.MacroTriggerUnsetVisibility}" />
               </StackPanel>
               <ComboBox Grid.Column="1" local:Localized.Uid="MacroTriggerMode" Header="触发方式" MinWidth="108" FontSize="13" MinHeight="40" MaxDropDownHeight="240" SelectedIndex="{Binding Macros.SelectedMacro.TriggerModeIndex, Mode=TwoWay}" Visibility="{Binding Macros.MacroTriggerBoundVisibility}" IsEnabled="{Binding Macros.CanEditMacro}">
                 <ComboBoxItem local:Localized.Uid="MacroTriggerModePress" Content="按下" />

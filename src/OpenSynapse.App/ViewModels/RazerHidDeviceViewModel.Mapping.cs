@@ -15,6 +15,8 @@ public sealed partial class RazerHidDeviceViewModel
     public Func<string, MacroInput, MacroTriggerMode, bool, CancellationToken, Task<string?>>?
         SoftwareMacroBinder { get; set; }
 
+    public Func<string, CancellationToken, Task<string?>>? SoftwareMacroClearer { get; set; }
+
     public Func<byte, MacroInput?>? SoftwareMacroTriggerResolver { get; set; }
 
     private bool IsNagaMouse =>
@@ -39,7 +41,8 @@ public sealed partial class RazerHidDeviceViewModel
                 Has(RazerHidBackendCapability.MacroStorageNameWrite),
             softwareTriggerResolver:
                 SoftwareMacroTriggerResolver ?? ResolveDefaultSoftwareMacroTrigger,
-            softwareTriggerBinder: SoftwareMacroBinder);
+            softwareTriggerBinder: SoftwareMacroBinder,
+            softwareTriggerClearer: SoftwareMacroClearer);
 
     private MacroInput? ResolveDefaultSoftwareMacroTrigger(byte buttonId)
     {

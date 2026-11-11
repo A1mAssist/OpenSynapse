@@ -104,7 +104,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             RunDeviceOperationAsync,
             reading => Telemetry.NotifyBatteryObserved(reading),
             () => Macros.Items.Select(macro => macro.Definition).ToArray(),
-            Macros.TryBindMacroTriggerAsync);
+            Macros.TryBindMacroTriggerAsync,
+            Macros.TryClearMacroTriggerAsync);
         Blade = new BladeWorkspace(
             deviceTelemetryReader,
             bladeLightingController,
@@ -210,6 +211,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             () => Lighting.IsChromaIntegrationEnabled,
             () => Macros.Items.Select(macro => macro.Definition).ToArray(),
             Macros.TryBindMacroTriggerAsync,
+            Macros.TryClearMacroTriggerAsync,
             () => _machineSettings,
             SaveMachineSettingsAsync,
             ct => Refresh!.RefreshDevicesAsync(ct),

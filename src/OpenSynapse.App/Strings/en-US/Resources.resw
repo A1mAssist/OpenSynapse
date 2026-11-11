@@ -2445,9 +2445,9 @@
   <data name="MacroListEmpty.Text" xml:space="preserve"><value>No macros yet. Use + to add one.</value></data>
   <data name="MacroNoMacroSelected.Text" xml:space="preserve"><value>No macro selected</value></data>
   <data name="MacroEmptyEditorHint.Text" xml:space="preserve"><value>Use Record to capture an action sequence, or click the keyboard below to add single actions.</value></data>
-  <data name="MacroKeyBindsTitle.Text" xml:space="preserve"><value>Key binds</value></data>
+  <data name="MacroKeyBindsTitle.Text" xml:space="preserve"><value>Trigger (macro first)</value></data>
   <data name="MacroKeyBindsNoMacro.Text" xml:space="preserve"><value>Select a macro to view its key binds.</value></data>
-  <data name="MacroTriggerUnsetHint.Text" xml:space="preserve"><value>No trigger yet. Use + to bind one.</value></data>
+  <data name="MacroTriggerUnsetHint.Text" xml:space="preserve"><value>No trigger yet. Use + to bind one. The key page shows the same key as "Macro: name"; changing that action clears this trigger.</value></data>
   <data name="MacroProperties.Text" xml:space="preserve"><value>Properties</value></data>
   <data name="MacroStepProperties.Text" xml:space="preserve"><value>Action</value></data>
   <data name="MacroRecordMenu.Text" xml:space="preserve"><value>Record</value></data>
@@ -3537,7 +3537,7 @@
   <data name="RazerMappingMacroUnsupported" xml:space="preserve"><value>This macro cannot be stored onboard: step {0}: {1}. Edit the macro and try again.</value></data>
   <data name="RazerMappingMacroUnsupportedSoftware" xml:space="preserve"><value>This macro cannot be stored onboard: step {0}: {1}. Use a software macro or edit the macro.</value></data>
   <data name="RazerMappingMacroSlotOverwrite" xml:space="preserve"><value>This slot already contains another macro; saving will overwrite it.</value></data>
-  <data name="RazerMappingMacroSoftwareApplied" xml:space="preserve"><value>{0} (software)</value></data>
+  <data name="RazerMappingMacroSoftwareApplied" xml:space="preserve"><value>Macro: {0}</value></data>
   <data name="RazerMappingMacroAssignmentNotOff" xml:space="preserve"><value>This key has a software macro, but the device action is still active, so it may fire twice. Apply again to fix it.</value></data>
   <data name="RazerMappingMacroCurrentOnce" xml:space="preserve"><value>{0} · Run once</value></data>
   <data name="RazerMappingMacroCurrentRepeat" xml:space="preserve"><value>{0} · Repeat {1} times</value></data>
