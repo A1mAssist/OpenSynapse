@@ -522,9 +522,32 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
         }
         catch (Exception exception)
         {
-            // The shipped graph is function-primary; an unreadable Fn state keeps it.
-            WriteDiagnostic($"fn row mode unavailable: {exception.Message}");
-            return true;
+            // Older Blade families expose the same setting through the 07:8B swap
+            // command instead of the 02:86 live profile.
+            var swapRequest = BladeSynapsePolicyProtocol.CreateGetFnKeySwapRequest();
+            try
+            {
+                var swapResponse = await _session!.QueryAsync(
+                        swapRequest[2],
+                        swapRequest[6],
+                        swapRequest[7],
+                        swapRequest[8],
+                        swapRequest.AsMemory(RazerFeatureReport.ArgumentsOffset, swapRequest[6]),
+                        TimeSpan.FromMilliseconds(20),
+                        responseReportId: 0,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+                return !BladeSynapsePolicyProtocol
+                    .ParseFnKeySwap(swapResponse, swapRequest)
+                    .MultiFunctionPrimary;
+            }
+            catch (Exception swapException)
+            {
+                // The shipped graph is function-primary; an unreadable Fn state keeps it.
+                WriteDiagnostic(
+                    $"fn row mode unavailable: {exception.Message}; swap: {swapException.Message}");
+                return true;
+            }
         }
     }
 
