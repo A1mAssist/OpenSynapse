@@ -1422,6 +1422,10 @@
     <value>已读取 {0} 个按键 · {1} 个宏</value>
     <comment>已读取 {0} 个按键 · {1} 个宏</comment>
   </data>
+  <data name="RazerHidMappingReadCountPartial" xml:space="preserve">
+    <value>已读取 {0}/{1} 个按键，{2} 个读取失败</value>
+    <comment>已读取 {0}/{1} 个按键，{2} 个读取失败</comment>
+  </data>
   <data name="RazerHidMappingMacroName" xml:space="preserve">
     <value>宏 {0}</value>
     <comment>宏 {0}</comment>

@@ -1099,6 +1099,9 @@
   <data name="RazerHidMappingReadCountWithMacros" xml:space="preserve">
     <value>Read {0} buttons · {1} macros</value>
   </data>
+  <data name="RazerHidMappingReadCountPartial" xml:space="preserve">
+    <value>Read {0} of {1} buttons; {2} failed</value>
+  </data>
   <data name="RazerHidMappingMacroName" xml:space="preserve">
     <value>Macro {0}</value>
   </data>
