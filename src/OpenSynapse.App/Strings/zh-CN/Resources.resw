@@ -4049,7 +4049,7 @@
   <data name="RazerDriverInstallStartFailed" xml:space="preserve"><value>Razer 驱动安装程序没有启动。</value></data>
   <data name="RazerDriverNoStagedInf" xml:space="preserve"><value>驱动已安装，但没有找到匹配的过滤 INF。请重启后重试，或重新安装驱动包。</value></data>
   <data name="RazerDriverFilterMissing" xml:space="preserve"><value>驱动包已安装，但过滤驱动没有挂到设备上。点“安装或修复驱动”重试。</value></data>
-  <data name="RazerDriverEndpointPending" xml:space="preserve"><value>过滤驱动已挂载，但设备端点没有出现。重新插拔设备；仍无效再重启。</value></data>
+  <data name="RazerDriverEndpointPending" xml:space="preserve"><value>过滤驱动已挂载，但设备没有就绪。点“安装或修复驱动”重试；仍无效再重新插拔。</value></data>
   <data name="RazerDriverInstallUncertain" xml:space="preserve"><value>驱动安装已提交，但服务没有返回结果。请等待一分钟后重新检查，不要重复安装。</value></data>
   <data name="RazerDriverCommonDownloading" xml:space="preserve"><value>正在下载 Razer 通用控制驱动…</value></data>
   <data name="RazerDriverCommonInstalling" xml:space="preserve"><value>正在安装 Razer 通用控制驱动…</value></data>

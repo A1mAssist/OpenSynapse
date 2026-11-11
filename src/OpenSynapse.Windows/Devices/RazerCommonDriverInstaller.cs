@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Security.Cryptography;
-using Microsoft.Win32;
 using OpenSynapse.Windows.Lifecycle;
 
 namespace OpenSynapse.Windows.Devices;
@@ -25,44 +24,6 @@ internal static class RazerCommonDriverInstaller
     {
         Timeout = TimeSpan.FromMinutes(2),
     };
-
-    internal static bool IsInstalled
-    {
-        get
-        {
-            using var key = Registry.LocalMachine.OpenSubKey(
-                @"SYSTEM\CurrentControlSet\Services\RzCommon");
-            if (key?.GetValue("ImagePath") is not string imagePath ||
-                string.IsNullOrWhiteSpace(imagePath))
-            {
-                return false;
-            }
-
-            var path = imagePath.Trim();
-            if (path.StartsWith('"'))
-            {
-                var closingQuote = path.IndexOf('"', 1);
-                if (closingQuote > 1)
-                {
-                    path = path[1..closingQuote];
-                }
-            }
-
-            path = Environment.ExpandEnvironmentVariables(path);
-            var windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
-            const string systemRootPrefix = @"\SystemRoot\";
-            if (path.StartsWith(systemRootPrefix, StringComparison.OrdinalIgnoreCase))
-            {
-                path = Path.Combine(windows, path[systemRootPrefix.Length..]);
-            }
-            else if (!Path.IsPathRooted(path))
-            {
-                path = Path.Combine(windows, path);
-            }
-
-            return File.Exists(path);
-        }
-    }
 
     /// <summary>
     /// Starts the common service after the INF is staged. A demand-start driver
@@ -96,12 +57,6 @@ internal static class RazerCommonDriverInstaller
         IProgress<RazerDriverInstallProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
-        if (IsInstalled)
-        {
-            await EnsureStartedAsync(cancellationToken).ConfigureAwait(false);
-            return new RazerDriverInstallResult(true);
-        }
-
         var (infPath, failure) = await EnsurePackageAsync(
                 RazerDriverInstaller.CacheDirectory,
                 progress,
@@ -131,12 +86,6 @@ internal static class RazerCommonDriverInstaller
     internal static async Task<RazerDriverInstallResult> InstallAsServiceAsync(
         CancellationToken cancellationToken = default)
     {
-        if (IsInstalled)
-        {
-            await EnsureStartedAsync(cancellationToken).ConfigureAwait(false);
-            return new RazerDriverInstallResult(true);
-        }
-
         try
         {
             RazerDriverInstaller.EnsureServiceCacheDirectory();

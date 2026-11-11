@@ -3619,7 +3619,7 @@
   <data name="RazerDriverInstallStartFailed" xml:space="preserve"><value>The Razer driver installer did not start.</value></data>
   <data name="RazerDriverNoStagedInf" xml:space="preserve"><value>The driver is installed, but no matching filter INF was found. Restart and retry, or reinstall the package.</value></data>
   <data name="RazerDriverFilterMissing" xml:space="preserve"><value>The package is installed, but the filter driver is not attached to the device. Click Install or repair driver to retry.</value></data>
-  <data name="RazerDriverEndpointPending" xml:space="preserve"><value>The filter driver is attached, but the device endpoint did not appear. Replug the device; restart only if that does not help.</value></data>
+  <data name="RazerDriverEndpointPending" xml:space="preserve"><value>The filter driver is attached, but the device is not ready. Click Install or repair driver to retry; replug only if that does not help.</value></data>
   <data name="RazerDriverInstallUncertain" xml:space="preserve"><value>The driver install was submitted, but the service did not return a result. Wait a minute and refresh; do not reinstall.</value></data>
   <data name="RazerDriverCommonDownloading" xml:space="preserve"><value>Downloading the Razer common control driver…</value></data>
   <data name="RazerDriverCommonInstalling" xml:space="preserve"><value>Installing the Razer common control driver…</value></data>
