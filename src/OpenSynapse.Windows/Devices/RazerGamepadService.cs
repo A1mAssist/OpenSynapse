@@ -93,6 +93,15 @@ public sealed partial class RazerGamepadService
 
     public static async Task<RazerGamepadConnection?> FindAsync(
         Action<string>? diagnostic = null,
+        CancellationToken cancellationToken = default) =>
+        (await FindAllAsync(diagnostic, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+
+    /// <summary>
+    /// Every attached gamepad, one row per physical device. The previous first-only
+    /// lookup hid the second controller when two were connected.
+    /// </summary>
+    public static async Task<IReadOnlyList<RazerGamepadConnection>> FindAllAsync(
+        Action<string>? diagnostic = null,
         CancellationToken cancellationToken = default)
     {
         var interfaces = await WindowsHidDiscovery.FindVendorFeatureInterfacesAsync(
@@ -100,30 +109,38 @@ public sealed partial class RazerGamepadService
             RazerFeatureReport.Length,
             cancellationToken).ConfigureAwait(false);
 
-        var candidates = interfaces
-            .Where(item => Products.ContainsKey(item.ProductId))
-            .Where(item => RazerHidDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
-            .OrderByDescending(item => item.Access == DeviceAccessState.Available)
-            .ThenBy(item => item.ProductId)
-            .ToArray();
-        if (candidates.Length == 0)
+        var candidates = SelectCandidates(interfaces);
+        if (candidates.Count == 0)
         {
             diagnostic?.Invoke(
                 "gamepad found no admitted 91-byte interface; " +
                 $"enumerated={string.Join(",", interfaces.Select(item => $"{item.ProductId:X4}"))}");
-            return null;
+            return [];
         }
 
-        var chosen = candidates[0];
         diagnostic?.Invoke(
-            $"gamepad selected pid={chosen.ProductId:X4} path={RazerFeatureTransport.DescribeDevicePath(chosen.DevicePath)} " +
-            $"usage=0x{chosen.UsagePage:X4}:0x{chosen.Usage:X4} access={chosen.Access}");
-        return new RazerGamepadConnection(
-            chosen.DevicePath,
-            chosen.ProductId,
-            Products[chosen.ProductId],
-            chosen.FeatureReportByteLength);
+            "gamepad selected " + string.Join(", ", candidates.Select(item =>
+                $"pid={item.ProductId:X4} path={RazerFeatureTransport.DescribeDevicePath(item.DevicePath)} " +
+                $"usage=0x{item.UsagePage:X4}:0x{item.Usage:X4} access={item.Access}")));
+        return candidates
+            .Select(item => new RazerGamepadConnection(
+                item.DevicePath, item.ProductId, Products[item.ProductId], item.FeatureReportByteLength))
+            .ToArray();
     }
+
+    internal static IReadOnlyList<WindowsHidDiscovery.HidInterfaceDescriptor> SelectCandidates(
+        IEnumerable<WindowsHidDiscovery.HidInterfaceDescriptor> interfaces) =>
+        interfaces
+            .Where(item => Products.ContainsKey(item.ProductId))
+            .Where(item => RazerHidDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
+            .GroupBy(item => item.PhysicalDeviceKey, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group
+                .OrderByDescending(item => item.Access == DeviceAccessState.Available)
+                .ThenBy(item => item.DevicePath, StringComparer.OrdinalIgnoreCase)
+                .First())
+            .OrderBy(item => item.ProductId)
+            .ThenBy(item => item.DevicePath, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
 
     public async Task<RazerGamepadState> ReadStateAsync(CancellationToken cancellationToken = default)
     {

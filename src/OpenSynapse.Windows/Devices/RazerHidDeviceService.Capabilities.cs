@@ -73,6 +73,23 @@ public sealed partial class RazerHidDeviceService
         }
         Add(RazerHidBackendCapability.ForceChromaCtrlRead, "get_force_chroma_ctrl", "razer_chroma_misc_get_force_chroma_ctrl");
         Add(RazerHidBackendCapability.ForceChromaCtrlWrite, "set_force_chroma_ctrl", "razer_chroma_misc_set_force_chroma_ctrl");
+        // The JS keyboard deviceUI sends game mode as 00:88/00:08, not through an
+        // OpenRazer transaction, so the capability set is the only catalogue evidence.
+        // A rejected 00:88 read marks both members unsupported at runtime.
+        // The JS keyboard sets are exactly the ones that also carry time-to-dim;
+        // the OpenRazer-only sets have a game LED, not the 00:88/00:08 pair.
+        if (device.Category == DeviceCategory.Keyboard &&
+            device.HasSourceCapability("get_game_mode") &&
+            device.HasSourceCapability("get_time_to_dim"))
+        {
+            result.Add(RazerHidBackendCapability.GameModeRead);
+        }
+        if (device.Category == DeviceCategory.Keyboard &&
+            device.HasSourceCapability("set_game_mode") &&
+            device.HasSourceCapability("get_time_to_dim"))
+        {
+            result.Add(RazerHidBackendCapability.GameModeWrite);
+        }
         Add(RazerHidBackendCapability.ProfileDebounceTimeRead, "get_profile_debounce_time", "razer_chroma_misc_get_profile_debounce_time");
         Add(RazerHidBackendCapability.ProfileDebounceTimeWrite, "set_profile_debounce_time", "razer_chroma_misc_set_profile_debounce_time");
         Add(RazerHidBackendCapability.ChromaTapRead, "get_chroma_tap", "razer_chroma_misc_get_chroma_tap");

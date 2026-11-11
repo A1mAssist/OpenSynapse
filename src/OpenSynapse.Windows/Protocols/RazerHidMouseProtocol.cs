@@ -415,6 +415,7 @@ internal static class RazerHidMouseProtocol
             "razer_chroma_misc_set_low_battery_threshold", 0x01, 0x07, 0x01, [raw]);
     }
 
+    // The bundle targets [1] or [1,n] from local data; OpenSynapse has no local n.
     internal static RazerHidRequest GetScrollMode(RazerHidDeviceDefinition device) =>
         RazerHidStandardProtocol.Create(device,
             "razer_chroma_misc_get_scroll_mode", 0x02, 0x02, 0x94, [RazerHidStandardProtocol.VariableStore]);
@@ -471,7 +472,7 @@ internal static class RazerHidMouseProtocol
     internal static int ParseBatteryPercent(ReadOnlySpan<byte> response)
     {
         var arguments = RazerHidStandardProtocol.Arguments(response, 2);
-        return (int)Math.Round(arguments[1] * 100d / 255d, MidpointRounding.AwayFromZero);
+        return (int)Math.Floor(arguments[1] * 100d / 255d);
     }
 
     internal static bool ParseCharging(ReadOnlySpan<byte> response) =>
@@ -521,8 +522,7 @@ internal static class RazerHidMouseProtocol
     }
 
     internal static int ParseLowBatteryThreshold(ReadOnlySpan<byte> response) =>
-        (int)Math.Round(RazerHidStandardProtocol.Arguments(response, 1)[0] * 100d / 255d,
-            MidpointRounding.AwayFromZero);
+        (int)Math.Floor(RazerHidStandardProtocol.Arguments(response, 1)[0] * 100d / 255d);
 
     internal static RazerHidTimeToDim ParseTimeToDim(ReadOnlySpan<byte> response)
     {

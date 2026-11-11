@@ -1638,6 +1638,9 @@
   <data name="Text_8FF04F66" xml:space="preserve"><value>Charging</value></data>
   <data name="Text_EC17E7E7" xml:space="preserve"><value>Not charging</value></data>
   <data name="RazerHidDpiStagesTitle.Text" xml:space="preserve"><value>DPI stages</value></data>
+  <data name="RazerHidGameModeTitle.Text" xml:space="preserve"><value>Game mode</value></data>
+  <data name="RazerHidGameModeDescription.Text" xml:space="preserve"><value>When enabled, the keyboard firmware blocks the Windows key so games do not lose focus.</value></data>
+  <data name="RazerHidGameModeEnabled.Header" xml:space="preserve"><value>Enable</value></data>
   <data name="RazerHidSensorRotationTitle.Text" xml:space="preserve"><value>Sensor rotation</value></data>
   <data name="RazerHidSensorRotationRange.Text" xml:space="preserve"><value>Range −44° to +44°.</value></data>
   <data name="RazerHidSensorRotationEnabled.Header" xml:space="preserve"><value>Enable</value></data>
@@ -1896,6 +1899,8 @@
   <data name="RazerHidCapabilitySensorRotationWrite" xml:space="preserve"><value>Sensor rotation write</value></data>
   <data name="RazerHidCapabilityKnobRead" xml:space="preserve"><value>Knob read</value></data>
   <data name="RazerHidCapabilityKnobWrite" xml:space="preserve"><value>Knob write</value></data>
+  <data name="RazerHidCapabilityGameModeRead" xml:space="preserve"><value>Game mode read</value></data>
+  <data name="RazerHidCapabilityGameModeWrite" xml:space="preserve"><value>Game mode write</value></data>
   <data name="RazerHidCapabilityAnalogKeyRead" xml:space="preserve"><value>Analog key read</value></data>
   <data name="RazerHidCapabilityAnalogKeyWrite" xml:space="preserve"><value>Analog key write</value></data>
   <data name="RazerHidCapabilityOledRead" xml:space="preserve"><value>OLED display read</value></data>

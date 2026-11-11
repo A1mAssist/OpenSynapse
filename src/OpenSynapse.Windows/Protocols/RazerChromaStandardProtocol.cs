@@ -76,7 +76,7 @@ public static class RazerChromaStandardProtocol
     {
         var data = Arguments(response);
         Require(data, 1);
-        return (byte)Math.Ceiling(data[0] * 100d / 255d);
+        return (byte)Math.Round(data[0] * 100d / 255d);
     }
 
     /// <summary>Battery and charging live on class 0x07, the same commands the keyboard page uses.</summary>

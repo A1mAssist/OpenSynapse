@@ -120,6 +120,8 @@ public enum RazerHidBackendCapability
     SensorRotationWrite,
     KnobRead,
     KnobWrite,
+    GameModeRead,
+    GameModeWrite,
     AnalogKeyRead,
     AnalogKeyWrite,
     OledRead,

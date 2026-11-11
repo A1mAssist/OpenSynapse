@@ -2014,6 +2014,9 @@
   <data name="Text_8FF04F66" xml:space="preserve"><value>充电中</value></data>
   <data name="Text_EC17E7E7" xml:space="preserve"><value>未充电</value></data>
   <data name="RazerHidDpiStagesTitle.Text" xml:space="preserve"><value>DPI 档位</value></data>
+  <data name="RazerHidGameModeTitle.Text" xml:space="preserve"><value>游戏模式</value></data>
+  <data name="RazerHidGameModeDescription.Text" xml:space="preserve"><value>开启后由键盘固件屏蔽 Windows 键，避免游戏中误触。</value></data>
+  <data name="RazerHidGameModeEnabled.Header" xml:space="preserve"><value>启用</value></data>
   <data name="RazerHidSensorRotationTitle.Text" xml:space="preserve"><value>传感器旋转</value></data>
   <data name="RazerHidSensorRotationRange.Text" xml:space="preserve"><value>范围 −44° ~ +44°。</value></data>
   <data name="RazerHidSensorRotationEnabled.Header" xml:space="preserve"><value>启用</value></data>
@@ -2272,6 +2275,8 @@
   <data name="RazerHidCapabilitySensorRotationWrite" xml:space="preserve"><value>传感器角度写入</value></data>
   <data name="RazerHidCapabilityKnobRead" xml:space="preserve"><value>旋钮读取</value></data>
   <data name="RazerHidCapabilityKnobWrite" xml:space="preserve"><value>旋钮写入</value></data>
+  <data name="RazerHidCapabilityGameModeRead" xml:space="preserve"><value>游戏模式读取</value></data>
+  <data name="RazerHidCapabilityGameModeWrite" xml:space="preserve"><value>游戏模式写入</value></data>
   <data name="RazerHidCapabilityAnalogKeyRead" xml:space="preserve"><value>模拟键读取</value></data>
   <data name="RazerHidCapabilityAnalogKeyWrite" xml:space="preserve"><value>模拟键写入</value></data>
   <data name="RazerHidCapabilityOledRead" xml:space="preserve"><value>OLED 屏幕读取</value></data>

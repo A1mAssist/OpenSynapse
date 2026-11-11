@@ -566,8 +566,9 @@ public sealed partial class GamepadProfileApplier : IDeviceProfileApplier
         Action<string>? diagnostic,
         CancellationToken cancellationToken)
     {
-        var connection = await RazerGamepadService.FindAsync(diagnostic, cancellationToken);
-        return connection is null || connection.ProductId != device.ProductId
+        var connections = await RazerGamepadService.FindAllAsync(diagnostic, cancellationToken);
+        var connection = connections.FirstOrDefault(item => item.ProductId == device.ProductId);
+        return connection is null
             ? null
             : new RazerGamepadService(
                 new RazerFeatureTransport(),

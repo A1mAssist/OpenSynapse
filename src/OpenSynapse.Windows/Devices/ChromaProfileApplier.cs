@@ -337,7 +337,9 @@ public sealed class ChromaProfileApplier : IDeviceProfileApplier
             : new RazerChromaStandardService(
                 new RazerFeatureTransport(),
                 connection.DevicePath,
-                TimeSpan.FromMilliseconds(20));
+                TimeSpan.FromMilliseconds(20),
+                channel: connection.Channel,
+                productId: connection.ProductId);
     }
 
     private static ProfileDeviceApplyStatus Status(List<ProfileSettingApplyResult> results) =>

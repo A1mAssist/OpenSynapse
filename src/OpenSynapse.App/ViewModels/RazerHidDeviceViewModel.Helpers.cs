@@ -501,6 +501,9 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(KnobWriteVisibility));
         OnPropertyChanged(nameof(CanEditKnob));
         OnPropertyChanged(nameof(CanApplyKnob));
+        OnPropertyChanged(nameof(GameModeVisibility));
+        OnPropertyChanged(nameof(GameModeWriteVisibility));
+        OnPropertyChanged(nameof(CanEditGameMode));
         OnPropertyChanged(nameof(AnalogKeyVisibility));
         OnPropertyChanged(nameof(AnalogKeyWriteVisibility));
         OnPropertyChanged(nameof(CanEditAnalogKey));

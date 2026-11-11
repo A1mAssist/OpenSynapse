@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Lighting;
 
@@ -5,6 +6,16 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed partial class RazerChromaStandardService
 {
+    // Both product bundles define the class-0x0F effect table and the class-0x03
+    // per-region brightness pair; neither calls the shared class-0x10 table.
+    private static readonly FrozenSet<ushort> PerLedLegacyProducts =
+        new ushort[] { 0x0F45, 0x0F6D }.ToFrozenSet();
+
+    internal static RazerChromaChannel ChannelFor(ushort productId) =>
+        PerLedLegacyProducts.Contains(productId)
+            ? RazerChromaChannel.LegacyPerLed
+            : RazerChromaChannel.Standard;
+
     internal static IReadOnlyList<RazerChromaDeviceConnection> SelectConnections(
         IEnumerable<WindowsHidDiscovery.HidInterfaceDescriptor> interfaces) =>
         interfaces
@@ -25,14 +36,16 @@ public sealed partial class RazerChromaStandardService
             .ThenBy(item => item.DevicePath, StringComparer.OrdinalIgnoreCase)
             .Select(item => Products.TryGetValue(item.ProductId, out var curated)
                 ? new RazerChromaDeviceConnection(
-                    item.DevicePath, item.ProductId, curated.Name, curated.Category)
+                    item.DevicePath, item.ProductId, curated.Name, curated.Category,
+                    ChannelFor(item.ProductId))
                 : new RazerChromaDeviceConnection(
                     item.DevicePath,
                     item.ProductId,
                     string.IsNullOrWhiteSpace(item.ProductName)
                         ? $"Razer Chroma 0x{item.ProductId:X4}"
                         : item.ProductName,
-                    CategoryFor(ChromaDeviceCatalog.Resolve(item.ProductId)!.Value)))
+                    CategoryFor(ChromaDeviceCatalog.Resolve(item.ProductId)!.Value),
+                    ChannelFor(item.ProductId)))
             .ToArray();
 
     private static DeviceCategory CategoryFor(ChromaDeviceKind kind) => kind switch

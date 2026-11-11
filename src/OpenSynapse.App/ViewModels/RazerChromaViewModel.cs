@@ -89,6 +89,7 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
     private int _selectedArgbPortIndex;
     private int _argbLedCount;
     private bool _isBusy;
+    private bool _hasEditableState;
     private string _errorText = string.Empty;
     private string _operationStatusText = string.Empty;
     private double _brightness = 100;
@@ -99,7 +100,6 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
     private Version? _firmware;
     private string? _serial;
     private Color _secondaryColor = Color.FromArgb(255, 255, 0, 0);
-
     public RazerChromaViewModel(
         RazerChromaDeviceConnection connection,
         Action<string>? diagnostic = null,
@@ -248,10 +248,12 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
         {
             if (!SetField(ref _isBusy, value)) return;
             OnPropertyChanged(nameof(CanEdit));
+            OnPropertyChanged(nameof(CanRefresh));
         }
     }
 
-    public bool CanEdit => !IsBusy;
+    public bool CanEdit => !IsBusy && _hasEditableState;
+    public bool CanRefresh => !IsBusy;
     public string ErrorText { get => _errorText; private set => SetField(ref _errorText, value); }
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);
 
@@ -267,6 +269,7 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
         try
         {
             var state = await OpenService().ReadStateAsync(cancellationToken);
+            _hasEditableState = state.BrightnessPercent is not null || state.Effect is not null;
             if (state.BrightnessPercent is byte brightness) Brightness = brightness;
             if (state.Effect is RazerChromaEffect effect)
             {
@@ -302,6 +305,7 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
         }
         catch (Exception exception) when (IsExpectedException(exception))
         {
+            _hasEditableState = false;
             ErrorText = exception.Message;
         }
         finally
@@ -513,8 +517,7 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
         }
     }
 
-    private RazerChromaStandardService OpenService() =>
-        new(new RazerFeatureTransport(), _connection.DevicePath, TimeSpan.FromMilliseconds(20), _diagnostic);
+    private RazerChromaStandardService OpenService() => new(new RazerFeatureTransport(), _connection.DevicePath, TimeSpan.FromMilliseconds(20), _diagnostic, _connection.Channel, _connection.ProductId);
 
     private async Task RunWriteAsync(
         Func<RazerChromaStandardService, CancellationToken, Task> write,
@@ -594,5 +597,3 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 }
-
-

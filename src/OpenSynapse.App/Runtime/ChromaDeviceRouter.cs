@@ -189,7 +189,9 @@ internal sealed class ChromaDeviceRouter
                         new RazerFeatureTransport(),
                         path,
                         TimeSpan.FromMilliseconds(20),
-                        _diagnostic));
+                        _diagnostic,
+                        connection.Channel,
+                        connection.ProductId));
                 await CaptureBaselineAsync(target.InstanceId, service, cancellationToken).ConfigureAwait(false);
                 await service.SetEffectAsync(
                     RazerChromaEffect.Static,

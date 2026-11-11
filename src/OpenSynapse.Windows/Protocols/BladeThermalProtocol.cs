@@ -21,7 +21,11 @@ public static class BladeThermalProtocol
 
     public static BladeThermalFanInformation ParseFanInformation(ReadOnlySpan<byte> response)
     {
-        ValidateResponse(response, CreateGetFanInformationRequest(), expectedArguments: 0x0C);
+        ValidateResponse(
+            response,
+            CreateGetFanInformationRequest(),
+            expectedArguments: 0x0C,
+            allowFramingMismatch: true);
         var arguments = response[RazerFeatureReport.ArgumentsOffset..];
         if (arguments[0] != 0x00)
         {
@@ -111,9 +115,10 @@ public static class BladeThermalProtocol
         expectedFanId = ValidateFanId(expectedFanId);
         ValidateResponse(response, request, expectedArguments: 3, allowFramingMismatch: true);
         var arguments = response[RazerFeatureReport.ArgumentsOffset..];
-        if (arguments[0] != ProfileId || arguments[1] != expectedFanId)
+        if ((arguments[0] != 0x00 && arguments[0] != ProfileId) || arguments[1] != expectedFanId)
         {
-            throw new InvalidOperationException("Blade returned an incorrect current-fan object.");
+            throw new InvalidOperationException(
+                "Blade returned an incorrect current-fan object; expected profile 1 or an omitted selector.");
         }
 
         return checked(arguments[2] * 100);
@@ -130,9 +135,10 @@ public static class BladeThermalProtocol
         expectedFanId = ValidateFanId(expectedFanId);
         ValidateResponse(response, request, expectedArguments: 3, allowFramingMismatch: true);
         var arguments = response[RazerFeatureReport.ArgumentsOffset..];
-        if (arguments[0] != ProfileId || arguments[1] != expectedFanId)
+        if ((arguments[0] != 0x00 && arguments[0] != ProfileId) || arguments[1] != expectedFanId)
         {
-            throw new InvalidOperationException("Blade returned an incorrect advanced-fan object.");
+            throw new InvalidOperationException(
+                "Blade returned an incorrect advanced-fan object; expected profile 1 or an omitted selector.");
         }
 
         return arguments[2];
