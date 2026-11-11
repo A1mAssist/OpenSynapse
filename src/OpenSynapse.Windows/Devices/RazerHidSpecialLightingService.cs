@@ -352,9 +352,10 @@ public sealed class RazerHidSpecialLightingService
         var device = KrakenDevices[connection.ProductId];
         IReadOnlyList<byte[]> reports = settings.Effect switch
         {
-            RazerHidLightingEffect.Off => RazerHidKrakenV4Protocol.CreateOff(isDongle),
+            RazerHidLightingEffect.Off => RazerHidKrakenV4Protocol.CreateOff(
+                isDongle, device.LedCount),
             RazerHidLightingEffect.Static => RazerHidKrakenV4Protocol.CreateStatic(
-                settings.Primary, intensity, isDongle),
+                settings.Primary, intensity, isDongle, device.LedCount),
             RazerHidLightingEffect.Wave => RazerHidKrakenV4Protocol.CreateWave(intensity, isDongle),
             RazerHidLightingEffect.BreathingSingle => RazerHidKrakenV4Protocol.CreateBreathing(
                 settings.Primary, intensity, isDongle),
