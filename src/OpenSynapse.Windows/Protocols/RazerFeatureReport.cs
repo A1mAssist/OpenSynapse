@@ -73,7 +73,7 @@ public static class RazerFeatureReport
             report[3] != 0x00 ||
             report[4] != 0x00 ||
             report[5] != 0x00 ||
-            report[6] != 0x01 ||
+            report[6] != 0x09 ||
             report[7] != 0x03 ||
             report[8] != 0x0A ||
             report[ArgumentsOffset] != 0x19 ||

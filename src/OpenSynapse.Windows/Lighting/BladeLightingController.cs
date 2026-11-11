@@ -806,7 +806,7 @@ public sealed partial class BladeLightingController : IBladeLightingController
         CancellationToken cancellationToken,
         bool allowRemainingPacketsMismatch = false)
     {
-        if (request[6] == 0x01 && request[7] == 0x03 && request[8] == 0x0A &&
+        if (request[6] == 0x09 && request[7] == 0x03 && request[8] == 0x0A &&
             request[RazerFeatureReport.ArgumentsOffset] == 0x19)
         {
             return _transport.QueryPreparedAsync(

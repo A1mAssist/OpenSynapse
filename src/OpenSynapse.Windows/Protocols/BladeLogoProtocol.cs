@@ -102,7 +102,8 @@ public static class BladeLogoProtocol
         {
             throw new ArgumentOutOfRangeException(nameof(profileId));
         }
-        if (!RazerFeatureReport.IsSuccessfulResponse(request, response, 3))
+        if (!RazerFeatureReport.IsSuccessfulResponse(
+                request, response, 3, allowRemainingPacketsMismatch: true))
         {
             throw new InvalidOperationException("Blade Logo returned an invalid or out-of-order feature report.");
         }

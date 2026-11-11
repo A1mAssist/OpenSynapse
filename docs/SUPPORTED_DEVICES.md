@@ -42,6 +42,7 @@ Standard mouse controls include DPI, polling rate, battery, lighting and onboard
 | Razer Basilisk V4 Pro (Wired) | `1532:00E2` | DPI, polling, battery, lighting and onboard mapping |
 | Razer Basilisk V4 Pro (Wireless) | `1532:00E3` | DPI, polling, battery, lighting and onboard mapping |
 | Razer Basilisk X HyperSpeed | `1532:0083` | — |
+| Razer Boomslang 20th Anniversary Edition | `1532:00DD` | DPI, polling, battery, lighting and onboard mapping |
 | Razer Cobra | `1532:00A2` | DPI, polling and onboard mapping via the middleware protocol |
 | Razer Cobra | `1532:00A3` | — |
 | Razer Cobra HyperSpeed (Wired) | `1532:00DA` | — |
@@ -81,7 +82,6 @@ Standard mouse controls include DPI, polling rate, battery, lighting and onboard
 | Razer HyperPolling Wireless Dongle | `1532:00B3` | — |
 | Razer Imperator 2012 | `1532:002F` | — |
 | Razer Jugan | `1532:0063` | DPI, polling, battery, lighting and onboard mapping |
-| Razer Krakoff | `1532:00DD` | DPI, polling, battery, lighting and onboard mapping |
 | Razer Lancehead (Wired) | `1532:0059` | — |
 | Razer Lancehead (Wireless) | `1532:005A` | — |
 | Razer Lancehead Tournament Edition | `1532:0060` | — |
@@ -133,6 +133,7 @@ Standard mouse controls include DPI, polling rate, battery, lighting and onboard
 | Razer Pro Click V2 Vertical Edition (Wireless) | `1532:00C8` | — |
 | Razer Taipan | `1532:0034` | — |
 | Razer Turret Mouse Xbox One Edition | `1532:0075` | DPI, polling, battery, lighting and onboard mapping |
+| Razer Turret Mouse Gears of War 5 Edition | `1532:0A22` | Not shown: Synapse ships a native `PID0a22Drv`; the product bundle has no command module |
 | Razer Viper | `1532:0078` | — |
 | Razer Viper 8KHz | `1532:0091` | — |
 | Razer Viper Mini | `1532:008A` | — |
@@ -446,9 +447,7 @@ Accessory controls cover lighting, docks, stands, fan control and presence signa
 
 | Device | USB VID:PID | Notes |
 |---|---|---|
-| Esther | `1532:0F45` | Lighting only |
 | Lian Li O11 Dynamic - Razer Edition | `1532:0F13` | — |
-| MarciT2H | `1532:0F6D` | Lighting only |
 | Razer Aether Lamp | `1532:030E` | Lighting only |
 | Razer Aether Lamp Pro | `1532:030D` | Lighting only |
 | Razer Aether Light Bulb | `1532:030F` | Lighting only |
@@ -469,7 +468,8 @@ Accessory controls cover lighting, docks, stands, fan control and presence signa
 | Razer Core | `1532:0215` | — |
 | Razer Core X Chroma | `1532:0F1A` | — |
 | Razer Core X V2 | `1532:0F51` | Lighting only |
-| Razer Hanbo AIO | `1532:0F35` | Lighting only |
+| Razer Freyja | `1532:0F45` | Lighting only (`LegacyPerLed`: 0F:80 regions, 03:83/03:03 brightness, 0F:82/0F:02 effects) |
+| Razer Hanbo AIO 240MM | `1532:0F35` | Lighting only |
 | Razer Handheld Dock Chroma | `1532:0F5C` | Lighting only |
 | Razer Head Cushion Chroma | `1532:0F36` | Lighting only |
 | Razer Key Light Chroma | `1532:030C` | Lighting only |
@@ -484,6 +484,7 @@ Accessory controls cover lighting, docks, stands, fan control and presence signa
 | Razer Mouse Dock V2 Pro | `1532:00F1` | Lighting only |
 | Razer PWM PC Fan Controller | `1532:0F3C` | Lighting only |
 | Razer Soma Chroma | `1532:0F64` | Lighting only |
+| Razer Soma Sensa HD Haptics | `1532:0F6D` | Lighting only (`LegacyPerLed`: 0F:80 regions, 03:83/03:03 brightness, 0F:82/0F:02 effects) |
 | Razer Thunderbolt 4 Dock Chroma | `1532:0F21` | — |
 | Razer Thunderbolt 5 Dock Chroma | `1532:0F52` | Lighting only |
 | Razer Tomahawk ATX | `1532:0F17` | — |

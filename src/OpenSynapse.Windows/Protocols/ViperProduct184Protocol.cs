@@ -18,10 +18,17 @@ public static class ViperProduct184Protocol
     public static byte[] CreateSetPollingRateRequest(int hertz) =>
         Create(0x01, 0x00, 0x05, hertz switch
         {
+            // The bundle's code table has all seven rates even though the 00B8 product
+            // UI lists only 125/500/1000; accept the rest for a device set elsewhere.
+            100 => 0x0A,
             125 => 0x08,
+            200 => 0x05,
+            250 => 0x04,
+            333 => 0x03,
             500 => 0x02,
             1000 => 0x01,
-            _ => throw new ArgumentOutOfRangeException(nameof(hertz), "Viper polling rate only supports 125, 500, or 1000 Hz."),
+            _ => throw new ArgumentOutOfRangeException(nameof(hertz),
+                "Viper polling rate supports 100, 125, 200, 250, 333, 500, or 1000 Hz."),
         });
 
     public static byte[] CreateGetDpiRequest() =>
@@ -115,8 +122,7 @@ public static class ViperProduct184Protocol
     internal static int ParseBatteryPercent(ReadOnlySpan<byte> response, ReadOnlySpan<byte> request)
     {
         ValidateResponse(response, request, 2);
-        return (int)Math.Round(response[RazerFeatureReport.ArgumentsOffset + 1] * 100d / 255d,
-            MidpointRounding.AwayFromZero);
+        return (int)Math.Floor(response[RazerFeatureReport.ArgumentsOffset + 1] * 100d / 255d);
     }
 
     public static int ParsePollingRateHertz(ReadOnlySpan<byte> response) =>
@@ -129,7 +135,11 @@ public static class ViperProduct184Protocol
         {
             0x01 => 1000,
             0x02 => 500,
+            0x03 => 333,
+            0x04 => 250,
+            0x05 => 200,
             0x08 => 125,
+            0x0A => 100,
             var raw => throw new InvalidOperationException($"Viper returned an unknown polling-rate code: 0x{raw:X2}."),
         };
     }

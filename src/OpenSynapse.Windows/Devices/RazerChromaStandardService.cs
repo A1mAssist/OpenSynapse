@@ -8,7 +8,8 @@ public sealed record RazerChromaDeviceConnection(
     string DevicePath,
     ushort ProductId,
     string Name,
-    DeviceCategory Category);
+    DeviceCategory Category,
+    RazerChromaChannel Channel = RazerChromaChannel.Standard);
 
 public sealed record RazerChromaStandardState(
     byte? BrightnessPercent,
@@ -28,11 +29,13 @@ public enum RazerChromaChannel
 {
     Standard,
     Legacy,
+    /// <summary>Class-0x0F effects with class-0x03 per-region brightness (Esther/MarciT2H).</summary>
+    LegacyPerLed,
 }
 
 /// <summary>
 /// Brightness and effect control over the class 0x10 Chroma channel shared by mice,
-/// keyboards, lamps, ARGB controllers and docks that the RazerHid catalogue does not cover.
+/// keyboards, lamps, ARGB controllers and docks, plus the class 0x0F/0x03 legacy paths.
 /// </summary>
 public sealed partial class RazerChromaStandardService
 {
@@ -76,7 +79,7 @@ public sealed partial class RazerChromaStandardService
             [0x0075] = ("Razer Turret Mouse Xbox One Edition", DeviceCategory.Mouse),
             [0x0093] = ("Razer Naga Classic Edition", DeviceCategory.Mouse),
             [0x00CF] = ("Razer HyperFlux V2", DeviceCategory.Mouse),
-            [0x00DD] = ("Razer Krakoff", DeviceCategory.Mouse),
+            [0x00DD] = ("Razer Boomslang 20th Anniversary Edition", DeviceCategory.Mouse),
             [0x00E0] = ("Razer Orochi V2", DeviceCategory.Mouse),
             [0x00E2] = ("Razer Basilisk V4 Pro", DeviceCategory.Mouse),
             [0x00E7] = ("Razer Naga V3 Pro", DeviceCategory.Mouse),
@@ -96,10 +99,10 @@ public sealed partial class RazerChromaStandardService
             [0x0F28] = ("Razer Raptor 27", DeviceCategory.Monitor),
             [0x0F2C] = ("Razer Chroma Wireless ARGB Controller", DeviceCategory.Accessory),
             [0x0F2E] = ("Razer Chroma Wireless ARGB Controller", DeviceCategory.Accessory),
-            [0x0F35] = ("Razer Hanbo AIO", DeviceCategory.Accessory),
+            [0x0F35] = ("Razer Hanbo AIO 240MM", DeviceCategory.Accessory),
             [0x0F36] = ("Razer Head Cushion Chroma", DeviceCategory.Accessory),
             [0x0F3C] = ("Razer PWM PC Fan Controller", DeviceCategory.Accessory),
-            [0x0F45] = ("Esther", DeviceCategory.Accessory),
+            [0x0F45] = ("Razer Freyja", DeviceCategory.Accessory),
             [0x0F51] = ("Razer Core X V2", DeviceCategory.Accessory),
             [0x0F52] = ("Razer Thunderbolt 5 Dock Chroma", DeviceCategory.Accessory),
             [0x0F59] = ("Razer Monitor Stand Chroma", DeviceCategory.Accessory),
@@ -108,7 +111,7 @@ public sealed partial class RazerChromaStandardService
             [0x0F64] = ("Razer Soma Chroma", DeviceCategory.Accessory),
             [0x0566] = ("Razer Wireless Control Pod", DeviceCategory.Accessory),
             [0x0F6A] = ("Razer Base Station V3 Chroma", DeviceCategory.Accessory),
-            [0x0F6D] = ("MarciT2H", DeviceCategory.Accessory),
+            [0x0F6D] = ("Razer Soma Sensa HD Haptics", DeviceCategory.Accessory),
         };
 
     public static bool IsSupported(ushort productId) => Products.ContainsKey(productId);
@@ -152,13 +155,15 @@ public sealed partial class RazerChromaStandardService
     {
         var errors = new List<string>();
         byte? brightness = null;
-        if (_channel == RazerChromaChannel.Standard)
+        if (_channel is RazerChromaChannel.Standard or RazerChromaChannel.LegacyPerLed)
         {
             try
             {
-                brightness = RazerChromaStandardProtocol.ReadBrightnessPercent(
-                    await QueryAsync(RazerChromaStandardProtocol.GetBrightness, "read brightness", cancellationToken)
-                        .ConfigureAwait(false));
+                brightness = _channel == RazerChromaChannel.Standard
+                    ? RazerChromaStandardProtocol.ReadBrightnessPercent(
+                        await QueryAsync(RazerChromaStandardProtocol.GetBrightness, "read brightness", cancellationToken)
+                            .ConfigureAwait(false))
+                    : await ReadLegacyPerLedBrightnessAsync(cancellationToken).ConfigureAwait(false);
             }
             catch (Exception exception) when (IsExpected(exception))
             {
@@ -170,7 +175,7 @@ public sealed partial class RazerChromaStandardService
         IReadOnlyList<byte> colors = [];
         try
         {
-            if (_channel == RazerChromaChannel.Legacy)
+            if (_channel is RazerChromaChannel.Legacy or RazerChromaChannel.LegacyPerLed)
             {
                 var legacy = RazerLegacyChromaProtocol.ReadEffect(
                     await QueryAsync(RazerLegacyChromaProtocol.GetEffect, "read effect", cancellationToken)
@@ -247,6 +252,12 @@ public sealed partial class RazerChromaStandardService
             throw new ArgumentOutOfRangeException(nameof(percent), "Brightness must be between 0 and 100.");
         }
 
+        if (_channel == RazerChromaChannel.LegacyPerLed)
+        {
+            await SetLegacyPerLedBrightnessAsync(percent, cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
         var previous = RazerChromaStandardProtocol.ReadBrightnessPercent(
             await QueryAsync(RazerChromaStandardProtocol.GetBrightness, "read brightness", cancellationToken)
                 .ConfigureAwait(false));
@@ -299,7 +310,7 @@ public sealed partial class RazerChromaStandardService
         }
 
         var payload = colors.ToArray();
-        if (_channel == RazerChromaChannel.Legacy)
+        if (_channel is RazerChromaChannel.Legacy or RazerChromaChannel.LegacyPerLed)
         {
             await SetLegacyEffectAsync(effect, payload, cancellationToken).ConfigureAwait(false);
             return;

@@ -203,9 +203,9 @@ public static class BladeLightingProtocol
 
     private static void ValidateMatrixDimensions(int rows, int columns)
     {
-        if (rows is < 1 or > 7 || columns is < 1 or > 25)
+        if (rows is < 1 or > 7 || columns is < 1 or > 22)
         {
-            throw new ArgumentOutOfRangeException(nameof(rows), "Blade matrix dimensions must be 1..7 rows and 1..25 columns.");
+            throw new ArgumentOutOfRangeException(nameof(rows), "Blade matrix dimensions must be 1..7 rows and 1..22 columns.");
         }
     }
 
@@ -220,11 +220,10 @@ public static class BladeLightingProtocol
             throw new ArgumentOutOfRangeException(nameof(speed));
         }
 
-        // RazerHid commit 4e65f1249587 verified this wire format on hardware:
-        // the report declares one data byte while carrying all nine arguments.
-        return RazerFeatureReport.CreateRequestWithDeclaredSize(
+        // 0233/02C6 rzDevice25 03:0A StarlightField declares nine data bytes.
+        return RazerFeatureReport.CreateRequest(
             TransactionId,
-            0x01,
+            0x09,
             CommandClass,
             EffectCommandId,
             new byte[]

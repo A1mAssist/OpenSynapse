@@ -227,10 +227,10 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
 
     internal async Task RefreshGamepadsAsync(CancellationToken cancellationToken)
     {
-        RazerGamepadConnection? connection;
+        IReadOnlyList<RazerGamepadConnection> connections;
         try
         {
-            connection = await RazerGamepadService.FindAsync(
+            connections = await RazerGamepadService.FindAllAsync(
                 message => _diagnosticLog.TryWrite("gamepad", message), cancellationToken);
         }
         catch (Exception exception) when (IsExpectedRuntimeException(exception))
@@ -239,7 +239,7 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
             return;
         }
 
-        if (connection is null)
+        if (connections.Count == 0)
         {
             if (GamepadDevices.Count == 0 && SelectedGamepad is null) return;
             GamepadDevices.Clear();
@@ -248,31 +248,28 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
             return;
         }
 
-        if (GamepadDevices.Count == 1 &&
-            StringComparer.OrdinalIgnoreCase.Equals(
-                GamepadDevices[0].Connection.DevicePath, connection.DevicePath) &&
-            GamepadDevices[0].Connection.ProductId == connection.ProductId)
+        if (GamepadDevices.Count == connections.Count &&
+            connections.Zip(GamepadDevices).All(pair =>
+                pair.First.ProductId == pair.Second.Connection.ProductId &&
+                StringComparer.OrdinalIgnoreCase.Equals(
+                    pair.First.DevicePath, pair.Second.Connection.DevicePath)))
         {
             return;
         }
 
+        var previousPath = _selectedGamepadDevice?.Connection.DevicePath;
         GamepadDevices.Clear();
-        var row = new RazerGamepadDeviceRowViewModel(connection);
-        GamepadDevices.Add(row);
-        var probe = new RazerGamepadViewModel(
-            connection,
-            message => _diagnosticLog.TryWrite("gamepad", message),
-            _getProfile,
-            _saveProfile);
-        await probe.LoadAsync(cancellationToken);
-        row.SetCapabilityText(probe.CapabilityText);
-        if (_selectedGamepadDevice is null ||
-            !StringComparer.OrdinalIgnoreCase.Equals(
-                _selectedGamepadDevice.Connection.DevicePath, connection.DevicePath))
+        foreach (var connection in connections)
         {
-            _selectedGamepadDevice = null;
-            SelectedGamepad = null;
+            GamepadDevices.Add(new RazerGamepadDeviceRowViewModel(connection));
         }
+
+        _selectedGamepadDevice = null;
+        SelectedGamepad = null;
+        var row = GamepadDevices.FirstOrDefault(candidate => previousPath is not null &&
+            StringComparer.OrdinalIgnoreCase.Equals(candidate.Connection.DevicePath, previousPath))
+            ?? GamepadDevices[0];
+        await SelectGamepadAsync(row, cancellationToken);
     }
 
     public async Task SelectGamepadAsync(
@@ -294,6 +291,7 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
             _getProfile,
             _saveProfile);
         await SelectedGamepad.LoadAsync(cancellationToken);
+        row.SetCapabilityText(SelectedGamepad.CapabilityText);
     }
 
     private RazerChromaDeviceRowViewModel? _selectedChromaDevice;

@@ -8,14 +8,15 @@ namespace OpenSynapse.Windows.Protocols;
 /// which exposes its own fan-info and max-speed commands.
 /// <list type="bullet">
 /// <item>set speed: class 0x0D, command 0x01, dataSize 6,
-/// arguments <c>[classId, thermalId, speedHi, speedLo]</c></item>
+/// arguments <c>[classId, thermalId, speedUnits]</c></item>
 /// <item>get speed: class 0x0D, command 0x81, dataSize 6,
 /// arguments <c>[classId, thermalId]</c></item>
-/// <item>fan information: class 0x0D, command 0x83, dataSize 12,
+/// <item>fan information: class 0x0D, command 0x83, dataSize 8,
 /// arguments <c>[classId]</c></item>
 /// </list>
-/// The speed is a big-endian 16-bit RPM value, as in rzDevice25FiverV2.
-/// The fan-information pairs are big-endian 16-bit values.
+/// The set-speed byte is the fan's 50-RPM unit, as in
+/// rzDevice25PWMPCFanController. The get-speed reply and fan-information pairs
+/// are big-endian 16-bit values.
 /// </summary>
 public static partial class RazerCoolingPadProtocol
 {
@@ -62,7 +63,7 @@ public static partial class RazerCoolingPadProtocol
     private const byte CoolingModeSourceSynapse = 0x01;
     private const byte SetSpeedDataSize = 0x06;
     private const byte GetSpeedDataSize = 0x06;
-    private const byte GetFanInformationDataSize = 0x0C;
+    private const byte GetFanInformationDataSize = 0x08;
     private const byte CoolingModeDataSize = 0x03;
 
     public static byte[] CreateGetSpeedRequest() =>
@@ -75,8 +76,7 @@ public static partial class RazerCoolingPadProtocol
 
     public static byte[] CreateSetSpeedRequest(int rpm)
     {
-        _ = ToUnits(rpm); // range and 50-RPM step validation
-        return CreateSpeedRequest(rpm);
+        return CreateSpeedRequest(ToUnits(rpm));
     }
 
     /// <summary>
@@ -94,16 +94,16 @@ public static partial class RazerCoolingPadProtocol
                 $"Cooling pad curve speed must be {MinimumCurveRpm}..{MaximumCurveRpm} RPM in {RpmPerUnit} RPM steps.");
         }
 
-        return CreateSpeedRequest(rpm);
+        return CreateSpeedRequest(rpm / RpmPerUnit);
     }
 
-    private static byte[] CreateSpeedRequest(int rpm) =>
+    private static byte[] CreateSpeedRequest(int units) =>
         RazerFeatureReport.CreateRequest(
             TransactionId,
             SetSpeedDataSize,
             CommandClass,
             SetSpeedCommandId,
-            new[] { ClassId, ThermalId, (byte)(rpm >> 8), (byte)rpm });
+            new[] { ClassId, ThermalId, checked((byte)units) });
 
     public static byte[] CreateGetFanInformationRequest() =>
         RazerFeatureReport.CreateRequest(

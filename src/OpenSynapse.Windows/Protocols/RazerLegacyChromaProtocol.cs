@@ -9,6 +9,7 @@ namespace OpenSynapse.Windows.Protocols;
 public static class RazerLegacyChromaProtocol
 {
     public const byte CommandClass = 0x0F;
+    private const byte PerLedCommandClass = 0x03;
     public const int MaxColors = 2;
 
     // The led-matrix keyboards (rzDevice25LedMatrix) take the whole-device effect on
@@ -40,6 +41,24 @@ public static class RazerLegacyChromaProtocol
             CommandClass,
             0x82,
             [ReadProfileId, ReadRegionId]);
+
+    /// <summary>
+    /// The Esther/MarciT2H product code reads the region list with 0F:80 and then
+    /// uses the first region for the class-0x03 brightness pair. The 0F:04 row in
+    /// the shared table is not the call site those products use.
+    /// </summary>
+    public static byte[] GetRegionIds(byte transactionId) =>
+        RazerFeatureReport.CreateRequest(transactionId, 80, CommandClass, 0x80, []);
+
+    public static byte[] GetPerLedBrightness(byte transactionId, byte profileId, byte regionId) =>
+        RazerFeatureReport.CreateRequest(
+            transactionId, 3, PerLedCommandClass, 0x83, [profileId, regionId]);
+
+    public static byte[] SetPerLedBrightness(
+        byte transactionId, byte profileId, byte regionId, byte percent) =>
+        RazerFeatureReport.CreateRequest(
+            transactionId, 3, PerLedCommandClass, 0x03,
+            [profileId, regionId, (byte)Math.Ceiling(Math.Clamp(percent, (byte)0, (byte)100) * 255d / 100d)]);
 
     public static byte[] SetEffect(
         byte transactionId,
@@ -143,5 +162,40 @@ public static class RazerLegacyChromaProtocol
         }
 
         return (data[2], data[3], data[4], data.Slice(6, count * 3).ToArray());
+    }
+
+    public static byte ReadPerLedBrightnessPercent(ReadOnlySpan<byte> response)
+    {
+        var data = Arguments(response);
+        if (data.Length < 3)
+        {
+            throw new InvalidDataException($"Per-LED brightness response has {data.Length} data bytes; 3 required.");
+        }
+
+        return (byte)Math.Floor(data[2] * 100d / 255d);
+    }
+
+    public static byte? ReadFirstRegionId(ReadOnlySpan<byte> response)
+    {
+        var data = Arguments(response);
+        // The region list is a sequence of five-byte records; the first byte is the id.
+        return data.Length >= 5 ? data[0] : null;
+    }
+
+    private static ReadOnlySpan<byte> Arguments(ReadOnlySpan<byte> response)
+    {
+        if (response.Length != RazerFeatureReport.Length)
+        {
+            throw new InvalidDataException(
+                $"Razer feature reports are {RazerFeatureReport.Length} bytes; got {response.Length}.");
+        }
+
+        var declaredLength = response[6];
+        if (declaredLength > 80)
+        {
+            throw new InvalidDataException($"Razer response declares {declaredLength} data bytes; 80 maximum.");
+        }
+
+        return response.Slice(RazerFeatureReport.ArgumentsOffset, declaredLength);
     }
 }
