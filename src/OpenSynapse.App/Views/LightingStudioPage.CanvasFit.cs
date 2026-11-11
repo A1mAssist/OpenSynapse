@@ -23,22 +23,37 @@ public sealed partial class LightingStudioPage
 #endif
         if (visuals.Count == 0)
         {
+            _builtVisualSignature = null;
             DeviceCanvas.Visibility = Visibility.Collapsed;
             FallbackPreview.Visibility = Visibility.Visible;
             StudioTimingMarkRefresh(timingStarted, visuals, "empty");
             return;
         }
 
+        var profile = _viewModel.Profile;
+        var placements = profile is null
+            ? Enumerable.Empty<string>()
+            : profile.Devices.Select(placement => FormattableString.Invariant(
+                $"{placement.InstanceId}:{placement.X:0.##}:{placement.Y:0.##}:{placement.Rotation}"));
         var visualSignature = string.Join(
             "|",
             visuals.Select(visual =>
-                FormattableString.Invariant(
-                    $"{visual.InstanceId}:{visual.Width:0.##}x{visual.Height:0.##}:{visual.Leds.Count}")));
+                    FormattableString.Invariant(
+                        $"{visual.InstanceId}:{visual.ProductId}:{visual.Width:0.##}x{visual.Height:0.##}:{visual.Leds.Count}:{visual.UsesSvg}:{visual.Paths.Count}"))
+                .Concat(placements)
+                .Prepend(profile?.Id ?? string.Empty));
         var needsFit = !_canvasFitted ||
             !string.Equals(_fittedVisualSignature, visualSignature, StringComparison.Ordinal);
+        if (DeviceCanvas.Visibility == Visibility.Visible &&
+            string.Equals(_builtVisualSignature, visualSignature, StringComparison.Ordinal))
+        {
+            return;
+        }
+
         DeviceCanvas.Devices = visuals.ToArray();
         DeviceCanvas.Profile = _viewModel.Profile;
         DeviceCanvas.Refresh();
+        _builtVisualSignature = visualSignature;
         DeviceCanvas.Visibility = Visibility.Visible;
         FallbackPreview.Visibility = Visibility.Collapsed;
         DeviceCanvas.UpdateLayout();
