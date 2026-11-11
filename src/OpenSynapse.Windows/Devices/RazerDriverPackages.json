@@ -555,7 +555,7 @@
     },
     "00DD": {
       "name": "Razer Krakoff",
-      "version": "1.0.0.0",
+      "version": "25.0.1.0",
       "size": 1097794,
       "url": "https://app-assets.razer.com/files/synapse/devices/221/PID00ddDrv_v25.0.1.0.exe"
     },
@@ -1761,7 +1761,7 @@
     },
     "0F6A": {
       "name": "Razer Base Station V3 Chroma",
-      "version": "25.0.1.50",
+      "version": "26.0.1.0",
       "size": 1099344,
       "url": "https://app-assets.razer.com/files/synapse/devices/3946/PID0f6aDrv_v26.0.1.0.exe"
     },
