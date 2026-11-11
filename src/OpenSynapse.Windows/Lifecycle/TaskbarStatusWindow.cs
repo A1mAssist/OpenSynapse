@@ -201,7 +201,8 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             var instance = GetModuleHandleW(null);
 
             var status = CreateWindowExW(
-                WsExToolWindow | WsExNoActivate | WsExLayered,
+                // Click-through: the strip is display only, so taskbar clicks must reach the taskbar.
+                WsExToolWindow | WsExNoActivate | WsExLayered | WsExTransparent,
                 _statusClassName,
                 string.Empty,
                 // Win11 paints its taskbar above child windows, so stay an owned popup.
