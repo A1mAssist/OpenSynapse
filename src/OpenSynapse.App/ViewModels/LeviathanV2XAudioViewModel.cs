@@ -171,15 +171,8 @@ public sealed class LeviathanV2XAudioViewModel : INotifyPropertyChanged
         try
         {
             var state = await _service.ReadStateAsync(cancellationToken);
-            ApplyState(state);
+            ApplyReadResult(state);
             await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
-            var hasErrors = state.Errors.Count > 0;
-            PartialReadText = hasErrors && HasState
-                ? AppStrings.Text("LeviathanPartialRead")
-                : string.Empty;
-            ErrorText = hasErrors && !HasState
-                ? AppStrings.Text("LeviathanReadFailed")
-                : string.Empty;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -294,7 +287,7 @@ public sealed class LeviathanV2XAudioViewModel : INotifyPropertyChanged
                 await _service.SetBassAsync(Math.Clamp(bass, 1, 7), cancellationToken);
             }
 
-            ApplyState(await _service.ReadStateAsync(cancellationToken));
+            ApplyReadResult(await _service.ReadStateAsync(cancellationToken));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -307,6 +300,18 @@ public sealed class LeviathanV2XAudioViewModel : INotifyPropertyChanged
     }
 
     private string ProfileKey => $"1532:{LeviathanV2XProtocol.ProductId:X4}";
+
+    private void ApplyReadResult(LeviathanV2XAudioState state)
+    {
+        ApplyState(state);
+        var hasErrors = state.Errors.Count > 0;
+        PartialReadText = hasErrors && HasState
+            ? AppStrings.Text("LeviathanPartialRead")
+            : string.Empty;
+        ErrorText = hasErrors && !HasState
+            ? AppStrings.Text("LeviathanReadFailed")
+            : string.Empty;
+    }
 
     private Task<bool> SaveProfileAsync(
         Action<HeadsetProfileSettings> mutate,

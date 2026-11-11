@@ -54,6 +54,7 @@ public sealed class LeviathanV2XAudioService
         }
         catch (Exception exception) when (IsExpectedException(exception))
         {
+            _diagnostic?.Invoke($"leviathan EQ bands read failed: {exception.Message}");
             errors.Add($"EQ bands: {exception.Message}");
         }
 
@@ -269,6 +270,7 @@ public sealed class LeviathanV2XAudioService
         }
         catch (Exception exception) when (IsExpectedException(exception))
         {
+            _diagnostic?.Invoke($"leviathan {label} read failed: {exception.Message}");
             errors.Add($"{label}: {exception.Message}");
             return null;
         }
