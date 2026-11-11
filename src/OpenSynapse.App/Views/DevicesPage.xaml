@@ -809,6 +809,7 @@
                         </StackPanel>
                         <Button Grid.Column="1" local:Localized.Uid="LeviathanRefreshButton" Content="刷新" Click="LeviathanRefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" />
                       </Grid>
+                      <InfoBar IsOpen="{Binding HasPartialRead}" IsClosable="False" Severity="Informational" Message="{Binding PartialReadText}" />
                       <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
                       <TextBlock Text="{Binding OperationStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
                       <Grid ColumnDefinitions="*,*" ColumnSpacing="16" Visibility="{Binding HasState, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -819,7 +820,7 @@
                         </StackPanel>
                         <StackPanel Grid.Column="1" Spacing="8">
                           <TextBlock local:Localized.Uid="LeviathanBassLabel" Text="低音增强" Style="{StaticResource MetricLabelStyle}" />
-                          <NumberBox Value="{Binding BassLevel, Mode=TwoWay}" Minimum="1" Maximum="7" SmallChange="1" SpinButtonPlacementMode="Compact" IsEnabled="{Binding CanEdit}" />
+                          <Slider Minimum="1" Maximum="7" StepFrequency="1" Value="{Binding BassLevel, Mode=TwoWay}" IsThumbToolTipEnabled="False" IsEnabled="{Binding CanEdit}" />
                           <TextBlock Text="{Binding BassText}" FontFamily="Cascadia Mono,Consolas" Foreground="{StaticResource MutedBrush}" />
                           <Button local:Localized.Uid="LeviathanBassApply" Content="应用低音" Click="LeviathanApplyBassClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
                         </StackPanel>
