@@ -152,7 +152,10 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
             await BladeAudioMuteRuntime
                 .InitializeSessionAsync(_session, cancellationToken)
                 .ConfigureAwait(false);
-            var functionPrimary = await ReadFunctionRowPrimaryAsync(cancellationToken)
+            var functionPrimary = await BladeFunctionRowState.ReadPrimaryAsync(
+                    _session,
+                    WriteDiagnostic,
+                    cancellationToken)
                 .ConfigureAwait(false);
             WriteDiagnostic($"fn row primary={functionPrimary} (EC 02:86)");
             _mapping = await LoadMappingAsync(
@@ -499,56 +502,6 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
             .ToArray();
         (_recovery ?? throw new InvalidOperationException("RecoveryHost is not ready."))
             .UpdateSyntheticKeys(keys);
-    }
-
-    private async Task<bool> ReadFunctionRowPrimaryAsync(CancellationToken cancellationToken)
-    {
-        var request = BladeSynapsePolicyProtocol.CreateGetFnKeyStateRequest();
-        try
-        {
-            var response = await _session!.QueryAsync(
-                    request[2],
-                    request[6],
-                    request[7],
-                    request[8],
-                    request.AsMemory(RazerFeatureReport.ArgumentsOffset, request[6]),
-                    TimeSpan.FromMilliseconds(20),
-                    responseReportId: 0,
-                    cancellationToken)
-                .ConfigureAwait(false);
-            return !BladeSynapsePolicyProtocol
-                .ParseFnKeyState(response, request)
-                .MultiFunctionPrimary;
-        }
-        catch (Exception exception)
-        {
-            // Older Blade families expose the same setting through the 07:8B swap
-            // command instead of the 02:86 live profile.
-            var swapRequest = BladeSynapsePolicyProtocol.CreateGetFnKeySwapRequest();
-            try
-            {
-                var swapResponse = await _session!.QueryAsync(
-                        swapRequest[2],
-                        swapRequest[6],
-                        swapRequest[7],
-                        swapRequest[8],
-                        swapRequest.AsMemory(RazerFeatureReport.ArgumentsOffset, swapRequest[6]),
-                        TimeSpan.FromMilliseconds(20),
-                        responseReportId: 0,
-                        cancellationToken)
-                    .ConfigureAwait(false);
-                return !BladeSynapsePolicyProtocol
-                    .ParseFnKeySwap(swapResponse, swapRequest)
-                    .MultiFunctionPrimary;
-            }
-            catch (Exception swapException)
-            {
-                // The shipped graph is function-primary; an unreadable Fn state keeps it.
-                WriteDiagnostic(
-                    $"fn row mode unavailable: {exception.Message}; swap: {swapException.Message}");
-                return true;
-            }
-        }
     }
 
     private static async Task<BladeMappingInputRuntime> LoadMappingAsync(
