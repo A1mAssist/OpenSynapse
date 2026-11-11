@@ -1107,6 +1107,9 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             RequestDeviceRefresh();
         }, cancellationToken, () =>
             FnKeyMultimediaPrimary = _blade._bladeFnKeyMultimediaPrimary ?? false);
+        // The Fn row layer lives in the host mapping graph, so the runtime must
+        // rebuild it after the device accepted a new primary layer.
+        InputProfileChanged?.Invoke();
     }
 
     internal async Task CycleInternalDisplayRefreshRateAsync(CancellationToken cancellationToken = default)

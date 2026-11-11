@@ -146,7 +146,20 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
 
             LogDkmTable(filterDevicePath);
 
-            _mapping = await LoadMappingAsync(_productId, _mappingPreset, cancellationToken)
+            _session = await _transport
+                .OpenSessionAsync(_featureDevicePath, cancellationToken)
+                .ConfigureAwait(false);
+            await BladeAudioMuteRuntime
+                .InitializeSessionAsync(_session, cancellationToken)
+                .ConfigureAwait(false);
+            var functionPrimary = await ReadFunctionRowPrimaryAsync(cancellationToken)
+                .ConfigureAwait(false);
+            WriteDiagnostic($"fn row primary={functionPrimary} (EC 02:86)");
+            _mapping = await LoadMappingAsync(
+                    _productId,
+                    _mappingPreset,
+                    functionPrimary,
+                    cancellationToken)
                 .ConfigureAwait(false);
             _mapping.AddGameModeWindowsKeySuppression();
             var hooks = _mapping.Rules
@@ -157,12 +170,6 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                 .Distinct()
                 .OrderBy(static hook => hook.ScanCode)
                 .ToArray();
-            _session = await _transport
-                .OpenSessionAsync(_featureDevicePath, cancellationToken)
-                .ConfigureAwait(false);
-            await BladeAudioMuteRuntime
-                .InitializeSessionAsync(_session, cancellationToken)
-                .ConfigureAwait(false);
 
             _recovery = await BladeRecoveryClient.StartAsync(
                     RecoveryHostPath,
@@ -494,9 +501,37 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
             .UpdateSyntheticKeys(keys);
     }
 
+    private async Task<bool> ReadFunctionRowPrimaryAsync(CancellationToken cancellationToken)
+    {
+        var request = BladeSynapsePolicyProtocol.CreateGetFnKeyStateRequest();
+        try
+        {
+            var response = await _session!.QueryAsync(
+                    request[2],
+                    request[6],
+                    request[7],
+                    request[8],
+                    request.AsMemory(RazerFeatureReport.ArgumentsOffset, request[6]),
+                    TimeSpan.FromMilliseconds(20),
+                    responseReportId: 0,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            return !BladeSynapsePolicyProtocol
+                .ParseFnKeyState(response, request)
+                .MultiFunctionPrimary;
+        }
+        catch (Exception exception)
+        {
+            // The shipped graph is function-primary; an unreadable Fn state keeps it.
+            WriteDiagnostic($"fn row mode unavailable: {exception.Message}");
+            return true;
+        }
+    }
+
     private static async Task<BladeMappingInputRuntime> LoadMappingAsync(
         ushort productId,
         string mappingPreset,
+        bool functionPrimary,
         CancellationToken cancellationToken)
     {
         if (!StringComparer.Ordinal.Equals(
@@ -511,6 +546,7 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
             ?? throw new InvalidDataException($"Product {productId} mapping root is invalid.");
         var graph = root["defaultMappings"]?["appEngine"] as JsonObject
             ?? throw new InvalidDataException($"Product {productId} default mapping graph is missing.");
+        BladeMappingInputRuntime.ApplyFunctionRowPrimary(graph, functionPrimary);
         return BladeMappingInputRuntime.FromGraph(graph);
     }
 
