@@ -218,7 +218,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
             OnPropertyChanged(nameof(PreviewColumns));
             OnPropertyChanged(nameof(NoPixelOutputVisibility));
             NotifyDocumentChanged();
-            _ = LoadVisualAsync(value);
+            if (value?.HasSameIdentity(_selectedDevice) != true) _ = LoadVisualAsync(value);
         }
     }
 

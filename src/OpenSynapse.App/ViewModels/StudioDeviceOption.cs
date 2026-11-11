@@ -80,6 +80,10 @@ public sealed class StudioDeviceOption : INotifyPropertyChanged
 
     public string? EffectiveInstanceId => InstanceId ?? Descriptor?.Id;
 
+    public bool HasSameIdentity(StudioDeviceOption? other) =>
+        other is not null && EffectiveProductId == other.EffectiveProductId &&
+        string.Equals(EffectiveInstanceId, other.EffectiveInstanceId, StringComparison.OrdinalIgnoreCase);
+
     public bool HasMatrix => Rows > 0 && Columns > 0;
 
     public StudioProductImage ProductImage => _productImage;

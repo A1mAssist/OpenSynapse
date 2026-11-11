@@ -37,6 +37,7 @@ public sealed partial class LightingStudioPage : UserControl
     private bool _userZoomed;
     private bool _syncingZoomPicker;
     private string? _fittedVisualSignature;
+    private string? _builtVisualSignature;
 #if DEBUG
     private StudioCanvasBenchmark? _studioBenchmark;
     private bool _studioBenchmarkOwnsCanvas;
@@ -246,6 +247,7 @@ public sealed partial class LightingStudioPage : UserControl
     {
         _canvasFitted = false;
         _fittedVisualSignature = null;
+        _builtVisualSignature = null;
         _userZoomed = false;
         DeviceCanvas.CancelPendingZoomView();
     }

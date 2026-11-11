@@ -286,10 +286,13 @@ public sealed partial class LightingStudioViewModel
             return;
         }
 
-        var offline = _visualLoader.LoadOfflineVisual(
-            option.EffectiveProductId,
-            option.EffectiveInstanceId ?? string.Empty,
-            option.Name);
+        var offline = DeviceVisuals.FirstOrDefault(visual =>
+                visual.ProductId == option.EffectiveProductId &&
+                string.Equals(visual.InstanceId, option.EffectiveInstanceId, StringComparison.OrdinalIgnoreCase))
+            ?? _visualLoader.LoadOfflineVisual(
+                option.EffectiveProductId,
+                option.EffectiveInstanceId ?? string.Empty,
+                option.Name);
         var placeholder = offline ?? GridVisual(option);
         if (placeholder is not null)
         {
