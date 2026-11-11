@@ -319,6 +319,26 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         {
             ShowWindow(_statusWindow, SwShowNoActivate);
         }
+
+        RaiseAboveTaskbar(taskbar);
+    }
+
+    /// <summary>
+    /// Show-desktop re-orders the topmost band and leaves this owned popup behind
+    /// the taskbar while it still reports itself visible, so re-insert it above.
+    /// </summary>
+    private void RaiseAboveTaskbar(IntPtr taskbar)
+    {
+        var above = GetWindow(taskbar, GwHwndPrev);
+        if (above == _statusWindow) return;
+        // Nothing above the taskbar means it is the top window; join the topmost
+        // band so the strip still lands above it.
+        if (above == IntPtr.Zero) above = new IntPtr(-1);
+        SetWindowPos(
+            _statusWindow,
+            above,
+            0, 0, 0, 0,
+            SwpNoMove | SwpNoSize | SwpNoActivate);
     }
 
     /// <summary>

@@ -36,6 +36,8 @@ internal static class TaskbarStatusNative
     public const int SwHide = 0;
     public const int SwShowNoActivate = 4;
 
+    public const uint GwHwndPrev = 3;
+
     public const uint MonitorDefaultToNearest = 2;
 
     public const uint DtCenter = 0x0001;
@@ -199,6 +201,9 @@ internal static class TaskbarStatusNative
 
     [DllImport("user32.dll")]
     public static extern IntPtr GetAncestor(IntPtr windowHandle, uint flags);
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetWindow(IntPtr windowHandle, uint command);
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
