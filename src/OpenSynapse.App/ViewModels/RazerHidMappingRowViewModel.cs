@@ -79,7 +79,9 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
     {
         _localMacros = localMacros;
         _canUseOnboardMacro = canUseOnboardMacro && localMacros.Count > 0;
-        _canUseSoftwareMacro = canUseSoftwareMacro && localMacros.Count > 0;
+        // Software macros come from the local library, so the group must stay visible
+        // before the first macro exists; CanApply still needs a real macro.
+        _canUseSoftwareMacro = canUseSoftwareMacro;
         _macroTargetIndex = _canUseOnboardMacro ? (int)MacroExecutionTarget.Onboard : (int)MacroExecutionTarget.Software;
         _catalog = catalog;
         _groupOptions = RazerMappingText.GroupOptions(_canUseOnboardMacro || _canUseSoftwareMacro);

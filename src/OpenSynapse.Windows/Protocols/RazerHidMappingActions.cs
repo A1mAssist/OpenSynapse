@@ -169,7 +169,7 @@ public static partial class RazerHidMappingActions
         RazerHidMappingGroup.HyperShiftToggle => ["HyperShift"],
         RazerHidMappingGroup.Macro when macros is { Count: > 0 } =>
             macros.Select(macro => macro.Name).ToArray(),
-        RazerHidMappingGroup.Macro => ["No readable macro slots"],
+        RazerHidMappingGroup.Macro => ["Create a macro in the macro editor first"],
         RazerHidMappingGroup.TurboKey => Names(Keys).Select(name => $"Turbo {name}").ToArray(),
         RazerHidMappingGroup.TurboButton =>
             Names(MouseButtons).Select(name => $"Turbo {name}").ToArray(),
