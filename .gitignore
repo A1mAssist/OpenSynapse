@@ -49,6 +49,7 @@ scripts/*
 !scripts/extract-blade-profiles.mjs
 !scripts/governance.test.mjs
 !scripts/Test-ChromaEffects.ps1
+!scripts/patch-msi-service.ps1
 
 # IDE and user state
 .vs/

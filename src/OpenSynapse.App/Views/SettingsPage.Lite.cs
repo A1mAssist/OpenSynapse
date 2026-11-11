@@ -11,7 +11,6 @@ public sealed partial class SettingsPage
         var visibility = liteMode ? Visibility.Collapsed : Visibility.Visible;
         AdvancedFeaturesCard.Visibility = visibility;
         ModeNotificationCard.Visibility = visibility;
-        TaskbarStatusCard.Visibility = visibility;
         PerformanceOverlayCard.Visibility = visibility;
         ChromaRestCard.Visibility = visibility;
     }

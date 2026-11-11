@@ -359,6 +359,23 @@ internal sealed class BladePowerTelemetryReader
             request.AsMemory(RazerFeatureReport.ArgumentsOffset, request[6]),
             cancellationToken,
             request[6]);
+        // 02C6 acknowledges the write even when the EC has not applied it;
+        // read the persistent profile back instead of trusting the echo.
+        if (blade.Owns(CapabilityIds.FnKeyGet))
+        {
+            var getRequest = RazerCapabilityClient.CreateConfiguredRequest(
+                blade,
+                CapabilityIds.FnKeyGet,
+                BladeSynapsePolicyProtocol.CreateGetFnKeyStateRequest());
+            var getResponse = await _client.QueryAsync(
+                blade,
+                CapabilityIds.FnKeyGet,
+                getRequest.AsMemory(RazerFeatureReport.ArgumentsOffset, getRequest[6]),
+                cancellationToken,
+                getRequest[6]);
+            return BladeSynapsePolicyProtocol.ParseFnKeyState(getResponse, getRequest).MultiFunctionPrimary;
+        }
+
         var state = BladeSynapsePolicyProtocol.ParseFnKeyState(response, request);
         return state.MultiFunctionPrimary;
     }

@@ -15,6 +15,7 @@ public static class BladeSynapsePolicyProtocol
     public const byte FnCommandClass = 0x02;
     public const byte FnSetCommandId = 0x06;
     public const byte FnGetCommandId = 0x86;
+    public const byte FnKeyProfileId = 0x01;
     public const byte FnSwapCommandClass = 0x07;
     public const byte FnSwapSetCommandId = 0x0B;
     public const byte FnSwapGetCommandId = 0x8B;
@@ -30,13 +31,13 @@ public static class BladeSynapsePolicyProtocol
 
     public static byte[] CreateSetFnKeyStateRequest(
         bool multiFunctionPrimary,
-        byte classId = 0x00) =>
+        byte profileId = FnKeyProfileId) =>
         RazerFeatureReport.CreateRequest(
             SynapseTransactionId,
             0x02,
             FnCommandClass,
             FnSetCommandId,
-            new[] { classId, multiFunctionPrimary ? (byte)0x01 : (byte)0x00 });
+            new[] { profileId, multiFunctionPrimary ? (byte)0x01 : (byte)0x00 });
 
     public static byte[] CreateGetFnKeyStateRequest() =>
         RazerFeatureReport.CreateRequest(
@@ -44,7 +45,7 @@ public static class BladeSynapsePolicyProtocol
             0x02,
             FnCommandClass,
             FnGetCommandId,
-            new byte[] { 0x01, 0x00 });
+            new byte[] { FnKeyProfileId, 0x00 });
 
     public static byte[] CreateGetFnKeySwapRequest() =>
         RazerFeatureReport.CreateRequest(

@@ -307,6 +307,15 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
             {
                 snapshot = snapshot with { Devices = ActiveDescriptors };
             }
+            if (_liteMode)
+            {
+                snapshot = snapshot with
+                {
+                    Devices = snapshot.Devices
+                        .Where(device => !DeviceProtocolFamilies.IsBlade(device.ProtocolFamily))
+                        .ToArray(),
+                };
+            }
             var nextFingerprint = CreateDeviceFingerprint(snapshot);
             if (!StringComparer.Ordinal.Equals(_deviceFingerprint, nextFingerprint))
             {

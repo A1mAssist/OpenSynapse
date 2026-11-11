@@ -36,7 +36,10 @@ public sealed partial class MainWindow
         page.SetLiteMode(_viewModel.IsLiteMode);
         page.RefreshAdvancedFeaturesVisibility();
         page.RefreshLightingPresetOptions();
-        return AddPage(page);
+        AddPage(page);
+        page.SyncBladeComboSelections();
+        page.SyncTouchpadToggle();
+        return page;
     }
 
     private LightingStudioPage CreateLightingStudioPage()
@@ -56,7 +59,7 @@ public sealed partial class MainWindow
 
     private ProfilesPage CreateProfilesPage()
     {
-        var page = new ProfilesPage { Host = this };
+        var page = new ProfilesPage { Host = this, DataContext = _viewModel };
         page.InitializeBehaviorSettingsUi();
         return AddPage(page);
     }
@@ -70,7 +73,7 @@ public sealed partial class MainWindow
 
     private SettingsPage CreateSettingsPage()
     {
-        var page = new SettingsPage { Host = this };
+        var page = new SettingsPage { Host = this, DataContext = _viewModel };
         page.SetLiteMode(_viewModel.IsLiteMode);
         page.Initialize();
         page.InitializeBehaviorSettingsUi();

@@ -185,6 +185,14 @@ public partial class App
             _diagnosticLog.TryWrite("chroma-broker", $"service start failed: {exception.Message}");
         }
 
+        if (OpenSynapseServiceInstaller.IsMachineInstallPath(Environment.ProcessPath))
+        {
+            _diagnosticLog.TryWrite(
+                "chroma-broker",
+                "OpenSynapseService is unavailable for this machine install; Chroma SDK is disabled until the service is registered.");
+            return;
+        }
+
         StartChromaBrokerElevated();
     }
 

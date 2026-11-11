@@ -55,12 +55,12 @@ public static class OpenSynapseServiceInstaller
         return false;
     }
 
-    public static bool EnsureInstalled(string? executablePath)
+    public static bool EnsureInstalled(string? executablePath, string? userSid = null)
     {
         try
         {
             using var identity = WindowsIdentity.GetCurrent();
-            var userSid = identity.User?.Value;
+            userSid ??= identity.User?.Value;
             var mayChange = new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator) ||
                 identity.IsSystem;
             if (mayChange && executablePath is not null && IsMachineInstallPath(executablePath) &&

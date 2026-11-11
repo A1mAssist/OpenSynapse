@@ -195,8 +195,18 @@ public sealed partial class DevicesPage : UserControl
 
     private async void AutoApplyComboSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is not ComboBox combo || combo.Tag is not string setting ||
-            (!combo.IsDropDownOpen && combo.FocusState == FocusState.Unfocused))
+        if (_syncingBladeCombos || sender is not ComboBox combo || combo.Tag is not string setting)
+        {
+            return;
+        }
+
+        if (combo.SelectedIndex < 0)
+        {
+            DispatcherQueue.TryEnqueue(SyncBladeComboSelections);
+            return;
+        }
+
+        if (!combo.IsDropDownOpen && combo.FocusState == FocusState.Unfocused)
         {
             return;
         }
@@ -204,6 +214,7 @@ public sealed partial class DevicesPage : UserControl
         switch (setting)
         {
             case "charge":
+                ViewModel.Blade.ChargeLimitIndex = combo.SelectedIndex;
                 await ViewModel.Blade.ApplyChargeLimitAsync(Lifetime);
                 break;
             case "cpuBoost":
@@ -220,9 +231,15 @@ public sealed partial class DevicesPage : UserControl
                 await ViewModel.Blade.ApplyGpuBoostAsync(Lifetime);
                 break;
             case "lighting":
+                // These combos already wrote their value through the TwoWay binding.
+                await ViewModel.Blade.ApplySelectedLightingEffectAsync(Lifetime);
+                break;
+            case "lightingMode":
+                ViewModel.Blade.LightingModeIndex = combo.SelectedIndex;
                 await ViewModel.Blade.ApplySelectedLightingEffectAsync(Lifetime);
                 break;
             case "logo":
+                ViewModel.Blade.LogoIndex = combo.SelectedIndex;
                 await ViewModel.Blade.ApplyLogoAsync(Lifetime);
                 break;
             case "refreshRate":
@@ -728,7 +745,7 @@ public sealed partial class DevicesPage : UserControl
 
     private async void ToggleTouchpadToggled(object sender, RoutedEventArgs e)
     {
-        if (_touchpadToggleInFlight || sender is not ToggleSwitch { FocusState: not FocusState.Unfocused })
+        if (_touchpadToggleInFlight || _syncingTouchpadToggle || sender is not ToggleSwitch)
         {
             return;
         }
@@ -741,6 +758,7 @@ public sealed partial class DevicesPage : UserControl
         finally
         {
             _touchpadToggleInFlight = false;
+            SyncTouchpadToggle();
         }
     }
 

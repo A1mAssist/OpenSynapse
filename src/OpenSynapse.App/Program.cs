@@ -16,9 +16,16 @@ public static class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        if (args.Contains("--install-service", StringComparer.OrdinalIgnoreCase))
+        var installServiceIndex = Array.FindIndex(
+            args,
+            argument => argument.Equals("--install-service", StringComparison.OrdinalIgnoreCase));
+        if (installServiceIndex >= 0)
         {
-            var ok = OpenSynapseServiceInstaller.EnsureInstalled(Environment.ProcessPath);
+            var userSid = args.Length > installServiceIndex + 1 &&
+                !args[installServiceIndex + 1].StartsWith("--", StringComparison.Ordinal)
+                    ? args[installServiceIndex + 1]
+                    : null;
+            var ok = OpenSynapseServiceInstaller.EnsureInstalled(Environment.ProcessPath, userSid);
             Console.WriteLine(ok
                 ? "OpenSynapseService registered."
                 : !OpenSynapseServiceInstaller.IsMachineInstallPath(Environment.ProcessPath)

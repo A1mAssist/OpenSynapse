@@ -144,7 +144,10 @@ public sealed partial class MainWindow : Window
     {
         Localized.RefreshTree(RootLayout);
         _devicesPage?.RefreshLightingPresetOptions();
-        _devicesPage?.RefreshDedicatedGpuMode();
+        if (!_viewModel.IsLiteMode)
+        {
+            _devicesPage?.RefreshDedicatedGpuMode();
+        }
         _aboutWindow?.RefreshLocalization();
         _macroEditorWindow?.RefreshLocalization();
         ((App)Application.Current).RefreshTrayLocalization();

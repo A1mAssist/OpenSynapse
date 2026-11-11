@@ -39,6 +39,8 @@ public sealed partial class DevicesPage : UserControl
 
     private bool _razerDriversRequested;
     private bool _bladeFanTelemetryHooked;
+    private bool _syncingBladeCombos;
+    private bool _syncingTouchpadToggle;
     private bool _liteMode;
 
     public DevicesPage()
@@ -66,6 +68,8 @@ public sealed partial class DevicesPage : UserControl
         {
             return;
         }
+
+        SyncTouchpadToggle();
 
         if (!_bladeFanTelemetryHooked)
         {
@@ -222,6 +226,23 @@ public sealed partial class DevicesPage : UserControl
 
     internal void OnViewModelPropertyChanged(string? propertyName)
     {
+        if (propertyName is nameof(BladeWorkspace.ChargeLimitIndex)
+            or nameof(BladeWorkspace.LightingModeIndex)
+            or nameof(BladeWorkspace.LightingRenderModeIndex)
+            or nameof(BladeWorkspace.WaveDirectionIndex)
+            or nameof(BladeWorkspace.ReactiveSpeedIndex)
+            or nameof(BladeWorkspace.StarlightSpeedIndex)
+            or nameof(BladeWorkspace.StarlightColorModeIndex)
+            or nameof(BladeWorkspace.AnimationSpeedIndex)
+            or nameof(BladeWorkspace.LogoIndex)
+            or nameof(BladeWorkspace.LightingModeOptions))
+        {
+            DispatcherQueue.TryEnqueue(SyncBladeComboSelections);
+        }
+        if (propertyName == nameof(BladeWorkspace.TouchpadEnabled))
+        {
+            DispatcherQueue.TryEnqueue(SyncTouchpadToggle);
+        }
         if (propertyName == nameof(ViperWorkspace.DeviceVisibility) &&
             ViewModel.Viper.DeviceVisibility != Visibility.Visible &&
             ViperDevicePanel.Visibility == Visibility.Visible)
@@ -297,6 +318,66 @@ public sealed partial class DevicesPage : UserControl
         {
             BladeDevicePanel.Visibility = Visibility.Collapsed;
             AdvancedFeaturesPanel.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    internal void SyncBladeComboSelections()
+    {
+        if (DataContext is not MainViewModel viewModel || _syncingBladeCombos)
+        {
+            return;
+        }
+        _syncingBladeCombos = true;
+        try
+        {
+            SetComboItems(ChargeLimitCombo, viewModel.Blade.ChargeLimitOptions);
+            SetComboItems(LightingEffectCombo, viewModel.Blade.LightingModeOptions);
+            SetComboItems(LogoModeCombo, viewModel.Blade.LogoOptions);
+            ChargeLimitCombo.SelectedIndex = viewModel.Blade.ChargeLimitIndex;
+            LightingEffectCombo.SelectedIndex = viewModel.Blade.LightingModeIndex;
+            LogoModeCombo.SelectedIndex = viewModel.Blade.LogoIndex;
+            SetSelectedIndex(LightingRenderModeCombo, viewModel.Blade.LightingRenderModeIndex, 2);
+            SetSelectedIndex(WaveDirectionCombo, viewModel.Blade.WaveDirectionIndex, 2);
+            SetSelectedIndex(ReactiveSpeedCombo, viewModel.Blade.ReactiveSpeedIndex,
+                viewModel.Blade.ReactiveSpeedOptions.Count);
+            SetSelectedIndex(StarlightSpeedCombo, viewModel.Blade.StarlightSpeedIndex,
+                viewModel.Blade.StarlightSpeedOptions.Count);
+            SetSelectedIndex(StarlightColorModeCombo, viewModel.Blade.StarlightColorModeIndex,
+                viewModel.Blade.StarlightColorModeOptions.Count);
+            SetSelectedIndex(AnimationSpeedCombo, viewModel.Blade.AnimationSpeedIndex,
+                viewModel.Blade.AnimationSpeedOptions.Count);
+        }
+        finally
+        {
+            _syncingBladeCombos = false;
+        }
+
+        static void SetComboItems(ComboBox combo, IReadOnlyList<string> options)
+        {
+            if (!combo.Items.Cast<object>().Select(item => item as string).SequenceEqual(options))
+            {
+                combo.ItemsSource = options;
+            }
+        }
+
+        static void SetSelectedIndex(ComboBox combo, int index, int count) =>
+            combo.SelectedIndex = index >= 0 && index < count ? index : 0;
+    }
+
+    internal void SyncTouchpadToggle()
+    {
+        if (DataContext is not MainViewModel viewModel || _syncingTouchpadToggle)
+        {
+            return;
+        }
+        _syncingTouchpadToggle = true;
+        try
+        {
+            TouchpadToggle.IsOn = viewModel.Blade.TouchpadEnabled;
+        }
+        finally
+        {
+            _syncingTouchpadToggle = false;
         }
     }
 

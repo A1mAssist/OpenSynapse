@@ -2392,10 +2392,10 @@
   <data name="BladeFnKeyLabel" xml:space="preserve"><value>Fn 行行为</value></data>
   <data name="BladeFnKeyMultimediaPrimaryText" xml:space="preserve"><value>多媒体键优先</value></data>
   <data name="BladeFnKeyFunctionPrimaryText" xml:space="preserve"><value>功能键优先</value></data>
-  <data name="BladeFnRowTitle" xml:space="preserve"><value>主功能按键</value></data>
-  <data name="BladeFnRowDescription" xml:space="preserve"><value>选择功能键或多媒体键作为第一层。</value></data>
-  <data name="BladeFnRowFunction" xml:space="preserve"><value>功能按键</value></data>
-  <data name="BladeFnRowMultimedia" xml:space="preserve"><value>多媒体按键</value></data>
+  <data name="BladeFnRowTitle" xml:space="preserve"><value>Fn 功能键行为</value></data>
+  <data name="BladeFnRowDescription" xml:space="preserve"><value>设置不按 Fn 时 F1–F12 的行为：直接作为功能键，或触发音量、亮度等多媒体功能。按 Fn 会切换到另一层。</value></data>
+  <data name="BladeFnRowFunction" xml:space="preserve"><value>功能键（F1–F12）</value></data>
+  <data name="BladeFnRowMultimedia" xml:space="preserve"><value>多媒体键（音量/亮度）</value></data>
   <data name="BatteryHealthLabel" xml:space="preserve"><value>电池健康</value></data>
   <data name="BatteryHealthDetail" xml:space="preserve"><value>设计 {0:0.0} Wh / 满充 {1:0.0} Wh · 循环 {2} 次</value></data>
   <data name="BatteryHealthUnavailable" xml:space="preserve"><value>未检测到电池</value></data>
