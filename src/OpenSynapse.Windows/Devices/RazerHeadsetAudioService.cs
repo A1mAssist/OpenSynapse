@@ -32,14 +32,13 @@ public sealed record RazerHeadsetAudioConnection(
 /// </summary>
 public sealed partial class RazerHeadsetAudioService
 {
-    // The 2026 Hammerhead V3 and BlackShark V3 X identities (0A54, 0A61, 0A64,
-    // 0A68, 0A6C, 0A81, 1022) are deliberately absent: their bundles select
-    // rzDevice25ValkyrieT3 or rzDevice40, which move EQ, mic mute and sidetone to
-    // 64-byte class 0x18 commands that this table's 91-byte class 0x08 path and
-    // RazerMxicHeadsetProtocol do not build. The Xbox/PlayStation BlackShark V3
-    // identities (0A4E, 0A51, 101E, 101F) are listed as identities but route to
-    // RazerValkyrieHeadsetService through RazerHeadsetChannelCatalog. 0x101C keeps the
-    // dedicated BlackShark THX panel instead: it is BlackSharkV3ProProtocol.UsbProductId.
+    // The Hammerhead V3 and BlackShark V3 X identities (057C/057D, 05B6, 05B9,
+    // 0A54/0A5B, 0A61/0A64/0A68/0A6C/0A81, 1021/1022) are listed here for identity,
+    // but RazerHeadsetChannelCatalog routes them to the 64-byte rzDevice40 or
+    // rzDevice25ValkyrieT3 path instead of this table's 91-byte class 0x08 path.
+    // The Xbox/PlayStation BlackShark V3 identities (0A4E/0A55, 0A51/0A58, 101E/101F)
+    // route to RazerValkyrieHeadsetService. 0x101C keeps the dedicated BlackShark THX
+    // panel instead: it is BlackSharkV3ProProtocol.UsbProductId.
     public static readonly IReadOnlyDictionary<ushort, string> Products =
         new Dictionary<ushort, string>
         {
@@ -55,6 +54,7 @@ public sealed partial class RazerHeadsetAudioService
             [0x052D] = "Razer Kraken V3 Pro",
             [0x0533] = "Razer Kraken V3 HyperSense",
             [0x0539] = "Razer Barracuda Pro",
+            [0x053A] = "Razer Barracuda Pro",
             [0x053B] = "Razer Barracuda 2.4",
             [0x053C] = "Razer Barracuda",
             [0x053E] = "Razer Audio Mixer",
@@ -63,25 +63,44 @@ public sealed partial class RazerHeadsetAudioService
             [0x0555] = "Razer BlackShark V2 Pro",
             [0x0565] = "Razer BlackShark V2 HyperSpeed",
             [0x0567] = "Razer Kraken V4 Pro",
+            [0x0568] = "Razer Kraken V4 Pro",
             [0x056B] = "Razer Kraken V4",
+            [0x056C] = "Razer Kraken V4",
             [0x056E] = "Razer BlackShark V2 HyperSpeed",
+            [0x0575] = "Razer BlackShark V3 Pro",
             [0x0576] = "Razer BlackShark V3 Pro",
+            [0x0578] = "Razer BlackShark V3",
             [0x0579] = "Razer BlackShark V3",
+            [0x057A] = "Razer BlackShark V3",
+            [0x057C] = "Razer BlackShark V3 X",
+            [0x057D] = "Razer BlackShark V3 X",
             [0x0A4E] = "Razer BlackShark V3 Pro for Xbox",
+            [0x0A4F] = "Razer BlackShark V3 Pro for Xbox",
             [0x0A51] = "Razer BlackShark V3 for Xbox",
+            [0x0A52] = "Razer BlackShark V3 for Xbox",
             [0x0A54] = "Razer BlackShark V3 X for Xbox",
+            [0x0A55] = "Razer BlackShark V3 Pro for Xbox",
+            [0x0A56] = "Razer BlackShark V3 X for Xbox",
+            [0x0A58] = "Razer BlackShark V3 for Xbox",
+            [0x0A5B] = "Razer BlackShark V3 X for Xbox",
             [0x0A61] = "Razer Hammerhead V3 HyperSpeed",
             [0x0A64] = "Razer Hammerhead V3 X HyperSpeed",
             [0x0A68] = "Razer Hammerhead V3 X HyperSpeed for Xbox",
             [0x0A6C] = "Razer Hammerhead V3 X HyperSpeed for PlayStation",
             [0x0A81] = "Razer Hammerhead V3 X HyperSpeed Kuromi Edition",
             [0x1022] = "Razer BlackShark V3 X HyperSpeed for PlayStation",
+            [0x1021] = "Razer BlackShark V3 X HyperSpeed for PlayStation",
+            [0x101D] = "Razer BlackShark V3 Pro for PlayStation",
             [0x101E] = "Razer BlackShark V3 for PlayStation",
             [0x101F] = "Razer BlackShark V3 for PlayStation",
             [0x0583] = "Razer Barracuda Pro",
             [0x0584] = "Razer Barracuda 2.4",
             [0x0587] = "Razer Kraken Kitty V3 Pro",
+            [0x0588] = "Razer Kraken Kitty V3 Pro",
+            [0x0589] = "Razer Kraken Kitty V3 Pro",
+            [0x0592] = "Razer Barracuda V2 Pro",
             [0x0593] = "Razer Barracuda V2 Pro",
+            [0x059F] = "Razer Kraken V4 X Sensa HD Haptics",
             [0x0309] = "Razer Kraken BT Sanrio Limited Edition",
             [0x0526] = "Razer Kraken X USB",
             [0x0530] = "Razer Kraken BT Kitty Edition",
@@ -106,14 +125,17 @@ public sealed partial class RazerHeadsetAudioService
             [0x0582] = "Razer Kraken V3 X",
             [0x056D] = "Razer Kraken V4 X",
             [0x0F66] = "Razer Marci",
+            [0x05AB] = "Razer Mako",
             [0x05AD] = "Razer Mako X",
+            [0x05B6] = "Razer Kraken Kitty V3",
+            [0x05B9] = "Razer Hammerhead V3 Chroma",
             // The Seiren Emote shares the Camyt3 middleware bundle; its LED matrix uses the
             // class 0x10 Chroma commands, while EQ and mic volume match this family.
             [0x0F1B] = "Razer Seiren Emote",
         };
 
     private static readonly IReadOnlySet<ushort> SpeakerProductIds =
-        new HashSet<ushort> { 0x0532, 0x055A, 0x055C, 0x055E, 0x0548, 0x05A3, 0x05AD };
+        new HashSet<ushort> { 0x0532, 0x055A, 0x055C, 0x055E, 0x0548, 0x05A3, 0x05AB, 0x05AD };
 
     private static readonly IReadOnlySet<ushort> MicrophoneProductIds =
         new HashSet<ushort> { 0x0542, 0x0543, 0x056A, 0x0F1B, 0x056F, 0x058E, 0x05A6 };

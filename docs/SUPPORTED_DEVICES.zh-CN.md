@@ -324,19 +324,26 @@ Blade 16 (2023) 只提供固件渲染的关闭、呼吸、光谱和波浪效果�
 | Razer Barracuda | `1532:053C` | 不显示：缺少该协议族的 bundle 证据 |
 | Razer Barracuda 2.4 | `1532:053B` | 音频页 |
 | Razer Barracuda 2.4 | `1532:0584` | 音频页 |
-| Razer Barracuda Pro | `1532:0539` | 音频页 |
+| Razer Barracuda Pro | `1532:0539`、`1532:053A` | 音频页；`053A` 是 2.4 GHz 接收器 |
 | Razer Barracuda Pro | `1532:0583` | 音频页 |
-| Razer Barracuda V2 Pro | `1532:0593` | 音频页（电量/充电）；提供 THX V4 安装入口 |
+| Razer Barracuda V2 Pro | `1532:0593`、`1532:0592` | 音频页（电量/充电）；提供 THX V4 安装入口；`0592` 是 2.4 GHz 接收器 |
 | Razer Barracuda X Chroma | `1532:0574` | 音频页与 6 灯灯光 |
 | Razer Hammerhead V3 | `1532:058C` | 音频页 |
+| Razer Hammerhead V3 幻彩版 | `1532:05B9` | 音频页（`rzDevice40`，class 0x18） |
 | Razer BlackShark V2 HyperSpeed | `1532:0565` | 音频页（2.4 GHz 接收器端点） |
 | Razer BlackShark V2 HyperSpeed | `1532:056E` | 音频页 |
 | Razer BlackShark V2 Pro (2020) | `1532:0528` | 音频页；提供 THX 安装入口 |
 | Razer BlackShark V2 Pro (2023) | `1532:0555` | 音频页；提供 THX 安装入口 |
-| Razer BlackShark V3 | `1532:0579` | 音频页 |
+| Razer BlackShark V3 | `1532:0579`、`1532:057A` | 音频页；`057A` 是 2.4 GHz 接收器；BLE 身份（`0578`）不显示 |
 | Razer BlackShark V3 Pro (0x0576 interface) | `1532:0576` | 音频页；BlackShark V3 Pro 有线控制接口 |
 | Razer BlackShark V3 Pro (2.4 GHz) | `1532:101B` | 音频、ANC、THX 和游戏/语音平衡（2.4 GHz） |
-| Razer BlackShark V3 Pro (USB) | `1532:101C` | 音频、ANC、THX 和游戏/语音平衡（USB） |
+| Razer BlackShark V3 Pro (USB) | `1532:101C` | 音频、ANC、THX 和游戏/语音平衡（USB）；BLE 身份（`101D`）不显示 |
+| Razer BlackShark V3 Pro Xbox | `1532:0A4E`、`1532:0A55` | 音频页；`0A55` 是 2.4 GHz 接收器 |
+| Razer BlackShark V3 Xbox | `1532:0A51`、`1532:0A58` | 音频页；`0A58` 是 2.4 GHz 接收器 |
+| Razer BlackShark V3 PlayStation | `1532:101E`、`1532:101F` | 音频页（有线与无线端点） |
+| Razer BlackShark V3 X | `1532:057C`、`1532:057D` | 音频页（`rzDevice25ValkyrieT3`）；`057D` 是 2.4 GHz 接收器 |
+| Razer BlackShark V3 X Xbox | `1532:0A54`、`1532:0A5B` | 音频页；`0A5B` 是 2.4 GHz 接收器 |
+| Razer BlackShark V3 X PlayStation | `1532:1022`、`1532:1021` | 音频页；`1021` 是 2.4 GHz 接收器 |
 | Razer Kraken 7.1 | `1532:0501` | 仅灯光 |
 | Razer Kraken 7.1 | `1532:0506` | 仅灯光 |
 | Razer Kraken 7.1 Chroma | `1532:0504` | 仅灯光 |
@@ -348,17 +355,19 @@ Blade 16 (2023) 只提供固件渲染的关闭、呼吸、光谱和波浪效果�
 | Razer Kraken Kitty V2 | `1532:0560` | 音频页与灯光 |
 | Razer Kraken Kitty V2 BT Quartz Edition | `1532:0562` | BLE 页：电量/充电、音量、侧音、游戏模式、低音、触觉、扬声器/麦克风 EQ、自动关机和 Chroma |
 | Razer Kraken Kitty V2 Pro | `1532:0554` | 音频页 |
-| Razer Kraken Kitty V3 Pro | `1532:0587` | 音频页（EQ/电量/充电）；提供 THX V4 安装入口 |
+| Razer Kraken Kitty V3 | `1532:05B6` | 音频页（`rzDevice25ValkyrieT3`） |
+| Razer Kraken Kitty V3 Pro | `1532:0587`、`1532:0588` | 音频页（EQ/电量/充电）；提供 THX V4 安装入口；`0588` 是 2.4 GHz 接收器；BLE 身份（`0589`）不显示 |
 | Razer Kraken Tournament Edition | `1532:0520` | 音频页与灯光；提供 Kraken TE 的 THX 安装入口 |
 | Razer Kraken Ultimate | `1532:0527` | 音频页与灯光；提供 THX 安装入口 |
 | Razer Kraken V3 | `1532:0549` | 音频页 |
 | Razer Kraken V3 HyperSense | `1532:0533` | 音频页 |
 | Razer Kraken V3 Pro | `1532:052D` | 不显示：串口音频 transport 未实现 |
 | Razer Kraken V3 X | `1532:0537`、`1532:0582` | 音频页 |
-| Razer Kraken V4 | `1532:056B` | 灯光页（有线） |
-| Razer Kraken V4 | `1532:056C` | 灯光页（2.4 GHz 接收器） |
-| Razer Kraken V4 Pro | `1532:0567` | 音频页 |
+| Razer Kraken V4 | `1532:056B` | 音频页与灯光（有线） |
+| Razer Kraken V4 | `1532:056C` | 音频页与灯光（2.4 GHz 接收器） |
+| Razer Kraken V4 Pro | `1532:0567`、`1532:0568` | 音频页；`0568` 是 2.4 GHz 接收器 |
 | Razer Kraken V4 X | `1532:056D` | 音频页 |
+| Razer Kraken V4 X Sensa HD Haptics | `1532:059F` | 音频页（`rzDevice40BillieT3H`，class 0x18）；侧音/触觉仍受限 |
 | Razer Kraken X USB | `1532:0526` | 音频页 |
 | Razer Marci | `1532:0F66` | 音频页 |
 | Razer Nari | `1532:051C` | 音频页 |
@@ -378,6 +387,7 @@ Kraken 7.1 使用 37-byte output-report 通道；Kraken V4 有线版及其 2.4 G
 | Razer Leviathan V2 Pro | `1532:0548` | 音频页（Protocol 25，65 字节 Feature Report） |
 | Razer Leviathan V2 ECR | `1532:05A3` | 音频页（Protocol 25，64 字节 Feature Report） |
 | Razer Leviathan V2 X | `1532:054A` | 声霸音频与灯光；仍待实机验证 |
+| Razer Mako | `1532:05AB` | 音频页（`rzDeviceJolie`）；Mako X 仍为 `1532:05AD` |
 | Razer Nommo Chroma | `1532:0517` | Chroma 灯光 |
 | Razer Nommo Pro | `1532:0518` | Chroma 灯光 |
 | Razer Nommo V2 | `1532:055C` | 音频页 |

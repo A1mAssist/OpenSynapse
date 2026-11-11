@@ -2,7 +2,7 @@ namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
 /// protocol40 headset channel selected by rzDevice40Headset / rzDevice40HeadsetAiroha
-/// (1532:0593 Barracuda V2 Pro). The bundle builds 64-byte report id 2 with the
+/// (1532:0593 Barracuda V2 Pro and its 0592 receiver). The bundle builds 64-byte report id 2 with the
 /// 0x60 transaction at byte 2, class/id/size at 5..8, payload at 9 and XOR of
 /// bytes 3..61 at 62. The Airoha class only exposes battery and charging; EQ and
 /// microphone mute live in rzDevice40, which this PID does not select.
@@ -18,7 +18,7 @@ public static class RazerProtocol40HeadsetProtocol
     public static readonly byte[] GetCharging = [0x02, 0x07, 0x84];
     public static readonly byte[] GetConnect = [0x00, 0x00, 0x87];
 
-    public static bool IsSupported(ushort productId) => productId == 0x0593;
+    public static bool IsSupported(ushort productId) => productId is 0x0592 or 0x0593;
 
     // rzDevice40Headset.connectDevice writes [0,0,135] once to wake the HID channel.
     public static byte[] CreateConnect() => CreateRequest(GetConnect);

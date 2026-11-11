@@ -54,13 +54,14 @@ public static class RazerMxicHeadsetProtocol
     /// whose legacy triplets are the ones below. The
     /// BlackShark V3 Xbox/PlayStation identities select AudioValkyrie, which uses a
     /// different 64-byte frame and is handled by <c>RazerValkyrieHeadsetService</c>.
-    /// The Hammerhead V3 and BlackShark V3 X families use a different 0x18 command
-    /// set and are not listed here either.
+    /// The Hammerhead V3 and BlackShark V3 X families use their own 0x18 dialects
+    /// but share this envelope, so their IDs are still listed for transport dispatch.
     /// </summary>
     private static readonly FrozenSet<ushort> ProductIds = new ushort[]
     {
         ProductId,
         0x0539,
+        0x053A,
         0x053B,
         0x0583,
         0x0584,
@@ -70,8 +71,16 @@ public static class RazerMxicHeadsetProtocol
         0x0A6C,
         0x0A81,
         0x0A54,
+        0x0A5B,
+        0x057C,
+        0x057D,
+        0x05B6,
+        0x1021,
         0x1022,
+        0x05AB,
         0x05AD,
+        0x059F,
+        0x05B9,
     }.ToFrozenSet();
 
     public static bool IsSupported(ushort productId) => ProductIds.Contains(productId);
@@ -79,6 +88,7 @@ public static class RazerMxicHeadsetProtocol
     private static readonly FrozenSet<ushort> MabelT1ProductIds = new ushort[]
     {
         0x0539,
+        0x053A,
         0x053B,
     }.ToFrozenSet();
 
@@ -88,7 +98,9 @@ public static class RazerMxicHeadsetProtocol
     /// The Hammerhead V3 dongles select the rzDevice40 audio chunk. Its command tuple is
     /// [dataSize, class, id] where this 2023 class uses [class, id, dataSize], EQ and mute
     /// moved to class 0x18, and every response echoes the request payload instead of the
-    /// command bytes. The 64-byte 50 41 envelope is unchanged.
+    /// command bytes. The 64-byte 50 41 envelope is unchanged. 059F (BillieT3H) and
+    /// 05B9 (Hammerhead V3 Chroma) inherit the same channel; 059F only exposes sidetone
+    /// and haptics in its bundle, so unsupported probes surface as partial reads.
     /// </summary>
     private static readonly FrozenSet<ushort> Class18ProductIds = new ushort[]
     {
@@ -97,6 +109,8 @@ public static class RazerMxicHeadsetProtocol
         0x0A68,
         0x0A6C,
         0x0A81,
+        0x059F,
+        0x05B9,
     }.ToFrozenSet();
 
     public static bool UsesClass18Commands(ushort productId) => Class18ProductIds.Contains(productId);
@@ -108,7 +122,12 @@ public static class RazerMxicHeadsetProtocol
     /// </summary>
     private static readonly FrozenSet<ushort> ValkyrieT3ProductIds = new ushort[]
     {
+        0x057C,
+        0x057D,
+        0x05B6,
         0x0A54,
+        0x0A5B,
+        0x1021,
         0x1022,
     }.ToFrozenSet();
 
@@ -121,6 +140,7 @@ public static class RazerMxicHeadsetProtocol
     /// </summary>
     private static readonly FrozenSet<ushort> JolietProductIds = new ushort[]
     {
+        0x05AB,
         0x05AD,
     }.ToFrozenSet();
 
