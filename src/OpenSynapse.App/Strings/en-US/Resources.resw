@@ -1700,6 +1700,8 @@
   <data name="RazerHidEffectStarlightSingle" xml:space="preserve"><value>Single-color starlight</value></data>
   <data name="RazerHidEffectStarlightDual" xml:space="preserve"><value>Dual-color starlight</value></data>
   <data name="RazerHidEffectWheel" xml:space="preserve"><value>Wheel</value></data>
+  <data name="RazerHidEffectFire" xml:space="preserve"><value>Fire</value></data>
+  <data name="RazerHidEffectAudioMeter" xml:space="preserve"><value>Audio meter</value></data>
   <data name="RazerHidEffectCustom" xml:space="preserve"><value>Custom</value></data>
   <data name="RazerHidEffectSoftwareSpectrum" xml:space="preserve"><value>Software spectrum</value></data>
   <data name="RazerHidEffectSoftwareWave" xml:space="preserve"><value>Software wave</value></data>

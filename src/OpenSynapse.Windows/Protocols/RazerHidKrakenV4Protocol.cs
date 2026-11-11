@@ -35,6 +35,10 @@ internal static class RazerHidKrakenV4Protocol
     private const byte EffectBreathing = 0x02;
     private const byte EffectSpectrumCycling = 0x03;
     private const byte EffectWave = 0x04;
+    private const byte EffectStarlight = 0x07;
+    private const byte EffectFire = 0x09;
+    private const byte EffectAudioMeter = 0x0A;
+    private const byte EffectWheel = 0x0C;
 
     private const byte FrameCommandClass = 0x0F;
     private const byte FrameCommandId = 0x03;
@@ -90,6 +94,26 @@ internal static class RazerHidKrakenV4Protocol
     internal static IReadOnlyList<byte[]> CreateSpectrum(bool isDongle = false) =>
     [
         CreateEffect(EffectSpectrumCycling, isDongle),
+    ];
+
+    internal static IReadOnlyList<byte[]> CreateStarlight(bool isDongle = false) =>
+    [
+        CreateEffect(EffectStarlight, isDongle),
+    ];
+
+    internal static IReadOnlyList<byte[]> CreateFire(bool isDongle = false) =>
+    [
+        CreateEffect(EffectFire, isDongle),
+    ];
+
+    internal static IReadOnlyList<byte[]> CreateAudioMeter(bool isDongle = false) =>
+    [
+        CreateEffect(EffectAudioMeter, isDongle),
+    ];
+
+    internal static IReadOnlyList<byte[]> CreateWheel(bool isDongle = false) =>
+    [
+        CreateEffect(EffectWheel, isDongle),
     ];
 
     /// <summary>
