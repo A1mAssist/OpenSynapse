@@ -232,7 +232,8 @@ public partial class App : Application
             SetChromaRestEnabledAsync,
             GetChromaRestSnapshot,
             SetBladeIndicatorDisplayAvailableAsync,
-            SetChromaSourceAllowedAsync, _bladeLightingController, SetTaskbarStatusEnabled);
+            SetChromaSourceAllowedAsync, _bladeLightingController, SetTaskbarStatusEnabled,
+            message => _diagnosticLog.TryWrite("power-notification", message));
         RegisterMainWindow(window, viewModel);
         StartChromaHosts(viewModel);
         InitializeTray(window, viewModel);
