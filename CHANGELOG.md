@@ -4,7 +4,7 @@ English · [Chinese](CHANGELOG.zh-CN.md)
 
 All notable user-visible changes to OpenSynapse are documented here.
 
-## [1.7.2] - 2026-11-12
+## [Unreleased]
 
 ### Added
 
@@ -20,6 +20,18 @@ All notable user-visible changes to OpenSynapse are documented here.
 - **Install and update**: startup updates ask first; MSI installs update through the machine service without UAC; per-device driver installs also run through the service.
 - **Onboard profiles** read the device's real id list and create the first free id; delete and reset ask for confirmation, and the active profile cannot be deleted.
 - **Huntsman V3 Pro TKL / Mini / 8KHz**: analog keys are back, with TKL, Mini and full-size layouts.
+- **Pair a new device**: the devices page can scan and bind a new device to a multi-device receiver, backed by the official dual-dongle compatibility table that filters candidates for the current receiver.
+- **Blade software matrix lighting**: 15 Blades from 2019-2023 gain software matrix effects (Static, Spectrum, Wave and others); a rejected matrix write falls back to the existing firmware effects.
+- **Headset wireless state and powered-off hiding**: the BlackShark V2 Pro (0555) reads its wireless link and hides its card when powered off; the Barracuda 2.4 GHz card hides when the link drops. Added the Barracuda V2 X and Kraken Kitty V2.
+- **More battery sources in the tray**: headset, standalone keyboard and BLE peripheral battery now feed the tray menu and taskbar strip; the menu lists all of them and the strip still shows only the lowest.
+- **Analog-key tooltips**: hovering any analog key shows that key's own actuation and Rapid Trigger sensitivity without selecting it first.
+- **MXIC headsets**: added a do-not-disturb switch.
+- **Game mode**: RazerHid devices that support the command gain a game-mode switch on their device card.
+
+### Improvements
+
+- Pages are built on first navigation, shortening startup.
+- The first device scan now shows “Scanning devices...” instead of appearing stuck.
 
 ### Fixed
 
@@ -37,6 +49,13 @@ All notable user-visible changes to OpenSynapse are documented here.
 - Fixed the missing GPU level, CPU/GPU Boost and max-fan controls after switching to Custom performance mode; sensor rotation, analog-key layout and THX install visibility now refresh with state changes.
 - Fixed update routing for non-MSI installs, MSI update permissions and same-version beta MSI upgrades.
 - Fixed macro editor rename labels, playback controls and import status text.
+- Fixed the mouse-record offsets in driver-level macros: relative movement, absolute coordinates and vertical scrolling no longer land in the wrong fields.
+- The MSI now closes a running OpenSynapse before replacing files, so an overwrite install cannot leave old DLLs behind; update-task failures surface the real error.
+- Fixed the keyboard Keypad mapping table, the wireless RazerHid keyboard transaction bank, and the DeathAdder V4 receiver indicator readout.
+- THX enhancements stay available when the native export is missing instead of disappearing.
+- Lighting Studio device cards now use the Synapse dashboard artwork.
+- Keyboard lighting is saved to the app profile and restored on the next launch.
+- Multiple connected Razer gamepads are all listed, and the previously selected one stays selected.
 
 ## [1.7.1] - 2026-11-09
 
