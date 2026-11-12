@@ -23,6 +23,11 @@ public sealed class RazerAwBleHeadsetRowViewModel(RazerBleDevice device) : INoti
     public DeviceCategory HardwareCategory => DeviceCategory.Headset;
     public string Status => AppStrings.Text("BlackSharkStatusConnected");
 
+    /// <summary>Last value the headset page read, reused by the tray without reconnecting.</summary>
+    public int? BatteryPercent { get; private set; }
+
+    internal void SetBatteryPercent(int? percent) => BatteryPercent = percent;
+
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
 }
 
@@ -81,6 +86,7 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
     private RazerAwBleHeadsetService? _service;
     private bool _isBusy;
     private string _batteryText = "--";
+    private int? _batteryPercent;
     private string _statusText = string.Empty;
     private string _operationStatusText = string.Empty;
     private string _errorText = string.Empty;
@@ -128,6 +134,7 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
     public string Name => string.IsNullOrWhiteSpace(_device.Name) ? "Razer Audio BLE" : _device.Name;
     public string Identity => "BLE";
     public string BatteryText => _batteryText;
+    public int? BatteryPercent => _batteryPercent;
     public string StatusText => _statusText;
     public string OperationStatusText
     {
@@ -391,6 +398,7 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
             }
 
             var state = await _service.ReadBatteryAsync(cancellationToken);
+            _batteryPercent = state.HeadsetPercent;
             _batteryText = FormatBattery(state);
             _statusText = AppStrings.FormatText("AwBleHeadsetStatusRead", _batteryText);
             OnPropertyChanged(nameof(BatteryText));

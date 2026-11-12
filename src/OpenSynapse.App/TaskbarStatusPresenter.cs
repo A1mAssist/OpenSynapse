@@ -32,6 +32,11 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         _diagnosticLog = diagnosticLog;
         _viewModel.Devices.CollectionChanged += OnDevicesChanged;
         _viewModel.RazerHid.Devices.CollectionChanged += OnDevicesChanged;
+        _viewModel.Accessories.HeadsetAudioDevices.CollectionChanged += OnDevicesChanged;
+        _viewModel.Accessories.KeyboardDevices.CollectionChanged += OnDevicesChanged;
+        _viewModel.BlackSharkDevices.CollectionChanged += OnDevicesChanged;
+        _viewModel.BleDevices.CollectionChanged += OnDevicesChanged;
+        _viewModel.AwBleHeadsetDevices.CollectionChanged += OnDevicesChanged;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
         _timer = _dispatcherQueue?.CreateTimer();
         if (_timer is not null)
@@ -71,6 +76,11 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         _statusWindow = null;
         _viewModel.Devices.CollectionChanged -= OnDevicesChanged;
         _viewModel.RazerHid.Devices.CollectionChanged -= OnDevicesChanged;
+        _viewModel.Accessories.HeadsetAudioDevices.CollectionChanged -= OnDevicesChanged;
+        _viewModel.Accessories.KeyboardDevices.CollectionChanged -= OnDevicesChanged;
+        _viewModel.BlackSharkDevices.CollectionChanged -= OnDevicesChanged;
+        _viewModel.BleDevices.CollectionChanged -= OnDevicesChanged;
+        _viewModel.AwBleHeadsetDevices.CollectionChanged -= OnDevicesChanged;
         GC.SuppressFinalize(this);
     }
 

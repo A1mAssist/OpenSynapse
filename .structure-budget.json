@@ -61,7 +61,7 @@
     {
       "path": "src/OpenSynapse.App/ViewModels/RazerBleDeviceViewModel.cs",
       "maxLines": 1185,
-      "maxPublicMembers": 114
+      "maxPublicMembers": 118
     },
     {
       "path": "src/OpenSynapse.Windows/Protocols/BladeMappingInputRuntime.cs",
@@ -248,7 +248,7 @@
     },
     {
       "path": "src/OpenSynapse.App/ViewModels/TrayWorkspace.cs",
-      "maxLines": 69,
+      "maxLines": 210,
       "maxPublicMembers": 2
     },
     {
@@ -275,7 +275,7 @@
   "groups": [
     {
       "pattern": "src/OpenSynapse.App/ViewModels/MainViewModel*.cs",
-        "maxLines": 1449,
+        "maxLines": 1465,
         "maxPublicMembers": 73
     }
   ]

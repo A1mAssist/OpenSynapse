@@ -62,6 +62,7 @@ public sealed partial class MainViewModel
             StringComparer.OrdinalIgnoreCase.Equals(_selectedAwBleHeadsetRow.Device.Id, row.Device.Id))
         {
             await SelectedAwBleHeadset.LoadAsync(cancellationToken);
+            row.SetBatteryPercent(SelectedAwBleHeadset.BatteryPercent);
             return;
         }
 
@@ -77,5 +78,6 @@ public sealed partial class MainViewModel
             () => _profile,
             SaveProfileAsync);
         await SelectedAwBleHeadset.LoadAsync(cancellationToken);
+        row.SetBatteryPercent(SelectedAwBleHeadset.BatteryPercent);
     }
 }
