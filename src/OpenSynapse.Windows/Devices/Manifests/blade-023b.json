@@ -210,5 +210,7 @@
       }
     }
   },
-  "lightingDialect": "FirmwareEffect"
+  "matrixRows": 6,
+  "matrixColumns": 16,
+  "lightingDialect": "LedMatrixBlade"
 }

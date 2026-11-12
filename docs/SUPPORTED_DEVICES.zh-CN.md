@@ -281,7 +281,7 @@ Naga V3 Pro（`00E7`/`00E8`）使用 Naga V2 Pro（`00A8`）协议。Viper V4 Pr
 | Razer Blade 15 Advanced (Early 2022) | `1532:028A` | — |
 | Razer Blade 15 Advanced (Mid 2021) | `1532:0276` | — |
 | Razer Blade 15 Studio Edition (2019) | `1532:024D` | — |
-| Razer Blade 16 (2023) | `1532:029F` | Blade 专用控制；固件渲染键盘灯效 |
+| Razer Blade 16 (2023) | `1532:029F` | Blade 专用控制；6×16 软件矩阵灯效 |
 | Razer Blade 16 (2024) | `1532:02B7` | Blade 专用控制 |
 | Razer Blade 16 (2025) | `1532:02C6` | Blade 专用控制 |
 | Razer Blade 16 (2026) | `1532:02E0` | Blade 专用控制；原生键盘固件灯效和软件帧泵；MUX 按 0D:8A 能力位开放（仅报告 DDS 时显示） |
