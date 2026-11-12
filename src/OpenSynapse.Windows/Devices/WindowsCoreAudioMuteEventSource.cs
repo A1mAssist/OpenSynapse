@@ -22,6 +22,9 @@ internal interface IWindowsAudioMuteSnapshotReader : IDisposable
 public sealed class WindowsCoreAudioMuteEventSource : IDisposable
 {
     private static readonly TimeSpan DefaultRetryInterval = TimeSpan.FromSeconds(5);
+    // Endpoint callbacks can stop arriving after a device re-enumeration. Re-read on a
+    // timer so the Blade mute LEDs cannot stay stale until the app restarts.
+    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2);
 
     private readonly Action<BladeAudioMuteState> _publish;
     private readonly Func<IWindowsAudioMuteSnapshotReader> _readerFactory;
@@ -186,7 +189,7 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
                     reader = null;
                 }
 
-                if (WaitHandle.WaitAny(waitHandles, reader is null || retryMissingEndpoint ? _retryInterval : Timeout.InfiniteTimeSpan) == 0)
+                if (WaitHandle.WaitAny(waitHandles, reader is null || retryMissingEndpoint ? _retryInterval : PollInterval) == 0)
                 {
                     break;
                 }
