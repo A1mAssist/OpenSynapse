@@ -24,6 +24,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
     private readonly IRazerMxicHeadsetTransport _transport;
     private readonly Action<string>? _diagnostic;
     private readonly MxicDialect _dialect;
+    private readonly ushort _productId;
     private bool _remoteMode;
 
     public RazerMxicHeadsetService(ushort productId, string devicePath, Action<string>? diagnostic = null)
@@ -48,6 +49,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
         Action<string>? diagnostic = null)
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
+        _productId = productId;
         _dialect = RazerProtocol40HeadsetProtocol.IsSupported(productId) ? MxicDialect.Protocol40
             : RazerMxicHeadsetProtocol.UsesMabelT1(productId) ? MxicDialect.MabelT1
             : RazerMxicHeadsetProtocol.UsesValkyrieT3Commands(productId) ? MxicDialect.ValkyrieT3
@@ -151,6 +153,31 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
         MxicDialect.Joliet => RazerMxicHeadsetProtocol.EqPresetHeaderClass18,
         _ => RazerMxicHeadsetProtocol.SetEqPresetHeader,
     };
+
+    public async Task<bool?> TryReadWirelessConnectionAsync(CancellationToken cancellationToken = default)
+    {
+        if (_dialect != MxicDialect.Legacy ||
+            !RazerMxicHeadsetProtocol.SupportsWirelessConnectionStatus(_productId))
+        {
+            return null;
+        }
+
+        try
+        {
+            var value = await QueryReportAsync(
+                RazerMxicHeadsetProtocol.CreateRequest(
+                    RazerMxicHeadsetProtocol.GetWirelessConnectionStatus, reportId: ReportId),
+                RazerMxicHeadsetProtocol.WirelessConnectionStatusHeader,
+                "read wireless connection",
+                cancellationToken).ConfigureAwait(false);
+            return RazerMxicHeadsetProtocol.ReadWirelessConnectionStatus(value);
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            _diagnostic?.Invoke($"mxic wireless status failed: {exception.Message}");
+            return null;
+        }
+    }
 
     public async Task<RazerHeadsetAudioState> ReadStateAsync(
         CancellationToken cancellationToken = default)
