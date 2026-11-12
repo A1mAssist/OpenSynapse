@@ -804,10 +804,11 @@ internal sealed class MacroRuntime : IDisposable
                     return true;
                 }
 
-                // Mouse buttons cannot auto-repeat. A second down means the
-                // previous up was lost (focus change or device removal), so
-                // process it instead of swallowing the trigger until restart.
-                if (value.Input.Kind != MacroInputKind.MouseButton)
+                // A second down without an up is normal auto-repeat for the
+                // hold-family modes. Toggle needs it to reach the stop branch
+                // so a lost release can never leave the macro unstoppable.
+                if (suppressed.Mode != MacroTriggerMode.Toggle &&
+                    value.Input.Kind != MacroInputKind.MouseButton)
                 {
                     return true;
                 }

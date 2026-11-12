@@ -63,6 +63,13 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
     internal event Action<string, string>? MacroContinuousPlaybackStarted;
 
+    /// <summary>
+    /// Writes a software macro's original key assignment back to its device.
+    /// The device workspace owns the transport; the macro workspace only owns
+    /// the lifetime of the binding.
+    /// </summary>
+    public Func<MacroSoftwareBinding, CancellationToken, Task>? SoftwareBindingRestorer { get; set; }
+
     public ObservableCollection<MacroRowViewModel> Items { get; } = new();
     public ObservableCollection<MacroStepRowViewModel> Steps { get; } = new();
 
@@ -107,9 +114,6 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
 
     public bool CanEditMacro =>
         SelectedMacro is not null && !IsMacroRecording && !IsMacroCountdown;
-
-    public bool CanEditMacroPlaybackMode =>
-        CanEditMacro && SelectedMacro?.IsPlaybackModeEditable == true;
 
     public MacroStepRowViewModel? SelectedStep
     {
@@ -414,7 +418,6 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
             OnPropertyChanged(nameof(MacroRecordButtonText));
             OnPropertyChanged(nameof(CanEditMacro));
             OnPropertyChanged(nameof(CanEditMacroStep));
-            OnPropertyChanged(nameof(CanEditMacroPlaybackMode));
             OnPropertyChanged(nameof(CanStartMacroRecording));
             OnPropertyChanged(nameof(CanStopMacroRecording));
             OnPropertyChanged(nameof(CanPlayMacro));
@@ -435,7 +438,6 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
             OnPropertyChanged(nameof(MacroRecordButtonText));
             OnPropertyChanged(nameof(CanEditMacro));
             OnPropertyChanged(nameof(CanEditMacroStep));
-            OnPropertyChanged(nameof(CanEditMacroPlaybackMode));
             OnPropertyChanged(nameof(CanStartMacroRecording));
             OnPropertyChanged(nameof(CanStopMacroRecording));
         }
@@ -691,6 +693,11 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         }
 
         var wasDirty = _dirtyMacroIds.Contains(selected.Id);
+        if (selected.Definition.SoftwareBinding is { } binding)
+        {
+            await RestoreSoftwareBindingAsync(binding, cancellationToken);
+        }
+
         profile.Macros.RemoveAt(index);
         Items.Remove(selected);
         _dirtyMacroIds.Remove(selected.Id);
@@ -1229,6 +1236,12 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
             return;
         }
 
+        if (selected.Definition.SoftwareBinding is { } binding)
+        {
+            await RestoreSoftwareBindingAsync(binding, cancellationToken);
+            selected.Definition.SoftwareBinding = null;
+        }
+
         selected.SetTrigger(trigger);
         MarkMacroDirty(selected);
         if (!await TrySaveMacroProfileAsync(cancellationToken))
@@ -1251,6 +1264,10 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
 
         CancelMacroCapture();
         var clearedInput = selected.Definition.Trigger?.Input;
+        var binding = selected.Definition.SoftwareBinding;
+        var restored = binding is not null &&
+            await RestoreSoftwareBindingAsync(binding, cancellationToken);
+        selected.Definition.SoftwareBinding = null;
         selected.SetTrigger(null);
         MarkMacroDirty(selected);
         if (!await TrySaveMacroProfileAsync(cancellationToken))
@@ -1261,7 +1278,7 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         RefreshMacroRuntime();
         NotifySelectedMacroChanged();
         StatusText = AppStrings.Text(clearedInput is { } input &&
-            RazerSoftwareMacroAssignmentPolicy.NeedsOff(input)
+            RazerSoftwareMacroAssignmentPolicy.NeedsOff(input) && !restored
                 ? "MacroTriggerClearedRestoreAssignment"
                 : "MacroTriggerCleared");
     }
@@ -2443,7 +2460,6 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
             OnPropertyChanged(nameof(MacroTriggerBoundVisibility));
             OnPropertyChanged(nameof(MacroTriggerUnsetVisibility));
             OnPropertyChanged(nameof(MacroTotalDurationText));
-            OnPropertyChanged(nameof(CanEditMacroPlaybackMode));
             OnPropertyChanged(nameof(CanPlayMacro));
         }
     }
@@ -2542,7 +2558,6 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         OnPropertyChanged(nameof(MacroEditorVisibility));
         OnPropertyChanged(nameof(CanEditMacro));
         OnPropertyChanged(nameof(CanEditMacroStep));
-        OnPropertyChanged(nameof(CanEditMacroPlaybackMode));
         OnPropertyChanged(nameof(MacroNoSelectionVisibility));
         OnPropertyChanged(nameof(MacroTriggerBoundVisibility));
         OnPropertyChanged(nameof(MacroTriggerUnsetVisibility));

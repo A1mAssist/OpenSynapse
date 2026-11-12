@@ -104,7 +104,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             RunDeviceOperationAsync,
             reading => Telemetry.NotifyBatteryObserved(reading),
             () => Macros.Items.Select(macro => macro.Definition).ToArray(),
-            Macros.TryBindMacroTriggerAsync,
+            Macros.TryApplyMacroBindingAsync,
             Macros.TryClearMacroTriggerAsync);
         Blade = new BladeWorkspace(
             deviceTelemetryReader,
@@ -210,7 +210,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             _diagnosticLog,
             () => Lighting.IsChromaIntegrationEnabled,
             () => Macros.Items.Select(macro => macro.Definition).ToArray(),
-            Macros.TryBindMacroTriggerAsync,
+            Macros.TryApplyMacroBindingAsync,
             Macros.TryClearMacroTriggerAsync,
             () => _machineSettings,
             SaveMachineSettingsAsync,
@@ -218,6 +218,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             RefreshDeviceOverviewVisibility,
             SetDeviceOperationError,
             DispatcherQueue.GetForCurrentThread());
+        Macros.SoftwareBindingRestorer = RazerHid.RestoreSoftwareMacroBindingAsync;
         Accessories = new UsbAccessoriesWorkspace(
             _diagnosticLog, RazerHid, Macros, () => _profile, SaveProfileAsync);
         Accessories.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Accessories));

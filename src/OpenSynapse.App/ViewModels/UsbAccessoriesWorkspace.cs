@@ -210,7 +210,7 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
         SelectedKeyboard = row.Detail;
         SelectedKeyboard.Onboard.LocalMacroProvider =
             () => _macros.Items.Select(macro => macro.Definition).ToArray();
-        SelectedKeyboard.SoftwareMacroBinder = _macros.TryBindMacroTriggerAsync;
+        SelectedKeyboard.SoftwareMacroBinder = _macros.TryApplyMacroBindingAsync;
         SelectedKeyboard.SoftwareMacroClearer = _macros.TryClearMacroTriggerAsync;
         await row.EnsureLoadedAsync(cancellationToken);
     }

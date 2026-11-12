@@ -105,8 +105,9 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
     private Microsoft.UI.Xaml.Visibility _mappingVisibility = Microsoft.UI.Xaml.Visibility.Collapsed;
 
     public Func<string, OpenSynapse.Core.Macros.MacroInput,
-        OpenSynapse.Core.Macros.MacroTriggerMode, bool, CancellationToken, Task<string?>>?
-        SoftwareMacroBinder { get; set; }
+        OpenSynapse.Core.Macros.MacroTriggerMode, OpenSynapse.Core.Macros.MacroPlaybackMode,
+        int, bool, OpenSynapse.Core.Macros.MacroSoftwareBinding?, CancellationToken,
+        Task<string?>>? SoftwareMacroBinder { get; set; }
 
     public Func<string, CancellationToken, Task<string?>>? SoftwareMacroClearer { get; set; }
 

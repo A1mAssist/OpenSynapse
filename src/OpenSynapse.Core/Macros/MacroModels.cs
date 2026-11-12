@@ -233,6 +233,28 @@ public sealed class MacroMousePoint
     };
 }
 
+/// <summary>
+/// The device assignment a software macro replaced when it had to switch the key
+/// off. It is restored when the macro is deleted, so the key never stays dead.
+/// </summary>
+public sealed class MacroSoftwareBinding
+{
+    public ushort ProductId { get; set; }
+    public byte Layer { get; set; }
+    public byte ButtonId { get; set; }
+    public byte OriginalFunctionId { get; set; }
+    public List<byte> OriginalData { get; set; } = [];
+
+    public MacroSoftwareBinding Clone() => new()
+    {
+        ProductId = ProductId,
+        Layer = Layer,
+        ButtonId = ButtonId,
+        OriginalFunctionId = OriginalFunctionId,
+        OriginalData = OriginalData.ToList(),
+    };
+}
+
 public sealed class MacroStep
 {
     public MacroStepKind Kind { get; set; }
@@ -460,6 +482,7 @@ public sealed class MacroDefinition
     public string Name { get; set; } = string.Empty;
     public bool Enabled { get; set; } = true;
     public MacroTrigger? Trigger { get; set; }
+    public MacroSoftwareBinding? SoftwareBinding { get; set; }
     public MacroPlaybackMode PlaybackMode { get; set; }
     public int RepeatCount { get; set; } = 1;
     public double PlaybackSpeed { get; set; } = 1.0;
@@ -503,12 +526,6 @@ public sealed class MacroDefinition
         {
             RepeatCount = 1;
         }
-        if (Trigger?.Mode == MacroTriggerMode.HoldRepeat)
-        {
-            PlaybackMode = MacroPlaybackMode.RepeatUntilStopped;
-            RepeatCount = 1;
-        }
-
         if (double.IsNaN(PlaybackSpeed) || double.IsInfinity(PlaybackSpeed))
         {
             PlaybackSpeed = 1.0;
@@ -544,6 +561,7 @@ public sealed class MacroDefinition
             Name = Name,
             Enabled = Enabled,
             Trigger = Trigger?.Clone(),
+            SoftwareBinding = SoftwareBinding?.Clone(),
             PlaybackMode = PlaybackMode,
             RepeatCount = RepeatCount,
             PlaybackSpeed = PlaybackSpeed,

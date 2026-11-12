@@ -7,17 +7,58 @@ public sealed partial class RazerHidMappingViewModel
 {
     private readonly Func<string, CancellationToken, Task<string?>>? _softwareTriggerClearer;
 
-    private sealed record ClearedSoftwareTrigger(string MacroId, MacroTrigger Trigger);
+    private sealed record ClearedSoftwareTrigger(
+        string MacroId,
+        MacroTrigger Trigger,
+        MacroPlaybackMode PlaybackMode,
+        int RepeatCount,
+        MacroSoftwareBinding? SoftwareBinding);
 
     private int FindSoftwareMacro(MacroInput input, bool hyperShiftLayer, out MacroTriggerMode mode) =>
         RazerSoftwareMacroTriggerMatcher.FindIndex(_localMacros, input, hyperShiftLayer, out mode);
 
+    private MacroDefinition? ResolveSoftwareMacro(RazerHidMappingRowViewModel row)
+    {
+        if (row.OptionIndex != row.LoadedOptionIndex)
+        {
+            // The user picked from the dropdown after the page was read.
+            return row.OptionIndex >= 0 && row.OptionIndex < _localMacros.Count
+                ? _localMacros[row.OptionIndex]
+                : null;
+        }
+
+        if (row.SoftwareMacroId is { } boundId)
+        {
+            return _localMacros.FirstOrDefault(macro =>
+                StringComparer.Ordinal.Equals(macro.Id, boundId));
+        }
+
+        return row.OptionIndex >= 0 && row.OptionIndex < _localMacros.Count
+            ? _localMacros[row.OptionIndex]
+            : null;
+    }
+
+    private MacroSoftwareBinding? CreateSoftwareBinding(
+        RazerHidMappingRowViewModel row,
+        IReadOnlyList<AssignmentBackup> backups)
+    {
+        var backup = backups.FirstOrDefault(item => ReferenceEquals(item.Row, row));
+        return backup is null
+            ? null
+            : new MacroSoftwareBinding
+            {
+                ProductId = _productId,
+                Layer = Mode,
+                ButtonId = row.ButtonId,
+                OriginalFunctionId = backup.Assignment.FunctionId,
+                OriginalData = backup.Assignment.Data.ToList(),
+            };
+    }
+
     private static int SoftwareTriggerModeIndex(MacroTriggerMode mode) => mode switch
     {
         MacroTriggerMode.Toggle => 1,
-        MacroTriggerMode.Hold => 2,
-        MacroTriggerMode.Sequence => 3,
-        MacroTriggerMode.HoldRepeat => 4,
+        MacroTriggerMode.HoldRepeat => 2,
         _ => 0,
     };
 
@@ -44,9 +85,14 @@ public sealed partial class RazerHidMappingViewModel
             }
 
             if (_localMacros.FirstOrDefault(
-                    macro => StringComparer.Ordinal.Equals(macro.Id, oldId))?.Trigger is { } trigger)
+                    macro => StringComparer.Ordinal.Equals(macro.Id, oldId)) is { Trigger: { } trigger } macro)
             {
-                clears.Add(new ClearedSoftwareTrigger(oldId, trigger.Clone()));
+                clears.Add(new ClearedSoftwareTrigger(
+                    oldId,
+                    trigger.Clone(),
+                    macro.PlaybackMode,
+                    macro.RepeatCount,
+                    macro.SoftwareBinding?.Clone()));
             }
         }
 
@@ -89,7 +135,10 @@ public sealed partial class RazerHidMappingViewModel
                         clear.MacroId,
                         clear.Trigger.Input,
                         clear.Trigger.Mode,
+                        clear.PlaybackMode,
+                        clear.RepeatCount,
                         clear.Trigger.HyperShiftLayer,
+                        clear.SoftwareBinding,
                         CancellationToken.None)
                     .ConfigureAwait(true);
                 if (error is not null)
