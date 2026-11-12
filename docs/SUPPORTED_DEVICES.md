@@ -282,7 +282,7 @@ Blade models with a dedicated manifest expose telemetry, performance, fans, disp
 | Razer Blade 15 Advanced (Early 2022) | `1532:028A` | — |
 | Razer Blade 15 Advanced (Mid 2021) | `1532:0276` | — |
 | Razer Blade 15 Studio Edition (2019) | `1532:024D` | — |
-| Razer Blade 16 (2023) | `1532:029F` | Dedicated Blade controls; firmware-rendered keyboard effects |
+| Razer Blade 16 (2023) | `1532:029F` | Dedicated Blade controls; 6×16 software matrix lighting |
 | Razer Blade 16 (2024) | `1532:02B7` | Dedicated Blade controls |
 | Razer Blade 16 (2025) | `1532:02C6` | Dedicated Blade controls |
 | Razer Blade 16 (2026) | `1532:02E0` | Dedicated Blade controls; native keyboard effects and software frame pump; MUX follows the 0D:8A capability bits (DDS only when reported) |
