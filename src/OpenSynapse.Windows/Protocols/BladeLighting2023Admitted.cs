@@ -4,12 +4,11 @@ using OpenSynapse.Windows.Lighting;
 namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
-/// Keyboard-lighting admission for models that render uniform effects in firmware.
+/// Keyboard-lighting admission for the firmware-effect fallback.
 ///
-/// These models have no per-key matrix path in the native Blade channel, so only
-/// firmware-rendered effects and brightness are admitted. Their stored effect RGB is
-/// not readable, so no color readback, custom palette, frame-pumped effect or Chroma
-/// override is offered.
+/// A matrix model whose firmware rejects the per-key channel drops to these effects
+/// for the rest of the session. Their stored effect RGB is not readable, so no color
+/// readback, custom palette, frame-pumped effect or Chroma override is offered.
 /// </summary>
 public static class BladeLighting2023Admitted
 {
