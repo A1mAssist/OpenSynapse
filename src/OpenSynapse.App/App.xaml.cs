@@ -326,23 +326,23 @@ public partial class App : Application
             var packages = locator.PackagesDir
                 ?? throw new InvalidOperationException("The OpenSynapse package directory is unavailable.");
             var packagePath = Path.Combine(packages, release.FileName);
-            var viaService = await OpenSynapseServiceClient
+            var attempt = await OpenSynapseServiceClient
                 .TryApplyUpdateAsync(
                     release.FileName,
                     packagePath,
                     release.Version.ToString(),
                     Environment.ProcessId)
                 .ConfigureAwait(false);
-            if (viaService is true)
+            if (attempt.Started)
             {
                 await GetShutdownTask(_audioMuteViewModel);
                 Environment.Exit(0);
             }
 
-            if (viaService is false)
+            if (attempt.ViaService)
             {
                 throw new InvalidOperationException(
-                    "The OpenSynapse service could not start the update task.");
+                    attempt.Error ?? "The OpenSynapse service could not start the update task.");
             }
 
             _ = MachineWideUpdateLauncher.Start(

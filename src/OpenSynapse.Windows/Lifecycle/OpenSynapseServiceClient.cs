@@ -158,7 +158,7 @@ public static partial class OpenSynapseServiceClient
     }
 
     /// <summary>Applies a downloaded Velopack package through the machine service.</summary>
-    public static async Task<bool?> TryApplyUpdateAsync(
+    public static async Task<OpenSynapseUpdateAttempt> TryApplyUpdateAsync(
         string packageFileName,
         string packagePath,
         string packageVersion,
@@ -170,7 +170,7 @@ public static partial class OpenSynapseServiceClient
             string.IsNullOrWhiteSpace(packageVersion) ||
             waitProcessId <= 0)
         {
-            return false;
+            return new OpenSynapseUpdateAttempt(false, false, "The update request is invalid.");
         }
 
         var request = new OpenSynapseServiceRequest(
@@ -188,8 +188,11 @@ public static partial class OpenSynapseServiceClient
                 ApplyUpdateResponseTimeout)
             .ConfigureAwait(false);
         return response?.Handled == true
-            ? response.Outcome == DedicatedGpuSwitchOutcome.Success
-            : null;
+            ? new OpenSynapseUpdateAttempt(
+                true,
+                response.Outcome == DedicatedGpuSwitchOutcome.Success,
+                response.Error)
+            : new OpenSynapseUpdateAttempt(false, false, null);
     }
 
     /// <summary>

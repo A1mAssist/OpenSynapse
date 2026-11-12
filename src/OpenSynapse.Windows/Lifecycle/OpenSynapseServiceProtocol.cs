@@ -212,6 +212,16 @@ public sealed record OpenSynapseServiceResponse(
     bool? CurveOptimizerAvailable = null);
 
 /// <summary>
+/// The service's answer to an update request. ViaService separates "the service
+/// declined the request, so the UAC fallback is available" from "the service ran
+/// and failed, so there is no safe automatic fallback".
+/// </summary>
+public readonly record struct OpenSynapseUpdateAttempt(
+    bool ViaService,
+    bool Started,
+    string? Error);
+
+/// <summary>
 /// What the driver currently holds. Null from the client means the installed service
 /// predates the clock-offset operation, not that the driver refused it.
 /// </summary>
