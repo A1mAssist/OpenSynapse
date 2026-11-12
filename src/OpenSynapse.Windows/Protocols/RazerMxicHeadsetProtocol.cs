@@ -51,6 +51,11 @@ public static class RazerMxicHeadsetProtocol
     public static readonly byte[] SetMicMuteCommand = [0xE9, 0x00, 0x01];
     public static readonly byte[] SetMicMuteHeader = [0xE9, 0x01, 0x01];
 
+    public static readonly byte[] GetAudioDnd = [0x27, 0x00, 0x00];
+    public static readonly byte[] AudioDndHeader = [0x27, 0x01, 0x01];
+    public static readonly byte[] SetAudioDndCommand = [0xA7, 0x00, 0x01];
+    public static readonly byte[] SetAudioDndHeader = [0xA7, 0x01, 0x01];
+
     /// <summary>
     /// Products whose audio channel uses this 64-byte MXIC envelope. The
     /// Barracuda Pro/2.4 identities (0539, 053B, 0583, 0584) select AudioMxicDevice,
@@ -177,6 +182,11 @@ public static class RazerMxicHeadsetProtocol
     public static readonly byte[] EqBandsHeaderClass18 = [LiveProfile, SpeakerSource];
     public static readonly byte[] MicMuteRequestClass18 = [2, Class18, 0x84];
     public static readonly byte[] MicMuteHeaderClass18 = [LiveProfile, MicrophoneSource];
+    public static readonly byte[] AudioDndRequestClass18 = [1, Class18, 0x85];
+    public static readonly byte[] AudioDndRequestValkyrie = [2, Class18, 0x85];
+    public static readonly byte[] AudioDndHeaderClass18 = [LiveProfile];
+    public static readonly byte[] SetAudioDndCommandClass18 = [2, Class18, 0x05];
+    public static readonly byte[] SetAudioDndCommandValkyrie = [2, Class18, 0x05];
 
     public static byte[] CreateGetEqPresetClass18() =>
         Create(RazerCommand, EqPresetRequestClass18, [LiveProfile, 0x00]);
@@ -211,6 +221,28 @@ public static class RazerMxicHeadsetProtocol
 
     public static byte[] CreateSetMicMuteClass18(bool muted, byte reportId = ReportId) =>
         Create(reportId, RazerCommand, [3, Class18, 0x04], [LiveProfile, MicrophoneSource, muted ? (byte)1 : (byte)0]);
+
+    public static byte[] CreateGetAudioDnd(ushort productId) =>
+        UsesValkyrieT3Commands(productId)
+            ? RazerValkyrieT3Protocol.Create(0x85, [LiveProfile, 0x00])
+            : UsesClass18Commands(productId)
+                ? Create(RazerCommand, AudioDndRequestClass18, [LiveProfile])
+                : CreateRequest(
+                    GetAudioDnd,
+                    reportId: UsesMabelT1(productId) ? MabelT1ReportId : ReportId);
+
+    public static byte[] CreateSetAudioDnd(ushort productId, bool enabled)
+    {
+        var state = enabled ? (byte)1 : (byte)0;
+        return UsesValkyrieT3Commands(productId)
+            ? RazerValkyrieT3Protocol.Create(0x05, [LiveProfile, state])
+            : UsesClass18Commands(productId)
+                ? Create(RazerCommand, SetAudioDndCommandClass18, [LiveProfile, state])
+                : CreateRequest(
+                    SetAudioDndCommand,
+                    [state],
+                    UsesMabelT1(productId) ? MabelT1ReportId : ReportId);
+    }
 
     // rzDevice25ValkyrieT3: S=[2,24,128] A=[4,24,0] U=[2,24,129] E=[12,24,1]. The second
     // payload byte is the preset group (0/1, validated by setPresetEQIndex), not a source.
@@ -415,6 +447,20 @@ public static class RazerMxicHeadsetProtocol
 
     public static bool ReadMicMute(ReadOnlySpan<byte> value)
     {
+        Require(value, 1);
+        return value[0] == 1;
+    }
+
+    public static bool ReadAudioDnd(ushort productId, ReadOnlySpan<byte> value)
+    {
+        // The class 0x18 reply is [profile, state]; transports that strip the
+        // profile byte hand back only the state.
+        if (UsesClass18Commands(productId) || UsesValkyrieT3Commands(productId))
+        {
+            Require(value, 1);
+            return value.Length >= 2 ? value[1] == 1 : value[0] == 1;
+        }
+
         Require(value, 1);
         return value[0] == 1;
     }

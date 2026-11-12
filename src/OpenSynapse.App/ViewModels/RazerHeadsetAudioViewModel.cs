@@ -225,6 +225,8 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         RazerHeadsetAudioTransport.ValkyrieT3Feature64 or RazerHeadsetAudioTransport.Jolie64;
     private bool IsMixer053E => _connection.Transport == RazerHeadsetAudioTransport.Mixer053E;
     private bool IsProtocol40 => RazerProtocol40HeadsetProtocol.IsSupported(_connection.ProductId);
+    private bool IsMxicDnd => !IsProtocol40 && _connection.Transport is
+        RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64;
     private bool IsValkyrie => _connection.Transport is
         RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64;
     private bool IsFeature91 => !IsMxic && !IsValkyrie && !IsMixer053E && !IsKrakenBase &&
@@ -581,7 +583,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         (IsFeature91 || IsProtocol25) && _hasNoiseSuppression ? Visibility.Visible : Visibility.Collapsed;
 
     public bool Dnd { get => _dnd; set => SetField(ref _dnd, value); }
-    public Visibility DndVisibility => _hasDnd ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility DndVisibility => _hasDnd && !IsProtocol40 ? Visibility.Visible : Visibility.Collapsed;
 
     public bool AutoPause { get => _autoPause; set => SetField(ref _autoPause, value); }
     public Visibility AutoPauseVisibility => _hasAutoPause ? Visibility.Visible : Visibility.Collapsed;
@@ -652,7 +654,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     public Visibility MicReverbVisibility => _hasMicReverb ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility AdvancedAudioVisibility =>
-        _hasDnd || _hasAutoPause || _hasGestureControl || _hasDolby || _hasNightMode || _hasVoicePrompts
+        !IsProtocol40 && (_hasDnd || _hasAutoPause || _hasGestureControl || _hasDolby || _hasNightMode || _hasVoicePrompts)
             ? Visibility.Visible
             : Visibility.Collapsed;
 
@@ -1505,7 +1507,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             _hasMicMuted = !IsT3;
             OnPropertyChanged(nameof(MicCardVisibility));
         }
-        if (state.Dnd is bool dnd) { Dnd = dnd; _hasDnd = true; OnPropertyChanged(nameof(DndVisibility)); }
+        if (state.Dnd is bool dnd) { Dnd = dnd; _hasDnd = !IsProtocol40; OnPropertyChanged(nameof(DndVisibility)); }
         if (state.SilenceDetectionPeriod is ushort period) _silenceDetectionPeriod = period;
         if (state.AutoPause is bool autoPause)
         {
