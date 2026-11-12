@@ -10,92 +10,92 @@
   <ScrollViewer x:Name="PageScrollViewer" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
               <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
                 <StackPanel Spacing="5">
-                  <TextBlock local:Localized.Uid="SettingsPageTitle" Text="设置" Style="{StaticResource PageTitleStyle}" />
-                  <TextBlock local:Localized.Uid="SettingsPageDescription" Text="管理 OpenSynapse 的启动、通知、语言和更新。" Foreground="{StaticResource MutedBrush}" />
+                  <TextBlock local:Localized.Uid="SettingsPageTitle" Style="{StaticResource PageTitleStyle}" />
+                  <TextBlock local:Localized.Uid="SettingsPageDescription" Foreground="{StaticResource MutedBrush}" />
                 </StackPanel>
                 <Border Style="{StaticResource CardStyle}" Padding="16">
                   <StackPanel Spacing="14">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-                      <StackPanel Spacing="4"><TextBlock local:Localized.Uid="Loc_C6BFF9FFC0" Text="开机启动" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock local:Localized.Uid="Loc_6048E58A89" Text="仅当前用户，不需要管理员权限。" Foreground="{StaticResource MutedBrush}" /></StackPanel>
-                      <ToggleSwitch local:Localized.Uid="StartupToggle" Grid.Column="1" IsOn="{Binding Profiles.IsStartupEnabled, Mode=OneWay}" Toggled="StartupToggled" IsEnabled="{Binding Profiles.CanSetStartup}" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="开机启动" />
+                      <StackPanel Spacing="4"><TextBlock local:Localized.Uid="Loc_C6BFF9FFC0" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock local:Localized.Uid="Loc_6048E58A89" Foreground="{StaticResource MutedBrush}" /></StackPanel>
+                      <ToggleSwitch local:Localized.Uid="StartupToggle" Grid.Column="1" IsOn="{Binding Profiles.IsStartupEnabled, Mode=OneWay}" Toggled="StartupToggled" IsEnabled="{Binding Profiles.CanSetStartup}" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
                     </Grid>
                     <Border Height="1" Background="{StaticResource LineBrush}" />
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-                      <StackPanel Spacing="4"><TextBlock local:Localized.Uid="Loc_4ED618F72C" Text="静默启动" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock local:Localized.Uid="Loc_E40B74CC08" Text="开机启动时仅显示托盘图标。" Foreground="{StaticResource MutedBrush}" /></StackPanel>
-                      <ToggleSwitch local:Localized.Uid="SilentStartupToggle" Grid.Column="1" IsOn="{Binding Profiles.IsSilentStartupEnabled, Mode=OneWay}" Toggled="SilentStartupToggled" IsEnabled="{Binding Profiles.CanSetSilentStartup}" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="静默启动" />
+                      <StackPanel Spacing="4"><TextBlock local:Localized.Uid="Loc_4ED618F72C" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock local:Localized.Uid="Loc_E40B74CC08" Foreground="{StaticResource MutedBrush}" /></StackPanel>
+                      <ToggleSwitch local:Localized.Uid="SilentStartupToggle" Grid.Column="1" IsOn="{Binding Profiles.IsSilentStartupEnabled, Mode=OneWay}" Toggled="SilentStartupToggled" IsEnabled="{Binding Profiles.CanSetSilentStartup}" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
                     </Grid>
                   </StackPanel>
                 </Border>
                 <Border x:Name="LiteModeCard" Style="{StaticResource CardStyle}" Padding="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                     <StackPanel Spacing="4">
-                      <TextBlock local:Localized.Uid="LiteModeTitle" Text="Lite 模式（仅外设控制）" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <TextBlock local:Localized.Uid="LiteModeDescription" Text="隐藏笔记本控制、性能面板和高级设置；切换后需要重启。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="LiteModeTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="LiteModeDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                     </StackPanel>
-                    <ToggleSwitch x:Name="LiteModeToggle" Grid.Column="1" Toggled="LiteModeToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="Lite 模式" />
+                    <ToggleSwitch local:Localized.Uid="LiteModeToggle" x:Name="LiteModeToggle" Grid.Column="1" Toggled="LiteModeToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
                   </Grid>
                 </Border>
                 <Border x:Name="AdvancedFeaturesCard" Style="{StaticResource CardStyle}" Padding="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                     <StackPanel Spacing="4">
-                      <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="AdvancedFeaturesTitle" Text="高级功能（危险）" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
-                      <TextBlock local:Localized.Uid="AdvancedFeaturesSettingDescription" Text="在设备页显示 GPU 超频、CPU 功耗墙和 Curve Optimizer 等直接写入硬件的设置。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="AdvancedFeaturesTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
+                      <TextBlock local:Localized.Uid="AdvancedFeaturesSettingDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                     </StackPanel>
-                    <ToggleSwitch local:Localized.Uid="A11yEnableAdvancedFeatures" x:Name="AdvancedFeaturesToggle" Grid.Column="1" Toggled="AdvancedFeaturesToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="开启高级功能" />
+                    <ToggleSwitch local:Localized.Uid="A11yEnableAdvancedFeatures" x:Name="AdvancedFeaturesToggle" Grid.Column="1" Toggled="AdvancedFeaturesToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
                   </Grid>
                 </Border>
                 <Border x:Name="ModeNotificationCard" Style="{StaticResource CardStyle}" Padding="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                     <StackPanel Spacing="4">
-                      <TextBlock local:Localized.Uid="ModeNotificationTitle" Text="模式切换通知" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <TextBlock local:Localized.Uid="ModeNotificationDescription" Text="性能模式或游戏模式切换成功后发送 Windows 通知。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="ModeNotificationTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="ModeNotificationDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                     </StackPanel>
-                    <ToggleSwitch local:Localized.Uid="ModeNotificationToggle" x:Name="ModeNotificationToggle" Grid.Column="1" Toggled="ModeNotificationToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="模式切换通知" />
+                    <ToggleSwitch local:Localized.Uid="ModeNotificationToggle" x:Name="ModeNotificationToggle" Grid.Column="1" Toggled="ModeNotificationToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
                   </Grid>
                 </Border>
                 <Border Style="{StaticResource CardStyle}" Padding="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                     <StackPanel Spacing="4">
-                      <TextBlock local:Localized.Uid="LowBatteryNotificationTitle" Text="外设低电量通知" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <TextBlock local:Localized.Uid="LowBatteryNotificationDescription" Text="读到外设电量降至 20% 和 10% 时发送 Windows 通知。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="LowBatteryNotificationTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="LowBatteryNotificationDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                     </StackPanel>
-                    <ToggleSwitch local:Localized.Uid="LowBatteryNotificationToggle" x:Name="LowBatteryNotificationToggle" Grid.Column="1" Toggled="LowBatteryNotificationToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="外设低电量通知" />
+                    <ToggleSwitch local:Localized.Uid="LowBatteryNotificationToggle" x:Name="LowBatteryNotificationToggle" Grid.Column="1" Toggled="LowBatteryNotificationToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
                   </Grid>
                 </Border>
                 <Border Style="{StaticResource CardStyle}" Padding="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                     <StackPanel Spacing="4">
-                      <TextBlock local:Localized.Uid="TrayBatteryTitle" Text="托盘菜单外设电量" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <TextBlock local:Localized.Uid="TrayBatteryDescription" Text="在右键菜单中显示已连接鼠标和键盘的电量。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="TrayBatteryTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="TrayBatteryDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                     </StackPanel>
-                    <ToggleSwitch local:Localized.Uid="TrayBatteryToggle" x:Name="TrayBatteryToggle" Grid.Column="1" Toggled="TrayBatteryToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="托盘菜单外设电量" />
+                    <ToggleSwitch local:Localized.Uid="TrayBatteryToggle" x:Name="TrayBatteryToggle" Grid.Column="1" Toggled="TrayBatteryToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
                   </Grid>
                 </Border>
                 <Border x:Name="TaskbarStatusCard" Style="{StaticResource CardStyle}" Padding="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                     <StackPanel Spacing="4">
-                      <TextBlock local:Localized.Uid="TaskbarStatusTitle" Text="任务栏状态条" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <TextBlock local:Localized.Uid="TaskbarStatusDescription" Text="在任务栏显示已连接外设的电量。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="TaskbarStatusTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="TaskbarStatusDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                     </StackPanel>
-                    <ToggleSwitch local:Localized.Uid="TaskbarStatusToggle" x:Name="TaskbarStatusToggle" Grid.Column="1" Toggled="TaskbarStatusToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="任务栏状态条" />
+                    <ToggleSwitch local:Localized.Uid="TaskbarStatusToggle" x:Name="TaskbarStatusToggle" Grid.Column="1" Toggled="TaskbarStatusToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
                   </Grid>
                 </Border>
                 <Border x:Name="PerformanceOverlayCard" Style="{StaticResource CardStyle}" Padding="16">
                   <StackPanel Spacing="12">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                       <StackPanel Spacing="4">
-                        <TextBlock local:Localized.Uid="PerformanceOverlayTitle" Text="性能悬浮窗" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                        <TextBlock local:Localized.Uid="PerformanceOverlayDescription" Text="在桌面显示性能模式、CPU/GPU 温度和风扇转速；可拖动并记住位置。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                        <TextBlock local:Localized.Uid="PerformanceOverlayTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock local:Localized.Uid="PerformanceOverlayDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                       </StackPanel>
-                      <ToggleSwitch local:Localized.Uid="PerformanceOverlayToggle" x:Name="PerformanceOverlayToggle" Grid.Column="1" Toggled="PerformanceOverlayToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="性能悬浮窗" />
+                      <ToggleSwitch local:Localized.Uid="PerformanceOverlayToggle" x:Name="PerformanceOverlayToggle" Grid.Column="1" Toggled="PerformanceOverlayToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
                     </Grid>
                     <Border Height="1" Background="{StaticResource LineBrush}" />
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                       <StackPanel Spacing="4">
-                        <TextBlock local:Localized.Uid="PerformanceOverlayDetailedTitle" Text="详细卡片" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                        <TextBlock local:Localized.Uid="PerformanceOverlayDetailedDescription" Text="使用较大的半透明卡片，并显示 CPU/GPU 负载折线图。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                        <TextBlock local:Localized.Uid="PerformanceOverlayDetailedTitle" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock local:Localized.Uid="PerformanceOverlayDetailedDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                       </StackPanel>
-                      <ToggleSwitch local:Localized.Uid="PerformanceOverlayDetailedToggle" x:Name="PerformanceOverlayDetailedToggle" Grid.Column="1" Toggled="PerformanceOverlayDetailedToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="详细性能悬浮窗" />
+                      <ToggleSwitch local:Localized.Uid="PerformanceOverlayDetailedToggle" x:Name="PerformanceOverlayDetailedToggle" Grid.Column="1" Toggled="PerformanceOverlayDetailedToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
                     </Grid>
                   </StackPanel>
                 </Border>
@@ -120,11 +120,11 @@
                     <Border Height="1" Background="{StaticResource LineBrush}" />
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                       <StackPanel Spacing="4">
-                        <TextBlock local:Localized.Uid="ChromaOfficialDllTitle" Text="官方 Chroma DLL" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                        <TextBlock local:Localized.Uid="ChromaOfficialDllDescription" Text="安装官方 RzChromaSDK64.dll，让游戏通过 OpenSynapse 控制灯效；无需安装雷云或完整 Chroma SDK。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                        <TextBlock local:Localized.Uid="ChromaOfficialDllTitle" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock local:Localized.Uid="ChromaOfficialDllDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                         <TextBlock x:Name="ChromaOfficialDllStatusText" Text="" FontSize="12" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Visibility="Collapsed" />
                       </StackPanel>
-                      <Button local:Localized.Uid="ChromaOfficialDllDownload" x:Name="ChromaOfficialDllButton" Grid.Column="1" Content="下载并安装" Click="ChromaOfficialDllClick" Style="{StaticResource SecondaryButtonStyle}" FontSize="12" VerticalAlignment="Center" />
+                      <Button local:Localized.Uid="ChromaOfficialDllDownload" x:Name="ChromaOfficialDllButton" Grid.Column="1" Click="ChromaOfficialDllClick" Style="{StaticResource SecondaryButtonStyle}" FontSize="12" VerticalAlignment="Center" />
                     </Grid>
                     <StackPanel x:Name="ChromaSourceSection" Spacing="10">
                       <Border Height="1" Background="{StaticResource LineBrush}" />
@@ -138,21 +138,21 @@
                 <Border Style="{StaticResource CardStyle}" Padding="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                     <StackPanel Spacing="4">
-                      <TextBlock local:Localized.Uid="HueTitle" Text="飞利浦 Hue" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <TextBlock local:Localized.Uid="HueDescription" Text="自动查找局域网中的 Hue 桥；找不到时可手动填写地址。按桥上的配对按钮后点“配对”。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="HueTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="HueDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                     </StackPanel>
-                    <Button local:Localized.Uid="HueConfigureButton" Grid.Column="1" Content="配置" Click="HueSettingsClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+                    <Button local:Localized.Uid="HueConfigureButton" Grid.Column="1" Click="HueSettingsClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
                   </Grid>
                 </Border>
                 <Border Style="{StaticResource CardStyle}" Padding="16">
                   <Grid ColumnDefinitions="*,220" ColumnSpacing="16">
                     <StackPanel Spacing="4">
-                      <TextBlock local:Localized.Uid="Loc_69C8D0D8B7" Text="语言" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <TextBlock local:Localized.Uid="Loc_7F211E0B63" Text="默认跟随 Windows 显示语言；切换后立即生效。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="Loc_69C8D0D8B7" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="Loc_7F211E0B63" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                     </StackPanel>
-                    <ComboBox local:Localized.Uid="Loc_C3B65B0A4F" x:Name="AppLanguageComboBox" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" SelectionChanged="LanguageSelectionChanged" AutomationProperties.Name="界面语言">
-                      <ComboBoxItem local:Localized.Uid="Loc_6E1BBAA0E8" Content="跟随系统" Tag="system" />
-                      <ComboBoxItem local:Localized.Uid="Loc_5C8A32D3B1" Content="简体中文" Tag="zh-CN" />
+                    <ComboBox local:Localized.Uid="Loc_C3B65B0A4F" x:Name="AppLanguageComboBox" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" SelectionChanged="LanguageSelectionChanged">
+                      <ComboBoxItem local:Localized.Uid="Loc_6E1BBAA0E8" Tag="system" />
+                      <ComboBoxItem local:Localized.Uid="Loc_5C8A32D3B1" Tag="zh-CN" />
                       <ComboBoxItem local:Localized.Uid="Loc_F08B7A510E" Content="English" Tag="en-US" />
                     </ComboBox>
                   </Grid>
@@ -161,35 +161,35 @@
                   <StackPanel Spacing="14">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                       <StackPanel Spacing="4">
-                        <TextBlock local:Localized.Uid="UpdateTitle" Text="自动更新" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                        <TextBlock local:Localized.Uid="UpdateDescription" Text="启动时自动检查；发现新版本会提示你下载安装。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                        <TextBlock local:Localized.Uid="UpdateTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock local:Localized.Uid="UpdateDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                       </StackPanel>
-                      <ToggleSwitch local:Localized.Uid="AutomaticUpdatesToggle" x:Name="AutomaticUpdatesToggle" Grid.Column="1" Toggled="AutomaticUpdatesToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="自动更新" />
+                      <ToggleSwitch local:Localized.Uid="AutomaticUpdatesToggle" x:Name="AutomaticUpdatesToggle" Grid.Column="1" Toggled="AutomaticUpdatesToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
                     </Grid>
                     <Border Height="1" Background="{StaticResource LineBrush}" />
                     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                       <StackPanel Spacing="5" VerticalAlignment="Center">
-                        <TextBlock x:Name="UpdateStatusText" local:Localized.Uid="UpdateStatusLoading" Text="正在读取更新状态" TextWrapping="Wrap" />
+                        <TextBlock x:Name="UpdateStatusText" local:Localized.Uid="UpdateStatusLoading" TextWrapping="Wrap" />
                         <ProgressBar x:Name="UpdateProgressBar" Minimum="0" Maximum="100" Height="3" Visibility="Collapsed" />
                       </StackPanel>
-                      <Button local:Localized.Uid="CheckUpdateButton" x:Name="CheckUpdateButton" Grid.Column="1" Content="检查更新" Click="CheckForUpdatesClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
-                      <Button x:Name="UpdateActionButton" local:Localized.Uid="下载更新" Grid.Column="2" Content="下载更新" Click="UpdateActionClick" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Center" Visibility="Collapsed" />
+                      <Button local:Localized.Uid="CheckUpdateButton" x:Name="CheckUpdateButton" Grid.Column="1" Click="CheckForUpdatesClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+                      <Button x:Name="UpdateActionButton" local:Localized.Uid="UpdateDownloadButton" Grid.Column="2" Click="UpdateActionClick" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Center" Visibility="Collapsed" />
                     </Grid>
                   </StackPanel>
                 </Border>
-                <Button local:Localized.Uid="Loc_79D0601598" Click="ShowIntroductionClick" Style="{StaticResource QuickActionButtonStyle}" MinHeight="96" Padding="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="查看使用引导">
+                <Button local:Localized.Uid="Loc_79D0601598" Click="ShowIntroductionClick" Style="{StaticResource QuickActionButtonStyle}" MinHeight="96" Padding="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
                   <Grid>
                     <StackPanel Spacing="4">
-                      <TextBlock local:Localized.Uid="SettingsGuideTitle" Text="使用引导" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <TextBlock local:Localized.Uid="SettingsGuideDescription" Text="重新查看 OpenSynapse 的主要页面和设备控制入口。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="SettingsGuideTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="SettingsGuideDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                     </StackPanel>
                   </Grid>
                 </Button>
-                <Button local:Localized.Uid="SettingsAboutButton" Click="OpenAboutClick" Style="{StaticResource QuickActionButtonStyle}" MinHeight="96" Padding="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="打开关于 OpenSynapse">
+                <Button local:Localized.Uid="SettingsAboutButton" Click="OpenAboutClick" Style="{StaticResource QuickActionButtonStyle}" MinHeight="96" Padding="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
                   <Grid>
                     <StackPanel Spacing="4" VerticalAlignment="Center">
-                      <TextBlock local:Localized.Uid="SettingsAboutTitle" Text="关于 OpenSynapse" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <TextBlock local:Localized.Uid="SettingsAboutDescription" Text="查看版本、项目主页和许可信息。" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock local:Localized.Uid="SettingsAboutTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="SettingsAboutDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                     </StackPanel>
                   </Grid>
                 </Button>

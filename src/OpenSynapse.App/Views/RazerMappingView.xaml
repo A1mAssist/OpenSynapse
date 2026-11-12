@@ -10,12 +10,12 @@
     <DataTemplate x:Key="MappingEditorTemplate">
       <StackPanel Spacing="12">
         <ComboBox local:Localized.Uid="RazerMappingTypeColumn"
-                  Header="类型"
+
                   ItemsSource="{Binding GroupNames}"
                   SelectedIndex="{Binding GroupOptionIndex, Mode=TwoWay}"
                   HorizontalAlignment="Stretch" />
         <TextBlock local:Localized.Uid="RazerMappingButtonMacroUnavailable"
-                   Text="此键不支持宏绑定"
+
                    Visibility="{Binding MacroUnsupportedVisibility}"
                    Foreground="{StaticResource MutedBrush}"
                    FontSize="12"
@@ -27,39 +27,39 @@
                   IsEnabled="{Binding CanApply}"
                   HorizontalAlignment="Stretch" />
         <ComboBox local:Localized.Uid="RazerMappingMacroTargetHeader"
-                  Header="运行位置"
+
                   ItemsSource="{Binding MacroTargetOptions}"
                   SelectedIndex="{Binding MacroTargetIndex, Mode=TwoWay}"
                   Visibility="{Binding MacroTargetVisibility}"
                   HorizontalAlignment="Stretch" />
         <StackPanel Spacing="8">
           <ComboBox local:Localized.Uid="RazerMappingModifierHeader"
-                    Header="修饰键"
+
                     ItemsSource="{Binding ModifierNames}"
                     SelectedIndex="{Binding ModifierIndex, Mode=TwoWay}"
                     Visibility="{Binding ModifierVisibility}"
                     HorizontalAlignment="Stretch" />
           <ComboBox local:Localized.Uid="RazerMappingMacroSlotHeader"
-                    Header="宏槽"
+
                     ItemsSource="{Binding MacroSlotNames}"
                     SelectedIndex="{Binding SelectedMacroSlotIndex, Mode=TwoWay}"
                     Visibility="{Binding MacroSlotVisibility}"
                     HorizontalAlignment="Stretch" />
           <Grid ColumnDefinitions="*,*" ColumnSpacing="6" Visibility="{Binding SoftwareTriggerVisibility}">
             <ComboBox local:Localized.Uid="RazerMappingSoftwareTriggerHeader"
-                      Header="触发方式"
+
                       ItemsSource="{Binding TriggerModeOptions}"
                       SelectedIndex="{Binding SoftwareTriggerModeIndex, Mode=TwoWay}"
                       HorizontalAlignment="Stretch" />
             <ComboBox Grid.Column="1"
                       local:Localized.Uid="RazerMappingMacroExecutionHeader"
-                      Header="执行方式"
+
                       ItemsSource="{Binding ExecutionOptions}"
                       SelectedIndex="{Binding ExecutionModeIndex, Mode=TwoWay}"
                       HorizontalAlignment="Stretch" />
           </Grid>
           <NumberBox local:Localized.Uid="RazerMappingMacroExecutionRepeat"
-                     Header="重复次数"
+
                      Minimum="1"
                      Maximum="999"
                      SmallChange="1"
@@ -68,18 +68,18 @@
                      Visibility="{Binding ExecutionRepeatVisibility}"
                      HorizontalAlignment="Stretch" />
           <TextBlock local:Localized.Uid="RazerMappingMacroNoFreeSlot"
-                     Text="没有空闲宏槽"
+
                      Visibility="{Binding MacroNoSlotVisibility}"
                      Foreground="{StaticResource WarningBrush}"
                      TextWrapping="Wrap" />
           <ComboBox local:Localized.Uid="RazerMappingOnboardBehaviorHeader"
-                    Header="按键行为"
+
                     ItemsSource="{Binding MacroPlaybackOptions}"
                     SelectedIndex="{Binding MacroPlaybackIndex, Mode=TwoWay}"
                     Visibility="{Binding MacroPlaybackVisibility}"
                     HorizontalAlignment="Stretch" />
           <NumberBox local:Localized.Uid="RazerMappingTurboHeader"
-                     Header="Turbo 次/秒"
+
                      Minimum="1"
                      Maximum="50"
                      SmallChange="1"
@@ -87,7 +87,7 @@
                      Value="{Binding TurboRate, Mode=TwoWay}"
                      Visibility="{Binding TurboRateVisibility}" />
           <NumberBox local:Localized.Uid="RazerMappingProfileIdHeader"
-                     Header="配置 ID"
+
                      Minimum="1"
                      Maximum="5"
                      SmallChange="1"
@@ -111,7 +111,7 @@
                        Value="{Binding DpiClutchY, Mode=TwoWay}" />
           </StackPanel>
           <NumberBox local:Localized.Uid="RazerMappingMacroRepeatHeader"
-                     Header="宏次数"
+
                      Minimum="1"
                      Maximum="255"
                      SmallChange="1"
@@ -127,13 +127,13 @@
                      Foreground="{StaticResource WarningBrush}"
                      TextWrapping="Wrap" />
           <TextBlock local:Localized.Uid="RazerMappingSoftwareMacroHint"
-                     Text="由 OpenSynapse 执行，软件关闭后不生效。"
+
                      Visibility="{Binding MacroSoftwareHintVisibility}"
                      Foreground="{StaticResource MutedBrush}"
                      FontSize="12"
                      TextWrapping="Wrap" />
           <TextBlock local:Localized.Uid="RazerMappingOnboardMacroHint"
-                     Text="由设备执行，OpenSynapse 关闭后仍然有效。"
+
                      Visibility="{Binding MacroOnboardHintVisibility}"
                      Foreground="{StaticResource MutedBrush}"
                      FontSize="12"
@@ -180,18 +180,18 @@
   <StackPanel x:Name="MappingRoot" Spacing="14">
     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
       <StackPanel Spacing="3">
-        <TextBlock local:Localized.Uid="RazerMappingTitle" Text="按键映射" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+        <TextBlock local:Localized.Uid="RazerMappingTitle" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
         <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
         <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{Binding BusyVisibility}">
           <ProgressRing Width="16" Height="16" IsActive="{Binding IsBusy}" />
-          <TextBlock local:Localized.Uid="RazerMappingBusy" Text="正在同步…" Foreground="{StaticResource MutedBrush}" FontSize="12" VerticalAlignment="Center" />
+          <TextBlock local:Localized.Uid="RazerMappingBusy" Foreground="{StaticResource MutedBrush}" FontSize="12" VerticalAlignment="Center" />
         </StackPanel>
       </StackPanel>
-      <Button Grid.Column="1" local:Localized.Uid="RazerMappingRead" Content="读取" Click="ReadClick" IsEnabled="{Binding CanRead}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
-      <Button Grid.Column="2" local:Localized.Uid="RazerMappingSave" Content="保存" Click="ApplyClick" IsEnabled="{Binding CanApply}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" />
+      <Button Grid.Column="1" local:Localized.Uid="RazerMappingRead" Click="ReadClick" IsEnabled="{Binding CanRead}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
+      <Button Grid.Column="2" local:Localized.Uid="RazerMappingSave" Click="ApplyClick" IsEnabled="{Binding CanApply}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" />
     </Grid>
 
-    <RadioButtons local:Localized.Uid="A11yMappingLayer" ItemsSource="{Binding LayerNames}" SelectedIndex="{Binding LayerIndex, Mode=TwoWay}" MaxColumns="2" AutomationProperties.Name="映射层" IsEnabled="{Binding CanRead}" />
+    <RadioButtons local:Localized.Uid="A11yMappingLayer" ItemsSource="{Binding LayerNames}" SelectedIndex="{Binding LayerIndex, Mode=TwoWay}" MaxColumns="2" IsEnabled="{Binding CanRead}" />
     <TextBlock Text="{Binding HyperShiftSoftwareUnavailableText}"
                Visibility="{Binding HyperShiftSoftwareUnavailableVisibility}"
                Foreground="{StaticResource MutedBrush}"
@@ -233,7 +233,7 @@
                Stretch="Uniform"
                HorizontalAlignment="Center"
                VerticalAlignment="Center"
-               AutomationProperties.Name="设备图"
+
                Source="{Binding LayoutImage}" />
       </Border>
 
@@ -264,13 +264,13 @@
                 Background="Transparent" />
       </Viewbox>
       <TextBlock local:Localized.Uid="RazerMappingKeyboardHint"
-                 Text="点击键位编辑映射"
+
                  Foreground="{StaticResource MutedBrush}"
                  HorizontalAlignment="Center" />
     </StackPanel>
 
     <TextBlock local:Localized.Uid="RazerMappingCalloutHint"
-               Text="点击设备旁的按键标签编辑映射"
+
                Foreground="{StaticResource MutedBrush}"
                HorizontalAlignment="Center"
                Visibility="{Binding StageVisibility}" />
@@ -287,7 +287,7 @@
             <TextBlock Text="{Binding SelectedButtonName}" FontSize="17" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
             <TextBlock Text="{Binding SelectedRow.CurrentActionText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
           </StackPanel>
-          <Button local:Localized.Uid="A11yClose" Grid.Column="1" Content="✕" Click="CloseEditorClick" AutomationProperties.Name="关闭" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Top" />
+          <Button local:Localized.Uid="A11yClose" Grid.Column="1" Content="✕" Click="CloseEditorClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Top" />
         </Grid>
         <ContentControl Content="{Binding SelectedRow}" ContentTemplate="{StaticResource MappingEditorTemplate}" />
       </StackPanel>
@@ -296,11 +296,11 @@
     <Grid MinHeight="120" Visibility="{Binding TableVisibility}">
       <StackPanel Spacing="8">
         <Grid ColumnDefinitions="110,1.2*,150,1.3*,*" ColumnSpacing="10">
-          <TextBlock local:Localized.Uid="RazerMappingButtonColumn" Text="按键" Style="{StaticResource MetricLabelStyle}" />
-          <TextBlock Grid.Column="1" local:Localized.Uid="RazerMappingCurrentColumn" Text="当前动作" Style="{StaticResource MetricLabelStyle}" />
-          <TextBlock Grid.Column="2" local:Localized.Uid="RazerMappingTypeColumn" Text="类型" Style="{StaticResource MetricLabelStyle}" />
-          <TextBlock Grid.Column="3" local:Localized.Uid="RazerMappingActionColumn" Text="目标动作" Style="{StaticResource MetricLabelStyle}" />
-          <TextBlock Grid.Column="4" local:Localized.Uid="RazerMappingParameterColumn" Text="参数" Style="{StaticResource MetricLabelStyle}" />
+          <TextBlock local:Localized.Uid="RazerMappingButtonColumn" Style="{StaticResource MetricLabelStyle}" />
+          <TextBlock Grid.Column="1" local:Localized.Uid="RazerMappingCurrentColumn" Style="{StaticResource MetricLabelStyle}" />
+          <TextBlock Grid.Column="2" local:Localized.Uid="RazerMappingTypeColumn" Style="{StaticResource MetricLabelStyle}" />
+          <TextBlock Grid.Column="3" local:Localized.Uid="RazerMappingActionColumn" Style="{StaticResource MetricLabelStyle}" />
+          <TextBlock Grid.Column="4" local:Localized.Uid="RazerMappingParameterColumn" Style="{StaticResource MetricLabelStyle}" />
         </Grid>
         <ItemsControl ItemsSource="{Binding Rows}">
           <ItemsControl.ItemTemplate>
@@ -308,26 +308,26 @@
               <Grid ColumnDefinitions="110,1.2*,150,1.3*,*" ColumnSpacing="10" MinHeight="40" Padding="0,4">
                 <TextBlock Text="{Binding ButtonName}" VerticalAlignment="Center" TextWrapping="Wrap" />
                 <TextBlock Grid.Column="1" Text="{Binding CurrentActionText}" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
-                <ComboBox local:Localized.Uid="A11yTargetMappingType" Grid.Column="2" ItemsSource="{Binding GroupNames}" SelectedIndex="{Binding GroupOptionIndex, Mode=TwoWay}" AutomationProperties.Name="目标映射类型" HorizontalAlignment="Stretch" />
-                <ComboBox local:Localized.Uid="A11yTargetMappingAction" Grid.Column="3" ItemsSource="{Binding OptionNames}" SelectedIndex="{Binding OptionIndex, Mode=TwoWay}" Visibility="{Binding OptionVisibility}" IsEnabled="{Binding CanApply}" AutomationProperties.Name="目标映射动作" HorizontalAlignment="Stretch" />
+                <ComboBox local:Localized.Uid="A11yTargetMappingType" Grid.Column="2" ItemsSource="{Binding GroupNames}" SelectedIndex="{Binding GroupOptionIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" />
+                <ComboBox local:Localized.Uid="A11yTargetMappingAction" Grid.Column="3" ItemsSource="{Binding OptionNames}" SelectedIndex="{Binding OptionIndex, Mode=TwoWay}" Visibility="{Binding OptionVisibility}" IsEnabled="{Binding CanApply}" HorizontalAlignment="Stretch" />
                 <StackPanel Grid.Column="4" Spacing="4" VerticalAlignment="Center">
-                  <ComboBox local:Localized.Uid="A11yKeyboardModifier" ItemsSource="{Binding ModifierNames}" SelectedIndex="{Binding ModifierIndex, Mode=TwoWay}" Visibility="{Binding ModifierVisibility}" AutomationProperties.Name="键盘修饰键" HorizontalAlignment="Stretch" />
-                  <ComboBox local:Localized.Uid="A11yMacroExecutionTarget" ItemsSource="{Binding MacroTargetOptions}" SelectedIndex="{Binding MacroTargetIndex, Mode=TwoWay}" Visibility="{Binding MacroTargetVisibility}" AutomationProperties.Name="宏运行位置" HorizontalAlignment="Stretch" />
-                  <ComboBox local:Localized.Uid="A11yMacroSlot" ItemsSource="{Binding MacroSlotNames}" SelectedIndex="{Binding SelectedMacroSlotIndex, Mode=TwoWay}" Visibility="{Binding MacroSlotVisibility}" AutomationProperties.Name="宏槽" HorizontalAlignment="Stretch" />
-                  <TextBlock local:Localized.Uid="RazerMappingMacroNoFreeSlot" Text="没有空闲宏槽" Visibility="{Binding MacroNoSlotVisibility}" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" />
+                  <ComboBox local:Localized.Uid="A11yKeyboardModifier" ItemsSource="{Binding ModifierNames}" SelectedIndex="{Binding ModifierIndex, Mode=TwoWay}" Visibility="{Binding ModifierVisibility}" HorizontalAlignment="Stretch" />
+                  <ComboBox local:Localized.Uid="A11yMacroExecutionTarget" ItemsSource="{Binding MacroTargetOptions}" SelectedIndex="{Binding MacroTargetIndex, Mode=TwoWay}" Visibility="{Binding MacroTargetVisibility}" HorizontalAlignment="Stretch" />
+                  <ComboBox local:Localized.Uid="A11yMacroSlot" ItemsSource="{Binding MacroSlotNames}" SelectedIndex="{Binding SelectedMacroSlotIndex, Mode=TwoWay}" Visibility="{Binding MacroSlotVisibility}" HorizontalAlignment="Stretch" />
+                  <TextBlock local:Localized.Uid="RazerMappingMacroNoFreeSlot" Visibility="{Binding MacroNoSlotVisibility}" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" />
                   <Grid ColumnDefinitions="*,*" ColumnSpacing="6" Visibility="{Binding SoftwareTriggerVisibility}">
-                    <ComboBox local:Localized.Uid="A11ySoftwareMacroTriggerMode" ItemsSource="{Binding TriggerModeOptions}" SelectedIndex="{Binding SoftwareTriggerModeIndex, Mode=TwoWay}" AutomationProperties.Name="软件宏触发方式" HorizontalAlignment="Stretch" />
-                    <ComboBox Grid.Column="1" local:Localized.Uid="A11ySoftwareMacroExecutionMode" ItemsSource="{Binding ExecutionOptions}" SelectedIndex="{Binding ExecutionModeIndex, Mode=TwoWay}" AutomationProperties.Name="软件宏执行方式" HorizontalAlignment="Stretch" />
+                    <ComboBox local:Localized.Uid="A11ySoftwareMacroTriggerMode" ItemsSource="{Binding TriggerModeOptions}" SelectedIndex="{Binding SoftwareTriggerModeIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" />
+                    <ComboBox Grid.Column="1" local:Localized.Uid="A11ySoftwareMacroExecutionMode" ItemsSource="{Binding ExecutionOptions}" SelectedIndex="{Binding ExecutionModeIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" />
                   </Grid>
-                  <NumberBox local:Localized.Uid="RazerMappingMacroExecutionRepeat" Header="重复次数" Minimum="1" Maximum="999" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding ExecutionRepeatCount, Mode=TwoWay}" Visibility="{Binding ExecutionRepeatVisibility}" />
-                  <ComboBox local:Localized.Uid="A11yOnboardButtonBehavior" ItemsSource="{Binding MacroPlaybackOptions}" SelectedIndex="{Binding MacroPlaybackIndex, Mode=TwoWay}" Visibility="{Binding MacroPlaybackVisibility}" AutomationProperties.Name="板载按键行为" HorizontalAlignment="Stretch" />
-                  <NumberBox local:Localized.Uid="RazerMappingTurboHeader" Header="Turbo 次/秒" Minimum="1" Maximum="50" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding TurboRate, Mode=TwoWay}" Visibility="{Binding TurboRateVisibility}" />
-                  <NumberBox local:Localized.Uid="RazerMappingProfileIdHeader" Header="配置 ID" Minimum="1" Maximum="5" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding ProfileId, Mode=TwoWay}" Visibility="{Binding ProfileIdVisibility}" />
+                  <NumberBox local:Localized.Uid="RazerMappingMacroExecutionRepeat" Minimum="1" Maximum="999" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding ExecutionRepeatCount, Mode=TwoWay}" Visibility="{Binding ExecutionRepeatVisibility}" />
+                  <ComboBox local:Localized.Uid="A11yOnboardButtonBehavior" ItemsSource="{Binding MacroPlaybackOptions}" SelectedIndex="{Binding MacroPlaybackIndex, Mode=TwoWay}" Visibility="{Binding MacroPlaybackVisibility}" HorizontalAlignment="Stretch" />
+                  <NumberBox local:Localized.Uid="RazerMappingTurboHeader" Minimum="1" Maximum="50" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding TurboRate, Mode=TwoWay}" Visibility="{Binding TurboRateVisibility}" />
+                  <NumberBox local:Localized.Uid="RazerMappingProfileIdHeader" Minimum="1" Maximum="5" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding ProfileId, Mode=TwoWay}" Visibility="{Binding ProfileIdVisibility}" />
                   <StackPanel Orientation="Horizontal" Spacing="4" Visibility="{Binding DpiClutchVisibility}">
                     <NumberBox local:Localized.Uid="RazerMappingDpiXHeader" Header="DPI X" Minimum="100" Maximum="30000" SmallChange="50" SpinButtonPlacementMode="Inline" Value="{Binding DpiClutchX, Mode=TwoWay}" />
                     <NumberBox local:Localized.Uid="RazerMappingDpiYHeader" Header="DPI Y" Minimum="100" Maximum="30000" SmallChange="50" SpinButtonPlacementMode="Inline" Value="{Binding DpiClutchY, Mode=TwoWay}" />
                   </StackPanel>
-                  <NumberBox local:Localized.Uid="RazerMappingMacroRepeatHeader" Header="宏次数" Minimum="1" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding MacroRepeatCount, Mode=TwoWay}" Visibility="{Binding MacroRepeatVisibility}" />
+                  <NumberBox local:Localized.Uid="RazerMappingMacroRepeatHeader" Minimum="1" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding MacroRepeatCount, Mode=TwoWay}" Visibility="{Binding MacroRepeatVisibility}" />
                   <TextBlock Text="{Binding MacroErrorText}" Visibility="{Binding MacroErrorVisibility}" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" />
                   <TextBlock Text="{Binding MacroSlotWarningText}" Visibility="{Binding MacroSlotWarningVisibility}" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" />
                 </StackPanel>

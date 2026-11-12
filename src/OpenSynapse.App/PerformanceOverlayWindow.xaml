@@ -252,7 +252,6 @@
             </Border>
             <TextBlock x:Name="CompactFanLabel"
                        Grid.Column="1"
-                       Text="风扇"
                        FontFamily="Microsoft YaHei UI"
                        FontSize="9"
                        Foreground="#A8FFFFFF"
@@ -470,7 +469,6 @@
               </Border>
               <TextBlock x:Name="DetailedFanLabel"
                          Grid.Column="1"
-                         Text="风扇"
                          FontFamily="Microsoft YaHei UI"
                          FontSize="9"
                          Foreground="#A8FFFFFF"

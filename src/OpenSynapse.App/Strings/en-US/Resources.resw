@@ -1324,12 +1324,7 @@
   <data name="UpdateReady" xml:space="preserve"><value>Version {0} is downloaded and ready.</value></data>
   <data name="UpdateAvailable" xml:space="preserve"><value>Version {0} is available.</value></data>
   <data name="CurrentVersion" xml:space="preserve"><value>Current version: {0}.</value></data>
-  <data name="更新并重启" xml:space="preserve"><value>Update and restart</value></data>
-  <data name="下载更新" xml:space="preserve"><value>Download update</value></data>
-  <data name="正在检查更新" xml:space="preserve"><value>Checking for updates</value></data>
-  <data name="当前已是最新版本" xml:space="preserve"><value>OpenSynapse is up to date</value></data>
-  <data name="正在下载更新" xml:space="preserve"><value>Downloading update</value></data>
-  <data name="正在安全退出并更新" xml:space="preserve"><value>Safely stopping device control before updating</value></data>
+  <data name="UpdateDownloadButton.Content" xml:space="preserve"><value>Download update</value></data>
   <data name="UpdateSettingError" xml:space="preserve"><value>Could not save update settings: {0}</value></data>
   <data name="UpdateCheckFailed" xml:space="preserve"><value>Could not check for updates: {0}</value></data>
   <data name="UpdateDownloadFailed" xml:space="preserve"><value>Could not download the update: {0}</value></data>
@@ -1360,18 +1355,7 @@
   <data name="PerformanceCycleSilent.Content" xml:space="preserve"><value>Silent</value></data>
   <data name="RefreshRateCycleTitle.Text" xml:space="preserve"><value>Refresh rates in the Fn+R cycle</value></data>
   <data name="RefreshRateCycleDescription.Text" xml:space="preserve"><value>Clear refresh rates you do not want Fn+R to select. Manual selection is unaffected.</value></data>
-  <data name="性能模式已切换" xml:space="preserve"><value>Performance Mode Changed</value></data>
   <data name="PerformanceModeNotification" xml:space="preserve"><value>Current Mode: {0}</value></data>
-  <data name="游戏模式已切换" xml:space="preserve"><value>Gaming Mode Changed</value></data>
-  <data name="游戏模式已启用" xml:space="preserve"><value>Gaming Mode Is On</value></data>
-  <data name="游戏模式已关闭" xml:space="preserve"><value>Gaming Mode Is Off</value></data>
-  <data name="触控板已切换" xml:space="preserve"><value>Touchpad Changed</value></data>
-  <data name="触控板已启用" xml:space="preserve"><value>Touchpad Is On</value></data>
-  <data name="触控板已禁用" xml:space="preserve"><value>Touchpad Is Off</value></data>
-  <data name="一次性充满已切换" xml:space="preserve"><value>One-Time Full Charge Changed</value></data>
-  <data name="一次性充满已启用" xml:space="preserve"><value>One-Time Full Charge Is On</value></data>
-  <data name="一次性充满已关闭" xml:space="preserve"><value>One-Time Full Charge Is Off</value></data>
-  <data name="刷新率已切换" xml:space="preserve"><value>Refresh Rate Changed</value></data>
   <data name="RefreshRateNotification" xml:space="preserve"><value>Current Refresh Rate: {0} Hz</value></data>
   <data name="BehaviorSettingError" xml:space="preserve"><value>Shortcut and notification settings: {0}</value></data>
   <data name="SettingsNavigationItem.Content" xml:space="preserve"><value>Settings</value></data>
@@ -3859,6 +3843,8 @@
   <data name="AnalogKeySelectedCount" xml:space="preserve"><value>{0} keys selected</value></data>
   <data name="AnalogKeyAppliedCount" xml:space="preserve"><value>Applied to {0} keys and read back.</value></data>
   <data name="AnalogKeyReadCount" xml:space="preserve"><value>Read trigger and Rapid Trigger settings for {0} keys.</value></data>
+  <data name="AnalogKeyTooltip" xml:space="preserve"><value>Actuation {0:0.0} mm · RT {1:0.0} mm</value></data>
+  <data name="AnalogKeyTooltipRapidTriggerOff" xml:space="preserve"><value>Actuation {0:0.0} mm · RT off</value></data>
   <data name="AnalogKeyLayoutMissing.Text" xml:space="preserve"><value>Analog keys responded, but this model has no per-key layout yet.</value></data>
   <data name="SnapTapReading" xml:space="preserve"><value>Reading Snap Tap settings…</value></data>
   <data name="SnapTapNeedTwoKeys" xml:space="preserve"><value>Each pair needs two keys.</value></data>
@@ -3871,6 +3857,7 @@
   <data name="A11yDeletePathPoint.Content" xml:space="preserve"><value>×</value></data>
   <data name="LiteModeTitle.Text" xml:space="preserve"><value>Lite mode (peripherals only)</value></data>
   <data name="LiteModeDescription.Text" xml:space="preserve"><value>Hides laptop controls, performance panels, and advanced settings. Restart required after switching.</value></data>
+  <data name="LiteModeToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Lite mode</value></data>
   <data name="LiteModeRestartTitle.Text" xml:space="preserve"><value>Switch to Lite mode</value></data>
   <data name="LiteModeRestartPrompt.Text" xml:space="preserve"><value>Switching Lite mode restarts OpenSynapse.&#10;Unsaved macro edits will be lost.</value></data>
   <data name="LiteModeRestartElevated.Text" xml:space="preserve"><value>This process is running as administrator; the restarted app will stay elevated.</value></data>

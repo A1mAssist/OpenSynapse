@@ -1,4 +1,4 @@
-# 后台跑 UI 冒烟；默认不干扰已有实例，只有显式 -AllowRestart 才临时停止并恢复。
+# Run the UI smoke test in the background. Leave existing instances alone unless -AllowRestart is set.
 param(
     [string]$Configuration = 'Release',
     [string]$SkillRoot = 'C:\Users\A1mAssist\.codex\skills\winui-ui-automation',
@@ -12,16 +12,16 @@ $root = Split-Path -Parent $PSScriptRoot
 $appDir = Join-Path $root "src\OpenSynapse.App\bin\$Configuration\net10.0-windows10.0.26100.0\win-x64"
 $exe = if ($AppPath) { [IO.Path]::GetFullPath($AppPath) } else { Join-Path $appDir 'OpenSynapse.App.exe' }
 $appDir = Split-Path -Parent $exe
-if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw "先 build：$exe 不存在" }
+if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw "Build first: $exe does not exist" }
 $runner = Join-Path $SkillRoot 'scripts/winui-qa.ps1'
-if (-not (Test-Path -LiteralPath $runner -PathType Leaf)) { throw "UIA runner 不存在：$runner" }
+if (-not (Test-Path -LiteralPath $runner -PathType Leaf)) { throw "UIA runner does not exist: $runner" }
 
 $running = @(Get-Process -Name OpenSynapse.App -ErrorAction SilentlyContinue)
 if ($running.Count -gt 0 -and -not $AllowRestart) {
-    throw '已有 OpenSynapse 实例，未停止。请自行退出后重试，或显式使用 -AllowRestart。'
+    throw 'OpenSynapse is already running. Exit it first, or pass -AllowRestart.'
 }
-if ($running.Count -gt 1) { throw '存在多个实例，无法安全恢复；请自行退出后重试。' }
-if ($running.Count -eq 1 -and -not $running[0].Path) { throw '无法确定已有实例路径，未停止。' }
+if ($running.Count -gt 1) { throw 'Multiple instances are running and cannot be restored safely. Exit them first.' }
+if ($running.Count -eq 1 -and -not $running[0].Path) { throw 'Cannot determine the existing instance path; it was not stopped.' }
 
 $runDir = Join-Path $OutDir ((Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [guid]::NewGuid().ToString('N'))
 $null = New-Item -ItemType Directory -Path $runDir -Force
@@ -73,9 +73,9 @@ try {
     }
     $startedAt = [DateTimeOffset]::UtcNow
     & pwsh -NoProfile -File $runner -Scenario $scenarioPath
-    if ($LASTEXITCODE -ne 0) { throw "UIA runner 失败：exit $LASTEXITCODE（报告 $runDir）" }
+    if ($LASTEXITCODE -ne 0) { throw "UIA runner failed: exit $LASTEXITCODE (report $runDir)" }
     $reportPath = Join-Path $runDir 'report.json'
-    if (-not (Test-Path -LiteralPath $reportPath -PathType Leaf)) { throw '本次运行未生成 report.json。' }
+    if (-not (Test-Path -LiteralPath $reportPath -PathType Leaf)) { throw 'This run did not produce report.json.' }
     $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
     $reportStarted = [DateTimeOffset]$report.startedAt
     $reportFinished = [DateTimeOffset]$report.finishedAt
@@ -83,9 +83,9 @@ try {
         [IO.Path]::GetFullPath($report.scenario) -ne [IO.Path]::GetFullPath($scenarioPath) -or
         [IO.Path]::GetFullPath($report.exe) -ne [IO.Path]::GetFullPath($exe) -or
         $reportStarted -lt $startedAt -or $reportFinished -lt $reportStarted) {
-        throw "UIA 报告失败或不属于本次运行：$reportPath"
+        throw "UIA report failed or does not belong to this run: $reportPath"
     }
-    "UI 冒烟：$($report.status)（截图 $runDir）"
+    "UI smoke test: $($report.status) (screenshots $runDir)"
 }
 finally {
     if ($restart) {

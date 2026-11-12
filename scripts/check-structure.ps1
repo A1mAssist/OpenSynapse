@@ -1,4 +1,4 @@
-# 结构体检。默认只报告并按预算判定退出码；-UpdateBudget 会重写 .structure-budget.json。
+# Structure check. Reports by default and fails on budget violations; -UpdateBudget rewrites .structure-budget.json.
 param(
     [switch]$UpdateBudget,
     [string]$Root = (Split-Path -Parent $PSScriptRoot),
@@ -44,12 +44,12 @@ if ($UpdateBudget) {
         )
     }
     $budget | ConvertTo-Json -Depth 5 | Set-Content -Path $budgetPath -Encoding utf8
-    "已写入 $budgetPath（$($budget.files.Count) 个文件条目）"
+    "Wrote $budgetPath ($($budget.files.Count) file entries)"
     exit 0
 }
 
 if (-not (Test-Path $budgetPath)) {
-    throw '缺少 .structure-budget.json，先跑一次 -UpdateBudget'
+    throw 'Missing .structure-budget.json. Run -UpdateBudget once first.'
 }
 
 $saved = Get-Content $budgetPath -Raw | ConvertFrom-Json
@@ -58,42 +58,42 @@ if (-not $PSBoundParameters.ContainsKey('NewFilePublicMemberLimit')) { $NewFileP
 $failures = @()
 foreach ($entry in $saved.files) {
     $actual = $files | Where-Object { $_.Path -ceq $entry.path }
-    if (-not $actual) { $failures += "预算条目已失效：$($entry.path)"; continue }
-    if ($actual.Lines -gt $entry.maxLines) { $failures += "$($entry.path) 超预算：$($actual.Lines) > $($entry.maxLines)" }
+    if (-not $actual) { $failures += "Stale budget entry: $($entry.path)"; continue }
+    if ($actual.Lines -gt $entry.maxLines) { $failures += "$($entry.path) over budget: $($actual.Lines) > $($entry.maxLines)" }
 }
 foreach ($file in $files) {
     $entry = $saved.files | Where-Object { $_.path -ceq $file.Path }
     $lineLimit = if ($entry) { $entry.maxLines } else { $NewFileLineLimit }
     $publicLimit = if ($entry -and $null -ne $entry.maxPublicMembers) { $entry.maxPublicMembers } else { $NewFilePublicMemberLimit }
     if (-not $entry -and $file.Lines -gt $lineLimit) {
-        $failures += "$($file.Path) 新文件超预算：$($file.Lines) > $lineLimit"
+        $failures += "$($file.Path) new file over budget: $($file.Lines) > $lineLimit"
     }
     if ($file.Path.EndsWith('.cs', [StringComparison]::OrdinalIgnoreCase) -and $file.PublicMembers -gt $publicLimit) {
-        $failures += "$($file.Path) public 超预算：$($file.PublicMembers) > $publicLimit"
+        $failures += "$($file.Path) public members over budget: $($file.PublicMembers) > $publicLimit"
     }
 }
 foreach ($group in $saved.groups) {
     $matched = @($files | Where-Object { $_.Path -clike $group.pattern })
-    if ($matched.Count -eq 0) { $failures += "分组预算已失效：$($group.pattern)"; continue }
+    if ($matched.Count -eq 0) { $failures += "Stale group budget: $($group.pattern)"; continue }
     $lines = [int]($matched | Measure-Object Lines -Sum).Sum
     $members = [int]($matched | Measure-Object PublicMembers -Sum).Sum
     if ($null -ne $group.maxLines -and $lines -gt $group.maxLines) {
-        $failures += "$($group.pattern) 分组行数超预算：$lines > $($group.maxLines)"
+        $failures += "$($group.pattern) group lines over budget: $lines > $($group.maxLines)"
     }
     if ($null -ne $group.maxPublicMembers -and $members -gt $group.maxPublicMembers) {
-        $failures += "$($group.pattern) 分组 public 超预算：$members > $($group.maxPublicMembers)"
+        $failures += "$($group.pattern) group public members over budget: $members > $($group.maxPublicMembers)"
     }
 }
 
-"超 $NewFileLineLimit 行的文件：$($over.Count)"
+"Files over $NewFileLineLimit lines: $($over.Count)"
 $over | Select-Object -First 12 | ForEach-Object { '{0,6}  {1,4} public  {2}' -f $_.Lines, $_.PublicMembers, $_.Path }
 
 if ($failures.Count -gt 0) {
     ''
-    '预算失败：'
+    'Budget failures:'
     $failures | ForEach-Object { "  $_" }
     exit 1
 }
 
-'结构预算：通过'
+'Structure budget: passed'
 exit 0

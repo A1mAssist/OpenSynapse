@@ -2,23 +2,22 @@
     x:Class="OpenSynapse.App.BladeFanCurveWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:OpenSynapse.App"
-    Title="手动风扇曲线">
+    xmlns:local="using:OpenSynapse.App">
   <Grid x:Name="RootLayout" Background="{StaticResource CanvasBrush}" RequestedTheme="Dark" Padding="20">
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
       <StackPanel Spacing="16">
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-          <TextBlock local:Localized.Uid="BladeFanCurveHint" Text="拖动圆点调整转速，也可以在下方输入精确数值。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="12" VerticalAlignment="Center" />
+          <TextBlock local:Localized.Uid="BladeFanCurveHint" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="12" VerticalAlignment="Center" />
           <ComboBox Grid.Column="1" ItemsSource="{Binding Fan.BladeFanCurveModeOptions}" SelectedIndex="{Binding Fan.BladeFanCurveModeIndex, Mode=TwoWay}" MinWidth="160" />
         </Grid>
         <StackPanel Orientation="Horizontal" Spacing="16">
-          <RadioButton local:Localized.Uid="BladeFanCurveCpuTab" Content="CPU 曲线" GroupName="BladeFanCurveSide" IsChecked="{Binding Fan.BladeFanCurveEditor.IsCpuCurveSelected, Mode=TwoWay}" />
-          <RadioButton local:Localized.Uid="BladeFanCurveGpuTab" Content="GPU 曲线" GroupName="BladeFanCurveSide" IsChecked="{Binding Fan.BladeFanCurveEditor.IsGpuCurveSelected, Mode=TwoWay}" />
+          <RadioButton local:Localized.Uid="BladeFanCurveCpuTab" GroupName="BladeFanCurveSide" IsChecked="{Binding Fan.BladeFanCurveEditor.IsCpuCurveSelected, Mode=TwoWay}" />
+          <RadioButton local:Localized.Uid="BladeFanCurveGpuTab" GroupName="BladeFanCurveSide" IsChecked="{Binding Fan.BladeFanCurveEditor.IsGpuCurveSelected, Mode=TwoWay}" />
         </StackPanel>
         <local:BladeFanCurvePlot DataContext="{Binding Fan.BladeFanCurveEditor}" Height="280" />
         <StackPanel Spacing="8">
           <Grid ColumnDefinitions="110,*,44" ColumnSpacing="10">
-            <TextBlock local:Localized.Uid="BladeFanCurveColumnTemperature" Text="温度" Style="{StaticResource MetricLabelStyle}" />
+            <TextBlock local:Localized.Uid="BladeFanCurveColumnTemperature" Style="{StaticResource MetricLabelStyle}" />
             <TextBlock Grid.Column="1" Text="RPM" Style="{StaticResource MetricLabelStyle}" />
           </Grid>
           <ItemsControl ItemsSource="{Binding Fan.BladeFanCurveEditor.Points}">
@@ -34,9 +33,9 @@
           </ItemsControl>
         </StackPanel>
         <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="10">
-          <Button local:Localized.Uid="BladeFanCurveAddTier" Content="添加档位" Click="AddBladeFanCurveTierClick" Style="{StaticResource SecondaryButtonStyle}" />
-          <Button Grid.Column="1" local:Localized.Uid="BladeFanCurveReset" Content="恢复默认" Click="ResetBladeFanCurveClick" Style="{StaticResource SecondaryButtonStyle}" />
-          <Button Grid.Column="2" local:Localized.Uid="BladeFanCurveApply" Content="应用" Click="ApplyBladeFanCurveClick" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Right" />
+          <Button local:Localized.Uid="BladeFanCurveAddTier" Click="AddBladeFanCurveTierClick" Style="{StaticResource SecondaryButtonStyle}" />
+          <Button Grid.Column="1" local:Localized.Uid="BladeFanCurveReset" Click="ResetBladeFanCurveClick" Style="{StaticResource SecondaryButtonStyle}" />
+          <Button Grid.Column="2" local:Localized.Uid="BladeFanCurveApply" Click="ApplyBladeFanCurveClick" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Right" />
         </Grid>
       </StackPanel>
     </ScrollViewer>
