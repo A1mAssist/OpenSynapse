@@ -49,6 +49,7 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
 
             Definition.Enabled = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(TriggerText));
             OnDefinitionChanged();
             EnabledChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -56,8 +57,16 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
 
     public bool HasTrigger => Definition.Trigger is not null;
 
+    public Visibility TriggerToggleVisibility =>
+        HasTrigger ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility TriggerUnsetBadgeVisibility =>
+        HasTrigger ? Visibility.Collapsed : Visibility.Visible;
+
     public string TriggerText => Definition.Trigger is { } trigger
-        ? AppStrings.FormatText("MacroTriggerValue", DescribeTrigger(trigger))
+        ? Definition.Enabled
+            ? AppStrings.FormatText("MacroTriggerValue", DescribeTrigger(trigger))
+            : AppStrings.FormatText("MacroTriggerValueDisabled", DescribeTrigger(trigger))
         : AppStrings.Text("MacroTriggerUnset");
 
     public string StepsText => AppStrings.FormatText(
@@ -207,6 +216,8 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
         Definition.Trigger = trigger;
         OnPropertyChanged(nameof(TriggerText));
         OnPropertyChanged(nameof(HasTrigger));
+        OnPropertyChanged(nameof(TriggerToggleVisibility));
+        OnPropertyChanged(nameof(TriggerUnsetBadgeVisibility));
         OnPropertyChanged(nameof(TriggerModeIndex));
         OnDefinitionChanged();
     }
@@ -223,6 +234,8 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(Enabled));
         OnPropertyChanged(nameof(TriggerText));
         OnPropertyChanged(nameof(HasTrigger));
+        OnPropertyChanged(nameof(TriggerToggleVisibility));
+        OnPropertyChanged(nameof(TriggerUnsetBadgeVisibility));
         OnPropertyChanged(nameof(StepsText));
         OnPropertyChanged(nameof(IsRepeating));
         OnPropertyChanged(nameof(PlaybackModeIndex));

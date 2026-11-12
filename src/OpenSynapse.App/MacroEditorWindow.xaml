@@ -201,7 +201,7 @@
       <Border Grid.Row="2" Style="{StaticResource CardStyle}" Padding="0">
         <StackPanel>
           <Grid Padding="12,10" ColumnDefinitions="*,Auto" ColumnSpacing="4">
-            <TextBlock local:Localized.Uid="MacroKeyBindsTitle" Text="触发键（宏优先）" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+            <TextBlock local:Localized.Uid="MacroKeyBindsTitle" Text="触发键" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
             <Button Grid.Column="1" x:Name="MacroTriggerCaptureButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" IsEnabled="{Binding Macros.CanEditMacro}">
               <FontIcon Glyph="&#xE710;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
               <Button.Flyout>

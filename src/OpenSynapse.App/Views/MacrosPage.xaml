@@ -33,7 +33,11 @@
                                 <TextBlock Text="{Binding StepsText}" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" />
                                 <TextBlock Text="{Binding TriggerText}" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" />
                               </StackPanel>
-                              <ToggleSwitch local:Localized.Uid="MacroRowEnableToggle" Grid.Column="1" IsOn="{Binding Enabled, Mode=TwoWay}" Toggled="MacroRowEnabledToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
+                              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                <TextBlock local:Localized.Uid="MacroRowTriggerLabel" Text="触发" Foreground="{StaticResource MutedBrush}" FontSize="11" VerticalAlignment="Center" Visibility="{Binding TriggerToggleVisibility}" />
+                                <ToggleSwitch local:Localized.Uid="MacroRowEnableToggle" IsOn="{Binding Enabled, Mode=TwoWay}" Toggled="MacroRowEnabledToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" Visibility="{Binding TriggerToggleVisibility}" />
+                                <TextBlock local:Localized.Uid="MacroRowTriggerUnsetBadge" Text="未绑定" Foreground="{StaticResource MutedBrush}" FontSize="11" VerticalAlignment="Center" Visibility="{Binding TriggerUnsetBadgeVisibility}" />
+                              </StackPanel>
                               <Button local:Localized.Uid="A11yMore" Grid.Column="2" Width="26" Height="26" MinWidth="26" MinHeight="26" Padding="0" Style="{StaticResource IconButtonStyle}" VerticalAlignment="Center" ToolTipService.ToolTip="更多" AutomationProperties.Name="更多"><TextBlock Text="&#x2026;" FontSize="14" />
                                 <Button.Flyout>
                                   <MenuFlyout>
@@ -65,8 +69,9 @@
                         <TextBlock local:Localized.Uid="MacroSummaryNoMacro" Text="选择一个宏以查看它的详情。" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" Visibility="{Binding Macros.MacroNoSelectionVisibility}" />
                         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Visibility="{Binding Macros.MacroEditorVisibility}">
                           <StackPanel Spacing="3">
-                            <TextBlock local:Localized.Uid="MacroKeyBindsTitle" Text="键位绑定" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock local:Localized.Uid="MacroKeyBindsTitle" Text="触发键" Style="{StaticResource MetricLabelStyle}" />
                             <TextBlock Text="{Binding Macros.SelectedMacro.TriggerText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                            <TextBlock local:Localized.Uid="MacroTriggerSwitchHint" Text="开关只控制这个触发键；手动播放不受影响。" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Visibility="{Binding Macros.MacroTriggerBoundVisibility}" />
                           </StackPanel>
                           <Button Grid.Column="1" local:Localized.Uid="MacroMainCaptureButton" Width="30" Height="30" MinWidth="30" MinHeight="30" Padding="0" Style="{StaticResource IconButtonStyle}" Click="CaptureMacroTriggerClick" IsEnabled="{Binding Macros.CanEditMacro}"><FontIcon Glyph="&#xE710;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" /></Button>
                         </Grid>
@@ -76,7 +81,7 @@
                   </Border>
                 </Grid>
                 <TextBlock Text="{Binding Macros.StatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
-                <TextBlock local:Localized.Uid="MacroHint" Text="宏仅在 OpenSynapse 运行时生效，触发键会全局拦截，F9 可停止录制并保存。" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" />
+                <TextBlock local:Localized.Uid="MacroHint" Text="宏仅在 OpenSynapse 运行时生效。列表开关只控制触发键是否执行；手动播放不受影响。" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" />
               </StackPanel>
   </ScrollViewer>
 </UserControl>
