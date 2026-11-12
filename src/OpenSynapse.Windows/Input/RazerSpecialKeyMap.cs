@@ -16,6 +16,14 @@ internal static class RazerSpecialKeyMap
     };
     private static readonly FrozenDictionary<ushort, IReadOnlyDictionary<byte, byte>> Maps = Load();
 
+    // Bundle anchors carry the private-key code (32 = DPI+) while the profile
+    // reports the mapping button id (0x0B). The JSON proves the pair.
+    private static readonly FrozenDictionary<ushort, IReadOnlyDictionary<byte, byte>> ButtonIdsByCode =
+        Maps.ToFrozenDictionary(
+            item => item.Key,
+            item => (IReadOnlyDictionary<byte, byte>)item.Value
+                .ToFrozenDictionary(pair => pair.Value, pair => pair.Key));
+
     internal static bool TryResolve(ushort productId, byte mappingButtonId, out byte razerKeyCode)
     {
         if (Maps.TryGetValue(productId, out var keys) &&
@@ -25,6 +33,18 @@ internal static class RazerSpecialKeyMap
         }
 
         razerKeyCode = 0;
+        return false;
+    }
+
+    internal static bool TryResolveButtonId(ushort productId, byte razerKeyCode, out byte mappingButtonId)
+    {
+        if (ButtonIdsByCode.TryGetValue(productId, out var keys) &&
+            keys.TryGetValue(razerKeyCode, out mappingButtonId))
+        {
+            return true;
+        }
+
+        mappingButtonId = 0;
         return false;
     }
 

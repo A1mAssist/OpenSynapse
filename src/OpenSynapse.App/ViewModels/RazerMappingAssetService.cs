@@ -6,6 +6,7 @@ using System.Text.Json;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Lighting;
 using OpenSynapse.Core.Storage;
+using OpenSynapse.Windows.Input;
 
 namespace OpenSynapse.App.ViewModels;
 
@@ -143,7 +144,10 @@ public sealed partial class RazerMappingAssetService
                                 new Uri(imagePath), cancellationToken).ConfigureAwait(false);
                             return imageOnly is null
                                 ? null
-                                : imageOnly with { ButtonNames = bundle.ButtonNamesById };
+                                : imageOnly with
+                                {
+                                    ButtonNames = MapButtonNames(productId, bundle.ButtonNamesById),
+                                };
                         }
 
                         if (await HasExpectedAspectAsync(imagePath, bundle.ImageWidth, bundle.ImageHeight)
@@ -153,7 +157,10 @@ public sealed partial class RazerMappingAssetService
                             foreach (var anchor in bundle.MouseAnchors)
                             {
                                 hotspots.TryAdd(
-                                    anchor.ButtonId,
+                                    RazerSpecialKeyMap.TryResolveButtonId(
+                                        productId, anchor.ButtonId, out var mappedButtonId)
+                                        ? mappedButtonId
+                                        : anchor.ButtonId,
                                     new RazerMappingPoint(anchor.X, anchor.Y, anchor.IsLeft));
                             }
 
@@ -162,7 +169,7 @@ public sealed partial class RazerMappingAssetService
                                 return new RazerMappingImageLayout(
                                     new Uri(imagePath), bundle.ImageWidth, bundle.ImageHeight, hotspots)
                                 {
-                                    ButtonNames = bundle.ButtonNamesById,
+                                    ButtonNames = MapButtonNames(productId, bundle.ButtonNamesById),
                                 };
                             }
                         }
@@ -183,6 +190,16 @@ public sealed partial class RazerMappingAssetService
 
         return null;
     }
+
+    // DPI anchors come from the bundle's DKM code (32/33), not the profile button id.
+    private static IReadOnlyDictionary<byte, string> MapButtonNames(
+        ushort productId,
+        IReadOnlyDictionary<byte, string> names) =>
+        names.ToDictionary(
+            pair => RazerSpecialKeyMap.TryResolveButtonId(productId, pair.Key, out var mappedButtonId)
+                ? mappedButtonId
+                : pair.Key,
+            pair => pair.Value);
 
     private async Task<RazerMappingKeyboardLayout?> LoadKeyboardAsync(
         ushort productId,
