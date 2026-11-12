@@ -20,7 +20,7 @@ public sealed partial class DevicesPage : UserControl
     }
 
     private async void HeadsetAudioRefreshClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel.Accessories.SelectedHeadsetAudio?.LoadAsync(Lifetime) ?? Task.CompletedTask);
+        await ViewModel.Accessories.RefreshSelectedHeadsetAudioAsync(Lifetime);
 
     private async void HeadsetAudioInstallThxClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.Accessories.SelectedHeadsetAudio?.InstallThxComponentsAsync(Lifetime) ?? Task.CompletedTask);

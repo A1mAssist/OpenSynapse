@@ -120,6 +120,7 @@ public sealed partial class MainWindow : Window
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.RazerHid.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.RazerHid.Devices.CollectionChanged += OnRazerHidDevicesChanged;
+        _viewModel.Accessories.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.Display.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.Blade.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.Viper.PropertyChanged += OnViewModelPropertyChanged;
@@ -570,6 +571,7 @@ public sealed partial class MainWindow : Window
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.RazerHid.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.RazerHid.Devices.CollectionChanged -= OnRazerHidDevicesChanged;
+        _viewModel.Accessories.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.Display.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.Blade.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.Viper.PropertyChanged -= OnViewModelPropertyChanged;

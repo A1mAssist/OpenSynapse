@@ -277,6 +277,12 @@ public sealed partial class DevicesPage : UserControl
         {
             DispatcherQueue.TryEnqueue(() => UpdateDeviceSelector("razer-hid"));
         }
+        if (propertyName == nameof(UsbAccessoriesWorkspace.SelectedHeadsetAudio) &&
+            ViewModel.Accessories.SelectedHeadsetAudio is null &&
+            HeadsetAudioPanel.Visibility == Visibility.Visible)
+        {
+            DispatcherQueue.TryEnqueue(() => SelectDevice("none"));
+        }
         if (propertyName == nameof(RazerHidWorkspace.SelectedKraken) &&
             ViewModel.RazerHid.SelectedKraken is null &&
             RazerHidKrakenPanel.Visibility == Visibility.Visible)

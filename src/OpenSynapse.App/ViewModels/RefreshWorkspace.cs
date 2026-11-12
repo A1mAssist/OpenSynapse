@@ -30,6 +30,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
     private readonly Func<DeviceDescriptor?, CancellationToken, Task<string?>> _readSerialAsync;
     private readonly Action _clearSerials;
     private readonly Func<CancellationToken, Task> _refreshAccessoriesAsync;
+    private readonly Func<CancellationToken, Task> _pollHeadsetPower;
     private readonly BladeWorkspace _blade;
     private readonly DisplayWorkspace _display;
     private readonly FanWorkspace _fan;
@@ -86,6 +87,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
         Func<DeviceDescriptor?, CancellationToken, Task<string?>> readSerialAsync,
         Action clearSerials,
         Func<CancellationToken, Task> refreshAccessoriesAsync,
+        Func<CancellationToken, Task> pollHeadsetPower,
         BladeWorkspace blade,
         DisplayWorkspace display,
         FanWorkspace fan,
@@ -126,6 +128,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
         _readSerialAsync = readSerialAsync;
         _clearSerials = clearSerials;
         _refreshAccessoriesAsync = refreshAccessoriesAsync;
+        _pollHeadsetPower = pollHeadsetPower;
         _blade = blade;
         _display = display;
         _fan = fan;
