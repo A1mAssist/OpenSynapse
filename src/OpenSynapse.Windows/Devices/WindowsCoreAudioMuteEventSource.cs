@@ -158,18 +158,10 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
                     var current = reader.Read();
                     retryMissingEndpoint = current.SpeakerAvailable == false || current.MicrophoneAvailable == false;
                     var forcePublish = Interlocked.Exchange(ref _forcePublish, 0) != 0;
-                    if (previous is null && !forcePublish)
-                    {
-                        // The keyboard is already in software mode here, so the F1
-                        // speaker indicator needs its real state once. Do not seed the
-                        // microphone: an unused capture endpoint is commonly muted and
-                        // would light the M5 indicator at startup.
-                        if (current.SpeakerAvailable != false) PublishSpeaker(current.SpeakerMuted);
-                    }
-                    else
-                    {
-                        PublishChanges(forcePublish ? null : previous, current);
-                    }
+                    // Seed both endpoints on the first read. A default microphone that
+                    // is already muted is a real state, so waiting for an edge would
+                    // leave the M5 indicator dark until the next mute change.
+                    PublishChanges(forcePublish ? null : previous, current);
                     previous = current;
                     Volatile.Write(ref _lastError, retryMissingEndpoint ? "A default Core Audio endpoint is unavailable." : null);
                 }
@@ -272,18 +264,6 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
             {
                 _publish(new(BladeAudioMuteTarget.Microphone, current.MicrophoneMuted));
             }
-        }
-        catch (Exception exception)
-        {
-            Volatile.Write(ref _lastError, exception.Message);
-        }
-    }
-
-    private void PublishSpeaker(bool muted)
-    {
-        try
-        {
-            _publish(new(BladeAudioMuteTarget.Speaker, muted));
         }
         catch (Exception exception)
         {
