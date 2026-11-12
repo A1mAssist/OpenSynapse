@@ -14,6 +14,10 @@ namespace OpenSynapse.Windows.Input;
 internal sealed class RazerPrivateKeyInput : IDisposable
 {
     private const ushort RazerVendorId = 0x1532;
+    // Product 710 (0x02C6) is the only Blade whose private keys are owned by the
+    // filter-driven runtime. Mice use the same MI_01 Col04/05 collections for
+    // their DPI and profile keys, so the path filter must not be product-blind.
+    private const ushort BladeKeyboardProductId = 0x02C6;
     private const byte RazerKeyReportId = 4;
     private const byte SlaveKeyReportId = 8;
     private const byte DevicePickUpKey = 93;
@@ -270,8 +274,10 @@ internal sealed class RazerPrivateKeyInput : IDisposable
         device.Usage is 0x0000 or 0x0080 &&
         // Blade keyboards publish every M-key, Fn shortcut and the microphone indicator
         // as report 4 on MI_01 Col04/Col05. The Product 710 filter runtime owns that
-        // stream, and a second reader takes the reports away from it.
-        !IsBladeVendorEventCollection(device.DevicePath);
+        // stream, and a second reader takes the reports away from it. Mice put their
+        // DPI/profile keys on those same collections, so scope this to the Blade.
+        !(device.ProductId == BladeKeyboardProductId &&
+          IsBladeVendorEventCollection(device.DevicePath));
 
     private static bool IsBladeVendorEventCollection(string path) =>
         path.Contains("&MI_01&COL04#", StringComparison.OrdinalIgnoreCase) ||
