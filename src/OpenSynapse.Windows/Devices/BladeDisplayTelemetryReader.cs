@@ -124,7 +124,11 @@ internal sealed class BladeDisplayTelemetryReader
         }
         catch (Exception exception) when (BladeLightingRuntimeDialect.IsExplicitRejection(exception))
         {
-            BladeLightingRuntimeDialect.Downgrade(blade.Descriptor.ProductId, exception.Message);
+            // This firmware-effect channel is the last one left, so there is no lower dialect.
+            BladeLightingRuntimeDialect.Downgrade(
+                blade.Descriptor.ProductId,
+                BladeLightingDialect.Unknown,
+                exception.Message);
             throw;
         }
 
