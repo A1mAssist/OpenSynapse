@@ -89,8 +89,13 @@ public static class RazerMxicHeadsetProtocol
 
     public static bool IsSupported(ushort productId) => ProductIds.Contains(productId);
 
+    // 0584 (Barracuda 2.4) derives its own power state from getWirelessConnectionStatus,
+    // so the reply is authoritative there. 0583 gets the same command from the
+    // AudioMxicDevice base but hardcodes isPowerOn true, so it stays out. The MabelT1
+    // (0539/053A/053B) and Class18/Protocol40 dialects use a different report envelope
+    // and stay out until their reply is measured.
     private static readonly FrozenSet<ushort> WirelessConnectionStatusProductIds =
-        new ushort[] { ProductId }.ToFrozenSet();
+        new ushort[] { ProductId, 0x0584 }.ToFrozenSet();
 
     public static bool SupportsWirelessConnectionStatus(ushort productId) =>
         WirelessConnectionStatusProductIds.Contains(productId);
