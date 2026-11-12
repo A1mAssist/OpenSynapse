@@ -53,7 +53,7 @@ public partial class App : Application
     private bool _appNotificationsRegistered;
     private AppBehaviorSettings _behaviorSettings = new();
     private LowBatteryNotificationTracker? _lowBatteryNotifications;
-    private RazerHidDeviceService? _openRazerDeviceService;
+    private RazerHidDeviceService? _razerHidDeviceService;
     private readonly LocalDiagnosticLog _diagnosticLog = new();
 
     public App()
@@ -179,9 +179,9 @@ public partial class App : Application
         _elevatedMacroSink = new ElevatedMacroInputSink(_elevatedMacroClient);
         _razerFilterMacroSink = new RazerFilterMacroInputSink(_elevatedMacroSink);
         // Share the Razer transport so RazerHid requests and telemetry serialize on one gate.
-        _openRazerDeviceService = new RazerHidDeviceService(
+        _razerHidDeviceService = new RazerHidDeviceService(
             RazerHidDeviceCatalog.BuiltIn, razerTransport, _diagnosticLog);
-        _openRazerDeviceService.BatteryObserved += OnPeripheralBatteryObserved;
+        _razerHidDeviceService.BatteryObserved += OnPeripheralBatteryObserved;
         var viewModel = new MainViewModel(
             new WindowsHidDiscovery(
                 registryLoad.Registry,
@@ -198,7 +198,7 @@ public partial class App : Application
             Environment.ProcessPath,
             registryLoad.Errors,
             liteMode ? null : new WindowsTouchpadController(),
-            _openRazerDeviceService,
+            _razerHidDeviceService,
             new RazerHidSpecialLightingService(
                 message => _diagnosticLog.TryWrite("kraken-lighting", message)),
             thxAudioController: _thxAudioController,
@@ -387,10 +387,10 @@ public partial class App : Application
             _audioMuteViewModel.Macros.MacroContinuousPlaybackStarted -= OnMacroContinuousPlaybackStarted;
             _audioMuteViewModel = null;
         }
-        if (_openRazerDeviceService is not null)
+        if (_razerHidDeviceService is not null)
         {
-            _openRazerDeviceService.BatteryObserved -= OnPeripheralBatteryObserved;
-            _openRazerDeviceService = null;
+            _razerHidDeviceService.BatteryObserved -= OnPeripheralBatteryObserved;
+            _razerHidDeviceService = null;
         }
         try
         {

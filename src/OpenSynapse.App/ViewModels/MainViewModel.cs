@@ -58,8 +58,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         string? executablePath = null,
         IReadOnlyList<string>? startupDiagnostics = null,
         WindowsTouchpadController? touchpadController = null,
-        RazerHidDeviceService? openRazerDeviceService = null,
-        RazerHidSpecialLightingService? openRazerSpecialLightingService = null,
+        RazerHidDeviceService? razerHidDeviceService = null,
+        RazerHidSpecialLightingService? razerHidSpecialLightingService = null,
         RazerFirmwareUpdateClient? firmwareUpdateClient = null,
         IThxAudioController? thxAudioController = null,
         bool thxAudioSupported = false,
@@ -201,8 +201,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             SetRazerHidChromaEnabled,
             Blade.State);
         RazerHid = new RazerHidWorkspace(
-            openRazerDeviceService,
-            openRazerSpecialLightingService,
+            razerHidDeviceService,
+            razerHidSpecialLightingService,
             () => CurrentPowerSource,
             () => _profile,
             GetActiveProfile,

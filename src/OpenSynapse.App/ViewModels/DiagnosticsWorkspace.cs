@@ -9,21 +9,21 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class DiagnosticsWorkspace
 {
-    private readonly RazerHidWorkspace _openRazer;
+    private readonly RazerHidWorkspace _razerHid;
     private readonly IReadOnlyList<string> _startupDiagnostics;
     private readonly Func<string> _lastRefreshText;
     private readonly Func<string> _telemetryTimeText;
     private readonly Func<IReadOnlyList<DeviceRowViewModel>> _currentDevices;
 
     internal DiagnosticsWorkspace(
-        RazerHidWorkspace openRazer,
+        RazerHidWorkspace razerHid,
         IReadOnlyList<string> startupDiagnostics,
         Func<string> lastRefreshText,
         Func<string> telemetryTimeText,
         Func<IEnumerable<AccessoryDiagnostic>> readAccessories,
         Func<IReadOnlyList<DeviceRowViewModel>> currentDevices)
     {
-        _openRazer = openRazer;
+        _razerHid = razerHid;
         _startupDiagnostics = startupDiagnostics;
         _lastRefreshText = lastRefreshText;
         _telemetryTimeText = telemetryTimeText;
@@ -85,7 +85,7 @@ public sealed partial class DiagnosticsWorkspace
         IReadOnlyList<string> errors)
     {
         Rows.Clear();
-        _openRazerRows.Clear();
+        _razerHidRows.Clear();
         var groups = new Dictionary<string, DiagnosticRowViewModel>(StringComparer.OrdinalIgnoreCase);
         var errorBrush = new SolidColorBrush(Color.FromArgb(255, 255, 107, 107));
         var bladeName = snapshot.Devices.FirstOrDefault(device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily))?.Name

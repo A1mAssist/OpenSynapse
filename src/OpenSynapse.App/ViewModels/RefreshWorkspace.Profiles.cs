@@ -45,7 +45,7 @@ public sealed partial class RefreshWorkspace
         var razerHidDevices = devices
             .Where(device => device.Category is DeviceCategory.Mouse or DeviceCategory.Keyboard)
             .Where(device => device.ProtocolFamily != DeviceProtocolFamilies.Viper)
-            .Where(device => _openRazer.ResolveConnection(device) is not null)
+            .Where(device => _razerHid.ResolveConnection(device) is not null)
             .ToArray();
         if (razerHidDevices.Length == 0)
         {
