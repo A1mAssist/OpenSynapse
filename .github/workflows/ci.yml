@@ -1,0 +1,36 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Restore
+        run: dotnet restore src/OpenSynapse.App/OpenSynapse.App.csproj -p:Platform=x64
+      - name: Build
+        run: dotnet build src/OpenSynapse.App/OpenSynapse.App.csproj -c Release -p:Platform=x64 --no-restore
+      - name: Structure budget
+        shell: pwsh
+        run: ./scripts/check-structure.ps1
+      - name: Governance tests
+        run: node scripts/governance.test.mjs
+      - name: Unit tests when the private test tree is present
+        shell: pwsh
+        run: |
+          if (Test-Path tests/OpenSynapse.Core.Tests/OpenSynapse.Core.Tests.csproj) {
+            dotnet test tests/OpenSynapse.Core.Tests/OpenSynapse.Core.Tests.csproj -c Release
+          } else {
+            Write-Host "tests/ is private and not present in this checkout; skipping."
+          }
