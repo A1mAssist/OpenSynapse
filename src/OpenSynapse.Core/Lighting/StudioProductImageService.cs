@@ -3,13 +3,14 @@ using System.Collections.Concurrent;
 namespace OpenSynapse.Core.Lighting;
 
 /// <summary>
-/// Downloads per-product cover art from the Synapse asset host and keeps it on
-/// disk so the device picker still has art when the network is unavailable.
+/// Downloads per-product art from Razer's dashboard and keeps it on disk so
+/// the device picker still has art when the network is unavailable.
 /// </summary>
 public sealed class StudioProductImageService
 {
-    // Synapse 4's dashboard falls back to app-assets.razer.com/files/synapse/devices/{productId}/cover.png.
+    // Synapse 4's dashboard serves per-device art from apps.razer.com; cover.png is the legacy fallback.
     private const string AssetRoot = "https://app-assets.razer.com/files/synapse/devices/";
+    private const string DashboardAssetRoot = "https://apps.razer.com/synapse/products/";
     private const int MaxImageBytes = 4 * 1024 * 1024;
     private const int MemoryCacheLimit = 64;
     private const string UserAgent = "OpenSynapse-LightingStudio/1.0";
@@ -30,11 +31,27 @@ public sealed class StudioProductImageService
         _cacheDirectory = Path.GetFullPath(cacheDirectory);
     }
 
-    /// <summary>Resolves the verified Synapse cover URL; zero has no product art.</summary>
-    public static Uri? ResolveUri(ushort productId) =>
-        productId == 0
-            ? null
-            : new Uri(FormattableString.Invariant($"{AssetRoot}{productId}/cover.png"));
+    /// <summary>Resolves the first product-art URL; zero has no product art.</summary>
+    public static Uri? ResolveUri(ushort productId) => ResolveUris(productId).FirstOrDefault();
+
+    /// <summary>
+    /// The Synapse dashboard image, then the legacy cover. Layout 0 covers most
+    /// devices; keyboards such as the BlackWidow Elite only publish layout 1.
+    /// </summary>
+    public static IReadOnlyList<Uri> ResolveUris(ushort productId)
+    {
+        if (productId == 0) return Array.Empty<Uri>();
+        return new[]
+        {
+            DashboardImage(productId, 0),
+            DashboardImage(productId, 1),
+            new Uri(FormattableString.Invariant($"{AssetRoot}{productId}/cover.png")),
+        };
+    }
+
+    private static Uri DashboardImage(ushort productId, int layoutId) =>
+        new(FormattableString.Invariant(
+            $"{DashboardAssetRoot}{productId}/ui/{productId}_0/PluginImages/{productId}_0_{layoutId}_dashboard1x.png"));
 
     public async Task<StudioProductImage> GetAsync(
         ushort productId,
@@ -74,9 +91,27 @@ public sealed class StudioProductImageService
         string? name,
         CancellationToken cancellationToken)
     {
-        var uri = ResolveUri(productId);
-        if (uri is null) return StudioProductImage.Unavailable(name, "no-product");
+        var uris = ResolveUris(productId);
+        if (uris.Count == 0) return StudioProductImage.Unavailable(name, "no-product");
 
+        StudioProductImage result = StudioProductImage.Unavailable(name, "no-product");
+        foreach (var uri in uris)
+        {
+            result = await DownloadAsync(uri, cachePath, name, cancellationToken).ConfigureAwait(false);
+            if (result.State == StudioProductImageState.Loaded) return result;
+            if (result.Error is null ||
+                !result.Error.StartsWith("http-", StringComparison.Ordinal)) return result;
+        }
+
+        return result;
+    }
+
+    private async Task<StudioProductImage> DownloadAsync(
+        Uri uri,
+        string cachePath,
+        string? name,
+        CancellationToken cancellationToken)
+    {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(RequestTimeout);
         try

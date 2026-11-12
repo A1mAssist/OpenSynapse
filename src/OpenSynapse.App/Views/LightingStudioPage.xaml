@@ -146,8 +146,7 @@
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
               <Grid Width="84" Height="68">
-                <Border Background="{StaticResource SurfaceMutedBrush}" CornerRadius="8" />
-                <Image Source="{Binding SelectedDevice.Image}" Stretch="Uniform" Margin="6"
+                <Image Source="{Binding SelectedDevice.Image}" Stretch="Uniform" Margin="2"
                        Visibility="{Binding SelectedDevice.ImageVisibility}" />
                 <views:StudioDeviceGlyph Visual="{Binding DeviceVisual}" Margin="6"
                                         Visibility="{Binding SelectedDevice.FallbackVisibility}" />
