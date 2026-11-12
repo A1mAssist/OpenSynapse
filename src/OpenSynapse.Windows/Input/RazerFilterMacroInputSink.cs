@@ -17,15 +17,13 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
     private const uint MapVkToVscEx = 4;
     private const int MouseMaximumValue = 65_536;
     private const int MouseWheelStep = 120;
-    private const uint MouseWheelUp = 0x00780400;
-    private const uint MouseWheelDown = 0xFF880400;
     private const int SmXVirtualScreen = 76;
     private const int SmYVirtualScreen = 77;
     private const int SmCxVirtualScreen = 78;
     private const int SmCyVirtualScreen = 79;
 
-    private static readonly uint[] MouseDownFlags = [0, 1, 4, 16, 64, 256];
-    private static readonly uint[] MouseUpFlags = [0, 2, 8, 32, 128, 512];
+    private static readonly ushort[] MouseDownFlags = [0, 1, 4, 16, 64, 256];
+    private static readonly ushort[] MouseUpFlags = [0, 2, 8, 32, 128, 512];
 
     private readonly IMacroInputSink _fallback;
     private readonly Func<bool, CancellationToken, ValueTask<IRazerFilterDriverChannel?>> _open;
@@ -227,14 +225,14 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
             Math.Abs(input.WheelDelta) / MouseWheelStep,
             1,
             20);
-        var flags = input.WheelDelta > 0 ? MouseWheelUp : MouseWheelDown;
+        var wheel = input.WheelDelta > 0 ? MouseWheelStep : -MouseWheelStep;
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             for (var index = 0; index < steps; index++)
             {
                 if (await TryWriteDriverLockedAsync(
-                        RazerFilterInputProtocol.CreateMouseInput(0, flags, 0, 0),
+                        RazerFilterInputProtocol.CreateMouseInput(0, 0x0400, 0, 0, wheel),
                         mouse: true,
                         cancellationToken).ConfigureAwait(false))
                 {
