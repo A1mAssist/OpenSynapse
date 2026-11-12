@@ -21,6 +21,7 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
     private readonly IRazerHeadsetHidTransport _transport;
     private readonly Action<string>? _diagnostic;
     private readonly HeadsetProfile _profile;
+    private readonly ushort _productId;
     private readonly byte _direction;
     private readonly bool _eqBandsWithProfile;
     private readonly bool _usesRollingTransaction;
@@ -41,6 +42,7 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _profile = GetProfile(productId);
+        _productId = productId;
         // Dongle-forwarded commands set byte 9; wired cables leave it zero.
         _direction = productId is
             BlackSharkV3ProProtocol.HyperSpeedWirelessProductId or
@@ -57,6 +59,12 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
         0x0567 or 0x0568 or 0x056B or 0x056C or 0x0574 or 0x0587 or 0x0588 or
         BlackSharkV3ProProtocol.HyperSpeedWirelessProductId or
         BlackSharkV3ProProtocol.HyperSpeedUsbProductId;
+
+    // Only a dongle answers the radio-link query; hiding a wired headset because it
+    // ignored an unsupported command would remove a working device.
+    public static bool SupportsWirelessConnectionStatus(ushort productId) => productId is
+        BlackSharkV3ProProtocol.HyperSpeedWirelessProductId or
+        0x0568 or 0x056C or 0x0588 or 0x057A or 0x0A55 or 0x0A58;
 
     private static HeadsetProfile GetProfile(ushort productId) => productId switch
     {
@@ -147,6 +155,30 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
             AncState: null,
             AncLevel: null,
             Errors: errors) { MicBands = micBands.Ok ? micBands.Value : null };
+    }
+
+    public async Task<bool?> TryReadWirelessConnectionAsync(
+        CancellationToken cancellationToken = default)
+    {
+        if (!SupportsWirelessConnectionStatus(_productId))
+        {
+            return null;
+        }
+
+        try
+        {
+            var value = await QueryAsync(
+                RazerValkyrieHeadsetProtocol.CreateGetWirelessConnectionStatus(),
+                RazerValkyrieHeadsetProtocol.WirelessConnectionStatusHeader,
+                "read wireless connection",
+                cancellationToken).ConfigureAwait(false);
+            return RazerValkyrieHeadsetProtocol.ReadWirelessConnectionStatus(value);
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            _diagnostic?.Invoke($"{_profile} wireless status failed: {exception.Message}");
+            return null;
+        }
     }
 
     private Task SetEqPresetCoreAsync(byte preset, CancellationToken cancellationToken = default) =>

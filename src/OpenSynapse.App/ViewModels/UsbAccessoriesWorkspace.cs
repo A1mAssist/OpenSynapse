@@ -4,7 +4,6 @@ using System.Runtime.CompilerServices;
 using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
-using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
 
@@ -77,11 +76,10 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
             return;
         }
 
-        // 0555 keeps its HID endpoint enumerated after the headset is powered off, so
-        // the radio link is the only reliable power signal. A failed read falls back
-        // to the old behaviour instead of hiding a live device.
-        if (connection.Transport == RazerHeadsetAudioTransport.Mxic64 &&
-            RazerMxicHeadsetProtocol.SupportsWirelessConnectionStatus(connection.ProductId))
+        // These headsets keep their HID endpoint enumerated after the device is powered
+        // off, so the radio link is the only reliable power signal. A failed read falls
+        // back to the old behaviour instead of hiding a live device.
+        if (connection.SupportsWirelessPowerSignal)
         {
             var connected = await TryReadHeadsetPowerAsync(connection, cancellationToken);
             _headsetPowerConnection = connection;
@@ -211,19 +209,14 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
         RazerHeadsetAudioConnection connection,
         CancellationToken cancellationToken)
     {
-        if (connection.Transport != RazerHeadsetAudioTransport.Mxic64 ||
-            !RazerMxicHeadsetProtocol.SupportsWirelessConnectionStatus(connection.ProductId))
+        if (!connection.SupportsWirelessPowerSignal)
         {
             return null;
         }
 
         try
         {
-            await using var service = new RazerMxicHeadsetService(
-                connection.ProductId,
-                connection.DevicePath,
-                message => _diagnosticLog.TryWrite("headset-audio", message));
-            return await service.TryReadWirelessConnectionAsync(cancellationToken);
+            return await ReadWirelessPowerAsync(connection, cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -233,6 +226,35 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
         {
             _diagnosticLog.TryWrite("headset-audio", $"power check failed: {exception.Message}");
             return null;
+        }
+    }
+
+    private async Task<bool?> ReadWirelessPowerAsync(
+        RazerHeadsetAudioConnection connection,
+        CancellationToken cancellationToken)
+    {
+        void Diagnostic(string message) => _diagnosticLog.TryWrite("headset-audio", message);
+
+        switch (connection.Transport)
+        {
+            case RazerHeadsetAudioTransport.AvneraFeature65:
+                await using (var avnera = new RazerAvneraHeadsetService(connection.DevicePath, Diagnostic))
+                {
+                    return await avnera.TryReadLinkStatusAsync(cancellationToken).ConfigureAwait(false);
+                }
+            case RazerHeadsetAudioTransport.Valkyrie64:
+            case RazerHeadsetAudioTransport.Billie64:
+                await using (var valkyrie = new RazerValkyrieHeadsetService(
+                    connection.ProductId, connection.DevicePath, Diagnostic))
+                {
+                    return await valkyrie.TryReadWirelessConnectionAsync(cancellationToken).ConfigureAwait(false);
+                }
+            default:
+                await using (var mxic = new RazerMxicHeadsetService(
+                    connection.ProductId, connection.DevicePath, Diagnostic))
+                {
+                    return await mxic.TryReadWirelessConnectionAsync(cancellationToken).ConfigureAwait(false);
+                }
         }
     }
 

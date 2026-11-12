@@ -55,6 +55,10 @@ public static class RazerValkyrieHeadsetProtocol
     public static readonly byte[] SetMicMuteCommand = [0xE9, 0x00, 0x01];
     public static readonly byte[] SetMicMuteHeader = [0xE9, 0x01, 0x01];
 
+    // Only a dongle forwards this query; wired profiles have no radio link to report.
+    public static readonly byte[] GetWirelessConnectionStatus = [0x20, 0x00, 0x00];
+    public static readonly byte[] WirelessConnectionStatusHeader = [0x20, 0x01, 0x01];
+
     public static byte[] CreateGetBattery() => CreateRequest(GetBattery);
 
     public static byte[] CreateGetCharging() => CreateRequest(GetCharging);
@@ -105,6 +109,9 @@ public static class RazerValkyrieHeadsetProtocol
     }
 
     public static byte[] CreateGetMicMute() => CreateRequest(GetMicMute);
+
+    public static byte[] CreateGetWirelessConnectionStatus() =>
+        CreateRequest(GetWirelessConnectionStatus);
 
     public static byte[] CreateSetMicMute(bool muted) =>
         CreateRequest(SetMicMuteCommand, [muted ? (byte)1 : (byte)0]);
@@ -226,6 +233,9 @@ public static class RazerValkyrieHeadsetProtocol
         Require(value, 1);
         return value[0] == 1;
     }
+
+    public static bool ReadWirelessConnectionStatus(ReadOnlySpan<byte> value) =>
+        value.Length >= 1 && value[0] == 1;
 
     /// <summary>
     /// The bundles store an EQ level as sign-magnitude: -12 becomes 140 (128 + 12),
