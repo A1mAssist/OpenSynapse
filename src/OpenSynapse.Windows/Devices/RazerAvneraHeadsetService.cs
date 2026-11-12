@@ -183,6 +183,26 @@ public sealed class RazerAvneraHeadsetService : IAsyncDisposable
         return link.Value == 1;
     }
 
+    /// <summary>Reads only the battery level for the tray poll.</summary>
+    public async Task<int?> TryReadBatteryPercentAsync(CancellationToken cancellationToken = default)
+    {
+        var errors = new List<string>();
+        var battery = await ProbeAsync(
+            "battery",
+            RazerAvnera65Protocol.CreateBatteryRequest(),
+            RazerAvnera65Protocol.BatteryHeader,
+            RazerAvnera65Protocol.ReadBattery,
+            errors,
+            cancellationToken).ConfigureAwait(false);
+        if (!battery.Ok)
+        {
+            _diagnostic?.Invoke($"avnera battery read failed: {errors[0]}");
+            return null;
+        }
+
+        return battery.Value.Level;
+    }
+
     public Task SetAutoPauseAsync(
         bool enabled,
         ushort period,

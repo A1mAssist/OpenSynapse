@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Protocols;
 
@@ -150,6 +151,25 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
             anc.Mode,
             anc.Level,
             gameChat is byte rawGameChat ? InvertGameChat(rawGameChat) : null);
+    }
+
+    /// <summary>Reads only the battery level for the tray poll.</summary>
+    public async Task<int?> TryReadBatteryPercentAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await ReadValueAsync(
+                BlackSharkV3ProProtocol.CreateGetBattery(_connection.Wireless),
+                0x21,
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (
+            exception is IOException or InvalidDataException or InvalidOperationException or
+                Win32Exception or UnauthorizedAccessException)
+        {
+            _diagnostic?.Invoke($"BlackShark battery read failed: {exception.Message}");
+            return null;
+        }
     }
 
     public async Task SetSidetoneAsync(int level, CancellationToken cancellationToken = default)
