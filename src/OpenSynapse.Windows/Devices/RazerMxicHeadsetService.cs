@@ -542,7 +542,9 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
             lastStatus = await _transport
                 .SendAndReadStatusAsync(request, cancellationToken)
                 .ConfigureAwait(false);
-            if (lastStatus == RazerMxicHeadsetProtocol.StatusOk)
+            // AudioMxicDevice treats an empty getInputReport result as a missing status
+            // report, not a failure. The firmware still executes setRemoteMode above.
+            if (lastStatus is null or RazerMxicHeadsetProtocol.StatusOk)
             {
                 _remoteMode = true;
                 return;
