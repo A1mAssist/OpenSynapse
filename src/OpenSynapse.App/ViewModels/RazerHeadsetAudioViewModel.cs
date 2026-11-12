@@ -90,6 +90,8 @@ public sealed class RazerHeadsetThxBandViewModel : INotifyPropertyChanged
 
 public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncDisposable
 {
+    private static readonly TimeSpan MxicReadTimeout = TimeSpan.FromSeconds(8);
+
     private static readonly (byte Value, string Key)[] Presets =
     [
         (0x00, "RazerHeadsetPresetDefault"),
@@ -1303,8 +1305,24 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
     private async Task<RazerHeadsetAudioState> ReadMxicStateAsync(CancellationToken cancellationToken)
     {
-        await using var service = OpenMxicService();
-        return await service.ReadStateAsync(cancellationToken);
+        var service = OpenMxicService();
+        try
+        {
+            return await service.ReadStateAsync(cancellationToken)
+                .WaitAsync(MxicReadTimeout, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (TimeoutException)
+        {
+            // The native HID call can outlive every driver-side timeout. Closing the
+            // service handle makes the stuck read return instead of leaving the card
+            // on "正在读取…" forever.
+            throw new IOException("Headset read timed out.");
+        }
+        finally
+        {
+            await service.DisposeAsync().ConfigureAwait(false);
+        }
     }
 
     private RazerValkyrieHeadsetService OpenValkyrieService() =>

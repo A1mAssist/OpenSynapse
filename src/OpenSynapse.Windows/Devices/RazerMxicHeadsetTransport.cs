@@ -26,7 +26,7 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
 {
     private static readonly TimeSpan ResponseTimeout = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan ControlReportTimeout = TimeSpan.FromMilliseconds(250);
-    private static readonly TimeSpan ControlReportRetryDelay = TimeSpan.FromMilliseconds(10);
+    private static readonly TimeSpan ControlReportDelay = TimeSpan.FromMilliseconds(5);
     private readonly SafeFileHandle _handle;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly Channel<byte[]> _reports = Channel.CreateUnbounded<byte[]>();
@@ -96,6 +96,7 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
             }
 
             await SendReportAsync(report, cancellationToken).ConfigureAwait(false);
+            await Task.Delay(ControlReportDelay, cancellationToken).ConfigureAwait(false);
             return await ReadControlStatusAsync(report[0], cancellationToken).ConfigureAwait(false);
         }
         finally
@@ -124,73 +125,85 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            while (_reports.Reader.TryRead(out _))
+            // AudioMxicDevice sends the command again when getInputReport returns a
+            // non-OK status. The first status after a wireless wake-up can be transient,
+            // so a single failed status must not discard the whole read.
+            var attempts = expectedHeader is not null && _useControlStatusReport ? 3 : 1;
+            for (var attempt = 0; attempt < attempts; attempt++)
             {
-            }
-
-            await SendReportAsync(report, cancellationToken).ConfigureAwait(false);
-
-            if (expectedHeader is null && rawMatches is null)
-            {
-                return null;
-            }
-
-            if (expectedHeader is not null && _useControlStatusReport)
-            {
-                var control = await ReadControlReportAsync(
-                    report,
-                    expectedHeader,
-                    cancellationToken).ConfigureAwait(false);
-                if (control is not null)
+                while (_reports.Reader.TryRead(out _))
                 {
-                    return control;
                 }
-            }
 
-            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeout.CancelAfter(ResponseTimeout);
-            try
-            {
-                while (await _reports.Reader.WaitToReadAsync(timeout.Token).ConfigureAwait(false))
+                await SendReportAsync(report, cancellationToken).ConfigureAwait(false);
+
+                if (expectedHeader is null && rawMatches is null)
                 {
-                    while (_reports.Reader.TryRead(out var data))
+                    return null;
+                }
+
+                if (expectedHeader is not null && _useControlStatusReport)
+                {
+                    await Task.Delay(ControlReportDelay, cancellationToken).ConfigureAwait(false);
+                    var status = await ReadControlStatusAsync(report[0], cancellationToken).ConfigureAwait(false);
+                    if (status is not null && status != RazerMxicHeadsetProtocol.StatusOk)
                     {
-                        if (rawMatches is not null)
+                        await Task.Delay(
+                                TimeSpan.FromMilliseconds(10 * (attempt + 1)),
+                                cancellationToken)
+                            .ConfigureAwait(false);
+                        continue;
+                    }
+                }
+
+                // AudioMxicDevice waits 5 ms between the status report and hid.read. Send a
+                // command and then take its payload from the same input stream Synapse uses.
+                await Task.Delay(ControlReportDelay, cancellationToken).ConfigureAwait(false);
+                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                timeout.CancelAfter(ResponseTimeout);
+                try
+                {
+                    while (await _reports.Reader.WaitToReadAsync(timeout.Token).ConfigureAwait(false))
+                    {
+                        while (_reports.Reader.TryRead(out var data))
                         {
-                            if (rawMatches(data))
+                            if (rawMatches is not null)
                             {
-                                return data;
+                                if (rawMatches(data))
+                                {
+                                    return data;
+                                }
+
+                                continue;
                             }
 
-                            continue;
-                        }
-
-                        // The input report id matches the request's, so 0555 stays on 2 and
-                        // the Valkyrie T3 family reads its id-7 replies. An empty expected
-                        // header selects the protocol40 reply layout.
-                        if (expectedHeader is null)
-                        {
-                            continue;
-                        }
-
-                        if (expectedHeader.Length == 0)
-                        {
-                            if (RazerProtocol40HeadsetProtocol.TryReadValue(data, report, out var protocol40))
+                            // The input report id matches the request's, so 0555 stays on 2 and
+                            // the Valkyrie T3 family reads its id-7 replies. An empty expected
+                            // header selects the protocol40 reply layout.
+                            if (expectedHeader is null)
                             {
-                                return protocol40;
+                                continue;
                             }
-                        }
-                        else if (RazerMxicHeadsetProtocol.TryReadValue(
-                            data, report[0], expectedHeader, out var value))
-                        {
-                            return value;
+
+                            if (expectedHeader.Length == 0)
+                            {
+                                if (RazerProtocol40HeadsetProtocol.TryReadValue(data, report, out var protocol40))
+                                {
+                                    return protocol40;
+                                }
+                            }
+                            else if (RazerMxicHeadsetProtocol.TryReadValue(
+                                data, report[0], expectedHeader, out var value))
+                            {
+                                return value;
+                            }
                         }
                     }
                 }
-            }
-            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-            {
-                return null;
+                catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                {
+                    return null;
+                }
             }
 
             return null;
@@ -224,48 +237,6 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
         await _output.SendOutputAsync(_devicePath, report, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task<byte[]?> ReadControlReportAsync(
-        byte[] request,
-        byte[] expectedHeader,
-        CancellationToken cancellationToken)
-    {
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(ControlReportTimeout);
-        while (!timeout.IsCancellationRequested)
-        {
-            var candidate = new byte[_inputReportLength];
-            candidate[0] = request[0];
-            try
-            {
-                if (await Task.Run(
-                        () => NativeMethods.HidD_GetInputReport(
-                            _handle,
-                            candidate,
-                            candidate.Length),
-                        timeout.Token).ConfigureAwait(false) &&
-                    TryMatch(candidate, request, expectedHeader, out var value))
-                {
-                    return value;
-                }
-            }
-            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-            {
-                break;
-            }
-
-            try
-            {
-                await Task.Delay(ControlReportRetryDelay, timeout.Token).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-            {
-                break;
-            }
-        }
-
-        return null;
-    }
-
     private async Task<byte?> ReadControlStatusAsync(
         byte reportId,
         CancellationToken cancellationToken)
@@ -277,37 +248,52 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
 
         var candidate = new byte[_inputReportLength];
         candidate[0] = reportId;
-        if (!await Task.Run(
+
+        // HidD_GetInputReport is a blocking control transfer. Do not run it on the
+        // interrupt-read handle: a device that never answers would hold the transport
+        // gate forever and leave the card on "正在读取…". A separate handle and a
+        // bounded wait keep a status read optional, just like AudioMxicDevice treats
+        // an empty getInputReport result.
+        SafeFileHandle? statusHandle = null;
+        try
+        {
+            statusHandle = NativeMethods.CreateFile(
+                _devicePath,
+                NativeMethods.GenericRead,
+                NativeMethods.FileShareRead | NativeMethods.FileShareWrite,
+                IntPtr.Zero,
+                NativeMethods.OpenExisting,
+                0,
+                IntPtr.Zero);
+            if (statusHandle.IsInvalid)
+            {
+                return null;
+            }
+
+            var read = Task.Run(
                 () => NativeMethods.HidD_GetInputReport(
-                    _handle,
+                    statusHandle,
                     candidate,
-                    candidate.Length),
-                cancellationToken).ConfigureAwait(false))
-        {
-            return null;
+                    candidate.Length));
+            bool succeeded;
+            try
+            {
+                succeeded = await read.WaitAsync(ControlReportTimeout, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (TimeoutException)
+            {
+                return null;
+            }
+
+            // HidD_GetInputReport returns the report id followed by the payload. Synapse
+            // strips the id and uses the next byte as the STATUS_OK/STATUS_FAIL flag.
+            return succeeded && candidate.Length > 1 ? candidate[1] : null;
         }
-
-        // HidD_GetInputReport returns the report id followed by the payload. Synapse
-        // strips the id and uses the next byte as the STATUS_OK/STATUS_FAIL flag.
-        return candidate.Length > 1 ? candidate[1] : null;
-    }
-
-    private static bool TryMatch(
-        byte[] data,
-        byte[] request,
-        byte[] expectedHeader,
-        out byte[] value)
-    {
-        if (expectedHeader.Length == 0)
+        finally
         {
-            return RazerProtocol40HeadsetProtocol.TryReadValue(data, request, out value);
+            statusHandle?.Dispose();
         }
-
-        return RazerMxicHeadsetProtocol.TryReadValue(
-            data,
-            request[0],
-            expectedHeader,
-            out value);
     }
 
     private void ReadLoop()
