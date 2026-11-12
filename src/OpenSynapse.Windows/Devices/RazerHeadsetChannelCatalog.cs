@@ -45,6 +45,7 @@ public static class RazerHeadsetChannelCatalog
             [0x057C] = new("rzDevice25ValkyrieT3", RazerHeadsetChannel.ValkyrieT3Feature64),
             [0x057D] = new("rzDevice25ValkyrieT3", RazerHeadsetChannel.ValkyrieT3Feature64),
             [0x05B6] = new("rzDevice25ValkyrieT3", RazerHeadsetChannel.ValkyrieT3Feature64),
+            [0x05B3] = new("rzDevice25ValkyrieT3", RazerHeadsetChannel.ValkyrieT3Feature64),
             [0x0A54] = new("rzDevice25ValkyrieT3", RazerHeadsetChannel.ValkyrieT3Feature64),
             [0x0A5B] = new("rzDevice25ValkyrieT3", RazerHeadsetChannel.ValkyrieT3Feature64),
             [0x1021] = new("rzDevice25ValkyrieT3", RazerHeadsetChannel.ValkyrieT3Feature64),
@@ -138,6 +139,7 @@ public static class RazerHeadsetChannelCatalog
             [0x0526] = new("AudioKrakenXUSB", RazerHeadsetChannel.KrakenBase37),
             [0x0521] = new("AudioKrakenKitty", RazerHeadsetChannel.KrakenBase37),
             [0x0560] = new("AudioKrakenKittyT3", RazerHeadsetChannel.KrakenBase37),
+            [0x058A] = new("AudioKrakenKittyT3", RazerHeadsetChannel.KrakenBase37),
             // The KrystalT2/T3 bundles inherit AudioKrakenBase and use the
             // existing 37-byte write/33-byte read path.
             [0x0533] = new("AudioKrystalT2", RazerHeadsetChannel.KrakenBase37),

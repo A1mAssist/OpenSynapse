@@ -81,6 +81,7 @@ public static class RazerMxicHeadsetProtocol
         0x05AD,
         0x059F,
         0x05B9,
+        0x05B3,
     }.ToFrozenSet();
 
     public static bool IsSupported(ushort productId) => ProductIds.Contains(productId);
@@ -125,6 +126,7 @@ public static class RazerMxicHeadsetProtocol
         0x057C,
         0x057D,
         0x05B6,
+        0x05B3,
         0x0A54,
         0x0A5B,
         0x1021,
