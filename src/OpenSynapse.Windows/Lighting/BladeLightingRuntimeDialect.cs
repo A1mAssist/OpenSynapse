@@ -12,7 +12,9 @@ namespace OpenSynapse.Windows.Lighting;
 /// </summary>
 internal static class BladeLightingRuntimeDialect
 {
-    private static readonly ConcurrentDictionary<ushort, string> Downgraded = new();
+    private static readonly ConcurrentDictionary<ushort, Fallback> Downgraded = new();
+
+    internal readonly record struct Fallback(BladeLightingDialect Dialect, string Reason);
 
     public static BladeLightingDialect Get(ushort productId) =>
         Get(
@@ -21,12 +23,12 @@ internal static class BladeLightingRuntimeDialect
                 ?? BladeLightingDialect.Unknown);
 
     public static BladeLightingDialect Get(ushort productId, BladeLightingDialect declared) =>
-        Downgraded.ContainsKey(productId) ? BladeLightingDialect.Unknown : declared;
+        Downgraded.TryGetValue(productId, out var fallback) ? fallback.Dialect : declared;
 
     public static bool IsDowngraded(ushort productId) => Downgraded.ContainsKey(productId);
 
-    public static void Downgrade(ushort productId, string reason) =>
-        Downgraded.TryAdd(productId, reason ?? string.Empty);
+    public static void Downgrade(ushort productId, BladeLightingDialect fallback, string reason) =>
+        Downgraded.TryAdd(productId, new Fallback(fallback, reason ?? string.Empty));
 
     /// <summary>Only a command the firmware answered with 0x03/0x05 is a rejection.</summary>
     public static bool IsExplicitRejection(Exception exception) =>

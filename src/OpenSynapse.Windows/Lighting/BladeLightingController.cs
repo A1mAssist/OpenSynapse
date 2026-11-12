@@ -202,7 +202,10 @@ public sealed partial class BladeLightingController : IBladeLightingController
                         (_lightingDialect is BladeLightingDialect.LedMatrixBlade or BladeLightingDialect.FirmwareEffect) &&
                         BladeLightingRuntimeDialect.IsExplicitRejection(exception))
                     {
-                        BladeLightingRuntimeDialect.Downgrade(device.ProductId, exception.Message);
+                        BladeLightingRuntimeDialect.Downgrade(
+                            device.ProductId,
+                            SelectFallbackDialect(),
+                            exception.Message);
                         throw;
                     }
                     if (effect.Mode == BladeLightingMode.Off)
@@ -267,7 +270,10 @@ public sealed partial class BladeLightingController : IBladeLightingController
                 if ((_lightingDialect is BladeLightingDialect.LedMatrixBlade or BladeLightingDialect.FirmwareEffect) &&
                     BladeLightingRuntimeDialect.IsExplicitRejection(exception))
                 {
-                    BladeLightingRuntimeDialect.Downgrade(device.ProductId, exception.Message);
+                    BladeLightingRuntimeDialect.Downgrade(
+                        device.ProductId,
+                        SelectFallbackDialect(),
+                        exception.Message);
                 }
                 try
                 {
@@ -748,6 +754,14 @@ public sealed partial class BladeLightingController : IBladeLightingController
                 manifest.MatrixRows > 0 && manifest.MatrixColumns > 0,
             _ => false,
         };
+
+    // A rejected matrix write falls back to the model's selector effect (0F:02), which
+    // every LedMatrixBlade manifest still declares. Blade2/710/2026 have no selector
+    // contract, so they can only drop to Unknown.
+    private BladeLightingDialect SelectFallbackDialect() =>
+        _lightingDialect == BladeLightingDialect.LedMatrixBlade
+            ? BladeLightingDialect.FirmwareEffect
+            : BladeLightingDialect.Unknown;
 
     private async Task ValidateCurrentPathAsync(
         string devicePath,
