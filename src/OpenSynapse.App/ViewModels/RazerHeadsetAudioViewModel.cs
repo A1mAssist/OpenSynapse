@@ -1146,8 +1146,8 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
         _thxNormalizationEnabled = state.SoundNormalization?.Enabled ?? false;
         _thxNormalizationLevel = state.SoundNormalization?.LevelPercent ?? 0;
-        _thxVoiceClarityEnabled = state.VoiceClarity.Enabled;
-        _thxVoiceClarityLevel = state.VoiceClarity.LevelPercent;
+        _thxVoiceClarityEnabled = state.VoiceClarity?.Enabled ?? false;
+        _thxVoiceClarityLevel = state.VoiceClarity?.LevelPercent ?? 0;
         _thxBassBoostEnabled = state.BassBoost?.Enabled ?? false;
         _thxBassBoostLevel = state.BassBoost?.LevelPercent ?? 0;
         _thxSidetoneEnabled = state.Sidetone?.Enabled ?? false;

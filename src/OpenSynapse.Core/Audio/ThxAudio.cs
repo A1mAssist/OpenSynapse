@@ -43,7 +43,7 @@ public sealed record ThxAudioState(
     IReadOnlyList<ThxAudioBand> EqualizerBands,
     IReadOnlyDictionary<string, IReadOnlyList<double>> FactoryCurves,
     ThxAudioEnhancement? SoundNormalization,
-    ThxAudioEnhancement VoiceClarity,
+    ThxAudioEnhancement? VoiceClarity,
     bool CanEdit,
     ThxAudioEnhancement? Sidetone = null,
     ThxAudioEnhancement? BassBoost = null);

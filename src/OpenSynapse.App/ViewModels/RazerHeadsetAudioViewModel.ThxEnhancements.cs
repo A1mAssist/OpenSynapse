@@ -54,7 +54,7 @@ public sealed partial class RazerHeadsetAudioViewModel
 
     public string ThxVoiceClarityText => $"{ThxVoiceClarityLevel}%";
     public Visibility ThxVoiceClarityVisibility =>
-        _thxState is not null ? Visibility.Visible : Visibility.Collapsed;
+        _thxState?.VoiceClarity is not null ? Visibility.Visible : Visibility.Collapsed;
 
     public bool ThxBassBoostEnabled
     {
