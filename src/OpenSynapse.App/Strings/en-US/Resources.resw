@@ -1144,6 +1144,9 @@
   <data name="Text_C2463C0F" xml:space="preserve">
     <value>Device monitoring</value>
   </data>
+  <data name="LaunchScanningDevices" xml:space="preserve">
+    <value>Scanning devices...</value>
+  </data>
   <data name="Text_07E747F7" xml:space="preserve">
     <value>OpenSynapse profile</value>
   </data>

@@ -369,7 +369,7 @@ public sealed partial class MainWindow : Window
                     AppStrings.Text("Text_79DA5816"));
             }
             await _viewModel.InitializeProfileAsync(_lifetime.Token);
-            LaunchStatusText.Text = AppStrings.Text("Text_C2463C0F");
+            LaunchStatusText.Text = AppStrings.Text("LaunchScanningDevices");
             if (!await RefreshDevicesBeforeLaunchAsync())
             {
                 _viewModel.Refresh.RequestDeviceRefresh();
