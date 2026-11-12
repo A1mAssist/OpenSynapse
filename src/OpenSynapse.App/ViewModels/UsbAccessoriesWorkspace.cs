@@ -11,20 +11,20 @@ namespace OpenSynapse.App.ViewModels;
 public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisposable
 {
     private readonly LocalDiagnosticLog _diagnosticLog;
-    private readonly RazerHidWorkspace _openRazer;
+    private readonly RazerHidWorkspace _razerHid;
     private readonly MacroWorkspace _macros;
     private readonly Func<ProfileDocument>? _getProfile;
     private readonly Func<CancellationToken, Task<bool>>? _saveProfile;
 
     internal UsbAccessoriesWorkspace(
         LocalDiagnosticLog log,
-        RazerHidWorkspace openRazer,
+        RazerHidWorkspace razerHid,
         MacroWorkspace macros,
         Func<ProfileDocument>? getActiveProfile = null,
         Func<CancellationToken, Task<bool>>? saveProfileAsync = null)
     {
         _diagnosticLog = log;
-        _openRazer = openRazer;
+        _razerHid = razerHid;
         _macros = macros;
         _getProfile = getActiveProfile;
         _saveProfile = saveProfileAsync;
@@ -81,7 +81,7 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
         var probe = new RazerHeadsetAudioViewModel(
             connection,
             message => _diagnosticLog.TryWrite("headset-audio", message),
-            _openRazer.CreateKrakenLighting(connection.ProductId),
+            _razerHid.CreateKrakenLighting(connection.ProductId),
             _getProfile,
             _saveProfile);
         await probe.LoadAsync(cancellationToken);
@@ -111,7 +111,7 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
         }
 
         _selectedHeadsetAudioDevice = row;
-        var lighting = _openRazer.CreateKrakenLighting(row.Connection.ProductId);
+        var lighting = _razerHid.CreateKrakenLighting(row.Connection.ProductId);
 
         if (SelectedHeadsetAudio is { } previous)
         {
@@ -369,7 +369,7 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
         SelectedChroma = new RazerChromaViewModel(
             row.Connection,
             message => _diagnosticLog.TryWrite("chroma", message),
-            _openRazer.SpecialLightingService,
+            _razerHid.SpecialLightingService,
             _getProfile,
             _saveProfile);
         await SelectedChroma.LoadAsync(cancellationToken);

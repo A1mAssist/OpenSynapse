@@ -12,7 +12,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
 {
     private readonly RazerDeviceResolver _resolver;
     private readonly BladeTelemetryReader _bladeReader;
-    private readonly RazerHidTelemetryReader _openRazerReader;
+    private readonly RazerHidTelemetryReader _razerHidReader;
     private readonly ViperTelemetryReader _viperReader;
 
     public RazerDeviceTelemetryReader()
@@ -34,7 +34,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
         _resolver = new RazerDeviceResolver(registry);
         var client = new RazerCapabilityClient(transport);
         _bladeReader = new BladeTelemetryReader(_resolver, client);
-        _openRazerReader = new RazerHidTelemetryReader(_resolver, client);
+        _razerHidReader = new RazerHidTelemetryReader(_resolver, client);
         _viperReader = new ViperTelemetryReader(_resolver, client);
     }
 
@@ -44,7 +44,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
     {
         ArgumentNullException.ThrowIfNull(devices);
         _bladeReader.ResetValidation();
-        _openRazerReader.ResetValidation();
+        _razerHidReader.ResetValidation();
         // Viper mapping reads establish their own validation; the periodic
         // telemetry poll must not clear it before the user saves.
         var blade = _resolver.FindReadyBlade(devices);
@@ -54,7 +54,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             : await _bladeReader.ReadAsync(blade, cancellationToken);
         var mouseResult = mouse is null
             ? null
-            : await _openRazerReader.ReadAsync(mouse, cancellationToken);
+            : await _razerHidReader.ReadAsync(mouse, cancellationToken);
 
         var errors = new List<string>();
         var rejectedCapabilities = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -309,32 +309,32 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
         IReadOnlyList<DeviceDescriptor> devices,
         int hertz,
         CancellationToken cancellationToken = default) =>
-        _openRazerReader.SetViperPollingRateAsync(devices, hertz, cancellationToken);
+        _razerHidReader.SetViperPollingRateAsync(devices, hertz, cancellationToken);
 
     public ValueTask<(int X, int Y)> SetViperDpiAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         int x,
         int y,
         CancellationToken cancellationToken = default) =>
-        _openRazerReader.SetViperDpiAsync(devices, x, y, cancellationToken);
+        _razerHidReader.SetViperDpiAsync(devices, x, y, cancellationToken);
 
     public ValueTask<ViperDpiStagesTelemetry> SetViperDpiStagesAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         ViperDpiStagesTelemetry stages,
         CancellationToken cancellationToken = default) =>
-        _openRazerReader.SetViperDpiStagesAsync(devices, stages, cancellationToken);
+        _razerHidReader.SetViperDpiStagesAsync(devices, stages, cancellationToken);
 
     public ValueTask<int> SetViperIdleSecondsAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         int seconds,
         CancellationToken cancellationToken = default) =>
-        _openRazerReader.SetViperIdleSecondsAsync(devices, seconds, cancellationToken);
+        _razerHidReader.SetViperIdleSecondsAsync(devices, seconds, cancellationToken);
 
     public ValueTask<int> SetViperLowBatteryThresholdAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         int percent,
         CancellationToken cancellationToken = default) =>
-        _openRazerReader.SetViperLowBatteryThresholdAsync(devices, percent, cancellationToken);
+        _razerHidReader.SetViperLowBatteryThresholdAsync(devices, percent, cancellationToken);
 
     public ValueTask<byte> SetViperBatteryChemistryAsync(
         IReadOnlyList<DeviceDescriptor> devices,

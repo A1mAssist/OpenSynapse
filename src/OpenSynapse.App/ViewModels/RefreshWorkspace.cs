@@ -34,7 +34,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
     private readonly DisplayWorkspace _display;
     private readonly FanWorkspace _fan;
     private readonly LightingWorkspace _lighting;
-    private readonly RazerHidWorkspace _openRazer;
+    private readonly RazerHidWorkspace _razerHid;
     private readonly ViperWorkspace _viper;
     private readonly TelemetryWorkspace _telemetry;
     private readonly ProfilesWorkspace _profiles;
@@ -90,7 +90,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
         DisplayWorkspace display,
         FanWorkspace fan,
         LightingWorkspace lighting,
-        RazerHidWorkspace openRazer,
+        RazerHidWorkspace razerHid,
         ViperWorkspace viper,
         TelemetryWorkspace telemetry,
         ProfilesWorkspace profiles,
@@ -130,7 +130,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
         _display = display;
         _fan = fan;
         _lighting = lighting;
-        _openRazer = openRazer;
+        _razerHid = razerHid;
         _viper = viper;
         _telemetry = telemetry;
         _profiles = profiles;
@@ -149,10 +149,10 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
         _applyBleProfile = applyBleProfile;
         _applyAccessoryProfiles = applyAccessoryProfiles;
         _liteMode = liteMode;
-        if (openRazer.DeviceService is { } razerHidService)
+        if (razerHid.DeviceService is { } razerHidService)
         {
             _razerHidProfileApplier = new DeviceProfileApplyCoordinator(
-                [new RazerHidProfileApplier(razerHidService, openRazer.ResolveConnection)]);
+                [new RazerHidProfileApplier(razerHidService, razerHid.ResolveConnection)]);
         }
     }
 
@@ -248,9 +248,9 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
 
         try
         {
-            if (_openRazer.SelectedDevice is { } openRazerDevice)
+            if (_razerHid.SelectedDevice is { } razerHidDevice)
             {
-                await openRazerDevice.RefreshBatteryStateAsync(cancellationToken);
+                await razerHidDevice.RefreshBatteryStateAsync(cancellationToken);
             }
             if (ActiveDescriptors.Count == 0)
             {
@@ -328,7 +328,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
             // responsive Blade must not look missing while another endpoint times out.
             _refreshDeviceSelector();
             PopulateDeviceRows(snapshot.Devices);
-            await _openRazer.RefreshAsync(cancellationToken);
+            await _razerHid.RefreshAsync(cancellationToken);
             await _refreshAccessoriesAsync(cancellationToken);
 
             var blade = _liteMode
@@ -371,8 +371,8 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
             }
             if (applyDisplayProfile)
             {
-                await _openRazer.RestoreLightingAfterExternalAsync(cancellationToken);
-                if (_openRazer.SelectedDevice is { } selectedRazerHid)
+                await _razerHid.RestoreLightingAfterExternalAsync(cancellationToken);
+                if (_razerHid.SelectedDevice is { } selectedRazerHid)
                 {
                     await selectedRazerHid.ApplyConfiguredLightingAsync(cancellationToken);
                 }
@@ -473,7 +473,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
                 errors.Insert(0, snapshot.ErrorMessage);
             }
 
-            var openRazerErrorCount = _openRazer.ErrorCount;
+            var razerHidErrorCount = _razerHid.ErrorCount;
 
             if (!_liteMode && IsDisplayAvailable &&
                 Interlocked.Exchange(ref _displayBrightnessRestorePending, 0) != 0)
@@ -485,7 +485,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
             {
                 _rebuildDiagnostics(snapshot, telemetry, errors);
             }
-            var totalErrorCount = errors.Count + openRazerErrorCount + _accessoryErrorCount();
+            var totalErrorCount = errors.Count + razerHidErrorCount + _accessoryErrorCount();
             _setDeviceQueryError(totalErrorCount == 0
                 ? string.Empty
                 : AppStrings.FormatText("HardwareQueryFailureCount",

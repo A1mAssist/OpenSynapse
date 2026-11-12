@@ -6,12 +6,12 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class DiagnosticsWorkspace
 {
-    private readonly List<DiagnosticRowViewModel> _openRazerRows = [];
+    private readonly List<DiagnosticRowViewModel> _razerHidRows = [];
 
     internal void EnsureRazerHidRows()
     {
-        foreach (var row in _openRazerRows) Rows.Remove(row);
-        _openRazerRows.Clear();
+        foreach (var row in _razerHidRows) Rows.Remove(row);
+        _razerHidRows.Clear();
         if (Rows.Count == 1 && Rows[0].Device == AppStrings.Text("Text_CAF15352")) Rows.Clear();
         if (Rows.Count == 0) AddCurrentDeviceRows();
         AddRazerHidRows(
@@ -32,7 +32,7 @@ public sealed partial class DiagnosticsWorkspace
         Dictionary<string, DiagnosticRowViewModel> groups,
         Brush errorBrush)
     {
-        foreach (var row in _openRazer.Devices)
+        foreach (var row in _razerHid.Devices)
         {
             var group = new DiagnosticRowViewModel(
                 row.Name,
@@ -41,9 +41,9 @@ public sealed partial class DiagnosticsWorkspace
                 row.Identity,
                 row.StatusBrush);
             Rows.Add(group);
-            _openRazerRows.Add(group);
-            var details = _openRazer.SelectedDevice?.InstanceId == row.Connection.InstanceId
-                ? _openRazer.SelectedDevice.ProtocolDetails
+            _razerHidRows.Add(group);
+            var details = _razerHid.SelectedDevice?.InstanceId == row.Connection.InstanceId
+                ? _razerHid.SelectedDevice.ProtocolDetails
                 : RazerHidDeviceViewModel.BuildProtocolDetails(row.Connection);
             foreach (var detail in details) group.AddProtocolDetail(detail);
             if (row.HasError)
@@ -51,16 +51,16 @@ public sealed partial class DiagnosticsWorkspace
                 group.AddIssue(new DiagnosticRowViewModel(row.Name, group.Capability,
                     AppStrings.Text("Text_6027BEB0"), row.Error, errorBrush));
             }
-            if (_openRazer.SelectedDevice?.InstanceId == row.Connection.InstanceId &&
-                _openRazer.SelectedDevice.HasError &&
-                !StringComparer.Ordinal.Equals(_openRazer.SelectedDevice.ErrorText, row.Error))
+            if (_razerHid.SelectedDevice?.InstanceId == row.Connection.InstanceId &&
+                _razerHid.SelectedDevice.HasError &&
+                !StringComparer.Ordinal.Equals(_razerHid.SelectedDevice.ErrorText, row.Error))
             {
                 group.AddIssue(new DiagnosticRowViewModel(row.Name, group.Capability,
-                    AppStrings.Text("Text_6027BEB0"), DescribeFailedReads(_openRazer.SelectedDevice), errorBrush));
+                    AppStrings.Text("Text_6027BEB0"), DescribeFailedReads(_razerHid.SelectedDevice), errorBrush));
             }
         }
 
-        foreach (var row in _openRazer.KrakenDevices)
+        foreach (var row in _razerHid.KrakenDevices)
         {
             var group = new DiagnosticRowViewModel(
                 row.Name,
@@ -69,7 +69,7 @@ public sealed partial class DiagnosticsWorkspace
                 row.Identity,
                 row.StatusBrush);
             Rows.Add(group);
-            _openRazerRows.Add(group);
+            _razerHidRows.Add(group);
             if (!string.IsNullOrWhiteSpace(row.Error))
             {
                 group.AddIssue(new DiagnosticRowViewModel(row.Name, group.Capability,
