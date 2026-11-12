@@ -275,7 +275,7 @@
   "groups": [
     {
       "pattern": "src/OpenSynapse.App/ViewModels/MainViewModel*.cs",
-        "maxLines": 1443,
+        "maxLines": 1449,
         "maxPublicMembers": 73
     }
   ]

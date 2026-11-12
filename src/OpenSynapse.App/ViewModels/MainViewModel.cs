@@ -220,7 +220,12 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             DispatcherQueue.GetForCurrentThread());
         Macros.SoftwareBindingRestorer = RazerHid.RestoreSoftwareMacroBindingAsync;
         Accessories = new UsbAccessoriesWorkspace(
-            _diagnosticLog, RazerHid, Macros, () => _profile, SaveProfileAsync);
+            _diagnosticLog, RazerHid, Macros, () => _profile, SaveProfileAsync,
+            () =>
+            {
+                RefreshDeviceSelectorItems();
+                RefreshDeviceOverviewVisibility();
+            });
         Accessories.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Accessories));
         Diagnostics = new DiagnosticsWorkspace(
             RazerHid,
@@ -229,6 +234,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             () => DeviceTelemetryTimeText,
             ReadAccessoryDiagnostics,
             () => Devices);
+        Accessories.ForgetAccessoryDiagnostic = Diagnostics.ForgetAccessory;
         Refresh = new RefreshWorkspace(
             discovery,
             deviceTelemetryReader,
@@ -246,6 +252,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             GetDeviceSerialAsync,
             () => _deviceSerials.Clear(),
             RefreshAttachedDevicesAsync,
+            Accessories.PollHeadsetPowerAsync,
             Blade,
             Display,
             Fan,

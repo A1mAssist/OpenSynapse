@@ -37,9 +37,11 @@ public sealed class RazerHeadsetAudioDeviceRowViewModel : INotifyPropertyChanged
     public string CapabilityText => _capabilityText;
     public Brush StatusBrush => _statusBrush;
     public string Error => _error;
+    internal RazerHeadsetProbeState ProbeState { get; private set; }
 
     internal void SetProbeResult(RazerHeadsetProbeState state, string capabilityText, string error)
     {
+        ProbeState = state;
         _capabilityText = capabilityText;
         _error = error;
         (_status, _statusBrush) = state switch
