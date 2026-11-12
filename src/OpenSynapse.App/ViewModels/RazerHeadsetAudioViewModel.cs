@@ -1314,18 +1314,19 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
     private async Task<RazerHeadsetAudioState> ReadMxicStateAsync(CancellationToken cancellationToken)
     {
+        // Cancel the read itself at the deadline; WaitAsync only abandoned the task and
+        // disposed the transport while the native calls were still running.
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(MxicReadTimeout);
         var service = OpenMxicService();
         try
         {
-            return await service.ReadStateAsync(cancellationToken)
-                .WaitAsync(MxicReadTimeout, cancellationToken)
-                .ConfigureAwait(false);
+            return await service.ReadStateAsync(timeout.Token).ConfigureAwait(false);
         }
-        catch (TimeoutException)
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            // The native HID call can outlive every driver-side timeout. Closing the
-            // service handle makes the stuck read return instead of leaving the card
-            // in its reading state forever.
+            // The transport cancels the native HID call on this token, so the service
+            // is safe to dispose instead of leaving the card in its reading state.
             throw new IOException("Headset read timed out.");
         }
         finally

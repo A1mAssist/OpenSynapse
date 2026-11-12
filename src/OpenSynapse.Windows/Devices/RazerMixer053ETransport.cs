@@ -91,16 +91,16 @@ internal sealed class RazerMixer053ETransport : IRazerMixer053ETransport
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await Task.Run(() =>
+            var sent = await CancellableNativeCall.RunAsync(
+                () => NativeMethods.HidD_SetFeature(_handle, request, request.Length),
+                ResponseTimeout,
+                cancellationToken).ConfigureAwait(false);
+            if (!sent)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (!NativeMethods.HidD_SetFeature(_handle, request, request.Length))
-                {
-                    throw new Win32Exception(
-                        Marshal.GetLastWin32Error(),
-                        "053E HID feature request failed.");
-                }
-            }, cancellationToken).ConfigureAwait(false);
+                throw new Win32Exception(
+                    Marshal.GetLastWin32Error(),
+                    "053E HID feature request failed.");
+            }
 
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(ResponseTimeout);
@@ -110,8 +110,9 @@ internal sealed class RazerMixer053ETransport : IRazerMixer053ETransport
                 {
                     var candidate = new byte[RazerMixer053EProtocol.FeatureReportLength];
                     candidate[0] = RazerMixer053EProtocol.FeatureReportId;
-                    var success = await Task.Run(
+                    var success = await CancellableNativeCall.RunAsync(
                         () => NativeMethods.HidD_GetFeature(_handle, candidate, candidate.Length),
+                        ResponseTimeout,
                         timeout.Token).ConfigureAwait(false);
                     if (success && isMatch(candidate))
                     {
@@ -177,8 +178,9 @@ internal sealed class RazerMixer053ETransport : IRazerMixer053ETransport
             {
                 var report = new byte[RazerMixer053EProtocol.StatusReportLength];
                 report[0] = RazerMixer053EProtocol.StatusReportId;
-                var success = await Task.Run(
+                var success = await CancellableNativeCall.RunAsync(
                     () => NativeMethods.HidD_GetInputReport(_handle, report, report.Length),
+                    ResponseTimeout,
                     cancellationToken).ConfigureAwait(false);
                 if (success && report[0] == RazerMixer053EProtocol.StatusReportId)
                 {

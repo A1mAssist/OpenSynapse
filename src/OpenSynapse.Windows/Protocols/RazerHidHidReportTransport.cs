@@ -7,6 +7,7 @@ namespace OpenSynapse.Windows.Protocols;
 
 internal sealed class RazerHidHidReportTransport
 {
+    private static readonly TimeSpan SendTimeout = TimeSpan.FromSeconds(2);
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _gates =
         new(StringComparer.OrdinalIgnoreCase);
 
@@ -32,11 +33,10 @@ internal sealed class RazerHidHidReportTransport
         await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            // shortcut: a wedged ReadFile thread exits when the device responds or the
-            // handle closes; switch to overlapped I/O if a device is observed hanging.
-            return await Task.Run(() =>
+            // CancellableNativeCall stops the blocking call at the deadline instead of
+            // leaving it queued in the HID driver behind every later request.
+            return await CancellableNativeCall.RunAsync(() =>
             {
-                cancellationToken.ThrowIfCancellationRequested();
                 using var handle = NativeMethods.CreateFile(
                     devicePath,
                     NativeMethods.GenericRead | NativeMethods.GenericWrite,
@@ -77,7 +77,7 @@ internal sealed class RazerHidHidReportTransport
                 }
 
                 return buffer[..(int)read];
-            }, cancellationToken).WaitAsync(timeout, cancellationToken).ConfigureAwait(false);
+            }, timeout, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -100,9 +100,8 @@ internal sealed class RazerHidHidReportTransport
         await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await Task.Run(() =>
+            await CancellableNativeCall.RunAsync(() =>
             {
-                cancellationToken.ThrowIfCancellationRequested();
                 using var handle = NativeMethods.CreateFile(
                     devicePath,
                     NativeMethods.GenericWrite,
@@ -128,7 +127,9 @@ internal sealed class RazerHidHidReportTransport
                     throw new Win32Exception(Marshal.GetLastWin32Error(),
                         "RazerHid output report write failed.");
                 }
-            }, cancellationToken).ConfigureAwait(false);
+
+                return true;
+            }, SendTimeout, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
