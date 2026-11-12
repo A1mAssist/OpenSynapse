@@ -44,7 +44,7 @@ Controls are resolved from the connected PID and HID endpoint. A control that is
 
 ### Chroma REST
 
-See [Chroma-supported devices](docs/CHROMA_SUPPORTED_DEVICES.md) for the current device and transport matrix.
+See [Chroma-supported devices](docs/CHROMA_SUPPORTED_DEVICES.zh-CN.md) for the current device and transport matrix.
 
 Compatible games and integrations can send static, `CUSTOM`, `CUSTOM_KEY`, and `CUSTOM2` frames to `127.0.0.1:54235` for keyboard, mouse, headset, mousepad, keypad and ChromaLink. Matrix channels use the device's own grid; whole-device channels receive the frame's average colour. ChromaLink reaches Aether lamps, docks, stands, ARGB controllers and Chroma accessories. OpenSynapse restores the effect each device had before external control. Razer Synapse is not required.
 
@@ -94,8 +94,6 @@ The application does not require Razer Synapse, AppEngine, or `mapping_engine.dl
 ## Build
 
 Building requires Windows 11 x64, the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0), and Windows SDK `10.0.26100`.
-
-The post-v1.5.1 source/test-build controls for peripheral low-battery notifications and Chroma REST source management are documented in [Notifications and Chroma sources](docs/NOTIFICATIONS_AND_CHROMA_SOURCES.md).
 
 ```powershell
 dotnet restore OpenSynapse.slnx

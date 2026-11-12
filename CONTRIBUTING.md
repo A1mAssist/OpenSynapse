@@ -93,7 +93,7 @@ label it as the auto-update/per-user package in the release notes. Before
 uploading, compare every renamed installer with the file produced
 by the same `vpk pack` invocation for size and SHA-256, keep the feed filenames
 untouched, then launch the exact packaged executable from its deployed
-`current` directory. See `docs/RELEASING.zh-CN.md` for the full checklist.
+`current` directory. See the release checklist in `README.md`.
 
 ### Test builds
 
