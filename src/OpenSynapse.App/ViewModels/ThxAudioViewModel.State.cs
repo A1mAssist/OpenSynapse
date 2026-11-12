@@ -64,8 +64,8 @@ public sealed partial class ThxAudioViewModel
         {
             SpatialEnabled = state.SpatialEnabled;
             EqualizerEnabled = state.EqualizerEnabled;
-            VoiceClarityEnabled = state.VoiceClarity.Enabled;
-            VoiceClarityLevel = state.VoiceClarity.LevelPercent;
+            VoiceClarityEnabled = state.VoiceClarity?.Enabled ?? false;
+            VoiceClarityLevel = state.VoiceClarity?.LevelPercent ?? 0;
             SoundNormalizationEnabled = state.SoundNormalization?.Enabled ?? false;
             SoundNormalizationLevel = state.SoundNormalization?.LevelPercent ?? 0;
             BassBoostEnabled = state.BassBoost?.Enabled ?? false;

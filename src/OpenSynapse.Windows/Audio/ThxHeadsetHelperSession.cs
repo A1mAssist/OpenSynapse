@@ -343,18 +343,18 @@ internal sealed class ThxHeadsetHelperSession
             ToBands(gains),
             DefaultFactoryCurves(),
             ReadV4Enhancement(NormalizationEnabledPropertyId, NormalizationLevelPropertyId),
-            ReadV4Enhancement(VoiceClarityEnabledPropertyId, VoiceClarityLevelPropertyId) ??
-                new ThxAudioEnhancement(false, 0),
+            ReadV4Enhancement(VoiceClarityEnabledPropertyId, VoiceClarityLevelPropertyId),
             CanEdit: true,
             BassBoost: ReadV4Enhancement(BassBoostEnabledPropertyId, BassBoostLevelPropertyId));
     }
 
     private ThxAudioState ReadV3State(ThxHeadsetProfile profile, string containerId)
     {
-        var spatial = _v3!.GetSpatial(containerId);
+        var v3 = _v3!;
+        var spatial = v3.GetSpatial(containerId);
         var presets = ReadV3Presets(containerId);
-        var selected = TryRead(() => ThxVendorJson.ParseSelectedPresetValue(_v3.GetPreset(containerId)));
-        var gains = TryRead(() => ThxVendorJson.ParseGains(_v3.GetEqGains(containerId))) ?? [];
+        var selected = TryRead(() => ThxVendorJson.ParseSelectedPresetValue(v3.GetPreset(containerId)));
+        var gains = TryRead(() => ThxVendorJson.ParseGains(v3.GetEqGains(containerId))) ?? [];
         return new ThxAudioState(
             ThxAudioEndpoint.Headphones,
             spatial,
@@ -363,20 +363,24 @@ internal sealed class ThxHeadsetHelperSession
             presets,
             ToBands(gains),
             DefaultFactoryCurves(),
-            new ThxAudioEnhancement(
-                _v3.GetNormalization(containerId),
-                ClampPercent(_v3.GetNormalizationLevel(containerId))),
-            new ThxAudioEnhancement(
-                _v3.GetVocalClarity(containerId),
-                ClampPercent(_v3.GetVocalClarityLevel(containerId))),
+            TryReadEnhancement(
+                () => v3.GetNormalization(containerId),
+                () => v3.GetNormalizationLevel(containerId)),
+            TryReadEnhancement(
+                () => v3.GetVocalClarity(containerId),
+                () => v3.GetVocalClarityLevel(containerId)),
             true,
             new ThxAudioEnhancement(
-                _v3.GetSidetone(containerId),
-                SidetonePercent(_v3.GetSidetoneLevel(containerId))),
-            BassBoost: new ThxAudioEnhancement(
-                _v3.GetBassBoost(containerId),
-                ClampPercent(_v3.GetBassBoostLevel(containerId))));
+                v3.GetSidetone(containerId),
+                SidetonePercent(v3.GetSidetoneLevel(containerId))),
+            BassBoost: TryReadEnhancement(
+                () => v3.GetBassBoost(containerId),
+                () => v3.GetBassBoostLevel(containerId)));
     }
+
+    /// <summary>null means this device or component cannot report the enhancement.</summary>
+    internal static ThxAudioEnhancement? TryReadEnhancement(Func<bool> enabled, Func<int> level) =>
+        TryRead(() => new ThxAudioEnhancement(enabled(), ClampPercent(level())));
 
     private IReadOnlyList<ThxAudioPreset> ReadV3Presets(string containerId)
     {
@@ -460,7 +464,8 @@ internal sealed class ThxHeadsetHelperSession
             return read();
         }
         catch (Exception exception) when (
-            exception is InvalidDataException or InvalidOperationException or JsonException)
+            exception is InvalidDataException or InvalidOperationException or JsonException or
+                EntryPointNotFoundException)
         {
             return default;
         }
