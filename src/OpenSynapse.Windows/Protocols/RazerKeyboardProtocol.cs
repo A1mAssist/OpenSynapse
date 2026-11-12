@@ -16,9 +16,11 @@ public static class RazerKeyboardProtocol
     /// The DualLinkKeyboard middleware module sends every command with 0x80 | sequence.
     /// The RazerHid catalogue already carries high-bank transactions for its dual-link
     /// keyboards; these are the remaining dongles handled by the protocol-25 keyboard page.
+    /// The wireless bundles also declare isDualLinkDevice for the five dongles below.
     /// </summary>
     public static bool UsesDualLinkTransaction(ushort productId) =>
-        productId is 0x02C9 or 0x02D2 or 0x02C2 or 0x02F5;
+        productId is 0x02C9 or 0x02D2 or 0x02C2 or 0x02F5
+            or 0x0271 or 0x0290 or 0x0296 or 0x02BA or 0x02D5;
 
     // The 8 kHz keyboards encode the polling period as a bit mask, not as hertz.
     public static readonly IReadOnlyList<(byte Code, int Hertz)> PollingRates =
