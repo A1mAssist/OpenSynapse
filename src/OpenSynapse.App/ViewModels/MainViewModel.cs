@@ -446,7 +446,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             return;
         }
 
-        await RazerHid.DisposeAsync().ConfigureAwait(false);
+        // Dispose runs on the UI thread and still touches bound collections and
+        // selections below; keep every continuation there.
+        await RazerHid.DisposeAsync().ConfigureAwait(true);
         Macros.Dispose();
         _hue?.Dispose();
         CoolingPad.Dispose();
@@ -456,23 +458,23 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
         if (SelectedBle is { } ble)
         {
-            await ble.DisposeAsync().ConfigureAwait(false);
+            await ble.DisposeAsync().ConfigureAwait(true);
             SelectedBle = null;
         }
 
         if (SelectedAwBleHeadset is { } awBleHeadset)
         {
-            await awBleHeadset.DisposeAsync().ConfigureAwait(false);
+            await awBleHeadset.DisposeAsync().ConfigureAwait(true);
             SelectedAwBleHeadset = null;
         }
         _selectedBlackSharkDevice = null;
         BlackSharkDevices.Clear();
 
-        await Accessories.DisposeAsync().ConfigureAwait(false);
+        await Accessories.DisposeAsync().ConfigureAwait(true);
 
-        await Blade.DisposeAsync().ConfigureAwait(false);
-        _ = await Fan.StopAsync("application-exit").ConfigureAwait(false);
-        await Fan.DisposeAsync().ConfigureAwait(false);
+        await Blade.DisposeAsync().ConfigureAwait(true);
+        _ = await Fan.StopAsync("application-exit").ConfigureAwait(true);
+        await Fan.DisposeAsync().ConfigureAwait(true);
     }
 
     private PowerSourceKind CurrentPowerSource =>

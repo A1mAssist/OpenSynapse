@@ -193,7 +193,9 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
                 .ThenBy(connection => connection.Definition.DisplayName, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
             await RestoreDriverModeAsync(connections, cancellationToken);
-            await _softwareLightingOwner.PruneAsync(connections, cancellationToken).ConfigureAwait(false);
+            // After pruning, this method rebuilds bound collections and selects a device;
+            // keep the refresh loop's UI context instead of continuing on the pool.
+            await _softwareLightingOwner.PruneAsync(connections, cancellationToken).ConfigureAwait(true);
             if (Devices.Count != connections.Length ||
                 !Devices.Zip(connections)
                     .All(pair => ConnectionMatches(pair.First.Connection, pair.Second)))
@@ -213,7 +215,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
                 {
                     if (SelectedDevice is { } removedDevice)
                     {
-                        await removedDevice.DisposeAsync().ConfigureAwait(false);
+                        await removedDevice.DisposeAsync().ConfigureAwait(true);
                     }
                     SelectedDevice = null;
                 }
@@ -311,7 +313,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         _selectionCancellation = null;
         if (SelectedDevice is { } previous)
         {
-            await previous.DisposeAsync().ConfigureAwait(false);
+            await previous.DisposeAsync().ConfigureAwait(true);
         }
         SelectedDevice = null;
         SelectedKraken = new RazerHidKrakenViewModel(

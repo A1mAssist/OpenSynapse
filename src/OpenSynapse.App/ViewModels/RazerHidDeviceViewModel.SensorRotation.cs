@@ -91,12 +91,14 @@ public sealed partial class RazerHidDeviceViewModel
             async () =>
             {
                 var angle = (int)Math.Round(SensorRotationAngle);
+                // Called from a click handler; the read-back and status text below are
+                // bound to the page and must raise PropertyChanged on the UI thread.
                 await _service.SetSensorRotationAsync(
-                    Connection, SensorRotationEnabled, angle, cancellationToken).ConfigureAwait(false);
+                    Connection, SensorRotationEnabled, angle, cancellationToken).ConfigureAwait(true);
                 try
                 {
                     ApplySensorRotation(await _service.GetSensorRotationAsync(
-                        Connection, cancellationToken).ConfigureAwait(false));
+                        Connection, cancellationToken).ConfigureAwait(true));
                 }
                 catch (Exception) when (!cancellationToken.IsCancellationRequested)
                 {
