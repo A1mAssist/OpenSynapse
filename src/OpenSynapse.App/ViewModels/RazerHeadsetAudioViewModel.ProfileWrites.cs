@@ -361,7 +361,22 @@ public sealed partial class RazerHeadsetAudioViewModel
             return;
         }
 
-        if (!IsFeature91) return;
+        if (!IsFeature91)
+        {
+            if (!IsMxicDnd) return;
+            // MXIC headsets only carry DND, and the composite must still save once.
+            var mxicPrevious = Dnd;
+            if (!await RunMxicWriteAsync(
+                    (service, token) => service.SetAudioDndAsync(Dnd, token), cancellationToken))
+            {
+                return;
+            }
+
+            await SaveSettingAsync(mxicPrevious, Dnd, value => Dnd = value,
+                (settings, value) => settings.Dnd = value,
+                token => RestoreMxicDndAsync(mxicPrevious, token), cancellationToken);
+            return;
+        }
         var previous = (Dnd, AutoPause, GestureControl, Dolby, NightMode, VoicePrompts);
         if (!await RunWriteAsync(
                 (service, token) => WriteAdvancedAsync(
@@ -427,6 +442,12 @@ public sealed partial class RazerHeadsetAudioViewModel
     [ProfileSetting("headset.dnd", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyDndAsync(CancellationToken cancellationToken = default)
     {
+        if (IsMxicDnd)
+        {
+            await WriteMxicDndAsync(cancellationToken);
+            return;
+        }
+
         if (!IsFeature91) return;
         var previous = Dnd;
         if (!await RunWriteAsync((service, token) => service.SetAudioDndAsync(Dnd, token), cancellationToken)) return;

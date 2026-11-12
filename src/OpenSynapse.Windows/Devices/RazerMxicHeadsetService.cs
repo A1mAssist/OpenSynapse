@@ -248,6 +248,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
                 errors,
                 cancellationToken).ConfigureAwait(false);
         }
+        var dnd = await ReadAudioDndAsync(errors, cancellationToken).ConfigureAwait(false);
 
         return new RazerHeadsetAudioState(
             Firmware: firmware.Ok ? firmware.Value : null,
@@ -262,7 +263,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
             NoiseSuppression: null,
             AncState: null,
             AncLevel: null,
-            Errors: errors);
+            Errors: errors) { Dnd = dnd };
     }
 
     private async Task<RazerHeadsetAudioState> ReadProtocol40StateAsync(
@@ -285,6 +286,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
             RazerProtocol40HeadsetProtocol.ReadChargingStatus,
             errors,
             cancellationToken).ConfigureAwait(false);
+        var dnd = await ReadAudioDndAsync(errors, cancellationToken).ConfigureAwait(false);
 
         return new RazerHeadsetAudioState(
             Firmware: null,
@@ -299,7 +301,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
             NoiseSuppression: null,
             AncState: null,
             AncLevel: null,
-            Errors: errors);
+            Errors: errors) { Dnd = dnd };
     }
 
     private async Task<RazerHeadsetAudioState> ReadJolietStateAsync(

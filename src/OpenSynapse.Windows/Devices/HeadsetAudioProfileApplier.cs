@@ -86,6 +86,7 @@ public sealed partial class HeadsetAudioProfileApplier : IDeviceProfileApplier
             // THX is a Windows-side component keyed by PID/container, so it still
             // replays for headsets whose audio settings use a 37/64-byte transport.
             await ApplyThxAsync(connection, profile, results, cancellationToken);
+            await ApplyMxicDndAsync(connection, profile, results, cancellationToken);
             return CreateResult(context.Device.Id, results);
         }
 
@@ -113,6 +114,28 @@ public sealed partial class HeadsetAudioProfileApplier : IDeviceProfileApplier
                 ? ProfileDeviceApplyStatus.Applied
                 : ProfileDeviceApplyStatus.Skipped;
         return new ProfileDeviceApplyResult(deviceId, status, results);
+    }
+
+    private static async Task ApplyMxicDndAsync(
+        RazerHeadsetAudioConnection connection,
+        HeadsetProfileSettings profile,
+        List<ProfileSettingApplyResult> results,
+        CancellationToken cancellationToken)
+    {
+        if (profile.Dnd is not { } dnd ||
+            connection.Transport is not (RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64) ||
+            RazerProtocol40HeadsetProtocol.IsSupported(connection.ProductId))
+        {
+            return;
+        }
+
+        await using var service = new RazerMxicHeadsetService(
+            connection.ProductId, connection.DevicePath);
+        await ApplyAsync(
+            "headset.dnd",
+            token => service.SetAudioDndAsync(dnd, token),
+            results,
+            cancellationToken);
     }
 
     private async Task ApplyChromaAsync(
