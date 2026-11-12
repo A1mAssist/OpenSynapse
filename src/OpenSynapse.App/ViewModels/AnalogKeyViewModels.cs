@@ -47,11 +47,26 @@ public sealed class AnalogKeyKeyViewModel : INotifyPropertyChanged
         set => SetField(ref _rapidTriggerSensitivityMillimeters, Math.Clamp(value, 0.1, 4.0));
     }
 
+    public string AnalogKeyTooltipText => RapidTriggerEnabled
+        ? AppStrings.FormatText(
+            "AnalogKeyTooltip",
+            ActuationMillimeters,
+            RapidTriggerSensitivityMillimeters)
+        : AppStrings.FormatText(
+            "AnalogKeyTooltipRapidTriggerOff",
+            ActuationMillimeters);
+
     private void SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {
         if (EqualityComparer<T>.Default.Equals(field, value)) return;
         field = value;
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        if (propertyName is nameof(ActuationMillimeters)
+            or nameof(RapidTriggerEnabled)
+            or nameof(RapidTriggerSensitivityMillimeters))
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(AnalogKeyTooltipText)));
+        }
     }
 }
 
