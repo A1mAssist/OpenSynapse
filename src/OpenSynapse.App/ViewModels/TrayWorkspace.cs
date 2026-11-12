@@ -71,8 +71,20 @@ public sealed class TrayWorkspace
     public async Task<IReadOnlyList<PeripheralBattery>> ReadBatteriesAsync(
         CancellationToken cancellationToken = default)
     {
-        var results = new List<PeripheralBattery>(TelemetryBatteries());
-        foreach (var row in BatteryDevices().ToArray())
+        // Snapshot every source before the first await: these are UI-thread
+        // ObservableCollections and the continuation can resume on a pool thread.
+        var claimed = ClaimedDevicePaths();
+        var telemetry = TelemetryBatteries();
+        var hidRows = BatteryDevices().ToArray();
+        var headsetRows = HeadsetRows(claimed).ToArray();
+        var blackSharkRows = BlackSharkRows(claimed).ToArray();
+        var keyboardRows = KeyboardRows(claimed).ToArray();
+        var bleRows = _bleDevices().ToArray();
+        var awBleRows = _awBleDevices().ToArray();
+        var headsetBusy = _accessories.SelectedHeadsetAudio?.IsBusy == true;
+
+        var results = new List<PeripheralBattery>(telemetry);
+        foreach (var row in hidRows)
         {
             results.Add(new PeripheralBattery(
                 row.Name,
@@ -81,9 +93,7 @@ public sealed class TrayWorkspace
                 row, HidKey(row)));
         }
 
-        var claimed = ClaimedDevicePaths();
-        var headsetBusy = _accessories.SelectedHeadsetAudio?.IsBusy == true;
-        foreach (var row in HeadsetRows(claimed))
+        foreach (var row in headsetRows)
         {
             results.Add(new PeripheralBattery(
                 row.Name,
@@ -96,7 +106,7 @@ public sealed class TrayWorkspace
                 row.IconGlyph, row, HeadsetKey(row)));
         }
 
-        foreach (var row in BlackSharkRows(claimed))
+        foreach (var row in blackSharkRows)
         {
             results.Add(new PeripheralBattery(
                 row.Name,
@@ -106,7 +116,7 @@ public sealed class TrayWorkspace
                 row.IconGlyph, row, BlackSharkKey(row)));
         }
 
-        foreach (var row in KeyboardRows(claimed))
+        foreach (var row in keyboardRows)
         {
             results.Add(new PeripheralBattery(
                 row.Name,
@@ -117,9 +127,9 @@ public sealed class TrayWorkspace
                 row.IconGlyph, row, KeyboardKey(row)));
         }
 
-        results.AddRange(_bleDevices().Select(row =>
+        results.AddRange(bleRows.Select(row =>
             new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row, $"ble:{row.Device.Id}")));
-        results.AddRange(_awBleDevices().Select(row =>
+        results.AddRange(awBleRows.Select(row =>
             new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row, $"awble:{row.Device.Id}")));
         return results;
     }
