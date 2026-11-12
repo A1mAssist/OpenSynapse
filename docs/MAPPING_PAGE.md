@@ -48,6 +48,10 @@ HID 适配器复用 `RazerHidDeviceService` 的 `02:84 / 02:8C / 02:0C`；独立
 | ContinuousToggle | `MacroTypeIII` |
 | Sequence | `MacroTypeIV` |
 
+### `ScrollModeSwitch` 的两种标签
+
+`artifacts/razer-mw-full-cdn/bundles/022B/6737.dea211e46904fb2956f3.js` 的按键动作表只有一条 `ScrollModeSwitch`：`DeviceInfo.useCycleScrollModeLabel` 为真时显示 `CYCLE_SCROLL_MODE`，否则显示 `SCROLL_MODE_TOGGLE`。两条路径都产出同一个 `scrollModeSwitch` 动作（`flag:1`），对应 `ScrollWheelModes ("Toggle scroll mode", 0x01)` 和 RazerKey 84 / `RazerPrivateKeyCatalog` 的 `ScrollModeSwitch`。不要把 `CYCLE_SCROLL_MODE` 当成新的 wire 命令；本地快照没有定义 `useCycleScrollModeLabel` 的 PID 归属，因此也不加 per-device flag。
+
 ## 板载宏名称结构
 
 协议 25 的宏数据区和名称区是两套命令：
