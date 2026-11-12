@@ -290,7 +290,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         Lighting = lighting;
         _getActiveProfile = getActiveProfile;
         _saveProfileAsync = saveProfileAsync;
-        if (IsMixer053E)
+        if (IsMixer053E && connection.HasControlInterface)
         {
             Mixer053E = new RazerMixer053EViewModel(
                 connection.DevicePath,
@@ -488,6 +488,8 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         RazerHeadsetProbeState.Partial => AppStrings.Text("BlackSharkStatusPartial"),
         RazerHeadsetProbeState.Failed => AppStrings.Text("BlackSharkCapabilityReadFailed"),
         RazerHeadsetProbeState.NotAvailable => AppStrings.Text("BlackSharkComponentRequired"),
+        RazerHeadsetProbeState.ControlInterfaceMissing =>
+            AppStrings.Text("RazerHeadsetControlInterfaceMissing"),
         _ => AppStrings.Text("BlackSharkStatusConnected"),
     };
 
@@ -817,6 +819,13 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
+        if (!_connection.HasControlInterface)
+        {
+            ErrorText = AppStrings.Text("RazerHeadsetControlInterfaceMissing");
+            SetProbeState(RazerHeadsetProbeState.ControlInterfaceMissing);
+            return;
+        }
+
         if (Mixer053E is { } mixer053E)
         {
             await mixer053E.LoadAsync(cancellationToken);

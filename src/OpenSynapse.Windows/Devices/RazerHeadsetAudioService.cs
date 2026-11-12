@@ -20,7 +20,8 @@ public sealed record RazerHeadsetAudioConnection(
     string Name,
     ushort FeatureReportByteLength,
     string? ContainerId = null,
-    RazerHeadsetAudioTransport Transport = RazerHeadsetAudioTransport.Feature91);
+    RazerHeadsetAudioTransport Transport = RazerHeadsetAudioTransport.Feature91,
+    bool HasControlInterface = true);
 
 
 /// <summary>
@@ -249,9 +250,25 @@ public sealed partial class RazerHeadsetAudioService
                     ToTransport(fallbackChannel));
             }
 
+            var usbDevices = await WindowsUsbDiscovery
+                .FindPresentAsync(0x1532, cancellationToken)
+                .ConfigureAwait(false);
+            var usbDevice = usbDevices
+                .Where(item => Products.ContainsKey(item.ProductId) && NeedsHidControlInterface(item.ProductId))
+                .OrderBy(item => item.ProductId)
+                .FirstOrDefault();
+            if (usbDevice.ProductId != 0)
+            {
+                diagnostic?.Invoke(
+                    $"headset-audio selected usb-only pid={usbDevice.ProductId:X4} " +
+                    $"path={usbDevice.InstanceId}");
+                return CreateUsbFallback(usbDevice);
+            }
+
             diagnostic?.Invoke(
                 "headset-audio found no interface for a supported channel; " +
-                $"enumerated={string.Join(",", interfaces.Select(item => $"{item.ProductId:X4}:0x{item.UsagePage:X4}:{item.FeatureReportByteLength}/{item.OutputReportByteLength}"))}");
+                $"hid={string.Join(",", interfaces.Select(item => $"{item.ProductId:X4}:0x{item.UsagePage:X4}:{item.FeatureReportByteLength}/{item.OutputReportByteLength}"))}; " +
+                $"usb={string.Join(",", usbDevices.Select(item => $"{item.ProductId:X4}"))}");
             return null;
         }
 

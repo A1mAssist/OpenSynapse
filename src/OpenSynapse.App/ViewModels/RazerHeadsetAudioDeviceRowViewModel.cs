@@ -50,6 +50,8 @@ public sealed class RazerHeadsetAudioDeviceRowViewModel : INotifyPropertyChanged
                 (AppStrings.Text("BlackSharkStatusPartial"), PartialBrush),
             RazerHeadsetProbeState.NotAvailable =>
                 (AppStrings.Text("BlackSharkComponentRequired"), PartialBrush),
+            RazerHeadsetProbeState.ControlInterfaceMissing =>
+                (AppStrings.Text("RazerHeadsetControlInterfaceMissing"), PartialBrush),
             _ => (AppStrings.Text("BlackSharkStatusConnected"), ConnectedBrush),
         };
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CapabilityText)));

@@ -979,6 +979,9 @@
   <data name="BlackSharkComponentRequired" xml:space="preserve">
     <value>Razer audio component required</value>
   </data>
+  <data name="RazerHeadsetControlInterfaceMissing" xml:space="preserve">
+    <value>The headset is present, but its control interface is not available. Reconnect the headset or receiver; restart only if it stays missing.</value>
+  </data>
   <data name="BlackSharkStatusPartial" xml:space="preserve">
     <value>Partially available</value>
   </data>
