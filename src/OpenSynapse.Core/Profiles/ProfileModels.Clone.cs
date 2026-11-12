@@ -105,6 +105,9 @@ public sealed partial class ProfileDefinition
         MappingPreset = source.MappingPreset,
         LightingEnabled = source.LightingEnabled,
         ChromaOverrideEnabled = source.ChromaOverrideEnabled,
+        LightingColorMemory = source.LightingColorMemory is null
+            ? null
+            : new Dictionary<string, string>(source.LightingColorMemory, StringComparer.OrdinalIgnoreCase),
         DisplayBrightnessPercent = source.DisplayBrightnessPercent,
         StartupAnimationEnabled = source.StartupAnimationEnabled,
         AutoSleepSeconds = source.AutoSleepSeconds,
