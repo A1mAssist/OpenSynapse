@@ -237,7 +237,16 @@ public sealed partial class DevicesPage : UserControl
             or nameof(BladeWorkspace.LogoIndex)
             or nameof(BladeWorkspace.LightingModeOptions))
         {
-            DispatcherQueue.TryEnqueue(SyncBladeComboSelections);
+            if (_activeLightingColorFlyout is not null)
+            {
+                // Rebuilding the effect combos steals focus from an open color
+                // flyout and WinUI light-dismisses it.
+                _syncBladeCombosAfterColorFlyout = true;
+            }
+            else
+            {
+                DispatcherQueue.TryEnqueue(SyncBladeComboSelections);
+            }
         }
         if (propertyName == nameof(BladeWorkspace.TouchpadEnabled))
         {

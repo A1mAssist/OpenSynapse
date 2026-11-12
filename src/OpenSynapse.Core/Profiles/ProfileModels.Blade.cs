@@ -1,5 +1,6 @@
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Displays;
+using System.Text.Json.Serialization;
 
 namespace OpenSynapse.Core.Profiles;
 
@@ -23,6 +24,9 @@ public sealed class BladeProfileSettings
     public string? MappingPreset { get; set; }
     public bool? LightingEnabled { get; set; }
     public bool? ChromaOverrideEnabled { get; set; }
+    // Per-effect color memory so switching away and back keeps the user's palette.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Dictionary<string, string>? LightingColorMemory { get; set; }
     public int? DisplayBrightnessPercent { get; set; }
     public bool? StartupAnimationEnabled { get; set; }
     public int? AutoSleepSeconds { get; set; }
@@ -43,6 +47,10 @@ public sealed class BladeProfileSettings
     internal void ApplySafeDefaults()
     {
         FanCurve?.ApplySafeDefaults();
+        if (LightingColorMemory is not null)
+        {
+            LightingColorMemory = ProfileDictionary.Normalize(LightingColorMemory);
+        }
         if (MappingPreset is not null &&
             !StringComparer.Ordinal.Equals(MappingPreset, Product710DefaultMappingPreset))
         {

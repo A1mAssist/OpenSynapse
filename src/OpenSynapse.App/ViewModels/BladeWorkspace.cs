@@ -192,9 +192,10 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             () => BrightnessPercent = _blade._confirmedBladeBrightnessPercent);
     }
 
-    public async Task ApplyLightingEffectAsync(
+    internal async Task ApplyLightingEffectAsync(
         BladeLightingEffect effect,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        BladeLightingColorMemoryEntry? colorMemory = null)
     {
         if (!CanSetLighting ||
             _bladeLightingController is null)
@@ -204,22 +205,32 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
 
         await RunDeviceOperationAsync(
             AppStrings.Text("Text_09707A2C"),
-            () => ApplyLightingEffectCoreAsync(effect, cancellationToken),
+            () => ApplyLightingEffectCoreAsync(effect, cancellationToken, colorMemory),
             cancellationToken,
             successVerb: AppStrings.Text("Text_945C2E42"));
     }
 
     private async Task ApplyLightingEffectCoreAsync(
         BladeLightingEffect effect,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        BladeLightingColorMemoryEntry? colorMemory = null)
     {
         var previousProfile = Profile.Clone();
         var encoded = BladeLightingProfileCodec.Create(effect);
         var targetLighting = EditableLightingProfile;
-        if (!IsSelectedLightingPowerActive || !IsDisplayAvailable)
+        var targetBlade = EditableLightingBladeProfile;
+        void ApplyToProfile()
         {
             targetLighting.Effect = encoded.Effect;
             targetLighting.Parameters = encoded.Parameters;
+            if (colorMemory is { } memory)
+            {
+                BladeLightingColorMemory.Remember(targetBlade, effect.Mode, memory);
+            }
+        }
+        if (!IsSelectedLightingPowerActive || !IsDisplayAvailable)
+        {
+            ApplyToProfile();
             if (!await SaveProfileAsync(cancellationToken))
             {
                 Profile = previousProfile;
@@ -232,8 +243,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
 
         if (!LightingEnabled)
         {
-            targetLighting.Effect = encoded.Effect;
-            targetLighting.Parameters = encoded.Parameters;
+            ApplyToProfile();
             if (!await SaveProfileAsync(cancellationToken))
             {
                 Profile = previousProfile;
@@ -254,8 +264,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             NotifyLightingDialectChangedIfDowngraded();
             throw;
         }
-        targetLighting.Effect = encoded.Effect;
-        targetLighting.Parameters = encoded.Parameters;
+        ApplyToProfile();
         if (!await SaveProfileAsync(cancellationToken))
         {
             Profile = previousProfile;
@@ -330,7 +339,12 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             palette,
             BladeAnimationSpeeds[Math.Clamp(AnimationSpeedIndex, 0, BladeAnimationSpeeds.Length - 1)],
             mode == BladeLightingMode.ChromaFile ? _blade._bladeChromaAnimation : null);
-        return ApplyLightingEffectAsync(effect, cancellationToken);
+        var colorMemory = new BladeLightingColorMemoryEntry(
+            color,
+            secondColor,
+            tertiaryColor,
+            mode is BladeLightingMode.Wave or BladeLightingMode.Spectrum && LightingRenderModeIndex == 1);
+        return ApplyLightingEffectAsync(effect, cancellationToken, colorMemory);
     }
 
     public async Task ImportChromaFileAsync(
@@ -1832,13 +1846,9 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         {
             if (SetField(ref _blade._bladeLightingModeIndex, value))
             {
-                if (SelectedLightingMode is BladeLightingMode.Wave or BladeLightingMode.Spectrum)
+                if (SelectedLightingMode is { } mode)
                 {
-                    LightingRenderModeIndex = 0;
-                    var defaults = BladeLightingPaletteResolver.GetDefault(SelectedLightingMode.Value).Colors;
-                    LightingColor = Color.FromArgb(0xFF, defaults[0].Red, defaults[0].Green, defaults[0].Blue);
-                    LightingSecondColor = Color.FromArgb(0xFF, defaults[1].Red, defaults[1].Green, defaults[1].Blue);
-                    LightingTertiaryColor = Color.FromArgb(0xFF, defaults[2].Red, defaults[2].Green, defaults[2].Blue);
+                    RestoreLightingColors(mode);
                 }
                 OnPropertyChanged(nameof(LightingColorVisibility));
                 OnPropertyChanged(nameof(LightingPresetVisibility));
@@ -2221,7 +2231,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
 
     internal void RefreshLightingEditor()
     {
-        if (Profile.Profiles.Count == 0)
+        if (Profile.Profiles.Count == 0 || IsLightingColorFlyoutOpen)
         {
             return;
         }
@@ -2262,7 +2272,20 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
                 BladeLightingMode.Spectrum or BladeLightingMode.Wave or BladeLightingMode.Fire or
                 BladeLightingMode.Wheel or BladeLightingMode.AudioMeter)
             {
-                selectedPalette = BladeLightingPaletteResolver.GetDefault(effect.Mode);
+                if (BladeLightingColorMemory.TryRecall(bladeProfile, effect.Mode, out var memory))
+                {
+                    LightingColor = ToColor(memory.Primary);
+                    LightingSecondColor = ToColor(memory.Secondary);
+                    LightingTertiaryColor = ToColor(memory.Tertiary);
+                    if (effect.Mode is BladeLightingMode.Wave or BladeLightingMode.Spectrum)
+                    {
+                        LightingRenderModeIndex = memory.SoftwareRender ? 1 : 0;
+                    }
+                }
+                else
+                {
+                    selectedPalette = BladeLightingPaletteResolver.GetDefault(effect.Mode);
+                }
             }
             if (selectedPalette is not null)
             {
@@ -2284,6 +2307,40 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             SetBrightness(brightness, confirm: false);
         }
     }
+
+    private void RestoreLightingColors(BladeLightingMode mode)
+    {
+        if (BladeLightingColorMemory.TryRecall(EditableLightingBladeProfile, mode, out var memory))
+        {
+            LightingColor = ToColor(memory.Primary);
+            LightingSecondColor = ToColor(memory.Secondary);
+            LightingTertiaryColor = ToColor(memory.Tertiary);
+            if (mode is BladeLightingMode.Wave or BladeLightingMode.Spectrum)
+            {
+                LightingRenderModeIndex = memory.SoftwareRender ? 1 : 0;
+            }
+
+            return;
+        }
+
+        if (mode is BladeLightingMode.Spectrum or BladeLightingMode.Wave or BladeLightingMode.Fire or
+            BladeLightingMode.Wheel or BladeLightingMode.AudioMeter)
+        {
+            var defaults = BladeLightingPaletteResolver.GetDefault(mode).Colors;
+            LightingColor = ToColor(defaults[0]);
+            LightingSecondColor = ToColor(defaults[Math.Min(1, defaults.Count - 1)]);
+            LightingTertiaryColor = ToColor(defaults[Math.Min(2, defaults.Count - 1)]);
+            if (mode is BladeLightingMode.Wave or BladeLightingMode.Spectrum)
+            {
+                LightingRenderModeIndex = 0;
+            }
+        }
+    }
+
+    private static Color ToColor(RazerRgb color) =>
+        Color.FromArgb(0xFF, color.Red, color.Green, color.Blue);
+
+    internal bool IsLightingColorFlyoutOpen { get; set; }
 
     internal void RefreshPerformanceEditor()
     {

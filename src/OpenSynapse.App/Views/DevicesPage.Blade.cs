@@ -28,6 +28,7 @@ public sealed partial class DevicesPage : UserControl
     private Color? _lightingColorBeforeEdit;
     private ColorPicker? _activeLightingColorPicker;
     private Flyout? _activeLightingColorFlyout;
+    private bool _syncBladeCombosAfterColorFlyout;
     private bool _editingRazerHidTertiary;
     private Color? _razerHidSecondaryColorBeforeTertiary;
 
@@ -533,6 +534,7 @@ public sealed partial class DevicesPage : UserControl
 
     private void LightingColorFlyoutOpened(object sender, object e)
     {
+        ViewModel.Blade.IsLightingColorFlyoutOpen = true;
         _activeLightingColorFlyout = sender as Flyout;
         _activeLightingColorPicker = ReferenceEquals(sender, PrimaryLightingColorFlyout)
             ? PrimaryLightingColorPicker
@@ -552,11 +554,11 @@ public sealed partial class DevicesPage : UserControl
                                     ? KrakenTertiaryColorPicker
                 : null;
         _lightingColorBeforeEdit = _activeLightingColorPicker?.Color;
-        UpdateRecentLightingColorVisibility();
     }
 
     private async void LightingColorFlyoutClosed(object sender, object e)
     {
+        ViewModel.Blade.IsLightingColorFlyoutOpen = false;
         var picker = _activeLightingColorPicker;
         var changed = picker is not null && _lightingColorBeforeEdit is Color previous &&
             picker.Color != previous;
@@ -570,6 +572,11 @@ public sealed partial class DevicesPage : UserControl
         _activeLightingColorPicker = null;
         _activeLightingColorFlyout = null;
         _editingRazerHidTertiary = false;
+        if (_syncBladeCombosAfterColorFlyout)
+        {
+            _syncBladeCombosAfterColorFlyout = false;
+            DispatcherQueue.TryEnqueue(SyncBladeComboSelections);
+        }
 
         if (editingRazerHidTertiary &&
             razerHidSecondaryColorBeforeTertiary is Color secondaryBeforeTertiary &&
