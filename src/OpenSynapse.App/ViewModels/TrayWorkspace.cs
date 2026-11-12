@@ -13,14 +13,14 @@ public sealed record PeripheralBattery(string Name, int? Percent, string Glyph, 
 public sealed class TrayWorkspace
 {
     private readonly Func<IReadOnlyList<DeviceRowViewModel>> _devices;
-    private readonly RazerHidWorkspace _openRazer;
+    private readonly RazerHidWorkspace _razerHid;
 
     internal TrayWorkspace(
         Func<IReadOnlyList<DeviceRowViewModel>> devices,
-        RazerHidWorkspace openRazer)
+        RazerHidWorkspace razerHid)
     {
         _devices = devices;
-        _openRazer = openRazer;
+        _razerHid = razerHid;
     }
 
     /// <summary>
@@ -31,7 +31,7 @@ public sealed class TrayWorkspace
     public IReadOnlyList<PeripheralBattery> ConnectedBatteries =>
         TelemetryBatteries()
             .Concat(BatteryDevices()
-                .Select(row => new PeripheralBattery(row.Name, null, row.IconGlyph, row, $"openrazer:{row.Connection.InstanceId}")))
+                .Select(row => new PeripheralBattery(row.Name, null, row.IconGlyph, row, $"razer-hid:{row.Connection.InstanceId}")))
             .ToArray();
 
     /// <summary>
@@ -48,9 +48,9 @@ public sealed class TrayWorkspace
         {
             results.Add(new PeripheralBattery(
                 row.Name,
-                await _openRazer.ReadBatteryPercentAsync(row, cancellationToken).ConfigureAwait(false),
+                await _razerHid.ReadBatteryPercentAsync(row, cancellationToken).ConfigureAwait(false),
                 row.IconGlyph,
-                row, $"openrazer:{row.Connection.InstanceId}"));
+                row, $"razer-hid:{row.Connection.InstanceId}"));
         }
 
         return results;
@@ -63,7 +63,7 @@ public sealed class TrayWorkspace
             .ToArray();
 
     private IEnumerable<RazerHidDeviceRowViewModel> BatteryDevices() =>
-        _openRazer.Devices.Where(row => row.Connection.IsReady &&
+        _razerHid.Devices.Where(row => row.Connection.IsReady &&
             row.HardwareCategory != DeviceCategory.Laptop &&
             row.Connection.Capabilities.Contains(RazerHidBackendCapability.BatteryRead));
 }

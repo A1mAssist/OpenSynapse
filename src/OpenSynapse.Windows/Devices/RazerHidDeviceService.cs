@@ -253,7 +253,7 @@ public sealed partial class RazerHidDeviceService
             // A charging read that answered is useful without a battery percentage.
             // A failed charging read must not be reported as discharging.
             BatteryObserved?.Invoke(new DeviceBatteryReading(
-                $"openrazer:{connection.InstanceId}", connection.Definition.DisplayName, battery, charging));
+                $"razer-hid:{connection.InstanceId}", connection.Definition.DisplayName, battery, charging));
         }
         return new RazerHidBasicState(firmware, serial, softwareMode, battery, charging,
             pollingRate, dpiX, dpiY, idle, threshold, autoSleep,
@@ -1450,14 +1450,14 @@ public sealed partial class RazerHidDeviceService
     }
 
     private void WriteDiagnostic(ushort productId, string message) =>
-        _diagnosticLog?.TryWrite($"openrazer-{productId:X4}", message);
+        _diagnosticLog?.TryWrite($"razer-hid-{productId:X4}", message);
 
     /// <summary>
     /// Records why a control was skipped before it reached the device, so a write that
     /// never leaves the app is distinguishable from one the firmware refused.
     /// </summary>
     public void LogSkippedControl(ushort productId, string message) =>
-        _diagnosticLog?.TryWrite($"openrazer-{productId:X4}", message);
+        _diagnosticLog?.TryWrite($"razer-hid-{productId:X4}", message);
 
     internal static string DescribeRejected(IReadOnlyList<WindowsHidDiscovery.HidInterfaceDescriptor> candidates) =>
         string.Join("; ", candidates.Select(candidate =>

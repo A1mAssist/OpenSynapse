@@ -21,7 +21,7 @@ public sealed partial class DevicesPage : UserControl
             "keyboard" => KeyboardControlsGrid.Visibility == Visibility.Visible
                 ? KeyboardControlsGrid
                 : KeyboardPanel,
-            "openrazer" => RazerHidControlsGrid.Visibility == Visibility.Visible
+            "razer-hid" => RazerHidControlsGrid.Visibility == Visibility.Visible
                 ? RazerHidControlsGrid
                 : RazerHidDevicePanel,
             "viper" => ViperPollingRateCard,
@@ -130,7 +130,7 @@ public sealed partial class DevicesPage : UserControl
             ArrangeBladeAuxCards();
         }
         ViperDevicePanel.Visibility = device == "viper" ? Visibility.Visible : Visibility.Collapsed;
-        RazerHidDevicePanel.Visibility = device == "openrazer" ? Visibility.Visible : Visibility.Collapsed;
+        RazerHidDevicePanel.Visibility = device == "razer-hid" ? Visibility.Visible : Visibility.Collapsed;
         RazerHidKrakenPanel.Visibility = device == "kraken" ? Visibility.Visible : Visibility.Collapsed;
         BlackSharkPanel.Visibility = device == "blackshark" ? Visibility.Visible : Visibility.Collapsed;
         HeadsetAudioPanel.Visibility = device == "headsetaudio" ? Visibility.Visible : Visibility.Collapsed;
@@ -163,7 +163,7 @@ public sealed partial class DevicesPage : UserControl
             {
                 DeviceSelectorItemKind.Blade => device == "blade",
                 DeviceSelectorItemKind.Viper => device == "viper",
-                DeviceSelectorItemKind.RazerHid => device == "openrazer" &&
+                DeviceSelectorItemKind.RazerHid => device == "razer-hid" &&
                     item.Source is RazerHidDeviceRowViewModel row &&
                     StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, ViewModel.RazerHid.SelectedDevice?.InstanceId),
                 DeviceSelectorItemKind.Kraken => device == "kraken" &&
@@ -210,7 +210,7 @@ public sealed partial class DevicesPage : UserControl
     internal string CurrentDeviceRoute() =>
         RazerHidKrakenPanel.Visibility == Visibility.Visible ? "kraken" :
         BlackSharkPanel.Visibility == Visibility.Visible ? "blackshark" :
-        RazerHidDevicePanel.Visibility == Visibility.Visible ? "openrazer" :
+        RazerHidDevicePanel.Visibility == Visibility.Visible ? "razer-hid" :
         HeadsetAudioPanel.Visibility == Visibility.Visible ? "headsetaudio" :
         KeyboardPanel.Visibility == Visibility.Visible ? "keyboard" :
         GamepadPanel.Visibility == Visibility.Visible ? "gamepad" :
@@ -275,7 +275,7 @@ public sealed partial class DevicesPage : UserControl
         else if (propertyName == nameof(RazerHidWorkspace.SelectedDevice) &&
             RazerHidDevicePanel.Visibility == Visibility.Visible)
         {
-            DispatcherQueue.TryEnqueue(() => UpdateDeviceSelector("openrazer"));
+            DispatcherQueue.TryEnqueue(() => UpdateDeviceSelector("razer-hid"));
         }
         if (propertyName == nameof(RazerHidWorkspace.SelectedKraken) &&
             ViewModel.RazerHid.SelectedKraken is null &&

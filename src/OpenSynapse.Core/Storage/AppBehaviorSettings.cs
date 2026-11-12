@@ -69,6 +69,7 @@ public sealed class AppBehaviorSettings
                 ? JsonSerializer.Deserialize<AppBehaviorSettings>(File.ReadAllText(filePath)) ?? throw new JsonException("Settings are null.")
                 : new();
             settings.LowBatteryNotifiedLevels = (settings.LowBatteryNotifiedLevels ?? [])
+                .Select(item => (Key: NormalizeBatteryKey(item.Key), item.Value))
                 .Where(item => !string.IsNullOrWhiteSpace(item.Key) && item.Value is 10 or 20)
                 .GroupBy(item => item.Key, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(group => group.Key, group => group.Min(item => item.Value), StringComparer.OrdinalIgnoreCase);
@@ -113,6 +114,12 @@ public sealed class AppBehaviorSettings
             return fallback;
         }
     }
+
+    // Keys persisted before the rename carry the old prefix.
+    private static string NormalizeBatteryKey(string key) =>
+        key.StartsWith("openrazer:", StringComparison.OrdinalIgnoreCase)
+            ? "razer-hid:" + key["openrazer:".Length..]
+            : key;
 
     public void Save() => Save(SettingsPath);
     public void Save(string filePath) => Save(filePath, null);

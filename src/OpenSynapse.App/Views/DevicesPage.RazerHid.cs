@@ -61,9 +61,9 @@ public sealed partial class DevicesPage : UserControl
             return;
         }
 
-        SelectDevice("openrazer");
+        SelectDevice("razer-hid");
         await ViewModel.RazerHid.SelectDeviceAsync(row, Lifetime);
-        UpdateDeviceSelector("openrazer");
+        UpdateDeviceSelector("razer-hid");
     }
 
     private async void DeviceSelectorItemClick(object sender, RoutedEventArgs e)
@@ -81,7 +81,7 @@ public sealed partial class DevicesPage : UserControl
         switch (source)
         {
             case RazerHidDeviceRowViewModel row:
-                SelectDevice("openrazer");
+                SelectDevice("razer-hid");
                 await ViewModel.RazerHid.SelectDeviceAsync(row, Lifetime);
                 break;
             case RazerHidKrakenDeviceRowViewModel row:

@@ -473,7 +473,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
                 exception is NotSupportedException or InvalidOperationException or
                 System.ComponentModel.Win32Exception or System.IO.IOException)
             {
-                _diagnosticLog.TryWrite("openrazer-driver-mode",
+                _diagnosticLog.TryWrite("razer-driver-mode",
                     $"1532:{connection.Definition.ProductId:X4} restore failed: {exception.Message}");
                 ReportOperationError(AppStrings.FormatText("RazerHidDriverModeRestoreFailed",
                     connection.Definition.DisplayName, exception.Message));

@@ -245,7 +245,7 @@ public sealed class RazerHidDeviceConnection
     internal string? DevicePath { get; }
 
     public DeviceDescriptor ToDescriptor() => new(
-        DevicePath ?? $"openrazer://1532/{Definition.ProductId:X4}/{Uri.EscapeDataString(InstanceId)}",
+        DevicePath ?? $"opensynapse://1532/{Definition.ProductId:X4}/{Uri.EscapeDataString(InstanceId)}",
         Definition.DisplayName,
         RazerHidDeviceDefinition.VendorId,
         Definition.ProductId,
@@ -258,7 +258,7 @@ public sealed class RazerHidDeviceConnection
         91,
         0,
         0,
-        "openrazer-standard",
+        "razer-hid-standard",
         Definition.Category);
 }
 
