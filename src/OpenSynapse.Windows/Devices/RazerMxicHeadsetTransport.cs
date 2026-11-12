@@ -251,7 +251,7 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
 
         // HidD_GetInputReport is a blocking control transfer. Do not run it on the
         // interrupt-read handle: a device that never answers would hold the transport
-        // gate forever and leave the card on "正在读取…". A separate handle and a
+        // gate forever and leave the card on its reading state. A separate handle and a
         // bounded wait keep a status read optional, just like AudioMxicDevice treats
         // an empty getInputReport result.
         SafeFileHandle? statusHandle = null;
