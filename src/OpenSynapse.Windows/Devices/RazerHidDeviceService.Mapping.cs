@@ -84,27 +84,37 @@ public sealed partial class RazerHidDeviceService
     {
         var analog = definition.ProductId is 0x0266 or 0x0282;
         // 0244/022B keypads map the first art key to SPAD_NUM_1, firmware key id 64 (0x40).
-        // 0x02 is the generic keyboard "1" output key, not a keypad table entry.
+        // Some firmware refuses that row while still answering the generic 0x02 key, so
+        // try both; otherwise one rejected row hides the whole mapping page.
         var keypad = definition.ProductId is 0x022B or 0x0244;
-        var keyId = (byte)(keypad ? 0x40 : 0x02);
-        var assignment = analog
-            ? RazerHidMappingProtocol.GetAnalogKeyAssignment(
-                keyId, RazerHidMappingProtocol.NormalMode)
-            : RazerHidMappingProtocol.GetKeyAssignment(
-                keyId, RazerHidMappingProtocol.NormalMode);
-        return await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
-            "mapping.keyAssignment", assignment.Report,
-            response =>
+        byte[] keyIds = keypad ? [0x40, 0x02] : [0x02];
+        foreach (var keyId in keyIds)
+        {
+            WriteDiagnostic(definition.ProductId, $"mapping probe key=0x{keyId:X2}");
+            var assignment = analog
+                ? RazerHidMappingProtocol.GetAnalogKeyAssignment(
+                    keyId, RazerHidMappingProtocol.NormalMode)
+                : RazerHidMappingProtocol.GetKeyAssignment(
+                    keyId, RazerHidMappingProtocol.NormalMode);
+            if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
+                    "mapping.keyAssignment", assignment.Report,
+                    response =>
+                    {
+                        if (analog)
+                        {
+                            _ = RazerHidMappingProtocol.ParseAnalogAssignment(response);
+                        }
+                        else
+                        {
+                            _ = RazerHidMappingProtocol.ParseAssignment(response);
+                        }
+                        return true;
+                    }, cancellationToken).ConfigureAwait(false))
             {
-                if (analog)
-                {
-                    _ = RazerHidMappingProtocol.ParseAnalogAssignment(response);
-                }
-                else
-                {
-                    _ = RazerHidMappingProtocol.ParseAssignment(response);
-                }
                 return true;
-            }, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        return false;
     }
 }
