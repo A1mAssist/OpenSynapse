@@ -89,4 +89,19 @@ public sealed partial class DiagnosticsPage : UserControl
             DiagnosticsCopyStatusText.Text = string.Empty;
         }
     }
+
+    private void ExportDiagnosticsLogsClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.Diagnostics.EnsureRazerHidRows();
+
+        try
+        {
+            var path = ViewModel.Diagnostics.ExportLogBundle();
+            DiagnosticsCopyStatusText.Text = AppStrings.FormatText("DiagnosticsLogsExported", path);
+        }
+        catch (Exception exception)
+        {
+            DiagnosticsCopyStatusText.Text = AppStrings.FormatText("DiagnosticsLogsExportFailed", exception.Message);
+        }
+    }
 }
