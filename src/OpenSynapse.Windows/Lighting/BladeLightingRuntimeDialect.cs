@@ -6,9 +6,9 @@ using OpenSynapse.Windows.Protocols;
 namespace OpenSynapse.Windows.Lighting;
 
 /// <summary>
-/// Session-local dialect override keyed by Blade product id. A firmware that explicitly
-/// rejects the declared effect report keeps that dialect off until the app restarts;
-/// keyboard brightness uses a separate report and stays available.
+/// Session-local dialect override keyed by Blade product id. A rejected matrix write
+/// falls back to the model's firmware effects until the app restarts; keyboard
+/// brightness uses a separate report and stays available.
 /// </summary>
 internal static class BladeLightingRuntimeDialect
 {
