@@ -39,10 +39,10 @@
         <ColumnDefinition Width="Auto" />
       </Grid.ColumnDefinitions>
       <StackPanel Spacing="4">
-        <TextBlock local:Localized.Uid="LightingStudioTitle" Text="灯光工作室"
+        <TextBlock local:Localized.Uid="LightingStudioTitle"
                    FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
         <TextBlock local:Localized.Uid="LightingStudioSubtitle"
-                   Text="图层、区域与效果实时预览，支持多设备矩阵输出和 Chroma 文件导入导出。"
+
                    FontSize="13" Foreground="{StaticResource MutedBrush}" />
       </StackPanel>
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
@@ -51,7 +51,7 @@
                 AutomationProperties.AutomationId="StudioPlayButton">
           <StackPanel Orientation="Horizontal" Spacing="8">
             <FontIcon x:Name="PlayButtonIcon" Glyph="&#xE102;" FontFamily="{StaticResource IconFontFamily}" FontSize="14" />
-            <TextBlock x:Name="PlayButtonLabel" local:Localized.Uid="LightingStudioPlay" Text="播放" />
+            <TextBlock x:Name="PlayButtonLabel" local:Localized.Uid="LightingStudioPlay" />
           </StackPanel>
         </Button>
         <Button x:Name="ApplyButton" Click="ApplyClick" MinWidth="140" IsEnabled="{Binding CanApply}"
@@ -59,7 +59,7 @@
                 AutomationProperties.AutomationId="StudioApplyButton">
           <StackPanel Orientation="Horizontal" Spacing="8">
             <FontIcon Glyph="&#xE10B;" FontFamily="{StaticResource IconFontFamily}" FontSize="14" />
-            <TextBlock local:Localized.Uid="LightingStudioApply" Text="应用到设备" />
+            <TextBlock local:Localized.Uid="LightingStudioApply" />
           </StackPanel>
         </Button>
         <Button x:Name="StopButton" Click="StopClick" MinWidth="92"
@@ -67,7 +67,7 @@
                 AutomationProperties.AutomationId="StudioStopButton">
           <StackPanel Orientation="Horizontal" Spacing="8">
             <FontIcon Glyph="&#xE15B;" FontFamily="{StaticResource IconFontFamily}" FontSize="14" />
-            <TextBlock local:Localized.Uid="LightingStudioStop" Text="停止" />
+            <TextBlock local:Localized.Uid="LightingStudioStop" />
           </StackPanel>
         </Button>
       </StackPanel>
@@ -94,11 +94,11 @@
               <StackPanel Orientation="Horizontal" Spacing="8">
                 <FontIcon Glyph="&#xE188;" FontFamily="{StaticResource IconFontFamily}"
                           FontSize="14" Foreground="{StaticResource MutedBrush}" />
-                <TextBlock local:Localized.Uid="LightingStudioProject" Text="项目" />
+                <TextBlock local:Localized.Uid="LightingStudioProject" />
               </StackPanel>
             </Expander.Header>
             <StackPanel Spacing="8">
-              <TextBlock local:Localized.Uid="LightingStudioProfileLabel" Text="配置档"
+              <TextBlock local:Localized.Uid="LightingStudioProfileLabel"
                          FontSize="11" Foreground="{StaticResource MutedBrush}" />
               <Grid ColumnSpacing="6">
                 <Grid.ColumnDefinitions>
@@ -109,31 +109,31 @@
                           SelectedItem="{Binding SelectedProfile, Mode=TwoWay}"
                           HorizontalAlignment="Stretch" />
                 <DropDownButton Grid.Column="1" local:Localized.Uid="LightingStudioMore"
-                                Content="更多" Padding="8,0"
+                                Padding="8,0"
                                 AutomationProperties.AutomationId="StudioProfileMenu">
                   <DropDownButton.Flyout>
                     <MenuFlyout>
-                      <MenuFlyoutItem local:Localized.Uid="LightingStudioAdd" Text="新增"
+                      <MenuFlyoutItem local:Localized.Uid="LightingStudioAdd"
                                       Click="AddProfileClick" />
-                      <MenuFlyoutItem local:Localized.Uid="LightingStudioDuplicate" Text="复制"
+                      <MenuFlyoutItem local:Localized.Uid="LightingStudioDuplicate"
                                       Click="DuplicateProfileClick" />
-                      <MenuFlyoutItem local:Localized.Uid="LightingStudioRemove" Text="删除"
+                      <MenuFlyoutItem local:Localized.Uid="LightingStudioRemove"
                                       Click="RemoveProfileClick" />
                     </MenuFlyout>
                   </DropDownButton.Flyout>
                 </DropDownButton>
               </Grid>
-              <TextBlock local:Localized.Uid="LightingStudioProfileTitle" Text="配置档名称"
+              <TextBlock local:Localized.Uid="LightingStudioProfileTitle"
                          FontSize="11" Foreground="{StaticResource MutedBrush}" />
               <TextBox Text="{Binding SelectedProfile.Title, Mode=TwoWay}"
                        LostFocus="NameBoxLostFocus" FontSize="12" />
-              <TextBlock local:Localized.Uid="LightingStudioNameLabel" Text="工作室名称"
+              <TextBlock local:Localized.Uid="LightingStudioNameLabel"
                          FontSize="11" Foreground="{StaticResource MutedBrush}" />
               <TextBox Text="{Binding DocumentName, Mode=TwoWay}" FontSize="12" />
             </StackPanel>
           </Expander>
 
-          <TextBlock local:Localized.Uid="LightingStudioDeviceLabel" Text="设备"
+          <TextBlock local:Localized.Uid="LightingStudioDeviceLabel"
                      FontSize="11" Foreground="{StaticResource MutedBrush}" />
           <ComboBox ItemsSource="{Binding Devices}" DisplayMemberPath="Name"
                     AutomationProperties.AutomationId="StudioDeviceSelector"
@@ -167,7 +167,7 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
           </Grid.RowDefinitions>
-          <TextBlock local:Localized.Uid="LightingStudioLayers" Text="图层"
+          <TextBlock local:Localized.Uid="LightingStudioLayers"
                      FontSize="11" Foreground="{StaticResource MutedBrush}" />
           <ListView x:Name="LayerList" Grid.Row="1" ItemsSource="{Binding LayerRows}"
                     SelectedItem="{Binding SelectedLayerRow, Mode=TwoWay}"
@@ -212,7 +212,7 @@
                     Padding="4,0" MinHeight="34" AutomationProperties.AutomationId="StudioAddLayer">
               <StackPanel Orientation="Horizontal" Spacing="4">
                 <FontIcon Glyph="&#xE109;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
-                <TextBlock local:Localized.Uid="LightingStudioAdd" Text="新增" />
+                <TextBlock local:Localized.Uid="LightingStudioAdd" />
               </StackPanel>
             </Button>
             <Button x:Name="DuplicateLayerButton" Grid.Column="1" Click="DuplicateLayerClick"
@@ -220,7 +220,7 @@
                     AutomationProperties.AutomationId="StudioDuplicateLayer">
               <StackPanel Orientation="Horizontal" Spacing="4">
                 <FontIcon Glyph="&#xE16F;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
-                <TextBlock local:Localized.Uid="LightingStudioDuplicate" Text="复制" />
+                <TextBlock local:Localized.Uid="LightingStudioDuplicate" />
               </StackPanel>
             </Button>
             <Button x:Name="RemoveLayerButton" Grid.Column="2" Click="RemoveLayerClick"
@@ -228,19 +228,19 @@
                     IsEnabled="{Binding CanRemoveLayer}" AutomationProperties.AutomationId="StudioRemoveLayer">
               <StackPanel Orientation="Horizontal" Spacing="4">
                 <FontIcon Glyph="&#xE107;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
-                <TextBlock local:Localized.Uid="LightingStudioRemove" Text="删除" />
+                <TextBlock local:Localized.Uid="LightingStudioRemove" />
               </StackPanel>
             </Button>
             <Button x:Name="GroupLayerButton" Grid.Column="3" HorizontalAlignment="Stretch"
                     Padding="4,0" MinHeight="34" AutomationProperties.AutomationId="StudioGroupMenu">
               <StackPanel Orientation="Horizontal" Spacing="4">
                 <FontIcon Glyph="&#xE188;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
-                <TextBlock local:Localized.Uid="LightingStudioGroup" Text="分组" />
+                <TextBlock local:Localized.Uid="LightingStudioGroup" />
               </StackPanel>
               <Button.Flyout>
                 <Flyout>
                   <StackPanel Width="220" Spacing="8">
-                    <Button local:Localized.Uid="LightingStudioAddGroup" Content="组"
+                    <Button local:Localized.Uid="LightingStudioAddGroup"
                             Click="AddGroupClick" HorizontalAlignment="Stretch" />
                     <ComboBox ItemsSource="{Binding GroupChoices}" DisplayMemberPath="Title"
                               SelectedItem="{Binding SelectedGroup, Mode=TwoWay}"
@@ -250,9 +250,9 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                       </Grid.ColumnDefinitions>
-                      <Button local:Localized.Uid="LightingStudioMoveIntoGroup" Content="入组"
+                      <Button local:Localized.Uid="LightingStudioMoveIntoGroup"
                               Click="MoveIntoGroupClick" HorizontalAlignment="Stretch" />
-                      <Button Grid.Column="1" local:Localized.Uid="LightingStudioMoveToRoot" Content="出组"
+                      <Button Grid.Column="1" local:Localized.Uid="LightingStudioMoveToRoot"
                               Click="MoveToRootClick" HorizontalAlignment="Stretch" />
                     </Grid>
                     <Grid ColumnSpacing="6">
@@ -260,9 +260,9 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                       </Grid.ColumnDefinitions>
-                      <Button local:Localized.Uid="LightingStudioMoveUp" Content="上移"
+                      <Button local:Localized.Uid="LightingStudioMoveUp"
                               Click="MoveUpClick" HorizontalAlignment="Stretch" />
-                      <Button Grid.Column="1" local:Localized.Uid="LightingStudioMoveDown" Content="下移"
+                      <Button Grid.Column="1" local:Localized.Uid="LightingStudioMoveDown"
                               Click="MoveDownClick" HorizontalAlignment="Stretch" />
                     </Grid>
                   </StackPanel>
@@ -282,16 +282,16 @@
                           AutomationProperties.AutomationId="StudioDocumentMenu">
             <StackPanel Orientation="Horizontal" Spacing="7">
               <FontIcon Glyph="&#xE130;" FontFamily="{StaticResource IconFontFamily}" FontSize="14" />
-              <TextBlock local:Localized.Uid="LightingStudioDocument" Text="文档" />
+              <TextBlock local:Localized.Uid="LightingStudioDocument" />
             </StackPanel>
             <DropDownButton.Flyout>
               <MenuFlyout>
-                <MenuFlyoutItem local:Localized.Uid="LightingStudioNew" Text="新建" Click="NewClick" />
-                <MenuFlyoutItem local:Localized.Uid="LightingStudioLoad" Text="载入" Click="LoadClick" />
-                <MenuFlyoutItem local:Localized.Uid="LightingStudioSave" Text="保存" Click="SaveClick" />
+                <MenuFlyoutItem local:Localized.Uid="LightingStudioNew" Click="NewClick" />
+                <MenuFlyoutItem local:Localized.Uid="LightingStudioLoad" Click="LoadClick" />
+                <MenuFlyoutItem local:Localized.Uid="LightingStudioSave" Click="SaveClick" />
                 <MenuFlyoutSeparator />
-                <MenuFlyoutItem local:Localized.Uid="LightingStudioImport" Text="导入" Click="ImportChromaClick" />
-                <MenuFlyoutItem local:Localized.Uid="LightingStudioExport" Text="导出" Click="ExportChromaClick" />
+                <MenuFlyoutItem local:Localized.Uid="LightingStudioImport" Click="ImportChromaClick" />
+                <MenuFlyoutItem local:Localized.Uid="LightingStudioExport" Click="ExportChromaClick" />
               </MenuFlyout>
             </DropDownButton.Flyout>
           </DropDownButton>
@@ -337,25 +337,25 @@
                   <ComboBoxItem>
                     <StackPanel Orientation="Horizontal" Spacing="8">
                       <FontIcon Glyph="&#xE1E3;" FontFamily="{StaticResource IconFontFamily}" FontSize="14" />
-                      <TextBlock local:Localized.Uid="LightingStudioToolSelect" Text="选择" />
+                      <TextBlock local:Localized.Uid="LightingStudioToolSelect" />
                     </StackPanel>
                   </ComboBoxItem>
                   <ComboBoxItem>
                     <StackPanel Orientation="Horizontal" Spacing="8">
                       <FontIcon Glyph="&#xE104;" FontFamily="{StaticResource IconFontFamily}" FontSize="14" />
-                      <TextBlock local:Localized.Uid="LightingStudioToolPen" Text="画笔" />
+                      <TextBlock local:Localized.Uid="LightingStudioToolPen" />
                     </StackPanel>
                   </ComboBoxItem>
                   <ComboBoxItem>
                     <StackPanel Orientation="Horizontal" Spacing="8">
                       <FontIcon Glyph="&#xE186;" FontFamily="{StaticResource IconFontFamily}" FontSize="14" />
-                      <TextBlock local:Localized.Uid="LightingStudioToolBucket" Text="油漆桶" />
+                      <TextBlock local:Localized.Uid="LightingStudioToolBucket" />
                     </StackPanel>
                   </ComboBoxItem>
                   <ComboBoxItem>
                     <StackPanel Orientation="Horizontal" Spacing="8">
                       <FontIcon Glyph="&#xE14F;" FontFamily="{StaticResource IconFontFamily}" FontSize="14" />
-                      <TextBlock local:Localized.Uid="LightingStudioToolMove" Text="移动" />
+                      <TextBlock local:Localized.Uid="LightingStudioToolMove" />
                     </StackPanel>
                   </ComboBoxItem>
                 </ComboBox>
@@ -399,7 +399,7 @@
                           AutomationProperties.AutomationId="StudioInspectorToggle">
                     <StackPanel Orientation="Horizontal" Spacing="7">
                       <FontIcon Glyph="&#xE138;" FontFamily="{StaticResource IconFontFamily}" FontSize="14" />
-                      <TextBlock local:Localized.Uid="LightingStudioLayerProperties" Text="图层属性" />
+                      <TextBlock local:Localized.Uid="LightingStudioLayerProperties" />
                       <FontIcon x:Name="InspectorChevron" Glyph="&#xE70E;"
                                 FontFamily="{StaticResource IconFontFamily}" FontSize="10" />
                     </StackPanel>
@@ -422,7 +422,7 @@
               </Grid.ColumnDefinitions>
               <StackPanel Spacing="4">
                 <TextBlock local:Localized.Uid="LightingStudioDeviceNoPixelOutput"
-                           Text="无逐像素输出。此设备无法接收工作室帧，画布仅供预览，应用时会跳过。"
+
                            TextWrapping="Wrap" FontSize="12"
                            Foreground="{StaticResource AccentBrush}"
                            Visibility="{Binding NoPixelOutputVisibility}" />
@@ -435,21 +435,21 @@
                         AutomationProperties.AutomationId="StudioSelectAll">
                   <StackPanel Orientation="Horizontal" Spacing="6">
                     <FontIcon Glyph="&#xE14E;" FontFamily="{StaticResource IconFontFamily}" FontSize="13" />
-                    <TextBlock local:Localized.Uid="LightingStudioSelectAll" Text="全选" />
+                    <TextBlock local:Localized.Uid="LightingStudioSelectAll" />
                   </StackPanel>
                 </Button>
                 <Button x:Name="ApplySelectionButton" Click="ApplySelectionClick"
                         AutomationProperties.AutomationId="StudioApplySelection">
                   <StackPanel Orientation="Horizontal" Spacing="6">
                     <FontIcon Glyph="&#xE10B;" FontFamily="{StaticResource IconFontFamily}" FontSize="13" />
-                    <TextBlock local:Localized.Uid="LightingStudioApplySelection" Text="应用选区" />
+                    <TextBlock local:Localized.Uid="LightingStudioApplySelection" />
                   </StackPanel>
                 </Button>
                 <Button x:Name="ClearSelectionButton" Click="ClearSelectionClick"
                         AutomationProperties.AutomationId="StudioClearSelection">
                   <StackPanel Orientation="Horizontal" Spacing="6">
                     <FontIcon Glyph="&#xE1C5;" FontFamily="{StaticResource IconFontFamily}" FontSize="13" />
-                    <TextBlock local:Localized.Uid="LightingStudioClearSelection" Text="清除选区" />
+                    <TextBlock local:Localized.Uid="LightingStudioClearSelection" />
                   </StackPanel>
                 </Button>
               </StackPanel>
@@ -473,11 +473,11 @@
                 <FontIcon Glyph="&#xE138;" FontFamily="{StaticResource IconFontFamily}"
                           FontSize="16" Foreground="{StaticResource AccentBrush}"
                           VerticalAlignment="Center" />
-                <TextBlock local:Localized.Uid="LightingStudioLayerProperties" Text="图层属性"
+                <TextBlock local:Localized.Uid="LightingStudioLayerProperties"
                            FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}"
                            VerticalAlignment="Center" />
               </StackPanel>
-              <CheckBox Grid.Column="1" local:Localized.Uid="LightingStudioEnabled" Content="启用"
+              <CheckBox Grid.Column="1" local:Localized.Uid="LightingStudioEnabled"
                         IsChecked="{Binding SelectedLayer.Visible, Mode=TwoWay}"
                         VerticalAlignment="Center" />
             </Grid>
@@ -497,20 +497,20 @@
                   <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <StackPanel Spacing="3">
-                  <TextBlock local:Localized.Uid="LightingStudioLayerNameLabel" Text="名称"
+                  <TextBlock local:Localized.Uid="LightingStudioLayerNameLabel"
                              FontSize="11" Foreground="{StaticResource MutedBrush}" />
                   <TextBox x:Name="LayerNameBox" Text="{Binding SelectedLayer.Title, Mode=TwoWay}"
                            LostFocus="NameBoxLostFocus" MinHeight="30" Padding="8,3" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Spacing="3">
-                  <TextBlock local:Localized.Uid="LightingStudioRegionLabel" Text="区域"
+                  <TextBlock local:Localized.Uid="LightingStudioRegionLabel"
                              FontSize="11" Foreground="{StaticResource MutedBrush}" />
                   <ComboBox ItemsSource="{Binding RegionChoices}" DisplayMemberPath="Label"
                             SelectedItem="{Binding SelectedRegionChoice, Mode=TwoWay}"
                             HorizontalAlignment="Stretch" MinHeight="30" />
                 </StackPanel>
                 <StackPanel Grid.Row="1" Spacing="3">
-                  <TextBlock local:Localized.Uid="LightingStudioEffect" Text="效果"
+                  <TextBlock local:Localized.Uid="LightingStudioEffect"
                              FontSize="11" Foreground="{StaticResource MutedBrush}" />
                   <ComboBox AutomationProperties.AutomationId="StudioEffectComboBox"
                             ItemsSource="{Binding EffectChoices}" DisplayMemberPath="Label"
@@ -518,14 +518,14 @@
                             HorizontalAlignment="Stretch" MinHeight="30" />
                 </StackPanel>
                 <StackPanel Grid.Row="1" Grid.Column="1" Spacing="3">
-                  <TextBlock local:Localized.Uid="LightingStudioBlend" Text="混合"
+                  <TextBlock local:Localized.Uid="LightingStudioBlend"
                              FontSize="11" Foreground="{StaticResource MutedBrush}" />
                   <ComboBox ItemsSource="{Binding BlendChoices}" DisplayMemberPath="Label"
                             SelectedItem="{Binding SelectedBlendChoice, Mode=TwoWay}"
                             HorizontalAlignment="Stretch" MinHeight="30" />
                 </StackPanel>
                 <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Spacing="2">
-                  <TextBlock local:Localized.Uid="LightingStudioOpacity" Text="不透明度"
+                  <TextBlock local:Localized.Uid="LightingStudioOpacity"
                              FontSize="11" Foreground="{StaticResource MutedBrush}" />
                   <Slider Minimum="0" Maximum="100" StepFrequency="1"
                           Value="{Binding SelectedLayer.Opacity, Mode=TwoWay}"

@@ -4,15 +4,15 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:OpenSynapse.App">
   <StackPanel Spacing="12" MinWidth="420">
-    <TextBlock local:Localized.Uid="RazerDualDongleHint" Text="先让目标设备进入配对模式（长按配对键），再点“开始配对”。" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" />
+    <TextBlock local:Localized.Uid="RazerDualDongleHint" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" />
     <ComboBox local:Localized.Uid="RazerDualDongleReceiver"
-              Header="接收器"
+
               ItemsSource="{Binding Receivers}" SelectedItem="{Binding SelectedReceiver, Mode=TwoWay}"
               DisplayMemberPath="Title" HorizontalAlignment="Stretch"
               IsEnabled="{Binding CanPick}"
               Visibility="{Binding ReceiverPickerVisibility}" />
     <ComboBox local:Localized.Uid="RazerDualDongleTarget"
-              Header="要配对的设备"
+
               ItemsSource="{Binding Candidates}" SelectedItem="{Binding SelectedCandidate, Mode=TwoWay}"
               DisplayMemberPath="Title" HorizontalAlignment="Stretch" IsEnabled="{Binding CanPick}" />
     <InfoBar IsOpen="{Binding IsStatusOpen}" IsClosable="False"

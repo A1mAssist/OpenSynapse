@@ -1705,12 +1705,7 @@
   <data name="UpdateReady" xml:space="preserve"><value>版本 {0} 已下载，可以更新。</value><comment>版本 {0} 已下载，可以更新。</comment></data>
   <data name="UpdateAvailable" xml:space="preserve"><value>发现版本 {0}。</value><comment>发现版本 {0}。</comment></data>
   <data name="CurrentVersion" xml:space="preserve"><value>当前版本 {0}。</value><comment>当前版本 {0}。</comment></data>
-  <data name="更新并重启" xml:space="preserve"><value>更新并重启</value><comment>更新并重启</comment></data>
-  <data name="下载更新" xml:space="preserve"><value>下载更新</value><comment>下载更新</comment></data>
-  <data name="正在检查更新" xml:space="preserve"><value>正在检查更新</value><comment>正在检查更新</comment></data>
-  <data name="当前已是最新版本" xml:space="preserve"><value>当前已是最新版本</value><comment>当前已是最新版本</comment></data>
-  <data name="正在下载更新" xml:space="preserve"><value>正在下载更新</value><comment>正在下载更新</comment></data>
-  <data name="正在安全退出并更新" xml:space="preserve"><value>正在安全退出并更新</value><comment>正在安全退出并更新</comment></data>
+  <data name="UpdateDownloadButton.Content" xml:space="preserve"><value>下载更新</value><comment>下载更新</comment></data>
   <data name="UpdateSettingError" xml:space="preserve"><value>更新设置保存失败：{0}</value><comment>更新设置保存失败：{0}</comment></data>
   <data name="UpdateCheckFailed" xml:space="preserve"><value>检查更新失败：{0}</value><comment>检查更新失败：{0}</comment></data>
   <data name="UpdateDownloadFailed" xml:space="preserve"><value>下载更新失败：{0}</value><comment>下载更新失败：{0}</comment></data>
@@ -1741,18 +1736,7 @@
   <data name="PerformanceCycleSilent.Content" xml:space="preserve"><value>静音</value><comment>静音</comment></data>
   <data name="RefreshRateCycleTitle.Text" xml:space="preserve"><value>Fn+R 循环包含的刷新率</value><comment>Fn+R 循环包含的刷新率</comment></data>
   <data name="RefreshRateCycleDescription.Text" xml:space="preserve"><value>取消不想通过 Fn+R 切换到的刷新率；手动选择不受影响。</value><comment>取消不想通过 Fn+R 切换到的刷新率；手动选择不受影响。</comment></data>
-  <data name="性能模式已切换" xml:space="preserve"><value>性能模式已切换</value><comment>性能模式已切换</comment></data>
   <data name="PerformanceModeNotification" xml:space="preserve"><value>当前模式：{0}</value><comment>当前模式：{0}</comment></data>
-  <data name="游戏模式已切换" xml:space="preserve"><value>游戏模式已切换</value><comment>游戏模式已切换</comment></data>
-  <data name="游戏模式已启用" xml:space="preserve"><value>游戏模式已启用</value><comment>游戏模式已启用</comment></data>
-  <data name="游戏模式已关闭" xml:space="preserve"><value>游戏模式已关闭</value><comment>游戏模式已关闭</comment></data>
-  <data name="触控板已切换" xml:space="preserve"><value>触控板已切换</value><comment>触控板通知标题</comment></data>
-  <data name="触控板已启用" xml:space="preserve"><value>触控板已启用</value><comment>触控板已启用</comment></data>
-  <data name="触控板已禁用" xml:space="preserve"><value>触控板已禁用</value><comment>触控板已禁用</comment></data>
-  <data name="一次性充满已切换" xml:space="preserve"><value>一次性充满已切换</value><comment>一次性充满通知标题</comment></data>
-  <data name="一次性充满已启用" xml:space="preserve"><value>一次性充满已启用</value><comment>一次性充满已启用</comment></data>
-  <data name="一次性充满已关闭" xml:space="preserve"><value>一次性充满已关闭</value><comment>一次性充满已关闭</comment></data>
-  <data name="刷新率已切换" xml:space="preserve"><value>刷新率已切换</value><comment>刷新率通知标题</comment></data>
   <data name="RefreshRateNotification" xml:space="preserve"><value>当前刷新率：{0} Hz</value><comment>刷新率通知内容</comment></data>
   <data name="BehaviorSettingError" xml:space="preserve"><value>快捷键与通知设置：{0}</value><comment>快捷键与通知设置：{0}</comment></data>
   <data name="SettingsNavigationItem.Content" xml:space="preserve"><value>设置</value><comment>设置导航项</comment></data>
@@ -4294,6 +4278,8 @@
   <data name="AnalogKeySelectedCount" xml:space="preserve"><value>已选 {0} 个键</value></data>
   <data name="AnalogKeyAppliedCount" xml:space="preserve"><value>已应用到 {0} 个键，并已读回。</value></data>
   <data name="AnalogKeyReadCount" xml:space="preserve"><value>已读取 {0} 个键的触发与 Rapid Trigger 设置。</value></data>
+  <data name="AnalogKeyTooltip" xml:space="preserve"><value>触发行程 {0:0.0} mm · RT {1:0.0} mm</value></data>
+  <data name="AnalogKeyTooltipRapidTriggerOff" xml:space="preserve"><value>触发行程 {0:0.0} mm · RT 关闭</value></data>
   <data name="AnalogKeyLayoutMissing.Text" xml:space="preserve"><value>已检测到模拟键，但这个型号的逐键布局尚未收录。</value></data>
   <data name="SnapTapReading" xml:space="preserve"><value>正在读取 Snap Tap 设置…</value></data>
   <data name="SnapTapNeedTwoKeys" xml:space="preserve"><value>每一组都要同时选两个键。</value></data>
@@ -4306,6 +4292,7 @@
   <data name="A11yDeletePathPoint.Content" xml:space="preserve"><value>×</value></data>
   <data name="LiteModeTitle.Text" xml:space="preserve"><value>Lite 模式（仅外设控制）</value></data>
   <data name="LiteModeDescription.Text" xml:space="preserve"><value>隐藏笔记本控制、性能面板和高级设置；切换后需要重启。</value></data>
+  <data name="LiteModeToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Lite 模式</value></data>
   <data name="LiteModeRestartTitle.Text" xml:space="preserve"><value>切换 Lite 模式</value></data>
   <data name="LiteModeRestartPrompt.Text" xml:space="preserve"><value>切换 Lite 模式需要重启 OpenSynapse。&#10;未保存的宏编辑会丢失。</value></data>
   <data name="LiteModeRestartElevated.Text" xml:space="preserve"><value>当前进程以管理员权限运行，重启后仍是管理员权限。</value></data>

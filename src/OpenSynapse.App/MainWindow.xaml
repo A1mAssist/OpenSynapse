@@ -12,7 +12,7 @@
     <Grid x:Name="AppTitleBar" Grid.Row="0" ColumnDefinitions="224,*" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1">
       <Grid Padding="16,0" VerticalAlignment="Stretch">
         <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <Image local:Localized.Uid="AppLogo" Width="28" Height="28" Stretch="Uniform" AutomationProperties.Name="OpenSynapse 标志">
+          <Image local:Localized.Uid="AppLogo" Width="28" Height="28" Stretch="Uniform">
             <Image.Source><SvgImageSource UriSource="ms-appx:///Assets/OpenSynapseLogo.svg" /></Image.Source>
           </Image>
           <StackPanel Spacing="0" VerticalAlignment="Center">
@@ -36,15 +36,15 @@
         FontFamily="{StaticResource AppFontFamily}"
         SelectionChanged="NavigationChanged">
       <NavigationView.MenuItems>
-        <NavigationViewItem local:Localized.Uid="Loc_70C0B22D6C" x:Name="OverviewNavigationItem" Content="概览" Tag="overview" IsSelected="True"><NavigationViewItem.Icon><FontIcon Glyph="&#xE80F;" FontFamily="{StaticResource IconFontFamily}" FontSize="16" /></NavigationViewItem.Icon></NavigationViewItem>
-        <NavigationViewItem local:Localized.Uid="Loc_D1F5A968DF" x:Name="DevicesNavigationItem" Content="设备" Tag="devices"><NavigationViewItem.Icon><SymbolIcon Symbol="AllApps" /></NavigationViewItem.Icon></NavigationViewItem>
-        <NavigationViewItem local:Localized.Uid="LightingStudioTitle" x:Name="LightingStudioNavigationItem" AutomationProperties.AutomationId="LightingStudioNavigationItem" Content="灯光工作室" Tag="studio"><NavigationViewItem.Icon><FontIcon Glyph="&#xE790;" FontFamily="{StaticResource IconFontFamily}" FontSize="16" /></NavigationViewItem.Icon></NavigationViewItem>
-        <NavigationViewItem local:Localized.Uid="MacroNavigationItem" x:Name="MacrosNavigationItem" AutomationProperties.AutomationId="MacrosNavigationItem" Content="宏" Tag="macros"><NavigationViewItem.Icon><FontIcon Glyph="&#xE765;" FontFamily="{StaticResource IconFontFamily}" FontSize="16" /></NavigationViewItem.Icon></NavigationViewItem>
-        <NavigationViewItem local:Localized.Uid="Loc_8C8F3B71B8" x:Name="ProfilesNavigationItem" AutomationProperties.AutomationId="ProfilesNavigationItem" Content="配置" Tag="profiles"><NavigationViewItem.Icon><SymbolIcon Symbol="Library" /></NavigationViewItem.Icon></NavigationViewItem>
-        <NavigationViewItem local:Localized.Uid="Loc_D1F42581D7" x:Name="DiagnosticsNavigationItem" AutomationProperties.AutomationId="DiagnosticsNavigationItem" Content="诊断" Tag="diagnostics"><NavigationViewItem.Icon><SymbolIcon Symbol="Document" /></NavigationViewItem.Icon></NavigationViewItem>
+        <NavigationViewItem local:Localized.Uid="Loc_70C0B22D6C" x:Name="OverviewNavigationItem" Tag="overview" IsSelected="True"><NavigationViewItem.Icon><FontIcon Glyph="&#xE80F;" FontFamily="{StaticResource IconFontFamily}" FontSize="16" /></NavigationViewItem.Icon></NavigationViewItem>
+        <NavigationViewItem local:Localized.Uid="Loc_D1F5A968DF" x:Name="DevicesNavigationItem" Tag="devices"><NavigationViewItem.Icon><SymbolIcon Symbol="AllApps" /></NavigationViewItem.Icon></NavigationViewItem>
+        <NavigationViewItem local:Localized.Uid="LightingStudioTitle" x:Name="LightingStudioNavigationItem" AutomationProperties.AutomationId="LightingStudioNavigationItem" Tag="studio"><NavigationViewItem.Icon><FontIcon Glyph="&#xE790;" FontFamily="{StaticResource IconFontFamily}" FontSize="16" /></NavigationViewItem.Icon></NavigationViewItem>
+        <NavigationViewItem local:Localized.Uid="MacroNavigationItem" x:Name="MacrosNavigationItem" AutomationProperties.AutomationId="MacrosNavigationItem" Tag="macros"><NavigationViewItem.Icon><FontIcon Glyph="&#xE765;" FontFamily="{StaticResource IconFontFamily}" FontSize="16" /></NavigationViewItem.Icon></NavigationViewItem>
+        <NavigationViewItem local:Localized.Uid="Loc_8C8F3B71B8" x:Name="ProfilesNavigationItem" AutomationProperties.AutomationId="ProfilesNavigationItem" Tag="profiles"><NavigationViewItem.Icon><SymbolIcon Symbol="Library" /></NavigationViewItem.Icon></NavigationViewItem>
+        <NavigationViewItem local:Localized.Uid="Loc_D1F42581D7" x:Name="DiagnosticsNavigationItem" AutomationProperties.AutomationId="DiagnosticsNavigationItem" Tag="diagnostics"><NavigationViewItem.Icon><SymbolIcon Symbol="Document" /></NavigationViewItem.Icon></NavigationViewItem>
       </NavigationView.MenuItems>
       <NavigationView.FooterMenuItems>
-        <NavigationViewItem local:Localized.Uid="SettingsNavigationItem" x:Name="SettingsNavigationItem" AutomationProperties.AutomationId="SettingsNavigationItem" Content="设置" Tag="settings"><NavigationViewItem.Icon><FontIcon Glyph="&#xE713;" FontFamily="{StaticResource IconFontFamily}" FontSize="16" /></NavigationViewItem.Icon></NavigationViewItem>
+        <NavigationViewItem local:Localized.Uid="SettingsNavigationItem" x:Name="SettingsNavigationItem" AutomationProperties.AutomationId="SettingsNavigationItem" Tag="settings"><NavigationViewItem.Icon><FontIcon Glyph="&#xE713;" FontFamily="{StaticResource IconFontFamily}" FontSize="16" /></NavigationViewItem.Icon></NavigationViewItem>
       </NavigationView.FooterMenuItems>
       <NavigationView.Content>
         <Grid x:Name="PageHost" />
@@ -58,12 +58,12 @@
       </Grid.Resources>
       <StackPanel x:Name="LaunchPanel" Width="420" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
         <Grid Width="112" Height="112" HorizontalAlignment="Center">
-          <ProgressRing local:Localized.Uid="Loc_A7FABDAFBA" x:Name="LaunchProgressRing" Width="108" Height="108" IsActive="True" Foreground="{StaticResource AccentBrush}" AutomationProperties.Name="正在启动 OpenSynapse" />
-          <Image local:Localized.Uid="Loc_BA196502D0" Width="70" Height="70" Stretch="Uniform" AutomationProperties.Name="OpenSynapse 标志"><Image.Source><SvgImageSource UriSource="ms-appx:///Assets/OpenSynapseLogo.svg" /></Image.Source></Image>
+          <ProgressRing local:Localized.Uid="Loc_A7FABDAFBA" x:Name="LaunchProgressRing" Width="108" Height="108" IsActive="True" Foreground="{StaticResource AccentBrush}" />
+          <Image local:Localized.Uid="Loc_BA196502D0" Width="70" Height="70" Stretch="Uniform"><Image.Source><SvgImageSource UriSource="ms-appx:///Assets/OpenSynapseLogo.svg" /></Image.Source></Image>
         </Grid>
         <TextBlock Text="OpenSynapse" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontSize="32" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" HorizontalAlignment="Center" />
         <TextBlock Text="LOCAL DEVICE CONTROL" FontFamily="Cascadia Mono,Consolas" FontSize="10" CharacterSpacing="40" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
-        <TextBlock local:Localized.Uid="Loc_D21D65F64A" x:Name="LaunchStatusText" Text="正在准备本机控制" FontSize="14" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
+        <TextBlock local:Localized.Uid="Loc_D21D65F64A" x:Name="LaunchStatusText" FontSize="14" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
       </StackPanel>
     </Grid>
     <Canvas x:Name="IntroductionOverlay" Grid.Row="1" Canvas.ZIndex="150" Visibility="Collapsed">
@@ -81,14 +81,14 @@
         PlacementMargin="0,4,0,4"
         TailVisibility="Visible"
         CloseButtonClick="IntroductionTipCloseClick"
-        AutomationProperties.Name="OpenSynapse 使用导览">
+       >
       <StackPanel Spacing="16">
         <TextBlock x:Name="IntroductionBodyText" TextWrapping="WrapWholeWords" Foreground="{StaticResource MutedBrush}" FontFamily="Microsoft YaHei UI,Segoe UI" FontSize="14" LineHeight="22" />
         <Border Height="1" Background="{StaticResource LineBrush}" />
         <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
           <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="12" Padding="10,3" VerticalAlignment="Center"><TextBlock x:Name="IntroductionProgressText" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></Border>
-          <Button local:Localized.Uid="Loc_870B386A8A" x:Name="IntroductionPreviousButton" Grid.Column="2" MinWidth="84" MinHeight="36" Content="上一步" FontFamily="Microsoft YaHei UI,Segoe UI" FontSize="14" FontWeight="Normal" Click="IntroductionPreviousClick" Style="{StaticResource SecondaryButtonStyle}" />
-          <Button local:Localized.Uid="Loc_0D81928209" x:Name="IntroductionNextButton" Grid.Column="3" MinWidth="84" MinHeight="36" Content="下一步" FontFamily="Microsoft YaHei UI,Segoe UI" FontSize="14" FontWeight="Normal" Click="IntroductionNextClick" Style="{StaticResource PrimaryButtonStyle}" />
+          <Button local:Localized.Uid="Loc_870B386A8A" x:Name="IntroductionPreviousButton" Grid.Column="2" MinWidth="84" MinHeight="36" FontFamily="Microsoft YaHei UI,Segoe UI" FontSize="14" FontWeight="Normal" Click="IntroductionPreviousClick" Style="{StaticResource SecondaryButtonStyle}" />
+          <Button local:Localized.Uid="Loc_0D81928209" x:Name="IntroductionNextButton" Grid.Column="3" MinWidth="84" MinHeight="36" FontFamily="Microsoft YaHei UI,Segoe UI" FontSize="14" FontWeight="Normal" Click="IntroductionNextClick" Style="{StaticResource PrimaryButtonStyle}" />
         </Grid>
       </StackPanel>
     </TeachingTip>
