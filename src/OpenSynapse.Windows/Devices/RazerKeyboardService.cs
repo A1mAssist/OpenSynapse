@@ -36,7 +36,7 @@ public enum RazerKeyboardMappingProtocol
 /// RazerHid catalogue does not cover: game mode, polling period, battery and identity.
 /// Each value is probed, so a model that does not answer a command simply hides that row.
 /// </summary>
-public sealed class RazerKeyboardService
+public sealed partial class RazerKeyboardService
 {
     public static readonly IReadOnlyDictionary<ushort, string> Products =
         new Dictionary<ushort, string>
