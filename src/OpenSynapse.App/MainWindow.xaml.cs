@@ -64,7 +64,8 @@ public sealed partial class MainWindow : Window
         Func<bool, Task>? setBladeIndicatorDisplayAvailable = null,
         Func<string, bool, Task>? setChromaSourceAllowed = null,
         IBladeLightingController? bladeLightingController = null,
-        Action<bool>? setTaskbarStatusEnabled = null)
+        Action<bool>? setTaskbarStatusEnabled = null,
+        Action<string>? displayPowerDiagnostic = null)
     {
         _viewModel = viewModel;
         _bladeLightingController = bladeLightingController;
@@ -136,7 +137,8 @@ public sealed partial class MainWindow : Window
             _viewModel,
             _dispatcherQueue,
             _setBladeIndicatorDisplayAvailable,
-            _lifetime.Token);
+            _lifetime.Token,
+            displayPowerDiagnostic);
         _displayPowerNotification.Initialize();
         _settingsPage?.UpdateChromaRestStatusTimer(AppWindow.IsVisible);
     }

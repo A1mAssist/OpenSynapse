@@ -24,6 +24,7 @@ internal sealed class DisplayPowerNotification
     private readonly DispatcherQueue _dispatcherQueue;
     private readonly Func<bool, Task>? _setBladeIndicatorDisplayAvailable;
     private readonly CancellationToken _lifetime;
+    private readonly Action<string>? _diagnostic;
     private SubclassProcedure? _powerSubclassProcedure;
     private SuspendResumeCallback? _displayStateCallback;
     private SuspendResumeCallback? _suspendResumeCallback;
@@ -39,20 +40,26 @@ internal sealed class DisplayPowerNotification
         MainViewModel viewModel,
         DispatcherQueue dispatcherQueue,
         Func<bool, Task>? setBladeIndicatorDisplayAvailable,
-        CancellationToken lifetime)
+        CancellationToken lifetime,
+        Action<string>? diagnostic = null)
     {
         _window = window;
         _viewModel = viewModel;
         _dispatcherQueue = dispatcherQueue;
         _setBladeIndicatorDisplayAvailable = setBladeIndicatorDisplayAvailable;
         _lifetime = lifetime;
+        _diagnostic = diagnostic;
     }
 
     internal void Initialize()
     {
         _powerSubclassProcedure = HandlePowerWindowMessage;
         var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(_window);
-        if (!SetWindowSubclass(windowHandle, _powerSubclassProcedure, 0x4F5350, UIntPtr.Zero)) return;
+        if (!SetWindowSubclass(windowHandle, _powerSubclassProcedure, 0x4F5350, UIntPtr.Zero))
+        {
+            _diagnostic?.Invoke("Could not subclass the main window for power notifications.");
+            return;
+        }
         _displayStateCallback = HandleDisplayStateNotification;
         var guid = ConsoleDisplayStateGuid;
         var displayParameters = new DeviceNotifySubscribeParameters
@@ -60,11 +67,16 @@ internal sealed class DisplayPowerNotification
             Callback = Marshal.GetFunctionPointerForDelegate(_displayStateCallback),
             Context = IntPtr.Zero,
         };
-        _ = PowerSettingRegisterNotification(
+        _powerNotificationHandle = 0;
+        var displayResult = PowerSettingRegisterNotification(
             ref guid,
             DeviceNotifyCallback,
             ref displayParameters,
             out _powerNotificationHandle);
+        if (displayResult != 0)
+        {
+            _diagnostic?.Invoke($"PowerSettingRegisterNotification failed: 0x{displayResult:X8}.");
+        }
 
         _suspendResumeCallback = HandleSuspendResumeNotification;
         var parameters = new DeviceNotifySubscribeParameters
@@ -72,10 +84,15 @@ internal sealed class DisplayPowerNotification
             Callback = Marshal.GetFunctionPointerForDelegate(_suspendResumeCallback),
             Context = IntPtr.Zero,
         };
-        _ = PowerRegisterSuspendResumeNotification(
+        _suspendResumeNotificationHandle = 0;
+        var suspendResult = PowerRegisterSuspendResumeNotification(
             DeviceNotifyCallback,
             ref parameters,
             out _suspendResumeNotificationHandle);
+        if (suspendResult != 0)
+        {
+            _diagnostic?.Invoke($"PowerRegisterSuspendResumeNotification failed: 0x{suspendResult:X8}.");
+        }
     }
 
     internal void Dispose()

@@ -550,17 +550,11 @@ internal sealed class WindowsRazerFilterDriverChannel : IRazerFilterDriverChanne
                 throw new Win32Exception(error, $"Razer filter IOCTL 0x{controlCode:X8} failed.");
             }
 
-            completion.WaitHandle.WaitOne();
-            if (!NativeMethods.GetOverlappedResult(
-                    _handle,
-                    completion.Overlapped,
-                    out _,
-                    false))
-            {
-                throw new Win32Exception(
-                    Marshal.GetLastWin32Error(),
-                    $"Razer filter IOCTL 0x{controlCode:X8} failed.");
-            }
+            RazerFilterControlCompletion.Complete(
+                completion.WaitHandle,
+                () => NativeMethods.GetOverlappedResult(_handle, completion.Overlapped, out _, false),
+                () => _ = NativeMethods.CancelIoEx(_handle, completion.Overlapped),
+                controlCode);
         }
         finally
         {
