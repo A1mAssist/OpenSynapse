@@ -5,6 +5,10 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed partial class RazerHidDeviceService
 {
+    // Scan (0x46) and pairing mode (0x41) take 0x00; the transport rewrites the
+    // DualLink keyboard and 00A4 dock branches itself.
+    private const byte PairingTransactionId = 0x00;
+
     public async Task<RazerWirelessConnectionState> GetActiveWirelessConnectionStateAsync(
         RazerHidDeviceConnection connection,
         CancellationToken cancellationToken = default)
@@ -40,8 +44,32 @@ public sealed partial class RazerHidDeviceService
         RequireReady(connection);
         return ExecuteWithoutResultAsync(connection,
             new RazerHidRequest("razer_device_set_pairing_mode",
-                RazerPairingProtocol.CreateSetDevicePairingModeRequest(MiddlewareTransactionId, mode, productId)),
+                RazerPairingProtocol.CreateSetDevicePairingModeRequest(PairingTransactionId, mode, productId)),
             cancellationToken);
+    }
+
+    public Task SetDeviceScanAsync(
+        RazerHidDeviceConnection connection,
+        byte mode,
+        CancellationToken cancellationToken = default)
+    {
+        RequireReady(connection);
+        return ExecuteWithoutResultAsync(connection,
+            new RazerHidRequest("razer_device_set_device_scan",
+                RazerPairingProtocol.CreateSetDeviceScanRequest(PairingTransactionId, mode)),
+            cancellationToken);
+    }
+
+    public async Task PairWirelessCandidateAsync(
+        RazerHidDeviceConnection connection,
+        ushort candidateProductId,
+        CancellationToken cancellationToken = default)
+    {
+        await SetDeviceScanAsync(connection, RazerPairingProtocol.ScanStart, cancellationToken)
+            .ConfigureAwait(false);
+        await Task.Delay(300, cancellationToken).ConfigureAwait(false);
+        await SetDevicePairingModeAsync(connection, RazerPairingProtocol.PairModeDefault,
+            candidateProductId, cancellationToken).ConfigureAwait(false);
     }
 
     public Task UnpairWirelessDeviceAsync(

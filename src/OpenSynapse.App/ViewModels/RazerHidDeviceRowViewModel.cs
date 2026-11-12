@@ -38,6 +38,8 @@ public sealed class RazerHidDeviceRowViewModel : INotifyPropertyChanged
         _ => AppStrings.Text("Text_CAF15352"),
     };
     public string Identity => $"VID_1532 / PID_{_connection.Definition.ProductId:X4}";
+    public bool CanPairNewDevice =>
+        _connection.IsReady && RazerDualDongleCatalog.CanHost(_connection.Definition.ProductId);
     public string IconGlyph => _connection.Definition.Category switch
     {
         DeviceCategory.Laptop => "\uE7F8",
