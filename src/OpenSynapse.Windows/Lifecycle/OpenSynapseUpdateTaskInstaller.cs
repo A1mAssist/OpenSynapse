@@ -22,19 +22,23 @@ internal static class OpenSynapseUpdateTaskInstaller
         string installRoot,
         string packageFileName,
         int waitProcessId,
-        SecurityIdentifier? userSid)
+        SecurityIdentifier? userSid,
+        out string? error)
     {
+        error = null;
         if (userSid is null || waitProcessId <= 0 ||
             string.IsNullOrWhiteSpace(packageFileName) ||
             !StringComparer.Ordinal.Equals(packageFileName, Path.GetFileName(packageFileName)) ||
             !packageFileName.EndsWith(".nupkg", StringComparison.OrdinalIgnoreCase))
         {
+            error = "The update task request is invalid.";
             return false;
         }
 
         var root = Path.GetFullPath(installRoot);
         if (!OpenSynapseServiceInstaller.IsMachineInstallPath(root))
         {
+            error = "The OpenSynapse install root is not protected.";
             return false;
         }
 
@@ -49,15 +53,39 @@ internal static class OpenSynapseUpdateTaskInstaller
 
         if (!File.Exists(updateExe) || !File.Exists(package) || !File.Exists(appLauncher))
         {
+            error = "The update task files are missing.";
             return false;
         }
 
-        return CreateTask(UpdateTaskName, BuildUpdateTaskXml(
-                   updateExe,
-                   BuildApplyArguments(package, root, packages, waitProcessId),
-                   root)) &&
-               CreateTask(RestartTaskName, BuildRestartTaskXml(appLauncher, root, userSid)) &&
-               RunSchTasks("/run", "/tn", UpdateTaskName).ExitCode == 0;
+        if (!CreateTask(
+                UpdateTaskName,
+                BuildUpdateTaskXml(
+                    updateExe,
+                    BuildApplyArguments(package, root, packages, waitProcessId),
+                    root),
+                out error))
+        {
+            error = $"The update task could not be created: {error}";
+            return false;
+        }
+
+        if (!CreateTask(
+                RestartTaskName,
+                BuildRestartTaskXml(appLauncher, root, userSid),
+                out error))
+        {
+            error = $"The restart task could not be created: {error}";
+            return false;
+        }
+
+        var run = RunSchTasks("/run", "/tn", UpdateTaskName);
+        if (run.ExitCode != 0)
+        {
+            error = $"The update task could not be started: {run.Output}";
+            return false;
+        }
+
+        return true;
     }
 
     internal static string BuildApplyArguments(
@@ -93,7 +121,6 @@ internal static class OpenSynapseUpdateTaskInstaller
               <Principals>
                 <Principal id="Author">
                   <UserId>{Escape(systemSid)}</UserId>
-                  <LogonType>ServiceAccount</LogonType>
                   <RunLevel>HighestAvailable</RunLevel>
                 </Principal>
               </Principals>
@@ -167,13 +194,15 @@ internal static class OpenSynapseUpdateTaskInstaller
             </Task>
             """;
 
-    private static bool CreateTask(string name, string xml)
+    private static bool CreateTask(string name, string xml, out string? error)
     {
         var xmlPath = Path.Combine(Path.GetTempPath(), $"OpenSynapseUpdate-{Guid.NewGuid():N}.xml");
         try
         {
             File.WriteAllText(xmlPath, xml, new UnicodeEncoding(bigEndian: false, byteOrderMark: true));
-            return RunSchTasks("/create", "/tn", name, "/xml", xmlPath, "/f").ExitCode == 0;
+            var result = RunSchTasks("/create", "/tn", name, "/xml", xmlPath, "/f");
+            error = result.ExitCode == 0 ? null : result.Output;
+            return result.ExitCode == 0;
         }
         finally
         {
