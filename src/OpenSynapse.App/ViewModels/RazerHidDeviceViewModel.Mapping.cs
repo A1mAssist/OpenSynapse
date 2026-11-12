@@ -10,10 +10,12 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerHidDeviceViewModel
 {
+    private string? _mappingMacroSignature;
+
     private RazerHidMappingViewModel? _mapping;
 
-    public Func<string, MacroInput, MacroTriggerMode, bool, CancellationToken, Task<string?>>?
-        SoftwareMacroBinder { get; set; }
+    public Func<string, MacroInput, MacroTriggerMode, MacroPlaybackMode, int, bool,
+        MacroSoftwareBinding?, CancellationToken, Task<string?>>? SoftwareMacroBinder { get; set; }
 
     public Func<string, CancellationToken, Task<string?>>? SoftwareMacroClearer { get; set; }
 
@@ -42,7 +44,8 @@ public sealed partial class RazerHidDeviceViewModel
             softwareTriggerResolver:
                 SoftwareMacroTriggerResolver ?? ResolveDefaultSoftwareMacroTrigger,
             softwareTriggerBinder: SoftwareMacroBinder,
-            softwareTriggerClearer: SoftwareMacroClearer);
+            softwareTriggerClearer: SoftwareMacroClearer,
+            log: _log);
 
     private MacroInput? ResolveDefaultSoftwareMacroTrigger(byte buttonId)
     {
@@ -113,7 +116,16 @@ public sealed partial class RazerHidDeviceViewModel
 
     private async Task LoadMappingIfNeededAsync(CancellationToken cancellationToken)
     {
-        if (MappingVisibility != Visibility.Visible || Mapping.IsLoaded)
+        if (MappingVisibility != Visibility.Visible)
+        {
+            return;
+        }
+
+        // Rows hold a macro id from the library snapshot; reload when macros changed
+        // so a deleted or recreated macro cannot leave a stale binding behind.
+        var signature = MacroContextSignature();
+        if (Mapping.IsLoaded &&
+            string.Equals(signature, _mappingMacroSignature, StringComparison.Ordinal))
         {
             return;
         }
@@ -121,6 +133,10 @@ public sealed partial class RazerHidDeviceViewModel
         try
         {
             await LoadMappingAsync(cancellationToken);
+            if (!Mapping.HasError)
+            {
+                _mappingMacroSignature = signature;
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -132,6 +148,11 @@ public sealed partial class RazerHidDeviceViewModel
             Mapping.SetLoadError(exception.Message);
         }
     }
+
+    private string MacroContextSignature() =>
+        string.Join(';', (_localMacros?.Invoke() ?? Array.Empty<MacroDefinition>())
+            .Select(macro => FormattableString.Invariant(
+                $"{macro.Id}|{macro.Name}|{macro.Trigger?.Mode}|{macro.Trigger?.Input?.Kind}|{macro.Trigger?.Input?.VirtualKey}|{macro.Trigger?.Input?.MouseButton}|{macro.Trigger?.Input?.RazerKeyCode}|{macro.Trigger?.Input?.DeviceId}|{macro.Trigger?.HyperShiftLayer}")));
 
     public Task ApplyMappingAsync(CancellationToken cancellationToken = default) =>
         Mapping.ApplyAsync(cancellationToken);

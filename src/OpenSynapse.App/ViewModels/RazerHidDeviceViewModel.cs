@@ -20,6 +20,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
     private static readonly Color DefaultSecondaryColor = Color.FromArgb(255, 0, 153, 255);
     private static readonly Color DefaultTertiaryColor = Color.FromArgb(255, 255, 32, 64);
     private readonly RazerHidDeviceService _service;
+    private readonly Action<string>? _log;
     private readonly HashSet<RazerHidBackendCapability> _unsupported = [];
     private readonly HashSet<(RazerHidLedZone Zone, RazerHidLightingEffect Effect)> _unsupportedLighting = [];
     private readonly HashSet<RazerHidLedZone> _unsupportedBrightnessWrites = [];
@@ -126,7 +127,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         Func<CancellationToken, Task<bool>>? saveProfileAsync = null,
         Func<MachineSettings>? getMachineSettings = null,
         Func<CancellationToken, Task<bool>>? saveMachineSettingsAsync = null,
-        Func<ProfileDocument>? getProfileDocument = null)
+        Func<ProfileDocument>? getProfileDocument = null,
+        Action<string>? log = null)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
         Connection = connection ?? throw new ArgumentNullException(nameof(connection));
@@ -154,6 +156,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         _saveProfileAsync = saveProfileAsync;
         _getMachineSettings = getMachineSettings;
         _saveMachineSettingsAsync = saveMachineSettingsAsync;
+        _log = log;
         _lightingEnabled = lightingEnabledResolver?.Invoke() ?? true;
         _chromaOverrideEnabled = chromaOverrideResolver?.Invoke() ?? true;
         _chromaIntegrationEnabled = chromaIntegrationEnabled;

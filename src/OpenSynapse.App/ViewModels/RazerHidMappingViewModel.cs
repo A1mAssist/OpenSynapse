@@ -18,21 +18,13 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
 {
-    private static readonly MacroTriggerMode[] SoftwareTriggerModes = [
-        // Persisted by position; append new modes only.
-        MacroTriggerMode.Press,
-        MacroTriggerMode.Toggle,
-        MacroTriggerMode.Hold,
-        MacroTriggerMode.Sequence,
-        MacroTriggerMode.HoldRepeat,
-    ];
     private readonly IRazerMappingTransport _transport;
     private readonly IRazerMappingActionCatalog _catalog;
     private readonly bool _canWrite;
     private readonly bool _canWriteOnboardMacros;
     private readonly Func<byte, MacroInput?>? _softwareTriggerResolver;
-    private readonly Func<string, MacroInput, MacroTriggerMode, bool, CancellationToken, Task<string?>>?
-        _softwareTriggerBinder;
+    private readonly Func<string, MacroInput, MacroTriggerMode, MacroPlaybackMode, int, bool,
+        MacroSoftwareBinding?, CancellationToken, Task<string?>>? _softwareTriggerBinder;
     private readonly Func<RazerOnboardMacroService>? _macroServiceFactory;
     private readonly Func<IReadOnlyList<MacroDefinition>>? _localMacroProvider;
     private readonly Func<CancellationToken, Task>? _afterApplyAsync;
@@ -74,7 +66,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         RazerMappingAssetService? assetService = null,
         bool canWriteOnboardMacros = false,
         Func<byte, MacroInput?>? softwareTriggerResolver = null,
-        Func<string, MacroInput, MacroTriggerMode, bool, CancellationToken, Task<string?>>? softwareTriggerBinder = null,
+        Func<string, MacroInput, MacroTriggerMode, MacroPlaybackMode, int, bool,
+            MacroSoftwareBinding?, CancellationToken, Task<string?>>? softwareTriggerBinder = null,
         Func<string, CancellationToken, Task<string?>>? softwareTriggerClearer = null)
     {
         _transport = transport;
@@ -234,6 +227,14 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                     RightRows.Add(row);
                 }
             }
+
+            // Keys the product bundle does not place on the photo (the 009C DPI
+            // buttons) still get a callout so they can be edited, just without
+            // a connector line.
+            foreach (var row in Rows.Where(row => !_layout.Hotspots.ContainsKey(row.ButtonId)))
+            {
+                LeftRows.Add(row);
+            }
         }
 
         OnPropertyChanged(nameof(TableVisibility));
@@ -301,12 +302,19 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 var mouseIds = visual.Mouse?.ButtonNames?.Keys.Order().ToArray();
                 ids = _deviceKind == RazerMappingDeviceKind.Keyboard ? keyboardIds ?? mouseIds ?? [] : mouseIds ?? keyboardIds ?? [];
             }
+            _log?.Invoke(ids.Count == 0
+                ? $"mapping pid=0x{_productId:X4}: the device returned no button list"
+                : $"mapping pid=0x{_productId:X4} buttons: {string.Join(",", ids.Select(id => id.ToString("X2", CultureInfo.InvariantCulture)))}");
             var rows = new List<RazerHidMappingRowViewModel>(ids.Count);
             var defaults = _freeSlots.ToList();
             var unreadable = 0;
             foreach (var id in ids.Where(id => id != 0))
             {
                 var softwareTrigger = _softwareTriggerResolver?.Invoke(id);
+                if (softwareTrigger is null)
+                {
+                    _log?.Invoke($"mapping pid=0x{_productId:X4} button 0x{id:X2} has no software trigger");
+                }
                 var row = new RazerHidMappingRowViewModel(
                     id,
                     _localMacroOptions,
@@ -404,7 +412,10 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                         row.MacroTargetIndex = (int)MacroExecutionTarget.Software;
                         row.OptionIndex = softwareMacroIndex;
                         row.SoftwareTriggerModeIndex = SoftwareTriggerModeIndex(triggerMode);
+                        row.ExecutionModeIndex = (int)_localMacros[softwareMacroIndex].PlaybackMode;
+                        row.ExecutionRepeatCount = _localMacros[softwareMacroIndex].RepeatCount;
                         row.SoftwareMacroId = _localMacros[softwareMacroIndex].Id;
+                        row.LoadedOptionIndex = softwareMacroIndex;
                         row.CurrentActionText = AppStrings.FormatText(
                             "RazerMappingMacroSoftwareApplied",
                             _localMacros[softwareMacroIndex].Name);
@@ -464,6 +475,9 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         ClearedSoftwareTrigger[] clears = [];
         try
         {
+            // The macro library can change while the mapping page stays open;
+            // resolve rows against the list that exists right now.
+            await RefreshMacroContextAsync(cancellationToken).ConfigureAwait(true);
             var invalidMacro = Rows.FirstOrDefault(row =>
                 row.Group == RazerHidMappingGroup.Macro && row.HasMacroError);
             if (invalidMacro is not null)
@@ -534,10 +548,10 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                         AppStrings.Text("RazerMappingMacroSoftwareUnavailable"));
                 }
 
-                if (row.OptionIndex < 0 || row.OptionIndex >= _localMacros.Count)
+                if (ResolveSoftwareMacro(row) is null)
                 {
                     throw new InvalidOperationException(
-                        AppStrings.Text("RazerMappingMacroSelectionMissing"));
+                        AppStrings.Text("RazerMappingMacroDeleted"));
                 }
             }
 
@@ -615,15 +629,22 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
 
             foreach (var row in softwareRows)
             {
-                var macro = _localMacros[row.OptionIndex];
+                var macro = ResolveSoftwareMacro(row)!;
                 var input = _softwareTriggerResolver!.Invoke(row.ButtonId)!;
-                var mode = SoftwareTriggerModes[
-                    Math.Clamp(row.SoftwareTriggerModeIndex, 0, SoftwareTriggerModes.Length - 1)];
+                var mode = row.TriggerMode;
+                var softwareBinding = CreateSoftwareBinding(row, backups);
                 string? error;
                 try
                 {
                     error = await _softwareTriggerBinder!(
-                            macro.Id, input, mode, LayerIndex == 1, cancellationToken)
+                            macro.Id,
+                            input,
+                            mode,
+                            row.ExecutionMode,
+                            row.EffectiveExecutionRepeatCount,
+                            LayerIndex == 1,
+                            softwareBinding,
+                            cancellationToken)
                         .ConfigureAwait(true);
                 }
                 catch
@@ -643,10 +664,12 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
 
             foreach (var row in softwareRows)
             {
+                var macro = ResolveSoftwareMacro(row)!;
                 row.CurrentActionText = AppStrings.FormatText(
                     "RazerMappingMacroSoftwareApplied",
-                    _localMacros[row.OptionIndex].Name);
-                row.SoftwareMacroId = _localMacros[row.OptionIndex].Id;
+                    macro.Name);
+                row.SoftwareMacroId = macro.Id;
+                row.LoadedOptionIndex = row.OptionIndex;
             }
 
             foreach (var row in assignmentRows)

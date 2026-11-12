@@ -49,6 +49,7 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
 {
     private readonly IReadOnlyList<RazerHidMacroOption> _localMacros;
     private readonly bool _canUseSoftwareMacro;
+    private readonly bool _macroUnsupported;
     private bool _canUseOnboardMacro;
     private readonly IReadOnlyList<RazerMappingGroupOption> _groupOptions;
     private readonly IRazerMappingActionCatalog _catalog;
@@ -61,7 +62,6 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
     private double _dpiClutchY = 800;
     private int _macroPlaybackIndex;
     private int _macroTargetIndex;
-    private int _softwareTriggerModeIndex;
     private double _macroRepeatCount = 1;
     private string _macroErrorText = string.Empty;
     private string _macroSlotWarningText = string.Empty;
@@ -80,6 +80,7 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
     {
         _localMacros = localMacros;
         _canUseOnboardMacro = canUseOnboardMacro && localMacros.Count > 0;
+        _macroUnsupported = !canUseSoftwareMacro && !canUseOnboardMacro;
         // Software macros come from the local library, so the group must stay visible
         // before the first macro exists; CanApply still needs a real macro.
         _canUseSoftwareMacro = canUseSoftwareMacro;
@@ -106,6 +107,9 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
     }
 
     internal void SetButtonName(string name) => ButtonName = name;
+
+    /// <summary>Option index the row was last loaded or applied with.</summary>
+    internal int LoadedOptionIndex { get; set; } = -1;
 
     internal bool ButtonNameIsFallback { get; }
 
@@ -311,23 +315,6 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
     public IReadOnlyList<string> MacroTargetOptions => AppStrings.Texts(
         "RazerMappingMacroTargetSoftware", "RazerMappingMacroTargetOnboard");
 
-    public IReadOnlyList<string> SoftwareTriggerOptions => AppStrings.Texts(
-        "RazerMappingMacroPlaybackOnce", "RazerMappingMacroPlaybackToggle",
-        "RazerMappingMacroTriggerHold", "RazerMappingMacroPlaybackSequence",
-        "RazerMappingMacroPlaybackHoldRepeat");
-
-    public int SoftwareTriggerModeIndex
-    {
-        get => _softwareTriggerModeIndex;
-        set
-        {
-            var clamped = Math.Clamp(value, 0, SoftwareTriggerOptions.Count - 1);
-            if (_softwareTriggerModeIndex == clamped) return;
-            _softwareTriggerModeIndex = clamped;
-            OnPropertyChanged();
-        }
-    }
-
     public IReadOnlyList<string> MacroPlaybackOptions => AppStrings.Texts(
         "RazerMappingMacroPlaybackOnce", "RazerMappingMacroPlaybackRepeat",
         "RazerMappingMacroPlaybackHold", "RazerMappingMacroPlaybackToggle",
@@ -432,6 +419,8 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
             : Visibility.Collapsed;
     public Visibility MacroSoftwareHintVisibility => SoftwareTriggerVisibility;
     public Visibility MacroOnboardHintVisibility => OnboardBehaviorVisibility;
+    public Visibility MacroUnsupportedVisibility =>
+        _macroUnsupported ? Visibility.Visible : Visibility.Collapsed;
     public Visibility MacroErrorVisibility =>
         _groupIndex == (int)RazerHidMappingGroup.Macro && _macroErrorText.Length > 0
             ? Visibility.Visible

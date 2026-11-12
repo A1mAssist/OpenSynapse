@@ -3527,6 +3527,7 @@
   <data name="RazerMappingDeviceImageLabel" xml:space="preserve"><value>Device image</value></data>
   <data name="RazerMappingModifierHeader" xml:space="preserve"><value>Modifier key</value></data>
   <data name="RazerMappingMacroSlotHeader" xml:space="preserve"><value>Macro slot</value></data>
+  <data name="RazerMappingButtonMacroUnavailable" xml:space="preserve"><value>This button cannot run a macro</value></data>
   <data name="RazerMappingPlaybackHeader" xml:space="preserve"><value>Playback</value></data>
   <data name="RazerMappingMacroTargetHeader" xml:space="preserve"><value>Execution</value></data>
   <data name="RazerMappingMacroHeader" xml:space="preserve"><value>Macro</value></data>
@@ -3536,11 +3537,15 @@
   <data name="RazerMappingOnboardBehaviorHeader" xml:space="preserve"><value>Button behavior</value></data>
   <data name="RazerMappingMacroPlaybackOnce" xml:space="preserve"><value>Run once</value></data>
   <data name="RazerMappingMacroPlaybackRepeat" xml:space="preserve"><value>Repeat N times</value></data>
+  <data name="RazerMappingMacroPlaybackContinuous" xml:space="preserve"><value>Until stopped</value></data>
   <data name="RazerMappingMacroPlaybackHold" xml:space="preserve"><value>Repeat while held</value></data>
   <data name="RazerMappingMacroTriggerHold" xml:space="preserve"><value>Hold</value></data>
   <data name="RazerMappingMacroPlaybackHoldRepeat" xml:space="preserve"><value>Hold to loop</value></data>
   <data name="RazerMappingMacroPlaybackToggle" xml:space="preserve"><value>Press to start / stop</value></data>
   <data name="RazerMappingMacroPlaybackSequence" xml:space="preserve"><value>Run one step per press</value></data>
+  <data name="RazerMappingMacroExecutionHeader" xml:space="preserve"><value>Execution</value></data>
+  <data name="RazerMappingMacroExecutionRepeat" xml:space="preserve"><value>Repeat count</value></data>
+  <data name="MacroTriggerModeMovedHint.Text" xml:space="preserve"><value>Execution is set on the mapping page.</value></data>
   <data name="RazerMappingSoftwareMacroHint" xml:space="preserve"><value>Runs in OpenSynapse and stops working when the app is closed.</value></data>
   <data name="RazerMappingOnboardMacroHint" xml:space="preserve"><value>Runs on the device and keeps working when OpenSynapse is closed.</value></data>
   <data name="RazerMappingMacroUnsupported" xml:space="preserve"><value>This macro cannot be stored onboard: step {0}: {1}. Edit the macro and try again.</value></data>
@@ -3574,6 +3579,7 @@
   <data name="RazerMappingMacroDuplicateSlot" xml:space="preserve"><value>Several buttons target macro slot {0}. Choose a different slot for each button.</value></data>
   <data name="RazerMappingMacroSelectionMissing" xml:space="preserve"><value>Select a local macro.</value></data>
   <data name="RazerMappingMacroUnavailable" xml:space="preserve"><value>This device has no onboard macro storage.</value></data>
+  <data name="RazerMappingMacroDeleted" xml:space="preserve"><value>The macro bound to this key was deleted. Pick a macro again.</value></data>
   <data name="RazerMappingMacroEmpty" xml:space="preserve"><value>The selected macro has no steps that can be stored onboard.</value></data>
   <data name="RazerMappingMacroNoFreeSlot" xml:space="preserve"><value>No free macro slot</value></data>
   <data name="RazerMappingGroupKeep" xml:space="preserve"><value>Keep</value></data>
@@ -3756,6 +3762,7 @@
   <data name="A11yOnboardButtonBehavior.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Onboard button behavior</value></data>
   <data name="A11ySaveBatteryType.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Save battery type</value></data>
   <data name="A11ySoftwareMacroTriggerMode.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Software macro trigger mode</value></data>
+  <data name="A11ySoftwareMacroExecutionMode.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Software macro execution mode</value></data>
   <data name="A11yTargetMappingAction.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Target mapping action</value></data>
   <data name="A11yTargetMappingType.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Target mapping type</value></data>
   <data name="A11yTime.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Time</value></data>

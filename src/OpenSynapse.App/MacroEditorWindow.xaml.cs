@@ -112,10 +112,9 @@ public sealed partial class MacroEditorWindow : Window
             return;
         }
 
-        // The three property columns share the space next to the action list, so
-        // about 1080 logical pixels keeps every column usable. Cap both
-        // dimensions so the status bar and keyboard stay reachable on small
-        // displays.
+        // The left inspector and the action list share the width, so about 1080
+        // logical pixels keeps both usable. Cap both dimensions so the status bar
+        // and keyboard stay reachable on small displays.
         presenter.PreferredMinimumWidth = Math.Min(
             (int)Math.Round(1080 * scale),
             Math.Max(1, workArea.Width));
@@ -148,15 +147,17 @@ public sealed partial class MacroEditorWindow : Window
 
     private void PositionOnOwnerDisplay(RectInt32 workArea, double scale)
     {
-        // The editor shows the action list, three property columns and the whole
+        // The editor shows the property inspector, the action list and the whole
         // keyboard at once. It opens at a size that fits all of them without
         // covering the whole display, and the columns shrink together when the
         // user resizes it narrower. The work area is in physical pixels, so the
         // requested logical size is clamped against the logical work area.
         var logicalWorkAreaWidth = workArea.Width / scale;
         var logicalWorkAreaHeight = workArea.Height / scale;
-        var width = (int)Math.Round(Math.Min(1080, logicalWorkAreaWidth) * scale);
-        var height = (int)Math.Round(Math.Min(960, logicalWorkAreaHeight) * scale);
+        var width = (int)Math.Round(Math.Min(1180, logicalWorkAreaWidth) * scale);
+        // The left column stacks two setting cards above the step inspector, so
+        // the editor wants the full work area height instead of a 960 cap.
+        var height = (int)Math.Round(Math.Min(1080, logicalWorkAreaHeight) * scale);
         AppWindow.MoveAndResize(new RectInt32(
             workArea.X + Math.Max(0, (workArea.Width - width) / 2),
             workArea.Y + Math.Max(0, (workArea.Height - height) / 2),

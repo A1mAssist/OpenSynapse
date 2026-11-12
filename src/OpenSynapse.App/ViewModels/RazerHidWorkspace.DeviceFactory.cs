@@ -39,7 +39,8 @@ public sealed partial class RazerHidWorkspace
             _saveProfileAsync,
             _getMachineSettings,
             _saveMachineSettingsAsync,
-            _getProfile);
+            _getProfile,
+            message => _diagnosticLog.TryWrite("mapping", message));
         device.AttachMatrixLayout(_matrixLayoutLoader.LoadLayoutAsync, _dispatcherQueue);
         device.Onboard.LocalMacroProvider = _localMacros;
         device.SoftwareMacroBinder = _softwareMacroBinder;
