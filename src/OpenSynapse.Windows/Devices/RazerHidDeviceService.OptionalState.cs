@@ -148,7 +148,7 @@ public sealed partial class RazerHidDeviceService
                 {
                     WriteDiagnostic(definition.ProductId,
                         RazerFeatureResponseDiagnostics.DescribeCapabilityProbeFailure(
-                            definition.ProductId, "mouse.proximitySensor", response, error));
+                            definition.ProductId, "mouse.proximitySensor", request, response, error));
                 }
             });
     }
@@ -178,7 +178,7 @@ public sealed partial class RazerHidDeviceService
                 {
                     WriteDiagnostic(definition.ProductId,
                         RazerFeatureResponseDiagnostics.DescribeCapabilityProbeFailure(
-                            definition.ProductId, "mouse.sensorRotation", response, error));
+                            definition.ProductId, "mouse.sensorRotation", request, response, error));
                 }
             });
     }

@@ -8,14 +8,17 @@ internal static class RazerFeatureResponseDiagnostics
     internal static string DescribeCapabilityProbeFailure(
         ushort productId,
         string capability,
+        byte[] request,
         byte[]? response,
         Exception? error)
     {
+        var classId = request.Length > 7 ? request[7] : 0;
+        var commandId = request.Length > 8 ? request[8] : 0;
         var detail = response is null
             ? "status=-- size=-- data=--"
             : $"status={(response.Length > 1 ? response[1] : 0):X2} size={(response.Length > 6 ? response[6] : 0)} data={Prefix(response)}";
         var suffix = error is null ? string.Empty : $" error={error.GetType().Name}: {error.Message}";
-        return $"capability-probe {capability} pid={productId:X4} {detail}{suffix}";
+        return $"capability-probe {capability} pid={productId:X4} class={classId:X2} id={commandId:X2} {detail}{suffix}";
     }
 
     private static string Prefix(ReadOnlySpan<byte> response) =>
