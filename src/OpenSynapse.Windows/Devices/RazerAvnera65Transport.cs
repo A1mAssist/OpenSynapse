@@ -47,11 +47,14 @@ internal sealed class RazerAvnera65Transport : IRazerAvnera65Transport
         try
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            await Task.Run(() =>
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                _io.Send(report);
-            }, cancellationToken).ConfigureAwait(false);
+            await CancellableNativeCall.RunAsync(
+                () =>
+                {
+                    _io.Send(report);
+                    return true;
+                },
+                ResponseTimeout,
+                cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -75,18 +78,24 @@ internal sealed class RazerAvnera65Transport : IRazerAvnera65Transport
         try
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            await Task.Run(() =>
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                _io.Send(report);
-            }, cancellationToken).ConfigureAwait(false);
+            await CancellableNativeCall.RunAsync(
+                () =>
+                {
+                    _io.Send(report);
+                    return true;
+                },
+                ResponseTimeout,
+                cancellationToken).ConfigureAwait(false);
 
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(ResponseTimeout);
             for (var attempt = 0; attempt < 10; attempt++)
             {
                 await Task.Delay(RetryDelay, timeout.Token).ConfigureAwait(false);
-                var reply = await Task.Run(_io.Read, timeout.Token).ConfigureAwait(false);
+                var reply = await CancellableNativeCall.RunAsync(
+                    _io.Read,
+                    ResponseTimeout,
+                    timeout.Token).ConfigureAwait(false);
                 if (RazerAvnera65Protocol.Matches(reply, expectedHeader))
                 {
                     return reply;

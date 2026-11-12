@@ -36,6 +36,7 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
     private readonly RazerHidHidReportTransport _output = new();
     private readonly bool _useSetOutputReport;
     private readonly bool _useControlStatusReport;
+    private uint _readThreadId;
     private bool _disposed;
 
     internal RazerMxicHeadsetTransport(
@@ -218,16 +219,16 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
     {
         if (_useSetOutputReport)
         {
-            await Task.Run(() =>
+            var succeeded = await CancellableNativeCall.RunAsync(
+                () => NativeMethods.HidD_SetOutputReport(_handle, report, report.Length),
+                ResponseTimeout,
+                cancellationToken).ConfigureAwait(false);
+            if (!succeeded)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (!NativeMethods.HidD_SetOutputReport(_handle, report, report.Length))
-                {
-                    throw new Win32Exception(
-                        Marshal.GetLastWin32Error(),
-                        "MXIC HID output report failed.");
-                }
-            }, cancellationToken).ConfigureAwait(false);
+                throw new Win32Exception(
+                    Marshal.GetLastWin32Error(),
+                    "MXIC HID output report failed.");
+            }
             return;
         }
 
@@ -270,16 +271,14 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
                 return null;
             }
 
-            var read = Task.Run(
-                () => NativeMethods.HidD_GetInputReport(
-                    statusHandle,
-                    candidate,
-                    candidate.Length));
             bool succeeded;
             try
             {
-                succeeded = await read.WaitAsync(ControlReportTimeout, cancellationToken)
-                    .ConfigureAwait(false);
+                var handle = statusHandle;
+                succeeded = await CancellableNativeCall.RunAsync(
+                    () => NativeMethods.HidD_GetInputReport(handle, candidate, candidate.Length),
+                    ControlReportTimeout,
+                    cancellationToken).ConfigureAwait(false);
             }
             catch (TimeoutException)
             {
@@ -298,6 +297,7 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
 
     private void ReadLoop()
     {
+        _readThreadId = CancellableNativeCall.CurrentThreadId;
         var buffer = new byte[_inputReportLength];
         try
         {
@@ -352,6 +352,9 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
 
         _disposed = true;
         _reports.Writer.TryComplete();
+        // A ReadFile parked on a silent device only returns when its handle closes, and
+        // closing it under a live call can leave the request in the driver. Cancel first.
+        CancellableNativeCall.CancelSynchronousIo(Interlocked.Exchange(ref _readThreadId, 0));
 
         var teardown = Task.Run(async () =>
         {
