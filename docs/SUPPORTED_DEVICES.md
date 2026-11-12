@@ -322,6 +322,22 @@ The audio page covers EQ, microphone volume, sidetone, ANC, THX and game/chat ba
 
 If Windows sees the headset USB device but no HID control interface yet, the audio page keeps the device card visible with "control interface not available" instead of hiding the device. Reconnecting the headset or receiver restores the controls automatically.
 
+### Enhancement coverage
+
+The three THX enhancements (bass boost, sound normalization, voice clarity) come from the THX native component and cover every headset on the THX admission list. When one export is missing or one read fails, only that row is hidden; the other two and the rest of the card stay visible.
+
+The do-not-disturb state is read from the headset itself. A failed read hides only that toggle and leaves the other settings alone.
+
+| Feature | Protocol group | PIDs | State |
+|---|---|---|---|
+| Bass boost / sound normalization / voice clarity | THX native component (V3 / V4) | Headsets on the THX admission list | Supported; a missing export hides only that row |
+| Do not disturb | `AudioMxicDevice` (Legacy / MabelT1) | `0539` `053A` `053B` `0555` `0583` `0584` | Read and write |
+| Do not disturb | `rzDevice40` / class 0x18 | `0A61` `0A64` `0A68` `0A6C` `0A81` `059F` `05B9` | Read and write |
+| Do not disturb | `rzDevice25ValkyrieT3` | `057C` `057D` `05B6` `05B3` `0A54` `0A5B` `1021` `1022` | Read and write |
+| Do not disturb | `rzDevice40HeadsetAiroha` (Protocol40) | `0592` `0593` | Read probe only; no write |
+
+The `Billie`, `Valkyrie`, `OdessaT2Wireless`, `MabelT3C`, `Avnera`, `KrakenBase37` and protocol 25 bundles ship no do-not-disturb command, so those models do not show the toggle.
+
 | Device | USB VID:PID | Notes |
 |---|---|---|
 | Razer Barracuda | `1532:053C` | Not shown: no bundle evidence for the protocol family |
