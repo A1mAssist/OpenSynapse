@@ -181,6 +181,26 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
         }
     }
 
+    /// <summary>Reads only the battery level for the tray poll.</summary>
+    public async Task<int?> TryReadBatteryPercentAsync(CancellationToken cancellationToken = default)
+    {
+        var errors = new List<string>();
+        var battery = await ProbeAsync(
+            "battery",
+            RazerValkyrieHeadsetProtocol.CreateGetBattery(),
+            RazerValkyrieHeadsetProtocol.BatteryHeader,
+            RazerValkyrieHeadsetProtocol.ReadBatteryPercent,
+            errors,
+            cancellationToken).ConfigureAwait(false);
+        if (!battery.Ok)
+        {
+            _diagnostic?.Invoke($"{_profile} battery read failed: {errors[0]}");
+            return null;
+        }
+
+        return battery.Value;
+    }
+
     private Task SetEqPresetCoreAsync(byte preset, CancellationToken cancellationToken = default) =>
         WriteAsync(
             RazerValkyrieHeadsetProtocol.CreateGetEqPreset(),
