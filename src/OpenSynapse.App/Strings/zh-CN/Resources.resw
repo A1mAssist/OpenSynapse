@@ -1481,6 +1481,10 @@
     <value>设备监听</value>
     <comment>设备监听</comment>
   </data>
+  <data name="LaunchScanningDevices" xml:space="preserve">
+    <value>扫描设备中...</value>
+    <comment>扫描设备中...</comment>
+  </data>
   <data name="Text_07E747F7" xml:space="preserve">
     <value>OpenSynapse 配置</value>
     <comment>OpenSynapse 配置</comment>
