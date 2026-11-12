@@ -67,6 +67,17 @@ public sealed partial class HeadsetAudioProfileApplier : IDeviceProfileApplier
                     "The headset audio connection is not available.")]);
         }
 
+        if (!connection.HasControlInterface)
+        {
+            return new ProfileDeviceApplyResult(
+                context.Device.Id,
+                ProfileDeviceApplyStatus.Skipped,
+                [new ProfileSettingApplyResult(
+                    "device",
+                    ProfileSettingApplyStatus.Skipped,
+                    "The headset control interface is not available.")]);
+        }
+
         var profile = context.Profile.Headset;
         var results = new List<ProfileSettingApplyResult>();
 

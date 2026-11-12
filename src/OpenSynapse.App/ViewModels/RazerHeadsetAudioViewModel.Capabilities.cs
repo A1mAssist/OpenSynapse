@@ -11,6 +11,7 @@ public enum RazerHeadsetProbeState
     Partial,
     Failed,
     NotAvailable,
+    ControlInterfaceMissing,
 }
 
 public sealed partial class RazerHeadsetAudioViewModel
@@ -182,6 +183,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         RazerHeadsetProbeState.Probing => AppStrings.Text("BlackSharkCapabilityReading"),
         RazerHeadsetProbeState.Failed => AppStrings.Text("BlackSharkCapabilityReadFailed"),
         RazerHeadsetProbeState.NotAvailable => AppStrings.Text("BlackSharkComponentRequired"),
+        RazerHeadsetProbeState.ControlInterfaceMissing =>
+            AppStrings.Text("RazerHeadsetControlInterfaceMissing"),
         RazerHeadsetProbeState.Partial => AppStrings.FormatText(
             "ProtocolAvailableCountPartial", ProtocolAvailableCount, ProtocolTotalCount),
         _ => AppStrings.FormatText("ProtocolAvailableCount", ProtocolAvailableCount, ProtocolTotalCount),

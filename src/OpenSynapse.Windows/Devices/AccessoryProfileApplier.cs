@@ -238,7 +238,8 @@ public sealed class AccessoryProfileApplier : IDeviceProfileApplier
         CancellationToken cancellationToken)
     {
         var connection = await RazerHeadsetAudioService.FindAsync(diagnostic, cancellationToken);
-        return connection is null || connection.ProductId != device.ProductId ||
+        return connection is null || !connection.HasControlInterface ||
+            connection.ProductId != device.ProductId ||
             connection.ProductId != RazerMixer053EProtocol.ProductId
             ? null
             : new RazerMixer053EService(connection.DevicePath, diagnostic);

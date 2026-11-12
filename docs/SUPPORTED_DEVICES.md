@@ -320,6 +320,8 @@ Blade 16 (2023) exposes firmware-rendered Off, Breathing, Spectrum and Wave effe
 
 The audio page covers EQ, microphone volume, sidetone, ANC, THX and game/chat balance where the model and installed components support them.
 
+If Windows sees the headset USB device but no HID control interface yet, the audio page keeps the device card visible with "control interface not available" instead of hiding the device. Reconnecting the headset or receiver restores the controls automatically.
+
 | Device | USB VID:PID | Notes |
 |---|---|---|
 | Razer Barracuda | `1532:053C` | Not shown: no bundle evidence for the protocol family |

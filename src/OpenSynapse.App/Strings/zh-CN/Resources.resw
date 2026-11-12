@@ -1281,6 +1281,9 @@
   <data name="BlackSharkComponentRequired" xml:space="preserve">
     <value>需要安装雷蛇音频组件</value>
   </data>
+  <data name="RazerHeadsetControlInterfaceMissing" xml:space="preserve">
+    <value>已检测到耳机，但控制接口没有出现。请重新插拔耳机或接收器；仍无效时再重启。</value>
+  </data>
   <data name="BlackSharkStatusPartial" xml:space="preserve">
     <value>部分可用</value>
   </data>
