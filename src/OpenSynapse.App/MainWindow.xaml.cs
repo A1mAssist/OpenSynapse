@@ -370,11 +370,14 @@ public sealed partial class MainWindow : Window
             }
             await _viewModel.InitializeProfileAsync(_lifetime.Token);
             LaunchStatusText.Text = AppStrings.Text("Text_C2463C0F");
+            if (!await RefreshDevicesBeforeLaunchAsync())
+            {
+                _viewModel.Refresh.RequestDeviceRefresh();
+            }
             _viewModel.Refresh.SetDeviceWatchActive(AppWindow.IsVisible);
             _ = ObserveBackgroundLoopAsync(
                 () => _viewModel.Refresh.RunDeviceWatchLoopAsync(_lifetime.Token),
                 AppStrings.Text("Text_C2463C0F"));
-            _viewModel.Refresh.RequestDeviceRefresh();
             LaunchStatusText.Text = AppStrings.Text("Text_470691B2");
             SettingsPage.StartStartupUpdateCheck();
         }
