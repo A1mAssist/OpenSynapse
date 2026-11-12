@@ -2391,6 +2391,7 @@
   <data name="MacroDefaultName" xml:space="preserve"><value>Macro {0}</value></data>
   <data name="MacroTriggerUnset" xml:space="preserve"><value>No trigger</value></data>
   <data name="MacroTriggerValue" xml:space="preserve"><value>Trigger: {0}</value></data>
+  <data name="MacroTriggerValueDisabled" xml:space="preserve"><value>Disabled · Trigger: {0}</value></data>
   <data name="MacroStepCount" xml:space="preserve"><value>{0} actions</value></data>
   <data name="MacroMouseButton1" xml:space="preserve"><value>Left</value></data>
   <data name="MacroMouseButton2" xml:space="preserve"><value>Right</value></data>
@@ -2464,10 +2465,13 @@
   <data name="MacroPlayButton" xml:space="preserve"><value>Play</value></data>
   <data name="MacroRowDeleteItem.Text" xml:space="preserve"><value>Delete</value></data>
   <data name="MacroListEmpty.Text" xml:space="preserve"><value>No macros yet. Use + to add one.</value></data>
+  <data name="MacroRowTriggerLabel.Text" xml:space="preserve"><value>Trigger</value></data>
+  <data name="MacroRowTriggerUnsetBadge.Text" xml:space="preserve"><value>Not bound</value></data>
   <data name="MacroNoMacroSelected.Text" xml:space="preserve"><value>No macro selected</value></data>
   <data name="MacroEmptyEditorHint.Text" xml:space="preserve"><value>Use Record to capture an action sequence, or click the keyboard below to add single actions.</value></data>
-  <data name="MacroKeyBindsTitle.Text" xml:space="preserve"><value>Trigger (macro first)</value></data>
-  <data name="MacroKeyBindsNoMacro.Text" xml:space="preserve"><value>Select a macro to view its key binds.</value></data>
+  <data name="MacroKeyBindsTitle.Text" xml:space="preserve"><value>Trigger key</value></data>
+  <data name="MacroTriggerSwitchHint.Text" xml:space="preserve"><value>The switch controls this trigger only; manual playback is unaffected.</value></data>
+  <data name="MacroKeyBindsNoMacro.Text" xml:space="preserve"><value>Select a macro to view its trigger key.</value></data>
   <data name="MacroTriggerUnsetHint.Text" xml:space="preserve"><value>No trigger yet. Use + to bind one. The key page shows the same key as "Macro: name"; changing that action clears this trigger.</value></data>
   <data name="MacroProperties.Text" xml:space="preserve"><value>Properties</value></data>
   <data name="MacroStepProperties.Text" xml:space="preserve"><value>Action</value></data>
@@ -2559,7 +2563,7 @@
   <data name="MacroRenameNameLabel" xml:space="preserve"><value>Name</value></data>
   <data name="MacroRenameNamePlaceholder" xml:space="preserve"><value>Macro name</value></data>
   <data name="MacroRenameSave" xml:space="preserve"><value>Save</value></data>
-  <data name="MacroHint.Text" xml:space="preserve"><value>Macros work while OpenSynapse is running. Trigger keys are intercepted globally. Press F9 to stop recording and save; set playback shortcuts in the macro editor. Hold HyperShift while pressing the target key to bind the trigger to the HyperShift layer (the device must report HyperShift).</value></data>
+  <data name="MacroHint.Text" xml:space="preserve"><value>Macros work while OpenSynapse is running. The list switch controls only trigger keys; manual playback is unaffected. Press F9 to stop recording and save; set playback shortcuts in the macro editor. Hold HyperShift while pressing the target key to bind the trigger to the HyperShift layer (the device must report HyperShift).</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Bind trigger key</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Bind trigger key</value></data>
   <data name="MacroKeyPickerKeyboard.Text" xml:space="preserve"><value>Keyboard</value></data>
@@ -2674,8 +2678,8 @@
   <data name="LeviathanPresetTreble" xml:space="preserve"><value>Treble</value></data>
   <data name="LeviathanPresetCustom" xml:space="preserve"><value>Custom</value></data>
   <data name="MacroExportButtonShort.Content" xml:space="preserve"><value>Export</value></data>
-  <data name="MacroRowEnableToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Enable macro</value></data>
-  <data name="MacroRowEnableToggle.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Enable or disable this macro</value></data>
+  <data name="MacroRowEnableToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Enable trigger</value></data>
+  <data name="MacroRowEnableToggle.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Enable or disable this macro's trigger; manual playback is unaffected.</value></data>
   <data name="MacroRecordDelayRecordedLabel" xml:space="preserve"><value>Record actual interval</value></data>
   <data name="MacroRecordDelayFixedLabel" xml:space="preserve"><value>Fixed interval</value></data>
   <data name="MacroRecordDelayNoneLabel" xml:space="preserve"><value>Do not record delay</value></data>
@@ -3558,7 +3562,7 @@
   <data name="RazerMappingMacroExecutionHeader" xml:space="preserve"><value>Execution</value></data>
   <data name="RazerMappingMacroExecutionRepeat" xml:space="preserve"><value>Repeat count</value></data>
   <data name="MacroTriggerModeMovedHint.Text" xml:space="preserve"><value>Execution is set on the mapping page.</value></data>
-  <data name="RazerMappingSoftwareMacroHint" xml:space="preserve"><value>Runs in OpenSynapse and stops working when the app is closed.</value></data>
+  <data name="RazerMappingSoftwareMacroHint" xml:space="preserve"><value>Runs in OpenSynapse. The macro page trigger switch also controls this key; turning it off does not disable manual playback.</value></data>
   <data name="RazerMappingOnboardMacroHint" xml:space="preserve"><value>Runs on the device and keeps working when OpenSynapse is closed.</value></data>
   <data name="RazerMappingMacroUnsupported" xml:space="preserve"><value>This macro cannot be stored onboard: step {0}: {1}. Edit the macro and try again.</value></data>
   <data name="RazerMappingMacroUnsupportedSoftware" xml:space="preserve"><value>This macro cannot be stored onboard: step {0}: {1}. Use a software macro or edit the macro.</value></data>

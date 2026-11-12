@@ -2825,6 +2825,7 @@
   <data name="MacroDefaultName" xml:space="preserve"><value>宏 {0}</value></data>
   <data name="MacroTriggerUnset" xml:space="preserve"><value>未设置触发键</value></data>
   <data name="MacroTriggerValue" xml:space="preserve"><value>触发键：{0}</value></data>
+  <data name="MacroTriggerValueDisabled" xml:space="preserve"><value>已停用 · 触发键：{0}</value></data>
   <data name="MacroStepCount" xml:space="preserve"><value>{0} 个动作</value></data>
   <data name="MacroMouseButton1" xml:space="preserve"><value>左键</value></data>
   <data name="MacroMouseButton2" xml:space="preserve"><value>右键</value></data>
@@ -2898,10 +2899,13 @@
   <data name="MacroPlayButton" xml:space="preserve"><value>播放</value></data>
   <data name="MacroRowDeleteItem.Text" xml:space="preserve"><value>删除</value></data>
   <data name="MacroListEmpty.Text" xml:space="preserve"><value>还没有宏，点击 + 新建。</value></data>
+  <data name="MacroRowTriggerLabel.Text" xml:space="preserve"><value>触发</value></data>
+  <data name="MacroRowTriggerUnsetBadge.Text" xml:space="preserve"><value>未绑定</value></data>
   <data name="MacroNoMacroSelected.Text" xml:space="preserve"><value>未选择宏</value></data>
   <data name="MacroEmptyEditorHint.Text" xml:space="preserve"><value>点击"录制"开始录制动作序列，或直接点击下方键盘添加单个动作。</value></data>
-  <data name="MacroKeyBindsTitle.Text" xml:space="preserve"><value>触发键（宏优先）</value></data>
-  <data name="MacroKeyBindsNoMacro.Text" xml:space="preserve"><value>选择一个宏以查看它的键位绑定。</value></data>
+  <data name="MacroKeyBindsTitle.Text" xml:space="preserve"><value>触发键</value></data>
+  <data name="MacroTriggerSwitchHint.Text" xml:space="preserve"><value>开关只控制这个触发键；手动播放不受影响。</value></data>
+  <data name="MacroKeyBindsNoMacro.Text" xml:space="preserve"><value>选择一个宏以查看它的触发键。</value></data>
   <data name="MacroTriggerUnsetHint.Text" xml:space="preserve"><value>还没有绑定触发键，点击 + 绑定。同一个键在按键页会显示为“宏：名称”；在按键页改动作会清除这里的触发键。</value></data>
   <data name="MacroProperties.Text" xml:space="preserve"><value>属性</value></data>
   <data name="MacroStepProperties.Text" xml:space="preserve"><value>动作属性</value></data>
@@ -2993,7 +2997,7 @@
   <data name="MacroRenameNameLabel" xml:space="preserve"><value>名称</value></data>
   <data name="MacroRenameNamePlaceholder" xml:space="preserve"><value>宏名称</value></data>
   <data name="MacroRenameSave" xml:space="preserve"><value>保存</value></data>
-  <data name="MacroHint.Text" xml:space="preserve"><value>宏仅在 OpenSynapse 运行时生效，触发键会全局拦截，F9 停止录制并保存；播放快捷键可在宏编辑器中设置。按住 HyperShift 再按目标键，可把触发绑定到 HyperShift 层（需要设备上报 HyperShift）。</value></data>
+  <data name="MacroHint.Text" xml:space="preserve"><value>宏仅在 OpenSynapse 运行时生效。列表开关只控制触发键是否执行，手动播放不受影响。F9 停止录制并保存；播放快捷键可在宏编辑器中设置。按住 HyperShift 再按目标键，可把触发绑定到 HyperShift 层（需要设备上报 HyperShift）。</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>绑定触发键</value></data>
   <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>绑定触发键</value></data>
   <data name="MacroKeyPickerKeyboard.Text" xml:space="preserve"><value>键盘</value></data>
@@ -3108,8 +3112,8 @@
   <data name="LeviathanPresetTreble" xml:space="preserve"><value>高音</value></data>
   <data name="LeviathanPresetCustom" xml:space="preserve"><value>自定义</value></data>
   <data name="MacroExportButtonShort.Content" xml:space="preserve"><value>导出</value></data>
-  <data name="MacroRowEnableToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>启用宏</value></data>
-  <data name="MacroRowEnableToggle.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>启用或禁用这个宏</value></data>
+  <data name="MacroRowEnableToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>启用触发</value></data>
+  <data name="MacroRowEnableToggle.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>启用或禁用这个宏的触发键；手动播放不受影响。</value></data>
   <data name="MacroRecordDelayRecordedLabel" xml:space="preserve"><value>记录实际间隔</value></data>
   <data name="MacroRecordDelayFixedLabel" xml:space="preserve"><value>固定间隔</value></data>
   <data name="MacroRecordDelayNoneLabel" xml:space="preserve"><value>不记录延迟</value></data>
@@ -3992,7 +3996,7 @@
   <data name="RazerMappingMacroExecutionHeader" xml:space="preserve"><value>执行方式</value></data>
   <data name="RazerMappingMacroExecutionRepeat" xml:space="preserve"><value>重复次数</value></data>
   <data name="MacroTriggerModeMovedHint.Text" xml:space="preserve"><value>执行方式在按键页设置。</value></data>
-  <data name="RazerMappingSoftwareMacroHint" xml:space="preserve"><value>由 OpenSynapse 执行，软件关闭后不生效。</value></data>
+  <data name="RazerMappingSoftwareMacroHint" xml:space="preserve"><value>由 OpenSynapse 执行；受宏页触发开关控制，关闭触发后按键不执行宏，但手动播放仍可用。</value></data>
   <data name="RazerMappingOnboardMacroHint" xml:space="preserve"><value>由设备执行，OpenSynapse 关闭后仍然有效。</value></data>
   <data name="RazerMappingMacroUnsupported" xml:space="preserve"><value>这个宏不能写入板载：第 {0} 步：{1}。请返回宏编辑器修改。</value></data>
   <data name="RazerMappingMacroUnsupportedSoftware" xml:space="preserve"><value>这个宏不能写入板载：第 {0} 步：{1}。请改用软件宏，或返回宏编辑器修改。</value></data>
