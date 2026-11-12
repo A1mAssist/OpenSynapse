@@ -4,16 +4,39 @@ English · [Chinese](CHANGELOG.zh-CN.md)
 
 All notable user-visible changes to OpenSynapse are documented here.
 
-## [Unreleased]
+## [1.7.2] - 2026-11-12
+
+### Added
+
+- **Lite mode** keeps only the peripheral pages, skips Blade, performance and Lighting Studio features, and marks the title bar with a Lite badge.
+- **Smart tracking and sensor rotation for mice**: adaptive or adjustable lift-off, independent lift-off/landing distances and rotation calibration; a failed probe no longer hides the card for known models.
+- **Mapping and macros**: special keys, Viper private keys and keyboard keys can all bind software macros; HyperShift gates their triggers; the key page owns execution settings and the macro trigger card moved into the left inspector; changing a key action clears its old macro trigger.
+- **Blade**: Fn row primary switch and live Fn profile (including 023A and 02C6), logo effects decoded from the Synapse bundle (including 02B6 and 029D), a redrawn fixed-fan slider with Synapse fan icons, and batched matrix frame writes for lower lighting latency.
+- **Kraken V4 lighting**: completed the Billie T2 Starlight, Fire, AudioMeter and Wheel effects; the V4 static frame now follows the device ring size.
+- **Mako X**: EQ presets and the 10-band curve, plus lighting; the 65-byte Jolie frame and 64-byte feature report are handled separately.
+- **Protocol-25 headsets**: EQ, microphone, input source and ANC now follow the Synapse bundles; MXIC headsets use Synapse's HID write and input-report path.
+- **Lighting Studio**: gradient, ripple, tidal and radiate effects, native 25 fps device output, and faster zoom, canvas rebuild and mask caching.
+- **Diagnostics**: crash reports, a log bundle export, and reports stamped with date and app version.
+- **Install and update**: startup updates ask first; MSI installs update through the machine service without UAC; per-device driver installs also run through the service.
+- **Onboard profiles** read the device's real id list and create the first free id; delete and reset ask for confirmation, and the active profile cannot be deleted.
+- **Huntsman V3 Pro TKL / Mini / 8KHz**: analog keys are back, with TKL, Mini and full-size layouts.
 
 ### Fixed
 
-- Razer driver setup now matches the connected device, catalog key and installer PID, reads the ProgramData uninstaller, binds the staged INF by hardware ID, starts `RzDev_*`, treats 3010/1641 as success, and installs the per-device package through the machine service without UAC.
-- Analog keys now appear on Huntsman V3 Pro TKL (02A7), Mini (02B0) and 8KHz (02CF): the capability probe uses the per-key actuation command, optional setting reads can no longer remove the card, and the TKL/Mini/full-size layouts are covered.
-- Onboard profiles now read the device's real id list and create the first free id; delete and reset ask for confirmation, the active profile cannot be deleted, and failures use readable messages.
-- Switching to the Custom performance mode now shows the GPU performance level and refreshes the CPU/GPU Boost and max-fan controls.
-- Sensor rotation, analog-key layout, THX install state, fan mode and CPU power panels now refresh their derived visibility after state changes; low-frequency transitions use one workspace-wide state notification.
-- MSI installs can now update from inside the app: **Update and restart** hands the package to the service registered at install time, which verifies it, applies it through Task Scheduler, and restarts the app without a UAC prompt.
+- BlackShark V2 Pro (0555) no longer stalls on “reading”: timed-out HID control requests are actually cancelled instead of piling up in the driver queue; USB-only headsets stay visible before HID is ready.
+- Kiyo, sensor rotation, smart tracking and software-lighting cleanup no longer raise `PropertyChanged` on the thread pool, fixing the `0x8001010E` settings-page failure.
+- Leviathan V2 X partial reads are informational instead of a whole-device error, and the bass control is a slider.
+- BlackShark V3 is no longer mislabelled as V2 Pro; missing headset identities were filled in.
+- Razer driver setup now matches device, catalog key and installer PID, binds the staged INF by hardware ID, verifies the filter is really attached, treats 3010/1641 as success, stops rejecting republished packages by size, and reinstalls the common driver during repair.
+- The taskbar status strip returns after Show Desktop and passes clicks through to the taskbar.
+- The launch overlay waits for the first device scan, so the device list is no longer empty during startup.
+- Intel CPU temperature reads through PawnIO, and low ACPI idle temperatures are no longer discarded.
+- THX service, native DLL and startup now complete in one click.
+- Fixed Blade logo effect ids, 02B6/029D reads, stale Fn state, control state and ChromaBroker startup.
+- Fixed several mouse/keyboard button ids (009C DPI keys, Keypad, Basilisk Ultimate DKM, legacy mouse private keys) and mapping-page refreshes.
+- Fixed the missing GPU level, CPU/GPU Boost and max-fan controls after switching to Custom performance mode; sensor rotation, analog-key layout and THX install visibility now refresh with state changes.
+- Fixed update routing for non-MSI installs, MSI update permissions and same-version beta MSI upgrades.
+- Fixed macro editor rename labels, playback controls and import status text.
 
 ## [1.7.1] - 2026-11-09
 
