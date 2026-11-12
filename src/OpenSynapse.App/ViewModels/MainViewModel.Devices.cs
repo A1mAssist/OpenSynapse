@@ -46,6 +46,9 @@ public sealed partial class MainViewModel
 
     public IReadOnlyList<ConnectedDeviceRowViewModel> AdditionalDevices => ConnectedDevices.Skip(2).ToArray();
 
+    public bool CanPairNewDevice =>
+        !IsLiteMode && RazerHid.Devices.Any(device => device.CanPairNewDevice);
+
     public Visibility AdditionalDevicesVisibility =>
         AdditionalDevices.Count > 0
             ? Visibility.Visible
@@ -62,6 +65,7 @@ public sealed partial class MainViewModel
         Blade.RefreshDeviceOverview();
         Viper.RefreshDeviceRow();
         OnPropertyChanged(nameof(AdditionalDevicesVisibility));
+        OnPropertyChanged(nameof(CanPairNewDevice));
     }
 
     private void RefreshDeviceSelectorItems()

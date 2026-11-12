@@ -4311,4 +4311,16 @@
   <data name="LiteModeRestartElevated.Text" xml:space="preserve"><value>当前进程以管理员权限运行，重启后仍是管理员权限。</value></data>
   <data name="LiteModeRestartConfirm.Text" xml:space="preserve"><value>重启并切换</value></data>
   <data name="LiteModeRestartCancel.Text" xml:space="preserve"><value>取消</value></data>
+  <data name="Loc_PairNewDevice.Content" xml:space="preserve"><value>配对新设备</value></data>
+  <data name="RazerDualDongleTitle" xml:space="preserve"><value>配对新设备</value></data>
+  <data name="RazerDualDongleHint" xml:space="preserve"><value>先让目标设备进入配对模式（长按配对键），再点“开始配对”。</value></data>
+  <data name="RazerDualDongleReceiver.Header" xml:space="preserve"><value>接收器</value></data>
+  <data name="RazerDualDongleTarget.Header" xml:space="preserve"><value>要配对的设备</value></data>
+  <data name="RazerDualDongleStart" xml:space="preserve"><value>开始配对</value></data>
+  <data name="RazerDualDonglePairing" xml:space="preserve"><value>正在配对，最多等 30 秒…</value></data>
+  <data name="RazerDualDongleSuccess" xml:space="preserve"><value>已配对：{0}</value></data>
+  <data name="RazerDualDongleTimeout" xml:space="preserve"><value>没检测到设备。确认它已进入配对模式，必要时先更新接收器固件再试。</value></data>
+  <data name="RazerDualDongleNoCandidate" xml:space="preserve"><value>这个接收器没有空位（已连 1 个键盘 + 1 个鼠标）。</value></data>
+  <data name="RazerDualDongleStatusUnknown" xml:space="preserve"><value>无法读取当前连接状态。</value></data>
+  <data name="RazerDualDongleInvalid" xml:space="preserve"><value>接收器拒绝了这次配对。</value></data>
 </root>
