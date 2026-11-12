@@ -28,6 +28,7 @@ docs/*
 !docs/HEADSET_TRANSPORT_MATRIX.md
 !docs/MAPPING_PAGE.md
 !docs/RELEASING.zh-CN.md
+!docs/FEATURE_BACKLOG.zh-CN.md
 artifacts/borderless-capture-probe.exe
 artifacts/borderless-capture-probe.obj
 artifacts/build-validation*/
