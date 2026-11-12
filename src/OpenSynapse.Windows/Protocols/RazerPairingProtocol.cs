@@ -20,6 +20,10 @@ public static class RazerPairingProtocol
     private const byte SetActiveWirelessConnectionStateCommand = 0x47;
     private const byte MultipleDeviceWirelessStatusSize = 80;
 
+    public const byte ScanStart = 0x01;
+    public const byte ScanCancel = 0x04;
+    public const byte PairModeDefault = 0x01;
+
     public static byte[] CreateSetDevicePairingModeRequest(
         byte transactionId,
         byte mode,
@@ -30,6 +34,9 @@ public static class RazerPairingProtocol
             CommandClass,
             SetDevicePairingModeCommand,
             new byte[] { mode, (byte)(productId >> 8), (byte)productId });
+
+    public static byte[] CreateSetDeviceScanRequest(byte transactionId, byte mode) =>
+        RazerFeatureReport.CreateRequest(transactionId, 1, CommandClass, 0x46, new[] { mode });
 
     public static byte[] CreateSetDeviceUnpairRequest(byte transactionId, ushort productId) =>
         RazerFeatureReport.CreateRequest(
