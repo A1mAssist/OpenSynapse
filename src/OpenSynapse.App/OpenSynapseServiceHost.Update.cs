@@ -92,7 +92,8 @@ internal static partial class OpenSynapseServiceHost
             root,
             packageFileName,
             request.WaitProcessId!.Value,
-            authorizedUser);
+            authorizedUser,
+            out var taskError);
         return started
             ? new OpenSynapseServiceResponse(
                 OpenSynapseServiceProtocol.Version,
@@ -101,7 +102,7 @@ internal static partial class OpenSynapseServiceHost
                 ExitCode: 0,
                 Status: null,
                 Error: null)
-            : UpdateFailed("The update task could not be started.");
+            : UpdateFailed(taskError ?? "The update task could not be started.");
     }
 
     private static async Task<bool> VerifyPackageAsync(
