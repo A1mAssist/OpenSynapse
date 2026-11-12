@@ -259,10 +259,10 @@ internal sealed partial class RazerDeviceRegistry
             try
             {
                 var manifest = Parse(document);
-                if (manifest.ProtocolFamily == "openrazer-standard")
+                if (manifest.ProtocolFamily == "razer-hid-standard")
                 {
                     throw new InvalidOperationException(
-                        "openrazer-standard permits only reviewed built-in manifests; devices cannot be registered through external configuration.");
+                        "razer-hid-standard permits only reviewed built-in manifests; devices cannot be registered through external configuration.");
                 }
                 var familyTemplate = manifests.First(item =>
                     item.ProtocolFamily == manifest.ProtocolFamily &&

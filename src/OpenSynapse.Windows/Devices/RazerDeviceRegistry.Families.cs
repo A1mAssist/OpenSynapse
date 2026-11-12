@@ -155,7 +155,7 @@ internal sealed partial class RazerDeviceRegistry
             },
             // Future RazerHid devices need an audited built-in manifest and
             // verified Windows transport before any capability is admitted.
-            ["openrazer-standard"] = new Dictionary<string, CapabilityContract>(StringComparer.Ordinal),
+            ["razer-hid-standard"] = new Dictionary<string, CapabilityContract>(StringComparer.Ordinal),
         };
     private static readonly IReadOnlyDictionary<string, IReadOnlySet<string>> FamilyRequiredCapabilities =
         new Dictionary<string, IReadOnlySet<string>>(StringComparer.Ordinal)
@@ -206,6 +206,6 @@ internal sealed partial class RazerDeviceRegistry
                     CapabilityIds.GpuCardDetectionGet or CapabilityIds.GpuCardDetectionSet))
                 .ToHashSet(StringComparer.Ordinal),
             ["viper-184"] = FamilyCapabilities["viper-184"].Keys.ToHashSet(StringComparer.Ordinal),
-            ["openrazer-standard"] = new HashSet<string>(StringComparer.Ordinal),
+            ["razer-hid-standard"] = new HashSet<string>(StringComparer.Ordinal),
         };
 }

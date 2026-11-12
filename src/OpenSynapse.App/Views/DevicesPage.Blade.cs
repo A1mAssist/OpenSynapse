@@ -29,7 +29,7 @@ public sealed partial class DevicesPage : UserControl
     private ColorPicker? _activeLightingColorPicker;
     private Flyout? _activeLightingColorFlyout;
     private bool _editingRazerHidTertiary;
-    private Color? _openRazerSecondaryColorBeforeTertiary;
+    private Color? _razerHidSecondaryColorBeforeTertiary;
 
     internal IReadOnlyList<LightingColorOption> LightingPaletteColors { get; } =
     [
@@ -73,7 +73,7 @@ public sealed partial class DevicesPage : UserControl
     private async void LightingPresetButtonClick(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: LightingPresetOption preset }) return;
-        await ApplyLightingPresetAsync("openrazer", preset);
+        await ApplyLightingPresetAsync("razer-hid", preset);
     }
 
     private async void BladeLightingPresetButtonClick(object sender, RoutedEventArgs e)
@@ -116,7 +116,7 @@ public sealed partial class DevicesPage : UserControl
             ViewModel.Blade.LightingTertiaryColor = preset.Tertiary;
             await ViewModel.Blade.ApplySelectedLightingEffectAsync(Lifetime);
         }
-        else if (target == "openrazer" && SelectedRazerHidDevice is { } device)
+        else if (target == "razer-hid" && SelectedRazerHidDevice is { } device)
         {
             if ((device.SelectedLightingEffect is RazerHidLightingEffect.StarlightRandom or
                 RazerHidLightingEffect.StarlightSingle) &&
@@ -561,7 +561,7 @@ public sealed partial class DevicesPage : UserControl
         var changed = picker is not null && _lightingColorBeforeEdit is Color previous &&
             picker.Color != previous;
         var editingRazerHidTertiary = _editingRazerHidTertiary;
-        var openRazerSecondaryColorBeforeTertiary = _openRazerSecondaryColorBeforeTertiary;
+        var razerHidSecondaryColorBeforeTertiary = _razerHidSecondaryColorBeforeTertiary;
         if (changed)
         {
             AddRecentLightingColor(picker!.Color);
@@ -572,12 +572,12 @@ public sealed partial class DevicesPage : UserControl
         _editingRazerHidTertiary = false;
 
         if (editingRazerHidTertiary &&
-            openRazerSecondaryColorBeforeTertiary is Color secondaryBeforeTertiary &&
-            SelectedRazerHidDevice is { } openRazerForRestore)
+            razerHidSecondaryColorBeforeTertiary is Color secondaryBeforeTertiary &&
+            SelectedRazerHidDevice is { } razerHidForRestore)
         {
-            openRazerForRestore.SecondaryColor = secondaryBeforeTertiary;
+            razerHidForRestore.SecondaryColor = secondaryBeforeTertiary;
         }
-        _openRazerSecondaryColorBeforeTertiary = null;
+        _razerHidSecondaryColorBeforeTertiary = null;
 
         if (!changed)
         {
@@ -600,15 +600,15 @@ public sealed partial class DevicesPage : UserControl
         else if (ReferenceEquals(sender, RazerHidPrimaryColorFlyout) ||
             ReferenceEquals(sender, RazerHidSecondaryColorFlyout))
         {
-            if (SelectedRazerHidDevice is { } openRazer)
+            if (SelectedRazerHidDevice is { } razerHid)
             {
                 if (ReferenceEquals(sender, RazerHidPrimaryColorFlyout))
-                    openRazer.PrimaryColor = picker!.Color;
+                    razerHid.PrimaryColor = picker!.Color;
                 else if (editingRazerHidTertiary)
-                    openRazer.TertiaryColor = picker!.Color;
+                    razerHid.TertiaryColor = picker!.Color;
                 else if (ReferenceEquals(sender, RazerHidSecondaryColorFlyout))
-                    openRazer.SecondaryColor = picker!.Color;
-                await openRazer.ApplyLightingAsync(Lifetime);
+                    razerHid.SecondaryColor = picker!.Color;
+                await razerHid.ApplyLightingAsync(Lifetime);
             }
         }
         else if (ReferenceEquals(sender, KrakenPrimaryColorFlyout) ||
@@ -632,15 +632,15 @@ public sealed partial class DevicesPage : UserControl
 
     private void RazerHidTertiaryColorButtonClick(object sender, RoutedEventArgs e)
     {
-        if (SelectedRazerHidDevice is not { } openRazer ||
+        if (SelectedRazerHidDevice is not { } razerHid ||
             sender is not FrameworkElement target)
         {
             return;
         }
 
         _editingRazerHidTertiary = true;
-        _openRazerSecondaryColorBeforeTertiary = openRazer.SecondaryColor;
-        RazerHidSecondaryColorPicker.Color = openRazer.TertiaryColor;
+        _razerHidSecondaryColorBeforeTertiary = razerHid.SecondaryColor;
+        RazerHidSecondaryColorPicker.Color = razerHid.TertiaryColor;
         RazerHidSecondaryColorFlyout.ShowAt(target);
     }
 
@@ -678,8 +678,8 @@ public sealed partial class DevicesPage : UserControl
         var visibility = RecentLightingColors.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         if (PrimaryRecentLightingColors is { } bladePrimary) bladePrimary.Visibility = visibility;
         if (SecondaryRecentLightingColors is { } bladeSecondary) bladeSecondary.Visibility = visibility;
-        if (RazerHidPrimaryRecentColors is { } openRazerPrimary) openRazerPrimary.Visibility = visibility;
-        if (RazerHidSecondaryRecentColors is { } openRazerSecondary) openRazerSecondary.Visibility = visibility;
+        if (RazerHidPrimaryRecentColors is { } razerHidPrimary) razerHidPrimary.Visibility = visibility;
+        if (RazerHidSecondaryRecentColors is { } razerHidSecondary) razerHidSecondary.Visibility = visibility;
         if (KrakenPrimaryRecentColors is { } krakenPrimary) krakenPrimary.Visibility = visibility;
         if (KrakenSecondaryRecentColors is { } krakenSecondary) krakenSecondary.Visibility = visibility;
         if (KrakenTertiaryRecentColors is { } krakenTertiary) krakenTertiary.Visibility = visibility;
