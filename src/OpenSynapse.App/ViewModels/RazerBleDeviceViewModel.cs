@@ -24,6 +24,11 @@ public sealed class RazerBleDeviceRowViewModel(RazerBleDevice device) : INotifyP
     public Microsoft.UI.Xaml.Media.Brush StatusBrush { get; } =
         new Microsoft.UI.Xaml.Media.SolidColorBrush(global::Windows.UI.Color.FromArgb(255, 68, 214, 44));
 
+    /// <summary>Last value the BLE page read, reused by the tray without reconnecting.</summary>
+    public int? BatteryPercent { get; private set; }
+
+    internal void SetBatteryPercent(int? percent) => BatteryPercent = percent;
+
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
 }
 
@@ -1096,6 +1101,9 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
             ? Visibility.Visible
             : Visibility.Collapsed;
     }
+
+    /// <summary>The raw percentage behind <see cref="BatteryText"/>.</summary>
+    public int? BatteryPercent => _batteryPercent;
 
     private void Apply(RazerBleDeviceState state)
     {

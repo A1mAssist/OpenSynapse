@@ -281,7 +281,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             (power, token) => SelectedBle?.ApplyPersistedProfileAsync(power, token) ?? Task.CompletedTask,
             (power, token) => AccessoryProfileReplay.ApplyAsync(this, _diagnosticLog, power, token),
             liteMode: liteMode);
-        Tray = new TrayWorkspace(() => Devices, RazerHid);
+        Tray = new TrayWorkspace(
+            () => Devices, RazerHid, Accessories,
+            () => BlackSharkDevices, () => BleDevices, () => AwBleHeadsetDevices);
         CpuCurve = new CpuCurveWorkspace(
             (label, operation, token) => RunDeviceOperationAsync(label, operation, token),
             () => Blade.EditablePlatformProfile,

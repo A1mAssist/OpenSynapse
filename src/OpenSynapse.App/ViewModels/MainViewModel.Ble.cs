@@ -62,6 +62,7 @@ public sealed partial class MainViewModel
             StringComparer.OrdinalIgnoreCase.Equals(_selectedBleDevice.Device.Id, row.Device.Id))
         {
             await SelectedBle.LoadAsync(cancellationToken);
+            row.SetBatteryPercent(SelectedBle.BatteryPercent);
             return;
         }
 
@@ -77,6 +78,7 @@ public sealed partial class MainViewModel
             () => _profile,
             SaveProfileAsync);
         await SelectedBle.LoadAsync(cancellationToken);
+        row.SetBatteryPercent(SelectedBle.BatteryPercent);
     }
 
     public Task ApplyBlePollingRateAsync(CancellationToken cancellationToken = default) =>
