@@ -1316,7 +1316,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         {
             // The native HID call can outlive every driver-side timeout. Closing the
             // service handle makes the stuck read return instead of leaving the card
-            // on "正在读取…" forever.
+            // in its reading state forever.
             throw new IOException("Headset read timed out.");
         }
         finally
