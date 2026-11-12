@@ -17,6 +17,11 @@ public sealed partial class DiagnosticsWorkspace
         get { CaptureAccessorySnapshot(); return _accessorySnapshots.Values.Count(row => !string.IsNullOrWhiteSpace(row.Error)); }
     }
 
+    internal void ForgetAccessory(string key)
+    {
+        if (_accessorySnapshots.Remove(key)) RefreshAccessoryRows();
+    }
+
     // Re-read at copy time as controls can fail without a discovery refresh. Keep an
     // observed failure after disappearance instead of hiding its only diagnostic identity.
     internal void CaptureAccessorySnapshot()
