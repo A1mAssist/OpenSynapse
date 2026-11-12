@@ -76,6 +76,33 @@ public sealed partial class DevicesPage : UserControl
         await SelectDeviceSourceAsync(item.Source);
     }
 
+    private async void PairNewDeviceClick(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.RazerHid.DeviceService is not { } service) return;
+        var vm = new RazerPairingDialogViewModel(ViewModel.RazerHid.Devices, service);
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = AppStrings.Text("RazerDualDongleTitle"),
+            PrimaryButtonText = AppStrings.Text("RazerDualDongleStart"),
+            CloseButtonText = AppStrings.Text("Text_949856B3"),
+            DefaultButton = ContentDialogButton.Primary,
+            Content = new RazerPairingDialog { DataContext = vm },
+        };
+        dialog.PrimaryButtonClick += async (_, args) =>
+        {
+            // Keep the dialog open while pairing; Hide() closes it on success.
+            args.Cancel = true;
+            if (!vm.CanStart) return;
+            if (await vm.StartAsync(Lifetime))
+            {
+                dialog.Hide();
+            }
+        };
+        await dialog.ShowAsync();
+        await ViewModel.Refresh.RefreshDevicesAsync(Lifetime);
+    }
+
     private async Task SelectDeviceSourceAsync(object? source)
     {
         switch (source)

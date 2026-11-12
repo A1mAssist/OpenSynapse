@@ -3876,4 +3876,16 @@
   <data name="LiteModeRestartElevated.Text" xml:space="preserve"><value>This process is running as administrator; the restarted app will stay elevated.</value></data>
   <data name="LiteModeRestartConfirm.Text" xml:space="preserve"><value>Restart and switch</value></data>
   <data name="LiteModeRestartCancel.Text" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Loc_PairNewDevice.Content" xml:space="preserve"><value>Pair new device</value></data>
+  <data name="RazerDualDongleTitle" xml:space="preserve"><value>Pair new device</value></data>
+  <data name="RazerDualDongleHint" xml:space="preserve"><value>Put the target device in pairing mode first, then start.</value></data>
+  <data name="RazerDualDongleReceiver.Header" xml:space="preserve"><value>Receiver</value></data>
+  <data name="RazerDualDongleTarget.Header" xml:space="preserve"><value>Device to pair</value></data>
+  <data name="RazerDualDongleStart" xml:space="preserve"><value>Start pairing</value></data>
+  <data name="RazerDualDonglePairing" xml:space="preserve"><value>Pairing, up to 30 seconds…</value></data>
+  <data name="RazerDualDongleSuccess" xml:space="preserve"><value>Paired: {0}</value></data>
+  <data name="RazerDualDongleTimeout" xml:space="preserve"><value>Device not detected. Check pairing mode, update the dongle firmware if needed.</value></data>
+  <data name="RazerDualDongleNoCandidate" xml:space="preserve"><value>No free slot on this receiver.</value></data>
+  <data name="RazerDualDongleStatusUnknown" xml:space="preserve"><value>Could not read the current connection state.</value></data>
+  <data name="RazerDualDongleInvalid" xml:space="preserve"><value>The receiver rejected the pairing.</value></data>
 </root>

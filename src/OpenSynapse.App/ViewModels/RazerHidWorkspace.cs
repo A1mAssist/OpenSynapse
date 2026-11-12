@@ -273,6 +273,8 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
                 }
             }
         }
+
+        NotifyDeviceOverview();
     }
 
     public async Task SelectDeviceAsync(
