@@ -30,6 +30,9 @@ public static class RazerMxicHeadsetProtocol
     public static readonly byte[] GetBattery = [0x21, 0x00, 0x00];
     public static readonly byte[] BatteryHeader = [0x21, 0x01, 0x01];
 
+    public static readonly byte[] GetWirelessConnectionStatus = [0x20, 0x00, 0x00];
+    public static readonly byte[] WirelessConnectionStatusHeader = [0x20, 0x01, 0x01];
+
     public static readonly byte[] GetCharging = [0x2A, 0x00, 0x00];
     public static readonly byte[] ChargingHeader = [0x2A, 0x01, 0x01];
 
@@ -85,6 +88,12 @@ public static class RazerMxicHeadsetProtocol
     }.ToFrozenSet();
 
     public static bool IsSupported(ushort productId) => ProductIds.Contains(productId);
+
+    private static readonly FrozenSet<ushort> WirelessConnectionStatusProductIds =
+        new ushort[] { ProductId }.ToFrozenSet();
+
+    public static bool SupportsWirelessConnectionStatus(ushort productId) =>
+        WirelessConnectionStatusProductIds.Contains(productId);
 
     private static readonly FrozenSet<ushort> MabelT1ProductIds = new ushort[]
     {
@@ -383,6 +392,9 @@ public static class RazerMxicHeadsetProtocol
         Require(value, 1);
         return value[0] == 1;
     }
+
+    public static bool ReadWirelessConnectionStatus(ReadOnlySpan<byte> value) =>
+        value.Length >= 1 && value[0] == 1;
 
     public static byte ReadEqPreset(ReadOnlySpan<byte> value)
     {
