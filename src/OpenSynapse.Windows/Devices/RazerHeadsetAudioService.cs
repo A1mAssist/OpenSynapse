@@ -21,7 +21,24 @@ public sealed record RazerHeadsetAudioConnection(
     ushort FeatureReportByteLength,
     string? ContainerId = null,
     RazerHeadsetAudioTransport Transport = RazerHeadsetAudioTransport.Feature91,
-    bool HasControlInterface = true);
+    bool HasControlInterface = true)
+{
+    /// <summary>
+    /// True when the identity keeps its HID endpoint enumerated while the headset is
+    /// powered off and answers a radio-link command, so the link state is the only
+    /// reliable power signal. Wired identities stay false: a failed read must never
+    /// hide a working headset.
+    /// </summary>
+    public bool SupportsWirelessPowerSignal => Transport switch
+    {
+        RazerHeadsetAudioTransport.Mxic64 =>
+            RazerMxicHeadsetProtocol.SupportsWirelessConnectionStatus(ProductId),
+        RazerHeadsetAudioTransport.AvneraFeature65 => true,
+        RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
+            RazerValkyrieHeadsetService.SupportsWirelessConnectionStatus(ProductId),
+        _ => false,
+    };
+}
 
 
 /// <summary>

@@ -160,6 +160,29 @@ public sealed class RazerAvneraHeadsetService : IAsyncDisposable
         _transport.SendAsync(
             RazerAvnera65Protocol.CreateSetSidetoneRequest(percent), cancellationToken);
 
+    /// <summary>
+    /// Reads the wireless link state; false means the headset is powered off but the
+    /// dongle still enumerates.
+    /// </summary>
+    public async Task<bool?> TryReadLinkStatusAsync(CancellationToken cancellationToken = default)
+    {
+        var errors = new List<string>();
+        var link = await ProbeAsync(
+            "link status",
+            RazerAvnera65Protocol.CreateLinkStatusRequest(),
+            RazerAvnera65Protocol.LinkStatusHeader,
+            RazerAvnera65Protocol.ReadLinkStatus,
+            errors,
+            cancellationToken).ConfigureAwait(false);
+        if (!link.Ok)
+        {
+            _diagnostic?.Invoke($"avnera link status failed: {errors[0]}");
+            return null;
+        }
+
+        return link.Value == 1;
+    }
+
     public Task SetAutoPauseAsync(
         bool enabled,
         ushort period,
