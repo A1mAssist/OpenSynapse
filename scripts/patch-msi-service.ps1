@@ -112,7 +112,38 @@ try {
         $record.GetType().InvokeMember('StringData', 'GetProperty', $null, $record, @([int]$index))
     }
     $view.GetType().InvokeMember('Close', 'InvokeMethod', $null, $view, $null)
+    foreach ($sql in @(
+        "DELETE FROM ``CustomAction`` WHERE ``Action`` = 'CloseOpenSynapseApp'",
+        "DELETE FROM ``InstallExecuteSequence`` WHERE ``Action`` = 'CloseOpenSynapseApp'"
+    )) {
+        $view = Open-View $sql
+        $view.GetType().InvokeMember('Close', 'InvokeMethod', $null, $view, $null)
+    }
+
+    # 34 = run an exe from a path, +64 = ignore its exit code (taskkill returns 128 when the app is not running).
+    # Without this the installer leaves the old DLLs on disk when the app is still running, then reports success.
+    $insertCloseAction = "INSERT INTO ``CustomAction`` (``Action``, ``Type``, ``Source``, ``Target``) " +
+        "VALUES ('CloseOpenSynapseApp', 98, '[SystemFolder]taskkill.exe', '/IM OpenSynapse.App.exe /F')"
+    $view = Open-View $insertCloseAction
+    $view.GetType().InvokeMember('Close', 'InvokeMethod', $null, $view, $null)
+
+    $insertCloseSequence = "INSERT INTO ``InstallExecuteSequence`` (``Action``, ``Condition``, ``Sequence``) " +
+        "VALUES ('CloseOpenSynapseApp', '', 3999)"
+    $view = Open-View $insertCloseSequence
+    $view.GetType().InvokeMember('Close', 'InvokeMethod', $null, $view, $null)
+
+    $view = Open-View 'SELECT `Sequence` FROM `InstallExecuteSequence` WHERE `Action` = ''CloseOpenSynapseApp'''
+    $closeRecord = $view.GetType().InvokeMember('Fetch', 'InvokeMethod', $null, $view, $null)
+    $closeSequence = if ($null -eq $closeRecord) { 0 } else {
+        [int]$closeRecord.GetType().InvokeMember('IntegerData', 'GetProperty', $null, $closeRecord, @(1))
+    }
+    $view.GetType().InvokeMember('Close', 'InvokeMethod', $null, $view, $null)
+    if ($closeSequence -ne 3999) {
+        throw 'The close-application custom action was not scheduled.'
+    }
+
     Write-Output ("Patched {0}: {1}" -f $resolved, ($values -join ' | '))
+    Write-Output 'Scheduled CloseOpenSynapseApp at 3999, before InstallFiles.'
     $database.GetType().InvokeMember('Commit', 'InvokeMethod', $null, $database, $null)
 }
 finally {
