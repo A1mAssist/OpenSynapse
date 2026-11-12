@@ -997,6 +997,15 @@
   <data name="DiagnosticsCopyFailed" xml:space="preserve">
     <value>Copy failed: {0}</value>
   </data>
+  <data name="ExportDiagnosticsLogs" xml:space="preserve">
+    <value>Export logs</value>
+  </data>
+  <data name="DiagnosticsLogsExported" xml:space="preserve">
+    <value>Logs exported: {0}</value>
+  </data>
+  <data name="DiagnosticsLogsExportFailed" xml:space="preserve">
+    <value>Log export failed: {0}</value>
+  </data>
   <data name="RazerHidOperationApplied" xml:space="preserve">
     <value>Applied to device</value>
   </data>

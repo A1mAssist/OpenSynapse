@@ -1303,6 +1303,18 @@
     <value>复制失败：{0}</value>
     <comment>复制诊断信息失败</comment>
   </data>
+  <data name="ExportDiagnosticsLogs" xml:space="preserve">
+    <value>导出日志</value>
+    <comment>导出日志</comment>
+  </data>
+  <data name="DiagnosticsLogsExported" xml:space="preserve">
+    <value>日志已导出：{0}</value>
+    <comment>日志已导出</comment>
+  </data>
+  <data name="DiagnosticsLogsExportFailed" xml:space="preserve">
+    <value>导出日志失败：{0}</value>
+    <comment>导出日志失败</comment>
+  </data>
   <data name="RazerHidOperationApplied" xml:space="preserve">
     <value>已应用到设备</value>
     <comment>已应用到设备</comment>
