@@ -252,7 +252,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
 
     private async Task DisableLightingAsync(CancellationToken cancellationToken)
     {
-        await StopSoftwareLightingAsync(cancellationToken).ConfigureAwait(false);
+        await StopSoftwareLightingAsync(cancellationToken).ConfigureAwait(true);
         var zone = SelectedLightingZone;
         var capabilities = SelectedZoneCapabilities;
         if (capabilities?.CanWriteState == true && !_unsupportedLedStateWrites.Contains(zone))
@@ -524,7 +524,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         if (Enum.TryParse<RazerHidLightingEffect>(profile.Effect, true, out var effect) &&
             IsSoftwareLightingEffect(effect))
         {
-            await ApplySoftwareLightingAsync(effect, cancellationToken).ConfigureAwait(false);
+            await ApplySoftwareLightingAsync(effect, cancellationToken).ConfigureAwait(true);
         }
         else if (Enum.TryParse<RazerHidLightingEffect>(profile.Effect, true, out effect) &&
             Connection.LightingZones.TryGetValue(zone, out var capabilities) &&

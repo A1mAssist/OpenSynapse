@@ -108,18 +108,20 @@ public sealed partial class RazerHidDeviceViewModel
                 var distance = (int)Math.Round(SmartTrackingDistance);
                 var liftOff = SmartTrackingLiftOffDistance;
                 var landing = SmartTrackingLandingDistance;
+                // Called from a click handler; the read-back and status text below are
+                // bound to the page and must raise PropertyChanged on the UI thread.
                 await _service.SetSmartTrackingAsync(
                     Connection,
                     mode,
                     distance,
                     liftOff,
                     landing,
-                    cancellationToken).ConfigureAwait(false);
+                    cancellationToken).ConfigureAwait(true);
 
                 try
                 {
                     var actual = await _service.GetSmartTrackingAsync(
-                        Connection, cancellationToken).ConfigureAwait(false);
+                        Connection, cancellationToken).ConfigureAwait(true);
                     ApplySmartTracking(actual);
                     SmartTrackingStatusText = AppStrings.Text(MatchesRequested(
                         mode, distance, liftOff, landing, actual)

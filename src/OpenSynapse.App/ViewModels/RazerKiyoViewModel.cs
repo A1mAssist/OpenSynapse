@@ -133,7 +133,11 @@ public sealed class RazerKiyoViewModel : INotifyPropertyChanged, IDisposable
                 _service = null;
             }
 
-            _service ??= await _connect(cancellationToken).ConfigureAwait(false);
+            // The refresh loop calls this from the UI thread, and every continuation
+            // below raises PropertyChanged on XAML bindings. ConfigureAwait(false)
+            // moved those notifications to the thread pool and WinUI rejected them with
+            // RPC_E_WRONG_THREAD (0x8001010E).
+            _service ??= await _connect(cancellationToken).ConfigureAwait(true);
             if (_service is null)
             {
                 return;
@@ -141,7 +145,7 @@ public sealed class RazerKiyoViewModel : INotifyPropertyChanged, IDisposable
 
             OnPropertyChanged(nameof(Name));
             OnPropertyChanged(nameof(Identity));
-            var snapshot = await Task.Run(_service.ReadSnapshot, cancellationToken).ConfigureAwait(false);
+            var snapshot = await Task.Run(_service.ReadSnapshot, cancellationToken).ConfigureAwait(true);
             Apply(snapshot);
             await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
             SetError(string.Empty);
@@ -181,7 +185,7 @@ public sealed class RazerKiyoViewModel : INotifyPropertyChanged, IDisposable
             var updated = await Task.Run(
                     () => service.SetWhiteBalanceAuto(desired),
                     cancellationToken)
-                .ConfigureAwait(false);
+                .ConfigureAwait(true);
             _whiteBalance = updated;
             _whiteBalanceAuto = updated.IsAuto;
             if (!await PeripheralProfileStore.SaveAsync(
@@ -285,7 +289,7 @@ public sealed class RazerKiyoViewModel : INotifyPropertyChanged, IDisposable
 
         try
         {
-            var opened = await Task.Run(_service.OpenSettings, cancellationToken).ConfigureAwait(false);
+            var opened = await Task.Run(_service.OpenSettings, cancellationToken).ConfigureAwait(true);
             if (!opened)
             {
                 SetError(AppStrings.Text("KiyoSettingsError"));

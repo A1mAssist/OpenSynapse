@@ -374,13 +374,18 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
             _saveProfile);
         await SelectedChroma.LoadAsync(cancellationToken);
     }
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         if (SelectedHeadsetAudio is { } headset)
         {
-            await headset.DisposeAsync().ConfigureAwait(false);
+            // Clear the selection before the await so its PropertyChanged fires on the
+            // caller's thread; clearing it afterwards raised it on the thread pool and
+            // WinUI rejected the binding update with RPC_E_WRONG_THREAD during exit.
             SelectedHeadsetAudio = null;
+            return headset.DisposeAsync();
         }
+
+        return ValueTask.CompletedTask;
     }
 
     private static bool IsExpectedRuntimeException(Exception exception) =>
