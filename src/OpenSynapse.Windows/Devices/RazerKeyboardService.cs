@@ -450,10 +450,11 @@ public sealed partial class RazerKeyboardService
             _ = await GetMappingButtonIdsAsync(cancellationToken).ConfigureAwait(false);
         }
 
+        var normalized = RazerHidMappingActions.NormalizeKeyData(functionId, data.ToArray(), 0);
         if (_mappingProtocol == RazerKeyboardMappingProtocol.Middleware02)
         {
             await QueryPreparedAsync(
-                RazerHidMappingProtocol.SetAssignment(buttonId, mode, functionId, data.Span).Report,
+                RazerHidMappingProtocol.SetAssignment(buttonId, mode, functionId, normalized).Report,
                 "mapping 02:0C",
                 cancellationToken).ConfigureAwait(false);
         }
@@ -466,7 +467,7 @@ public sealed partial class RazerKeyboardService
                     buttonId,
                     (RazerButtonAssignmentMode)mode,
                     (RazerButtonFunctionType)functionId,
-                    data.Span),
+                    normalized),
                 "mapping 08:04",
                 cancellationToken).ConfigureAwait(false);
         }
@@ -477,7 +478,7 @@ public sealed partial class RazerKeyboardService
 
         var applied = await GetMappingAssignmentAsync(buttonId, mode, cancellationToken)
             .ConfigureAwait(false);
-        if (applied.FunctionId != functionId || !applied.Data.SequenceEqual(data.ToArray()))
+        if (applied.FunctionId != functionId || !applied.Data.SequenceEqual(normalized))
         {
             throw new InvalidOperationException(
                 "The keyboard kept a different button assignment.");

@@ -51,6 +51,11 @@ public sealed partial class RazerHidDeviceService
             await EnsureDriverModeAsync(connection, cancellationToken).ConfigureAwait(false);
         }
 
+        // A bare modifier is [bit, 0] on NKRO products and [0, usage] elsewhere; the device
+        // also decides what the read-back comparison must expect.
+        data = RazerHidMappingActions.NormalizeKeyData(
+            functionId, data, connection.Definition.ProductId);
+
         RazerHidRequest request;
         if (UsesAnalogKeyAssignments(connection))
         {

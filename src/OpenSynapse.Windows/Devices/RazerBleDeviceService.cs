@@ -170,14 +170,15 @@ public sealed partial class RazerBleDeviceService : IDisposable
         ReadOnlyMemory<byte> data,
         CancellationToken cancellationToken = default)
     {
+        var normalized = RazerHidMappingActions.NormalizeKeyData(functionId, data.ToArray(), 0);
         var response = await _session.SendAsync(
             transaction => RazerBleProtocol30.CreateSetButtonAssignment(
-                transaction, MappingClassId, buttonId, mode, functionId, data.Span),
+                transaction, MappingClassId, buttonId, mode, functionId, normalized),
             "set button assignment", cancellationToken).ConfigureAwait(false);
         EnsureSuccess(response, "set button assignment");
 
         var applied = await GetButtonAssignmentAsync(buttonId, mode, cancellationToken).ConfigureAwait(false);
-        if (applied.FunctionId != functionId || !applied.Data.SequenceEqual(data.ToArray()))
+        if (applied.FunctionId != functionId || !applied.Data.SequenceEqual(normalized))
         {
             throw new InvalidOperationException("The BLE device kept a different button assignment.");
         }

@@ -579,20 +579,38 @@ public static partial class RazerHidMappingActions
     }
 
     /// <summary>
-    /// Pre-beta-41 builds wrote a bare modifier as [usage, 0]. Byte 0 is the modifier bitmask,
-    /// so 0xE1 became LeftCtrl + RightShift + RightAlt + RightGUI. The middleware's own
-    /// encoder (non-NKRO, which is what this device family reports) writes [0, usage], so
-    /// rewrite stale profile data to that form on the way out.
+    /// Bundles that declare obmSupportFeature.isNKeyRollOver encode a bare modifier as
+    /// [bit, 0]; every other product writes [0, usage]. Verified against the CDN bundles.
     /// </summary>
-    internal static ReadOnlySpan<byte> NormalizeKeyData(byte functionId, ReadOnlySpan<byte> data)
+    internal static bool UsesModifierBitEncoding(ushort productId) => productId is
+        0x0096 or 0x0227 or 0x0269 or 0x02A6 or 0x02A7 or 0x02B3 or 0x02CF or 0x02D0 or
+        0x02D1 or 0x02D8 or 0x02E4 or 0x02E5 or 0x02E6 or 0x02EA or 0x02EB or 0x02F4;
+
+    /// <summary>
+    /// Byte 0 of a KeyCode assignment is the modifier bitmask, so the pre-beta-41 [usage, 0]
+    /// form is a chord (0xE1 = LeftCtrl + RightShift + RightAlt + RightGUI). Rewrite a bare
+    /// modifier to the form this product's bundle uses.
+    /// </summary>
+    internal static byte[] NormalizeKeyData(byte functionId, IReadOnlyList<byte> data, ushort productId)
     {
-        if (functionId == RazerHidMappingFunctions.KeyCode && data.Length >= 2 && data[1] == 0 &&
-            data[0] is >= 224 and <= 231)
+        if (functionId != RazerHidMappingFunctions.KeyCode || data.Count < 2)
         {
-            return new byte[] { 0, data[0] };
+            return data.ToArray();
         }
 
-        return data;
+        var usage = data[0] is >= 224 and <= 231 && data[1] == 0
+            ? data[0]
+            : data[0] == 0 && data[1] is >= 224 and <= 231
+                ? data[1]
+                : (byte)0;
+        if (usage == 0)
+        {
+            return data.ToArray();
+        }
+
+        return UsesModifierBitEncoding(productId)
+            ? [(byte)(1 << (usage - 224)), 0]
+            : [0, usage];
     }
 
     private static byte? ModifierHid(byte modifierMask) => modifierMask switch

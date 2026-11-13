@@ -81,8 +81,6 @@ internal static class RazerHidMappingProtocol
         byte functionId,
         ReadOnlySpan<byte> data)
     {
-        data = RazerHidMappingActions.NormalizeKeyData(functionId, data);
-
         if (data.Length > 5)
         {
             throw new ArgumentOutOfRangeException(nameof(data));
@@ -111,8 +109,6 @@ internal static class RazerHidMappingProtocol
         byte functionId,
         ReadOnlySpan<byte> data)
     {
-        data = RazerHidMappingActions.NormalizeKeyData(functionId, data);
-
         if (data.Length > 5)
         {
             throw new ArgumentOutOfRangeException(nameof(data));
