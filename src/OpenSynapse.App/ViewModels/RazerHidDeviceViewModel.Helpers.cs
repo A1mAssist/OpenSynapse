@@ -190,6 +190,11 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         _operationSucceeded = false;
         _operationStatusOverride = null;
         OnPropertyChanged(nameof(OperationStatusText));
+        if (RazerHidDeviceService.IsWirelessLinkDownFailure(exception))
+        {
+            ErrorText = AppStrings.Text("RazerHidDeviceWirelessIdle");
+            return;
+        }
         if (exception is (RazerDeviceTimeoutException or RazerReportMismatchException) &&
             capability is { } unanswered)
         {
@@ -257,6 +262,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             ? AppStrings.Text("RazerHidDpiStagesMalformedResponse")
             : exception switch
             {
+                RazerDeviceTimeoutException { WirelessLinkDown: true } =>
+                    AppStrings.Text("RazerHidDeviceWirelessIdle"),
                 InvalidDataException => AppStrings.Text("RazerHidProtocolMalformedResponse"),
                 NotSupportedException => AppStrings.Text("RazerHidProtocolUnsupported"),
                 RazerDeviceTimeoutException or RazerReportMismatchException when capability is { } unanswered =>

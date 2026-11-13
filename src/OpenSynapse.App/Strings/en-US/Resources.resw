@@ -1047,6 +1047,9 @@
   <data name="RazerHidDeviceNotReady" xml:space="preserve">
     <value>The {0} may be powered off or asleep. Check the device power.</value>
   </data>
+  <data name="RazerHidDeviceWirelessIdle" xml:space="preserve">
+    <value>The device is asleep or powered off (receiver online). Move it or press a key to wake it, then retry.</value>
+  </data>
   <data name="RazerHidProtocolQueryFailed" xml:space="preserve">
     <value>The device channel could not be read.</value>
   </data>

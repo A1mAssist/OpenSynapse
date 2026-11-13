@@ -1367,6 +1367,9 @@
   <data name="RazerHidDeviceNotReady" xml:space="preserve">
     <value>{0}可能未开启或尚未唤醒，请检查设备电源。</value>
   </data>
+  <data name="RazerHidDeviceWirelessIdle" xml:space="preserve">
+    <value>设备已休眠或已关机（接收器在线）；动一下鼠标或按一下键唤醒后重试。</value>
+  </data>
   <data name="RazerHidProtocolQueryFailed" xml:space="preserve">
     <value>设备通道读取失败。</value>
     <comment>设备通道读取失败</comment>

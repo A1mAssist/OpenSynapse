@@ -116,10 +116,14 @@ public sealed partial class RazerHidDeviceService
         byte? brightness = null;
         var errors = new Dictionary<string, string>(StringComparer.Ordinal);
         var unsupported = new HashSet<RazerHidBackendCapability>();
+        var wirelessLinkDown = false;
 
         async Task ReadAsync<T>(RazerHidBackendCapability capability, string key, Func<Task<T>> read, Action<T> assign)
         {
-            if (!connection.Capabilities.Contains(capability) || excludedCapabilities?.Contains(capability) == true)
+            // One link-down answer covers the whole pass: every remaining read would only
+            // burn its retry budget against a device that is not on the air.
+            if (wirelessLinkDown ||
+                !connection.Capabilities.Contains(capability) || excludedCapabilities?.Contains(capability) == true)
             {
                 return;
             }
@@ -130,6 +134,15 @@ public sealed partial class RazerHidDeviceService
             catch (Exception exception) when (exception is Win32Exception or IOException or COMException or
                 InvalidOperationException or NotSupportedException or InvalidDataException)
             {
+                if (IsWirelessLinkDownFailure(exception))
+                {
+                    wirelessLinkDown = true;
+                    errors[capability.ToString()] = exception.Message;
+                    WriteDiagnostic(connection.Definition.ProductId,
+                        $"state read '{key}' stopped: the wireless link is down");
+                    return;
+                }
+
                 if (exception is RazerDeviceTimeoutException { IsRetryableBusy: true })
                 {
                     // Busy is transient. Keep the capability enabled so the next refresh retries it.
@@ -1807,13 +1820,13 @@ public sealed partial class RazerHidDeviceService
         RazerHidDeviceConnection connection,
         RazerHidRequest request,
         CancellationToken cancellationToken) =>
-        _executor.ExecuteAsync(connection, request, cancellationToken);
+        ExecuteWithWirelessLinkClassificationAsync(connection, request, cancellationToken);
 
     private Task ExecuteWithoutResultAsync(
         RazerHidDeviceConnection connection,
         RazerHidRequest request,
         CancellationToken cancellationToken) =>
-        _executor.ExecuteWithoutResultAsync(connection, request, cancellationToken);
+        ExecuteAsync(connection, request, cancellationToken);
 
     private static void RequireReady(RazerHidDeviceConnection connection) =>
         RazerHidRequestExecutor.RequireReady(connection);
