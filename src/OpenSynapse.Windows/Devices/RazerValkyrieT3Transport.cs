@@ -15,6 +15,7 @@ internal sealed class RazerValkyrieT3Transport : IRazerMxicHeadsetTransport
 {
     private readonly IRazerValkyrieT3FeatureIo _io;
     private readonly SemaphoreSlim _gate = new(1, 1);
+    private static readonly TimeSpan NativeCallTimeout = TimeSpan.FromSeconds(1);
     private byte _transaction;
     private bool _disposed;
 
@@ -42,11 +43,12 @@ internal sealed class RazerValkyrieT3Transport : IRazerMxicHeadsetTransport
             _transaction = (byte)((_transaction % 31) + 1);
             request[2] = _transaction;
             // Keep ownership until the synchronous HID call has actually completed.
-            await Task.Run(() => { cancellationToken.ThrowIfCancellationRequested(); _io.Send(request); }, cancellationToken).ConfigureAwait(false);
+            await RunNativeAsync(() => { _io.Send(request); return true; }, cancellationToken)
+                .ConfigureAwait(false);
             for (var attempt = 0; attempt < 10; attempt++)
             {
                 await Task.Delay(20, cancellationToken).ConfigureAwait(false);
-                var reply = await Task.Run(_io.Read, cancellationToken).ConfigureAwait(false);
+                var reply = await RunNativeAsync(_io.Read, cancellationToken).ConfigureAwait(false);
                 cancellationToken.ThrowIfCancellationRequested();
                 if (!RazerValkyrieT3Protocol.Matches(request, reply)) continue;
                 if (reply[1] is 0 or 1 or 4) continue;
@@ -61,6 +63,24 @@ internal sealed class RazerValkyrieT3Transport : IRazerMxicHeadsetTransport
             throw new InvalidOperationException("Valkyrie T3 returned no matching successful ACK.");
         }
         finally { _gate.Release(); }
+    }
+
+    /// <summary>
+    /// A blocking HidD call must be cancelled at the deadline, not abandoned: the
+    /// pending request stays in the HID driver and every later open or read fails
+    /// until the device is replugged.
+    /// </summary>
+    private static async Task<T> RunNativeAsync<T>(Func<T> call, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await CancellableNativeCall.RunAsync(call, NativeCallTimeout, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (TimeoutException exception)
+        {
+            throw new IOException("Valkyrie T3 HID call timed out.", exception);
+        }
     }
 
     public async ValueTask DisposeAsync()

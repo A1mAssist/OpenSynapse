@@ -891,6 +891,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         }
         catch (Exception exception) when (IsExpectedException(exception))
         {
+            _diagnostic?.Invoke($"headset read failed: {exception.Message}");
             ErrorText = LocalizeHeadsetReadFailure(exception.Message);
             SetProbeState(RazerHeadsetProbeState.Failed);
         }
@@ -1641,6 +1642,8 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         raw.Contains("does not support seeking", StringComparison.OrdinalIgnoreCase) ||
         raw.Contains("does not support", StringComparison.OrdinalIgnoreCase) ||
         raw.Contains("no matching response", StringComparison.OrdinalIgnoreCase) ||
+        raw.Contains("no matching successful ack", StringComparison.OrdinalIgnoreCase) ||
+        raw.Contains("feature channel", StringComparison.OrdinalIgnoreCase) ||
         raw.Contains("timed out", StringComparison.OrdinalIgnoreCase) ||
         raw.Contains("busy", StringComparison.OrdinalIgnoreCase)
             ? AppStrings.Text("RazerHeadsetTransportUnavailable")

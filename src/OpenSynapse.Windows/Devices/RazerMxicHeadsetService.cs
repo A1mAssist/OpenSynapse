@@ -506,6 +506,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
         catch (Exception exception) when (IsExpected(exception))
         {
             errors.Add($"{label}: {exception.Message}");
+            _diagnostic?.Invoke($"mxic read {label} failed: {exception.Message}");
             return (false, default!);
         }
     }
