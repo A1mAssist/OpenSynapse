@@ -52,7 +52,7 @@
               </StackPanel>
               <TextBlock Text="{Binding Capability}" FontSize="11" FontFamily="Cascadia Mono,Consolas" Foreground="{Binding StatusBrush}" VerticalAlignment="Center" />
             </StackPanel>
-            <TextBlock Text="{Binding Error}" FontSize="10" FontFamily="Cascadia Mono,Consolas" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap" HorizontalAlignment="Right" />
+            <TextBlock Text="{Binding Error}" FontSize="10" FontFamily="Cascadia Mono,Consolas" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap" HorizontalAlignment="Right" Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}" />
           </StackPanel>
         </Grid>
       </Button>
@@ -60,7 +60,7 @@
   </UserControl.Resources>
   <ScrollViewer local:Localized.Uid="A11yDeviceScrollArea" x:Name="PageScrollViewer" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" AutomationProperties.AutomationId="DevicesPageScrollViewer">
               <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
-                <Grid ColumnDefinitions="*,Auto,Auto"><StackPanel Spacing="5"><TextBlock local:Localized.Uid="Loc_E7F68C4BF6" Style="{StaticResource PageTitleStyle}" /><TextBlock local:Localized.Uid="Loc_0053B5D025" Foreground="{StaticResource MutedBrush}" /></StackPanel><Button local:Localized.Uid="Loc_PairNewDevice" Grid.Column="1" Click="PairNewDeviceClick" IsEnabled="{Binding CanPairNewDevice}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" Margin="0,0,8,0" /><Button local:Localized.Uid="Loc_AB55074471" Grid.Column="2" Click="RefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" /></Grid>
+                <Grid ColumnDefinitions="*,Auto,Auto"><StackPanel Spacing="5"><TextBlock local:Localized.Uid="Loc_E7F68C4BF6" Style="{StaticResource PageTitleStyle}" /><TextBlock local:Localized.Uid="Loc_0053B5D025" Foreground="{StaticResource MutedBrush}" /></StackPanel><Button local:Localized.Uid="Loc_PairNewDevice" Grid.Column="1" Click="PairNewDeviceClick" IsEnabled="{Binding CanPairNewDevice}" Visibility="{Binding CanPairNewDevice, Converter={StaticResource BoolToVisibilityConverter}}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" Margin="0,0,8,0" /><Button local:Localized.Uid="Loc_AB55074471" Grid.Column="2" Click="RefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" /></Grid>
                 <InfoBar IsOpen="{Binding HasDeviceError}" IsClosable="False" Severity="Warning" Message="{Binding DeviceErrorText}" />
                 <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding RazerDrivers.HasMissing, Converter={StaticResource BoolToVisibilityConverter}}">
                   <StackPanel Spacing="10">
