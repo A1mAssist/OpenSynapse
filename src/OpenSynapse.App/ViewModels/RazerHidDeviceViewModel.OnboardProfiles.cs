@@ -18,7 +18,6 @@ public sealed partial class RazerHidDeviceViewModel
     private IReadOnlyList<byte> _onboardProfileIds = [];
     private int _selectedOnboardProfileIndex = -1;
     private bool _activeOnboardProfileKnown;
-    private bool _onboardProfileIdsKnown;
     private string _onboardProfileStatusText = string.Empty;
     private bool _onboardProfileStatusIsError;
 
@@ -240,7 +239,6 @@ public sealed partial class RazerHidDeviceViewModel
             _activeOnboardProfileKnown = false;
         }
 
-        _onboardProfileIdsKnown = ids is not null;
         _onboardProfileIds = ids ?? BuildFallbackProfileIds(OnboardProfileCount, OnboardMaxProfiles);
 
         if (idsUnavailable && OnboardMaxProfiles > 0)
@@ -319,12 +317,20 @@ public sealed partial class RazerHidDeviceViewModel
                 }
 
                 var previousCount = OnboardProfileCount;
-                var previousIds = _onboardProfileIds.ToArray();
                 await _service.CreateOnboardProfileAsync(Connection, newId, cancellationToken);
-                var exactIds = await ReadOnboardProfilesAsync(cancellationToken);
-                var created = exactIds
-                    ? _onboardProfileIds.Contains(newId) && !previousIds.Contains(newId)
-                    : OnboardProfileCount > previousCount;
+                var created = false;
+                for (var attempt = 0; attempt < 4 && !created; attempt++)
+                {
+                    if (attempt > 0)
+                    {
+                        await Task.Delay(120, cancellationToken);
+                    }
+
+                    created = await ReadOnboardProfilesAsync(cancellationToken)
+                        ? _onboardProfileIds.Contains(newId)
+                        : OnboardProfileCount > previousCount;
+                }
+
                 if (!created)
                 {
                     SetOnboardProfileStatus(
@@ -348,8 +354,19 @@ public sealed partial class RazerHidDeviceViewModel
                 }
 
                 await _service.DeleteOnboardProfileAsync(Connection, deleted, cancellationToken);
-                await ReadOnboardProfilesAsync(cancellationToken);
-                if (_onboardProfileIdsKnown && _onboardProfileIds.Contains(deleted))
+                var removed = false;
+                for (var attempt = 0; attempt < 4 && !removed; attempt++)
+                {
+                    if (attempt > 0)
+                    {
+                        await Task.Delay(120, cancellationToken);
+                    }
+
+                    removed = !await ReadOnboardProfilesAsync(cancellationToken) ||
+                        !_onboardProfileIds.Contains(deleted);
+                }
+
+                if (!removed)
                 {
                     SetOnboardProfileStatus(
                         AppStrings.Text("RazerHidOnboardProfileDeleteNotApplied"), isError: true);
@@ -369,7 +386,18 @@ public sealed partial class RazerHidDeviceViewModel
                     return;
                 }
 
-                await _service.ResetOnboardProfileAsync(Connection, SelectedOnboardProfileId, cancellationToken);
+                try
+                {
+                    await _service.ResetOnboardProfileAsync(Connection, SelectedOnboardProfileId, cancellationToken);
+                }
+                catch (NotSupportedException)
+                {
+                    // 02B9 and similar keyboards reject 05:0B even though the bundle declares it.
+                    SetOnboardProfileStatus(
+                        AppStrings.Text("RazerHidOnboardProfileResetUnsupported"), isError: true);
+                    return;
+                }
+
                 await ReadOnboardProfilesAsync(cancellationToken);
                 SetOnboardProfileStatus(AppStrings.Text("RazerHidOperationApplied"), isError: false);
             }, cancellationToken);
