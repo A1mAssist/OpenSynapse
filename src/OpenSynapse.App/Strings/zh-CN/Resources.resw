@@ -4293,6 +4293,8 @@
   <data name="AnalogKeyNoneSelected" xml:space="preserve"><value>未选择键</value></data>
   <data name="AnalogKeySelectedCount" xml:space="preserve"><value>已选 {0} 个键</value></data>
   <data name="AnalogKeyAppliedCount" xml:space="preserve"><value>已应用到 {0} 个键，并已读回。</value></data>
+  <data name="AnalogKeyAppliedUnverified" xml:space="preserve"><value>已写入 {0} 个键，但读回失败；设置可能没有生效，请重试。</value></data>
+  <data name="AnalogKeyApplyMismatch" xml:space="preserve"><value>已写入 {0} 个键，但读回值与设置不一致；设置没有生效。</value></data>
   <data name="AnalogKeyReadCount" xml:space="preserve"><value>已读取 {0} 个键的触发与 Rapid Trigger 设置。</value></data>
   <data name="AnalogKeyTooltip" xml:space="preserve"><value>触发行程 {0:0.0} mm · RT {1:0.0} mm</value></data>
   <data name="AnalogKeyTooltipRapidTriggerOff" xml:space="preserve"><value>触发行程 {0:0.0} mm · RT 关闭</value></data>

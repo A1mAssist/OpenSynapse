@@ -3857,6 +3857,8 @@
   <data name="AnalogKeyNoneSelected" xml:space="preserve"><value>No keys selected</value></data>
   <data name="AnalogKeySelectedCount" xml:space="preserve"><value>{0} keys selected</value></data>
   <data name="AnalogKeyAppliedCount" xml:space="preserve"><value>Applied to {0} keys and read back.</value></data>
+  <data name="AnalogKeyAppliedUnverified" xml:space="preserve"><value>Wrote {0} keys, but the readback failed; the settings may not have applied. Try again.</value></data>
+  <data name="AnalogKeyApplyMismatch" xml:space="preserve"><value>Wrote {0} keys, but the readback did not match; the settings did not apply.</value></data>
   <data name="AnalogKeyReadCount" xml:space="preserve"><value>Read trigger and Rapid Trigger settings for {0} keys.</value></data>
   <data name="AnalogKeyTooltip" xml:space="preserve"><value>Actuation {0:0.0} mm · RT {1:0.0} mm</value></data>
   <data name="AnalogKeyTooltipRapidTriggerOff" xml:space="preserve"><value>Actuation {0:0.0} mm · RT off</value></data>

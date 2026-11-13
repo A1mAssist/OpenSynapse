@@ -237,9 +237,32 @@ public sealed partial class RazerHidDeviceViewModel
                         cancellationToken);
                 }
 
-                await RefreshAnalogKeyLayoutAsync(cancellationToken);
-                AnalogKeyLayoutStatusText =
-                    AppStrings.FormatText("AnalogKeyAppliedCount", keys.Count);
+                // The write is already on the wire. Reflect it now so a failed readback
+                // cannot leave the editor showing the previous values.
+                foreach (var key in keys)
+                {
+                    key.ActuationMillimeters = AnalogKeyActuationPointMillimeters;
+                    key.RapidTriggerEnabled = AnalogKeyRapidTriggerEnabled;
+                    key.RapidTriggerSensitivityMillimeters = AnalogKeyRapidTriggerSensitivityMillimeters;
+                }
+
+                int read;
+                try
+                {
+                    read = await ReadAnalogKeyLayoutAsync(keys, cancellationToken);
+                }
+                catch (Exception exception) when (IsAnalogKeyReadbackFailure(exception))
+                {
+                    // A readback failure is not a write failure; keep the write capability
+                    // so the user can retry instead of losing the whole analog card.
+                    AnalogKeyLayoutStatusText = AppStrings.FormatText(
+                        "AnalogKeyAppliedUnverified", keys.Count);
+                    return;
+                }
+
+                AnalogKeyLayoutStatusText = read == keys.Count && keys.All(MatchesAnalogKeyRequest)
+                    ? AppStrings.FormatText("AnalogKeyAppliedCount", keys.Count)
+                    : AppStrings.FormatText("AnalogKeyApplyMismatch", keys.Count);
             }, cancellationToken);
 
     private async Task RefreshAnalogKeyAsync(CancellationToken cancellationToken)
@@ -300,8 +323,17 @@ public sealed partial class RazerHidDeviceViewModel
 
     private async Task RefreshAnalogKeyLayoutAsync(CancellationToken cancellationToken)
     {
-        var keyIds = _analogKeyKeys.Select(key => key.KeyId).ToArray();
-        var byId = _analogKeyKeys.ToDictionary(key => key.KeyId);
+        var read = await ReadAnalogKeyLayoutAsync(_analogKeyKeys, cancellationToken);
+        AnalogKeyLayoutStatusText = AppStrings.FormatText("AnalogKeyReadCount", read);
+    }
+
+    private async Task<int> ReadAnalogKeyLayoutAsync(
+        IReadOnlyList<AnalogKeyKeyViewModel> keys,
+        CancellationToken cancellationToken)
+    {
+        var keyIds = keys.Select(key => key.KeyId).ToArray();
+        var byId = keys.ToDictionary(key => key.KeyId);
+        var seen = new HashSet<byte>();
         foreach (var batch in keyIds.Chunk(RazerAnalogKeyProtocol.MaxActuationPoints))
         {
             var table = await _service.GetAnalogKeyActuationPointsAsync(
@@ -316,6 +348,7 @@ public sealed partial class RazerHidDeviceViewModel
                 var threshold = point.ThresholdL != 0 ? point.ThresholdL : point.ThresholdH;
                 key.ActuationMillimeters = Math.Round(
                     RazerAnalogKeyProtocol.ToMillimeters(threshold), 1, MidpointRounding.AwayFromZero);
+                seen.Add(point.KeyId);
             }
         }
 
@@ -340,9 +373,19 @@ public sealed partial class RazerHidDeviceViewModel
         }
 
         _analogKeyLayoutLoaded = true;
-        AnalogKeyLayoutStatusText =
-            AppStrings.FormatText("AnalogKeyReadCount", keyIds.Length);
+        return seen.Count;
     }
+
+    private bool MatchesAnalogKeyRequest(AnalogKeyKeyViewModel key) =>
+        Math.Abs(key.ActuationMillimeters - AnalogKeyActuationPointMillimeters) <= 0.11 &&
+        key.RapidTriggerEnabled == AnalogKeyRapidTriggerEnabled &&
+        (!AnalogKeyRapidTriggerEnabled ||
+            Math.Abs(key.RapidTriggerSensitivityMillimeters - AnalogKeyRapidTriggerSensitivityMillimeters) <= 0.11);
+
+    private static bool IsAnalogKeyReadbackFailure(Exception exception) =>
+        exception is RazerCommandRejectedException or NotSupportedException or
+            RazerDeviceTimeoutException or RazerReportMismatchException or
+            InvalidDataException or InvalidOperationException or IOException;
 
     private void InitializeAnalogKeyLayout()
     {
