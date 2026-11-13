@@ -98,6 +98,9 @@ secrets.json
 *.appx
 *.appxbundle
 
+# Generated structure check budget
+.structure-budget.json
+
 # OS metadata
 Thumbs.db
 Desktop.ini
