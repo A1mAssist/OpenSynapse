@@ -103,7 +103,12 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                 }
 
                 var candidates = RazerDriverPackageCatalog.GetCandidateProductIds(productId, package);
-                if (candidates.Any(ready.Contains))
+                // The endpoint only proves the package reached the device stack. A mouse
+                // endpoint can exist while its keyboard collections still run on kbdhid,
+                // and macro injection needs those collections. Keep the row so the page
+                // can say "filter missing" and offer the repair path.
+                var hasEndpoint = candidates.Any(ready.Contains);
+                if (hasEndpoint && RazerFilterInfBinder.InspectAttachment(candidates).IsAttached)
                 {
                     continue;
                 }
@@ -111,7 +116,7 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                 var name = group.Select(static item => item.ProductName)
                     .FirstOrDefault(static value => !string.IsNullOrWhiteSpace(value));
                 var row = new RazerDriverRowViewModel(name ?? package.Name, productId, package, candidates);
-                if (_installedProductIds.Overlaps(candidates) || IsPackageInstalled(candidates))
+                if (hasEndpoint || _installedProductIds.Overlaps(candidates) || IsPackageInstalled(candidates))
                 {
                     // The package is installed but the endpoint is still missing. Start
                     // the per-device service once, then report whether the filter is
