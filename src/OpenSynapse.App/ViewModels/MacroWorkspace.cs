@@ -1113,7 +1113,7 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
     {
         _diagnosticLog.TryWrite(
             "macro",
-            $"started id={macro.Id} trigger={macro.Trigger?.Mode.ToString() ?? "manual"} playback={macro.PlaybackMode}");
+            $"started id={macro.Id} trigger={macro.Trigger?.Mode.ToString() ?? "manual"} playback={macro.PlaybackMode} steps={MacroStepTree.Enumerate(macro.Steps).Count()}");
         if (macro.PlaybackMode != MacroPlaybackMode.RepeatUntilStopped ||
             macro.Trigger?.Mode is (MacroTriggerMode.Hold or MacroTriggerMode.HoldRepeat))
         {
