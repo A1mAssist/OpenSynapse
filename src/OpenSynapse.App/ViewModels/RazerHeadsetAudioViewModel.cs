@@ -884,7 +884,9 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
 
             var hasAnyValue = HasAnyValue(state);
-            ErrorText = state.Errors.Count > 0
+            // A probe that failed while the rest of the device answered is a missing
+            // read-back, not a dead device: the capability list already marks that item.
+            ErrorText = state.Errors.Count > 0 && !hasAnyValue
                 ? LocalizeHeadsetReadFailure(state.Errors[0])
                 : string.Empty;
             SetProbeState(hasAnyValue
