@@ -35,16 +35,17 @@ public sealed partial class MainViewModel
             .Concat(AwBleHeadsetDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat([new ConnectedDeviceRowViewModel(Hue)])
             .Where(device => device.IsVisible)
-            // The laptop owns the Blade page and must stay in the first two cards even
+            // The laptop owns the Blade page and must stay in the first cards even
             // when its 91-byte control channel is temporarily unavailable.
             .OrderBy(device => device.Category == DeviceCategory.Laptop ? 0 : device.IsReady ? 1 : 2)
             .ThenBy(device => device.SortOrder)
             .ThenBy(device => device.Name, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
-    public IReadOnlyList<ConnectedDeviceRowViewModel> PrimaryDevices => ConnectedDevices.Take(2).ToArray();
+    // Four cards fit a 1080p window without hiding the page controls behind "more".
+    public IReadOnlyList<ConnectedDeviceRowViewModel> PrimaryDevices => ConnectedDevices.Take(4).ToArray();
 
-    public IReadOnlyList<ConnectedDeviceRowViewModel> AdditionalDevices => ConnectedDevices.Skip(2).ToArray();
+    public IReadOnlyList<ConnectedDeviceRowViewModel> AdditionalDevices => ConnectedDevices.Skip(4).ToArray();
 
     public bool CanPairNewDevice =>
         !IsLiteMode && RazerHid.Devices.Any(device => device.CanPairNewDevice);
