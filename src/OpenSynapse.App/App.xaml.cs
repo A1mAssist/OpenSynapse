@@ -753,7 +753,8 @@ public partial class App : Application
         catch (Exception exception)
         {
             _diagnosticLog.TryWrite("audio-mute-sync", $"switch failed: {exception}");
-            if (exception is BladeFilterEndpointMissingException)
+            if (exception is BladeFilterEndpointMissingException or
+                BladeFilterDriverIncompleteException)
             {
                 if (generation == Volatile.Read(ref _audioMuteGeneration))
                 {
