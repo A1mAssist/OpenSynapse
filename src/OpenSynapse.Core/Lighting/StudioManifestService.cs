@@ -304,10 +304,18 @@ public sealed class StudioManifestService
         var text = Encoding.UTF8.GetString(body);
         if (!text.TrimStart('\uFEFF', ' ', '\t', '\r', '\n').StartsWith('<')) return;
 
-        Directory.CreateDirectory(directory);
-        var temporary = path + ".tmp";
-        await File.WriteAllTextAsync(temporary, text, cancellationToken).ConfigureAwait(false);
-        File.Move(temporary, path, overwrite: true);
+        try
+        {
+            Directory.CreateDirectory(directory);
+            // Two editions can share one file, so keep the scratch name unique.
+            var temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            await File.WriteAllTextAsync(temporary, text, cancellationToken).ConfigureAwait(false);
+            File.Move(temporary, path, overwrite: true);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            // A cache write failure only costs the picture for this session.
+        }
     }
 
     private StudioManifestResult? TryReadOfflineCatalog(ushort productId, int editionId)
