@@ -256,6 +256,20 @@ internal static partial class OpenSynapseServiceHost
                 case OpenSynapseServiceAction.StopChromaBroker:
                     return StopChromaBroker();
 
+                case OpenSynapseServiceAction.ReadCpuTemperature:
+                    var temperatureRead = RyzenSmuTemperature.TryRead(
+                        out var cpuCelsius, out var temperatureError);
+                    return new OpenSynapseServiceResponse(
+                        OpenSynapseServiceProtocol.Version,
+                        Handled: true,
+                        temperatureRead
+                            ? DedicatedGpuSwitchOutcome.Success
+                            : DedicatedGpuSwitchOutcome.Failed,
+                        ExitCode: temperatureRead ? 0 : 1,
+                        Status: null,
+                        Error: temperatureError,
+                        CpuTemperatureCelsius: temperatureRead ? cpuCelsius : null);
+
                 case OpenSynapseServiceAction.InstallChromaDll:
                     var dllOutcome = await ChromaOfficialDllInstaller
                         .InstallAsServiceAsync(CancellationToken.None)

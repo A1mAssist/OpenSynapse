@@ -157,7 +157,8 @@ public partial class App : Application
             _diagnosticLog.TryWrite("gpu-preference", $"registration failed: {exception}");
         }
 
-        _performanceMonitor = new WindowsPerformanceMonitor();
+        _performanceMonitor = new WindowsPerformanceMonitor(
+            OpenSynapseServiceClient.TryReadCpuTemperatureAsync);
         var razerTransport = new RazerFeatureTransport(_diagnosticLog);
         _razerTransport = razerTransport;
         var registryLoad = RazerDeviceRegistry.Load();

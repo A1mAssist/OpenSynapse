@@ -2,6 +2,14 @@ using System.Runtime.InteropServices;
 
 namespace OpenSynapse.Windows.Sensors;
 
+internal enum CpuTemperatureSource
+{
+    None,
+    Hwinfo,
+    IntelMsr,
+    Acpi,
+}
+
 internal sealed class CpuHardwareMonitor : IDisposable
 {
     private readonly PdhWildcardCounter? _temperature =
@@ -15,6 +23,9 @@ internal sealed class CpuHardwareMonitor : IDisposable
     private readonly HwinfoSensorReader _hwinfo = new();
     private readonly IntelMsrTemperatureReader _intelMsr = new();
     private readonly object _gate = new();
+    /// <summary>Which reader produced the last CPU temperature.</summary>
+    internal CpuTemperatureSource LastSource { get; private set; }
+
     private double? _lastAcpiTemperature;
     private DateTimeOffset _acpiTemperatureStableSince = DateTimeOffset.UtcNow;
 
@@ -43,12 +54,14 @@ internal sealed class CpuHardwareMonitor : IDisposable
         if (_hwinfo.ReadCpuTemperatureCelsius() is double hwinfoTemperature)
         {
             _lastAcpiTemperature = null;
+            LastSource = CpuTemperatureSource.Hwinfo;
             return hwinfoTemperature;
         }
 
         if (_intelMsr.ReadPackageTemperatureCelsius() is double packageTemperature)
         {
             _lastAcpiTemperature = null;
+            LastSource = CpuTemperatureSource.IntelMsr;
             return packageTemperature;
         }
 
@@ -57,8 +70,11 @@ internal sealed class CpuHardwareMonitor : IDisposable
         if (acpiTemperature is not double value)
         {
             _lastAcpiTemperature = null;
+            LastSource = CpuTemperatureSource.None;
             return null;
         }
+
+        LastSource = CpuTemperatureSource.Acpi;
 
         var now = DateTimeOffset.UtcNow;
         if (value != _lastAcpiTemperature)
