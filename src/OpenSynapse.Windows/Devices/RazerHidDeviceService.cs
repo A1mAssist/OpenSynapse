@@ -1200,7 +1200,7 @@ public sealed partial class RazerHidDeviceService
             // 0083 and other OBM mice answer the assignment table even when the button
             // list GET is silent, so read one known assignment as the capability probe.
             var assignment = RazerHidMappingProtocol.GetAssignment(
-                0x01, RazerHidMappingProtocol.NormalMode);
+                RazerHidMappingProtocol.ProfileId, 0x01, RazerHidMappingProtocol.NormalMode);
             if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
                     "mapping.assignment", assignment.Report,
                     response =>

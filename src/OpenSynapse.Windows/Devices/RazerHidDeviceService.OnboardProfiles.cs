@@ -119,6 +119,7 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
+        ForgetMappingProfile(connection);
         return ExecuteWithoutResultAsync(connection,
             new RazerHidRequest("razer_onboard_set_active_profile",
                 UsesAltProfileClass(connection)
@@ -133,6 +134,7 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
+        ForgetMappingProfile(connection);
         return ExecuteWithoutResultAsync(connection,
             new RazerHidRequest("razer_onboard_create_profile",
                 UsesAltProfileClass(connection)
@@ -147,6 +149,7 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
+        ForgetMappingProfile(connection);
         return ExecuteWithoutResultAsync(connection,
             new RazerHidRequest("razer_onboard_delete_profile",
                 UsesAltProfileClass(connection)
