@@ -81,7 +81,7 @@ internal static class StudioManifestParser
                 supportedElement.ValueKind == JsonValueKind.True;
 
             var svgParts = ReadSvgParts(root);
-            var (svgKey, svgBase64) = SelectPrimarySvg(svgParts, editionId);
+            var (svgKey, svgBase64) = SelectPrimarySvg(svgParts, editionId, category);
 
             var ledConfigJson = root.TryGetProperty("ledConfig", out var ledConfigElement)
                 ? ledConfigElement.GetRawText()
@@ -137,13 +137,21 @@ internal static class StudioManifestParser
 
     private static (string Key, string Value) SelectPrimarySvg(
         IReadOnlyList<StudioManifestSvg> parts,
-        int editionId)
+        int editionId,
+        string? category)
     {
-        var preferredKey = FormattableString.Invariant($"svg_{editionId}_1");
-        var preferred = parts.FirstOrDefault(part => part.Key == preferredKey);
-        if (preferred is not null) return (preferred.Key, preferred.Value);
+        if (parts.Count == 0) return (string.Empty, string.Empty);
 
-        var selected = parts.FirstOrDefault(part => !part.IsFile) ?? parts.FirstOrDefault();
-        return selected is null ? (string.Empty, string.Empty) : (selected.Key, selected.Value);
+        // Synapse falls back to layout 1 on keyboards and layout 0 elsewhere when the
+        // device does not report a layout; a manifest declares one part per layout.
+        var isKeyboard = string.Equals(category, "KEYBOARD", StringComparison.OrdinalIgnoreCase);
+        foreach (var layout in new[] { isKeyboard ? 1 : 0, isKeyboard ? 0 : 1 })
+        {
+            var key = FormattableString.Invariant($"svg_{editionId}_{layout}");
+            var part = parts.FirstOrDefault(candidate => candidate.Key == key);
+            if (part is not null) return (part.Key, part.Value);
+        }
+
+        return (parts[0].Key, parts[0].Value);
     }
 }

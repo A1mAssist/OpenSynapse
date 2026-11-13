@@ -53,7 +53,7 @@ public static class StudioDeviceVisualBuilder
         ArgumentNullException.ThrowIfNull(manifest);
 
         var leds = TryParseLeds(manifest.LedConfigJson);
-        var svg = StudioSvgParts.Merge(StudioSvgParts.Parse(manifest, svgFileResolver));
+        var svg = StudioSvgParts.Select(manifest, svgFileResolver);
         if (svg is not null && svg.Paths.Any(path => path.Role == StudioSvgRole.Led))
         {
             return new StudioDeviceVisual(
