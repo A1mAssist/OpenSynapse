@@ -55,6 +55,37 @@ public sealed partial class MainViewModel
             ? Visibility.Visible
             : Visibility.Collapsed;
 
+    private bool _batteriesPrimed;
+
+    /// <summary>
+    /// The tray poller stops when the taskbar strip is disabled, so the cards read each
+    /// wireless device once when the page first opens. Failures keep the card batteryless.
+    /// </summary>
+    internal async Task PrimeDeviceBatteriesAsync(CancellationToken cancellationToken)
+    {
+        if (_batteriesPrimed)
+        {
+            return;
+        }
+
+        _batteriesPrimed = true;
+        foreach (var row in RazerHid.Devices.Where(row =>
+                     row.BatteryPercent is null &&
+                     row.Connection.Capabilities.Contains(RazerHidBackendCapability.BatteryRead)))
+        {
+            try
+            {
+                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                timeout.CancelAfter(TimeSpan.FromSeconds(1));
+                await RazerHid.ReadBatteryPercentAsync(row, timeout.Token);
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                // A silent device keeps the card without a battery number.
+            }
+        }
+    }
+
     private void RefreshDeviceOverviewVisibility()
     {
         _connectedDevicesCache = null;

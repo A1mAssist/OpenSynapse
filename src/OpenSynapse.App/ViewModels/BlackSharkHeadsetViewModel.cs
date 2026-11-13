@@ -71,6 +71,7 @@ public sealed class BlackSharkHeadsetViewModel : INotifyPropertyChanged
         : Visibility.Visible;
 
     public string BatteryText => _batteryPercent is int battery ? $"{battery}%" : "--";
+    public int? BatteryPercent => _batteryPercent;
     public string ChargingText => _charging switch
     {
         true => AppStrings.Text("BlackSharkCharging"),

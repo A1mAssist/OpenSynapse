@@ -83,6 +83,7 @@ public sealed partial class DevicesPage : UserControl
         }
 
         _razerDriversRequested = true;
+        _ = viewModel.PrimeDeviceBatteriesAsync(Lifetime);
         await viewModel.RazerDrivers.RefreshAsync(Lifetime);
     }
 

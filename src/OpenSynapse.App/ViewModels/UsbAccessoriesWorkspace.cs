@@ -152,7 +152,8 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
         try
         {
             await probe.LoadAsync(cancellationToken);
-            row.SetProbeResult(probe.ProbeState, probe.CapabilityText, probe.ErrorText);
+            row.SetProbeResult(
+                probe.ProbeState, probe.CapabilityText, probe.ErrorText, probe.BatteryPercent);
         }
         finally
         {
@@ -288,7 +289,8 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
         row.SetProbeResult(
             SelectedHeadsetAudio.ProbeState,
             SelectedHeadsetAudio.CapabilityText,
-            SelectedHeadsetAudio.ErrorText);
+            SelectedHeadsetAudio.ErrorText,
+            SelectedHeadsetAudio.BatteryPercent);
     }
 
     internal async Task RefreshSelectedHeadsetAudioAsync(CancellationToken cancellationToken = default)
@@ -297,7 +299,8 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
         await selected.LoadAsync(cancellationToken);
         if (_selectedHeadsetAudioDevice is { } row)
         {
-            row.SetProbeResult(selected.ProbeState, selected.CapabilityText, selected.ErrorText);
+            row.SetProbeResult(
+                selected.ProbeState, selected.CapabilityText, selected.ErrorText, selected.BatteryPercent);
         }
     }
 

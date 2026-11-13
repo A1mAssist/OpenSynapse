@@ -12,8 +12,12 @@ using OpenSynapse.Windows.Protocols;
 namespace OpenSynapse.App.ViewModels;
 
 /// <summary>Device-list row for a paired AudioAWKittyBLE headset.</summary>
-public sealed class RazerAwBleHeadsetRowViewModel(RazerBleDevice device) : INotifyPropertyChanged
+public sealed class RazerAwBleHeadsetRowViewModel(RazerBleDevice device)
+    : INotifyPropertyChanged, IDeviceBatteryRow
 {
+    private int? _batteryPercent;
+    public string BatteryText => _batteryPercent is { } value ? $"{value}%" : string.Empty;
+    public bool IsBatteryAvailable => _batteryPercent is not null;
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public RazerBleDevice Device { get; } = device;
@@ -24,9 +28,21 @@ public sealed class RazerAwBleHeadsetRowViewModel(RazerBleDevice device) : INoti
     public string Status => AppStrings.Text("BlackSharkStatusConnected");
 
     /// <summary>Last value the headset page read, reused by the tray without reconnecting.</summary>
-    public int? BatteryPercent { get; private set; }
+    public int? BatteryPercent => _batteryPercent;
 
-    internal void SetBatteryPercent(int? percent) => BatteryPercent = percent;
+    /// <summary>A failed read keeps the last value so the card does not blink on a timeout.</summary>
+    internal void SetBatteryPercent(int? percent)
+    {
+        if (percent is null || percent == _batteryPercent)
+        {
+            return;
+        }
+
+        _batteryPercent = percent;
+        PropertyChanged?.Invoke(this, new(nameof(IsBatteryAvailable)));
+        PropertyChanged?.Invoke(this, new(nameof(BatteryText)));
+        PropertyChanged?.Invoke(this, new(nameof(BatteryPercent)));
+    }
 
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
 }

@@ -6,8 +6,9 @@ using Windows.UI;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed class RazerHidDeviceRowViewModel : INotifyPropertyChanged
+public sealed class RazerHidDeviceRowViewModel : INotifyPropertyChanged, IDeviceBatteryRow
 {
+    private int? _batteryPercent;
     private readonly RazerHidDeviceConnection _connection;
     private RazerHidDeviceViewModel? _detail;
     private readonly Brush _statusBrush;
@@ -67,6 +68,23 @@ public sealed class RazerHidDeviceRowViewModel : INotifyPropertyChanged
             ? AppStrings.FormatText("RazerHidDeviceNotReady", Category)
             : AppStrings.Text("RazerHidProtocolRescanRequired");
     public bool HasError => !string.IsNullOrWhiteSpace(Error);
+    public bool IsBatteryAvailable => _batteryPercent is not null;
+    public string BatteryText => _batteryPercent is { } value ? $"{value}%" : string.Empty;
+    public int? BatteryPercent => _batteryPercent;
+
+    /// <summary>A failed read keeps the last value so the card does not blink on a timeout.</summary>
+    internal void SetBatteryPercent(int? percent)
+    {
+        if (percent is null || percent == _batteryPercent)
+        {
+            return;
+        }
+
+        _batteryPercent = percent;
+        PropertyChanged?.Invoke(this, new(nameof(IsBatteryAvailable)));
+        PropertyChanged?.Invoke(this, new(nameof(BatteryText)));
+        PropertyChanged?.Invoke(this, new(nameof(BatteryPercent)));
+    }
 
     public void AttachDetail(RazerHidDeviceViewModel detail)
     {
