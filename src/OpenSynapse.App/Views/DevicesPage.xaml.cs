@@ -1,3 +1,4 @@
+using System.Collections.Specialized;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -38,6 +39,7 @@ public sealed partial class DevicesPage : UserControl
     private CancellationToken Lifetime => Host.LifetimeToken;
 
     private bool _razerDriversRequested;
+    private bool _deviceBatterySourcesHooked;
     private bool _bladeFanTelemetryHooked;
     private bool _syncingBladeCombos;
     private bool _syncingTouchpadToggle;
@@ -47,6 +49,8 @@ public sealed partial class DevicesPage : UserControl
     {
         InitializeComponent();
         Loaded += DevicesPageLoaded;
+        Unloaded += DevicesPageUnloaded;
+        RegisterPropertyChangedCallback(UIElement.VisibilityProperty, DevicesPageVisibilityChanged);
         BladeBrightnessSlider.AddHandler(
             UIElement.PointerPressedEvent,
             new PointerEventHandler(BladeBrightnessPointerPressed),
@@ -77,14 +81,76 @@ public sealed partial class DevicesPage : UserControl
             viewModel.Blade.PropertyChanged += BladeFanTelemetryChanged;
         }
 
+        HookDeviceBatterySources(viewModel);
+        _ = viewModel.PrimeDeviceBatteriesAsync(Lifetime);
+
         if (_razerDriversRequested)
         {
             return;
         }
 
         _razerDriversRequested = true;
-        _ = viewModel.PrimeDeviceBatteriesAsync(Lifetime);
         await viewModel.RazerDrivers.RefreshAsync(Lifetime);
+    }
+
+    private void DevicesPageUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel viewModel)
+        {
+            UnhookDeviceBatterySources(viewModel);
+        }
+    }
+
+    private void DevicesPageVisibilityChanged(DependencyObject sender, DependencyProperty dp)
+    {
+        if (Visibility != Visibility.Visible || Host is null ||
+            DataContext is not MainViewModel viewModel)
+        {
+            return;
+        }
+
+        HookDeviceBatterySources(viewModel);
+        _ = viewModel.PrimeDeviceBatteriesAsync(Lifetime);
+    }
+
+    private void HookDeviceBatterySources(MainViewModel viewModel)
+    {
+        if (_deviceBatterySourcesHooked)
+        {
+            return;
+        }
+
+        _deviceBatterySourcesHooked = true;
+        viewModel.RazerHid.Devices.CollectionChanged += DeviceBatterySourceChanged;
+        viewModel.BleDevices.CollectionChanged += DeviceBatterySourceChanged;
+        viewModel.AwBleHeadsetDevices.CollectionChanged += DeviceBatterySourceChanged;
+        viewModel.BlackSharkDevices.CollectionChanged += DeviceBatterySourceChanged;
+        viewModel.Accessories.HeadsetAudioDevices.CollectionChanged += DeviceBatterySourceChanged;
+        viewModel.Accessories.KeyboardDevices.CollectionChanged += DeviceBatterySourceChanged;
+    }
+
+    private void UnhookDeviceBatterySources(MainViewModel viewModel)
+    {
+        if (!_deviceBatterySourcesHooked)
+        {
+            return;
+        }
+
+        _deviceBatterySourcesHooked = false;
+        viewModel.RazerHid.Devices.CollectionChanged -= DeviceBatterySourceChanged;
+        viewModel.BleDevices.CollectionChanged -= DeviceBatterySourceChanged;
+        viewModel.AwBleHeadsetDevices.CollectionChanged -= DeviceBatterySourceChanged;
+        viewModel.BlackSharkDevices.CollectionChanged -= DeviceBatterySourceChanged;
+        viewModel.Accessories.HeadsetAudioDevices.CollectionChanged -= DeviceBatterySourceChanged;
+        viewModel.Accessories.KeyboardDevices.CollectionChanged -= DeviceBatterySourceChanged;
+    }
+
+    private void DeviceBatterySourceChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (DataContext is MainViewModel viewModel)
+        {
+            _ = viewModel.PrimeDeviceBatteriesAsync(Lifetime);
+        }
     }
 
     private async void RefreshClick(object sender, RoutedEventArgs e)
