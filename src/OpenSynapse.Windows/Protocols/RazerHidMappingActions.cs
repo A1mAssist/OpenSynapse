@@ -204,8 +204,7 @@ public static partial class RazerHidMappingActions
                 return new(mouse.Name, RazerHidMappingFunctions.ButtonCode, [mouse.Id]);
             case RazerHidMappingGroup.KeyboardKey when optionIndex < Keys.Length:
                 var key = Keys[optionIndex];
-                var encoded = EncodeKey(modifierMask, key.Hid);
-                return new(key.Name, RazerHidMappingFunctions.KeyCode, [encoded.Modifier, encoded.Key]);
+                return new(key.Name, RazerHidMappingFunctions.KeyCode, [modifierMask, key.Hid]);
             case RazerHidMappingGroup.Dpi when optionIndex < DpiActions.Length:
                 var dpi = DpiActions[optionIndex];
                 return new(dpi.Name, RazerHidMappingFunctions.Dpi, [dpi.Code]);
@@ -253,9 +252,8 @@ public static partial class RazerHidMappingActions
             case RazerHidMappingGroup.TurboKey when optionIndex < Keys.Length:
                 var turboKey = Keys[optionIndex];
                 var turboKeyInterval = Interval(turboRate);
-                var turboEncoded = EncodeKey(modifierMask, turboKey.Hid);
                 return new($"Turbo {turboKey.Name}", RazerHidMappingFunctions.TurboModeKey,
-                    [turboEncoded.Modifier, turboEncoded.Key, High(turboKeyInterval), Low(turboKeyInterval)]);
+                    [modifierMask, turboKey.Hid, High(turboKeyInterval), Low(turboKeyInterval)]);
             case RazerHidMappingGroup.TurboButton when optionIndex < MouseButtons.Length:
                 var turboButton = MouseButtons[optionIndex];
                 var turboButtonInterval = Interval(turboRate);
@@ -581,34 +579,21 @@ public static partial class RazerHidMappingActions
     }
 
     /// <summary>
-    /// fnData byte 0 is the HID modifier bitmask, never a usage. A bare modifier is written
-    /// as its bit with no key id; writing the usage (0xE1 for Left Shift) makes the firmware
-    /// press LeftCtrl + RightShift + RightAlt + RightGUI instead.
-    /// </summary>
-    private static (byte Modifier, byte Key) EncodeKey(byte modifierMask, byte hid) =>
-        ModifierBit(hid) is byte bit ? (bit, (byte)0) : (modifierMask, hid);
-
-    /// <summary>
-    /// Profiles saved by pre-beta-41 builds carry the HID usage in the modifier byte; the
-    /// firmware reads that as a chord, so rewrite it to the single modifier bit on the way out.
+    /// Pre-beta-41 builds wrote a bare modifier as [usage, 0]. Byte 0 is the modifier bitmask,
+    /// so 0xE1 became LeftCtrl + RightShift + RightAlt + RightGUI. The middleware's own
+    /// encoder (non-NKRO, which is what this device family reports) writes [0, usage], so
+    /// rewrite stale profile data to that form on the way out.
     /// </summary>
     internal static ReadOnlySpan<byte> NormalizeKeyData(byte functionId, ReadOnlySpan<byte> data)
     {
         if (functionId == RazerHidMappingFunctions.KeyCode && data.Length >= 2 && data[1] == 0 &&
             data[0] is >= 224 and <= 231)
         {
-            return new byte[] { (byte)(1 << (data[0] - 224)), 0 };
+            return new byte[] { 0, data[0] };
         }
 
         return data;
     }
-
-    private static byte? ModifierBit(byte hid) => hid switch
-    {
-        224 => 0x01, 225 => 0x02, 226 => 0x04, 227 => 0x08,
-        228 => 0x10, 229 => 0x20, 230 => 0x40, 231 => 0x80,
-        _ => null,
-    };
 
     private static byte? ModifierHid(byte modifierMask) => modifierMask switch
     {
