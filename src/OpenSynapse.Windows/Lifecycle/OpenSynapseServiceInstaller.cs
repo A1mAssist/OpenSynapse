@@ -55,12 +55,48 @@ public static class OpenSynapseServiceInstaller
         return false;
     }
 
+    internal static string? TryReadServiceUserSid(string? binaryPath)
+    {
+        if (string.IsNullOrWhiteSpace(binaryPath))
+        {
+            return null;
+        }
+
+        const string marker = "--open-synapse-service-user";
+        var index = binaryPath.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+        if (index < 0)
+        {
+            return null;
+        }
+
+        var rest = binaryPath[(index + marker.Length)..].TrimStart(' ', '\t', '"');
+        var end = rest.IndexOfAny(new[] { ' ', '\t', '"' });
+        var sid = end < 0 ? rest : rest[..end];
+        return OpenSynapseServiceConfiguration.IsValidSid(sid) ? sid : null;
+    }
+
     public static bool EnsureInstalled(string? executablePath, string? userSid = null)
     {
         try
         {
             using var identity = WindowsIdentity.GetCurrent();
-            userSid ??= identity.User?.Value;
+            if (string.IsNullOrWhiteSpace(userSid))
+            {
+                // A deferred MSI action runs as SYSTEM. Reuse the installed service's
+                // authorized user instead of rewriting it to SYSTEM during a silent repair.
+                var installed = OpenSynapseServiceConfiguration.Read();
+                userSid = TryReadServiceUserSid(installed?.BinaryPath);
+                if (string.IsNullOrWhiteSpace(userSid) && !identity.IsSystem)
+                {
+                    userSid = identity.User?.Value;
+                }
+
+                if (string.IsNullOrWhiteSpace(userSid))
+                {
+                    return false;
+                }
+            }
+
             var mayChange = new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator) ||
                 identity.IsSystem;
             if (mayChange && executablePath is not null && IsMachineInstallPath(executablePath) &&

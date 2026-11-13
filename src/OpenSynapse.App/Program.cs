@@ -30,7 +30,9 @@ public static class Program
                 ? "OpenSynapseService registered."
                 : !OpenSynapseServiceInstaller.IsMachineInstallPath(Environment.ProcessPath)
                     ? "OpenSynapseService registration failed: install under Program Files first."
-                    : "OpenSynapseService registration failed: run the command as administrator.");
+                    : string.IsNullOrWhiteSpace(userSid)
+                        ? "OpenSynapseService registration failed: the installing user SID is missing."
+                        : "OpenSynapseService registration failed: run the command as administrator.");
             Environment.Exit(ok ? 0 : 1);
         }
 
