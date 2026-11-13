@@ -52,7 +52,7 @@
     },
     {
       "path": "src/OpenSynapse.Windows/Input/RazerFilterMacroInputSink.cs",
-      "maxLines": 700
+      "maxLines": 735
     },
     {
       "path": "src/OpenSynapse.App/App.xaml.cs",

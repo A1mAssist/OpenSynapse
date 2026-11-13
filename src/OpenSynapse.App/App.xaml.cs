@@ -177,7 +177,9 @@ public partial class App : Application
         _thxAudioController = new WindowsThxAudioController();
         _elevatedMacroClient = new ElevatedMacroClient();
         _elevatedMacroSink = new ElevatedMacroInputSink(_elevatedMacroClient);
-        _razerFilterMacroSink = new RazerFilterMacroInputSink(_elevatedMacroSink);
+        _razerFilterMacroSink = new RazerFilterMacroInputSink(
+            _elevatedMacroSink,
+            message => _diagnosticLog.TryWrite("macro", message));
         // Share the Razer transport so RazerHid requests and telemetry serialize on one gate.
         _razerHidDeviceService = new RazerHidDeviceService(
             RazerHidDeviceCatalog.BuiltIn, razerTransport, _diagnosticLog);
