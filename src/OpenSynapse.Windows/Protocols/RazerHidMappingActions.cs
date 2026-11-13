@@ -402,6 +402,21 @@ public static partial class RazerHidMappingActions
                     ? null
                     : turboButton with { TurboRate = IntervalRate(data, 1) };
             case RazerHidMappingFunctions.TurboModeKey when data.Count >= 2:
+                if (data[1] == 0)
+                {
+                    var modifierHid = ModifierHid(data[0]) ??
+                        (data[0] is >= 224 and <= 231 ? data[0] : (byte)0);
+                    var modifierIndex = KeyIndex(modifierHid);
+                    if (modifierHid != 0 && modifierIndex >= 0)
+                    {
+                        return new(
+                            RazerHidMappingGroup.TurboKey,
+                            modifierIndex,
+                            0,
+                            TurboRate: IntervalRate(data, 2));
+                    }
+                }
+
                 var turboModifier = ModifierIndex(data[0]);
                 var turboKey = KeyIndex(data[1]);
                 return turboModifier >= 0 && turboKey >= 0
@@ -572,6 +587,21 @@ public static partial class RazerHidMappingActions
     /// </summary>
     private static (byte Modifier, byte Key) EncodeKey(byte modifierMask, byte hid) =>
         ModifierBit(hid) is byte bit ? (bit, (byte)0) : (modifierMask, hid);
+
+    /// <summary>
+    /// Profiles saved by pre-beta-41 builds carry the HID usage in the modifier byte; the
+    /// firmware reads that as a chord, so rewrite it to the single modifier bit on the way out.
+    /// </summary>
+    internal static ReadOnlySpan<byte> NormalizeKeyData(byte functionId, ReadOnlySpan<byte> data)
+    {
+        if (functionId == RazerHidMappingFunctions.KeyCode && data.Length >= 2 && data[1] == 0 &&
+            data[0] is >= 224 and <= 231)
+        {
+            return new byte[] { (byte)(1 << (data[0] - 224)), 0 };
+        }
+
+        return data;
+    }
 
     private static byte? ModifierBit(byte hid) => hid switch
     {
