@@ -237,7 +237,7 @@
     },
     {
       "path": "src/OpenSynapse.Windows/Protocols/RazerHidMappingActions.cs",
-      "maxLines": 669
+      "maxLines": 672
     },
     {
       "path": "src/OpenSynapse.App/ViewModels/RazerHidWorkspace.cs",

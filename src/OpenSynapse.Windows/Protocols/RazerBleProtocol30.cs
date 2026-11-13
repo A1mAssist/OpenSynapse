@@ -503,7 +503,6 @@ public static partial class RazerBleProtocol30
         byte functionId,
         ReadOnlySpan<byte> data)
     {
-        data = RazerHidMappingActions.NormalizeKeyData(functionId, data);
         if (data.Length > 5)
         {
             throw new ArgumentOutOfRangeException(nameof(data), "Protocol 30 button assignments carry at most 5 data bytes.");
