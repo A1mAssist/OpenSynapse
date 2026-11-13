@@ -55,23 +55,50 @@ public sealed partial class MainViewModel
             ? Visibility.Visible
             : Visibility.Collapsed;
 
-    private bool _batteriesPrimed;
+    private bool _batteryPrimeRunning;
+    private bool _batteryPrimeRequested;
 
     /// <summary>
-    /// The tray poller stops when the taskbar strip is disabled, so the cards read each
-    /// wireless device once when the page first opens. Failures keep the card batteryless.
+    /// The cards read every source that already has no percentage: RazerHid, BLE,
+    /// AudioAW BLE, headsets, BlackShark and standalone keyboards. The page calls this
+    /// again when it is shown or a device collection changes, so discovery races cannot
+    /// leave a card permanently batteryless. Failures keep the last value.
     /// </summary>
     internal async Task PrimeDeviceBatteriesAsync(CancellationToken cancellationToken)
     {
-        if (_batteriesPrimed)
+        if (_batteryPrimeRunning)
         {
+            _batteryPrimeRequested = true;
             return;
         }
 
-        _batteriesPrimed = true;
+        _batteryPrimeRunning = true;
+        try
+        {
+            do
+            {
+                _batteryPrimeRequested = false;
+                await PrimeRazerHidBatteriesAsync(cancellationToken);
+                await PrimeBleBatteriesAsync(cancellationToken);
+                await PrimeAwBleBatteriesAsync(cancellationToken);
+                await PrimeAccessoryBatteriesAsync(cancellationToken);
+            }
+            while (_batteryPrimeRequested && !cancellationToken.IsCancellationRequested);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        finally
+        {
+            _batteryPrimeRunning = false;
+        }
+    }
+
+    private async Task PrimeRazerHidBatteriesAsync(CancellationToken cancellationToken)
+    {
         foreach (var row in RazerHid.Devices.Where(row =>
                      row.BatteryPercent is null &&
-                     row.Connection.Capabilities.Contains(RazerHidBackendCapability.BatteryRead)))
+                     row.Connection.Capabilities.Contains(RazerHidBackendCapability.BatteryRead)).ToArray())
         {
             try
             {

@@ -50,6 +50,8 @@ public sealed class RazerKeyboardDeviceRowViewModel : INotifyPropertyChanged, ID
     public string BatteryText => Detail.BatteryPercent is { } value ? $"{value}%" : string.Empty;
     public int? BatteryPercent => Detail.BatteryPercent;
 
+    internal void SetBatteryPercent(int percent) => Detail.SetBatteryPercent(percent);
+
     public Task EnsureLoadedAsync(CancellationToken cancellationToken = default) =>
         _loadTask ??= Detail.LoadAsync(cancellationToken);
 
@@ -534,11 +536,7 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
         _hasSerial = !string.IsNullOrWhiteSpace(state.Serial);
         if (state.BatteryPercent is byte battery)
         {
-            BatteryText = $"{battery}%";
-            BatteryPercent = battery;
-            _hasBattery = true;
-            OnPropertyChanged(nameof(BatteryPercent));
-            OnPropertyChanged(nameof(BatteryVisibility));
+            SetBatteryPercent(battery);
         }
 
         if (state.Charging is bool charging)

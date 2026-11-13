@@ -12,6 +12,24 @@ public sealed partial class RazerBleDeviceService
     // The middleware writes the live smart-dimming setting to profile 1, then replays it per profile.
     private const byte SmartIlluminationProfileId = 1;
 
+    /// <summary>Reads only the battery percentage for the device card.</summary>
+    public async Task<int?> TryReadBatteryPercentAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _session.SendAsync(
+                transaction => RazerBleProtocol30.CreateGetBatteryLevel(transaction),
+                "get battery",
+                cancellationToken).ConfigureAwait(false);
+            return RazerBleProtocol30.ReadBatteryPercent(response);
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or NotSupportedException)
+        {
+            _diagnostic?.Invoke($"ble battery read failed: {exception.Message}");
+            return null;
+        }
+    }
+
     public async Task<RazerBleSnapTapState> ReadSnapTapAsync(
         byte profileId = BleProfileId,
         CancellationToken cancellationToken = default)
