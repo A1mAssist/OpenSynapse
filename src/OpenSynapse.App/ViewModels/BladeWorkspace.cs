@@ -1514,7 +1514,8 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     }
     public bool CanSetNativeDisplayMode =>
         _blade._bladeNativeDisplayMode is not null &&
-        _blade._bladeSkuHardwareConfiguration?.SupportsNativeDisplayMode == true;
+        _blade._bladeSkuHardwareConfiguration?.SupportsNativeDisplayMode == true &&
+        BladeModelCapabilities.SupportsNativeDisplayMode(_blade._bladeProductId);
     public bool CanApplyNativeDisplayMode =>
         CanSetNativeDisplayMode &&
         NativeDisplayModeIndex is >= 0 and <= 1 &&
@@ -1551,7 +1552,9 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             }
         }
     }
-    public bool CanSetLocalDimming => _blade._bladeLocalDimmingEnabled is not null;
+    public bool CanSetLocalDimming =>
+        _blade._bladeLocalDimmingEnabled is not null &&
+        BladeModelCapabilities.SupportsLocalDimming(_blade._bladeProductId);
     public bool CanApplyLocalDimming =>
         CanSetLocalDimming && LocalDimmingEnabled != _blade._bladeLocalDimmingEnabled;
     public Visibility LocalDimmingVisibility =>
