@@ -27,9 +27,12 @@
     </Style>
     <DataTemplate x:Key="ConnectedDeviceCardTemplate">
       <Button Tag="{Binding Source}" Click="ConnectedDeviceCardClick" Style="{StaticResource QuickActionButtonStyle}" Padding="12" MinHeight="60" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="{Binding Name}" ToolTipService.ToolTip="{Binding Identity}">
-        <Grid ColumnDefinitions="36,*,Auto" ColumnSpacing="12">
-          <Border Width="36" Height="36" Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="4">
-            <FontIcon Glyph="{Binding IconGlyph}" FontFamily="{StaticResource IconFontFamily}" FontSize="18" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <Grid ColumnDefinitions="44,*,Auto" ColumnSpacing="12">
+          <Border Width="44" Height="36" Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="4">
+            <Grid>
+              <FontIcon Glyph="{Binding IconGlyph}" Visibility="{Binding IconVisibility}" FontFamily="{StaticResource IconFontFamily}" FontSize="18" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              <Image Source="{Binding ProductImage}" Stretch="Uniform" Margin="2" />
+            </Grid>
           </Border>
           <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{Binding Name}" TextWrapping="Wrap" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
           <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Spacing="2" MaxWidth="320">
