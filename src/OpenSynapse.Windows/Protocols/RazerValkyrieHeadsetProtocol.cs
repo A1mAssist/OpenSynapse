@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+
 namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
@@ -55,6 +57,30 @@ public static class RazerValkyrieHeadsetProtocol
     public static readonly byte[] SetMicMuteCommand = [0xE9, 0x00, 0x01];
     public static readonly byte[] SetMicMuteHeader = [0xE9, 0x01, 0x01];
 
+    // The eight AudioValkyrie bundles expose AudioMxicDevice's sidetone and ANC
+    // triplets; the Billie/Bastet, T3, MXIC and dedicated BlackShark paths do not.
+    public static readonly byte[] GetSidetone = [0x18, 0x00, 0x00];
+    public static readonly byte[] SidetoneHeader = [0x18, 0x01, 0x01];
+    public static readonly byte[] SetSidetoneCommand = [0x98, 0x00, 0x01];
+    public static readonly byte[] SetSidetoneHeader = [0x98, 0x01, 0x01];
+
+    // getANCStatusAndLevel and setANCStatusAndLevel use a two-byte state/level payload.
+    public static readonly byte[] GetAnc = [0x12, 0x00, 0x00];
+    public static readonly byte[] AncHeader = [0x12, 0x01, 0x02];
+    public static readonly byte[] SetAncCommand = [0x92, 0x00, 0x02];
+    public static readonly byte[] SetAncHeader = [0x92, 0x01, 0x02];
+
+    private static readonly ushort[] SidetoneAncProductIds =
+    [
+        0x0579, 0x057A, 0x0A4E, 0x0A51, 0x0A55, 0x0A58, 0x101E, 0x101F,
+    ];
+
+    public static readonly IReadOnlySet<ushort> SupportsSidetone =
+        SidetoneAncProductIds.ToFrozenSet();
+
+    public static readonly IReadOnlySet<ushort> SupportsAnc =
+        SidetoneAncProductIds.ToFrozenSet();
+
     // Only a dongle forwards this query; wired profiles have no radio link to report.
     public static readonly byte[] GetWirelessConnectionStatus = [0x20, 0x00, 0x00];
     public static readonly byte[] WirelessConnectionStatusHeader = [0x20, 0x01, 0x01];
@@ -109,6 +135,16 @@ public static class RazerValkyrieHeadsetProtocol
     }
 
     public static byte[] CreateGetMicMute() => CreateRequest(GetMicMute);
+
+    public static byte[] CreateGetSidetone() => CreateRequest(GetSidetone);
+
+    public static byte[] CreateSetSidetone(bool enabled) =>
+        CreateRequest(SetSidetoneCommand, [enabled ? (byte)1 : (byte)0]);
+
+    public static byte[] CreateGetAnc() => CreateRequest(GetAnc);
+
+    public static byte[] CreateSetAnc(RazerAncState state, byte level) =>
+        CreateRequest(SetAncCommand, [(byte)state, level]);
 
     public static byte[] CreateGetWirelessConnectionStatus() =>
         CreateRequest(GetWirelessConnectionStatus);
@@ -232,6 +268,18 @@ public static class RazerValkyrieHeadsetProtocol
     {
         Require(value, 1);
         return value[0] == 1;
+    }
+
+    public static bool ReadSidetone(ReadOnlySpan<byte> value)
+    {
+        Require(value, 1);
+        return value[0] != 0;
+    }
+
+    public static (RazerAncState State, byte Level) ReadAnc(ReadOnlySpan<byte> value)
+    {
+        Require(value, 2);
+        return ((RazerAncState)value[0], value[1]);
     }
 
     public static bool ReadWirelessConnectionStatus(ReadOnlySpan<byte> value) =>

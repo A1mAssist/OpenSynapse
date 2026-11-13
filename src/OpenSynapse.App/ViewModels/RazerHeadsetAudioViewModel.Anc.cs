@@ -9,13 +9,16 @@ public sealed partial class RazerHeadsetAudioViewModel
     [ProfileSetting("headset.anc", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyAncAsync(CancellationToken cancellationToken = default)
     {
-        if (!IsFeature91 && !IsKrakenBase && !IsMxic0555) return;
+        if (!IsFeature91 && !IsKrakenBase && !IsMxicAnc && !IsValkyrieAnc) return;
         var previousIndex = SelectedAncIndex;
         var previousLevel = AncLevel;
         var state = DeviceAncStates[SelectedAncIndex];
         var level = (byte)Math.Round(AncLevel);
-        var written = IsMxic0555
+        var written = IsMxicAnc
             ? await RunMxicWriteAsync(
+                (service, token) => service.SetAncAsync(state, level, token), cancellationToken)
+            : IsValkyrieAnc
+            ? await RunValkyrieWriteAsync(
                 (service, token) => service.SetAncAsync(state, level, token), cancellationToken)
             : await RunWriteAsync(
                 (service, token) => service.SetAncAsync(state, level, token), cancellationToken);
@@ -46,9 +49,14 @@ public sealed partial class RazerHeadsetAudioViewModel
             {
                 var previousState = DeviceAncStates[previousIndex];
                 var previousValue = (byte)Math.Round(previousLevel);
-                if (IsMxic0555)
+                if (IsMxicAnc)
                 {
                     await using var service = OpenMxicService();
+                    await service.SetAncAsync(previousState, previousValue, token);
+                }
+                else if (IsValkyrieAnc)
+                {
+                    await using var service = OpenValkyrieService();
                     await service.SetAncAsync(previousState, previousValue, token);
                 }
                 else

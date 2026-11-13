@@ -38,39 +38,60 @@ public sealed partial class RazerMxicHeadsetService
         List<string> errors,
         CancellationToken cancellationToken)
     {
-        if (_dialect != MxicDialect.Legacy || _productId != RazerMxicHeadsetProtocol.ProductId)
+        var sidetone = (Ok: false, Value: false);
+        if (CanUseSidetone)
         {
-            return (false, false, false, RazerAncState.Off, 0);
+            sidetone = await ProbeAsync(
+                "sidetone",
+                RazerMxicHeadsetProtocol.CreateGetSidetone(_productId),
+                SidetoneReadHeader,
+                ReadSidetone,
+                errors,
+                cancellationToken).ConfigureAwait(false);
         }
 
-        var sidetone = await ProbeAsync(
-            "sidetone",
-            CreateSidetoneRead(),
-            RazerMxicHeadsetProtocol.SidetoneHeader,
-            ReadSidetone,
-            errors,
-            cancellationToken).ConfigureAwait(false);
-        var anc = await ProbeAsync(
-            "ANC",
-            CreateAncRead(),
-            RazerMxicHeadsetProtocol.AncHeader,
-            ReadAnc,
-            errors,
-            cancellationToken).ConfigureAwait(false);
+        var anc = (Ok: false, Value: (State: RazerAncState.Off, Level: (byte)0));
+        if (CanUseAnc)
+        {
+            anc = await ProbeAsync(
+                "ANC",
+                CreateAncRead(),
+                RazerMxicHeadsetProtocol.AncHeader,
+                ReadAnc,
+                errors,
+                cancellationToken).ConfigureAwait(false);
+        }
+
         return (sidetone.Ok, sidetone.Value, anc.Ok, anc.Value.State, anc.Value.Level);
     }
 
+    // AudioMxicDevice carries sidetone on its legacy triplet; rzDevice25ValkyrieT3 keeps
+    // class 0x18 and uses source 3. ANC is only measured on 0555.
+    private bool CanUseSidetone =>
+        (_dialect is MxicDialect.Legacy or MxicDialect.MabelT1 or MxicDialect.ValkyrieT3) &&
+        RazerMxicHeadsetProtocol.SupportsSidetone(_productId);
+
+    private bool CanUseAnc =>
+        _dialect == MxicDialect.Legacy && RazerMxicHeadsetProtocol.SupportsAnc(_productId);
+
+    private byte[] SidetoneReadHeader => _dialect == MxicDialect.ValkyrieT3
+        ? RazerMxicHeadsetProtocol.SidetoneHeaderValkyrie
+        : RazerMxicHeadsetProtocol.SidetoneHeader;
+
+    // A Valkyrie T3 setter only needs the command ACK, which the transport already checks.
+    private byte[] SidetoneWriteHeader => _dialect == MxicDialect.ValkyrieT3
+        ? []
+        : RazerMxicHeadsetProtocol.SetSidetoneHeader;
+
     public Task SetSidetoneAsync(bool enabled, CancellationToken cancellationToken = default) =>
-        _dialect == MxicDialect.Legacy && _productId == RazerMxicHeadsetProtocol.ProductId
+        CanUseSidetone
             ? WriteAsync(
-                CreateSidetoneRead(),
-                RazerMxicHeadsetProtocol.SidetoneHeader,
+                RazerMxicHeadsetProtocol.CreateGetSidetone(_productId),
+                SidetoneReadHeader,
                 ReadSidetone,
                 enabled,
-                value => RazerMxicHeadsetProtocol.CreateRequest(
-                    RazerMxicHeadsetProtocol.SetSidetoneCommand,
-                    [value ? (byte)1 : (byte)0]),
-                RazerMxicHeadsetProtocol.SetSidetoneHeader,
+                value => RazerMxicHeadsetProtocol.CreateSetSidetone(_productId, value),
+                SidetoneWriteHeader,
                 value => value == enabled,
                 "sidetone",
                 cancellationToken)
@@ -82,7 +103,7 @@ public sealed partial class RazerMxicHeadsetService
         byte level,
         CancellationToken cancellationToken = default)
     {
-        if (_dialect != MxicDialect.Legacy || _productId != RazerMxicHeadsetProtocol.ProductId)
+        if (!CanUseAnc)
         {
             return Task.FromException(new NotSupportedException(
                 $"Device {_productId:X4} does not expose the MXIC ANC command."));
@@ -111,11 +132,6 @@ public sealed partial class RazerMxicHeadsetService
             "ANC",
             cancellationToken);
     }
-
-    private byte[] CreateSidetoneRead() =>
-        RazerMxicHeadsetProtocol.CreateRequest(
-            RazerMxicHeadsetProtocol.GetSidetone,
-            reportId: ReportId);
 
     private byte[] CreateAncRead() =>
         RazerMxicHeadsetProtocol.CreateRequest(
