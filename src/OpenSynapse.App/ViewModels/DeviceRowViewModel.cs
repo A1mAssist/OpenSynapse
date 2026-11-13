@@ -5,7 +5,7 @@ using Windows.UI;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed class DeviceRowViewModel : INotifyPropertyChanged
+public sealed class DeviceRowViewModel : INotifyPropertyChanged, IDeviceBatteryRow
 {
     private readonly string _accessSource;
     private readonly string _iconAutomationSource;
@@ -102,9 +102,25 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged
     public bool IsAvailable { get; }
     public bool IsPresent { get; }
     public int SupportedCapabilityCount => _total;
-    public int? BatteryPercent { get; }
+    public int? BatteryPercent { get; private set; }
+    public bool IsBatteryAvailable => BatteryPercent is not null;
+    public string BatteryText => BatteryPercent is { } value ? $"{value}%" : string.Empty;
     public Brush StatusBrush { get; }
     public IReadOnlyList<DeviceProtocolDetailViewModel> ProtocolDetails { get; }
+
+    /// <summary>A failed read keeps the last value so the card does not blink on a timeout.</summary>
+    internal void SetBatteryPercent(int? percent)
+    {
+        if (percent is not int value || value == BatteryPercent)
+        {
+            return;
+        }
+
+        BatteryPercent = value;
+        PropertyChanged?.Invoke(this, new(nameof(IsBatteryAvailable)));
+        PropertyChanged?.Invoke(this, new(nameof(BatteryText)));
+        PropertyChanged?.Invoke(this, new(nameof(BatteryPercent)));
+    }
 
     private static IReadOnlyList<DeviceProtocolDetailViewModel> CreateProtocolDetails(
         DeviceDescriptor descriptor,

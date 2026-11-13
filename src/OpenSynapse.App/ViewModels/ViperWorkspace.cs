@@ -230,6 +230,7 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
         if (telemetry.ViperBatteryPercent is int battery)
         {
             BatteryText = $"{battery}%";
+            _deviceRow()?.SetBatteryPercent(battery);
         }
 
         var viper = _deviceDescriptors().FirstOrDefault(device =>
