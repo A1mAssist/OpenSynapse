@@ -30,6 +30,12 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
     private int _stopped;
     private int _disposed;
 
+    /// <summary>
+    /// A wireless keyboard drops a static custom frame after its idle timeout.
+    /// Rewriting an unchanged frame keeps the custom effect armed.
+    /// </summary>
+    internal int KeepAliveIntervalMilliseconds { get; set; } = 2000;
+
     public StudioHidOutputRouter(
         RazerHidDeviceService service,
         Func<IReadOnlyList<RazerHidDeviceConnection>> connections,
@@ -144,6 +150,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
         try
         {
             if (Volatile.Read(ref _stopped) != 0) return false;
+            var now = Environment.TickCount64;
 
             Func<RazerHidDeviceConnection, IReadOnlyList<StudioLayerRender>>? layersForDevice;
             long layersVersion;
@@ -229,9 +236,17 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                     frame[index] = new RazerHidColor(color.Red, color.Green, color.Blue);
                 }
 
-                if (output.Frame is { } previous && previous.AsSpan().SequenceEqual(frame))
+                var unchanged = output.Frame is { } previous && previous.AsSpan().SequenceEqual(frame);
+                if (unchanged && now - output.LastWriteTimestamp < KeepAliveIntervalMilliseconds)
                 {
                     continue;
+                }
+
+                if (unchanged)
+                {
+                    // The device may have left custom mode while idle, so selecting the
+                    // custom frame again is part of the keep-alive, not just the pixels.
+                    output.CustomEffectAttempted = false;
                 }
 
                 if (!output.BaselineAttempted)
@@ -260,6 +275,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                     }
 
                     output.Frame = frame;
+                    output.LastWriteTimestamp = now;
                 }
                 catch (Exception exception) when (IsDeviceFailure(exception))
                 {
@@ -450,6 +466,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
         internal StudioLedLayout? Layout { get; }
         internal RazerHidDeviceConnection? Connection { get; set; }
         internal RazerHidColor[]? Frame { get; set; }
+        internal long LastWriteTimestamp { get; set; }
         internal long LayersVersion { get; set; } = -1;
         internal DeviceBaseline? Baseline { get; set; }
         internal bool BaselineAttempted { get; set; }
