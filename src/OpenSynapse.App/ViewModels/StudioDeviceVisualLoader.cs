@@ -22,7 +22,8 @@ public sealed class StudioDeviceVisualLoader : IDisposable
             _http,
             cacheDirectory ?? AppDataPaths.Combine("lighting-studio", "manifests"),
             TimeSpan.FromMinutes(10),
-            Path.Combine(AppContext.BaseDirectory, "Assets", "LightingLayouts", "studio-manifests.zip"));
+            Path.Combine(AppContext.BaseDirectory, "Assets", "LightingLayouts", "studio-manifests.zip"),
+            Path.Combine(AppContext.BaseDirectory, "Assets", "LightingLayouts", "svg"));
         _images = new StudioProductImageService(
             _http,
             AppDataPaths.Combine("lighting-studio", "product-images"));
@@ -39,7 +40,7 @@ public sealed class StudioDeviceVisualLoader : IDisposable
     {
         var result = await _service.GetAsync(productId, 0, cancellationToken).ConfigureAwait(false);
         if (result.Manifest is null) return null;
-        return StudioDeviceVisualBuilder.Build(result.Manifest, instanceId, name);
+        return StudioDeviceVisualBuilder.Build(result.Manifest, instanceId, name, _service.TryReadSvgAsset);
     }
 
     /// <summary>Builds the packaged layout immediately; the network fetch may replace it later.</summary>
@@ -48,7 +49,7 @@ public sealed class StudioDeviceVisualLoader : IDisposable
         if (productId == 0) return null;
         var result = _service.TryGetOfflineCatalog(productId, 0);
         return result?.Manifest is { } manifest
-            ? StudioDeviceVisualBuilder.Build(manifest, instanceId, name)
+            ? StudioDeviceVisualBuilder.Build(manifest, instanceId, name, _service.TryReadSvgAsset)
             : null;
     }
 

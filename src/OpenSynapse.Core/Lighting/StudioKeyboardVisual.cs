@@ -1,4 +1,3 @@
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace OpenSynapse.Core.Lighting;
@@ -39,19 +38,15 @@ public static class StudioKeyboardVisualBuilder
     }
 
     public static StudioKeyboardVisual? Build(StudioManifestDevice manifest)
+        => Build(manifest, null);
+
+    public static StudioKeyboardVisual? Build(
+        StudioManifestDevice manifest,
+        Func<string, string?>? svgFileResolver)
     {
         ArgumentNullException.ThrowIfNull(manifest);
-        if (string.IsNullOrWhiteSpace(manifest.SvgBase64)) return null;
-
-        try
-        {
-            var svg = Encoding.UTF8.GetString(Convert.FromBase64String(manifest.SvgBase64));
-            return BuildVisual(StudioSvgLayoutParser.Parse(svg));
-        }
-        catch (Exception ex) when (ex is FormatException or ArgumentException)
-        {
-            return null;
-        }
+        var layout = StudioSvgParts.Merge(StudioSvgParts.Parse(manifest, svgFileResolver));
+        return layout is null ? null : BuildVisual(layout);
     }
 
     /// <summary>
@@ -59,20 +54,15 @@ public static class StudioKeyboardVisualBuilder
     /// Their first N paths map to the keypad counters in bundle order.
     /// </summary>
     public static StudioKeyboardVisual? BuildKeypad(StudioManifestDevice manifest)
+        => BuildKeypad(manifest, null);
+
+    public static StudioKeyboardVisual? BuildKeypad(
+        StudioManifestDevice manifest,
+        Func<string, string?>? svgFileResolver)
     {
         ArgumentNullException.ThrowIfNull(manifest);
-        if (string.IsNullOrWhiteSpace(manifest.SvgBase64)) return null;
-
-        try
-        {
-            var svg = Encoding.UTF8.GetString(Convert.FromBase64String(manifest.SvgBase64));
-            var layout = StudioSvgLayoutParser.Parse(svg);
-            return BuildKeypad(layout);
-        }
-        catch (Exception ex) when (ex is FormatException or ArgumentException or System.Xml.XmlException)
-        {
-            return null;
-        }
+        var layout = StudioSvgParts.Merge(StudioSvgParts.Parse(manifest, svgFileResolver));
+        return layout is null ? null : BuildKeypad(layout);
     }
 
     private static StudioKeyboardVisual BuildVisual(StudioSvgLayout layout)

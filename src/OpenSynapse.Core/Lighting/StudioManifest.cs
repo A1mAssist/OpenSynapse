@@ -2,6 +2,9 @@ using System.Text.Json;
 
 namespace OpenSynapse.Core.Lighting;
 
+/// <summary>One SVG entry: inline payload text or a file name the host must resolve.</summary>
+public sealed record StudioManifestSvg(string Key, string Value, bool IsFile);
+
 /// <summary>A Chroma lighting manifest for one product edition.</summary>
 public sealed record StudioManifestDevice(
     ushort ProductId,
@@ -18,6 +21,12 @@ public sealed record StudioManifestDevice(
 {
     /// <summary>Razer device category, for example KEYBOARD, KEYPAD or MOUSE.</summary>
     public string? Category { get; init; }
+
+    /// <summary>
+    /// Every declared SVG part. Older manifests inline base64; newer ones name
+    /// external files, and some mix both within one device.
+    /// </summary>
+    public IReadOnlyList<StudioManifestSvg> SvgParts { get; init; } = [];
 
     /// <summary>Product folder that owns the Synapse cover art.</summary>
     public ushort CoverProductId => WiredProductId != 0 ? WiredProductId : ProductId;
@@ -71,7 +80,8 @@ internal static class StudioManifestParser
             var isStudioSupported = root.TryGetProperty("isChromaStudioSupported", out var supportedElement) &&
                 supportedElement.ValueKind == JsonValueKind.True;
 
-            var (svgKey, svgBase64) = ReadSvg(root, editionId);
+            var svgParts = ReadSvgParts(root);
+            var (svgKey, svgBase64) = SelectPrimarySvg(svgParts, editionId);
 
             var ledConfigJson = root.TryGetProperty("ledConfig", out var ledConfigElement)
                 ? ledConfigElement.GetRawText()
@@ -91,6 +101,7 @@ internal static class StudioManifestParser
                 dongleProductId)
             {
                 Category = category,
+                SvgParts = svgParts,
             };
         }
         catch (JsonException)
@@ -104,29 +115,35 @@ internal static class StudioManifestParser
             ? value
             : (ushort)0;
 
-    private static (string Key, string Base64) ReadSvg(JsonElement root, int editionId)
+    private static IReadOnlyList<StudioManifestSvg> ReadSvgParts(JsonElement root)
     {
         if (!root.TryGetProperty("svg", out var svgElement) ||
             svgElement.ValueKind != JsonValueKind.Object)
         {
-            return (string.Empty, string.Empty);
+            return [];
         }
 
-        var preferredKey = FormattableString.Invariant($"svg_{editionId}_1");
-        if (svgElement.TryGetProperty(preferredKey, out var preferred) &&
-            preferred.ValueKind == JsonValueKind.String)
-        {
-            return (preferredKey, preferred.GetString() ?? string.Empty);
-        }
-
+        var parts = new List<StudioManifestSvg>();
         foreach (var property in svgElement.EnumerateObject())
         {
-            if (property.Value.ValueKind == JsonValueKind.String)
-            {
-                return (property.Name, property.Value.GetString() ?? string.Empty);
-            }
+            if (property.Value.ValueKind != JsonValueKind.String) continue;
+            var value = property.Value.GetString();
+            if (string.IsNullOrWhiteSpace(value)) continue;
+            parts.Add(new StudioManifestSvg(property.Name, value, StudioSvgParts.IsFileReference(value)));
         }
 
-        return (string.Empty, string.Empty);
+        return parts;
+    }
+
+    private static (string Key, string Value) SelectPrimarySvg(
+        IReadOnlyList<StudioManifestSvg> parts,
+        int editionId)
+    {
+        var preferredKey = FormattableString.Invariant($"svg_{editionId}_1");
+        var preferred = parts.FirstOrDefault(part => part.Key == preferredKey);
+        if (preferred is not null) return (preferred.Key, preferred.Value);
+
+        var selected = parts.FirstOrDefault(part => !part.IsFile) ?? parts.FirstOrDefault();
+        return selected is null ? (string.Empty, string.Empty) : (selected.Key, selected.Value);
     }
 }

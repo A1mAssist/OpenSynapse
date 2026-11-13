@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text;
 using System.Text.Json;
 
 namespace OpenSynapse.Core.Lighting;
@@ -48,12 +47,13 @@ public static class StudioDeviceVisualBuilder
     public static StudioDeviceVisual Build(
         StudioManifestDevice manifest,
         string instanceId,
-        string? name = null)
+        string? name = null,
+        Func<string, string?>? svgFileResolver = null)
     {
         ArgumentNullException.ThrowIfNull(manifest);
 
         var leds = TryParseLeds(manifest.LedConfigJson);
-        var svg = TryParseSvg(manifest.SvgBase64);
+        var svg = StudioSvgParts.Merge(StudioSvgParts.Parse(manifest, svgFileResolver));
         if (svg is not null && svg.Paths.Any(path => path.Role == StudioSvgRole.Led))
         {
             return new StudioDeviceVisual(
@@ -199,22 +199,6 @@ public static class StudioDeviceVisualBuilder
         catch (Exception ex) when (ex is ArgumentException or JsonException or InvalidOperationException or FormatException)
         {
             // A broken LED map must not hide the SVG geometry.
-            return null;
-        }
-    }
-
-    private static StudioSvgLayout? TryParseSvg(string? svgBase64)
-    {
-        if (string.IsNullOrWhiteSpace(svgBase64)) return null;
-
-        try
-        {
-            var svg = Encoding.UTF8.GetString(Convert.FromBase64String(svgBase64));
-            return string.IsNullOrWhiteSpace(svg) ? null : StudioSvgLayoutParser.Parse(svg);
-        }
-        catch (Exception ex) when (ex is ArgumentException or FormatException)
-        {
-            // Non-payload values and malformed XML both fall back to the grid.
             return null;
         }
     }
