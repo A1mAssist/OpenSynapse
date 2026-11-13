@@ -736,6 +736,25 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
             if (value is >= 0 and <= 1) LightingDirection = checked((byte)(value + 1));
         }
     }
+    /// <summary>
+    /// The product bundle declares the axis a wave travels along, so the two options have to
+    /// name that axis; the same wire ids mean a different direction per device family.
+    /// </summary>
+    public IReadOnlyList<string> LightingDirectionOptions =>
+        Connection.Definition.WaveAxis switch
+        {
+            RazerWaveDirectionAxis.LeftRight =>
+                [AppStrings.Text("CoolingPadLightingDirectionRight"),
+                 AppStrings.Text("CoolingPadLightingDirectionLeft")],
+            RazerWaveDirectionAxis.UpDown =>
+                [AppStrings.Text("CoolingPadLightingDirectionUp"),
+                 AppStrings.Text("CoolingPadLightingDirectionDown")],
+            RazerWaveDirectionAxis.Clockwise =>
+                [AppStrings.Text("CoolingPadLightingDirectionClockwise"),
+                 AppStrings.Text("CoolingPadLightingDirectionCounterClockwise")],
+            _ => [AppStrings.Text("RazerHidLightingDirectionForward"),
+                  AppStrings.Text("RazerHidLightingDirectionReverse")],
+        };
     public Visibility LightingPresetVisibility => VisibleWhen(SecondaryColorVisibility == Visibility.Visible ||
         (PrimaryColorVisibility == Visibility.Visible && SelectedLightingEffect == RazerHidLightingEffect.StarlightSingle &&
          LightingEffects.Contains(RazerHidLightingEffect.StarlightDual)));

@@ -173,6 +173,18 @@ internal static class RazerHidLightingProtocol
             allowArgumentsBeyondDeclaredSize: arguments.Length > dataSize);
     }
 
+    /// <summary>
+    /// The first UI option is the forward one. The wire ids follow the device's bundled
+    /// wave axis: right/left are 2/1, up/down are 3/4 and clockwise/counter-clockwise are 1/2.
+    /// </summary>
+    private static byte WaveWireDirection(RazerHidDeviceDefinition device, byte direction) =>
+        device.WaveAxis switch
+        {
+            RazerWaveDirectionAxis.LeftRight => direction == 1 ? (byte)2 : (byte)1,
+            RazerWaveDirectionAxis.UpDown => direction == 1 ? (byte)3 : (byte)4,
+            _ => Math.Clamp(direction, (byte)1, (byte)2),
+        };
+
     private static RazerHidRequest CreateStandard(
         RazerHidDeviceDefinition device,
         string builder,
@@ -183,7 +195,7 @@ internal static class RazerHidLightingProtocol
         var arguments = value.Effect switch
         {
             RazerHidLightingEffect.Off => new byte[] { 0x00 },
-            RazerHidLightingEffect.Wave => [0x01, Math.Clamp(value.Direction, (byte)1, (byte)2)],
+            RazerHidLightingEffect.Wave => [0x01, WaveWireDirection(device, value.Direction)],
             RazerHidLightingEffect.Spectrum => [0x04],
             // The middleware keeps the flags byte at zero for reactive and puts the colour
             // straight after it; the speed byte it would overwrite is not part of the frame.
@@ -222,7 +234,7 @@ internal static class RazerHidLightingProtocol
         {
             RazerHidLightingEffect.Off => [0x00, 0, 0, 0],
             RazerHidLightingEffect.Static => [0x01, 0, 0, 1, value.Primary.Red, value.Primary.Green, value.Primary.Blue],
-            RazerHidLightingEffect.Wave => [0x04, Math.Clamp(value.Direction, (byte)0, (byte)2), 0x28, 0],
+            RazerHidLightingEffect.Wave => [0x04, WaveWireDirection(device, value.Direction), 0x28, 0],
             RazerHidLightingEffect.Spectrum => [0x03, 0, 0, 0],
             // Wheel is effect 12 in the middleware's Kw table; 10 is AudioMeter, and the
             // middleware pins the rate byte to zero for this effect.

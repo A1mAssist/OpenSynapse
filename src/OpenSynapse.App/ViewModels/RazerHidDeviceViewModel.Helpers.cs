@@ -353,6 +353,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(LightingSpeedVisibility));
         OnPropertyChanged(nameof(MaximumLightingSpeed));
         OnPropertyChanged(nameof(LightingDirectionVisibility));
+        OnPropertyChanged(nameof(LightingDirectionOptions));
         OnPropertyChanged(nameof(CanApplyLighting));
         OnPropertyChanged(nameof(LightingSaveVisibility));
         OnPropertyChanged(nameof(CanEditLightingSettings));
