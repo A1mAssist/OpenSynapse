@@ -1059,6 +1059,9 @@
   <data name="RazerHidOnboardProfileUnsupported" xml:space="preserve">
     <value>This device does not support this onboard profile operation.</value>
   </data>
+  <data name="RazerHidOnboardProfileResetUnsupported" xml:space="preserve">
+    <value>This model rejects the one-touch reset. Create a new profile and delete the old ones instead.</value>
+  </data>
   <data name="RazerHidOnboardProfileUnknown" xml:space="preserve">
     <value>Unknown</value>
   </data>
@@ -1985,6 +1988,9 @@
   <data name="CpuPowerLimitLocked" xml:space="preserve"><value>The firmware has locked the power wall.</value></data>
   <data name="BladeFilterDriverTitle.Text" xml:space="preserve"><value>Fn key takeover needs the Razer driver</value></data>
   <data name="BladeFilterDriverDescription.Text" xml:space="preserve"><value>Fn shortcut takeover depends on Razer's keyboard filter driver. Download the package for this model, install it as administrator, then restart OpenSynapse.</value></data>
+  <data name="BladeSensorPromptTitle.Text" xml:space="preserve"><value>CPU temperature needs PawnIO</value></data>
+  <data name="BladeSensorPromptDescription.Text" xml:space="preserve"><value>The fan curve and the temperature tiles read the CPU sensor through PawnIO. Installing it switches sampling to the real sensor without a restart.</value></data>
+  <data name="BladeSensorPromptInstall.Text" xml:space="preserve"><value>Download PawnIO</value></data>
   <data name="BladeFilterDriverDownload.Content" xml:space="preserve"><value>Download Fn driver</value></data>
   <data name="BladeFilterDriverUninstallHint.Text" xml:space="preserve"><value>The driver stays in Windows after installation; Synapse does not need to stay installed.</value></data>
   <data name="BladeFilterDriverRecoveryHint.Text" xml:space="preserve"><value>If the driver is removed (deleted in Device Manager or after a system reset), run this as administrator:</value></data>

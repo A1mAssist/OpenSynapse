@@ -125,6 +125,7 @@ public sealed partial class DevicesPage : UserControl
             device = "none";
         }
         BladeDevicePanel.Visibility = device == "blade" ? Visibility.Visible : Visibility.Collapsed;
+            UpdateBladeSensorPrompt();
         if (device == "blade")
         {
             ArrangeBladeAuxCards();
@@ -395,6 +396,12 @@ public sealed partial class DevicesPage : UserControl
             _syncingTouchpadToggle = false;
         }
     }
+
+    private void UpdateBladeSensorPrompt() =>
+        BladeSensorPromptCard.Visibility =
+            OpenSynapse.Windows.Devices.PawnIoAvailability.IsInstalled
+                ? Visibility.Collapsed
+                : Visibility.Visible;
 
     internal void RefreshAdvancedFeaturesVisibility() =>
         AdvancedFeaturesPanel.Visibility = !_liteMode && Host.BehaviorSettings.AdvancedFeaturesEnabled
