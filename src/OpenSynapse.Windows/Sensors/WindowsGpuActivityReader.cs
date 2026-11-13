@@ -21,7 +21,9 @@ internal sealed partial class WindowsGpuActivityReader : IDisposable
     private const uint IntelVendorId = 0x8086;
     private const uint DxgiAdapterFlagSoftware = 0x02;
     private const int DxgiErrorNotFound = unchecked((int)0x887A0002);
-    private readonly Dictionary<string, GpuAdapter> _adapters = TryEnumerateAdapters()
+    // A PnP GPU switch or a driver restart re-enumerates the adapter under a new LUID,
+    // so the cache is refreshed on read instead of being frozen for the process lifetime.
+    private Dictionary<string, GpuAdapter> _adapters = TryEnumerateAdapters()
         .ToDictionary(adapter => adapter.Luid, StringComparer.OrdinalIgnoreCase);
     // Counter creation expands every GPU engine instance and costs seconds on the
     // first call, so keep it on the sampling thread instead of the UI constructor.
@@ -36,9 +38,10 @@ internal sealed partial class WindowsGpuActivityReader : IDisposable
     {
         try
         {
-            var engines = ReadEngines();
-            var memory = ReadMemory();
-            return _adapters.Values.Select(adapter =>
+            var adapters = RefreshAdapters();
+            var engines = ReadEngines(adapters);
+            var memory = ReadMemory(adapters);
+            return adapters.Values.Select(adapter =>
             {
                 var adapterEngines = engines.GetValueOrDefault(adapter.Luid);
                 var usage = adapterEngines is null ? 0 : adapterEngines.Values.Max(engine => engine.Total);
@@ -115,6 +118,32 @@ internal sealed partial class WindowsGpuActivityReader : IDisposable
             .FirstOrDefault()
         ?? SelectIntegrated(samples);
 
+    private Dictionary<string, GpuAdapter> RefreshAdapters()
+    {
+        var enumerated = TryEnumerateAdapters();
+        if (!NeedsAdapterRefresh(
+                _adapters.Keys,
+                enumerated.Select(adapter => adapter.Luid).ToArray()))
+        {
+            return _adapters;
+        }
+
+        var refreshed = enumerated.ToDictionary(adapter => adapter.Luid, StringComparer.OrdinalIgnoreCase);
+        _adapters = refreshed;
+        return refreshed;
+    }
+
+    /// <summary>
+    /// True when DXGI reports a different adapter set than the cache holds. An empty
+    /// round is a failed enumeration, not a machine without GPUs, so it keeps the cache.
+    /// </summary>
+    internal static bool NeedsAdapterRefresh(
+        IReadOnlyCollection<string> cachedLuids,
+        IReadOnlyCollection<string> observedLuids) =>
+        observedLuids.Count > 0 &&
+        (observedLuids.Count != cachedLuids.Count ||
+         observedLuids.Any(luid => !cachedLuids.Contains(luid)));
+
     public void Dispose()
     {
         DisposeCounter(_engineUsage);
@@ -130,7 +159,8 @@ internal sealed partial class WindowsGpuActivityReader : IDisposable
         }
     }
 
-    private Dictionary<string, Dictionary<string, EngineUsage>> ReadEngines()
+    private Dictionary<string, Dictionary<string, EngineUsage>> ReadEngines(
+        Dictionary<string, GpuAdapter> adapters)
     {
         var result = new Dictionary<string, Dictionary<string, EngineUsage>>(StringComparer.OrdinalIgnoreCase);
         var engineUsage = _engineUsage.Value;
@@ -142,7 +172,7 @@ internal sealed partial class WindowsGpuActivityReader : IDisposable
         foreach (var sample in engineUsage.Read())
         {
             var parsed = ParseEngineInstance(sample.Name);
-            if (parsed is null || !_adapters.ContainsKey(parsed.Value.Luid))
+            if (parsed is null || !adapters.ContainsKey(parsed.Value.Luid))
             {
                 continue;
             }
@@ -162,7 +192,7 @@ internal sealed partial class WindowsGpuActivityReader : IDisposable
         return result;
     }
 
-    private Dictionary<string, MemoryUsage> ReadMemory()
+    private Dictionary<string, MemoryUsage> ReadMemory(Dictionary<string, GpuAdapter> adapters)
     {
         var result = new Dictionary<string, MemoryUsage>(StringComparer.OrdinalIgnoreCase);
         var dedicatedUsage = _memoryDedicated.Value;
@@ -186,7 +216,7 @@ internal sealed partial class WindowsGpuActivityReader : IDisposable
                 continue;
             }
             var luid = NormalizeLuid(match);
-            if (!_adapters.ContainsKey(luid))
+            if (!adapters.ContainsKey(luid))
             {
                 continue;
             }
