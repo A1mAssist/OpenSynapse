@@ -22,8 +22,6 @@ public sealed class StudioManifestService
     private readonly HttpClient _httpClient;
     private readonly string _cacheDirectory;
     private readonly string? _offlineCatalogPath;
-    private readonly string? _svgAssetDirectory;
-    private readonly Lazy<IReadOnlyDictionary<string, string>> _offlineSvgAssets;
     private readonly TimeSpan _memoryCacheLifetime;
     private readonly ConcurrentDictionary<(ushort ProductId, int EditionId), SemaphoreSlim> _locks = new();
 
@@ -31,8 +29,7 @@ public sealed class StudioManifestService
         HttpClient httpClient,
         string cacheDirectory,
         TimeSpan? memoryCacheLifetime = null,
-        string? offlineCatalogPath = null,
-        string? svgAssetDirectory = null)
+        string? offlineCatalogPath = null)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentException.ThrowIfNullOrWhiteSpace(cacheDirectory);
@@ -41,10 +38,6 @@ public sealed class StudioManifestService
         _offlineCatalogPath = string.IsNullOrWhiteSpace(offlineCatalogPath)
             ? null
             : Path.GetFullPath(offlineCatalogPath);
-        _svgAssetDirectory = string.IsNullOrWhiteSpace(svgAssetDirectory)
-            ? null
-            : Path.GetFullPath(svgAssetDirectory);
-        _offlineSvgAssets = new Lazy<IReadOnlyDictionary<string, string>>(LoadOfflineSvgAssets);
         _memoryCacheLifetime = memoryCacheLifetime ?? TimeSpan.Zero;
     }
 
@@ -75,6 +68,15 @@ public sealed class StudioManifestService
             if (result.Manifest is null && TryReadOfflineCatalog(productId, editionId) is { } offline)
             {
                 result = offline;
+            }
+
+            // External SVG parts are not packaged; fetch the selected one on demand so the
+            // device shows its real picture once and is served from the cache afterwards.
+            if (result.Manifest is { } resolved &&
+                !IsOfflineCatalog(result) &&
+                !string.Equals(result.Error, "offline-cache", StringComparison.Ordinal))
+            {
+                await CacheSelectedSvgAsync(resolved, productId, cancellationToken).ConfigureAwait(false);
             }
 
             Remember(productId, editionId, result);
@@ -259,8 +261,7 @@ public sealed class StudioManifestService
         TryReadOfflineCatalog(productId, editionId);
 
     /// <summary>
-    /// Reads one external SVG part by file name. Only a bare file name is accepted;
-    /// the bundled asset folder, the manifest cache and the offline catalog are tried.
+    /// Reads one external SVG part from the cache. Only a bare file name is accepted.
     /// </summary>
     public string? TryReadSvgAsset(string fileName)
     {
@@ -271,54 +272,42 @@ public sealed class StudioManifestService
             return null;
         }
 
-        foreach (var directory in new[]
-                 {
-                     _svgAssetDirectory,
-                     _cacheDirectory,
-                     Path.Combine(_cacheDirectory, "svg"),
-                 })
-        {
-            if (string.IsNullOrWhiteSpace(directory)) continue;
-            var path = Path.Combine(directory, fileName);
-            if (!File.Exists(path)) continue;
-            try
-            {
-                return File.ReadAllText(path);
-            }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-            {
-            }
-        }
-
-        return TryReadOfflineSvg(fileName);
-    }
-
-    private string? TryReadOfflineSvg(string fileName)
-    {
-        return _offlineSvgAssets.Value.TryGetValue(fileName, out var svg) ? svg : null;
-    }
-
-    private IReadOnlyDictionary<string, string> LoadOfflineSvgAssets()
-    {
-        var assets = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        if (_offlineCatalogPath is null || !File.Exists(_offlineCatalogPath)) return assets;
-
+        var path = Path.Combine(_cacheDirectory, "svg", fileName);
+        if (!File.Exists(path)) return null;
         try
         {
-            using var archive = ZipFile.OpenRead(_offlineCatalogPath);
-            foreach (var entry in archive.Entries)
-            {
-                if (!entry.Name.EndsWith(".svg", StringComparison.OrdinalIgnoreCase)) continue;
-                using var stream = entry.Open();
-                using var reader = new StreamReader(stream, Encoding.UTF8);
-                assets[entry.Name] = reader.ReadToEnd();
-            }
+            return File.ReadAllText(path);
         }
-        catch (Exception exception) when (exception is IOException or InvalidDataException or UnauthorizedAccessException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
+            return null;
         }
+    }
 
-        return assets;
+    private async Task CacheSelectedSvgAsync(
+        StudioManifestDevice manifest,
+        ushort productId,
+        CancellationToken cancellationToken)
+    {
+        var part = manifest.SvgParts.FirstOrDefault(candidate => candidate.Key == manifest.SvgKey);
+        if (part is not { IsFile: true }) return;
+
+        var directory = Path.Combine(_cacheDirectory, "svg");
+        var path = Path.Combine(directory, part.Value);
+        if (File.Exists(path)) return;
+
+        var url = FormattableString.Invariant(
+            $"https://apps.razer.com/synapse/products/{productId}/mw/lighting-svgs/{part.Value}");
+        var outcome = await FetchAsync(url, null, cancellationToken).ConfigureAwait(false);
+        if (outcome is not { Status: FetchStatus.Success, Body: { } body }) return;
+
+        var text = Encoding.UTF8.GetString(body);
+        if (!text.TrimStart('\uFEFF', ' ', '\t', '\r', '\n').StartsWith('<')) return;
+
+        Directory.CreateDirectory(directory);
+        var temporary = path + ".tmp";
+        await File.WriteAllTextAsync(temporary, text, cancellationToken).ConfigureAwait(false);
+        File.Move(temporary, path, overwrite: true);
     }
 
     private StudioManifestResult? TryReadOfflineCatalog(ushort productId, int editionId)

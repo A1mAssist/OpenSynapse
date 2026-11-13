@@ -44,9 +44,6 @@
     <Content Include="Assets\LightingLayouts\studio-manifests.zip"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="Assets\LightingLayouts\svg\*.svg"
-             CopyToOutputDirectory="PreserveNewest"
-             CopyToPublishDirectory="PreserveNewest" />
     <Content Include="Assets\Fonts\TitilliumWeb-Regular.ttf" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Fonts\TitilliumWeb-SemiBold.ttf" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Fonts\TitilliumWeb-Bold.ttf" CopyToOutputDirectory="PreserveNewest" />
