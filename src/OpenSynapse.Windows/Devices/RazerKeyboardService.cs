@@ -29,6 +29,7 @@ public enum RazerKeyboardMappingProtocol
 {
     Middleware02,
     ButtonAssignment08,
+    KeyTable8F,
 }
 
 /// <summary>
@@ -362,6 +363,7 @@ public sealed partial class RazerKeyboardService
 
         foreach (var protocol in new[]
         {
+            RazerKeyboardMappingProtocol.KeyTable8F,
             RazerKeyboardMappingProtocol.Middleware02,
             RazerKeyboardMappingProtocol.ButtonAssignment08,
         })
@@ -370,6 +372,13 @@ public sealed partial class RazerKeyboardService
             {
                 var response = protocol switch
                 {
+                    RazerKeyboardMappingProtocol.KeyTable8F =>
+                        await QueryPreparedAsync(
+                            RazerHidMappingProtocol.GetKeyAssignmentList(
+                                await ResolveProfileIdAsync(cancellationToken).ConfigureAwait(false),
+                                RazerHidMappingProtocol.NormalMode).Report,
+                            "mapping 02:8F",
+                            cancellationToken).ConfigureAwait(false),
                     RazerKeyboardMappingProtocol.Middleware02 =>
                         await QueryPreparedAsync(
                             RazerHidMappingProtocol.GetButtonList().Report,
@@ -383,6 +392,8 @@ public sealed partial class RazerKeyboardService
                 };
                 var ids = protocol switch
                 {
+                    RazerKeyboardMappingProtocol.KeyTable8F =>
+                        RazerHidMappingProtocol.ParseKeyAssignmentList(response),
                     RazerKeyboardMappingProtocol.Middleware02 =>
                         RazerHidMappingProtocol.ParseButtonList(response),
                     _ => RazerButtonAssignmentProtocol.ParseButtonList(response),
