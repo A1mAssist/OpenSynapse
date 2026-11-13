@@ -10,6 +10,7 @@ using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Lifecycle;
 using OpenSynapse.Windows.Lighting;
+using OpenSynapse.Windows.Sensors;
 
 namespace OpenSynapse.App;
 
@@ -257,7 +258,7 @@ internal static partial class OpenSynapseServiceHost
                     return StopChromaBroker();
 
                 case OpenSynapseServiceAction.ReadCpuTemperature:
-                    var temperatureRead = RyzenSmuTemperature.TryRead(
+                    var temperatureRead = CpuPackageTemperature.TryRead(
                         out var cpuCelsius, out var temperatureError);
                     return new OpenSynapseServiceResponse(
                         OpenSynapseServiceProtocol.Version,
