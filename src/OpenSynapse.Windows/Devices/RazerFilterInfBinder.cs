@@ -75,6 +75,58 @@ internal static partial class RazerFilterInfBinder
             }
         }
 
+        // The vendor package can exit 0 after only unpacking its INFs under
+        // Program Files, so DriverStore has no oem*.inf to find. pnputil accepts
+        // the vendor copies directly, which is the only path left on that host.
+        if (matches.Count == 0 &&
+            string.Equals(infDirectory, WindowsInfDirectory, StringComparison.OrdinalIgnoreCase))
+        {
+            matches.AddRange(FindVendorInfs(productId));
+        }
+
+        return matches;
+    }
+
+    internal static IReadOnlyList<string> FindVendorInfs(
+        ushort productId,
+        IEnumerable<string>? baseDirectories = null)
+    {
+        var matches = new List<string>();
+        var roots = baseDirectories?.ToArray() ?? new[]
+        {
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+        };
+        foreach (var candidate in GetCandidateProductIds(productId))
+        {
+            var folder = $"PID{candidate:X4}Drv";
+            foreach (var baseDirectory in roots)
+            {
+                if (string.IsNullOrEmpty(baseDirectory))
+                {
+                    continue;
+                }
+
+                var root = Path.Combine(baseDirectory, "Razer", folder, "Drivers");
+                if (!Directory.Exists(root))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    matches.AddRange(Directory.EnumerateFiles(
+                        root,
+                        $"RzDevU_{candidate:X4}_*.inf",
+                        SearchOption.AllDirectories));
+                }
+                catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+                {
+                    continue;
+                }
+            }
+        }
+
         return matches;
     }
 
@@ -146,6 +198,17 @@ internal static partial class RazerFilterInfBinder
             var succeeded = true;
             foreach (var inf in infs)
             {
+                // pnputil refuses /install while the inbox driver still owns the
+                // collection, so register the package before binding it.
+                var addCode = await RunPnpUtilAsync(inf, install: false, cancellationToken)
+                    .ConfigureAwait(false);
+                if (!RazerDriverInstaller.IsSuccessfulExitCode(addCode))
+                {
+                    exitCodes.Add($"{DescribeInf(inf)} returned {addCode}");
+                    succeeded = false;
+                    continue;
+                }
+
                 var exitCode = await RunPnpUtilAsync(inf, install: true, cancellationToken).ConfigureAwait(false);
                 var description = DescribeInf(inf);
                 if (exitCode == 259)
@@ -490,10 +553,13 @@ internal static partial class RazerFilterInfBinder
         const char quote = '"';
         // Every argument is a drive path from the Windows INF directory, so no
         // caller-controlled text reaches the command line.
-        var command = string.Join(
-            " && ",
-            infs.Select(inf => string.Concat(
-                "pnputil /add-driver ", quote, inf, quote, " /install")));
+        // Register first: /install is refused while the inbox driver still owns
+        // the collection, which would otherwise abort the whole && chain.
+        var register = infs.Select(inf => string.Concat(
+            "pnputil /add-driver ", quote, inf, quote));
+        var bind = infs.Select(inf => string.Concat(
+            "pnputil /add-driver ", quote, inf, quote, " /install"));
+        var command = string.Join(" && ", register.Concat(bind));
         return string.Concat("/s /c ", quote, command, quote);
     }
 }
