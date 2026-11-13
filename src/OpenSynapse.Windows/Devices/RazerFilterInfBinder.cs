@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
 using Microsoft.Win32;
 
@@ -32,7 +32,7 @@ internal readonly record struct RazerFilterAttachmentState(
 /// reboot cannot attach it. Installing the staged INF against the present nodes
 /// is what writes UpperFilters and creates the RAZER\DeviceContol child.
 /// </summary>
-internal static class RazerFilterInfBinder
+internal static partial class RazerFilterInfBinder
 {
     private static string WindowsInfDirectory => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.Windows),
@@ -146,7 +146,7 @@ internal static class RazerFilterInfBinder
             var succeeded = true;
             foreach (var inf in infs)
             {
-                var exitCode = await RunPnpUtilAsync(inf, cancellationToken).ConfigureAwait(false);
+                var exitCode = await RunPnpUtilAsync(inf, install: true, cancellationToken).ConfigureAwait(false);
                 var description = DescribeInf(inf);
                 if (exitCode == 259)
                 {
@@ -154,7 +154,7 @@ internal static class RazerFilterInfBinder
                     // Retry once so a keyboard collection that was temporarily absent
                     // can still receive its UpperFilters.
                     await Task.Delay(TimeSpan.FromSeconds(1.5), cancellationToken).ConfigureAwait(false);
-                    var retry = await RunPnpUtilAsync(inf, cancellationToken).ConfigureAwait(false);
+                    var retry = await RunPnpUtilAsync(inf, install: true, cancellationToken).ConfigureAwait(false);
                     exitCodes.Add($"{description} returned 259; retry returned {retry}");
                     exitCode = retry;
                 }
@@ -184,6 +184,7 @@ internal static class RazerFilterInfBinder
 
     private static async Task<int> RunPnpUtilAsync(
         string inf,
+        bool install,
         CancellationToken cancellationToken)
     {
         var startInfo = new ProcessStartInfo
@@ -195,7 +196,10 @@ internal static class RazerFilterInfBinder
         };
         startInfo.ArgumentList.Add("/add-driver");
         startInfo.ArgumentList.Add(inf);
-        startInfo.ArgumentList.Add("/install");
+        if (install)
+        {
+            startInfo.ArgumentList.Add("/install");
+        }
 
         using var process = Process.Start(startInfo)
             ?? throw new InvalidOperationException("The driver binder did not start.");
@@ -410,15 +414,18 @@ internal static class RazerFilterInfBinder
     private const string KeyboardClassGuid =
         "{4D36E96B-E325-11CE-BFC1-08002BE10318}";
 
-    private static bool HasFilter(RegistryKey instance, string filter)
+    private static bool HasFilter(
+        RegistryKey instance,
+        string filter,
+        string valueName = "UpperFilters")
     {
-        if (ContainsFilter(instance.GetValue("UpperFilters"), filter))
+        if (ContainsFilter(instance.GetValue(valueName), filter))
         {
             return true;
         }
 
         using var parameters = instance.OpenSubKey("Device Parameters");
-        return ContainsFilter(parameters?.GetValue("UpperFilters"), filter);
+        return ContainsFilter(parameters?.GetValue(valueName), filter);
     }
 
     private static bool IsKeyboardInstance(RegistryKey instance)

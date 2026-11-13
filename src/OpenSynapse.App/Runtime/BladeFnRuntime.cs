@@ -13,6 +13,13 @@ namespace OpenSynapse.App.Runtime;
 /// </summary>
 internal sealed class BladeFilterEndpointMissingException(string message) : InvalidOperationException(message);
 
+/// <summary>
+/// The RZCONTROL endpoint exists but the DKM lower filter is not bound to the USB
+/// composite function that owns the Fn row, so every Fn key reads zero. The vendor
+/// driver package leaves this filter out; it has to be completed separately.
+/// </summary>
+internal sealed class BladeFilterDriverIncompleteException(string message) : InvalidOperationException(message);
+
 internal sealed class BladeFnRuntime : IAsyncDisposable
 {
     private static readonly TimeSpan RecoveryReadyTimeout = TimeSpan.FromSeconds(5);
@@ -143,6 +150,13 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                 .ConfigureAwait(false)
                 ?? throw new BladeFilterEndpointMissingException(
                     $"Could not uniquely identify the RZCONTROL endpoint for PID 0x{_productId:X4}.");
+
+            if (!RazerFilterInfBinder.IsDkmAttached(_productId))
+            {
+                throw new BladeFilterDriverIncompleteException(
+                    $"The DKM lower filter RzDev_{_productId:X4} is missing from " +
+                    $@"USB\VID_1532&PID_{_productId:X4}&MI_*; Fn keys cannot reach the driver.");
+            }
 
             LogDkmTable(filterDevicePath);
 

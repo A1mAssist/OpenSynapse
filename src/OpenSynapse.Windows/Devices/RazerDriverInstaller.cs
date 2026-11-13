@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
@@ -101,7 +101,20 @@ internal static class RazerDriverInstaller
         progress?.Report(new RazerDriverInstallProgress(
             RazerDriverInstallStage.Installing,
             package.Name));
-        return await RunInstallerAsync(path, elevated: true, cancellationToken)
+        var result = await RunInstallerAsync(path, elevated: true, cancellationToken)
+            .ConfigureAwait(false);
+        if (!result.Success ||
+            !ushort.TryParse(
+                package.ProductId,
+                System.Globalization.NumberStyles.HexNumber,
+                null,
+                out var productId))
+        {
+            return result;
+        }
+
+        return await CompleteLowerFilterAsync(
+                productId, path, result, elevated: true, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -161,8 +174,13 @@ internal static class RazerDriverInstaller
                 Error: "The Razer driver package download timed out.");
         }
 
-        return await RunInstallerAsync(path, elevated: false, cancellationToken)
+        var result = await RunInstallerAsync(path, elevated: false, cancellationToken)
             .ConfigureAwait(false);
+        return result.Success
+            ? await CompleteLowerFilterAsync(
+                    productId, path, result, elevated: false, cancellationToken)
+                .ConfigureAwait(false)
+            : result;
     }
 
     internal static async Task<string> EnsurePackageAsync(
@@ -211,6 +229,106 @@ internal static class RazerDriverInstaller
 
         File.Move(temporary, path, overwrite: true);
         return path;
+    }
+
+    /// <summary>
+    /// The vendor package is an NSIS self-extractor: it ignores /D and deletes
+    /// its staging directory, so the lower-filter INFs it never installs can
+    /// only be read by unpacking the executable. 7za exits 1 for its benign
+    /// "data after the end of archive" warning.
+    /// </summary>
+    internal static async Task<string?> ExtractLowerFiltersAsync(
+        string packagePath,
+        string outputDirectory,
+        CancellationToken cancellationToken)
+    {
+        var extractor = Path.Combine(AppContext.BaseDirectory, "7za.exe");
+        if (!File.Exists(extractor))
+        {
+            return null;
+        }
+
+        Directory.CreateDirectory(outputDirectory);
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = extractor,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden,
+        };
+        startInfo.ArgumentList.Add("x");
+        startInfo.ArgumentList.Add("-tNsis");
+        startInfo.ArgumentList.Add(packagePath);
+        startInfo.ArgumentList.Add($"-o{outputDirectory}");
+        startInfo.ArgumentList.Add(@"Drivers\x64\Lower\*");
+        startInfo.ArgumentList.Add(@"Drivers\x64\VCon\*");
+        startInfo.ArgumentList.Add("-y");
+
+        try
+        {
+            using var process = Process.Start(startInfo);
+            if (process is null)
+            {
+                return null;
+            }
+
+            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+            return process.ExitCode is 0 or 1 ? outputDirectory : null;
+        }
+        catch (Exception exception) when (
+            exception is Win32Exception or IOException or InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// The vendor installer stages only the HID filters, so a machine can end up
+    /// with a working RZCONTROL endpoint and a dead Fn row. The lower filter is
+    /// completed here from the same verified package.
+    /// </summary>
+    private static async Task<RazerDriverInstallResult> CompleteLowerFilterAsync(
+        ushort productId,
+        string packagePath,
+        RazerDriverInstallResult result,
+        bool elevated,
+        CancellationToken cancellationToken)
+    {
+        if (RazerFilterInfBinder.IsDkmAttached(productId))
+        {
+            return result;
+        }
+
+        var extractRoot = Path.Combine(
+            Path.GetDirectoryName(packagePath)!,
+            "extracted",
+            productId.ToString("X4"));
+        var extracted = await ExtractLowerFiltersAsync(packagePath, extractRoot, cancellationToken)
+            .ConfigureAwait(false);
+        if (extracted is null)
+        {
+            return result with
+            {
+                Success = false,
+                Error = "The DKM lower filter could not be unpacked from the driver package.",
+            };
+        }
+
+        var bind = elevated
+            ? await RazerFilterInfBinder.ApplyBladeDkmElevatedAsync(
+                    productId, extracted, cancellationToken)
+                .ConfigureAwait(false)
+            : await RazerFilterInfBinder.ApplyBladeDkmAsync(
+                    productId, extracted, cancellationToken)
+                .ConfigureAwait(false);
+
+        return bind.Applied
+            ? result with { RequiresRestart = true }
+            : result with
+            {
+                Success = false,
+                Error = bind.Error ?? result.Error,
+            };
     }
 
     internal static bool IsSuccessfulExitCode(int exitCode) => exitCode is 0 or 3010 or 1641;
