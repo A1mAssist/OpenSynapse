@@ -315,10 +315,10 @@
                   <ComboBox local:Localized.Uid="A11yMacroExecutionTarget" ItemsSource="{Binding MacroTargetOptions}" SelectedIndex="{Binding MacroTargetIndex, Mode=TwoWay}" Visibility="{Binding MacroTargetVisibility}" HorizontalAlignment="Stretch" />
                   <ComboBox local:Localized.Uid="A11yMacroSlot" ItemsSource="{Binding MacroSlotNames}" SelectedIndex="{Binding SelectedMacroSlotIndex, Mode=TwoWay}" Visibility="{Binding MacroSlotVisibility}" HorizontalAlignment="Stretch" />
                   <TextBlock local:Localized.Uid="RazerMappingMacroNoFreeSlot" Visibility="{Binding MacroNoSlotVisibility}" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" />
-                  <Grid ColumnDefinitions="*,*" ColumnSpacing="6" Visibility="{Binding SoftwareTriggerVisibility}">
+                  <StackPanel Spacing="4" Visibility="{Binding SoftwareTriggerVisibility}">
                     <ComboBox local:Localized.Uid="A11ySoftwareMacroTriggerMode" ItemsSource="{Binding TriggerModeOptions}" SelectedIndex="{Binding SoftwareTriggerModeIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" />
-                    <ComboBox Grid.Column="1" local:Localized.Uid="A11ySoftwareMacroExecutionMode" ItemsSource="{Binding ExecutionOptions}" SelectedIndex="{Binding ExecutionModeIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" />
-                  </Grid>
+                    <ComboBox local:Localized.Uid="A11ySoftwareMacroExecutionMode" ItemsSource="{Binding ExecutionOptions}" SelectedIndex="{Binding ExecutionModeIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" />
+                  </StackPanel>
                   <NumberBox local:Localized.Uid="RazerMappingMacroExecutionRepeat" Minimum="1" Maximum="999" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding ExecutionRepeatCount, Mode=TwoWay}" Visibility="{Binding ExecutionRepeatVisibility}" />
                   <ComboBox local:Localized.Uid="A11yOnboardButtonBehavior" ItemsSource="{Binding MacroPlaybackOptions}" SelectedIndex="{Binding MacroPlaybackIndex, Mode=TwoWay}" Visibility="{Binding MacroPlaybackVisibility}" HorizontalAlignment="Stretch" />
                   <NumberBox local:Localized.Uid="RazerMappingTurboHeader" Minimum="1" Maximum="50" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding TurboRate, Mode=TwoWay}" Visibility="{Binding TurboRateVisibility}" />
