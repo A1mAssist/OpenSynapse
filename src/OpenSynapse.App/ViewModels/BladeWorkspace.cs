@@ -1118,7 +1118,8 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             var actual = await _deviceTelemetryReader.SetBladeFnKeyStateAsync(
                 ActiveDescriptors, requested, cancellationToken);
             SetFnKey(actual);
-            RequestDeviceRefresh();
+            // The write already returns the applied state. A full refresh would
+            // reapply the lighting profile and delay the keyboard by seconds.
         }, cancellationToken, () =>
             FnKeyMultimediaPrimary = _blade._bladeFnKeyMultimediaPrimary ?? false);
         // The Fn row layer lives in the host mapping graph, so the runtime must
