@@ -918,6 +918,22 @@ public static class BladeModelCapabilities
         productId is 0x02C5 or 0x02C6 or 0x02C7 or 0x02E0 or 0x02E1;
 
     /// <summary>
+    /// True only where the model's deviceUI publishes hasLocalDimming. A MiniLED panel
+    /// alone is not evidence: 029F/02A0/02B6/02C7 carry the dual-resolution panel but
+    /// their middleware never exposes the dimming switch, and the shared 07:0F write is
+    /// rejected with 0x05 on them.
+    /// </summary>
+    public static bool SupportsLocalDimming(ushort productId) =>
+        productId is 0x02B7 or 0x02B8 or 0x02C5 or 0x02C6 or 0x02E0 or 0x02E1;
+
+    /// <summary>
+    /// True only where the model's deviceUI publishes hasNativeDisplayMode.
+    /// </summary>
+    public static bool SupportsNativeDisplayMode(ushort productId) =>
+        productId is 0x029F or 0x02A0 or 0x02B6 or 0x02B7 or 0x02B8 or
+            0x02C5 or 0x02C6 or 0x02C7 or 0x02E0 or 0x02E1;
+
+    /// <summary>
     /// True only where the deviceUI publishes hasCpuBoostEnabled (028C, 029D, 02B6).
     /// The bit reads back on every model that shares the Power Mode Control mask, so a
     /// readable bit is not evidence of support.

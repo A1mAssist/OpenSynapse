@@ -185,7 +185,8 @@ public static class DeviceCapabilitySummaryCalculator
         }
 
         var supportsLocalDimming =
-            telemetry.BladeSkuHardwareConfiguration?.MiniLedResolution == true;
+            telemetry.BladeSkuHardwareConfiguration?.MiniLedResolution == true &&
+            BladeModelCapabilities.SupportsLocalDimming(descriptor.ProductId);
         // A shared Power Mode bit reads back on models that never implemented it, so the
         // Max Fan row is counted only where the model contract admits it.
         var supportsMaxFan = BladeModelCapabilities.SupportsMaxFan(descriptor.ProductId);
@@ -194,7 +195,8 @@ public static class DeviceCapabilitySummaryCalculator
         var supportsStartupAnimation =
             BladeModelCapabilities.SupportsStartupAnimation(descriptor.ProductId);
         var supportsNativeDisplay =
-            telemetry.BladeSkuHardwareConfiguration?.SupportsNativeDisplayMode == true;
+            telemetry.BladeSkuHardwareConfiguration?.SupportsNativeDisplayMode == true &&
+            BladeModelCapabilities.SupportsNativeDisplayMode(descriptor.ProductId);
         if (descriptor.ProtocolFamily == "blade-671")
         {
             // Blade 16 (2023): its own uniform lighting reports are admitted, but the
@@ -308,14 +310,16 @@ public static class DeviceCapabilitySummaryCalculator
             telemetry.BladeCpuPowerBoostEnabled);
         Row(powerMode, telemetry.BladeOneTimeFullChargeEnabled);
         Row(powerMode && sku &&
-            telemetry.BladeSkuHardwareConfiguration?.MiniLedResolution == true,
+            telemetry.BladeSkuHardwareConfiguration?.MiniLedResolution == true &&
+            BladeModelCapabilities.SupportsLocalDimming(descriptor.ProductId),
             telemetry.BladeLocalDimmingEnabled);
         Row(Owns(CapabilityIds.LogoModeGet),
             telemetry.BladeLogoMode ?? (object?)telemetry.BladeLogoEffectRaw);
         Row(Owns(CapabilityIds.GamingModeGet), telemetry.BladeGameMode);
         Row(Owns(CapabilityIds.StartupAnimationGet), telemetry.BladeStartupAnimationEnabled);
         Row(Owns(CapabilityIds.NativeDisplayModeGet) &&
-            telemetry.BladeSkuHardwareConfiguration?.SupportsNativeDisplayMode == true,
+            telemetry.BladeSkuHardwareConfiguration?.SupportsNativeDisplayMode == true &&
+            BladeModelCapabilities.SupportsNativeDisplayMode(descriptor.ProductId),
             telemetry.BladeNativeDisplayMode);
         Row(sku, telemetry.BladeSkuHardwareConfiguration);
         Row(Owns(CapabilityIds.AdapterPowerGet), telemetry.BladeAdapterPower);

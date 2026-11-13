@@ -438,7 +438,8 @@ internal sealed partial class BladeTelemetryReader
                     blade, CapabilityIds.SkuHardwareConfigurationGet, cancellationToken);
                 bladeSkuHardwareConfiguration = BladeProduct710Protocol.ParseSkuHardwareConfiguration(
                     response, RazerCapabilityClient.CreateRequest(blade, CapabilityIds.SkuHardwareConfigurationGet));
-                if (bladeSkuHardwareConfiguration.Value.MiniLedResolution)
+                if (bladeSkuHardwareConfiguration.Value.MiniLedResolution &&
+                    BladeModelCapabilities.SupportsLocalDimming(blade.Descriptor.ProductId))
                 {
                     _validation.LocalDimmingPath = _validation.PowerModePath;
                 }
@@ -454,8 +455,10 @@ internal sealed partial class BladeTelemetryReader
         }
 
         // 07:8F is shared and can answer even on a non-MiniLED panel; only a
-        // successful SKU report may promote local dimming to a supported control.
-        if (bladeSkuHardwareConfiguration?.MiniLedResolution != true)
+        // successful SKU report on a model that publishes hasLocalDimming may
+        // promote local dimming to a supported control.
+        if (bladeSkuHardwareConfiguration?.MiniLedResolution != true ||
+            !BladeModelCapabilities.SupportsLocalDimming(blade.Descriptor.ProductId))
         {
             bladeLocalDimmingEnabled = null;
         }
