@@ -99,13 +99,16 @@ public sealed partial class RazerKeyboardService
     private readonly Action<string>? _diagnostic;
     private byte _transactionId = 0x1F;
     private byte _profileId;
+    private readonly ushort _productId;
 
     internal RazerKeyboardService(
         IRazerFeatureTransport transport,
         string devicePath,
         TimeSpan deviceWait,
-        Action<string>? diagnostic = null)
+        Action<string>? diagnostic = null,
+        ushort productId = 0)
     {
+        _productId = RazerProductAliases.Canonical(productId);
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _devicePath = string.IsNullOrWhiteSpace(devicePath)
             ? throw new ArgumentException("A HID device path is required.", nameof(devicePath))
@@ -450,7 +453,8 @@ public sealed partial class RazerKeyboardService
             _ = await GetMappingButtonIdsAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        var normalized = RazerHidMappingActions.NormalizeKeyData(functionId, data.ToArray(), 0);
+        var normalized = RazerHidMappingActions.NormalizeKeyData(
+            functionId, data.ToArray(), _productId);
         if (_mappingProtocol == RazerKeyboardMappingProtocol.Middleware02)
         {
             await QueryPreparedAsync(

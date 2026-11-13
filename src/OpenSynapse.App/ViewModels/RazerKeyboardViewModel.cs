@@ -480,7 +480,8 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
     }
 
     private RazerKeyboardService OpenService() =>
-        new(new RazerFeatureTransport(), _connection.DevicePath, TimeSpan.FromMilliseconds(20), _diagnostic);
+        new(new RazerFeatureTransport(), _connection.DevicePath, TimeSpan.FromMilliseconds(20), _diagnostic,
+            _connection.ProductId);
 
     private async Task RunWriteAsync(
         Func<RazerKeyboardService, CancellationToken, Task> write,
