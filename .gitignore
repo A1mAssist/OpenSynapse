@@ -43,6 +43,9 @@ Product710_Driver.zip
 src/OpenSynapse.App/artifacts/
 /scripts/
 
+# Local reference archive (kept locally, not published)
+/archive/
+
 # IDE and user state
 .vs/
 .idea/
