@@ -121,15 +121,25 @@ public static class StudioDeviceVisualBuilder
                 Layout: layout);
         }
 
-        var rows = Math.Max(layout.MatrixRows, layout.Leds.Max(led => led.MatrixRow) + 1);
-        var columns = Math.Max(layout.MatrixColumns, layout.Leds.Max(led => led.MatrixCol) + 1);
-        var paths = new StudioVisualPath[layout.Leds.Count];
-        var leds = new StudioVisualLed[layout.Leds.Count];
+        // Without an SVG the matrix is only electrical: keyboards also map logo and
+        // side-strip LEDs, and their matrix is taller than the physical rows. Draw the
+        // keyed LEDs, cropped to their bounds; other devices keep the whole table.
+        var source = layout.Inputs.Any(input => input.InputType.Equals("kbd", StringComparison.OrdinalIgnoreCase))
+            ? layout.Leds.Where(led => layout.FindInputAt(led.MatrixRow, led.MatrixCol) is not null).ToArray()
+            : layout.Leds.ToArray();
+        if (source.Length == 0) source = layout.Leds.ToArray();
+
+        var minRow = source.Min(led => led.MatrixRow);
+        var minCol = source.Min(led => led.MatrixCol);
+        var rows = Math.Max(1, source.Max(led => led.MatrixRow) - minRow + 1);
+        var columns = Math.Max(1, source.Max(led => led.MatrixCol) - minCol + 1);
+        var paths = new StudioVisualPath[source.Length];
+        var leds = new StudioVisualLed[source.Length];
         for (var index = 0; index < leds.Length; index++)
         {
-            var led = layout.Leds[index];
-            var x = Margin + led.MatrixCol * (CellSize + CellGap);
-            var y = Margin + led.MatrixRow * (CellSize + CellGap);
+            var led = source[index];
+            var x = Margin + (led.MatrixCol - minCol) * (CellSize + CellGap);
+            var y = Margin + (led.MatrixRow - minRow) * (CellSize + CellGap);
             var id = $"led-{led.MatrixRow}-{led.MatrixCol}";
             paths[index] = new StudioVisualPath(
                 id,
