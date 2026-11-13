@@ -42,7 +42,8 @@ public sealed partial class RazerMappingAssetService
         _studio = new StudioManifestService(
             Http,
             AppDataPaths.Combine("mapping", "lighting-manifests"),
-            TimeSpan.FromMinutes(10));
+            TimeSpan.FromMinutes(10),
+            svgAssetDirectory: Path.Combine(AppContext.BaseDirectory, "Assets", "LightingLayouts", "svg"));
     }
 
     public static RazerMappingAssetService Shared { get; } = new();
@@ -215,7 +216,7 @@ public sealed partial class RazerMappingAssetService
                 continue;
             }
 
-            var visual = StudioKeyboardVisualBuilder.Build(result.Manifest);
+            var visual = StudioKeyboardVisualBuilder.Build(result.Manifest, _studio.TryReadSvgAsset);
             if (visual is { Keys.Count: > 0 })
             {
                 return new RazerMappingKeyboardLayout(
@@ -226,7 +227,7 @@ public sealed partial class RazerMappingAssetService
             }
 
             if (result.Manifest.Category?.Equals("KEYPAD", StringComparison.OrdinalIgnoreCase) == true &&
-                StudioKeyboardVisualBuilder.BuildKeypad(result.Manifest) is { } keypad)
+                StudioKeyboardVisualBuilder.BuildKeypad(result.Manifest, _studio.TryReadSvgAsset) is { } keypad)
             {
                 return new RazerMappingKeyboardLayout(
                     keypad, RazerKeyboardKeyCatalog.ResolveKeypad(productId, keypad.Keys));

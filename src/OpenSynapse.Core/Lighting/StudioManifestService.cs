@@ -22,6 +22,8 @@ public sealed class StudioManifestService
     private readonly HttpClient _httpClient;
     private readonly string _cacheDirectory;
     private readonly string? _offlineCatalogPath;
+    private readonly string? _svgAssetDirectory;
+    private readonly Lazy<IReadOnlyDictionary<string, string>> _offlineSvgAssets;
     private readonly TimeSpan _memoryCacheLifetime;
     private readonly ConcurrentDictionary<(ushort ProductId, int EditionId), SemaphoreSlim> _locks = new();
 
@@ -29,7 +31,8 @@ public sealed class StudioManifestService
         HttpClient httpClient,
         string cacheDirectory,
         TimeSpan? memoryCacheLifetime = null,
-        string? offlineCatalogPath = null)
+        string? offlineCatalogPath = null,
+        string? svgAssetDirectory = null)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentException.ThrowIfNullOrWhiteSpace(cacheDirectory);
@@ -38,6 +41,10 @@ public sealed class StudioManifestService
         _offlineCatalogPath = string.IsNullOrWhiteSpace(offlineCatalogPath)
             ? null
             : Path.GetFullPath(offlineCatalogPath);
+        _svgAssetDirectory = string.IsNullOrWhiteSpace(svgAssetDirectory)
+            ? null
+            : Path.GetFullPath(svgAssetDirectory);
+        _offlineSvgAssets = new Lazy<IReadOnlyDictionary<string, string>>(LoadOfflineSvgAssets);
         _memoryCacheLifetime = memoryCacheLifetime ?? TimeSpan.Zero;
     }
 
@@ -250,6 +257,69 @@ public sealed class StudioManifestService
     /// <summary>Reads the packaged fallback catalog without touching the network.</summary>
     public StudioManifestResult? TryGetOfflineCatalog(ushort productId, int editionId) =>
         TryReadOfflineCatalog(productId, editionId);
+
+    /// <summary>
+    /// Reads one external SVG part by file name. Only a bare file name is accepted;
+    /// the bundled asset folder, the manifest cache and the offline catalog are tried.
+    /// </summary>
+    public string? TryReadSvgAsset(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName) ||
+            !string.Equals(fileName, Path.GetFileName(fileName), StringComparison.OrdinalIgnoreCase) ||
+            fileName.Contains("..", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        foreach (var directory in new[]
+                 {
+                     _svgAssetDirectory,
+                     _cacheDirectory,
+                     Path.Combine(_cacheDirectory, "svg"),
+                 })
+        {
+            if (string.IsNullOrWhiteSpace(directory)) continue;
+            var path = Path.Combine(directory, fileName);
+            if (!File.Exists(path)) continue;
+            try
+            {
+                return File.ReadAllText(path);
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+            }
+        }
+
+        return TryReadOfflineSvg(fileName);
+    }
+
+    private string? TryReadOfflineSvg(string fileName)
+    {
+        return _offlineSvgAssets.Value.TryGetValue(fileName, out var svg) ? svg : null;
+    }
+
+    private IReadOnlyDictionary<string, string> LoadOfflineSvgAssets()
+    {
+        var assets = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (_offlineCatalogPath is null || !File.Exists(_offlineCatalogPath)) return assets;
+
+        try
+        {
+            using var archive = ZipFile.OpenRead(_offlineCatalogPath);
+            foreach (var entry in archive.Entries)
+            {
+                if (!entry.Name.EndsWith(".svg", StringComparison.OrdinalIgnoreCase)) continue;
+                using var stream = entry.Open();
+                using var reader = new StreamReader(stream, Encoding.UTF8);
+                assets[entry.Name] = reader.ReadToEnd();
+            }
+        }
+        catch (Exception exception) when (exception is IOException or InvalidDataException or UnauthorizedAccessException)
+        {
+        }
+
+        return assets;
+    }
 
     private StudioManifestResult? TryReadOfflineCatalog(ushort productId, int editionId)
     {
