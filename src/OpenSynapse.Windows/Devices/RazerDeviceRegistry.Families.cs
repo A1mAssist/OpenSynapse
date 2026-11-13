@@ -152,6 +152,9 @@ internal sealed partial class RazerDeviceRegistry
                 [CapabilityIds.ObmButtonIdsGet] = new(0x50, 0x02, 0x84, ""),
                 [CapabilityIds.ObmAssignmentGet] = new(0x50, 0x02, 0x8C, ""),
                 [CapabilityIds.ObmAssignmentSet] = new(0x50, 0x02, 0x0C, ""),
+                // The 00B8 dongle answers this even while the mouse is asleep or off,
+                // which is the only way to tell that state from a firmware fault.
+                [CapabilityIds.WirelessLinkStatusGet] = new(0x50, 0x00, 0xBF, ""),
             },
             // Future RazerHid devices need an audited built-in manifest and
             // verified Windows transport before any capability is admitted.

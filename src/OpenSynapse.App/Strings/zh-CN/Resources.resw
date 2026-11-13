@@ -902,6 +902,8 @@
   <data name="DiagnosticMouseIdleTimeout" xml:space="preserve"><value>鼠标空闲休眠</value></data>
   <data name="Text_6D7EF7B5" xml:space="preserve"><value>鼠标 DPI 档位</value></data>
   <data name="DiagnosticDeviceTimedOut" xml:space="preserve"><value>设备查询超时（0x04）；请唤醒设备、关闭雷蛇 Synapse 后重试。</value></data>
+  <data name="DiagnosticDeviceWirelessIdle" xml:space="preserve"><value>设备已休眠或已关机（接收器在线）；动一下鼠标或开机后重试。</value></data>
+  <data name="DiagnosticMouseLink" xml:space="preserve"><value>鼠标连接</value></data>
   <data name="DiagnosticProtocolDetailsTitle" xml:space="preserve"><value>未通过的检查</value></data>
   <data name="DiagnosticProtocolAvailable" xml:space="preserve"><value>已读取</value></data>
   <data name="DiagnosticProtocolUnavailable" xml:space="preserve"><value>未读取</value></data>

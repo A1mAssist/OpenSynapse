@@ -686,6 +686,8 @@
   <data name="DiagnosticMouseIdleTimeout" xml:space="preserve"><value>Mouse idle timeout</value></data>
   <data name="Text_6D7EF7B5" xml:space="preserve"><value>Mouse DPI stages</value></data>
   <data name="DiagnosticDeviceTimedOut" xml:space="preserve"><value>The device timed out (0x04); wake the device, close Synapse, and retry.</value></data>
+  <data name="DiagnosticDeviceWirelessIdle" xml:space="preserve"><value>The device is asleep or powered off (receiver online); move the mouse or power it on, then retry.</value></data>
+  <data name="DiagnosticMouseLink" xml:space="preserve"><value>Mouse link</value></data>
   <data name="DiagnosticProtocolDetailsTitle" xml:space="preserve"><value>Failed checks</value></data>
   <data name="DiagnosticProtocolAvailable" xml:space="preserve"><value>Read</value></data>
   <data name="DiagnosticProtocolUnavailable" xml:space="preserve"><value>Not read</value></data>

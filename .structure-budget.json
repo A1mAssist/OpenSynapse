@@ -105,6 +105,10 @@
       "maxLines": 875
     },
     {
+      "path": "src/OpenSynapse.Windows/Devices/RazerHidTelemetryReader.cs",
+      "maxLines": 608
+    },
+    {
       "path": "src/OpenSynapse.Core/Devices/RazerDeviceTelemetry.cs",
       "maxLines": 633
     },
@@ -258,7 +262,7 @@
     },
     {
       "path": "src/OpenSynapse.App/ViewModels/DiagnosticsWorkspace.cs",
-      "maxLines": 273,
+      "maxLines": 276,
       "maxPublicMembers": 2
     },
     {

@@ -5,6 +5,9 @@ namespace OpenSynapse.Windows.Devices;
 
 internal sealed class RazerHidTelemetryReader
 {
+    private const string WirelessLinkDownError =
+        "Mouse link: The device is asleep or powered off (receiver online).";
+
     private readonly RazerDeviceResolver _resolver;
     private readonly RazerCapabilityClient _client;
     private string? _validatedViperPollingPath;
@@ -12,6 +15,7 @@ internal sealed class RazerHidTelemetryReader
     private string? _validatedViperDpiStagesPath;
     private string? _validatedViperIdlePath;
     private string? _validatedViperLowBatteryThresholdPath;
+    private bool _wirelessLinkDown;
 
     public RazerHidTelemetryReader(RazerDeviceResolver resolver, RazerCapabilityClient client)
     {
@@ -24,6 +28,13 @@ internal sealed class RazerHidTelemetryReader
         CancellationToken cancellationToken = default)
     {
         ResetValidation();
+        // While the receiver reports no link, every device command would burn its full
+        // retry budget for nothing. One dongle read is enough to keep saying so.
+        if (_wirelessLinkDown && await IsWirelessLinkDownAsync(viper, cancellationToken).ConfigureAwait(false))
+        {
+            return EmptyResult();
+        }
+
         int? batteryPercent = null;
         int? pollingRate = null;
         int? dpiX = null;
@@ -107,6 +118,17 @@ internal sealed class RazerHidTelemetryReader
                 errors.Add($"Mouse low-battery threshold: {exception.Message}");
             }
 
+        _wirelessLinkDown =
+            batteryPercent is null && pollingRate is null && dpiX is null && idleSeconds is null &&
+            dpiStages is null && lowBatteryThresholdRaw is null && errors.Count > 0 &&
+            await IsWirelessLinkDownAsync(viper, cancellationToken).ConfigureAwait(false);
+        if (_wirelessLinkDown)
+        {
+            // Six identical 0x04 rows read like a broken driver. The receiver says the link
+            // is down, so report the state the user can act on.
+            errors.Clear();
+            errors.Add(WirelessLinkDownError);
+        }
 
         return new RazerHidTelemetryReadResult(
             batteryPercent,
@@ -118,6 +140,34 @@ internal sealed class RazerHidTelemetryReader
             lowBatteryThresholdRaw,
             errors);
     }
+
+    /// <summary>
+    /// The dongle answers 0xBF itself, so it keeps reporting a device that sleeps or is
+    /// switched off. A missing answer means the receiver itself is unhappy, not the mouse.
+    /// </summary>
+    private async ValueTask<bool> IsWirelessLinkDownAsync(
+        ResolvedRazerDevice viper,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _client.QueryAsync(viper, CapabilityIds.WirelessLinkStatusGet, cancellationToken)
+                .ConfigureAwait(false);
+            var statuses = RazerPairingProtocol.ParseMultipleDeviceWirelessConnectionStatusV2(
+                response, RazerCapabilityClient.CreateRequest(viper, CapabilityIds.WirelessLinkStatusGet));
+            return statuses.Any(status =>
+                status.ProductId == viper.Descriptor.ProductId &&
+                status.Status != RazerPairingProtocol.WirelessLinkConnected);
+        }
+        catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
+        {
+            return false;
+        }
+    }
+
+    private static RazerHidTelemetryReadResult EmptyResult() =>
+        new(null, null, null, null, null, null, null, [WirelessLinkDownError]);
+
     public async ValueTask<int> SetViperPollingRateAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         int hertz,
