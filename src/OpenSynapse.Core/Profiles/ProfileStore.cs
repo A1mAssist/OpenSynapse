@@ -37,6 +37,12 @@ public sealed class ProfileStore
 
     public string FilePath { get; }
 
+    /// <summary>
+    /// Where the last unreadable profile was moved. The app starts on defaults and can
+    /// save them without destroying the original file.
+    /// </summary>
+    public string? LastQuarantinedPath { get; private set; }
+
     public static Task ExportAsync(
         ProfileDocument document,
         string filePath,
@@ -87,6 +93,7 @@ public sealed class ProfileStore
 
     public async Task<ProfileDocument> LoadAsync(CancellationToken cancellationToken = default)
     {
+        LastQuarantinedPath = null;
         if (!File.Exists(FilePath))
         {
             return ProfileDocument.CreateDefault();
@@ -111,12 +118,12 @@ public sealed class ProfileStore
 
             if (document is null)
             {
-                return ProfileDocument.CreateDefault();
+                return QuarantineUnreadable();
             }
             var sourceVersion = document.Version;
             if (!TryUpgrade(document, moveLegacyMachineSettings: true, out var legacyGpuMode))
             {
-                return ProfileDocument.CreateDefault();
+                return QuarantineUnreadable();
             }
 
             document.ApplySafeDefaults();
@@ -128,17 +135,37 @@ public sealed class ProfileStore
         }
         catch (JsonException)
         {
-            // Leave the source untouched so the user can recover or inspect it.
-            return ProfileDocument.CreateDefault();
+            return QuarantineUnreadable();
         }
         catch (NotSupportedException)
         {
-            return ProfileDocument.CreateDefault();
+            return QuarantineUnreadable();
         }
         catch (InvalidDataException)
         {
-            return ProfileDocument.CreateDefault();
+            return QuarantineUnreadable();
         }
+    }
+
+    /// <summary>
+    /// A profile the loader cannot read is moved aside instead of being silently replaced
+    /// by the defaults on the next save. The user keeps the original bytes to inspect or
+    /// recover; the app keeps working on a clean document.
+    /// </summary>
+    private ProfileDocument QuarantineUnreadable()
+    {
+        try
+        {
+            var path = $"{FilePath}.corrupt-{DateTime.Now:yyyyMMddHHmmss}";
+            File.Move(FilePath, path);
+            LastQuarantinedPath = path;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            // A locked file stays in place; the next save may replace it, same as before.
+        }
+
+        return ProfileDocument.CreateDefault();
     }
 
     public async Task SaveAsync(ProfileDocument document, CancellationToken cancellationToken = default)

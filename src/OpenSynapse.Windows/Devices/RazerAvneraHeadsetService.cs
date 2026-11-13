@@ -310,7 +310,7 @@ public sealed class RazerAvneraHeadsetService : IAsyncDisposable
 
     private static bool IsExpected(Exception exception) =>
         exception is IOException or InvalidDataException or InvalidOperationException or
-            NotSupportedException or Win32Exception or UnauthorizedAccessException;
+            NotSupportedException or Win32Exception or UnauthorizedAccessException or TimeoutException;
 
     public ValueTask DisposeAsync() => _transport.DisposeAsync();
 }

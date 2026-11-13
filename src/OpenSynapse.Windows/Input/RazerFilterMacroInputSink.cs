@@ -107,7 +107,10 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
             _gate.Release();
         }
 
-        await ReleaseMouseThroughFallbackAsync(cancellationToken).ConfigureAwait(false);
+        // Whatever the driver refused to release stays in _pressed, including the case
+        // where it failed during this release pass and _driverUnavailable was never set.
+        await ReleasePressedThroughFallbackAsync(CancellationToken.None).ConfigureAwait(false);
+        await ReleaseMouseThroughFallbackAsync(CancellationToken.None).ConfigureAwait(false);
         await _fallback.ReleaseAllAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -362,13 +365,13 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
             {
                 _mouseDriverUnavailable = true;
                 DisposeDriverLocked(mouse: true);
-                await ReleaseMouseThroughFallbackAsync(cancellationToken).ConfigureAwait(false);
+                await ReleaseMouseThroughFallbackAsync(CancellationToken.None).ConfigureAwait(false);
             }
             else
             {
                 _driverUnavailable = true;
                 DisposeDriverLocked(mouse: false);
-                await ReleasePressedThroughFallbackAsync(cancellationToken).ConfigureAwait(false);
+                await ReleasePressedThroughFallbackAsync(CancellationToken.None).ConfigureAwait(false);
             }
             return false;
         }
@@ -462,7 +465,7 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
     {
         if (_driver is { } driver)
         {
-            foreach (var key in _pressed.Keys)
+            foreach (var key in _pressed.Keys.ToArray())
             {
                 try
                 {
@@ -472,6 +475,7 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
                             key.ScanCode,
                             isDown: false,
                             key.Extended));
+                    _pressed.Remove(key);
                 }
                 catch (Exception exception) when (
                     exception is IOException or Win32Exception or
@@ -483,11 +487,9 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
             }
         }
 
-        _pressed.Clear();
-
         if (_mouseDriver is { } mouseDriver)
         {
-            foreach (var button in _pressedMouseButtons)
+            foreach (var button in _pressedMouseButtons.ToArray())
             {
                 try
                 {
@@ -498,6 +500,7 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
                             MouseUpFlags[button],
                             0,
                             0));
+                    _pressedMouseButtons.Remove(button);
                 }
                 catch (Exception exception) when (
                     exception is IOException or Win32Exception or
@@ -508,35 +511,24 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
                 }
             }
         }
-
-        // Keep the set when no mouse driver is available so ReleaseAllAsync
-        // can send the ups through the fallback sink.
-        if (_mouseDriver is not null)
-        {
-            _pressedMouseButtons.Clear();
-        }
     }
 
     private async Task ReleasePressedThroughFallbackAsync(CancellationToken cancellationToken)
     {
         var pressed = _pressed.Values.ToArray();
-        _pressed.Clear();
         foreach (var input in pressed)
         {
-            try
+            await _fallback.SendAsync(
+                new MacroStep
+                {
+                    Kind = MacroStepKind.Input,
+                    Input = input,
+                    IsDown = false,
+                },
+                cancellationToken).ConfigureAwait(false);
+            if (TryGetScanCode(input, out var scanCode, out var extended))
             {
-                await _fallback.SendAsync(
-                    new MacroStep
-                    {
-                        Kind = MacroStepKind.Input,
-                        Input = input,
-                        IsDown = false,
-                    },
-                    cancellationToken).ConfigureAwait(false);
-            }
-            catch
-            {
-                // Best effort. The original driver failure is the actionable one.
+                _pressed.Remove((scanCode, extended));
             }
         }
     }
@@ -544,28 +536,21 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
     private async Task ReleaseMouseThroughFallbackAsync(CancellationToken cancellationToken)
     {
         var buttons = _pressedMouseButtons.ToArray();
-        _pressedMouseButtons.Clear();
         foreach (var button in buttons)
         {
-            try
-            {
-                await _fallback.SendAsync(
-                    new MacroStep
+            await _fallback.SendAsync(
+                new MacroStep
+                {
+                    Kind = MacroStepKind.Input,
+                    Input = new MacroInput
                     {
-                        Kind = MacroStepKind.Input,
-                        Input = new MacroInput
-                        {
-                            Kind = MacroInputKind.MouseButton,
-                            MouseButton = button,
-                        },
-                        IsDown = false,
+                        Kind = MacroInputKind.MouseButton,
+                        MouseButton = button,
                     },
-                    cancellationToken).ConfigureAwait(false);
-            }
-            catch
-            {
-                // Best effort. The original driver failure is the actionable one.
-            }
+                    IsDown = false,
+                },
+                cancellationToken).ConfigureAwait(false);
+            _pressedMouseButtons.Remove(button);
         }
     }
 

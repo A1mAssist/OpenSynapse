@@ -1638,6 +1638,7 @@
     <value>配置加载：{0}</value>
     <comment>配置加载：{0}</comment>
   </data>
+  <data name="ProfileCorruptQuarantined" xml:space="preserve"><value>配置文件无法读取，已备份到 {0}，本次使用默认配置。</value></data>
   <data name="DeviceWatchError" xml:space="preserve">
     <value>设备状态监听：{0}</value>
     <comment>设备状态监听：{0}</comment>

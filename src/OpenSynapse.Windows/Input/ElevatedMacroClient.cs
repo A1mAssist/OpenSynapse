@@ -24,7 +24,15 @@ public sealed class ElevatedMacroClient : IDisposable
     };
 
     private readonly SemaphoreSlim _gate = new(1, 1);
+    private readonly Func<CancellationToken, Task<Stream>> _connect;
     private bool _disposed;
+
+    public ElevatedMacroClient() : this(ConnectAsync)
+    {
+    }
+
+    internal ElevatedMacroClient(Func<CancellationToken, Task<Stream>> connect) =>
+        _connect = connect ?? throw new ArgumentNullException(nameof(connect));
 
     /// <summary>
     /// True when the agent answered a ping, so the caller knows the elevated
@@ -123,12 +131,7 @@ public sealed class ElevatedMacroClient : IDisposable
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(RequestTimeout);
 
-            await using var pipe = new NamedPipeClientStream(
-                ".",
-                ElevatedMacroProtocol.PipeName,
-                PipeDirection.InOut,
-                PipeOptions.Asynchronous);
-            await pipe.ConnectAsync(timeout.Token).ConfigureAwait(false);
+            await using var pipe = await _connect(timeout.Token).ConfigureAwait(false);
 
             using var writer = new StreamWriter(
                 pipe,
@@ -175,6 +178,25 @@ public sealed class ElevatedMacroClient : IDisposable
         finally
         {
             _gate.Release();
+        }
+    }
+
+    private static async Task<Stream> ConnectAsync(CancellationToken cancellationToken)
+    {
+        var pipe = new NamedPipeClientStream(
+            ".",
+            ElevatedMacroProtocol.PipeName,
+            PipeDirection.InOut,
+            PipeOptions.Asynchronous);
+        try
+        {
+            await pipe.ConnectAsync(cancellationToken).ConfigureAwait(false);
+            return pipe;
+        }
+        catch
+        {
+            await pipe.DisposeAsync().ConfigureAwait(false);
+            throw;
         }
     }
 

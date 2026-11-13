@@ -144,7 +144,8 @@ internal static class RazerCommonDriverInstaller
                 ExtractCab(cabPath, folder);
             }
 
-            RazerDriverInstaller.VerifyPackage(sysPath);
+            // WHQL attestation signs the common .sys as Microsoft, not as the Razer EXE publisher.
+            RazerDriverInstaller.VerifyPackage(sysPath, requireRazerPublisher: false);
             return (infPath, null);
         }
         catch (Exception exception) when (
