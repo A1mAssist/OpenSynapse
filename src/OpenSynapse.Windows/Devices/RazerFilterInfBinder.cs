@@ -146,26 +146,24 @@ internal static class RazerFilterInfBinder
             var succeeded = true;
             foreach (var inf in infs)
             {
-                var startInfo = new ProcessStartInfo
+                var exitCode = await RunPnpUtilAsync(inf, cancellationToken).ConfigureAwait(false);
+                var description = DescribeInf(inf);
+                if (exitCode == 259)
                 {
-                    FileName = Path.Combine(Environment.SystemDirectory, "pnputil.exe"),
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    WindowStyle = ProcessWindowStyle.Hidden,
-                };
-                startInfo.ArgumentList.Add("/add-driver");
-                startInfo.ArgumentList.Add(inf);
-                startInfo.ArgumentList.Add("/install");
-
-                using var process = Process.Start(startInfo);
-                if (process is null)
+                    // Installing the lower filter can re-enumerate the HID children.
+                    // Retry once so a keyboard collection that was temporarily absent
+                    // can still receive its UpperFilters.
+                    await Task.Delay(TimeSpan.FromSeconds(1.5), cancellationToken).ConfigureAwait(false);
+                    var retry = await RunPnpUtilAsync(inf, cancellationToken).ConfigureAwait(false);
+                    exitCodes.Add($"{description} returned 259; retry returned {retry}");
+                    exitCode = retry;
+                }
+                else
                 {
-                    return new(RazerFilterBindStatus.Failed, "The driver binder did not start.");
+                    exitCodes.Add($"{description} returned {exitCode}");
                 }
 
-                await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
-                exitCodes.Add($"{Path.GetFileName(inf)} returned {process.ExitCode}");
-                succeeded &= RazerDriverInstaller.IsSuccessfulExitCode(process.ExitCode);
+                succeeded &= RazerDriverInstaller.IsSuccessfulExitCode(exitCode);
             }
 
             return succeeded
@@ -177,10 +175,32 @@ internal static class RazerFilterInfBinder
             throw;
         }
         catch (Exception exception) when (
-            exception is Win32Exception or IOException or UnauthorizedAccessException)
+            exception is Win32Exception or IOException or InvalidOperationException or
+                UnauthorizedAccessException)
         {
             return new(RazerFilterBindStatus.Failed, exception.Message);
         }
+    }
+
+    private static async Task<int> RunPnpUtilAsync(
+        string inf,
+        CancellationToken cancellationToken)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = Path.Combine(Environment.SystemDirectory, "pnputil.exe"),
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden,
+        };
+        startInfo.ArgumentList.Add("/add-driver");
+        startInfo.ArgumentList.Add(inf);
+        startInfo.ArgumentList.Add("/install");
+
+        using var process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("The driver binder did not start.");
+        await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+        return process.ExitCode;
     }
 
     private static IReadOnlyList<ushort> GetCandidateProductIds(ushort productId) =>
@@ -191,19 +211,21 @@ internal static class RazerFilterInfBinder
     private const string HidEnumPath = @"SYSTEM\CurrentControlSet\Enum\HID";
 
     /// <summary>
-    /// True when every keyboard collection of the product carries the per-device
-    /// RzDev filter. The mouse collection alone is not enough: a mouse can expose
-    /// keyboard collections that need their own Keyboard-class INF for macro
-    /// injection. A staged INF in the DriverStore is not enough either.
+    /// True when every keyboard collection of the present product carries a RzDev
+    /// filter from the candidate list. The candidate list includes the wired
+    /// sibling, so its filter name is accepted; stale registry instances of that
+    /// sibling are not counted.
     /// </summary>
     internal static bool IsAttached(
         IReadOnlyList<ushort> productIds,
-        RegistryKey? enumRoot = null) =>
-        InspectAttachment(productIds, enumRoot).IsAttached;
+        RegistryKey? enumRoot = null,
+        IReadOnlySet<ushort>? presentProductIds = null) =>
+        InspectAttachment(productIds, enumRoot, presentProductIds).IsAttached;
 
     internal static RazerFilterAttachmentState InspectAttachment(
         IReadOnlyList<ushort> productIds,
-        RegistryKey? enumRoot = null)
+        RegistryKey? enumRoot = null,
+        IReadOnlySet<ushort>? presentProductIds = null)
     {
         ArgumentNullException.ThrowIfNull(productIds);
         var ownsRoot = enumRoot is null;
@@ -216,11 +238,16 @@ internal static class RazerFilterInfBinder
         var anyAttached = false;
         var keyboardInstances = 0;
         var attachedKeyboardInstances = 0;
+        var filters = productIds.Select(static id => $"RzDev_{id:X4}").ToArray();
         try
         {
             foreach (var productId in productIds)
             {
-                var filter = $"RzDev_{productId:X4}";
+                if (presentProductIds is not null && !presentProductIds.Contains(productId))
+                {
+                    continue;
+                }
+
                 foreach (var (deviceName, instanceName) in InstanceNames(root, productId))
                 {
                     using var instance = root.OpenSubKey($@"{deviceName}\{instanceName}");
@@ -229,7 +256,7 @@ internal static class RazerFilterInfBinder
                         continue;
                     }
 
-                    var attached = HasFilter(instance, filter);
+                    var attached = filters.Any(filter => HasFilter(instance, filter));
                     anyAttached |= attached;
                     if (!IsKeyboardInstance(instance))
                     {
@@ -260,7 +287,8 @@ internal static class RazerFilterInfBinder
 
     internal static IReadOnlyList<string> FindInstances(
         IReadOnlyList<ushort> productIds,
-        RegistryKey? enumRoot = null)
+        RegistryKey? enumRoot = null,
+        IReadOnlySet<ushort>? presentProductIds = null)
     {
         ArgumentNullException.ThrowIfNull(productIds);
         var ownsRoot = enumRoot is null;
@@ -275,6 +303,11 @@ internal static class RazerFilterInfBinder
             var instances = new List<string>();
             foreach (var productId in productIds)
             {
+                if (presentProductIds is not null && !presentProductIds.Contains(productId))
+                {
+                    continue;
+                }
+
                 foreach (var (deviceName, instanceName) in InstanceNames(root, productId))
                 {
                     instances.Add($@"HID\{deviceName}\{instanceName}");
@@ -298,7 +331,8 @@ internal static class RazerFilterInfBinder
     /// </summary>
     internal static IReadOnlyList<string> FindUnfilteredKeyboardInstances(
         IReadOnlyList<ushort> productIds,
-        RegistryKey? enumRoot = null)
+        RegistryKey? enumRoot = null,
+        IReadOnlySet<ushort>? presentProductIds = null)
     {
         ArgumentNullException.ThrowIfNull(productIds);
         var ownsRoot = enumRoot is null;
@@ -311,13 +345,19 @@ internal static class RazerFilterInfBinder
         try
         {
             var instances = new List<string>();
+            var filters = productIds.Select(static id => $"RzDev_{id:X4}").ToArray();
             foreach (var productId in productIds)
             {
-                var filter = $"RzDev_{productId:X4}";
+                if (presentProductIds is not null && !presentProductIds.Contains(productId))
+                {
+                    continue;
+                }
+
                 foreach (var (deviceName, instanceName) in InstanceNames(root, productId))
                 {
                     using var instance = root.OpenSubKey($@"{deviceName}\{instanceName}");
-                    if (instance is null || !IsKeyboardInstance(instance) || HasFilter(instance, filter))
+                    if (instance is null || !IsKeyboardInstance(instance) ||
+                        filters.Any(filter => HasFilter(instance, filter)))
                     {
                         continue;
                     }
@@ -411,6 +451,32 @@ internal static class RazerFilterInfBinder
             string name => name.Contains(filter, StringComparison.OrdinalIgnoreCase),
             _ => false,
         };
+
+    private static string DescribeInf(string path)
+    {
+        var fileName = Path.GetFileName(path);
+        try
+        {
+            foreach (var line in File.ReadLines(path).Take(20))
+            {
+                var marker = line.IndexOf("RzDevU_", StringComparison.OrdinalIgnoreCase);
+                if (marker < 0)
+                {
+                    continue;
+                }
+
+                var original = line[marker..].Trim();
+                return string.Equals(original, fileName, StringComparison.OrdinalIgnoreCase)
+                    ? fileName
+                    : $"{fileName} ({original})";
+            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+        }
+
+        return fileName;
+    }
 
     private static string CommandLine(IReadOnlyList<string> infs)
     {
