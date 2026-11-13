@@ -26,6 +26,7 @@ internal sealed class RazerAvnera65Transport : IRazerAvnera65Transport
     private static readonly TimeSpan RetryDelay = TimeSpan.FromMilliseconds(50);
     private readonly IRazerAvnera65Io _io;
     private readonly SemaphoreSlim _gate = new(1, 1);
+    private Exception? _ioFailure;
     private bool _disposed;
 
     internal RazerAvnera65Transport(string devicePath)
@@ -47,14 +48,12 @@ internal sealed class RazerAvnera65Transport : IRazerAvnera65Transport
         try
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            await CancellableNativeCall.RunAsync(
-                () =>
-                {
-                    _io.Send(report);
-                    return true;
-                },
-                ResponseTimeout,
-                cancellationToken).ConfigureAwait(false);
+            ThrowIfIoFailed();
+            await RunIoAsync(() =>
+            {
+                _io.Send(report);
+                return true;
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -78,24 +77,19 @@ internal sealed class RazerAvnera65Transport : IRazerAvnera65Transport
         try
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            await CancellableNativeCall.RunAsync(
-                () =>
-                {
-                    _io.Send(report);
-                    return true;
-                },
-                ResponseTimeout,
-                cancellationToken).ConfigureAwait(false);
+            ThrowIfIoFailed();
+            await RunIoAsync(() =>
+            {
+                _io.Send(report);
+                return true;
+            }, cancellationToken).ConfigureAwait(false);
 
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(ResponseTimeout);
             for (var attempt = 0; attempt < 10; attempt++)
             {
                 await Task.Delay(RetryDelay, timeout.Token).ConfigureAwait(false);
-                var reply = await CancellableNativeCall.RunAsync(
-                    _io.Read,
-                    ResponseTimeout,
-                    timeout.Token).ConfigureAwait(false);
+                var reply = await RunIoAsync(_io.Read, timeout.Token).ConfigureAwait(false);
                 if (RazerAvnera65Protocol.Matches(reply, expectedHeader))
                 {
                     return reply;
@@ -126,6 +120,36 @@ internal sealed class RazerAvnera65Transport : IRazerAvnera65Transport
         finally
         {
             _gate.Release();
+        }
+    }
+
+    private void ThrowIfIoFailed()
+    {
+        if (_ioFailure is not null) throw new IOException(_ioFailure.Message, _ioFailure);
+    }
+
+    private async Task<T> RunIoAsync<T>(Func<T> call, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await CancellableNativeCall.RunAsync(call, ResponseTimeout, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (TimeoutException exception) when (!_disposed)
+        {
+            // A timed-out native call may still own the channel after its cancellation grace.
+            _ioFailure = new IOException(
+                "The previous native I/O may still be active; reopen the device before retrying.", exception);
+            // Callers already treat IOException as an expected device failure; a raw
+            // TimeoutException would escape the headset view model and crash the page.
+            throw _ioFailure;
+        }
+        catch (OperationCanceledException exception) when (!_disposed)
+        {
+            // A caller cancellation also leaves the native call in an unknown state.
+            _ioFailure = new IOException(
+                "The previous native I/O may still be active; reopen the device before retrying.", exception);
+            throw;
         }
     }
 

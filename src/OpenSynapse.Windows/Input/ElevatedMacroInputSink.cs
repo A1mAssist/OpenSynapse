@@ -12,13 +12,19 @@ namespace OpenSynapse.Windows.Input;
 /// </summary>
 public sealed class ElevatedMacroInputSink : IMacroInputSink
 {
-    private readonly WindowsMacroInputSink _direct = new();
+    private readonly IMacroInputSink _direct;
     private readonly ElevatedMacroClient _client;
     private bool _useElevated;
+    private bool _agentReached;
 
-    public ElevatedMacroInputSink(ElevatedMacroClient client)
+    public ElevatedMacroInputSink(ElevatedMacroClient client) : this(client, new WindowsMacroInputSink())
+    {
+    }
+
+    internal ElevatedMacroInputSink(ElevatedMacroClient client, IMacroInputSink direct)
     {
         _client = client ?? throw new ArgumentNullException(nameof(client));
+        _direct = direct ?? throw new ArgumentNullException(nameof(direct));
     }
 
     /// <summary>
@@ -33,6 +39,7 @@ public sealed class ElevatedMacroInputSink : IMacroInputSink
     public async Task<bool> TryEnableAsync(CancellationToken cancellationToken = default)
     {
         _useElevated = await _client.IsElevatedAsync(cancellationToken).ConfigureAwait(false);
+        _agentReached |= _useElevated;
         return _useElevated;
     }
 
@@ -117,7 +124,8 @@ public sealed class ElevatedMacroInputSink : IMacroInputSink
     /// </summary>
     public async Task ReleaseAllAsync(CancellationToken cancellationToken = default)
     {
-        if (!_useElevated)
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!_agentReached)
         {
             return;
         }

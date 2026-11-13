@@ -2,6 +2,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 
 namespace OpenSynapse.Windows.Devices;
@@ -179,7 +181,7 @@ internal static class RazerDriverInstaller
         Directory.CreateDirectory(cacheDirectory);
         var fileName = Path.GetFileName(new Uri(package.Url).AbsolutePath);
         var path = Path.Combine(cacheDirectory, fileName);
-        if (File.Exists(path) && TryVerifyPackage(path, out _))
+        if (File.Exists(path) && TryVerifyPackage(path, requireRazerPublisher: true, out _))
         {
             return path;
         }
@@ -293,15 +295,16 @@ internal static class RazerDriverInstaller
         }
     }
 
-    internal static void VerifyPackage(string path)
+    internal static void VerifyPackage(string path, bool requireRazerPublisher = true)
     {
-        if (!TryVerifyPackage(path, out var error))
+        if (!TryVerifyPackage(path, requireRazerPublisher, out var error))
         {
             throw new InvalidDataException(error);
         }
     }
 
-    private static bool TryVerifyPackage(string path, out string error)
+    private static bool TryVerifyPackage(
+        string path, bool requireRazerPublisher, out string error)
     {
         var action = new Guid("00AAC56B-CD44-11d0-8CC2-00C04FC295EE");
         var file = new WinTrustFileInfo
@@ -328,6 +331,32 @@ internal static class RazerDriverInstaller
                 return false;
             }
 
+            if (requireRazerPublisher)
+            {
+                string subject;
+                try
+                {
+                    // The certificate is embedded in an executable, not an X.509 certificate file.
+#pragma warning disable SYSLIB0057
+                    using var signer = new X509Certificate2(X509Certificate.CreateFromSignedFile(path));
+#pragma warning restore SYSLIB0057
+                    subject = signer.SubjectName.Format(multiLine: true);
+                }
+                catch (CryptographicException exception)
+                {
+                    // WinVerifyTrust only vouches for the signature it found; the embedded
+                    // signer can still be unreadable on a republished package.
+                    error = $"Razer driver package has no readable signer certificate: {exception.Message}";
+                    return false;
+                }
+
+                if (!IsRazerPublisher(subject))
+                {
+                    error = "Razer driver package has an unexpected publisher.";
+                    return false;
+                }
+            }
+
             error = string.Empty;
             return true;
         }
@@ -338,6 +367,10 @@ internal static class RazerDriverInstaller
             Marshal.FreeHGlobal(data.File);
         }
     }
+
+    internal static bool IsRazerPublisher(string formattedSubject) =>
+        formattedSubject.Split('\n').Any(line =>
+            string.Equals(line.TrimEnd('\r'), "CN=Razer USA Ltd.", StringComparison.Ordinal));
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     private struct WinTrustFileInfo

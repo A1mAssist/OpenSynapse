@@ -27,6 +27,10 @@ public sealed partial class ProfilesWorkspace
         }
 
         _setProfile(loaded);
+        if (_profileStore.LastQuarantinedPath is { } quarantined)
+        {
+            _reportApplicationError(AppStrings.FormatText("ProfileCorruptQuarantined", quarantined));
+        }
         var migrated = EnsureActiveProfileExtensions();
         RefreshProfileState();
         RefreshStartupState();

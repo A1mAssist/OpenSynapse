@@ -79,10 +79,8 @@ internal sealed class BlackSharkHeadsetTransport : IAsyncDisposable
                 {
                     while (_reports.Reader.TryRead(out var data))
                     {
-                        if (BlackSharkV3ProProtocol.HasValidCrc(data) &&
-                            BlackSharkV3ProProtocol.TryParseResponse(data, out var response) &&
-                            response.CommandClass == report[10] &&
-                            response.Subtype == 0x01)
+                        if (BlackSharkV3ProProtocol.IsSuccessfulResponseFor(report, data) &&
+                            BlackSharkV3ProProtocol.TryParseResponse(data, out var response))
                         {
                             return response;
                         }

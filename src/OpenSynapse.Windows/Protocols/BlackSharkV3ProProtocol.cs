@@ -36,6 +36,7 @@ public static class BlackSharkV3ProProtocol
     public const int ReportLength = 64;
     public const byte ReportId = 0x02;
     public const byte TransactionId = 0x60;
+    public const byte StatusOk = 2;
 
     private const byte BatteryClass = 0x21;
     private const byte ChargingClass = 0x2A;
@@ -167,6 +168,19 @@ public static class BlackSharkV3ProProtocol
 
         return crc == report[62];
     }
+
+    // AudioBillieT2's audio _getElectronTransferInResult accepts only status 2;
+    // 1 and 3 request a resend. Other statuses never carry a successful value.
+    public static bool IsSuccessfulResponseFor(
+        ReadOnlySpan<byte> request,
+        ReadOnlySpan<byte> report) =>
+        request.Length >= ReportLength &&
+        HasValidCrc(report) &&
+        TryParseResponse(report, out var response) &&
+        report[2] == request[2] &&
+        response.Status == StatusOk &&
+        response.CommandClass == request[10] &&
+        response.Subtype == 0x01;
 
     public static byte[] Create(byte commandClass, byte commandId, bool wireless, params byte[] arguments) =>
         CreateForDirection(commandClass, commandId, wireless ? (byte)0x80 : (byte)0x00, arguments);

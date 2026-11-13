@@ -1264,6 +1264,7 @@
   <data name="ProfileLoadError" xml:space="preserve">
     <value>Profile loading: {0}</value>
   </data>
+  <data name="ProfileCorruptQuarantined" xml:space="preserve"><value>The profile file could not be read. It was backed up to {0} and defaults are in use.</value></data>
   <data name="DeviceWatchError" xml:space="preserve">
     <value>Device monitoring: {0}</value>
   </data>
