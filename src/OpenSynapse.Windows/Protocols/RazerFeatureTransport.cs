@@ -157,9 +157,12 @@ internal sealed class RazerCommandRejectedException(string message) : InvalidOpe
 /// this as a capability the firmware does not answer rather than a transport failure,
 /// because a disconnected endpoint fails every command on its path, not just one.
 /// </summary>
-internal sealed class RazerDeviceTimeoutException(string message, bool retryableBusy = false) : InvalidOperationException(message)
+internal sealed class RazerDeviceTimeoutException(
+    string message, bool retryableBusy = false, bool wirelessLinkDown = false) : InvalidOperationException(message)
 {
     public bool IsRetryableBusy { get; } = retryableBusy;
+    // The receiver reported no radio link: the device is asleep or switched off, not broken.
+    public bool WirelessLinkDown { get; } = wirelessLinkDown;
 }
 
 /// <summary>A reply did not match the request's transaction id, command, length or checksum.</summary>

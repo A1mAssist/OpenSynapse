@@ -19,7 +19,7 @@
     },
     {
       "path": "src/OpenSynapse.Windows/Devices/RazerHidDeviceService.cs",
-      "maxLines": 1904
+      "maxLines": 1914
     },
     {
       "path": "src/OpenSynapse.App/MainWindow.xaml",
@@ -193,7 +193,7 @@
     },
     {
       "path": "src/OpenSynapse.Windows/Protocols/RazerFeatureTransport.cs",
-      "maxLines": 680
+      "maxLines": 683
     },
     {
       "path": "src/OpenSynapse.Windows/Lighting/WasapiAudioMeterAdapter.cs",
