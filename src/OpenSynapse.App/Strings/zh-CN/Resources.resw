@@ -2202,6 +2202,9 @@
   <data name="PerformanceOverlayDescription" xml:space="preserve"><value>在桌面显示性能模式、CPU/GPU 温度与频率、内存占用与频率，以及风扇转速；可拖动并记住位置，右键可切换卡片、重置位置或关闭。</value></data>
   <data name="PerformanceOverlayDetailedTitle" xml:space="preserve"><value>详细卡片</value></data>
   <data name="PerformanceOverlayDetailedDescription" xml:space="preserve"><value>使用较大的半透明卡片，并显示 CPU/GPU 负载折线图。</value></data>
+  <data name="PerformanceOverlayTopmostTitle" xml:space="preserve"><value>始终置顶</value></data>
+  <data name="PerformanceOverlayTopmostDescription" xml:space="preserve"><value>关闭后悬浮窗使用普通窗口层级，避免影响无边框全屏游戏的 DirectFlip。</value></data>
+  <data name="PerformanceOverlayTopmostToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>性能悬浮窗始终置顶</value></data>
   <data name="PerformanceOverlayDetailedToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>详细性能悬浮窗</value></data>
   <data name="PerformanceOverlayToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>性能悬浮窗</value></data>
   <data name="PerformanceOverlayFanLabel" xml:space="preserve"><value>风扇</value></data>

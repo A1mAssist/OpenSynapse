@@ -32,6 +32,7 @@ public sealed class AppBehaviorSettings
     public bool LiteModeEnabled { get; set; }
     public bool PerformanceOverlayEnabled { get; set; }
     public bool PerformanceOverlayDetailed { get; set; }
+    public bool PerformanceOverlayAlwaysOnTop { get; set; } = true;
     public int? PerformanceOverlayX { get; set; }
     public int? PerformanceOverlayY { get; set; }
     public int WindowWidth { get; set; }

@@ -49,6 +49,29 @@ public sealed partial class SettingsPage
         }
     }
 
+    private void PerformanceOverlayTopmostToggled(object sender, RoutedEventArgs e)
+    {
+        if (!_behaviorUiReady || sender is not ToggleSwitch toggle) return;
+        var settings = Host.BehaviorSettings;
+        var previous = settings.PerformanceOverlayAlwaysOnTop;
+        try
+        {
+            settings.PerformanceOverlayAlwaysOnTop = toggle.IsOn;
+            settings.Save();
+            Host.RefreshPerformanceOverlayTopmost();
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+            InvalidOperationException or System.Security.SecurityException)
+        {
+            settings.PerformanceOverlayAlwaysOnTop = previous;
+            _behaviorUiReady = false;
+            toggle.IsOn = previous;
+            _behaviorUiReady = true;
+            ViewModel.ReportApplicationError(AppStrings.FormatText("BehaviorSettingError", exception.Message));
+        }
+    }
+
     private void PerformanceOverlayDetailedToggled(object sender, RoutedEventArgs e)
     {
         if (!_behaviorUiReady || sender is not ToggleSwitch toggle) return;

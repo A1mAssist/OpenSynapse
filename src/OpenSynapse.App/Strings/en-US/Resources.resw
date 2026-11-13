@@ -1820,6 +1820,9 @@
   <data name="PerformanceOverlayDescription" xml:space="preserve"><value>Show performance mode, CPU/GPU temperatures and clocks, memory usage and clock, and fan speed on the desktop. Drag it anywhere; its position is remembered. Right-click to switch cards, reset the position, or close it.</value></data>
   <data name="PerformanceOverlayDetailedTitle" xml:space="preserve"><value>Detailed card</value></data>
   <data name="PerformanceOverlayDetailedDescription" xml:space="preserve"><value>Use the larger translucent card with a CPU/GPU load chart.</value></data>
+  <data name="PerformanceOverlayTopmostTitle" xml:space="preserve"><value>Always on top</value></data>
+  <data name="PerformanceOverlayTopmostDescription" xml:space="preserve"><value>Turn off to keep the overlay at the normal window level so borderless fullscreen games keep DirectFlip.</value></data>
+  <data name="PerformanceOverlayTopmostToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Performance overlay always on top</value></data>
   <data name="PerformanceOverlayDetailedToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Detailed performance overlay</value></data>
   <data name="PerformanceOverlayToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Performance overlay</value></data>
   <data name="PerformanceOverlayFanLabel" xml:space="preserve"><value>Fan</value></data>

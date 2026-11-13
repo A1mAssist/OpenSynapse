@@ -92,6 +92,14 @@
                     <Border Height="1" Background="{StaticResource LineBrush}" />
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                       <StackPanel Spacing="4">
+                        <TextBlock local:Localized.Uid="PerformanceOverlayTopmostTitle" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock local:Localized.Uid="PerformanceOverlayTopmostDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      </StackPanel>
+                      <ToggleSwitch local:Localized.Uid="PerformanceOverlayTopmostToggle" x:Name="PerformanceOverlayTopmostToggle" Grid.Column="1" Toggled="PerformanceOverlayTopmostToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
+                    </Grid>
+                    <Border Height="1" Background="{StaticResource LineBrush}" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                      <StackPanel Spacing="4">
                         <TextBlock local:Localized.Uid="PerformanceOverlayDetailedTitle" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
                         <TextBlock local:Localized.Uid="PerformanceOverlayDetailedDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                       </StackPanel>

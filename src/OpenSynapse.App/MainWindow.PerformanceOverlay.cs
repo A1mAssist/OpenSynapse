@@ -16,6 +16,8 @@ public sealed partial class MainWindow
 
     internal void RefreshPerformanceOverlayLayout() => _performanceOverlayWindow?.RefreshLayout();
 
+    internal void RefreshPerformanceOverlayTopmost() => _performanceOverlayWindow?.RefreshAlwaysOnTop();
+
     internal void SetPerformanceOverlayEnabled(bool enabled)
     {
         if (!enabled)
