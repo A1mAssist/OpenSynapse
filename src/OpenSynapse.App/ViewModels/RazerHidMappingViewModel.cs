@@ -368,6 +368,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 else
                 {
                     unreadable++;
+                    row.SetAssignmentReadable(false);
                     row.CurrentActionText = AppStrings.Text("RazerHidMappingUnreadable");
                     _log?.Invoke(
                         $"mapping button {id} read failed ({readError?.GetType().Name}): {readError?.Message}");
