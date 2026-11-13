@@ -8,7 +8,7 @@ public sealed partial class RazerHeadsetAudioViewModel
     [ProfileSetting("headset.mic-monitoring", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyMicMonitoringAsync(CancellationToken cancellationToken = default)
     {
-        if (IsMxic0555)
+        if (IsMxicSidetone)
         {
             var previousEnabled = MicMonitoringEnabled;
             if (!await RunMxicWriteAsync(
@@ -25,6 +25,29 @@ public sealed partial class RazerHeadsetAudioViewModel
                 async token =>
                 {
                     await using var service = OpenMxicService();
+                    await service.SetSidetoneAsync(previousEnabled, token);
+                },
+                cancellationToken);
+            return;
+        }
+
+        if (IsValkyrieSidetone)
+        {
+            var previousEnabled = MicMonitoringEnabled;
+            if (!await RunValkyrieWriteAsync(
+                    (service, token) => service.SetSidetoneAsync(MicMonitoringEnabled, token),
+                    cancellationToken))
+            {
+                return;
+            }
+
+            await SaveHeadsetSettingAsync(
+                settings => settings.MicMonitoringEnabled = MicMonitoringEnabled,
+                settings => settings.MicMonitoringEnabled = previousEnabled,
+                () => MicMonitoringEnabled = previousEnabled,
+                async token =>
+                {
+                    await using var service = OpenValkyrieService();
                     await service.SetSidetoneAsync(previousEnabled, token);
                 },
                 cancellationToken);

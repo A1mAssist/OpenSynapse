@@ -126,6 +126,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         HeadsetCapability.EqPreset,
         HeadsetCapability.EqBands,
         HeadsetCapability.MicMuted,
+        HeadsetCapability.MicMonitoring,
     ];
 
     private static readonly HeadsetCapability[] Protocol40Capabilities =
@@ -197,19 +198,49 @@ public sealed partial class RazerHeadsetAudioViewModel
             RazerHeadsetAudioTransport.KrakenBase37 => KrakenBaseCapabilities,
             RazerHeadsetAudioTransport.Protocol25Feature65 => Protocol25Capabilities,
             RazerHeadsetAudioTransport.Mxic64 => MxicProductCapabilities,
-            RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
-                ValkyrieCapabilities,
+            RazerHeadsetAudioTransport.Valkyrie64 => ValkyrieProductCapabilities,
+            RazerHeadsetAudioTransport.Billie64 => ValkyrieCapabilities,
             RazerHeadsetAudioTransport.ValkyrieT3Feature64 => ValkyrieT3Capabilities,
             RazerHeadsetAudioTransport.Feature91 => Feature91Capabilities,
             _ => [],
         };
 
-    // The 0555 bundle adds sidetone and ANC to AudioMxicDevice's base command set.
-    // Other MXIC identities keep the same six capabilities until their bundle proves them.
-    private HeadsetCapability[] MxicProductCapabilities =>
-        _connection.ProductId == RazerMxicHeadsetProtocol.ProductId
-            ? [.. MxicCapabilities, HeadsetCapability.MicMonitoring, HeadsetCapability.Anc]
-            : MxicCapabilities;
+    // AudioMxicDevice proves sidetone for its six identities; only 0555 also proves ANC.
+    private HeadsetCapability[] MxicProductCapabilities
+    {
+        get
+        {
+            var capabilities = new List<HeadsetCapability>(MxicCapabilities);
+            if (RazerMxicHeadsetProtocol.SupportsSidetone(_connection.ProductId))
+            {
+                capabilities.Add(HeadsetCapability.MicMonitoring);
+            }
+            if (RazerMxicHeadsetProtocol.SupportsAnc(_connection.ProductId))
+            {
+                capabilities.Add(HeadsetCapability.Anc);
+            }
+
+            return capabilities.ToArray();
+        }
+    }
+
+    private HeadsetCapability[] ValkyrieProductCapabilities
+    {
+        get
+        {
+            var capabilities = new List<HeadsetCapability>(ValkyrieCapabilities);
+            if (RazerValkyrieHeadsetProtocol.SupportsSidetone.Contains(_connection.ProductId))
+            {
+                capabilities.Add(HeadsetCapability.MicMonitoring);
+            }
+            if (RazerValkyrieHeadsetProtocol.SupportsAnc.Contains(_connection.ProductId))
+            {
+                capabilities.Add(HeadsetCapability.Anc);
+            }
+
+            return capabilities.ToArray();
+        }
+    }
 
     private bool IsCapabilityAvailable(HeadsetCapability capability) => capability switch
     {

@@ -140,6 +140,8 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
             RazerValkyrieHeadsetProtocol.ReadMicMute,
             errors,
             cancellationToken).ConfigureAwait(false);
+        var (sidetoneOk, sidetone, ancOk, ancState, ancLevel) =
+            await ReadSidetoneAndAncAsync(errors, cancellationToken).ConfigureAwait(false);
 
         return new RazerHeadsetAudioState(
             Firmware: null,
@@ -152,9 +154,13 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
             MicVolume: null,
             AudioSource: null,
             NoiseSuppression: null,
-            AncState: null,
-            AncLevel: null,
-            Errors: errors) { MicBands = micBands.Ok ? micBands.Value : null };
+            AncState: ancOk ? ancState : null,
+            AncLevel: ancOk ? ancLevel : null,
+            Errors: errors)
+        {
+            MicBands = micBands.Ok ? micBands.Value : null,
+            MicReturnSwitch = sidetoneOk ? sidetone : null,
+        };
     }
 
     public async Task<bool?> TryReadWirelessConnectionAsync(
@@ -201,6 +207,32 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
         return battery.Value;
     }
 
+    // Sidetone and ANC are exposed by the eight AudioValkyrie bundles; Billie,
+    // T3, MXIC and dedicated BlackShark profiles never see these commands.
+    private async Task<(bool SidetoneOk, bool Sidetone, bool AncOk, RazerAncState AncState, byte AncLevel)>
+        ReadSidetoneAndAncAsync(List<string> errors, CancellationToken cancellationToken)
+    {
+        var sidetone = RazerValkyrieHeadsetProtocol.SupportsSidetone.Contains(_productId)
+            ? await ProbeAsync(
+                "sidetone",
+                RazerValkyrieHeadsetProtocol.CreateGetSidetone(),
+                RazerValkyrieHeadsetProtocol.SidetoneHeader,
+                RazerValkyrieHeadsetProtocol.ReadSidetone,
+                errors,
+                cancellationToken).ConfigureAwait(false)
+            : (Ok: false, Value: false);
+        var anc = RazerValkyrieHeadsetProtocol.SupportsAnc.Contains(_productId)
+            ? await ProbeAsync(
+                "ANC",
+                RazerValkyrieHeadsetProtocol.CreateGetAnc(),
+                RazerValkyrieHeadsetProtocol.AncHeader,
+                RazerValkyrieHeadsetProtocol.ReadAnc,
+                errors,
+                cancellationToken).ConfigureAwait(false)
+            : (Ok: false, Value: (State: RazerAncState.Off, Level: (byte)0));
+        return (sidetone.Ok, sidetone.Value, anc.Ok, anc.Value.State, anc.Value.Level);
+    }
+
     private Task SetEqPresetCoreAsync(byte preset, CancellationToken cancellationToken = default) =>
         WriteAsync(
             RazerValkyrieHeadsetProtocol.CreateGetEqPreset(),
@@ -224,6 +256,54 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
             value => value == muted,
             "microphone mute",
             cancellationToken);
+
+    public Task SetSidetoneAsync(bool enabled, CancellationToken cancellationToken = default) =>
+        RazerValkyrieHeadsetProtocol.SupportsSidetone.Contains(_productId)
+            ? WriteAsync(
+                RazerValkyrieHeadsetProtocol.CreateGetSidetone(),
+                RazerValkyrieHeadsetProtocol.SidetoneHeader,
+                RazerValkyrieHeadsetProtocol.ReadSidetone,
+                enabled,
+                RazerValkyrieHeadsetProtocol.CreateSetSidetone,
+                RazerValkyrieHeadsetProtocol.SetSidetoneHeader,
+                value => value == enabled,
+                "sidetone",
+                cancellationToken)
+            : Task.FromException(new NotSupportedException(
+                $"Device {_productId:X4} does not expose the AudioValkyrie sidetone command."));
+
+    public Task SetAncAsync(
+        RazerAncState state,
+        byte level,
+        CancellationToken cancellationToken = default)
+    {
+        if (!RazerValkyrieHeadsetProtocol.SupportsAnc.Contains(_productId))
+        {
+            return Task.FromException(new NotSupportedException(
+                $"Device {_productId:X4} does not expose the AudioValkyrie ANC command."));
+        }
+        if (!Enum.IsDefined(state))
+        {
+            return Task.FromException(new ArgumentOutOfRangeException(nameof(state)));
+        }
+
+        var requested = (State: state, Level: state switch
+        {
+            RazerAncState.Off => (byte)0,
+            RazerAncState.Ambient => (byte)80,
+            _ => (byte)Math.Clamp((int)level, 1, 10),
+        });
+        return WriteAsync(
+            RazerValkyrieHeadsetProtocol.CreateGetAnc(),
+            RazerValkyrieHeadsetProtocol.AncHeader,
+            RazerValkyrieHeadsetProtocol.ReadAnc,
+            requested,
+            value => RazerValkyrieHeadsetProtocol.CreateSetAnc(value.State, value.Level),
+            RazerValkyrieHeadsetProtocol.SetAncHeader,
+            value => value == requested,
+            "ANC",
+            cancellationToken);
+    }
 
     private async Task SetEqBandsCoreAsync(
         IReadOnlyList<byte> bands,

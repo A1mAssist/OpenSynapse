@@ -117,6 +117,34 @@ public static class RazerMxicHeadsetProtocol
     public static bool SupportsWirelessConnectionStatus(ushort productId) =>
         WirelessConnectionStatusProductIds.Contains(productId);
 
+    // AudioMxicDevice proves sidetone in its bundle (get 18 00 00 -> header 18 01 01,
+    // set 98 00 01 + state -> header 98 01 01) for the six Mxic64 identities, and
+    // rzDevice25ValkyrieT3 exposes the same feature on class 0x18 source 3.
+    // ANC is still only measured on 0555, so it stays out of every other identity.
+    private static readonly FrozenSet<ushort> SidetoneProductIds = new ushort[]
+    {
+        0x0539,
+        0x053A,
+        0x053B,
+        ProductId,
+        0x0583,
+        0x0584,
+        0x057C,
+        0x057D,
+        0x05B6,
+        0x05B3,
+        0x0A54,
+        0x0A5B,
+        0x1021,
+        0x1022,
+    }.ToFrozenSet();
+
+    private static readonly FrozenSet<ushort> AncProductIds = new ushort[] { ProductId }.ToFrozenSet();
+
+    public static bool SupportsSidetone(ushort productId) => SidetoneProductIds.Contains(productId);
+
+    public static bool SupportsAnc(ushort productId) => AncProductIds.Contains(productId);
+
     private static readonly FrozenSet<ushort> MabelT1ProductIds = new ushort[]
     {
         0x0539,
@@ -256,9 +284,31 @@ public static class RazerMxicHeadsetProtocol
                     UsesMabelT1(productId) ? MabelT1ReportId : ReportId);
     }
 
+    public static byte[] CreateGetSidetone(ushort productId) =>
+        UsesValkyrieT3Commands(productId)
+            ? RazerValkyrieT3Protocol.Create(0x84, [LiveProfile, 0x03, 0x00])
+            : CreateRequest(
+                GetSidetone,
+                reportId: UsesMabelT1(productId) ? MabelT1ReportId : ReportId);
+
+    public static byte[] CreateSetSidetone(ushort productId, bool enabled)
+    {
+        var state = enabled ? (byte)1 : (byte)0;
+        return UsesValkyrieT3Commands(productId)
+            ? RazerValkyrieT3Protocol.Create(0x04, [LiveProfile, 0x03, state])
+            : CreateRequest(
+                SetSidetoneCommand,
+                [state],
+                UsesMabelT1(productId) ? MabelT1ReportId : ReportId);
+    }
+
     // rzDevice25ValkyrieT3: S=[2,24,128] A=[4,24,0] U=[2,24,129] E=[12,24,1]. The second
     // payload byte is the preset group (0/1, validated by setPresetEQIndex), not a source.
     public static readonly byte[] EqHeaderValkyrie = [LiveProfile, 0x01];
+
+    // getSidetone/setSidetone keep class 0x18 and switch to source 3, so the getter
+    // prefix is [profile, source] and the setter is command 0x04.
+    public static readonly byte[] SidetoneHeaderValkyrie = [LiveProfile, 0x03];
 
     public static byte[] CreateGetEqPresetValkyrie() =>
         RazerValkyrieT3Protocol.Create(0x80, [LiveProfile, 0x01]);

@@ -138,6 +138,58 @@ public sealed partial class RazerHeadsetAudioViewModel
             await AttemptAsync("headset.microphone", token => WriteMicMuteAsync(muted, token));
         }
 
+        if (profile.MicMonitoringEnabled is { } monitoring &&
+            (IsMxicSidetone || IsValkyrieSidetone || IsAvnera65))
+        {
+            await AttemptAsync("headset.mic-monitoring", async token =>
+            {
+                if (IsMxicSidetone)
+                {
+                    await using var service = OpenMxicService();
+                    await service.SetSidetoneAsync(monitoring, token);
+                }
+                else if (IsValkyrieSidetone)
+                {
+                    await using var service = OpenValkyrieService();
+                    await service.SetSidetoneAsync(monitoring, token);
+                }
+                else
+                {
+                    await using var service = OpenAvneraService();
+                    await service.SetSidetoneAsync(
+                        monitoring ? (byte)Math.Max(1, (int)_sidetonePercent) : (byte)0,
+                        token);
+                }
+            });
+        }
+
+        if (IsMxicAnc || IsValkyrieAnc)
+        {
+            RazerAncState? requestedAnc = profile.AncModeIndex is int configuredAncIndex &&
+                configuredAncIndex >= 0 && configuredAncIndex < DeviceAncStates.Length
+                    ? DeviceAncStates[configuredAncIndex]
+                    : profile.AncEnabled is bool ancEnabled
+                        ? ancEnabled ? RazerAncState.On : RazerAncState.Off
+                        : null;
+            if (requestedAnc is { } anc)
+            {
+                var level = (byte)Math.Clamp(profile.AncLevel ?? 0, 0, 10);
+                await AttemptAsync("headset.anc", async token =>
+                {
+                    if (IsMxicAnc)
+                    {
+                        await using var service = OpenMxicService();
+                        await service.SetAncAsync(anc, level, token);
+                    }
+                    else
+                    {
+                        await using var service = OpenValkyrieService();
+                        await service.SetAncAsync(anc, level, token);
+                    }
+                });
+            }
+        }
+
         if (IsKrakenBase &&
             profile.AncModeIndex is { } ancIndex &&
             ancIndex >= 0 && ancIndex < DeviceAncStates.Length)
