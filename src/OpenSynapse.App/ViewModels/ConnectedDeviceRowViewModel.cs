@@ -224,23 +224,6 @@ public sealed class ConnectedDeviceRowViewModel : INotifyPropertyChanged
     public DeviceCategory Category { get; }
     public bool IsReady { get; }
     public bool IsVisible { get; }
-    public string Capability => Source switch
-    {
-        DeviceRowViewModel row => row.Capability,
-        RazerHidDeviceRowViewModel row => row.Status,
-        RazerHidKrakenDeviceRowViewModel row => row.CapabilityText,
-        RazerBleDeviceRowViewModel row => row.Status,
-        RazerChromaDeviceRowViewModel row => row.Status,
-        RazerAwBleHeadsetRowViewModel row => row.Status,
-        BlackSharkDeviceRowViewModel row => row.CapabilityText,
-        RazerKeyboardDeviceRowViewModel row => row.Capability,
-        RazerGamepadDeviceRowViewModel row => row.CapabilityText,
-        RazerHeadsetAudioDeviceRowViewModel row => row.CapabilityText,
-        RazerKiyoViewModel row => row.CapabilityText,
-        RazerCoolingPadViewModel row => row.CapabilityText,
-        PhilipsHueViewModel row => row.IsConfigured ? AppStrings.Text("HuePaired") : string.Empty,
-        _ => string.Empty,
-    };
     public string Error => Source switch
     {
         RazerHidDeviceRowViewModel row => row.Error,
