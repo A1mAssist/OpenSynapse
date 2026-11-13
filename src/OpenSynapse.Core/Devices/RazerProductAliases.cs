@@ -30,6 +30,20 @@ public static class RazerProductAliases
             // Razer Reclusa Mini 65%
             [0x02F5] = 0x02F4,
             [0x02F6] = 0x02F4,
+            // Razer Viper V3 Pro
+            [0x00DF] = 0x00DE,
+            // Razer Basilisk V4 Pro
+            [0x00E3] = 0x00E2,
+            [0x00E4] = 0x00E2,
+            // Razer Naga V3 Pro
+            [0x00E8] = 0x00E7,
+            [0x00E9] = 0x00E7,
+            // Razer Basilisk V4 HyperSpeed
+            [0x00EA] = 0x00EB,
+            [0x00EC] = 0x00EB,
+            // Razer Basilisk V3 Pro 35K Xbox 25th Anniversary Edition
+            [0xB00B] = 0xB00A,
+            [0xB00C] = 0xB00A,
         };
 
     // These siblings expose the protocol-30 BLE page, not the 91-byte protocol-25 keyboard path.

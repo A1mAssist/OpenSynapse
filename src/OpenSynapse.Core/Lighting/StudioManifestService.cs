@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
+using OpenSynapse.Core.Devices;
 
 namespace OpenSynapse.Core.Lighting;
 
@@ -46,6 +47,8 @@ public sealed class StudioManifestService
         int editionId,
         CancellationToken cancellationToken = default)
     {
+        // Dongle and BLE siblings have no MW package of their own; the wired PID serves them.
+        productId = RazerProductAliases.Canonical(productId);
         if (TryMemory(productId, editionId, out var remembered)) return remembered;
 
         var gate = _locks.GetOrAdd((productId, editionId), static _ => new SemaphoreSlim(1, 1));
