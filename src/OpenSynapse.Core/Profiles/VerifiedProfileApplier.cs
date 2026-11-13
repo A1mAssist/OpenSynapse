@@ -369,7 +369,8 @@ public sealed class VerifiedProfileApplier
 
         var viper = devices.FirstOrDefault(device =>
             device.ProtocolFamily == "viper-184" && device.Access == DeviceAccessState.Available);
-        if (viper is not null)
+        // A sleeping mouse answers nothing: skip its writes instead of logging five timeouts.
+        if (viper is not null && !telemetry.ViperWirelessLinkDown)
         {
             var viperErrors = new List<string>();
             var profile = ProfileResolver.Resolve(document, viper, powerSource);

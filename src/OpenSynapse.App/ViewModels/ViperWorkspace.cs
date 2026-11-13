@@ -59,6 +59,7 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
     private ViperDpiStagesTelemetry? _confirmedDpiStages;
     private RazerHidMappingViewModel? _mapping;
     private string _mappingProfileFingerprint = string.Empty;
+    private bool _wirelessLinkDown;
 
     internal ViperWorkspace(
         IRazerDeviceTelemetryReader deviceTelemetryReader,
@@ -227,6 +228,7 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
 
     internal void ApplyTelemetry(RazerDeviceTelemetry telemetry)
     {
+        _wirelessLinkDown = telemetry.ViperWirelessLinkDown;
         if (telemetry.ViperBatteryPercent is int battery)
         {
             BatteryText = $"{battery}%";
@@ -296,12 +298,14 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
         if (viper is not null)
         {
             CanSetBatteryChemistry = true;
-            StatusText = telemetry.ViperBatteryPercent is not null ||
-                         telemetry.ViperPollingRateHertz is not null ||
-                         telemetry.ViperDpiX is not null ||
-                         telemetry.ViperIdleSeconds is not null
-                ? AppStrings.Text("Text_7EEF96A9")
-                : AppStrings.Text("Text_2E25FD9A");
+            StatusText = telemetry.ViperWirelessLinkDown
+                ? AppStrings.Text("ViperStatusWirelessIdle")
+                : telemetry.ViperBatteryPercent is not null ||
+                  telemetry.ViperPollingRateHertz is not null ||
+                  telemetry.ViperDpiX is not null ||
+                  telemetry.ViperIdleSeconds is not null
+                    ? AppStrings.Text("Text_7EEF96A9")
+                    : AppStrings.Text("Text_2E25FD9A");
         }
     }
 
@@ -320,6 +324,13 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
         var fingerprint = CreateMappingFingerprint(viper.Id, profile.ButtonAssignments);
         if (StringComparer.Ordinal.Equals(_mappingProfileFingerprint, fingerprint))
         {
+            return null;
+        }
+
+        // The receiver is online but the mouse is asleep: retry quietly once it wakes.
+        if (_wirelessLinkDown)
+        {
+            _mappingProfileFingerprint = string.Empty;
             return null;
         }
 

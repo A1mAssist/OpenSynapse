@@ -425,7 +425,8 @@ public sealed record RazerDeviceTelemetry(
     bool BladeTimeToDimWritable = false,
     bool BladeIndicatorLedWritable = false,
     bool BladeGpuCardDetectionWritable = false,
-    IReadOnlyDictionary<string, IReadOnlySet<string>>? DeclaredCapabilities = null);
+    IReadOnlyDictionary<string, IReadOnlySet<string>>? DeclaredCapabilities = null,
+    bool ViperWirelessLinkDown = false);
 
 public interface IRazerDeviceTelemetryReader
 {

@@ -1844,6 +1844,7 @@
   <data name="AboutWindowTitle" xml:space="preserve"><value>关于 OpenSynapse</value><comment>关于窗口标题</comment></data>
   <data name="AboutVersion" xml:space="preserve"><value>版本 {0}</value><comment>关于窗口版本</comment></data>
   <data name="ViperMappingProfileError" xml:space="preserve"><value>鼠标板载映射：{0}</value><comment>板载映射配置错误</comment></data>
+  <data name="ViperStatusWirelessIdle" xml:space="preserve"><value>已连接 · 设备休眠</value><comment>鼠标接收器在线但鼠标休眠或关机</comment></data>
   <data name="ViperMappingReadProfileSaveFailed" xml:space="preserve"><value>鼠标映射已读取，但活动配置保存失败。</value><comment>映射读取后配置保存失败</comment></data>
   <data name="ViperMappingSaveFailedRestored" xml:space="preserve"><value>鼠标映射已写入，但配置保存失败，原映射已恢复。</value><comment>单项映射保存失败并恢复</comment></data>
   <data name="ViperMappingBatchSaveFailedRestored" xml:space="preserve"><value>鼠标映射已写入，但配置保存失败，整套原映射已恢复。</value><comment>整套映射保存失败并恢复</comment></data>
