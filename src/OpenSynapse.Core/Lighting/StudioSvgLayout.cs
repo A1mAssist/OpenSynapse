@@ -226,15 +226,28 @@ public static class StudioSvgLayoutParser
         }
 
         var role = ownRole != StudioSvgRole.Other ? ownRole : inherited.Role;
+        var row = ReadInt(reader.GetAttribute("data-row")) ?? inherited.Row;
+        var col = ReadInt(reader.GetAttribute("data-col")) ?? inherited.Col;
+        var id = reader.GetAttribute("id");
+        if (string.IsNullOrEmpty(id) && row is { } cellRow && col is { } cellCol &&
+            role is StudioSvgRole.Led or StudioSvgRole.Selection)
+        {
+            // Media keys are plain circles with no id. The canvas pairs a shape
+            // with its LED by id, so an id-less key can never be clicked.
+            id = role == StudioSvgRole.Selection
+                ? $"sel-cell-{cellRow}-{cellCol}"
+                : $"cell-{cellRow}-{cellCol}";
+        }
+
         return new StudioSvgPath(
-            reader.GetAttribute("id") ?? string.Empty,
+            id ?? string.Empty,
             SvgPathData.Transform(data, transform),
             Painted(fill),
             Painted(stroke),
             opacity ?? 1d,
             role,
-            ReadInt(reader.GetAttribute("data-row")) ?? inherited.Row,
-            ReadInt(reader.GetAttribute("data-col")) ?? inherited.Col,
+            row,
+            col,
             reader.GetAttribute("data-assumed-key-name") ?? inherited.KeyName,
             reader.GetAttribute("data-selection-group") ?? inherited.SelectionGroup);
     }
