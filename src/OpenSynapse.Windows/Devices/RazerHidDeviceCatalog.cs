@@ -10,6 +10,19 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed record RazerHidMatrixDimensions(byte Rows, byte Columns);
 
+/// <summary>
+/// The axis a device's Wave effect travels along. The wire direction ids differ per axis:
+/// left/right is 1/2, up/down is 3/4, and clockwise/counter-clockwise is 1/2. The value
+/// comes from the product bundle's <c>WAVE_DIRECTION</c> declaration.
+/// </summary>
+public enum RazerWaveDirectionAxis
+{
+    Unknown,
+    LeftRight,
+    UpDown,
+    Clockwise,
+}
+
 internal sealed record RazerHidCommandStep(byte TransactionId, byte FixedArgument0);
 
 public sealed class RazerHidDeviceDefinition
@@ -31,7 +44,8 @@ public sealed class RazerHidDeviceDefinition
         IReadOnlyDictionary<string, byte>? commandSizes = null,
         bool supportsIndependentDpi = true,
         bool usesP1DpiScale = false,
-        bool usesLegacyInfo = false)
+        bool usesLegacyInfo = false,
+        RazerWaveDirectionAxis waveAxis = RazerWaveDirectionAxis.Unknown)
     {
         ProductId = productId;
         DisplayName = displayName;
@@ -51,6 +65,7 @@ public sealed class RazerHidDeviceDefinition
         SupportsIndependentDpi = supportsIndependentDpi;
         UsesP1DpiScale = usesP1DpiScale;
         UsesLegacyInfo = usesLegacyInfo;
+        WaveAxis = waveAxis;
     }
 
     public const ushort VendorId = 0x1532;
@@ -72,6 +87,7 @@ public sealed class RazerHidDeviceDefinition
     internal bool SupportsIndependentDpi { get; }
     internal bool UsesP1DpiScale { get; }
     internal bool UsesLegacyInfo { get; }
+    public RazerWaveDirectionAxis WaveAxis { get; }
 
     internal bool HasSourceCapability(string capability) => SourceCapabilities.Contains(capability);
 
@@ -85,7 +101,7 @@ public sealed class RazerHidDeviceDefinition
         new(ProductId, displayName, Category, SourceCapabilities, MaximumDpi, PollingRates,
             MatrixDimensions, DeviceWait, Transactions, BuilderArgumentPrefixes, DefaultStorage,
             DefaultLedZone, CommandSequences, CommandSizes, SupportsIndependentDpi, UsesP1DpiScale,
-            UsesLegacyInfo);
+            UsesLegacyInfo, WaveAxis);
 
     internal byte GetRequiredFixedArgument(string builderName, int argumentIndex)
     {
@@ -302,6 +318,15 @@ public sealed partial class RazerHidDeviceCatalog
                     new((byte)dimensions[0], (byte)dimensions[1]),
                 _ => throw new InvalidOperationException($"RazerHid catalog '{sourceName}' contains invalid matrix dimensions."),
             };
+            var waveAxis = device.WaveDirection switch
+            {
+                null => RazerWaveDirectionAxis.Unknown,
+                "LeftRight" => RazerWaveDirectionAxis.LeftRight,
+                "UpDown" => RazerWaveDirectionAxis.UpDown,
+                "CWCCW" => RazerWaveDirectionAxis.Clockwise,
+                _ => throw new InvalidOperationException(
+                    $"RazerHid catalog '{sourceName}' contains an invalid wave direction."),
+            };
             var definition = new RazerHidDeviceDefinition(
                 productId,
                 device.DisplayName.Trim(),
@@ -316,7 +341,8 @@ public sealed partial class RazerHidDeviceCatalog
                 ParseStorage(device.DefaultStorage),
                 ParseLedZone(device.DefaultLedZone),
                 commandSequences.ToFrozenDictionary(StringComparer.Ordinal),
-                commandSizes.ToFrozenDictionary(StringComparer.Ordinal));
+                commandSizes.ToFrozenDictionary(StringComparer.Ordinal),
+                waveAxis: waveAxis);
             if (!output.TryAdd(productId, definition))
             {
                 throw new InvalidOperationException($"Duplicate RazerHid product ID 1532:{productId:X4}.");
@@ -763,7 +789,8 @@ public sealed partial class RazerHidDeviceCatalog
         string? DefaultLedZone,
         Dictionary<string, CatalogCommandStep[]> CommandSequences,
         Dictionary<string, string>? CommandSizes,
-        string[] AmbiguousTransactions);
+        string[] AmbiguousTransactions,
+        string? WaveDirection);
 
     private sealed record CatalogCommandStep(string TransactionId, string FixedArgument0);
 }

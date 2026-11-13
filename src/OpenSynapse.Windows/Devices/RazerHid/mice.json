@@ -4115,6 +4115,7 @@
       "productId": "0046",
       "displayName": "Razer Mamba Tournament Edition",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-001",
       "maximumDpi": 16000,
       "pollRates": null,
@@ -4537,6 +4538,7 @@
       "productId": "0059",
       "displayName": "Razer Lancehead (Wired)",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-004",
       "maximumDpi": 16000,
       "pollRates": [
@@ -4879,6 +4881,7 @@
       "productId": "0060",
       "displayName": "Razer Lancehead Tournament Edition",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-006",
       "maximumDpi": 16000,
       "pollRates": [
@@ -4960,6 +4963,7 @@
       "productId": "0062",
       "displayName": "Razer Atheris (Receiver)",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-007",
       "maximumDpi": 7200,
       "pollRates": [
@@ -5010,6 +5014,7 @@
       "productId": "0064",
       "displayName": "Razer Basilisk",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-008",
       "maximumDpi": 16000,
       "pollRates": [
@@ -5189,6 +5194,7 @@
       "productId": "0067",
       "displayName": "Razer Naga Trinity",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-010",
       "maximumDpi": 16000,
       "pollRates": [
@@ -5393,6 +5399,7 @@
       "productId": "006C",
       "displayName": "Razer Mamba Elite",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-012",
       "maximumDpi": 16000,
       "pollRates": [
@@ -5629,6 +5636,7 @@
       "productId": "0070",
       "displayName": "Razer Lancehead Wireless (Wired)",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-014",
       "maximumDpi": 16000,
       "pollRates": [
@@ -5716,6 +5724,7 @@
       "productId": "0071",
       "displayName": "Razer DeathAdder Essential (White Edition)",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-013",
       "maximumDpi": 6400,
       "pollRates": [
@@ -5989,6 +5998,7 @@
       "productId": "0078",
       "displayName": "Razer Viper",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-016",
       "maximumDpi": 16000,
       "pollRates": [
@@ -6580,6 +6590,7 @@
       "productId": "0085",
       "displayName": "Razer Basilisk V2",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-005",
       "maximumDpi": 20000,
       "pollRates": [
@@ -6655,6 +6666,7 @@
       "productId": "0086",
       "displayName": "Razer Basilisk Ultimate",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-021",
       "maximumDpi": 20000,
       "pollRates": [
@@ -6818,6 +6830,7 @@
       "productId": "008A",
       "displayName": "Razer Viper Mini",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-016",
       "maximumDpi": 8500,
       "pollRates": [
@@ -6986,6 +6999,7 @@
       "productId": "008D",
       "displayName": "Razer Naga Left Handed Edition 2020",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-022",
       "maximumDpi": 20000,
       "pollRates": [
@@ -7081,6 +7095,7 @@
       "productId": "008F",
       "displayName": "Razer Naga Pro (Wired)",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-023",
       "maximumDpi": 20000,
       "pollRates": [
@@ -7292,6 +7307,7 @@
       "productId": "0091",
       "displayName": "Razer Viper 8KHz",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-024",
       "maximumDpi": 20000,
       "pollRates": [
@@ -7498,6 +7514,7 @@
       "productId": "0096",
       "displayName": "Razer Naga X",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-025",
       "maximumDpi": 18000,
       "pollRates": [
@@ -7670,6 +7687,7 @@
       "productId": "0099",
       "displayName": "Razer Basilisk V3",
       "category": "mouse",
+      "waveDirection": "CWCCW",
       "capabilitySet": "mice-js-027",
       "maximumDpi": 26000,
       "pollRates": [
@@ -8071,6 +8089,7 @@
       "productId": "00A3",
       "displayName": "Razer Cobra",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-029",
       "maximumDpi": 8500,
       "pollRates": [
@@ -8236,6 +8255,7 @@
       "productId": "00A7",
       "displayName": "Razer Naga V2 Pro (Wired)",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-031",
       "maximumDpi": 30000,
       "pollRates": [
@@ -8433,6 +8453,7 @@
       "productId": "00AA",
       "displayName": "Razer Basilisk V3 Pro (Wired)",
       "category": "mouse",
+      "waveDirection": "CWCCW",
       "capabilitySet": "mice-js-032",
       "maximumDpi": 30000,
       "pollRates": [
@@ -8947,6 +8968,7 @@
       "productId": "00B4",
       "displayName": "Razer Naga V2 HyperSpeed (Receiver)",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-007",
       "maximumDpi": 30000,
       "pollRates": [
@@ -9684,6 +9706,7 @@
       "productId": "00C7",
       "displayName": "Razer Pro Click V2 Vertical Edition (Wired)",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-039",
       "maximumDpi": 30000,
       "pollRates": [
@@ -9887,6 +9910,7 @@
       "productId": "00CB",
       "displayName": "Razer Basilisk V3 35K",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-040",
       "maximumDpi": 35000,
       "pollRates": [
@@ -9986,6 +10010,7 @@
       "productId": "00CC",
       "displayName": "Razer Basilisk V3 Pro 35K (Wired)",
       "category": "mouse",
+      "waveDirection": "CWCCW",
       "capabilitySet": "mice-js-032",
       "maximumDpi": 35000,
       "pollRates": [
@@ -10173,6 +10198,7 @@
       "productId": "00D0",
       "displayName": "Razer Pro Click V2 (Wired)",
       "category": "mouse",
+      "waveDirection": "UpDown",
       "capabilitySet": "mice-js-039",
       "maximumDpi": 30000,
       "pollRates": [
@@ -10507,6 +10533,7 @@
       "productId": "00D6",
       "displayName": "Razer Basilisk V3 Pro 35K Phantom Green Edition (Wired)",
       "category": "mouse",
+      "waveDirection": "CWCCW",
       "capabilitySet": "mice-js-042",
       "maximumDpi": 35000,
       "pollRates": [
