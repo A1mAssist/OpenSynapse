@@ -3,6 +3,21 @@ using System.Runtime.CompilerServices;
 
 namespace OpenSynapse.App.ViewModels;
 
+/// <summary>
+/// One of the bottom-dead-zone presets Razer's own UI offers. The value is the raw
+/// firmware code, not a percentage, so the editor must not expose a free 0-255 field.
+/// </summary>
+public sealed record AnalogDeadZoneChoice(byte Value)
+{
+    public string Title => Value switch
+    {
+        3 => AppStrings.Text("RazerHidAnalogDeadZoneResponsive"),
+        5 => AppStrings.Text("RazerHidAnalogDeadZoneMedium"),
+        8 => AppStrings.Text("RazerHidAnalogDeadZoneStable"),
+        _ => Value.ToString(),
+    };
+}
+
 public sealed class AnalogKeyKeyViewModel : INotifyPropertyChanged
 {
     private bool _isSelected;
