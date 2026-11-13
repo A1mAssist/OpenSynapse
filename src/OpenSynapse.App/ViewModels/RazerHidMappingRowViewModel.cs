@@ -447,13 +447,27 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
     public string ActionHeader => Group == RazerHidMappingGroup.Macro
         ? AppStrings.Text("RazerMappingMacroHeader")
         : AppStrings.Text("RazerMappingActionColumn");
-    public bool CanApply => _groupIndex > 0 &&
+    public bool CanApply => IsAssignmentReadable && _groupIndex > 0 &&
         (Group != RazerHidMappingGroup.Macro ||
          _localMacros.Count > 0 &&
          !HasMacroError &&
          (MacroTarget == MacroExecutionTarget.Software
              ? _canUseSoftwareMacro
              : _canUseOnboardMacro && MacroSlots.Count > 0));
+
+    /// <summary>
+    /// A row the device would not answer is not in this device's table (the button list can
+    /// carry ids the key table does not have). Writing it would land on another entry, so the
+    /// row stays read-only.
+    /// </summary>
+    internal bool IsAssignmentReadable { get; private set; } = true;
+
+    internal void SetAssignmentReadable(bool readable)
+    {
+        if (IsAssignmentReadable == readable) return;
+        IsAssignmentReadable = readable;
+        OnPropertyChanged(nameof(CanApply));
+    }
 
     public bool HasMacroError => _macroErrorText.Length > 0;
 
