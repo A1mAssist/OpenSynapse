@@ -196,13 +196,20 @@ public sealed partial class RazerHeadsetAudioViewModel
             RazerHeadsetAudioTransport.AvneraFeature65 => AvneraCapabilities,
             RazerHeadsetAudioTransport.KrakenBase37 => KrakenBaseCapabilities,
             RazerHeadsetAudioTransport.Protocol25Feature65 => Protocol25Capabilities,
-            RazerHeadsetAudioTransport.Mxic64 => MxicCapabilities,
+            RazerHeadsetAudioTransport.Mxic64 => MxicProductCapabilities,
             RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
                 ValkyrieCapabilities,
             RazerHeadsetAudioTransport.ValkyrieT3Feature64 => ValkyrieT3Capabilities,
             RazerHeadsetAudioTransport.Feature91 => Feature91Capabilities,
             _ => [],
         };
+
+    // The 0555 bundle adds sidetone and ANC to AudioMxicDevice's base command set.
+    // Other MXIC identities keep the same six capabilities until their bundle proves them.
+    private HeadsetCapability[] MxicProductCapabilities =>
+        _connection.ProductId == RazerMxicHeadsetProtocol.ProductId
+            ? [.. MxicCapabilities, HeadsetCapability.MicMonitoring, HeadsetCapability.Anc]
+            : MxicCapabilities;
 
     private bool IsCapabilityAvailable(HeadsetCapability capability) => capability switch
     {

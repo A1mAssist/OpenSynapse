@@ -51,6 +51,18 @@ public static class RazerMxicHeadsetProtocol
     public static readonly byte[] SetMicMuteCommand = [0xE9, 0x00, 0x01];
     public static readonly byte[] SetMicMuteHeader = [0xE9, 0x01, 0x01];
 
+    // AudioMxicDevice: getSidetone [18,0,0], setSidetone [98,0,1].
+    public static readonly byte[] GetSidetone = [0x18, 0x00, 0x00];
+    public static readonly byte[] SidetoneHeader = [0x18, 0x01, 0x01];
+    public static readonly byte[] SetSidetoneCommand = [0x98, 0x00, 0x01];
+    public static readonly byte[] SetSidetoneHeader = [0x98, 0x01, 0x01];
+
+    // getANCStatusAndLevel and setANCStatusAndLevel use a two-byte state/level payload.
+    public static readonly byte[] GetAnc = [0x12, 0x00, 0x00];
+    public static readonly byte[] AncHeader = [0x12, 0x01, 0x02];
+    public static readonly byte[] SetAncCommand = [0x92, 0x00, 0x02];
+    public static readonly byte[] SetAncHeader = [0x92, 0x01, 0x02];
+
     public static readonly byte[] GetAudioDnd = [0x27, 0x00, 0x00];
     public static readonly byte[] AudioDndHeader = [0x27, 0x01, 0x01];
     public static readonly byte[] SetAudioDndCommand = [0xA7, 0x00, 0x01];
