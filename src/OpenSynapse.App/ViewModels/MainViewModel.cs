@@ -43,6 +43,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     private IReadOnlyList<DeviceDescriptor> _deviceDescriptors = Array.Empty<DeviceDescriptor>();
     private RazerDeviceTelemetry? _lastDeviceTelemetry;
     private int _disposed;
+    private readonly Microsoft.UI.Dispatching.DispatcherQueue? _dispatcher =
+        Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
 
     public MainViewModel(
         IDeviceDiscovery discovery,
@@ -455,6 +457,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             return;
         }
 
+        _deviceImages?.Dispose();
         // Dispose runs on the UI thread and still touches bound collections and
         // selections below; keep every continuation there.
         await RazerHid.DisposeAsync().ConfigureAwait(true);

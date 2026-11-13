@@ -1,3 +1,6 @@
+using System.ComponentModel;
+using System.Globalization;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
@@ -5,8 +8,10 @@ using Windows.UI;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed class ConnectedDeviceRowViewModel
+public sealed class ConnectedDeviceRowViewModel : INotifyPropertyChanged
 {
+    public event PropertyChangedEventHandler? PropertyChanged;
+
     private static readonly Brush ConnectedBrush =
         new SolidColorBrush(Color.FromArgb(255, 68, 214, 44));
     private static readonly Brush NeutralBrush =
@@ -191,6 +196,31 @@ public sealed class ConnectedDeviceRowViewModel
     public string Identity { get; }
     public string Access { get; }
     public string IconGlyph { get; }
+    /// <summary>Chroma product art reuses the Studio image cache, so no extra download.</summary>
+    public ushort ProductId => ParseProductId(Identity);
+    public ImageSource? ProductImage { get; private set; }
+    public Visibility IconVisibility => ProductImage is null ? Visibility.Visible : Visibility.Collapsed;
+
+    internal void SetProductImage(ImageSource image)
+    {
+        ProductImage = image;
+        PropertyChanged?.Invoke(this, new(nameof(ProductImage)));
+        PropertyChanged?.Invoke(this, new(nameof(IconVisibility)));
+    }
+
+    private static ushort ParseProductId(string identity)
+    {
+        var marker = identity.LastIndexOf("PID_", StringComparison.OrdinalIgnoreCase);
+        return marker >= 0 && marker + 8 <= identity.Length &&
+            ushort.TryParse(
+                identity.AsSpan(marker + 4, 4),
+                NumberStyles.HexNumber,
+                CultureInfo.InvariantCulture,
+                out var productId)
+            ? productId
+            : (ushort)0;
+    }
+
     public DeviceCategory Category { get; }
     public bool IsReady { get; }
     public bool IsVisible { get; }

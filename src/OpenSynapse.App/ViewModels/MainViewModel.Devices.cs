@@ -1,5 +1,8 @@
+using System.Collections.Concurrent;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media.Imaging;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Lighting;
 using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.App.ViewModels;
@@ -7,7 +10,10 @@ namespace OpenSynapse.App.ViewModels;
 public sealed partial class MainViewModel
 {
     private readonly Dictionary<string, string> _deviceSerials = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<ushort, string> _deviceImagePaths = new();
+    private readonly ConcurrentDictionary<ushort, bool> _deviceImageRequests = new();
     private IReadOnlyList<ConnectedDeviceRowViewModel>? _connectedDevicesCache;
+    private StudioDeviceVisualLoader? _deviceImages;
 
     public IReadOnlyList<ConnectedDeviceRowViewModel> ConnectedDevices =>
         _connectedDevicesCache ??= BuildConnectedDevices();
@@ -125,6 +131,68 @@ public sealed partial class MainViewModel
         Viper.RefreshDeviceRow();
         OnPropertyChanged(nameof(AdditionalDevicesVisibility));
         OnPropertyChanged(nameof(CanPairNewDevice));
+        // Card art comes from the same product-image cache the lighting studio fills.
+        ApplyDeviceImages();
+    }
+
+    private void ApplyDeviceImages()
+    {
+        foreach (var row in ConnectedDevices)
+        {
+            var productId = row.ProductId;
+            if (productId == 0)
+            {
+                continue;
+            }
+
+            if (_deviceImagePaths.TryGetValue(productId, out var path))
+            {
+                row.SetProductImage(new BitmapImage(new Uri(path)));
+            }
+            else if (_deviceImageRequests.TryAdd(productId, true))
+            {
+                _ = LoadDeviceImageAsync(productId);
+            }
+        }
+    }
+
+    private async Task LoadDeviceImageAsync(ushort productId)
+    {
+        _deviceImages ??= new StudioDeviceVisualLoader();
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            var image = await _deviceImages
+                .LoadProductImageAsync(productId, name: null, timeout.Token)
+                .ConfigureAwait(false);
+            if (image.State != StudioProductImageState.Loaded || image.Path is not { } path)
+            {
+                return;
+            }
+
+            // BitmapImage must be created on the UI thread. Reuse the loaded path so a
+            // later card rebuild paints immediately instead of downloading again.
+            _dispatcher?.TryEnqueue(() =>
+            {
+                _deviceImagePaths[productId] = path;
+                foreach (var row in ConnectedDevices.Where(row => row.ProductId == productId))
+                {
+                    row.SetProductImage(new BitmapImage(new Uri(path)));
+                }
+            });
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception exception) when (
+            exception is IOException or HttpRequestException or
+                InvalidOperationException or UriFormatException)
+        {
+        }
+        finally
+        {
+            _deviceImageRequests.TryRemove(productId, out _);
+        }
     }
 
     private void RefreshDeviceSelectorItems()
