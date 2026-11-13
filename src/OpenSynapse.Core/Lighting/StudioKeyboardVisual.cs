@@ -45,7 +45,7 @@ public static class StudioKeyboardVisualBuilder
         Func<string, string?>? svgFileResolver)
     {
         ArgumentNullException.ThrowIfNull(manifest);
-        var layout = StudioSvgParts.Merge(StudioSvgParts.Parse(manifest, svgFileResolver));
+        var layout = StudioSvgParts.Select(manifest, svgFileResolver);
         return layout is null ? null : BuildVisual(layout);
     }
 
@@ -61,7 +61,7 @@ public static class StudioKeyboardVisualBuilder
         Func<string, string?>? svgFileResolver)
     {
         ArgumentNullException.ThrowIfNull(manifest);
-        var layout = StudioSvgParts.Merge(StudioSvgParts.Parse(manifest, svgFileResolver));
+        var layout = StudioSvgParts.Select(manifest, svgFileResolver);
         return layout is null ? null : BuildKeypad(layout);
     }
 

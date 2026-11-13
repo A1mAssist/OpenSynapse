@@ -4,8 +4,8 @@ using System.Xml;
 namespace OpenSynapse.Core.Lighting;
 
 /// <summary>
-/// Resolves every SVG part a manifest declares. Razer stores some payloads inline
-/// (base64 or XML) and others as file names the host must read; both are accepted.
+/// Resolves the SVG part Synapse draws for a device. A manifest declares one part
+/// per layout; payloads are inline (base64 or XML) or file names the host must read.
 /// </summary>
 public static class StudioSvgParts
 {
@@ -19,44 +19,20 @@ public static class StudioSvgParts
         !value.Contains('\n') &&
         !value.Contains('\r');
 
-    public static IReadOnlyList<StudioSvgLayout> Parse(
+    /// <summary>
+    /// Reads the part the manifest selected. The other parts are alternative
+    /// layouts of the same device, not layers to stack.
+    /// </summary>
+    public static StudioSvgLayout? Select(
         StudioManifestDevice manifest,
         Func<string, string?>? fileResolver)
     {
         ArgumentNullException.ThrowIfNull(manifest);
-        var parts = manifest.SvgParts.Count > 0
-            ? manifest.SvgParts
-            : [new StudioManifestSvg(manifest.SvgKey, manifest.SvgBase64,
-                IsFileReference(manifest.SvgBase64))];
-
-        var layouts = new List<StudioSvgLayout>(parts.Count);
-        foreach (var part in parts)
-        {
-            var payload = part.IsFile ? fileResolver?.Invoke(part.Value) : part.Value;
-            if (TryParse(payload) is { } layout) layouts.Add(layout);
-        }
-
-        return layouts;
-    }
-
-    /// <summary>Parts are authored as overlays on one canvas, so the largest extent wins.</summary>
-    public static StudioSvgLayout? Merge(IReadOnlyList<StudioSvgLayout> layouts)
-    {
-        if (layouts.Count == 0) return null;
-        if (layouts.Count == 1) return layouts[0];
-
-        var paths = new List<StudioSvgPath>();
-        var ids = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var path in layouts.SelectMany(layout => layout.Paths))
-        {
-            if (!string.IsNullOrEmpty(path.Id) && !ids.Add(path.Id)) continue;
-            paths.Add(path);
-        }
-
-        return new StudioSvgLayout(
-            layouts.Max(layout => layout.Width),
-            layouts.Max(layout => layout.Height),
-            paths);
+        var part = manifest.SvgParts.FirstOrDefault(candidate => candidate.Key == manifest.SvgKey)
+            ?? new StudioManifestSvg(
+                manifest.SvgKey, manifest.SvgBase64, IsFileReference(manifest.SvgBase64));
+        var payload = part.IsFile ? fileResolver?.Invoke(part.Value) : part.Value;
+        return TryParse(payload);
     }
 
     public static StudioSvgLayout? TryParse(string? payload)
