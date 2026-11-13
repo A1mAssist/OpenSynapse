@@ -294,7 +294,12 @@ internal static class RazerDriverInstaller
         bool elevated,
         CancellationToken cancellationToken)
     {
-        if (RazerFilterInfBinder.IsDkmAttached(productId))
+        // The DKM lower filter only carries Blade Fn input. A mouse never gets a
+        // LowerFilters entry, so running this step for one would always fail the
+        // whole install.
+        if (RazerDeviceRegistry.BuiltIn.Find(0x1532, productId)?.Category !=
+                OpenSynapse.Core.Devices.DeviceCategory.Laptop ||
+            RazerFilterInfBinder.IsDkmAttached(productId))
         {
             return result;
         }
