@@ -37,6 +37,12 @@ public sealed partial class RazerHidDeviceService
             }
         }
 
+        // Profile ids are one-based; a zero answer means the read did not resolve a table.
+        if (profileId == 0)
+        {
+            profileId = RazerHidMappingProtocol.ProfileId;
+        }
+
         _mappingProfileIds[connection.DevicePath ?? connection.InstanceId] = profileId;
         return profileId;
     }
