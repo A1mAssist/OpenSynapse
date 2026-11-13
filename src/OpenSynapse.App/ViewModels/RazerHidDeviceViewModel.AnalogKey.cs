@@ -13,6 +13,8 @@ public sealed partial class RazerHidDeviceViewModel
     // The analog-key short commands address class id 1 on the Huntsman V3 Pro and Mako.
     private const byte AnalogKeyClassId = 0x01;
     private const byte AnalogKeyDataType = 0x00;
+    // Razer's own UI only offers these three bottom-dead-zone presets.
+    private static readonly AnalogDeadZoneChoice[] AnalogDeadZonePresets = [new(3), new(5), new(8)];
     private readonly ObservableCollection<AnalogKeyRowViewModel> _analogKeyRows = [];
     private readonly List<AnalogKeyKeyViewModel> _analogKeyKeys = [];
     private AnalogKeyboardLayout? _analogKeyLayout;
@@ -23,8 +25,8 @@ public sealed partial class RazerHidDeviceViewModel
     private byte? _lastFirstSelectedKeyId;
     private bool _isAnalogKeyBusy;
     private bool _analogKeyContinuousRapidTrigger;
-    private byte _analogKeyBottomDeadZone;
-    private byte _analogReportMode;
+    private byte? _analogKeyBottomDeadZone;
+    private AnalogDeadZoneChoice? _selectedAnalogDeadZone;
     private double _analogKeyActuationPointMillimeters = 2.0;
     private bool _analogKeyRapidTriggerEnabled;
     private double _analogKeyRapidTriggerSensitivityMillimeters = 0.3;
@@ -47,16 +49,44 @@ public sealed partial class RazerHidDeviceViewModel
         set => SetField(ref _analogKeyContinuousRapidTrigger, value);
     }
 
-    public byte AnalogKeyBottomDeadZone
+    public IReadOnlyList<AnalogDeadZoneChoice> AnalogDeadZoneChoices => AnalogDeadZonePresets;
+
+    public AnalogDeadZoneChoice? SelectedAnalogDeadZone
     {
-        get => _analogKeyBottomDeadZone;
-        set => SetField(ref _analogKeyBottomDeadZone, value);
+        get => _selectedAnalogDeadZone;
+        set
+        {
+            if (!SetField(ref _selectedAnalogDeadZone, value) || value is null)
+            {
+                return;
+            }
+
+            _analogKeyBottomDeadZone = value.Value;
+            NotifyAnalogDeadZone();
+        }
     }
 
-    public byte AnalogReportMode
+    public string AnalogDeadZoneStatusText =>
+        _analogKeyBottomDeadZone is byte raw && AnalogDeadZonePresets.All(preset => preset.Value != raw)
+            ? AppStrings.FormatText("RazerHidAnalogDeadZoneUnknown", raw)
+            : string.Empty;
+
+    public Visibility AnalogDeadZoneUnknownVisibility => VisibleWhen(AnalogDeadZoneStatusText.Length > 0);
+
+    private void SetAnalogDeadZone(byte? value)
     {
-        get => _analogReportMode;
-        set => SetField(ref _analogReportMode, value);
+        _analogKeyBottomDeadZone = value;
+        _selectedAnalogDeadZone = value is byte raw
+            ? AnalogDeadZonePresets.FirstOrDefault(preset => preset.Value == raw)
+            : null;
+        OnPropertyChanged(nameof(SelectedAnalogDeadZone));
+        NotifyAnalogDeadZone();
+    }
+
+    private void NotifyAnalogDeadZone()
+    {
+        OnPropertyChanged(nameof(AnalogDeadZoneStatusText));
+        OnPropertyChanged(nameof(AnalogDeadZoneUnknownVisibility));
     }
 
     public double AnalogKeyActuationPointMillimeters
@@ -199,14 +229,17 @@ public sealed partial class RazerHidDeviceViewModel
             async () =>
             {
                 var previousRapidTrigger = AnalogKeyContinuousRapidTrigger;
-                var previousDeadZone = AnalogKeyBottomDeadZone;
-                var previousReportMode = AnalogReportMode;
+                var previousDeadZone = _analogKeyBottomDeadZone;
                 var previousProfile = ReadProfile(settings => settings.Keyboard.AnalogKeyEnabled);
                 await _service.SetAnalogKeyContinuousRapidTriggerAsync(
                     Connection, AnalogKeyClassId, AnalogKeyContinuousRapidTrigger, cancellationToken);
-                await _service.SetAnalogKeyBottomDeadZoneAsync(
-                    Connection, AnalogKeyClassId, AnalogKeyBottomDeadZone, cancellationToken);
-                await _service.SetAnalogReportModeAsync(Connection, AnalogReportMode, cancellationToken);
+                // An unrepresentable raw value is left untouched instead of being
+                // rewritten with a preset the user never chose.
+                if (SelectedAnalogDeadZone?.Value is { } deadZone)
+                {
+                    await _service.SetAnalogKeyBottomDeadZoneAsync(
+                        Connection, AnalogKeyClassId, deadZone, cancellationToken);
+                }
                 if (Has(RazerHidBackendCapability.AnalogKeyRead))
                 {
                     await RefreshAnalogKeyAsync(cancellationToken);
@@ -217,16 +250,17 @@ public sealed partial class RazerHidDeviceViewModel
                     () =>
                     {
                         AnalogKeyContinuousRapidTrigger = previousRapidTrigger;
-                        AnalogKeyBottomDeadZone = previousDeadZone;
-                        AnalogReportMode = previousReportMode;
+                        SetAnalogDeadZone(previousDeadZone);
                     },
                     async token =>
                     {
                         await _service.SetAnalogKeyContinuousRapidTriggerAsync(
                             Connection, AnalogKeyClassId, previousRapidTrigger, token);
-                        await _service.SetAnalogKeyBottomDeadZoneAsync(
-                            Connection, AnalogKeyClassId, previousDeadZone, token);
-                        await _service.SetAnalogReportModeAsync(Connection, previousReportMode, token);
+                        if (previousDeadZone is { } deadZoneToRestore)
+                        {
+                            await _service.SetAnalogKeyBottomDeadZoneAsync(
+                                Connection, AnalogKeyClassId, deadZoneToRestore, token);
+                        }
                     },
                     cancellationToken);
             }, cancellationToken);
@@ -308,7 +342,7 @@ public sealed partial class RazerHidDeviceViewModel
 
     private async Task RefreshAnalogKeyAsync(CancellationToken cancellationToken)
     {
-        // These three are optional settings. A firmware that does not answer one must
+        // These two are optional settings. A firmware that does not answer one must
         // not remove the whole analog card; keep the last value and let the per-key
         // actuation/Rapid Trigger read below decide whether the layout is usable.
         var continuous = await ReadOrKeepAsync(
@@ -316,15 +350,11 @@ public sealed partial class RazerHidDeviceViewModel
             new RazerAnalogKeyContinuousRapidTrigger(AnalogKeyClassId, AnalogKeyContinuousRapidTrigger),
             cancellationToken);
         AnalogKeyContinuousRapidTrigger = continuous.Enabled;
-        var deadZone = await ReadOrKeepAsync(
-            token => _service.GetAnalogKeyBottomDeadZoneAsync(Connection, AnalogKeyClassId, token),
-            new RazerAnalogKeyBottomDeadZone(AnalogKeyClassId, AnalogKeyBottomDeadZone),
-            cancellationToken);
-        AnalogKeyBottomDeadZone = deadZone.Value;
-        AnalogReportMode = await ReadOrKeepAsync(
-            token => _service.GetAnalogReportModeAsync(Connection, token),
-            AnalogReportMode,
-            cancellationToken);
+        SetAnalogDeadZone(await ReadOrKeepAsync<byte?>(
+            async token => (await _service.GetAnalogKeyBottomDeadZoneAsync(
+                Connection, AnalogKeyClassId, token)).Value,
+            _analogKeyBottomDeadZone,
+            cancellationToken));
         if (_analogKeyLayout is not null && !_analogKeyLayoutLoaded)
         {
             try

@@ -1552,8 +1552,8 @@
   <data name="RazerHidWristRestApply.Content" xml:space="preserve"><value>Apply wrist rest colour</value></data>
   <data name="RazerHidLightingSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Effect speed or duration</value></data>
   <data name="RazerHidLightingDirection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Lighting direction</value></data>
-  <data name="RazerHidLightingDirectionForward.Content" xml:space="preserve"><value>Right / clockwise</value></data>
-  <data name="RazerHidLightingDirectionReverse.Content" xml:space="preserve"><value>Left / counterclockwise</value></data>
+  <data name="RazerHidLightingDirectionForward" xml:space="preserve"><value>Right / clockwise</value></data>
+  <data name="RazerHidLightingDirectionReverse" xml:space="preserve"><value>Left / counterclockwise</value></data>
   <data name="BladeLightingReactiveSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Reactive duration</value></data>
   <data name="BladeLightingStarlightSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Starlight speed</value></data>
   <data name="BladeLightingStarlightColorMode.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Starlight color mode</value></data>
@@ -1625,10 +1625,13 @@
   <data name="RazerHidOledLanguageKorean.Text" xml:space="preserve"><value>Korean</value></data>
   <data name="RazerHidOledLanguageFrench.Text" xml:space="preserve"><value>French</value></data>
   <data name="RazerHidAnalogKeyTitle.Text" xml:space="preserve"><value>Analog keys</value></data>
-  <data name="RazerHidAnalogKeyDescription.Text" xml:space="preserve"><value>Apply continuous Rapid Trigger, bottom dead zone and report mode together.</value></data>
+  <data name="RazerHidAnalogKeyDescription.Text" xml:space="preserve"><value>Apply continuous Rapid Trigger and the bottom dead zone together.</value></data>
   <data name="RazerHidAnalogContinuousRapidTrigger.Text" xml:space="preserve"><value>Continuous Rapid Trigger</value></data>
   <data name="RazerHidAnalogBottomDeadZone.Header" xml:space="preserve"><value>Bottom dead zone</value></data>
-  <data name="RazerHidAnalogReportMode.Header" xml:space="preserve"><value>Analog report mode</value></data>
+  <data name="RazerHidAnalogDeadZoneResponsive.Text" xml:space="preserve"><value>Responsive</value></data>
+  <data name="RazerHidAnalogDeadZoneMedium.Text" xml:space="preserve"><value>Medium</value></data>
+  <data name="RazerHidAnalogDeadZoneStable.Text" xml:space="preserve"><value>Stable</value></data>
+  <data name="RazerHidAnalogDeadZoneUnknown" xml:space="preserve"><value>The current value is outside the presets (raw {0}); it was left unchanged.</value></data>
   <data name="RazerHidOledTitle.Text" xml:space="preserve"><value>OLED display</value></data>
   <data name="RazerHidOledBrightness.Text" xml:space="preserve"><value>Brightness</value></data>
   <data name="RazerHidOledScreensaverMode.Header" xml:space="preserve"><value>Screensaver mode</value></data>

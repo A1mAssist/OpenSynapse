@@ -1934,8 +1934,8 @@
   <data name="RazerHidWristRestApply.Content" xml:space="preserve"><value>应用腕托颜色</value></data>
   <data name="RazerHidLightingSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>灯效速度或持续时间</value></data>
   <data name="RazerHidLightingDirection.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>灯效方向</value></data>
-  <data name="RazerHidLightingDirectionForward.Content" xml:space="preserve"><value>向右 / 顺时针</value></data>
-  <data name="RazerHidLightingDirectionReverse.Content" xml:space="preserve"><value>向左 / 逆时针</value></data>
+  <data name="RazerHidLightingDirectionForward" xml:space="preserve"><value>向右 / 顺时针</value></data>
+  <data name="RazerHidLightingDirectionReverse" xml:space="preserve"><value>向左 / 逆时针</value></data>
   <data name="BladeLightingReactiveSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>响应持续时间</value></data>
   <data name="BladeLightingStarlightSpeed.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>星光速度</value></data>
   <data name="BladeLightingStarlightColorMode.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>星光颜色模式</value></data>
@@ -2007,10 +2007,13 @@
   <data name="RazerHidOledLanguageKorean.Text" xml:space="preserve"><value>韩语</value></data>
   <data name="RazerHidOledLanguageFrench.Text" xml:space="preserve"><value>法语</value></data>
   <data name="RazerHidAnalogKeyTitle.Text" xml:space="preserve"><value>模拟键</value></data>
-  <data name="RazerHidAnalogKeyDescription.Text" xml:space="preserve"><value>一次应用连续 Rapid Trigger、底部死区和上报模式。</value></data>
+  <data name="RazerHidAnalogKeyDescription.Text" xml:space="preserve"><value>一次应用连续 Rapid Trigger 和底部死区。</value></data>
   <data name="RazerHidAnalogContinuousRapidTrigger.Text" xml:space="preserve"><value>连续 Rapid Trigger</value></data>
   <data name="RazerHidAnalogBottomDeadZone.Header" xml:space="preserve"><value>底部死区</value></data>
-  <data name="RazerHidAnalogReportMode.Header" xml:space="preserve"><value>模拟上报模式</value></data>
+  <data name="RazerHidAnalogDeadZoneResponsive.Text" xml:space="preserve"><value>灵敏</value></data>
+  <data name="RazerHidAnalogDeadZoneMedium.Text" xml:space="preserve"><value>中等</value></data>
+  <data name="RazerHidAnalogDeadZoneStable.Text" xml:space="preserve"><value>稳定</value></data>
+  <data name="RazerHidAnalogDeadZoneUnknown" xml:space="preserve"><value>当前值不在预设范围内（原始值 {0}），未修改。</value></data>
   <data name="RazerHidOledTitle.Text" xml:space="preserve"><value>OLED 屏幕</value></data>
   <data name="RazerHidOledBrightness.Text" xml:space="preserve"><value>亮度</value></data>
   <data name="RazerHidOledScreensaverMode.Header" xml:space="preserve"><value>屏保模式</value></data>
