@@ -2652,7 +2652,8 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
                 ? AppStrings.Text("Text_A98448E8")
                 : AppStrings.Text("Text_874ADE24");
         }
-        NotifyStateChanged();
+        // No blanket refresh on this path: it runs on every readout tick and would
+        // rebuild every bound option list, closing an open combo box each time.
     }
 
     internal void ResetTelemetry()
