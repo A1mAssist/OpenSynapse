@@ -99,6 +99,8 @@ untouched, then launch the exact packaged executable from its deployed
 
 A test build handed to a device owner for verification is always a pre-release.
 It must never be a published release, and it must never be the latest release.
+Keep local build output under `artifacts/test-packages/<build-name>/`; do not
+create beta, test, or publish directories directly under `artifacts/`.
 
 ```powershell
 gh release create <tag> <testbuild.zip> --draft --title "<title>" --notes "<notes>"
