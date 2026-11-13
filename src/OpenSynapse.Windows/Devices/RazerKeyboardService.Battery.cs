@@ -28,7 +28,8 @@ public sealed partial class RazerKeyboardService
             new RazerFeatureTransport(),
             connection.DevicePath,
             TimeSpan.FromMilliseconds(20),
-            diagnostic);
+            diagnostic,
+            connection.ProductId);
         try
         {
             return await service.TryReadBatteryPercentAsync(cancellationToken).ConfigureAwait(false);
