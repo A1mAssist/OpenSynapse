@@ -10,7 +10,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
   <UserControl.Resources>
-    <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" /><local:VisibilityLayoutConverter x:Key="VisibilityLayoutConverter" />
+    <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" /><local:BatteryFillWidthConverter x:Key="BatteryFillWidthConverter" /><local:BatteryLevelBrushConverter x:Key="BatteryLevelBrushConverter" /><local:VisibilityLayoutConverter x:Key="VisibilityLayoutConverter" />
     <Style x:Key="BladeCardTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource MetricLabelStyle}">
       <Setter Property="FontFamily" Value="{StaticResource AppFontSemiBoldFamily}" />
       <Setter Property="FontSize" Value="19" />
@@ -26,19 +26,33 @@
       <Setter Property="VerticalContentAlignment" Value="Stretch" />
     </Style>
     <DataTemplate x:Key="ConnectedDeviceCardTemplate">
-      <Button Tag="{Binding Source}" Click="ConnectedDeviceCardClick" Style="{StaticResource QuickActionButtonStyle}" Padding="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="{Binding Name}">
-        <Grid ColumnDefinitions="42,*,Auto" ColumnSpacing="13">
-          <Border Width="42" Height="42" Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="4">
-            <FontIcon Glyph="{Binding IconGlyph}" FontFamily="{StaticResource IconFontFamily}" FontSize="20" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+      <Button Tag="{Binding Source}" Click="ConnectedDeviceCardClick" Style="{StaticResource QuickActionButtonStyle}" Padding="12" MinHeight="60" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="{Binding Name}" ToolTipService.ToolTip="{Binding Identity}">
+        <Grid ColumnDefinitions="36,*,Auto" ColumnSpacing="12">
+          <Border Width="36" Height="36" Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="4">
+            <FontIcon Glyph="{Binding IconGlyph}" FontFamily="{StaticResource IconFontFamily}" FontSize="18" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
           </Border>
-          <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
-            <TextBlock Text="{Binding Name}" TextWrapping="Wrap" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
-            <TextBlock Text="{Binding Access}" TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource MutedBrush}" />
-            <TextBlock Text="{Binding Identity}" TextWrapping="Wrap" FontFamily="Cascadia Mono,Consolas" FontSize="10" Foreground="{StaticResource MutedBrush}" />
-          </StackPanel>
-          <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="3" MaxWidth="260">
-            <TextBlock Text="{Binding Capability}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{Binding StatusBrush}" TextWrapping="Wrap" HorizontalAlignment="Right" />
-            <TextBlock Text="{Binding Error}" FontFamily="Cascadia Mono,Consolas" FontSize="10" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" HorizontalAlignment="Right" />
+          <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{Binding Name}" TextWrapping="Wrap" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
+          <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Spacing="2" MaxWidth="320">
+            <StackPanel Orientation="Horizontal" Spacing="7" HorizontalAlignment="Right">
+              <Border Width="6" Height="6" CornerRadius="3" VerticalAlignment="Center" Background="{Binding StatusBrush}" />
+              <TextBlock Text="{Binding Access}" FontSize="12" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+              <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center" Visibility="{Binding BatteryRow.IsBatteryAvailable, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock Text="&#183;" FontSize="11" Foreground="{StaticResource LineStrongBrush}" />
+                <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                  <StackPanel Orientation="Horizontal" Spacing="1" VerticalAlignment="Center">
+                    <Grid Width="16" Height="10">
+                      <Border BorderBrush="{StaticResource MutedBrush}" BorderThickness="1" CornerRadius="2" />
+                      <Border Margin="2" HorizontalAlignment="Left" CornerRadius="1" Background="{Binding BatteryRow.BatteryPercent, Converter={StaticResource BatteryLevelBrushConverter}}" Width="{Binding BatteryRow.BatteryPercent, Converter={StaticResource BatteryFillWidthConverter}}" />
+                    </Grid>
+                    <Border Width="2" Height="4" CornerRadius="0,1,1,0" Background="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <TextBlock Text="{Binding BatteryRow.BatteryText}" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Text="&#183;" FontSize="11" Foreground="{StaticResource LineStrongBrush}" />
+              </StackPanel>
+              <TextBlock Text="{Binding Capability}" FontSize="11" FontFamily="Cascadia Mono,Consolas" Foreground="{Binding StatusBrush}" VerticalAlignment="Center" />
+            </StackPanel>
+            <TextBlock Text="{Binding Error}" FontSize="10" FontFamily="Cascadia Mono,Consolas" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap" HorizontalAlignment="Right" />
           </StackPanel>
         </Grid>
       </Button>
