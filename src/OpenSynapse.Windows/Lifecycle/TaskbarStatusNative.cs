@@ -112,6 +112,9 @@ internal static class TaskbarStatusNative
 
     public delegate IntPtr WndProc(IntPtr windowHandle, uint message, UIntPtr wParam, IntPtr lParam);
 
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal delegate bool EnumChildWindow(IntPtr windowHandle, IntPtr parameter);
+
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     public static extern ushort RegisterClassExW(ref WndClassEx windowClass);
 
@@ -149,6 +152,14 @@ internal static class TaskbarStatusNative
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     public static extern IntPtr FindWindowExW(
         IntPtr parent, IntPtr childAfter, string? className, string? windowName);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool EnumChildWindows(
+        IntPtr parent, EnumChildWindow callback, IntPtr parameter);
+
+    [DllImport("user32.dll")]
+    internal static extern uint GetWindowThreadProcessId(IntPtr windowHandle, out uint processId);
 
     [DllImport("user32.dll")]
     public static extern int GetWindowLongW(IntPtr windowHandle, int index);

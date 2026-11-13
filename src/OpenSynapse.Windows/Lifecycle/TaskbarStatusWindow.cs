@@ -437,9 +437,20 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             return false;
         }
 
+        if (!TaskbarStatusLayout.TryFindRightmostSlot(
+                leftBound: 0,
+                rightBound: right,
+                width: width,
+                gap: gap,
+                obstacles: GetForeignTaskbarObstacles(taskbar, client.Height, right),
+                out var left))
+        {
+            return false;
+        }
+
         var origin = new Point
         {
-            X = right - gap - width,
+            X = left,
             Y = Math.Max(0, (clientHeight - height) / 2),
         };
         if (!ClientToScreen(taskbar, ref origin))
@@ -450,6 +461,46 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         x = origin.X;
         y = origin.Y;
         return true;
+    }
+
+    private static IReadOnlyList<TaskbarStatusObstacle> GetForeignTaskbarObstacles(
+        IntPtr taskbar,
+        int taskbarHeight,
+        int right)
+    {
+        // Taskbar overlays such as TrafficMonitor are child windows owned by another process.
+        var obstacles = new List<TaskbarStatusObstacle>();
+        _ = GetWindowThreadProcessId(taskbar, out var shellProcessId);
+        var ownProcessId = (uint)Environment.ProcessId;
+        _ = EnumChildWindows(taskbar, (child, _) =>
+        {
+            if (!IsWindowVisible(child) ||
+                !GetWindowRect(child, out var rect) ||
+                rect.Width <= 0 || rect.Height <= 0)
+            {
+                return true;
+            }
+
+            GetWindowThreadProcessId(child, out var processId);
+            if (processId == shellProcessId || processId == ownProcessId)
+            {
+                return true;
+            }
+
+            var topLeft = new Point { X = rect.Left, Y = rect.Top };
+            var bottomRight = new Point { X = rect.Right, Y = rect.Bottom };
+            if (!ScreenToClient(taskbar, ref topLeft) ||
+                !ScreenToClient(taskbar, ref bottomRight) ||
+                bottomRight.Y <= 0 || topLeft.Y >= taskbarHeight ||
+                bottomRight.X <= 0 || topLeft.X >= right)
+            {
+                return true;
+            }
+
+            obstacles.Add(new TaskbarStatusObstacle(topLeft.X, bottomRight.X));
+            return true;
+        }, IntPtr.Zero);
+        return obstacles;
     }
 
 }
