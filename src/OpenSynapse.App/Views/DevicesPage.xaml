@@ -53,7 +53,6 @@
                 </StackPanel>
                 <TextBlock Text="&#183;" FontSize="11" Foreground="{StaticResource LineStrongBrush}" />
               </StackPanel>
-              <TextBlock Text="{Binding Capability}" FontSize="11" FontFamily="Cascadia Mono,Consolas" Foreground="{Binding StatusBrush}" VerticalAlignment="Center" />
             </StackPanel>
             <TextBlock Text="{Binding Error}" FontSize="10" FontFamily="Cascadia Mono,Consolas" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap" HorizontalAlignment="Right" Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}" />
           </StackPanel>
