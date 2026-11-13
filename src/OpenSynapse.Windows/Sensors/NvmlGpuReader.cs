@@ -22,6 +22,7 @@ internal sealed class NvmlGpuReader : IDisposable
     private const uint TemperatureSensorGpu = 0;
     private const uint ClockGraphics = 0;
     private const int NameBufferLength = 96;
+    private const uint MemoryInfoV2Version = 2;
 
     [StructLayout(LayoutKind.Sequential)]
     private struct Utilization
@@ -38,6 +39,18 @@ internal sealed class NvmlGpuReader : IDisposable
         internal ulong Used;
     }
 
+    // v2 reports driver-reserved memory separately, so Used matches what nvidia-smi
+    // prints. The v1 struct folds the reservation into Used (260 MiB on an idle card).
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MemoryInfoV2
+    {
+        internal uint Version;
+        internal ulong Total;
+        internal ulong Reserved;
+        internal ulong Free;
+        internal ulong Used;
+    }
+
     private delegate int InitDelegate();
     private delegate int ShutdownDelegate();
     private delegate int GetHandleDelegate(uint index, out IntPtr device);
@@ -47,6 +60,7 @@ internal sealed class NvmlGpuReader : IDisposable
     private delegate int GetPowerDelegate(IntPtr device, out uint milliwatts);
     private delegate int GetClockDelegate(IntPtr device, uint clock, out uint megahertz);
     private delegate int GetMemoryDelegate(IntPtr device, out MemoryInfo memory);
+    private delegate int GetMemoryV2Delegate(IntPtr device, ref MemoryInfoV2 memory);
 
     private readonly object _gate = new();
     private IntPtr _library;
@@ -60,6 +74,7 @@ internal sealed class NvmlGpuReader : IDisposable
     private GetPowerDelegate? _getPower;
     private GetClockDelegate? _getClock;
     private GetMemoryDelegate? _getMemory;
+    private GetMemoryV2Delegate? _getMemoryV2;
     private bool _initialized;
     private bool _unavailable;
     private bool _disposed;
@@ -74,19 +89,7 @@ internal sealed class NvmlGpuReader : IDisposable
                 return false;
             }
 
-            if (_device != IntPtr.Zero)
-            {
-                error = null;
-                return true;
-            }
-
-            if (_unavailable)
-            {
-                error = "NVML is not available on this machine.";
-                return false;
-            }
-
-            return Open(out error);
+            return TryInitializeInner(out error);
         }
     }
 
@@ -133,7 +136,12 @@ internal sealed class NvmlGpuReader : IDisposable
                 clock = (int)megahertz;
             }
 
-            if (_getMemory!(_device, out var memory) == NvmlSuccess)
+            if (_getMemoryV2 is not null && TryReadMemoryV2(out var usedMebibytes, out var totalMebibytes))
+            {
+                used = usedMebibytes;
+                total = totalMebibytes;
+            }
+            else if (_getMemory!(_device, out var memory) == NvmlSuccess)
             {
                 used = (long)(memory.Used / (1024 * 1024));
                 total = (long)(memory.Total / (1024 * 1024));
@@ -164,15 +172,26 @@ internal sealed class NvmlGpuReader : IDisposable
                 _shutdown?.Invoke();
             }
 
-            if (_library != IntPtr.Zero)
-            {
-                NativeLibrary.Free(_library);
-                _library = IntPtr.Zero;
-            }
-
-            _device = IntPtr.Zero;
-            _initialized = false;
+            ReleaseLibrary();
         }
+    }
+
+    private bool TryReadMemoryV2(out long? used, out long? total)
+    {
+        var memory = new MemoryInfoV2
+        {
+            Version = ((uint)Marshal.SizeOf<MemoryInfoV2>()) | (MemoryInfoV2Version << 24),
+        };
+        if (_getMemoryV2!(_device, ref memory) != NvmlSuccess)
+        {
+            used = null;
+            total = null;
+            return false;
+        }
+
+        used = (long)(memory.Used / (1024 * 1024));
+        total = (long)(memory.Total / (1024 * 1024));
+        return true;
     }
 
     private bool TryInitializeInner(out string? error)
@@ -206,6 +225,7 @@ internal sealed class NvmlGpuReader : IDisposable
             _getPower = Bind<GetPowerDelegate>("nvmlDeviceGetPowerUsage");
             _getClock = Bind<GetClockDelegate>("nvmlDeviceGetClockInfo");
             _getMemory = Bind<GetMemoryDelegate>("nvmlDeviceGetMemoryInfo");
+            _getMemoryV2 = TryBind<GetMemoryV2Delegate>("nvmlDeviceGetMemoryInfo_v2");
         }
         catch (Exception exception) when (
             exception is DllNotFoundException or EntryPointNotFoundException or BadImageFormatException)
@@ -248,6 +268,11 @@ internal sealed class NvmlGpuReader : IDisposable
         var pointer = NativeLibrary.GetExport(_library, export);
         return Marshal.GetDelegateForFunctionPointer<T>(pointer);
     }
+
+    private T? TryBind<T>(string export) where T : Delegate =>
+        NativeLibrary.TryGetExport(_library, export, out var pointer)
+            ? Marshal.GetDelegateForFunctionPointer<T>(pointer)
+            : null;
 
     private string? ReadName()
     {
