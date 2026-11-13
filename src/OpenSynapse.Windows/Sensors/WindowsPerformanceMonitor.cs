@@ -17,7 +17,7 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
     private readonly WindowsGpuActivityReader _gpuActivity = new();
     private readonly AmdAdlTelemetryReader _amdGpu = new();
     private readonly IntelIgclTelemetryReader _intelGpu = new();
-    private readonly SemaphoreSlim _nvidiaSampleGate = new(1, 1);
+    private readonly NvmlGpuReader _nvml = new();
     private NvidiaGpuSample? _nvidiaSample;
     private DateTimeOffset _nvidiaSampleAt = DateTimeOffset.MinValue;
     private readonly object _storageGate = new();
@@ -47,7 +47,7 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
         ReadStorageThrottled(out var storageUsed, out var storageTotal);
         var windowsGpus = _gpuActivity.Read();
         var nvidiaActive = WindowsGpuActivityReader.IsNvidiaActive(windowsGpus);
-        var nvidia = nvidiaActive ? await ReadNvidiaGpuThrottledAsync(cancellationToken) : null;
+        var nvidia = nvidiaActive ? ReadNvidiaGpuThrottled() : null;
         var selected = WindowsGpuActivityReader.SelectDisplayGpu(windowsGpus);
         var amd = selected?.VendorId == 0x1002 ? _amdGpu.Read() : default;
         var intel = selected?.VendorId == 0x8086 ? _intelGpu.Read() : default;
@@ -101,8 +101,7 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
                 : selected?.TemperatureCelsius;
         if (includeGpu && selected is { VendorId: 0x10DE } && gpu is null)
         {
-            gpu = (await ReadNvidiaGpuThrottledAsync(cancellationToken).ConfigureAwait(false))
-                ?.TemperatureCelsius;
+            gpu = ReadNvidiaGpuThrottled()?.TemperatureCelsius;
         }
         if (includeGpu && gpu is null)
         {
@@ -117,7 +116,7 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
         _amdGpu.Dispose();
         _intelGpu.Dispose();
         _cpuHardware.Dispose();
-        _nvidiaSampleGate.Dispose();
+        _nvml.Dispose();
     }
 
     private static string? VendorHint(uint? vendorId) => vendorId switch
@@ -239,63 +238,17 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
         }
     }
 
-    private static async Task<NvidiaGpuSample?> ReadNvidiaGpuAsync(CancellationToken cancellationToken)
+    private NvidiaGpuSample? ReadNvidiaGpuThrottled()
     {
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(TimeSpan.FromSeconds(2));
-
-        try
+        var now = DateTimeOffset.UtcNow;
+        if (now - _nvidiaSampleAt < NvidiaSampleCacheInterval)
         {
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "nvidia-smi.exe",
-                Arguments = "--query-gpu=name,temperature.gpu,utilization.gpu,power.draw,clocks.current.graphics,memory.used,memory.total --format=csv,noheader,nounits",
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            };
-
-            using var process = Process.Start(startInfo);
-            if (process is null)
-            {
-                return null;
-            }
-
-            var output = await process.StandardOutput.ReadToEndAsync(timeout.Token);
-            await process.WaitForExitAsync(timeout.Token);
-            return process.ExitCode == 0 ? NvidiaSmiOutputParser.Parse(output) : null;
-        }
-        catch (Exception exception) when (exception is Win32Exception or OperationCanceledException)
-        {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                throw new OperationCanceledException(cancellationToken);
-            }
-
-            return null;
-        }
-    }
-
-    private async Task<NvidiaGpuSample?> ReadNvidiaGpuThrottledAsync(CancellationToken cancellationToken)
-    {
-        await _nvidiaSampleGate.WaitAsync(cancellationToken);
-        try
-        {
-            var now = DateTimeOffset.UtcNow;
-            if (now - _nvidiaSampleAt < NvidiaSampleCacheInterval)
-            {
-                return _nvidiaSample;
-            }
-
-            _nvidiaSample = await ReadNvidiaGpuAsync(cancellationToken);
-            _nvidiaSampleAt = DateTimeOffset.UtcNow;
             return _nvidiaSample;
         }
-        finally
-        {
-            _nvidiaSampleGate.Release();
-        }
+
+        _nvidiaSample = _nvml.TryRead(out var sample) ? sample : null;
+        _nvidiaSampleAt = DateTimeOffset.UtcNow;
+        return _nvidiaSample;
     }
 
     private static class NativeMethods
