@@ -19,6 +19,7 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
     private readonly LocalDiagnosticLog _diagnosticLog;
     private readonly ObservableCollection<RazerDriverRowViewModel> _missing = [];
     private readonly HashSet<ushort> _installedProductIds = [];
+    private IReadOnlySet<ushort>? _presentProductIds;
     private bool _isBusy;
     private string _statusText = string.Empty;
 
@@ -72,6 +73,7 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
             var interfaces = await WindowsHidDiscovery.FindVendorInterfacesAsync(
                 0x1532,
                 cancellationToken).ConfigureAwait(true);
+            _presentProductIds = interfaces.Select(static item => item.ProductId).ToHashSet();
             var endpoints = await RazerFilterEndpointDiscovery.DiscoverAllAsync(cancellationToken)
                 .ConfigureAwait(true);
             var ready = BuildReadySet(endpoints);
@@ -108,7 +110,9 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                 // and macro injection needs those collections. Keep the row so the page
                 // can say "filter missing" and offer the repair path.
                 var hasEndpoint = candidates.Any(ready.Contains);
-                if (hasEndpoint && RazerFilterInfBinder.InspectAttachment(candidates).IsAttached)
+                if (hasEndpoint && RazerFilterInfBinder
+                        .InspectAttachment(candidates, presentProductIds: _presentProductIds)
+                        .IsAttached)
                 {
                     continue;
                 }
@@ -124,12 +128,13 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                     row.IsInstalled = true;
                     await EnsureDriverServicesStartedAsync(candidates, cancellationToken)
                         .ConfigureAwait(true);
-                    var attachment = RazerFilterInfBinder.InspectAttachment(candidates);
+                    var attachment = RazerFilterInfBinder.InspectAttachment(
+                        candidates, presentProductIds: _presentProductIds);
                     _diagnosticLog.TryWrite(
                         "razer-driver",
                         $"Razer filter {productId} refresh attached={attachment.IsAttached}; " +
                         $"keyboard={attachment.AttachedKeyboardInstances}/{attachment.KeyboardInstances}; " +
-                        $"missing: {string.Join(", ", RazerFilterInfBinder.FindUnfilteredKeyboardInstances(candidates))}");
+                        $"missing: {string.Join(", ", RazerFilterInfBinder.FindUnfilteredKeyboardInstances(candidates, presentProductIds: _presentProductIds))}");
                     row.StatusText = attachment.IsAttached
                         ? AppStrings.Text("RazerDriverEndpointPending")
                         : AppStrings.Text("RazerDriverFilterMissing");
@@ -271,7 +276,8 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                             row.CandidateProductIds, cancellationToken).ConfigureAwait(true);
                         row.EndpointVerified = await WaitForEndpointAsync(
                             row.CandidateProductIds, cancellationToken).ConfigureAwait(true);
-                        var attachment = RazerFilterInfBinder.InspectAttachment(row.CandidateProductIds);
+                        var attachment = RazerFilterInfBinder.InspectAttachment(
+                            row.CandidateProductIds, presentProductIds: _presentProductIds);
                         if (!row.EndpointVerified || !attachment.IsAttached)
                         {
                             // A silent vendor install only stages the filter INF. A staged
@@ -303,13 +309,14 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
 
                             await EnsureDriverServicesStartedAsync(
                                 row.CandidateProductIds, cancellationToken).ConfigureAwait(true);
-                            attachment = RazerFilterInfBinder.InspectAttachment(row.CandidateProductIds);
+                            attachment = RazerFilterInfBinder.InspectAttachment(
+                                row.CandidateProductIds, presentProductIds: _presentProductIds);
                             _diagnosticLog.TryWrite(
                                 "razer-driver",
                                 $"Razer filter {row.ProductId} attached={attachment.IsAttached}; " +
                                 $"keyboard={attachment.AttachedKeyboardInstances}/{attachment.KeyboardInstances}; " +
-                                $"instances: {string.Join(", ", RazerFilterInfBinder.FindInstances(row.CandidateProductIds))}; " +
-                                $"missing: {string.Join(", ", RazerFilterInfBinder.FindUnfilteredKeyboardInstances(row.CandidateProductIds))}");
+                                $"instances: {string.Join(", ", RazerFilterInfBinder.FindInstances(row.CandidateProductIds, presentProductIds: _presentProductIds))}; " +
+                                $"missing: {string.Join(", ", RazerFilterInfBinder.FindUnfilteredKeyboardInstances(row.CandidateProductIds, presentProductIds: _presentProductIds))}");
                             if (!attachment.IsAttached)
                             {
                                 row.StatusText = AppStrings.Text("RazerDriverFilterMissing");
