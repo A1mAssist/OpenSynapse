@@ -79,9 +79,9 @@ public static class RazerFilterEndpointDiscovery
             cancellationToken));
 
     /// <summary>
-    /// Lists every present RZCONTROL endpoint. RzCommon routes a keyboard
-    /// injection to a device that advertises keyboard capability, so any
-    /// endpoint can carry the frame when the Blade one is absent.
+    /// Lists every present RZCONTROL endpoint. RzCommon injects into the device that
+    /// owns the endpoint, so callers must match the endpoint to the event kind: a
+    /// keyboard frame sent to a mouse endpoint is accepted and then dropped.
     /// </summary>
     public static ValueTask<IReadOnlyList<string>> DiscoverAllAsync(
         CancellationToken cancellationToken = default) =>

@@ -25,8 +25,11 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
     private static readonly ushort[] MouseDownFlags = [0, 1, 4, 16, 64, 256];
     private static readonly ushort[] MouseUpFlags = [0, 2, 8, 32, 128, 512];
 
+    private const long RetryMilliseconds = 5_000;
+
     private readonly IMacroInputSink _fallback;
     private readonly Func<bool, CancellationToken, ValueTask<IRazerFilterDriverChannel?>> _open;
+    private readonly Action<string>? _log;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly Dictionary<(ushort ScanCode, bool Extended), MacroInput> _pressed = [];
     private readonly HashSet<int> _pressedMouseButtons = [];
@@ -34,19 +37,23 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
     private IRazerFilterDriverChannel? _mouseDriver;
     private bool _driverUnavailable;
     private bool _mouseDriverUnavailable;
+    private long _driverRetryAtTicks;
+    private long _mouseDriverRetryAtTicks;
     private bool _disposed;
 
-    public RazerFilterMacroInputSink(IMacroInputSink fallback)
-        : this(fallback, OpenDriverAsync)
+    public RazerFilterMacroInputSink(IMacroInputSink fallback, Action<string>? log = null)
+        : this(fallback, (mouse, cancellationToken) => OpenDriverAsync(mouse, log, cancellationToken), log)
     {
     }
 
     internal RazerFilterMacroInputSink(
         IMacroInputSink fallback,
-        Func<bool, CancellationToken, ValueTask<IRazerFilterDriverChannel?>> open)
+        Func<bool, CancellationToken, ValueTask<IRazerFilterDriverChannel?>> open,
+        Action<string>? log = null)
     {
         _fallback = fallback ?? throw new ArgumentNullException(nameof(fallback));
         _open = open ?? throw new ArgumentNullException(nameof(open));
+        _log = log;
     }
 
     public async Task SendAsync(MacroStep step, CancellationToken cancellationToken = default)
@@ -405,16 +412,30 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
         bool mouse,
         CancellationToken cancellationToken)
     {
+        var now = Environment.TickCount64;
         if (mouse)
         {
             if (_mouseDriver is not null || _mouseDriverUnavailable)
             {
                 return _mouseDriver;
             }
+
+            if (now < _mouseDriverRetryAtTicks)
+            {
+                return null;
+            }
         }
-        else if (_driver is not null || _driverUnavailable)
+        else
         {
-            return _driver;
+            if (_driver is not null || _driverUnavailable)
+            {
+                return _driver;
+            }
+
+            if (now < _driverRetryAtTicks)
+            {
+                return null;
+            }
         }
 
         try
@@ -445,18 +466,21 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
             }
         }
 
+        // No suitable endpoint is a normal state, not a permanent failure: the user
+        // may install or repair the driver while the app is running, so retry later
+        // instead of falling back to SendInput until the next restart.
         if (mouse)
         {
             if (_mouseDriver is null)
             {
-                _mouseDriverUnavailable = true;
+                _mouseDriverRetryAtTicks = Environment.TickCount64 + RetryMilliseconds;
             }
             return _mouseDriver;
         }
 
         if (_driver is null)
         {
-            _driverUnavailable = true;
+            _driverRetryAtTicks = Environment.TickCount64 + RetryMilliseconds;
         }
         return _driver;
     }
@@ -600,6 +624,7 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
 
     private static async ValueTask<IRazerFilterDriverChannel?> OpenDriverAsync(
         bool mouse,
+        Action<string>? log,
         CancellationToken cancellationToken)
     {
         if (mouse)
@@ -616,15 +641,18 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
 
                 try
                 {
+                    log?.Invoke($"macro mouse endpoint={candidate}");
                     return new WindowsRazerFilterDriverChannel(candidate);
                 }
                 catch (Exception exception) when (
                     exception is IOException or Win32Exception or UnauthorizedAccessException)
                 {
                     // Another client may hold the endpoint; try the next one.
+                    log?.Invoke($"macro mouse endpoint busy={candidate}: {exception.Message}");
                 }
             }
 
+            log?.Invoke("macro mouse endpoint=none (sendinput)");
             return null;
         }
 
@@ -633,28 +661,62 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
             cancellationToken).ConfigureAwait(false);
         if (path is not null)
         {
+            log?.Invoke($"macro keyboard endpoint={path}");
             return new WindowsRazerFilterDriverChannel(path);
         }
 
+        // RzCommon injects into whichever device owns the endpoint, so a keyboard
+        // frame only works on a keyboard endpoint whose keyboard collections carry
+        // the filter. A mouse endpoint accepts the frame and injects nothing, and a
+        // silent success here used to suppress the SendInput fallback.
         foreach (var candidate in await RazerFilterEndpointDiscovery
                      .DiscoverAllAsync(cancellationToken).ConfigureAwait(false))
         {
+            if (!IsKeyboardEndpoint(candidate) ||
+                !TryReadEndpointProductId(candidate, out var productId))
+            {
+                log?.Invoke($"macro keyboard endpoint skipped={candidate} reason=not-keyboard");
+                continue;
+            }
+
+            if (!RazerFilterInfBinder.InspectAttachment([productId]).IsAttached)
+            {
+                log?.Invoke($"macro keyboard endpoint skipped={candidate} reason=filter-missing");
+                continue;
+            }
+
             try
             {
+                log?.Invoke($"macro keyboard endpoint={candidate}");
                 return new WindowsRazerFilterDriverChannel(candidate);
             }
             catch (Exception exception) when (
                 exception is IOException or Win32Exception or UnauthorizedAccessException)
             {
                 // Another client may hold the endpoint; try the next one.
+                log?.Invoke($"macro keyboard endpoint busy={candidate}: {exception.Message}");
             }
         }
 
+        log?.Invoke("macro keyboard endpoint=none (sendinput)");
         return null;
     }
 
-    private static bool IsMouseEndpoint(string path)
+    private static bool IsMouseEndpoint(string path) =>
+        TryReadEndpointProductId(path, out var productId) &&
+        CategoryOf(productId) == DeviceCategory.Mouse;
+
+    internal static bool IsKeyboardEndpoint(string path) =>
+        TryReadEndpointProductId(path, out var productId) &&
+        CategoryOf(productId) == DeviceCategory.Keyboard;
+
+    private static DeviceCategory? CategoryOf(ushort productId) =>
+        RazerHidDeviceCatalog.BuiltIn.Find(0x1532, productId)?.Category
+        ?? RazerDeviceRegistry.BuiltIn.Find(0x1532, productId)?.Category;
+
+    private static bool TryReadEndpointProductId(string path, out ushort productId)
     {
+        productId = 0;
         var index = path.IndexOf("PID_", StringComparison.OrdinalIgnoreCase);
         return index >= 0 &&
             index + 8 <= path.Length &&
@@ -662,10 +724,7 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
                 path.AsSpan(index + 4, 4),
                 NumberStyles.HexNumber,
                 CultureInfo.InvariantCulture,
-                out var productId) &&
-            (RazerHidDeviceCatalog.BuiltIn.Find(0x1532, productId)?.Category
-                ?? RazerDeviceRegistry.BuiltIn.Find(0x1532, productId)?.Category) ==
-            DeviceCategory.Mouse;
+                out productId);
     }
 
     [DllImport("user32.dll")]
