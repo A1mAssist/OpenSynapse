@@ -223,6 +223,8 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     private bool IsJolie => _connection.Transport == RazerHeadsetAudioTransport.Jolie64;
     private bool IsMxic => _connection.Transport is RazerHeadsetAudioTransport.Mxic64 or
         RazerHeadsetAudioTransport.ValkyrieT3Feature64 or RazerHeadsetAudioTransport.Jolie64;
+    private bool IsMxic0555 => IsMxic &&
+        _connection.ProductId == RazerMxicHeadsetProtocol.ProductId;
     private bool IsMixer053E => _connection.Transport == RazerHeadsetAudioTransport.Mixer053E;
     private bool IsProtocol40 => RazerProtocol40HeadsetProtocol.IsSupported(_connection.ProductId);
     private bool IsMxicDnd => !IsProtocol40 && _connection.Transport is
@@ -1229,43 +1231,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         await SaveSettingAsync(previous, NoiseSuppression, value => NoiseSuppression = value,
             (settings, value) => settings.NoiseSuppression = value,
             token => OpenService().SetNoiseSuppressionAsync(previous, token), cancellationToken);
-    }
-
-    [ProfileSetting("headset.anc", DeviceCategory.Headset, powerScoped: true)]
-    public async Task ApplyAncAsync(CancellationToken cancellationToken = default)
-    {
-        if (!IsFeature91 && !IsKrakenBase) return;
-        var previousIndex = SelectedAncIndex;
-        var previousLevel = AncLevel;
-        if (!await RunWriteAsync(
-                (service, token) => service.SetAncAsync(
-                    DeviceAncStates[SelectedAncIndex], (byte)Math.Round(AncLevel), token),
-                cancellationToken))
-        {
-            return;
-        }
-
-        await SaveHeadsetSettingAsync(
-            settings =>
-            {
-                settings.AncModeIndex = SelectedAncIndex;
-                settings.AncEnabled = DeviceAncStates[SelectedAncIndex] != RazerAncState.Off;
-                settings.AncLevel = (int)Math.Round(AncLevel);
-            },
-            settings =>
-            {
-                settings.AncModeIndex = previousIndex;
-                settings.AncEnabled = DeviceAncStates[previousIndex] != RazerAncState.Off;
-                settings.AncLevel = (int)Math.Round(previousLevel);
-            },
-            () =>
-            {
-                SelectedAncIndex = previousIndex;
-                AncLevel = previousLevel;
-            },
-            token => OpenService().SetAncAsync(
-                DeviceAncStates[previousIndex], (byte)Math.Round(previousLevel), token),
-            cancellationToken);
     }
 
     public void RefreshLocalization()

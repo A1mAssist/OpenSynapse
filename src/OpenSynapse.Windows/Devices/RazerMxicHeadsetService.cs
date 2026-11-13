@@ -154,31 +154,6 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
         _ => RazerMxicHeadsetProtocol.SetEqPresetHeader,
     };
 
-    public async Task<bool?> TryReadWirelessConnectionAsync(CancellationToken cancellationToken = default)
-    {
-        if (_dialect != MxicDialect.Legacy ||
-            !RazerMxicHeadsetProtocol.SupportsWirelessConnectionStatus(_productId))
-        {
-            return null;
-        }
-
-        try
-        {
-            var value = await QueryReportAsync(
-                RazerMxicHeadsetProtocol.CreateRequest(
-                    RazerMxicHeadsetProtocol.GetWirelessConnectionStatus, reportId: ReportId),
-                RazerMxicHeadsetProtocol.WirelessConnectionStatusHeader,
-                "read wireless connection",
-                cancellationToken).ConfigureAwait(false);
-            return RazerMxicHeadsetProtocol.ReadWirelessConnectionStatus(value);
-        }
-        catch (Exception exception) when (IsExpected(exception))
-        {
-            _diagnostic?.Invoke($"mxic wireless status failed: {exception.Message}");
-            return null;
-        }
-    }
-
     public async Task<RazerHeadsetAudioState> ReadStateAsync(
         CancellationToken cancellationToken = default)
     {
@@ -248,6 +223,8 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
                 errors,
                 cancellationToken).ConfigureAwait(false);
         }
+        var (sidetoneOk, sidetone, ancOk, ancState, ancLevel) =
+            await ReadSidetoneAndAncAsync(errors, cancellationToken).ConfigureAwait(false);
         var dnd = await ReadAudioDndAsync(errors, cancellationToken).ConfigureAwait(false);
 
         return new RazerHeadsetAudioState(
@@ -261,9 +238,14 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
             MicVolume: null,
             AudioSource: null,
             NoiseSuppression: null,
-            AncState: null,
-            AncLevel: null,
-            Errors: errors) { Dnd = dnd };
+            AncState: ancOk ? ancState : null,
+            AncLevel: ancOk ? ancLevel : null,
+            Errors: errors)
+        {
+            Dnd = dnd,
+            SidetonePercent = sidetoneOk ? (sidetone ? (byte)100 : (byte)0) : null,
+            MicReturnSwitch = sidetoneOk ? sidetone : null,
+        };
     }
 
     private async Task<RazerHeadsetAudioState> ReadProtocol40StateAsync(
