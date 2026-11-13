@@ -225,6 +225,7 @@ public sealed class ConnectedDeviceRowViewModel
         PhilipsHueViewModel row => row.ErrorText,
         _ => string.Empty,
     };
+    public bool HasError => !string.IsNullOrWhiteSpace(Error);
     public Brush StatusBrush => Source switch
     {
         DeviceRowViewModel row => row.StatusBrush,
