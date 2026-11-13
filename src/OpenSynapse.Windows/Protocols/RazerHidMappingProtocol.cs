@@ -28,6 +28,7 @@ internal static class RazerHidMappingProtocol
     internal const byte HypershiftMode = 0x01;
     private const byte MappingClass = 0x02;
     private const byte GetButtonListCommand = 0x84;
+    private const byte GetKeyAssignmentListCommand = 0x8F;
     private const byte GetAssignmentCommand = 0x8C;
     private const byte SetAssignmentCommand = 0x0C;
     private const byte GetKeyAssignmentCommand = 0x8D;
@@ -39,6 +40,16 @@ internal static class RazerHidMappingProtocol
         "mapping.getButtonList",
         RazerFeatureReport.CreateRequest(
             TransactionId, ReportDataSize, MappingClass, GetButtonListCommand, []));
+
+    /// <summary>
+    /// Keyboards list their key table with 0x8F. The 0x84 button list also carries
+    /// modifier buttons that 0x8D rejects, so it cannot drive keyboard rows.
+    /// </summary>
+    internal static RazerHidRequest GetKeyAssignmentList(byte profileId, byte mode) => new(
+        "mapping.getKeyAssignmentList",
+        RazerFeatureReport.CreateRequest(
+            TransactionId, ReportDataSize, MappingClass, GetKeyAssignmentListCommand,
+            new[] { profileId, mode, (byte)0 }));
 
     internal static RazerHidRequest GetAssignment(byte profileId, byte buttonId, byte mode) => new(
         "mapping.getAssignment",
@@ -143,6 +154,13 @@ internal static class RazerHidMappingProtocol
             ids.Add(arguments[1 + index]);
         }
         return ids;
+    }
+
+    /// <summary>The reply is [classId, mode, keyId...]; the first two bytes are not ids.</summary>
+    internal static IReadOnlyList<byte> ParseKeyAssignmentList(ReadOnlySpan<byte> response)
+    {
+        var arguments = RazerHidStandardProtocol.Arguments(response, 2);
+        return arguments.Length <= 2 ? [] : arguments[2..].ToArray();
     }
 
     internal static RazerHidButtonAssignment ParseAssignment(ReadOnlySpan<byte> response)

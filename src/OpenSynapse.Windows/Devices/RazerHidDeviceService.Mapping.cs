@@ -185,4 +185,49 @@ public sealed partial class RazerHidDeviceService
 
         return false;
     }
+
+    public async Task<IReadOnlyList<byte>> GetMappingButtonIdsAsync(
+        RazerHidDeviceConnection connection,
+        CancellationToken cancellationToken = default)
+    {
+        // Keyboards list their key table with 0x8F. The 0x84 button list also carries
+        // modifier buttons that 0x8D rejects, so it cannot drive keyboard rows.
+        if (connection.Definition.Category == DeviceCategory.Keyboard)
+        {
+            try
+            {
+                var profileId = await ResolveMappingProfileIdAsync(connection, cancellationToken)
+                    .ConfigureAwait(false);
+                var keyResponse = await ExecuteAsync(connection,
+                    RazerHidMappingProtocol.GetKeyAssignmentList(
+                        profileId, RazerHidMappingProtocol.NormalMode), cancellationToken)
+                    .ConfigureAwait(false);
+                var keyIds = RazerHidMappingProtocol.ParseKeyAssignmentList(keyResponse);
+                if (keyIds.Any(id => id != 0))
+                {
+                    return keyIds;
+                }
+            }
+            catch (Exception exception) when (
+                exception is NotSupportedException or RazerDeviceTimeoutException or RazerCommandRejectedException)
+            {
+                // Some firmware only answers the button list; keep the existing fallback.
+            }
+        }
+
+        try
+        {
+            var response = await ExecuteAsync(connection,
+                RazerHidMappingProtocol.GetButtonList(), cancellationToken).ConfigureAwait(false);
+            // The middleware only builds a button list when the reply declares data; a
+            // zero-length success means the firmware stores no table, not that the read failed.
+            return response[6] == 0 ? [] : RazerHidMappingProtocol.ParseButtonList(response);
+        }
+        catch (Exception exception) when (exception is NotSupportedException or RazerDeviceTimeoutException)
+        {
+            // Razer's own UI never asks this GET for every product; some firmware only
+            // answers the assignment table. The caller falls back to the product bundle ids.
+            return [];
+        }
+    }
 }
