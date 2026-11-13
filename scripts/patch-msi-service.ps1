@@ -120,10 +120,13 @@ try {
         $view.GetType().InvokeMember('Close', 'InvokeMethod', $null, $view, $null)
     }
 
-    # 34 = run an exe from a path, +64 = ignore its exit code (taskkill returns 128 when the app is not running).
-    # Without this the installer leaves the old DLLs on disk when the app is still running, then reports success.
+    # 34 = run an exe from a path without ignoring its exit code. The old type 98
+    # ignored taskkill failures, so a live app could survive and leave mixed DLLs.
+    # taskkill returns 128 when the app is absent; the recheck treats that as success,
+    # but a process that survives (access denied, hung) fails the install.
+    $closeCommand = '/d /c "taskkill /IM OpenSynapse.App.exe /F >nul 2>&1 & for /L %i in (1,1,10) do @(tasklist /NH | findstr /I /L /C:OpenSynapse.App.exe >nul || exit /b 0 & ping -n 2 127.0.0.1 >nul) & exit /b 1"'
     $insertCloseAction = "INSERT INTO ``CustomAction`` (``Action``, ``Type``, ``Source``, ``Target``) " +
-        "VALUES ('CloseOpenSynapseApp', 98, '[SystemFolder]taskkill.exe', '/IM OpenSynapse.App.exe /F')"
+        "VALUES ('CloseOpenSynapseApp', 34, '[SystemFolder]cmd.exe', '$closeCommand')"
     $view = Open-View $insertCloseAction
     $view.GetType().InvokeMember('Close', 'InvokeMethod', $null, $view, $null)
 
