@@ -120,7 +120,8 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             BladeAutoSleepWritable: bladeResult?.BladeAutoSleepWritable ?? false,
             BladeTimeToDimWritable: bladeResult?.BladeTimeToDimWritable ?? false,
             BladeIndicatorLedWritable: bladeResult?.BladeIndicatorLedWritable ?? false,
-            BladeGpuCardDetectionWritable: bladeResult?.BladeGpuCardDetectionWritable ?? false);
+            BladeGpuCardDetectionWritable: bladeResult?.BladeGpuCardDetectionWritable ?? false,
+            ViperWirelessLinkDown: mouseResult?.WirelessLinkDown ?? false);
 
         var capabilitySummaries = new Dictionary<string, DeviceCapabilitySummary>(
             StringComparer.OrdinalIgnoreCase);

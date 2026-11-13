@@ -5,9 +5,6 @@ namespace OpenSynapse.Windows.Devices;
 
 internal sealed class RazerHidTelemetryReader
 {
-    private const string WirelessLinkDownError =
-        "Mouse link: The device is asleep or powered off (receiver online).";
-
     private readonly RazerDeviceResolver _resolver;
     private readonly RazerCapabilityClient _client;
     private string? _validatedViperPollingPath;
@@ -125,9 +122,9 @@ internal sealed class RazerHidTelemetryReader
         if (_wirelessLinkDown)
         {
             // Six identical 0x04 rows read like a broken driver. The receiver says the link
-            // is down, so report the state the user can act on.
+            // is down, so this is idle, not a failed query: report it through the flag and
+            // keep the failure banner clean.
             errors.Clear();
-            errors.Add(WirelessLinkDownError);
         }
 
         return new RazerHidTelemetryReadResult(
@@ -138,7 +135,8 @@ internal sealed class RazerHidTelemetryReader
             idleSeconds,
             dpiStages,
             lowBatteryThresholdRaw,
-            errors);
+            errors,
+            _wirelessLinkDown);
     }
 
     /// <summary>
@@ -166,7 +164,7 @@ internal sealed class RazerHidTelemetryReader
     }
 
     private static RazerHidTelemetryReadResult EmptyResult() =>
-        new(null, null, null, null, null, null, null, [WirelessLinkDownError]);
+        new(null, null, null, null, null, null, null, [], WirelessLinkDown: true);
 
     public async ValueTask<int> SetViperPollingRateAsync(
         IReadOnlyList<DeviceDescriptor> devices,
@@ -604,5 +602,6 @@ internal sealed record RazerHidTelemetryReadResult(
     int? IdleSeconds,
     ViperDpiStagesTelemetry? DpiStages,
     byte? LowBatteryThresholdRaw,
-    IReadOnlyList<string> Errors);
+    IReadOnlyList<string> Errors,
+    bool WirelessLinkDown = false);
 

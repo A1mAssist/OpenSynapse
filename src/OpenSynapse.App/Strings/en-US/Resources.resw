@@ -1462,6 +1462,7 @@
   <data name="AboutWindowTitle" xml:space="preserve"><value>About OpenSynapse</value></data>
   <data name="AboutVersion" xml:space="preserve"><value>Version {0}</value></data>
   <data name="ViperMappingProfileError" xml:space="preserve"><value>Mouse onboard mappings: {0}</value></data>
+  <data name="ViperStatusWirelessIdle" xml:space="preserve"><value>Connected · asleep</value></data>
   <data name="ViperMappingReadProfileSaveFailed" xml:space="preserve"><value>The mouse mappings were read, but the active profile could not be saved.</value></data>
   <data name="ViperMappingSaveFailedRestored" xml:space="preserve"><value>The mouse mapping was written, but the profile could not be saved. The previous mapping was restored.</value></data>
   <data name="ViperMappingBatchSaveFailedRestored" xml:space="preserve"><value>The mouse mappings were written, but the profile could not be saved. The previous mapping set was restored.</value></data>
