@@ -24,6 +24,13 @@ public static class RazerPairingProtocol
     public const byte ScanCancel = 0x04;
     public const byte PairModeDefault = 0x01;
 
+    /// <summary>
+    /// Per-device status in the 0xBF reply. rzDevice25 uses 0 = disconnected and
+    /// 1 = connected; a sleeping or powered-off device reports disconnected because the
+    /// link itself is gone, so the two states cannot be told apart from the receiver.
+    /// </summary>
+    public const byte WirelessLinkConnected = 0x01;
+
     public static byte[] CreateSetDevicePairingModeRequest(
         byte transactionId,
         byte mode,

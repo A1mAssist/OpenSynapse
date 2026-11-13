@@ -74,6 +74,12 @@ public static class CapabilityIds
     public const string ThermalStateSet = "thermal-state.set";
     public const string TimeToDimGet = "time-to-dim.get";
     public const string TimeToDimSet = "time-to-dim.set";
+    /// <summary>
+    /// Receiver-level link status (class 0x00, command 0xBF). The dongle keeps answering
+    /// while the paired device sleeps or is switched off, so this is what separates a dead
+    /// link from a real protocol fault.
+    /// </summary>
+    public const string WirelessLinkStatusGet = "wireless-link-status.get";
 
     public static IReadOnlyList<string> All { get; } = Array.AsReadOnly(new[]
     {
@@ -145,5 +151,6 @@ public static class CapabilityIds
         ThermalStateSet,
         TimeToDimGet,
         TimeToDimSet,
+        WirelessLinkStatusGet,
     });
 }

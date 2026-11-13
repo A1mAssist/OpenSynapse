@@ -32,6 +32,7 @@
     "obm-profile-ids.get": { "transactionId": "1F", "dataSize": "50", "commandClass": "05", "commandId": "81", "arguments": "" },
     "obm-button-ids.get": { "transactionId": "1F", "dataSize": "50", "commandClass": "02", "commandId": "84", "arguments": "" },
     "obm-assignment.get": { "transactionId": "1F", "dataSize": "50", "commandClass": "02", "commandId": "8C", "arguments": "" },
-    "obm-assignment.set": { "transactionId": "1F", "dataSize": "50", "commandClass": "02", "commandId": "0C", "arguments": "" }
+    "obm-assignment.set": { "transactionId": "1F", "dataSize": "50", "commandClass": "02", "commandId": "0C", "arguments": "" },
+    "wireless-link-status.get": { "transactionId": "1F", "dataSize": "50", "commandClass": "00", "commandId": "BF", "arguments": "" }
   }
 }

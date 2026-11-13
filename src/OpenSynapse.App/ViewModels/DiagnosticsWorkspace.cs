@@ -251,6 +251,7 @@ public sealed partial class DiagnosticsWorkspace
             "Mouse idle timeout" => ("DiagnosticMouseIdleTimeout", viperName),
             "Mouse DPI stages" => ("Text_6D7EF7B5", viperName),
             "Mouse low-battery threshold" => ("Text_B98036FA", viperName),
+            "Mouse link" => ("DiagnosticMouseLink", viperName),
             _ => ("Text_D0003708",
                 rawCapability.StartsWith("Mouse ", StringComparison.OrdinalIgnoreCase)
                     ? viperName
@@ -262,7 +263,9 @@ public sealed partial class DiagnosticsWorkspace
     private static string LocalizeDiagnosticDetail(string detail) =>
         detail.StartsWith("The device timed out", StringComparison.OrdinalIgnoreCase)
             ? AppStrings.Text("DiagnosticDeviceTimedOut")
-            : detail.Contains("does not support this command", StringComparison.OrdinalIgnoreCase) ? AppStrings.Text("Text_43154C61") : detail;
+            : detail.StartsWith("The device is asleep or powered off", StringComparison.OrdinalIgnoreCase)
+                ? AppStrings.Text("DiagnosticDeviceWirelessIdle")
+                : detail.Contains("does not support this command", StringComparison.OrdinalIgnoreCase) ? AppStrings.Text("Text_43154C61") : detail;
 
     private static int FindDiagnosticSeparator(string value)
     {
