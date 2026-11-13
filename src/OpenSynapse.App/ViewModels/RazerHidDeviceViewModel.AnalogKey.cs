@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Lighting;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
@@ -15,7 +16,9 @@ public sealed partial class RazerHidDeviceViewModel
     private readonly ObservableCollection<AnalogKeyRowViewModel> _analogKeyRows = [];
     private readonly List<AnalogKeyKeyViewModel> _analogKeyKeys = [];
     private AnalogKeyboardLayout? _analogKeyLayout;
+    private StudioKeyboardVisual? _analogKeyVisual;
     private bool _analogKeyLayoutLoaded;
+    private bool _analogKeyVisualLoaded;
     private bool _updatingAnalogKeySelection;
     private byte? _lastFirstSelectedKeyId;
     private bool _isAnalogKeyBusy;
@@ -32,6 +35,9 @@ public sealed partial class RazerHidDeviceViewModel
     public Visibility AnalogKeyWriteVisibility => VisibleWhen(Has(RazerHidBackendCapability.AnalogKeyWrite));
     public Visibility AnalogKeyLayoutVisibility => VisibleWhen(_analogKeyLayout is not null);
     public Visibility AnalogKeyLayoutMissingVisibility => VisibleWhen(_analogKeyLayout is null);
+    public Visibility AnalogKeyVisualVisibility => VisibleWhen(_analogKeyVisual is not null);
+    public Visibility AnalogKeyFallbackVisibility => VisibleWhen(_analogKeyVisual is null);
+    public StudioKeyboardVisual? AnalogKeyVisual => _analogKeyVisual;
     public string AnalogKeyLayoutName => _analogKeyLayout?.Name ?? string.Empty;
     public IReadOnlyList<AnalogKeyRowViewModel> AnalogKeyRows => _analogKeyRows;
 
@@ -128,6 +134,7 @@ public sealed partial class RazerHidDeviceViewModel
     public async Task LoadAnalogKeyAsync(CancellationToken cancellationToken = default)
     {
         InitializeAnalogKeyLayout();
+        _ = LoadAnalogKeyVisualAsync(cancellationToken);
         if (!CanUse(RazerHidBackendCapability.AnalogKeyRead) || IsAnalogKeyBusy)
         {
             return;
@@ -148,6 +155,40 @@ public sealed partial class RazerHidDeviceViewModel
         finally
         {
             IsAnalogKeyBusy = false;
+        }
+    }
+
+    private async Task LoadAnalogKeyVisualAsync(CancellationToken cancellationToken)
+    {
+        if (_analogKeyVisualLoaded || _analogKeyLayout is null)
+        {
+            return;
+        }
+
+        _analogKeyVisualLoaded = true;
+        try
+        {
+            var visual = await RazerMappingAssetService.Shared.GetAsync(
+                Connection.Definition.ProductId,
+                RazerMappingDeviceKind.Keyboard,
+                cancellationToken).ConfigureAwait(true);
+            if (visual.Keyboard?.Visual is not { Paths.Count: > 0 } keyboard)
+            {
+                return;
+            }
+
+            _analogKeyVisual = keyboard;
+            OnPropertyChanged(nameof(AnalogKeyVisual));
+            OnPropertyChanged(nameof(AnalogKeyVisualVisibility));
+            OnPropertyChanged(nameof(AnalogKeyFallbackVisibility));
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            _analogKeyVisualLoaded = false;
+        }
+        catch (Exception)
+        {
+            // The SVG is optional art. Keep the rectangular fallback when it is unavailable.
         }
     }
 

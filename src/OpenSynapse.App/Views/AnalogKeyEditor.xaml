@@ -33,7 +33,14 @@
       </StackPanel>
     </Grid>
 
-    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+    <StackPanel Visibility="{Binding AnalogKeyVisualVisibility}" Spacing="4">
+      <Viewbox Stretch="Uniform" MaxHeight="420" HorizontalAlignment="Center">
+        <Canvas x:Name="AnalogKeyboardCanvas" Background="Transparent" />
+      </Viewbox>
+    </StackPanel>
+
+    <ScrollViewer Visibility="{Binding AnalogKeyFallbackVisibility}"
+                  HorizontalScrollBarVisibility="Auto"
                   VerticalScrollBarVisibility="Disabled"
                   HorizontalScrollMode="Enabled"
                   VerticalScrollMode="Disabled"
@@ -52,7 +59,6 @@
                   <ToggleButton Width="{Binding Width}"
                                 Content="{Binding Label}"
                                 IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                Click="KeyClick"
                                 ToolTipService.ToolTip="{Binding AnalogKeyTooltipText}"
                                 AutomationProperties.HelpText="{Binding AnalogKeyTooltipText}"
                                 Style="{StaticResource AnalogKeyToggleStyle}" />
