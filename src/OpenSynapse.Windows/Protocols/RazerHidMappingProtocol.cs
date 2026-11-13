@@ -81,6 +81,8 @@ internal static class RazerHidMappingProtocol
         byte functionId,
         ReadOnlySpan<byte> data)
     {
+        data = NormalizeKeyData(functionId, data);
+
         if (data.Length > 5)
         {
             throw new ArgumentOutOfRangeException(nameof(data));
@@ -109,6 +111,8 @@ internal static class RazerHidMappingProtocol
         byte functionId,
         ReadOnlySpan<byte> data)
     {
+        data = NormalizeKeyData(functionId, data);
+
         if (data.Length > 5)
         {
             throw new ArgumentOutOfRangeException(nameof(data));
@@ -125,6 +129,21 @@ internal static class RazerHidMappingProtocol
             builderName,
             RazerFeatureReport.CreateRequest(
                 TransactionId, ReportDataSize, MappingClass, command, arguments));
+    }
+
+    /// <summary>
+    /// Profiles saved by pre-beta-41 builds carry the HID usage in the modifier byte; the
+    /// firmware reads that as a chord, so rewrite it to the single modifier bit on the way out.
+    /// </summary>
+    private static ReadOnlySpan<byte> NormalizeKeyData(byte functionId, ReadOnlySpan<byte> data)
+    {
+        if (functionId == RazerHidMappingFunctions.KeyCode && data.Length >= 2 && data[1] == 0 &&
+            data[0] is >= 224 and <= 231)
+        {
+            return new byte[] { (byte)(1 << (data[0] - 224)), 0 };
+        }
+
+        return data;
     }
 
     internal static IReadOnlyList<byte> ParseButtonList(ReadOnlySpan<byte> response)
