@@ -5,22 +5,62 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed partial class RazerHidDeviceService
 {
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> _mappingProfileIds =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Mapping tables are keyed by the profile the device is actually on. Profile 1 is only a
+    /// fallback: a user can delete it and keep working on a later profile.
+    /// </summary>
+    private async Task<byte> ResolveMappingProfileIdAsync(
+        RazerHidDeviceConnection connection,
+        CancellationToken cancellationToken)
+    {
+        if (_mappingProfileIds.TryGetValue(connection.DevicePath ?? connection.InstanceId, out var cached))
+        {
+            return cached;
+        }
+
+        var profileId = RazerHidMappingProtocol.ProfileId;
+        if (connection.Capabilities.Contains(RazerHidBackendCapability.OnboardProfileRead))
+        {
+            try
+            {
+                profileId = await GetActiveOnboardProfileIdAsync(connection, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception exception) when (exception is RazerDeviceTimeoutException or
+                RazerCommandRejectedException or NotSupportedException or InvalidOperationException)
+            {
+                WriteDiagnostic(connection.Definition.ProductId,
+                    $"mapping.activeProfile read failed: {exception.Message}");
+            }
+        }
+
+        _mappingProfileIds[connection.DevicePath ?? connection.InstanceId] = profileId;
+        return profileId;
+    }
+
+    internal void ForgetMappingProfile(RazerHidDeviceConnection connection) =>
+        _mappingProfileIds.TryRemove(connection.DevicePath ?? connection.InstanceId, out _);
+
     public async Task<RazerHidButtonAssignment> GetButtonAssignmentAsync(
         RazerHidDeviceConnection connection,
         byte buttonId,
         byte mode,
         CancellationToken cancellationToken = default)
     {
+        var profileId = await ResolveMappingProfileIdAsync(connection, cancellationToken).ConfigureAwait(false);
         if (UsesAnalogKeyAssignments(connection))
         {
             return RazerHidMappingProtocol.ParseAnalogAssignment(await ExecuteAsync(connection,
-                RazerHidMappingProtocol.GetAnalogKeyAssignment(buttonId, mode), cancellationToken)
+                RazerHidMappingProtocol.GetAnalogKeyAssignment(profileId, buttonId, mode), cancellationToken)
                 .ConfigureAwait(false));
         }
 
         var request = UsesKeyAssignments(connection)
-            ? RazerHidMappingProtocol.GetKeyAssignment(buttonId, mode)
-            : RazerHidMappingProtocol.GetAssignment(buttonId, mode);
+            ? RazerHidMappingProtocol.GetKeyAssignment(profileId, buttonId, mode)
+            : RazerHidMappingProtocol.GetAssignment(profileId, buttonId, mode);
         return RazerHidMappingProtocol.ParseAssignment(
             await ExecuteAsync(connection, request, cancellationToken).ConfigureAwait(false));
     }
@@ -56,20 +96,21 @@ public sealed partial class RazerHidDeviceService
         data = RazerHidMappingActions.NormalizeKeyData(
             functionId, data, connection.Definition.ProductId);
 
+        var profileId = await ResolveMappingProfileIdAsync(connection, cancellationToken).ConfigureAwait(false);
         RazerHidRequest request;
         if (UsesAnalogKeyAssignments(connection))
         {
             // Preserve the key's actuation band; changing it would alter how the key feels.
             var current = await GetButtonAssignmentAsync(connection, buttonId, mode, cancellationToken)
                 .ConfigureAwait(false);
-            request = RazerHidMappingProtocol.SetAnalogKeyAssignment(buttonId, mode,
+            request = RazerHidMappingProtocol.SetAnalogKeyAssignment(profileId, buttonId, mode,
                 current.ThresholdL, current.ThresholdH, functionId, data.ToArray());
         }
         else
         {
             request = UsesKeyAssignments(connection)
-                ? RazerHidMappingProtocol.SetKeyAssignment(buttonId, mode, functionId, data.ToArray())
-                : RazerHidMappingProtocol.SetAssignment(buttonId, mode, functionId, data.ToArray());
+                ? RazerHidMappingProtocol.SetKeyAssignment(profileId, buttonId, mode, functionId, data.ToArray())
+                : RazerHidMappingProtocol.SetAssignment(profileId, buttonId, mode, functionId, data.ToArray());
         }
         await ExecuteWithoutResultAsync(connection, request, cancellationToken).ConfigureAwait(false);
         var applied = await GetButtonAssignmentAsync(connection, buttonId, mode, cancellationToken)
@@ -93,14 +134,30 @@ public sealed partial class RazerHidDeviceService
         // try both; otherwise one rejected row hides the whole mapping page.
         var keypad = definition.ProductId is 0x022B or 0x0244;
         byte[] keyIds = keypad ? [0x40, 0x02] : [0x02];
+
+        // A deleted profile 1 must not hide the whole mapping page; ask which profile is live.
+        byte activeProfile = 0;
+        var activeRequest = RazerOnboardProfileProtocol.CreateGetActiveProfileIdRequest(MiddlewareTransactionId);
+        _ = await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
+            "mapping.activeProfile", activeRequest,
+            response =>
+            {
+                activeProfile = RazerOnboardProfileProtocol.ParseProfileId(response, activeRequest);
+                return true;
+            }, cancellationToken).ConfigureAwait(false);
+        byte[] profileIds = activeProfile != 0 && activeProfile != RazerHidMappingProtocol.ProfileId
+            ? [activeProfile, RazerHidMappingProtocol.ProfileId]
+            : [RazerHidMappingProtocol.ProfileId];
+
+        foreach (var profileId in profileIds)
         foreach (var keyId in keyIds)
         {
-            WriteDiagnostic(definition.ProductId, $"mapping probe key=0x{keyId:X2}");
+            WriteDiagnostic(definition.ProductId, $"mapping probe profile={profileId} key=0x{keyId:X2}");
             var assignment = analog
                 ? RazerHidMappingProtocol.GetAnalogKeyAssignment(
-                    keyId, RazerHidMappingProtocol.NormalMode)
+                    profileId, keyId, RazerHidMappingProtocol.NormalMode)
                 : RazerHidMappingProtocol.GetKeyAssignment(
-                    keyId, RazerHidMappingProtocol.NormalMode);
+                    profileId, keyId, RazerHidMappingProtocol.NormalMode);
             if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
                     "mapping.keyAssignment", assignment.Report,
                     response =>

@@ -417,7 +417,8 @@ public sealed partial class RazerKeyboardService
         {
             return RazerHidMappingProtocol.ParseAssignment(
                 await QueryPreparedAsync(
-                    RazerHidMappingProtocol.GetAssignment(buttonId, mode).Report,
+                    RazerHidMappingProtocol.GetAssignment(
+                        await ResolveProfileIdAsync(cancellationToken).ConfigureAwait(false), buttonId, mode).Report,
                     "mapping 02:8C",
                     cancellationToken).ConfigureAwait(false));
         }
@@ -458,7 +459,9 @@ public sealed partial class RazerKeyboardService
         if (_mappingProtocol == RazerKeyboardMappingProtocol.Middleware02)
         {
             await QueryPreparedAsync(
-                RazerHidMappingProtocol.SetAssignment(buttonId, mode, functionId, normalized).Report,
+                RazerHidMappingProtocol.SetAssignment(
+                    await ResolveProfileIdAsync(cancellationToken).ConfigureAwait(false),
+                    buttonId, mode, functionId, normalized).Report,
                 "mapping 02:0C",
                 cancellationToken).ConfigureAwait(false);
         }
@@ -487,6 +490,19 @@ public sealed partial class RazerKeyboardService
             throw new InvalidOperationException(
                 "The keyboard kept a different button assignment.");
         }
+    }
+
+    /// <summary>
+    /// Mapping tables follow the profile the keyboard is on; profile 1 is only the fallback.
+    /// </summary>
+    private async Task<byte> ResolveProfileIdAsync(CancellationToken cancellationToken)
+    {
+        if (_profileId == 0)
+        {
+            _profileId = await TryReadActiveProfileAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        return _profileId == 0 ? RazerHidMappingProtocol.ProfileId : _profileId;
     }
 
     private async Task<byte> TryReadActiveProfileAsync(CancellationToken cancellationToken)
