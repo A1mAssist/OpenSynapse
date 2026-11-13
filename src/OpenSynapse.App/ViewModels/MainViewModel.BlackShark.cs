@@ -56,7 +56,7 @@ public sealed partial class MainViewModel
             () => _profile,
             SaveProfileAsync);
         await probe.LoadAsync(cancellationToken);
-        row.SetCapabilityText(probe.CapabilityText);
+        row.SetCapabilityText(probe.CapabilityText, probe.BatteryPercent);
         if (_selectedBlackSharkDevice is not null &&
             StringComparer.OrdinalIgnoreCase.Equals(
                 _selectedBlackSharkDevice.Connection.DevicePath, connection.DevicePath))

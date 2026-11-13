@@ -497,6 +497,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
     public string FirmwareText { get => _firmwareText; private set => SetField(ref _firmwareText, value); }
     public string BatteryText { get => _batteryText; private set => SetField(ref _batteryText, value); }
+    public int? BatteryPercent { get; private set; }
     public string ChargingText { get => _chargingText; private set => SetField(ref _chargingText, value); }
     public IReadOnlyList<string> EqPresetOptions =>
         ActivePresets.Select(preset => AppStrings.Text(preset.Key)).ToArray();
@@ -1464,7 +1465,9 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         if (state.BatteryPercent is byte battery)
         {
             BatteryText = $"{battery}%";
+            BatteryPercent = battery;
             _hasBattery = true;
+            OnPropertyChanged(nameof(BatteryPercent));
         }
         if (state.Charging is bool charging)
         {

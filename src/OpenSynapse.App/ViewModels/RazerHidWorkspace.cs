@@ -418,9 +418,11 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         if (_deviceService is null) return null;
         try
         {
-            return await _deviceService
+            var percent = await _deviceService
                 .GetBatteryPercentAsync(row.Connection, cancellationToken)
                 .ConfigureAwait(false);
+            row.SetBatteryPercent(percent);
+            return percent;
         }
         catch (Exception) when (!cancellationToken.IsCancellationRequested)
         {

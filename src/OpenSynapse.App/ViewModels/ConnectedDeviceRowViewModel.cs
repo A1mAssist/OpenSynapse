@@ -182,6 +182,11 @@ public sealed class ConnectedDeviceRowViewModel
     }
 
     public object Source { get; }
+    /// <summary>
+    /// The live row behind this snapshot. Cards bind through it so a poll result repaints
+    /// the battery without rebuilding the list.
+    /// </summary>
+    public IDeviceBatteryRow BatteryRow => Source as IDeviceBatteryRow ?? NoBatteryRow.Instance;
     public string Name { get; }
     public string Identity { get; }
     public string Access { get; }
@@ -244,4 +249,12 @@ public sealed class ConnectedDeviceRowViewModel
         DeviceCategory.Mouse => 2,
         _ => 3,
     };
+
+    private sealed class NoBatteryRow : IDeviceBatteryRow
+    {
+        public static NoBatteryRow Instance { get; } = new();
+        public bool IsBatteryAvailable => false;
+        public string BatteryText => string.Empty;
+        public int? BatteryPercent => null;
+    }
 }

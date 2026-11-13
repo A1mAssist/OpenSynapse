@@ -12,7 +12,7 @@ using Windows.UI;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed class RazerKeyboardDeviceRowViewModel : INotifyPropertyChanged
+public sealed class RazerKeyboardDeviceRowViewModel : INotifyPropertyChanged, IDeviceBatteryRow
 {
     private static readonly Brush ConnectedBrush =
         new SolidColorBrush(Color.FromArgb(255, 68, 214, 44));
@@ -46,6 +46,9 @@ public sealed class RazerKeyboardDeviceRowViewModel : INotifyPropertyChanged
             ? ConnectedBrush
             : PartialBrush;
     public string Error => string.Empty;
+    public bool IsBatteryAvailable => Detail.BatteryPercent is not null;
+    public string BatteryText => Detail.BatteryPercent is { } value ? $"{value}%" : string.Empty;
+    public int? BatteryPercent => Detail.BatteryPercent;
 
     public Task EnsureLoadedAsync(CancellationToken cancellationToken = default) =>
         _loadTask ??= Detail.LoadAsync(cancellationToken);
@@ -58,6 +61,13 @@ public sealed class RazerKeyboardDeviceRowViewModel : INotifyPropertyChanged
         {
             PropertyChanged?.Invoke(this, new(nameof(Capability)));
             PropertyChanged?.Invoke(this, new(nameof(StatusBrush)));
+        }
+
+        if (args.PropertyName is nameof(RazerKeyboardViewModel.BatteryPercent))
+        {
+            PropertyChanged?.Invoke(this, new(nameof(IsBatteryAvailable)));
+            PropertyChanged?.Invoke(this, new(nameof(BatteryText)));
+            PropertyChanged?.Invoke(this, new(nameof(BatteryPercent)));
         }
     }
 
@@ -148,6 +158,7 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
     public string FirmwareText { get => _firmwareText; private set => SetField(ref _firmwareText, value); }
     public string SerialText { get => _serialText; private set => SetField(ref _serialText, value); }
     public string BatteryText { get => _batteryText; private set => SetField(ref _batteryText, value); }
+    public int? BatteryPercent { get; private set; }
     public string ChargingText { get => _chargingText; private set => SetField(ref _chargingText, value); }
 
     public bool GameModeEnabled
@@ -524,7 +535,9 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
         if (state.BatteryPercent is byte battery)
         {
             BatteryText = $"{battery}%";
+            BatteryPercent = battery;
             _hasBattery = true;
+            OnPropertyChanged(nameof(BatteryPercent));
             OnPropertyChanged(nameof(BatteryVisibility));
         }
 
