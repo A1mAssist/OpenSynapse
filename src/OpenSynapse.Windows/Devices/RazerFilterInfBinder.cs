@@ -292,6 +292,51 @@ internal static class RazerFilterInfBinder
         }
     }
 
+    /// <summary>
+    /// Keyboard collections that are present but still lack the RzDev filter. The
+    /// count alone does not say which collection needs the repair.
+    /// </summary>
+    internal static IReadOnlyList<string> FindUnfilteredKeyboardInstances(
+        IReadOnlyList<ushort> productIds,
+        RegistryKey? enumRoot = null)
+    {
+        ArgumentNullException.ThrowIfNull(productIds);
+        var ownsRoot = enumRoot is null;
+        var root = enumRoot ?? Registry.LocalMachine.OpenSubKey(HidEnumPath);
+        if (root is null)
+        {
+            return [];
+        }
+
+        try
+        {
+            var instances = new List<string>();
+            foreach (var productId in productIds)
+            {
+                var filter = $"RzDev_{productId:X4}";
+                foreach (var (deviceName, instanceName) in InstanceNames(root, productId))
+                {
+                    using var instance = root.OpenSubKey($@"{deviceName}\{instanceName}");
+                    if (instance is null || !IsKeyboardInstance(instance) || HasFilter(instance, filter))
+                    {
+                        continue;
+                    }
+
+                    instances.Add($@"HID\{deviceName}\{instanceName}");
+                }
+            }
+
+            return instances;
+        }
+        finally
+        {
+            if (ownsRoot)
+            {
+                root.Dispose();
+            }
+        }
+    }
+
     private static IEnumerable<(string DeviceName, string InstanceName)> InstanceNames(
         RegistryKey root,
         ushort productId)
