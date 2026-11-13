@@ -66,6 +66,7 @@ public sealed partial class SettingsPage : UserControl
         TaskbarStatusToggle.IsOn = settings.TaskbarStatusEnabled;
         PerformanceOverlayToggle.IsOn = settings.PerformanceOverlayEnabled;
         PerformanceOverlayDetailedToggle.IsOn = settings.PerformanceOverlayDetailed;
+        PerformanceOverlayTopmostToggle.IsOn = settings.PerformanceOverlayAlwaysOnTop;
         ChromaRestToggle.IsOn = settings.ExperimentalChromaRestEnabled;
         ViewModel.Lighting.SetChromaIntegrationEnabled(settings.ExperimentalChromaRestEnabled);
         ChromaRestoreToggle.IsOn = settings.RestoreLightingAfterChromaSession;

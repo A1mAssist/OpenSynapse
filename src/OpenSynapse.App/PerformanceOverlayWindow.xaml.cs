@@ -70,6 +70,7 @@ public sealed partial class PerformanceOverlayWindow : Window
             presenter.IsResizable = false;
             presenter.IsMaximizable = false;
             presenter.IsMinimizable = false;
+            presenter.IsAlwaysOnTop = _settings.PerformanceOverlayAlwaysOnTop;
         }
 
         _windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
@@ -101,6 +102,17 @@ public sealed partial class PerformanceOverlayWindow : Window
     }
 
     internal void RefreshLayout() => ApplyLayout(_settings.PerformanceOverlayDetailed);
+
+    /// <summary>Re-applies the saved z-order after the setting changes.</summary>
+    internal void RefreshAlwaysOnTop()
+    {
+        if (AppWindow.Presenter is OverlappedPresenter presenter)
+        {
+            presenter.IsAlwaysOnTop = _settings.PerformanceOverlayAlwaysOnTop;
+        }
+
+        ApplyLayout(_settings.PerformanceOverlayDetailed);
+    }
 
     internal void RefreshLocalization()
     {
@@ -236,10 +248,11 @@ public sealed partial class PerformanceOverlayWindow : Window
         x = Math.Clamp(x, workArea.X, Math.Max(workArea.X, workArea.X + workArea.Width - width));
         y = Math.Clamp(y, workArea.Y, Math.Max(workArea.Y, workArea.Y + workArea.Height - height));
         AppWindow.MoveAndResize(new RectInt32(x, y, width, height));
-        // Normal-window z-order; topmost breaks DirectFlip in borderless games.
+        // Topmost keeps the overlay above the desktop but can break DirectFlip in borderless
+        // games, so the user decides. The presenter flag and this call must always agree.
         _ = SetWindowPos(
             _windowHandle,
-            IntPtr.Zero,
+            _settings.PerformanceOverlayAlwaysOnTop ? new IntPtr(-1) : IntPtr.Zero,
             0,
             0,
             0,
