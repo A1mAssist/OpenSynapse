@@ -648,7 +648,8 @@ public sealed partial class BladeLightingController : IBladeLightingController
                 BladeLightingMode.Spectrum =>
                     BladeLightingLedMatrixBladeProtocol.CreateSpectrumRequest(NextTransactionId()),
                 BladeLightingMode.Wave =>
-                    BladeLightingLedMatrixBladeProtocol.CreateWaveRequest(NextTransactionId(), effect.Direction),
+                    BladeLightingLedMatrixBladeProtocol.CreateWaveRequest(
+                        NextTransactionId(), ToMatrixWireDirection(effect.Direction)),
                 BladeLightingMode.Reactive =>
                     BladeLightingLedMatrixBladeProtocol.CreateReactiveRequest(
                         NextTransactionId(), effect.ReactiveSpeed, effect.Color),
@@ -686,11 +687,14 @@ public sealed partial class BladeLightingController : IBladeLightingController
         return request.Length != 0;
     }
 
-    // User-observed on Blade 16 2025 (710): the firmware's 0x02 moves the wave left.
-    // Keep 2026, Blade2 and 023A on the semantic enum until their hardware confirms
-    // the wire byte.
+    // Razer's own UI flips the direction before writing: the 6737 effect adapter in the
+    // 023A, 029F (Blade 16 2023), 02B7 and 02E0 bundles all send `1 === direction ? 2 : 1`.
+    // The semantic value is therefore not the wire byte on any Blade matrix family;
+    // users see the mirror image when it is sent raw. 2026 stays on the semantic enum
+    // until a unit confirms its 03:0A byte.
     private BladeWaveDirection ToMatrixWireDirection(BladeWaveDirection direction) =>
-        _lightingDialect == BladeLightingDialect.LedMatrix710
+        _lightingDialect is BladeLightingDialect.LedMatrix710 or BladeLightingDialect.LedMatrixBlade
+            or BladeLightingDialect.LedMatrixBlade2
             ? direction == BladeWaveDirection.Right ? BladeWaveDirection.Left : BladeWaveDirection.Right
             : direction;
 
