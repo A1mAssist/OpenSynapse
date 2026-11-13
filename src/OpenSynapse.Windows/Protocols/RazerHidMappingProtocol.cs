@@ -33,8 +33,11 @@ internal static class RazerHidMappingProtocol
     private const byte SetAssignmentCommand = 0x0C;
     private const byte GetKeyAssignmentCommand = 0x8D;
     private const byte SetKeyAssignmentCommand = 0x0D;
+    private const byte GetMultiKeyAssignmentCommand = 0x9E;
+    private const byte SetMultiKeyAssignmentCommand = 0x1E;
     private const byte GetAnalogKeyAssignmentCommand = 0x92;
     private const byte SetAnalogKeyAssignmentCommand = 0x12;
+    private const int MultiKeyAssignmentStride = 9;
 
     internal static RazerHidRequest GetButtonList() => new(
         "mapping.getButtonList",
@@ -64,6 +67,23 @@ internal static class RazerHidMappingProtocol
             TransactionId, ReportDataSize, MappingClass, GetKeyAssignmentCommand,
             new[] { profileId, keyId, mode }));
 
+    /// <summary>
+    /// Huntsman V3 Pro firmware rejects 0x8D for modifier and navigation keys. Synapse
+    /// reads every key through the multi-key table instead, one nine-byte slot per key.
+    /// </summary>
+    internal static RazerHidRequest GetMultiKeyAssignment(byte profileId, byte keyId, byte mode)
+    {
+        var arguments = new byte[1 + MultiKeyAssignmentStride];
+        arguments[0] = profileId;
+        arguments[1] = keyId;
+        arguments[2] = mode;
+        return new RazerHidRequest(
+            "mapping.getMultiKeyAssignment",
+            RazerFeatureReport.CreateRequest(
+                TransactionId, (byte)arguments.Length, MappingClass,
+                GetMultiKeyAssignmentCommand, arguments));
+    }
+
     internal static RazerHidRequest GetAnalogKeyAssignment(byte profileId, byte keyId, byte mode) => new(
         "mapping.getAnalogKeyAssignment",
         RazerFeatureReport.CreateRequest(
@@ -87,6 +107,32 @@ internal static class RazerHidMappingProtocol
         ReadOnlySpan<byte> data) =>
         CreateAssignmentRequest(
             "mapping.setKeyAssignment", SetKeyAssignmentCommand, profileId, keyId, mode, functionId, data);
+
+    internal static RazerHidRequest SetMultiKeyAssignment(
+        byte profileId,
+        byte keyId,
+        byte mode,
+        byte functionId,
+        ReadOnlySpan<byte> data)
+    {
+        if (data.Length > 5)
+        {
+            throw new ArgumentOutOfRangeException(nameof(data));
+        }
+
+        var arguments = new byte[1 + MultiKeyAssignmentStride];
+        arguments[0] = profileId;
+        arguments[1] = keyId;
+        arguments[2] = mode;
+        arguments[3] = functionId;
+        arguments[4] = (byte)data.Length;
+        data.CopyTo(arguments.AsSpan(5));
+        return new RazerHidRequest(
+            "mapping.setMultiKeyAssignment",
+            RazerFeatureReport.CreateRequest(
+                TransactionId, (byte)arguments.Length, MappingClass,
+                SetMultiKeyAssignmentCommand, arguments));
+    }
 
     internal static RazerHidRequest SetAnalogKeyAssignment(
         byte profileId,
@@ -172,6 +218,32 @@ internal static class RazerHidMappingProtocol
             arguments[2],
             arguments[3],
             arguments.Slice(5, size).ToArray());
+    }
+
+    /// <summary>The reply is [classId, keyId, mode, functionId, dataSize, data[5]] per key.</summary>
+    internal static RazerHidButtonAssignment ParseMultiKeyAssignment(
+        ReadOnlySpan<byte> response,
+        byte keyId)
+    {
+        var arguments = RazerHidStandardProtocol.Arguments(response, 10);
+        for (var offset = 1; offset + MultiKeyAssignmentStride <= arguments.Length;
+             offset += MultiKeyAssignmentStride)
+        {
+            if (arguments[offset] != keyId)
+            {
+                continue;
+            }
+
+            var size = Math.Min((int)arguments[offset + 3], 5);
+            return new RazerHidButtonAssignment(
+                arguments[offset],
+                arguments[offset + 1],
+                arguments[offset + 2],
+                arguments.Slice(offset + 4, size).ToArray());
+        }
+
+        throw new InvalidDataException(
+            $"RazerHid did not return key 0x{keyId:X2} in the multi-key assignment table.");
     }
 
     internal static RazerHidButtonAssignment ParseAnalogAssignment(ReadOnlySpan<byte> response)

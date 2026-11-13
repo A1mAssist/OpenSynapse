@@ -57,6 +57,15 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         var profileId = await ResolveMappingProfileIdAsync(connection, cancellationToken).ConfigureAwait(false);
+        if (UsesMultiKeyAssignments(connection))
+        {
+            return RazerHidMappingProtocol.ParseMultiKeyAssignment(
+                await ExecuteAsync(connection,
+                    RazerHidMappingProtocol.GetMultiKeyAssignment(profileId, buttonId, mode),
+                    cancellationToken).ConfigureAwait(false),
+                buttonId);
+        }
+
         if (UsesAnalogKeyAssignments(connection))
         {
             return RazerHidMappingProtocol.ParseAnalogAssignment(await ExecuteAsync(connection,
@@ -81,6 +90,11 @@ public sealed partial class RazerHidDeviceService
     private static bool UsesAnalogKeyAssignments(RazerHidDeviceConnection connection) =>
         connection.Definition.ProductId is 0x0266 or 0x0282;
 
+    // Huntsman V3 Pro firmware rejects 0x8D for modifiers and navigation keys. Synapse
+    // reads and writes those keyboards through the 0x9E/0x1E multi-key table instead.
+    private static bool UsesMultiKeyAssignments(RazerHidDeviceConnection connection) =>
+        connection.Definition.ProductId is 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
+
     public async Task SetButtonAssignmentAsync(
         RazerHidDeviceConnection connection,
         byte buttonId,
@@ -104,7 +118,12 @@ public sealed partial class RazerHidDeviceService
 
         var profileId = await ResolveMappingProfileIdAsync(connection, cancellationToken).ConfigureAwait(false);
         RazerHidRequest request;
-        if (UsesAnalogKeyAssignments(connection))
+        if (UsesMultiKeyAssignments(connection))
+        {
+            request = RazerHidMappingProtocol.SetMultiKeyAssignment(
+                profileId, buttonId, mode, functionId, data.ToArray());
+        }
+        else if (UsesAnalogKeyAssignments(connection))
         {
             // Preserve the key's actuation band; changing it would alter how the key feels.
             var current = await GetButtonAssignmentAsync(connection, buttonId, mode, cancellationToken)
@@ -135,6 +154,7 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken)
     {
         var analog = definition.ProductId is 0x0266 or 0x0282;
+        var multi = definition.ProductId is 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
         // 0244/022B keypads map the first art key to SPAD_NUM_1, firmware key id 64 (0x40).
         // Some firmware refuses that row while still answering the generic 0x02 key, so
         // try both; otherwise one rejected row hides the whole mapping page.
@@ -162,8 +182,11 @@ public sealed partial class RazerHidDeviceService
             var assignment = analog
                 ? RazerHidMappingProtocol.GetAnalogKeyAssignment(
                     profileId, keyId, RazerHidMappingProtocol.NormalMode)
-                : RazerHidMappingProtocol.GetKeyAssignment(
-                    profileId, keyId, RazerHidMappingProtocol.NormalMode);
+                : multi
+                    ? RazerHidMappingProtocol.GetMultiKeyAssignment(
+                        profileId, keyId, RazerHidMappingProtocol.NormalMode)
+                    : RazerHidMappingProtocol.GetKeyAssignment(
+                        profileId, keyId, RazerHidMappingProtocol.NormalMode);
             if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
                     "mapping.keyAssignment", assignment.Report,
                     response =>
@@ -171,6 +194,10 @@ public sealed partial class RazerHidDeviceService
                         if (analog)
                         {
                             _ = RazerHidMappingProtocol.ParseAnalogAssignment(response);
+                        }
+                        else if (multi)
+                        {
+                            _ = RazerHidMappingProtocol.ParseMultiKeyAssignment(response, keyId);
                         }
                         else
                         {
