@@ -18,6 +18,7 @@ internal sealed class RyzenSmuSession : IDisposable
     private const string UpdatePmTableIoctl = "ioctl_update_pm_table";
     private const string ReadPmTableIoctl = "ioctl_read_pm_table";
     private const string SendSmuCommandIoctl = "ioctl_send_smu_command";
+    private const string ReadSmuRegisterIoctl = "ioctl_read_smu_register";
 
     private const int PmTableWords = 64;
     private const uint AccessDeniedHresult = 0x80070005;
@@ -141,6 +142,28 @@ internal sealed class RyzenSmuSession : IDisposable
             detail = $"The Ryzen SMU path could not be opened: {exception.Message}";
             return CpuPowerLimitAvailability.Failed;
         }
+    }
+
+    /// <summary>
+    /// Reads one SMN register. The module accepts only the ranges it whitelists, and
+    /// asks for exactly one input and one output word.
+    /// </summary>
+    public bool TryReadRegister(ulong address, out ulong value, out string? error)
+    {
+        ThrowIfDisposed();
+        var output = new ulong[1];
+        var status = _execute(
+            _handle, ReadSmuRegisterIoctl, [address], 1, output, 1, out var written);
+        if (status < 0 || written.ToUInt64() != 1)
+        {
+            value = 0;
+            error = $"SMN 0x{address:X8} could not be read (HRESULT 0x{(uint)status:X8}).";
+            return false;
+        }
+
+        value = output[0];
+        error = null;
+        return true;
     }
 
     public bool TrySend(uint message, uint argument, out string? error)

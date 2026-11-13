@@ -34,6 +34,7 @@ public static class OpenSynapseServiceProtocol
     public const string StartChromaBrokerOperation = "start-chroma-broker";
     public const string StopChromaBrokerOperation = "stop-chroma-broker";
     public const string InstallChromaDllOperation = "install-chroma-dll";
+    public const string ReadCpuTemperatureOperation = "read-cpu-temperature";
     public const string InstallRazerCommonOperation = "install-razer-common";
     public const string InstallRazerDeviceDriverOperation = "install-razer-device-driver";
     public const string BindFilterOperation = "bind-filter";
@@ -167,6 +168,12 @@ public enum OpenSynapseServiceAction
     /// </summary>
     InstallChromaDll,
 
+    /// <summary>
+    /// Reads the CPU package temperature through PawnIO. Only an elevated caller can
+    /// open the driver, so the app asks the service once per sample.
+    /// </summary>
+    ReadCpuTemperature,
+
     /// <summary>Start a Razer driver service that is installed but stopped.</summary>
     StartDriverService,
 
@@ -209,7 +216,8 @@ public sealed record OpenSynapseServiceResponse(
     bool? ClockLimitAvailable = null,
     int? ClockLimitMhz = null,
     CpuPowerLimitReport? PowerLimit = null,
-    bool? CurveOptimizerAvailable = null);
+    bool? CurveOptimizerAvailable = null,
+    double? CpuTemperatureCelsius = null);
 
 /// <summary>
 /// The service's answer to an update request. ViaService separates "the service
@@ -376,6 +384,13 @@ public static class OpenSynapseServiceRequestParser
                 OpenSynapseServiceProtocol.InstallChromaDllOperation))
         {
             return OpenSynapseServiceAction.InstallChromaDll;
+    }
+
+    if (StringComparer.Ordinal.Equals(
+        request.Operation,
+        OpenSynapseServiceProtocol.ReadCpuTemperatureOperation))
+    {
+        return OpenSynapseServiceAction.ReadCpuTemperature;
         }
 
         if (StringComparer.Ordinal.Equals(

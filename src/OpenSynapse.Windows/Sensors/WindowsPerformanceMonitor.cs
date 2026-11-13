@@ -28,8 +28,16 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
     private ulong _previousKernel;
     private ulong _previousUser;
 
-    public WindowsPerformanceMonitor()
+    /// <summary>
+    /// Reads the CPU package temperature from the machine-wide service, which is the only
+    /// process that can open PawnIO. Null keeps the locally sampled value.
+    /// </summary>
+    private readonly Func<CancellationToken, Task<double?>>? _remoteCpuTemperature;
+
+    public WindowsPerformanceMonitor(
+        Func<CancellationToken, Task<double?>>? remoteCpuTemperature = null)
     {
+        _remoteCpuTemperature = remoteCpuTemperature;
         _cpuName = Registry.GetValue(
             @"HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\CentralProcessor\0",
             "ProcessorNameString",
@@ -42,6 +50,12 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
         cancellationToken.ThrowIfCancellationRequested();
         var cpuUsage = ReadCpuUsage();
         var cpu = _cpuHardware.Read();
+        var cpuTemperature = cpu.TemperatureCelsius;
+        if (_cpuHardware.LastSource is CpuTemperatureSource.Acpi or CpuTemperatureSource.None)
+        {
+            cpuTemperature = await TryRemoteCpuTemperatureAsync(cancellationToken)
+                .ConfigureAwait(false) ?? cpuTemperature;
+        }
         ReadMemory(out var memoryUsed, out var memoryTotal);
         var memoryClock = _memoryClockMegahertz.Value;
         ReadStorageThrottled(out var storageUsed, out var storageTotal);
@@ -62,7 +76,7 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
         return new PerformanceSnapshot(
             _cpuName.Trim(),
             cpuUsage,
-            cpu.TemperatureCelsius,
+            cpuTemperature,
             cpu.PowerWatts,
             cpu.ClockMegahertz,
             gpuName,
@@ -93,6 +107,12 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
     {
         cancellationToken.ThrowIfCancellationRequested();
         var cpu = includeCpu ? _cpuHardware.ReadTemperatureCelsius() : null;
+        if (includeCpu &&
+            _cpuHardware.LastSource is CpuTemperatureSource.Acpi or CpuTemperatureSource.None)
+        {
+            cpu = await TryRemoteCpuTemperatureAsync(cancellationToken)
+                .ConfigureAwait(false) ?? cpu;
+        }
         var selected = includeGpu ? _gpuActivity.ReadSelectedTemperature() : null;
         var gpu = selected?.VendorId == 0x1002
             ? _amdGpu.Read().TemperatureCelsius ?? selected?.TemperatureCelsius
@@ -235,6 +255,31 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
             _storageSampleAt = now;
             used = _storageUsed;
             total = _storageTotal;
+        }
+    }
+
+    private async ValueTask<double?> TryRemoteCpuTemperatureAsync(CancellationToken cancellationToken)
+    {
+        if (_remoteCpuTemperature is null)
+        {
+            return null;
+        }
+
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromMilliseconds(800));
+        try
+        {
+            return await _remoteCpuTemperature(timeout.Token).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (
+            exception is OperationCanceledException or IOException or TimeoutException)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                throw new OperationCanceledException(cancellationToken);
+            }
+
+            return null;
         }
     }
 
