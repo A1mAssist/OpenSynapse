@@ -1382,6 +1382,10 @@
     <value>该设备不支持这项板载配置操作。</value>
     <comment>板载配置命令不支持</comment>
   </data>
+  <data name="RazerHidOnboardProfileResetUnsupported" xml:space="preserve">
+    <value>该型号拒绝一键重置。请新建一个配置，再删除旧配置。</value>
+    <comment>板载配置重置被固件拒绝</comment>
+  </data>
   <data name="RazerHidOnboardProfileUnknown" xml:space="preserve">
     <value>未知</value>
   </data>
@@ -2366,6 +2370,9 @@
   <data name="CpuPowerLimitLocked" xml:space="preserve"><value>固件已锁定功耗墙，当前不可写。</value></data>
   <data name="BladeFilterDriverTitle.Text" xml:space="preserve"><value>Fn 按键接管需要 Razer 驱动</value></data>
   <data name="BladeFilterDriverDescription.Text" xml:space="preserve"><value>Fn 快捷键接管依赖 Razer 的键盘过滤驱动。下载对应机型的驱动包，以管理员身份安装后重启 OpenSynapse。</value></data>
+  <data name="BladeSensorPromptTitle.Text" xml:space="preserve"><value>CPU 温度需要 PawnIO</value></data>
+  <data name="BladeSensorPromptDescription.Text" xml:space="preserve"><value>风扇曲线和温度卡片通过 PawnIO 读取 CPU 传感器。装上后采样会自动切到真实温度，不用重启。</value></data>
+  <data name="BladeSensorPromptInstall.Text" xml:space="preserve"><value>下载 PawnIO</value></data>
   <data name="BladeFilterDriverDownload.Content" xml:space="preserve"><value>下载 Fn 驱动</value></data>
   <data name="BladeFilterDriverUninstallHint.Text" xml:space="preserve"><value>驱动装好后会留在系统里，不需要让雷云常驻。</value></data>
   <data name="BladeFilterDriverRecoveryHint.Text" xml:space="preserve"><value>如果驱动被删除（设备管理器删除驱动或系统重置），请以管理员身份运行：</value></data>

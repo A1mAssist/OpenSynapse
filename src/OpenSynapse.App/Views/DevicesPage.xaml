@@ -1096,6 +1096,13 @@
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="{Binding Blade.DeviceName}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" FontSize="38" /><StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock Text="{Binding Blade.ProtocolText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" /><TextBlock Text="{Binding Blade.IdentityText}" FontFamily="Cascadia Mono,Consolas" FontSize="10" Foreground="{StaticResource MutedBrush}" /></StackPanel></Grid>
                   <StackPanel Visibility="{Binding Blade.SerialVisibility}" Orientation="Horizontal" Spacing="8"><TextBlock local:Localized.Uid="RazerHidSerialLabel" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding Blade.Serial}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /></StackPanel>
                   <TextBlock Text="{Binding ActivePowerSourceText}" Foreground="{StaticResource MutedBrush}" FontSize="12" />
+                  <Border x:Name="BladeSensorPromptCard" Visibility="Collapsed" Style="{StaticResource CardStyle}" Padding="16">
+                    <StackPanel Spacing="8">
+                      <TextBlock local:Localized.Uid="BladeSensorPromptTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
+                      <TextBlock local:Localized.Uid="BladeSensorPromptDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <Button local:Localized.Uid="BladeSensorPromptInstall" Click="CpuPowerLimitInstallPawnIoClick" HorizontalAlignment="Left" Style="{StaticResource RazerHidSaveButtonStyle}" />
+                    </StackPanel>
+                  </Border>
                   <Border Visibility="{Binding Blade.FilterDriverVisibility}" Style="{StaticResource CardStyle}" Padding="16">
                     <StackPanel Spacing="8">
                       <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="BladeFilterDriverTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource ThermalBrush}" /></StackPanel>
