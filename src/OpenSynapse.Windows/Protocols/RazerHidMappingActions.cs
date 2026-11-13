@@ -204,9 +204,8 @@ public static partial class RazerHidMappingActions
                 return new(mouse.Name, RazerHidMappingFunctions.ButtonCode, [mouse.Id]);
             case RazerHidMappingGroup.KeyboardKey when optionIndex < Keys.Length:
                 var key = Keys[optionIndex];
-                return key.Hid >= 224
-                    ? new(key.Name, RazerHidMappingFunctions.KeyCode, [key.Hid, 0x00])
-                    : new(key.Name, RazerHidMappingFunctions.KeyCode, [modifierMask, key.Hid]);
+                var encoded = EncodeKey(modifierMask, key.Hid);
+                return new(key.Name, RazerHidMappingFunctions.KeyCode, [encoded.Modifier, encoded.Key]);
             case RazerHidMappingGroup.Dpi when optionIndex < DpiActions.Length:
                 var dpi = DpiActions[optionIndex];
                 return new(dpi.Name, RazerHidMappingFunctions.Dpi, [dpi.Code]);
@@ -254,8 +253,9 @@ public static partial class RazerHidMappingActions
             case RazerHidMappingGroup.TurboKey when optionIndex < Keys.Length:
                 var turboKey = Keys[optionIndex];
                 var turboKeyInterval = Interval(turboRate);
+                var turboEncoded = EncodeKey(modifierMask, turboKey.Hid);
                 return new($"Turbo {turboKey.Name}", RazerHidMappingFunctions.TurboModeKey,
-                    [modifierMask, turboKey.Hid, High(turboKeyInterval), Low(turboKeyInterval)]);
+                    [turboEncoded.Modifier, turboEncoded.Key, High(turboKeyInterval), Low(turboKeyInterval)]);
             case RazerHidMappingGroup.TurboButton when optionIndex < MouseButtons.Length:
                 var turboButton = MouseButtons[optionIndex];
                 var turboButtonInterval = Interval(turboRate);
@@ -346,9 +346,20 @@ public static partial class RazerHidMappingActions
             case RazerHidMappingFunctions.ButtonCode when data.Count > 0:
                 return Map(RazerHidMappingGroup.MouseButton, MouseButtons, data[0]);
             case RazerHidMappingFunctions.KeyCode when data.Count >= 2:
-                if (data[0] >= 224 && data[1] == 0)
+                if (data[1] == 0)
                 {
-                    return Map(RazerHidMappingGroup.KeyboardKey, Keys, data[0]);
+                    // [single modifier bit, 0] is the canonical bare-modifier form.
+                    if (ModifierHid(data[0]) is byte modifierKey)
+                    {
+                        return Map(RazerHidMappingGroup.KeyboardKey, Keys, modifierKey);
+                    }
+
+                    // Builds before 1.7.2 beta 41 wrote the usage into the modifier byte.
+                    // Keep those rows readable so one re-save repairs them.
+                    if (data[0] is >= 224 and <= 231)
+                    {
+                        return Map(RazerHidMappingGroup.KeyboardKey, Keys, data[0]);
+                    }
                 }
 
                 var modifier = ModifierIndex(data[0]);
@@ -493,11 +504,16 @@ public static partial class RazerHidMappingActions
 
     private static string DescribeKey(byte modifierMask, byte hid)
     {
-        // Modifier-only keys are stored as [usage, 0] by the middleware encoder.
-        if (hid == 0 && modifierMask >= 224)
+        // A bare modifier is [bit, 0]; pre-beta-41 rows carried the usage instead.
+        if (hid == 0)
         {
-            return Keys.FirstOrDefault(key => key.Hid == modifierMask).Name
-                ?? $"Key {modifierMask}";
+            var modifierHid = ModifierHid(modifierMask) ??
+                (modifierMask is >= 224 and <= 231 ? modifierMask : (byte)0);
+            if (modifierHid != 0)
+            {
+                return Keys.FirstOrDefault(key => key.Hid == modifierHid).Name
+                    ?? $"Key {modifierHid}";
+            }
         }
 
         var name = Keys.FirstOrDefault(key => key.Hid == hid).Name ?? $"Key {hid}";
@@ -548,6 +564,29 @@ public static partial class RazerHidMappingActions
 
         return null;
     }
+
+    /// <summary>
+    /// fnData byte 0 is the HID modifier bitmask, never a usage. A bare modifier is written
+    /// as its bit with no key id; writing the usage (0xE1 for Left Shift) makes the firmware
+    /// press LeftCtrl + RightShift + RightAlt + RightGUI instead.
+    /// </summary>
+    private static (byte Modifier, byte Key) EncodeKey(byte modifierMask, byte hid) =>
+        ModifierBit(hid) is byte bit ? (bit, (byte)0) : (modifierMask, hid);
+
+    private static byte? ModifierBit(byte hid) => hid switch
+    {
+        224 => 0x01, 225 => 0x02, 226 => 0x04, 227 => 0x08,
+        228 => 0x10, 229 => 0x20, 230 => 0x40, 231 => 0x80,
+        _ => null,
+    };
+
+    private static byte? ModifierHid(byte modifierMask) => modifierMask switch
+    {
+        0x01 => 224, 0x02 => 225, 0x04 => 226, 0x08 => 227,
+        0x10 => 228, 0x20 => 229, 0x40 => 230, 0x80 => 231,
+        _ => null,
+    };
+
     private static int KeyIndex(byte hid)
     {
         for (var index = 0; index < Keys.Length; index++)
