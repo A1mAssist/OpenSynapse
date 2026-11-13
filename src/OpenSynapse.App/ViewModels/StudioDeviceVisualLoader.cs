@@ -22,8 +22,7 @@ public sealed class StudioDeviceVisualLoader : IDisposable
             _http,
             cacheDirectory ?? AppDataPaths.Combine("lighting-studio", "manifests"),
             TimeSpan.FromMinutes(10),
-            Path.Combine(AppContext.BaseDirectory, "Assets", "LightingLayouts", "studio-manifests.zip"),
-            Path.Combine(AppContext.BaseDirectory, "Assets", "LightingLayouts", "svg"));
+            Path.Combine(AppContext.BaseDirectory, "Assets", "LightingLayouts", "studio-manifests.zip"));
         _images = new StudioProductImageService(
             _http,
             AppDataPaths.Combine("lighting-studio", "product-images"));
