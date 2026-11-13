@@ -128,7 +128,8 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                     _diagnosticLog.TryWrite(
                         "razer-driver",
                         $"Razer filter {productId} refresh attached={attachment.IsAttached}; " +
-                        $"keyboard={attachment.AttachedKeyboardInstances}/{attachment.KeyboardInstances}");
+                        $"keyboard={attachment.AttachedKeyboardInstances}/{attachment.KeyboardInstances}; " +
+                        $"missing: {string.Join(", ", RazerFilterInfBinder.FindUnfilteredKeyboardInstances(candidates))}");
                     row.StatusText = attachment.IsAttached
                         ? AppStrings.Text("RazerDriverEndpointPending")
                         : AppStrings.Text("RazerDriverFilterMissing");
@@ -307,7 +308,8 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                                 "razer-driver",
                                 $"Razer filter {row.ProductId} attached={attachment.IsAttached}; " +
                                 $"keyboard={attachment.AttachedKeyboardInstances}/{attachment.KeyboardInstances}; " +
-                                $"instances: {string.Join(", ", RazerFilterInfBinder.FindInstances(row.CandidateProductIds))}");
+                                $"instances: {string.Join(", ", RazerFilterInfBinder.FindInstances(row.CandidateProductIds))}; " +
+                                $"missing: {string.Join(", ", RazerFilterInfBinder.FindUnfilteredKeyboardInstances(row.CandidateProductIds))}");
                             if (!attachment.IsAttached)
                             {
                                 row.StatusText = AppStrings.Text("RazerDriverFilterMissing");
