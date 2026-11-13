@@ -16,6 +16,16 @@ internal sealed record RazerFilterBindResult(RazerFilterBindStatus Status, strin
     internal bool Applied => Status == RazerFilterBindStatus.Applied;
 }
 
+internal readonly record struct RazerFilterAttachmentState(
+    bool AnyAttached,
+    int KeyboardInstances,
+    int AttachedKeyboardInstances)
+{
+    internal bool KeyboardAttached => KeyboardInstances == AttachedKeyboardInstances;
+
+    internal bool IsAttached => AnyAttached && KeyboardAttached;
+}
+
 /// <summary>
 /// The vendor package stages RzDevU_&lt;pid&gt;_*.inf into the DriverStore when it
 /// runs silently, but a staged filter INF is not attached to any device and a
@@ -181,11 +191,17 @@ internal static class RazerFilterInfBinder
     private const string HidEnumPath = @"SYSTEM\CurrentControlSet\Enum\HID";
 
     /// <summary>
-    /// True when a present device instance of the product really carries the
-    /// per-device RzDev filter in UpperFilters. A staged INF in the DriverStore
-    /// is not enough: the filter only runs once it is attached to the device stack.
+    /// True when every keyboard collection of the product carries the per-device
+    /// RzDev filter. The mouse collection alone is not enough: a mouse can expose
+    /// keyboard collections that need their own Keyboard-class INF for macro
+    /// injection. A staged INF in the DriverStore is not enough either.
     /// </summary>
     internal static bool IsAttached(
+        IReadOnlyList<ushort> productIds,
+        RegistryKey? enumRoot = null) =>
+        InspectAttachment(productIds, enumRoot).IsAttached;
+
+    internal static RazerFilterAttachmentState InspectAttachment(
         IReadOnlyList<ushort> productIds,
         RegistryKey? enumRoot = null)
     {
@@ -194,9 +210,12 @@ internal static class RazerFilterInfBinder
         var root = enumRoot ?? Registry.LocalMachine.OpenSubKey(HidEnumPath);
         if (root is null)
         {
-            return false;
+            return default;
         }
 
+        var anyAttached = false;
+        var keyboardInstances = 0;
+        var attachedKeyboardInstances = 0;
         try
         {
             foreach (var productId in productIds)
@@ -210,20 +229,20 @@ internal static class RazerFilterInfBinder
                         continue;
                     }
 
-                    if (ContainsFilter(instance.GetValue("UpperFilters"), filter))
+                    var attached = HasFilter(instance, filter);
+                    anyAttached |= attached;
+                    if (!IsKeyboardInstance(instance))
                     {
-                        return true;
+                        continue;
                     }
 
-                    using var parameters = instance.OpenSubKey("Device Parameters");
-                    if (ContainsFilter(parameters?.GetValue("UpperFilters"), filter))
+                    keyboardInstances++;
+                    if (attached)
                     {
-                        return true;
+                        attachedKeyboardInstances++;
                     }
                 }
             }
-
-            return false;
         }
         finally
         {
@@ -232,6 +251,11 @@ internal static class RazerFilterInfBinder
                 root.Dispose();
             }
         }
+
+        return new RazerFilterAttachmentState(
+            anyAttached,
+            keyboardInstances,
+            attachedKeyboardInstances);
     }
 
     internal static IReadOnlyList<string> FindInstances(
@@ -296,6 +320,42 @@ internal static class RazerFilterInfBinder
                 yield return (deviceName, instanceName);
             }
         }
+    }
+
+    private const string KeyboardClassGuid =
+        "{4D36E96B-E325-11CE-BFC1-08002BE10318}";
+
+    private static bool HasFilter(RegistryKey instance, string filter)
+    {
+        if (ContainsFilter(instance.GetValue("UpperFilters"), filter))
+        {
+            return true;
+        }
+
+        using var parameters = instance.OpenSubKey("Device Parameters");
+        return ContainsFilter(parameters?.GetValue("UpperFilters"), filter);
+    }
+
+    private static bool IsKeyboardInstance(RegistryKey instance)
+    {
+        if (instance.GetValue("ClassGUID") is string classGuid &&
+            string.Equals(classGuid, KeyboardClassGuid, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (instance.GetValue("HardwareID") is string[] hardwareIds)
+        {
+            foreach (var hardwareId in hardwareIds)
+            {
+                if (hardwareId.Contains("HID_DEVICE_SYSTEM_KEYBOARD", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private static bool ContainsFilter(object? value, string filter) =>
