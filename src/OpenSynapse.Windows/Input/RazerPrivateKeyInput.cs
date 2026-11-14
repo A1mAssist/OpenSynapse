@@ -31,6 +31,8 @@ internal sealed class RazerPrivateKeyInput : IDisposable
         new(StringComparer.OrdinalIgnoreCase);
     private readonly List<FileStream> _streams = [];
     private readonly HashSet<string> _loggedOpenFailures = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _loggedReaders = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _loggedReports = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _gate = new();
     private bool _loggedNoCollections;
     private Task? _completion;
@@ -151,6 +153,11 @@ internal sealed class RazerPrivateKeyInput : IDisposable
                         }
                         _streams.Add(stream);
                     }
+                    if (_loggedReaders.Add(device.DevicePath))
+                    {
+                        _log?.Invoke(
+                            $"Razer private key input: listening {device.DevicePath} usage=0x{device.UsagePage:X4}:0x{device.Usage:X4} input={device.InputReportByteLength}");
+                    }
                     readers.Add(ReadLoopAsync(device, stream, cancellationToken));
                 }
                 catch (Exception exception) when (
@@ -194,7 +201,24 @@ internal sealed class RazerPrivateKeyInput : IDisposable
                     break;
                 }
 
-                if (length < 2 || buffer[0] is not (RazerKeyReportId or SlaveKeyReportId))
+                if (length < 2)
+                {
+                    continue;
+                }
+
+                var reportKey = $"{device.DevicePath}:{buffer[0]:X2}";
+                bool firstReport;
+                lock (_gate)
+                {
+                    firstReport = _loggedReports.Add(reportKey);
+                }
+                if (firstReport)
+                {
+                    _log?.Invoke(
+                        $"Razer private key input: {device.DevicePath} report id=0x{buffer[0]:X2} len={length} data={Convert.ToHexString(buffer.AsSpan(0, Math.Min(length, 16)))}");
+                }
+
+                if (buffer[0] is not (RazerKeyReportId or SlaveKeyReportId))
                 {
                     continue;
                 }
@@ -278,14 +302,25 @@ internal sealed class RazerPrivateKeyInput : IDisposable
          device.UsagePage == 0x0001 &&
          device.Usage == 0x0006 &&
          device.InputReportByteLength == 16 &&
-         RazerHidDeviceCatalog.BuiltIn.Find(RazerVendorId, device.ProductId)?.Category ==
-             DeviceCategory.Mouse) &&
+         IsMouseProduct(device.ProductId)) &&
         // Blade keyboards publish every M-key, Fn shortcut and the microphone indicator
         // as report 4 on MI_01 Col04/Col05. The Product 710 filter runtime owns that
         // stream, and a second reader takes the reports away from it. Mice put their
         // DPI/profile keys on those same collections, so scope this to the Blade.
         !(device.ProductId == BladeKeyboardProductId &&
           IsBladeVendorEventCollection(device.DevicePath));
+
+    private static bool IsMouseProduct(ushort productId)
+    {
+        var hid = RazerHidDeviceCatalog.BuiltIn.Find(RazerVendorId, productId);
+        if (hid is not null)
+        {
+            return hid.Category == DeviceCategory.Mouse;
+        }
+
+        return RazerDeviceRegistry.BuiltIn.Find(RazerVendorId, productId)?.Category ==
+            DeviceCategory.Mouse;
+    }
 
     private static bool IsBladeVendorEventCollection(string path) =>
         path.Contains("&MI_01&COL04#", StringComparison.OrdinalIgnoreCase) ||
