@@ -276,8 +276,8 @@ public static class BladeModelCapabilities
             // readback from this EC can retain 5500 RPM, so accept that as a read
             // ceiling while keeping writes inside the bundle-published 5300 limit.
             // The preset minima are 3400/4000, but the manual target can reach the
-            // model floor of 2000; keep the preset table intact and lower only the
-            // fixed-speed slider through MinimumManualFanTargetRpm.
+            // model floor of 2000; keep the preset table intact and lower the
+            // fixed-speed slider and the curve through the per-device floors.
             [0x029F] = new(
                 MaxFan: true,
                 [.. LowMediumHigh, BladeCpuBoostMode.Boost],
@@ -285,6 +285,7 @@ public static class BladeModelCapabilities
                 MinimumFanTargetRpm: 3400,
                 MaximumFanTargetRpm: 5500,
                 MinimumManualFanTargetRpm: 2000,
+                MinimumCurveFanTargetRpm: 2000,
                 HyperBoost: true,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3400, 5200, 4100),
@@ -843,14 +844,19 @@ public static class BladeModelCapabilities
 
     /// <summary>
     /// Target range for a fan curve. A curve is a continuous policy, so it uses the
-    /// model-wide floor instead of the fixed slider's per-mode minimum. The maximum is
+    /// model-wide floor instead of the fixed slider's per-mode minimum, unless the model
+    /// overrides that floor because its EC accepts a lower curve target. The maximum is
     /// the current mode's fixed range, limited by the model's writable ceiling.
     /// </summary>
     public static BladeFanTargetRange FanCurveTargetRangeFor(ushort productId, BladePerformanceMode mode)
     {
         var fixedRange = FanTargetRangeFor(productId, mode);
+        var minimum = Contracts.TryGetValue(productId, out var contract)
+            && contract.MinimumCurveFanTargetRpm is int curveMinimum
+                ? curveMinimum
+                : MinimumFanTargetRpmFor(productId);
         return new BladeFanTargetRange(
-            MinimumFanTargetRpmFor(productId),
+            minimum,
             Math.Min(fixedRange.MaximumRpm, MaximumWritableFanTargetRpmFor(productId)),
             fixedRange.DefaultRpm);
     }
@@ -922,7 +928,8 @@ public static class BladeModelCapabilities
         IReadOnlyDictionary<BladePerformanceMode, BladeFanTargetRange>? ModeFanRanges = null,
         IReadOnlyList<BladePerformanceMode>? Modes = null,
         bool CpuPowerBoost = false,
-        int? MinimumManualFanTargetRpm = null);
+        int? MinimumManualFanTargetRpm = null,
+        int? MinimumCurveFanTargetRpm = null);
 
     /// <summary>
     /// True only where the exact model has an audited write path. Unknown models stay
