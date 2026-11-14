@@ -100,6 +100,10 @@ public sealed class MacroInputHook : IDisposable
         _log?.Invoke(message);
     }
 
+    internal Func<bool>? IsPlaybackActive { get; set; }
+
+    private bool PlaybackActive() => IsPlaybackActive?.Invoke() == true;
+
     public bool CaptureMouseMoves
     {
         get => _captureMouseMoves;
@@ -332,14 +336,18 @@ public sealed class MacroInputHook : IDisposable
             var data = Marshal.PtrToStructure<KbdLlHookStruct>(lParam);
             var injected = (data.Flags & LlkhfInjected) != 0;
             var ours = data.ExtraInfo == WindowsMacroInputSink.InjectionTag;
-            if (injected || ours)
+            var playing = PlaybackActive();
+            // The driver re-injects the keys it rewrites; dropping every injected
+            // key hides those. Only a playback can be our own untagged output.
+            if (ours || (injected && playing))
             {
                 if (MacroInputTrace.Enabled)
                 {
                     Trace(
                         $"hook keyboard ignored injected vk=0x{data.VirtualKey:X2} " +
                         $"scan=0x{data.ScanCode:X2} flags=0x{data.Flags:X} " +
-                        $"extra=0x{data.ExtraInfo:X} msgExtra=0x{GetMessageExtraInfo():X} ours={ours}");
+                        $"extra=0x{data.ExtraInfo:X} msgExtra=0x{GetMessageExtraInfo():X} " +
+                        $"ours={ours} playing={playing}");
                 }
                 return CallNextHookEx(0, code, wParam, lParam);
             }
@@ -393,6 +401,7 @@ public sealed class MacroInputHook : IDisposable
             }
 
             var data = Marshal.PtrToStructure<MsLlHookStruct>(lParam);
+            var playing = PlaybackActive();
             if (data.ExtraInfo == WindowsMacroInputSink.InjectionTag)
             {
                 if (MacroInputTrace.Enabled)
@@ -407,14 +416,14 @@ public sealed class MacroInputHook : IDisposable
 
             if (message is WmMouseWheel or WmMouseHWheel)
             {
-                if ((data.Flags & LlMhInjected) != 0)
+                if ((data.Flags & LlMhInjected) != 0 && playing)
                 {
                     if (MacroInputTrace.Enabled)
                     {
                         Trace(
                             $"hook wheel ignored injected delta={unchecked((short)(data.MouseData >> 16))} " +
                             $"flags=0x{data.Flags:X} extra=0x{data.ExtraInfo:X} " +
-                            $"msgExtra=0x{GetMessageExtraInfo():X}");
+                            $"msgExtra=0x{GetMessageExtraInfo():X} playing={playing}");
                     }
                     return CallNextHookEx(0, code, wParam, lParam);
                 }
@@ -447,12 +456,14 @@ public sealed class MacroInputHook : IDisposable
                 _ => (false, 0),
             };
             var accepted = button != 0 &&
-                MacroMouseInputPolicy.AcceptsMouseButton(data.Flags, data.ExtraInfo, button);
+                MacroMouseInputPolicy.AcceptsMouseButton(
+                    data.Flags, data.ExtraInfo, button, playing);
             if (MacroInputTrace.Enabled)
             {
                 Trace(
                     $"hook mouse button={button} down={isDown} flags=0x{data.Flags:X} " +
-                    $"extra=0x{data.ExtraInfo:X} msgExtra=0x{GetMessageExtraInfo():X} accepted={accepted}");
+                    $"extra=0x{data.ExtraInfo:X} msgExtra=0x{GetMessageExtraInfo():X} " +
+                    $"playing={playing} accepted={accepted}");
             }
             if (!accepted)
             {
