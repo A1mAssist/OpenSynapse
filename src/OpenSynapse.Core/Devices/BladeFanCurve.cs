@@ -240,6 +240,36 @@ public sealed class BladeFanCurve
     }
 
     /// <summary>
+    /// Keeps every target inside the range the exact model and performance mode accept.
+    /// Some ECs stop answering the target report while a below-floor value is stored, so a
+    /// curve must never put one on the wire.
+    /// </summary>
+    public BladeFanCurve ClampFanSpeedRange(int minimumRpm, int maximumRpm)
+    {
+        if (minimumRpm < MinimumPointFanSpeedRpm ||
+            maximumRpm > MaximumPointFanSpeedRpm ||
+            minimumRpm > maximumRpm)
+        {
+            throw new ArgumentOutOfRangeException(nameof(minimumRpm));
+        }
+
+        static BladeFanCurvePoint Clamp(BladeFanCurvePoint point, int minimum, int maximum) =>
+            point with
+            {
+                CpuFanSpeedRpm = Math.Clamp(point.CpuFanSpeedRpm, minimum, maximum),
+                GpuFanSpeedRpm = Math.Clamp(point.GpuFanSpeedRpm, minimum, maximum),
+            };
+
+        return new BladeFanCurve(
+            TemperatureMode,
+            CpuPoints.Select(point => Clamp(point, minimumRpm, maximumRpm)).ToArray(),
+            GpuPoints.Select(point => Clamp(point, minimumRpm, maximumRpm)).ToArray(),
+            MinimumCpuTemperatureCelsius,
+            MinimumGpuTemperatureCelsius,
+            Math.Clamp(MinimumFanSpeedRpm, minimumRpm, maximumRpm));
+    }
+
+    /// <summary>
     /// Conservative starting curve: near-idle while the machine is cool, then a steady
     /// climb to full speed before the chip reaches its thermal limit. Both sensors share
     /// one shape because the GPU runs hotter than the CPU under the same load.

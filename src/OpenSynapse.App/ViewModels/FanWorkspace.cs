@@ -232,7 +232,7 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
         await _runDeviceOperation(AppStrings.Text("Text_0982EC10"), async () =>
         {
             BladeFanCurve curve;
-            try { curve = createCurve().ClampMaximumFanSpeed(BladeModelCapabilities.MaximumWritableFanTargetRpmFor(_blade._bladeProductId)); }
+            try { curve = ClampBladeFanCurve(createCurve()); }
             catch (ArgumentException exception) { throw new InvalidOperationException(exception.Message, exception); }
             // The curve lives in the same card as Max Fan, so it follows the performance
             // power profile. Writing the global slot would drop a per-power-source curve.
@@ -444,7 +444,7 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
                     return new(AppStrings.Text("Text_780EB5E5"), Changed: changedOwner);
                 }
 
-                curve = profile.FanCurve.CreateCurve().ClampMaximumFanSpeed(BladeModelCapabilities.MaximumWritableFanTargetRpmFor(_blade._bladeProductId));
+                curve = ClampBladeFanCurve(profile.FanCurve.CreateCurve());
             }
             else if (profile.FanMode is byte rawMode)
             {
