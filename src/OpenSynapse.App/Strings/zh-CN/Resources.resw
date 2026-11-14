@@ -3180,6 +3180,15 @@
   <data name="RazerHeadsetThxVoiceClarityApply.Content" xml:space="preserve"><value>应用人声清晰度</value></data>
   <data name="RazerHeadsetThxSidetoneToggle.Header" xml:space="preserve"><value>侧音</value></data>
   <data name="RazerHeadsetThxSidetoneApply.Content" xml:space="preserve"><value>应用侧音</value></data>
+  <data name="RazerHeadsetThxCaptureTitle.Text" xml:space="preserve"><value>麦克风增强</value></data>
+  <data name="RazerHeadsetThxCaptureNormalizationToggle.Header" xml:space="preserve"><value>音量标准化</value></data>
+  <data name="RazerHeadsetThxCaptureNormalizationApply.Content" xml:space="preserve"><value>应用音量标准化</value></data>
+  <data name="RazerHeadsetThxCaptureVocalClarityToggle.Header" xml:space="preserve"><value>亮丽人声</value></data>
+  <data name="RazerHeadsetThxCaptureVocalClarityApply.Content" xml:space="preserve"><value>应用亮丽人声</value></data>
+  <data name="RazerHeadsetThxCaptureNoiseReductionToggle.Header" xml:space="preserve"><value>麦克风降噪</value></data>
+  <data name="RazerHeadsetThxCaptureNoiseReductionApply.Content" xml:space="preserve"><value>应用麦克风降噪</value></data>
+  <data name="RazerHeadsetThxCaptureVoiceGateToggle.Header" xml:space="preserve"><value>麦克风噪音门</value></data>
+  <data name="RazerHeadsetThxCaptureVoiceGateApply.Content" xml:space="preserve"><value>应用麦克风噪音门</value></data>
   <data name="RazerHeadsetThxContainerMissing" xml:space="preserve"><value>没有拿到耳机音频端点的容器 ID，无法定位 THX。重新连接耳机后刷新。</value></data>
   <data name="RazerHeadsetThxHelperFailed" xml:space="preserve"><value>THX 辅助进程启动失败。重新打开应用后再试。</value></data>
   <data name="RazerHeadsetThxFailed" xml:space="preserve"><value>THX 组件没有接受这次修改。重新安装 THX 组件后刷新。</value></data>

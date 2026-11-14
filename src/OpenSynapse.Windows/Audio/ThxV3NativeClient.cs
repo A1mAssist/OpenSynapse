@@ -36,6 +36,13 @@ internal sealed class ThxV3NativeClient : IDisposable
     private delegate bool ContainerSetIntCall(nint containerId, int value);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate float ContainerFloatCall(nint containerId);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    [return: MarshalAs(UnmanagedType.I1)]
+    private delegate bool ContainerSetFloatCall(nint containerId, float value);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate nint EmptyPointerCall();
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -67,6 +74,22 @@ internal sealed class ThxV3NativeClient : IDisposable
     private readonly ContainerSetBoolCall _setSidetone;
     private readonly ContainerIntCall _getSidetoneLevel;
     private readonly ContainerSetIntCall _setSidetoneLevel;
+    private readonly ContainerBoolCall? _getCaptureNormalization;
+    private readonly ContainerSetBoolCall? _setCaptureNormalization;
+    private readonly ContainerIntCall? _getCaptureNormalizationLevel;
+    private readonly ContainerSetIntCall? _setCaptureNormalizationLevel;
+    private readonly ContainerBoolCall? _getCaptureVocalClarity;
+    private readonly ContainerSetBoolCall? _setCaptureVocalClarity;
+    private readonly ContainerIntCall? _getCaptureVocalClarityLevel;
+    private readonly ContainerSetIntCall? _setCaptureVocalClarityLevel;
+    private readonly ContainerBoolCall? _getCaptureNoiseReduction;
+    private readonly ContainerSetBoolCall? _setCaptureNoiseReduction;
+    private readonly ContainerIntCall? _getCaptureNoiseReductionLevel;
+    private readonly ContainerSetIntCall? _setCaptureNoiseReductionLevel;
+    private readonly ContainerBoolCall? _getCaptureVoiceGate;
+    private readonly ContainerSetBoolCall? _setCaptureVoiceGate;
+    private readonly ContainerFloatCall? _getCaptureVoiceGateLevel;
+    private readonly ContainerSetFloatCall? _setCaptureVoiceGateLevel;
     private readonly EmptyPointerCall _getVersion;
     private readonly FreeMallocCall _freeMalloc;
     private bool _initialized;
@@ -110,6 +133,22 @@ internal sealed class ThxV3NativeClient : IDisposable
         _setSidetone = GetExport<ContainerSetBoolCall>("SetCaptureSidetone");
         _getSidetoneLevel = GetExport<ContainerIntCall>("GetCaptureSidetoneLevel");
         _setSidetoneLevel = GetExport<ContainerSetIntCall>("SetCaptureSidetoneLevel");
+        _getCaptureNormalization = TryGetExport<ContainerBoolCall>("GetCaptureNormalization");
+        _setCaptureNormalization = TryGetExport<ContainerSetBoolCall>("SetCaptureNormalization");
+        _getCaptureNormalizationLevel = TryGetExport<ContainerIntCall>("GetCaptureNormalizationLevel");
+        _setCaptureNormalizationLevel = TryGetExport<ContainerSetIntCall>("SetCaptureNormalizationLevel");
+        _getCaptureVocalClarity = TryGetExport<ContainerBoolCall>("GetCaptureVocalClarity");
+        _setCaptureVocalClarity = TryGetExport<ContainerSetBoolCall>("SetCaptureVocalClarity");
+        _getCaptureVocalClarityLevel = TryGetExport<ContainerIntCall>("GetCaptureVocalClarityLevel");
+        _setCaptureVocalClarityLevel = TryGetExport<ContainerSetIntCall>("SetCaptureVocalClarityLevel");
+        _getCaptureNoiseReduction = TryGetExport<ContainerBoolCall>("GetCaptureNoiseReduction");
+        _setCaptureNoiseReduction = TryGetExport<ContainerSetBoolCall>("SetCaptureNoiseReduction");
+        _getCaptureNoiseReductionLevel = TryGetExport<ContainerIntCall>("GetCaptureNoiseReductionLevel");
+        _setCaptureNoiseReductionLevel = TryGetExport<ContainerSetIntCall>("SetCaptureNoiseReductionLevel");
+        _getCaptureVoiceGate = TryGetExport<ContainerBoolCall>("GetCaptureVoiceGate");
+        _setCaptureVoiceGate = TryGetExport<ContainerSetBoolCall>("SetCaptureVoiceGate");
+        _getCaptureVoiceGateLevel = TryGetExport<ContainerFloatCall>("GetCaptureVoiceGateLevel");
+        _setCaptureVoiceGateLevel = TryGetExport<ContainerSetFloatCall>("SetCaptureVoiceGateLevel");
         _getVersion = GetExport<EmptyPointerCall>("GetDLLVersion");
         _freeMalloc = GetExport<FreeMallocCall>("FreeMalloc");
     }
@@ -167,6 +206,38 @@ internal sealed class ThxV3NativeClient : IDisposable
     internal bool SetSidetone(string containerId, bool enabled) => CallSetBool(containerId, _setSidetone, enabled);
     internal int GetSidetoneLevel(string containerId) => CallInt(containerId, _getSidetoneLevel);
     internal bool SetSidetoneLevel(string containerId, int level) => CallSetInt(containerId, _setSidetoneLevel, level);
+    internal bool GetCaptureNormalization(string containerId) =>
+        CallBool(containerId, Required(_getCaptureNormalization, "GetCaptureNormalization"));
+    internal bool SetCaptureNormalization(string containerId, bool enabled) =>
+        CallSetBool(containerId, Required(_setCaptureNormalization, "SetCaptureNormalization"), enabled);
+    internal int GetCaptureNormalizationLevel(string containerId) =>
+        CallInt(containerId, Required(_getCaptureNormalizationLevel, "GetCaptureNormalizationLevel"));
+    internal bool SetCaptureNormalizationLevel(string containerId, int level) =>
+        CallSetInt(containerId, Required(_setCaptureNormalizationLevel, "SetCaptureNormalizationLevel"), level);
+    internal bool GetCaptureVocalClarity(string containerId) =>
+        CallBool(containerId, Required(_getCaptureVocalClarity, "GetCaptureVocalClarity"));
+    internal bool SetCaptureVocalClarity(string containerId, bool enabled) =>
+        CallSetBool(containerId, Required(_setCaptureVocalClarity, "SetCaptureVocalClarity"), enabled);
+    internal int GetCaptureVocalClarityLevel(string containerId) =>
+        CallInt(containerId, Required(_getCaptureVocalClarityLevel, "GetCaptureVocalClarityLevel"));
+    internal bool SetCaptureVocalClarityLevel(string containerId, int level) =>
+        CallSetInt(containerId, Required(_setCaptureVocalClarityLevel, "SetCaptureVocalClarityLevel"), level);
+    internal bool GetCaptureNoiseReduction(string containerId) =>
+        CallBool(containerId, Required(_getCaptureNoiseReduction, "GetCaptureNoiseReduction"));
+    internal bool SetCaptureNoiseReduction(string containerId, bool enabled) =>
+        CallSetBool(containerId, Required(_setCaptureNoiseReduction, "SetCaptureNoiseReduction"), enabled);
+    internal int GetCaptureNoiseReductionLevel(string containerId) =>
+        CallInt(containerId, Required(_getCaptureNoiseReductionLevel, "GetCaptureNoiseReductionLevel"));
+    internal bool SetCaptureNoiseReductionLevel(string containerId, int level) =>
+        CallSetInt(containerId, Required(_setCaptureNoiseReductionLevel, "SetCaptureNoiseReductionLevel"), level);
+    internal bool GetCaptureVoiceGate(string containerId) =>
+        CallBool(containerId, Required(_getCaptureVoiceGate, "GetCaptureVoiceGate"));
+    internal bool SetCaptureVoiceGate(string containerId, bool enabled) =>
+        CallSetBool(containerId, Required(_setCaptureVoiceGate, "SetCaptureVoiceGate"), enabled);
+    internal float GetCaptureVoiceGateLevel(string containerId) =>
+        CallFloat(containerId, Required(_getCaptureVoiceGateLevel, "GetCaptureVoiceGateLevel"));
+    internal bool SetCaptureVoiceGateLevel(string containerId, float level) =>
+        CallSetFloat(containerId, Required(_setCaptureVoiceGateLevel, "SetCaptureVoiceGateLevel"), level);
 
     public void Dispose()
     {
@@ -200,6 +271,18 @@ internal sealed class ThxV3NativeClient : IDisposable
     }
 
     private static bool CallSetInt(string containerId, ContainerSetIntCall call, int value)
+    {
+        using var container = new Utf8Argument(containerId);
+        return call(container.Pointer, value);
+    }
+
+    private static float CallFloat(string containerId, ContainerFloatCall call)
+    {
+        using var container = new Utf8Argument(containerId);
+        return call(container.Pointer);
+    }
+
+    private static bool CallSetFloat(string containerId, ContainerSetFloatCall call, float value)
     {
         using var container = new Utf8Argument(containerId);
         return call(container.Pointer, value);

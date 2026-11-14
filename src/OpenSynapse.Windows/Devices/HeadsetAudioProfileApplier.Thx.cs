@@ -20,7 +20,11 @@ public sealed partial class HeadsetAudioProfileApplier
             profile.ThxNormalizationEnabled is null &&
             profile.ThxVoiceClarityEnabled is null &&
             profile.ThxBassBoostEnabled is null &&
-            profile.ThxSidetoneEnabled is null)
+            profile.ThxSidetoneEnabled is null &&
+            profile.ThxCaptureNormalizationEnabled is null &&
+            profile.ThxCaptureVocalClarityEnabled is null &&
+            profile.ThxCaptureNoiseReductionEnabled is null &&
+            profile.ThxCaptureVoiceGateEnabled is null)
         {
             return;
         }
@@ -144,6 +148,26 @@ public sealed partial class HeadsetAudioProfileApplier
             controller, state.Sidetone, "headset.thx.sidetone",
             ThxAudioEnhancementKind.Sidetone,
             profile.ThxSidetoneEnabled, profile.ThxSidetoneLevel,
+            results, cancellationToken);
+        await ApplyThxEnhancementAsync(
+            controller, state.CaptureNormalization, "headset.thx.capture-normalization",
+            ThxAudioEnhancementKind.CaptureNormalization,
+            profile.ThxCaptureNormalizationEnabled, profile.ThxCaptureNormalizationLevel,
+            results, cancellationToken);
+        await ApplyThxEnhancementAsync(
+            controller, state.CaptureVocalClarity, "headset.thx.capture-vocal-clarity",
+            ThxAudioEnhancementKind.CaptureVocalClarity,
+            profile.ThxCaptureVocalClarityEnabled, profile.ThxCaptureVocalClarityLevel,
+            results, cancellationToken);
+        await ApplyThxEnhancementAsync(
+            controller, state.CaptureNoiseReduction, "headset.thx.capture-noise-reduction",
+            ThxAudioEnhancementKind.CaptureNoiseReduction,
+            profile.ThxCaptureNoiseReductionEnabled, profile.ThxCaptureNoiseReductionLevel,
+            results, cancellationToken);
+        await ApplyThxEnhancementAsync(
+            controller, state.CaptureVoiceGate, "headset.thx.capture-voice-gate",
+            ThxAudioEnhancementKind.CaptureVoiceGate,
+            profile.ThxCaptureVoiceGateEnabled, profile.ThxCaptureVoiceGateLevel,
             results, cancellationToken);
     }
 
