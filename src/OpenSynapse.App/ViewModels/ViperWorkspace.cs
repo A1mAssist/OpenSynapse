@@ -140,17 +140,11 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
             productId: 0x00B8,
             deviceKind: RazerMappingDeviceKind.Mouse,
             localMacros: _localMacros,
+            // The mapping page reports bundle button ids (0x60 DPI cycle up), while the
+            // private key stream reports the DKM code (82). Resolve through the bundle map
+            // so the DPI keys can host a macro at all.
             softwareTriggerResolver: buttonId =>
-                buttonId is 4 or 5
-                    ? new MacroInput { Kind = MacroInputKind.MouseButton, MouseButton = buttonId }
-                    : RazerPrivateKeyCatalog.IsPrivate(0x00B8, buttonId)
-                        ? new MacroInput
-                        {
-                            Kind = MacroInputKind.RazerKey,
-                            DeviceId = 0x00B8,
-                            RazerKeyCode = buttonId,
-                        }
-                        : null,
+                RazerMouseMacroTriggerResolver.Resolve(0x00B8, buttonId, isNaga: false),
             softwareTriggerBinder: _softwareMacroBinder,
             softwareTriggerClearer: _softwareMacroClearer,
             afterApplyAsync: PersistMappingProfileAsync);
