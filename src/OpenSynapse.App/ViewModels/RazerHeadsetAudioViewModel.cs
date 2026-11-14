@@ -877,11 +877,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
                 state = await ReadStateOnceAsync();
             }
             ApplyState(state);
-            if ((IsFeature91 || IsJolie) && !IsSeirenEmote)
-            {
-                ApplyMatrixLighting(await OpenChromaService().ReadStateAsync(cancellationToken));
-            }
-            await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
 
             var hasAnyValue = HasAnyValue(state);
             // A probe that failed while the rest of the device answered is a missing
@@ -894,6 +889,21 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
                     ? RazerHeadsetProbeState.Partial
                     : RazerHeadsetProbeState.Ready
                 : RazerHeadsetProbeState.Failed);
+
+            // Optional extras must not decide the card state: Mako X and the 91-byte
+            // headsets can answer audio while the lighting channel is busy.
+            try
+            {
+                if ((IsFeature91 || IsJolie) && !IsSeirenEmote)
+                {
+                    ApplyMatrixLighting(await OpenChromaService().ReadStateAsync(cancellationToken));
+                }
+                await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
+            }
+            catch (Exception exception) when (IsExpectedException(exception))
+            {
+                _diagnostic?.Invoke($"headset optional state failed: {exception.Message}");
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
