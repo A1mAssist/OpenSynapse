@@ -89,6 +89,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         if (IsJolie)
         {
             await ApplyPersistedJolietEqAsync(profile, cancellationToken);
+            await ApplyPersistedJolietLightingAsync(profile, cancellationToken);
             return;
         }
 

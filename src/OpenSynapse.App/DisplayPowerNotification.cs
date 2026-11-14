@@ -125,6 +125,7 @@ internal sealed class DisplayPowerNotification
         if (message == WmEndSession && wParam != 0 &&
             _turnOffLightingOnSessionEnding?.Invoke() == true)
         {
+            _viewModel.Accessories.TurnOffHeadsetLightingForShutdown(TimeSpan.FromSeconds(1));
             _viewModel.RazerHid.TurnOffLightingForShutdown(TimeSpan.FromSeconds(2));
         }
 

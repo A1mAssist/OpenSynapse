@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
@@ -147,6 +148,94 @@ public sealed partial class RazerHeadsetAudioViewModel
             token => WriteChromaEffectHardwareAsync(
                 LightingEffects[previousEffectIndex], previousPrimary, previousSecondary, token),
             cancellationToken);
+    }
+
+    internal async Task<bool> TurnOffLightingForShutdownAsync(
+        CancellationToken cancellationToken = default)
+    {
+        // Mako X keeps the 0x0F Chroma channel on the audio HID collection, not
+        // the RazerHid catalogue, so the RazerHid shutdown sweep never sees it.
+        if (!IsJolie)
+        {
+            return false;
+        }
+
+        await OpenChromaService()
+            .SetEffectAsync(RazerChromaEffect.Off, [], cancellationToken)
+            .ConfigureAwait(false);
+        return true;
+    }
+
+    private async Task ApplyPersistedJolietLightingAsync(
+        HeadsetProfileSettings profile,
+        CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(profile.ChromaEffect) &&
+            Enum.TryParse<RazerChromaEffect>(profile.ChromaEffect, ignoreCase: true, out var effect) &&
+            LightingEffects.Contains(effect))
+        {
+            var primary = TryGetChromaColor(profile.ChromaParameters, "primary", PrimaryColor);
+            var secondary = TryGetChromaColor(profile.ChromaParameters, "secondary", SecondaryColor);
+            try
+            {
+                await WriteChromaEffectHardwareAsync(effect, primary, secondary, cancellationToken)
+                    .ConfigureAwait(false);
+                SelectedLightingEffectIndex = Array.IndexOf(LightingEffects, effect);
+                PrimaryColor = primary;
+                SecondaryColor = secondary;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception) when (IsExpectedException(exception))
+            {
+                _diagnostic?.Invoke($"profile headset.lighting.effect: {exception.Message}");
+            }
+        }
+
+        if (profile.ChromaBrightness is int brightness)
+        {
+            var applied = (byte)Math.Clamp(brightness, 0, 100);
+            try
+            {
+                await WriteChromaBrightnessHardwareAsync(applied, cancellationToken).ConfigureAwait(false);
+                Brightness = applied;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception) when (IsExpectedException(exception))
+            {
+                _diagnostic?.Invoke($"profile headset.lighting.brightness: {exception.Message}");
+            }
+        }
+    }
+
+    private static Color TryGetChromaColor(
+        IReadOnlyDictionary<string, string>? parameters,
+        string key,
+        Color fallback)
+    {
+        if (parameters is null)
+        {
+            return fallback;
+        }
+
+        foreach (var (name, value) in parameters)
+        {
+            if (!string.Equals(name, key, StringComparison.OrdinalIgnoreCase) ||
+                value is not { Length: 6 } ||
+                !uint.TryParse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var rgb))
+            {
+                continue;
+            }
+
+            return Color.FromArgb(255, (byte)(rgb >> 16), (byte)(rgb >> 8), (byte)rgb);
+        }
+
+        return fallback;
     }
 }
 

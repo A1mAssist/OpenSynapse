@@ -31,7 +31,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 - **Blade fan curve**: the curve window draws live fan RPM and CPU/GPU temperature, and point limits follow the model and the current performance mode; every fixed-fan Blade now offers the curve.
 - **HyperPolling receivers**: the mouse paired to a HyperPolling dongle is discovered as its own device.
 - **Performance overlay**: added an always-on-top switch, on by default; turn it off for borderless games that lose DirectFlip.
-- **Shutdown lighting**: optional “Turn off peripheral lighting on shutdown” sends Off to RazerHid lighting devices before Windows shuts down or signs out, and restores the saved lighting after the next launch.
+- **Shutdown lighting**: optional “Turn off peripheral lighting on shutdown” sends Off to RazerHid lighting devices and the Mako X audio-card lighting path before Windows shuts down or signs out, and restores the saved lighting after the next launch.
 
 ### Improvements
 
@@ -42,6 +42,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
+- Shutdown lighting now covers Mako X, whose Chroma channel lives on the audio HID collection rather than the RazerHid catalogue.
 - BlackShark V2 Pro (0555) no longer stalls on “reading”: timed-out HID control requests are actually cancelled instead of piling up in the driver queue; USB-only headsets stay visible before HID is ready.
 - Kiyo, sensor rotation, smart tracking and software-lighting cleanup no longer raise `PropertyChanged` on the thread pool, fixing the `0x8001010E` settings-page failure.
 - Partial reads are informational instead of a whole-device error (Leviathan V2 X, Mako X and others), and the bass control is a slider.
