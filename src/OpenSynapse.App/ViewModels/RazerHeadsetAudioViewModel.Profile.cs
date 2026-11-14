@@ -90,6 +90,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         {
             await ApplyPersistedJolietEqAsync(profile, cancellationToken);
             await ApplyPersistedJolietLightingAsync(profile, cancellationToken);
+            await ApplyPersistedJolietPowerAsync(profile, cancellationToken);
             return;
         }
 
@@ -314,14 +315,8 @@ public sealed partial class RazerHeadsetAudioViewModel
             return;
         }
 
-        var colors = effect switch
-        {
-            RazerChromaEffect.Static => new byte[] { primary.R, primary.G, primary.B },
-            RazerChromaEffect.Breathing =>
-                [primary.R, primary.G, primary.B, secondary.R, secondary.G, secondary.B],
-            _ => [],
-        };
-        await OpenChromaService().SetEffectAsync(effect, colors, cancellationToken);
+        await WriteChromaEffectAsync(
+            OpenChromaService(), effect, primary, secondary, cancellationToken);
     }
 
     private async Task WriteChromaBrightnessHardwareAsync(

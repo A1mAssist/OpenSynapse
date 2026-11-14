@@ -13,7 +13,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 - **Mapping and macros**: special keys, Viper private keys and keyboard keys can all bind software macros; HyperShift gates their triggers; the key page owns execution settings and the macro trigger card moved into the left inspector; changing a key action clears its old macro trigger.
 - **Blade**: Fn row primary switch and live Fn profile (including 023A and 02C6), logo effects decoded from the Synapse bundle (including 02B6 and 029D), a redrawn fixed-fan slider with Synapse fan icons, and batched matrix frame writes for lower lighting latency.
 - **Kraken V4 lighting**: completed the Billie T2 Starlight, Fire, AudioMeter and Wheel effects; the V4 static frame now follows the device ring size.
-- **Mako X**: EQ presets and the 10-band curve, plus lighting; the 65-byte Jolie frame and 64-byte feature report are handled separately.
+- **Mako X**: EQ presets and the 10-band curve, Wave/Starlight/Fire/Audio Meter firmware effects, screen-sampled Ambient Awareness, Chroma SDK frames and auto-sleep; the 65-byte Jolie frame and 64-byte feature report are handled separately.
 - **Protocol-25 headsets**: EQ, microphone, input source and ANC now follow the Synapse bundles; MXIC headsets use Synapse's HID write and input-report path.
 - **Lighting Studio**: gradient, ripple, tidal and radiate effects, native 25 fps device output, and faster zoom, canvas rebuild and mask caching.
 - **Diagnostics**: crash reports, a log bundle export, and reports stamped with date and app version.

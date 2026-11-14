@@ -7,6 +7,9 @@ public enum RazerChromaEffect : byte
     Breathing = 2,
     Spectrum = 3,
     Wave = 4,
+    Starlight = 7,
+    CustomFrame = 8,
+    Fire = 9,
     AudioMeter = 10,
 }
 

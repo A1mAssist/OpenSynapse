@@ -45,6 +45,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
     private readonly Func<IReadOnlyList<StudioDeviceOption>>? _matrixDevices;
     private readonly StudioHidOutputRouter? _hidRouter;
     private readonly StudioArgbOutputRouter? _argbRouter;
+    private readonly StudioHeadsetOutputRouter? _headsetRouter;
     private readonly StudioInputSampler? _inputSampler;
     private readonly Func<Task>? _restoreAfterExternal;
     private readonly DispatcherQueue? _dispatcher;
@@ -80,6 +81,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         StudioHidOutputRouter? hidRouter = null,
         StudioInputSampler? inputSampler = null,
         StudioArgbOutputRouter? argbRouter = null,
+        StudioHeadsetOutputRouter? headsetRouter = null,
         Func<Task>? restoreAfterExternal = null)
     {
         _lighting = lighting;
@@ -87,6 +89,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         _matrixDevices = matrixDevices;
         _hidRouter = hidRouter;
         _argbRouter = argbRouter;
+        _headsetRouter = headsetRouter;
         _inputSampler = inputSampler;
         _restoreAfterExternal = restoreAfterExternal;
         _dispatcher = DispatcherQueue.GetForCurrentThread();
@@ -96,6 +99,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
             _hidRouter.RestoreFailed += OnHidRestoreFailed;
         }
         if (_argbRouter is not null) _argbRouter.WriteFailed += OnOutputWriteFailed;
+        if (_headsetRouter is not null) _headsetRouter.WriteFailed += OnOutputWriteFailed;
         if (_lighting is not null) _lighting.RestoreFailed += OnHidRestoreFailed;
 
         _project = StudioProject.CreateDefault();
@@ -454,7 +458,8 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
 
     public async Task ApplyAsync()
     {
-        if (_isBusy || (_lighting is null && _hidRouter is null && _argbRouter is null)) return;
+        if (_isBusy || (_lighting is null && _hidRouter is null && _argbRouter is null && _headsetRouter is null))
+            return;
         var applied = new List<string>();
         var startOutputPump = false;
         IsBusy = true;
@@ -516,6 +521,11 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
             }
 
             await ApplyArgbAsync(applied, startOutputPump);
+            if (await ApplyHeadsetAsync(applied) && !startOutputPump)
+            {
+                StartOutputPump();
+                startOutputPump = true;
+            }
 
             IsApplied = applied.Count > 0;
             if (IsApplied) _needsExternalRestore = true;
@@ -612,29 +622,6 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         LocalizeDefaultProject(project);
         ApplyProject(project);
         StatusText = AppStrings.Text("LightingStudioStatusNew");
-    }
-
-    public void Dispose()
-    {
-        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
-        if (_hidRouter is not null)
-        {
-            _hidRouter.WriteFailed -= OnOutputWriteFailed;
-            _hidRouter.RestoreFailed -= OnHidRestoreFailed;
-        }
-        if (_argbRouter is not null) _argbRouter.WriteFailed -= OnOutputWriteFailed;
-        if (_lighting is not null) _lighting.RestoreFailed -= OnHidRestoreFailed;
-        DetachProfile(_project.SelectedProfile); CancelMediaLoads();
-        _visualCancellation?.Cancel();
-        _visualCancellation?.Dispose();
-        _visualsCancellation?.Cancel();
-        _visualsCancellation?.Dispose();
-        _visualLoader.Dispose();
-        _outputCancellation?.Cancel();
-        _outputCancellation?.Dispose();
-        if (_inputSampler is { } sampler) _ = sampler.DisposeAsync().AsTask();
-        _source = null;
-        _appliedBlade = null;
     }
 
     private StudioPlaybackClock GetClock(Guid id)

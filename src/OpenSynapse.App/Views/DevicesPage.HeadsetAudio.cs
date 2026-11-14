@@ -100,6 +100,9 @@ public sealed partial class DevicesPage : UserControl
     private async void HeadsetAudioApplyMatrixLightingClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.Accessories.SelectedHeadsetAudio?.ApplyMatrixLightingAsync(Lifetime) ?? Task.CompletedTask);
 
+    private async void HeadsetAudioApplyAutoSleepClick(object sender, RoutedEventArgs e) =>
+        await (ViewModel.Accessories.SelectedHeadsetAudio?.ApplyAutoSleepAsync(Lifetime) ?? Task.CompletedTask);
+
     private async void HeadsetAudioApplyLightingClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.Accessories.SelectedHeadsetAudio?.Lighting?.ApplyAsync(Lifetime) ?? Task.CompletedTask);
 

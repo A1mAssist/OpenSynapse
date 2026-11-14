@@ -360,6 +360,10 @@ public static partial class ProfileResolver
             power?.AutoShutdownMinutes,
             device?.AutoShutdownMinutes,
             global?.AutoShutdownMinutes),
+        AutoSleepEnabled = First(
+            power?.AutoSleepEnabled,
+            device?.AutoSleepEnabled,
+            global?.AutoSleepEnabled),
         Dnd = First(power?.Dnd, device?.Dnd, global?.Dnd),
         GestureControl = First(power?.GestureControl, device?.GestureControl, global?.GestureControl),
         ChromaBrightness = First(power?.ChromaBrightness, device?.ChromaBrightness, global?.ChromaBrightness),

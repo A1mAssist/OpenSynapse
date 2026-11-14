@@ -13,7 +13,7 @@
 - **按键映射与宏**：特殊键、Viper 私有键和键盘按键都可绑定软件宏；HyperShift 层可以门控触发；按键页接管动作执行，宏页的触发键卡片并入左栏；改按键动作会清除旧宏触发。
 - **灵刃**：补齐 Fn 行主开关和 live Fn profile（含 023A、02C6 老款）；Logo 效果改为从 Synapse bundle 解析（含 02B6、029D）；固定风扇滑杆重绘并使用 Synapse 风扇图标；矩阵帧批量写入，降低灯光延迟。
 - **Kraken V4 灯效**：补完 Billie T2 的 Starlight、Fire、AudioMeter、Wheel；V4 静态帧按设备灯环尺寸生成。
-- **Mako X**：EQ 预设与 10 段曲线、灯光控制；按 65 字节 Jolie 帧和 64 字节 feature 报文分别处理。
+- **Mako X**：EQ 预设与 10 段曲线，Wave/Starlight/Fire/Audio Meter 固件灯效、屏幕采样环境光、Chroma SDK 帧和自动待机；按 65 字节 Jolie 帧和 64 字节 feature 报文分别处理。
 - **协议 25 耳机**：按 Synapse bundle 对齐 EQ、麦克风、输入源和 ANC；MXIC 耳机改用 Synapse 的 HID 写入与 input-report 读取路径。
 - **灯光工作室**：新增渐变、波纹、潮汐、辐射效果；按设备原生 25 fps 输出；缩放锚定、画布重建和遮罩缓存优化。
 - **诊断**：新增崩溃报告、日志打包导出，报告带日期和应用版本。

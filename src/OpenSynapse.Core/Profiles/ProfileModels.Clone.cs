@@ -228,6 +228,7 @@ public sealed partial class ProfileDefinition
         HapticsStrength = source.HapticsStrength,
         AutoPause = source.AutoPause,
         AutoShutdownMinutes = source.AutoShutdownMinutes,
+        AutoSleepEnabled = source.AutoSleepEnabled,
         Dnd = source.Dnd,
         GestureControl = source.GestureControl,
         ChromaBrightness = source.ChromaBrightness,

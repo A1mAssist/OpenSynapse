@@ -56,6 +56,7 @@ public sealed class HeadsetProfileSettings
     public int? HapticsStrength { get; set; }
     public bool? AutoPause { get; set; }
     public int? AutoShutdownMinutes { get; set; }
+    public bool? AutoSleepEnabled { get; set; }
     public bool? Dnd { get; set; }
     public bool? GestureControl { get; set; }
     public int? ChromaBrightness { get; set; }

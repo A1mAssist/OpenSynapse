@@ -513,6 +513,8 @@ public sealed partial class MainWindow : Window
                 Category: "argb"));
         }
 
+        AddMakoXStudioDevice(options);
+
         return options;
     }
 
@@ -559,6 +561,7 @@ public sealed partial class MainWindow : Window
             () => ArgbStripSettings.Load(),
             (rows, columns) => sampler.Sample(rows, columns));
     }
+
     internal void ForwardBladeMappingInput(BladeMappingInputEvent input)
     {
         if (!input.IsDown) return;

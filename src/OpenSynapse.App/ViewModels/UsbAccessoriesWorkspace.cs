@@ -49,6 +49,13 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
         private set => SetField(ref _selectedHeadsetAudio, value);
     }
 
+    /// <summary>
+    /// The connected headset even before its page is opened; Mako X uses this
+    /// path for Chroma frames and the studio ambient output.
+    /// </summary>
+    internal RazerHeadsetAudioConnection? SelectedHeadsetAudioConnection =>
+        _selectedHeadsetAudioDevice?.Connection ?? HeadsetAudioDevices.FirstOrDefault()?.Connection;
+
     internal async Task RefreshHeadsetAudioAsync(CancellationToken cancellationToken)
     {
         RazerHeadsetAudioConnection? connection;
