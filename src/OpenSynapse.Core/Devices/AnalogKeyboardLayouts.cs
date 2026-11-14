@@ -5,7 +5,8 @@ public sealed record AnalogKeyboardKey(byte KeyId, string Label, int Row, double
 public sealed record AnalogKeyboardLayout(
     ushort ProductId,
     string Name,
-    IReadOnlyList<AnalogKeyboardKey> Keys);
+    IReadOnlyList<AnalogKeyboardKey> Keys,
+    bool SupportsBottomDeadZone = false);
 
 /// <summary>
 /// Per-key analog layouts taken from the middleware key table in bundle 7795.
@@ -47,7 +48,7 @@ public static class AnalogKeyboardLayouts
             [0x02B0] = Create(0x02B0, "Huntsman V3 Pro Mini", includeFunctionRow: false,
                 includeNavigation: false, includeNumpad: false),
             [0x02CF] = Create(0x02CF, "Huntsman V3 Pro 8KHz", includeFunctionRow: true,
-                includeNavigation: true, includeNumpad: true),
+                includeNavigation: true, includeNumpad: true, supportsBottomDeadZone: true),
         };
         return layouts;
     }
@@ -57,7 +58,8 @@ public static class AnalogKeyboardLayouts
         string name,
         bool includeFunctionRow,
         bool includeNavigation,
-        bool includeNumpad)
+        bool includeNumpad,
+        bool supportsBottomDeadZone = false)
     {
         var keys = new List<AnalogKeyboardKey>(includeNumpad ? 104 : 88);
         var row = 0;
@@ -127,7 +129,7 @@ public static class AnalogKeyboardLayouts
             Append(keys, row, (79, "Left"), (84, "Down"), (89, "Right"));
         }
 
-        return new AnalogKeyboardLayout(productId, name, keys);
+        return new AnalogKeyboardLayout(productId, name, keys, supportsBottomDeadZone);
     }
 
     private static void Row(List<AnalogKeyboardKey> keys, int row, params KeySpec[] entries)

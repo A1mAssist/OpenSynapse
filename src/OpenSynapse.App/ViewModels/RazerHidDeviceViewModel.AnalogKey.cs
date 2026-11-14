@@ -38,6 +38,8 @@ public sealed partial class RazerHidDeviceViewModel
     public Visibility AnalogKeyLayoutMissingVisibility => VisibleWhen(_analogKeyLayout is null);
     public Visibility AnalogKeyVisualVisibility => VisibleWhen(_analogKeyVisual is not null);
     public Visibility AnalogKeyFallbackVisibility => VisibleWhen(_analogKeyVisual is null);
+    public Visibility AnalogKeyBottomDeadZoneVisibility =>
+        VisibleWhen(_analogKeyLayout?.SupportsBottomDeadZone == true);
     public StudioKeyboardVisual? AnalogKeyVisual => _analogKeyVisual;
     public string AnalogKeyLayoutName => _analogKeyLayout?.Name ?? string.Empty;
     public IReadOnlyList<AnalogKeyRowViewModel> AnalogKeyRows => _analogKeyRows;
@@ -396,29 +398,39 @@ public sealed partial class RazerHidDeviceViewModel
             new RazerAnalogKeyContinuousRapidTrigger(profileId, AnalogKeyContinuousRapidTrigger),
             cancellationToken);
         AnalogKeyContinuousRapidTrigger = continuous.Enabled;
-        try
+        if (_analogKeyLayout?.SupportsBottomDeadZone == true)
         {
-            var deadZone = await _service.GetAnalogKeyBottomDeadZoneAsync(
-                Connection, profileId, cancellationToken);
+            try
+            {
+                var deadZone = await _service.GetAnalogKeyBottomDeadZoneAsync(
+                    Connection, profileId, cancellationToken);
+                _analogDeadZoneUnreadable = false;
+                SetAnalogDeadZone(deadZone.Value);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (NotSupportedException)
+            {
+                _analogDeadZoneUnreadable = true;
+                _analogDeadZoneReported = null;
+                _analogKeyBottomDeadZone = null;
+                _analogKeyBottomDeadZoneMillimeters = double.NaN;
+                OnPropertyChanged(nameof(AnalogKeyBottomDeadZoneMillimeters));
+                NotifyAnalogDeadZone();
+            }
+            catch (Exception)
+            {
+                // Keep the last value. A timeout is not the same as an unsupported read.
+            }
+        }
+        else
+        {
+            // 02A6/02A7/02B0 have no 0xA8; the middleware enables the command
+            // only for models whose supportedFeature lists bottomDeadZone.
             _analogDeadZoneUnreadable = false;
-            SetAnalogDeadZone(deadZone.Value);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (NotSupportedException)
-        {
-            _analogDeadZoneUnreadable = true;
-            _analogDeadZoneReported = null;
-            _analogKeyBottomDeadZone = null;
-            _analogKeyBottomDeadZoneMillimeters = double.NaN;
-            OnPropertyChanged(nameof(AnalogKeyBottomDeadZoneMillimeters));
-            NotifyAnalogDeadZone();
-        }
-        catch (Exception)
-        {
-            // Keep the last value. A timeout is not the same as an unsupported read.
+            SetAnalogDeadZone(null);
         }
         if (_analogKeyLayout is not null && !_analogKeyLayoutLoaded)
         {
