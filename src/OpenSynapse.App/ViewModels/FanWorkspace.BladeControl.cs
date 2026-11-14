@@ -18,23 +18,26 @@ public sealed partial class FanWorkspace
             return;
         }
 
-        var profileEnabled = target.MaxFanMode == (byte)BladeMaxFanMode.Enabled;
         if (_blade._bladeMaxFanEnabled)
         {
-            if (CurrentBladePerformanceMode != BladePerformanceMode.Custom)
+            // HyperBoost owns the fan explicitly on models that support it; a manual
+            // curve must not silently remove its thermal safeguard.
+            if (CurrentBladePerformanceMode == BladePerformanceMode.Hyperboost)
             {
-                // HyperBoost can require Max Fan for its raised power budget; do not
-                // silently remove that thermal safeguard.
                 return;
             }
 
-            await _disableMaxFanAsync(cancellationToken);
-            target.MaxFanMode = (byte)BladeMaxFanMode.Disabled;
+            // Editing an inactive power profile must not change the fan owner that is
+            // currently active on the device.
+            if (_isSelectedPerformancePowerActive())
+            {
+                await _disableMaxFanAsync(cancellationToken);
+            }
         }
-        else if (profileEnabled)
-        {
-            target.MaxFanMode = (byte)BladeMaxFanMode.Disabled;
-        }
+
+        // A manual curve owns the target even when the profile is being edited from
+        // another power source, so do not leave a stored Max Fan bit behind.
+        target.MaxFanMode = (byte)BladeMaxFanMode.Disabled;
     }
 
     /// <summary>

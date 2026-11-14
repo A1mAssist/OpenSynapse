@@ -34,6 +34,31 @@ public sealed partial class FanWorkspace
     private BladeFanCurve DefaultBladeFanCurve() =>
         ClampBladeFanCurve(BladeFanCurve.CreateDefault());
 
+    private static BladeFanCurve? TryBuildCurve(BladeFanCurveEditorViewModel? editor)
+    {
+        if (editor is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            return editor.BuildCurve();
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
+    }
+
+    private static bool SameCurve(BladeFanCurve left, BladeFanCurve right) =>
+        left.TemperatureMode == right.TemperatureMode &&
+        left.MinimumCpuTemperatureCelsius == right.MinimumCpuTemperatureCelsius &&
+        left.MinimumGpuTemperatureCelsius == right.MinimumGpuTemperatureCelsius &&
+        left.MinimumFanSpeedRpm == right.MinimumFanSpeedRpm &&
+        left.CpuPoints.SequenceEqual(right.CpuPoints) &&
+        left.GpuPoints.SequenceEqual(right.GpuPoints);
+
     /// <summary>
     /// The editor's generic 1900..5400 range is wider than some models accept. Clamp to
     /// the model-wide floor so a curve can still reach the lowest speed the EC supports;

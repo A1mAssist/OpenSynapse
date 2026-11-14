@@ -679,22 +679,61 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
                 return;
             }
 
-            var actual = await _deviceTelemetryReader.SetBladeMaxFanModeAsync(
-                ActiveDescriptors, requested, cancellationToken);
-            SetMaxFan(actual);
+            var target = EditablePerformanceProfile;
+            var edit = new BladeFanProfileEdit(target);
             try
             {
-                await BladePerformanceProfileEdit.SaveMaxFanAsync(EditablePerformanceProfile, (byte)actual,
-                    SaveProfileAsync, cancellationToken, AppStrings.Text("Text_AB07F412"));
+                if (requested == BladeMaxFanMode.Enabled)
+                {
+                    await PrepareFanForMaxFanAsync(cancellationToken);
+                }
+
+                var actual = await _deviceTelemetryReader.SetBladeMaxFanModeAsync(
+                    ActiveDescriptors, requested, cancellationToken);
+                SetMaxFan(actual);
+                if (requested == BladeMaxFanMode.Enabled)
+                {
+                    target.FanControlMode = BladeFanControlMode.Automatic;
+                    target.FanMode = (byte)BladeFanMode.Automatic;
+                    target.FanTargetRpm = null;
+                }
+                target.MaxFanMode = (byte)actual;
+                if (!await SaveProfileAsync(cancellationToken))
+                {
+                    throw new InvalidOperationException(AppStrings.Text("Text_AB07F412"));
+                }
             }
             catch
             {
+                edit.Restore();
                 RequestDeviceRefresh();
                 throw;
             }
 
             RequestDeviceRefresh();
         }, cancellationToken, RefreshPerformanceEditor);
+    }
+
+    /// <summary>
+    /// Max Fan and a manual target share the same fan owner. Release curve/fixed
+    /// control and write Automatic before the Max Fan bit so a stale Manual state
+    /// cannot make the switch refuse until another performance-mode write.
+    /// </summary>
+    private async Task PrepareFanForMaxFanAsync(CancellationToken cancellationToken)
+    {
+        var stopError = await _fan().StopAsync("max-fan");
+        if (stopError is not null)
+        {
+            throw new InvalidOperationException(stopError);
+        }
+
+        var actual = await _deviceTelemetryReader.SetBladeFanAsync(
+            ActiveDescriptors,
+            BladeFanMode.Automatic,
+            null,
+            null,
+            cancellationToken);
+        _fan().ObserveFanTelemetry(actual.Mode, actual.TargetRpm);
     }
 
     /// <summary>

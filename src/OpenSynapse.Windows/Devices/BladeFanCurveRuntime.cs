@@ -21,6 +21,9 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
     private Task? _disposeTask;
     private IReadOnlyList<DeviceDescriptor> _devices = [];
     private BladeFanTargets? _lastTargets;
+    private BladeFanMode? _fixedMode;
+    private int _fixedCpuTarget;
+    private int _fixedGpuTarget;
     private int _disposed;
 
     public BladeFanCurveRuntime(
@@ -133,6 +136,11 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
             }
 
             _stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _devices = deviceSnapshot;
+            _lastTargets = null;
+            _fixedMode = mode;
+            _fixedCpuTarget = cpuTarget;
+            _fixedGpuTarget = gpuTarget;
             _worker = HoldFixedAsync(
                 deviceSnapshot, original, mode, cpuTarget, gpuTarget, _stop.Token);
         }
@@ -180,19 +188,29 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (_worker is not { IsCompleted: false } ||
-                _lastTargets is not { } targets ||
-                _devices.Count == 0)
+            if (_worker is not { IsCompleted: false } || _devices.Count == 0)
             {
                 return;
             }
 
-            await _set(
-                _devices,
-                BladeFanMode.Manual,
-                targets.CpuRpm,
-                targets.GpuRpm,
-                cancellationToken).ConfigureAwait(false);
+            if (_lastTargets is { } targets)
+            {
+                await _set(
+                    _devices,
+                    BladeFanMode.Manual,
+                    targets.CpuRpm,
+                    targets.GpuRpm,
+                    cancellationToken).ConfigureAwait(false);
+            }
+            else if (_fixedMode is { } mode)
+            {
+                await _setFixed(
+                    _devices,
+                    mode,
+                    mode == BladeFanMode.Manual ? _fixedCpuTarget : null,
+                    mode == BladeFanMode.Manual ? _fixedGpuTarget : null,
+                    cancellationToken).ConfigureAwait(false);
+            }
         }
         finally
         {
@@ -234,6 +252,7 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
                     _stop = null;
                     _devices = [];
                     _lastTargets = null;
+                    _fixedMode = null;
                     stop?.Dispose();
                 }
             }
@@ -268,6 +287,7 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
         Exception? failure = null;
         var takeoverAttempted = false;
         var missingSamples = 0;
+        var lastWriteAt = DateTimeOffset.MinValue;
         try
         {
             using var timer = new PeriodicTimer(_interval);
@@ -297,7 +317,10 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
                     continue;
                 }
 
-                if (targets != _lastTargets)
+                var now = DateTimeOffset.UtcNow;
+                // The EC may reset a manual target after a mode transition. Reassert
+                // the same curve target on a slow heartbeat as well as on a change.
+                if (targets != _lastTargets || now - lastWriteAt >= _fixedKeepAliveInterval)
                 {
                     takeoverAttempted = true;
                     // Keep the target before awaiting the device write so a partial HID write
@@ -306,6 +329,7 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
                     try
                     {
                         _lastTargets = targets;
+                        lastWriteAt = now;
                         await _set(
                             devices,
                             BladeFanMode.Manual,

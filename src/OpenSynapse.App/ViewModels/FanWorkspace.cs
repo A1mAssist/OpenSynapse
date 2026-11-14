@@ -30,6 +30,7 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
     private readonly Func<string, Func<Task>, CancellationToken, Action?, Task> _runDeviceOperation;
     private readonly Action _requestDeviceRefresh;
     private BladeFanCurveEditorViewModel? _bladeFanCurveEditor;
+    private BladeFanCurve? _bladeFanCurveBaseline;
     private int _bladeFanFixedRpm = BladeFanLimits.MinimumRpm;
     private BladeFanControlMode? _pendingMode;
     private BladeFanMode? _lastTelemetryFanMode;
@@ -88,6 +89,7 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
             _blade._bladeProductId,
             CurrentBladePerformanceMode);
 
+        _bladeFanCurveBaseline = curve;
         return new BladeFanCurveEditorViewModel(
             curve,
             range.MinimumRpm,
@@ -249,6 +251,7 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
             var blade = _deviceDescriptors().FirstOrDefault(device =>
                 DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) && device.Access == DeviceAccessState.Available);
             await PersistBladeFanEditAsync(edit, blade, cancellationToken, AppStrings.Text("Text_BA5FB914"));
+            _bladeFanCurveBaseline = curve;
             ClearPendingMode();
             _refreshBladePerformanceEditor();
         }, cancellationToken, null);
@@ -287,9 +290,16 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
         OnPropertyChanged(nameof(BladeFanFixedMinimumRpm));
         OnPropertyChanged(nameof(BladeFanFixedMaximumRpm));
 
-        _bladeFanCurveEditor = CreateBladeFanCurveEditor(
-            TryCreateCurve(resolved) ?? DefaultBladeFanCurve());
-        OnPropertyChanged(nameof(BladeFanCurveEditor));
+        var resolvedCurve = TryCreateCurve(resolved) ?? DefaultBladeFanCurve();
+        var editorCurve = TryBuildCurve(_bladeFanCurveEditor);
+        if (_bladeFanCurveEditor is null ||
+            _bladeFanCurveBaseline is not { } baseline ||
+            editorCurve is null ||
+            SameCurve(editorCurve, baseline))
+        {
+            _bladeFanCurveEditor = CreateBladeFanCurveEditor(resolvedCurve);
+            OnPropertyChanged(nameof(BladeFanCurveEditor));
+        }
         OnPropertyChanged(nameof(BladeFanCurveModeIndex));
         OnPropertyChanged(nameof(BladeFanCurveActive));
         OnPropertyChanged(nameof(BladeFanCurveVisibility));
