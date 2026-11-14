@@ -11,6 +11,7 @@ namespace OpenSynapse.App;
 internal sealed class CpuPowerBaselineStore
 {
     private static readonly string FilePath = AppDataPaths.Combine("cpu-power-baseline.txt");
+    private const string FileVersion = "v2";
 
     public static CpuPowerBaselineStore Instance { get; } = new();
 
@@ -18,10 +19,11 @@ internal sealed class CpuPowerBaselineStore
 
     private CpuPowerBaselineStore() => Current = Read();
 
-    /// <summary>Records the first available wall and never overwrites it (INV-07).</summary>
-    public void Capture(CpuPowerLimitReport report)
+    /// <summary>Records the first available non-Custom wall and never overwrites it (INV-07).</summary>
+    public void Capture(CpuPowerLimitReport report, bool allowCapture)
     {
-        if (Current is not null ||
+        if (!allowCapture ||
+            Current is not null ||
             report.Availability != CpuPowerLimitAvailability.Available ||
             !IsPlausible(report.Pl1Watts, report.Pl2Watts))
         {
@@ -42,7 +44,7 @@ internal sealed class CpuPowerBaselineStore
                 FilePath,
                 string.Create(
                     CultureInfo.InvariantCulture,
-                    $"{baseline.Pl1Watts} {baseline.Pl2Watts}"));
+                    $"{FileVersion} {baseline.Pl1Watts} {baseline.Pl2Watts}"));
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or
@@ -63,9 +65,10 @@ internal sealed class CpuPowerBaselineStore
 
             var parts = File.ReadAllText(FilePath)
                 .Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length != 2 ||
-                !double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var pl1) ||
-                !double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var pl2) ||
+            if (parts.Length != 3 ||
+                !StringComparer.Ordinal.Equals(parts[0], FileVersion) ||
+                !double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var pl1) ||
+                !double.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out var pl2) ||
                 !IsPlausible(pl1, pl2))
             {
                 return null;

@@ -297,6 +297,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         CpuPower = new CpuPowerLimitWorkspace(
             () => IsBusy,
             () => Blade.IsCustomMode,
+            () => Blade.PerformanceModeIndex >= 0,
             RunDeviceOperation,
             () => Blade.EditablePlatformProfile,
             SaveProfileAsync);

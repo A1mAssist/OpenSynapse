@@ -84,6 +84,7 @@ public sealed partial class BladeWorkspace
     [NotProfileScoped]
     internal async Task<int> ApplyProfileTuningAsync(
         BladeProfileSettings profile,
+        BladePerformanceMode? effectivePerformanceMode,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(profile);
@@ -132,32 +133,49 @@ public sealed partial class BladeWorkspace
             applied++;
         }
 
-        // Razer only applies the CPU watt override in Custom mode. Writing it from a
-        // preset mode would overwrite the EC's own power wall on every refresh.
-        var performanceMode = profile.PerformanceMode is byte rawPerformanceMode &&
-            Enum.IsDefined(typeof(BladePerformanceMode), rawPerformanceMode)
-                ? (BladePerformanceMode)rawPerformanceMode
-                : LastTelemetry?.BladePerformanceMode;
+        // Razer only applies the CPU watt override in Custom mode. Use the mode
+        // that was actually verified, not the requested profile value.
         if (profile.CpuPowerLimitWatts is int watts &&
-            performanceMode == BladePerformanceMode.Custom)
+            effectivePerformanceMode == BladePerformanceMode.Custom)
         {
-            var report = watts <= 0
-                ? await CpuPowerLimitBroker.RestoreAsync(
-                    cancellationToken: cancellationToken)
-                : await CpuPowerLimitBroker.ApplyAsync(
+            CpuPowerLimitReport? report = null;
+            if (watts <= 0)
+            {
+                if (CpuPowerBaselineStore.Instance.Current is not { } baseline)
+                {
+                    _diagnosticLog.TryWrite(
+                        "cpu-power",
+                        "Auto restore skipped: no trusted baseline was captured outside Custom mode.");
+                }
+                else
+                {
+                    report = await CpuPowerLimitBroker.RestoreAsync(
+                        baseline,
+                        cancellationToken);
+                }
+            }
+            else
+            {
+                report = await CpuPowerLimitBroker.ApplyAsync(
                     new CpuPowerLimit(
                         watts,
                         Math.Min(watts + 15, CpuPowerLimit.MaximumWatts),
                         CpuPowerLimit.MinimumTimeSeconds,
                         CpuPowerLimit.MaximumTimeSeconds),
                     cancellationToken);
-            if (report.Availability != CpuPowerLimitAvailability.Available)
+            }
+
+            if (report is not null &&
+                report.Availability != CpuPowerLimitAvailability.Available)
             {
                 throw new InvalidOperationException(
                     report.Detail ?? AppStrings.Text("CpuPowerLimitUnavailable"));
             }
 
-            applied++;
+            if (report is not null)
+            {
+                applied++;
+            }
         }
 
         return applied;
