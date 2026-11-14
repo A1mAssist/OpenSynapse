@@ -116,6 +116,12 @@ public sealed class ElevatedMacroClient : IDisposable
             new ElevatedMacroRequest { Kind = ElevatedMacroCommandKind.ReleaseAll },
             cancellationToken);
 
+    public Task<ElevatedMacroResponse?> StopAsync(
+        CancellationToken cancellationToken = default) =>
+        SendAsync(
+            new ElevatedMacroRequest { Kind = ElevatedMacroCommandKind.Shutdown },
+            cancellationToken);
+
     private async Task<ElevatedMacroResponse?> SendAsync(
         ElevatedMacroRequest request,
         CancellationToken cancellationToken)
