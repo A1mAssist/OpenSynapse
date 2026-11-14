@@ -3871,12 +3871,13 @@
   <data name="AnalogKeyLayoutPrompt" xml:space="preserve"><value>Select the keys to adjust on the keyboard layout first.</value></data>
   <data name="AnalogKeyNoneSelected" xml:space="preserve"><value>No keys selected</value></data>
   <data name="AnalogKeySelectedCount" xml:space="preserve"><value>{0} keys selected</value></data>
-  <data name="AnalogKeyAppliedCount" xml:space="preserve"><value>Applied to {0} keys and read back.</value></data>
-  <data name="AnalogKeyAppliedUnverified" xml:space="preserve"><value>Wrote {0} keys, but the readback failed; the settings may not have applied. Try again.</value></data>
+  <data name="AnalogKeyAppliedCount" xml:space="preserve"><value>Applied to {0} keys: {1}; read back.</value></data>
+  <data name="AnalogKeyAppliedUnverified" xml:space="preserve"><value>Wrote {0} keys: {1}; readback failed, so the values are unconfirmed.</value></data>
   <data name="AnalogKeyApplyMismatch" xml:space="preserve"><value>Wrote {0} keys, but the readback did not match; the settings did not apply.</value></data>
   <data name="AnalogKeyReadCount" xml:space="preserve"><value>Read trigger and Rapid Trigger settings for {0} keys.</value></data>
   <data name="AnalogKeyTooltip" xml:space="preserve"><value>Actuation {0:0.0} mm · RT {1:0.0} mm</value></data>
   <data name="AnalogKeyTooltipRapidTriggerOff" xml:space="preserve"><value>Actuation {0:0.0} mm · RT off</value></data>
+  <data name="AnalogKeySettingsApplied" xml:space="preserve"><value>Applied continuous Rapid Trigger and the bottom dead zone.</value></data>
   <data name="AnalogKeyLayoutMissing.Text" xml:space="preserve"><value>Analog keys responded, but this model has no per-key layout yet.</value></data>
   <data name="SnapTapReading" xml:space="preserve"><value>Reading Snap Tap settings…</value></data>
   <data name="SnapTapNeedTwoKeys" xml:space="preserve"><value>Each pair needs two keys.</value></data>

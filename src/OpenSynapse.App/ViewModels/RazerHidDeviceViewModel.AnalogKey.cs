@@ -192,7 +192,10 @@ public sealed partial class RazerHidDeviceViewModel
         }
         catch (Exception exception)
         {
-            HandleOptionalFailure(exception, RazerHidBackendCapability.AnalogKeyRead);
+            // A busy per-key read is a local readback failure, not a device-wide
+            // channel failure. Keep the analog card usable for writes.
+            AnalogKeyLayoutStatusText = LocalizeProtocolError(
+                exception, RazerHidBackendCapability.AnalogKeyRead);
         }
         finally
         {
@@ -251,10 +254,9 @@ public sealed partial class RazerHidDeviceViewModel
                     await _service.SetAnalogKeyBottomDeadZoneAsync(
                         Connection, profileId, deadZone, cancellationToken);
                 }
-                if (Has(RazerHidBackendCapability.AnalogKeyRead))
-                {
-                    await RefreshAnalogKeyAsync(cancellationToken);
-                }
+                // The global apply writes two short settings. Reading the whole
+                // per-key layout here makes a busy 0x99 response roll back a write
+                // that already succeeded; per-key values have their own apply path.
                 await SaveProfileAsync(
                     settings => settings.Keyboard.AnalogKeyEnabled = AnalogKeyContinuousRapidTrigger,
                     settings => settings.Keyboard.AnalogKeyEnabled = previousProfile,
@@ -274,6 +276,7 @@ public sealed partial class RazerHidDeviceViewModel
                         }
                     },
                     cancellationToken);
+                AnalogKeyLayoutStatusText = AppStrings.Text("AnalogKeySettingsApplied");
             }, cancellationToken);
 
     public Task ApplyAnalogKeyToSelectionAsync(CancellationToken cancellationToken = default) =>
@@ -295,6 +298,7 @@ public sealed partial class RazerHidDeviceViewModel
                 }
 
                 var profileId = await ResolveAnalogKeyProfileIdAsync(cancellationToken);
+                var values = AnalogKeyValueSummary();
                 var actuation = RazerAnalogKeyProtocol.ToThreshold(AnalogKeyActuationPointMillimeters);
                 var release = RazerAnalogKeyProtocol.ToThreshold(
                     Math.Max(0.1, AnalogKeyActuationPointMillimeters - 0.1));
@@ -352,12 +356,12 @@ public sealed partial class RazerHidDeviceViewModel
                     // A readback failure is not a write failure; keep the write capability
                     // so the user can retry instead of losing the whole analog card.
                     AnalogKeyLayoutStatusText = AppStrings.FormatText(
-                        "AnalogKeyAppliedUnverified", keys.Count);
+                        "AnalogKeyAppliedUnverified", keys.Count, values);
                     return;
                 }
 
                 AnalogKeyLayoutStatusText = read == keys.Count && keys.All(MatchesAnalogKeyRequest)
-                    ? AppStrings.FormatText("AnalogKeyAppliedCount", keys.Count)
+                    ? AppStrings.FormatText("AnalogKeyAppliedCount", keys.Count, values)
                     : AppStrings.FormatText("AnalogKeyApplyMismatch", keys.Count);
             }, cancellationToken);
 
@@ -476,6 +480,12 @@ public sealed partial class RazerHidDeviceViewModel
         (!AnalogKeyRapidTriggerEnabled ||
             Math.Abs(key.RapidTriggerSensitivityMillimeters - AnalogKeyRapidTriggerSensitivityMillimeters) <=
                 AnalogKeyToleranceMillimeters);
+
+    private string AnalogKeyValueSummary() =>
+        AppStrings.FormatText(
+            AnalogKeyRapidTriggerEnabled ? "AnalogKeyTooltip" : "AnalogKeyTooltipRapidTriggerOff",
+            AnalogKeyActuationPointMillimeters,
+            AnalogKeyRapidTriggerSensitivityMillimeters);
 
     private Task<byte> ResolveAnalogKeyProfileIdAsync(CancellationToken cancellationToken) =>
         _service.ResolveActiveProfileIdAsync(Connection, cancellationToken);
