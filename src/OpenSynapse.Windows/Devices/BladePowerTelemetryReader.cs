@@ -580,9 +580,10 @@ internal sealed class BladePowerTelemetryReader
             "Read the Blade Max Fan state successfully first.");
 
         var thermal = await _fan.ReadThermalStateAsync(blade, cancellationToken);
-        if (thermal.PerformanceMode != BladePerformanceMode.Custom)
+        if (mode == BladeMaxFanMode.Enabled &&
+            thermal.PerformanceMode != BladePerformanceMode.Custom)
         {
-            throw new InvalidOperationException("Max Fan can only be changed in Custom performance mode.");
+            throw new InvalidOperationException("Max Fan can only be enabled in Custom performance mode.");
         }
         if (mode == BladeMaxFanMode.Enabled && thermal.FanMode != BladeFanMode.Automatic)
         {
