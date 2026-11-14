@@ -27,16 +27,19 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
     private int _cpuPowerLimitIndex = -1;
     private bool _isRefreshingCpuPowerLimit;
     private readonly Func<bool> _isBusy;
+    private readonly Func<bool> _isCustomMode;
     private readonly Func<string, Func<Task>, CancellationToken, Action?, Task> _runOperation;
     private readonly Func<BladeProfileSettings> _getProfileSettings;
     private readonly Func<CancellationToken, Task<bool>> _saveProfileAsync;
 
     internal CpuPowerLimitWorkspace(Func<bool> isBusy,
+        Func<bool> isCustomMode,
         Func<string, Func<Task>, CancellationToken, Action?, Task> runOperation,
         Func<BladeProfileSettings> getProfileSettings,
         Func<CancellationToken, Task<bool>> saveProfileAsync)
     {
         _isBusy = isBusy;
+        _isCustomMode = isCustomMode;
         _runOperation = runOperation;
         _getProfileSettings = getProfileSettings;
         _saveProfileAsync = saveProfileAsync;
@@ -103,6 +106,7 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
 
     public bool CanSetCpuPowerLimit =>
         !_isBusy() &&
+        _isCustomMode() &&
         _cpuPowerLimitReport is
         {
             Availability: CpuPowerLimitAvailability.Available,
@@ -160,7 +164,7 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
     public async Task ApplyCpuPowerLimitAsync(CancellationToken cancellationToken = default)
     {
         var requestedIndex = _cpuPowerLimitIndex;
-        if (requestedIndex < 0 || requestedIndex >= CpuPowerLimitPresets.Length)
+        if (requestedIndex < 0 || requestedIndex >= CpuPowerLimitPresets.Length || !_isCustomMode())
         {
             return;
         }
@@ -280,11 +284,16 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
     private void PublishCpuPowerLimit(CpuPowerLimitReport report)
     {
         _cpuPowerLimitReport = report;
-        // A firmware default (150 W) is not a preset; a blank picker would hide that the
-        // card is on Automatic.
-        var index = report.Availability == CpuPowerLimitAvailability.Available
-            ? Math.Max(0, Array.IndexOf(CpuPowerLimitPresets, report.Pl1Watts))
-            : -1;
+        // The picker shows the profile's intent, not the live register: an EC preset
+        // such as Silent also reads 25 W but is not a user-selected 25 W override.
+        var index = -1;
+        if (report.Availability == CpuPowerLimitAvailability.Available)
+        {
+            var configured = _getProfileSettings().CpuPowerLimitWatts;
+            index = configured is int watts
+                ? Math.Max(0, Array.IndexOf(CpuPowerLimitPresets, (double)watts))
+                : 0;
+        }
         SetCpuPowerLimitIndex(index);
         NotifyStateChanged();
     }
@@ -296,6 +305,8 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
         OnPropertyChanged(nameof(CanSetCpuPowerLimit));
         OnPropertyChanged(nameof(CanInstallCpuPowerLimitPawnIo));
     }
+
+    internal void NotifyModeChanged() => OnPropertyChanged(nameof(CanSetCpuPowerLimit));
 
     /// <summary>
     /// The notification must stay inside the flag: the binding pushes the new index into the

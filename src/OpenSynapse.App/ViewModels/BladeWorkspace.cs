@@ -2857,7 +2857,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         OnPropertyChanged(nameof(CanApplyOneTimeFullCharge));
     }
 
-    private bool IsCustomMode => _blade.IsCustomMode;
+    internal bool IsCustomMode => _blade.IsCustomMode;
 
     private void ClearCustomPerformance()
     {

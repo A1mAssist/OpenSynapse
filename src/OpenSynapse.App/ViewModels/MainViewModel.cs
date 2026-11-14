@@ -295,9 +295,15 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             SaveProfileAsync);
         CpuPower = new CpuPowerLimitWorkspace(
             () => IsBusy,
+            () => Blade.IsCustomMode,
             RunDeviceOperation,
             () => Blade.EditablePlatformProfile,
             SaveProfileAsync);
+        Blade.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName is null or nameof(BladeWorkspace.PerformanceModeIndex))
+                CpuPower.NotifyModeChanged();
+        };
         ThxAudio = new ThxAudioViewModel(thxAudioController, thxAudioSupported);
     }
 
