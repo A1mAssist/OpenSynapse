@@ -50,12 +50,14 @@
 
                       ItemsSource="{Binding TriggerModeOptions}"
                       SelectedIndex="{Binding SoftwareTriggerModeIndex, Mode=TwoWay}"
+                      SelectionChanged="SoftwareTriggerModeChanged"
                       HorizontalAlignment="Stretch" />
             <ComboBox Grid.Column="1"
                       local:Localized.Uid="RazerMappingMacroExecutionHeader"
 
                       ItemsSource="{Binding ExecutionOptions}"
                       SelectedIndex="{Binding ExecutionModeIndex, Mode=TwoWay}"
+                      SelectionChanged="SoftwareExecutionModeChanged"
                       HorizontalAlignment="Stretch" />
           </Grid>
           <NumberBox local:Localized.Uid="RazerMappingMacroExecutionRepeat"

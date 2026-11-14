@@ -1,5 +1,6 @@
 using OpenSynapse.Core.Macros;
 using OpenSynapse.Windows.Input;
+using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
 
@@ -53,6 +54,98 @@ public sealed partial class RazerHidMappingViewModel
                 OriginalFunctionId = backup.Assignment.FunctionId,
                 OriginalData = backup.Assignment.Data.ToList(),
             };
+    }
+
+    // A stale mapping page must not rewrite a macro-editor change. New
+    // bindings and rows whose mode/repeat values changed are written;
+    // everything else is left alone.
+    private HashSet<RazerHidMappingRowViewModel> SoftwareModeRows(
+        IReadOnlyList<RazerHidMappingRowViewModel> softwareRows) =>
+        softwareRows.Where(row =>
+            row.OptionIndex != row.LoadedOptionIndex ||
+            row.HasSoftwareModeChanges ||
+            !StringComparer.Ordinal.Equals(
+                row.SoftwareMacroId,
+                ResolveSoftwareMacro(row)?.Id)).ToHashSet();
+
+    private async Task WriteSoftwareModeRowAsync(
+        RazerHidMappingRowViewModel row,
+        IReadOnlyList<AssignmentBackup> backups,
+        CancellationToken cancellationToken)
+    {
+        var macro = ResolveSoftwareMacro(row)!;
+        var input = _softwareTriggerResolver!.Invoke(row.ButtonId)!;
+        var error = await _softwareTriggerBinder!(
+                macro.Id,
+                input,
+                row.TriggerMode,
+                row.ExecutionMode,
+                row.EffectiveExecutionRepeatCount,
+                LayerIndex == 1,
+                CreateSoftwareBinding(row, backups),
+                cancellationToken)
+            .ConfigureAwait(true);
+        if (error is not null)
+        {
+            throw new InvalidOperationException(error);
+        }
+
+        row.MarkSoftwareModeLoaded();
+    }
+
+    /// <summary>
+    /// Applies a trigger/playback choice made on an already-bound row without
+    /// waiting for the mapping page's Save. The key assignment is untouched.
+    /// </summary>
+    internal async Task PersistSoftwareModeAsync(RazerHidMappingRowViewModel row)
+    {
+        if (!_loaded || IsBusy || _softwareTriggerBinder is null ||
+            _softwareTriggerResolver is null || !row.HasSoftwareModeChanges ||
+            row.Group != RazerHidMappingGroup.Macro ||
+            row.MacroTarget != MacroExecutionTarget.Software)
+        {
+            return;
+        }
+
+        if (row.SoftwareMacroId is not { } boundId)
+        {
+            return;
+        }
+
+        var macro = ResolveSoftwareMacro(row);
+        if (macro is null ||
+            !StringComparer.Ordinal.Equals(macro.Id, boundId) ||
+            _softwareTriggerResolver(row.ButtonId) is not { } input)
+        {
+            return;
+        }
+
+        try
+        {
+            var error = await _softwareTriggerBinder(
+                    macro.Id,
+                    input,
+                    row.TriggerMode,
+                    row.ExecutionMode,
+                    row.EffectiveExecutionRepeatCount,
+                    LayerIndex == 1,
+                    macro.SoftwareBinding?.Clone(),
+                    CancellationToken.None)
+                .ConfigureAwait(true);
+            if (error is not null)
+            {
+                ErrorText = error;
+                return;
+            }
+
+            row.MarkSoftwareModeLoaded();
+            StatusText = AppStrings.Text("MacroSaved");
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            ErrorText = exception.Message;
+            _log?.Invoke($"software mode apply failed: {exception}");
+        }
     }
 
     private static int SoftwareTriggerModeIndex(MacroTriggerMode mode) => mode switch
