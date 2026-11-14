@@ -365,6 +365,19 @@ public sealed partial class RazerKeyboardService
                 };
                 if (ids.Any(id => id != 0))
                 {
+                    if (!RazerHidMappingProtocol.IsValidKeyIdList(ids))
+                    {
+                        _diagnostic?.Invoke(
+                            $"keyboard mapping {protocol} returned an invalid key list: " +
+                            $"count={ids.Count}, unique={ids.Distinct().Count()}, " +
+                            $"zeros={ids.Count(id => id == 0)}");
+                        if (protocol == RazerKeyboardMappingProtocol.KeyTable8F)
+                        {
+                            return [];
+                        }
+                        continue;
+                    }
+
                     _mappingProtocol = protocol;
                     _mappingButtonIds = ids;
                     return ids;
