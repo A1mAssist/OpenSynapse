@@ -21,8 +21,7 @@ public sealed partial class FanWorkspace
 
         try
         {
-            return profile.CreateCurve().ClampMaximumFanSpeed(
-                BladeModelCapabilities.MaximumWritableFanTargetRpmFor(_blade._bladeProductId));
+            return ClampBladeFanCurve(profile.CreateCurve());
         }
         catch (ArgumentException)
         {
@@ -33,6 +32,17 @@ public sealed partial class FanWorkspace
     }
 
     private BladeFanCurve DefaultBladeFanCurve() =>
-        BladeFanCurve.CreateDefault().ClampMaximumFanSpeed(
-            BladeModelCapabilities.MaximumWritableFanTargetRpmFor(_blade._bladeProductId));
+        ClampBladeFanCurve(BladeFanCurve.CreateDefault());
+
+    /// <summary>
+    /// The editor's generic 1900..5400 range is wider than some models and performance
+    /// modes accept. A stored target below the EC's floor makes the target report go
+    /// silent, so clamp both ends before the curve is shown, saved or written.
+    /// </summary>
+    private BladeFanCurve ClampBladeFanCurve(BladeFanCurve curve)
+    {
+        var range = BladeModelCapabilities.FanTargetRangeFor(
+            _blade._bladeProductId, CurrentBladePerformanceMode);
+        return curve.ClampFanSpeedRange(range.MinimumRpm, range.MaximumRpm);
+    }
 }
