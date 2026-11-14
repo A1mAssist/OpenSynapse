@@ -348,6 +348,12 @@ public sealed partial class DevicesPage : UserControl
         {
             DispatcherQueue.TryEnqueue(() => SelectDevice("none"));
         }
+        if (propertyName == nameof(MainViewModel.ConnectedDevices) &&
+            !ViewModel.Hue.IsConfigured &&
+            HuePanel.Visibility == Visibility.Visible)
+        {
+            DispatcherQueue.TryEnqueue(() => SelectDevice("none"));
+        }
         if (propertyName == nameof(RazerHidWorkspace.SelectedDevice) &&
             ViewModel.RazerHid.SelectedDevice is null &&
             RazerHidDevicePanel.Visibility == Visibility.Visible)
@@ -362,6 +368,36 @@ public sealed partial class DevicesPage : UserControl
         if (propertyName == nameof(UsbAccessoriesWorkspace.SelectedHeadsetAudio) &&
             ViewModel.Accessories.SelectedHeadsetAudio is null &&
             HeadsetAudioPanel.Visibility == Visibility.Visible)
+        {
+            DispatcherQueue.TryEnqueue(() => SelectDevice("none"));
+        }
+        if (propertyName == nameof(UsbAccessoriesWorkspace.SelectedKeyboard) &&
+            ViewModel.Accessories.SelectedKeyboard is null &&
+            KeyboardPanel.Visibility == Visibility.Visible)
+        {
+            DispatcherQueue.TryEnqueue(() => SelectDevice("none"));
+        }
+        if (propertyName == nameof(UsbAccessoriesWorkspace.SelectedGamepad) &&
+            ViewModel.Accessories.SelectedGamepad is null &&
+            GamepadPanel.Visibility == Visibility.Visible)
+        {
+            DispatcherQueue.TryEnqueue(() => SelectDevice("none"));
+        }
+        if (propertyName == nameof(UsbAccessoriesWorkspace.SelectedChroma) &&
+            ViewModel.Accessories.SelectedChroma is null &&
+            ChromaPanel.Visibility == Visibility.Visible)
+        {
+            DispatcherQueue.TryEnqueue(() => SelectDevice("none"));
+        }
+        if (propertyName == nameof(MainViewModel.SelectedBle) &&
+            ViewModel.SelectedBle is null &&
+            BlePanel.Visibility == Visibility.Visible)
+        {
+            DispatcherQueue.TryEnqueue(() => SelectDevice("none"));
+        }
+        if (propertyName == nameof(MainViewModel.SelectedAwBleHeadset) &&
+            ViewModel.SelectedAwBleHeadset is null &&
+            AwBleHeadsetPanel.Visibility == Visibility.Visible)
         {
             DispatcherQueue.TryEnqueue(() => SelectDevice("none"));
         }
