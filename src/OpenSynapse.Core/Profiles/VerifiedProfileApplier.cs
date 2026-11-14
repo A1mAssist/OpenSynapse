@@ -181,8 +181,23 @@ public sealed class VerifiedProfileApplier
                     }
                 }
 
+                if (bladeErrors.Count == 0 &&
+                    profile.Blade.ResolvedFanControlMode is (
+                        BladeFanControlMode.Curve or BladeFanControlMode.Fixed) &&
+                    telemetry.BladeMaxFanMode == BladeMaxFanMode.Enabled)
+                {
+                    await ApplyValueAsync(
+                        bladeErrors,
+                        "Blade Max Fan",
+                        BladeMaxFanMode.Disabled,
+                        telemetry.BladeMaxFanMode,
+                        (value, token) => reader.SetBladeMaxFanModeAsync(devices, value, token));
+                }
+
                 if (bladeErrors.Count == 0 && profile.Blade.MaxFanMode is byte rawMaxFan &&
-                BladeModelCapabilities.SupportsMaxFan(blade.ProductId))
+                    BladeModelCapabilities.SupportsMaxFan(blade.ProductId) &&
+                    profile.Blade.ResolvedFanControlMode is not (
+                        BladeFanControlMode.Curve or BladeFanControlMode.Fixed))
                 {
                     if (!Enum.IsDefined(typeof(BladeMaxFanMode), rawMaxFan))
                     {

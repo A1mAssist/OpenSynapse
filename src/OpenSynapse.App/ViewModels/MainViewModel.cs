@@ -183,6 +183,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             () => Blade.PerformanceModeIndex,
             () => Blade.CanSetFan,
             mode => Blade.SetPerformanceMode(mode, confirm: false),
+            Blade.DisableMaxFanForFanControlAsync,
             _diagnosticLog,
             RunDeviceOperation,
             () => Refresh!.RequestDeviceRefresh());

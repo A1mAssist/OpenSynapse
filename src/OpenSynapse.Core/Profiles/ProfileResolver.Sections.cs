@@ -11,6 +11,7 @@ public static partial class ProfileResolver
         {
             KeyboardBrightness = First(power?.KeyboardBrightness, device?.KeyboardBrightness, global?.KeyboardBrightness),
             PerformanceMode = First(power?.PerformanceMode, device?.PerformanceMode, global?.PerformanceMode),
+            FanControlMode = First(power?.FanControlMode, device?.FanControlMode, global?.FanControlMode),
             FanMode = First(power?.FanMode, device?.FanMode, global?.FanMode),
             FanTargetRpm = First(power?.FanTargetRpm, device?.FanTargetRpm, global?.FanTargetRpm),
             FanCurve = (power?.FanCurve ?? device?.FanCurve ?? global?.FanCurve)?.Clone(),

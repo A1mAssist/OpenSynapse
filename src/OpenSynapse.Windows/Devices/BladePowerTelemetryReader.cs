@@ -67,8 +67,8 @@ internal sealed class BladePowerTelemetryReader
         try
         {
             if (originalPowerMask is not null)
-                await BladePowerTelemetryShared.SetPerformanceMaxFanAsync(
-                    _client, blade, enabled: false, mode == BladePerformanceMode.Custom, cancellationToken);
+                await BladePowerTelemetryShared.SetPerformanceMaxFanAsync(_client, blade, enabled: false,
+                    mode == BladePerformanceMode.Custom && original.FanMode == BladeFanMode.Automatic, cancellationToken);
             // The 028C EC keeps a stale manual flag when a preset leaves Custom mode, so
             // the fans must go back to firmware automatic instead of carrying it over.
             var fanMode = blade.FixedFanRequiresCustomMode &&

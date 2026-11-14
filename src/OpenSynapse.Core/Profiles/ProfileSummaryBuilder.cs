@@ -1,3 +1,5 @@
+using OpenSynapse.Core.Devices;
+
 namespace OpenSynapse.Core.Profiles;
 
 public enum ProfileSummaryScope
@@ -230,8 +232,14 @@ public static class ProfileSummaryBuilder
         AddIf(group, settings.KeyboardBrightness, "ProfileSummary_Item_BladeKeyboardBrightness", scope);
         AddIf(group, settings.PerformanceMode, "ProfileSummary_Item_BladePerformanceMode", scope);
         AddIf(group, settings.FanMode, "ProfileSummary_Item_FanMode", scope);
-        AddIf(group, settings.FanTargetRpm, "ProfileSummary_Item_FanTarget", scope);
-        AddIf(group, settings.FanCurve, "ProfileSummary_Item_FanCurve", scope);
+        if (settings.ResolvedFanControlMode == BladeFanControlMode.Fixed)
+        {
+            AddIf(group, settings.FanTargetRpm, "ProfileSummary_Item_FanTarget", scope);
+        }
+        if (settings.ResolvedFanControlMode == BladeFanControlMode.Curve)
+        {
+            AddIf(group, settings.FanCurve, "ProfileSummary_Item_FanCurve", scope);
+        }
         AddIf(group, settings.ChargeLimitPercent, "ProfileSummary_Item_ChargeLimit", scope);
         AddIf(group, settings.RefreshRateHertz, "ProfileSummary_Item_RefreshRate", scope);
         AddIf(group, settings.MaxFanMode, "ProfileSummary_Item_MaxFanMode", scope);
@@ -360,7 +368,9 @@ public static class ProfileSummaryBuilder
         AddIf(
             group,
             settings.ThxNormalizationEnabled ?? settings.ThxVoiceClarityEnabled ??
-            settings.ThxBassBoostEnabled ?? settings.ThxSidetoneEnabled,
+            settings.ThxBassBoostEnabled ?? settings.ThxSidetoneEnabled ??
+            settings.ThxCaptureNormalizationEnabled ?? settings.ThxCaptureVocalClarityEnabled ??
+            settings.ThxCaptureNoiseReductionEnabled ?? settings.ThxCaptureVoiceGateEnabled,
             "ProfileSummary_Item_ThxEnhancements",
             scope);
         AddIf(group, FirstPresent(settings.EqPreset, settings.EqBands), "ProfileSummary_Item_EqPreset", scope);

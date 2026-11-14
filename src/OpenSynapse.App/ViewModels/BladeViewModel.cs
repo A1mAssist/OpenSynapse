@@ -314,12 +314,15 @@ internal sealed class BladeViewModel
 
     /// <summary>Preset delays plus the firmware's own value when it is not one of them.</summary>
     internal IReadOnlyList<int> TimeToDimSeconds =>
-        _bladeTimeToDim is { } state && !TimeToDimPresetSeconds.Contains(state.Seconds)
+        _bladeTimeToDim is { Seconds: > 0 } state &&
+        !TimeToDimPresetSeconds.Contains(state.Seconds)
             ? [.. TimeToDimPresetSeconds, state.Seconds]
             : TimeToDimPresetSeconds;
 
     internal int ConfirmedTimeToDimIndex =>
-        _bladeTimeToDim is { } state ? TimeToDimSeconds.ToList().IndexOf(state.Seconds) : -1;
+        _bladeTimeToDim is { Seconds: > 0 } state
+            ? TimeToDimSeconds.ToList().IndexOf(state.Seconds)
+            : -1;
 
     internal void SetAutoSleep(bool? enabled, bool writable)
     {
@@ -332,7 +335,7 @@ internal sealed class BladeViewModel
     {
         _bladeTimeToDim = state;
         _bladeTimeToDimWritable = writable;
-        _bladeTimeToDimIndex = state is { } value
+        _bladeTimeToDimIndex = state is { Seconds: > 0 } value
             ? TimeToDimSeconds.ToList().IndexOf(value.Seconds)
             : -1;
     }

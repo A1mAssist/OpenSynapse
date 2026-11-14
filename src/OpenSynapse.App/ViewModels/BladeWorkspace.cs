@@ -546,6 +546,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             var actual = await _deviceTelemetryReader.SetBladePerformanceModeAsync(
                 ActiveDescriptors, requested, cancellationToken, _bladeCoolingPadConnected);
             SetPerformanceMode(actual);
+            await _fan().ReapplyAfterPerformanceModeChangeAsync(cancellationToken);
             var clearedFan = ClearFixedFanWhenLeavingCustom(actual, target);
             try
             {
@@ -577,14 +578,15 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     {
         if (mode == BladePerformanceMode.Custom ||
             !BladeModelCapabilities.FixedFanRequiresCustomMode(_blade._bladeProductId) ||
-            target.FanMode is null)
+            target.ResolvedFanControlMode is null or BladeFanControlMode.Automatic)
         {
             return false;
         }
 
-        target.FanMode = null;
+        // Keep the configured curve so switching back to Custom can restore it.
+        target.FanControlMode = BladeFanControlMode.Automatic;
+        target.FanMode = (byte)BladeFanMode.Automatic;
         target.FanTargetRpm = null;
-        target.FanCurve = null;
         return true;
     }
 
@@ -693,6 +695,24 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
 
             RequestDeviceRefresh();
         }, cancellationToken, RefreshPerformanceEditor);
+    }
+
+    /// <summary>
+    /// Called by the fan workspace while it holds the device-operation gate. A curve or
+    /// fixed target cannot share the Custom-mode Max Fan bit.
+    /// </summary>
+    internal async Task DisableMaxFanForFanControlAsync(CancellationToken cancellationToken)
+    {
+        if (!_blade.SupportsMaxFan || !_blade._bladeMaxFanEnabled)
+        {
+            return;
+        }
+
+        var actual = await _deviceTelemetryReader.SetBladeMaxFanModeAsync(
+            ActiveDescriptors,
+            BladeMaxFanMode.Disabled,
+            cancellationToken);
+        SetMaxFan(actual);
     }
 
     public async Task ApplyLogoAsync(CancellationToken cancellationToken = default)
@@ -806,6 +826,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
                 cancellationToken,
                 _bladeCoolingPadConnected);
             SetPerformanceMode(actual);
+            await _fan().ReapplyAfterPerformanceModeChangeAsync(cancellationToken);
             var clearedFan = ClearFixedFanWhenLeavingCustom(actual, target);
             try
             {
@@ -2820,6 +2841,14 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
 
     private void SetTimeToDim(BladeTimeToDimTelemetry? state, bool writable)
     {
+        if (_blade._bladeTimeToDim == state &&
+            _blade._bladeTimeToDimWritable == writable)
+        {
+            // Telemetry repeats the same value every tick. Reassigning the ComboBox
+            // source here made an empty/zero selection flicker on every refresh.
+            return;
+        }
+
         _blade.SetTimeToDim(state, writable);
         OnPropertyChanged(nameof(TimeToDimOptions));
         OnPropertyChanged(nameof(TimeToDimIndex));

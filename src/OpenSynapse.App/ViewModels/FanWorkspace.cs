@@ -10,17 +10,6 @@ using static OpenSynapse.App.ViewModels.DeviceUiCatalog;
 
 namespace OpenSynapse.App.ViewModels;
 
-/// <summary>
-/// How the Blade fans are driven, matching what Synapse exposes: firmware automatic,
-/// a fixed speed, or a temperature curve the app evaluates.
-/// </summary>
-public enum BladeFanControlMode
-{
-    Automatic = 0,
-    Fixed = 1,
-    Curve = 2,
-}
-
 public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposable
 {
     private readonly BladeFanCurveRuntime _bladeFanRuntime;
@@ -36,6 +25,7 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
     private readonly Func<int> _bladePerformanceModeIndex;
     private readonly Func<bool> _canSetBladeFan;
     private readonly Action<BladePerformanceMode> _setBladePerformanceMode;
+    private readonly Func<CancellationToken, Task> _disableMaxFanAsync;
     private readonly LocalDiagnosticLog _diagnosticLog;
     private readonly Func<string, Func<Task>, CancellationToken, Action?, Task> _runDeviceOperation;
     private readonly Action _requestDeviceRefresh;
@@ -62,6 +52,7 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
         Func<int> bladePerformanceModeIndex,
         Func<bool> canSetBladeFan,
         Action<BladePerformanceMode> setBladePerformanceMode,
+        Func<CancellationToken, Task> disableMaxFanAsync,
         LocalDiagnosticLog diagnosticLog,
         Func<string, Func<Task>, CancellationToken, Action?, Task> runDeviceOperation,
         Action requestDeviceRefresh)
@@ -79,6 +70,7 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
         _bladePerformanceModeIndex = bladePerformanceModeIndex;
         _canSetBladeFan = canSetBladeFan;
         _setBladePerformanceMode = setBladePerformanceMode;
+        _disableMaxFanAsync = disableMaxFanAsync;
         _diagnosticLog = diagnosticLog;
         _runDeviceOperation = runDeviceOperation;
         _requestDeviceRefresh = requestDeviceRefresh;
@@ -174,7 +166,7 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
 
     /// <summary>True once a curve is applied, so the card can say so instead of showing defaults.</summary>
     public bool BladeFanCurveActive =>
-        _editablePerformanceBladeProfile().FanCurve is not null;
+        StoredBladeFanControlMode == BladeFanControlMode.Curve;
 
     public IReadOnlyList<string> BladeFanCurveModeOptions =>
         AppStrings.Texts(
@@ -204,14 +196,12 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
             // The device is authoritative. A stale profile must not show Manual while
             // the firmware is running the fans automatically (or the reverse).
             BladeFanMode.Automatic => BladeFanControlMode.Automatic,
-            BladeFanMode.Manual => _editablePerformanceBladeProfile().FanCurve is not null
+            BladeFanMode.Manual => _editablePerformanceBladeProfile().ResolvedFanControlMode ==
+                BladeFanControlMode.Curve
                 ? BladeFanControlMode.Curve
                 : BladeFanControlMode.Fixed,
-            _ => _editablePerformanceBladeProfile().FanCurve is not null
-                ? BladeFanControlMode.Curve
-                : _editablePerformanceBladeProfile().FanMode is byte rawMode && rawMode == (byte)BladeFanMode.Manual
-                    ? BladeFanControlMode.Fixed
-                    : BladeFanControlMode.Automatic,
+            _ => _editablePerformanceBladeProfile().ResolvedFanControlMode ??
+                BladeFanControlMode.Automatic,
         };
 
     /// <summary>
@@ -250,8 +240,10 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
             // power profile. Writing the global slot would drop a per-power-source curve.
             var target = _editablePerformanceBladeProfile();
             var edit = new BladeFanProfileEdit(target);
+            await DisableMaxFanForManualControlAsync(target, cancellationToken);
+            target.FanControlMode = BladeFanControlMode.Curve;
             target.FanCurve = BladeFanCurveProfile.FromCurve(curve);
-            target.FanMode = null;
+            target.FanMode = (byte)BladeFanMode.Manual;
             target.FanTargetRpm = null;
 
             var blade = _deviceDescriptors().FirstOrDefault(device =>
@@ -440,39 +432,40 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
             if (ownershipError is not null) return new(ownershipError, Changed: true);
             changedOwner = true;
         }
+        var controlMode = profile.ResolvedFanControlMode;
         BladeFanCurve? curve = null;
         try
         {
-            if (profile.FanCurve is not null)
+            switch (controlMode)
             {
-                if (profile.FanMode is not null || profile.FanTargetRpm is not null)
-                {
+                case BladeFanControlMode.Curve:
+                    if (profile.FanCurve is null)
+                    {
+                        return new(AppStrings.Text("Text_780EB5E5"), Changed: changedOwner);
+                    }
+
+                    curve = ClampBladeFanCurve(profile.FanCurve.CreateCurve());
+                    break;
+                case BladeFanControlMode.Fixed:
+                    if (!_blade.SupportsFixedFan)
+                    {
+                        return new(AppStrings.Text("Text_43154C61"), Changed: changedOwner);
+                    }
+                    if (profile.FanTargetRpm is null)
+                    {
+                        return new(AppStrings.Text("Text_F76B82D3"), Changed: changedOwner);
+                    }
+                    if (profile.FanMode is byte rawMode &&
+                        !Enum.IsDefined(typeof(BladeFanMode), rawMode))
+                    {
+                        return new(AppStrings.FormatText("InvalidBladeFanMode", rawMode), Changed: changedOwner);
+                    }
+                    break;
+                case BladeFanControlMode.Automatic:
+                case null:
+                    break;
+                default:
                     return new(AppStrings.Text("Text_780EB5E5"), Changed: changedOwner);
-                }
-
-                curve = ClampBladeFanCurve(profile.FanCurve.CreateCurve());
-            }
-            else if (profile.FanMode is byte rawMode)
-            {
-                if (!Enum.IsDefined(typeof(BladeFanMode), rawMode))
-                {
-                    return new(AppStrings.FormatText("InvalidBladeFanMode", rawMode), Changed: changedOwner);
-                }
-
-                var mode = (BladeFanMode)rawMode;
-                if (mode == BladeFanMode.Manual && !_blade.SupportsFixedFan)
-                {
-                    return new(AppStrings.Text("Text_43154C61"), Changed: changedOwner);
-                }
-                if (mode == BladeFanMode.Manual && profile.FanTargetRpm is null ||
-                    mode == BladeFanMode.Automatic && profile.FanTargetRpm is not null)
-                {
-                    return new(AppStrings.Text("Text_F76B82D3"), Changed: changedOwner);
-                }
-            }
-            else if (profile.FanTargetRpm is not null)
-            {
-                return new(AppStrings.Text("Text_FF784DE9"), Changed: changedOwner);
             }
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
@@ -522,7 +515,9 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
             }
             else
             {
-                var mode = (BladeFanMode)profile.FanMode!.Value;
+                var mode = controlMode == BladeFanControlMode.Automatic
+                    ? BladeFanMode.Automatic
+                    : (BladeFanMode)(profile.FanMode ?? (byte)BladeFanMode.Manual);
                 await _bladeFanRuntime.StartFixedAsync(
                     _deviceDescriptors(),
                     mode,
@@ -587,7 +582,13 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
             var requiresCustom = mode == BladeFanMode.Manual &&
                 BladeModelCapabilities.FixedFanRequiresCustomMode(_blade._bladeProductId);
             var edit = new BladeFanProfileEdit(target, restorePerformance: requiresCustom);
-            target.FanCurve = null;
+            if (mode == BladeFanMode.Manual)
+            {
+                await DisableMaxFanForManualControlAsync(target, cancellationToken);
+            }
+            target.FanControlMode = mode == BladeFanMode.Automatic
+                ? BladeFanControlMode.Automatic
+                : BladeFanControlMode.Fixed;
             target.FanMode = (byte)mode;
             target.FanTargetRpm = targetRpm;
 
