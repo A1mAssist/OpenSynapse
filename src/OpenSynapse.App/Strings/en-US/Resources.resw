@@ -1818,6 +1818,10 @@
   <data name="TaskbarStatusTitle.Text" xml:space="preserve"><value>Taskbar status strip</value></data>
   <data name="TaskbarStatusDescription.Text" xml:space="preserve"><value>Show connected peripheral battery in the taskbar.</value></data>
   <data name="TaskbarStatusToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Taskbar status strip</value></data>
+  <data name="TaskbarBatterySelectionTitle.Text" xml:space="preserve"><value>Taskbar devices</value></data>
+  <data name="TaskbarBatterySelectionDescription.Text" xml:space="preserve"><value>Choose up to three devices. When none are selected, the lowest battery is shown.</value></data>
+  <data name="TaskbarBatteryDisconnected" xml:space="preserve"><value>Not connected</value></data>
+  <data name="TaskbarBatteryCurrentPercent" xml:space="preserve"><value>{0}%</value></data>
   <data name="ShutdownLightingTitle.Text" xml:space="preserve"><value>Turn off peripheral lighting on shutdown</value></data>
   <data name="ShutdownLightingDescription.Text" xml:space="preserve"><value>Before Windows shuts down or signs out, send Off to Razer peripherals that support lighting writes. Restore the saved lighting after the next launch.</value></data>
   <data name="ShutdownLightingToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Turn off peripheral lighting on shutdown</value></data>

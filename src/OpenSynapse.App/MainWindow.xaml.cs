@@ -34,6 +34,7 @@ public sealed partial class MainWindow : Window
     private readonly Func<ChromaRestSnapshot>? _getChromaRestSnapshot;
     private readonly Func<string, bool, Task>? _setChromaSourceAllowed;
     private readonly Action<bool>? _setTaskbarStatusEnabled;
+    private readonly Action? _refreshTaskbarStatus;
     private readonly IBladeLightingController? _bladeLightingController;
     private readonly StudioInputSampler? _studioInputSampler;
     private DisplayPowerNotification? _displayPowerNotification;
@@ -53,6 +54,7 @@ public sealed partial class MainWindow : Window
         _setTaskbarStatusEnabled?.Invoke(enabled);
         UpdatePerformanceSamplingState();
     }
+    internal void RefreshTaskbarStatus() => _refreshTaskbarStatus?.Invoke();
     internal Grid RootLayoutElement => RootLayout;
 
     internal MainWindow(
@@ -65,7 +67,8 @@ public sealed partial class MainWindow : Window
         Func<string, bool, Task>? setChromaSourceAllowed = null,
         IBladeLightingController? bladeLightingController = null,
         Action<bool>? setTaskbarStatusEnabled = null,
-        Action<string>? displayPowerDiagnostic = null)
+        Action<string>? displayPowerDiagnostic = null,
+        Action? refreshTaskbarStatus = null)
     {
         _viewModel = viewModel;
         _bladeLightingController = bladeLightingController;
@@ -74,6 +77,7 @@ public sealed partial class MainWindow : Window
         _getChromaRestSnapshot = getChromaRestSnapshot;
         _setChromaSourceAllowed = setChromaSourceAllowed;
         _setTaskbarStatusEnabled = setTaskbarStatusEnabled;
+        _refreshTaskbarStatus = refreshTaskbarStatus;
         _setBladeIndicatorDisplayAvailable = setBladeIndicatorDisplayAvailable;
         _silentLaunch = silentLaunch;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread()

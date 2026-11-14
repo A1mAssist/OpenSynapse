@@ -72,13 +72,33 @@
                   </Grid>
                 </Border>
                 <Border x:Name="TaskbarStatusCard" Style="{StaticResource CardStyle}" Padding="16">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-                    <StackPanel Spacing="4">
-                      <TextBlock local:Localized.Uid="TaskbarStatusTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <TextBlock local:Localized.Uid="TaskbarStatusDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                  <StackPanel Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                      <StackPanel Spacing="4">
+                        <TextBlock local:Localized.Uid="TaskbarStatusTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock local:Localized.Uid="TaskbarStatusDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      </StackPanel>
+                      <ToggleSwitch local:Localized.Uid="TaskbarStatusToggle" x:Name="TaskbarStatusToggle" Grid.Column="1" Toggled="TaskbarStatusToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
+                    </Grid>
+                    <StackPanel x:Name="TaskbarBatterySelectionPanel" Spacing="8" Visibility="Collapsed">
+                      <TextBlock local:Localized.Uid="TaskbarBatterySelectionTitle" Style="{StaticResource MetricLabelStyle}" />
+                      <TextBlock local:Localized.Uid="TaskbarBatterySelectionDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <ItemsControl x:Name="TaskbarBatteryChoices">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" Margin="0,2">
+                              <TextBlock Text="{Binding Glyph}" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                              <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Name}" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                              </StackPanel>
+                              <ToggleSwitch Grid.Column="2" IsOn="{Binding IsSelected, Mode=OneWay}" IsEnabled="{Binding IsEnabled}" Toggled="TaskbarBatteryChoiceToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
+                            </Grid>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
                     </StackPanel>
-                    <ToggleSwitch local:Localized.Uid="TaskbarStatusToggle" x:Name="TaskbarStatusToggle" Grid.Column="1" Toggled="TaskbarStatusToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
-                  </Grid>
+                  </StackPanel>
                 </Border>
                 <Border Style="{StaticResource CardStyle}" Padding="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
