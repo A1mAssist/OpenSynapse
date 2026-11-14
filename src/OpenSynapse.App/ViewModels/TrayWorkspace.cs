@@ -92,7 +92,6 @@ public sealed class TrayWorkspace
                 row.IconGlyph,
                 row, HidKey(row)));
         }
-
         foreach (var row in headsetRows)
         {
             var percent = headsetBusy
@@ -107,7 +106,6 @@ public sealed class TrayWorkspace
                 percent ?? row.BatteryPercent,
                 row.IconGlyph, row, HeadsetKey(row)));
         }
-
         foreach (var row in blackSharkRows)
         {
             var percent = await ReadWithTimeoutAsync(
@@ -118,7 +116,6 @@ public sealed class TrayWorkspace
                 percent ?? row.BatteryPercent,
                 row.IconGlyph, row, BlackSharkKey(row)));
         }
-
         foreach (var row in keyboardRows)
         {
             var percent = await ReadWithTimeoutAsync(
