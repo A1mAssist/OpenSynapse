@@ -53,7 +53,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 - Fixed Blade logo effect ids, 02B6/029D reads, stale Fn state, control state and ChromaBroker startup.
 - Fixed several mouse/keyboard button ids (009C DPI keys, Keypad, Basilisk Ultimate DKM, legacy mouse private keys) and mapping-page refreshes.
 - Fixed the missing GPU level, CPU/GPU Boost and max-fan controls after switching to Custom performance mode; sensor rotation, analog-key layout and THX install visibility now refresh with state changes.
-- The Blade 16 (2023) `029F` fixed-fan slider reaches its own 2000 RPM floor in every performance mode; every other Blade keeps the per-mode minimum its firmware publishes.
+- The Blade 16 (2023) `029F` fixed-fan slider and fan curve reach its own 2000 RPM floor in every performance mode; every other Blade keeps the per-mode minimum its firmware publishes.
 - Fixed update routing for non-MSI installs, MSI update permissions and same-version beta MSI upgrades.
 - Fixed macro editor rename labels, playback controls and import status text.
 - Fixed the mouse-record offsets in driver-level macros: relative movement, absolute coordinates and vertical scrolling no longer land in the wrong fields.
