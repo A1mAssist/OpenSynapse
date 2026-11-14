@@ -30,6 +30,7 @@
             <Button.Flyout>
               <MenuFlyout>
                 <MenuFlyoutItem local:Localized.Uid="MacroInsertCapture" Click="MacroInsertCaptureClick" Style="{StaticResource MacroMenuItemStyle}" />
+                <MenuFlyoutItem local:Localized.Uid="MacroInsertClickAt" Click="AddMacroClickAtClick" Style="{StaticResource MacroMenuItemStyle}" />
                 <MenuFlyoutItem local:Localized.Uid="MacroAddDelayButton" Click="AddMacroDelayClick" Style="{StaticResource MacroMenuItemStyle}" />
                 <MenuFlyoutSeparator />
                 <MenuFlyoutItem local:Localized.Uid="MacroInsertText" Click="AddMacroTextClick" Style="{StaticResource MacroMenuItemStyle}" />
@@ -323,6 +324,17 @@
                     <Button x:Name="MacroMousePathEditButton" Grid.Column="1" local:Localized.Uid="MacroMousePathEditButton" Click="OpenMousePathEditorClick" Style="{StaticResource SecondaryButtonStyle}" IsEnabled="{Binding Macros.CanEditMacro}" />
                   </Grid>
                   <TextBlock Text="{Binding Macros.SelectedStep.MousePathText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                  <StackPanel Spacing="4" Visibility="{Binding Macros.SelectedStep.MouseClickVisibility, FallbackValue=Collapsed}">
+                    <TextBlock local:Localized.Uid="MacroStepMouseClickLabel" Style="{StaticResource MetricLabelStyle}" />
+                    <ComboBox FontSize="13" MinHeight="40" MaxDropDownHeight="240" SelectedIndex="{Binding Macros.SelectedStep.MouseClickButtonIndex, Mode=TwoWay}" HorizontalAlignment="Stretch">
+                      <ComboBoxItem local:Localized.Uid="MacroStepMouseClickNone" />
+                      <ComboBoxItem local:Localized.Uid="MacroMouseButton1" />
+                      <ComboBoxItem local:Localized.Uid="MacroMouseButton2" />
+                      <ComboBoxItem local:Localized.Uid="MacroMouseButton3" />
+                      <ComboBoxItem local:Localized.Uid="MacroMouseButton4" />
+                      <ComboBoxItem local:Localized.Uid="MacroMouseButton5" />
+                    </ComboBox>
+                  </StackPanel>
                 </StackPanel>
 
               </StackPanel>

@@ -131,6 +131,9 @@ public sealed class MacroStepRowViewModel : INotifyPropertyChanged
     public Visibility MousePathVisibility =>
         IsMouseMove ? Visibility.Visible : Visibility.Collapsed;
 
+    public Visibility MouseClickVisibility =>
+        IsMouseMove ? Visibility.Visible : Visibility.Collapsed;
+
     public Visibility GroupVisibility =>
         HasGroup ? Visibility.Visible : Visibility.Collapsed;
 
@@ -164,6 +167,12 @@ public sealed class MacroStepRowViewModel : INotifyPropertyChanged
         MacroStepKind.MacroReference => AppStrings.FormatText(
             "MacroReferenceStepName",
             ReferenceName()),
+        MacroStepKind.MouseMove when Step.MouseClickButton is >= 1 and <= 5 =>
+            AppStrings.FormatText(
+                "MacroMouseClickStepName",
+                AppStrings.Text($"MacroMouseButton{Step.MouseClickButton}"),
+                Step.MousePath.Count > 0 ? Step.MousePath[^1].X : 0,
+                Step.MousePath.Count > 0 ? Step.MousePath[^1].Y : 0),
         MacroStepKind.MouseMove => AppStrings.FormatText(
             "MacroMouseMoveStepName",
             Step.MousePath.Count),
@@ -330,6 +339,24 @@ public sealed class MacroStepRowViewModel : INotifyPropertyChanged
         }
     }
 
+    public int MouseClickButtonIndex
+    {
+        get => Step.MouseClickButton;
+        set
+        {
+            var button = Math.Clamp(value, 0, 5);
+            if (Step.MouseClickButton == button)
+            {
+                return;
+            }
+
+            Step.MouseClickButton = button;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(NameText));
+            Changed();
+        }
+    }
+
     public double DelayMilliseconds
     {
         get => Step.DelayMilliseconds;
@@ -404,6 +431,7 @@ public sealed class MacroStepRowViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(LoopVisibility));
         OnPropertyChanged(nameof(MacroReferenceVisibility));
         OnPropertyChanged(nameof(MousePathVisibility));
+        OnPropertyChanged(nameof(MouseClickVisibility));
         OnPropertyChanged(nameof(GroupVisibility));
         OnPropertyChanged(nameof(DirectionVisibility));
         OnPropertyChanged(nameof(GroupText));
@@ -419,6 +447,7 @@ public sealed class MacroStepRowViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(LoopCount));
         OnPropertyChanged(nameof(AutoRelease));
         OnPropertyChanged(nameof(HoldMilliseconds));
+        OnPropertyChanged(nameof(MouseClickButtonIndex));
         OnPropertyChanged(nameof(DelayMilliseconds));
     }
 
