@@ -138,6 +138,66 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
 
     }
 
+    internal void TurnOffHeadsetLightingForShutdown(TimeSpan timeout)
+    {
+        var selected = SelectedHeadsetAudio;
+        var row = _selectedHeadsetAudioDevice ?? HeadsetAudioDevices.FirstOrDefault();
+        if (selected is null && row is null)
+        {
+            return;
+        }
+
+        var connection = row?.Connection;
+        var productId = selected?.ProductId ?? connection?.ProductId;
+        var task = Task.Run(async () =>
+        {
+            RazerHeadsetAudioViewModel? temporary = null;
+            try
+            {
+                var headset = selected ?? (temporary = new RazerHeadsetAudioViewModel(
+                    row!.Connection,
+                    message => _diagnosticLog.TryWrite("headset-audio", message),
+                    null,
+                    _getProfile,
+                    _saveProfile));
+                if (await headset.TurnOffLightingForShutdownAsync(CancellationToken.None))
+                {
+                    _diagnosticLog.TryWrite(
+                        "lighting-shutdown",
+                        $"headset {productId:X4} off request sent.");
+                }
+            }
+            catch (Exception exception)
+            {
+                _diagnosticLog.TryWrite(
+                    "lighting-shutdown",
+                    $"headset {productId:X4} off failed: {exception.Message}");
+            }
+            finally
+            {
+                if (temporary is not null)
+                {
+                    await temporary.DisposeAsync().ConfigureAwait(false);
+                }
+            }
+        });
+        try
+        {
+            if (!task.Wait(timeout))
+            {
+                _diagnosticLog.TryWrite(
+                    "lighting-shutdown",
+                    $"headset off timed out after {timeout.TotalSeconds:0.#}s.");
+            }
+        }
+        catch (AggregateException exception)
+        {
+            _diagnosticLog.TryWrite(
+                "lighting-shutdown",
+                $"headset off failed: {exception.GetBaseException().Message}");
+        }
+    }
+
     private async Task ProbeHeadsetRowAsync(
         RazerHeadsetAudioDeviceRowViewModel row,
         RazerHeadsetAudioConnection connection,

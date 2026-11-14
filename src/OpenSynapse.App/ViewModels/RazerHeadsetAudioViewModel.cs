@@ -494,6 +494,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         });
     public string Identity => $"VID_1532 / PID_{_connection.ProductId:X4}";
     public string DevicePath => _connection.DevicePath;
+    internal ushort ProductId => _connection.ProductId;
     public string StatusText => _probeState switch
     {
         RazerHeadsetProbeState.Probing => AppStrings.Text("BlackSharkCapabilityReading"),
