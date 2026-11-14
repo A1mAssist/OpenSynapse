@@ -352,11 +352,11 @@ internal sealed class MacroRuntime : IDisposable
     public async Task PlayAsync(
         MacroDefinition macro,
         MacroModifierKeys triggerModifiers,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, MacroPlaybackMode? playbackMode = null)
     {
         ArgumentNullException.ThrowIfNull(macro);
         cancellationToken.ThrowIfCancellationRequested();
-        var repeatUntilStopped = macro.PlaybackMode == MacroPlaybackMode.RepeatUntilStopped;
+        var repeatUntilStopped = (playbackMode ?? macro.PlaybackMode) == MacroPlaybackMode.RepeatUntilStopped;
         IReadOnlyDictionary<string, MacroDefinition> macroMap;
         lock (_gate)
         {
@@ -586,6 +586,7 @@ internal sealed class MacroRuntime : IDisposable
 
         MacroDefinition? playMacro = null;
         var playModifiers = MacroModifierKeys.None;
+        var playRepeatUntilStopped = false;
         var suppress = false;
         var stopRequested = false;
         var stopPlayback = false;
@@ -844,6 +845,7 @@ internal sealed class MacroRuntime : IDisposable
                             !StringComparer.Ordinal.Equals(_activePlaybackMacroId, macro.Id))
                         {
                             playMacro = macro;
+                            playRepeatUntilStopped = trigger.Mode == MacroTriggerMode.HoldRepeat;
                         }
                         break;
 
@@ -911,10 +913,7 @@ internal sealed class MacroRuntime : IDisposable
             // low-level hook thread. Windows drops slow hooks and the desktop
             // would stall until the plan finishes.
             _ = Task.Run(() => ObservePlaybackAsync(
-                playMacro,
-                playModifiers,
-                holdCancellation,
-                holdInput));
+                playMacro, playModifiers, holdCancellation, holdInput, playRepeatUntilStopped));
         }
         return suppress;
     }
@@ -923,7 +922,8 @@ internal sealed class MacroRuntime : IDisposable
         MacroDefinition macro,
         MacroModifierKeys triggerModifiers,
         CancellationTokenSource? holdCancellation,
-        MacroInput? holdInput)
+        MacroInput? holdInput,
+        bool repeatUntilStopped)
     {
         var holdMonitor = holdCancellation is not null &&
             holdInput is not null &&
@@ -935,7 +935,8 @@ internal sealed class MacroRuntime : IDisposable
             await PlayAsync(
                 macro,
                 triggerModifiers,
-                holdCancellation?.Token ?? CancellationToken.None).ConfigureAwait(false);
+                holdCancellation?.Token ?? CancellationToken.None,
+                repeatUntilStopped ? MacroPlaybackMode.RepeatUntilStopped : null).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {

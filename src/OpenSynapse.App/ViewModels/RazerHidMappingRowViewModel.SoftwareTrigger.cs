@@ -33,27 +33,37 @@ public sealed partial class RazerHidMappingRowViewModel
             var clamped = Math.Clamp(value, 0, SoftwareTriggerModes.Length - 1);
             if (_softwareTriggerModeIndex == clamped) return;
             _softwareTriggerModeIndex = clamped;
-            if (TriggerMode != MacroTriggerMode.Toggle && _executionModeIndex == 2)
+            if (TriggerMode == MacroTriggerMode.HoldRepeat)
+            {
+                _executionModeIndex = (int)MacroPlaybackMode.RepeatUntilStopped;
+            }
+            else if (TriggerMode != MacroTriggerMode.Toggle && _executionModeIndex == 2)
             {
                 _executionModeIndex = 0;
-                OnPropertyChanged(nameof(ExecutionModeIndex));
-                OnPropertyChanged(nameof(ExecutionRepeatVisibility));
             }
 
             OnPropertyChanged();
             OnPropertyChanged(nameof(TriggerMode));
+            OnPropertyChanged(nameof(ExecutionModeIndex));
+            OnPropertyChanged(nameof(ExecutionMode));
             OnPropertyChanged(nameof(ExecutionOptions));
+            OnPropertyChanged(nameof(ExecutionRepeatVisibility));
+            OnPropertyChanged(nameof(EffectiveExecutionRepeatCount));
         }
     }
 
-    public IReadOnlyList<string> ExecutionOptions => TriggerMode == MacroTriggerMode.Toggle
-        ? AppStrings.Texts(
+    public IReadOnlyList<string> ExecutionOptions => TriggerMode switch
+    {
+        MacroTriggerMode.Toggle => AppStrings.Texts(
             "RazerMappingMacroPlaybackOnce",
             "RazerMappingMacroPlaybackRepeat",
-            "RazerMappingMacroPlaybackContinuous")
-        : AppStrings.Texts(
+            "RazerMappingMacroPlaybackContinuous"),
+        MacroTriggerMode.HoldRepeat => AppStrings.Texts(
+            "RazerMappingMacroPlaybackContinuous"),
+        _ => AppStrings.Texts(
             "RazerMappingMacroPlaybackOnce",
-            "RazerMappingMacroPlaybackRepeat");
+            "RazerMappingMacroPlaybackRepeat"),
+    };
 
     public int ExecutionModeIndex
     {
@@ -61,7 +71,11 @@ public sealed partial class RazerHidMappingRowViewModel
         set
         {
             var clamped = Math.Clamp(value, 0, 2);
-            if (TriggerMode != MacroTriggerMode.Toggle && clamped == 2)
+            if (TriggerMode == MacroTriggerMode.HoldRepeat)
+            {
+                clamped = (int)MacroPlaybackMode.RepeatUntilStopped;
+            }
+            else if (TriggerMode != MacroTriggerMode.Toggle && clamped == 2)
             {
                 clamped = 0;
             }
