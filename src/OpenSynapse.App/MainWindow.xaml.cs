@@ -330,6 +330,7 @@ public sealed partial class MainWindow : Window
         ResizeForCurrentDisplay();
         var launchStarted = Stopwatch.GetTimestamp();
         LaunchStatusText.Text = AppStrings.Text("Text_528DF7D8");
+        SetLaunchProgress(1, 10);
         var initializationTask = InitializeRuntimeAsync();
 
         var remaining = TimeSpan.FromMilliseconds(MinimumLaunchDurationMilliseconds) -
@@ -350,6 +351,7 @@ public sealed partial class MainWindow : Window
         {
             return;
         }
+        SetLaunchProgress(3, 100);
         if (HasSeenIntroduction)
         {
             LaunchStatusText.Text = AppStrings.Text("Text_470691B2");
@@ -380,8 +382,11 @@ public sealed partial class MainWindow : Window
                     AppStrings.Text("Text_79DA5816"));
             }
             await _viewModel.InitializeProfileAsync(_lifetime.Token);
+            SetLaunchProgress(2, 45);
             LaunchStatusText.Text = AppStrings.Text("LaunchScanningDevices");
-            if (!await RefreshDevicesBeforeLaunchAsync())
+            var scanned = await RefreshDevicesBeforeLaunchAsync();
+            SetLaunchProgress(3, scanned ? 85 : 70);
+            if (!scanned)
             {
                 _viewModel.Refresh.RequestDeviceRefresh();
             }
@@ -390,6 +395,7 @@ public sealed partial class MainWindow : Window
                 () => _viewModel.Refresh.RunDeviceWatchLoopAsync(_lifetime.Token),
                 AppStrings.Text("Text_C2463C0F"));
             LaunchStatusText.Text = AppStrings.Text("Text_470691B2");
+            SetLaunchProgress(3, 95);
             SettingsPage.StartStartupUpdateCheck();
         }
         catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)

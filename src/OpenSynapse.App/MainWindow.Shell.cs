@@ -3,6 +3,7 @@ using Microsoft.UI.Composition;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using Windows.Foundation;
 using Windows.UI.ViewManagement;
 
@@ -20,6 +21,7 @@ public sealed partial class MainWindow
     private const double LaunchTitleDuration = 1050;
     private const double LaunchTitleDelay = 60;
     private const float WordmarkGap = 8f;
+    private const int LaunchStageCount = 3;
 
     private static readonly UISettings s_uiSettings = new();
 
@@ -43,6 +45,8 @@ public sealed partial class MainWindow
         FadeOut(compositor, LaunchTitleText, LaunchCaptionDuration, Ease(compositor, 0.42f, 0f, 0.18f, 1f));
         FadeOut(compositor, LaunchSubtitleText, LaunchCaptionDuration, Ease(compositor, 0.42f, 0f, 0.18f, 1f));
         FadeOut(compositor, LaunchStatusText, LaunchCaptionDuration, Ease(compositor, 0.42f, 0f, 0.18f, 1f));
+        FadeOut(compositor, LaunchProgressBar, LaunchCaptionDuration, Ease(compositor, 0.42f, 0f, 0.18f, 1f));
+        FadeOut(compositor, LaunchProgressStepText, LaunchCaptionDuration, Ease(compositor, 0.42f, 0f, 0.18f, 1f));
         FadeOut(compositor, LaunchVeil, LaunchFlightDuration, Ease(compositor, 0.65f, 0f, 0.35f, 1f));
         FadeOut(compositor, LaunchBackdrop, LaunchFlightDuration, Ease(compositor, 0.65f, 0f, 0.35f, 1f));
 
@@ -90,6 +94,29 @@ public sealed partial class MainWindow
         FadeOut(compositor, LaunchProgressRing, LaunchCaptionDuration, Ease(compositor, 0.42f, 0f, 0.18f, 1f));
 
         await Task.Delay(TimeSpan.FromMilliseconds(LaunchFlightDuration));
+    }
+
+    private void SetLaunchProgress(int stage, double value)
+    {
+        LaunchProgressStepText.Text = $"{stage}/{LaunchStageCount}";
+        if (!s_uiSettings.AnimationsEnabled)
+        {
+            LaunchProgressBar.Value = value;
+            return;
+        }
+
+        var animation = new DoubleAnimation
+        {
+            From = LaunchProgressBar.Value,
+            To = value,
+            Duration = TimeSpan.FromMilliseconds(240),
+            EnableDependentAnimation = true,
+        };
+        Storyboard.SetTarget(animation, LaunchProgressBar);
+        Storyboard.SetTargetProperty(animation, "Value");
+        var storyboard = new Storyboard();
+        storyboard.Children.Add(animation);
+        storyboard.Begin();
     }
 
     private void PlayBrandArrival(Compositor compositor)
