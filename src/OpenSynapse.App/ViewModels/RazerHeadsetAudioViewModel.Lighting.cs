@@ -170,9 +170,9 @@ public sealed partial class RazerHeadsetAudioViewModel
         try
         {
             var power = new RazerMakoXPowerService(_connection.DevicePath, _diagnostic);
-            var previousHardware = await power.ReadAsync(cancellationToken).ConfigureAwait(false);
-            await power.SetAsync(AutoSleepEnabled, minutes, cancellationToken).ConfigureAwait(false);
-            var applied = await power.ReadAsync(cancellationToken).ConfigureAwait(false);
+            var previousHardware = await power.ReadAsync(cancellationToken);
+            await power.SetAsync(AutoSleepEnabled, minutes, cancellationToken);
+            var applied = await power.ReadAsync(cancellationToken);
             if (applied.Enabled != AutoSleepEnabled || Math.Abs(applied.Minutes - minutes) > 1)
             {
                 throw new InvalidOperationException(
@@ -199,7 +199,7 @@ public sealed partial class RazerHeadsetAudioViewModel
                 },
                 token => new RazerMakoXPowerService(_connection.DevicePath, _diagnostic)
                     .SetAsync(previousHardware.Enabled, previousHardware.Minutes, token),
-                cancellationToken).ConfigureAwait(false);
+                cancellationToken);
             ErrorText = string.Empty;
             OperationStatusText = AppStrings.Text("BlackSharkSaved");
         }
@@ -231,20 +231,38 @@ public sealed partial class RazerHeadsetAudioViewModel
             throw new InvalidOperationException("Ambient uses the screen-sampling frame pump.");
         }
 
-        if (service is RazerMakoXChromaService mako && effect == RazerChromaEffect.Wave)
+        if (service is RazerMakoXChromaService mako)
         {
-            await mako.SetEffectAsync(
-                effect,
-                [],
-                MakoXWaveDirections[SelectedWaveDirectionIndex].Flag,
-                40,
-                cancellationToken).ConfigureAwait(false);
-            return;
+            if (effect == RazerChromaEffect.Wave)
+            {
+                await mako.SetEffectAsync(
+                    effect,
+                    [],
+                    MakoXWaveDirections[SelectedWaveDirectionIndex].Flag,
+                    40,
+                    cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            if (effect == RazerChromaEffect.Starlight)
+            {
+                // Synapse's Joliet defaults use duration 2 for Starlight.
+                await mako.SetEffectAsync(
+                    effect,
+                    [primary.R, primary.G, primary.B],
+                    1,
+                    2,
+                    cancellationToken).ConfigureAwait(false);
+                return;
+            }
         }
 
         var colors = effect switch
         {
             RazerChromaEffect.Static => new byte[] { primary.R, primary.G, primary.B },
+            // Synapse's Joliet defaults send one color for Breathing.
+            RazerChromaEffect.Breathing when service is RazerMakoXChromaService =>
+                [primary.R, primary.G, primary.B],
             RazerChromaEffect.Breathing =>
                 [primary.R, primary.G, primary.B, secondary.R, secondary.G, secondary.B],
             RazerChromaEffect.Starlight => new byte[] { primary.R, primary.G, primary.B },
@@ -292,8 +310,7 @@ public sealed partial class RazerHeadsetAudioViewModel
                 if (effect != RazerChromaEffect.CustomFrame)
                 {
                     await StopAmbientCoreAsync();
-                    await WriteChromaEffectHardwareAsync(effect, primary, secondary, cancellationToken)
-                        .ConfigureAwait(false);
+                    await WriteChromaEffectHardwareAsync(effect, primary, secondary, cancellationToken);
                 }
                 SelectedLightingEffectIndex = Array.IndexOf(LightingEffects, effect);
                 PrimaryColor = primary;
@@ -314,7 +331,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             var applied = (byte)Math.Clamp(brightness, 0, 100);
             try
             {
-                await WriteChromaBrightnessHardwareAsync(applied, cancellationToken).ConfigureAwait(false);
+                await WriteChromaBrightnessHardwareAsync(applied, cancellationToken);
                 Brightness = applied;
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -348,7 +365,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         try
         {
             await new RazerMakoXPowerService(_connection.DevicePath, _diagnostic)
-                .SetAsync(appliedEnabled, appliedMinutes, cancellationToken).ConfigureAwait(false);
+                .SetAsync(appliedEnabled, appliedMinutes, cancellationToken);
             AutoSleepEnabled = appliedEnabled;
             SelectAutoSleepMinutes(appliedMinutes);
         }
