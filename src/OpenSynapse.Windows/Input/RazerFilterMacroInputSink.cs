@@ -679,7 +679,7 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
                 continue;
             }
 
-            if (!RazerFilterInfBinder.InspectAttachment([productId]).IsAttached)
+            if (!RazerFilterInfBinder.IsAttachedForInstalledInfs([productId]))
             {
                 log?.Invoke($"macro keyboard endpoint skipped={candidate} reason=filter-missing");
                 continue;

@@ -211,20 +211,15 @@ internal static partial class RazerFilterInfBinder
 
                 var exitCode = await RunPnpUtilAsync(inf, install: true, cancellationToken).ConfigureAwait(false);
                 var description = DescribeInf(inf);
-                if (exitCode == 259)
+                for (var attempt = 0; exitCode == 259 && attempt < 3; attempt++)
                 {
-                    // Installing the lower filter can re-enumerate the HID children.
-                    // Retry once so a keyboard collection that was temporarily absent
-                    // can still receive its UpperFilters.
-                    await Task.Delay(TimeSpan.FromSeconds(1.5), cancellationToken).ConfigureAwait(false);
-                    var retry = await RunPnpUtilAsync(inf, install: true, cancellationToken).ConfigureAwait(false);
-                    exitCodes.Add($"{description} returned 259; retry returned {retry}");
-                    exitCode = retry;
+                    // Installing a filter re-enumerates the HID children. A device
+                    // that is still coming back reports ERROR_PENDING; wait for it
+                    // instead of failing the whole bind after one short retry.
+                    await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken).ConfigureAwait(false);
+                    exitCode = await RunPnpUtilAsync(inf, install: true, cancellationToken).ConfigureAwait(false);
                 }
-                else
-                {
-                    exitCodes.Add($"{description} returned {exitCode}");
-                }
+                exitCodes.Add($"{description} returned {exitCode}");
 
                 succeeded &= RazerDriverInstaller.IsSuccessfulExitCode(exitCode);
             }
@@ -286,13 +281,15 @@ internal static partial class RazerFilterInfBinder
     internal static bool IsAttached(
         IReadOnlyList<ushort> productIds,
         RegistryKey? enumRoot = null,
-        IReadOnlySet<ushort>? presentProductIds = null) =>
-        InspectAttachment(productIds, enumRoot, presentProductIds).IsAttached;
+        IReadOnlySet<ushort>? presentProductIds = null,
+        IReadOnlySet<int>? coveredInterfaces = null) =>
+        InspectAttachment(productIds, enumRoot, presentProductIds, coveredInterfaces).IsAttached;
 
     internal static RazerFilterAttachmentState InspectAttachment(
         IReadOnlyList<ushort> productIds,
         RegistryKey? enumRoot = null,
-        IReadOnlySet<ushort>? presentProductIds = null)
+        IReadOnlySet<ushort>? presentProductIds = null,
+        IReadOnlySet<int>? coveredInterfaces = null)
     {
         ArgumentNullException.ThrowIfNull(productIds);
         var ownsRoot = enumRoot is null;
@@ -317,6 +314,13 @@ internal static partial class RazerFilterInfBinder
 
                 foreach (var (deviceName, instanceName) in InstanceNames(root, productId))
                 {
+                    if (coveredInterfaces is not null &&
+                        (!TryGetInterfaceNumber(deviceName, out var interfaceNumber) ||
+                         !coveredInterfaces.Contains(interfaceNumber)))
+                    {
+                        continue;
+                    }
+
                     using var instance = root.OpenSubKey($@"{deviceName}\{instanceName}");
                     if (instance is null)
                     {
@@ -399,7 +403,8 @@ internal static partial class RazerFilterInfBinder
     internal static IReadOnlyList<string> FindUnfilteredKeyboardInstances(
         IReadOnlyList<ushort> productIds,
         RegistryKey? enumRoot = null,
-        IReadOnlySet<ushort>? presentProductIds = null)
+        IReadOnlySet<ushort>? presentProductIds = null,
+        IReadOnlySet<int>? coveredInterfaces = null)
     {
         ArgumentNullException.ThrowIfNull(productIds);
         var ownsRoot = enumRoot is null;
@@ -422,6 +427,13 @@ internal static partial class RazerFilterInfBinder
 
                 foreach (var (deviceName, instanceName) in InstanceNames(root, productId))
                 {
+                    if (coveredInterfaces is not null &&
+                        (!TryGetInterfaceNumber(deviceName, out var interfaceNumber) ||
+                         !coveredInterfaces.Contains(interfaceNumber)))
+                    {
+                        continue;
+                    }
+
                     using var instance = root.OpenSubKey($@"{deviceName}\{instanceName}");
                     if (instance is null || !IsKeyboardInstance(instance) ||
                         filters.Any(filter => HasFilter(instance, filter)))
