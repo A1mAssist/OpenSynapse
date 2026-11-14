@@ -209,17 +209,18 @@ public sealed partial class MainWindow
 
     private void UpdatePerformanceSamplingState()
     {
-        // The overlay is a separate window, so it keeps sampling while the main
-        // window is hidden. Without a visible consumer, the two-second sensor pass
-        // is pure background cost.
+        // Separate windows keep sampling while the main window is hidden. Without
+        // a visible consumer, the two-second sensor pass is pure background cost.
+        var curveWindowOpen = _bladeFanCurveWindow is not null;
         _viewModel.Telemetry.SetPerformanceSamplingEnabled(
-            _performanceOverlayEnabled ||
+            _performanceOverlayEnabled || curveWindowOpen ||
             (AppWindow.IsVisible &&
              (IsPageCurrent("overview") ||
               (IsPageCurrent("devices") && _devicesPage?.IsBladePanelVisible == true))));
         _viewModel.Refresh.SetDeviceReadoutSamplingEnabled(
-            AppWindow.IsVisible &&
-            (IsPageCurrent("devices") || IsPageCurrent("diagnostics")));
+            curveWindowOpen ||
+            (AppWindow.IsVisible &&
+             (IsPageCurrent("devices") || IsPageCurrent("diagnostics"))));
         _viewModel.Refresh.SetDiagnosticsRebuildEnabled(
             AppWindow.IsVisible && IsPageCurrent("diagnostics"));
     }

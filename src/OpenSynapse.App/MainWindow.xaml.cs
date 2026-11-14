@@ -256,7 +256,8 @@ public sealed partial class MainWindow : Window
         if (args.DidVisibilityChange)
         {
             UpdatePerformanceSamplingState();
-            _viewModel.Refresh.SetDeviceWatchActive(sender.IsVisible);
+            _viewModel.Refresh.SetDeviceWatchActive(
+                sender.IsVisible || _bladeFanCurveWindow is not null);
             _settingsPage?.UpdateChromaRestStatusTimer(sender.IsVisible);
             if (sender.IsVisible)
             {

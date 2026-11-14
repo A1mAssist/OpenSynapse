@@ -23,9 +23,13 @@ public sealed partial class MainWindow
             if (ReferenceEquals(_bladeFanCurveWindow, window))
             {
                 _bladeFanCurveWindow = null;
+                _viewModel.Refresh.SetDeviceWatchActive(AppWindow.IsVisible);
+                UpdatePerformanceSamplingState();
             }
         };
         _bladeFanCurveWindow = window;
+        _viewModel.Refresh.SetDeviceWatchActive(true);
+        UpdatePerformanceSamplingState();
         window.Activate();
         window.BringToFront();
     }
