@@ -1227,6 +1227,14 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         _thxBassBoostLevel = state.BassBoost?.LevelPercent ?? 0;
         _thxSidetoneEnabled = state.Sidetone?.Enabled ?? false;
         _thxSidetoneLevel = state.Sidetone?.LevelPercent ?? 0;
+        _thxCaptureNormalizationEnabled = state.CaptureNormalization?.Enabled ?? false;
+        _thxCaptureNormalizationLevel = state.CaptureNormalization?.LevelPercent ?? 0;
+        _thxCaptureVocalClarityEnabled = state.CaptureVocalClarity?.Enabled ?? false;
+        _thxCaptureVocalClarityLevel = state.CaptureVocalClarity?.LevelPercent ?? 0;
+        _thxCaptureNoiseReductionEnabled = state.CaptureNoiseReduction?.Enabled ?? false;
+        _thxCaptureNoiseReductionLevel = state.CaptureNoiseReduction?.LevelPercent ?? 0;
+        _thxCaptureVoiceGateEnabled = state.CaptureVoiceGate?.Enabled ?? false;
+        _thxCaptureVoiceGateLevel = state.CaptureVoiceGate?.LevelPercent ?? 0;
         OnPropertyChanged(string.Empty);
     }
 
@@ -1259,6 +1267,11 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         OnPropertyChanged(nameof(ThxVoiceClarityVisibility));
         OnPropertyChanged(nameof(ThxBassBoostVisibility));
         OnPropertyChanged(nameof(ThxSidetoneVisibility));
+        OnPropertyChanged(nameof(ThxCaptureVisibility));
+        OnPropertyChanged(nameof(ThxCaptureNormalizationVisibility));
+        OnPropertyChanged(nameof(ThxCaptureVocalClarityVisibility));
+        OnPropertyChanged(nameof(ThxCaptureNoiseReductionVisibility));
+        OnPropertyChanged(nameof(ThxCaptureVoiceGateVisibility));
     }
 
     public async Task LoadParametricEqAsync(CancellationToken cancellationToken = default)

@@ -2746,6 +2746,15 @@
   <data name="RazerHeadsetThxVoiceClarityApply.Content" xml:space="preserve"><value>Apply voice clarity</value></data>
   <data name="RazerHeadsetThxSidetoneToggle.Header" xml:space="preserve"><value>Sidetone</value></data>
   <data name="RazerHeadsetThxSidetoneApply.Content" xml:space="preserve"><value>Apply sidetone</value></data>
+  <data name="RazerHeadsetThxCaptureTitle.Text" xml:space="preserve"><value>Microphone enhancements</value></data>
+  <data name="RazerHeadsetThxCaptureNormalizationToggle.Header" xml:space="preserve"><value>Volume normalization</value></data>
+  <data name="RazerHeadsetThxCaptureNormalizationApply.Content" xml:space="preserve"><value>Apply volume normalization</value></data>
+  <data name="RazerHeadsetThxCaptureVocalClarityToggle.Header" xml:space="preserve"><value>Vocal clarity</value></data>
+  <data name="RazerHeadsetThxCaptureVocalClarityApply.Content" xml:space="preserve"><value>Apply vocal clarity</value></data>
+  <data name="RazerHeadsetThxCaptureNoiseReductionToggle.Header" xml:space="preserve"><value>Microphone noise reduction</value></data>
+  <data name="RazerHeadsetThxCaptureNoiseReductionApply.Content" xml:space="preserve"><value>Apply noise reduction</value></data>
+  <data name="RazerHeadsetThxCaptureVoiceGateToggle.Header" xml:space="preserve"><value>Microphone noise gate</value></data>
+  <data name="RazerHeadsetThxCaptureVoiceGateApply.Content" xml:space="preserve"><value>Apply noise gate</value></data>
   <data name="RazerHeadsetThxContainerMissing" xml:space="preserve"><value>The headset audio endpoint container ID is not available, so THX cannot be addressed. Reconnect the headset and refresh.</value></data>
   <data name="RazerHeadsetThxHelperFailed" xml:space="preserve"><value>The THX helper process could not be started. Reopen the app and try again.</value></data>
   <data name="RazerHeadsetThxFailed" xml:space="preserve"><value>The THX component did not accept this change. Install or repair the THX package, then refresh.</value></data>

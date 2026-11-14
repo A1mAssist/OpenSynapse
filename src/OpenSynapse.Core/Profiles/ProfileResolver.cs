@@ -278,6 +278,38 @@ public static partial class ProfileResolver
             power?.ThxSidetoneLevel,
             device?.ThxSidetoneLevel,
             global?.ThxSidetoneLevel),
+        ThxCaptureNormalizationEnabled = First(
+            power?.ThxCaptureNormalizationEnabled,
+            device?.ThxCaptureNormalizationEnabled,
+            global?.ThxCaptureNormalizationEnabled),
+        ThxCaptureNormalizationLevel = First(
+            power?.ThxCaptureNormalizationLevel,
+            device?.ThxCaptureNormalizationLevel,
+            global?.ThxCaptureNormalizationLevel),
+        ThxCaptureVocalClarityEnabled = First(
+            power?.ThxCaptureVocalClarityEnabled,
+            device?.ThxCaptureVocalClarityEnabled,
+            global?.ThxCaptureVocalClarityEnabled),
+        ThxCaptureVocalClarityLevel = First(
+            power?.ThxCaptureVocalClarityLevel,
+            device?.ThxCaptureVocalClarityLevel,
+            global?.ThxCaptureVocalClarityLevel),
+        ThxCaptureNoiseReductionEnabled = First(
+            power?.ThxCaptureNoiseReductionEnabled,
+            device?.ThxCaptureNoiseReductionEnabled,
+            global?.ThxCaptureNoiseReductionEnabled),
+        ThxCaptureNoiseReductionLevel = First(
+            power?.ThxCaptureNoiseReductionLevel,
+            device?.ThxCaptureNoiseReductionLevel,
+            global?.ThxCaptureNoiseReductionLevel),
+        ThxCaptureVoiceGateEnabled = First(
+            power?.ThxCaptureVoiceGateEnabled,
+            device?.ThxCaptureVoiceGateEnabled,
+            global?.ThxCaptureVoiceGateEnabled),
+        ThxCaptureVoiceGateLevel = First(
+            power?.ThxCaptureVoiceGateLevel,
+            device?.ThxCaptureVoiceGateLevel,
+            global?.ThxCaptureVoiceGateLevel),
         EqPreset = power?.EqPreset ?? device?.EqPreset ?? global?.EqPreset,
         EqBands = CloneMap(power?.EqBands ?? device?.EqBands ?? global?.EqBands),
         MicEqPreset = power?.MicEqPreset ?? device?.MicEqPreset ?? global?.MicEqPreset,

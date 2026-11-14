@@ -257,6 +257,56 @@ internal sealed class ThxHeadsetHelperSession
                 _v3.SetSidetoneLevel(containerId!, raw);
         }
 
+        if (kind == "captureVoiceGate")
+        {
+            if (profile.NativeVersion != ThxNativeVersion.V3)
+            {
+                throw new ArgumentException("THX capture voice gate is available only on V3.");
+            }
+            var currentEnabled = _v3!.GetCaptureVoiceGate(containerId!);
+            if (currentEnabled != enabled && !_v3.SetCaptureVoiceGate(containerId!, enabled))
+            {
+                return false;
+            }
+            if (!enabled || request.LevelPercent is not { } gatePercent)
+            {
+                return true;
+            }
+
+            var gateLevel = VoiceGateRaw(gatePercent);
+            return Math.Abs(_v3.GetCaptureVoiceGateLevel(containerId!) - gateLevel) < 0.01f ||
+                _v3.SetCaptureVoiceGateLevel(containerId!, gateLevel);
+        }
+
+        if (kind == "captureVocalClarity")
+        {
+            if (profile.NativeVersion != ThxNativeVersion.V3)
+            {
+                throw new ArgumentException("THX capture vocal clarity is available only on V3.");
+            }
+
+            var currentEnabled = _v3!.GetCaptureVocalClarity(containerId!);
+            if (currentEnabled != enabled && !_v3.SetCaptureVocalClarity(containerId!, enabled))
+            {
+                return false;
+            }
+            if (!enabled || request.LevelPercent is not { } clarityPercent)
+            {
+                return true;
+            }
+
+            var level = Math.Clamp(clarityPercent, 0, 100);
+            if (_v3.GetCaptureVocalClarityLevel(containerId!) == level)
+            {
+                return true;
+            }
+
+            // The firmware ignores a level write while vocal clarity is enabled.
+            _v3.SetCaptureVocalClarity(containerId!, false);
+            var applied = _v3.SetCaptureVocalClarityLevel(containerId!, level);
+            return _v3.SetCaptureVocalClarity(containerId!, true) && applied;
+        }
+
         if (profile.NativeVersion == ThxNativeVersion.V3)
         {
             var (getEnabled, setEnabled, getLevel, setLevel) = kind switch
@@ -276,6 +326,16 @@ internal sealed class ThxHeadsetHelperSession
                      (Func<bool, bool>)(value => _v3!.SetBassBoost(containerId!, value)),
                      (Func<int>)(() => _v3!.GetBassBoostLevel(containerId!)),
                      (Func<int, bool>)(value => _v3!.SetBassBoostLevel(containerId!, value))),
+                "captureNormalization" =>
+                    ((Func<bool>)(() => _v3!.GetCaptureNormalization(containerId!)),
+                     (Func<bool, bool>)(value => _v3!.SetCaptureNormalization(containerId!, value)),
+                     (Func<int>)(() => _v3!.GetCaptureNormalizationLevel(containerId!)),
+                     (Func<int, bool>)(value => _v3!.SetCaptureNormalizationLevel(containerId!, value))),
+                "captureNoiseReduction" =>
+                    ((Func<bool>)(() => _v3!.GetCaptureNoiseReduction(containerId!)),
+                     (Func<bool, bool>)(value => _v3!.SetCaptureNoiseReduction(containerId!, value)),
+                     (Func<int>)(() => _v3!.GetCaptureNoiseReductionLevel(containerId!)),
+                     (Func<int, bool>)(value => _v3!.SetCaptureNoiseReductionLevel(containerId!, value))),
                 _ => throw new ArgumentException("The THX enhancement kind is invalid."),
             };
 
@@ -375,12 +435,29 @@ internal sealed class ThxHeadsetHelperSession
                 SidetonePercent(v3.GetSidetoneLevel(containerId))),
             BassBoost: TryReadEnhancement(
                 () => v3.GetBassBoost(containerId),
-                () => v3.GetBassBoostLevel(containerId)));
+                () => v3.GetBassBoostLevel(containerId)),
+            CaptureNormalization: TryReadEnhancement(
+                () => v3.GetCaptureNormalization(containerId),
+                () => v3.GetCaptureNormalizationLevel(containerId)),
+            CaptureVocalClarity: TryReadEnhancement(
+                () => v3.GetCaptureVocalClarity(containerId),
+                () => v3.GetCaptureVocalClarityLevel(containerId)),
+            CaptureNoiseReduction: TryReadEnhancement(
+                () => v3.GetCaptureNoiseReduction(containerId),
+                () => v3.GetCaptureNoiseReductionLevel(containerId)),
+            CaptureVoiceGate: TryReadVoiceGateEnhancement(
+                () => v3.GetCaptureVoiceGate(containerId),
+                () => v3.GetCaptureVoiceGateLevel(containerId)));
     }
 
     /// <summary>null means this device or component cannot report the enhancement.</summary>
     internal static ThxAudioEnhancement? TryReadEnhancement(Func<bool> enabled, Func<int> level) =>
         TryRead(() => new ThxAudioEnhancement(enabled(), ClampPercent(level())));
+
+    internal static ThxAudioEnhancement? TryReadVoiceGateEnhancement(
+        Func<bool> enabled,
+        Func<float> level) =>
+        TryRead(() => new ThxAudioEnhancement(enabled(), VoiceGatePercent(level())));
 
     private IReadOnlyList<ThxAudioPreset> ReadV3Presets(string containerId)
     {
@@ -442,6 +519,12 @@ internal sealed class ThxHeadsetHelperSession
         gains.All(value => double.IsFinite(value) && value is >= -12 and <= 12);
 
     private static int ClampPercent(int value) => Math.Clamp(value, 0, 100);
+
+    private static int VoiceGatePercent(float value) =>
+        Math.Clamp((int)Math.Round((value + 70f) * 100f / 50f), 0, 100);
+
+    private static float VoiceGateRaw(int percent) =>
+        -70f + percent / 100f * 50f;
 
     private static int SidetonePercent(int raw)
     {

@@ -22,6 +22,14 @@ public sealed class HeadsetProfileSettings
     public int? ThxBassBoostLevel { get; set; }
     public bool? ThxSidetoneEnabled { get; set; }
     public int? ThxSidetoneLevel { get; set; }
+    public bool? ThxCaptureNormalizationEnabled { get; set; }
+    public int? ThxCaptureNormalizationLevel { get; set; }
+    public bool? ThxCaptureVocalClarityEnabled { get; set; }
+    public int? ThxCaptureVocalClarityLevel { get; set; }
+    public bool? ThxCaptureNoiseReductionEnabled { get; set; }
+    public int? ThxCaptureNoiseReductionLevel { get; set; }
+    public bool? ThxCaptureVoiceGateEnabled { get; set; }
+    public int? ThxCaptureVoiceGateLevel { get; set; }
     public string? EqPreset { get; set; }
     public Dictionary<string, int>? EqBands { get; set; }
     public string? MicEqPreset { get; set; }
@@ -76,6 +84,14 @@ public sealed class HeadsetProfileSettings
         MouseProfileSettings.ValidatePercent(ThxVoiceClarityLevel, nameof(ThxVoiceClarityLevel));
         MouseProfileSettings.ValidatePercent(ThxBassBoostLevel, nameof(ThxBassBoostLevel));
         MouseProfileSettings.ValidatePercent(ThxSidetoneLevel, nameof(ThxSidetoneLevel));
+        MouseProfileSettings.ValidatePercent(
+            ThxCaptureNormalizationLevel, nameof(ThxCaptureNormalizationLevel));
+        MouseProfileSettings.ValidatePercent(
+            ThxCaptureVocalClarityLevel, nameof(ThxCaptureVocalClarityLevel));
+        MouseProfileSettings.ValidatePercent(
+            ThxCaptureNoiseReductionLevel, nameof(ThxCaptureNoiseReductionLevel));
+        MouseProfileSettings.ValidatePercent(
+            ThxCaptureVoiceGateLevel, nameof(ThxCaptureVoiceGateLevel));
         MouseProfileSettings.ValidateRange(AudioSourceIndex, 0, 4, nameof(AudioSourceIndex));
         MouseProfileSettings.ValidatePercent(MicDeEsser, nameof(MicDeEsser));
         MouseProfileSettings.ValidateRange(MicLimiterDb, -60, 0, nameof(MicLimiterDb));

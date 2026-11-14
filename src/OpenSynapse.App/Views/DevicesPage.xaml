@@ -313,6 +313,31 @@
                       <Button local:Localized.Uid="RazerHidKrakenApplyButton" Click="HeadsetAudioApplyLightingClick" IsEnabled="{Binding CanApplyLighting}" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Right" />
                     </StackPanel>
                   </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ThxCaptureVisibility}">
+                    <StackPanel Spacing="12">
+                      <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="RazerHeadsetThxCaptureTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
+                      <StackPanel Spacing="4" Visibility="{Binding ThxCaptureNormalizationVisibility}">
+                        <ToggleSwitch local:Localized.Uid="RazerHeadsetThxCaptureNormalizationToggle" IsOn="{Binding ThxCaptureNormalizationEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding ThxCaptureNormalizationLevel, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" /><TextBlock Grid.Column="1" Text="{Binding ThxCaptureNormalizationText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></Grid>
+                        <Button local:Localized.Uid="RazerHeadsetThxCaptureNormalizationApply" Click="HeadsetAudioApplyThxCaptureNormalizationClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
+                      </StackPanel>
+                      <StackPanel Spacing="4" Visibility="{Binding ThxCaptureVocalClarityVisibility}">
+                        <ToggleSwitch local:Localized.Uid="RazerHeadsetThxCaptureVocalClarityToggle" IsOn="{Binding ThxCaptureVocalClarityEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding ThxCaptureVocalClarityLevel, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" /><TextBlock Grid.Column="1" Text="{Binding ThxCaptureVocalClarityText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></Grid>
+                        <Button local:Localized.Uid="RazerHeadsetThxCaptureVocalClarityApply" Click="HeadsetAudioApplyThxCaptureVocalClarityClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
+                      </StackPanel>
+                      <StackPanel Spacing="4" Visibility="{Binding ThxCaptureNoiseReductionVisibility}">
+                        <ToggleSwitch local:Localized.Uid="RazerHeadsetThxCaptureNoiseReductionToggle" IsOn="{Binding ThxCaptureNoiseReductionEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding ThxCaptureNoiseReductionLevel, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" /><TextBlock Grid.Column="1" Text="{Binding ThxCaptureNoiseReductionText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></Grid>
+                        <Button local:Localized.Uid="RazerHeadsetThxCaptureNoiseReductionApply" Click="HeadsetAudioApplyThxCaptureNoiseReductionClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
+                      </StackPanel>
+                      <StackPanel Spacing="4" Visibility="{Binding ThxCaptureVoiceGateVisibility}">
+                        <ToggleSwitch local:Localized.Uid="RazerHeadsetThxCaptureVoiceGateToggle" IsOn="{Binding ThxCaptureVoiceGateEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding ThxCaptureVoiceGateLevel, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" /><TextBlock Grid.Column="1" Text="{Binding ThxCaptureVoiceGateText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></Grid>
+                        <Button local:Localized.Uid="RazerHeadsetThxCaptureVoiceGateApply" Click="HeadsetAudioApplyThxCaptureVoiceGateClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
+                      </StackPanel>
+                    </StackPanel>
+                  </Border>
                 </StackPanel>
                 <StackPanel x:Name="KeyboardPanel" DataContext="{Binding Accessories.SelectedKeyboard}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">

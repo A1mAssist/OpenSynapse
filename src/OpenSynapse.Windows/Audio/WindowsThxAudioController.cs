@@ -71,6 +71,10 @@ public sealed class WindowsThxAudioController : IThxAudioController, IAsyncDispo
                 ThxAudioEnhancementKind.SoundNormalization => "soundNormalization",
                 ThxAudioEnhancementKind.Sidetone => "sidetone",
                 ThxAudioEnhancementKind.BassBoost => "bassBoost",
+                ThxAudioEnhancementKind.CaptureNormalization => "captureNormalization",
+                ThxAudioEnhancementKind.CaptureVocalClarity => "captureVocalClarity",
+                ThxAudioEnhancementKind.CaptureNoiseReduction => "captureNoiseReduction",
+                ThxAudioEnhancementKind.CaptureVoiceGate => "captureVoiceGate",
                 _ => "voiceClarity",
             },
             LevelPercent: levelPercent), cancellationToken);

@@ -22,6 +22,10 @@ public enum ThxAudioEnhancementKind
     SoundNormalization,
     Sidetone,
     BassBoost,
+    CaptureNormalization,
+    CaptureVocalClarity,
+    CaptureNoiseReduction,
+    CaptureVoiceGate,
 }
 
 public sealed record ThxAudioPreset(string Id, string Name)
@@ -46,7 +50,11 @@ public sealed record ThxAudioState(
     ThxAudioEnhancement? VoiceClarity,
     bool CanEdit,
     ThxAudioEnhancement? Sidetone = null,
-    ThxAudioEnhancement? BassBoost = null);
+    ThxAudioEnhancement? BassBoost = null,
+    ThxAudioEnhancement? CaptureNormalization = null,
+    ThxAudioEnhancement? CaptureVocalClarity = null,
+    ThxAudioEnhancement? CaptureNoiseReduction = null,
+    ThxAudioEnhancement? CaptureVoiceGate = null);
 
 public sealed record ThxAudioStatus(
     ThxAudioAvailability Availability,

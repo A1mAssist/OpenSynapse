@@ -129,4 +129,16 @@ public sealed partial class DevicesPage : UserControl
 
     private async void HeadsetAudioApplyThxSidetoneClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.Accessories.SelectedHeadsetAudio?.ApplyThxSidetoneAsync(Lifetime) ?? Task.CompletedTask);
+
+    private async void HeadsetAudioApplyThxCaptureNormalizationClick(object sender, RoutedEventArgs e) =>
+        await (ViewModel.Accessories.SelectedHeadsetAudio?.ApplyThxCaptureNormalizationAsync(Lifetime) ?? Task.CompletedTask);
+
+    private async void HeadsetAudioApplyThxCaptureVocalClarityClick(object sender, RoutedEventArgs e) =>
+        await (ViewModel.Accessories.SelectedHeadsetAudio?.ApplyThxCaptureVocalClarityAsync(Lifetime) ?? Task.CompletedTask);
+
+    private async void HeadsetAudioApplyThxCaptureNoiseReductionClick(object sender, RoutedEventArgs e) =>
+        await (ViewModel.Accessories.SelectedHeadsetAudio?.ApplyThxCaptureNoiseReductionAsync(Lifetime) ?? Task.CompletedTask);
+
+    private async void HeadsetAudioApplyThxCaptureVoiceGateClick(object sender, RoutedEventArgs e) =>
+        await (ViewModel.Accessories.SelectedHeadsetAudio?.ApplyThxCaptureVoiceGateAsync(Lifetime) ?? Task.CompletedTask);
 }
