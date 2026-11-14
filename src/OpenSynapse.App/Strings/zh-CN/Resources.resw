@@ -561,14 +561,6 @@
     <value>退出 OpenSynapse</value>
     <comment>退出 OpenSynapse</comment>
   </data>
-  <data name="TrayTurnOffDisplay.Text" xml:space="preserve">
-    <value>关闭屏幕</value>
-    <comment>关闭屏幕</comment>
-  </data>
-  <data name="TrayTurnOffDisplay.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>关闭屏幕</value>
-    <comment>关闭屏幕</comment>
-  </data>
   <data name="Text_0982EC10" xml:space="preserve">
     <value>智能风扇曲线</value>
     <comment>智能风扇曲线</comment>

@@ -117,21 +117,6 @@
         <Rectangle x:Name="BatterySeparator" Height="1" Fill="{ThemeResource MenuFlyoutSeparatorBackground}" Margin="6,2,6,2" Visibility="Collapsed" />
         <StackPanel x:Name="BatteryPanel" Visibility="Collapsed" />
         <Rectangle Height="1" Fill="{ThemeResource MenuFlyoutSeparatorBackground}" Margin="6,2,6,2" />
-        <Button x:Name="TurnOffDisplayMenuItem"
-                Style="{StaticResource TrayMenuButtonStyle}"
-                Click="TurnOffDisplayClick">
-          <Grid>
-            <Viewbox Width="16" Height="16" HorizontalAlignment="Left" VerticalAlignment="Center">
-              <SymbolIcon Symbol="View" />
-            </Viewbox>
-            <TextBlock x:Name="TurnOffDisplayText"
-                       local:Localized.Uid="TrayTurnOffDisplay"
-
-                       Margin="28,0,0,0"
-                       VerticalAlignment="Center" />
-          </Grid>
-        </Button>
-        <Rectangle Height="1" Fill="{ThemeResource MenuFlyoutSeparatorBackground}" Margin="6,2,6,2" />
         <Button x:Name="ExitMenuItem"
                 Style="{StaticResource TrayMenuButtonStyle}"
                 Click="ExitClick">
