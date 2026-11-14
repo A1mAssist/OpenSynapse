@@ -1321,6 +1321,7 @@ internal sealed class MacroRuntime : IDisposable
         try
         {
             var hook = new MacroInputHook(HandleInput, _log);
+            hook.IsPlaybackActive = () => _isPlaying;
             hook.Start();
             _hook = hook;
             return true;

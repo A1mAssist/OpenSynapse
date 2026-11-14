@@ -2,9 +2,12 @@ namespace OpenSynapse.Windows.Input;
 
 internal static class MacroMouseInputPolicy
 {
-    // Razer's driver can inject side-button events. Keep ignoring injected
-    // clicks and wheels so another tool cannot fire every macro.
-    internal static bool AcceptsMouseButton(uint flags, nuint extraInfo, int button) =>
+    // Razer's driver re-injects the buttons it rewrites, so an injected button
+    // is usually still a physical one. Only a running playback can produce
+    // untagged output of our own, so that is the window where injected input
+    // has to stay ignored.
+    internal static bool AcceptsMouseButton(
+        uint flags, nuint extraInfo, int button, bool playbackActive) =>
         extraInfo != WindowsMacroInputSink.InjectionTag &&
-        ((flags & 0x01) == 0 || button is 4 or 5);
+        (!playbackActive || (flags & 0x01) == 0 || button is 4 or 5);
 }
