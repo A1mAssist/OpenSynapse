@@ -416,6 +416,117 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
             CurrentConnections, SelectedDevice, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Session ending runs on the UI thread, so the HID writes happen on a worker
+    /// with a bounded wait. A device that does not answer must not delay shutdown.
+    /// </summary>
+    internal void TurnOffLightingForShutdown(TimeSpan timeout)
+    {
+        if (_deviceService is null)
+        {
+            return;
+        }
+
+        var connections = CurrentConnections;
+        var selected = SelectedDevice;
+        var task = Task.Run(() => TurnOffLightingForShutdownAsync(
+            connections, selected, CancellationToken.None));
+        try
+        {
+            if (!task.Wait(timeout))
+            {
+                _diagnosticLog.TryWrite(
+                    "lighting-shutdown",
+                    $"timed out after {timeout.TotalSeconds:0.#}s.");
+            }
+        }
+        catch (AggregateException exception)
+        {
+            _diagnosticLog.TryWrite(
+                "lighting-shutdown",
+                $"failed: {exception.GetBaseException().Message}");
+        }
+    }
+
+    private async Task TurnOffLightingForShutdownAsync(
+        IReadOnlyList<RazerHidDeviceConnection> connections,
+        RazerHidDeviceViewModel? selected,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _softwareLightingOwner.StopAllAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            _diagnosticLog.TryWrite(
+                "lighting-shutdown",
+                $"software runtime stop failed: {exception.Message}");
+        }
+
+        if (selected is not null)
+        {
+            try
+            {
+                await selected.StopLightingRuntimeAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
+            {
+                _diagnosticLog.TryWrite(
+                    "lighting-shutdown",
+                    $"selected runtime stop failed: {exception.Message}");
+            }
+        }
+
+        var service = _deviceService;
+        if (service is null)
+        {
+            return;
+        }
+
+        var turnedOff = 0;
+        foreach (var connection in connections.Where(connection =>
+                     connection.IsReady &&
+                     connection.Definition.Category != DeviceCategory.Laptop))
+        {
+            foreach (var (zone, capabilities) in connection.LightingZones)
+            {
+                try
+                {
+                    if (capabilities.CanWriteState)
+                    {
+                        await service.SetLedStateAsync(
+                            connection,
+                            connection.Definition.DefaultStorage,
+                            zone,
+                            false,
+                            cancellationToken).ConfigureAwait(false);
+                        turnedOff++;
+                    }
+                    else if (capabilities.LightingEffects.Contains(RazerHidLightingEffect.Off))
+                    {
+                        await service.SetLightingAsync(
+                            connection,
+                            new RazerHidLightingSettings(RazerHidLightingEffect.Off, Zone: zone),
+                            cancellationToken).ConfigureAwait(false);
+                        turnedOff++;
+                    }
+                }
+                catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
+                {
+                    _diagnosticLog.TryWrite(
+                        "lighting-shutdown",
+                        $"1532:{connection.Definition.ProductId:X4} {zone}: {exception.Message}");
+                }
+            }
+        }
+
+        _diagnosticLog.TryWrite(
+            "lighting-shutdown",
+            $"off requests sent for {turnedOff} zone(s) across " +
+            $"{connections.Count(connection => connection.IsReady)} ready device(s).");
+    }
+
     internal RazerHidKrakenViewModel? CreateKrakenLighting(ushort productId)
     {
         if (_specialLightingService is null) return null;

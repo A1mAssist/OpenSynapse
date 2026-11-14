@@ -64,6 +64,7 @@ public sealed partial class SettingsPage : UserControl
         LowBatteryNotificationToggle.IsOn = settings.LowBatteryNotificationsEnabled;
         TrayBatteryToggle.IsOn = settings.TrayBatteryLevelsEnabled;
         TaskbarStatusToggle.IsOn = settings.TaskbarStatusEnabled;
+        ShutdownLightingToggle.IsOn = settings.TurnOffPeripheralLightingOnShutdown;
         PerformanceOverlayToggle.IsOn = settings.PerformanceOverlayEnabled;
         PerformanceOverlayDetailedToggle.IsOn = settings.PerformanceOverlayDetailed;
         PerformanceOverlayTopmostToggle.IsOn = settings.PerformanceOverlayAlwaysOnTop;

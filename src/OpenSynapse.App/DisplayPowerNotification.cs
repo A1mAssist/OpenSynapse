@@ -9,6 +9,7 @@ internal sealed class DisplayPowerNotification
 {
     private const uint WmDeviceChange = 0x0219;
     private const uint WmPowerBroadcast = 0x0218;
+    private const uint WmQueryEndSession = 0x0011;
     private const nuint DbtDeviceArrival = 0x8000;
     private const nuint DbtDeviceRemoveComplete = 0x8004;
     private const nuint DbtDevNodesChanged = 0x0007;
@@ -23,6 +24,7 @@ internal sealed class DisplayPowerNotification
     private readonly MainViewModel _viewModel;
     private readonly DispatcherQueue _dispatcherQueue;
     private readonly Func<bool, Task>? _setBladeIndicatorDisplayAvailable;
+    private readonly Func<bool>? _turnOffLightingOnSessionEnding;
     private readonly CancellationToken _lifetime;
     private readonly Action<string>? _diagnostic;
     private SubclassProcedure? _powerSubclassProcedure;
@@ -41,12 +43,14 @@ internal sealed class DisplayPowerNotification
         DispatcherQueue dispatcherQueue,
         Func<bool, Task>? setBladeIndicatorDisplayAvailable,
         CancellationToken lifetime,
-        Action<string>? diagnostic = null)
+        Action<string>? diagnostic = null,
+        Func<bool>? turnOffLightingOnSessionEnding = null)
     {
         _window = window;
         _viewModel = viewModel;
         _dispatcherQueue = dispatcherQueue;
         _setBladeIndicatorDisplayAvailable = setBladeIndicatorDisplayAvailable;
+        _turnOffLightingOnSessionEnding = turnOffLightingOnSessionEnding;
         _lifetime = lifetime;
         _diagnostic = diagnostic;
     }
@@ -116,6 +120,11 @@ internal sealed class DisplayPowerNotification
 
     private nint HandlePowerWindowMessage(nint windowHandle, uint message, nint wParam, nint lParam, nuint subclassId, nuint referenceData)
     {
+        if (message == WmQueryEndSession && _turnOffLightingOnSessionEnding?.Invoke() == true)
+        {
+            _viewModel.RazerHid.TurnOffLightingForShutdown(TimeSpan.FromSeconds(2));
+        }
+
         if (message == WmDeviceChange &&
             (unchecked((nuint)wParam.ToInt64()) is DbtDeviceArrival or DbtDeviceRemoveComplete or DbtDevNodesChanged))
         {
