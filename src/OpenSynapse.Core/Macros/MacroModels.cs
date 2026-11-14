@@ -505,7 +505,7 @@ public sealed class MacroDefinition
         if (Trigger?.Input is not { } triggerInput ||
             triggerInput.IsModifierKey ||
             !triggerInput.IsValid(
-                allowPrimaryMouseButton: false,
+                allowPrimaryMouseButton: true,
                 allowWheel: false,
                 allowNagaSideButton: true,
                 allowDeviceButton: true))

@@ -11,7 +11,10 @@ public static class RazerMouseMacroTriggerResolver
 {
     public static MacroInput? Resolve(ushort productId, byte buttonId, bool isNaga)
     {
-        if (buttonId is 4 or 5)
+        // The mapping page uses the standard button ids: 1 left, 2 right, 3 middle,
+        // 4 back, 5 forward. Only 4/5 used to resolve, so a left-click macro could
+        // never be bound from the key page.
+        if (buttonId is >= 1 and <= 5)
         {
             return new MacroInput
             {
