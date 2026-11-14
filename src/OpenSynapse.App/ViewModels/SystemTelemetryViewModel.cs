@@ -10,6 +10,7 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
     private string _cpuName = "CPU";
     private string _cpuValue = "--";
     private double _cpuPercent;
+    private double? _cpuTemperatureCelsius;
     private string _cpuTemperatureText = "--";
     private string _cpuPowerText = "--";
     private string _cpuClockText = "--";
@@ -20,6 +21,7 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
     private string _gpuName = "GPU";
     private string _gpuValue = "--";
     private double _gpuPercent;
+    private double? _gpuTemperatureCelsius;
     private string _gpuTemperatureText = "--";
     private string _gpuPowerText = "--";
     private string _gpuClockText = "--";
@@ -51,6 +53,7 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
     public string CpuValue { get => _cpuValue; private set => SetField(ref _cpuValue, value); }
     public double CpuPercent { get => _cpuPercent; private set => SetField(ref _cpuPercent, value); }
     public bool HasCpuUsage { get => _hasCpuUsage; private set => SetField(ref _hasCpuUsage, value); }
+    internal double? CpuTemperatureCelsius { get => _cpuTemperatureCelsius; private set => SetField(ref _cpuTemperatureCelsius, value); }
     public string CpuTemperatureText { get => _cpuTemperatureText; private set => SetField(ref _cpuTemperatureText, value); }
     public string CpuPowerText { get => _cpuPowerText; private set => SetField(ref _cpuPowerText, value); }
     public string CpuClockText { get => _cpuClockText; private set => SetField(ref _cpuClockText, value); }
@@ -61,6 +64,7 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
     public string GpuValue { get => _gpuValue; private set => SetField(ref _gpuValue, value); }
     public double GpuPercent { get => _gpuPercent; private set => SetField(ref _gpuPercent, value); }
     public bool HasGpuUsage { get => _hasGpuUsage; private set => SetField(ref _hasGpuUsage, value); }
+    internal double? GpuTemperatureCelsius { get => _gpuTemperatureCelsius; private set => SetField(ref _gpuTemperatureCelsius, value); }
     public string GpuTemperatureText { get => _gpuTemperatureText; private set => SetField(ref _gpuTemperatureText, value); }
     public string GpuPowerText { get => _gpuPowerText; private set => SetField(ref _gpuPowerText, value); }
     public string GpuClockText { get => _gpuClockText; private set => SetField(ref _gpuClockText, value); }
@@ -90,6 +94,7 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
         CpuValue = FormatPercent(snapshot.CpuUsagePercent);
         CpuPercent = snapshot.CpuUsagePercent ?? 0;
         HasCpuUsage = snapshot.CpuUsagePercent is not null;
+        CpuTemperatureCelsius = snapshot.CpuTemperatureCelsius;
         CpuTemperatureText = FormatNumber(snapshot.CpuTemperatureCelsius, "0", "°C");
         CpuPowerText = FormatNumber(snapshot.CpuPowerWatts, "0.0", " W");
         CpuClockText = FormatNumber(snapshot.CpuClockMegahertz, "0", " MHz");
@@ -117,6 +122,7 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
         GpuValue = FormatPercent(snapshot.GpuUsagePercent);
         GpuPercent = snapshot.GpuUsagePercent ?? 0;
         HasGpuUsage = snapshot.GpuUsagePercent is not null;
+        GpuTemperatureCelsius = snapshot.GpuTemperatureCelsius;
         GpuTemperatureText = FormatNumber(snapshot.GpuTemperatureCelsius, "0", "°C");
         GpuPowerText = FormatNumber(snapshot.GpuPowerWatts, "0.0", " W");
         GpuClockText = FormatNumber(snapshot.GpuClockMegahertz, "0", " MHz");

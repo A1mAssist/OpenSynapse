@@ -72,6 +72,7 @@ public sealed partial class TelemetryWorkspace : INotifyPropertyChanged
     public string BatteryHealthValue => _system.BatteryHealthValue;
     public string BatteryHealthDetail => _system.BatteryHealthDetail;
     public string BatteryChargeValue { get; private set; } = "--";
+    internal (double? Cpu, double? Gpu) Temperatures => (_system.CpuTemperatureCelsius, _system.GpuTemperatureCelsius);
     public string BatteryChargeState { get; private set; } = string.Empty;
     internal int? BatteryPercent { get; private set; }
     internal bool? IsCharging { get; private set; }

@@ -12,10 +12,12 @@
       <StackPanel Orientation="Horizontal" Spacing="6">
         <Border Width="10" Height="10" CornerRadius="5" Background="#2D9CDB" VerticalAlignment="Center" />
         <TextBlock local:Localized.Uid="BladeFanCurveColumnCpu" Foreground="{StaticResource MutedBrush}" FontSize="12" VerticalAlignment="Center" />
+        <TextBlock x:Name="CpuLiveReading" Foreground="{StaticResource DataBrush}" FontSize="12" VerticalAlignment="Center" Visibility="Collapsed" />
       </StackPanel>
       <StackPanel Orientation="Horizontal" Spacing="6">
         <Border Width="10" Height="10" CornerRadius="5" Background="#44D62C" VerticalAlignment="Center" />
         <TextBlock local:Localized.Uid="BladeFanCurveColumnGpu" Foreground="{StaticResource MutedBrush}" FontSize="12" VerticalAlignment="Center" />
+        <TextBlock x:Name="GpuLiveReading" Foreground="{StaticResource DataBrush}" FontSize="12" VerticalAlignment="Center" Visibility="Collapsed" />
       </StackPanel>
     </StackPanel>
     <Canvas x:Name="PlotCanvas" Grid.Row="1" Background="Transparent" />

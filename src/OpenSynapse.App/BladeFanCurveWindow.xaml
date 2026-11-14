@@ -14,7 +14,7 @@
           <RadioButton local:Localized.Uid="BladeFanCurveCpuTab" GroupName="BladeFanCurveSide" IsChecked="{Binding Fan.BladeFanCurveEditor.IsCpuCurveSelected, Mode=TwoWay}" />
           <RadioButton local:Localized.Uid="BladeFanCurveGpuTab" GroupName="BladeFanCurveSide" IsChecked="{Binding Fan.BladeFanCurveEditor.IsGpuCurveSelected, Mode=TwoWay}" />
         </StackPanel>
-        <local:BladeFanCurvePlot DataContext="{Binding Fan.BladeFanCurveEditor}" Height="280" />
+        <local:BladeFanCurvePlot x:Name="CurvePlot" DataContext="{Binding Fan.BladeFanCurveEditor}" Height="280" />
         <StackPanel Spacing="8">
           <Grid ColumnDefinitions="110,*,44" ColumnSpacing="10">
             <TextBlock local:Localized.Uid="BladeFanCurveColumnTemperature" Style="{StaticResource MetricLabelStyle}" />

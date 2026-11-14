@@ -25,7 +25,9 @@ public sealed partial class BladeFanCurveWindow : Window
         InitializeComponent();
         _viewModel = viewModel;
         RootLayout.DataContext = viewModel;
+        CurvePlot.AttachLiveTelemetry(viewModel.Blade, viewModel.Telemetry);
         Closed += (_, _) => RootLayout.DataContext = null;
+        Closed += (_, _) => CurvePlot.DetachLiveTelemetry();
         WindowAppearance.Apply(this);
         var appIconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "OpenSynapse.ico");
         if (File.Exists(appIconPath))
