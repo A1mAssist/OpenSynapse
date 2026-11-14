@@ -21,7 +21,11 @@ public sealed partial class RazerHeadsetAudioViewModel
     private CancellationTokenSource? _ambientCancellation;
     private Task? _ambientPump;
 
-    private async Task<bool> RunAmbientAsync(CancellationToken cancellationToken)
+    private async Task<bool> RunAmbientAsync(
+        RazerChromaEffect fallbackEffect,
+        Color fallbackPrimary,
+        Color fallbackSecondary,
+        CancellationToken cancellationToken)
     {
         if (!BeginOperation()) return false;
         try
@@ -39,6 +43,20 @@ public sealed partial class RazerHeadsetAudioViewModel
         {
             ErrorText = exception.Message;
             OperationStatusText = string.Empty;
+            if (fallbackEffect != RazerChromaEffect.CustomFrame)
+            {
+                try
+                {
+                    await RestoreEffectAsync(
+                        fallbackEffect, fallbackPrimary, fallbackSecondary, CancellationToken.None)
+                        .ConfigureAwait(true);
+                }
+                catch (Exception restore) when (IsExpectedException(restore))
+                {
+                    _diagnostic?.Invoke($"mako-x ambient restore failed: {restore.Message}");
+                }
+            }
+
             return false;
         }
         finally
@@ -66,16 +84,6 @@ public sealed partial class RazerHeadsetAudioViewModel
         }
         catch
         {
-            try
-            {
-                await service.SetEffectAsync(RazerChromaEffect.Off, [], CancellationToken.None)
-                    .ConfigureAwait(true);
-            }
-            catch (Exception exception) when (IsExpectedException(exception))
-            {
-                _diagnostic?.Invoke($"mako-x ambient fallback failed: {exception.Message}");
-            }
-
             try
             {
                 await sampler.DisposeAsync().ConfigureAwait(true);

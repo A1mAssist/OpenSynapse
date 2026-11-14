@@ -49,9 +49,9 @@ internal sealed class RazerMakoXChromaService : IRazerHeadsetLightingService, IA
             var value = await QueryAsync(
                 Create(0x82, [0x00, 0x00]), [0x00, 0x00], "read effect", cancellationToken)
                 .ConfigureAwait(false);
-            if (value.Length >= 4 && Enum.IsDefined(typeof(RazerChromaEffect), value[0]))
+            if (value.Length >= 4 && FromFirmwareEffectId(value[0]) is { } parsed)
             {
-                effect = (RazerChromaEffect)value[0];
+                effect = parsed;
                 var count = Math.Min(value[3], (value.Length - 4) / 3);
                 for (var index = 0; index < count * 3; index++) colors.Add(value[4 + index]);
             }
@@ -135,11 +135,22 @@ internal sealed class RazerMakoXChromaService : IRazerHeadsetLightingService, IA
 
     private static byte ToFirmwareEffectId(RazerChromaEffect effect) => effect switch
     {
-        // The Joliet app sends its quick-effect ids, where Fire is 8 and Audio
-        // Meter is 12; 9/10 are the generic class-0x0F enum on another page.
-        RazerChromaEffect.Fire => 8,
-        RazerChromaEffect.AudioMeter => 12,
+        // The Joliet audio enum uses 13 for Starlight; 7 is the mouse/keyboard
+        // spelling. Fire and Audio Meter already match that enum.
+        RazerChromaEffect.Starlight => 13,
+        RazerChromaEffect.Fire => 9,
+        RazerChromaEffect.AudioMeter => 10,
         _ => (byte)effect,
+    };
+
+    private static RazerChromaEffect? FromFirmwareEffectId(byte effect) => effect switch
+    {
+        13 => RazerChromaEffect.Starlight,
+        9 => RazerChromaEffect.Fire,
+        10 => RazerChromaEffect.AudioMeter,
+        _ => Enum.IsDefined(typeof(RazerChromaEffect), effect)
+            ? (RazerChromaEffect)effect
+            : null,
     };
 
     internal static byte[] CreateFramePayload(IReadOnlyList<byte> colors)
