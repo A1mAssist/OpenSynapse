@@ -292,8 +292,15 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         try
         {
             await RefreshMacroContextAsync(cancellationToken).ConfigureAwait(true);
-            var ids = await _transport.GetButtonIdsAsync(cancellationToken).ConfigureAwait(true);
-            if (ids.Count == 0)
+            var ids = (await _transport.GetButtonIdsAsync(cancellationToken).ConfigureAwait(true)).ToArray();
+            if (ids.Length > 0 && ids.Distinct().Count() != ids.Length)
+            {
+                _log?.Invoke(
+                    $"mapping pid=0x{_productId:X4} returned duplicate key ids: " +
+                    string.Join(",", ids.Select(id => id.ToString("X2", CultureInfo.InvariantCulture))));
+                ids = [];
+            }
+            if (ids.Length == 0)
             {
                 // Razer's UI keeps these ids in the product bundle when the firmware returns no button list.
                 var visual = await _assetService.GetAsync(_productId, _deviceKind, cancellationToken)
@@ -302,10 +309,10 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 var mouseIds = visual.Mouse?.ButtonNames?.Keys.Order().ToArray();
                 ids = _deviceKind == RazerMappingDeviceKind.Keyboard ? keyboardIds ?? mouseIds ?? [] : mouseIds ?? keyboardIds ?? [];
             }
-            _log?.Invoke(ids.Count == 0
+            _log?.Invoke(ids.Length == 0
                 ? $"mapping pid=0x{_productId:X4}: the device returned no button list"
                 : $"mapping pid=0x{_productId:X4} buttons: {string.Join(",", ids.Select(id => id.ToString("X2", CultureInfo.InvariantCulture)))}");
-            var rows = new List<RazerHidMappingRowViewModel>(ids.Count);
+            var rows = new List<RazerHidMappingRowViewModel>(ids.Length);
             var defaults = _freeSlots.ToList();
             var unreadable = 0;
             foreach (var id in ids.Where(id => id != 0))

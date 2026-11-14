@@ -209,6 +209,15 @@ internal static class RazerHidMappingProtocol
         return arguments.Length <= 2 ? [] : arguments[2..].ToArray();
     }
 
+    /// <summary>
+    /// A key table is a flat list of unique HID usage ids. Some firmware answers 0x8F
+    /// with assignment records after a driver rebind; they must not become mapping rows.
+    /// </summary>
+    internal static bool IsValidKeyIdList(IReadOnlyList<byte> ids) =>
+        ids.Count > 0 &&
+        ids.All(id => id != 0) &&
+        ids.Distinct().Count() == ids.Count;
+
     internal static RazerHidButtonAssignment ParseAssignment(ReadOnlySpan<byte> response)
     {
         var arguments = RazerHidStandardProtocol.Arguments(response, 5);

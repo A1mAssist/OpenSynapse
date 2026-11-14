@@ -239,9 +239,19 @@ public sealed partial class RazerHidDeviceService
                         profileId, RazerHidMappingProtocol.NormalMode), cancellationToken)
                     .ConfigureAwait(false);
                 var keyIds = RazerHidMappingProtocol.ParseKeyAssignmentList(keyResponse);
-                if (keyIds.Any(id => id != 0))
+                if (keyIds.Count > 0)
                 {
-                    return keyIds;
+                    if (RazerHidMappingProtocol.IsValidKeyIdList(keyIds))
+                    {
+                        return keyIds;
+                    }
+
+                    // 0x8F can answer with assignment records after a driver rebind.
+                    // Returning empty lets the mapping page use the product key layout.
+                    WriteDiagnostic(connection.Definition.ProductId,
+                        $"mapping 0x8F returned an invalid key list: count={keyIds.Count}, " +
+                        $"unique={keyIds.Distinct().Count()}, zeros={keyIds.Count(id => id == 0)}");
+                    return [];
                 }
             }
             catch (Exception exception) when (
