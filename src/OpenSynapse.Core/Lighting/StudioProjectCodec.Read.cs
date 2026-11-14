@@ -91,9 +91,8 @@ public static partial class StudioProjectCodec
     private static bool IsSamePlacement(StudioDevicePlacement left, StudioDevicePlacement right) =>
         SameNonEmpty(left.Id, right.Id) ||
         SameNonEmpty(left.DeviceId, right.DeviceId) ||
-        SameNonEmpty(left.InstanceId, right.InstanceId) ||
         (left.ProductId != 0 && left.ProductId == right.ProductId &&
-         string.IsNullOrWhiteSpace(left.InstanceId) && string.IsNullOrWhiteSpace(right.InstanceId));
+         SameNonEmpty(left.InstanceId, right.InstanceId));
     private static List<ParsedLayer> ReadLayers(JsonElement array, HashSet<Guid> seen)
     {
         var result = new List<ParsedLayer>();

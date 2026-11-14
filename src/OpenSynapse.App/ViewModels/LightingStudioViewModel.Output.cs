@@ -57,13 +57,10 @@ public sealed partial class LightingStudioViewModel
 
             foreach (var region in layer.Regions)
             {
-                if (region.Devices.Count == 0)
-                {
-                    // A mask of all 100 is the same as no mask.
-                    layers.Add(new StudioLayerRender(
-                        region.Params, null, layer.Opacity, layer.Blend, layer.Visible, layer.Id));
-                    continue;
-                }
+                // Import leaves an empty region when the device it named is not
+                // connected. It has no target; painting it full-canvas would wash
+                // the other devices with that region's color.
+                if (region.Devices.Count == 0) continue;
 
                 var targetsDevice = false;
                 foreach (var target in region.Devices)

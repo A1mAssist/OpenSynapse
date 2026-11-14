@@ -73,9 +73,8 @@ public static partial class StudioProjectCodec
     private static bool IsSameDevice(StudioDevicePlacement placement, StudioRegionDevice device) =>
         SameNonEmpty(placement.Id, device.Id) ||
         SameNonEmpty(placement.DeviceId, device.DeviceId) ||
-        SameNonEmpty(placement.InstanceId, device.InstanceId) ||
         (placement.ProductId != 0 && placement.ProductId == device.ProductId &&
-         string.IsNullOrWhiteSpace(placement.InstanceId) && string.IsNullOrWhiteSpace(device.InstanceId));
+         SameNonEmpty(placement.InstanceId, device.InstanceId));
 
     private static bool SameNonEmpty(string? left, string? right) =>
         !string.IsNullOrWhiteSpace(left) && string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
