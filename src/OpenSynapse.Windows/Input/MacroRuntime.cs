@@ -982,10 +982,16 @@ internal sealed class MacroRuntime : IDisposable
         MacroInput? holdInput,
         bool repeatUntilStopped)
     {
-        var holdMonitor = holdCancellation is not null &&
-            holdInput is not null &&
-            MacroInputHook.SupportsPhysicalState(holdInput)
-                ? MonitorHoldReleaseAsync(holdInput, holdCancellation)
+        // Only poll a trigger that is already known to be down. Razer filter
+        // mice can deliver a side-button event without updating the XBUTTON
+        // state queried by GetAsyncKeyState; polling then reports an immediate
+        // release and kills a hold macro after the first 100 ms check. The
+        // hook still supplies the real release event for those devices.
+        var holdMonitor = holdCancellation is { } hold &&
+            holdInput is { } input &&
+            MacroInputHook.SupportsPhysicalState(input) &&
+            _isPhysicallyDown(input)
+                ? MonitorHoldReleaseAsync(input, hold)
                 : Task.CompletedTask;
         try
         {
