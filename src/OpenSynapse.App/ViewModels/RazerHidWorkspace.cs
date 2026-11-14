@@ -43,6 +43,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
     // stay alive instead of being disposed right after the profile is restored.
     private readonly RazerHidSoftwareLightingOwner _softwareLightingOwner;
     private readonly StudioDeviceVisualLoader _matrixLayoutLoader = new();
+    private readonly RazerMousePrivateKeyRuntime _privateKeyRuntime;
     private RazerHidDeviceViewModel? _selectedDevice;
     private RazerHidKrakenViewModel? _selectedKraken;
 
@@ -84,6 +85,8 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         _setDeviceOperationError = setDeviceOperationError;
         _dispatcherQueue = dispatcherQueue;
         _softwareLightingOwner = new RazerHidSoftwareLightingOwner(CreateDeviceViewModel);
+        _privateKeyRuntime = new RazerMousePrivateKeyRuntime(
+            message => diagnosticLog.TryWrite("mouse-private-key", message));
         if (_deviceService is not null)
         {
             _chromaFrameSink = new RazerHidChromaFrameSink(
@@ -194,6 +197,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
                 .ToArray();
             connections = RazerHidDeviceConnectionSiblings.Collapse(connections);
             await RestoreDriverModeAsync(connections, cancellationToken);
+            await SyncPrivateKeyDriverModeAsync(cancellationToken);
             // After pruning, this method rebuilds bound collections and selects a device;
             // keep the refresh loop's UI context instead of continuing on the pool.
             await _softwareLightingOwner.PruneAsync(connections, cancellationToken).ConfigureAwait(true);
@@ -563,6 +567,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
     {
         _selectionCancellation?.Cancel();
         _selectionCancellation?.Dispose();
+        await _privateKeyRuntime.ResetAsync().ConfigureAwait(false);
         await _softwareLightingOwner.DisposeAsync().ConfigureAwait(false);
         if (SelectedDevice is { } device)
         {
@@ -571,6 +576,72 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         }
         SelectedKraken = null;
         _matrixLayoutLoader.Dispose();
+    }
+
+    /// <summary>
+    /// Keeps driver mode in step with the bindings. A mouse only needs it while a
+    /// macro is bound to one of its private keys; otherwise the firmware keeps the
+    /// key and nothing changes for the user.
+    /// </summary>
+    internal async Task SyncPrivateKeyDriverModeAsync(CancellationToken cancellationToken = default)
+    {
+        var wanted = new HashSet<ushort>();
+        foreach (var macro in _localMacros())
+        {
+            if (!macro.Enabled ||
+                macro.Trigger is not { } trigger ||
+                trigger.Input.Kind != MacroInputKind.RazerKey ||
+                trigger.Input.DeviceId is not (> 0 and <= 0xFFFF))
+            {
+                continue;
+            }
+
+            wanted.Add((ushort)trigger.Input.DeviceId);
+        }
+
+        try
+        {
+            await _privateKeyRuntime
+                .SyncAsync(wanted, cancellationToken)
+                .ConfigureAwait(true);
+        }
+        catch (Exception exception) when (
+            !cancellationToken.IsCancellationRequested &&
+            exception is Win32Exception or IOException or InvalidOperationException)
+        {
+            _diagnosticLog.TryWrite(
+                "mouse-private-key",
+                $"driver-mode sync failed: {exception.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Replays the firmware default for a private key that no macro claimed. Only
+    /// the DPI keys need it: in driver mode the device stops stepping the stages.
+    /// </summary>
+    internal async Task HandleUnhandledRazerKeyAsync(MacroInput input)
+    {
+        if (input.Kind != MacroInputKind.RazerKey ||
+            input.DeviceId is not (> 0 and <= 0xFFFF) ||
+            input.RazerKeyCode is not (32 or 33 or 82))
+        {
+            return;
+        }
+
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            await _privateKeyRuntime
+                .HandleAsync((ushort)input.DeviceId, (byte)input.RazerKeyCode, timeout.Token)
+                .ConfigureAwait(false);
+        }
+        catch (Exception exception) when (
+            exception is OperationCanceledException or Win32Exception or IOException)
+        {
+            _diagnosticLog.TryWrite(
+                "mouse-private-key",
+                $"default action for key 0x{input.RazerKeyCode:X2} failed: {exception.Message}");
+        }
     }
 
     private async Task RestoreDriverModeAsync(

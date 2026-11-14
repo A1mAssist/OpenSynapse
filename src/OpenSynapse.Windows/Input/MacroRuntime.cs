@@ -59,6 +59,12 @@ internal sealed class MacroRuntime : IDisposable
 
     public event Action? PlaybackStartRequested;
 
+    /// <summary>
+    /// Raised for a private key no macro claimed. The app uses it to keep the
+    /// firmware's default action alive after the device enters driver mode.
+    /// </summary>
+    internal Action<MacroInput>? UnhandledRazerKeyHandler { get; set; }
+
     public event Action<MacroDefinition>? PlaybackStarted;
 
     public event Action? PlaybackStateChanged;
@@ -601,6 +607,7 @@ internal sealed class MacroRuntime : IDisposable
         var playbackShortcutHandled = false;
         CancellationTokenSource? holdCancellation = null;
         MacroInput? holdInput = null;
+        MacroInput? unhandledRazerKey = null;
 
         // Playback shortcuts take priority over macro triggers, but never while
         // recording or capturing a key.
@@ -930,6 +937,17 @@ internal sealed class MacroRuntime : IDisposable
                 }
                 break;
             }
+
+            if (!suppress &&
+                value.IsDown &&
+                value.Input.Kind == MacroInputKind.RazerKey &&
+                _recording is null &&
+                _stepCapture is null &&
+                _triggerCapture is null &&
+                !_recordingPending)
+            {
+                unhandledRazerKey = value.Input.Clone();
+            }
         }
 
     InputHandled:
@@ -948,6 +966,11 @@ internal sealed class MacroRuntime : IDisposable
             // would stall until the plan finishes.
             _ = Task.Run(() => ObservePlaybackAsync(
                 playMacro, playModifiers, holdCancellation, holdInput, playRepeatUntilStopped));
+        }
+        if (unhandledRazerKey is not null)
+        {
+            // The fallback reads and writes the device, never the hook thread.
+            _ = Task.Run(() => UnhandledRazerKeyHandler?.Invoke(unhandledRazerKey));
         }
         return suppress;
     }

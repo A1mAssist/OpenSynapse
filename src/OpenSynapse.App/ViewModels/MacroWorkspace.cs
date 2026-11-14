@@ -537,6 +537,15 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
     internal void SetMacroDispatcher(DispatcherQueue dispatcherQueue) =>
         _macroDispatcherQueue = dispatcherQueue;
 
+    internal void SetUnhandledRazerKeyHandler(Action<MacroInput>? handler) =>
+        _macroRuntime.UnhandledRazerKeyHandler = handler;
+
+    /// <summary>
+    /// Raised whenever the macro list or a trigger changes. The device workspace
+    /// listens so a mouse can enter or leave driver mode with its bindings.
+    /// </summary>
+    internal event Action? MacrosChanged;
+
     internal void SetMacroOwnWindowForegroundPredicate(Func<bool>? predicate) =>
         _macroRuntime.SetOwnWindowForegroundPredicate(predicate);
 
@@ -2497,6 +2506,7 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         _macroRuntime.UpdateMacros(profile.Macros);
         OnPropertyChanged(nameof(CanPlayMacro));
         OnPropertyChanged(nameof(MacroPlaybackShortcutText));
+        MacrosChanged?.Invoke();
     }
 
     private void RefreshMacroSteps(
