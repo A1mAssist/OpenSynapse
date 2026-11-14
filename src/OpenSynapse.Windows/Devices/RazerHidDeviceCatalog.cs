@@ -45,6 +45,7 @@ public sealed class RazerHidDeviceDefinition
         bool supportsIndependentDpi = true,
         bool usesP1DpiScale = false,
         bool usesLegacyInfo = false,
+        bool usesDynamicTransactions = false,
         RazerWaveDirectionAxis waveAxis = RazerWaveDirectionAxis.Unknown)
     {
         ProductId = productId;
@@ -65,6 +66,7 @@ public sealed class RazerHidDeviceDefinition
         SupportsIndependentDpi = supportsIndependentDpi;
         UsesP1DpiScale = usesP1DpiScale;
         UsesLegacyInfo = usesLegacyInfo;
+        UsesDynamicTransactions = usesDynamicTransactions;
         WaveAxis = waveAxis;
     }
 
@@ -87,6 +89,7 @@ public sealed class RazerHidDeviceDefinition
     internal bool SupportsIndependentDpi { get; }
     internal bool UsesP1DpiScale { get; }
     internal bool UsesLegacyInfo { get; }
+    internal bool UsesDynamicTransactions { get; }
     public RazerWaveDirectionAxis WaveAxis { get; }
 
     internal bool HasSourceCapability(string capability) => SourceCapabilities.Contains(capability);
@@ -101,7 +104,7 @@ public sealed class RazerHidDeviceDefinition
         new(ProductId, displayName, Category, SourceCapabilities, MaximumDpi, PollingRates,
             MatrixDimensions, DeviceWait, Transactions, BuilderArgumentPrefixes, DefaultStorage,
             DefaultLedZone, CommandSequences, CommandSizes, SupportsIndependentDpi, UsesP1DpiScale,
-            UsesLegacyInfo, WaveAxis);
+            UsesLegacyInfo, UsesDynamicTransactions, WaveAxis);
 
     internal byte GetRequiredFixedArgument(string builderName, int argumentIndex)
     {
@@ -342,6 +345,7 @@ public sealed partial class RazerHidDeviceCatalog
                 ParseLedZone(device.DefaultLedZone),
                 commandSequences.ToFrozenDictionary(StringComparer.Ordinal),
                 commandSizes.ToFrozenDictionary(StringComparer.Ordinal),
+                usesDynamicTransactions: device.DynamicTransactions ?? false,
                 waveAxis: waveAxis);
             if (!output.TryAdd(productId, definition))
             {
@@ -790,6 +794,7 @@ public sealed partial class RazerHidDeviceCatalog
         Dictionary<string, CatalogCommandStep[]> CommandSequences,
         Dictionary<string, string>? CommandSizes,
         string[] AmbiguousTransactions,
+        bool? DynamicTransactions,
         string? WaveDirection);
 
     private sealed record CatalogCommandStep(string TransactionId, string FixedArgument0);

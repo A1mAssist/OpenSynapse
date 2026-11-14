@@ -6010,7 +6010,8 @@
         1,
         1
       ],
-      "waitMicroseconds": 600,
+      "waitMicroseconds": 5000,
+      "dynamicTransactions": true,
       "transactions": {
         "razer_chroma_standard_get_firmware_version": "00",
         "razer_chroma_standard_get_serial": "00",
@@ -6025,10 +6026,10 @@
         "razer_chroma_extended_matrix_get_brightness": "3F",
         "razer_chroma_extended_matrix_set_custom_frame": "3F",
         "razer_chroma_misc_get_dpi_stages": "FF",
-        "razer_chroma_misc_get_dpi_xy": "FF",
+        "razer_chroma_misc_get_dpi_xy": "1F",
         "razer_chroma_misc_get_polling_rate": "FF",
         "razer_chroma_misc_set_dpi_stages": "FF",
-        "razer_chroma_misc_set_dpi_xy": "FF",
+        "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_polling_rate": "FF",
         "razer_chroma_misc_get_profile_debounce_time": "FF",
         "razer_chroma_misc_set_profile_debounce_time": "FF",
