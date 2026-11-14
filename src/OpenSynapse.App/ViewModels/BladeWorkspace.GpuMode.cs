@@ -7,6 +7,7 @@ namespace OpenSynapse.App.ViewModels;
 public sealed partial class BladeWorkspace
 {
     private readonly BladeGpuModeController _gpuMode;
+    private BladeGpuModeState? _gpuModeState;
     private bool _gpuModeRecoveryReconciled;
 
     /// <summary>
@@ -28,9 +29,27 @@ public sealed partial class BladeWorkspace
 
     internal bool CanManageGpuMode => _blade._bladeProductId != 0;
 
-    internal ValueTask<BladeGpuModeState> ReadGpuModeStateAsync(
-        CancellationToken cancellationToken = default) =>
-        _gpuMode.ReadStateAsync(_blade._bladeProductId, cancellationToken);
+    internal BladeGpuModeState? GpuModeState => _gpuModeState;
+
+    internal async ValueTask<BladeGpuModeState> ReadGpuModeStateAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var state = await _gpuMode.ReadStateAsync(_blade._bladeProductId, cancellationToken)
+            .ConfigureAwait(false);
+        SetGpuModeState(state);
+        return state;
+    }
+
+    private void SetGpuModeState(BladeGpuModeState state)
+    {
+        if (EqualityComparer<BladeGpuModeState?>.Default.Equals(_gpuModeState, state))
+        {
+            return;
+        }
+
+        _gpuModeState = state;
+        OnPropertyChanged(nameof(GpuModeState));
+    }
 
     internal async Task<BladeGpuModeApplyResult> ApplyGpuModeAsync(
         BladeGpuMode mode,

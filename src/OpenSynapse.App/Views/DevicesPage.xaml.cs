@@ -320,6 +320,11 @@ public sealed partial class DevicesPage : UserControl
         {
             DispatcherQueue.TryEnqueue(SyncTouchpadToggle);
         }
+        if (propertyName == nameof(BladeWorkspace.GpuModeState) &&
+            ViewModel.Blade.GpuModeState is { } gpuModeState)
+        {
+            DispatcherQueue.TryEnqueue(() => ApplyGpuModeState(gpuModeState));
+        }
         if (propertyName == nameof(ViperWorkspace.DeviceVisibility) &&
             ViewModel.Viper.DeviceVisibility != Visibility.Visible &&
             ViperDevicePanel.Visibility == Visibility.Visible)

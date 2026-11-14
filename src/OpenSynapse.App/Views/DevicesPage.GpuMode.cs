@@ -51,8 +51,12 @@ public sealed partial class DevicesPage
             return;
         }
 
-        ApplyGpuModeStatus(state);
+        ApplyGpuModeState(state);
+    }
 
+    private void ApplyGpuModeState(BladeGpuModeState state)
+    {
+        ApplyGpuModeStatus(state);
         if (!_legacyIntegratedRecoveryApplied &&
             ViewModel.Blade.BladeProductId != 0 &&
             state.Snapshot is { PnpSwitchAllowed: false, DedicatedGpuEnabled: false })
