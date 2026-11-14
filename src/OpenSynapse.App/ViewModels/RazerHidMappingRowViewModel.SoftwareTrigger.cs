@@ -15,6 +15,9 @@ public sealed partial class RazerHidMappingRowViewModel
     private int _softwareTriggerModeIndex;
     private int _executionModeIndex;
     private double _executionRepeatCount = 1;
+    private int _loadedSoftwareTriggerModeIndex = -1;
+    private int _loadedExecutionModeIndex = -1;
+    private double _loadedExecutionRepeatCount = 1;
 
     public IReadOnlyList<string> TriggerModeOptions => AppStrings.Texts(
         "RazerMappingMacroTriggerHold",
@@ -115,4 +118,21 @@ public sealed partial class RazerHidMappingRowViewModel
         ExecutionMode == MacroPlaybackMode.Repeat
             ? Visibility.Visible
             : Visibility.Collapsed;
+
+    /// <summary>
+    /// The mapping page used to write every software row on Save, so a page
+    /// opened before a macro-editor change could silently put the old mode
+    /// back. Only rows the user actually changed are written now.
+    /// </summary>
+    internal bool HasSoftwareModeChanges =>
+        _softwareTriggerModeIndex != _loadedSoftwareTriggerModeIndex ||
+        _executionModeIndex != _loadedExecutionModeIndex ||
+        _executionRepeatCount != _loadedExecutionRepeatCount;
+
+    internal void MarkSoftwareModeLoaded()
+    {
+        _loadedSoftwareTriggerModeIndex = _softwareTriggerModeIndex;
+        _loadedExecutionModeIndex = _executionModeIndex;
+        _loadedExecutionRepeatCount = _executionRepeatCount;
+    }
 }

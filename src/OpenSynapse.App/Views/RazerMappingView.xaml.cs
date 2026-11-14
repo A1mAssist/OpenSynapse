@@ -42,6 +42,24 @@ public sealed partial class RazerMappingView : UserControl
     private async void ApplyClick(object sender, RoutedEventArgs e) =>
         await (Mapping?.ApplyAsync() ?? Task.CompletedTask);
 
+    private async void SoftwareTriggerModeChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: RazerHidMappingRowViewModel row } &&
+            Mapping is { } mapping)
+        {
+            await mapping.PersistSoftwareModeAsync(row);
+        }
+    }
+
+    private async void SoftwareExecutionModeChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: RazerHidMappingRowViewModel row } &&
+            Mapping is { } mapping)
+        {
+            await mapping.PersistSoftwareModeAsync(row);
+        }
+    }
+
     private void CollapseClick(object sender, RoutedEventArgs e)
     {
         var collapse = MappingBody.Visibility == Visibility.Visible;

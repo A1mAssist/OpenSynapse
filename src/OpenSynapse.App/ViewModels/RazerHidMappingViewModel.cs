@@ -423,6 +423,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                         row.ExecutionModeIndex = (int)_localMacros[softwareMacroIndex].PlaybackMode;
                         row.ExecutionRepeatCount = _localMacros[softwareMacroIndex].RepeatCount;
                         row.SoftwareMacroId = _localMacros[softwareMacroIndex].Id;
+                        row.MarkSoftwareModeLoaded();
                         row.LoadedOptionIndex = softwareMacroIndex;
                         row.CurrentActionText = AppStrings.FormatText(
                             "RazerMappingMacroSoftwareApplied",
@@ -506,6 +507,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 .Where(row => row.Group == RazerHidMappingGroup.Macro &&
                               row.MacroTarget == MacroExecutionTarget.Software)
                 .ToArray();
+            var softwareModeRows = SoftwareModeRows(softwareRows);
             var assignmentRows = pending
                 .Where(row => row.Group != RazerHidMappingGroup.Macro ||
                               row.MacroTarget == MacroExecutionTarget.Onboard)
@@ -637,34 +639,17 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
 
             foreach (var row in softwareRows)
             {
-                var macro = ResolveSoftwareMacro(row)!;
-                var input = _softwareTriggerResolver!.Invoke(row.ButtonId)!;
-                var mode = row.TriggerMode;
-                var softwareBinding = CreateSoftwareBinding(row, backups);
-                string? error;
+                if (!softwareModeRows.Contains(row)) continue;
+
                 try
                 {
-                    error = await _softwareTriggerBinder!(
-                            macro.Id,
-                            input,
-                            mode,
-                            row.ExecutionMode,
-                            row.EffectiveExecutionRepeatCount,
-                            LayerIndex == 1,
-                            softwareBinding,
-                            cancellationToken)
+                    await WriteSoftwareModeRowAsync(row, backups, cancellationToken)
                         .ConfigureAwait(true);
                 }
                 catch
                 {
                     await RestoreAsync(clears, backups).ConfigureAwait(true);
                     throw;
-                }
-
-                if (error is not null)
-                {
-                    await RestoreAsync(clears, backups).ConfigureAwait(true);
-                    throw new InvalidOperationException(error);
                 }
 
                 applied++;

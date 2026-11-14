@@ -33,6 +33,7 @@ public sealed partial class MacroWorkspace
 
     private string? _pendingTriggerMacroId;
     private MacroTriggerMode _pendingTriggerMode = MacroTriggerMode.Press;
+    private CancellationTokenSource? _executionModeSaveCancellation;
 
     public IReadOnlyList<string> MacroTriggerModeOptions => AppStrings.Texts(
         "MacroTriggerModePress",
@@ -89,7 +90,11 @@ public sealed partial class MacroWorkspace
                 }
 
                 changed |= ApplyPlaybackChoice(selected, previousMode, mode);
-                if (changed) MarkMacroDirty(selected);
+                if (changed)
+                {
+                    MarkMacroDirty(selected);
+                    RequestExecutionModeSave();
+                }
             }
 
             OnPropertyChanged(nameof(MacroTriggerMode));
@@ -141,6 +146,7 @@ public sealed partial class MacroWorkspace
 
             MarkMacroDirty(selected);
             NotifyExecutionModeChanged();
+            RequestExecutionModeSave();
         }
     }
 
@@ -165,6 +171,7 @@ public sealed partial class MacroWorkspace
 
             selected.Definition.RepeatCount = count;
             MarkMacroDirty(selected);
+            RequestExecutionModeSave();
             OnPropertyChanged();
             OnPropertyChanged(nameof(MacroExecutionSummary));
             OnPropertyChanged(nameof(MacroTotalDurationText));
@@ -272,5 +279,80 @@ public sealed partial class MacroWorkspace
         OnPropertyChanged(nameof(MacroExecutionRepeatVisibility));
         OnPropertyChanged(nameof(MacroExecutionSummary));
         OnPropertyChanged(nameof(MacroTotalDurationText));
+    }
+
+    private void RequestExecutionModeSave()
+    {
+        _executionModeSaveCancellation?.Cancel();
+        _executionModeSaveCancellation?.Dispose();
+        var cancellation = new CancellationTokenSource();
+        _executionModeSaveCancellation = cancellation;
+        _ = SaveExecutionModeAfterDelayAsync(cancellation);
+    }
+
+    private async Task SaveExecutionModeAfterDelayAsync(
+        CancellationTokenSource cancellation)
+    {
+        try
+        {
+            await Task.Delay(250, cancellation.Token).ConfigureAwait(false);
+            if (_macroDispatcherQueue is not { } dispatcher)
+            {
+                return;
+            }
+
+            if (!dispatcher.HasThreadAccess)
+            {
+                dispatcher.TryEnqueue(() => _ = SaveExecutionModeNowAsync());
+                return;
+            }
+
+            await SaveExecutionModeNowAsync().ConfigureAwait(true);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception exception)
+        {
+            _diagnosticLog.TryWrite(
+                "macro",
+                $"execution mode auto-save failed: {exception.Message}");
+        }
+        finally
+        {
+            if (ReferenceEquals(_executionModeSaveCancellation, cancellation))
+            {
+                _executionModeSaveCancellation = null;
+            }
+
+            cancellation.Dispose();
+        }
+    }
+
+    private async Task SaveExecutionModeNowAsync()
+    {
+        if (IsMacroRecording || IsMacroCountdown)
+        {
+            return;
+        }
+
+        var dirtyRows = Items
+            .Where(row => _dirtyMacroIds.Contains(row.Id))
+            .ToArray();
+        if (dirtyRows.Length == 0 ||
+            dirtyRows.Any(row =>
+                !ValidateMacroTree(row.Definition) ||
+                !ValidateMacroReferences(row.Definition)))
+        {
+            // An incomplete step field stays dirty for the explicit Save.
+            return;
+        }
+
+        if (await SaveMacroChangesCoreAsync(
+                forceSelected: false,
+                CancellationToken.None).ConfigureAwait(true))
+        {
+            StatusText = AppStrings.Text("MacroSaved");
+        }
     }
 }
