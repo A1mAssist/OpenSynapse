@@ -127,7 +127,7 @@ public sealed partial class MainWindow : Window
         _viewModel.Viper.PropertyChanged += OnViewModelPropertyChanged;
         WindowAppearance.Apply(this);
         ApplyDarkTheme();
-        ApplyTitleBarColors(launchOverlayActive: true);
+        ApplyTitleBarColors();
         Activated += OnActivated;
         Closed += OnClosed;
         AppWindow.Closing += OnAppWindowClosing;
@@ -303,8 +303,9 @@ public sealed partial class MainWindow : Window
     {
         Activated -= OnActivated;
         LaunchProgressRing.IsActive = false;
-        LaunchOverlay.Visibility = Visibility.Collapsed;
-        ApplyTitleBarColors(launchOverlayActive: false);
+        ShowTitleBarBrand();
+        CollapseLaunchLayers();
+        ApplyTitleBarColors();
         ResizeForCurrentDisplay();
         _ = InitializeRuntimeAsync();
     }
@@ -316,8 +317,9 @@ public sealed partial class MainWindow : Window
         {
             AppWindow.Hide();
             LaunchProgressRing.IsActive = false;
-            LaunchOverlay.Visibility = Visibility.Collapsed;
-            ApplyTitleBarColors(launchOverlayActive: false);
+            ShowTitleBarBrand();
+            CollapseLaunchLayers();
+            ApplyTitleBarColors();
         }
         ResizeForCurrentDisplay();
         var launchStarted = Stopwatch.GetTimestamp();

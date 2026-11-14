@@ -231,7 +231,7 @@ public sealed partial class MainWindow
         _devicesPage?.RefreshSelectorHighlight();
     }
 
-    private void ApplyTitleBarColors(bool launchOverlayActive = false)
+    private void ApplyTitleBarColors()
     {
         var titleBar = AppWindow.TitleBar;
         if (!AppWindowTitleBar.IsCustomizationSupported())
@@ -239,15 +239,14 @@ public sealed partial class MainWindow
             return;
         }
 
-        var background = launchOverlayActive
-            ? Color.FromArgb(255, 0x17, 0x17, 0x17)
-            : Color.FromArgb(255, 0x20, 0x20, 0x20);
+        // The title bar keeps one colour for the whole window lifetime. Switching it
+        // when the launch overlay collapses reads as a flash at the end of the animation.
+        var background = Color.FromArgb(255, 0x17, 0x17, 0x17);
         var foreground = Color.FromArgb(255, 0xF4, 0xF4, 0xF4);
         var hoverBackground = Color.FromArgb(255, 0x38, 0x38, 0x38);
         var pressedBackground = Color.FromArgb(255, 0x4C, 0x4C, 0x4C);
 
-        AppTitleBar.Background = (Brush)Application.Current.Resources[
-            launchOverlayActive ? "CanvasBrush" : "SurfaceBrush"];
+        AppTitleBar.Background = (Brush)Application.Current.Resources["CanvasBrush"];
         titleBar.BackgroundColor = background;
         titleBar.ForegroundColor = foreground;
         titleBar.InactiveBackgroundColor = background;
