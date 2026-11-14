@@ -12,18 +12,26 @@ public sealed class BladeFanCurvePointViewModel : INotifyPropertyChanged
     private int _cpuRpm;
     private int _gpuRpm;
 
-    public BladeFanCurvePointViewModel(BladeFanCurvePoint point, bool isGpu = false,
-        int minimumTemperatureCelsius = MinimumTemperatureCelsius)
+    public BladeFanCurvePointViewModel(
+        BladeFanCurvePoint point,
+        bool isGpu = false,
+        int minimumTemperatureCelsius = MinimumTemperatureCelsius,
+        int minimumFanSpeedRpm = BladeFanCurve.MinimumPointFanSpeedRpm,
+        int maximumFanSpeedRpm = BladeFanCurve.MaximumPointFanSpeedRpm)
     {
         _isGpu = isGpu;
         MinimumEditableTemperatureCelsius = minimumTemperatureCelsius;
+        MinimumFanSpeedRpm = minimumFanSpeedRpm;
+        MaximumFanSpeedRpm = maximumFanSpeedRpm;
         _temperatureCelsius = Math.Clamp(point.TemperatureCelsius, minimumTemperatureCelsius, MaximumTemperatureCelsius);
-        _cpuRpm = point.CpuFanSpeedRpm;
-        _gpuRpm = point.GpuFanSpeedRpm;
+        _cpuRpm = Math.Clamp(point.CpuFanSpeedRpm, minimumFanSpeedRpm, maximumFanSpeedRpm);
+        _gpuRpm = Math.Clamp(point.GpuFanSpeedRpm, minimumFanSpeedRpm, maximumFanSpeedRpm);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public int MinimumEditableTemperatureCelsius { get; }
+    public int MinimumFanSpeedRpm { get; }
+    public int MaximumFanSpeedRpm { get; }
 
     public int TemperatureCelsius
     {
@@ -34,13 +42,13 @@ public sealed class BladeFanCurvePointViewModel : INotifyPropertyChanged
     public int CpuRpm
     {
         get => _cpuRpm;
-        set => Set(ref _cpuRpm, Clamp(value, BladeFanCurve.MinimumPointFanSpeedRpm, BladeFanCurve.MaximumPointFanSpeedRpm));
+        set => Set(ref _cpuRpm, Clamp(value, MinimumFanSpeedRpm, MaximumFanSpeedRpm));
     }
 
     public int GpuRpm
     {
         get => _gpuRpm;
-        set => Set(ref _gpuRpm, Clamp(value, BladeFanCurve.MinimumPointFanSpeedRpm, BladeFanCurve.MaximumPointFanSpeedRpm));
+        set => Set(ref _gpuRpm, Clamp(value, MinimumFanSpeedRpm, MaximumFanSpeedRpm));
     }
 
     /// <summary>The speed column this point owns in the selected CPU or GPU curve.</summary>
@@ -107,9 +115,9 @@ public sealed class BladeFanCurvePointViewModel : INotifyPropertyChanged
     private static int Clamp(int value, int minimum, int maximum) =>
         Math.Clamp(value, minimum, maximum);
 
-    private static int ToRpm(double value, int previous) => (int)Math.Round(Math.Clamp(
+    private int ToRpm(double value, int previous) => (int)Math.Round(Math.Clamp(
         double.IsFinite(value) ? value : previous,
-        BladeFanCurve.MinimumPointFanSpeedRpm, BladeFanCurve.MaximumPointFanSpeedRpm));
+        MinimumFanSpeedRpm, MaximumFanSpeedRpm));
 
     private void Set(ref int field, int value, [CallerMemberName] string? propertyName = null)
     {
