@@ -282,14 +282,14 @@ internal static partial class RazerFilterInfBinder
         IReadOnlyList<ushort> productIds,
         RegistryKey? enumRoot = null,
         IReadOnlySet<ushort>? presentProductIds = null,
-        IReadOnlySet<int>? coveredInterfaces = null) =>
+        IReadOnlySet<(ushort ProductId, int InterfaceNumber)>? coveredInterfaces = null) =>
         InspectAttachment(productIds, enumRoot, presentProductIds, coveredInterfaces).IsAttached;
 
     internal static RazerFilterAttachmentState InspectAttachment(
         IReadOnlyList<ushort> productIds,
         RegistryKey? enumRoot = null,
         IReadOnlySet<ushort>? presentProductIds = null,
-        IReadOnlySet<int>? coveredInterfaces = null)
+        IReadOnlySet<(ushort ProductId, int InterfaceNumber)>? coveredInterfaces = null)
     {
         ArgumentNullException.ThrowIfNull(productIds);
         var ownsRoot = enumRoot is null;
@@ -316,7 +316,7 @@ internal static partial class RazerFilterInfBinder
                 {
                     if (coveredInterfaces is not null &&
                         (!TryGetInterfaceNumber(deviceName, out var interfaceNumber) ||
-                         !coveredInterfaces.Contains(interfaceNumber)))
+                         !coveredInterfaces.Contains((productId, interfaceNumber))))
                     {
                         continue;
                     }
@@ -404,7 +404,7 @@ internal static partial class RazerFilterInfBinder
         IReadOnlyList<ushort> productIds,
         RegistryKey? enumRoot = null,
         IReadOnlySet<ushort>? presentProductIds = null,
-        IReadOnlySet<int>? coveredInterfaces = null)
+        IReadOnlySet<(ushort ProductId, int InterfaceNumber)>? coveredInterfaces = null)
     {
         ArgumentNullException.ThrowIfNull(productIds);
         var ownsRoot = enumRoot is null;
@@ -429,7 +429,7 @@ internal static partial class RazerFilterInfBinder
                 {
                     if (coveredInterfaces is not null &&
                         (!TryGetInterfaceNumber(deviceName, out var interfaceNumber) ||
-                         !coveredInterfaces.Contains(interfaceNumber)))
+                         !coveredInterfaces.Contains((productId, interfaceNumber))))
                     {
                         continue;
                     }
