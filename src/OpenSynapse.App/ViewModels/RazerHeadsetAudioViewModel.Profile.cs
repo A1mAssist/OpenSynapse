@@ -190,15 +190,6 @@ public sealed partial class RazerHeadsetAudioViewModel
             }
         }
 
-        if (IsKrakenBase &&
-            profile.AncModeIndex is { } ancIndex &&
-            ancIndex >= 0 && ancIndex < DeviceAncStates.Length)
-        {
-            var level = (byte)Math.Clamp(profile.AncLevel ?? 0, 0, 10);
-            await AttemptAsync(
-                "headset.anc",
-                token => OpenService().SetAncAsync(DeviceAncStates[ancIndex], level, token));
-        }
     }
 
     private async Task WriteMicMuteAsync(bool muted, CancellationToken cancellationToken)

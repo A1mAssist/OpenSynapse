@@ -9,7 +9,7 @@ public sealed partial class RazerHeadsetAudioViewModel
     [ProfileSetting("headset.anc", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyAncAsync(CancellationToken cancellationToken = default)
     {
-        if (!IsFeature91 && !IsKrakenBase && !IsMxicAnc && !IsValkyrieAnc) return;
+        if (!IsFeature91 && !IsMxicAnc && !IsValkyrieAnc) return;
         var previousIndex = SelectedAncIndex;
         var previousLevel = AncLevel;
         var state = DeviceAncStates[SelectedAncIndex];

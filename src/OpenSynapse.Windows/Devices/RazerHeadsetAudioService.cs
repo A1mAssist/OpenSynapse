@@ -619,6 +619,10 @@ public sealed partial class RazerHeadsetAudioService
         {
             throw new ArgumentOutOfRangeException(nameof(level), "ANC level must be between 0 and 10.");
         }
+        if (_transportKind == RazerHeadsetAudioTransport.KrakenBase37)
+        {
+            throw new NotSupportedException("This KrakenBase model has no ANC command.");
+        }
 
         var previous = RazerHeadsetAudioProtocol.ReadAnc(
             await QueryAsync(txn => RazerHeadsetAudioProtocol.GetAnc(txn), "read ANC", cancellationToken)
