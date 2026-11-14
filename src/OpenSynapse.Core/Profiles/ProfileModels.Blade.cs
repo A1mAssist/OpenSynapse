@@ -10,6 +10,7 @@ public sealed class BladeProfileSettings
 
     public byte? KeyboardBrightness { get; set; }
     public byte? PerformanceMode { get; set; }
+    public BladeFanControlMode? FanControlMode { get; set; }
     public byte? FanMode { get; set; }
     public int? FanTargetRpm { get; set; }
     public BladeFanCurveProfile? FanCurve { get; set; }
@@ -44,8 +45,29 @@ public sealed class BladeProfileSettings
     // Legacy v3 migration input; machine-settings.json owns the live GPU mode.
     public BladeGpuMode? GpuMode { get; set; }
 
+    /// <summary>
+    /// Resolves which control owns the fans. Older profiles used a null
+    /// <see cref="FanMode"/> plus a curve as the marker; keep that migration path.
+    /// </summary>
+    [JsonIgnore]
+    public BladeFanControlMode? ResolvedFanControlMode =>
+        FanControlMode ??
+        (FanCurve is not null && FanTargetRpm is null
+            ? BladeFanControlMode.Curve
+            : FanMode == (byte)BladeFanMode.Manual
+                ? BladeFanControlMode.Fixed
+                : FanMode == (byte)BladeFanMode.Automatic
+                    ? BladeFanControlMode.Automatic
+                    : null);
+
     internal void ApplySafeDefaults()
     {
+        if (FanControlMode is { } fanControlMode &&
+            !Enum.IsDefined(fanControlMode))
+        {
+            throw new InvalidDataException(
+                $"Unsupported Blade fan control mode: {(byte)fanControlMode}.");
+        }
         FanCurve?.ApplySafeDefaults();
         if (LightingColorMemory is not null)
         {

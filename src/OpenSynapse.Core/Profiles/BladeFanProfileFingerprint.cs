@@ -10,7 +10,8 @@ public static class BladeFanProfileFingerprint
         PowerSourceKind powerState, string activeProfileName)
     {
         var owner = $"{devicePath}\n{powerState}\n{activeProfileName}\n";
-        if (profile.FanCurve is { } curve)
+        if (profile.ResolvedFanControlMode == BladeFanControlMode.Curve &&
+            profile.FanCurve is { } curve)
         {
             var points = string.Join(",", curve.CpuPoints.Select(FormatPoint)) + "/" +
                 string.Join(",", curve.GpuPoints.Select(FormatPoint));
@@ -18,8 +19,13 @@ public static class BladeFanProfileFingerprint
                 $"{curve.MinimumCpuTemperatureCelsius},{curve.MinimumGpuTemperatureCelsius}," +
                 $"{curve.MinimumFanSpeedRpm}\n{points}";
         }
-        return profile.FanMode is byte mode
-            ? $"fixed\n{owner}{mode}\n{profile.FanTargetRpm}" : string.Empty;
+        return profile.ResolvedFanControlMode switch
+        {
+            BladeFanControlMode.Fixed =>
+                $"fixed\n{owner}{(profile.FanMode ?? (byte)BladeFanMode.Manual)}\n{profile.FanTargetRpm}",
+            BladeFanControlMode.Automatic => $"automatic\n{owner}",
+            _ => string.Empty,
+        };
 
         static string FormatPoint(BladeFanCurvePoint point) =>
             $"{point.TemperatureCelsius}:{point.CpuFanSpeedRpm}:{point.GpuFanSpeedRpm}";

@@ -9,6 +9,14 @@ public enum BladeFanCurveTemperatureMode
     Independent,
 }
 
+/// <summary>Which fan-control surface is active for a stored Blade profile.</summary>
+public enum BladeFanControlMode : byte
+{
+    Automatic = 0,
+    Fixed = 1,
+    Curve = 2,
+}
+
 public readonly record struct BladeFanCurvePoint(
     int TemperatureCelsius,
     int CpuFanSpeedRpm,
