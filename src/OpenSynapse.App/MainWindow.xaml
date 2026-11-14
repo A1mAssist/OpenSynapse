@@ -9,17 +9,20 @@
     mc:Ignorable="d"
     Title="OpenSynapse">
   <Grid x:Name="RootLayout" Background="{StaticResource CanvasBrush}" RowDefinitions="48,*" SizeChanged="RootLayoutSizeChanged">
-    <Grid x:Name="AppTitleBar" Grid.Row="0" ColumnDefinitions="224,*" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1">
+    <Grid x:Name="AppTitleBar" Grid.Row="0" ColumnDefinitions="224,*" Background="{StaticResource CanvasBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1">
       <Grid Padding="16,0" VerticalAlignment="Stretch">
-        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <Image local:Localized.Uid="AppLogo" Width="28" Height="28" Stretch="Uniform">
+        <Grid x:Name="TitleBarBrand" ColumnDefinitions="Auto,Auto" VerticalAlignment="Center" HorizontalAlignment="Left">
+          <Image local:Localized.Uid="AppLogo" x:Name="TitleBarLogo" Width="28" Height="28" Stretch="Uniform" Opacity="0">
             <Image.Source><SvgImageSource UriSource="ms-appx:///Assets/OpenSynapseLogo.svg" /></Image.Source>
           </Image>
-          <StackPanel Spacing="0" VerticalAlignment="Center">
-            <TextBlock FontFamily="{StaticResource AppFontSemiBoldFamily}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}"><Run Text="OpenSynapse" /><Run x:Name="LiteModeBadgeRun" Text="" FontSize="9.5" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" /></TextBlock>
-            <TextBlock Text="LOCAL DEVICE CONTROL" FontFamily="Cascadia Mono,Consolas" FontSize="8" Foreground="{StaticResource MutedBrush}" CharacterSpacing="70" />
-          </StackPanel>
-        </StackPanel>
+          <Grid x:Name="TitleBarTitleClip" Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center">
+            <Grid.Clip><RectangleGeometry x:Name="TitleBarTitleClipGeometry" Rect="0,0,600,40" /></Grid.Clip>
+            <StackPanel x:Name="TitleBarTextStack" Spacing="0" VerticalAlignment="Center">
+              <TextBlock x:Name="TitleBarTitleText" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" Opacity="0"><Run Text="OpenSynapse" /><Run x:Name="LiteModeBadgeRun" Text="" FontSize="9.5" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" /></TextBlock>
+              <TextBlock x:Name="TitleBarSubtitleText" Text="LOCAL DEVICE CONTROL" FontFamily="Cascadia Mono,Consolas" FontSize="8" Foreground="{StaticResource MutedBrush}" CharacterSpacing="70" Opacity="0" />
+            </StackPanel>
+          </Grid>
+        </Grid>
       </Grid>
       <Grid Grid.Column="1" />
     </Grid>
@@ -50,19 +53,16 @@
         <Grid x:Name="PageHost" />
       </NavigationView.Content>
     </NavigationView>
-    <Grid x:Name="LaunchOverlay" Grid.RowSpan="2" Canvas.ZIndex="100" Background="{StaticResource CanvasBrush}">
-      <Grid.Resources>
-        <Storyboard x:Name="LaunchOverlayFadeStoryboard" Completed="LaunchOverlayFadeCompleted">
-          <DoubleAnimation Storyboard.TargetName="LaunchOverlay" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.24" />
-        </Storyboard>
-      </Grid.Resources>
+    <Grid x:Name="LaunchVeil" Grid.RowSpan="2" Canvas.ZIndex="90" IsHitTestVisible="False" Background="#D9171717" />
+    <Grid x:Name="LaunchBackdrop" Grid.RowSpan="2" Canvas.ZIndex="100" Background="{StaticResource CanvasBrush}" IsHitTestVisible="False" />
+    <Grid x:Name="LaunchContent" Grid.RowSpan="2" Canvas.ZIndex="110" Background="Transparent" IsHitTestVisible="False">
       <StackPanel x:Name="LaunchPanel" Width="420" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
-        <Grid Width="112" Height="112" HorizontalAlignment="Center">
+        <Grid x:Name="LaunchMarkHost" Width="112" Height="112" HorizontalAlignment="Center">
           <ProgressRing local:Localized.Uid="Loc_A7FABDAFBA" x:Name="LaunchProgressRing" Width="108" Height="108" IsActive="True" Foreground="{StaticResource AccentBrush}" />
-          <Image local:Localized.Uid="Loc_BA196502D0" Width="70" Height="70" Stretch="Uniform"><Image.Source><SvgImageSource UriSource="ms-appx:///Assets/OpenSynapseLogo.svg" /></Image.Source></Image>
+          <Image local:Localized.Uid="Loc_BA196502D0" x:Name="LaunchMarkImage" Width="70" Height="70" Stretch="Uniform"><Image.Source><SvgImageSource UriSource="ms-appx:///Assets/OpenSynapseLogo.svg" /></Image.Source></Image>
         </Grid>
-        <TextBlock Text="OpenSynapse" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontSize="32" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" HorizontalAlignment="Center" />
-        <TextBlock Text="LOCAL DEVICE CONTROL" FontFamily="Cascadia Mono,Consolas" FontSize="10" CharacterSpacing="40" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
+        <TextBlock x:Name="LaunchTitleText" Text="OpenSynapse" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontSize="32" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" HorizontalAlignment="Center" />
+        <TextBlock x:Name="LaunchSubtitleText" Text="LOCAL DEVICE CONTROL" FontFamily="Cascadia Mono,Consolas" FontSize="10" CharacterSpacing="40" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
         <TextBlock local:Localized.Uid="Loc_D21D65F64A" x:Name="LaunchStatusText" FontSize="14" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
       </StackPanel>
     </Grid>

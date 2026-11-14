@@ -476,28 +476,6 @@ public sealed partial class MainWindow
         SweepDirection = SweepDirection.Clockwise,
     };
 
-    private void HideLaunchOverlay()
-    {
-        LaunchProgressRing.IsActive = false;
-        if (new UISettings().AnimationsEnabled)
-        {
-            LaunchOverlayFadeStoryboard.Begin();
-        }
-        else
-        {
-            LaunchOverlay.Visibility = Visibility.Collapsed;
-            ApplyTitleBarColors(launchOverlayActive: false);
-            StartPendingIntroduction();
-        }
-    }
-
-    private void LaunchOverlayFadeCompleted(object sender, object e)
-    {
-        LaunchOverlay.Visibility = Visibility.Collapsed;
-        ApplyTitleBarColors(launchOverlayActive: false);
-        StartPendingIntroduction();
-    }
-
     private void StartPendingIntroduction()
     {
         if (!_introductionPendingAfterLaunch)
