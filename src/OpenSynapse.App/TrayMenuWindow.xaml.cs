@@ -36,7 +36,6 @@ public sealed partial class TrayMenuWindow : Window
     private const int DwmWindowCornerDoNotRound = 1;
     private const int DwmBorderColor = 34;
     private const int DwmColorNone = unchecked((int)0xFFFFFFFE);
-    private const double PanelContentHeightDip = 5 * 32 + 2 * 5 + 8;
     // Button margin + padding + the text's left offset. The icon sits inside that offset;
     // adding the icon width again makes the panel too wide and leaves a heavy right gap.
     private const double PanelLeadingDip = 3 + 4 + 28;
@@ -138,8 +137,8 @@ public sealed partial class TrayMenuWindow : Window
     {
         // Counted, not measured: MenuRoot stretches to the client area, so DesiredSize
         // would feed the previous window size back in.
-        var separators = _batteryValues.Count > 0 ? 3 : 2;
-        return 5 * 32 + separators * 5 + 8 + _batteryValues.Count * BatteryRowHeightDip;
+        var separators = _batteryValues.Count > 0 ? 2 : 1;
+        return 4 * 32 + separators * 5 + 8 + _batteryValues.Count * BatteryRowHeightDip;
     }
 
     /// <summary>

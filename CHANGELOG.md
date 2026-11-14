@@ -51,6 +51,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 - Razer driver setup now matches device, catalog key and installer PID, binds the staged INF by hardware ID, verifies the filter is really attached, treats 3010/1641 as success, stops rejecting republished packages by size, reinstalls the common driver during repair, and installs the DKM lower filter that carries Blade Fn input.
 - The taskbar status strip returns after Show Desktop and passes clicks through to the taskbar.
 - The taskbar strip keeps a headset, BlackShark or standalone keyboard battery when the tray read misses; it now falls back to the value the device page already read.
+- The tray menu no longer leaves a black strip below the battery rows after the display-off item was removed.
 - The launch overlay waits for the first device scan, so the device list is no longer empty during startup.
 - CPU temperature now reads on AMD Ryzen as well as Intel through PawnIO, and low ACPI idle temperatures are no longer discarded.
 - THX service, native DLL and startup now complete in one click.
