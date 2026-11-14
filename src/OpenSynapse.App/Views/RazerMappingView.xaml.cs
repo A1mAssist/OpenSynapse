@@ -42,6 +42,17 @@ public sealed partial class RazerMappingView : UserControl
     private async void ApplyClick(object sender, RoutedEventArgs e) =>
         await (Mapping?.ApplyAsync() ?? Task.CompletedTask);
 
+    private void CollapseClick(object sender, RoutedEventArgs e)
+    {
+        var collapse = MappingBody.Visibility == Visibility.Visible;
+        MappingBody.Visibility = collapse ? Visibility.Collapsed : Visibility.Visible;
+        CollapseButton.Content = AppStrings.Text(collapse ? "RazerMappingExpand" : "RazerMappingCollapse");
+        if (!collapse)
+        {
+            RequestConnectors();
+        }
+    }
+
     private void CalloutClick(object sender, RoutedEventArgs e)
     {
         if (sender is FrameworkElement { DataContext: RazerHidMappingRowViewModel row } &&

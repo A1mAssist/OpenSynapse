@@ -178,7 +178,7 @@
   </UserControl.Resources>
 
   <StackPanel x:Name="MappingRoot" Spacing="14">
-    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+    <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
       <StackPanel Spacing="3">
         <TextBlock local:Localized.Uid="RazerMappingTitle" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
         <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
@@ -189,8 +189,10 @@
       </StackPanel>
       <Button Grid.Column="1" local:Localized.Uid="RazerMappingRead" Click="ReadClick" IsEnabled="{Binding CanRead}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
       <Button Grid.Column="2" local:Localized.Uid="RazerMappingSave" Click="ApplyClick" IsEnabled="{Binding CanApply}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" />
+      <Button x:Name="CollapseButton" Grid.Column="3" local:Localized.Uid="RazerMappingCollapse" Click="CollapseClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" />
     </Grid>
 
+    <StackPanel x:Name="MappingBody" Spacing="14">
     <RadioButtons local:Localized.Uid="A11yMappingLayer" ItemsSource="{Binding LayerNames}" SelectedIndex="{Binding LayerIndex, Mode=TwoWay}" MaxColumns="2" IsEnabled="{Binding CanRead}" />
     <TextBlock Text="{Binding HyperShiftSoftwareUnavailableText}"
                Visibility="{Binding HyperShiftSoftwareUnavailableVisibility}"
@@ -337,5 +339,6 @@
         </ItemsControl>
       </StackPanel>
     </Grid>
+    </StackPanel>
   </StackPanel>
 </UserControl>
