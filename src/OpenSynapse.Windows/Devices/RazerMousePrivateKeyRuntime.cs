@@ -23,6 +23,9 @@ internal sealed class RazerMousePrivateKeyRuntime
     private const byte DpiStageDownKey = 33;
     private const byte DpiCycleKey = 82;
     private static readonly TimeSpan DeviceWait = TimeSpan.FromMilliseconds(300);
+    // A replugged dongle forgets the mode, so an enabled mouse is verified again
+    // without turning every refresh into a query.
+    private static readonly TimeSpan RecheckInterval = TimeSpan.FromSeconds(30);
 
     private readonly RazerFeatureTransport _transport = new();
     private readonly Action<string>? _log;
@@ -33,6 +36,7 @@ internal sealed class RazerMousePrivateKeyRuntime
     private readonly Dictionary<ushort, bool> _applied = [];
     private readonly HashSet<ushort> _probed = [];
     private readonly Dictionary<ushort, byte> _activeStage = [];
+    private readonly Dictionary<ushort, DateTime> _verifiedAt = [];
     private bool _recovered;
 
     internal RazerMousePrivateKeyRuntime(Action<string>? log = null) => _log = log;
@@ -78,7 +82,9 @@ internal sealed class RazerMousePrivateKeyRuntime
             var enable = wanted.Contains(productId);
             lock (_gate)
             {
-                if (_applied.TryGetValue(productId, out var applied) && applied == enable)
+                if (_applied.TryGetValue(productId, out var applied) && applied == enable &&
+                    (!enable ||
+                     DateTime.UtcNow - _verifiedAt.GetValueOrDefault(productId) < RecheckInterval))
                 {
                     continue;
                 }
@@ -112,6 +118,7 @@ internal sealed class RazerMousePrivateKeyRuntime
             lock (_gate)
             {
                 _applied[productId] = enable;
+                _verifiedAt[productId] = DateTime.UtcNow;
                 if (!enable)
                 {
                     _activeStage.Remove(productId);
