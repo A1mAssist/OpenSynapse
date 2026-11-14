@@ -51,11 +51,11 @@ public sealed class TrayWorkspace
                 .Concat(BatteryDevices().Select(row =>
                     new PeripheralBattery(row.Name, null, row.IconGlyph, row, HidKey(row))))
                 .Concat(HeadsetRows(claimed).Select(row =>
-                    new PeripheralBattery(row.Name, null, row.IconGlyph, row, HeadsetKey(row))))
+                    new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row, HeadsetKey(row))))
                 .Concat(BlackSharkRows(claimed).Select(row =>
-                    new PeripheralBattery(row.Name, null, row.IconGlyph, row, BlackSharkKey(row))))
+                    new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row, BlackSharkKey(row))))
                 .Concat(KeyboardRows(claimed).Select(row =>
-                    new PeripheralBattery(row.Name, null, row.IconGlyph, row, KeyboardKey(row))))
+                    new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row, KeyboardKey(row))))
                 .Concat(_bleDevices().Select(row =>
                     new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row, $"ble:{row.Device.Id}")))
                 .Concat(_awBleDevices().Select(row =>
@@ -95,36 +95,39 @@ public sealed class TrayWorkspace
 
         foreach (var row in headsetRows)
         {
+            var percent = headsetBusy
+                ? null
+                : await ReadWithTimeoutAsync(
+                    token => RazerHeadsetAudioService.TryReadBatteryPercentAsync(
+                        row.Connection, null, token),
+                    cancellationToken,
+                    TimeSpan.FromSeconds(2)).ConfigureAwait(false);
             results.Add(new PeripheralBattery(
                 row.Name,
-                headsetBusy
-                    ? null
-                    : await ReadWithTimeoutAsync(
-                        token => RazerHeadsetAudioService.TryReadBatteryPercentAsync(
-                            row.Connection, null, token),
-                        cancellationToken,
-                        TimeSpan.FromSeconds(2)).ConfigureAwait(false),
+                percent ?? row.BatteryPercent,
                 row.IconGlyph, row, HeadsetKey(row)));
         }
 
         foreach (var row in blackSharkRows)
         {
+            var percent = await ReadWithTimeoutAsync(
+                token => ReadBlackSharkBatteryAsync(row.Connection, token),
+                cancellationToken).ConfigureAwait(false);
             results.Add(new PeripheralBattery(
                 row.Name,
-                await ReadWithTimeoutAsync(
-                    token => ReadBlackSharkBatteryAsync(row.Connection, token),
-                    cancellationToken).ConfigureAwait(false),
+                percent ?? row.BatteryPercent,
                 row.IconGlyph, row, BlackSharkKey(row)));
         }
 
         foreach (var row in keyboardRows)
         {
+            var percent = await ReadWithTimeoutAsync(
+                token => RazerKeyboardService.TryReadBatteryPercentAsync(
+                    row.Connection, null, token),
+                cancellationToken).ConfigureAwait(false);
             results.Add(new PeripheralBattery(
                 row.Name,
-                await ReadWithTimeoutAsync(
-                    token => RazerKeyboardService.TryReadBatteryPercentAsync(
-                        row.Connection, null, token),
-                    cancellationToken).ConfigureAwait(false),
+                percent ?? row.BatteryPercent,
                 row.IconGlyph, row, KeyboardKey(row)));
         }
 

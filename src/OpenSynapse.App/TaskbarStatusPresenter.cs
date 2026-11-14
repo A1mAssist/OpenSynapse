@@ -18,6 +18,7 @@ internal sealed class TaskbarStatusPresenter : IDisposable
     private readonly Dictionary<string, int?> _batteryReadings = new(StringComparer.OrdinalIgnoreCase);
     private TaskbarStatusWindow? _statusWindow;
     private CancellationTokenSource? _batteryReadCancellation;
+    private string? _lastBatteryKey;
     private DateTimeOffset _lastBatteryReadAt = DateTimeOffset.MinValue;
     private bool _batteryReadRequested = true;
     private bool _enabled;
@@ -102,11 +103,20 @@ internal sealed class TaskbarStatusPresenter : IDisposable
 
         if (battery is null)
         {
+            _lastBatteryKey = null;
             // Nothing to draw: keep the ten-second battery retry, not a one-second
             // UI tick for a window that is not there.
             SetTimerInterval(BatteryReadInterval);
             _statusWindow?.Clear();
             return;
+        }
+
+        if (!StringComparer.Ordinal.Equals(_lastBatteryKey, battery.Key))
+        {
+            _lastBatteryKey = battery.Key;
+            _diagnosticLog.TryWrite(
+                "taskbar-status",
+                $"strip shows {battery.Name} {battery.Percent}%");
         }
 
         SetTimerInterval(TimeSpan.FromSeconds(1));
