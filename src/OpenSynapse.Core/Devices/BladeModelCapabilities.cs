@@ -832,6 +832,20 @@ public static class BladeModelCapabilities
     }
 
     /// <summary>
+    /// Target range for a fan curve. A curve is a continuous policy, so it uses the
+    /// model-wide floor instead of the fixed slider's per-mode minimum. The per-mode
+    /// maximum still applies because the EC evaluates each frame in the active mode.
+    /// </summary>
+    public static BladeFanTargetRange FanCurveTargetRangeFor(ushort productId, BladePerformanceMode mode)
+    {
+        var fixedRange = FanTargetRangeFor(productId, mode);
+        return new BladeFanTargetRange(
+            MinimumFanTargetRpmFor(productId),
+            Math.Min(fixedRange.MaximumRpm, MaximumWritableFanTargetRpmFor(productId)),
+            fixedRange.DefaultRpm);
+    }
+
+    /// <summary>
     /// True where a fixed target is only acted on in Custom performance mode. The 028C
     /// EC stores a target in Balanced/Silent but keeps following its own curve.
     /// </summary>
