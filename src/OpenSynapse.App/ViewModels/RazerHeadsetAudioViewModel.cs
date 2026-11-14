@@ -1275,8 +1275,9 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
     private RazerHeadsetAudioService OpenService() =>
         new(new RazerFeatureTransport(), _connection.DevicePath,
-            IsKrakenBase ? TimeSpan.FromMilliseconds(250) : TimeSpan.FromMilliseconds(20),
-            _diagnostic, _connection.Transport, _connection.ProductId);
+            IsKrakenBase ? TimeSpan.FromMilliseconds(1000) : TimeSpan.FromMilliseconds(20),
+            _diagnostic, _connection.Transport, _connection.ProductId,
+            outputReportByteLength: _connection.OutputReportByteLength);
 
     private RazerMxicHeadsetService OpenMxicService() =>
         new(_connection.ProductId, _connection.DevicePath, _diagnostic);

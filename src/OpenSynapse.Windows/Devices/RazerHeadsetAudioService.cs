@@ -21,7 +21,8 @@ public sealed record RazerHeadsetAudioConnection(
     ushort FeatureReportByteLength,
     string? ContainerId = null,
     RazerHeadsetAudioTransport Transport = RazerHeadsetAudioTransport.Feature91,
-    bool HasControlInterface = true)
+    bool HasControlInterface = true,
+    ushort OutputReportByteLength = 0)
 {
     /// <summary>
     /// True when the identity keeps its HID endpoint enumerated while the headset is
@@ -166,6 +167,7 @@ public sealed partial class RazerHeadsetAudioService
     private readonly Action<string>? _diagnostic;
     private readonly RazerHeadsetAudioTransport _transportKind;
     private readonly ushort _productId;
+    private readonly ushort _outputReportLength;
     private readonly IRazerProtocol25FeatureTransport? _protocol25Transport;
     private readonly RazerHidHidReportTransport _hidReports = new();
     private byte _transactionId = 0x1F;
@@ -177,7 +179,8 @@ public sealed partial class RazerHeadsetAudioService
         Action<string>? diagnostic = null,
         RazerHeadsetAudioTransport transportKind = RazerHeadsetAudioTransport.Feature91,
         ushort productId = 0,
-        IRazerProtocol25FeatureTransport? protocol25Transport = null)
+        IRazerProtocol25FeatureTransport? protocol25Transport = null,
+        ushort outputReportByteLength = 0)
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _devicePath = string.IsNullOrWhiteSpace(devicePath)
@@ -187,6 +190,7 @@ public sealed partial class RazerHeadsetAudioService
         _diagnostic = diagnostic;
         _transportKind = transportKind;
         _productId = productId;
+        _outputReportLength = outputReportByteLength;
         // Both 64- and 65-byte protocol-25 channels resolve to this transport kind
         // (see ToTransport); the report length comes from the product id.
         _protocol25Transport = protocol25Transport ??
@@ -266,7 +270,8 @@ public sealed partial class RazerHeadsetAudioService
                     Products[fallback.ProductId],
                     fallback.FeatureReportByteLength,
                     ToContainerId(fallback.PhysicalDeviceKey),
-                    ToTransport(fallbackChannel));
+                    ToTransport(fallbackChannel),
+                    OutputReportByteLength: fallback.OutputReportByteLength);
             }
 
             var usbDevices = await WindowsUsbDiscovery
@@ -304,7 +309,8 @@ public sealed partial class RazerHeadsetAudioService
             Products[chosen.ProductId],
             chosen.FeatureReportByteLength,
             ToContainerId(chosen.PhysicalDeviceKey),
-            ToTransport(channel));
+            ToTransport(channel),
+            OutputReportByteLength: chosen.OutputReportByteLength);
     }
 
     internal static bool MatchesChannel(
@@ -612,25 +618,6 @@ public sealed partial class RazerHeadsetAudioService
         if (level > RazerHeadsetAudioProtocol.TenBandCount)
         {
             throw new ArgumentOutOfRangeException(nameof(level), "ANC level must be between 0 and 10.");
-        }
-
-        if (_transportKind == RazerHeadsetAudioTransport.KrakenBase37)
-        {
-            var enabled = state != RazerAncState.Off;
-            await QueryKrakenBaseAsync(
-                    RazerKrakenBaseProtocol.CreateAncSetRequest(enabled), cancellationToken)
-                .ConfigureAwait(false);
-            var actual = RazerKrakenBaseProtocol.ParseAncEnabled(
-                await QueryKrakenBaseAsync(
-                        RazerKrakenBaseProtocol.CreateAncGetRequest(), cancellationToken)
-                    .ConfigureAwait(false));
-            if (actual is null || actual.Value != enabled)
-            {
-                throw new InvalidOperationException(
-                    "Razer ANC read-back did not match the requested state.");
-            }
-
-            return;
         }
 
         var previous = RazerHeadsetAudioProtocol.ReadAnc(

@@ -98,7 +98,6 @@ public sealed partial class RazerHeadsetAudioViewModel
     [
         HeadsetCapability.Firmware,
         HeadsetCapability.Serial,
-        HeadsetCapability.Anc,
     ];
 
     private static readonly HeadsetCapability[] MxicCapabilities =
