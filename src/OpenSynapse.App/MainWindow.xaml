@@ -64,6 +64,10 @@
         <TextBlock x:Name="LaunchTitleText" Text="OpenSynapse" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontSize="32" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" HorizontalAlignment="Center" />
         <TextBlock x:Name="LaunchSubtitleText" Text="LOCAL DEVICE CONTROL" FontFamily="Cascadia Mono,Consolas" FontSize="10" CharacterSpacing="40" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
         <TextBlock local:Localized.Uid="Loc_D21D65F64A" x:Name="LaunchStatusText" FontSize="14" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
+        <StackPanel Width="300" Margin="0,10,0,0" HorizontalAlignment="Center" Spacing="6">
+          <ProgressBar x:Name="LaunchProgressBar" Height="12" Minimum="0" Maximum="100" Value="0" Foreground="{StaticResource AccentBrush}" Background="{StaticResource SurfaceRaisedBrush}" AutomationProperties.Name="{Binding Text, ElementName=LaunchStatusText}" IsHitTestVisible="False" />
+          <TextBlock x:Name="LaunchProgressStepText" Text="1/3" HorizontalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+        </StackPanel>
       </StackPanel>
     </Grid>
     <Canvas x:Name="IntroductionOverlay" Grid.Row="1" Canvas.ZIndex="150" Visibility="Collapsed">
