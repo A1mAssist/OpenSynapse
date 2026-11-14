@@ -19,7 +19,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 - **Diagnostics**: crash reports, a log bundle export, and reports stamped with date and app version.
 - **Install and update**: startup updates ask first; MSI installs update through the machine service without UAC; per-device driver installs also run through the service.
 - **Onboard profiles** read the device's real id list and create the first free id; delete and reset ask for confirmation, and the active profile cannot be deleted.
-- **Huntsman V3 Pro TKL / Mini / 8KHz**: analog keys are back, with TKL, Mini and full-size layouts.
+- **Huntsman V3 Pro TKL / Mini / 8KHz**: analog keys are back, with TKL, Mini and full-size layouts, drawn on the same SVG as the mapping page.
 - **Pair a new device**: the devices page can scan and bind a new device to a multi-device receiver, backed by the official dual-dongle compatibility table that filters candidates for the current receiver.
 - **Blade software matrix lighting**: 15 Blades from 2019-2023 gain software matrix effects (Static, Spectrum, Wave and others); a rejected matrix write falls back to the existing firmware effects.
 - **Headset wireless state and powered-off hiding**: the BlackShark V2 Pro (0555) reads its wireless link and hides its card when powered off; the Barracuda 2.4 GHz card hides when the link drops. Added the Barracuda V2 X and Kraken Kitty V2.
@@ -27,22 +27,28 @@ All notable user-visible changes to OpenSynapse are documented here.
 - **Analog-key tooltips**: hovering any analog key shows that key's own actuation and Rapid Trigger sensitivity without selecting it first.
 - **MXIC headsets**: added a do-not-disturb switch.
 - **Game mode**: RazerHid devices that support the command gain a game-mode switch on their device card.
+- **Macro playback**: the editor now chooses how a macro runs, once per press or repeat while the trigger is held; the choice applies to software macros on keys and on the primary mouse buttons.
+- **Blade fan curve**: the curve window draws live fan RPM and CPU/GPU temperature, and point limits follow the model and the current performance mode; every fixed-fan Blade now offers the curve.
+- **HyperPolling receivers**: the mouse paired to a HyperPolling dongle is discovered as its own device.
+- **Performance overlay**: added an always-on-top switch, on by default; turn it off for borderless games that lose DirectFlip.
 
 ### Improvements
 
 - Pages are built on first navigation, shortening startup.
 - The first device scan now shows “Scanning devices...” instead of appearing stuck.
+- Device cards are one compact line; four stay open before the list collapses, and a wired/wireless pair shares one card.
+- NVIDIA telemetry reads through NVML instead of launching `nvidia-smi`, and GPU memory matches what `nvidia-smi` reports.
 
 ### Fixed
 
 - BlackShark V2 Pro (0555) no longer stalls on “reading”: timed-out HID control requests are actually cancelled instead of piling up in the driver queue; USB-only headsets stay visible before HID is ready.
 - Kiyo, sensor rotation, smart tracking and software-lighting cleanup no longer raise `PropertyChanged` on the thread pool, fixing the `0x8001010E` settings-page failure.
-- Leviathan V2 X partial reads are informational instead of a whole-device error, and the bass control is a slider.
+- Partial reads are informational instead of a whole-device error (Leviathan V2 X, Mako X and others), and the bass control is a slider.
 - BlackShark V3 is no longer mislabelled as V2 Pro; missing headset identities were filled in.
-- Razer driver setup now matches device, catalog key and installer PID, binds the staged INF by hardware ID, verifies the filter is really attached, treats 3010/1641 as success, stops rejecting republished packages by size, and reinstalls the common driver during repair.
+- Razer driver setup now matches device, catalog key and installer PID, binds the staged INF by hardware ID, verifies the filter is really attached, treats 3010/1641 as success, stops rejecting republished packages by size, reinstalls the common driver during repair, and installs the DKM lower filter that carries Blade Fn input.
 - The taskbar status strip returns after Show Desktop and passes clicks through to the taskbar.
 - The launch overlay waits for the first device scan, so the device list is no longer empty during startup.
-- Intel CPU temperature reads through PawnIO, and low ACPI idle temperatures are no longer discarded.
+- CPU temperature now reads on AMD Ryzen as well as Intel through PawnIO, and low ACPI idle temperatures are no longer discarded.
 - THX service, native DLL and startup now complete in one click.
 - Fixed Blade logo effect ids, 02B6/029D reads, stale Fn state, control state and ChromaBroker startup.
 - Fixed several mouse/keyboard button ids (009C DPI keys, Keypad, Basilisk Ultimate DKM, legacy mouse private keys) and mapping-page refreshes.
@@ -52,10 +58,23 @@ All notable user-visible changes to OpenSynapse are documented here.
 - Fixed the mouse-record offsets in driver-level macros: relative movement, absolute coordinates and vertical scrolling no longer land in the wrong fields.
 - The MSI now closes a running OpenSynapse before replacing files, so an overwrite install cannot leave old DLLs behind; update-task failures surface the real error.
 - Fixed the keyboard Keypad mapping table, the wireless RazerHid keyboard transaction bank, and the DeathAdder V4 receiver indicator readout.
-- THX enhancements stay available when the native export is missing instead of disappearing.
-- Lighting Studio device cards now use the Synapse dashboard artwork.
+- THX enhancements stay available when the native export is missing or a read fails instead of disappearing.
+- Device cards reuse the Lighting Studio product artwork.
 - Keyboard lighting is saved to the app profile and restored on the next launch.
 - Multiple connected Razer gamepads are all listed, and the previously selected one stays selected.
+- Blade lighting remembers the colour chosen for each effect, so switching back no longer resets it.
+- The Blade microphone mute light is seeded at startup and re-read after a missed notification, so F1 mute matches the real state.
+- Macro steps can be moved or deleted after saving, and a recorded tap shows its release instead of only the press.
+- Key bindings: bare modifier keys are written in the byte form each keyboard family expects, so Left Shift no longer fires a four-modifier chord; rows already rewritten by an earlier beta are repaired, and the full keyboard key table is read instead of stopping short.
+- Onboard profiles: create and delete wait for the firmware to commit, the device's active profile is followed, id 0 is never cached, and a keyboard that rejects reset now points to create-and-delete.
+- Blade Wave follows the device's LED axis, so left and right are no longer reversed on 2023 models.
+- A sleeping wireless mouse is reported as a link state instead of a run of read failures.
+- Analog keys verify their writes and only send changed settings; the dead zone shows 0.3 / 0.5 / 0.8 mm, and the report-mode control is hidden.
+- Lighting Studio downloads and flattens multi-part SVG art, keeps static effects running on idle devices, and gives id-less media keys a selectable cell.
+- Sidetone and ANC now cover more headset families; KrakenBase frames use the declared report length and stay out of the ANC path.
+- Game mode uses the standard Game LED command, so the state persists on keyboards that store it.
+- The driver check only judges the interfaces the package covers, so an installed receiver no longer prompts for a driver; downloaded driver packages must carry a Razer publisher signature.
+- The MSI upgrade fails with the real reason instead of leaving a half-installed app when the running process cannot be closed.
 
 ## [1.7.1] - 2026-11-09
 
