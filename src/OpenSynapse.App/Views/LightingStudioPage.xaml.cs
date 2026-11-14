@@ -88,6 +88,7 @@ public sealed partial class LightingStudioPage : UserControl
         StudioHidOutputRouter? hidRouter = null,
         StudioInputSampler? inputSampler = null,
         StudioArgbOutputRouter? argbRouter = null,
+        StudioHeadsetOutputRouter? headsetRouter = null,
         Func<Task>? restoreAfterExternal = null)
     {
         _viewModel?.Dispose();
@@ -95,7 +96,8 @@ public sealed partial class LightingStudioPage : UserControl
         ResetCanvasFit();
         _inputSampler = inputSampler;
         _viewModel = new LightingStudioViewModel(
-            lighting, devices, matrixDevices, hidRouter, inputSampler, argbRouter, restoreAfterExternal);
+            lighting, devices, matrixDevices, hidRouter, inputSampler, argbRouter,
+            headsetRouter, restoreAfterExternal);
         StartStudioTimingIfRequested();
         StudioTimingAttachViewModel();
         RefreshDevicesWithTiming("initialize");

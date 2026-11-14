@@ -1,6 +1,9 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Animation;
+using OpenSynapse.App.ViewModels;
 using OpenSynapse.App.Views;
+using OpenSynapse.Windows.Devices;
+using OpenSynapse.Windows.Lighting;
 
 namespace OpenSynapse.App;
 
@@ -52,10 +55,34 @@ public sealed partial class MainWindow
             CreateStudioHidRouter(_studioInputSampler!),
             _studioInputSampler!,
             CreateStudioArgbRouter(_studioInputSampler!),
+            CreateStudioHeadsetRouter(_studioInputSampler!),
             _viewModel.RestoreLightingAfterExternalAsync);
         _studioDevicesDirty = true;
         return AddPage(page);
     }
+
+    private void AddMakoXStudioDevice(List<StudioDeviceOption> options)
+    {
+        if (_viewModel.Accessories.SelectedHeadsetAudioConnection is not
+            { Transport: RazerHeadsetAudioTransport.Jolie64 } mako)
+        {
+            return;
+        }
+
+        options.Add(new StudioDeviceOption(
+            mako.Name,
+            null,
+            mako.DevicePath,
+            mako.ProductId,
+            1,
+            RazerMakoXChromaService.LedCount,
+            Category: "headset"));
+    }
+
+    private StudioHeadsetOutputRouter? CreateStudioHeadsetRouter(StudioInputSampler sampler) =>
+        new(
+            () => _viewModel.Accessories.SelectedHeadsetAudioConnection,
+            (rows, columns) => sampler.Sample(rows, columns));
 
     private ProfilesPage CreateProfilesPage()
     {

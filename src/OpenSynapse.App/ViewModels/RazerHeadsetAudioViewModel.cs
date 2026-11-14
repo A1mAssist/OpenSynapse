@@ -213,9 +213,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     private Color _primaryColor = Color.FromArgb(255, 0, 255, 0);
     private Color _secondaryColor = Color.FromArgb(255, 255, 0, 0);
 
-    private static readonly RazerChromaEffect[] LightingEffects =
-        [RazerChromaEffect.Off, RazerChromaEffect.Static, RazerChromaEffect.Breathing, RazerChromaEffect.Spectrum];
-
     private bool IsKrakenBase => _connection.Transport == RazerHeadsetAudioTransport.KrakenBase37;
     private bool IsAvnera65 => _connection.Transport == RazerHeadsetAudioTransport.AvneraFeature65;
     private bool IsProtocol25 => _connection.Transport == RazerHeadsetAudioTransport.Protocol25Feature65;
@@ -438,12 +435,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         _thxState is { EqualizerBands.Count: > 0 } ? Visibility.Visible : Visibility.Collapsed;
 
     public IReadOnlyList<string> LightingEffectOptions =>
-    [
-        AppStrings.Text("RazerLightingEffectOff"),
-        AppStrings.Text("RazerLightingEffectStatic"),
-        AppStrings.Text("RazerLightingEffectBreathing"),
-        AppStrings.Text("RazerLightingEffectSpectrum"),
-    ];
+        LightingEffectChoices.Select(choice => AppStrings.Text(choice.Key)).ToArray();
 
     public int SelectedLightingEffectIndex
     {
@@ -452,6 +444,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         {
             if (!SetField(ref _selectedEffectIndex, Math.Clamp(value, 0, LightingEffects.Length - 1))) return;
             OnPropertyChanged(nameof(SecondaryColorVisibility));
+            OnPropertyChanged(nameof(WaveDirectionVisibility));
         }
     }
 
@@ -922,6 +915,13 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
                     ApplyMatrixLighting(await OpenChromaService().ReadStateAsync(cancellationToken));
                 }
                 await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
+                if (IsJolie)
+                {
+                    var power = await new RazerMakoXPowerService(
+                        _connection.DevicePath, _diagnostic).ReadAsync(cancellationToken);
+                    AutoSleepEnabled = power.Enabled;
+                    SelectAutoSleepMinutes(power.Minutes);
+                }
             }
             catch (Exception exception) when (IsExpectedException(exception))
             {
@@ -1306,22 +1306,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     {
         OnPropertyChanged(string.Empty);
         Mixer053E?.RefreshLocalization();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        var controller = _thxController;
-        _thxController = null;
-        if (controller is not null)
-        {
-            await controller.DisposeAsync();
-        }
-
-        if (Mixer053E is { } mixer053E)
-        {
-            await mixer053E.DisposeAsync();
-        }
-
     }
 
     private RazerHeadsetAudioService OpenService() =>

@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Lighting;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Lighting;
 
@@ -19,7 +20,7 @@ public sealed partial class LightingStudioViewModel
     public ObservableCollection<StudioOutputFailure> OutputFailures { get; } = new();
 
     public bool CanApply =>
-        !_isBusy && (_argbRouter is not null ||
+        !_isBusy && (_argbRouter is not null || _headsetRouter is not null ||
             ((_lighting is not null || _hidRouter is not null) &&
              Devices.Any(device => device.Descriptor is not null || device.HasMatrix)));
 
@@ -210,9 +211,27 @@ public sealed partial class LightingStudioViewModel
         applied.AddRange(ports.Select(port => port.DisplayName).Distinct(StringComparer.OrdinalIgnoreCase));
     }
 
+    [NotProfileScoped]
+    private async Task<bool> ApplyHeadsetAsync(List<string> applied)
+    {
+        if (_headsetRouter is null || !await _headsetRouter.RefreshAsync().ConfigureAwait(true))
+        {
+            return false;
+        }
+
+        var device = Devices.FirstOrDefault(item => item.HasMatrix &&
+            StudioLedSelection.SameInstance(item.EffectiveInstanceId, _headsetRouter.InstanceId));
+        var layers = device is null
+            ? BuildLayersFor(0x05AD, _headsetRouter.InstanceId, 1, RazerMakoXChromaService.LedCount)
+            : BuildLayersFor(device);
+        _headsetRouter.Update(() => layers);
+        applied.Add(_headsetRouter.DisplayName ?? "Razer Mako X");
+        return true;
+    }
+
     private void StartOutputPump()
     {
-        if (_hidRouter is null && _argbRouter is null) return;
+        if (_hidRouter is null && _argbRouter is null && _headsetRouter is null) return;
         _outputCancellation?.Cancel();
         _outputCancellation?.Dispose();
         _outputCancellation = new CancellationTokenSource();
@@ -232,6 +251,8 @@ public sealed partial class LightingStudioViewModel
                         await _hidRouter.ApplyAsync(_outputClock.Elapsed, token).ConfigureAwait(false);
                     if (_argbRouter is not null)
                         await _argbRouter.ApplyAsync(_outputClock.Elapsed, token).ConfigureAwait(false);
+                    if (_headsetRouter is not null)
+                        await _headsetRouter.ApplyAsync(_outputClock.Elapsed, token).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException)
@@ -267,7 +288,7 @@ public sealed partial class LightingStudioViewModel
 
     public async Task StopAsync()
     {
-        if (_lighting is null && _hidRouter is null && _argbRouter is null) return;
+        if (_lighting is null && _hidRouter is null && _argbRouter is null && _headsetRouter is null) return;
         IsPlaying = false;
         IsBusy = true;
         var failures = new List<string>();
@@ -289,6 +310,8 @@ public sealed partial class LightingStudioViewModel
             if (_hidRouter is not null) await StopPartAsync(() =>
                 _hidRouter.StopAsync(applyFallback: _restoreAfterExternal is null));
             if (_argbRouter is not null) await StopPartAsync(() => _argbRouter.StopAsync());
+            if (_headsetRouter is not null) await StopPartAsync(() =>
+                _headsetRouter.StopAsync(applyFallback: _restoreAfterExternal is null));
             // Set the neutral status first; a restore-failure event that follows must win.
             StatusText = AppStrings.Text("LightingStudioStatusStopped");
             if (_lighting is not null) await StopPartAsync(() => _lighting.StopAsync());

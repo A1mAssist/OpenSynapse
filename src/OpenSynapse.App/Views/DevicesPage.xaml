@@ -289,7 +289,19 @@
                       </Grid>
                       <StackPanel Spacing="4"><TextBlock local:Localized.Uid="RazerLightingPrimaryColor" Style="{StaticResource MetricLabelStyle}" /><ColorPicker Color="{Binding PrimaryColor, Mode=TwoWay}" IsAlphaEnabled="False" IsColorChannelTextInputVisible="False" IsColorSpectrumVisible="True" IsHexInputVisible="True" IsMoreButtonVisible="False" Width="280" HorizontalAlignment="Left" /></StackPanel>
                       <StackPanel Spacing="4" Visibility="{Binding SecondaryColorVisibility}"><TextBlock local:Localized.Uid="RazerLightingSecondaryColor" Style="{StaticResource MetricLabelStyle}" /><ColorPicker Color="{Binding SecondaryColor, Mode=TwoWay}" IsAlphaEnabled="False" IsColorChannelTextInputVisible="False" IsColorSpectrumVisible="True" IsHexInputVisible="True" IsMoreButtonVisible="False" Width="280" HorizontalAlignment="Left" /></StackPanel>
+                      <ComboBox local:Localized.Uid="CoolingPadLightingDirectionHeader" ItemsSource="{Binding WaveDirectionOptions}" SelectedIndex="{Binding SelectedWaveDirectionIndex, Mode=TwoWay}" Visibility="{Binding WaveDirectionVisibility}" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
                       <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right"><Button local:Localized.Uid="RazerLightingApplyBrightness" Click="HeadsetAudioApplyMatrixBrightnessClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource RazerHidSaveButtonStyle}" /><Button local:Localized.Uid="RazerLightingApplyEffect" Click="HeadsetAudioApplyMatrixLightingClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource PrimaryButtonStyle}" /></StackPanel>
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding MakoXPowerVisibility}">
+                    <StackPanel Spacing="10">
+                      <TextBlock local:Localized.Uid="RazerHidAutoSleepLabel" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                        <ToggleSwitch IsOn="{Binding AutoSleepEnabled, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" OnContent="" OffContent="" />
+                        <TextBlock Grid.Column="1" Text="{Binding AutoSleepStateText}" VerticalAlignment="Center" />
+                      </Grid>
+                      <ComboBox local:Localized.Uid="BleSleepTime" ItemsSource="{Binding AutoSleepMinuteOptions}" SelectedIndex="{Binding SelectedAutoSleepMinutesIndex, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
+                      <Button local:Localized.Uid="RazerHidSaveButton" Click="HeadsetAudioApplyAutoSleepClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
                     </StackPanel>
                   </Border>
                                     <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding LightingVisibility}">

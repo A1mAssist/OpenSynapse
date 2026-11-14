@@ -39,6 +39,9 @@ internal sealed class StudioInputSampler : ILightingInputAdapter
     /// <summary>The last level produced by <see cref="Sample"/>; silent input is zero.</summary>
     public double AudioLevel => Volatile.Read(ref _audioLevel);
 
+    /// <summary>True once the display capture has produced at least one frame.</summary>
+    internal bool HasScreenFrame => Volatile.Read(ref _latestFrame) is not null;
+
     public async ValueTask StartAsync(CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);

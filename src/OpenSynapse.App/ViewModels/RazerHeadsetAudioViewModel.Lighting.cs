@@ -60,6 +60,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             var previousAvneraIndex = SelectedLightingEffectIndex;
             var previousAvneraPrimary = PrimaryColor;
             var previousAvneraSecondary = SecondaryColor;
+            var previousAvneraDirection = SelectedWaveDirectionIndex;
             var avneraEffect = LightingEffects[SelectedLightingEffectIndex];
             if (!await RunAvneraWriteAsync(
                     (service, token) => service.SetChromaEffectAsync(
@@ -77,6 +78,7 @@ public sealed partial class RazerHeadsetAudioViewModel
                     {
                         ["primary"] = $"{PrimaryColor.R:X2}{PrimaryColor.G:X2}{PrimaryColor.B:X2}",
                         ["secondary"] = $"{SecondaryColor.R:X2}{SecondaryColor.G:X2}{SecondaryColor.B:X2}",
+                        ["direction"] = SelectedWaveDirectionIndex.ToString(),
                     };
                 },
                 settings =>
@@ -86,6 +88,7 @@ public sealed partial class RazerHeadsetAudioViewModel
                     {
                         ["primary"] = $"{previousAvneraPrimary.R:X2}{previousAvneraPrimary.G:X2}{previousAvneraPrimary.B:X2}",
                         ["secondary"] = $"{previousAvneraSecondary.R:X2}{previousAvneraSecondary.G:X2}{previousAvneraSecondary.B:X2}",
+                        ["direction"] = previousAvneraDirection.ToString(),
                     };
                 },
                 () =>
@@ -93,6 +96,7 @@ public sealed partial class RazerHeadsetAudioViewModel
                     SelectedLightingEffectIndex = previousAvneraIndex;
                     PrimaryColor = previousAvneraPrimary;
                     SecondaryColor = previousAvneraSecondary;
+                    SelectedWaveDirectionIndex = previousAvneraDirection;
                 },
                 token => WriteChromaEffectHardwareAsync(
                     LightingEffects[previousAvneraIndex], previousAvneraPrimary, previousAvneraSecondary, token),
@@ -103,23 +107,25 @@ public sealed partial class RazerHeadsetAudioViewModel
         var previousEffectIndex = SelectedLightingEffectIndex;
         var previousPrimary = PrimaryColor;
         var previousSecondary = SecondaryColor;
-        var applied = false;
-        await RunChromaWriteAsync(async (service, token) =>
-        {
-            var effect = LightingEffects[SelectedLightingEffectIndex];
-            var colors = effect switch
-            {
-                RazerChromaEffect.Static => new byte[] { PrimaryColor.R, PrimaryColor.G, PrimaryColor.B },
-                RazerChromaEffect.Breathing =>
-                    [PrimaryColor.R, PrimaryColor.G, PrimaryColor.B, SecondaryColor.R, SecondaryColor.G, SecondaryColor.B],
-                _ => [],
-            };
-            await service.SetEffectAsync(effect, colors, token);
-            applied = true;
-        }, cancellationToken);
-        if (!applied) return;
-
+        var previousDirection = SelectedWaveDirectionIndex;
+        var previousEffect = LightingEffects[previousEffectIndex];
         var effect = LightingEffects[SelectedLightingEffectIndex];
+        if (effect == RazerChromaEffect.CustomFrame)
+        {
+            if (!await RunAmbientAsync(cancellationToken)) return;
+        }
+        else
+        {
+            await StopAmbientCoreAsync();
+            var applied = false;
+            await RunChromaWriteAsync(async (service, token) =>
+            {
+                await WriteChromaEffectAsync(service, effect, PrimaryColor, SecondaryColor, token);
+                applied = true;
+            }, cancellationToken);
+            if (!applied) return;
+        }
+
         await SaveHeadsetSettingAsync(
             settings =>
             {
@@ -128,6 +134,7 @@ public sealed partial class RazerHeadsetAudioViewModel
                 {
                     ["primary"] = $"{PrimaryColor.R:X2}{PrimaryColor.G:X2}{PrimaryColor.B:X2}",
                     ["secondary"] = $"{SecondaryColor.R:X2}{SecondaryColor.G:X2}{SecondaryColor.B:X2}",
+                    ["direction"] = SelectedWaveDirectionIndex.ToString(),
                 };
             },
             settings =>
@@ -137,6 +144,7 @@ public sealed partial class RazerHeadsetAudioViewModel
                 {
                     ["primary"] = $"{previousPrimary.R:X2}{previousPrimary.G:X2}{previousPrimary.B:X2}",
                     ["secondary"] = $"{previousSecondary.R:X2}{previousSecondary.G:X2}{previousSecondary.B:X2}",
+                    ["direction"] = previousDirection.ToString(),
                 };
             },
             () =>
@@ -144,10 +152,105 @@ public sealed partial class RazerHeadsetAudioViewModel
                 SelectedLightingEffectIndex = previousEffectIndex;
                 PrimaryColor = previousPrimary;
                 SecondaryColor = previousSecondary;
+                SelectedWaveDirectionIndex = previousDirection;
             },
-            token => WriteChromaEffectHardwareAsync(
-                LightingEffects[previousEffectIndex], previousPrimary, previousSecondary, token),
+            token => RestoreEffectAsync(
+                previousEffect, previousPrimary, previousSecondary, token),
             cancellationToken);
+    }
+
+    [ProfileSetting("headset.auto-sleep", DeviceCategory.Headset, powerScoped: true)]
+    public async Task ApplyAutoSleepAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsJolie || !BeginOperation()) return;
+
+        var previousEnabled = AutoSleepEnabled;
+        var previousIndex = SelectedAutoSleepMinutesIndex;
+        var minutes = AutoSleepMinutes;
+        try
+        {
+            var power = new RazerMakoXPowerService(_connection.DevicePath, _diagnostic);
+            var previousHardware = await power.ReadAsync(cancellationToken).ConfigureAwait(false);
+            await power.SetAsync(AutoSleepEnabled, minutes, cancellationToken).ConfigureAwait(false);
+            var applied = await power.ReadAsync(cancellationToken).ConfigureAwait(false);
+            if (applied.Enabled != AutoSleepEnabled || Math.Abs(applied.Minutes - minutes) > 1)
+            {
+                throw new InvalidOperationException(
+                    $"Mako X reported auto sleep {applied.Enabled}/{applied.Minutes} min instead of {AutoSleepEnabled}/{minutes} min.");
+            }
+
+            AutoSleepEnabled = applied.Enabled;
+            SelectAutoSleepMinutes(applied.Minutes);
+            await SaveHeadsetSettingAsync(
+                settings =>
+                {
+                    settings.AutoSleepEnabled = applied.Enabled;
+                    settings.AutoShutdownMinutes = applied.Minutes;
+                },
+                settings =>
+                {
+                    settings.AutoSleepEnabled = previousEnabled;
+                    settings.AutoShutdownMinutes = AutoSleepMinuteChoices[previousIndex];
+                },
+                () =>
+                {
+                    AutoSleepEnabled = previousEnabled;
+                    SelectedAutoSleepMinutesIndex = previousIndex;
+                },
+                token => new RazerMakoXPowerService(_connection.DevicePath, _diagnostic)
+                    .SetAsync(previousHardware.Enabled, previousHardware.Minutes, token),
+                cancellationToken).ConfigureAwait(false);
+            ErrorText = string.Empty;
+            OperationStatusText = AppStrings.Text("BlackSharkSaved");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception) when (IsExpectedException(exception))
+        {
+            AutoSleepEnabled = previousEnabled;
+            SelectedAutoSleepMinutesIndex = previousIndex;
+            ErrorText = exception.Message;
+            OperationStatusText = string.Empty;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task WriteChromaEffectAsync(
+        IRazerHeadsetLightingService service,
+        RazerChromaEffect effect,
+        Color primary,
+        Color secondary,
+        CancellationToken cancellationToken)
+    {
+        if (effect == RazerChromaEffect.CustomFrame)
+        {
+            throw new InvalidOperationException("Ambient uses the screen-sampling frame pump.");
+        }
+
+        if (service is RazerMakoXChromaService mako && effect == RazerChromaEffect.Wave)
+        {
+            await mako.SetEffectAsync(
+                effect,
+                [],
+                MakoXWaveDirections[SelectedWaveDirectionIndex].Flag,
+                40,
+                cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        var colors = effect switch
+        {
+            RazerChromaEffect.Static => new byte[] { primary.R, primary.G, primary.B },
+            RazerChromaEffect.Breathing =>
+                [primary.R, primary.G, primary.B, secondary.R, secondary.G, secondary.B],
+            RazerChromaEffect.Starlight => new byte[] { primary.R, primary.G, primary.B },
+            _ => [],
+        };
+        await service.SetEffectAsync(effect, colors, cancellationToken).ConfigureAwait(false);
     }
 
     internal async Task<bool> TurnOffLightingForShutdownAsync(
@@ -160,6 +263,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             return false;
         }
 
+        await StopAmbientCoreAsync();
         await OpenChromaService()
             .SetEffectAsync(RazerChromaEffect.Off, [], cancellationToken)
             .ConfigureAwait(false);
@@ -176,10 +280,21 @@ public sealed partial class RazerHeadsetAudioViewModel
         {
             var primary = TryGetChromaColor(profile.ChromaParameters, "primary", PrimaryColor);
             var secondary = TryGetChromaColor(profile.ChromaParameters, "secondary", SecondaryColor);
+            if (profile.ChromaParameters is { } parameters &&
+                parameters.TryGetValue("direction", out var direction) &&
+                int.TryParse(direction, out var directionIndex))
+            {
+                SelectedWaveDirectionIndex = directionIndex;
+            }
             try
             {
-                await WriteChromaEffectHardwareAsync(effect, primary, secondary, cancellationToken)
-                    .ConfigureAwait(false);
+                // Ambient resumes on Apply; probes also call LoadAsync and must not start capture.
+                if (effect != RazerChromaEffect.CustomFrame)
+                {
+                    await StopAmbientCoreAsync();
+                    await WriteChromaEffectHardwareAsync(effect, primary, secondary, cancellationToken)
+                        .ConfigureAwait(false);
+                }
                 SelectedLightingEffectIndex = Array.IndexOf(LightingEffects, effect);
                 PrimaryColor = primary;
                 SecondaryColor = secondary;
@@ -212,6 +327,45 @@ public sealed partial class RazerHeadsetAudioViewModel
             }
         }
     }
+
+    [NotProfileScoped]
+    private async Task ApplyPersistedJolietPowerAsync(
+        HeadsetProfileSettings profile,
+        CancellationToken cancellationToken)
+    {
+        var minutes = profile.AutoShutdownMinutes;
+        var enabled = profile.AutoSleepEnabled;
+        if (minutes is null && enabled is null)
+        {
+            return;
+        }
+
+        var appliedMinutes = Math.Clamp(
+            minutes is > 0 ? minutes.Value : AutoSleepMinuteChoices[_selectedAutoSleepMinutesIndex],
+            15,
+            60);
+        var appliedEnabled = enabled ?? (minutes is > 0);
+        try
+        {
+            await new RazerMakoXPowerService(_connection.DevicePath, _diagnostic)
+                .SetAsync(appliedEnabled, appliedMinutes, cancellationToken).ConfigureAwait(false);
+            AutoSleepEnabled = appliedEnabled;
+            SelectAutoSleepMinutes(appliedMinutes);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (IsExpectedException(exception))
+        {
+            _diagnostic?.Invoke($"profile headset.auto-sleep: {exception.Message}");
+        }
+    }
+
+    private void SelectAutoSleepMinutes(int minutes) =>
+        SelectedAutoSleepMinutesIndex = Math.Clamp(
+            (int)Math.Round((minutes - AutoSleepMinuteChoices[0]) / 5d), 0,
+            AutoSleepMinuteChoices.Length - 1);
 
     private static Color TryGetChromaColor(
         IReadOnlyDictionary<string, string>? parameters,

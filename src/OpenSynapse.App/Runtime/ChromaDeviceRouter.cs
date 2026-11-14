@@ -14,6 +14,7 @@ internal enum ChromaTargetTransport
     KeyboardEffect,
     StandardEffect,
     Kraken,
+    JolieFrame,
 }
 
 internal sealed record ChromaTarget(
@@ -37,6 +38,7 @@ internal sealed class ChromaDeviceRouter
     private readonly Func<IReadOnlyList<RazerKeyboardConnection>> _keyboardDevices;
     private readonly Func<IReadOnlyList<RazerChromaDeviceConnection>> _standardConnections;
     private readonly Func<IReadOnlyList<RazerHidSpecialLightingConnection>> _krakenConnections;
+    private readonly Func<IReadOnlyList<RazerHeadsetAudioConnection>> _headsetConnections;
     private readonly Action<string>? _diagnostic;
     private readonly ConcurrentDictionary<string, RazerChromaStandardService> _standardServices = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, RazerChromaStandardState> _standardBaselines = new(StringComparer.OrdinalIgnoreCase);
@@ -45,6 +47,11 @@ internal sealed class ChromaDeviceRouter
     private readonly Dictionary<string, RazerRgb> _lastColors = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, RazerHidDeviceConnection> _customEffectPrepared =
         new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _joliePrepared = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, RazerChromaStandardState> _jolieBaselines = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _jolieBaselineAttempted = new(StringComparer.OrdinalIgnoreCase);
+    private RazerMakoXChromaService? _makoService;
+    private string? _makoPath;
     private readonly SemaphoreSlim _gate = new(1, 1);
 
     internal ChromaDeviceRouter(
@@ -54,6 +61,7 @@ internal sealed class ChromaDeviceRouter
         Func<IReadOnlyList<RazerKeyboardConnection>> keyboardDevices,
         Func<IReadOnlyList<RazerChromaDeviceConnection>> standardConnections,
         Func<IReadOnlyList<RazerHidSpecialLightingConnection>> krakenConnections,
+        Func<IReadOnlyList<RazerHeadsetAudioConnection>> headsetConnections,
         Action<string>? diagnostic = null)
     {
         _hid = hid;
@@ -62,6 +70,7 @@ internal sealed class ChromaDeviceRouter
         _keyboardDevices = keyboardDevices ?? throw new ArgumentNullException(nameof(keyboardDevices));
         _standardConnections = standardConnections ?? throw new ArgumentNullException(nameof(standardConnections));
         _krakenConnections = krakenConnections ?? throw new ArgumentNullException(nameof(krakenConnections));
+        _headsetConnections = headsetConnections ?? throw new ArgumentNullException(nameof(headsetConnections));
         _diagnostic = diagnostic;
     }
 
@@ -102,6 +111,21 @@ internal sealed class ChromaDeviceRouter
             {
                 _customEffectPrepared.Remove(staleId);
             }
+            foreach (var staleId in _joliePrepared.Where(id => !liveIds.Contains(id)).ToArray())
+            {
+                _joliePrepared.Remove(staleId);
+            }
+            foreach (var staleId in _jolieBaselines.Keys.Where(id => !liveIds.Contains(id)).ToArray())
+            {
+                _jolieBaselines.Remove(staleId);
+                _jolieBaselineAttempted.Remove(staleId);
+            }
+            if (_makoService is not null && (_makoPath is null || !liveIds.Contains(_makoPath)))
+            {
+                await _makoService.DisposeAsync().ConfigureAwait(false);
+                _makoService = null;
+                _makoPath = null;
+            }
 
             var applied = false;
             foreach (var target in targets)
@@ -131,6 +155,51 @@ internal sealed class ChromaDeviceRouter
         int columns,
         CancellationToken cancellationToken)
     {
+        if (target.Transport == ChromaTargetTransport.JolieFrame)
+        {
+            var resized = Resize(
+                frame, rows, columns, 1, RazerMakoXChromaService.LedCount);
+            if (_lastFrames.TryGetValue(target.InstanceId, out var previous) &&
+                previous.AsSpan().SequenceEqual(resized))
+            {
+                return true;
+            }
+
+            var connection = _headsetConnections().FirstOrDefault(candidate =>
+                candidate.Transport == RazerHeadsetAudioTransport.Jolie64 &&
+                StringComparer.OrdinalIgnoreCase.Equals(candidate.DevicePath, target.InstanceId));
+            if (connection is null) return false;
+            var service = await EnsureMakoServiceAsync(connection, cancellationToken).ConfigureAwait(false);
+            if (_jolieBaselineAttempted.Add(target.InstanceId))
+            {
+                try
+                {
+                    _jolieBaselines[target.InstanceId] =
+                        await service.ReadStateAsync(cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception exception) when (IsDeviceFailure(exception))
+                {
+                    _diagnostic?.Invoke($"Chroma baseline for {target.Name} unavailable: {exception.Message}");
+                }
+            }
+
+            if (_joliePrepared.Add(target.InstanceId))
+            {
+                await service.SetCustomFrameEffectAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            var colors = new byte[resized.Length * 3];
+            for (var index = 0; index < resized.Length; index++)
+            {
+                colors[index * 3] = resized[index].Red;
+                colors[(index * 3) + 1] = resized[index].Green;
+                colors[(index * 3) + 2] = resized[index].Blue;
+            }
+            await service.SetFrameAsync(colors, cancellationToken).ConfigureAwait(false);
+            _lastFrames[target.InstanceId] = resized;
+            return true;
+        }
+
         if (target.Transport == ChromaTargetTransport.HidMatrix)
         {
             var resized = Resize(frame, rows, columns, target.Rows, target.Columns);
@@ -287,11 +356,43 @@ internal sealed class ChromaDeviceRouter
                     _diagnostic?.Invoke($"Chroma restore for {instanceId} failed: {exception.Message}");
                 }
             }
+
+            foreach (var (instanceId, state) in _jolieBaselines.ToArray())
+            {
+                if (state.Effect is not { } effect || _makoService is null ||
+                    !StringComparer.OrdinalIgnoreCase.Equals(_makoPath, instanceId))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    await _makoService.SetEffectAsync(effect, state.Colors, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception exception) when (IsDeviceFailure(exception))
+                {
+                    _diagnostic?.Invoke($"Chroma restore for {instanceId} failed: {exception.Message}");
+                }
+            }
         }
         finally
         {
+            foreach (var instanceId in _jolieBaselines.Keys)
+            {
+                _lastFrames.Remove(instanceId);
+            }
             _standardBaselines.Clear();
             _baselineAttempted.Clear();
+            _jolieBaselines.Clear();
+            _jolieBaselineAttempted.Clear();
+            _joliePrepared.Clear();
+            if (_makoService is not null)
+            {
+                await _makoService.DisposeAsync().ConfigureAwait(false);
+                _makoService = null;
+                _makoPath = null;
+            }
             _gate.Release();
         }
     }
@@ -389,7 +490,42 @@ internal sealed class ChromaDeviceRouter
                 ChromaTargetTransport.Kraken));
         }
 
+        foreach (var connection in _headsetConnections())
+        {
+            if (connection.Transport != RazerHeadsetAudioTransport.Jolie64) continue;
+            targets.Add(new ChromaTarget(
+                connection.DevicePath,
+                connection.Name,
+                ChromaDeviceKind.Headset,
+                1,
+                RazerMakoXChromaService.LedCount,
+                ChromaTargetTransport.JolieFrame));
+        }
+
         return targets;
+    }
+
+    private async Task<RazerMakoXChromaService> EnsureMakoServiceAsync(
+        RazerHeadsetAudioConnection connection,
+        CancellationToken cancellationToken)
+    {
+        if (_makoService is not null &&
+            StringComparer.OrdinalIgnoreCase.Equals(_makoPath, connection.DevicePath))
+        {
+            return _makoService;
+        }
+
+        if (_makoService is not null)
+        {
+            await _makoService.DisposeAsync().ConfigureAwait(false);
+        }
+
+        _makoService = new RazerMakoXChromaService(
+            connection.DevicePath,
+            _diagnostic,
+            keepOpen: true);
+        _makoPath = connection.DevicePath;
+        return _makoService;
     }
 
     private static ChromaDeviceKind? MapCategory(DeviceCategory category) => category switch

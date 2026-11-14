@@ -2843,6 +2843,7 @@
   <data name="RazerLightingEffectFire" xml:space="preserve"><value>Fire</value></data>
   <data name="RazerLightingEffectAmbient" xml:space="preserve"><value>Ambient</value></data>
   <data name="RazerLightingEffectAudioMeter" xml:space="preserve"><value>Audio Meter</value></data>
+  <data name="RazerHeadsetAmbientAwareness" xml:space="preserve"><value>Ambient Awareness (screen capture)</value></data>
   <data name="RazerLightingEffectTidal" xml:space="preserve"><value>Tidal</value></data>
   <data name="RazerLightingEffectWave" xml:space="preserve"><value>Wave</value></data>
   <data name="RazerLightingEffectWheel" xml:space="preserve"><value>Wheel</value></data>
