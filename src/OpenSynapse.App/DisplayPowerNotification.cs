@@ -9,7 +9,7 @@ internal sealed class DisplayPowerNotification
 {
     private const uint WmDeviceChange = 0x0219;
     private const uint WmPowerBroadcast = 0x0218;
-    private const uint WmQueryEndSession = 0x0011;
+    private const uint WmEndSession = 0x0016;
     private const nuint DbtDeviceArrival = 0x8000;
     private const nuint DbtDeviceRemoveComplete = 0x8004;
     private const nuint DbtDevNodesChanged = 0x0007;
@@ -120,7 +120,10 @@ internal sealed class DisplayPowerNotification
 
     private nint HandlePowerWindowMessage(nint windowHandle, uint message, nint wParam, nint lParam, nuint subclassId, nuint referenceData)
     {
-        if (message == WmQueryEndSession && _turnOffLightingOnSessionEnding?.Invoke() == true)
+        // A non-zero wParam means the session end was confirmed, not cancelled by
+        // another app after WM_QUERYENDSESSION.
+        if (message == WmEndSession && wParam != 0 &&
+            _turnOffLightingOnSessionEnding?.Invoke() == true)
         {
             _viewModel.RazerHid.TurnOffLightingForShutdown(TimeSpan.FromSeconds(2));
         }
