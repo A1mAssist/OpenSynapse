@@ -9,44 +9,110 @@ public sealed partial class RazerHidDeviceService
     // 00A4's own bundle proves LINKER/00:BF. The 0088 identity has no equivalent
     // local target-selection evidence; a sibling's linker is not its admission.
     private const ushort MouseDockProProductId = 0x00A4;
+    // 00B3 is a single-device HyperPolling bridge. Its paired mouse answers through
+    // the dongle's own control collection, so there is no separate child HID path.
+    private const ushort HyperPollingDongleProductId = 0x00B3;
 
-    internal async Task<IReadOnlyList<ushort>> ReadLinkedProductIdsAsync(
+    internal async Task<IReadOnlyList<RazerWirelessDeviceConnectionStatus>> ReadLinkedStatusesAsync(
         RazerHidDeviceDefinition parentDefinition,
         string devicePath,
         CancellationToken cancellationToken)
     {
-        if (!IsDualLinkParent(parentDefinition.ProductId))
+        if (!IsLinkedDeviceParent(parentDefinition.ProductId))
         {
             return [];
         }
 
+        // 00A4's linker answers the dock transaction; the standalone 00B3 dongle
+        // uses the middleware transaction instead.
+        var transactionId = parentDefinition.ProductId == HyperPollingDongleProductId
+            ? MiddlewareTransactionId
+            : (byte)0xE0;
         var request = RazerPairingProtocol.CreateGetMultipleDeviceWirelessConnectionStatusV2Request(
-            0xE0);
+            transactionId);
         try
         {
             var response = await _transport.QueryPreparedAsync(
                 devicePath, request, parentDefinition.DeviceWait, cancellationToken).ConfigureAwait(false);
-            return RazerPairingProtocol
-                .ParseMultipleDeviceWirelessConnectionStatusV2(response, request)
-                // The bundle treats FFFF as empty; these ids alone do not identify
-                // the target of a subsequent command on the parent's collection.
-                .Where(status => status.ProductId != ushort.MaxValue)
-                .Select(status => status.ProductId)
-                .Distinct()
-                .ToArray();
+            return RazerPairingProtocol.ParseMultipleDeviceWirelessConnectionStatusV2(response, request);
         }
         catch (Exception exception) when (exception is Win32Exception or IOException or
             InvalidOperationException or NotSupportedException or InvalidDataException or TimeoutException or
             UnauthorizedAccessException)
         {
             WriteDiagnostic(parentDefinition.ProductId,
-                $"dual-link query failed: {exception.GetType().Name}: {exception.Message}");
+                $"linked-device query failed: {exception.GetType().Name}: {exception.Message}");
             return [];
         }
     }
 
+    internal async Task<IReadOnlyList<ushort>> ReadLinkedProductIdsAsync(
+        RazerHidDeviceDefinition parentDefinition,
+        string devicePath,
+        CancellationToken cancellationToken)
+    {
+        var statuses = await ReadLinkedStatusesAsync(
+            parentDefinition, devicePath, cancellationToken).ConfigureAwait(false);
+        // The bundle treats FFFF as empty; these ids alone do not identify
+        // the target of a subsequent command on the parent's collection.
+        return statuses
+            .Where(status => status.ProductId != ushort.MaxValue)
+            .Select(status => status.ProductId)
+            .Distinct()
+            .ToArray();
+    }
+
     internal static bool IsDualLinkParent(ushort productId) =>
         productId == MouseDockProProductId;
+
+    internal static bool IsLinkedDeviceParent(ushort productId) =>
+        IsDualLinkParent(productId) || productId == HyperPollingDongleProductId;
+
+    internal async Task<RazerHidDeviceConnection?> TryCreateHyperPollingConnectionAsync(
+        ushort productId,
+        string parentPath,
+        string parentDeviceKey,
+        CancellationToken cancellationToken)
+    {
+        var definition = _catalog.Find(RazerHidDeviceDefinition.VendorId, productId);
+        if (definition is null || definition.Category != DeviceCategory.Mouse)
+        {
+            WriteDiagnostic(productId, "hyperpolling child is not a known mouse; skipped");
+            return null;
+        }
+        if (!definition.Transactions.ContainsKey("razer_chroma_misc_get_battery_level"))
+        {
+            WriteDiagnostic(productId, "hyperpolling child has no battery command; skipped");
+            return null;
+        }
+
+        try
+        {
+            var probe = RazerHidMouseProtocol.GetBattery(definition);
+            var response = await _transport.QueryPreparedAsync(
+                parentPath, probe.Report, definition.DeviceWait, cancellationToken).ConfigureAwait(false);
+            if (!RazerFeatureReport.IsSuccessfulResponse(probe.Report, response, 2))
+                throw new InvalidDataException("HyperPolling child battery response did not match the request.");
+            _ = RazerHidMouseProtocol.ParseBatteryPercent(response);
+        }
+        catch (Exception exception) when (exception is Win32Exception or IOException or
+            InvalidOperationException or NotSupportedException or InvalidDataException or TimeoutException or
+            UnauthorizedAccessException)
+        {
+            WriteDiagnostic(productId,
+                $"hyperpolling child battery probe failed path={RazerFeatureTransport.DescribeDevicePath(parentPath)}: {exception.GetType().Name}: {exception.Message}");
+            return null;
+        }
+
+        WriteDiagnostic(productId,
+            $"hyperpolling child resolved path={RazerFeatureTransport.DescribeDevicePath(parentPath)}");
+        return CreateConnection(
+            definition,
+            parentPath,
+            $"{parentDeviceKey}#linked-{productId:X4}",
+            RazerHidEndpointState.Resolved,
+            null);
+    }
 
     internal async Task<RazerHidDeviceConnection?> TryCreateLinkedConnectionAsync(
         ushort productId,
@@ -121,9 +187,18 @@ public sealed partial class RazerHidDeviceService
         string parentDeviceKey,
         CancellationToken cancellationToken)
     {
-        var linkedProductIds = await ReadLinkedProductIdsAsync(
+        var statuses = await ReadLinkedStatusesAsync(
             dockDefinition, resolvedPath, cancellationToken).ConfigureAwait(false);
-        if (linkedProductIds.Count == 0)
+        var linkedProductIds = statuses
+            .Where(status => status.ProductId != ushort.MaxValue)
+            // The single-device 00B3 bridge only publishes a child while its paired
+            // mouse is connected. The dock keeps the previous all-status behavior.
+            .Where(status => dockDefinition.ProductId != HyperPollingDongleProductId ||
+                status.Status == RazerPairingProtocol.WirelessLinkConnected)
+            .Select(status => status.ProductId)
+            .Distinct()
+            .ToArray();
+        if (linkedProductIds.Length == 0)
         {
             return;
         }
@@ -134,8 +209,11 @@ public sealed partial class RazerHidDeviceService
             .ToArray();
         foreach (var linkedProductId in linkedProductIds)
         {
-            var linked = await TryCreateLinkedConnectionAsync(
-                linkedProductId, linkedPaths, parentDeviceKey, cancellationToken).ConfigureAwait(false);
+            var linked = dockDefinition.ProductId == HyperPollingDongleProductId
+                ? await TryCreateHyperPollingConnectionAsync(
+                    linkedProductId, resolvedPath, parentDeviceKey, cancellationToken).ConfigureAwait(false)
+                : await TryCreateLinkedConnectionAsync(
+                    linkedProductId, linkedPaths, parentDeviceKey, cancellationToken).ConfigureAwait(false);
             if (linked is not null)
             {
                 results.Add(linked);
