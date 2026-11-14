@@ -62,7 +62,7 @@ public sealed class RazerAvneraHeadsetService : IAsyncDisposable
             "battery",
             RazerAvnera65Protocol.CreateBatteryRequest(),
             RazerAvnera65Protocol.BatteryHeader,
-            RazerAvnera65Protocol.ReadBattery,
+            ReadBatteryWithLog,
             errors,
             cancellationToken).ConfigureAwait(false);
         var sidetone = await ProbeAsync(
@@ -191,7 +191,7 @@ public sealed class RazerAvneraHeadsetService : IAsyncDisposable
             "battery",
             RazerAvnera65Protocol.CreateBatteryRequest(),
             RazerAvnera65Protocol.BatteryHeader,
-            RazerAvnera65Protocol.ReadBattery,
+            ReadBatteryWithLog,
             errors,
             cancellationToken).ConfigureAwait(false);
         if (!battery.Ok)
@@ -201,6 +201,13 @@ public sealed class RazerAvneraHeadsetService : IAsyncDisposable
         }
 
         return battery.Value.Level;
+    }
+
+    private (byte Level, bool Charging) ReadBatteryWithLog(ReadOnlySpan<byte> value)
+    {
+        _diagnostic?.Invoke(
+            $"avnera battery raw={Convert.ToHexString(value[..Math.Min(value.Length, 16)])}");
+        return RazerAvnera65Protocol.ReadBattery(value);
     }
 
     public Task SetAutoPauseAsync(

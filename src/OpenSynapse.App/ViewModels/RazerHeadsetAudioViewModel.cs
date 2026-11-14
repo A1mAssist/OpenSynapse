@@ -91,6 +91,7 @@ public sealed class RazerHeadsetThxBandViewModel : INotifyPropertyChanged
 public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged, IAsyncDisposable
 {
     private static readonly TimeSpan MxicReadTimeout = TimeSpan.FromSeconds(8);
+    private static readonly TimeSpan BatteryRefreshInterval = TimeSpan.FromSeconds(10);
 
     private static readonly (byte Value, string Key)[] Presets =
     [
@@ -166,6 +167,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     private bool _hasHaptics;
     private bool _hasFirmware;
     private bool _hasBattery;
+    private DateTimeOffset _lastBatteryRefresh;
     private bool _hasCharging;
     private byte _sidetonePercent;
     private ushort _silenceDetectionPeriod = 15;
@@ -826,6 +828,24 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         private set => SetField(ref _operationStatusText, value);
     }
 
+    /// <summary>
+    /// Reads only the battery while the page stays open. A full state read would
+    /// overwrite controls the user has not applied yet.
+    /// </summary>
+    internal async Task RefreshBatteryStateAsync(CancellationToken cancellationToken = default)
+    {
+        if (IsBusy ||
+            DateTimeOffset.UtcNow - _lastBatteryRefresh < BatteryRefreshInterval)
+        {
+            return;
+        }
+
+        _lastBatteryRefresh = DateTimeOffset.UtcNow;
+        var percent = await RazerHeadsetAudioService
+            .TryReadBatteryPercentAsync(_connection, _diagnostic, cancellationToken);
+        ApplyBatteryPercent(percent);
+    }
+
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
         if (!_connection.HasControlInterface)
@@ -875,6 +895,10 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
                 state = await ReadStateOnceAsync();
             }
             ApplyState(state);
+            if (state.BatteryPercent is not null)
+            {
+                _lastBatteryRefresh = DateTimeOffset.UtcNow;
+            }
 
             var hasAnyValue = HasAnyValue(state);
             // A probe that failed while the rest of the device answered is a missing
@@ -1466,6 +1490,15 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         return false;
     }
 
+    internal void ApplyBatteryPercent(int? percent)
+    {
+        BatteryText = percent is int value ? $"{value}%" : "--";
+        BatteryPercent = percent;
+        _hasBattery = percent is not null;
+        OnPropertyChanged(nameof(BatteryPercent));
+        OnPropertyChanged(nameof(GenericStatusVisibility));
+    }
+
     private void ApplyState(RazerHeadsetAudioState state)
     {
         if (state.Firmware is { } firmware)
@@ -1473,13 +1506,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             FirmwareText = firmware.ToString();
             _hasFirmware = true;
         }
-        if (state.BatteryPercent is byte battery)
-        {
-            BatteryText = $"{battery}%";
-            BatteryPercent = battery;
-            _hasBattery = true;
-            OnPropertyChanged(nameof(BatteryPercent));
-        }
+        ApplyBatteryPercent(state.BatteryPercent);
         if (state.Charging is bool charging)
         {
             ChargingText = AppStrings.Text(charging ? "BlackSharkCharging" : "BlackSharkNotCharging");
