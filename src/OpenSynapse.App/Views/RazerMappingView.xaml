@@ -189,8 +189,8 @@
           <TextBlock local:Localized.Uid="RazerMappingBusy" Foreground="{StaticResource MutedBrush}" FontSize="12" VerticalAlignment="Center" />
         </StackPanel>
       </StackPanel>
-      <Button Grid.Column="1" local:Localized.Uid="RazerMappingRead" Click="ReadClick" IsEnabled="{Binding CanRead}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
-      <Button Grid.Column="2" local:Localized.Uid="RazerMappingSave" Click="ApplyClick" IsEnabled="{Binding CanApply}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" />
+      <Button Grid.Column="1" local:Localized.Uid="RazerMappingRead" Click="ReadClick" IsEnabled="{Binding CanRead}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" />
+      <Button Grid.Column="2" local:Localized.Uid="RazerMappingSave" Click="ApplyClick" IsEnabled="{Binding CanApply}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" />
       <Button x:Name="CollapseButton" Grid.Column="3" local:Localized.Uid="RazerMappingCollapse" Click="CollapseClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" />
     </Grid>
 
