@@ -898,8 +898,8 @@
                       <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="RazerHidDpiStagesTitle" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
                       <ProgressRing Width="20" Height="20" HorizontalAlignment="Left" IsActive="{Binding IsDpiStagesLoading}" Visibility="{Binding DpiStagesLoadingVisibility}" />
                       <NumberBox local:Localized.Uid="RazerHidActiveDpiStage" Value="{Binding ActiveDpiStage, Mode=TwoWay}" Minimum="1" Maximum="5" SpinButtonPlacementMode="Inline" IsEnabled="{Binding CanWriteDpiStages}" Visibility="{Binding DpiStagesWriteVisibility}" />
-                      <Grid ColumnDefinitions="56,200,200" ColumnSpacing="10">
-                        <TextBlock local:Localized.Uid="CommonStage" Style="{StaticResource MetricLabelStyle}" />
+                      <Grid ColumnDefinitions="76,200,200" ColumnSpacing="10">
+                        <TextBlock local:Localized.Uid="CommonStage" Margin="18,0,0,0" Style="{StaticResource MetricLabelStyle}" />
                         <TextBlock Grid.Column="1" Text="X" Style="{StaticResource MetricLabelStyle}" />
                         <TextBlock Grid.Column="2" Text="Y" Style="{StaticResource MetricLabelStyle}" />
                       </Grid>
@@ -908,8 +908,11 @@
                           <ItemsRepeater.Layout><StackLayout Spacing="6" /></ItemsRepeater.Layout>
                           <ItemsRepeater.ItemTemplate>
                             <DataTemplate>
-                               <Grid ColumnDefinitions="56,200,200" ColumnSpacing="10" MinHeight="34">
-                                <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+                               <Grid ColumnDefinitions="76,200,200" ColumnSpacing="10" MinHeight="34">
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                  <Border Width="10" Height="10" CornerRadius="5" Background="{Binding StageBrush}" />
+                                  <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+                                </StackPanel>
                                  <NumberBox Grid.Column="1" Width="200" Minimum="100" Maximum="100000" SmallChange="100" SpinButtonPlacementMode="Inline" Value="{Binding X, Mode=TwoWay}" Height="34" IsEnabled="{Binding IsEditable}" />
                                  <NumberBox Grid.Column="2" Width="200" Minimum="100" Maximum="100000" SmallChange="100" SpinButtonPlacementMode="Inline" Value="{Binding Y, Mode=TwoWay}" Height="34" IsEnabled="{Binding IsEditable}" />
                               </Grid>
