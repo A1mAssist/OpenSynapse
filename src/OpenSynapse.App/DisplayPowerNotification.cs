@@ -8,6 +8,7 @@ namespace OpenSynapse.App;
 internal sealed class DisplayPowerNotification
 {
     private const uint WmDeviceChange = 0x0219;
+    private const uint WmDisplayChange = 0x007E;
     private const uint WmPowerBroadcast = 0x0218;
     private const uint WmEndSession = 0x0016;
     private const nuint DbtDeviceArrival = 0x8000;
@@ -132,6 +133,13 @@ internal sealed class DisplayPowerNotification
         if (message == WmDeviceChange &&
             (unchecked((nuint)wParam.ToInt64()) is DbtDeviceArrival or DbtDeviceRemoveComplete or DbtDevNodesChanged))
         {
+            _viewModel.Refresh.RequestDeviceRefresh();
+        }
+
+        if (message == WmDisplayChange)
+        {
+            // Monitor hotplug and resolution/refresh changes update the GPU modes,
+            // the internal-display options, and the driver topology.
             _viewModel.Refresh.RequestDeviceRefresh();
         }
 
