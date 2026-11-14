@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Lighting;
 using Windows.Graphics.Imaging;
 using DataWriter = Windows.Storage.Streams.DataWriter;
 using InMemoryRandomAccessStream = Windows.Storage.Streams.InMemoryRandomAccessStream;
@@ -18,7 +19,10 @@ internal static class RazerMappingImageLoader
     {
         if (uri.LocalPath.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
         {
-            return new SvgImageSource { UriSource = uri };
+            return new SvgImageSource
+            {
+                UriSource = await PrepareSvgAsync(uri).ConfigureAwait(true),
+            };
         }
 
         if (uri.LocalPath.EndsWith(".avif", StringComparison.OrdinalIgnoreCase))
@@ -67,6 +71,30 @@ internal static class RazerMappingImageLoader
             UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {
             return null;
+        }
+    }
+
+    private static async Task<Uri> PrepareSvgAsync(Uri uri)
+    {
+        try
+        {
+            var text = await File.ReadAllTextAsync(uri.LocalPath).ConfigureAwait(true);
+            var flattened = SvgCssStyleFlattener.Flatten(text);
+            if (flattened is null) return uri;
+
+            var directory = Path.GetDirectoryName(uri.LocalPath);
+            if (string.IsNullOrEmpty(directory)) return uri;
+
+            var path = Path.Combine(
+                directory,
+                Path.GetFileNameWithoutExtension(uri.LocalPath) + ".flat.svg");
+            await File.WriteAllTextAsync(path, flattened).ConfigureAwait(true);
+            return new Uri(path);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            return uri;
         }
     }
 }
