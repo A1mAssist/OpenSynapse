@@ -6,6 +6,7 @@ using System.Text.Json;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Lighting;
 using OpenSynapse.Core.Storage;
+using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Input;
 
 namespace OpenSynapse.App.ViewModels;
@@ -222,7 +223,7 @@ public sealed partial class RazerMappingAssetService
                     visual,
                     visual.IsKeypad
                         ? RazerKeyboardKeyCatalog.ResolveKeypad(productId, visual.Keys)
-                        : RazerKeyboardKeyCatalog.Resolve(visual.Keys));
+                        : RazerKeyboardKeyCatalog.Resolve(productId, visual.Keys));
             }
 
             if (result.Manifest.Category?.Equals("KEYPAD", StringComparison.OrdinalIgnoreCase) == true &&
@@ -477,14 +478,20 @@ internal static class RazerKeyboardKeyCatalog
 {
     private static readonly IReadOnlyDictionary<string, byte> Hid = Build();
 
-    public static IReadOnlyDictionary<string, byte> Resolve(IEnumerable<StudioKeyboardKey> keys)
+    public static IReadOnlyDictionary<string, byte> Resolve(
+        ushort productId,
+        IEnumerable<StudioKeyboardKey> keys)
     {
         var result = new Dictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
+        var firmwareIds = RazerHuntsmanV3ProKeys.UsesFirmwareKeyIds(productId);
         foreach (var key in keys)
         {
             if (TryGet(key.KeyName, out var id))
             {
-                result[key.KeyName] = id;
+                result[key.KeyName] = firmwareIds &&
+                    RazerHuntsmanV3ProKeys.TryGetFirmwareKeyId(id, out var firmwareKeyId)
+                        ? firmwareKeyId
+                        : id;
             }
         }
 

@@ -1,4 +1,5 @@
 using OpenSynapse.Core.Profiles;
+using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
@@ -44,12 +45,20 @@ public sealed partial class RazerHidMappingViewModel
                 var decoded = _catalog is RazerViperMappingActionCatalog
                     ? null
                     : _catalog.Decode(assignment.FunctionId, assignment.Data);
-                mappings.Add(RazerHidMappingActions.ToProfileMapping(
+                var mapping = RazerHidMappingActions.ToProfileMapping(
                     row.ButtonId,
                     Mode,
                     assignment.FunctionId,
                     assignment.Data,
-                    decoded));
+                    decoded);
+                if (RazerHuntsmanV3ProKeys.UsesFirmwareKeyIds(_productId))
+                {
+                    mapping.Extra ??= new Dictionary<string, string>(StringComparer.Ordinal);
+                    mapping.Extra[RazerHuntsmanV3ProKeys.ProfileKeyIdMarker] =
+                        RazerHuntsmanV3ProKeys.ProfileFirmwareKeyIds;
+                }
+
+                mappings.Add(mapping);
             }
             catch (Exception exception) when (IsExpected(exception))
             {

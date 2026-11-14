@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using OpenSynapse.Core.Macros;
+using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Macros;
 
 namespace OpenSynapse.Windows.Input;
@@ -18,6 +19,17 @@ public static class RazerKeyboardMacroTriggerResolver
 
     public static MacroInput? Resolve(byte hidUsage, ushort productId)
     {
+        // 02A6 / 02A7 / 02B0 / 02CF mapping rows carry firmware key ids, not HID usages.
+        if (RazerHuntsmanV3ProKeys.UsesFirmwareKeyIds(productId))
+        {
+            if (!RazerHuntsmanV3ProKeys.TryGetHidUsage(hidUsage, out var hidUsageFromFirmware))
+            {
+                return null;
+            }
+
+            hidUsage = hidUsageFromFirmware;
+        }
+
         if (hidUsage is 0 or >= 0xE0 || productId == 0)
         {
             return null;
