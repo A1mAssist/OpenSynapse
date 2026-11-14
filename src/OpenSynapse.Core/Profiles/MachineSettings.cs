@@ -26,6 +26,9 @@ public sealed class MachineSettings
     public string? Language { get; set; }
     public string? UpdateChannel { get; set; }
     public bool? AutoUpdateEnabled { get; set; }
+    // PID ("02A7") -> the per-key setting last applied on that device.
+    public Dictionary<string, int> RazerHidAnalogKeyLastModified { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase);
 
     internal void ApplySafeDefaults()
     {
@@ -33,6 +36,21 @@ public sealed class MachineSettings
         {
             throw new InvalidDataException($"Unsupported GPU mode: {mode}.");
         }
+
+        var analogKeys = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        if (RazerHidAnalogKeyLastModified is { } entries)
+        {
+            foreach (var (productId, keyId) in entries)
+            {
+                if (productId is { Length: 4 } &&
+                    productId.All(char.IsAsciiHexDigit) &&
+                    keyId is >= 1 and <= byte.MaxValue)
+                {
+                    analogKeys[productId] = keyId;
+                }
+            }
+        }
+        RazerHidAnalogKeyLastModified = analogKeys;
     }
 }
 
