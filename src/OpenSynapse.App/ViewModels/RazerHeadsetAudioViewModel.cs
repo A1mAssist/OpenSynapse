@@ -764,9 +764,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     public Visibility ParametricEqVisibility =>
         _hasParametricEq ? Visibility.Visible : Visibility.Collapsed;
 
-    private RazerAncState[] DeviceAncStates => IsKrakenBase
-        ? [RazerAncState.Off, RazerAncState.On]
-        : AncStates;
+    private RazerAncState[] DeviceAncStates => AncStates;
 
     public IReadOnlyList<string> AncOptions =>
         DeviceAncStates.Select(state => AppStrings.Text(state switch
@@ -797,7 +795,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     }
 
     public string AncLevelText => $"{Math.Round(AncLevel)} / 10";
-    public Visibility AncLevelVisibility => !IsKrakenBase && _selectedAncIndex == 1
+    public Visibility AncLevelVisibility => _selectedAncIndex == 1
         ? Visibility.Visible
         : Visibility.Collapsed;
     public Visibility AncVisibility => _hasAnc ? Visibility.Visible : Visibility.Collapsed;
