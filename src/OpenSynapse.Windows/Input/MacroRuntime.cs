@@ -575,6 +575,13 @@ internal sealed class MacroRuntime : IDisposable
             return false;
         }
 
+        if (MacroInputTrace.Enabled)
+        {
+            _log?.Invoke(
+                $"input {MacroInputFormatter.Describe(value.Input)} down={value.IsDown} " +
+                $"modifiers={value.Modifiers} hyperShift={_hyperShiftHeld}");
+        }
+
         if (value.Input.Kind == MacroInputKind.RazerKey &&
             value.Input.DeviceId is > 0 and <= 0xFFFF &&
             RazerPrivateKeyCatalog.IsHyperShift(
@@ -825,15 +832,42 @@ internal sealed class MacroRuntime : IDisposable
 
             foreach (var macro in _macros)
             {
-                if (!macro.Enabled ||
-                    macro.Steps.Count == 0 ||
-                    macro.Trigger is not { } trigger ||
-                    trigger.HyperShiftLayer != _hyperShiftHeld ||
-                    !trigger.Matches(value.Input, value.Modifiers))
+                if (!macro.Enabled)
                 {
+                    TraceSkipped(macro, "disabled");
+                    continue;
+                }
+                if (macro.Steps.Count == 0)
+                {
+                    TraceSkipped(macro, "no steps");
+                    continue;
+                }
+                if (macro.Trigger is not { } trigger)
+                {
+                    TraceSkipped(macro, "no trigger");
+                    continue;
+                }
+                if (trigger.HyperShiftLayer != _hyperShiftHeld)
+                {
+                    TraceSkipped(
+                        macro,
+                        $"hyperShift={trigger.HyperShiftLayer} active={_hyperShiftHeld}");
+                    continue;
+                }
+                if (!trigger.Matches(value.Input, value.Modifiers))
+                {
+                    TraceSkipped(
+                        macro,
+                        $"trigger={MacroInputFormatter.Describe(trigger.Input)} " +
+                        $"modifiers={trigger.Modifiers}");
                     continue;
                 }
 
+                if (MacroInputTrace.Enabled)
+                {
+                    _log?.Invoke(
+                        $"trigger matched macro={macro.Name} id={macro.Id} mode={trigger.Mode}");
+                }
                 suppress = true;
                 playModifiers = trigger.Modifiers;
                 _suppressedInputs[key] = new SuppressedInput(trigger.Mode, macro.Id);
@@ -1333,6 +1367,14 @@ internal sealed class MacroRuntime : IDisposable
             macro.Enabled &&
             macro.Steps.Count > 0 &&
             macro.Trigger?.Input is not null);
+
+    private void TraceSkipped(MacroDefinition macro, string reason)
+    {
+        if (MacroInputTrace.Enabled)
+        {
+            _log?.Invoke($"trigger skipped macro={macro.Name} id={macro.Id} reason={reason}");
+        }
+    }
 
     private static MacroInput CreateDefaultStopShortcut() => new()
     {

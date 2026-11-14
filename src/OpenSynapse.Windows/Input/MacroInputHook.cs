@@ -95,6 +95,11 @@ public sealed class MacroInputHook : IDisposable
         _mouseProc = MouseHook;
     }
 
+    private void Trace(string message)
+    {
+        _log?.Invoke(message);
+    }
+
     public bool CaptureMouseMoves
     {
         get => _captureMouseMoves;
@@ -325,9 +330,17 @@ public sealed class MacroInputHook : IDisposable
         try
         {
             var data = Marshal.PtrToStructure<KbdLlHookStruct>(lParam);
-            if ((data.Flags & LlkhfInjected) != 0 ||
-                data.ExtraInfo == WindowsMacroInputSink.InjectionTag)
+            var injected = (data.Flags & LlkhfInjected) != 0;
+            var ours = data.ExtraInfo == WindowsMacroInputSink.InjectionTag;
+            if (injected || ours)
             {
+                if (MacroInputTrace.Enabled)
+                {
+                    Trace(
+                        $"hook keyboard ignored injected vk=0x{data.VirtualKey:X2} " +
+                        $"scan=0x{data.ScanCode:X2} flags=0x{data.Flags:X} " +
+                        $"extra=0x{data.ExtraInfo:X} msgExtra=0x{GetMessageExtraInfo():X} ours={ours}");
+                }
                 return CallNextHookEx(0, code, wParam, lParam);
             }
 
@@ -338,6 +351,12 @@ public sealed class MacroInputHook : IDisposable
                 return CallNextHookEx(0, code, wParam, lParam);
             }
 
+            if (MacroInputTrace.Enabled)
+            {
+                Trace(
+                    $"hook keyboard vk=0x{data.VirtualKey:X2} scan=0x{data.ScanCode:X2} " +
+                    $"down={isDown} flags=0x{data.Flags:X}");
+            }
             var virtualKey = checked((int)data.VirtualKey);
             var input = new MacroInput
             {
@@ -376,12 +395,29 @@ public sealed class MacroInputHook : IDisposable
             var data = Marshal.PtrToStructure<MsLlHookStruct>(lParam);
             if (data.ExtraInfo == WindowsMacroInputSink.InjectionTag)
             {
+                if (MacroInputTrace.Enabled)
+                {
+                    Trace(
+                        $"hook mouse ignored own injection flags=0x{data.Flags:X} " +
+                        $"extra=0x{data.ExtraInfo:X} msgExtra=0x{GetMessageExtraInfo():X} " +
+                        $"data=0x{data.MouseData:X}");
+                }
                 return CallNextHookEx(0, code, wParam, lParam);
             }
 
             if (message is WmMouseWheel or WmMouseHWheel)
             {
-                if ((data.Flags & LlMhInjected) != 0) return CallNextHookEx(0, code, wParam, lParam);
+                if ((data.Flags & LlMhInjected) != 0)
+                {
+                    if (MacroInputTrace.Enabled)
+                    {
+                        Trace(
+                            $"hook wheel ignored injected delta={unchecked((short)(data.MouseData >> 16))} " +
+                            $"flags=0x{data.Flags:X} extra=0x{data.ExtraInfo:X} " +
+                            $"msgExtra=0x{GetMessageExtraInfo():X}");
+                    }
+                    return CallNextHookEx(0, code, wParam, lParam);
+                }
                 var delta = unchecked((short)(data.MouseData >> 16));
                 if (delta == 0)
                 {
@@ -410,7 +446,15 @@ public sealed class MacroInputHook : IDisposable
                 WmXButtonUp => (false, GetXButton(data.MouseData)),
                 _ => (false, 0),
             };
-            if (button == 0 || !MacroMouseInputPolicy.AcceptsMouseButton(data.Flags, data.ExtraInfo, button))
+            var accepted = button != 0 &&
+                MacroMouseInputPolicy.AcceptsMouseButton(data.Flags, data.ExtraInfo, button);
+            if (MacroInputTrace.Enabled)
+            {
+                Trace(
+                    $"hook mouse button={button} down={isDown} flags=0x{data.Flags:X} " +
+                    $"extra=0x{data.ExtraInfo:X} msgExtra=0x{GetMessageExtraInfo():X} accepted={accepted}");
+            }
+            if (!accepted)
             {
                 return CallNextHookEx(0, code, wParam, lParam);
             }
@@ -431,6 +475,10 @@ public sealed class MacroInputHook : IDisposable
 
     private void HandleRazerDeviceButton(MacroInput input, bool isDown)
     {
+        if (MacroInputTrace.Enabled)
+        {
+            Trace($"hook device input={MacroInputFormatter.Describe(input)} down={isDown}");
+        }
         // Raw Input cannot suppress the legacy key report, so the result is
         // intentionally ignored. The trigger itself is still delivered.
         _ = _handler(CreateEvent(input, isDown));
@@ -777,6 +825,9 @@ public sealed class MacroInputHook : IDisposable
 
     [DllImport("user32.dll")]
     private static extern short GetAsyncKeyState(int virtualKey);
+
+    [DllImport("user32.dll")]
+    private static extern nint GetMessageExtraInfo();
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern nuint SetTimer(nint window, nuint timerId, uint elapse, nint timerProc);
