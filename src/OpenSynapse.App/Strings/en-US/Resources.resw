@@ -427,12 +427,6 @@
   <data name="Loc_81394C3DA6.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Exit OpenSynapse</value>
   </data>
-  <data name="TrayTurnOffDisplay.Text" xml:space="preserve">
-    <value>Turn off display</value>
-  </data>
-  <data name="TrayTurnOffDisplay.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Turn off display</value>
-  </data>
   <data name="Text_0982EC10" xml:space="preserve">
     <value>Smart fan curve</value>
   </data>

@@ -22,9 +22,6 @@ public sealed partial class TrayMenuWindow : Window
     private const uint SwpNoActivate = 0x0010;
     private const uint SwpShowWindow = 0x0040;
     private const uint SwpNoOwnerZOrder = 0x0200;
-    private const uint WmSysCommand = 0x0112;
-    private const nuint ScMonitorPower = 0xF170;
-    private const nint MonitorPowerOff = 2;
     private const int WhMouseLl = 14;
     private const int WhKeyboardLl = 13;
     private const uint WmLButtonDown = 0x0201;
@@ -46,7 +43,6 @@ public sealed partial class TrayMenuWindow : Window
     private const double PanelTrailingDip = 3 + 4 + 8;
     private const double MinPanelWidthDip = 120;
     private static readonly IntPtr HwndTopmost = new(-1);
-    private static readonly IntPtr HwndBroadcast = new(0xFFFF);
     private readonly IntPtr _windowHandle;
     private readonly LocalDiagnosticLog _diagnosticLog = new();
     private bool _hostReady;
@@ -118,7 +114,7 @@ public sealed partial class TrayMenuWindow : Window
     private double MeasurePanelWidthDip()
     {
         var widest = 0d;
-        foreach (var label in new[] { OpenMainPanelText, DevicesText, ProfilesText, TurnOffDisplayText, ExitText })
+        foreach (var label in new[] { OpenMainPanelText, DevicesText, ProfilesText, ExitText })
         {
             _widthProbe.Text = label.Text;
             _widthProbe.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
@@ -262,12 +258,10 @@ public sealed partial class TrayMenuWindow : Window
         Localized.Refresh(OpenMainPanelText);
         Localized.Refresh(DevicesText);
         Localized.Refresh(ProfilesText);
-        Localized.Refresh(TurnOffDisplayText);
         Localized.Refresh(ExitText);
         AutomationProperties.SetName(OpenMainPanelMenuItem, OpenMainPanelText.Text);
         AutomationProperties.SetName(DevicesMenuItem, DevicesText.Text);
         AutomationProperties.SetName(ProfilesMenuItem, ProfilesText.Text);
-        AutomationProperties.SetName(TurnOffDisplayMenuItem, TurnOffDisplayText.Text);
         AutomationProperties.SetName(ExitMenuItem, ExitText.Text);
     }
 
@@ -437,12 +431,6 @@ public sealed partial class TrayMenuWindow : Window
             DismissMenu();
             NavigationRequested?.Invoke(page);
         }
-    }
-
-    private void TurnOffDisplayClick(object sender, RoutedEventArgs e)
-    {
-        DismissMenu();
-        PostMessage(HwndBroadcast, WmSysCommand, ScMonitorPower, MonitorPowerOff);
     }
 
     private void ExitClick(object sender, RoutedEventArgs e)
@@ -699,9 +687,5 @@ public sealed partial class TrayMenuWindow : Window
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
     private static extern IntPtr GetModuleHandle(string? moduleName);
 
-    [DllImport("user32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool PostMessage(
-        IntPtr windowHandle, uint message, nuint wParam, nint lParam);
 }
 
