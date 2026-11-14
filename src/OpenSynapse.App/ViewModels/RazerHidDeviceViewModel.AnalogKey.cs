@@ -276,7 +276,12 @@ public sealed partial class RazerHidDeviceViewModel
                         }
                     },
                     cancellationToken);
-                AnalogKeyLayoutStatusText = AppStrings.Text("AnalogKeySettingsApplied");
+                AnalogKeyLayoutStatusText = AppStrings.FormatText(
+                    "AnalogKeySettingsApplied",
+                    AnalogKeyContinuousRapidTrigger
+                        ? AppStrings.Text("DiagnosticProtocolEnabled")
+                        : AppStrings.Text("DiagnosticProtocolDisabled"),
+                    AnalogKeyBottomDeadZoneMillimeters);
             }, cancellationToken);
 
     public Task ApplyAnalogKeyToSelectionAsync(CancellationToken cancellationToken = default) =>
