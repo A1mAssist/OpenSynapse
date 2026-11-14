@@ -258,9 +258,39 @@ public sealed class MacroPlaybackPlan
                             MouseMoveMode = mouseMoveMode,
                             MousePath = points,
                         });
+
+                        if (step.MouseClickButton is >= 1 and <= 5)
+                        {
+                            AddMouseClick(step.MouseClickButton, step.HoldMilliseconds, speed);
+                        }
                         break;
                 }
             }
+        }
+
+        private void AddMouseClick(int mouseButton, int holdMilliseconds, double speed)
+        {
+            var input = new MacroInput
+            {
+                Kind = MacroInputKind.MouseButton,
+                MouseButton = mouseButton,
+            };
+
+            Add(new MacroPlaybackAction
+            {
+                Kind = MacroPlaybackActionKind.MouseButtonDown,
+                Input = input,
+            });
+            Add(new MacroPlaybackAction
+            {
+                Kind = MacroPlaybackActionKind.Delay,
+                DelayMilliseconds = Scale(holdMilliseconds, speed),
+            });
+            Add(new MacroPlaybackAction
+            {
+                Kind = MacroPlaybackActionKind.MouseButtonUp,
+                Input = input,
+            });
         }
 
         private void AddInput(MacroStep step, MacroInput input, int delay, double speed)

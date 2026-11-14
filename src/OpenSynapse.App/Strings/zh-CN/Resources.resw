@@ -2820,6 +2820,12 @@
   <data name="MacroCommandStepName" xml:space="preserve"><value>命令：{0}</value></data>
   <data name="MacroReferenceStepName" xml:space="preserve"><value>运行宏：{0}</value></data>
   <data name="MacroMouseMoveStepName" xml:space="preserve"><value>鼠标轨迹（{0} 点）</value></data>
+  <data name="MacroMouseClickStepName" xml:space="preserve"><value>点击 {0}：({1}, {2})</value></data>
+  <data name="MacroMouseClickDialogTitle" xml:space="preserve"><value>点击坐标</value></data>
+  <data name="MacroMouseClickXLabel" xml:space="preserve"><value>X（屏幕像素）</value></data>
+  <data name="MacroMouseClickYLabel" xml:space="preserve"><value>Y（屏幕像素）</value></data>
+  <data name="MacroMouseClickButtonLabel" xml:space="preserve"><value>鼠标按键</value></data>
+  <data name="MacroMouseClickHint" xml:space="preserve"><value>坐标为虚拟桌面屏幕像素；只生成一个路径点，不产生中间轨迹。</value></data>
   <data name="MacroMousePathText" xml:space="preserve"><value>{0} 个采样点，最长 {1} ms</value></data>
   <data name="MacroModifierControl" xml:space="preserve"><value>Ctrl</value></data>
   <data name="MacroModifierShift" xml:space="preserve"><value>Shift</value></data>
@@ -2924,6 +2930,7 @@
   <data name="MacroInsertMenu.Text" xml:space="preserve"><value>插入</value></data>
   <data name="MacroInsertPickKey.Text" xml:space="preserve"><value>插入按键</value></data>
   <data name="MacroInsertCapture.Text" xml:space="preserve"><value>捕获按键</value></data>
+  <data name="MacroInsertClickAt.Text" xml:space="preserve"><value>点击坐标</value></data>
   <data name="MacroDurationText" xml:space="preserve"><value>{0} 毫秒</value></data>
   <data name="MacroDelayStepName" xml:space="preserve"><value>等待 {0} 毫秒</value></data>
   <data name="MacroStepDelayText" xml:space="preserve"><value>{0} ms</value></data>
@@ -3039,6 +3046,8 @@
   <data name="MacroStepLoopCountLabel.Text" xml:space="preserve"><value>循环次数</value></data>
   <data name="MacroStepMacroReferenceLabel.Text" xml:space="preserve"><value>目标宏</value></data>
   <data name="MacroStepMousePathLabel.Text" xml:space="preserve"><value>鼠标轨迹</value></data>
+  <data name="MacroStepMouseClickLabel.Text" xml:space="preserve"><value>点击</value></data>
+  <data name="MacroStepMouseClickNone.Content" xml:space="preserve"><value>不点击</value></data>
   <data name="MacroStepMoveDownButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>下移动作</value></data>
   <data name="MacroStepMoveDownButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>下移动作</value></data>
   <data name="MacroStepMoveUpButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>上移动作</value></data>

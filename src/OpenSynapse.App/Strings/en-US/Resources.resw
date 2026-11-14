@@ -2384,6 +2384,12 @@
   <data name="MacroCommandStepName" xml:space="preserve"><value>Command: {0}</value></data>
   <data name="MacroReferenceStepName" xml:space="preserve"><value>Run macro: {0}</value></data>
   <data name="MacroMouseMoveStepName" xml:space="preserve"><value>Mouse movement ({0} points)</value></data>
+  <data name="MacroMouseClickStepName" xml:space="preserve"><value>Click {0}: ({1}, {2})</value></data>
+  <data name="MacroMouseClickDialogTitle" xml:space="preserve"><value>Click at coordinate</value></data>
+  <data name="MacroMouseClickXLabel" xml:space="preserve"><value>X (screen pixels)</value></data>
+  <data name="MacroMouseClickYLabel" xml:space="preserve"><value>Y (screen pixels)</value></data>
+  <data name="MacroMouseClickButtonLabel" xml:space="preserve"><value>Mouse button</value></data>
+  <data name="MacroMouseClickHint" xml:space="preserve"><value>Coordinates are virtual-desktop screen pixels; this creates one path point with no intermediate movement.</value></data>
   <data name="MacroMousePathText" xml:space="preserve"><value>{0} samples, up to {1} ms</value></data>
   <data name="MacroModifierControl" xml:space="preserve"><value>Ctrl</value></data>
   <data name="MacroModifierShift" xml:space="preserve"><value>Shift</value></data>
@@ -2488,6 +2494,7 @@
   <data name="MacroInsertMenu.Text" xml:space="preserve"><value>Insert</value></data>
   <data name="MacroInsertPickKey.Text" xml:space="preserve"><value>Pick key</value></data>
   <data name="MacroInsertCapture.Text" xml:space="preserve"><value>Capture key</value></data>
+  <data name="MacroInsertClickAt.Text" xml:space="preserve"><value>Click at coordinate</value></data>
   <data name="MacroDurationText" xml:space="preserve"><value>{0} ms</value></data>
   <data name="MacroDelayStepName" xml:space="preserve"><value>Wait {0} ms</value></data>
   <data name="MacroStepDelayText" xml:space="preserve"><value>{0} ms</value></data>
@@ -2603,6 +2610,8 @@
   <data name="MacroStepLoopCountLabel.Text" xml:space="preserve"><value>Repeat count</value></data>
   <data name="MacroStepMacroReferenceLabel.Text" xml:space="preserve"><value>Target macro</value></data>
   <data name="MacroStepMousePathLabel.Text" xml:space="preserve"><value>Mouse path</value></data>
+  <data name="MacroStepMouseClickLabel.Text" xml:space="preserve"><value>Click</value></data>
+  <data name="MacroStepMouseClickNone.Content" xml:space="preserve"><value>No click</value></data>
   <data name="MacroStepMoveDownButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Move action down</value></data>
   <data name="MacroStepMoveDownButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Move action down</value></data>
   <data name="MacroStepMoveUpButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Move action up</value></data>

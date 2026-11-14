@@ -80,6 +80,31 @@ public static class MacroStepFactory
         };
     }
 
+    public static MacroStep CreateClickAt(
+        int x,
+        int y,
+        int mouseButton = 1,
+        int holdMilliseconds = MacroStep.DefaultHoldMilliseconds)
+    {
+        if (mouseButton is < 1 or > 5)
+        {
+            throw new ArgumentOutOfRangeException(nameof(mouseButton));
+        }
+
+        return new MacroStep
+        {
+            Kind = MacroStepKind.MouseMove,
+            MouseMoveMode = MacroMouseMoveMode.Absolute,
+            MousePath =
+            [
+                new MacroMousePoint { X = x, Y = y, OffsetMilliseconds = 0 },
+            ],
+            MouseClickButton = mouseButton,
+            HoldMilliseconds = Math.Clamp(
+                holdMilliseconds, 0, MacroStep.MaxHoldMilliseconds),
+        };
+    }
+
     public static IReadOnlyList<MacroInput> ModifierInputs(MacroModifierKeys modifiers)
     {
         var inputs = new List<MacroInput>(4);

@@ -111,7 +111,8 @@ public static class MacroValidator
                     step.Children.Count > 0,
                 MacroStepKind.MacroReference => !string.IsNullOrWhiteSpace(step.MacroId) &&
                     step.MacroId.Length <= 64,
-                MacroStepKind.MouseMove => step.MousePath.Count is > 0 and <= MacroStep.MaxMousePathPoints,
+                MacroStepKind.MouseMove => step.MousePath.Count is > 0 and <= MacroStep.MaxMousePathPoints &&
+                    step.MouseClickButton is >= 0 and <= 5,
                 _ => false,
             };
             if (!valid)
