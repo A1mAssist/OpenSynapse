@@ -29,7 +29,16 @@ public sealed partial class RazerFeatureTransport
                 return (byte)(0xE0 | NextDockTransactionId(ref sequence));
             return 0xFF;
         }
-        if (requested == 0xFF) return requested;
+        if (requested == 0xFF)
+        {
+            // Only the devices that opt in rotate the wildcard. Everyone else keeps
+            // 0xFF because their firmware uses it as "accept any echoed transaction".
+            return DeviceIdParser.TryParse(devicePath, out var vendorId, out var dynamicProductId) &&
+                vendorId == 0x1532 &&
+                RazerHidDeviceCatalog.BuiltIn.Find(vendorId, dynamicProductId)?.UsesDynamicTransactions == true
+                    ? NextTransactionId(ref sequence)
+                    : requested;
+        }
         if (DeviceIdParser.TryParse(devicePath, out _, out var productId) &&
             RazerKeyboardProtocol.UsesDualLinkTransaction(productId))
         {
