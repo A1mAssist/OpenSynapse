@@ -112,7 +112,12 @@ public sealed partial class RazerHeadsetAudioViewModel
         var effect = LightingEffects[SelectedLightingEffectIndex];
         if (effect == RazerChromaEffect.CustomFrame)
         {
-            if (!await RunAmbientAsync(cancellationToken)) return;
+            if (!await RunAmbientAsync(
+                    previousEffect, previousPrimary, previousSecondary, cancellationToken))
+            {
+                SelectedLightingEffectIndex = previousEffectIndex;
+                return;
+            }
         }
         else
         {
