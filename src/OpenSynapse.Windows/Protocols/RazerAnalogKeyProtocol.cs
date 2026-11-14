@@ -68,6 +68,15 @@ public static partial class RazerAnalogKeyProtocol
     public const int MaxModTapAssignments = 19;
     public const int MaxKeyAssignments = 8;
 
+    // The 02A7 firmware answers a full 15-key 0x99 read with 0x01 busy until
+    // the retry window expires, while the same firmware acknowledges 5-key
+    // batches. Keep this model on the smaller batch until its limit is known.
+    public static int MaxActuationPointsFor(ushort productId) =>
+        productId == 0x02A7 ? 5 : MaxActuationPoints;
+
+    public static int MaxRapidTriggerKeysFor(ushort productId) =>
+        productId == 0x02A7 ? 5 : MaxRapidTriggerKeys;
+
     private const byte CommandClass = 0x02;
     // Tuples are [staging size, class, id] from the Huntsman V3 Pro / Mako bundles.
     // List commands pass their actual record length to sendCommand, not the staging size.

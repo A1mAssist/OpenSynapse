@@ -311,7 +311,8 @@ public sealed partial class RazerHidDeviceViewModel
                     .Where(key => Math.Abs(key.ActuationMillimeters - AnalogKeyActuationPointMillimeters)
                         > AnalogKeyToleranceMillimeters)
                     .ToArray();
-                foreach (var batch in actuationKeys.Chunk(RazerAnalogKeyProtocol.MaxActuationPoints))
+                foreach (var batch in actuationKeys.Chunk(
+                    RazerAnalogKeyProtocol.MaxActuationPointsFor(Connection.Definition.ProductId)))
                 {
                     await _service.SetAnalogKeyActuationPointsAsync(
                         Connection,
@@ -328,7 +329,8 @@ public sealed partial class RazerHidDeviceViewModel
                         Math.Abs(key.RapidTriggerSensitivityMillimeters -
                             AnalogKeyRapidTriggerSensitivityMillimeters) > AnalogKeyToleranceMillimeters)
                     .ToArray();
-                foreach (var batch in rapidTriggerKeys.Chunk(RazerAnalogKeyProtocol.MaxRapidTriggerKeys))
+                foreach (var batch in rapidTriggerKeys.Chunk(
+                    RazerAnalogKeyProtocol.MaxRapidTriggerKeysFor(Connection.Definition.ProductId)))
                 {
                     await _service.SetAnalogKeyRapidTriggersAsync(
                         Connection,
@@ -437,7 +439,8 @@ public sealed partial class RazerHidDeviceViewModel
         var byId = keys.ToDictionary(key => key.KeyId);
         var seen = new HashSet<byte>();
         var profileId = await ResolveAnalogKeyProfileIdAsync(cancellationToken);
-        foreach (var batch in keyIds.Chunk(RazerAnalogKeyProtocol.MaxActuationPoints))
+        foreach (var batch in keyIds.Chunk(
+            RazerAnalogKeyProtocol.MaxActuationPointsFor(Connection.Definition.ProductId)))
         {
             var table = await _service.GetAnalogKeyActuationPointsAsync(
                 Connection, AnalogKeyDataType, profileId, batch, cancellationToken);
@@ -455,7 +458,8 @@ public sealed partial class RazerHidDeviceViewModel
             }
         }
 
-        foreach (var batch in keyIds.Chunk(RazerAnalogKeyProtocol.MaxRapidTriggerKeys))
+        foreach (var batch in keyIds.Chunk(
+            RazerAnalogKeyProtocol.MaxRapidTriggerKeysFor(Connection.Definition.ProductId)))
         {
             var table = await _service.GetAnalogKeyRapidTriggersAsync(
                 Connection, AnalogKeyDataType, profileId, batch, cancellationToken);
