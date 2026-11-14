@@ -832,15 +832,15 @@ public static class BladeModelCapabilities
 
     /// <summary>
     /// Target range for a fan curve. A curve is a continuous policy, so it uses the
-    /// model-wide floor instead of the fixed slider's per-mode minimum. The per-mode
-    /// maximum still applies, capped at the editor's 5400 ceiling.
+    /// model-wide floor instead of the fixed slider's per-mode minimum. The maximum is
+    /// the current mode's fixed range, limited by the model's writable ceiling.
     /// </summary>
     public static BladeFanTargetRange FanCurveTargetRangeFor(ushort productId, BladePerformanceMode mode)
     {
         var fixedRange = FanTargetRangeFor(productId, mode);
         return new BladeFanTargetRange(
             MinimumFanTargetRpmFor(productId),
-            Math.Min(fixedRange.MaximumRpm, Math.Min(MaximumWritableFanTargetRpmFor(productId), BladeFanCurve.MaximumPointFanSpeedRpm)),
+            Math.Min(fixedRange.MaximumRpm, MaximumWritableFanTargetRpmFor(productId)),
             fixedRange.DefaultRpm);
     }
 

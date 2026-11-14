@@ -23,12 +23,11 @@ public sealed class BladeFanCurve
     public const int DefaultMinimumFanSpeedRpm = 2300;
     public const int MinimumPointFanSpeedRpm = 1900;
     /// <summary>
-    /// Highest speed a curve point may carry. The official middleware drives the same
-    /// fan-target report as rpm/100 and its Performance and Hyperboost modes run up to
-    /// 5400 RPM, so a curve may ask for that too; the per-model ceiling in
-    /// BladeModelCapabilities still guards the write itself.
+    /// Highest speed any supported curve point may carry. 5600 is the highest write
+    /// ceiling published by a supported Blade contract; per-model and per-mode limits
+    /// are applied by BladeModelCapabilities before a curve is written.
     /// </summary>
-    public const int MaximumPointFanSpeedRpm = 5400;
+    public const int MaximumPointFanSpeedRpm = 5600;
     private const int MaximumPoints = 32;
 
     public BladeFanCurve(
@@ -209,7 +208,7 @@ public sealed class BladeFanCurve
 
     /// <summary>
     /// Returns a curve whose fan targets do not exceed the model's writable ceiling.
-    /// The editor publishes a global 5400 RPM maximum, but some ECs stop lower.
+    /// The curve domain covers every supported model, but some ECs stop lower.
     /// </summary>
     public BladeFanCurve ClampMaximumFanSpeed(int maximumRpm)
     {

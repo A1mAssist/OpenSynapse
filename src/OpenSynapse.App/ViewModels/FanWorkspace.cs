@@ -88,7 +88,19 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
 
     /// <summary>Draggable curve editor. Created lazily so non-Blade sessions pay nothing.</summary>
     public BladeFanCurveEditorViewModel BladeFanCurveEditor =>
-        _bladeFanCurveEditor ??= new BladeFanCurveEditorViewModel(DefaultBladeFanCurve());
+        _bladeFanCurveEditor ??= CreateBladeFanCurveEditor(DefaultBladeFanCurve());
+
+    private BladeFanCurveEditorViewModel CreateBladeFanCurveEditor(BladeFanCurve curve)
+    {
+        var range = BladeModelCapabilities.FanCurveTargetRangeFor(
+            _blade._bladeProductId,
+            CurrentBladePerformanceMode);
+
+        return new BladeFanCurveEditorViewModel(
+            curve,
+            range.MinimumRpm,
+            range.MaximumRpm);
+    }
 
     /// <summary>
     /// Which of the three fan control surfaces is showing. Curve mode only exists on models
@@ -283,7 +295,7 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
         OnPropertyChanged(nameof(BladeFanFixedMinimumRpm));
         OnPropertyChanged(nameof(BladeFanFixedMaximumRpm));
 
-        _bladeFanCurveEditor = new BladeFanCurveEditorViewModel(
+        _bladeFanCurveEditor = CreateBladeFanCurveEditor(
             TryCreateCurve(resolved) ?? DefaultBladeFanCurve());
         OnPropertyChanged(nameof(BladeFanCurveEditor));
         OnPropertyChanged(nameof(BladeFanCurveModeIndex));
@@ -299,12 +311,6 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
     public void ResetBladeFanCurveToDefault()
     {
         BladeFanCurveEditor.ResetToDefault();
-        var maximum = BladeModelCapabilities.MaximumWritableFanTargetRpmFor(_blade._bladeProductId);
-        foreach (var point in BladeFanCurveEditor.Points)
-        {
-            point.CpuRpm = Math.Min(point.CpuRpm, maximum);
-            point.GpuRpm = Math.Min(point.GpuRpm, maximum);
-        }
         OnPropertyChanged(nameof(BladeFanCurveModeIndex));
     }
 
