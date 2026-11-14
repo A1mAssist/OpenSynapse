@@ -1630,7 +1630,7 @@
   <data name="RazerHidAnalogContinuousRapidTrigger.Text" xml:space="preserve"><value>Continuous Rapid Trigger</value></data>
   <data name="RazerHidAnalogBottomDeadZone.Header" xml:space="preserve"><value>Bottom dead zone</value></data>
   <data name="RazerHidAnalogDeadZoneUnknown" xml:space="preserve"><value>The device returned {0:0.0} mm, outside 0.1-1.0 mm; it was left unchanged.</value></data>
-  <data name="RazerHidAnalogDeadZoneUnreadable" xml:space="preserve"><value>The device cannot read the current bottom dead zone; the value can be written but not read back.</value></data>
+  <data name="RazerHidAnalogDeadZoneUnreadable" xml:space="preserve"><value>The device does not accept the bottom dead zone setting.</value></data>
   <data name="RazerHidOledTitle.Text" xml:space="preserve"><value>OLED display</value></data>
   <data name="RazerHidOledBrightness.Text" xml:space="preserve"><value>Brightness</value></data>
   <data name="RazerHidOledScreensaverMode.Header" xml:space="preserve"><value>Screensaver mode</value></data>

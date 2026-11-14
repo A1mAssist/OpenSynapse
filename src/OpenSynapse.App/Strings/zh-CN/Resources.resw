@@ -2012,7 +2012,7 @@
   <data name="RazerHidAnalogContinuousRapidTrigger.Text" xml:space="preserve"><value>连续 Rapid Trigger</value></data>
   <data name="RazerHidAnalogBottomDeadZone.Header" xml:space="preserve"><value>底部死区</value></data>
   <data name="RazerHidAnalogDeadZoneUnknown" xml:space="preserve"><value>设备返回 {0:0.0} mm，超出 0.1–1.0 mm，未修改。</value></data>
-  <data name="RazerHidAnalogDeadZoneUnreadable" xml:space="preserve"><value>设备不支持读取当前底部死区；可以写入，但无法回读确认。</value></data>
+  <data name="RazerHidAnalogDeadZoneUnreadable" xml:space="preserve"><value>设备不接受底部死区设置。</value></data>
   <data name="RazerHidOledTitle.Text" xml:space="preserve"><value>OLED 屏幕</value></data>
   <data name="RazerHidOledBrightness.Text" xml:space="preserve"><value>亮度</value></data>
   <data name="RazerHidOledScreensaverMode.Header" xml:space="preserve"><value>屏保模式</value></data>
