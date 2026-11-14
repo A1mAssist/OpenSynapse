@@ -234,8 +234,8 @@ public sealed partial class RazerKeyboardService
             "charging", RazerKeyboardProtocol.GetChargingStatus, RazerKeyboardProtocol.ReadChargingStatus,
             errors, cancellationToken).ConfigureAwait(false);
         var gameMode = await ProbeAsync(
-            "game mode", RazerKeyboardProtocol.GetGameModeState,
-            response => RazerKeyboardProtocol.ReadGameModeState(response).GameMode != 0,
+            "game mode", GameModeReadRequest,
+            ReadGameMode,
             errors, cancellationToken).ConfigureAwait(false);
         var profile = await ProbeAsync(
             "active profile",
@@ -262,41 +262,6 @@ public sealed partial class RazerKeyboardService
             gameMode.Ok ? gameMode.Value : null,
             polling.Ok ? polling.Value : null,
             errors);
-    }
-
-    public async Task SetGameModeAsync(bool enabled, CancellationToken cancellationToken = default)
-    {
-        var previous = RazerKeyboardProtocol.ReadGameModeState(
-            await QueryAsync(RazerKeyboardProtocol.GetGameModeState, "read game mode", cancellationToken)
-                .ConfigureAwait(false));
-        var desired = enabled ? (byte)1 : (byte)0;
-        if (previous.GameMode == desired)
-        {
-            return;
-        }
-
-        try
-        {
-            await QueryAsync(
-                transaction => RazerKeyboardProtocol.SetGameModeState(transaction, desired),
-                "set game mode",
-                cancellationToken).ConfigureAwait(false);
-            var actual = RazerKeyboardProtocol.ReadGameModeState(
-                await QueryAsync(RazerKeyboardProtocol.GetGameModeState, "read back game mode", cancellationToken)
-                    .ConfigureAwait(false));
-            if (actual.GameMode != desired)
-            {
-                throw new InvalidOperationException(
-                    $"Game mode readback was {actual.GameMode}, expected {desired}.");
-            }
-        }
-        catch
-        {
-            await TryRestoreAsync(
-                transaction => RazerKeyboardProtocol.SetGameModeState(transaction, previous.GameMode),
-                "restore game mode").ConfigureAwait(false);
-            throw;
-        }
     }
 
     public async Task SetPollingRateAsync(int hertz, CancellationToken cancellationToken = default)

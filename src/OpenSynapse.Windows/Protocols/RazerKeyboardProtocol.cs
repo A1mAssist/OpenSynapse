@@ -52,6 +52,12 @@ public static class RazerKeyboardProtocol
     public static byte[] SetGameModeState(byte transactionId, byte gameMode) =>
         Create(transactionId, 4, 0x00, 0x08, gameMode);
 
+    public static byte[] GetGameLedState(byte transactionId) =>
+        Create(transactionId, 3, 0x03, 0x80, [0x00, 0x08]);
+
+    public static byte[] SetGameLedState(byte transactionId, bool enabled) =>
+        Create(transactionId, 3, 0x03, 0x00, [0x00, 0x08, enabled ? (byte)1 : (byte)0]);
+
     public static byte[] GetActiveProfile(byte transactionId) =>
         Create(transactionId, 1, 0x05, 0x84, 0x00);
 
@@ -101,6 +107,18 @@ public static class RazerKeyboardProtocol
         var data = Arguments(response);
         Require(data, 3);
         return (data[0], data[1], data[2]);
+    }
+
+    public static bool ReadGameLedState(ReadOnlySpan<byte> response)
+    {
+        var data = Arguments(response);
+        Require(data, 3);
+        return data[2] switch
+        {
+            0 => false,
+            1 => true,
+            _ => throw new InvalidDataException("Razer returned an invalid game LED state."),
+        };
     }
 
     public static byte ReadActiveProfileId(ReadOnlySpan<byte> response)
