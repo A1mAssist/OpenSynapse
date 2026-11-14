@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Macros;
 using OpenSynapse.Windows.Devices;
 
@@ -270,8 +271,15 @@ internal sealed class RazerPrivateKeyInput : IDisposable
         device.InputReportByteLength > 0 &&
         // The vendor key collection is Usage 0x0000/0x0080 under the
         // generic-desktop page (0x0001). Checking UsagePage skipped every
-        // Razer mouse whose private keys live there.
-        device.Usage is 0x0000 or 0x0080 &&
+        // Razer mouse whose private keys live there. Mice also send the
+        // 16-byte report 4 through their keyboard-protocol collection
+        // (Usage 0x0006); do not open that stream for real keyboards.
+        (device.Usage is 0x0000 or 0x0080 ||
+         device.UsagePage == 0x0001 &&
+         device.Usage == 0x0006 &&
+         device.InputReportByteLength == 16 &&
+         RazerHidDeviceCatalog.BuiltIn.Find(RazerVendorId, device.ProductId)?.Category ==
+             DeviceCategory.Mouse) &&
         // Blade keyboards publish every M-key, Fn shortcut and the microphone indicator
         // as report 4 on MI_01 Col04/Col05. The Product 710 filter runtime owns that
         // stream, and a second reader takes the reports away from it. Mice put their
