@@ -222,7 +222,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
                 }
                 else
                 {
-                    await SelectDeviceAsync(selectedRow, cancellationToken);
+                    await SelectDeviceAsync(selectedRow, cancellationToken, forceReload: true);
                 }
             }
             else if (SelectedDevice is { } selectedDevice)
@@ -280,10 +280,26 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
 
     public async Task SelectDeviceAsync(
         RazerHidDeviceRowViewModel row,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool forceReload = false)
     {
         if (_deviceService is null)
         {
+            return;
+        }
+
+        // Tab switches re-enter this method with the same row. Reuse the live view
+        // model instead of disposing it and reading every hardware value again.
+        if (!forceReload &&
+            SelectedDevice is { } selectedDevice &&
+            StringComparer.OrdinalIgnoreCase.Equals(
+                selectedDevice.InstanceId, row.Connection.InstanceId) &&
+            StringComparer.OrdinalIgnoreCase.Equals(
+                selectedDevice.Connection.DevicePath, row.Connection.DevicePath))
+        {
+            row.AttachDetail(selectedDevice);
+            SelectedKraken = null;
+            NotifyDeviceOverview();
             return;
         }
 
