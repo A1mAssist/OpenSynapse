@@ -145,7 +145,7 @@ public sealed class MacroStepRowViewModel : INotifyPropertyChanged
 
     public string DirectionText => IsInput
         ? Step.IsDown
-            ? AppStrings.Text("MacroStepDown")
+            ? AppStrings.Text(Step.AutoRelease ? "MacroStepTapDirection" : "MacroStepDown")
             : AppStrings.Text("MacroStepUp")
         : string.Empty;
 
@@ -170,7 +170,9 @@ public sealed class MacroStepRowViewModel : INotifyPropertyChanged
         MacroStepKind.Input when Step.Input is { } input => Step.Input.Kind == MacroInputKind.MouseWheel
             ? MacroRowViewModel.DescribeInput(input)
             : AppStrings.FormatText(
-                Step.IsDown ? "MacroStepNameDown" : "MacroStepNameUp",
+                Step.IsDown
+                    ? Step.AutoRelease ? "MacroStepNameTap" : "MacroStepNameDown"
+                    : "MacroStepNameUp",
                 MacroRowViewModel.DescribeInput(input)),
         _ => AppStrings.Text("MacroStepUnknownName"),
     };

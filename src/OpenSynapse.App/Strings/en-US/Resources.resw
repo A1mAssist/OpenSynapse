@@ -2379,6 +2379,7 @@
   <data name="MacroCancelCountdown" xml:space="preserve"><value>Cancel countdown</value></data>
   <data name="MacroStepNameDown" xml:space="preserve"><value>Down {0}</value></data>
   <data name="MacroStepNameUp" xml:space="preserve"><value>Up {0}</value></data>
+  <data name="MacroStepNameTap" xml:space="preserve"><value>Press and release {0}</value></data>
   <data name="MacroTextStepName" xml:space="preserve"><value>Text: {0}</value></data>
   <data name="MacroCommandStepName" xml:space="preserve"><value>Command: {0}</value></data>
   <data name="MacroReferenceStepName" xml:space="preserve"><value>Run macro: {0}</value></data>
@@ -2547,6 +2548,7 @@
   <data name="MacroReferenceInvalid" xml:space="preserve"><value>Invalid macro reference: the target is missing or the references form a cycle.</value></data>
   <data name="MacroResumed" xml:space="preserve"><value>Macro resumed.</value></data>
   <data name="MacroStepDown" xml:space="preserve"><value>Down</value></data>
+  <data name="MacroStepTapDirection" xml:space="preserve"><value>Down/Up</value></data>
   <data name="MacroStepIncomplete" xml:space="preserve"><value>An action is incomplete. Check its command, text, or reference target.</value></data>
   <data name="MacroStepUnknownName" xml:space="preserve"><value>Unknown action</value></data>
   <data name="MacroStepUp" xml:space="preserve"><value>Up</value></data>
