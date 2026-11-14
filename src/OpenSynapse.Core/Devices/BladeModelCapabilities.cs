@@ -275,12 +275,16 @@ public static class BladeModelCapabilities
             // official modes span 3400 to 5200 RPM and Custom reaches 5300. A user
             // readback from this EC can retain 5500 RPM, so accept that as a read
             // ceiling while keeping writes inside the bundle-published 5300 limit.
+            // The preset minima are 3400/4000, but the manual target can reach the
+            // model floor of 2000; keep the preset table intact and lower only the
+            // fixed-speed slider through MinimumManualFanTargetRpm.
             [0x029F] = new(
                 MaxFan: true,
                 [.. LowMediumHigh, BladeCpuBoostMode.Boost],
                 FanCurve: true, FixedFan: true,
                 MinimumFanTargetRpm: 3400,
                 MaximumFanTargetRpm: 5500,
+                MinimumManualFanTargetRpm: 2000,
                 HyperBoost: true,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3400, 5200, 4100),
@@ -821,13 +825,20 @@ public static class BladeModelCapabilities
                 BladeFanLimits.MinimumRpm, BladeFanLimits.MaximumRpm, BladeFanLimits.MinimumRpm);
         }
 
-        if (contract.ModeFanRanges is { } ranges && ranges.TryGetValue(mode, out var range))
+        BladeFanTargetRange range;
+        if (contract.ModeFanRanges is { } ranges && ranges.TryGetValue(mode, out var modeRange))
         {
-            return range;
+            range = modeRange;
+        }
+        else
+        {
+            range = new BladeFanTargetRange(
+                contract.MinimumFanTargetRpm, contract.MaximumFanTargetRpm, contract.MinimumFanTargetRpm);
         }
 
-        return new BladeFanTargetRange(
-            contract.MinimumFanTargetRpm, contract.MaximumFanTargetRpm, contract.MinimumFanTargetRpm);
+        return contract.MinimumManualFanTargetRpm is int manualMinimum
+            ? range with { MinimumRpm = Math.Min(range.MinimumRpm, manualMinimum) }
+            : range;
     }
 
     /// <summary>
@@ -910,7 +921,8 @@ public static class BladeModelCapabilities
         bool FixedFanRequiresCustomMode = false,
         IReadOnlyDictionary<BladePerformanceMode, BladeFanTargetRange>? ModeFanRanges = null,
         IReadOnlyList<BladePerformanceMode>? Modes = null,
-        bool CpuPowerBoost = false);
+        bool CpuPowerBoost = false,
+        int? MinimumManualFanTargetRpm = null);
 
     /// <summary>
     /// True only where the exact model has an audited write path. Unknown models stay
