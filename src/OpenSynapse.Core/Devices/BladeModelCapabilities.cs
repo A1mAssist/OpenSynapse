@@ -251,9 +251,8 @@ public static class BladeModelCapabilities
             // restart, and switching back to automatic released the fans. A 3000 RPM
             // write also read back as 0x1E on both zones, so the firmware stores the
             // requested value rather than remapping it; the higher tachometer readings
-            // are the firmware's own speed policy, not a scaling error. The fan curve
-            // stays closed because the official Synapse 4 for this model offers only
-            // automatic and a fixed-speed slider, so there is no OEM curve to match.
+            // are the firmware's own speed policy, not a scaling error. The curve reuses
+            // that admitted target write; it is not an OEM table copied from Synapse.
             // Maximum fan stays closed too: never exercised, and the OEM has no such mode.
             // Its bundle publishes boost.get/set and Custom CPU/GPU levels, so the
             // Low/Medium/High baseline is admitted even though the boost toggle is not.
@@ -305,12 +304,12 @@ public static class BladeModelCapabilities
             // controls, including both live fan tachometers. The owner then confirmed a
             // fixed-speed write by reading both tachometers back higher, and the write took
             // effect without restarting, so the baseline CPU levels stay admitted. Maximum
-            // fan and the fan curve stay closed: neither was exercised, and a curve also
-            // needs a verified restore-on-exit path.
+            // fan stays closed; the curve reuses the fixed write and the runtime restores
+            // the original mode and target when it stops.
 
             // Official Synapse exposes four Custom CPU levels on this model, including
             // Boost, and the fixed fan target only acts in Custom mode. Its official
-            // modes run up to 5400 RPM. Maximum fan and the fan curve stay closed.
+            // modes run up to 5400 RPM. Maximum fan stays closed.
             [Blade14_2022ProductId] = new(
                 MaxFan: false,
                 [.. LowMediumHigh, BladeCpuBoostMode.Boost],
@@ -759,12 +758,12 @@ public static class BladeModelCapabilities
     internal static IReadOnlyCollection<ushort> AdmittedProductIds => Contracts.Keys;
 
     /// <summary>
-    /// Temperature-driven fan curve admission. The curve is user-defined and reuses the
-    /// same 0D:01 fan-target write as fixed speed; the bundle does not need to publish an
-    /// OEM curve table for it. Models remain gated by their fan-target family.
+    /// Temperature-driven fan curve admission. A curve writes the same 0D:01 fan-target
+    /// report as a fixed speed, so an admitted fixed target also admits the curve; the
+    /// explicit flag is kept for a model that publishes only the curve path.
     /// </summary>
     public static bool SupportsFanCurve(ushort productId) =>
-        Contracts.TryGetValue(productId, out var contract) && contract.FanCurve;
+        Contracts.TryGetValue(productId, out var contract) && (contract.FanCurve || contract.FixedFan);
 
     /// <summary>True only where a fixed fan-target write has been admitted.</summary>
     public static bool SupportsFixedFan(ushort productId) =>
@@ -834,14 +833,14 @@ public static class BladeModelCapabilities
     /// <summary>
     /// Target range for a fan curve. A curve is a continuous policy, so it uses the
     /// model-wide floor instead of the fixed slider's per-mode minimum. The per-mode
-    /// maximum still applies because the EC evaluates each frame in the active mode.
+    /// maximum still applies, capped at the editor's 5400 ceiling.
     /// </summary>
     public static BladeFanTargetRange FanCurveTargetRangeFor(ushort productId, BladePerformanceMode mode)
     {
         var fixedRange = FanTargetRangeFor(productId, mode);
         return new BladeFanTargetRange(
             MinimumFanTargetRpmFor(productId),
-            Math.Min(fixedRange.MaximumRpm, MaximumWritableFanTargetRpmFor(productId)),
+            Math.Min(fixedRange.MaximumRpm, Math.Min(MaximumWritableFanTargetRpmFor(productId), BladeFanCurve.MaximumPointFanSpeedRpm)),
             fixedRange.DefaultRpm);
     }
 
