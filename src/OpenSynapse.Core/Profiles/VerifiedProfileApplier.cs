@@ -30,7 +30,7 @@ public sealed class VerifiedProfileApplier
         bool coolingPadConnected = true,
         bool padlessHyperBoostAccepted = false,
         IInternalDisplayController? displayController = null,
-        Func<BladeProfileSettings, CancellationToken, Task<int>>? applyBladeTuningAsync = null)
+        Func<BladeProfileSettings, BladePerformanceMode?, CancellationToken, Task<int>>? applyBladeTuningAsync = null)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(devices);
@@ -304,7 +304,10 @@ public sealed class VerifiedProfileApplier
             {
                 try
                 {
-                    applied += await applyBladeTuningAsync(profile.Blade, cancellationToken);
+                    applied += await applyBladeTuningAsync(
+                        profile.Blade,
+                        effectivePerformanceMode,
+                        cancellationToken);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
