@@ -2720,6 +2720,7 @@
   <data name="RazerHeadsetThxRebootRequired" xml:space="preserve"><value>THX components are installed; restart Windows to finish.</value></data>
   <data name="RazerHeadsetThxInstallerLinkButton.Content" xml:space="preserve"><value>Download THX installer</value></data>
   <data name="RazerHeadsetThxReady" xml:space="preserve"><value>THX components are installed.</value></data>
+  <data name="RazerHeadsetThxPartialRead" xml:space="preserve"><value>THX is connected, but some settings could not be read; defaults are shown. Apply directly or refresh to retry.</value></data>
   <data name="RazerHeadsetThxSpatialToggle.Header" xml:space="preserve"><value>Spatial audio</value></data>
   <data name="RazerHeadsetThxSpatialApply.Content" xml:space="preserve"><value>Apply spatial audio</value></data>
   <data name="RazerHeadsetThxS3Baseline.Content" xml:space="preserve"><value>Synapse 3 baseline</value></data>

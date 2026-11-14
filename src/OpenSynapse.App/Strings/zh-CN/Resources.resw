@@ -3156,6 +3156,7 @@
   <data name="RazerHeadsetThxRebootRequired" xml:space="preserve"><value>THX 组件已安装，需要重启电脑后生效。</value></data>
   <data name="RazerHeadsetThxInstallerLinkButton.Content" xml:space="preserve"><value>手动下载 THX 安装包</value></data>
   <data name="RazerHeadsetThxReady" xml:space="preserve"><value>THX 组件已安装。</value></data>
+  <data name="RazerHeadsetThxPartialRead" xml:space="preserve"><value>THX 已连接，但部分设置读取失败，当前显示默认值。可以直接应用或刷新重试。</value></data>
   <data name="RazerHeadsetThxSpatialToggle.Header" xml:space="preserve"><value>空间音效</value></data>
   <data name="RazerHeadsetThxSpatialApply.Content" xml:space="preserve"><value>应用空间音效</value></data>
   <data name="RazerHeadsetThxS3Baseline.Content" xml:space="preserve"><value>雷云3 默认声底</value></data>
