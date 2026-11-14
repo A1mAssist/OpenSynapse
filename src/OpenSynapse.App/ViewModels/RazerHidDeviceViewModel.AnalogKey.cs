@@ -24,6 +24,7 @@ public sealed partial class RazerHidDeviceViewModel
     private bool _analogKeyContinuousRapidTrigger;
     private byte? _analogKeyBottomDeadZone;
     private byte? _analogDeadZoneReported;
+    private bool _analogDeadZoneUnreadable;
     private double _analogKeyBottomDeadZoneMillimeters = 0.3;
     private double _analogKeyActuationPointMillimeters = 2.0;
     private bool _analogKeyRapidTriggerEnabled;
@@ -71,10 +72,11 @@ public sealed partial class RazerHidDeviceViewModel
         }
     }
 
-    public string AnalogDeadZoneStatusText =>
-        _analogDeadZoneReported is byte raw &&
-        raw is < RazerAnalogKeyProtocol.MinimumBottomDeadZone
-            or > RazerAnalogKeyProtocol.MaximumBottomDeadZone
+    public string AnalogDeadZoneStatusText => _analogDeadZoneUnreadable
+        ? AppStrings.Text("RazerHidAnalogDeadZoneUnreadable")
+        : _analogDeadZoneReported is byte raw &&
+            raw is < RazerAnalogKeyProtocol.MinimumBottomDeadZone
+                or > RazerAnalogKeyProtocol.MaximumBottomDeadZone
             ? AppStrings.FormatText("RazerHidAnalogDeadZoneUnknown", raw / 10d)
             : string.Empty;
 
@@ -152,7 +154,10 @@ public sealed partial class RazerHidDeviceViewModel
 
     public void ClearAnalogKeySelection() => SetAnalogKeySelection(false);
 
-    public void SynchronizeAnalogKeySelection()
+    public void SynchronizeAnalogKeySelection() =>
+        SynchronizeAnalogKeySelection(force: false);
+
+    private void SynchronizeAnalogKeySelection(bool force)
     {
         if (_updatingAnalogKeySelection)
         {
@@ -160,7 +165,8 @@ public sealed partial class RazerHidDeviceViewModel
         }
 
         var first = _analogKeyKeys.FirstOrDefault(key => key.IsSelected);
-        if (first is not null && (_lastFirstSelectedKeyId is null || first.KeyId != _lastFirstSelectedKeyId))
+        if (first is not null &&
+            (force || _lastFirstSelectedKeyId is null || first.KeyId != _lastFirstSelectedKeyId))
         {
             AnalogKeyActuationPointMillimeters = first.ActuationMillimeters;
             AnalogKeyRapidTriggerEnabled = first.RapidTriggerEnabled;
@@ -276,12 +282,13 @@ public sealed partial class RazerHidDeviceViewModel
                         }
                     },
                     cancellationToken);
-                AnalogKeyLayoutStatusText = AppStrings.FormatText(
-                    "AnalogKeySettingsApplied",
-                    AnalogKeyContinuousRapidTrigger
-                        ? AppStrings.Text("DiagnosticProtocolEnabled")
-                        : AppStrings.Text("DiagnosticProtocolDisabled"),
-                    AnalogKeyBottomDeadZoneMillimeters);
+                var rapidTrigger = AnalogKeyContinuousRapidTrigger
+                    ? AppStrings.Text("DiagnosticProtocolEnabled")
+                    : AppStrings.Text("DiagnosticProtocolDisabled");
+                AnalogKeyLayoutStatusText = _analogKeyBottomDeadZone is null
+                    ? AppStrings.FormatText("AnalogKeySettingsAppliedNoDeadZone", rapidTrigger)
+                    : AppStrings.FormatText(
+                        "AnalogKeySettingsApplied", rapidTrigger, AnalogKeyBottomDeadZoneMillimeters);
             }, cancellationToken);
 
     public Task ApplyAnalogKeyToSelectionAsync(CancellationToken cancellationToken = default) =>
@@ -344,6 +351,12 @@ public sealed partial class RazerHidDeviceViewModel
                         cancellationToken);
                 }
 
+                var rememberedKey = keys.FirstOrDefault(key => key.IsSelected) ?? keys.FirstOrDefault();
+                if (rememberedKey is not null)
+                {
+                    await RememberAnalogKeyAsync(rememberedKey.KeyId, cancellationToken);
+                }
+
                 // The write is already on the wire. Reflect it now so a failed readback
                 // cannot leave the editor showing the previous values.
                 foreach (var key in keys)
@@ -383,16 +396,37 @@ public sealed partial class RazerHidDeviceViewModel
             new RazerAnalogKeyContinuousRapidTrigger(profileId, AnalogKeyContinuousRapidTrigger),
             cancellationToken);
         AnalogKeyContinuousRapidTrigger = continuous.Enabled;
-        SetAnalogDeadZone(await ReadOrKeepAsync<byte?>(
-            async token => (await _service.GetAnalogKeyBottomDeadZoneAsync(
-                Connection, profileId, token)).Value,
-            _analogKeyBottomDeadZone,
-            cancellationToken));
+        try
+        {
+            var deadZone = await _service.GetAnalogKeyBottomDeadZoneAsync(
+                Connection, profileId, cancellationToken);
+            _analogDeadZoneUnreadable = false;
+            SetAnalogDeadZone(deadZone.Value);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (NotSupportedException)
+        {
+            _analogDeadZoneUnreadable = true;
+            _analogDeadZoneReported = null;
+            _analogKeyBottomDeadZone = null;
+            _analogKeyBottomDeadZoneMillimeters = double.NaN;
+            OnPropertyChanged(nameof(AnalogKeyBottomDeadZoneMillimeters));
+            NotifyAnalogDeadZone();
+        }
+        catch (Exception)
+        {
+            // Keep the last value. A timeout is not the same as an unsupported read.
+        }
         if (_analogKeyLayout is not null && !_analogKeyLayoutLoaded)
         {
             try
             {
                 await RefreshAnalogKeyLayoutAsync(cancellationToken);
+                SelectAnalogKeyForDisplay();
+                SynchronizeAnalogKeySelection(force: true);
                 await RefreshAnalogSnapTapAsync(cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

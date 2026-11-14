@@ -19,6 +19,23 @@ public static class AnalogKeyboardLayouts
     public static bool TryGet(ushort productId, out AnalogKeyboardLayout layout) =>
         Layouts.TryGetValue(productId, out layout!);
 
+    public static AnalogKeyboardKey? ResolveInitialDisplayKey(
+        AnalogKeyboardLayout layout,
+        int? rememberedKeyId)
+    {
+        if (rememberedKeyId is >= 1 and <= byte.MaxValue)
+        {
+            var remembered = layout.Keys.FirstOrDefault(key => key.KeyId == rememberedKeyId);
+            if (remembered is not null)
+            {
+                return remembered;
+            }
+        }
+
+        return layout.Keys.FirstOrDefault(key => key.KeyId == 0x12) ??
+            layout.Keys.FirstOrDefault();
+    }
+
     private static IReadOnlyDictionary<ushort, AnalogKeyboardLayout> Build()
     {
         var layouts = new Dictionary<ushort, AnalogKeyboardLayout>
