@@ -4032,6 +4032,8 @@
   <data name="RazerMappingBusy" xml:space="preserve"><value>正在同步…</value></data>
   <data name="RazerMappingRead" xml:space="preserve"><value>读取</value></data>
   <data name="RazerMappingSave" xml:space="preserve"><value>保存</value></data>
+  <data name="RazerMappingCollapse" xml:space="preserve"><value>收起</value></data>
+  <data name="RazerMappingExpand" xml:space="preserve"><value>展开</value></data>
   <data name="RazerMappingLayerNormal" xml:space="preserve"><value>普通层</value></data>
   <data name="RazerMappingLayerHyperShift" xml:space="preserve"><value>HyperShift 层</value></data>
   <data name="RazerMappingHyperShiftSoftwareUnavailable" xml:space="preserve"><value>OpenSynapse 无法观测该设备的 HyperShift 层（多数设备由固件处理）。软件宏在这里不可用；如果设备支持 HyperShift，请在 HyperShift 层使用板载宏。</value></data>

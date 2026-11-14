@@ -3596,6 +3596,8 @@
   <data name="RazerMappingBusy" xml:space="preserve"><value>Syncing…</value></data>
   <data name="RazerMappingRead" xml:space="preserve"><value>Read</value></data>
   <data name="RazerMappingSave" xml:space="preserve"><value>Save</value></data>
+  <data name="RazerMappingCollapse" xml:space="preserve"><value>Collapse</value></data>
+  <data name="RazerMappingExpand" xml:space="preserve"><value>Expand</value></data>
   <data name="RazerMappingLayerNormal" xml:space="preserve"><value>Normal</value></data>
   <data name="RazerMappingLayerHyperShift" xml:space="preserve"><value>HyperShift</value></data>
   <data name="RazerMappingHyperShiftSoftwareUnavailable" xml:space="preserve"><value>OpenSynapse cannot observe the HyperShift layer on this device (most devices handle it in firmware). Software macros are unavailable here; if the device supports HyperShift, use an onboard macro on that layer.</value></data>
