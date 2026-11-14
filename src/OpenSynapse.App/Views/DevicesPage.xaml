@@ -31,7 +31,7 @@
           <Border Width="44" Height="36" Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="4">
             <Grid>
               <FontIcon Glyph="{Binding IconGlyph}" Visibility="{Binding IconVisibility}" FontFamily="{StaticResource IconFontFamily}" FontSize="18" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-              <Image Source="{Binding ProductImage}" Stretch="Uniform" Margin="2" />
+              <Image Source="{Binding ProductImage}" Stretch="Uniform" Margin="3" HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Grid>
           </Border>
           <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{Binding Name}" TextWrapping="Wrap" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />

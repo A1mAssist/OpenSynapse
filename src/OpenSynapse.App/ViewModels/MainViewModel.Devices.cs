@@ -165,10 +165,14 @@ public sealed partial class MainViewModel
             var image = await _deviceImages
                 .LoadProductImageAsync(productId, name: null, timeout.Token)
                 .ConfigureAwait(false);
-            if (image.State != StudioProductImageState.Loaded || image.Path is not { } path)
+            if (image.State != StudioProductImageState.Loaded || image.Path is not { } sourcePath)
             {
                 return;
             }
+
+            var path = await DeviceCardImage
+                .EnsureCroppedAsync(sourcePath, timeout.Token)
+                .ConfigureAwait(false);
 
             // BitmapImage must be created on the UI thread. Reuse the loaded path so a
             // later card rebuild paints immediately instead of downloading again.
