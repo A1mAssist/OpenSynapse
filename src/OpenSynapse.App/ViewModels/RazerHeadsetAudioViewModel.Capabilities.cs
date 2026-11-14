@@ -205,7 +205,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             _ => [],
         };
 
-    // AudioMxicDevice proves sidetone for its six identities; only 0555 also proves ANC.
+    // AudioMxicDevice proves sidetone for its six identities; none of them expose ANC.
     private HeadsetCapability[] MxicProductCapabilities
     {
         get
