@@ -12,8 +12,6 @@ public sealed partial class RazerHidDeviceViewModel
 {
     private const byte AnalogKeyDataType = 0x00;
     private const double AnalogKeyToleranceMillimeters = 0.05;
-    // Razer's own UI only offers these three bottom-dead-zone presets.
-    private static readonly AnalogDeadZoneChoice[] AnalogDeadZonePresets = [new(3), new(5), new(8)];
     private readonly ObservableCollection<AnalogKeyRowViewModel> _analogKeyRows = [];
     private readonly List<AnalogKeyKeyViewModel> _analogKeyKeys = [];
     private AnalogKeyboardLayout? _analogKeyLayout;
@@ -25,7 +23,8 @@ public sealed partial class RazerHidDeviceViewModel
     private bool _isAnalogKeyBusy;
     private bool _analogKeyContinuousRapidTrigger;
     private byte? _analogKeyBottomDeadZone;
-    private AnalogDeadZoneChoice? _selectedAnalogDeadZone;
+    private byte? _analogDeadZoneReported;
+    private double _analogKeyBottomDeadZoneMillimeters = 0.3;
     private double _analogKeyActuationPointMillimeters = 2.0;
     private bool _analogKeyRapidTriggerEnabled;
     private double _analogKeyRapidTriggerSensitivityMillimeters = 0.3;
@@ -48,25 +47,34 @@ public sealed partial class RazerHidDeviceViewModel
         set => SetField(ref _analogKeyContinuousRapidTrigger, value);
     }
 
-    public IReadOnlyList<AnalogDeadZoneChoice> AnalogDeadZoneChoices => AnalogDeadZonePresets;
-
-    public AnalogDeadZoneChoice? SelectedAnalogDeadZone
+    public double AnalogKeyBottomDeadZoneMillimeters
     {
-        get => _selectedAnalogDeadZone;
+        get => _analogKeyBottomDeadZoneMillimeters;
         set
         {
-            if (!SetField(ref _selectedAnalogDeadZone, value) || value is null)
+            // Clearing a NumberBox sends NaN; keep the last valid value.
+            if (double.IsNaN(value))
             {
                 return;
             }
 
-            _analogKeyBottomDeadZone = value.Value;
+            var snapped = Math.Round(
+                Math.Clamp(value, 0.1, 1.0), 1, MidpointRounding.AwayFromZero);
+            if (!SetField(ref _analogKeyBottomDeadZoneMillimeters, snapped))
+            {
+                return;
+            }
+
+            _analogKeyBottomDeadZone = RazerAnalogKeyProtocol.ToBottomDeadZone(snapped);
+            _analogDeadZoneReported = null;
             NotifyAnalogDeadZone();
         }
     }
 
     public string AnalogDeadZoneStatusText =>
-        _analogKeyBottomDeadZone is byte raw && AnalogDeadZonePresets.All(preset => preset.Value != raw)
+        _analogDeadZoneReported is byte raw &&
+        raw is < RazerAnalogKeyProtocol.MinimumBottomDeadZone
+            or > RazerAnalogKeyProtocol.MaximumBottomDeadZone
             ? AppStrings.FormatText("RazerHidAnalogDeadZoneUnknown", raw / 10d)
             : string.Empty;
 
@@ -74,11 +82,16 @@ public sealed partial class RazerHidDeviceViewModel
 
     private void SetAnalogDeadZone(byte? value)
     {
-        _analogKeyBottomDeadZone = value;
-        _selectedAnalogDeadZone = value is byte raw
-            ? AnalogDeadZonePresets.FirstOrDefault(preset => preset.Value == raw)
-            : null;
-        OnPropertyChanged(nameof(SelectedAnalogDeadZone));
+        _analogDeadZoneReported = value;
+        if (value is byte raw &&
+            raw is >= RazerAnalogKeyProtocol.MinimumBottomDeadZone
+                and <= RazerAnalogKeyProtocol.MaximumBottomDeadZone)
+        {
+            _analogKeyBottomDeadZone = raw;
+            _analogKeyBottomDeadZoneMillimeters =
+                RazerAnalogKeyProtocol.BottomDeadZoneMillimeters(raw);
+            OnPropertyChanged(nameof(AnalogKeyBottomDeadZoneMillimeters));
+        }
         NotifyAnalogDeadZone();
     }
 
@@ -233,9 +246,7 @@ public sealed partial class RazerHidDeviceViewModel
                 var profileId = await ResolveAnalogKeyProfileIdAsync(cancellationToken);
                 await _service.SetAnalogKeyContinuousRapidTriggerAsync(
                     Connection, profileId, AnalogKeyContinuousRapidTrigger, cancellationToken);
-                // An unrepresentable raw value is left untouched instead of being
-                // rewritten with a preset the user never chose.
-                if (SelectedAnalogDeadZone?.Value is { } deadZone)
+                if (_analogKeyBottomDeadZone is { } deadZone)
                 {
                     await _service.SetAnalogKeyBottomDeadZoneAsync(
                         Connection, profileId, deadZone, cancellationToken);

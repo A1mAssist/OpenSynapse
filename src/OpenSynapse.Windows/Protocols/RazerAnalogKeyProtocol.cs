@@ -504,6 +504,16 @@ public static partial class RazerAnalogKeyProtocol
     public const double MinimumMillimeters = 0.1d;
     public const double MaximumMillimeters = 4.0d;
 
+    public const byte MinimumBottomDeadZone = 1;  // 0.1 mm
+    public const byte MaximumBottomDeadZone = 10; // 1.0 mm
+
+    public static byte ToBottomDeadZone(double millimeters) =>
+        (byte)Math.Round(
+            Math.Clamp(millimeters, 0.1, 1.0) * 10,
+            MidpointRounding.AwayFromZero);
+
+    public static double BottomDeadZoneMillimeters(byte value) => value / 10d;
+
     /// <summary>
     /// The middleware's actuationInfo unit is 1638 per 0.1 mm (1 mm = 16380).
     /// </summary>

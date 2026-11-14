@@ -3,15 +3,6 @@ using System.Runtime.CompilerServices;
 
 namespace OpenSynapse.App.ViewModels;
 
-/// <summary>
-/// One of the bottom-dead-zone presets Razer's own UI offers. The firmware value is
-/// in 0.1 mm units, so the editor shows 0.3/0.5/0.8 mm instead of Razer's labels.
-/// </summary>
-public sealed record AnalogDeadZoneChoice(byte Value)
-{
-    public string Title => $"{Value / 10d:0.0} mm";
-}
-
 public sealed class AnalogKeyKeyViewModel : INotifyPropertyChanged
 {
     private bool _isSelected;
