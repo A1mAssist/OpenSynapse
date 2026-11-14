@@ -125,13 +125,22 @@ internal sealed class RazerMakoXChromaService : IRazerHeadsetLightingService, IA
             throw new ArgumentException("A Chroma effect carries at most 255 colors.", nameof(colors));
 
         var payload = new byte[6 + colors.Count];
-        payload[2] = (byte)effect;
+        payload[2] = ToFirmwareEffectId(effect);
         payload[3] = flags;
         payload[4] = rate;
         payload[5] = (byte)(colors.Count / 3);
         for (var index = 0; index < colors.Count; index++) payload[6 + index] = colors[index];
         return payload;
     }
+
+    private static byte ToFirmwareEffectId(RazerChromaEffect effect) => effect switch
+    {
+        // The Joliet app sends its quick-effect ids, where Fire is 8 and Audio
+        // Meter is 12; 9/10 are the generic class-0x0F enum on another page.
+        RazerChromaEffect.Fire => 8,
+        RazerChromaEffect.AudioMeter => 12,
+        _ => (byte)effect,
+    };
 
     internal static byte[] CreateFramePayload(IReadOnlyList<byte> colors)
     {
@@ -158,7 +167,12 @@ internal sealed class RazerMakoXChromaService : IRazerHeadsetLightingService, IA
         var transport = GetTransport();
         try
         {
-            _diagnostic?.Invoke($"mako-x lighting {label}: class=0x{report[7]:X2} id=0x{report[8]:X2} size=0x{report[6]:X2}");
+            var payloadLength = Math.Min(report[6], (byte)12);
+            var payload = payloadLength > 0
+                ? $" payload={Convert.ToHexString(report, 9, payloadLength)}"
+                : string.Empty;
+            _diagnostic?.Invoke(
+                $"mako-x lighting {label}: class=0x{report[7]:X2} id=0x{report[8]:X2} size=0x{report[6]:X2}{payload}");
             await transport.SendAsync(report, cancellationToken).ConfigureAwait(false);
         }
         catch
