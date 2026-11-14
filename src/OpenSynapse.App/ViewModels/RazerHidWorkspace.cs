@@ -192,6 +192,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
                 .OrderBy(connection => DeviceUiCatalog.DeviceCategoryOrder(connection.Definition.Category))
                 .ThenBy(connection => connection.Definition.DisplayName, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
+            connections = RazerHidDeviceConnectionSiblings.Collapse(connections);
             await RestoreDriverModeAsync(connections, cancellationToken);
             // After pruning, this method rebuilds bound collections and selects a device;
             // keep the refresh loop's UI context instead of continuing on the pool.
