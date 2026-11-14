@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Audio;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
+using OpenSynapse.Windows.Audio;
 
 namespace OpenSynapse.App.ViewModels;
 
@@ -34,7 +35,9 @@ public sealed partial class RazerHeadsetAudioViewModel
 
     public string ThxNormalizationText => $"{ThxNormalizationLevel}%";
     public Visibility ThxNormalizationVisibility =>
-        _thxState?.SoundNormalization is not null ? Visibility.Visible : Visibility.Collapsed;
+        _thxStatus.Availability == ThxHeadsetAvailability.Available
+            ? Visibility.Visible
+            : Visibility.Collapsed;
 
     public bool ThxVoiceClarityEnabled
     {
@@ -54,7 +57,9 @@ public sealed partial class RazerHeadsetAudioViewModel
 
     public string ThxVoiceClarityText => $"{ThxVoiceClarityLevel}%";
     public Visibility ThxVoiceClarityVisibility =>
-        _thxState?.VoiceClarity is not null ? Visibility.Visible : Visibility.Collapsed;
+        _thxStatus.Availability == ThxHeadsetAvailability.Available
+            ? Visibility.Visible
+            : Visibility.Collapsed;
 
     public bool ThxBassBoostEnabled
     {
@@ -74,7 +79,9 @@ public sealed partial class RazerHeadsetAudioViewModel
 
     public string ThxBassBoostText => $"{ThxBassBoostLevel}%";
     public Visibility ThxBassBoostVisibility =>
-        _thxState?.BassBoost is not null ? Visibility.Visible : Visibility.Collapsed;
+        _thxStatus.Availability == ThxHeadsetAvailability.Available
+            ? Visibility.Visible
+            : Visibility.Collapsed;
 
     public bool ThxSidetoneEnabled
     {
@@ -94,7 +101,10 @@ public sealed partial class RazerHeadsetAudioViewModel
 
     public string ThxSidetoneText => $"{ThxSidetoneLevel}%";
     public Visibility ThxSidetoneVisibility =>
-        _thxState?.Sidetone is not null ? Visibility.Visible : Visibility.Collapsed;
+        _thxStatus.Availability == ThxHeadsetAvailability.Available &&
+        (ThxHeadsetAdmission.GetProfile(_connection.ProductId)?.HasSidetone ?? false)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
 
     [ProfileSetting("headset.thx.normalization", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyThxNormalizationAsync(CancellationToken cancellationToken = default)

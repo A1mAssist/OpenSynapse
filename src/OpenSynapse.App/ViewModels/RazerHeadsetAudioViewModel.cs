@@ -395,7 +395,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         };
 
     public Visibility ThxControlsVisibility =>
-        _thxStatus.Availability == ThxHeadsetAvailability.Available && _thxState is not null
+        _thxStatus.Availability == ThxHeadsetAvailability.Available
             ? Visibility.Visible
             : Visibility.Collapsed;
 
@@ -1128,7 +1128,11 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         {
             ApplyThxState(state);
             _thxStatus = new ThxHeadsetStatus(ThxHeadsetAvailability.Available, null);
-            _thxErrorText = string.Empty;
+            // A missing enhancement is a failed read, not a missing capability.
+            // Keep the controls visible with defaults and say so.
+            _thxErrorText = state.SoundNormalization is null || state.VoiceClarity is null
+                ? AppStrings.Text("RazerHeadsetThxPartialRead")
+                : string.Empty;
         }
         else
         {
