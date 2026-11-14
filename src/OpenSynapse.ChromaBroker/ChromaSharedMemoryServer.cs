@@ -2,7 +2,6 @@
 // worflor/neuron crates/neuron-host/src/adapters/chroma_shm.rs (GPL-3.0-or-later).
 // This C# port is part of OpenSynapse and distributed under AGPL-3.0.
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using OpenSynapse.ChromaSdk.Protocol;
 using static OpenSynapse.ChromaBroker.ChromaNativeMethods;
@@ -22,7 +21,6 @@ internal sealed class ChromaSharedMemoryServer : IDisposable
     private const uint ProcessQueryLimitedInformation = 0x1000;
     private const uint StillActive = 259;
     private const int ErrorAlreadyExists = 183;
-    private const string ChromaClientDll = "rzchromasdk64.dll";
     private static readonly IntPtr InvalidHandleValue = new(-1);
 
     private readonly EveryoneSecurity _security;
@@ -39,7 +37,7 @@ internal sealed class ChromaSharedMemoryServer : IDisposable
     private uint _pendingClientPid;
     private uint _loggedStalePid;
     private long _nextClientCheck;
-    private long _nextClientScan;
+    private long _nextClientLookup;
     private int _disposed;
 
     private ChromaSharedMemoryServer(EveryoneSecurity security)
@@ -116,7 +114,7 @@ internal sealed class ChromaSharedMemoryServer : IDisposable
                     _clientPid = null;
                     _frames.Clear();
                     _lastHeads.Clear();
-                    _nextClientScan = 0;
+                    _nextClientLookup = 0;
                     lost = true;
                 }
             }
@@ -127,11 +125,11 @@ internal sealed class ChromaSharedMemoryServer : IDisposable
             }
         }
 
-        if (now < _nextClientScan)
+        if (now < _nextClientLookup)
         {
             return lost;
         }
-        _nextClientScan = now + 2_000;
+        _nextClientLookup = now + 2_000;
 
         var pid = FindClientPid();
         if (pid == 0)
@@ -402,6 +400,7 @@ internal sealed class ChromaSharedMemoryServer : IDisposable
             return 0;
         }
 
+        // The official SDK writes its PID into the app registry; do not sweep processes.
         var registered = ReadRegisteredPid();
         if (registered == 0)
         {
@@ -416,15 +415,7 @@ internal sealed class ChromaSharedMemoryServer : IDisposable
         if (registered != 0 && registered != _loggedStalePid)
         {
             _loggedStalePid = registered;
-            BrokerLog.Info($"registered Chroma client PID {registered} is stale; scanning modules.");
-        }
-
-        var scanned = FindProcessWithChromaModule();
-        if (scanned != 0 && scanned != (uint)Environment.ProcessId && IsProcessAlive(scanned))
-        {
-            _loggedStalePid = 0;
-            BrokerLog.Info($"found Chroma client PID {scanned} by module scan.");
-            return scanned;
+            BrokerLog.Info($"registered Chroma client PID {registered} is stale; waiting for a new registration.");
         }
         return 0;
     }
@@ -440,66 +431,6 @@ internal sealed class ChromaSharedMemoryServer : IDisposable
             return 0;
         }
         return unchecked((uint)Marshal.ReadInt32(_appRegistry.View, 0x200 + 0x0C));
-    }
-
-    private uint FindProcessWithChromaModule()
-    {
-        foreach (var process in Process.GetProcesses())
-        {
-            if (Volatile.Read(ref _pendingClientPid) != 0)
-            {
-                return 0;
-            }
-
-            using (process)
-            {
-                if (process.Id <= 4 || process.Id == Environment.ProcessId)
-                {
-                    continue;
-                }
-                if (HasChromaModule(process.Id))
-                {
-                    return (uint)process.Id;
-                }
-            }
-        }
-        return 0;
-    }
-
-    private static bool HasChromaModule(int processId)
-    {
-        var snapshot = CreateToolhelp32Snapshot(
-            SnapshotModules | SnapshotModules32,
-            unchecked((uint)processId));
-        if (snapshot == InvalidHandleValue || snapshot == IntPtr.Zero)
-        {
-            return false;
-        }
-
-        try
-        {
-            var entry = new ModuleEntry32
-            {
-                Size = (uint)Marshal.SizeOf<ModuleEntry32>(),
-            };
-            if (!Module32FirstW(snapshot, ref entry))
-            {
-                return false;
-            }
-            do
-            {
-                if (string.Equals(entry.ModuleName, ChromaClientDll, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-            while (Module32NextW(snapshot, ref entry));
-            return false;
-        }
-        finally
-        {
-            CloseHandle(snapshot);
-        }
     }
 
     private void ResetFrameTracking()

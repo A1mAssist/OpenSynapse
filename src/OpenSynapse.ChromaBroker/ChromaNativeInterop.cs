@@ -4,8 +4,6 @@ namespace OpenSynapse.ChromaBroker;
 
 internal static class ChromaNativeMethods
 {
-    internal const uint SnapshotModules = 0x00000008;
-    internal const uint SnapshotModules32 = 0x00000010;
     internal static readonly IntPtr InvalidHandleValue = new(-1);
 
     [StructLayout(LayoutKind.Sequential)]
@@ -80,31 +78,6 @@ internal static class ChromaNativeMethods
     [DllImport("kernel32.dll", SetLastError = true)]
     internal static extern bool ProcessIdToSessionId(uint processId, out uint sessionId);
 
-    [DllImport("kernel32.dll", SetLastError = true)]
-    internal static extern IntPtr CreateToolhelp32Snapshot(uint flags, uint processId);
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    internal static extern bool Module32FirstW(IntPtr snapshot, ref ModuleEntry32 entry);
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    internal static extern bool Module32NextW(IntPtr snapshot, ref ModuleEntry32 entry);
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    internal struct ModuleEntry32
-    {
-        internal uint Size;
-        internal uint ModuleId;
-        internal uint ProcessId;
-        internal uint GlobalUsage;
-        internal uint ProcessUsage;
-        internal IntPtr BaseAddress;
-        internal uint BaseSize;
-        internal IntPtr ModuleHandle;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
-        internal string ModuleName;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-        internal string ExecutablePath;
-    }
 }
 
 internal sealed class EveryoneSecurity : IDisposable

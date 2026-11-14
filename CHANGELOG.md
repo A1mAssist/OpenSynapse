@@ -39,6 +39,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 - The first device scan now shows “Scanning devices...” instead of appearing stuck.
 - Device cards are one compact line; four stay open before the list collapses, and a wired/wireless pair shares one card.
 - NVIDIA telemetry reads through NVML instead of launching `nvidia-smi`, and GPU memory matches what `nvidia-smi` reports.
+- Chroma SDK client discovery now follows the official SDK registration instead of scanning every process, removing the broker's idle CPU load.
 
 ### Fixed
 
