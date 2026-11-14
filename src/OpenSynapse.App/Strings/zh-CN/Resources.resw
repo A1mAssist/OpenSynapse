@@ -2011,7 +2011,7 @@
   <data name="RazerHidAnalogKeyDescription.Text" xml:space="preserve"><value>一次应用连续 Rapid Trigger 和底部死区。</value></data>
   <data name="RazerHidAnalogContinuousRapidTrigger.Text" xml:space="preserve"><value>连续 Rapid Trigger</value></data>
   <data name="RazerHidAnalogBottomDeadZone.Header" xml:space="preserve"><value>底部死区</value></data>
-  <data name="RazerHidAnalogDeadZoneUnknown" xml:space="preserve"><value>当前值 {0:0.0} mm 不在预设范围内，未修改。</value></data>
+  <data name="RazerHidAnalogDeadZoneUnknown" xml:space="preserve"><value>设备返回 {0:0.0} mm，超出 0.1–1.0 mm，未修改。</value></data>
   <data name="RazerHidOledTitle.Text" xml:space="preserve"><value>OLED 屏幕</value></data>
   <data name="RazerHidOledBrightness.Text" xml:space="preserve"><value>亮度</value></data>
   <data name="RazerHidOledScreensaverMode.Header" xml:space="preserve"><value>屏保模式</value></data>
