@@ -78,6 +78,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     private DateTimeOffset _gpuClockOffsetNextProbe;
     private bool _bladeGpuClockLimitAvailable;
     private double _bladeGpuClockLimitMhz;
+    private string? _statusDeviceId;
 
     internal BladeWorkspace(
         IRazerDeviceTelemetryReader deviceTelemetryReader,
@@ -1219,7 +1220,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     public Visibility SerialVisibility => string.IsNullOrWhiteSpace(Serial)
         ? Visibility.Collapsed
         : Visibility.Visible;
-    public string ProtocolText => _bladeRow()?.Capability ?? StatusText;
+    public string ProtocolText => StatusText;
     public string IdentityText => _bladeRow()?.Identity ?? "VID_1532 / PID_02C6";
     public string StatusText { get => _blade._bladeStatusText; private set => SetField(ref _blade._bladeStatusText, value); }
     public Visibility FilterDriverVisibility => _blade._bladeFilterDriverMissing
@@ -2967,7 +2968,13 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
             RefreshModelCapabilityUi();
         }
 
-        StatusText = statusText;
+        var deviceChanged = !StringComparer.OrdinalIgnoreCase.Equals(_statusDeviceId, blade?.Id);
+        _statusDeviceId = blade?.Id;
+        // A rescan must not replace a live status with the discovery placeholder.
+        if (deviceChanged || blade is null || blade.Access != DeviceAccessState.Available)
+        {
+            StatusText = statusText;
+        }
         if (blade is not null)
         {
             ProbeGpuClockOffset();
@@ -2997,7 +3004,11 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         ControlDeviceChanged?.Invoke(value, productId);
     }
 
-    internal void SetStatus(string statusText) => StatusText = statusText;
+    internal void SetStatus(string statusText)
+    {
+        _statusDeviceId = null;
+        StatusText = statusText;
+    }
 
     internal void SetSerial(string? serial) => Serial = serial;
 

@@ -60,6 +60,7 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
     private RazerHidMappingViewModel? _mapping;
     private string _mappingProfileFingerprint = string.Empty;
     private bool _wirelessLinkDown;
+    private string? _statusDeviceId;
 
     internal ViperWorkspace(
         IRazerDeviceTelemetryReader deviceTelemetryReader,
@@ -93,7 +94,7 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public string DeviceName { get => _deviceName; private set => SetField(ref _deviceName, value); }
-    public string ProtocolText => _deviceRow()?.Capability ?? StatusText;
+    public string ProtocolText => StatusText;
     public string IdentityText => _deviceRow()?.Identity ?? "VID_1532 / PID_00B8";
     public Visibility DeviceVisibility { get => _deviceVisibility; private set => SetField(ref _deviceVisibility, value); }
     public string StatusText { get => _statusText; private set => SetField(ref _statusText, value); }
@@ -393,7 +394,13 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
     {
         DeviceName = device?.Name ?? "Razer Viper";
         Serial = serial;
-        StatusText = status;
+        var deviceChanged = !StringComparer.OrdinalIgnoreCase.Equals(_statusDeviceId, device?.Id);
+        _statusDeviceId = device?.Id;
+        // A rescan must not replace a live status with the discovery placeholder.
+        if (deviceChanged || device is null || device.Access != DeviceAccessState.Available)
+        {
+            StatusText = status;
+        }
     }
 
     internal void SetVisibility(bool available) =>
@@ -401,6 +408,7 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
 
     internal void SetUnavailable(bool hadViper)
     {
+        _statusDeviceId = null;
         Serial = null;
         DeviceVisibility = hadViper ? Visibility.Visible : Visibility.Collapsed;
         StatusText = hadViper ? AppStrings.Text("Text_A70924BE") : AppStrings.Text("Text_DB0974DC");
