@@ -49,6 +49,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 - BlackShark V3 is no longer mislabelled as V2 Pro; missing headset identities were filled in.
 - Razer driver setup now matches device, catalog key and installer PID, binds the staged INF by hardware ID, verifies the filter is really attached, treats 3010/1641 as success, stops rejecting republished packages by size, reinstalls the common driver during repair, and installs the DKM lower filter that carries Blade Fn input.
 - The taskbar status strip returns after Show Desktop and passes clicks through to the taskbar.
+- The taskbar strip keeps a headset, BlackShark or standalone keyboard battery when the tray read misses; it now falls back to the value the device page already read.
 - The launch overlay waits for the first device scan, so the device list is no longer empty during startup.
 - CPU temperature now reads on AMD Ryzen as well as Intel through PawnIO, and low ACPI idle temperatures are no longer discarded.
 - THX service, native DLL and startup now complete in one click.
@@ -68,6 +69,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 - Blade lighting remembers the colour chosen for each effect, so switching back no longer resets it.
 - The Blade microphone mute light is seeded at startup and re-read after a missed notification, so F1 mute matches the real state.
 - Macro steps can be moved or deleted after saving, and a recorded tap shows its release instead of only the press.
+- Hold and hold-repeat macros on Razer filter mice no longer stop after the first 100 ms physical-state check; the trigger's release event ends them.
 - Key bindings: bare modifier keys are written in the byte form each keyboard family expects, so Left Shift no longer fires a four-modifier chord; rows already rewritten by an earlier beta are repaired, and the full keyboard key table is read instead of stopping short.
 - Onboard profiles: create and delete wait for the firmware to commit, the device's active profile is followed, id 0 is never cached, and a keyboard that rejects reset now points to create-and-delete.
 - Blade Wave follows the device's LED axis, so left and right are no longer reversed on 2023 models.

@@ -1695,7 +1695,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         IsBusy = true;
         return true;
     }
-
     private static bool IsExpectedException(Exception exception) =>
         exception is IOException or InvalidDataException or InvalidOperationException or ArgumentOutOfRangeException or
             System.ComponentModel.Win32Exception or UnauthorizedAccessException;
