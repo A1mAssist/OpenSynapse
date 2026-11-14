@@ -1229,7 +1229,9 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         MacroTrigger trigger,
         CancellationToken cancellationToken)
     {
-        trigger.Mode = selected.Definition.Trigger?.Mode ?? MacroTriggerMode.Press;
+        trigger.Mode = ReferenceEquals(selected, SelectedMacro)
+            ? MacroTriggerMode
+            : selected.Definition.Trigger?.Mode ?? MacroTriggerMode.Press;
         if (FindTriggerConflict(selected.Definition, trigger, selected) is { } conflict)
         {
             StatusText = AppStrings.FormatText("MacroTriggerConflict", conflict.Name);
@@ -2461,6 +2463,7 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
             OnPropertyChanged(nameof(MacroTriggerUnsetVisibility));
             OnPropertyChanged(nameof(MacroTotalDurationText));
             OnPropertyChanged(nameof(CanPlayMacro));
+            SyncExecutionModeFromSelection();
         }
     }
 
@@ -2555,6 +2558,7 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
 
     private void NotifySelectedMacroChanged()
     {
+        SyncExecutionModeFromSelection();
         OnPropertyChanged(nameof(MacroEditorVisibility));
         OnPropertyChanged(nameof(CanEditMacro));
         OnPropertyChanged(nameof(CanEditMacroStep));

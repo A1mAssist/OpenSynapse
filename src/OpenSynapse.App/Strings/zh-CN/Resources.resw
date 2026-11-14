@@ -4006,7 +4006,13 @@
   <data name="RazerMappingMacroPlaybackSequence" xml:space="preserve"><value>每次执行下一步</value></data>
   <data name="RazerMappingMacroExecutionHeader" xml:space="preserve"><value>执行方式</value></data>
   <data name="RazerMappingMacroExecutionRepeat" xml:space="preserve"><value>重复次数</value></data>
-  <data name="MacroTriggerModeMovedHint.Text" xml:space="preserve"><value>执行方式在按键页设置。</value></data>
+  <data name="MacroTriggerModeMovedHint.Text" xml:space="preserve"><value>触发方式和执行方式保存在这个宏里；在按键页保存绑定会覆盖执行方式。</value></data>
+  <data name="MacroTriggerModeHeader" xml:space="preserve"><value>触发方式</value></data>
+  <data name="MacroExecutionModeHeader" xml:space="preserve"><value>执行方式</value></data>
+  <data name="MacroExecutionRepeat" xml:space="preserve"><value>重复次数</value></data>
+  <data name="MacroTriggerModePress.Text" xml:space="preserve"><value>按一下</value></data>
+  <data name="MacroExecutionSummary" xml:space="preserve"><value>执行方式：{0}</value></data>
+  <data name="MacroExecutionRepeatValue" xml:space="preserve"><value>重复 {0} 次</value></data>
   <data name="RazerMappingSoftwareMacroHint" xml:space="preserve"><value>由 OpenSynapse 执行；受宏页触发开关控制，关闭触发后按键不执行宏，但手动播放仍可用。</value></data>
   <data name="RazerMappingOnboardMacroHint" xml:space="preserve"><value>由设备执行，OpenSynapse 关闭后仍然有效。</value></data>
   <data name="RazerMappingMacroUnsupported" xml:space="preserve"><value>这个宏不能写入板载：第 {0} 步：{1}。请返回宏编辑器修改。</value></data>

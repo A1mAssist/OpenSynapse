@@ -75,6 +75,7 @@
                           </StackPanel>
                           <Button Grid.Column="1" local:Localized.Uid="MacroMainCaptureButton" Width="30" Height="30" MinWidth="30" MinHeight="30" Padding="0" Style="{StaticResource IconButtonStyle}" Click="CaptureMacroTriggerClick" IsEnabled="{Binding Macros.CanEditMacro}"><FontIcon Glyph="&#xE710;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" /></Button>
                         </Grid>
+                        <TextBlock Text="{Binding Macros.MacroExecutionSummary}" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Visibility="{Binding Macros.MacroEditorVisibility}" />
                         <Button x:Name="MacroOpenEditorButton" local:Localized.Uid="MacroOpenEditorButton" Click="OpenMacroEditorWindowClick" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Left" IsEnabled="{Binding Macros.CanEditMacro}" />
                       </StackPanel>
                     </StackPanel>

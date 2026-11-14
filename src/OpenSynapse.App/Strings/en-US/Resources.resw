@@ -3570,7 +3570,13 @@
   <data name="RazerMappingMacroPlaybackSequence" xml:space="preserve"><value>Run one step per press</value></data>
   <data name="RazerMappingMacroExecutionHeader" xml:space="preserve"><value>Execution</value></data>
   <data name="RazerMappingMacroExecutionRepeat" xml:space="preserve"><value>Repeat count</value></data>
-  <data name="MacroTriggerModeMovedHint.Text" xml:space="preserve"><value>Execution is set on the mapping page.</value></data>
+  <data name="MacroTriggerModeMovedHint.Text" xml:space="preserve"><value>Trigger and playback are stored in this macro. Saving a key binding on the mapping page replaces the playback setting.</value></data>
+  <data name="MacroTriggerModeHeader" xml:space="preserve"><value>Trigger</value></data>
+  <data name="MacroExecutionModeHeader" xml:space="preserve"><value>Playback</value></data>
+  <data name="MacroExecutionRepeat" xml:space="preserve"><value>Repeat count</value></data>
+  <data name="MacroTriggerModePress.Text" xml:space="preserve"><value>On press</value></data>
+  <data name="MacroExecutionSummary" xml:space="preserve"><value>Playback: {0}</value></data>
+  <data name="MacroExecutionRepeatValue" xml:space="preserve"><value>Repeat {0} times</value></data>
   <data name="RazerMappingSoftwareMacroHint" xml:space="preserve"><value>Runs in OpenSynapse. The macro page trigger switch also controls this key; turning it off does not disable manual playback.</value></data>
   <data name="RazerMappingOnboardMacroHint" xml:space="preserve"><value>Runs on the device and keeps working when OpenSynapse is closed.</value></data>
   <data name="RazerMappingMacroUnsupported" xml:space="preserve"><value>This macro cannot be stored onboard: step {0}: {1}. Edit the macro and try again.</value></data>
