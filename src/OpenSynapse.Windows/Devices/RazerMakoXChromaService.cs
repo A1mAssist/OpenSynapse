@@ -49,6 +49,8 @@ internal sealed class RazerMakoXChromaService : IRazerHeadsetLightingService, IA
             var value = await QueryAsync(
                 Create(0x82, [0x00, 0x00]), [0x00, 0x00], "read effect", cancellationToken)
                 .ConfigureAwait(false);
+            _diagnostic?.Invoke(
+                $"mako-x lighting effect readback: {Convert.ToHexString(value, 0, Math.Min(value.Length, 12))}");
             if (value.Length >= 4 && FromFirmwareEffectId(value[0]) is { } parsed)
             {
                 effect = parsed;
