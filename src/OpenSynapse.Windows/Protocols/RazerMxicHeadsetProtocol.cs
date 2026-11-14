@@ -485,7 +485,13 @@ public static class RazerMxicHeadsetProtocol
     public static byte ReadBatteryPercent(ReadOnlySpan<byte> value)
     {
         Require(value, 1);
-        return Math.Min(value[0], (byte)100);
+        if (value[0] > 100)
+        {
+            throw new InvalidDataException(
+                $"MXIC battery level {value[0]} is outside 0..100.");
+        }
+
+        return value[0];
     }
 
     public static bool ReadChargingStatus(ReadOnlySpan<byte> value)

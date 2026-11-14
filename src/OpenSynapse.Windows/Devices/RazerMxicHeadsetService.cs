@@ -179,7 +179,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
             "battery",
             RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetBattery, reportId: ReportId),
             RazerMxicHeadsetProtocol.BatteryHeader,
-            RazerMxicHeadsetProtocol.ReadBatteryPercent,
+            ReadBatteryWithLog,
             errors,
             cancellationToken).ConfigureAwait(false);
         var charging = _dialect == MxicDialect.ValkyrieT3 ? (Ok: false, Value: false) : await ProbeAsync(

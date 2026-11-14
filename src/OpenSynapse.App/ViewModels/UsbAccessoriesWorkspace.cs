@@ -204,6 +204,20 @@ public sealed class UsbAccessoriesWorkspace : INotifyPropertyChanged, IAsyncDisp
             _headsetPowerConnected = true;
             await RefreshHeadsetAudioAsync(cancellationToken);
         }
+
+        await RefreshSelectedHeadsetBatteryAsync(cancellationToken);
+    }
+
+    internal async Task RefreshSelectedHeadsetBatteryAsync(CancellationToken cancellationToken = default)
+    {
+        if (SelectedHeadsetAudio is not { } selected ||
+            _selectedHeadsetAudioDevice is not { } row)
+        {
+            return;
+        }
+
+        await selected.RefreshBatteryStateAsync(cancellationToken);
+        row.SetProbeResult(row.ProbeState, row.CapabilityText, row.Error, selected.BatteryPercent);
     }
 
     private async Task<bool?> TryReadHeadsetPowerAsync(

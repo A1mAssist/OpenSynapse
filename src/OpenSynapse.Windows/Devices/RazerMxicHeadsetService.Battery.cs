@@ -35,12 +35,20 @@ public sealed partial class RazerMxicHeadsetService
                 RazerMxicHeadsetProtocol.BatteryHeader,
                 "read battery",
                 cancellationToken).ConfigureAwait(false);
-            return RazerMxicHeadsetProtocol.ReadBatteryPercent(value);
+            return ReadBatteryWithLog(value);
         }
         catch (Exception exception) when (IsExpected(exception))
         {
             _diagnostic?.Invoke($"mxic battery read failed: {exception.Message}");
             return null;
         }
+    }
+
+    private byte ReadBatteryWithLog(ReadOnlySpan<byte> value)
+    {
+        _diagnostic?.Invoke(value.Length > 0
+            ? $"mxic battery raw=0x{value[0]:X2}"
+            : "mxic battery raw=<empty>");
+        return RazerMxicHeadsetProtocol.ReadBatteryPercent(value);
     }
 }

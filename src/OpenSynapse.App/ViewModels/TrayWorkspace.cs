@@ -102,7 +102,8 @@ public sealed class TrayWorkspace
                     : await ReadWithTimeoutAsync(
                         token => RazerHeadsetAudioService.TryReadBatteryPercentAsync(
                             row.Connection, null, token),
-                        cancellationToken).ConfigureAwait(false),
+                        cancellationToken,
+                        TimeSpan.FromSeconds(2)).ConfigureAwait(false),
                 row.IconGlyph, row, HeadsetKey(row)));
         }
 
@@ -149,13 +150,14 @@ public sealed class TrayWorkspace
     /// </summary>
     private static async Task<int?> ReadWithTimeoutAsync(
         Func<CancellationToken, Task<int?>> read,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        TimeSpan? timeout = null)
     {
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(ReadTimeout);
+        using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutSource.CancelAfter(timeout ?? ReadTimeout);
         try
         {
-            return await read(timeout.Token).ConfigureAwait(false);
+            return await read(timeoutSource.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
