@@ -1063,7 +1063,31 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             return;
         }
 
+        // VSSrv is demand-start. A machine that already has the THX stack must
+        // not look like a fresh install just because the service is stopped.
+        if (ThxAudioAdmission.HasService(ThxHeadsetAdmission.ServiceName) &&
+            !ThxAudioAdmission.HasRunningService(ThxHeadsetAdmission.ServiceName))
+        {
+            using var start = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            start.CancelAfter(TimeSpan.FromSeconds(2));
+            try
+            {
+                await ThxAudioAdmission
+                    .EnsureServiceRunningAsync(ThxHeadsetAdmission.ServiceName, start.Token)
+                    .ConfigureAwait(true);
+            }
+            catch (Exception exception) when (
+                exception is OperationCanceledException or InvalidOperationException or
+                    System.ComponentModel.Win32Exception or UnauthorizedAccessException)
+            {
+            }
+        }
+
         _thxStatus = ThxHeadsetAdmission.Check(_connection.ProductId);
+        _diagnostic?.Invoke(
+            $"thx status availability={_thxStatus.Availability} error={_thxStatus.ErrorCode ?? "-"} " +
+            $"service={ThxAudioAdmission.HasService(ThxHeadsetAdmission.ServiceName)} " +
+            $"running={ThxAudioAdmission.HasRunningService(ThxHeadsetAdmission.ServiceName)}");
         if (_thxStatus.Availability != ThxHeadsetAvailability.Available)
         {
             _thxState = null;
