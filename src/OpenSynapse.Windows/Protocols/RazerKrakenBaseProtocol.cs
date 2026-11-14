@@ -14,8 +14,16 @@ internal static class RazerKrakenBaseProtocol
     internal static byte[] CreateFirmwareRequest() => Frame(4, 32, 2, 0, 48);
     internal static byte[] CreateSerialNumberRequest() => Frame(4, 32, 22, 127, 0);
     internal static byte[] CreateHardwareIdRequest() => Frame(4, 32, 1, 127, 33);
-    internal static byte[] CreateAncSetRequest(bool enabled) => Frame(49, 3, enabled ? (byte)1 : (byte)2);
-    internal static byte[] CreateAncGetRequest() => Frame(50, 3);
+
+    // The bundle writes 37 bytes through a USB control transfer; the HID collection
+    // reports a longer fixed output report, and WriteFile rejects a short buffer.
+    internal static byte[] PadOutputReport(byte[] request, int outputReportLength)
+    {
+        if (outputReportLength <= request.Length) return request;
+        var padded = new byte[outputReportLength];
+        request.CopyTo(padded, 0);
+        return padded;
+    }
 
     internal static Version? ParseFirmware(ReadOnlySpan<byte> response)
     {
@@ -41,9 +49,6 @@ internal static class RazerKrakenBaseProtocol
 
     internal static byte? ParseHardwareId(ReadOnlySpan<byte> response) =>
         response.Length > 1 ? response[1] : null;
-
-    internal static bool? ParseAncEnabled(ReadOnlySpan<byte> response) =>
-        response.Length > 1 ? response[1] == 1 : null;
 
     private static byte[] Frame(params byte[] head)
     {
