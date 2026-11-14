@@ -123,7 +123,9 @@ public static class StudioChromaImport
                 continue;
             }
 
-            var remapped = !string.Equals(device.InstanceId, match.InstanceId, StringComparison.OrdinalIgnoreCase);
+            var remapped =
+                !string.Equals(device.InstanceId, match.InstanceId, StringComparison.OrdinalIgnoreCase) ||
+                (device.ProductId != 0 && device.ProductId != match.ProductId);
             var remappedLeds = remapped
                 ? RemapLeds(device, match, placement?.Placement.Category)
                 : null;
@@ -174,14 +176,28 @@ public static class StudioChromaImport
             resolution.Placement.InstanceId = resolution.Match.InstanceId;
             resolution.Placement.ProductId = resolution.Match.ProductId;
         }
+
+        // Chroma keeps the effect colors on the regions; the layer params are only
+        // editor defaults. Mirror a surviving region so the layer swatch and the
+        // "all regions" inspector show an imported color instead of Razer green.
+        foreach (var layer in profile.EnumerateLayers())
+        {
+            if (layer.IsGroup || layer.Regions.Count == 0) continue;
+            var region = layer.Regions.FirstOrDefault(candidate => candidate.Devices.Count > 0) ?? layer.Regions[0];
+            layer.Params.Primary = region.Params.ColorStops.Count > 0
+                ? region.Params.ColorStops[0].Color
+                : region.Params.Primary;
+            layer.Params.Secondary = region.Params.ColorStops.Count > 1
+                ? region.Params.ColorStops[^1].Color
+                : region.Params.Secondary;
+        }
     }
 
     private static bool IsSameDevice(StudioDevicePlacement placement, StudioRegionDevice device) =>
         SameNonEmpty(placement.Id, device.Id) ||
         SameNonEmpty(placement.DeviceId, device.DeviceId) ||
-        SameNonEmpty(placement.InstanceId, device.InstanceId) ||
         (placement.ProductId != 0 && placement.ProductId == device.ProductId &&
-         string.IsNullOrWhiteSpace(placement.InstanceId) && string.IsNullOrWhiteSpace(device.InstanceId));
+         SameNonEmpty(placement.InstanceId, device.InstanceId));
 
     private static bool SameNonEmpty(string? left, string? right) =>
         !string.IsNullOrWhiteSpace(left) && string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
