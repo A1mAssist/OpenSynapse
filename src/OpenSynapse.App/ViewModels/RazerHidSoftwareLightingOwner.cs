@@ -92,6 +92,18 @@ internal sealed class RazerHidSoftwareLightingOwner : IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// Stops every frame pump without disposing its view model. Shutdown needs the
+    /// last frame to stop before the firmware Off write can take effect.
+    /// </summary>
+    internal async Task StopAllAsync(CancellationToken cancellationToken)
+    {
+        foreach (var device in _devices.Values.ToArray())
+        {
+            await device.StopLightingRuntimeAsync(cancellationToken).ConfigureAwait(false);
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
         foreach (var device in _devices.Values)

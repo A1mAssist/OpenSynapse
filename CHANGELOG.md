@@ -31,6 +31,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 - **Blade fan curve**: the curve window draws live fan RPM and CPU/GPU temperature, and point limits follow the model and the current performance mode; every fixed-fan Blade now offers the curve.
 - **HyperPolling receivers**: the mouse paired to a HyperPolling dongle is discovered as its own device.
 - **Performance overlay**: added an always-on-top switch, on by default; turn it off for borderless games that lose DirectFlip.
+- **Shutdown lighting**: optional “Turn off peripheral lighting on shutdown” sends Off to RazerHid lighting devices before Windows shuts down or signs out, and restores the saved lighting after the next launch.
 
 ### Improvements
 

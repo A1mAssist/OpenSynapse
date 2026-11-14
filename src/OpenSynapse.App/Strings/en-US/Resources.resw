@@ -1817,6 +1817,9 @@
   <data name="TaskbarStatusTitle.Text" xml:space="preserve"><value>Taskbar status strip</value></data>
   <data name="TaskbarStatusDescription.Text" xml:space="preserve"><value>Show connected peripheral battery in the taskbar.</value></data>
   <data name="TaskbarStatusToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Taskbar status strip</value></data>
+  <data name="ShutdownLightingTitle.Text" xml:space="preserve"><value>Turn off peripheral lighting on shutdown</value></data>
+  <data name="ShutdownLightingDescription.Text" xml:space="preserve"><value>Before Windows shuts down or signs out, send Off to Razer peripherals that support lighting writes. Restore the saved lighting after the next launch.</value></data>
+  <data name="ShutdownLightingToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Turn off peripheral lighting on shutdown</value></data>
   <data name="PerformanceOverlayTitle" xml:space="preserve"><value>Performance overlay</value></data>
   <data name="PerformanceOverlayDescription" xml:space="preserve"><value>Show performance mode, CPU/GPU temperatures and clocks, memory usage and clock, and fan speed on the desktop. Drag it anywhere; its position is remembered. Right-click to switch cards, reset the position, or close it.</value></data>
   <data name="PerformanceOverlayDetailedTitle" xml:space="preserve"><value>Detailed card</value></data>

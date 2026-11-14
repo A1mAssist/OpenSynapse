@@ -80,6 +80,15 @@
                     <ToggleSwitch local:Localized.Uid="TaskbarStatusToggle" x:Name="TaskbarStatusToggle" Grid.Column="1" Toggled="TaskbarStatusToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
                   </Grid>
                 </Border>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                    <StackPanel Spacing="4">
+                      <TextBlock local:Localized.Uid="ShutdownLightingTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="ShutdownLightingDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch local:Localized.Uid="ShutdownLightingToggle" x:Name="ShutdownLightingToggle" Grid.Column="1" Toggled="ShutdownLightingToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
+                  </Grid>
+                </Border>
                 <Border x:Name="PerformanceOverlayCard" Style="{StaticResource CardStyle}" Padding="16">
                   <StackPanel Spacing="12">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
