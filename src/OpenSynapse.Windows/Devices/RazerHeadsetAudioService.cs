@@ -429,7 +429,8 @@ public sealed partial class RazerHeadsetAudioService
         }
         catch (Exception exception) when (IsExpected(exception))
         {
-            errors.Add($"ANC: {exception.Message}");
+            // Shared 91-byte class: a missing ANC is an absent feature, not a read failure.
+            _diagnostic?.Invoke($"headset ANC probe skipped: {exception.Message}");
         }
 
         // The protocol has no default selector; band 0 is the first of its ten-band range.

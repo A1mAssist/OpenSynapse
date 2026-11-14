@@ -120,7 +120,6 @@ public static class RazerMxicHeadsetProtocol
     // AudioMxicDevice proves sidetone in its bundle (get 18 00 00 -> header 18 01 01,
     // set 98 00 01 + state -> header 98 01 01) for the six Mxic64 identities, and
     // rzDevice25ValkyrieT3 exposes the same feature on class 0x18 source 3.
-    // ANC is still only measured on 0555, so it stays out of every other identity.
     private static readonly FrozenSet<ushort> SidetoneProductIds = new ushort[]
     {
         0x0539,
@@ -139,7 +138,10 @@ public static class RazerMxicHeadsetProtocol
         0x1022,
     }.ToFrozenSet();
 
-    private static readonly FrozenSet<ushort> AncProductIds = new ushort[] { ProductId }.ToFrozenSet();
+    // AudioMxicDevice's class carries ANC, but 0555's own bundle does not enable it:
+    // no feature flag, no ANC strings, and it never answers 12 00 00. No other Mxic64
+    // identity asks for it either, so the shared class alone is not evidence.
+    private static readonly FrozenSet<ushort> AncProductIds = Array.Empty<ushort>().ToFrozenSet();
 
     public static bool SupportsSidetone(ushort productId) => SidetoneProductIds.Contains(productId);
 
