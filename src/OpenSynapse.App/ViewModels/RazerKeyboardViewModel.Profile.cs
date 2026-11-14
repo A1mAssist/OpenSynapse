@@ -380,19 +380,30 @@ public sealed partial class RazerKeyboardViewModel
                 continue;
             }
 
+            if (!RazerHuntsmanV3ProKeys.TryResolveProfileButtonId(
+                    _connection.ProductId,
+                    mapping.ButtonId,
+                    mapping.Extra,
+                    out var buttonId))
+            {
+                _diagnostic?.Invoke(
+                    $"profile keyboard.mapping: saved key {mapping.ButtonId} is not in the firmware key table");
+                continue;
+            }
+
             var mode = mapping.Mode ?? 0;
-            var key = $"keyboard.mapping.{mode}.{mapping.ButtonId}";
+            var key = $"keyboard.mapping.{mode}.{buttonId}";
             try
             {
                 var data = mapping.FunctionData?.ToArray() ?? [];
-                var current = await transport.GetAssignmentAsync(mapping.ButtonId, mode, cancellationToken);
+                var current = await transport.GetAssignmentAsync(buttonId, mode, cancellationToken);
                 if (current.FunctionId == functionId && current.Data.SequenceEqual(data))
                 {
                     continue;
                 }
 
                 await transport.SetAssignmentAsync(
-                    mapping.ButtonId, mode, functionId, data, cancellationToken);
+                    buttonId, mode, functionId, data, cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {

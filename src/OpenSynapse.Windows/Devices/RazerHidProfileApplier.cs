@@ -306,8 +306,21 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
 
         foreach (var mapping in mappings)
         {
+            if (!RazerHuntsmanV3ProKeys.TryResolveProfileButtonId(
+                    connection.Definition.ProductId,
+                    mapping.ButtonId,
+                    mapping.Extra,
+                    out var buttonId))
+            {
+                results.Add(new ProfileSettingApplyResult(
+                    $"mapping.{mapping.Mode ?? 0}.{mapping.ButtonId}",
+                    ProfileSettingApplyStatus.Skipped,
+                    "The saved key id is not in this keyboard's firmware key table."));
+                continue;
+            }
+
             var mode = mapping.Mode ?? 0;
-            var key = $"mapping.{mode}.{mapping.ButtonId}";
+            var key = $"mapping.{mode}.{buttonId}";
             if (mapping.FunctionId is not { } functionId)
             {
                 results.Add(new ProfileSettingApplyResult(
@@ -319,7 +332,7 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
             try
             {
                 var current = await _service.GetButtonAssignmentAsync(
-                    connection, mapping.ButtonId, mode, cancellationToken);
+                    connection, buttonId, mode, cancellationToken);
                 var data = mapping.FunctionData?.ToArray() ?? [];
                 if (current.FunctionId == functionId && current.Data.SequenceEqual(data))
                 {
@@ -328,7 +341,7 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
                 }
 
                 await _service.SetButtonAssignmentAsync(
-                    connection, mapping.ButtonId, mode, functionId, data, cancellationToken);
+                    connection, buttonId, mode, functionId, data, cancellationToken);
                 results.Add(Applied(key));
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
