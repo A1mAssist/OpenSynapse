@@ -139,6 +139,7 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                     _diagnosticLog.TryWrite(
                         "razer-driver",
                         $"Razer filter {productId} refresh attached={attachment.IsAttached}; " +
+                        $"dkm={RazerFilterInfBinder.IsDkmAttached(productId)}; " +
                         $"keyboard={attachment.AttachedKeyboardInstances}/{attachment.KeyboardInstances}; " +
                         $"missing: {string.Join(", ", RazerFilterInfBinder.FindUnfilteredKeyboardInstances(candidates, presentProductIds: _presentProductIds, coveredInterfaces: coveredInterfaces))}");
                     row.StatusText = attachment.IsAttached
@@ -325,6 +326,7 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                             _diagnosticLog.TryWrite(
                                 "razer-driver",
                                 $"Razer filter {row.ProductId} attached={attachment.IsAttached}; " +
+                                $"dkm={RazerFilterInfBinder.IsDkmAttached(row.CandidateProductIds[0])}; " +
                                 $"keyboard={attachment.AttachedKeyboardInstances}/{attachment.KeyboardInstances}; " +
                                 $"instances: {string.Join(", ", RazerFilterInfBinder.FindInstances(row.CandidateProductIds, presentProductIds: _presentProductIds))}; " +
                                 $"missing: {string.Join(", ", RazerFilterInfBinder.FindUnfilteredKeyboardInstances(row.CandidateProductIds, presentProductIds: _presentProductIds, coveredInterfaces: coveredInterfaces))}");

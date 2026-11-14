@@ -289,7 +289,8 @@ internal static partial class RazerFilterInfBinder
         IReadOnlyList<ushort> productIds,
         RegistryKey? enumRoot = null,
         IReadOnlySet<ushort>? presentProductIds = null,
-        IReadOnlySet<(ushort ProductId, int InterfaceNumber)>? coveredInterfaces = null)
+        IReadOnlySet<(ushort ProductId, int InterfaceNumber)>? coveredInterfaces = null,
+        RegistryKey? usbEnumRoot = null)
     {
         ArgumentNullException.ThrowIfNull(productIds);
         var ownsRoot = enumRoot is null;
@@ -297,6 +298,14 @@ internal static partial class RazerFilterInfBinder
         if (root is null)
         {
             return default;
+        }
+
+        var usbRoot = usbEnumRoot;
+        var ownsUsbRoot = false;
+        if (usbRoot is null && enumRoot is null)
+        {
+            usbRoot = Registry.LocalMachine.OpenSubKey(UsbEnumPath);
+            ownsUsbRoot = usbRoot is not null;
         }
 
         var anyAttached = false;
@@ -327,7 +336,9 @@ internal static partial class RazerFilterInfBinder
                         continue;
                     }
 
-                    var attached = filters.Any(filter => HasFilter(instance, filter));
+                    var attached = filters.Any(filter =>
+                        HasFilter(instance, filter) ||
+                        (usbRoot is not null && HasLowerFilterOnParent(deviceName, filter, usbRoot)));
                     anyAttached |= attached;
                     if (!IsKeyboardInstance(instance))
                     {
@@ -347,6 +358,10 @@ internal static partial class RazerFilterInfBinder
             if (ownsRoot)
             {
                 root.Dispose();
+            }
+            if (ownsUsbRoot)
+            {
+                usbRoot!.Dispose();
             }
         }
 
@@ -404,7 +419,8 @@ internal static partial class RazerFilterInfBinder
         IReadOnlyList<ushort> productIds,
         RegistryKey? enumRoot = null,
         IReadOnlySet<ushort>? presentProductIds = null,
-        IReadOnlySet<(ushort ProductId, int InterfaceNumber)>? coveredInterfaces = null)
+        IReadOnlySet<(ushort ProductId, int InterfaceNumber)>? coveredInterfaces = null,
+        RegistryKey? usbEnumRoot = null)
     {
         ArgumentNullException.ThrowIfNull(productIds);
         var ownsRoot = enumRoot is null;
@@ -412,6 +428,14 @@ internal static partial class RazerFilterInfBinder
         if (root is null)
         {
             return [];
+        }
+
+        var usbRoot = usbEnumRoot;
+        var ownsUsbRoot = false;
+        if (usbRoot is null && enumRoot is null)
+        {
+            usbRoot = Registry.LocalMachine.OpenSubKey(UsbEnumPath);
+            ownsUsbRoot = usbRoot is not null;
         }
 
         try
@@ -436,7 +460,8 @@ internal static partial class RazerFilterInfBinder
 
                     using var instance = root.OpenSubKey($@"{deviceName}\{instanceName}");
                     if (instance is null || !IsKeyboardInstance(instance) ||
-                        filters.Any(filter => HasFilter(instance, filter)))
+                        filters.Any(filter => HasFilter(instance, filter) ||
+                            (usbRoot is not null && HasLowerFilterOnParent(deviceName, filter, usbRoot))))
                     {
                         continue;
                     }
@@ -452,6 +477,10 @@ internal static partial class RazerFilterInfBinder
             if (ownsRoot)
             {
                 root.Dispose();
+            }
+            if (ownsUsbRoot)
+            {
+                usbRoot!.Dispose();
             }
         }
     }
@@ -501,6 +530,37 @@ internal static partial class RazerFilterInfBinder
 
         using var parameters = instance.OpenSubKey("Device Parameters");
         return ContainsFilter(parameters?.GetValue(valueName), filter);
+    }
+
+    /// <summary>
+    /// The package binds the DKM lower filter to the USB composite function, not
+    /// to each HID collection, so the keyboard collection under it keeps its own
+    /// UpperFilters empty. Treat the parent function's LowerFilters as coverage;
+    /// otherwise a healthy stack is reported as a missing filter.
+    /// </summary>
+    private static bool HasLowerFilterOnParent(
+        string deviceName,
+        string filter,
+        RegistryKey usbEnumRoot)
+    {
+        var collection = deviceName.IndexOf("&Col", StringComparison.OrdinalIgnoreCase);
+        var functionName = collection < 0 ? deviceName : deviceName[..collection];
+        using var function = usbEnumRoot.OpenSubKey(functionName);
+        if (function is null)
+        {
+            return false;
+        }
+
+        foreach (var instanceName in function.GetSubKeyNames())
+        {
+            using var instance = function.OpenSubKey(instanceName);
+            if (instance is not null && HasFilter(instance, filter, "LowerFilters"))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsKeyboardInstance(RegistryKey instance)
