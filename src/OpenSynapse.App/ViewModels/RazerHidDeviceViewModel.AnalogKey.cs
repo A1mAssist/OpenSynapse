@@ -67,7 +67,7 @@ public sealed partial class RazerHidDeviceViewModel
 
     public string AnalogDeadZoneStatusText =>
         _analogKeyBottomDeadZone is byte raw && AnalogDeadZonePresets.All(preset => preset.Value != raw)
-            ? AppStrings.FormatText("RazerHidAnalogDeadZoneUnknown", raw)
+            ? AppStrings.FormatText("RazerHidAnalogDeadZoneUnknown", raw / 10d)
             : string.Empty;
 
     public Visibility AnalogDeadZoneUnknownVisibility => VisibleWhen(AnalogDeadZoneStatusText.Length > 0);
