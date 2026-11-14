@@ -359,10 +359,12 @@ public sealed class MacroStep
                 Arguments = null;
                 WorkingDirectory = null;
                 LoopCount = Math.Clamp(LoopCount, 1, MaxLoopCount);
-                Children = (Children ?? [])
-                    .Where(child => child is not null)
-                    .Take(MacroDefinition.MaxSteps)
-                    .ToList();
+                Children ??= [];
+                Children.RemoveAll(child => child is null);
+                if (Children.Count > MacroDefinition.MaxSteps)
+                {
+                    Children.RemoveRange(MacroDefinition.MaxSteps, Children.Count - MacroDefinition.MaxSteps);
+                }
                 foreach (var child in Children)
                 {
                     child.ApplySafeDefaults();
@@ -539,15 +541,16 @@ public sealed class MacroDefinition
 
         // Keep incomplete steps. An editor field is often empty for a moment
         // while the user types, and a clone or profile save must not delete it.
-        Steps = (Steps ?? [])
-            .Where(step => step is not null)
-            .Take(MaxSteps)
-            .Select(step =>
-            {
-                step.ApplySafeDefaults();
-                return step;
-            })
-            .ToList();
+        Steps ??= [];
+        Steps.RemoveAll(step => step is null);
+        if (Steps.Count > MaxSteps)
+        {
+            Steps.RemoveRange(MaxSteps, Steps.Count - MaxSteps);
+        }
+        foreach (var step in Steps)
+        {
+            step.ApplySafeDefaults();
+        }
     }
 
     internal MacroDefinition Clone()
