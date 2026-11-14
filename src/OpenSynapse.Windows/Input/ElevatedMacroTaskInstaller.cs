@@ -48,6 +48,9 @@ public static class ElevatedMacroTaskInstaller
         try
         {
             File.WriteAllText(xmlPath, xml, new UnicodeEncoding(bigEndian: false, byteOrderMark: true));
+            // Replace a running agent from the previous install so the new task
+            // points at the current executable instead of an old process.
+            _ = RunSchTasks("/end", "/tn", ElevatedMacroProtocol.TaskName);
             var result = RunSchTasks(
                 "/create",
                 "/tn",
@@ -74,6 +77,9 @@ public static class ElevatedMacroTaskInstaller
 
     public static bool Remove()
     {
+        // The task may still be running after the app was killed by the MSI.
+        // Stop it before deleting the task so no --macro-agent process survives.
+        _ = RunSchTasks("/end", "/tn", ElevatedMacroProtocol.TaskName);
         var result = RunSchTasks(
             "/delete",
             "/tn",

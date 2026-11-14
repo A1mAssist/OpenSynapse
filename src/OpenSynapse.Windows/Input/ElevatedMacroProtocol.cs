@@ -29,6 +29,7 @@ public enum ElevatedMacroCommandKind
     MouseMove = 2,
     Text = 3,
     ReleaseAll = 4,
+    Shutdown = 5,
 }
 
 /// <summary>
@@ -78,4 +79,7 @@ public sealed record ElevatedMacroResponse
     public int ErrorCode { get; init; }
 
     public string? Error { get; init; }
+
+    /// <summary>True when the agent should exit after writing this response.</summary>
+    public bool ShutdownRequested { get; init; }
 }

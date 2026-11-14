@@ -89,7 +89,25 @@ public partial class App
 
         try
         {
-            _elevatedMacroClient?.Dispose();
+            if (_elevatedMacroClient is { } macroClient)
+            {
+                using var stopTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+                try
+                {
+                    _ = await macroClient.StopAsync(stopTimeout.Token).ConfigureAwait(false);
+                }
+                catch (Exception exception)
+                {
+                    _diagnosticLog.TryWrite(
+                        "application",
+                        $"Macro agent shutdown failed: {exception.Message}");
+                }
+                finally
+                {
+                    macroClient.Dispose();
+                }
+            }
+
             // Cleanup can hang on a stale HID session or a blocked helper pipe. Bound the
             // wait here so the process still exits instead of leaving another stale
             // instance behind on every relaunch.

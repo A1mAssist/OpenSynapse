@@ -69,6 +69,7 @@ public static class ElevatedMacroAgent
                         if (!response.Ok) await ReleasePressedAsync(sink, pressed).ConfigureAwait(false);
                         await WriteResponseAsync(pipe, response, requestTimeout.Token).ConfigureAwait(false);
                         pipe.Disconnect();
+                        if (response.ShutdownRequested) break;
                     }
                     catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { break; }
                     catch (Exception exception) when (exception is IOException or InvalidOperationException or
@@ -263,6 +264,16 @@ public static class ElevatedMacroAgent
                 {
                     Ok = true,
                     IntegrityLevel = integrityLevel,
+                };
+
+            case ElevatedMacroCommandKind.Shutdown:
+                if (ReleasePressedAsync(sink, pressed).GetAwaiter().GetResult() is { } shutdownFailure)
+                    throw shutdownFailure;
+                return new ElevatedMacroResponse
+                {
+                    Ok = true,
+                    IntegrityLevel = integrityLevel,
+                    ShutdownRequested = true,
                 };
 
             default:
