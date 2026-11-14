@@ -1,5 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Microsoft.UI.Xaml.Media;
+using Windows.UI;
 
 namespace OpenSynapse.App.ViewModels;
 
@@ -21,6 +23,7 @@ public sealed class RazerHidDpiStageRowViewModel : INotifyPropertyChanged
         _y = y;
         Z = z;
         _isEditable = isEditable;
+        StageBrush = new SolidColorBrush(StageColor(number));
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -28,6 +31,8 @@ public sealed class RazerHidDpiStageRowViewModel : INotifyPropertyChanged
     public int Z { get; }
     public bool IsEditable => _isEditable;
     public string Label => AppStrings.FormatText("RazerHidDpiStageLabel", Number);
+    // Synapse marks stages 1..5 red, green, blue, cyan and yellow.
+    public SolidColorBrush StageBrush { get; }
     public int X { get => _x; set => SetField(ref _x, value); }
     public int Y { get => _y; set => SetField(ref _y, value); }
 
@@ -46,4 +51,14 @@ public sealed class RazerHidDpiStageRowViewModel : INotifyPropertyChanged
         field = value;
         PropertyChanged?.Invoke(this, new(name));
     }
+
+    private static Color StageColor(byte number) => number switch
+    {
+        1 => Color.FromArgb(255, 0xFF, 0x00, 0x00),
+        2 => Color.FromArgb(255, 0x00, 0xFF, 0x00),
+        3 => Color.FromArgb(255, 0x00, 0x7E, 0xF5),
+        4 => Color.FromArgb(255, 0x00, 0xFF, 0xFF),
+        5 => Color.FromArgb(255, 0xFF, 0xFF, 0x00),
+        _ => Color.FromArgb(255, 0x80, 0x80, 0x80),
+    };
 }
