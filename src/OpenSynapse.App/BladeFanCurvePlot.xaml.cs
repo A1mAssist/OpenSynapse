@@ -25,6 +25,7 @@ public sealed partial class BladeFanCurvePlot : UserControl
     private const double HandleSize = 12;
     private const double PointMarkerSize = 6;
     private const double HandleGrabRadius = 22;
+    private const double LiveMarkerSize = 16;
     private static readonly double[] TemperatureTicks = [30, 45, 60, 75, 90, 105, 120];
     private static readonly double[] RpmTicks = [2000, 2500, 3000, 3500, 4000, 4500, 5000, 5400];
 
@@ -41,6 +42,7 @@ public sealed partial class BladeFanCurvePlot : UserControl
     private readonly Line _rpmAxis = new();
     private readonly TextBlock _rpmUnit = new();
     private readonly TextBlock _temperatureUnit = new();
+    private readonly Ellipse[] _liveMarkers = [new(), new()];
     private readonly SolidColorBrush[] _seriesBrushes =
     [
         new(global::Windows.UI.Color.FromArgb(0xFF, 0x2D, 0x9C, 0xDB)),
@@ -48,6 +50,8 @@ public sealed partial class BladeFanCurvePlot : UserControl
     ];
 
     private BladeFanCurveEditorViewModel? _editor;
+    private BladeWorkspace? _blade;
+    private TelemetryWorkspace? _telemetry;
     private int _draggedSeries = -1;
     private int _draggedPointIndex = -1;
 
@@ -151,6 +155,19 @@ public sealed partial class BladeFanCurvePlot : UserControl
             Canvas.SetZIndex(handle, 6);
             PlotCanvas.Children.Add(handle);
         }
+
+        // Live state rides above the curve and the handles, but never takes a pointer.
+        for (var series = 0; series < _liveMarkers.Length; series++)
+        {
+            var marker = _liveMarkers[series];
+            marker.Width = marker.Height = LiveMarkerSize;
+            marker.Stroke = _seriesBrushes[series];
+            marker.StrokeThickness = 2.5;
+            marker.IsHitTestVisible = false;
+            marker.Visibility = Visibility.Collapsed;
+            Canvas.SetZIndex(marker, 7);
+            PlotCanvas.Children.Add(marker);
+        }
     }
 
     private TextBlock CreateTickLabel(string text, TextAlignment alignment, Brush brush)
@@ -204,6 +221,26 @@ public sealed partial class BladeFanCurvePlot : UserControl
 
         Render();
     }
+
+    internal void AttachLiveTelemetry(BladeWorkspace blade, TelemetryWorkspace telemetry)
+    {
+        DetachLiveTelemetry();
+        _blade = blade;
+        _telemetry = telemetry;
+        _blade.PropertyChanged += LiveTelemetryChanged;
+        _telemetry.PropertyChanged += LiveTelemetryChanged;
+    }
+
+    internal void DetachLiveTelemetry()
+    {
+        if (_blade is not null) _blade.PropertyChanged -= LiveTelemetryChanged;
+        if (_telemetry is not null) _telemetry.PropertyChanged -= LiveTelemetryChanged;
+        _blade = null;
+        _telemetry = null;
+        HideLiveMarkers();
+    }
+
+    private void LiveTelemetryChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => Render();
 
     private void EditorChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
@@ -420,8 +457,11 @@ public sealed partial class BladeFanCurvePlot : UserControl
 
         if (!hasPoints)
         {
+            HideLiveMarkers();
             return;
         }
+
+        RenderLive(width, height);
 
         // Each curve keeps its own tiers: CPU points drive the CPU line, GPU points the GPU line.
         for (var series = 0; series < _seriesLines.Count; series++)
@@ -464,6 +504,41 @@ public sealed partial class BladeFanCurvePlot : UserControl
             Canvas.SetTop(handle, y - HandleSize / 2);
             handle.Visibility = Visibility.Visible;
         }
+    }
+
+    private void RenderLive(double width, double height)
+    {
+        if (_blade is null || _telemetry is null)
+        {
+            HideLiveMarkers();
+            return;
+        }
+
+        var temperatures = _telemetry.Temperatures;
+        ShowLivePoint(0, temperatures.Cpu, _blade.CurrentFanCpuRpm, CpuLiveReading, width, height);
+        ShowLivePoint(1, temperatures.Gpu, _blade.CurrentFanGpuRpm, GpuLiveReading, width, height);
+    }
+
+    private void ShowLivePoint(int series, double? temperature, int? rpm, TextBlock reading,
+        double width, double height)
+    {
+        var marker = _liveMarkers[series];
+        if (temperature is not double t || rpm is not int r)
+        {
+            marker.Visibility = reading.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        Canvas.SetLeft(marker, XFromTemperature(t, width) - LiveMarkerSize / 2);
+        Canvas.SetTop(marker, YFromRpm(r, height) - LiveMarkerSize / 2);
+        marker.Visibility = reading.Visibility = Visibility.Visible;
+        reading.Text = $"{t:0}°C · {r:N0} RPM";
+    }
+
+    private void HideLiveMarkers()
+    {
+        foreach (var marker in _liveMarkers) marker.Visibility = Visibility.Collapsed;
+        CpuLiveReading.Visibility = GpuLiveReading.Visibility = Visibility.Collapsed;
     }
 
     private Ellipse GetPointMarker(int series, int index)
