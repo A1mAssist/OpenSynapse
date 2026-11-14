@@ -98,15 +98,16 @@ public sealed partial class RazerHidDeviceViewModel
                     return;
                 }
 
+                var profileId = await ResolveAnalogKeyProfileIdAsync(cancellationToken);
                 await _service.SetAnalogSnapTapAsync(
-                    Connection, AnalogKeyClassId, AnalogSnapTapEnabled, pairs, cancellationToken);
+                    Connection, profileId, AnalogSnapTapEnabled, pairs, cancellationToken);
                 await RefreshAnalogSnapTapAsync(cancellationToken);
                 await SaveProfileAsync(
                     settings => settings.Keyboard.SnapTapEnabled = AnalogSnapTapEnabled,
                     settings => settings.Keyboard.SnapTapEnabled = previousProfile,
                     () => AnalogSnapTapEnabled = previousEnabled,
                     token => _service.SetAnalogSnapTapAsync(
-                        Connection, AnalogKeyClassId, previousEnabled, previousPairs, token),
+                        Connection, profileId, previousEnabled, previousPairs, token),
                     cancellationToken);
                 AnalogSnapTapStatusText =
                     AppStrings.FormatText("SnapTapAppliedCount", pairs.Count);
@@ -122,8 +123,9 @@ public sealed partial class RazerHidDeviceViewModel
         BuildAnalogSnapTapChoices();
         try
         {
+            var profileId = await ResolveAnalogKeyProfileIdAsync(cancellationToken);
             var state = await _service.GetAnalogSnapTapAsync(
-                Connection, AnalogKeyClassId, cancellationToken);
+                Connection, profileId, cancellationToken);
             AnalogSnapTapEnabled = state.Enabled;
             _analogSnapTapPairs.Clear();
             foreach (var pair in state.Pairs)

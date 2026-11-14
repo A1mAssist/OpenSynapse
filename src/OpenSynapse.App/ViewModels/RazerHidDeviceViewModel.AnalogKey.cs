@@ -10,9 +10,8 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerHidDeviceViewModel
 {
-    // The analog-key short commands address class id 1 on the Huntsman V3 Pro and Mako.
-    private const byte AnalogKeyClassId = 0x01;
     private const byte AnalogKeyDataType = 0x00;
+    private const double AnalogKeyToleranceMillimeters = 0.05;
     // Razer's own UI only offers these three bottom-dead-zone presets.
     private static readonly AnalogDeadZoneChoice[] AnalogDeadZonePresets = [new(3), new(5), new(8)];
     private readonly ObservableCollection<AnalogKeyRowViewModel> _analogKeyRows = [];
@@ -231,14 +230,15 @@ public sealed partial class RazerHidDeviceViewModel
                 var previousRapidTrigger = AnalogKeyContinuousRapidTrigger;
                 var previousDeadZone = _analogKeyBottomDeadZone;
                 var previousProfile = ReadProfile(settings => settings.Keyboard.AnalogKeyEnabled);
+                var profileId = await ResolveAnalogKeyProfileIdAsync(cancellationToken);
                 await _service.SetAnalogKeyContinuousRapidTriggerAsync(
-                    Connection, AnalogKeyClassId, AnalogKeyContinuousRapidTrigger, cancellationToken);
+                    Connection, profileId, AnalogKeyContinuousRapidTrigger, cancellationToken);
                 // An unrepresentable raw value is left untouched instead of being
                 // rewritten with a preset the user never chose.
                 if (SelectedAnalogDeadZone?.Value is { } deadZone)
                 {
                     await _service.SetAnalogKeyBottomDeadZoneAsync(
-                        Connection, AnalogKeyClassId, deadZone, cancellationToken);
+                        Connection, profileId, deadZone, cancellationToken);
                 }
                 if (Has(RazerHidBackendCapability.AnalogKeyRead))
                 {
@@ -255,11 +255,11 @@ public sealed partial class RazerHidDeviceViewModel
                     async token =>
                     {
                         await _service.SetAnalogKeyContinuousRapidTriggerAsync(
-                            Connection, AnalogKeyClassId, previousRapidTrigger, token);
+                            Connection, profileId, previousRapidTrigger, token);
                         if (previousDeadZone is { } deadZoneToRestore)
                         {
                             await _service.SetAnalogKeyBottomDeadZoneAsync(
-                                Connection, AnalogKeyClassId, deadZoneToRestore, token);
+                                Connection, profileId, deadZoneToRestore, token);
                         }
                     },
                     cancellationToken);
@@ -283,27 +283,37 @@ public sealed partial class RazerHidDeviceViewModel
                     return;
                 }
 
+                var profileId = await ResolveAnalogKeyProfileIdAsync(cancellationToken);
                 var actuation = RazerAnalogKeyProtocol.ToThreshold(AnalogKeyActuationPointMillimeters);
                 var release = RazerAnalogKeyProtocol.ToThreshold(
                     Math.Max(0.1, AnalogKeyActuationPointMillimeters - 0.1));
-                foreach (var batch in keys.Chunk(RazerAnalogKeyProtocol.MaxActuationPoints))
+                var actuationKeys = keys
+                    .Where(key => Math.Abs(key.ActuationMillimeters - AnalogKeyActuationPointMillimeters)
+                        > AnalogKeyToleranceMillimeters)
+                    .ToArray();
+                foreach (var batch in actuationKeys.Chunk(RazerAnalogKeyProtocol.MaxActuationPoints))
                 {
                     await _service.SetAnalogKeyActuationPointsAsync(
                         Connection,
                         AnalogKeyDataType,
-                        AnalogKeyClassId,
+                        profileId,
                         batch.Select(key => new RazerAnalogActuationPoint(key.KeyId, release, actuation)).ToArray(),
                         cancellationToken);
                 }
 
                 var sensitivity = RazerAnalogKeyProtocol.ToThreshold(
                     AnalogKeyRapidTriggerSensitivityMillimeters);
-                foreach (var batch in keys.Chunk(RazerAnalogKeyProtocol.MaxRapidTriggerKeys))
+                var rapidTriggerKeys = keys
+                    .Where(key => key.RapidTriggerEnabled != AnalogKeyRapidTriggerEnabled ||
+                        Math.Abs(key.RapidTriggerSensitivityMillimeters -
+                            AnalogKeyRapidTriggerSensitivityMillimeters) > AnalogKeyToleranceMillimeters)
+                    .ToArray();
+                foreach (var batch in rapidTriggerKeys.Chunk(RazerAnalogKeyProtocol.MaxRapidTriggerKeys))
                 {
                     await _service.SetAnalogKeyRapidTriggersAsync(
                         Connection,
                         AnalogKeyDataType,
-                        AnalogKeyClassId,
+                        profileId,
                         batch.Select(key => new RazerAnalogRapidTrigger(
                             key.KeyId,
                             AnalogKeyRapidTriggerEnabled,
@@ -345,14 +355,15 @@ public sealed partial class RazerHidDeviceViewModel
         // These two are optional settings. A firmware that does not answer one must
         // not remove the whole analog card; keep the last value and let the per-key
         // actuation/Rapid Trigger read below decide whether the layout is usable.
+        var profileId = await ResolveAnalogKeyProfileIdAsync(cancellationToken);
         var continuous = await ReadOrKeepAsync(
-            token => _service.GetAnalogKeyContinuousRapidTriggerAsync(Connection, AnalogKeyClassId, token),
-            new RazerAnalogKeyContinuousRapidTrigger(AnalogKeyClassId, AnalogKeyContinuousRapidTrigger),
+            token => _service.GetAnalogKeyContinuousRapidTriggerAsync(Connection, profileId, token),
+            new RazerAnalogKeyContinuousRapidTrigger(profileId, AnalogKeyContinuousRapidTrigger),
             cancellationToken);
         AnalogKeyContinuousRapidTrigger = continuous.Enabled;
         SetAnalogDeadZone(await ReadOrKeepAsync<byte?>(
             async token => (await _service.GetAnalogKeyBottomDeadZoneAsync(
-                Connection, AnalogKeyClassId, token)).Value,
+                Connection, profileId, token)).Value,
             _analogKeyBottomDeadZone,
             cancellationToken));
         if (_analogKeyLayout is not null && !_analogKeyLayoutLoaded)
@@ -405,10 +416,11 @@ public sealed partial class RazerHidDeviceViewModel
         var keyIds = keys.Select(key => key.KeyId).ToArray();
         var byId = keys.ToDictionary(key => key.KeyId);
         var seen = new HashSet<byte>();
+        var profileId = await ResolveAnalogKeyProfileIdAsync(cancellationToken);
         foreach (var batch in keyIds.Chunk(RazerAnalogKeyProtocol.MaxActuationPoints))
         {
             var table = await _service.GetAnalogKeyActuationPointsAsync(
-                Connection, AnalogKeyDataType, AnalogKeyClassId, batch, cancellationToken);
+                Connection, AnalogKeyDataType, profileId, batch, cancellationToken);
             foreach (var point in table.Points)
             {
                 if (!byId.TryGetValue(point.KeyId, out var key))
@@ -426,7 +438,7 @@ public sealed partial class RazerHidDeviceViewModel
         foreach (var batch in keyIds.Chunk(RazerAnalogKeyProtocol.MaxRapidTriggerKeys))
         {
             var table = await _service.GetAnalogKeyRapidTriggersAsync(
-                Connection, AnalogKeyDataType, AnalogKeyClassId, batch, cancellationToken);
+                Connection, AnalogKeyDataType, profileId, batch, cancellationToken);
             foreach (var entry in table.Entries)
             {
                 if (!byId.TryGetValue(entry.KeyId, out var key))
@@ -448,10 +460,14 @@ public sealed partial class RazerHidDeviceViewModel
     }
 
     private bool MatchesAnalogKeyRequest(AnalogKeyKeyViewModel key) =>
-        Math.Abs(key.ActuationMillimeters - AnalogKeyActuationPointMillimeters) <= 0.11 &&
+        Math.Abs(key.ActuationMillimeters - AnalogKeyActuationPointMillimeters) <= AnalogKeyToleranceMillimeters &&
         key.RapidTriggerEnabled == AnalogKeyRapidTriggerEnabled &&
         (!AnalogKeyRapidTriggerEnabled ||
-            Math.Abs(key.RapidTriggerSensitivityMillimeters - AnalogKeyRapidTriggerSensitivityMillimeters) <= 0.11);
+            Math.Abs(key.RapidTriggerSensitivityMillimeters - AnalogKeyRapidTriggerSensitivityMillimeters) <=
+                AnalogKeyToleranceMillimeters);
+
+    private Task<byte> ResolveAnalogKeyProfileIdAsync(CancellationToken cancellationToken) =>
+        _service.ResolveActiveProfileIdAsync(Connection, cancellationToken);
 
     private static bool IsAnalogKeyReadbackFailure(Exception exception) =>
         exception is RazerCommandRejectedException or NotSupportedException or

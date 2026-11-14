@@ -47,6 +47,15 @@ public sealed partial class RazerHidDeviceService
         return profileId;
     }
 
+    /// <summary>
+    /// Exposes the cached active profile to the analog-key short commands, which
+    /// use the same profile slot as the mapping table.
+    /// </summary>
+    public Task<byte> ResolveActiveProfileIdAsync(
+        RazerHidDeviceConnection connection,
+        CancellationToken cancellationToken = default) =>
+        ResolveMappingProfileIdAsync(connection, cancellationToken);
+
     internal void ForgetMappingProfile(RazerHidDeviceConnection connection) =>
         _mappingProfileIds.TryRemove(connection.DevicePath ?? connection.InstanceId, out _);
 
