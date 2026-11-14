@@ -606,8 +606,8 @@
     <comment>触控板</comment>
   </data>
   <data name="Text_528DF7D8" xml:space="preserve">
-    <value>正在读取配置与设备状态</value>
-    <comment>正在读取配置与设备状态</comment>
+    <value>正在读取配置与设备状态...</value>
+    <comment>正在读取配置与设备状态...</comment>
   </data>
   <data name="Text_3F48AC7F" xml:space="preserve">
     <value>播放 / 暂停</value>
