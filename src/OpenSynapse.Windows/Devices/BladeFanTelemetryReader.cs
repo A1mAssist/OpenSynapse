@@ -106,9 +106,9 @@ internal sealed class BladeFanTelemetryReader
         var original = await ReadFanTransactionStateAsync(blade, cancellationToken);
         if (mode == BladeFanMode.Manual)
         {
-            // The EC stops answering the target report while a value below the current
-            // mode's floor is stored, so clamp rather than write a speed it will not admit.
-            var range = blade.GetBladeFanTargetRange(original.Thermal.PerformanceMode);
+            // The EC stops answering the target report below the model floor. Clamp to
+            // the curve range so a point below it cannot silence the target readback.
+            var range = blade.GetBladeFanCurveTargetRange(original.Thermal.PerformanceMode);
             cpuTargetRpm = Math.Clamp(cpuTargetRpm, range.MinimumRpm, range.MaximumRpm);
             gpuTargetRpm = Math.Clamp(gpuTargetRpm, range.MinimumRpm, range.MaximumRpm);
         }

@@ -35,13 +35,13 @@ public sealed partial class FanWorkspace
         ClampBladeFanCurve(BladeFanCurve.CreateDefault());
 
     /// <summary>
-    /// The editor's generic 1900..5400 range is wider than some models and performance
-    /// modes accept. A stored target below the EC's floor makes the target report go
-    /// silent, so clamp both ends before the curve is shown, saved or written.
+    /// The editor's generic 1900..5400 range is wider than some models accept. Clamp to
+    /// the model-wide floor so a curve can still reach the lowest speed the EC supports;
+    /// the fixed slider keeps its stricter per-mode minimum.
     /// </summary>
     private BladeFanCurve ClampBladeFanCurve(BladeFanCurve curve)
     {
-        var range = BladeModelCapabilities.FanTargetRangeFor(
+        var range = BladeModelCapabilities.FanCurveTargetRangeFor(
             _blade._bladeProductId, CurrentBladePerformanceMode);
         return curve.ClampFanSpeedRange(range.MinimumRpm, range.MaximumRpm);
     }

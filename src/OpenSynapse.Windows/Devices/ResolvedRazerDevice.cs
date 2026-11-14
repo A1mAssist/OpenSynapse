@@ -30,6 +30,11 @@ internal sealed record ResolvedRazerDevice(
             ? BladeModelCapabilities.FanTargetRangeFor(productId, mode)
             : default;
 
+    public BladeFanTargetRange GetBladeFanCurveTargetRange(BladePerformanceMode mode) =>
+        BladeProductId is { } productId
+            ? BladeModelCapabilities.FanCurveTargetRangeFor(productId, mode)
+            : default;
+
     public bool SupportsFanCurve => BladeProductId is { } pid && BladeModelCapabilities.SupportsFanCurve(pid);
     public bool SupportsFixedFan => BladeProductId is { } pid && BladeModelCapabilities.SupportsFixedFan(pid);
     public bool FixedFanRequiresCustomMode =>
