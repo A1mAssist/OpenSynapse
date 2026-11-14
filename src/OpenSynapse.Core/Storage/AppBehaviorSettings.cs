@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Lighting;
+using OpenSynapse.Core.Sensors;
 
 namespace OpenSynapse.Core.Storage;
 
@@ -29,6 +30,7 @@ public sealed class AppBehaviorSettings
     public bool LowBatteryNotificationsEnabled { get; set; } = true;
     public bool TrayBatteryLevelsEnabled { get; set; } = true;
     public bool TaskbarStatusEnabled { get; set; }
+    public List<TaskbarBatteryPreference> TaskbarBatteryDisplay { get; set; } = [];
     public bool TurnOffPeripheralLightingOnShutdown { get; set; }
     public bool LiteModeEnabled { get; set; }
     public bool PerformanceOverlayEnabled { get; set; }
@@ -92,6 +94,21 @@ public sealed class AppBehaviorSettings
             {
                 settings.RefreshRateCycleHertz = null;
             }
+            settings.TaskbarBatteryDisplay = (settings.TaskbarBatteryDisplay ?? [])
+                .OfType<TaskbarBatteryPreference>()
+                .Select(item => new TaskbarBatteryPreference
+                {
+                    Key = (item.Key ?? string.Empty).Trim(),
+                    Name = (item.Name ?? string.Empty).Trim(),
+                })
+                .Where(item => item.Key.Length > 0)
+                .Select(item => item.Name.Length <= 128
+                    ? item
+                    : new TaskbarBatteryPreference { Key = item.Key, Name = item.Name[..128] })
+                .GroupBy(item => item.Key, StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .Take(TaskbarStatusPolicy.MaximumBatteryCount)
+                .ToList();
             return settings;
         }
         catch (Exception exception) when (

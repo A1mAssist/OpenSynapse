@@ -74,6 +74,7 @@ public sealed partial class SettingsPage : UserControl
         RefreshChromaRestStatus();
         RefreshChromaOfficialDllUi();
         _behaviorUiReady = true;
+        InitializeTaskbarBatteryUi();
     }
 
     internal void InitializeUpdateUi()

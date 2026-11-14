@@ -15,13 +15,14 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     private const uint HostTimerInterval = 250;
     private const uint GetAncestorRoot = 2;
     private const int BaseWidthDip = 64;
-    private const int MaximumWidthDip = 120;
+    private const int MaximumWidthDip = 240;
     private const int TargetHeightDip = 30;
     private const int MinimumHeightDip = 22;
     private const int MaximumHeightDip = 36;
     private const int GapDip = 6;
     private const int PaddingDip = 8;
     private const int BatteryIconGapDip = 5;
+    private const int DeviceGapDip = 8;
     private const int IconBadgeDip = 18;
     private const int IconBadgeRadiusDip = 5;
     private const int ChargingGapDip = 3;
@@ -41,7 +42,8 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     private IntPtr _batteryFont;
     private IntPtr _iconFont;
     private Rect _lastStatusRect;
-    private TaskbarStatusSnapshot _snapshot = new(null, null);
+    private TaskbarStatusSnapshot _snapshot = new([]);
+    private int _visibleBatteryCount;
     private string _automationText = string.Empty;
     private bool _themeDark = true;
     private bool _attachFailed;
@@ -104,7 +106,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         if (_disposed) return;
         automationText ??= string.Empty;
         var contentChanged =
-            !_snapshot.Equals(snapshot) ||
+            !TaskbarStatusPolicy.SameContent(_snapshot, snapshot) ||
             !StringComparer.Ordinal.Equals(_automationText, automationText);
         _snapshot = snapshot;
         _automationText = automationText;
@@ -430,37 +432,44 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         var maximumWidth = (int)Math.Round(MaximumWidthDip * scale);
         var minimumWidth = (int)Math.Round(BaseWidthDip * scale);
 
-        width = MeasureWidth();
-        width = Math.Clamp(width, minimumWidth, maximumWidth);
-        if (width > available)
+        var obstacles = GetForeignTaskbarObstacles(taskbar, client.Height, right);
+        var batteryCount = Math.Min(
+            _snapshot.Batteries.Count, TaskbarStatusPolicy.MaximumBatteryCount);
+        for (var count = batteryCount; count >= 1; count--)
         {
-            return false;
-        }
+            var candidate = Math.Clamp(MeasureWidth(count), minimumWidth, maximumWidth);
+            if (candidate > available)
+            {
+                continue;
+            }
+            if (!TaskbarStatusLayout.TryFindRightmostSlot(
+                    leftBound: 0,
+                    rightBound: right,
+                    width: candidate,
+                    gap: gap,
+                    obstacles: obstacles,
+                    out var left))
+            {
+                continue;
+            }
 
-        if (!TaskbarStatusLayout.TryFindRightmostSlot(
-                leftBound: 0,
-                rightBound: right,
-                width: width,
-                gap: gap,
-                obstacles: GetForeignTaskbarObstacles(taskbar, client.Height, right),
-                out var left))
-        {
-            return false;
-        }
+            var origin = new Point
+            {
+                X = left,
+                Y = Math.Max(0, (clientHeight - height) / 2),
+            };
+            if (!ClientToScreen(taskbar, ref origin))
+            {
+                return false;
+            }
 
-        var origin = new Point
-        {
-            X = left,
-            Y = Math.Max(0, (clientHeight - height) / 2),
-        };
-        if (!ClientToScreen(taskbar, ref origin))
-        {
-            return false;
+            _visibleBatteryCount = count;
+            width = candidate;
+            x = origin.X;
+            y = origin.Y;
+            return true;
         }
-
-        x = origin.X;
-        y = origin.Y;
-        return true;
+        return false;
     }
 
     private static IReadOnlyList<TaskbarStatusObstacle> GetForeignTaskbarObstacles(

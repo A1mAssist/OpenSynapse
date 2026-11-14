@@ -63,7 +63,7 @@ public sealed partial class TaskbarStatusWindow
         }
     }
 
-    private int MeasureWidth()
+    private int MeasureWidth(int count)
     {
         var scale = _dpi / 96.0;
         var dc = GetDC(_statusWindow);
@@ -71,15 +71,20 @@ public sealed partial class TaskbarStatusWindow
         try
         {
             var width = PaddingDip * 2 * scale;
-            if (!string.IsNullOrWhiteSpace(_snapshot.BatteryIcon))
+            for (var index = 0; index < count && index < _snapshot.Batteries.Count; index++)
             {
-                width += (IconBadgeDip + BatteryIconGapDip) * scale;
-            }
-            width += MeasureText(dc, _batteryFont,
-                TaskbarStatusPolicy.FormatBattery(_snapshot.BatteryPercent));
-            if (_snapshot.IsCharging == true)
-            {
-                width += ChargingGapDip * scale + BoltWidthDip * scale;
+                if (index > 0) width += DeviceGapDip * scale;
+                var battery = _snapshot.Batteries[index];
+                if (!string.IsNullOrWhiteSpace(battery.Icon))
+                {
+                    width += (IconBadgeDip + BatteryIconGapDip) * scale;
+                }
+                width += MeasureText(dc, _batteryFont,
+                    TaskbarStatusPolicy.FormatBattery(battery.Percent));
+                if (battery.IsCharging == true)
+                {
+                    width += ChargingGapDip * scale + BoltWidthDip * scale;
+                }
             }
 
             return (int)Math.Ceiling(width);
@@ -163,34 +168,41 @@ public sealed partial class TaskbarStatusWindow
         DeleteObject(backgroundBrush);
         SetBkMode(dc, Transparent);
 
+        var count = _visibleBatteryCount > 0
+            ? _visibleBatteryCount
+            : Math.Min(_snapshot.Batteries.Count, TaskbarStatusPolicy.MaximumBatteryCount);
         var x = PaddingDip * scale;
-        if (!string.IsNullOrWhiteSpace(_snapshot.BatteryIcon))
-        {
-            DrawIconBadge(dc, x, client.Height, scale, _snapshot.BatteryIcon);
-            x += (IconBadgeDip + BatteryIconGapDip) * scale;
-        }
-
-        var battery = TaskbarStatusPolicy.FormatBattery(_snapshot.BatteryPercent);
         var previousFont = SelectObject(dc, _batteryFont);
-        SetTextColor(dc, primary);
-        var batteryWidth = MeasureText(dc, _batteryFont, battery);
-        var batteryRect = new Rect
+        for (var index = 0; index < count && index < _snapshot.Batteries.Count; index++)
         {
-            Left = (int)Math.Round(x),
-            Top = 0,
-            Right = (int)Math.Round(x + batteryWidth + 2),
-            Bottom = client.Bottom,
-        };
-        DrawTextW(dc, battery, battery.Length, ref batteryRect, DtSingleLine | DtVCenter | DtNoPrefix);
-        x += batteryWidth;
+            var battery = _snapshot.Batteries[index];
+            if (index > 0) x += DeviceGapDip * scale;
+            if (!string.IsNullOrWhiteSpace(battery.Icon))
+            {
+                DrawIconBadge(dc, x, client.Height, scale, battery.Icon);
+                x += (IconBadgeDip + BatteryIconGapDip) * scale;
+            }
 
-        if (_snapshot.IsCharging == true)
-        {
-            x += ChargingGapDip * scale;
-            DrawBolt(dc, x, client.Height, scale);
-            x += BoltWidthDip * scale;
+            var percent = TaskbarStatusPolicy.FormatBattery(battery.Percent);
+            SetTextColor(dc, primary);
+            var batteryWidth = MeasureText(dc, _batteryFont, percent);
+            var batteryRect = new Rect
+            {
+                Left = (int)Math.Round(x),
+                Top = 0,
+                Right = (int)Math.Round(x + batteryWidth + 2),
+                Bottom = client.Bottom,
+            };
+            DrawTextW(dc, percent, percent.Length, ref batteryRect, DtSingleLine | DtVCenter | DtNoPrefix);
+            x += batteryWidth;
+
+            if (battery.IsCharging == true)
+            {
+                x += ChargingGapDip * scale;
+                DrawBolt(dc, x, client.Height, scale);
+                x += BoltWidthDip * scale;
+            }
         }
-
 
         SelectObject(dc, previousFont);
     }

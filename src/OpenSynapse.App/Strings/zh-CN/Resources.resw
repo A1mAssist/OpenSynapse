@@ -2200,6 +2200,10 @@
   <data name="TaskbarStatusTitle.Text" xml:space="preserve"><value>任务栏状态条</value></data>
   <data name="TaskbarStatusDescription.Text" xml:space="preserve"><value>在任务栏显示已连接外设的电量。</value></data>
   <data name="TaskbarStatusToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>任务栏状态条</value></data>
+  <data name="TaskbarBatterySelectionTitle.Text" xml:space="preserve"><value>任务栏显示设备</value></data>
+  <data name="TaskbarBatterySelectionDescription.Text" xml:space="preserve"><value>最多选择 3 台设备；未选择时自动显示电量最低的设备。</value></data>
+  <data name="TaskbarBatteryDisconnected" xml:space="preserve"><value>未连接</value></data>
+  <data name="TaskbarBatteryCurrentPercent" xml:space="preserve"><value>{0}%</value></data>
   <data name="ShutdownLightingTitle.Text" xml:space="preserve"><value>关机时关闭外设灯光</value></data>
   <data name="ShutdownLightingDescription.Text" xml:space="preserve"><value>Windows 关机或注销前，向 OpenSynapse 支持灯效写入的 Razer 外设发送 Off；下次启动后按已保存的灯光配置恢复。</value></data>
   <data name="ShutdownLightingToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>关机时关闭外设灯光</value></data>

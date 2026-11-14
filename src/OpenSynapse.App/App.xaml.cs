@@ -236,7 +236,7 @@ public partial class App : Application
             GetChromaRestSnapshot,
             SetBladeIndicatorDisplayAvailableAsync,
             SetChromaSourceAllowedAsync, _bladeLightingController, SetTaskbarStatusEnabled,
-            message => _diagnosticLog.TryWrite("power-notification", message));
+            message => _diagnosticLog.TryWrite("power-notification", message), RefreshTaskbarStatus);
         RegisterMainWindow(window, viewModel);
         StartChromaHosts(viewModel);
         InitializeTray(window, viewModel);
@@ -562,6 +562,8 @@ public partial class App : Application
 
     private void SetTaskbarStatusEnabled(bool enabled) =>
         _taskbarStatusPresenter?.SetEnabled(enabled);
+
+    private void RefreshTaskbarStatus() => _taskbarStatusPresenter?.RefreshNow();
 
     private async Task DisposeHardwareForExitAsync(MainViewModel viewModel)
     {

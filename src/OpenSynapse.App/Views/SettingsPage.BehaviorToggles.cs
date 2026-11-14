@@ -115,6 +115,7 @@ public sealed partial class SettingsPage
             _behaviorUiReady = true;
             ViewModel.ReportApplicationError(AppStrings.FormatText("BehaviorSettingError", exception.Message));
         }
+        RefreshTaskbarBatteryChoices();
     }
 
     private void ShutdownLightingToggled(object sender, RoutedEventArgs e)

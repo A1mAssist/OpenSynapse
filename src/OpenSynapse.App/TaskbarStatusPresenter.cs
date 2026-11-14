@@ -12,13 +12,14 @@ internal sealed class TaskbarStatusPresenter : IDisposable
 {
     private static readonly TimeSpan BatteryReadInterval = TimeSpan.FromSeconds(10);
     private readonly MainViewModel _viewModel;
+    private readonly AppBehaviorSettings _settings;
     private readonly LocalDiagnosticLog _diagnosticLog;
     private readonly DispatcherQueue? _dispatcherQueue;
     private readonly DispatcherQueueTimer? _timer;
     private readonly Dictionary<string, int?> _batteryReadings = new(StringComparer.OrdinalIgnoreCase);
     private TaskbarStatusWindow? _statusWindow;
     private CancellationTokenSource? _batteryReadCancellation;
-    private string? _lastBatteryKey;
+    private string _lastBatterySummary = string.Empty;
     private DateTimeOffset _lastBatteryReadAt = DateTimeOffset.MinValue;
     private bool _batteryReadRequested = true;
     private bool _enabled;
@@ -30,6 +31,7 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         LocalDiagnosticLog diagnosticLog)
     {
         _viewModel = viewModel;
+        _settings = settings;
         _diagnosticLog = diagnosticLog;
         _viewModel.Devices.CollectionChanged += OnDevicesChanged;
         _viewModel.RazerHid.Devices.CollectionChanged += OnDevicesChanged;
@@ -67,6 +69,12 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         Refresh();
     }
 
+    public void RefreshNow()
+    {
+        _batteryReadRequested = true;
+        Refresh();
+    }
+
     public void Dispose()
     {
         if (_disposed) return;
@@ -94,16 +102,22 @@ internal sealed class TaskbarStatusPresenter : IDisposable
     private void Refresh()
     {
         if (!_enabled || _disposed) return;
-        var battery = CurrentBatteries()
+        var available = CurrentBatteries()
             .Where(item => item.Percent is not null)
-            .OrderBy(item => item.Percent)
-            .ThenBy(item => item.Name, StringComparer.CurrentCultureIgnoreCase)
-            .FirstOrDefault();
+            .Select(item => new TaskbarBatteryStatus(
+                item.Key,
+                item.Percent ?? 0,
+                null,
+                item.Glyph,
+                item.Name))
+            .ToArray();
+        var selected = TaskbarStatusPolicy.SelectBatteries(
+            available, _settings.TaskbarBatteryDisplay);
         RequestBatteryReadIfDue();
 
-        if (battery is null)
+        if (selected.Count == 0)
         {
-            _lastBatteryKey = null;
+            _lastBatterySummary = string.Empty;
             // Nothing to draw: keep the ten-second battery retry, not a one-second
             // UI tick for a window that is not there.
             SetTimerInterval(BatteryReadInterval);
@@ -111,21 +125,17 @@ internal sealed class TaskbarStatusPresenter : IDisposable
             return;
         }
 
-        if (!StringComparer.Ordinal.Equals(_lastBatteryKey, battery.Key))
+        var summary = string.Join(
+            ", ", selected.Select(item => $"{item.Name} {item.Percent}%"));
+        if (!StringComparer.Ordinal.Equals(_lastBatterySummary, summary))
         {
-            _lastBatteryKey = battery.Key;
-            _diagnosticLog.TryWrite(
-                "taskbar-status",
-                $"strip shows {battery.Name} {battery.Percent}%");
+            _lastBatterySummary = summary;
+            _diagnosticLog.TryWrite("taskbar-status", $"strip shows {summary}");
         }
 
         SetTimerInterval(TimeSpan.FromSeconds(1));
 
-        var snapshot = new TaskbarStatusSnapshot(
-            battery.Percent,
-            null,
-            battery.Glyph,
-            battery.Name);
+        var snapshot = new TaskbarStatusSnapshot(selected);
         if (!TaskbarStatusPolicy.ShouldShow(snapshot, enabled: true))
         {
             _statusWindow?.Clear();
