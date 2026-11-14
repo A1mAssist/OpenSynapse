@@ -348,11 +348,18 @@ public sealed partial class DevicesPage : UserControl
         {
             DispatcherQueue.TryEnqueue(() => SelectDevice("none"));
         }
-        if (propertyName == nameof(MainViewModel.ConnectedDevices) &&
-            !ViewModel.Hue.IsConfigured &&
-            HuePanel.Visibility == Visibility.Visible)
+        if (propertyName == nameof(MainViewModel.ConnectedDevices))
         {
-            DispatcherQueue.TryEnqueue(() => SelectDevice("none"));
+            // Hue is created lazily; read it on the UI thread so its brushes stay
+            // on the thread that owns the XAML objects.
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (!ViewModel.Hue.IsConfigured &&
+                    HuePanel.Visibility == Visibility.Visible)
+                {
+                    SelectDevice("none");
+                }
+            });
         }
         if (propertyName == nameof(RazerHidWorkspace.SelectedDevice) &&
             ViewModel.RazerHid.SelectedDevice is null &&
