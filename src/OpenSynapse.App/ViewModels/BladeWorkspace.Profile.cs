@@ -132,7 +132,14 @@ public sealed partial class BladeWorkspace
             applied++;
         }
 
-        if (profile.CpuPowerLimitWatts is int watts)
+        // Razer only applies the CPU watt override in Custom mode. Writing it from a
+        // preset mode would overwrite the EC's own power wall on every refresh.
+        var performanceMode = profile.PerformanceMode is byte rawPerformanceMode &&
+            Enum.IsDefined(typeof(BladePerformanceMode), rawPerformanceMode)
+                ? (BladePerformanceMode)rawPerformanceMode
+                : LastTelemetry?.BladePerformanceMode;
+        if (profile.CpuPowerLimitWatts is int watts &&
+            performanceMode == BladePerformanceMode.Custom)
         {
             var report = watts <= 0
                 ? await CpuPowerLimitBroker.RestoreAsync(

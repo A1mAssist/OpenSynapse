@@ -1979,7 +1979,7 @@
   <data name="CpuCurvePawnIoMissing" xml:space="preserve"><value>PawnIO is required for the Ryzen SMU path. Open its download page from the CPU power wall card.</value></data>
   <data name="CpuCurveModuleMissing" xml:space="preserve"><value>RyzenSMU.bin is missing; reinstall the app.</value></data>
   <data name="CpuCurveApplyFailed" xml:space="preserve"><value>The write failed; see the message above.</value></data>
-  <data name="CpuPowerLimitDescription" xml:space="preserve"><value>Cap the CPU package power wall (PL1/PL2).</value></data>
+  <data name="CpuPowerLimitDescription" xml:space="preserve"><value>Cap the CPU package power wall (PL1/PL2). Only applies in Custom performance mode.</value></data>
   <data name="CpuPowerLimitValue" xml:space="preserve"><value>PL1 {0:0} W · PL2 {1:0} W</value></data>
   <data name="CpuPowerLimitAuto" xml:space="preserve"><value>Automatic (firmware)</value></data>
   <data name="CpuPowerLimitPawnIoMissing" xml:space="preserve"><value>PawnIO is not installed. Choose Download PawnIO, install it, then restart OpenSynapse.</value></data>
