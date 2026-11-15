@@ -106,6 +106,14 @@ public sealed class RazerHidDeviceDefinition
             DefaultLedZone, CommandSequences, CommandSizes, SupportsIndependentDpi, UsesP1DpiScale,
             UsesLegacyInfo, UsesDynamicTransactions, WaveAxis);
 
+    internal RazerHidDeviceDefinition WithCapabilitiesAndTransactions(
+        IReadOnlySet<string> capabilities,
+        IReadOnlyDictionary<string, byte> transactions) =>
+        new(ProductId, DisplayName, Category, capabilities, MaximumDpi, PollingRates,
+            MatrixDimensions, DeviceWait, transactions, BuilderArgumentPrefixes, DefaultStorage,
+            DefaultLedZone, CommandSequences, CommandSizes, SupportsIndependentDpi, UsesP1DpiScale,
+            UsesLegacyInfo, UsesDynamicTransactions, WaveAxis);
+
     internal byte GetRequiredFixedArgument(string builderName, int argumentIndex)
     {
         if (argumentIndex < 0)
@@ -473,6 +481,14 @@ public sealed partial class RazerHidDeviceCatalog
                     continue;
                 }
 
+                // 00E0 carries the Orochi V2 battery-curve pair in its middleware group, but the
+                // 00DB definition used for the rest of the protocol does not. Merge the capability
+                // declaration and the two reports from the 0094 Orochi V2 entry before the whitelist.
+                if (entry.Product == 0x00E0 && devices.TryGetValue(0x0094, out var orochiV2))
+                {
+                    sibling = MergeBatteryCurve(sibling, orochiV2);
+                }
+
                 devices.Add(entry.Product, CreateMiddlewareMouseDefinition(
                     sibling, entry.Product, entry.Name, entry.MaxDpi, entry.Rates));
                 MappingProductIds.Add(entry.Product);
@@ -526,6 +542,28 @@ public sealed partial class RazerHidDeviceCatalog
                     device.DefaultLedZone,
                     device.CommandSequences,
                     commandSizes);
+            }
+
+            RazerHidDeviceDefinition MergeBatteryCurve(
+                RazerHidDeviceDefinition target, RazerHidDeviceDefinition source)
+            {
+                if (!source.Transactions.TryGetValue("razer_chroma_misc_get_battery_discharge_curve", out var get) ||
+                    !source.Transactions.TryGetValue("razer_chroma_misc_set_battery_discharge_curve", out var set))
+                {
+                    return target;
+                }
+
+                var capabilities = new HashSet<string>(target.SourceCapabilities, StringComparer.Ordinal)
+                {
+                    "get_battery_discharge_curve",
+                    "set_battery_discharge_curve",
+                };
+                var transactions = new Dictionary<string, byte>(target.Transactions, StringComparer.Ordinal)
+                {
+                    ["razer_chroma_misc_get_battery_discharge_curve"] = get,
+                    ["razer_chroma_misc_set_battery_discharge_curve"] = set,
+                };
+                return target.WithCapabilitiesAndTransactions(capabilities, transactions);
             }
         }
 

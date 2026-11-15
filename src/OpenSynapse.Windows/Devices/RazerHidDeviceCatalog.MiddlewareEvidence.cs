@@ -56,7 +56,8 @@ public sealed partial class RazerHidDeviceCatalog
         0x0063 or 0x0074 => new[] { "dpi", "poll" },
         0x0069 or 0x0075 or 0x0093 or 0x00E7 or 0x00E8 =>
             ["dpi", "dpi_stages", "poll", "idle", "low_battery"],
-        0x00DD or 0x00E0 or 0x00E5 or 0x00E6 or 0x00EF or 0x00F0 or 0xB005 or 0xB007 =>
+        0x00E0 => ["dpi", "dpi_stages", "poll", "idle", "low_battery", "battery_curve"],
+        0x00DD or 0x00E5 or 0x00E6 or 0x00EF or 0x00F0 or 0xB005 or 0xB007 =>
             ["dpi", "dpi_stages", "poll", "idle", "low_battery"],
         0x00E2 or 0x00E3 or 0x00EA or 0x00EB =>
             ["dpi", "dpi_stages", "poll", "idle", "low_battery",
@@ -94,6 +95,7 @@ public sealed partial class RazerHidDeviceCatalog
             value.Contains("polling_rate", StringComparison.Ordinal),
         "idle" => value.Contains("idle_time", StringComparison.Ordinal),
         "low_battery" => value.Contains("low_battery", StringComparison.Ordinal),
+        "battery_curve" => value.Contains("battery_discharge_curve", StringComparison.Ordinal),
         "scroll_mode" => value.Contains("scroll_mode", StringComparison.Ordinal),
         "scroll_acceleration" => value.Contains("scroll_acceleration", StringComparison.Ordinal),
         "scroll_smart_reel" => value.Contains("scroll_smart_reel", StringComparison.Ordinal),
