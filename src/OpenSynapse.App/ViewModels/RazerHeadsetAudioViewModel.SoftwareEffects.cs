@@ -19,9 +19,6 @@ public sealed partial class RazerHeadsetAudioViewModel
     /// <summary>Synapse blends the previous effect into the new one over ~1.5 s.</summary>
     private const double CrossfadeSeconds = 1.5;
 
-    /// <summary>Longest wait for the first Graphics Capture frame before Ambient fails.</summary>
-    private static readonly TimeSpan AmbientCaptureTimeout = TimeSpan.FromSeconds(3);
-
     private readonly DispatcherQueue? _dispatcher = DispatcherQueue.GetForCurrentThread();
     private StudioInputSampler? _softwareSampler;
     private RazerMakoXChromaService? _softwareService;
@@ -119,15 +116,33 @@ public sealed partial class RazerHeadsetAudioViewModel
                 parameters.Effect = StudioEffectKind.Solid;
                 break;
             case RazerChromaEffect.Breathing:
-                // 7000 ms: 0/25 black, 50 primary, 75 second colour, 100 black.
+                // Synapse's two palettes, taken from getEffectParams(): a single
+                // colour breathes in/out over 7 s, two colours alternate over 14 s
+                // and each peak is separated by a fully dark gap.
                 parameters.Effect = StudioEffectKind.Breathing;
-                parameters.DurationMs = 7_000;
-                parameters.ColorStops.Add(new StudioColorStop(0, StudioRgb.Black));
-                parameters.ColorStops.Add(new StudioColorStop(25, StudioRgb.Black));
-                parameters.ColorStops.Add(new StudioColorStop(50, primaryRgb));
-                parameters.ColorStops.Add(new StudioColorStop(
-                    75, secondaryRgb == primaryRgb ? primaryRgb : secondaryRgb));
-                parameters.ColorStops.Add(new StudioColorStop(100, StudioRgb.Black));
+                if (secondaryRgb == primaryRgb)
+                {
+                    parameters.DurationMs = 7_000;
+                    parameters.ColorStops.Add(new StudioColorStop(0, StudioRgb.Black));
+                    parameters.ColorStops.Add(new StudioColorStop(25, StudioRgb.Black));
+                    parameters.ColorStops.Add(new StudioColorStop(50, primaryRgb));
+                    parameters.ColorStops.Add(new StudioColorStop(75, primaryRgb));
+                    parameters.ColorStops.Add(new StudioColorStop(100, StudioRgb.Black));
+                }
+                else
+                {
+                    parameters.DurationMs = 14_000;
+                    parameters.ColorStops.Add(new StudioColorStop(0, StudioRgb.Black));
+                    parameters.ColorStops.Add(new StudioColorStop(12, StudioRgb.Black));
+                    parameters.ColorStops.Add(new StudioColorStop(25, primaryRgb));
+                    parameters.ColorStops.Add(new StudioColorStop(38, primaryRgb));
+                    parameters.ColorStops.Add(new StudioColorStop(50, StudioRgb.Black));
+                    parameters.ColorStops.Add(new StudioColorStop(62, StudioRgb.Black));
+                    parameters.ColorStops.Add(new StudioColorStop(75, secondaryRgb));
+                    parameters.ColorStops.Add(new StudioColorStop(88, secondaryRgb));
+                    parameters.ColorStops.Add(new StudioColorStop(100, StudioRgb.Black));
+                }
+
                 break;
             case RazerChromaEffect.Spectrum:
                 // 37.74 s rainbow palette from the engine's spectrum effect.
@@ -173,10 +188,6 @@ public sealed partial class RazerHeadsetAudioViewModel
                     MakoXWheelDirections[Math.Clamp(directionIndex, 0, MakoXWheelDirections.Length - 1)]
                         .Counterclockwise;
                 parameters.ColorStops.AddRange(SynapseSpectrumStops);
-                break;
-            case RazerChromaEffect.CustomFrame:
-                // Ambient Awareness: full-screen sample, blur 5.
-                parameters = StudioEffectCatalog.CreateDefault(StudioEffectKind.Ambient);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(
@@ -265,11 +276,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         await StopSoftwareEffectCoreAsync().ConfigureAwait(true);
 
         var parameters = CreateSoftwareEffectParameters(effect, primary, secondary, directionIndex);
-        // Fire and Starlight are pure functions of time; only Audio Meter and Ambient
-        // need live input, so those are the only effects that open capture.
-        var sampler = effect is RazerChromaEffect.AudioMeter or RazerChromaEffect.CustomFrame
-            ? new StudioInputSampler()
-            : null;
+        // Only Audio Meter needs live input; the other effects are functions of time.
+        var sampler = effect == RazerChromaEffect.AudioMeter ? new StudioInputSampler() : null;
         var service = new RazerMakoXChromaService(
             _connection.DevicePath, _diagnostic, keepOpen: true);
         try
@@ -278,22 +286,6 @@ public sealed partial class RazerHeadsetAudioViewModel
             if (sampler is not null)
             {
                 await sampler.StartAsync(cancellationToken).ConfigureAwait(true);
-                if (effect == RazerChromaEffect.CustomFrame)
-                {
-                    // Graphics Capture delivers the first frame asynchronously, so
-                    // wait for it instead of assuming one fixed delay is enough.
-                    var deadline = Stopwatch.GetTimestamp() +
-                        (long)(Stopwatch.Frequency * AmbientCaptureTimeout.TotalSeconds);
-                    while (!sampler.HasScreenFrame && Stopwatch.GetTimestamp() < deadline)
-                    {
-                        await Task.Delay(50, cancellationToken).ConfigureAwait(true);
-                    }
-
-                    if (!sampler.HasScreenFrame)
-                    {
-                        throw new InvalidOperationException("Screen capture is unavailable.");
-                    }
-                }
             }
 
             // Write the first frame here so a dead channel fails the click, not the pump.
@@ -504,6 +496,7 @@ public sealed partial class RazerHeadsetAudioViewModel
                     StudioEffectKind.Audio => RenderAudioMeterFrame(parameters, input.AudioLevel),
                     _ => RenderSoftwareEffectFrame(parameters, input, seconds),
                 };
+
                 if (crossfadeFrom is not null && seconds < CrossfadeSeconds)
                 {
                     var alpha = seconds / CrossfadeSeconds;

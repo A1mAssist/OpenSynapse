@@ -389,7 +389,7 @@ The `Billie`, `Valkyrie`, `OdessaT2Wireless`, `MabelT3C`, `Avnera`, `KrakenBase3
 | Razer Kraken V4 X Sensa HD Haptics | `1532:059F` | Audio page (`rzDevice40BillieT3H`, class 0x18); sidetone/haptics remain limited |
 | Razer Kraken X USB | `1532:0526` | Audio page |
 | Razer Marci | `1532:0F66` | Audio page |
-| Razer Mako X | `1532:05AD` | Audio page (`rzDeviceJolie`); firmware Off/Static/Breathing/Spectrum/Wave, Starlight/Fire/Audio Meter and Ambient as 25 fps frames, auto sleep |
+| Razer Mako X | `1532:05AD` | Audio page (`rzDeviceJolie`); Synapse-style quick effects (static, breathing, fire, spectrum, starlight, rotation, audio meter) as 25 fps frames, auto sleep |
 | Razer Nari | `1532:051C` | Audio page |
 | Razer Nari Essential | `1532:051E` | Audio page; THX installer |
 | Razer Nari Essential (Wired) | `1532:051F` | Audio page; the card stays visible and reports not-ready when its control channel fails |
@@ -409,13 +409,13 @@ The lighting channel is class `0x0F` on the same 64-byte report-id-7 feature rep
 | Spectrum | id `0x03` | no colors |
 | Wave | id `0x04` | flags 1-4 are left/right/up/down, rate 40 |
 | Custom frame | id `0x08` | select once, then `0x0F:0x03` writes `[0,0,0,0,count-1,R,G,B...]` |
-| Starlight, Fire, Audio Meter, Ambient | id `0x08` + frames | rendered by the app at 25 fps; Starlight follows the page's two colors, Fire uses the native 7x23 heat palette and Audio Meter the fixed green-yellow-red gradient |
+| Starlight, Fire, Audio Meter | id `0x08` + frames | rendered by the app at 25 fps; Starlight follows the page's two colors, Fire uses the native 7x23 heat palette and Audio Meter the fixed green-yellow-red gradient |
 
 `0x0F:0x80` (region list) and `0x0F:0x81` (effect id list) answer status `0x05` on this unit, so region and effect capabilities are not enumerable.
 
 The device page mirrors what Synapse 4 does on this unit: every effect is streamed as per-LED frames (about 24 fps, unchanged frames skipped), effects crossfade over 1.5 s, rotation is the measured 25-frame cycle played forward or backward, and the audio meter paints the whole strip one palette colour from green (quiet) through yellow to red (loud) and turns off below the noise floor.
 
-Ambient Awareness samples the internal display through Graphics Capture. When Windows reports no internal panel (desktops, clamshell laptops) it samples the primary monitor instead, and when Graphics Capture itself is denied it falls back to a 25 fps desktop copy that excludes layered windows.
+The device page does not offer the screen-sampled Ambient effect: Synapse exposes that through the Chroma app instead, and its wallpaper sync is not reproducible through the device channel.
 
 ## Speakers
 

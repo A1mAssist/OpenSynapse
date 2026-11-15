@@ -25,6 +25,35 @@ internal sealed class RazerValkyrieT3Transport : IRazerMxicHeadsetTransport
     public async Task SendAsync(byte[] report, CancellationToken cancellationToken) =>
         _ = await QueryAsync(report, [], cancellationToken).ConfigureAwait(false);
 
+    /// <summary>
+    /// Fire-and-forget feature write. The Joliet bundle sends per-LED frames with
+    /// <c>checkUSBTransferIn: false</c>; waiting for an ACK on every frame makes a
+    /// single missed reply stop the lighting pump.
+    /// </summary>
+    internal async Task SendOnlyAsync(byte[] report, CancellationToken cancellationToken)
+    {
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (report.Length != 64 || report[0] != 7)
+            {
+                throw new ArgumentException(
+                    "A Valkyrie T3 feature64/report7 request is required.", nameof(report));
+            }
+
+            var request = report.ToArray();
+            _transaction = (byte)((_transaction % 31) + 1);
+            request[2] = _transaction;
+            await RunNativeAsync(() => { _io.Send(request); return true; }, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
     public Task<byte?> SendAndReadStatusAsync(byte[] report, CancellationToken cancellationToken) =>
         Task.FromException<byte?>(new NotSupportedException(
             "Valkyrie T3 does not use the MXIC remote-mode handshake."));

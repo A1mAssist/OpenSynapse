@@ -125,8 +125,10 @@ internal sealed class RazerMakoXChromaService : IRazerHeadsetLightingService, IA
     internal Task SetFrameAsync(IReadOnlyList<byte> colors, CancellationToken cancellationToken = default)
     {
         var payload = CreateFramePayload(colors);
-        // A 25 fps effect pump would otherwise write one log line per frame.
-        return SendAsync(Create(0x03, payload), "set frame", cancellationToken, log: false);
+        // A 25 fps effect pump would otherwise write one log line per frame, and
+        // a missed ACK must not stop the pump, so frames are fire-and-forget.
+        return SendAsync(
+            Create(0x03, payload), "set frame", cancellationToken, log: false, waitForAck: false);
     }
 
     internal static byte[] CreateEffectPayload(
@@ -203,7 +205,8 @@ internal sealed class RazerMakoXChromaService : IRazerHeadsetLightingService, IA
         byte[] report,
         string label,
         CancellationToken cancellationToken,
-        bool log = true)
+        bool log = true,
+        bool waitForAck = true)
     {
         var transport = GetTransport();
         try
@@ -218,7 +221,14 @@ internal sealed class RazerMakoXChromaService : IRazerHeadsetLightingService, IA
                     $"mako-x lighting {label}: class=0x{report[7]:X2} id=0x{report[8]:X2} size=0x{report[6]:X2}{payload}");
             }
 
-            await transport.SendAsync(report, cancellationToken).ConfigureAwait(false);
+            if (waitForAck)
+            {
+                await transport.SendAsync(report, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await transport.SendOnlyAsync(report, cancellationToken).ConfigureAwait(false);
+            }
         }
         catch
         {
