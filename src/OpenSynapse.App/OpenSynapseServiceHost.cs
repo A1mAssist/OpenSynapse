@@ -101,6 +101,7 @@ internal static partial class OpenSynapseServiceHost
 
         private async Task RunAsync(CancellationToken cancellationToken)
         {
+            ProgramDataSecurity.EnsureProtected();
             var shouldStop = false;
             while (!cancellationToken.IsCancellationRequested)
             {
