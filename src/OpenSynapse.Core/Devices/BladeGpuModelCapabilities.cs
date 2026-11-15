@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using OpenSynapse.Core.Displays;
 
 namespace OpenSynapse.Core.Devices;
 
@@ -9,6 +10,15 @@ namespace OpenSynapse.Core.Devices;
 /// </summary>
 public static class BladeGpuModelCapabilities
 {
+    // 028C's official UI exposes Optimus and Dedicated GPU, but its firmware does
+    // not always answer the separate 0D:8A capability report. Its bundle still uses
+    // the same 0D:89/09/8A VGA Configure family as the Blade 16 (2023).
+    private static readonly FrozenDictionary<ushort, BladeDisplayMuxCapabilities> KnownDisplayMuxCapabilities =
+        new Dictionary<ushort, BladeDisplayMuxCapabilities>
+        {
+            [0x028C] = BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
+        }.ToFrozenDictionary();
+
     private static readonly FrozenSet<ushort> DedicatedGpuPnpSwitchProductIds =
         new ushort[]
         {
@@ -18,6 +28,11 @@ public static class BladeGpuModelCapabilities
 
     public static bool SupportsDedicatedGpuPnpSwitch(ushort productId) =>
         DedicatedGpuPnpSwitchProductIds.Contains(productId);
+
+    public static BladeDisplayMuxCapabilities KnownDisplayMuxCapabilitiesFor(ushort productId) =>
+        KnownDisplayMuxCapabilities.TryGetValue(productId, out var capabilities)
+            ? capabilities
+            : BladeDisplayMuxCapabilities.None;
 
     internal static IReadOnlyCollection<ushort> AdmittedProductIds =>
         DedicatedGpuPnpSwitchProductIds;
