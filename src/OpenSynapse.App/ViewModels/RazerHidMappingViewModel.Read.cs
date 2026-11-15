@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Lighting;
 using OpenSynapse.Core.Macros;
 using OpenSynapse.Core.Profiles;
@@ -128,7 +129,13 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 // Razer's UI keeps these ids in the product bundle when the firmware returns no button list.
                 var visual = await _assetService.GetAsync(_productId, _deviceKind, cancellationToken)
                     .ConfigureAwait(true);
-                var keyboardIds = visual.Keyboard?.ButtonIdsByKeyName.Values.Distinct().Order().ToArray();
+                var keyboardIds = visual.Keyboard is { } keyboard
+                    ? keyboard.ButtonIdsByKeyName.Values
+                        .Concat(RazerKeypadKeyCatalog.ExtraButtonIds(_productId))
+                        .Distinct()
+                        .Order()
+                        .ToArray()
+                    : null;
                 var mouseIds = visual.Mouse?.ButtonNames?.Keys.Order().ToArray();
                 ids = _deviceKind == RazerMappingDeviceKind.Keyboard ? keyboardIds ?? mouseIds ?? [] : mouseIds ?? keyboardIds ?? [];
             }
