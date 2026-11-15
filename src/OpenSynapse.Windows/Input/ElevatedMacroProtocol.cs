@@ -18,6 +18,7 @@ public static class ElevatedMacroProtocol
     public const string RemoveTaskArgument = "--remove-macro-agent-task";
     public const string TaskName = "OpenSynapseMacroAgent";
     public const string PipeName = "OpenSynapse.MacroAgent.v1";
+    public const string HostInstanceName = @"Local\OpenSynapse";
     public const int Version = 1;
     public const int MaximumMessageLength = 8192;
 }

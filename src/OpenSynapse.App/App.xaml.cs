@@ -87,7 +87,9 @@ public partial class App : Application
         var isElevated = ProcessIntegrityLevel.IsElevated(ProcessIntegrityLevel.Current());
         // An elevated launch must replace the tray instance; otherwise it exits before device discovery.
         // UI automation uses a separate mutex so it never replaces the user tray instance.
-        var instanceName = Environment.GetEnvironmentVariable("OPENSSYNAPSE_UI_TEST_INSTANCE") is { Length: > 0 } testInstance ? $@"Local\OpenSynapse.QA.{testInstance}" : @"Local\OpenSynapse";
+        var instanceName = Environment.GetEnvironmentVariable("OPENSSYNAPSE_UI_TEST_INSTANCE") is { Length: > 0 } testInstance
+            ? $@"Local\OpenSynapse.QA.{testInstance}"
+            : ElevatedMacroProtocol.HostInstanceName;
         var replaceExisting = isElevated && !silentLaunch &&
             !SingleInstanceGuard.IsExistingElevated(instanceName);
         bool acquired;
