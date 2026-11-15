@@ -2453,7 +2453,7 @@
   <data name="MacroRecording" xml:space="preserve"><value>Recording actions. Select Stop recording to finish.</value></data>
   <data name="MacroCapturePrompt" xml:space="preserve"><value>Press the key or mouse side button to bind (Side 1 = Mouse 4, Side 2 = Mouse 5).</value></data>
   <data name="MacroCaptureCanceled" xml:space="preserve"><value>Trigger capture canceled.</value></data>
-  <data name="MacroCaptureDeviceHint" xml:space="preserve"><value>No key was captured. For DPI, Profile, Sniper and other special keys, bind the macro from the device mapping page; if the firmware already maps the key to a normal key, this capture cannot recover the physical key.</value></data>
+  <data name="MacroCaptureDeviceHint" xml:space="preserve"><value>No key was captured. For DPI, Profile, Sniper and other special keys, use Capture device button in the trigger dropdown; if the firmware already maps the key to a normal key, this capture cannot recover the physical key.</value></data>
   <data name="MacroTriggerCaptured" xml:space="preserve"><value>Trigger set to {0}.</value></data>
   <data name="MacroEmpty" xml:space="preserve"><value>This macro has no actions.</value></data>
   <data name="MacroPlaying" xml:space="preserve"><value>Playing macro.</value></data>
@@ -2511,7 +2511,7 @@
   <data name="MacroKeyBindsTitle.Text" xml:space="preserve"><value>Trigger key</value></data>
   <data name="MacroTriggerSwitchHint.Text" xml:space="preserve"><value>The switch controls this trigger only; manual playback is unaffected.</value></data>
   <data name="MacroKeyBindsNoMacro.Text" xml:space="preserve"><value>Select a macro to view its trigger key.</value></data>
-  <data name="MacroTriggerUnsetHint.Text" xml:space="preserve"><value>No trigger yet. Use + to bind one. The key page shows the same key as "Macro: name"; changing that action clears this trigger.</value></data>
+  <data name="MacroTriggerUnsetHint.Text" xml:space="preserve"><value>No trigger yet. Use the trigger button above to bind one. The key page shows the same key as "Macro: name"; changing that action clears this trigger.</value></data>
   <data name="MacroProperties.Text" xml:space="preserve"><value>Properties</value></data>
   <data name="MacroStepProperties.Text" xml:space="preserve"><value>Action</value></data>
   <data name="MacroRecordMenu.Text" xml:space="preserve"><value>Record</value></data>
@@ -2591,7 +2591,7 @@
   <data name="MacroTextDialogTitle" xml:space="preserve"><value>Insert text</value></data>
   <data name="MacroTriggerCleared" xml:space="preserve"><value>Trigger cleared.</value></data>
   <data name="MacroTriggerClearedRestoreAssignment" xml:space="preserve"><value>Trigger cleared. The device action for this key is still off; set it again on the device mapping page.</value></data>
-  <data name="MacroTriggerConflict" xml:space="preserve"><value>The trigger conflicts with "{0}".</value></data>
+  <data name="MacroTriggerConflict" xml:space="preserve"><value>The trigger conflicts with "{0}". Clear that macro's trigger first, or choose another key.</value></data>
   <data name="MacroTriggerMacroMissing" xml:space="preserve"><value>That macro no longer exists.</value></data>
   <data name="MacroEditBusy" xml:space="preserve"><value>The trigger cannot be changed while recording or counting down.</value></data>
   <data name="MacroMediaMail" xml:space="preserve"><value>Mail</value></data>
@@ -2605,8 +2605,6 @@
   <data name="MacroRenameNamePlaceholder" xml:space="preserve"><value>Macro name</value></data>
   <data name="MacroRenameSave" xml:space="preserve"><value>Save</value></data>
   <data name="MacroHint.Text" xml:space="preserve"><value>Macros work while OpenSynapse is running. The list switch controls only trigger keys; manual playback is unaffected. Press F9 to stop recording and save; set playback shortcuts in the macro editor. Hold HyperShift while pressing the target key to bind the trigger to the HyperShift layer (the device must report HyperShift).</value></data>
-  <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Bind trigger key</value></data>
-  <data name="MacroMainCaptureButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Bind trigger key</value></data>
   <data name="MacroKeyPickerKeyboard.Text" xml:space="preserve"><value>Keyboard</value></data>
   <data name="MacroKeyPickerMouse.Text" xml:space="preserve"><value>Mouse</value></data>
   <data name="MacroMediaKeysTitle.Text" xml:space="preserve"><value>Media keys</value></data>
@@ -2651,7 +2649,16 @@
   <data name="MacroStopPlaybackButton.Content" xml:space="preserve"><value>Stop</value></data>
   <data name="MacroTriggerCaptureSingle.Text" xml:space="preserve"><value>Capture single key</value></data>
   <data name="MacroTriggerCaptureCombo.Text" xml:space="preserve"><value>Capture key combination</value></data>
-  <data name="MacroTriggerClear.Text" xml:space="preserve"><value>Clear binding</value></data>
+  <data name="MacroTriggerClear.Text" xml:space="preserve"><value>Clear trigger</value></data>
+  <data name="MacroTriggerClearIcon.[using:Microsoft.UI.Xaml.Automation]AutomationProperties/Name" xml:space="preserve"><value>Clear trigger</value></data>
+  <data name="MacroTriggerClearIcon.[using:Microsoft.UI.Xaml.Controls]ToolTipService/ToolTip" xml:space="preserve"><value>Clears only this macro's trigger without deleting the macro; the key's original action is restored when possible.</value></data>
+  <data name="MacroTriggerChipDisabled" xml:space="preserve"><value>Disabled · {0}</value></data>
+  <data name="MacroTriggerDeviceBinding" xml:space="preserve"><value>Turning off the device action and binding…</value></data>
+  <data name="MacroTriggerDeviceMissing" xml:space="preserve"><value>No Razer device matches this key. Make sure the device is online, or bind it from the device mapping page.</value></data>
+  <data name="MacroTriggerDeviceUnavailable" xml:space="preserve"><value>This special key needs device support. Bind it from the device mapping page.</value></data>
+  <data name="MacroTriggerDeviceRebindUnbindFirst" xml:space="preserve"><value>This macro is already bound to a different special key. Clear it with × first, then bind the new key.</value></data>
+  <data name="MacroTriggerRestoreFailed" xml:space="preserve"><value>The original key action could not be restored, so the rebind was cancelled. Restore it on the device mapping page.</value></data>
+  <data name="RazerMappingMacroTriggerMissing" xml:space="preserve"><value>This key is not in the current device's mapping table. Use a single-key binding or check the device mapping page.</value></data>
   <data name="MacroTriggerMode.Header" xml:space="preserve"><value>Trigger mode</value></data>
   <data name="MacroTriggerModePress.Content" xml:space="preserve"><value>Press</value></data>
   <data name="MacroTriggerModeToggle.Content" xml:space="preserve"><value>Toggle</value></data>

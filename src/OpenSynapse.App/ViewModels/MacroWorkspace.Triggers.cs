@@ -135,9 +135,19 @@ public sealed partial class MacroWorkspace
             return;
         }
 
+        if (RazerSoftwareMacroAssignmentPolicy.NeedsOff(trigger.Input))
+        {
+            await BindDeviceTriggerAsync(selected, trigger, cancellationToken).ConfigureAwait(true);
+            return;
+        }
+
         if (selected.Definition.SoftwareBinding is { } binding)
         {
-            await RestoreSoftwareBindingAsync(binding, cancellationToken);
+            if (!await RestoreSoftwareBindingAsync(binding, cancellationToken).ConfigureAwait(true))
+            {
+                StatusText = AppStrings.Text("MacroTriggerRestoreFailed");
+                return;
+            }
             selected.Definition.SoftwareBinding = null;
         }
 
@@ -149,6 +159,53 @@ public sealed partial class MacroWorkspace
         }
 
         RefreshMacroRuntime();
+        NotifyTriggerChanged();
+        StatusText = AppStrings.FormatText(
+            "MacroTriggerCaptured",
+            MacroRowViewModel.DescribeTrigger(trigger));
+    }
+
+    private async Task BindDeviceTriggerAsync(
+        MacroRowViewModel selected,
+        MacroTrigger trigger,
+        CancellationToken cancellationToken)
+    {
+        if (SoftwareTriggerBinder is null)
+        {
+            StatusText = AppStrings.Text("MacroTriggerDeviceUnavailable");
+            return;
+        }
+
+        var existing = selected.Definition.SoftwareBinding;
+        if (existing is not null &&
+            (selected.Definition.Trigger is not { } current ||
+             !current.Input.Matches(trigger.Input) ||
+             current.HyperShiftLayer != trigger.HyperShiftLayer))
+        {
+            StatusText = AppStrings.Text("MacroTriggerDeviceRebindUnbindFirst");
+            return;
+        }
+
+        StatusText = AppStrings.Text("MacroTriggerDeviceBinding");
+        var error = await SoftwareTriggerBinder(
+                selected.Id,
+                trigger.Input,
+                trigger.Mode,
+                selected.Definition.PlaybackMode,
+                selected.Definition.RepeatCount,
+                trigger.HyperShiftLayer,
+                existing,
+                cancellationToken)
+            .ConfigureAwait(true);
+        if (error is not null)
+        {
+            StatusText = error;
+            return;
+        }
+
+        RefreshMacroRuntime();
+        NotifySelectedMacroChanged();
+        NotifyTriggerChanged();
         StatusText = AppStrings.FormatText(
             "MacroTriggerCaptured",
             MacroRowViewModel.DescribeTrigger(trigger));
@@ -176,6 +233,7 @@ public sealed partial class MacroWorkspace
 
         RefreshMacroRuntime();
         NotifySelectedMacroChanged();
+        NotifyTriggerChanged();
         StatusText = AppStrings.Text(clearedInput is { } input &&
             RazerSoftwareMacroAssignmentPolicy.NeedsOff(input) && !restored
                 ? "MacroTriggerClearedRestoreAssignment"

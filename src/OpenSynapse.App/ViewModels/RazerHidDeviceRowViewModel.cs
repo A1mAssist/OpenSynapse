@@ -26,6 +26,7 @@ public sealed class RazerHidDeviceRowViewModel : INotifyPropertyChanged, IDevice
     public event PropertyChangedEventHandler? PropertyChanged;
     public Brush SelectorBackground { get; private set; } = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
     public RazerHidDeviceConnection Connection => _connection;
+    internal RazerHidDeviceViewModel? Detail => _detail;
     public DeviceCategory HardwareCategory => _connection.Definition.Category;
     public string Name => _connection.Definition.DisplayName;
     public string Category => _connection.Definition.Category switch

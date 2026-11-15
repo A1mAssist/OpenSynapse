@@ -227,7 +227,7 @@
         <StackPanel>
           <Grid Padding="12,10" ColumnDefinitions="*,Auto" ColumnSpacing="4">
             <TextBlock local:Localized.Uid="MacroKeyBindsTitle" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
-            <Button Grid.Column="1" x:Name="MacroTriggerCaptureButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" IsEnabled="{Binding Macros.CanEditMacro}">
+            <Button Grid.Column="1" x:Name="MacroTriggerCaptureButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" IsEnabled="{Binding Macros.CanEditMacro}" ToolTipService.ToolTip="{Binding Macros.MacroCaptureButtonText}">
               <FontIcon Glyph="&#xE710;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
               <Button.Flyout>
                 <MenuFlyout Opening="MacroTriggerFlyoutOpening">
@@ -236,13 +236,11 @@
                   <MenuFlyoutSubItem x:Name="MacroMouseSideTriggerMenu" local:Localized.Uid="MacroTriggerMouseSide" />
                   <MenuFlyoutSubItem x:Name="MacroNagaTriggerMenu" local:Localized.Uid="MacroTriggerNaga" />
                   <MenuFlyoutItem local:Localized.Uid="MacroTriggerDevice" Click="CaptureMacroDeviceTriggerClick" Style="{StaticResource MacroMenuItemStyle}" />
-                  <MenuFlyoutSeparator />
-                  <MenuFlyoutItem x:Name="MacroClearTriggerItem" local:Localized.Uid="MacroTriggerClear" Click="ClearMacroTriggerClick" Style="{StaticResource MacroMenuItemStyle}" />
                 </MenuFlyout>
               </Button.Flyout>
             </Button>
           </Grid>
-          <Grid Padding="12,0,12,10">
+          <Grid Padding="12,0,12,10" ColumnDefinitions="*,Auto" ColumnSpacing="8">
             <StackPanel Spacing="4" VerticalAlignment="Center">
               <StackPanel Orientation="Horizontal" Spacing="7">
                 <FontIcon Glyph="&#xE765;" FontFamily="{StaticResource IconFontFamily}" FontSize="13" Foreground="{StaticResource AccentBrush}" />
@@ -252,6 +250,16 @@
               <TextBlock local:Localized.Uid="MacroTriggerUnsetHint" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Visibility="{Binding Macros.MacroTriggerUnsetVisibility}" />
               <TextBlock local:Localized.Uid="MacroTriggerModeMovedHint" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Visibility="{Binding Macros.MacroTriggerBoundVisibility}" />
             </StackPanel>
+            <Button Grid.Column="1"
+                    local:Localized.Uid="MacroTriggerClearIcon"
+                    Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0"
+                    Style="{StaticResource IconButtonStyle}"
+                    Click="ClearMacroTriggerClick"
+                    IsEnabled="{Binding Macros.CanEditMacro}"
+                    Visibility="{Binding Macros.MacroTriggerBoundVisibility}"
+                    VerticalAlignment="Center">
+              <FontIcon Glyph="&#xE711;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
+            </Button>
           </Grid>
         </StackPanel>
       </Border>

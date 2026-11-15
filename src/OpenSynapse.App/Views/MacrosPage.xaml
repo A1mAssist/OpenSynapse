@@ -44,6 +44,7 @@
                                     <MenuFlyoutItem local:Localized.Uid="MacroRowCopyItem" Tag="{x:Bind}" Click="CopyMacroRowClick" Style="{StaticResource MacroMenuItemStyle}" />
                                     <MenuFlyoutItem local:Localized.Uid="MacroRowRenameItem" Tag="{x:Bind}" Click="RenameMacroRowClick" Style="{StaticResource MacroMenuItemStyle}" />
                                     <MenuFlyoutItem local:Localized.Uid="MacroRowExportItem" Tag="{x:Bind}" Click="ExportMacroRowClick" Style="{StaticResource MacroMenuItemStyle}" />
+                                    <MenuFlyoutItem local:Localized.Uid="MacroTriggerClear" Tag="{x:Bind}" Click="ClearMacroRowTriggerClick" IsEnabled="{x:Bind HasTrigger, Mode=OneWay}" Style="{StaticResource MacroMenuItemStyle}" />
                                     <MenuFlyoutSeparator />
                                     <MenuFlyoutItem local:Localized.Uid="MacroRowDeleteItem" Tag="{x:Bind}" Click="DeleteMacroRowClick" Style="{StaticResource MacroMenuItemStyle}" />
                                   </MenuFlyout>
@@ -67,14 +68,41 @@
                           <TextBlock Text="{Binding Macros.SelectedMacro.StepsText}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
                         </StackPanel>
                         <TextBlock local:Localized.Uid="MacroSummaryNoMacro" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" Visibility="{Binding Macros.MacroNoSelectionVisibility}" />
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Visibility="{Binding Macros.MacroEditorVisibility}">
-                          <StackPanel Spacing="3">
-                            <TextBlock local:Localized.Uid="MacroKeyBindsTitle" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Text="{Binding Macros.SelectedMacro.TriggerText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                            <TextBlock local:Localized.Uid="MacroTriggerSwitchHint" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Visibility="{Binding Macros.MacroTriggerBoundVisibility}" />
-                          </StackPanel>
-                          <Button Grid.Column="1" local:Localized.Uid="MacroMainCaptureButton" Width="30" Height="30" MinWidth="30" MinHeight="30" Padding="0" Style="{StaticResource IconButtonStyle}" Click="CaptureMacroTriggerClick" IsEnabled="{Binding Macros.CanEditMacro}"><FontIcon Glyph="&#xE710;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" /></Button>
-                        </Grid>
+                        <StackPanel Spacing="3" Visibility="{Binding Macros.MacroEditorVisibility}">
+                          <TextBlock local:Localized.Uid="MacroKeyBindsTitle" Style="{StaticResource MetricLabelStyle}" />
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                            <SplitButton AutomationProperties.Name="{Binding Macros.MacroCaptureButtonText}"
+                                         ToolTipService.ToolTip="{Binding Macros.MacroCaptureButtonText}"
+                                         HorizontalAlignment="Stretch"
+                                         HorizontalContentAlignment="Left"
+                                         Click="CaptureMacroTriggerSplitClick"
+                                         IsEnabled="{Binding Macros.CanEditMacro}">
+                              <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon Glyph="&#xE765;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Macros.SelectedMacro.TriggerChipText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                              </StackPanel>
+                              <SplitButton.Flyout>
+                                <MenuFlyout Opening="MacroTriggerFlyoutOpening">
+                                  <MenuFlyoutItem local:Localized.Uid="MacroTriggerCaptureSingle" Click="CaptureMacroTriggerClick" Style="{StaticResource MacroMenuItemStyle}" />
+                                  <MenuFlyoutItem local:Localized.Uid="MacroTriggerCaptureCombo" Click="CaptureMacroTriggerComboClick" Style="{StaticResource MacroMenuItemStyle}" />
+                                  <MenuFlyoutSubItem x:Name="MacroMouseSideTriggerMenu" local:Localized.Uid="MacroTriggerMouseSide" />
+                                  <MenuFlyoutSubItem x:Name="MacroNagaTriggerMenu" local:Localized.Uid="MacroTriggerNaga" />
+                                  <MenuFlyoutItem local:Localized.Uid="MacroTriggerDevice" Click="CaptureMacroDeviceTriggerClick" Style="{StaticResource MacroMenuItemStyle}" />
+                                </MenuFlyout>
+                              </SplitButton.Flyout>
+                            </SplitButton>
+                            <Button Grid.Column="1"
+                                    local:Localized.Uid="MacroTriggerClearIcon"
+                                    Width="30" Height="30" MinWidth="30" MinHeight="30" Padding="0"
+                                    Style="{StaticResource IconButtonStyle}"
+                                    Click="ClearMacroTriggerClick"
+                                    IsEnabled="{Binding Macros.CanEditMacro}"
+                                    Visibility="{Binding Macros.MacroTriggerBoundVisibility}">
+                              <FontIcon Glyph="&#xE711;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
+                            </Button>
+                          </Grid>
+                          <TextBlock local:Localized.Uid="MacroTriggerSwitchHint" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Visibility="{Binding Macros.MacroTriggerBoundVisibility}" />
+                        </StackPanel>
                         <TextBlock Text="{Binding Macros.MacroExecutionSummary}" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Visibility="{Binding Macros.MacroEditorVisibility}" />
                         <Button x:Name="MacroOpenEditorButton" local:Localized.Uid="MacroOpenEditorButton" Click="OpenMacroEditorWindowClick" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Left" IsEnabled="{Binding Macros.CanEditMacro}" />
                       </StackPanel>

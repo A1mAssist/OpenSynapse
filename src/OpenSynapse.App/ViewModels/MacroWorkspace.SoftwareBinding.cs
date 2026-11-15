@@ -15,8 +15,7 @@ public sealed partial class MacroWorkspace
 
         try
         {
-            await SoftwareBindingRestorer(binding, cancellationToken).ConfigureAwait(true);
-            return true;
+            return await SoftwareBindingRestorer(binding, cancellationToken).ConfigureAwait(true);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

@@ -222,6 +222,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             SetDeviceOperationError,
             DispatcherQueue.GetForCurrentThread());
         Macros.SoftwareBindingRestorer = RazerHid.RestoreSoftwareMacroBindingAsync;
+        Macros.SoftwareTriggerBinder = RazerHid.BindSoftwareMacroTriggerAsync;
+        Macros.TriggerChanged += (_, _) => RazerHid.InvalidateMappings();
         Macros.SetUnhandledRazerKeyHandler(
             input => _ = RazerHid.HandleUnhandledRazerKeyAsync(input));
         Macros.MacrosChanged += () => _ = RazerHid.SyncPrivateKeyDriverModeAsync();
