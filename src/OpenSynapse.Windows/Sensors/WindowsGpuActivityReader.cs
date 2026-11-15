@@ -71,25 +71,26 @@ internal sealed partial class WindowsGpuActivityReader : IDisposable
         }
     }
 
-    internal (uint VendorId, double? TemperatureCelsius)? ReadSelectedTemperature()
-    {
-        try
-        {
-            var selected = SelectDisplayGpu(Read());
-            return selected is null
-                ? null
-                : (selected.VendorId, selected.TemperatureCelsius);
-        }
-        catch (Exception exception) when (
-            exception is InvalidOperationException or UnauthorizedAccessException or
-            PlatformNotSupportedException or ExternalException)
-        {
-            return null;
-        }
-    }
-
     internal static bool IsNvidiaActive(IReadOnlyList<WindowsGpuSample> samples) =>
         samples.Any(sample => sample.VendorId == NvidiaVendorId && sample.ExternalUsagePercent >= 0.1);
+
+    /// <summary>
+    /// The fan curve must follow the heat source, not the adapter that happens to drive
+    /// the display: hybrid laptops usually run the desktop on the iGPU.
+    /// </summary>
+    internal static double? HottestTemperature(IReadOnlyList<WindowsGpuSample> samples)
+    {
+        double? hottest = null;
+        foreach (var sample in samples)
+        {
+            if (sample.TemperatureCelsius is double temperature &&
+                (hottest is null || temperature > hottest))
+            {
+                hottest = temperature;
+            }
+        }
+        return hottest;
+    }
 
     internal static WindowsGpuSample? SelectNvidia(IReadOnlyList<WindowsGpuSample> samples) =>
         samples

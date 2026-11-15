@@ -353,15 +353,20 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
             failure = exception;
         }
 
-        if (takeoverAttempted)
+        // A failure before the first write still has to release a stored manual target:
+        // the user asked for the curve, not for the fixed speed that was there before.
+        if (takeoverAttempted || failure is not null)
         {
             try
             {
                 await _gate.WaitAsync().ConfigureAwait(false);
                 try
                 {
-                    if (original.Mode == BladeFanMode.Automatic)
-                        await _setFixed(devices, original.Mode, null, null, CancellationToken.None).ConfigureAwait(false);
+                    // A failed curve must hand the fans back to firmware control. Restoring
+                    // the previous manual target would leave them pinned at the last fixed
+                    // speed with no curve actually running.
+                    if (failure is not null || original.Mode == BladeFanMode.Automatic)
+                        await _setFixed(devices, BladeFanMode.Automatic, null, null, CancellationToken.None).ConfigureAwait(false);
                     else
                         await _set(devices, original.Mode, original.CpuTargetRpm, original.GpuTargetRpm,
                             CancellationToken.None).ConfigureAwait(false);

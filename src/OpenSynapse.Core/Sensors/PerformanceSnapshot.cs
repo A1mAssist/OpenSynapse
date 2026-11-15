@@ -20,4 +20,5 @@ public sealed record PerformanceSnapshot(
     DateTimeOffset CapturedAt,
     string? ErrorMessage = null,
     string GpuMemoryLabel = "GPU memory",
-    int? MemoryClockMegahertz = null);
+    int? MemoryClockMegahertz = null,
+    double? HottestGpuTemperatureCelsius = null);

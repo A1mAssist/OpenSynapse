@@ -68,6 +68,7 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
         var gpuName = nvidia?.Name ?? selected?.Name ?? "GPU";
         var gpuUsage = nvidia?.UsagePercent ?? selected?.UsagePercent;
         var gpuTemperature = nvidia?.TemperatureCelsius ?? amd.TemperatureCelsius ?? intel.TemperatureCelsius;
+        var hottestGpuTemperature = WindowsGpuActivityReader.HottestTemperature(windowsGpus);
         if (gpuTemperature is null)
         {
             gpuTemperature = _cpuHardware.ReadGpuTemperatureCelsius(VendorHint(selected?.VendorId));
@@ -97,7 +98,8 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
                     ? "NVIDIA is active, but detailed temperature, power, and frequency data are temporarily unavailable."
                     : null,
             selected?.IsIntegrated == true ? "Shared memory" : "Dedicated memory",
-            memoryClock);
+            memoryClock,
+            hottestGpuTemperature);
     }
 
     public async ValueTask<(double? CpuTemperatureCelsius, double? GpuTemperatureCelsius)> SampleTemperaturesAsync(
@@ -113,7 +115,8 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
             cpu = await TryRemoteCpuTemperatureAsync(cancellationToken)
                 .ConfigureAwait(false) ?? cpu;
         }
-        var selected = includeGpu ? _gpuActivity.ReadSelectedTemperature() : null;
+        var samples = includeGpu ? _gpuActivity.Read() : [];
+        var selected = samples.Count == 0 ? null : WindowsGpuActivityReader.SelectDisplayGpu(samples);
         var gpu = selected?.VendorId == 0x1002
             ? _amdGpu.Read().TemperatureCelsius ?? selected?.TemperatureCelsius
             : selected?.VendorId == 0x8086
@@ -126,6 +129,12 @@ public sealed class WindowsPerformanceMonitor : IPerformanceMonitor, IDisposable
         if (includeGpu && gpu is null)
         {
             gpu = _cpuHardware.ReadGpuTemperatureCelsius(VendorHint(selected?.VendorId));
+        }
+        var hottest = WindowsGpuActivityReader.HottestTemperature(samples);
+        if (hottest is double hottestTemperature &&
+            (gpu is not double current || hottestTemperature > current))
+        {
+            gpu = hottestTemperature;
         }
         return (cpu, gpu);
     }
