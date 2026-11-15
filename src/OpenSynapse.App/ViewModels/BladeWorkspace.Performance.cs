@@ -116,9 +116,11 @@ public sealed partial class BladeWorkspace
             var actual = await _deviceTelemetryReader.SetBladePerformanceModeAsync(
                 ActiveDescriptors, requested, cancellationToken, _bladeCoolingPadConnected);
             SetPerformanceMode(actual);
-            await ReapplyCustomPowerLevelsAsync(cancellationToken);
             await _fan().ReapplyAfterPerformanceModeChangeAsync(cancellationToken);
             var clearedFan = ClearFixedFanWhenLeavingCustom(actual, target);
+            // The EC applies the mode's own levels when the fan write touches the mode
+            // byte, so the profile's Custom levels must be the last write of the switch.
+            await ReapplyCustomPowerLevelsAsync(cancellationToken);
             try
             {
                 await BladePerformanceProfileEdit.SaveModeAsync(target, (byte)actual, SaveProfileAsync,
@@ -404,9 +406,9 @@ public sealed partial class BladeWorkspace
                 cancellationToken,
                 _bladeCoolingPadConnected);
             SetPerformanceMode(actual);
-            await ReapplyCustomPowerLevelsAsync(cancellationToken);
             await _fan().ReapplyAfterPerformanceModeChangeAsync(cancellationToken);
             var clearedFan = ClearFixedFanWhenLeavingCustom(actual, target);
+            await ReapplyCustomPowerLevelsAsync(cancellationToken);
             try
             {
                 await BladePerformanceProfileEdit.SaveModeAsync(target, (byte)actual, SaveProfileAsync,
