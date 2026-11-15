@@ -254,10 +254,7 @@ public sealed partial class DiagnosticsWorkspace
             "Mouse DPI stages" => ("Text_6D7EF7B5", viperName),
             "Mouse low-battery threshold" => ("Text_B98036FA", viperName),
             "Mouse link" => ("DiagnosticMouseLink", viperName),
-            _ => ("Text_D0003708",
-                rawCapability.StartsWith("Mouse ", StringComparison.OrdinalIgnoreCase)
-                    ? viperName
-                    : bladeName),
+            _ => ("Text_D0003708", rawCapability.StartsWith("Mouse ", StringComparison.OrdinalIgnoreCase) ? viperName : bladeName),
         };
         return (AppStrings.Text(mapping.Item1), mapping.Item2);
     }
