@@ -282,15 +282,22 @@ internal static partial class RazerFilterInfBinder
         IReadOnlyList<ushort> productIds,
         RegistryKey? enumRoot = null,
         IReadOnlySet<ushort>? presentProductIds = null,
-        IReadOnlySet<(ushort ProductId, int InterfaceNumber)>? coveredInterfaces = null) =>
-        InspectAttachment(productIds, enumRoot, presentProductIds, coveredInterfaces).IsAttached;
+        IReadOnlySet<(ushort ProductId, int InterfaceNumber)>? coveredInterfaces = null,
+        IReadOnlySet<string>? presentInstanceIds = null) =>
+        InspectAttachment(
+            productIds,
+            enumRoot,
+            presentProductIds,
+            coveredInterfaces,
+            presentInstanceIds: presentInstanceIds).IsAttached;
 
     internal static RazerFilterAttachmentState InspectAttachment(
         IReadOnlyList<ushort> productIds,
         RegistryKey? enumRoot = null,
         IReadOnlySet<ushort>? presentProductIds = null,
         IReadOnlySet<(ushort ProductId, int InterfaceNumber)>? coveredInterfaces = null,
-        RegistryKey? usbEnumRoot = null)
+        RegistryKey? usbEnumRoot = null,
+        IReadOnlySet<string>? presentInstanceIds = null)
     {
         ArgumentNullException.ThrowIfNull(productIds);
         var ownsRoot = enumRoot is null;
@@ -323,9 +330,10 @@ internal static partial class RazerFilterInfBinder
 
                 foreach (var (deviceName, instanceName) in InstanceNames(root, productId))
                 {
-                    if (coveredInterfaces is not null &&
-                        (!TryGetInterfaceNumber(deviceName, out var interfaceNumber) ||
-                         !coveredInterfaces.Contains((productId, interfaceNumber))))
+                    if (!IsPresentInstance(presentInstanceIds, deviceName, instanceName) ||
+                        (coveredInterfaces is not null &&
+                         (!TryGetInterfaceNumber(deviceName, out var interfaceNumber) ||
+                          !coveredInterfaces.Contains((productId, interfaceNumber)))))
                     {
                         continue;
                     }
@@ -369,150 +377,6 @@ internal static partial class RazerFilterInfBinder
             anyAttached,
             keyboardInstances,
             attachedKeyboardInstances);
-    }
-
-    internal static IReadOnlyList<string> FindInstances(
-        IReadOnlyList<ushort> productIds,
-        RegistryKey? enumRoot = null,
-        IReadOnlySet<ushort>? presentProductIds = null)
-    {
-        ArgumentNullException.ThrowIfNull(productIds);
-        var ownsRoot = enumRoot is null;
-        var root = enumRoot ?? Registry.LocalMachine.OpenSubKey(HidEnumPath);
-        if (root is null)
-        {
-            return [];
-        }
-
-        try
-        {
-            var instances = new List<string>();
-            foreach (var productId in productIds)
-            {
-                if (presentProductIds is not null && !presentProductIds.Contains(productId))
-                {
-                    continue;
-                }
-
-                foreach (var (deviceName, instanceName) in InstanceNames(root, productId))
-                {
-                    instances.Add($@"HID\{deviceName}\{instanceName}");
-                }
-            }
-
-            return instances;
-        }
-        finally
-        {
-            if (ownsRoot)
-            {
-                root.Dispose();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Keyboard collections that are present but still lack the RzDev filter. The
-    /// count alone does not say which collection needs the repair.
-    /// </summary>
-    internal static IReadOnlyList<string> FindUnfilteredKeyboardInstances(
-        IReadOnlyList<ushort> productIds,
-        RegistryKey? enumRoot = null,
-        IReadOnlySet<ushort>? presentProductIds = null,
-        IReadOnlySet<(ushort ProductId, int InterfaceNumber)>? coveredInterfaces = null,
-        RegistryKey? usbEnumRoot = null)
-    {
-        ArgumentNullException.ThrowIfNull(productIds);
-        var ownsRoot = enumRoot is null;
-        var root = enumRoot ?? Registry.LocalMachine.OpenSubKey(HidEnumPath);
-        if (root is null)
-        {
-            return [];
-        }
-
-        var usbRoot = usbEnumRoot;
-        var ownsUsbRoot = false;
-        if (usbRoot is null && enumRoot is null)
-        {
-            usbRoot = Registry.LocalMachine.OpenSubKey(UsbEnumPath);
-            ownsUsbRoot = usbRoot is not null;
-        }
-
-        try
-        {
-            var instances = new List<string>();
-            var filters = productIds.Select(static id => $"RzDev_{id:X4}").ToArray();
-            foreach (var productId in productIds)
-            {
-                if (presentProductIds is not null && !presentProductIds.Contains(productId))
-                {
-                    continue;
-                }
-
-                foreach (var (deviceName, instanceName) in InstanceNames(root, productId))
-                {
-                    if (coveredInterfaces is not null &&
-                        (!TryGetInterfaceNumber(deviceName, out var interfaceNumber) ||
-                         !coveredInterfaces.Contains((productId, interfaceNumber))))
-                    {
-                        continue;
-                    }
-
-                    using var instance = root.OpenSubKey($@"{deviceName}\{instanceName}");
-                    if (instance is null || !IsKeyboardInstance(instance) ||
-                        filters.Any(filter => HasFilter(instance, filter) ||
-                            (usbRoot is not null && HasLowerFilterOnParent(deviceName, filter, usbRoot))))
-                    {
-                        continue;
-                    }
-
-                    instances.Add($@"HID\{deviceName}\{instanceName}");
-                }
-            }
-
-            return instances;
-        }
-        finally
-        {
-            if (ownsRoot)
-            {
-                root.Dispose();
-            }
-            if (ownsUsbRoot)
-            {
-                usbRoot!.Dispose();
-            }
-        }
-    }
-
-    private static IEnumerable<(string DeviceName, string InstanceName)> InstanceNames(
-        RegistryKey root,
-        ushort productId)
-    {
-        var marker = $"VID_1532&PID_{productId:X4}&MI_";
-        foreach (var deviceName in root.GetSubKeyNames())
-        {
-            if (!deviceName.Contains(marker, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            string[] instances;
-            using (var device = root.OpenSubKey(deviceName))
-            {
-                if (device is null)
-                {
-                    continue;
-                }
-
-                instances = device.GetSubKeyNames();
-            }
-
-            foreach (var instanceName in instances)
-            {
-                yield return (deviceName, instanceName);
-            }
-        }
     }
 
     private const string KeyboardClassGuid =
