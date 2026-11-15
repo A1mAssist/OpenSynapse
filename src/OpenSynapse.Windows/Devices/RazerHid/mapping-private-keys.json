@@ -1316,6 +1316,14 @@
       "0E": {
         "code": 80,
         "label": "CycleUpProfile"
+      },
+      "60": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
+      },
+      "52": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
       }
     }
   },
@@ -1366,6 +1374,30 @@
       "0E": {
         "code": 80,
         "label": "CycleUpProfile"
+      },
+      "60": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
+      },
+      "6A": {
+        "code": 84,
+        "label": "ScrollModeSwitch"
+      },
+      "52": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
+      },
+      "54": {
+        "code": 84,
+        "label": "ScrollModeSwitch"
+      },
+      "59": {
+        "code": 89,
+        "label": "HyperShift"
+      },
+      "D2": {
+        "code": 210,
+        "label": "AI_Launcher"
       }
     }
   },
@@ -1376,6 +1408,30 @@
       "0E": {
         "code": 80,
         "label": "CycleUpProfile"
+      },
+      "60": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
+      },
+      "6A": {
+        "code": 84,
+        "label": "ScrollModeSwitch"
+      },
+      "52": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
+      },
+      "54": {
+        "code": 84,
+        "label": "ScrollModeSwitch"
+      },
+      "59": {
+        "code": 89,
+        "label": "HyperShift"
+      },
+      "D2": {
+        "code": 210,
+        "label": "AI_Launcher"
       }
     }
   },
@@ -1386,6 +1442,30 @@
       "0E": {
         "code": 80,
         "label": "CycleUpProfile"
+      },
+      "60": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
+      },
+      "6A": {
+        "code": 84,
+        "label": "ScrollModeSwitch"
+      },
+      "52": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
+      },
+      "54": {
+        "code": 84,
+        "label": "ScrollModeSwitch"
+      },
+      "59": {
+        "code": 89,
+        "label": "HyperShift"
+      },
+      "D2": {
+        "code": 210,
+        "label": "AI_Launcher"
       }
     }
   },
@@ -1482,6 +1562,14 @@
       "0E": {
         "code": 80,
         "label": "CycleUpProfile"
+      },
+      "59": {
+        "code": 89,
+        "label": "HyperShift"
+      },
+      "D2": {
+        "code": 210,
+        "label": "AI_Launcher"
       }
     }
   },
@@ -1492,6 +1580,14 @@
       "0E": {
         "code": 80,
         "label": "CycleUpProfile"
+      },
+      "59": {
+        "code": 89,
+        "label": "HyperShift"
+      },
+      "D2": {
+        "code": 210,
+        "label": "AI_Launcher"
       }
     }
   },
@@ -1502,6 +1598,14 @@
       "0E": {
         "code": 80,
         "label": "CycleUpProfile"
+      },
+      "59": {
+        "code": 89,
+        "label": "HyperShift"
+      },
+      "D2": {
+        "code": 210,
+        "label": "AI_Launcher"
       }
     }
   },
@@ -1568,6 +1672,10 @@
       "60": {
         "code": 82,
         "label": "CycleUpSensitivityStages"
+      },
+      "52": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
       }
     }
   },
@@ -1576,6 +1684,10 @@
     "catalogPid": "B005",
     "keys": {
       "60": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
+      },
+      "52": {
         "code": 82,
         "label": "CycleUpSensitivityStages"
       }
@@ -1588,6 +1700,10 @@
       "60": {
         "code": 82,
         "label": "CycleUpSensitivityStages"
+      },
+      "52": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
       }
     }
   },
@@ -1596,6 +1712,10 @@
     "catalogPid": "B007",
     "keys": {
       "60": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
+      },
+      "52": {
         "code": 82,
         "label": "CycleUpSensitivityStages"
       }
@@ -1612,6 +1732,30 @@
       "0F": {
         "code": 81,
         "label": "SensitivityClutch"
+      },
+      "60": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
+      },
+      "6A": {
+        "code": 84,
+        "label": "ScrollModeSwitch"
+      },
+      "50": {
+        "code": 80,
+        "label": "CycleUpProfile"
+      },
+      "51": {
+        "code": 81,
+        "label": "SensitivityClutch"
+      },
+      "52": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
+      },
+      "54": {
+        "code": 84,
+        "label": "ScrollModeSwitch"
       }
     }
   },
@@ -1626,6 +1770,30 @@
       "0F": {
         "code": 81,
         "label": "SensitivityClutch"
+      },
+      "60": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
+      },
+      "6A": {
+        "code": 84,
+        "label": "ScrollModeSwitch"
+      },
+      "50": {
+        "code": 80,
+        "label": "CycleUpProfile"
+      },
+      "51": {
+        "code": 81,
+        "label": "SensitivityClutch"
+      },
+      "52": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
+      },
+      "54": {
+        "code": 84,
+        "label": "ScrollModeSwitch"
       }
     }
   },
@@ -1640,6 +1808,30 @@
       "0F": {
         "code": 81,
         "label": "SensitivityClutch"
+      },
+      "60": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
+      },
+      "6A": {
+        "code": 84,
+        "label": "ScrollModeSwitch"
+      },
+      "50": {
+        "code": 80,
+        "label": "CycleUpProfile"
+      },
+      "51": {
+        "code": 81,
+        "label": "SensitivityClutch"
+      },
+      "52": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
+      },
+      "54": {
+        "code": 84,
+        "label": "ScrollModeSwitch"
       }
     }
   }

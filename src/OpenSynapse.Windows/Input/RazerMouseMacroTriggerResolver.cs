@@ -9,6 +9,13 @@ namespace OpenSynapse.Windows.Input;
 /// </summary>
 public static class RazerMouseMacroTriggerResolver
 {
+    private static readonly HashSet<ushort> HyperShiftSideButtonProducts =
+    [
+        0x00AA, 0x00AB, 0x00AC,
+        0x00E2, 0x00E3, 0x00E4,
+        0xB00A, 0xB00B, 0xB00C,
+    ];
+
     public static MacroInput? Resolve(ushort productId, byte buttonId, bool isNaga)
     {
         // The mapping page uses the standard button ids: 1 left, 2 right, 3 middle,
@@ -26,6 +33,18 @@ public static class RazerMouseMacroTriggerResolver
         if (isNaga && RazerNagaSideButtonResolver.Resolve(buttonId) is { } naga)
         {
             return naga;
+        }
+
+        // The HyperShift layer reports the side buttons as DKM_M_03/M_04
+        // (Previous/Next), which the mapping page exposes as 0x22/0x23.
+        if (HyperShiftSideButtonProducts.Contains(productId) &&
+            buttonId is 0x22 or 0x23)
+        {
+            return new MacroInput
+            {
+                Kind = MacroInputKind.MouseButton,
+                MouseButton = buttonId == 0x22 ? 4 : 5,
+            };
         }
 
         // The mapping page reports its own button id; the private key stream reports
