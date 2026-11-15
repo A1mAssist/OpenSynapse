@@ -22,6 +22,7 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
     private string _gpuValue = "--";
     private double _gpuPercent;
     private double? _gpuTemperatureCelsius;
+    private double? _hottestGpuTemperatureCelsius;
     private string _gpuTemperatureText = "--";
     private string _gpuPowerText = "--";
     private string _gpuClockText = "--";
@@ -65,6 +66,7 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
     public double GpuPercent { get => _gpuPercent; private set => SetField(ref _gpuPercent, value); }
     public bool HasGpuUsage { get => _hasGpuUsage; private set => SetField(ref _hasGpuUsage, value); }
     internal double? GpuTemperatureCelsius { get => _gpuTemperatureCelsius; private set => SetField(ref _gpuTemperatureCelsius, value); }
+    internal double? HottestGpuTemperatureCelsius { get => _hottestGpuTemperatureCelsius; private set => SetField(ref _hottestGpuTemperatureCelsius, value); }
     public string GpuTemperatureText { get => _gpuTemperatureText; private set => SetField(ref _gpuTemperatureText, value); }
     public string GpuPowerText { get => _gpuPowerText; private set => SetField(ref _gpuPowerText, value); }
     public string GpuClockText { get => _gpuClockText; private set => SetField(ref _gpuClockText, value); }
@@ -123,6 +125,7 @@ public sealed class SystemTelemetryViewModel : INotifyPropertyChanged
         GpuPercent = snapshot.GpuUsagePercent ?? 0;
         HasGpuUsage = snapshot.GpuUsagePercent is not null;
         GpuTemperatureCelsius = snapshot.GpuTemperatureCelsius;
+        HottestGpuTemperatureCelsius = snapshot.HottestGpuTemperatureCelsius;
         GpuTemperatureText = FormatNumber(snapshot.GpuTemperatureCelsius, "0", "°C");
         GpuPowerText = FormatNumber(snapshot.GpuPowerWatts, "0.0", " W");
         GpuClockText = FormatNumber(snapshot.GpuClockMegahertz, "0", " MHz");

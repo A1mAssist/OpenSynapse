@@ -250,6 +250,9 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
 
             var blade = _deviceDescriptors().FirstOrDefault(device =>
                 DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) && device.Access == DeviceAccessState.Available);
+            _diagnosticLog.TryWrite("blade-fan",
+                $"Curve apply: mode={curve.TemperatureMode}, points={curve.CpuPoints.Count}/{curve.GpuPoints.Count}, " +
+                $"power={_currentPowerSource()}, active={_isSelectedPerformancePowerActive()}, blade={blade?.Id ?? "none"}.");
             await PersistBladeFanEditAsync(edit, blade, cancellationToken, AppStrings.Text("Text_BA5FB914"));
             _bladeFanCurveBaseline = curve;
             ClearPendingMode();
