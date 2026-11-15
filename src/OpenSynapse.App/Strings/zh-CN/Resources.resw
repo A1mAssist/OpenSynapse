@@ -590,8 +590,8 @@
     <comment>性能模式</comment>
   </data>
   <data name="Text_40985721" xml:space="preserve">
-    <value>控制通道不可用</value>
-    <comment>控制通道不可用</comment>
+    <value>控制不可用</value>
+    <comment>控制不可用</comment>
   </data>
   <data name="Text_949856B3" xml:space="preserve">
     <value>取消</value>
@@ -638,8 +638,8 @@
     <comment>降压预设</comment>
   </data>
   <data name="Text_5965520A" xml:space="preserve">
-    <value>HID 控制通道可打开</value>
-    <comment>HID 控制通道可打开</comment>
+    <value>控制可用</value>
+    <comment>控制可用</comment>
   </data>
   <data name="Text_388555B3" xml:space="preserve">
     <value>潮汐</value>
