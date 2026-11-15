@@ -4063,6 +4063,29 @@
   <data name="RazerMappingKeyboardButton" xml:space="preserve"><value>键位 {0}</value></data>
   <data name="RazerMappingNagaSideButton" xml:space="preserve"><value>侧键 {0}</value></data>
   <data name="RazerMappingButtonColumn" xml:space="preserve"><value>按键</value></data>
+  <data name="RazerMappingButtonLeft" xml:space="preserve"><value>左键</value></data>
+  <data name="RazerMappingButtonRight" xml:space="preserve"><value>右键</value></data>
+  <data name="RazerMappingButtonMiddle" xml:space="preserve"><value>中键</value></data>
+  <data name="RazerMappingButtonBack" xml:space="preserve"><value>后退</value></data>
+  <data name="RazerMappingButtonForward" xml:space="preserve"><value>前进</value></data>
+  <data name="RazerMappingButtonScrollUp" xml:space="preserve"><value>向上滚动</value></data>
+  <data name="RazerMappingButtonScrollDown" xml:space="preserve"><value>向下滚动</value></data>
+  <data name="RazerMappingButtonScrollLeft" xml:space="preserve"><value>向左滚动</value></data>
+  <data name="RazerMappingButtonScrollRight" xml:space="preserve"><value>向右滚动</value></data>
+  <data name="RazerMappingButtonDpiUp" xml:space="preserve"><value>DPI 增加</value></data>
+  <data name="RazerMappingButtonDpiDown" xml:space="preserve"><value>DPI 降低</value></data>
+  <data name="RazerMappingButtonUserSelect" xml:space="preserve"><value>用户选择</value></data>
+  <data name="RazerMappingButtonProfileSwitch" xml:space="preserve"><value>配置切换</value></data>
+  <data name="RazerMappingButtonSniper" xml:space="preserve"><value>狙击</value></data>
+  <data name="RazerMappingButtonDpiCycleUp" xml:space="preserve"><value>DPI 循环增加</value></data>
+  <data name="RazerMappingButtonDpiCycleDown" xml:space="preserve"><value>DPI 循环降低</value></data>
+  <data name="RazerMappingButtonPreviousPage" xml:space="preserve"><value>上一页</value></data>
+  <data name="RazerMappingButtonNextPage" xml:space="preserve"><value>下一页</value></data>
+  <data name="RazerMappingButtonVolumeUp" xml:space="preserve"><value>音量增加</value></data>
+  <data name="RazerMappingButtonVolumeDown" xml:space="preserve"><value>音量降低</value></data>
+  <data name="RazerMappingButtonMute" xml:space="preserve"><value>静音</value></data>
+  <data name="RazerMappingButtonScrollModeSwitch" xml:space="preserve"><value>滚轮模式切换</value></data>
+  <data name="RazerMappingButtonNumber" xml:space="preserve"><value>按键 {0}</value></data>
   <data name="RazerMappingCurrentColumn" xml:space="preserve"><value>当前动作</value></data>
   <data name="RazerMappingTypeColumn" xml:space="preserve"><value>类型</value></data>
   <data name="RazerMappingActionColumn" xml:space="preserve"><value>目标动作</value></data>

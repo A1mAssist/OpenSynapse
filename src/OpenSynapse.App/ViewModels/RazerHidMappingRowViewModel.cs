@@ -88,8 +88,9 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
         _catalog = catalog;
         _groupOptions = RazerMappingText.GroupOptions(_canUseOnboardMacro || _canUseSoftwareMacro);
         ButtonId = buttonId;
-        ButtonName = catalog.DescribeButton(buttonId);
-        ButtonNameIsFallback = ButtonName.StartsWith("Button ", StringComparison.Ordinal);
+        var buttonName = catalog.DescribeButton(buttonId);
+        ButtonNameIsFallback = buttonName.StartsWith("Button ", StringComparison.Ordinal);
+        ButtonName = RazerMappingButtonNames.Localize(buttonName);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -106,7 +107,7 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
         }
     }
 
-    internal void SetButtonName(string name) => ButtonName = name;
+    internal void SetButtonName(string name) => ButtonName = RazerMappingButtonNames.Localize(name);
 
     /// <summary>Option index the row was last loaded or applied with.</summary>
     internal int LoadedOptionIndex { get; set; } = -1;

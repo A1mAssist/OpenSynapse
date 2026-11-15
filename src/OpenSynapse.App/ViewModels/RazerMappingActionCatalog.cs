@@ -234,12 +234,12 @@ public sealed class RazerViperMappingActionCatalog : IRazerMappingActionCatalog
 
     private static string Name(ViperMappingActionDefinition definition) =>
         definition.Function == ViperButtonMappingFunction.MouseButton
-            ? RazerHidMappingActions.DescribeButton(definition.Value)
+            ? RazerMappingButtonNames.Localize(RazerHidMappingActions.DescribeButton(definition.Value))
             : AppStrings.Text(definition.NameKey);
 
     private static IReadOnlyList<string> TurboButtonNames() =>
         TurboButtons
-            .Select(button => $"Turbo {RazerHidMappingActions.DescribeButton(button)}")
+            .Select(button => $"Turbo {RazerMappingButtonNames.Localize(RazerHidMappingActions.DescribeButton(button))}")
             .ToArray();
 
     private static ushort Interval(int keysPerSecond)
