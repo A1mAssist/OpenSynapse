@@ -43,5 +43,9 @@
         </StackPanel>
       </Grid>
     </Button>
+    <StackPanel Margin="12,2,12,8" Spacing="2" Visibility="{Binding HasResetOnboardProfileFooter, Converter={StaticResource BoolToVisibilityConverter}}">
+      <HyperlinkButton Content="{Binding ResetOnboardProfileActionText}" Click="ResetButtonClick" IsEnabled="{Binding CanResetOnboardProfileNow}" AutomationProperties.Name="{Binding ResetOnboardProfileActionText}" HorizontalAlignment="Left" Padding="0" MinHeight="26" Visibility="{Binding CanResetOnboardProfile, Converter={StaticResource BoolToVisibilityConverter}}" />
+      <TextBlock Text="{Binding ResetOnboardProfileStatusText}" Foreground="{Binding ResetOnboardProfileStatusBrush}" FontSize="11" TextWrapping="Wrap" Visibility="{Binding HasResetOnboardProfileStatus, Converter={StaticResource BoolToVisibilityConverter}}" />
+    </StackPanel>
   </StackPanel>
 </UserControl>

@@ -27,7 +27,7 @@
       <Setter Property="VerticalContentAlignment" Value="Stretch" />
     </Style>
     <DataTemplate x:Key="ConnectedDeviceCardTemplate">
-      <DevicePanels:ConnectedDeviceCard CardClicked="ConnectedDeviceCardClick" />
+      <DevicePanels:ConnectedDeviceCard CardClicked="ConnectedDeviceCardClick" ResetRequested="ConnectedDeviceCardResetClick" />
     </DataTemplate>
   </UserControl.Resources>
   <ScrollViewer local:Localized.Uid="A11yDeviceScrollArea" x:Name="PageScrollViewer" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" AutomationProperties.AutomationId="DevicesPageScrollViewer">

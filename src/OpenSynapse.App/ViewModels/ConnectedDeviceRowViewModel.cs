@@ -16,6 +16,14 @@ public sealed class ConnectedDeviceRowViewModel : INotifyPropertyChanged
         new SolidColorBrush(Color.FromArgb(255, 68, 214, 44));
     private static readonly Brush NeutralBrush =
         new SolidColorBrush(Color.FromArgb(255, 255, 181, 71));
+    private static readonly Brush ResetFailedBrush =
+        new SolidColorBrush(Color.FromArgb(255, 255, 107, 107));
+    private static readonly HashSet<ushort> ResetUnsupportedProducts = [];
+    private static readonly object ResetUnsupportedGate = new();
+    private bool _canResetOnboardProfile;
+    private bool _isResetOnboardProfileBusy;
+    private string _resetOnboardProfileStatusText = string.Empty;
+    private bool _resetOnboardProfileStatusIsError;
 
     public ConnectedDeviceRowViewModel(DeviceRowViewModel source)
     {
@@ -50,6 +58,13 @@ public sealed class ConnectedDeviceRowViewModel : INotifyPropertyChanged
         IsVisible = source.Connection.IsReady
             ? source.Connection.Capabilities.Count > 0
             : source.HardwareCategory == DeviceCategory.Keyboard;
+        _canResetOnboardProfile =
+            source.Connection.IsReady &&
+            source.Connection.Capabilities.Contains(RazerHidBackendCapability.OnboardProfileRead) &&
+            source.Connection.Capabilities.Contains(RazerHidBackendCapability.OnboardProfileWrite) &&
+            RazerHidDeviceService.SupportsOnboardProfileReset(
+                source.Connection.Definition.ProductId) &&
+            !IsResetUnsupported(source.Connection.Definition.ProductId);
     }
 
     public ConnectedDeviceRowViewModel(RazerHidKrakenDeviceRowViewModel source)
@@ -224,6 +239,20 @@ public sealed class ConnectedDeviceRowViewModel : INotifyPropertyChanged
     public DeviceCategory Category { get; }
     public bool IsReady { get; }
     public bool IsVisible { get; }
+    public bool CanResetOnboardProfile => _canResetOnboardProfile;
+    public bool CanResetOnboardProfileNow => _canResetOnboardProfile && !_isResetOnboardProfileBusy;
+    public bool IsResetOnboardProfileBusy => _isResetOnboardProfileBusy;
+    public string ResetOnboardProfileActionText => AppStrings.Text(
+        _isResetOnboardProfileBusy
+            ? "DeviceResetOnboardProfileBusy"
+            : "DeviceResetOnboardProfile");
+    public string ResetOnboardProfileStatusText => _resetOnboardProfileStatusText;
+    public bool HasResetOnboardProfileStatus =>
+        !string.IsNullOrWhiteSpace(_resetOnboardProfileStatusText);
+    public bool HasResetOnboardProfileFooter =>
+        _canResetOnboardProfile || HasResetOnboardProfileStatus;
+    public Brush ResetOnboardProfileStatusBrush =>
+        _resetOnboardProfileStatusIsError ? ResetFailedBrush : ConnectedBrush;
     public string Error => Source switch
     {
         RazerHidDeviceRowViewModel row => row.Error,
@@ -263,6 +292,57 @@ public sealed class ConnectedDeviceRowViewModel : INotifyPropertyChanged
         DeviceCategory.Mouse => 2,
         _ => 3,
     };
+
+    internal void SetResetOnboardProfileBusy(bool value)
+    {
+        if (_isResetOnboardProfileBusy == value)
+        {
+            return;
+        }
+
+        _isResetOnboardProfileBusy = value;
+        PropertyChanged?.Invoke(this, new(nameof(IsResetOnboardProfileBusy)));
+        PropertyChanged?.Invoke(this, new(nameof(CanResetOnboardProfileNow)));
+        PropertyChanged?.Invoke(this, new(nameof(ResetOnboardProfileActionText)));
+    }
+
+    internal void DisableResetOnboardProfile()
+    {
+        if (!_canResetOnboardProfile)
+        {
+            return;
+        }
+
+        _canResetOnboardProfile = false;
+        if (Source is RazerHidDeviceRowViewModel row)
+        {
+            lock (ResetUnsupportedGate)
+            {
+                ResetUnsupportedProducts.Add(row.Connection.Definition.ProductId);
+            }
+        }
+        PropertyChanged?.Invoke(this, new(nameof(CanResetOnboardProfile)));
+        PropertyChanged?.Invoke(this, new(nameof(CanResetOnboardProfileNow)));
+        PropertyChanged?.Invoke(this, new(nameof(HasResetOnboardProfileFooter)));
+    }
+
+    internal void SetResetOnboardProfileStatus(string text, bool isError)
+    {
+        _resetOnboardProfileStatusText = text;
+        _resetOnboardProfileStatusIsError = isError;
+        PropertyChanged?.Invoke(this, new(nameof(ResetOnboardProfileStatusText)));
+        PropertyChanged?.Invoke(this, new(nameof(HasResetOnboardProfileStatus)));
+        PropertyChanged?.Invoke(this, new(nameof(HasResetOnboardProfileFooter)));
+        PropertyChanged?.Invoke(this, new(nameof(ResetOnboardProfileStatusBrush)));
+    }
+
+    private static bool IsResetUnsupported(ushort productId)
+    {
+        lock (ResetUnsupportedGate)
+        {
+            return ResetUnsupportedProducts.Contains(productId);
+        }
+    }
 
     private sealed class NoBatteryRow : IDeviceBatteryRow
     {
