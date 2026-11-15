@@ -48,6 +48,14 @@ public sealed partial class BladeWorkspace
         }
 
         _gpuModeState = state;
+        _diagnosticLog.TryWrite(
+            "gpu-mode",
+            $"pid=0x{_blade._bladeProductId:X4} " +
+            $"mux={(state.Snapshot.MuxPresent ? state.Snapshot.Mux.Mode.ToString() : "none")} " +
+            $"caps=0x{(int)state.Snapshot.Mux.Capabilities:X2} pnp={state.Snapshot.PnpSwitchAllowed} " +
+            $"blocked={state.Dedicated.BlockReason} device={state.Dedicated.DeviceState} " +
+            $"topology={state.Topology.IsKnown}/{state.Topology.HasActiveInternalDisplay}/" +
+            $"{state.Topology.InternalDisplayRouteKnown}/{state.Topology.HasExternalDisplay}");
         OnPropertyChanged(nameof(GpuModeState));
     }
 
