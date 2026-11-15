@@ -33,6 +33,9 @@ public sealed partial class RazerHeadsetAudioViewModel
     /// <summary>Below this audio level the meter goes dark instead of holding one LED.</summary>
     private const double AudioMeterSilenceLevel = 0.02;
 
+    /// <summary>A transient HID failure must not leave a frame effect frozen.</summary>
+    private const int SoftwareEffectMaxWriteFailures = 10;
+
     /// <summary>
     /// Effects Synapse 4 renders in its lighting engine and streams as per-LED
     /// frames on the Mako X (the page's setChromaEffect call always carries the
@@ -522,6 +525,7 @@ public sealed partial class RazerHeadsetAudioViewModel
     {
         using var timer = new PeriodicTimer(SoftwareEffectFrameInterval);
         byte[]? previous = null;
+        var writeFailures = 0;
         try
         {
             while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
@@ -550,9 +554,25 @@ public sealed partial class RazerHeadsetAudioViewModel
                     continue;
                 }
 
-                await service.SetFrameAsync(frame, cancellationToken).ConfigureAwait(false);
-                previous = frame;
-                _softwareLastFrame = frame;
+                try
+                {
+                    await service.SetFrameAsync(frame, cancellationToken).ConfigureAwait(false);
+                    writeFailures = 0;
+                    previous = frame;
+                    _softwareLastFrame = frame;
+                }
+                catch (Exception exception) when (
+                    !cancellationToken.IsCancellationRequested && IsExpectedException(exception))
+                {
+                    writeFailures++;
+                    _diagnostic?.Invoke(
+                        $"mako-x effect frame failed ({writeFailures}/{SoftwareEffectMaxWriteFailures}): {exception.Message}");
+                    if (writeFailures >= SoftwareEffectMaxWriteFailures) throw;
+                    // The device can be busy during startup or a profile write; keep
+                    // the pump alive and let the next tick retry instead of freezing
+                    // on the first missed frame.
+                    await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                }
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
