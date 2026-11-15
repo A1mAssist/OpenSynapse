@@ -20,7 +20,6 @@ namespace OpenSynapse.Windows.Input;
 /// </summary>
 public static class ElevatedMacroAgent
 {
-    private static readonly TimeSpan HostCheckInterval = TimeSpan.FromSeconds(2);
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -56,20 +55,21 @@ public static class ElevatedMacroAgent
         var sink = new WindowsMacroInputSink();
         return RunWithCleanupAsync(sink, async pressed =>
         {
+            using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            using var monitorStop = new CancellationTokenSource();
+            var hostMonitor = Task.Run(
+                () => MonitorHost(lifetime, monitorStop.Token),
+                CancellationToken.None);
             NamedPipeServerStream? pipe = null;
             try
             {
                 pipe = CreatePipe();
-                while (!cancellationToken.IsCancellationRequested)
+                while (!lifetime.IsCancellationRequested)
                 {
                     try
                     {
-                        if (!await WaitForHostConnectionAsync(pipe, cancellationToken).ConfigureAwait(false))
-                        {
-                            break;
-                        }
-
-                        using var requestTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                        await pipe.WaitForConnectionAsync(lifetime.Token).ConfigureAwait(false);
+                        using var requestTimeout = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
                         requestTimeout.CancelAfter(TimeSpan.FromSeconds(10));
                         var response = await HandleAsync(pipe, sink, pressed, requestTimeout.Token).ConfigureAwait(false);
                         if (!response.Ok) await ReleasePressedAsync(sink, pressed).ConfigureAwait(false);
@@ -77,75 +77,80 @@ public static class ElevatedMacroAgent
                         pipe.Disconnect();
                         if (response.ShutdownRequested) break;
                     }
-                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { break; }
+                    catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { break; }
                     catch (Exception exception) when (exception is IOException or InvalidOperationException or
                         UnauthorizedAccessException or JsonException or ObjectDisposedException or OperationCanceledException)
                     {
                         await ReleasePressedAsync(sink, pressed).ConfigureAwait(false);
                         pipe.Dispose();
-                        pipe = CreatePipeWithRetry(cancellationToken);
+                        pipe = CreatePipeWithRetry(lifetime.Token);
                     }
                 }
             }
-            finally { pipe?.Dispose(); }
+            finally
+            {
+                pipe?.Dispose();
+                monitorStop.Cancel();
+                try
+                {
+                    await hostMonitor.ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                }
+            }
         });
     }
 
-    private static async Task<bool> WaitForHostConnectionAsync(
-        NamedPipeServerStream pipe,
-        CancellationToken cancellationToken)
+    internal static void MonitorHost(
+        CancellationTokenSource hostLifetime,
+        CancellationToken stop,
+        string instanceName = ElevatedMacroProtocol.HostInstanceName)
     {
-        using var waitCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var connection = pipe.WaitForConnectionAsync(waitCancellation.Token);
-        while (!connection.IsCompleted)
-        {
-            var check = Task.Delay(HostCheckInterval, waitCancellation.Token);
-            if (await Task.WhenAny(connection, check).ConfigureAwait(false) == connection)
-            {
-                break;
-            }
-
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return false;
-            }
-
-            if (IsHostInstanceRunning())
-            {
-                continue;
-            }
-
-            waitCancellation.Cancel();
-            try
-            {
-                await connection.ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-            {
-            }
-
-            return false;
-        }
-
-        await connection.ConfigureAwait(false);
-        return true;
-    }
-
-    internal static bool IsHostInstanceRunning(string instanceName = ElevatedMacroProtocol.HostInstanceName)
-    {
+        Mutex? mutex = null;
         try
         {
-            using var mutex = Mutex.OpenExisting(instanceName);
-            return true;
+            try
+            {
+                mutex = Mutex.OpenExisting(instanceName);
+            }
+            catch (WaitHandleCannotBeOpenedException)
+            {
+                hostLifetime.Cancel();
+                return;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Never kill the agent just because the host handle cannot be inspected.
+                return;
+            }
+
+            var acquired = false;
+            try
+            {
+                acquired = WaitHandle.WaitAny(new WaitHandle[] { mutex, stop.WaitHandle }) == 0;
+            }
+            catch (AbandonedMutexException exception) when (exception.MutexIndex == 0)
+            {
+                acquired = true;
+            }
+
+            if (acquired)
+            {
+                try
+                {
+                    mutex.ReleaseMutex();
+                }
+                catch (ApplicationException)
+                {
+                }
+
+                hostLifetime.Cancel();
+            }
         }
-        catch (WaitHandleCannotBeOpenedException)
+        finally
         {
-            return false;
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // Never kill the agent just because the host handle cannot be inspected.
-            return true;
+            mutex?.Dispose();
         }
     }
 
