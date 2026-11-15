@@ -49,6 +49,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 - Mako X no longer reports a failed state query while a frame effect is running: every service opens its own HID handle, so feature-report writes and reads for the same device now share one gate instead of overwriting each other's replies.
 - Mako X restores frame-rendered effects (including rotation) on launch and profile replay; the frame pump is not persistent, so it is started again from the saved effect instead of leaving the strip dark until Apply.
 - Mako X frame effects keep animating through a transient HID failure instead of freezing on the first missed frame; the pump retries and only stops after repeated failures.
+- Mako X keeps the startup probe view model alive until the device page takes it over; disposing that temporary probe stopped the frame pump after the first frame, which made rotation light up but stay frozen until the page was opened.
 - Shutdown lighting now covers Mako X, whose Chroma channel lives on the audio HID collection rather than the RazerHid catalogue.
 - BlackShark V2 Pro (0555) no longer stalls on “reading”: timed-out HID control requests are actually cancelled instead of piling up in the driver queue; USB-only headsets stay visible before HID is ready.
 - Kiyo, sensor rotation, smart tracking and software-lighting cleanup no longer raise `PropertyChanged` on the thread pool, fixing the `0x8001010E` settings-page failure.
