@@ -1,4 +1,5 @@
 using System.Collections.Specialized;
+using System.ComponentModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using OpenSynapse.App.ViewModels;
@@ -10,6 +11,7 @@ public sealed partial class SettingsPage
 {
     private bool _taskbarBatteryUiReady;
     private bool _taskbarBatterySourcesHooked;
+    private readonly HashSet<INotifyPropertyChanged> _taskbarBatteryRows = [];
 
     internal void InitializeTaskbarBatteryUi()
     {
@@ -38,6 +40,7 @@ public sealed partial class SettingsPage
             .GroupBy(item => item.Key, StringComparer.OrdinalIgnoreCase)
             .Select(group => group.First())
             .ToDictionary(item => item.Key, StringComparer.OrdinalIgnoreCase);
+        ObserveTaskbarBatteryRows(available.Values);
         var saved = settings.TaskbarBatteryDisplay;
         var savedKeys = saved.Select(item => item.Key)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -75,6 +78,42 @@ public sealed partial class SettingsPage
         TaskbarBatterySelectionPanel.Visibility =
             available.Count >= 2 || saved.Count >= 2 ? Visibility.Visible : Visibility.Collapsed;
         _taskbarBatteryUiReady = true;
+    }
+
+    private void ObserveTaskbarBatteryRows(IEnumerable<PeripheralBattery> batteries)
+    {
+        var rows = batteries
+            .Select(item => item.Source)
+            .OfType<INotifyPropertyChanged>()
+            .ToHashSet();
+        foreach (var row in _taskbarBatteryRows.Except(rows).ToArray())
+        {
+            row.PropertyChanged -= OnTaskbarBatteryRowChanged;
+            _taskbarBatteryRows.Remove(row);
+        }
+
+        foreach (var row in rows.Where(_taskbarBatteryRows.Add))
+        {
+            row.PropertyChanged += OnTaskbarBatteryRowChanged;
+        }
+    }
+
+    private void OnTaskbarBatteryRowChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (!string.IsNullOrEmpty(args.PropertyName) &&
+            args.PropertyName != nameof(IDeviceBatteryRow.BatteryPercent))
+        {
+            return;
+        }
+
+        if (DispatcherQueue.HasThreadAccess)
+        {
+            RefreshTaskbarBatteryChoices();
+        }
+        else
+        {
+            DispatcherQueue.TryEnqueue(RefreshTaskbarBatteryChoices);
+        }
     }
 
     private static TaskbarBatteryChoiceViewModel Choice(

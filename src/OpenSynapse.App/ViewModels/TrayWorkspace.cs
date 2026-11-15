@@ -49,7 +49,7 @@ public sealed class TrayWorkspace
             var claimed = ClaimedDevicePaths();
             return TelemetryBatteries()
                 .Concat(BatteryDevices().Select(row =>
-                    new PeripheralBattery(row.Name, null, row.IconGlyph, row, HidKey(row))))
+                    new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row, HidKey(row))))
                 .Concat(HeadsetRows(claimed).Select(row =>
                     new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row, HeadsetKey(row))))
                 .Concat(BlackSharkRows(claimed).Select(row =>
