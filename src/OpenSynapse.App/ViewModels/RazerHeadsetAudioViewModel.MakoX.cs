@@ -19,7 +19,7 @@ public sealed partial class RazerHeadsetAudioViewModel
     [
         RazerChromaEffect.Off, RazerChromaEffect.AudioMeter, RazerChromaEffect.Breathing,
         RazerChromaEffect.Fire, RazerChromaEffect.Spectrum, RazerChromaEffect.Starlight,
-        RazerChromaEffect.Static, RazerChromaEffect.Wheel, RazerChromaEffect.CustomFrame,
+        RazerChromaEffect.Static, RazerChromaEffect.Wheel,
     ];
 
     private static readonly (RazerChromaEffect Effect, string Key)[] DefaultLightingEffectOptions =
@@ -40,7 +40,6 @@ public sealed partial class RazerHeadsetAudioViewModel
         (RazerChromaEffect.Starlight, "MakoXLightingEffectStarlight"),
         (RazerChromaEffect.Static, "MakoXLightingEffectStatic"),
         (RazerChromaEffect.Wheel, "MakoXLightingEffectWheel"),
-        (RazerChromaEffect.CustomFrame, "RazerHeadsetAmbientAwareness"),
     ];
 
     /// <summary>The rotation effect takes the engine's two directions.</summary>
@@ -60,9 +59,10 @@ public sealed partial class RazerHeadsetAudioViewModel
     private static bool IsDirectionEffect(RazerChromaEffect effect) =>
         effect == RazerChromaEffect.Wheel;
 
-    public IReadOnlyList<string> WaveDirectionOptions => MakoXWheelDirections
-        .Select(direction => AppStrings.Text(direction.Key))
-        .ToArray();
+    private string[]? _wheelDirectionLabels;
+
+    public IReadOnlyList<string> WaveDirectionOptions => _wheelDirectionLabels ??=
+        MakoXWheelDirections.Select(direction => AppStrings.Text(direction.Key)).ToArray();
 
     public int SelectedWaveDirectionIndex
     {
