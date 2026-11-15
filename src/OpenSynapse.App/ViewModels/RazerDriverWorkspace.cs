@@ -20,6 +20,7 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
     private readonly ObservableCollection<RazerDriverRowViewModel> _missing = [];
     private readonly HashSet<ushort> _installedProductIds = [];
     private IReadOnlySet<ushort>? _presentProductIds;
+    private IReadOnlySet<string>? _presentInstanceIds;
     private bool _isBusy;
     private string _statusText = string.Empty;
 
@@ -73,7 +74,7 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
             var interfaces = await WindowsHidDiscovery.FindVendorInterfacesAsync(
                 0x1532,
                 cancellationToken).ConfigureAwait(true);
-            _presentProductIds = interfaces.Select(static item => item.ProductId).ToHashSet();
+            TrackPresentInterfaces(interfaces);
             var endpoints = await RazerFilterEndpointDiscovery.DiscoverAllAsync(cancellationToken)
                 .ConfigureAwait(true);
             var ready = BuildReadySet(endpoints);
@@ -115,7 +116,8 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                         .InspectAttachment(
                             candidates,
                             presentProductIds: _presentProductIds,
-                            coveredInterfaces: coveredInterfaces)
+                            coveredInterfaces: coveredInterfaces,
+                            presentInstanceIds: _presentInstanceIds)
                         .IsAttached)
                 {
                     continue;
@@ -135,13 +137,14 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                     var attachment = RazerFilterInfBinder.InspectAttachment(
                         candidates,
                         presentProductIds: _presentProductIds,
-                        coveredInterfaces: coveredInterfaces);
+                        coveredInterfaces: coveredInterfaces,
+                        presentInstanceIds: _presentInstanceIds);
                     _diagnosticLog.TryWrite(
                         "razer-driver",
                         $"Razer filter {productId} refresh attached={attachment.IsAttached}; " +
                         $"dkm={RazerFilterInfBinder.IsDkmAttached(productId)}; " +
                         $"keyboard={attachment.AttachedKeyboardInstances}/{attachment.KeyboardInstances}; " +
-                        $"missing: {string.Join(", ", RazerFilterInfBinder.FindUnfilteredKeyboardInstances(candidates, presentProductIds: _presentProductIds, coveredInterfaces: coveredInterfaces))}");
+                        $"missing: {string.Join(", ", RazerFilterInfBinder.FindUnfilteredKeyboardInstances(candidates, presentProductIds: _presentProductIds, coveredInterfaces: coveredInterfaces, presentInstanceIds: _presentInstanceIds))}");
                     row.StatusText = attachment.IsAttached
                         ? AppStrings.Text("RazerDriverEndpointPending")
                         : AppStrings.Text("RazerDriverFilterMissing");
@@ -279,6 +282,9 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                             _installedProductIds.Add(productId);
                         }
 
+                        // The install re-enumerates the device; re-read the live
+                        // instances before judging which ones are present.
+                        await RefreshPresentInterfacesAsync(cancellationToken).ConfigureAwait(true);
                         await EnsureDriverServicesStartedAsync(
                             row.CandidateProductIds, cancellationToken).ConfigureAwait(true);
                         row.EndpointVerified = await WaitForEndpointAsync(
@@ -287,7 +293,8 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                         var attachment = RazerFilterInfBinder.InspectAttachment(
                             row.CandidateProductIds,
                             presentProductIds: _presentProductIds,
-                            coveredInterfaces: coveredInterfaces);
+                            coveredInterfaces: coveredInterfaces,
+                            presentInstanceIds: _presentInstanceIds);
                         if (!row.EndpointVerified || !attachment.IsAttached)
                         {
                             // A silent vendor install only stages the filter INF. A staged
@@ -319,17 +326,19 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
 
                             await EnsureDriverServicesStartedAsync(
                                 row.CandidateProductIds, cancellationToken).ConfigureAwait(true);
+                            await RefreshPresentInterfacesAsync(cancellationToken).ConfigureAwait(true);
                             attachment = RazerFilterInfBinder.InspectAttachment(
                                 row.CandidateProductIds,
                                 presentProductIds: _presentProductIds,
-                                coveredInterfaces: coveredInterfaces);
+                                coveredInterfaces: coveredInterfaces,
+                                presentInstanceIds: _presentInstanceIds);
                             _diagnosticLog.TryWrite(
                                 "razer-driver",
                                 $"Razer filter {row.ProductId} attached={attachment.IsAttached}; " +
                                 $"dkm={RazerFilterInfBinder.IsDkmAttached(row.CandidateProductIds[0])}; " +
                                 $"keyboard={attachment.AttachedKeyboardInstances}/{attachment.KeyboardInstances}; " +
-                                $"instances: {string.Join(", ", RazerFilterInfBinder.FindInstances(row.CandidateProductIds, presentProductIds: _presentProductIds))}; " +
-                                $"missing: {string.Join(", ", RazerFilterInfBinder.FindUnfilteredKeyboardInstances(row.CandidateProductIds, presentProductIds: _presentProductIds, coveredInterfaces: coveredInterfaces))}");
+                                $"instances: {string.Join(", ", RazerFilterInfBinder.FindInstances(row.CandidateProductIds, presentProductIds: _presentProductIds, presentInstanceIds: _presentInstanceIds))}; " +
+                                $"missing: {string.Join(", ", RazerFilterInfBinder.FindUnfilteredKeyboardInstances(row.CandidateProductIds, presentProductIds: _presentProductIds, coveredInterfaces: coveredInterfaces, presentInstanceIds: _presentInstanceIds))}");
                             if (!attachment.IsAttached)
                             {
                                 row.StatusText = AppStrings.Text("RazerDriverFilterMissing");
@@ -427,6 +436,31 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                 .Select(RazerDriverIdentity.TryParseEndpointProductId)
                 .Where(static id => id is not null)
                 .Select(static id => id!.Value));
+
+    private void TrackPresentInterfaces(
+        IReadOnlyList<WindowsHidDiscovery.HidInterfaceDescriptor> interfaces)
+    {
+        // An empty enumeration right after a re-enumeration would otherwise make
+        // every instance look stale and report the filter as missing.
+        if (interfaces.Count == 0)
+        {
+            return;
+        }
+
+        _presentProductIds = interfaces.Select(static item => item.ProductId).ToHashSet();
+        _presentInstanceIds = interfaces
+            .Select(static item => RazerFilterInfBinder.TryGetHidRegistryInstanceId(item.DevicePath))
+            .OfType<string>()
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private async Task RefreshPresentInterfacesAsync(CancellationToken cancellationToken)
+    {
+        var interfaces = await WindowsHidDiscovery.FindVendorInterfacesAsync(
+            0x1532,
+            cancellationToken).ConfigureAwait(true);
+        TrackPresentInterfaces(interfaces);
+    }
 
     private static async Task EnsureDriverServicesStartedAsync(
         IReadOnlyList<ushort> candidates,

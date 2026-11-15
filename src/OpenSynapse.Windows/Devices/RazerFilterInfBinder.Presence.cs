@@ -1,0 +1,187 @@
+using Microsoft.Win32;
+
+namespace OpenSynapse.Windows.Devices;
+
+internal static partial class RazerFilterInfBinder
+{
+    internal static IReadOnlyList<string> FindInstances(
+        IReadOnlyList<ushort> productIds,
+        RegistryKey? enumRoot = null,
+        IReadOnlySet<ushort>? presentProductIds = null,
+        IReadOnlySet<string>? presentInstanceIds = null)
+    {
+        ArgumentNullException.ThrowIfNull(productIds);
+        var ownsRoot = enumRoot is null;
+        var root = enumRoot ?? Registry.LocalMachine.OpenSubKey(HidEnumPath);
+        if (root is null)
+        {
+            return [];
+        }
+
+        try
+        {
+            var instances = new List<string>();
+            foreach (var productId in productIds)
+            {
+                if (presentProductIds is not null && !presentProductIds.Contains(productId))
+                {
+                    continue;
+                }
+
+                foreach (var (deviceName, instanceName) in InstanceNames(root, productId))
+                {
+                    if (!IsPresentInstance(presentInstanceIds, deviceName, instanceName))
+                    {
+                        continue;
+                    }
+
+                    instances.Add(HidInstancePath(deviceName, instanceName));
+                }
+            }
+
+            return instances;
+        }
+        finally
+        {
+            if (ownsRoot)
+            {
+                root.Dispose();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Keyboard collections that are present but still lack the RzDev filter. The
+    /// count alone does not say which collection needs the repair.
+    /// </summary>
+    internal static IReadOnlyList<string> FindUnfilteredKeyboardInstances(
+        IReadOnlyList<ushort> productIds,
+        RegistryKey? enumRoot = null,
+        IReadOnlySet<ushort>? presentProductIds = null,
+        IReadOnlySet<(ushort ProductId, int InterfaceNumber)>? coveredInterfaces = null,
+        RegistryKey? usbEnumRoot = null,
+        IReadOnlySet<string>? presentInstanceIds = null)
+    {
+        ArgumentNullException.ThrowIfNull(productIds);
+        var ownsRoot = enumRoot is null;
+        var root = enumRoot ?? Registry.LocalMachine.OpenSubKey(HidEnumPath);
+        if (root is null)
+        {
+            return [];
+        }
+
+        var usbRoot = usbEnumRoot;
+        var ownsUsbRoot = false;
+        if (usbRoot is null && enumRoot is null)
+        {
+            usbRoot = Registry.LocalMachine.OpenSubKey(UsbEnumPath);
+            ownsUsbRoot = usbRoot is not null;
+        }
+
+        try
+        {
+            var instances = new List<string>();
+            var filters = productIds.Select(static id => $"RzDev_{id:X4}").ToArray();
+            foreach (var productId in productIds)
+            {
+                if (presentProductIds is not null && !presentProductIds.Contains(productId))
+                {
+                    continue;
+                }
+
+                foreach (var (deviceName, instanceName) in InstanceNames(root, productId))
+                {
+                    if (!IsPresentInstance(presentInstanceIds, deviceName, instanceName) ||
+                        (coveredInterfaces is not null &&
+                         (!TryGetInterfaceNumber(deviceName, out var interfaceNumber) ||
+                          !coveredInterfaces.Contains((productId, interfaceNumber)))))
+                    {
+                        continue;
+                    }
+
+                    using var instance = root.OpenSubKey($@"{deviceName}\{instanceName}");
+                    if (instance is null || !IsKeyboardInstance(instance) ||
+                        filters.Any(filter => HasFilter(instance, filter) ||
+                            (usbRoot is not null && HasLowerFilterOnParent(deviceName, filter, usbRoot))))
+                    {
+                        continue;
+                    }
+
+                    instances.Add(HidInstancePath(deviceName, instanceName));
+                }
+            }
+
+            return instances;
+        }
+        finally
+        {
+            if (ownsRoot)
+            {
+                root.Dispose();
+            }
+            if (ownsUsbRoot)
+            {
+                usbRoot!.Dispose();
+            }
+        }
+    }
+
+    internal static string? TryGetHidRegistryInstanceId(string devicePath)
+    {
+        if (string.IsNullOrWhiteSpace(devicePath))
+        {
+            return null;
+        }
+
+        var parts = devicePath.Split('#');
+        for (var index = 0; index + 2 < parts.Length; index++)
+        {
+            if (parts[index].EndsWith("hid", StringComparison.OrdinalIgnoreCase))
+            {
+                return HidInstancePath(parts[index + 1], parts[index + 2]);
+            }
+        }
+
+        return null;
+    }
+
+    private static bool IsPresentInstance(
+        IReadOnlySet<string>? presentInstanceIds,
+        string deviceName,
+        string instanceName) =>
+        presentInstanceIds is null ||
+        presentInstanceIds.Contains(HidInstancePath(deviceName, instanceName));
+
+    private static string HidInstancePath(string deviceName, string instanceName) =>
+        $@"HID\{deviceName}\{instanceName}";
+
+    private static IEnumerable<(string DeviceName, string InstanceName)> InstanceNames(
+        RegistryKey root,
+        ushort productId)
+    {
+        var marker = $"VID_1532&PID_{productId:X4}&MI_";
+        foreach (var deviceName in root.GetSubKeyNames())
+        {
+            if (!deviceName.Contains(marker, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            string[] instances;
+            using (var device = root.OpenSubKey(deviceName))
+            {
+                if (device is null)
+                {
+                    continue;
+                }
+
+                instances = device.GetSubKeyNames();
+            }
+
+            foreach (var instanceName in instances)
+            {
+                yield return (deviceName, instanceName);
+            }
+        }
+    }
+}
