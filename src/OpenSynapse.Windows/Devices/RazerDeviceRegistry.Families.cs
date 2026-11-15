@@ -12,6 +12,7 @@ internal sealed partial class RazerDeviceRegistry
                 [CapabilityIds.ThermalStateGet] = new(0x04, 0x0D, 0x82, ""),
                 [CapabilityIds.ThermalStateSet] = new(0x04, 0x0D, 0x02, ""),
                 [CapabilityIds.FanTargetGet] = new(0x03, 0x0D, 0x81, ""),
+                [CapabilityIds.FanInformationGet] = new(0x0C, 0x0D, 0x83, ""),
                 [CapabilityIds.CurrentFanRpmGet] = new(0x03, 0x0D, 0x88, ""),
                 [CapabilityIds.AdvancedFanModeGet] = new(0x03, 0x0D, 0x87, ""),
                 [CapabilityIds.BoostGet] = new(0x03, 0x0D, 0x87, ""),
@@ -67,6 +68,7 @@ internal sealed partial class RazerDeviceRegistry
                 [CapabilityIds.ThermalStateGet] = new(0x04, 0x0D, 0x82, ""),
                 [CapabilityIds.ThermalStateSet] = new(0x04, 0x0D, 0x02, ""),
                 [CapabilityIds.FanTargetGet] = new(0x03, 0x0D, 0x81, ""),
+                [CapabilityIds.FanInformationGet] = new(0x0C, 0x0D, 0x83, ""),
                 [CapabilityIds.CurrentFanRpmGet] = new(0x03, 0x0D, 0x88, ""),
                 [CapabilityIds.BoostGet] = new(0x03, 0x0D, 0x87, ""),
                 [CapabilityIds.BoostSet] = new(0x03, 0x0D, 0x07, ""),
@@ -167,7 +169,8 @@ internal sealed partial class RazerDeviceRegistry
                 .Where(capability => capability is not (CapabilityIds.AutoSleepGet or CapabilityIds.AutoSleepSet or
                     CapabilityIds.TimeToDimGet or CapabilityIds.TimeToDimSet or
                     CapabilityIds.IndicatorLedGet or CapabilityIds.IndicatorLedSet or
-                    CapabilityIds.GpuCardDetectionGet or CapabilityIds.GpuCardDetectionSet))
+                    CapabilityIds.GpuCardDetectionGet or CapabilityIds.GpuCardDetectionSet or
+                    CapabilityIds.FanInformationGet))
                 .ToHashSet(StringComparer.Ordinal),
             // The Blade 18 (2024) firmware rejects 0F:98/18, even though the family
             // shares those reports. Keep them optional; the other manifests still own them.
@@ -177,7 +180,8 @@ internal sealed partial class RazerDeviceRegistry
                     CapabilityIds.TimeToDimGet or CapabilityIds.TimeToDimSet or
                     CapabilityIds.IndicatorLedGet or CapabilityIds.IndicatorLedSet or
                     CapabilityIds.GpuCardDetectionGet or CapabilityIds.GpuCardDetectionSet or
-                    CapabilityIds.FnKeySwapGet or CapabilityIds.FnKeySwapSet))
+                    CapabilityIds.FnKeySwapGet or CapabilityIds.FnKeySwapSet or
+                    CapabilityIds.FanInformationGet))
                 .ToHashSet(StringComparer.Ordinal),
             // Per-model reports are optional: 0270 rejects gaming-mode 00:08;
             // 024C rejects Power Mode Control with 0x05; 023A rejects Boost and
@@ -186,6 +190,7 @@ internal sealed partial class RazerDeviceRegistry
                 .Where(capability => capability is not (CapabilityIds.BoostGet or CapabilityIds.BoostSet or
                     CapabilityIds.ChargeLimitGet or CapabilityIds.ChargeLimitSet or
                     CapabilityIds.AdapterPowerGet or
+                    CapabilityIds.FanInformationGet or
                     CapabilityIds.PowerModeGet or CapabilityIds.PowerModeSet or
                     CapabilityIds.LogoPowerGet or CapabilityIds.LogoPowerSet or
                     CapabilityIds.LogoModeGet or CapabilityIds.LogoModeSet or

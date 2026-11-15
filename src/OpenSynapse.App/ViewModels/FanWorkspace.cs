@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Devices;
@@ -13,6 +14,7 @@ namespace OpenSynapse.App.ViewModels;
 public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposable
 {
     private readonly BladeFanCurveRuntime _bladeFanRuntime;
+    private readonly DispatcherQueue? _dispatcherQueue;
     private readonly Func<ProfileDocument> _getProfile;
     private readonly Func<BladeProfileSettings> _editablePerformanceBladeProfile;
     private readonly Func<CancellationToken, Task<bool>> _saveProfileAsync;
@@ -59,6 +61,7 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
         Action requestDeviceRefresh)
     {
         _bladeFanRuntime = new BladeFanCurveRuntime(deviceTelemetryReader, performanceMonitor);
+        _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
         _getProfile = getProfile;
         _editablePerformanceBladeProfile = editablePerformanceBladeProfile;
         _saveProfileAsync = saveProfileAsync;
@@ -85,9 +88,7 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
 
     private BladeFanCurveEditorViewModel CreateBladeFanCurveEditor(BladeFanCurve curve)
     {
-        var range = BladeModelCapabilities.FanCurveTargetRangeFor(
-            _blade._bladeProductId,
-            CurrentBladePerformanceMode);
+        var range = CurrentBladeFanCurveRange;
 
         _bladeFanCurveBaseline = curve;
         return new BladeFanCurveEditorViewModel(
@@ -540,6 +541,7 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
 
             _bladeFanControlFingerprint = fingerprint;
             _bladeFanControlCompletion = _bladeFanRuntime.Completion;
+            SetBladeFanRuntimeError(null);
             _ = ObserveBladeFanControlAsync(_bladeFanControlCompletion);
             return new(null, Changed: true);
         }
@@ -563,6 +565,7 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
         try
         {
             await _bladeFanRuntime.StopAsync().ConfigureAwait(false);
+            SetBladeFanRuntimeError(null);
             return null;
         }
         catch (Exception exception) when (IsExpectedFanException(exception))
@@ -639,6 +642,7 @@ public sealed partial class FanWorkspace : INotifyPropertyChanged, IAsyncDisposa
                 _diagnosticLog.TryWrite("blade-fan", $"Fan control failed: {exception}");
                 _bladeFanControlFingerprint = string.Empty;
                 _bladeFanControlCompletion = null;
+                SetBladeFanRuntimeError(RuntimeErrors.Format(exception));
                 try
                 {
                     await _bladeFanRuntime.StopAsync().ConfigureAwait(false);

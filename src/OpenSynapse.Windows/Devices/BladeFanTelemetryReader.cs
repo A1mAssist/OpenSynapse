@@ -4,7 +4,7 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
 
-internal sealed class BladeFanTelemetryReader
+internal sealed partial class BladeFanTelemetryReader
 {
     private readonly RazerDeviceResolver _resolver;
     private readonly RazerCapabilityClient _client;
@@ -108,7 +108,9 @@ internal sealed class BladeFanTelemetryReader
         {
             // The EC stops answering the target report below the model floor. Clamp to
             // the curve range so a point below it cannot silence the target readback.
-            var range = blade.GetBladeFanCurveTargetRange(original.Thermal.PerformanceMode);
+            var range = await ReadFanRangeAsync(
+                    blade, original.Thermal.PerformanceMode, cancellationToken)
+                ?? blade.GetBladeFanCurveTargetRange(original.Thermal.PerformanceMode);
             cpuTargetRpm = Math.Clamp(cpuTargetRpm, range.MinimumRpm, range.MaximumRpm);
             gpuTargetRpm = Math.Clamp(gpuTargetRpm, range.MinimumRpm, range.MaximumRpm);
         }
@@ -141,8 +143,19 @@ internal sealed class BladeFanTelemetryReader
             var performanceModeByte = requiresCustomMode && mode == BladeFanMode.Manual
                 ? (byte)BladePerformanceMode.Custom
                 : original.Thermal.PerformanceModeByte;
+            var modeChanged = original.Thermal.FanMode != mode ||
+                original.Thermal.PerformanceModeByte != performanceModeByte;
 
-            if (requiresCustomMode)
+            if (writeTargets && !modeChanged)
+            {
+                // Re-writing the mode resets the EC target and restarts its ramp. In the
+                // steady state only the two speed registers belong on the wire.
+                await WriteFanTargetAsync(
+                    blade, BladeFanProtocol.ZoneCpu, cpuTargetRpm, cancellationToken, curveTarget: true);
+                await WriteFanTargetAsync(
+                    blade, BladeFanProtocol.ZoneGpu, gpuTargetRpm, cancellationToken, curveTarget: true);
+            }
+            else if (requiresCustomMode)
             {
                 // The 028C EC only acts on a fixed target after the Custom/manual
                 // mode write, so the mode has to go out first.

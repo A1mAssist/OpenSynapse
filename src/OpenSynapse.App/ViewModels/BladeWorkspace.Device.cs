@@ -53,6 +53,7 @@ public sealed partial class BladeWorkspace
         if (_blade._bladeProductId != (blade?.ProductId ?? 0))
         {
             _blade._bladeProductId = blade?.ProductId ?? 0;
+            _blade._bladeFanRange = null;
             OnPropertyChanged(nameof(BladeProductId));
             _gpuModeRecoveryReconciled = false;
             RefreshModelCapabilityUi();

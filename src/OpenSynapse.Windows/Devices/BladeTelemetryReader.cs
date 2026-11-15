@@ -51,6 +51,7 @@ internal sealed partial class BladeTelemetryReader
         bool? bladeOneTimeFullChargeEnabled = null;
         bool? bladeLocalDimmingEnabled = null;
         bool? bladeFnKeyMultimediaPrimary = null;
+        BladeFanTargetRange? bladeFanRange = null;
         string? bladeMcuVersion = null;
         BladeAdapterPowerSnapshot? bladeAdapterPower = null;
         bool? bladeAutoSleepEnabled = null;
@@ -106,6 +107,14 @@ internal sealed partial class BladeTelemetryReader
         bladePerformanceMode = thermal.PerformanceMode;
         bladeFanMode = thermal.FanMode;
         bladeThermalReadSucceeded = thermal.Succeeded;
+
+        if (bladeThermalReadSucceeded &&
+            thermal.PerformanceMode is BladePerformanceMode thermalMode &&
+            owns(CapabilityIds.FanInformationGet))
+        {
+            bladeFanRange = await _fan.ReadFanRangeAsync(
+                blade, thermalMode, cancellationToken);
+        }
 
         if (owns(CapabilityIds.FanTargetGet))
         {
@@ -456,7 +465,8 @@ internal sealed partial class BladeTelemetryReader
             canWriteTimeToDim,
             canWriteIndicatorLed,
             canWriteGpuCardDetection,
-            errors);
+            errors,
+            bladeFanRange);
     }
 
     public void ResetValidation() => _validation.Reset();
@@ -610,38 +620,3 @@ internal sealed partial class BladeTelemetryReader
     }
 }
 
-internal sealed record BladeTelemetryReadResult(
-    byte? BladeKeyboardBrightness,
-    BladePerformanceMode? BladePerformanceMode,
-    BladeLighting2023Effect? BladeKeyboardEffect,
-    BladeFanMode? BladeFanMode,
-    int? BladeFanTargetRpm,
-    int? BladeChargeLimitPercent,
-    BladeCpuBoostMode? BladeCpuBoostMode,
-    BladeGpuBoostMode? BladeGpuBoostMode,
-    BladeMaxFanMode? BladeMaxFanMode,
-    bool? BladeCpuPowerBoostEnabled,
-    int? BladeCurrentFanCpuRpm,
-    int? BladeCurrentFanGpuRpm,
-    byte? BladeAdvancedFanCpuModeRaw,
-    byte? BladeAdvancedFanGpuModeRaw,
-    BladeLogoMode? BladeLogoMode,
-    byte? BladeLogoEffectRaw,
-    BladeGameModeTelemetry? BladeGameMode, bool BladeGamingModeWritable,
-    bool? BladeStartupAnimationEnabled,
-    BladeNativeDisplayMode? BladeNativeDisplayMode,
-    BladeSkuHardwareConfiguration? BladeSkuHardwareConfiguration,
-    bool? BladeOneTimeFullChargeEnabled,
-    bool? BladeLocalDimmingEnabled,
-    bool? BladeFnKeyMultimediaPrimary,
-    string? BladeMcuVersion,
-    BladeAdapterPowerSnapshot? BladeAdapterPower,
-    bool? BladeAutoSleepEnabled,
-    BladeTimeToDimTelemetry? BladeTimeToDim,
-    bool? BladeIndicatorLedEnabled,
-    BladeGpuCardDetectionTelemetry? BladeGpuCardDetection,
-    bool BladeAutoSleepWritable,
-    bool BladeTimeToDimWritable,
-    bool BladeIndicatorLedWritable,
-    bool BladeGpuCardDetectionWritable,
-    IReadOnlyList<string> Errors);

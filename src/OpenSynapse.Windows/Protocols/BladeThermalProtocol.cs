@@ -170,7 +170,8 @@ public static class BladeThermalProtocol
 /// <summary>
 /// Exact rzDevice25 0D:83 decode. The middleware exposes the GPU/VRAM/A..G view
 /// and a second fan-curve view over the same bytes; the aliases below preserve
-/// that overlap without inventing units. All values are raw protocol values.
+/// that overlap. Raw bytes stay byte-for-byte; the RPM properties apply the
+/// middleware's 100x scale to B/D/F.
 /// </summary>
 public readonly record struct BladeThermalFanInformation(
     byte ClassId,
@@ -191,6 +192,12 @@ public readonly record struct BladeThermalFanInformation(
     public ushort FanUpdate => (ushort)(((Vram & 0xFF) << 8) | A);
 
     public ushort FanMaxDelta => (ushort)((B << 8) | C);
+
+    public int MinimumFanSpeedRpm => B * 100;
+
+    public int DefaultFanSpeedRpm => D * 100;
+
+    public int MaximumFanSpeedRpm => F * 100;
 }
 
 /// <summary>

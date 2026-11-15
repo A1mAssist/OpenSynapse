@@ -7,6 +7,7 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
       <StackPanel Spacing="16">
         <InfoBar IsOpen="{Binding HasDeviceError}" IsClosable="False" Severity="Warning" Message="{Binding DeviceErrorText}" />
+        <InfoBar IsOpen="{Binding Fan.HasBladeFanRuntimeError}" IsClosable="False" Severity="Warning" Message="{Binding Fan.BladeFanRuntimeError}" />
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
           <TextBlock local:Localized.Uid="BladeFanCurveHint" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="12" VerticalAlignment="Center" />
           <ComboBox Grid.Column="1" ItemsSource="{Binding Fan.BladeFanCurveModeOptions}" SelectedIndex="{Binding Fan.BladeFanCurveModeIndex, Mode=TwoWay}" MinWidth="160" />

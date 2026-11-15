@@ -374,11 +374,7 @@ public sealed record BladeAdapterPowerSnapshot(
 
 public sealed record BladeFanControlState(BladeFanMode Mode, int TargetRpm);
 
-public sealed record BladeFanControlSnapshot(
-    BladePerformanceMode PerformanceMode,
-    BladeFanMode Mode,
-    int CpuTargetRpm,
-    int GpuTargetRpm);
+public sealed record BladeFanControlSnapshot(BladePerformanceMode PerformanceMode, BladeFanMode Mode, int CpuTargetRpm, int GpuTargetRpm);
 
 public sealed record RazerDeviceTelemetry(
     byte? BladeKeyboardBrightness,
@@ -426,7 +422,8 @@ public sealed record RazerDeviceTelemetry(
     bool BladeIndicatorLedWritable = false,
     bool BladeGpuCardDetectionWritable = false,
     IReadOnlyDictionary<string, IReadOnlySet<string>>? DeclaredCapabilities = null,
-    bool ViperWirelessLinkDown = false);
+    bool ViperWirelessLinkDown = false,
+    BladeFanTargetRange? BladeFanRange = null);
 
 public partial interface IRazerDeviceTelemetryReader
 {
