@@ -22,7 +22,8 @@ internal static class RazerSpecialKeyMap
         Maps.ToFrozenDictionary(
             item => item.Key,
             item => (IReadOnlyDictionary<byte, byte>)item.Value
-                .ToFrozenDictionary(pair => pair.Value, pair => pair.Key));
+                .GroupBy(pair => pair.Value)
+                .ToFrozenDictionary(group => group.Key, group => group.First().Key));
 
     internal static bool TryResolve(ushort productId, byte mappingButtonId, out byte razerKeyCode)
     {

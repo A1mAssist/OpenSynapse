@@ -196,11 +196,12 @@ public sealed partial class RazerMappingAssetService
     private static IReadOnlyDictionary<byte, string> MapButtonNames(
         ushort productId,
         IReadOnlyDictionary<byte, string> names) =>
-        names.ToDictionary(
-            pair => RazerSpecialKeyMap.TryResolveButtonId(productId, pair.Key, out var mappedButtonId)
-                ? mappedButtonId
-                : pair.Key,
-            pair => pair.Value);
+        names
+            .Select(pair => (
+                Id: RazerSpecialKeyMap.TryResolveButtonId(productId, pair.Key, out var mapped) ? mapped : pair.Key,
+                pair.Value))
+            .DistinctBy(item => item.Id)
+            .ToDictionary(item => item.Id, item => item.Value);
 
     private async Task<RazerMappingKeyboardLayout?> LoadKeyboardAsync(
         ushort productId,

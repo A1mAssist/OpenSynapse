@@ -17,12 +17,14 @@ $labelToMappingId = @{
 }
 
 # Bundles that carry only the DKM id and the private key code, without a
-# buttonKey label, still pin these four mapping-page ids.
+# buttonKey label, still pin these semantic and firmware mapping-page ids.
 $inputIdToMapping = @{
-    DKM_SB_01  = @{ Id = 0x0E; Label = 'CycleUpProfile' }
-    DKM_SB_02  = @{ Id = 0x0F; Label = 'SensitivityClutch' }
-    DKM_SB_03  = @{ Id = 0x60; Label = 'CycleUpSensitivityStages' }
-    DKM_M_106  = @{ Id = 0x6A; Label = 'ScrollModeSwitch' }
+    DKM_SB_01      = @{ Ids = @(0x0E, 0x50); Label = 'CycleUpProfile' }
+    DKM_SB_02      = @{ Ids = @(0x0F, 0x51); Label = 'SensitivityClutch' }
+    DKM_SB_03      = @{ Ids = @(0x60, 0x52); Label = 'CycleUpSensitivityStages' }
+    DKM_M_106      = @{ Ids = @(0x6A, 0x54); Label = 'ScrollModeSwitch' }
+    DKM_HYPERSHIFT = @{ Ids = @(0x59); Label = 'HyperShift' }
+    DKM_AI_PROMPT  = @{ Ids = @(0xD2); Label = 'AI_Launcher' }
 }
 
 $definitions = Get-Content (Join-Path $Root 'device-definitions.json') -Raw | ConvertFrom-Json
@@ -67,16 +69,18 @@ foreach ($definition in $definitions | Where-Object { $_.category -eq 'mouse' -a
         }
         $keys[('{0:X2}' -f $id)] = [ordered]@{ code = $code; label = $label }
     }
-    foreach ($match in [regex]::Matches($text, '\{inputID:"(DKM_SB_01|DKM_SB_02|DKM_SB_03|DKM_M_106)",key:(\d+)\}')) {
+    foreach ($match in [regex]::Matches($text, '\{inputID:"(DKM_SB_01|DKM_SB_02|DKM_SB_03|DKM_M_106|DKM_HYPERSHIFT|DKM_AI_PROMPT)"[^}]*key:(\d+)[^}]*\}')) {
         $inputId = $match.Groups[1].Value
         $mapping = $inputIdToMapping[$inputId]
-        $keyId = '{0:X2}' -f [int]$mapping.Id
-        if ($keys.Contains($keyId)) { continue }
         $code = [int]$match.Groups[2].Value
         if ($code -lt 0 -or $code -gt 255) {
             throw "Key code $code is outside one byte for $($definition.productId) $inputId"
         }
-        $keys[$keyId] = [ordered]@{ code = $code; label = $mapping.Label }
+        foreach ($id in $mapping.Ids) {
+            $keyId = '{0:X2}' -f [int]$id
+            if ($keys.Contains($keyId)) { continue }
+            $keys[$keyId] = [ordered]@{ code = $code; label = $mapping.Label }
+        }
     }
 
     if ($keys.Count -eq 0) { continue }
@@ -127,6 +131,8 @@ Assert-Key '00C1' '60' 82
 Assert-Key '00BF' '60' 82
 Assert-Key '00AB' '60' 82
 Assert-Key '00AB' '6A' 84
+Assert-Key 'B00A' '52' 82
+Assert-Key '00E2' 'D2' 210
 
 $json = $result | ConvertTo-Json -Depth 6
 Set-Content -LiteralPath $Output -Value $json -Encoding utf8
