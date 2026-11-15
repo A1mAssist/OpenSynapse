@@ -10,13 +10,28 @@ namespace OpenSynapse.Core.Devices;
 /// </summary>
 public static class BladeGpuModelCapabilities
 {
-    // 028C's official UI exposes Optimus and Dedicated GPU, but its firmware does
-    // not always answer the separate 0D:8A capability report. Its bundle still uses
-    // the same 0D:89/09/8A VGA Configure family as the Blade 16 (2023).
+    // Every listed middleware bundle sets hasGPUmode and the shared rzDevice25 VGA
+    // Configure path uses 0D:89/09/8A. The separate 0D:8A report is not reliable on
+    // older firmware, so the two official modes are pinned here.
     private static readonly FrozenDictionary<ushort, BladeDisplayMuxCapabilities> KnownDisplayMuxCapabilities =
         new Dictionary<ushort, BladeDisplayMuxCapabilities>
         {
+            [0x0234] = BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
+            [0x023B] = BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
+            [0x0245] = BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
+            [0x0246] = BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
+            [0x024B] = BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
+            [0x0253] = BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
+            [0x0256] = BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
+            [0x026D] = BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
+            [0x026E] = BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
+            [0x0270] = BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
+            [0x0279] = BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
+            [0x027A] = BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
+            [0x028A] = BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
+            [0x028B] = BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
             [0x028C] = BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
+            [0x029E] = BladeDisplayMuxCapabilities.Hybrid | BladeDisplayMuxCapabilities.Discrete,
         }.ToFrozenDictionary();
 
     private static readonly FrozenSet<ushort> DedicatedGpuPnpSwitchProductIds =

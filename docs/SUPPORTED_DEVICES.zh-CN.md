@@ -313,7 +313,7 @@ Naga V3 Pro（`00E7`/`00E8`）使用 Naga V2 Pro（`00A8`）协议。Viper V4 Pr
 | Razer Blade Stealth (Mid 2017) | `1532:022D` | — |
 | Razer Book (2020) | `1532:026A` | — |
 
-Blade 16 (2023) 只提供固件渲染的关闭、呼吸、光谱和波浪效果，没有逐键矩阵通道。Blade 15 Advanced (2019, `023A`) 使用继承的 6x16 `03:0A` 灯效和 `03:0B` 帧通道。2026 款 Blade 16/18 按 P23/P24 对齐热控状态、固定风扇转速、软件风扇曲线、充电上限、性能模式、适配器功率和 VGA MUX；原生键盘灯光使用中间件的 03:0A 固件灯效报文和 03:0B 软件帧报文。MUX 写入按 0D:8A 能力位；只有设备报告 DynamicDisplaySwitch 时才显示 DDS，否则只显示 Hybrid/Discrete。2026 的 deviceFeatures 未列出最大风扇开关，因此不暴露 Max Fan。Blade 18 (2026) 的 bundle 把 `Gaming` wire value（0x01）显示为 Turbo，OpenSynapse 只做同一个显示别名，不新增第二种模式。Blade 16 (2026) 的 HyperBoost 和风扇读取已在一台实机核对；Blade 18 (2026) 仍为 bundle 对齐结果。
+Blade 16 (2023) 只提供固件渲染的关闭、呼吸、光谱和波浪效果，没有逐键矩阵通道。Blade 15 Advanced (2019, `023A`) 使用继承的 6x16 `03:0A` 灯效和 `03:0B` 帧通道。2026 款 Blade 16/18 按 P23/P24 对齐热控状态、固定风扇转速、软件风扇曲线、充电上限、性能模式、适配器功率和 VGA MUX；原生键盘灯光使用中间件的 03:0A 固件灯效报文和 03:0B 软件帧报文。MUX 写入按 0D:8A 能力位；只有设备报告 DynamicDisplaySwitch 时才显示 DDS，否则只显示 Hybrid/Discrete。2026 的 deviceFeatures 未列出最大风扇开关，因此不暴露 Max Fan。Blade 18 (2026) 的 bundle 把 `Gaming` wire value（0x01）显示为 Turbo，OpenSynapse 只做同一个显示别名，不新增第二种模式。Blade 16 (2026) 的 HyperBoost 和风扇读取已在一台实机核对；Blade 18 (2026) 仍为 bundle 对齐结果。2018–2023 款中，中间件声明 `hasGPUmode` 的 Blade 现在统一开放 `0D:89/09/8A` VGA MUX（Hybrid/Discrete）；2021 款 Blade 15 Advanced 保留 legacy `0D:90/10/8B` 路径。
 
 ## 耳机
 
