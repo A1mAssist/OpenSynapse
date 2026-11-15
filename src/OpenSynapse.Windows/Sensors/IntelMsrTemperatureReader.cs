@@ -11,6 +11,7 @@ namespace OpenSynapse.Windows.Sensors;
 internal sealed class IntelMsrTemperatureReader : IDisposable
 {
     private const uint PackageThermStatusMsr = 0x1B1;
+    private const uint CoreThermStatusMsr = 0x19C;
     private const uint TemperatureTargetMsr = 0x1A2;
     private const int DefaultTjMaxCelsius = 100;
 
@@ -47,9 +48,20 @@ internal sealed class IntelMsrTemperatureReader : IDisposable
                     return null;
                 }
 
-                return DecodePackageTemperature(
-                    ReadMsr(_execute, _handle, PackageThermStatusMsr),
-                    ReadMsr(_execute, _handle, TemperatureTargetMsr));
+                var target = ReadMsr(_execute, _handle, TemperatureTargetMsr);
+                var package = TryReadMsr(_execute, _handle, PackageThermStatusMsr);
+                if (package is { } packageStatus &&
+                    DecodePackageTemperature(packageStatus, target) is { } packageTemperature)
+                {
+                    return packageTemperature;
+                }
+
+                // Some Raptor Lake firmware leaves the package validity bit clear.
+                // The per-core status uses the same TjMax/delta layout and is still valid.
+                var core = TryReadMsr(_execute, _handle, CoreThermStatusMsr);
+                return core is { } coreStatus
+                    ? DecodePackageTemperature(coreStatus, target)
+                    : null;
             }
             catch (Exception exception) when (
                 exception is DllNotFoundException or EntryPointNotFoundException or
@@ -151,6 +163,18 @@ internal sealed class IntelMsrTemperatureReader : IDisposable
         }
 
         return output[0];
+    }
+
+    private static ulong? TryReadMsr(PawnIoExecute execute, IntPtr handle, uint msr)
+    {
+        try
+        {
+            return ReadMsr(execute, handle, msr);
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
     }
 
     private static int LoadModule(PawnIoLoad load, IntPtr handle, byte[] blob)
