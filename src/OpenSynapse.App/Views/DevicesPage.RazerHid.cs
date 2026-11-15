@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using OpenSynapse.App.ViewModels;
+using OpenSynapse.App.Views.DevicePanels;
 using OpenSynapse.Core.Devices;
 using Windows.System;
 
@@ -25,10 +26,14 @@ public sealed partial class DevicesPage : UserControl
 
     private async void ConnectedDeviceCardClick(object sender, RoutedEventArgs e)
     {
-        if (sender is not Button button) return;
+        if (sender is not ConnectedDeviceCard { DataContext: ConnectedDeviceRowViewModel row })
+        {
+            return;
+        }
+
         try
         {
-            await SelectDeviceSourceAsync(button.Tag);
+            await SelectDeviceSourceAsync(row.Source);
         }
         catch (OperationCanceledException) when (Lifetime.IsCancellationRequested) { }
         catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
