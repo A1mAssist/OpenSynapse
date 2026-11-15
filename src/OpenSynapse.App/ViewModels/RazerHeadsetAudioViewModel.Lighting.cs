@@ -110,10 +110,16 @@ public sealed partial class RazerHeadsetAudioViewModel
         var previousDirection = SelectedWaveDirectionIndex;
         var previousEffect = LightingEffects[previousEffectIndex];
         var effect = LightingEffects[SelectedLightingEffectIndex];
-        if (effect == RazerChromaEffect.CustomFrame)
+        if (IsJolie && IsSoftwareLightingEffect(effect))
         {
-            if (!await RunAmbientAsync(
-                    previousEffect, previousPrimary, previousSecondary, cancellationToken))
+            if (!await RunSoftwareEffectAsync(
+                    CreateSoftwareEffect(effect, PrimaryColor, SecondaryColor),
+                    effect == RazerChromaEffect.CustomFrame,
+                    effect == RazerChromaEffect.AudioMeter,
+                    previousEffect,
+                    previousPrimary,
+                    previousSecondary,
+                    cancellationToken))
             {
                 SelectedLightingEffectIndex = previousEffectIndex;
                 return;
@@ -312,7 +318,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             try
             {
                 // Ambient resumes on Apply; probes also call LoadAsync and must not start capture.
-                if (effect != RazerChromaEffect.CustomFrame)
+                if (!IsSoftwareLightingEffect(effect))
                 {
                     await StopAmbientCoreAsync();
                     await WriteChromaEffectHardwareAsync(effect, primary, secondary, cancellationToken);

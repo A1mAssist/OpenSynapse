@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.UI.Dispatching;
 using OpenSynapse.Core.Lighting;
 using OpenSynapse.Windows.Devices;
@@ -15,13 +16,49 @@ public sealed partial class RazerHeadsetAudioViewModel
         Blur = 5,
     };
 
+    private static StudioEffectParams CreateSoftwareEffect(
+        RazerChromaEffect effect, Color primary, Color secondary) => effect switch
+    {
+        RazerChromaEffect.CustomFrame => AmbientParameters,
+        RazerChromaEffect.Starlight => new StudioEffectParams
+        {
+            Effect = StudioEffectKind.Starlight,
+            Primary = ToStudio(primary),
+            Secondary = ToStudio(secondary),
+            DurationMs = 2000,
+        },
+        RazerChromaEffect.Fire => new StudioEffectParams
+        {
+            Effect = StudioEffectKind.Fire,
+            Primary = ToStudio(primary),
+            Secondary = ToStudio(secondary),
+        },
+        RazerChromaEffect.AudioMeter => new StudioEffectParams
+        {
+            Effect = StudioEffectKind.Audio,
+            Primary = ToStudio(primary),
+            Secondary = ToStudio(secondary),
+            AutoBoost = true,
+        },
+        _ => throw new ArgumentOutOfRangeException(nameof(effect)),
+    };
+
+    private static StudioRgb ToStudio(Color color) => new(color.R, color.G, color.B);
+
+    private static bool IsSoftwareLightingEffect(RazerChromaEffect effect) =>
+        effect is RazerChromaEffect.CustomFrame or RazerChromaEffect.Starlight
+            or RazerChromaEffect.Fire or RazerChromaEffect.AudioMeter;
+
     private readonly DispatcherQueue? _dispatcher = DispatcherQueue.GetForCurrentThread();
     private StudioInputSampler? _ambientSampler;
     private RazerMakoXChromaService? _ambientService;
     private CancellationTokenSource? _ambientCancellation;
     private Task? _ambientPump;
 
-    private async Task<bool> RunAmbientAsync(
+    private async Task<bool> RunSoftwareEffectAsync(
+        StudioEffectParams parameters,
+        bool requireScreen,
+        bool requireAudio,
         RazerChromaEffect fallbackEffect,
         Color fallbackPrimary,
         Color fallbackSecondary,
@@ -30,7 +67,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         if (!BeginOperation()) return false;
         try
         {
-            await StartAmbientCoreAsync(cancellationToken).ConfigureAwait(true);
+            await StartSoftwareEffectAsync(parameters, requireScreen, requireAudio, cancellationToken)
+                .ConfigureAwait(true);
             ErrorText = string.Empty;
             OperationStatusText = AppStrings.Text("BlackSharkSaved");
             return true;
@@ -65,32 +103,47 @@ public sealed partial class RazerHeadsetAudioViewModel
         }
     }
 
-    private async Task StartAmbientCoreAsync(CancellationToken cancellationToken)
+    private async Task StartSoftwareEffectAsync(
+        StudioEffectParams parameters,
+        bool requireScreen,
+        bool requireAudio,
+        CancellationToken cancellationToken)
     {
         await StopAmbientCoreAsync().ConfigureAwait(true);
 
-        var sampler = new StudioInputSampler();
+        StudioInputSampler? sampler = null;
         var service = new RazerMakoXChromaService(
             _connection.DevicePath, _diagnostic, keepOpen: true);
         try
         {
             await service.SetCustomFrameEffectAsync(cancellationToken).ConfigureAwait(true);
-            await sampler.StartAsync(cancellationToken).ConfigureAwait(true);
-            await Task.Delay(300, cancellationToken).ConfigureAwait(true);
-            if (!sampler.HasScreenFrame)
+            if (requireScreen || requireAudio)
             {
-                throw new InvalidOperationException("Screen capture is unavailable.");
+                sampler = new StudioInputSampler();
+                await sampler.StartAsync(cancellationToken).ConfigureAwait(true);
+            }
+
+            if (requireScreen)
+            {
+                await Task.Delay(300, cancellationToken).ConfigureAwait(true);
+                if (!sampler!.HasScreenFrame)
+                {
+                    throw new InvalidOperationException("Screen capture is unavailable.");
+                }
             }
         }
         catch
         {
-            try
+            if (sampler is not null)
             {
-                await sampler.DisposeAsync().ConfigureAwait(true);
-            }
-            catch (Exception exception) when (IsExpectedException(exception))
-            {
-                _diagnostic?.Invoke($"mako-x ambient capture dispose failed: {exception.Message}");
+                try
+                {
+                    await sampler.DisposeAsync().ConfigureAwait(true);
+                }
+                catch (Exception exception) when (IsExpectedException(exception))
+                {
+                    _diagnostic?.Invoke($"mako-x ambient capture dispose failed: {exception.Message}");
+                }
             }
 
             try
@@ -110,7 +163,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         _ambientService = service;
         _ambientCancellation = stop;
         _ambientPump = Task.Run(
-            () => PumpAmbientAsync(sampler, service, stop.Token),
+            () => PumpSoftwareEffectAsync(parameters, sampler, service, stop.Token),
             CancellationToken.None);
     }
 
@@ -170,9 +223,13 @@ public sealed partial class RazerHeadsetAudioViewModel
         Color secondary,
         CancellationToken cancellationToken)
     {
-        if (effect == RazerChromaEffect.CustomFrame)
+        if (IsSoftwareLightingEffect(effect))
         {
-            await StartAmbientCoreAsync(cancellationToken).ConfigureAwait(true);
+            await StartSoftwareEffectAsync(
+                CreateSoftwareEffect(effect, primary, secondary),
+                effect == RazerChromaEffect.CustomFrame,
+                effect == RazerChromaEffect.AudioMeter,
+                cancellationToken).ConfigureAwait(true);
             return;
         }
 
@@ -181,20 +238,22 @@ public sealed partial class RazerHeadsetAudioViewModel
             .ConfigureAwait(true);
     }
 
-    private async Task PumpAmbientAsync(
-        StudioInputSampler sampler,
+    private async Task PumpSoftwareEffectAsync(
+        StudioEffectParams parameters,
+        StudioInputSampler? sampler,
         RazerMakoXChromaService service,
         CancellationToken cancellationToken)
     {
+        var clock = Stopwatch.StartNew();
         using var timer = new PeriodicTimer(
             TimeSpan.FromSeconds(1d / StudioEffectRenderer.NativeFramesPerSecond));
         try
         {
             while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
             {
-                var input = sampler.Sample(1, RazerMakoXChromaService.LedCount);
+                var input = sampler?.Sample(1, RazerMakoXChromaService.LedCount) ?? default;
                 var colors = StudioEffectRenderer.Render(
-                    AmbientParameters, 1, RazerMakoXChromaService.LedCount, 0, input);
+                    parameters, 1, RazerMakoXChromaService.LedCount, clock.Elapsed.TotalSeconds, input);
                 var frame = new byte[colors.Length * 3];
                 for (var index = 0; index < colors.Length; index++)
                 {
