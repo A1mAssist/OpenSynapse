@@ -4,7 +4,7 @@ English · [Chinese](CHANGELOG.zh-CN.md)
 
 All notable user-visible changes to OpenSynapse are documented here.
 
-## [Unreleased]
+## [1.7.2] - 2026-11-15
 
 ### Added
 
@@ -89,6 +89,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 - Game mode uses the standard Game LED command, so the state persists on keyboards that store it.
 - The driver check only judges the interfaces the package covers, so an installed receiver no longer prompts for a driver; downloaded driver packages must carry a Razer publisher signature.
 - The MSI upgrade fails with the real reason instead of leaving a half-installed app when the running process cannot be closed.
+- ProgramData service caches now use a SYSTEM/Administrators-only ACL, so a standard user cannot plant a junction that the service follows.
 
 ## [1.7.1] - 2026-11-09
 
