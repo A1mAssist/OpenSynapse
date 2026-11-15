@@ -305,6 +305,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         RazerChromaEffect effect,
         Color primary,
         Color secondary,
+        int directionIndex,
         CancellationToken cancellationToken)
     {
         if (IsAvnera65)
@@ -319,11 +320,11 @@ public sealed partial class RazerHeadsetAudioViewModel
         {
             // The Joliet firmware has no Starlight/Fire/Audio Meter id; these run
             // as 25 fps per-LED frames on the same custom-frame channel as Ambient.
-            await StartSoftwareEffectCoreAsync(effect, primary, secondary, cancellationToken);
+            await StartSoftwareEffectCoreAsync(effect, primary, secondary, directionIndex, cancellationToken);
             return;
         }
 
-        await StopSoftwareEffectCoreAsync();
+        await StopSoftwareEffectCoreAsync(fadeOut: true);
         await WriteChromaEffectAsync(
             OpenChromaService(), effect, primary, secondary, cancellationToken);
     }

@@ -109,7 +109,9 @@ public static partial class StudioEffectRenderer
             // CBreathingEffect 0x650f0 builds a duration-length palette and
             // advances one entry per 25 fps tick; the stops already describe
             // the two peaks, so no separate envelope is applied.
-            var frames = PaletteFrames(parameters, 14_000);
+            var frames = PaletteFrames(
+                parameters,
+                parameters.DurationMs > 0 ? parameters.DurationMs : 14_000);
             var palette = GradientTable(parameters, frames);
             return Fill(rows, columns, palette[PaletteCursor(time, frames)]);
         }
@@ -130,7 +132,9 @@ public static partial class StudioEffectRenderer
         if (parameters.ColorStops.Count >= 2)
         {
             // CSpectrumEffect 0x61dc0 writes one palette entry per 25 fps tick.
-            var frames = PaletteFrames(parameters, 37_740);
+            var frames = PaletteFrames(
+                parameters,
+                parameters.DurationMs > 0 ? parameters.DurationMs : 37_740);
             var palette = GradientTable(parameters, frames);
             return Fill(rows, columns, palette[PaletteCursor(time, frames)]);
         }

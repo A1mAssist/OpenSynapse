@@ -11,6 +11,8 @@ public enum RazerChromaEffect : byte
     CustomFrame = 8,
     Fire = 9,
     AudioMeter = 10,
+    /// <summary>Wheel/rotation; only the engine-rendered dialects use it.</summary>
+    Wheel = 12,
 }
 
 /// <summary>
