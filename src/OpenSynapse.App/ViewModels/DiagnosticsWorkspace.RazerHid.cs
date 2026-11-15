@@ -34,18 +34,34 @@ public sealed partial class DiagnosticsWorkspace
     {
         foreach (var row in _razerHid.Devices)
         {
+            var selectedDevice = _razerHid.SelectedDevice?.InstanceId == row.Connection.InstanceId
+                ? _razerHid.SelectedDevice
+                : null;
+            var capability = selectedDevice is { RequiresRescan: false, ProtocolTotalCount: > 0 } capabilityDetail
+                ? AppStrings.FormatText(
+                    capabilityDetail.ProtocolAvailableCount == capabilityDetail.ProtocolTotalCount
+                        ? "ProtocolAvailableCount"
+                        : "ProtocolPartiallyAvailableCount",
+                    capabilityDetail.ProtocolAvailableCount,
+                    capabilityDetail.ProtocolTotalCount)
+                : AppStrings.Text("Text_5EAB9F51");
+            var status = selectedDevice is { RequiresRescan: true } rescanDetail
+                ? rescanDetail.StatusText
+                : row.Connection.IsReady
+                    ? AppStrings.Text("BlackSharkStatusConnected")
+                    : row.Status;
             var group = new DiagnosticRowViewModel(
                 row.Name,
-                AppStrings.Text("Text_5EAB9F51"),
-                row.Status,
+                capability,
+                status,
                 row.Identity,
                 row.StatusBrush);
             Rows.Add(group);
             _razerHidRows.Add(group);
-            var details = _razerHid.SelectedDevice?.InstanceId == row.Connection.InstanceId
-                ? _razerHid.SelectedDevice.ProtocolDetails
+            var details = selectedDevice is not null
+                ? selectedDevice.ProtocolDetails
                 : RazerHidDeviceViewModel.BuildProtocolDetails(row.Connection);
-            foreach (var detail in details) group.AddProtocolDetail(detail);
+            foreach (var protocolDetail in details) group.AddProtocolDetail(protocolDetail);
             if (row.HasError)
             {
                 group.AddIssue(new DiagnosticRowViewModel(row.Name, group.Capability,
@@ -64,8 +80,10 @@ public sealed partial class DiagnosticsWorkspace
         {
             var group = new DiagnosticRowViewModel(
                 row.Name,
-                AppStrings.Text("Text_5EAB9F51"),
-                row.Status,
+                row.CapabilityText,
+                row.Connection.IsReady
+                    ? AppStrings.Text("BlackSharkStatusConnected")
+                    : row.Status,
                 row.Identity,
                 row.StatusBrush);
             Rows.Add(group);
