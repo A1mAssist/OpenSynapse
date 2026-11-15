@@ -24,10 +24,7 @@
                         <Button local:Localized.Uid="RazerHeadsetThxPatcherButton" Click="HeadsetAudioOpenThxPatcherClick" Visibility="{Binding ThxPatcherVisibility}" Style="{StaticResource SecondaryButtonStyle}" />
                       </StackPanel>
                       <StackPanel Spacing="12" Visibility="{Binding ThxControlsVisibility}">
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                          <ToggleSwitch local:Localized.Uid="RazerHeadsetThxSpatialToggle" IsOn="{Binding ThxSpatialEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
-                          <Button Grid.Column="1" local:Localized.Uid="RazerHeadsetThxSpatialApply" Click="HeadsetAudioApplyThxSpatialClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" VerticalAlignment="Bottom" />
-                        </Grid>
+                        <ToggleSwitch local:Localized.Uid="RazerHeadsetThxSpatialToggle" IsOn="{Binding ThxSpatialEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
                         <StackPanel Spacing="4" Visibility="{Binding ThxS3BaselineVisibility}">
                           <Button local:Localized.Uid="RazerHeadsetThxS3Baseline" Click="HeadsetAudioApplyThxS3BaselineClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Left" />
                           <TextBlock local:Localized.Uid="RazerHeadsetThxS3BaselineHint" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" />

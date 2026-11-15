@@ -10,22 +10,35 @@ public sealed partial class RazerHeadsetAudioViewModel
     [ProfileSetting("headset.thx.spatial", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyThxSpatialAsync(CancellationToken cancellationToken = default)
     {
-        var previous = ThxSpatialEnabled;
+        var desired = ThxSpatialEnabled;
+        var previous = _thxState?.SpatialEnabled ?? !desired;
         if (!await RunThxAsync(
                 (controller, token) => controller.SetSpatialAsync(
-                    ThxAudioEndpoint.Headphones, ThxSpatialEnabled, token),
+                    ThxAudioEndpoint.Headphones, desired, token),
                 cancellationToken))
         {
+            SetThxSpatialDraft(previous);
             return;
         }
 
         await SaveHeadsetSettingAsync(
             settings => settings.ThxSpatialEnabled = ThxSpatialEnabled,
             settings => settings.ThxSpatialEnabled = previous,
-            () => ThxSpatialEnabled = previous,
+            () => SetThxSpatialDraft(previous),
             async token => await ThxController.SetSpatialAsync(
                 ThxAudioEndpoint.Headphones, previous, token),
             cancellationToken);
+    }
+
+    private void SetThxSpatialDraft(bool value)
+    {
+        if (_thxSpatialEnabled == value)
+        {
+            return;
+        }
+
+        _thxSpatialEnabled = value;
+        OnPropertyChanged(nameof(ThxSpatialEnabled));
     }
 
     [ProfileSetting("headset.thx.preset", DeviceCategory.Headset, powerScoped: true)]
@@ -102,7 +115,7 @@ public sealed partial class RazerHeadsetAudioViewModel
     {
         if (!SupportsS3Baseline(_connection.ProductId) || !CanApplyThx) return;
 
-        ThxSpatialEnabled = false;
+        SetThxSpatialDraft(false);
         await ApplyThxSpatialAsync(cancellationToken);
         if (!CanApplyThx || ThxSpatialEnabled) return;
 
