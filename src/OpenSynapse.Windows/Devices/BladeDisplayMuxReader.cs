@@ -145,6 +145,12 @@ internal static class BladeDisplayMuxReader
         string capabilityId,
         CancellationToken cancellationToken)
     {
+        var known = BladeGpuModelCapabilities.KnownDisplayMuxCapabilitiesFor(blade.Descriptor.ProductId);
+        if (known != BladeDisplayMuxCapabilities.None)
+        {
+            return known;
+        }
+
         var request = RazerCapabilityClient.CreateRequest(blade, capabilityId);
         var response = await client.QueryAsync(blade, capabilityId, cancellationToken);
         return BladeDisplayMuxProtocol.ParseCapabilities(response, request);
