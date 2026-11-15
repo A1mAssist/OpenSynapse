@@ -50,6 +50,7 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
             Definition.Enabled = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(TriggerText));
+            OnPropertyChanged(nameof(TriggerChipText));
             OnDefinitionChanged();
             EnabledChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -68,6 +69,12 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
             ? AppStrings.FormatText("MacroTriggerValue", DescribeTrigger(trigger))
             : AppStrings.FormatText("MacroTriggerValueDisabled", DescribeTrigger(trigger))
         : AppStrings.Text("MacroTriggerUnset");
+
+    public string TriggerChipText => Definition.Trigger is { } trigger
+        ? Definition.Enabled
+            ? DescribeTrigger(trigger)
+            : AppStrings.FormatText("MacroTriggerChipDisabled", DescribeTrigger(trigger))
+        : AppStrings.Text("MacroCaptureTrigger");
 
     public string StepsText => AppStrings.FormatText(
         "MacroStepCount",
@@ -215,6 +222,7 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
 
         Definition.Trigger = trigger;
         OnPropertyChanged(nameof(TriggerText));
+        OnPropertyChanged(nameof(TriggerChipText));
         OnPropertyChanged(nameof(HasTrigger));
         OnPropertyChanged(nameof(TriggerToggleVisibility));
         OnPropertyChanged(nameof(TriggerUnsetBadgeVisibility));
@@ -233,6 +241,7 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(Name));
         OnPropertyChanged(nameof(Enabled));
         OnPropertyChanged(nameof(TriggerText));
+        OnPropertyChanged(nameof(TriggerChipText));
         OnPropertyChanged(nameof(HasTrigger));
         OnPropertyChanged(nameof(TriggerToggleVisibility));
         OnPropertyChanged(nameof(TriggerUnsetBadgeVisibility));

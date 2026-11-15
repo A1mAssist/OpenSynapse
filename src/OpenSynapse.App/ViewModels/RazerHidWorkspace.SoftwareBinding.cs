@@ -4,7 +4,7 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerHidWorkspace
 {
-    internal async Task RestoreSoftwareMacroBindingAsync(
+    internal async Task<bool> RestoreSoftwareMacroBindingAsync(
         MacroSoftwareBinding binding,
         CancellationToken cancellationToken)
     {
@@ -13,7 +13,7 @@ public sealed partial class RazerHidWorkspace
             _diagnosticLog.TryWrite(
                 "mapping",
                 $"software binding restore skipped: no device service (pid=0x{binding.ProductId:X4})");
-            return;
+            return false;
         }
 
         var connection = CurrentConnections.FirstOrDefault(candidate =>
@@ -23,7 +23,7 @@ public sealed partial class RazerHidWorkspace
             _diagnosticLog.TryWrite(
                 "mapping",
                 $"software binding restore skipped: pid=0x{binding.ProductId:X4} is offline");
-            return;
+            return false;
         }
 
         try
@@ -35,12 +35,14 @@ public sealed partial class RazerHidWorkspace
                 binding.OriginalFunctionId,
                 binding.OriginalData,
                 cancellationToken).ConfigureAwait(false);
+            return true;
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             _diagnosticLog.TryWrite(
                 "mapping",
                 $"software binding restore failed: {exception.Message}");
+            return false;
         }
     }
 }

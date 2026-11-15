@@ -165,6 +165,36 @@ public sealed partial class MacrosPage : UserControl
     private async void CaptureMacroTriggerClick(object sender, RoutedEventArgs e) =>
         await ViewModel.Macros.CaptureMacroTriggerAsync(Lifetime);
 
+    private async void CaptureMacroTriggerSplitClick(
+        SplitButton sender,
+        SplitButtonClickEventArgs args) =>
+        await ViewModel.Macros.CaptureMacroTriggerAsync(Lifetime);
+
+    private async void CaptureMacroTriggerComboClick(object sender, RoutedEventArgs e) =>
+        await ViewModel.Macros.CaptureMacroTriggerComboAsync(Lifetime);
+
+    private async void CaptureMacroDeviceTriggerClick(object sender, RoutedEventArgs e) =>
+        await ViewModel.Macros.CaptureMacroDeviceTriggerAsync(Lifetime);
+
+    private async void ClearMacroTriggerClick(object sender, RoutedEventArgs e) =>
+        await ViewModel.Macros.ClearMacroTriggerAsync(Lifetime);
+
+    private async void ClearMacroRowTriggerClick(object sender, RoutedEventArgs e)
+    {
+        if (MacroRowFromSender(sender) is { } row)
+        {
+            ViewModel.Macros.SelectedMacro = row;
+            await ViewModel.Macros.ClearMacroTriggerAsync(Lifetime);
+        }
+    }
+
+    private void MacroTriggerFlyoutOpening(object sender, object e) =>
+        MacroTriggerMenu.Populate(
+            MacroMouseSideTriggerMenu,
+            MacroNagaTriggerMenu,
+            ViewModel.Macros,
+            Lifetime);
+
     private void OpenMacroEditorWindowClick(object sender, RoutedEventArgs e) =>
         OpenEditorRequested?.Invoke(this, EventArgs.Empty);
 

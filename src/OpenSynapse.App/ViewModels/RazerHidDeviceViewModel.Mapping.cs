@@ -114,6 +114,15 @@ public sealed partial class RazerHidDeviceViewModel
     public Task LoadMappingAsync(CancellationToken cancellationToken = default) =>
         Mapping.ReadAsync(cancellationToken);
 
+    internal void InvalidateMapping()
+    {
+        _mappingMacroSignature = null;
+        if (_mapping is { IsLoaded: true, IsBusy: false } mapping)
+        {
+            _ = mapping.ReadAsync();
+        }
+    }
+
     private async Task LoadMappingIfNeededAsync(CancellationToken cancellationToken)
     {
         if (MappingVisibility != Visibility.Visible)

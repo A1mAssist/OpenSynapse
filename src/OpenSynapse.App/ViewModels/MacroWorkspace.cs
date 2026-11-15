@@ -68,7 +68,7 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
     /// The device workspace owns the transport; the macro workspace only owns
     /// the lifetime of the binding.
     /// </summary>
-    public Func<MacroSoftwareBinding, CancellationToken, Task>? SoftwareBindingRestorer { get; set; }
+    public Func<MacroSoftwareBinding, CancellationToken, Task<bool>>? SoftwareBindingRestorer { get; set; }
 
     public ObservableCollection<MacroRowViewModel> Items { get; } = new();
     public ObservableCollection<MacroStepRowViewModel> Steps { get; } = new();
