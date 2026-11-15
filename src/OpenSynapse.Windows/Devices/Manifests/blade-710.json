@@ -54,6 +54,13 @@
       "commandId": "81",
       "arguments": ""
     },
+    "fan-information.get": {
+      "transactionId": "1F",
+      "dataSize": "0C",
+      "commandClass": "0D",
+      "commandId": "83",
+      "arguments": ""
+    },
     "current-fan-rpm.get": {
       "transactionId": "1F",
       "dataSize": "03",

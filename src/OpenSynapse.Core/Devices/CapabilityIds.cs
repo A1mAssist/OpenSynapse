@@ -27,6 +27,7 @@ public static class CapabilityIds
     public const string LegacyDisplayMuxSet = "legacy-display-mux.set";
     public const string DpiStagesGet = "dpi-stages.get";
     public const string DpiStagesSet = "dpi-stages.set";
+    public const string FanInformationGet = "fan-information.get";
     public const string FanTargetGet = "fan-target.get";
     public const string FnKeyGet = "fn-key.get";
     public const string FnKeySet = "fn-key.set";
@@ -101,6 +102,7 @@ public static class CapabilityIds
         DisplayMuxSet,
         DpiStagesGet,
         DpiStagesSet,
+        FanInformationGet,
         FanTargetGet,
         FnKeyGet,
         FnKeySet,

@@ -56,6 +56,11 @@ public sealed partial class BladeWorkspace
             SetPerformanceMode(performanceMode);
             CanSetPerformanceMode = true;
         }
+        if (_blade._bladeFanRange != telemetry.BladeFanRange)
+        {
+            _blade._bladeFanRange = telemetry.BladeFanRange;
+            _fan().RefreshBladeFanCurveEditor();
+        }
         if (telemetry.BladeCpuBoostMode is BladeCpuBoostMode cpuBoost)
         {
             SetCpuBoost(cpuBoost);

@@ -65,8 +65,7 @@ public sealed partial class FanWorkspace
     /// </summary>
     private BladeFanCurve ClampBladeFanCurve(BladeFanCurve curve)
     {
-        var range = BladeModelCapabilities.FanCurveTargetRangeFor(
-            _blade._bladeProductId, CurrentBladePerformanceMode);
+        var range = CurrentBladeFanCurveRange;
         return curve.ClampFanSpeedRange(range.MinimumRpm, range.MaximumRpm);
     }
 }
