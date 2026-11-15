@@ -223,11 +223,11 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Resume replay: firmware resets the wall during sleep, so write the chosen preset
-    /// again. Auto (0) must not overwrite the firmware default, and a failure here is
-    /// background noise rather than a user-visible error.
+    /// Firmware resets the wall during sleep and when the performance preset changes,
+    /// so write the chosen preset again. Auto (0) must not overwrite the firmware
+    /// default, and a failure here is background noise rather than a user-visible error.
     /// </summary>
-    internal async Task ReplayCpuPowerLimitAfterResumeAsync(
+    internal async Task ReplayCpuPowerLimitAsync(
         CancellationToken cancellationToken = default)
     {
         var configured = _getProfileSettings().CpuPowerLimitWatts;

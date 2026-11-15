@@ -134,6 +134,7 @@ internal sealed partial class BladeFanTelemetryReader
         BladeFanTransactionState original,
         CancellationToken cancellationToken)
     {
+        BladeBoostState? boost = null;
         try
         {
             var requiresCustomMode = blade.FixedFanRequiresCustomMode;
@@ -145,6 +146,12 @@ internal sealed partial class BladeFanTelemetryReader
                 : original.Thermal.PerformanceModeByte;
             var modeChanged = original.Thermal.FanMode != mode ||
                 original.Thermal.PerformanceModeByte != performanceModeByte;
+            // A thermal-zone write makes the EC re-apply the mode's own CPU/GPU
+            // levels. Synapse re-sends the Custom levels right after the fan mode;
+            // do the same so a curve or fixed speed cannot drop the power setting.
+            boost = !writeTargets || modeChanged
+                ? await CaptureCustomBoostAsync(blade, original, cancellationToken).ConfigureAwait(false)
+                : null;
 
             if (writeTargets && !modeChanged)
             {
@@ -212,11 +219,18 @@ internal sealed partial class BladeFanTelemetryReader
                     $"CPU {actual.CpuTargetRpm} / GPU {actual.GpuTargetRpm} RPM.");
             }
 
+            if (!await TryRestoreCustomBoostAsync(blade, boost).ConfigureAwait(false))
+            {
+                throw new InvalidOperationException(
+                    "The fan mode changed but the Blade CPU/GPU levels could not be restored.");
+            }
+
             return actual;
         }
         catch (Exception operationException)
         {
             var restorationException = await RestoreFanTransactionStateAsync(blade, original);
+            await TryRestoreCustomBoostAsync(blade, boost).ConfigureAwait(false);
             if (restorationException is not null)
             {
                 throw new AggregateException(
@@ -466,20 +480,6 @@ internal sealed partial class BladeFanTelemetryReader
             response,
             fanId,
             RazerCapabilityClient.CreateConfiguredRequest(device, CapabilityIds.CurrentFanRpmGet, request));
-    }
-
-    internal async Task<byte> ReadAdvancedFanModeAsync(
-        ResolvedRazerDevice device,
-        byte fanId,
-        CancellationToken cancellationToken)
-    {
-        var request = BladeThermalProtocol.CreateGetAdvancedFanModeRequest(fanId);
-        var response = await _client.QueryBuiltRequestAsync(
-            device, CapabilityIds.AdvancedFanModeGet, request, cancellationToken);
-        return BladeThermalProtocol.ParseAdvancedFanMode(
-            response,
-            fanId,
-            RazerCapabilityClient.CreateConfiguredRequest(device, CapabilityIds.AdvancedFanModeGet, request));
     }
 
     /// <summary>

@@ -116,6 +116,7 @@ public sealed partial class BladeWorkspace
             var actual = await _deviceTelemetryReader.SetBladePerformanceModeAsync(
                 ActiveDescriptors, requested, cancellationToken, _bladeCoolingPadConnected);
             SetPerformanceMode(actual);
+            await ReapplyCustomPowerLevelsAsync(cancellationToken);
             await _fan().ReapplyAfterPerformanceModeChangeAsync(cancellationToken);
             var clearedFan = ClearFixedFanWhenLeavingCustom(actual, target);
             try
@@ -204,6 +205,61 @@ public sealed partial class BladeWorkspace
                 throw new InvalidOperationException(AppStrings.Text("Text_AB07F412"));
             }
         }, cancellationToken, () => GpuBoostIndex = _blade._confirmedBladeGpuBoostIndex);
+    }
+
+    /// <summary>
+    /// The EC re-applies the mode's stored levels when the performance byte is
+    /// written. Entering Custom must re-send the levels the profile names, or the
+    /// machine keeps the EC preset instead of the user's setting.
+    /// </summary>
+    private async Task ReapplyCustomPowerLevelsAsync(CancellationToken cancellationToken)
+    {
+        if (!IsCustomMode)
+        {
+            return;
+        }
+
+        var blade = ActiveDescriptors.FirstOrDefault(device =>
+            DeviceProtocolFamilies.IsBlade(device.ProtocolFamily));
+        var profile = blade is null
+            ? EditablePerformanceProfile
+            : ProfileResolver.Resolve(Profile, blade, CurrentPowerSource).Blade;
+        if (!_blade.SupportsCpuBoost)
+        {
+            return;
+        }
+
+        if (profile.CpuBoostMode is byte rawCpu &&
+            Enum.IsDefined(typeof(BladeCpuBoostMode), rawCpu))
+        {
+            try
+            {
+                SetCpuBoost(await _deviceTelemetryReader.SetBladeCpuBoostModeAsync(
+                    ActiveDescriptors, (BladeCpuBoostMode)rawCpu, cancellationToken));
+            }
+            catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
+            {
+                _diagnosticLog.TryWrite(
+                    "blade-performance",
+                    $"Custom CPU level reapply failed: {exception.Message}");
+            }
+        }
+
+        if (profile.GpuBoostMode is byte rawGpu &&
+            Enum.IsDefined(typeof(BladeGpuBoostMode), rawGpu))
+        {
+            try
+            {
+                SetGpuBoost(await _deviceTelemetryReader.SetBladeGpuBoostModeAsync(
+                    ActiveDescriptors, (BladeGpuBoostMode)rawGpu, cancellationToken));
+            }
+            catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
+            {
+                _diagnosticLog.TryWrite(
+                    "blade-performance",
+                    $"Custom GPU level reapply failed: {exception.Message}");
+            }
+        }
     }
 
     public async Task ApplyMaxFanAsync(CancellationToken cancellationToken = default)
@@ -348,6 +404,7 @@ public sealed partial class BladeWorkspace
                 cancellationToken,
                 _bladeCoolingPadConnected);
             SetPerformanceMode(actual);
+            await ReapplyCustomPowerLevelsAsync(cancellationToken);
             await _fan().ReapplyAfterPerformanceModeChangeAsync(cancellationToken);
             var clearedFan = ClearFixedFanWhenLeavingCustom(actual, target);
             try
