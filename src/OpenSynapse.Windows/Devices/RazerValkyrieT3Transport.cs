@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
@@ -13,14 +14,28 @@ internal interface IRazerValkyrieT3FeatureIo : IDisposable
 
 internal sealed class RazerValkyrieT3Transport : IRazerMxicHeadsetTransport
 {
+    // Every service opens its own HID handle, but the device has one feature-report
+    // buffer. A frame write from the effect pump can otherwise replace the reply to
+    // a state query, so transports for the same device share one gate.
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> SharedGates =
+        new(StringComparer.OrdinalIgnoreCase);
+
     private readonly IRazerValkyrieT3FeatureIo _io;
-    private readonly SemaphoreSlim _gate = new(1, 1);
+    private readonly SemaphoreSlim _gate;
     private static readonly TimeSpan NativeCallTimeout = TimeSpan.FromSeconds(1);
     private byte _transaction;
     private bool _disposed;
 
-    internal RazerValkyrieT3Transport(string path) : this(new NativeFeatureIo(path)) { }
-    internal RazerValkyrieT3Transport(IRazerValkyrieT3FeatureIo io) => _io = io;
+    internal RazerValkyrieT3Transport(string path) : this(new NativeFeatureIo(path), path) { }
+    internal RazerValkyrieT3Transport(IRazerValkyrieT3FeatureIo io) : this(io, null) { }
+
+    private RazerValkyrieT3Transport(IRazerValkyrieT3FeatureIo io, string? path)
+    {
+        _io = io;
+        _gate = path is null
+            ? new SemaphoreSlim(1, 1)
+            : SharedGates.GetOrAdd(path, _ => new SemaphoreSlim(1, 1));
+    }
 
     public async Task SendAsync(byte[] report, CancellationToken cancellationToken) =>
         _ = await QueryAsync(report, [], cancellationToken).ConfigureAwait(false);
