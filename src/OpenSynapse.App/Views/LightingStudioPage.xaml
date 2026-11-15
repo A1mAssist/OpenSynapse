@@ -367,13 +367,14 @@
                           AutomationProperties.AutomationId="StudioZoomOut">
                     <FontIcon Glyph="&#xE1A4;" FontFamily="{StaticResource IconFontFamily}" FontSize="14" />
                   </Button>
-                  <ComboBox x:Name="ZoomPicker" SelectedIndex="3" MinWidth="100"
+                  <ComboBox x:Name="ZoomPicker" SelectedIndex="4" MinWidth="100"
                             VerticalAlignment="Center"
                             AutomationProperties.AutomationId="StudioZoomPicker"
                             SelectionChanged="ZoomStepChanged">
                     <ComboBoxItem Content="10%" />
                     <ComboBoxItem Content="25%" />
                     <ComboBoxItem Content="50%" />
+                    <ComboBoxItem Content="75%" />
                     <ComboBoxItem Content="100%" />
                     <ComboBoxItem Content="200%" />
                     <ComboBoxItem Content="300%" />
@@ -505,7 +506,7 @@
                 <StackPanel Grid.Column="1" Spacing="3">
                   <TextBlock local:Localized.Uid="LightingStudioRegionLabel"
                              FontSize="11" Foreground="{StaticResource MutedBrush}" />
-                  <ComboBox ItemsSource="{Binding RegionChoices}" DisplayMemberPath="Label"
+                  <ComboBox x:Name="RegionPicker" ItemsSource="{Binding RegionChoices}" DisplayMemberPath="Label"
                             SelectedItem="{Binding SelectedRegionChoice, Mode=TwoWay}"
                             HorizontalAlignment="Stretch" MinHeight="30" />
                 </StackPanel>

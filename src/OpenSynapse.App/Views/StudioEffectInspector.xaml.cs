@@ -117,11 +117,14 @@ public sealed partial class StudioEffectInspector : UserControl
         }
 
         var initial = secondary ? parameters.Secondary : parameters.Primary;
-        var custom = new Expander
+        var custom = new Button
         {
-            Header = AppStrings.Text("LightingStudioCustomColor"),
-            IsExpanded = false,
+            Content = AppStrings.Text("LightingStudioCustomColor"),
             HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        custom.Flyout = new Flyout
+        {
+            Placement = FlyoutPlacementMode.Left,
             Content = BuildColorEditor(initial, color => SetColor(color.ToHex(), secondary)),
         };
         AutomationProperties.SetAutomationId(custom,
