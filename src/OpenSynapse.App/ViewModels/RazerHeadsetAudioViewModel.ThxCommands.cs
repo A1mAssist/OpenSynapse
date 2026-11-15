@@ -217,6 +217,18 @@ public sealed partial class RazerHeadsetAudioViewModel
         try
         {
             var status = await action(ThxController, cancellationToken).ConfigureAwait(true);
+            if (status.State is null)
+            {
+                // A refused write does not mean the components went away; keep the
+                // panel the last admission check proved and report the reason.
+                _diagnostic?.Invoke(
+                    $"thx operation failed availability={status.Availability} error={status.Error ?? "-"}");
+                _thxErrorText = status.Error == "ThxOperationRejected"
+                    ? AppStrings.Text("RazerHeadsetThxRejectedInstalled")
+                    : ThxMessage(status.Error);
+                OperationStatusText = string.Empty;
+                return false;
+            }
             ApplyThxStatus(status);
             ErrorText = string.Empty;
             OperationStatusText = status.IsAvailable
