@@ -95,17 +95,14 @@ public sealed partial class DevicesPage
                 BladeGpuModes.IsAvailable(snapshot, BladeGpuMode.Auto)
                     ? BladeGpuMode.Auto
                     : current;
-            var available = BladeGpuModes.GetAvailableModes(snapshot);
-            var options = BladeGpuModes.GetOfferedModes(
-                    snapshot,
-                    DedicatedGpuModePolicy.ShouldShow(state.Dedicated.BlockReason))
+            var options = BladeGpuModes.GetAvailableModes(snapshot)
                 .Select(mode => new GpuModeOptionViewModel(
                     mode,
                     GpuModeLabel(mode),
                     GpuModeSummary(mode),
                     mode == preferred,
                     !_gpuModeBusy &&
-                        (mode == current || available.Contains(mode))))
+                        (mode == current || BladeGpuModes.IsAvailable(snapshot, mode))))
                 .ToArray();
             GpuModeOptionsList.ItemsSource = options;
             GpuModeOptionsList.Visibility = options.Length > 0
@@ -143,26 +140,6 @@ public sealed partial class DevicesPage
         }
 
         var available = BladeGpuModes.GetAvailableModes(snapshot);
-        var offered = BladeGpuModes.GetOfferedModes(
-            snapshot,
-            DedicatedGpuModePolicy.ShouldShow(dedicated.BlockReason));
-        if (offered.Contains(BladeGpuMode.Integrated) && !available.Contains(BladeGpuMode.Integrated))
-        {
-            return AppStrings.Text(dedicated.BlockReason switch
-            {
-                DedicatedGpuModeBlockReason.ExternalDisplayConnected =>
-                    "DedicatedGpuModeStatusBlockedExternal",
-                DedicatedGpuModeBlockReason.InternalDisplayUnavailable =>
-                    "DedicatedGpuModeStatusBlockedInternal",
-                DedicatedGpuModeBlockReason.DisplayTopologyUnavailable or
-                    DedicatedGpuModeBlockReason.InternalDisplayRouteUnavailable =>
-                    "DedicatedGpuModeStatusBlockedDisplay",
-                DedicatedGpuModeBlockReason.InternalDisplayUsesDiscreteGpu =>
-                    "GpuModeStatusDiscreteRouteLocked",
-                _ => "DedicatedGpuModeStatusBlockedUnsupported",
-            });
-        }
-
         if (available is [BladeGpuMode.Discrete])
         {
             return AppStrings.Text("GpuModeStatusOnlyDiscrete");

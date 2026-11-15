@@ -85,25 +85,6 @@ public static class BladeGpuModes
     }
 
     /// <summary>
-    /// Modes the card keeps on screen. A live block (external display, lid closed,
-    /// unknown topology) disables the iGPU switch instead of deleting it, so the
-    /// choice does not look missing from the model.
-    /// </summary>
-    public static IReadOnlyList<BladeGpuMode> GetOfferedModes(
-        in BladeGpuModeSnapshot snapshot,
-        bool adaptersPresent)
-    {
-        var available = GetAvailableModes(snapshot);
-        if (!adaptersPresent || !snapshot.PnpSwitchAllowed || !snapshot.MuxPresent)
-        {
-            return available;
-        }
-        return All
-            .Where(mode => available.Contains(mode) || mode is BladeGpuMode.Integrated or BladeGpuMode.Auto)
-            .ToArray();
-    }
-
-    /// <summary>
     /// The mode the hardware is actually in. Auto cannot be derived here; callers keep
     /// the stored preference separately and fall back to this when it is not Auto.
     /// </summary>
