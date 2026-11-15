@@ -177,30 +177,13 @@ internal static class ThxHeadsetAdmission
 
         if (profile.NativeVersion == ThxNativeVersion.V3)
         {
-            // VSSrv and the APO come from the THX package and usually survive an
-            // app-only uninstall. When the service is already registered, only the
-            // control DLL can be missing; downloading that is enough.
-            if (ThxAudioAdmission.HasService(ServiceName))
-            {
-                var nativeOnlyError = HasVerifiedNativeClient(profile)
-                    ? null
-                    : await InstallNativeFileAsync(profile, cancellationToken).ConfigureAwait(false);
-                var nativeOnlyRunning = await ThxAudioAdmission
-                    .EnsureServiceRunningAsync(ServiceName, cancellationToken)
-                    .ConfigureAwait(false);
-                return CombineInstallResult(
-                    false,
-                    nativeOnlyError,
-                    nativeOnlyRunning,
-                    serviceRegistered: true);
-            }
-
             if (profile.Installer is not { } installer)
             {
                 return new(ThxHeadsetAvailability.ServiceMissing, "ThxInstallerUnavailable");
             }
-            // A leftover VSSrv means the previous install is broken, not complete:
-            // repair it instead of silently skipping the package.
+            // A live VSSrv does not prove this model's APO is bound: another THX
+            // headset can own the service. Always run the pinned per-model package;
+            // a leftover service is repaired instead of treated as complete.
             var install = await ThxComponentInstaller.InstallAsync(
                 installer,
                 cancellationToken,

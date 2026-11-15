@@ -243,6 +243,8 @@ public sealed partial class RazerHeadsetAudioViewModel
 
     private void ApplyThxStatus(ThxAudioStatus status)
     {
+        _diagnostic?.Invoke(
+            $"thx result availability={status.Availability} error={status.Error ?? "-"}");
         if (status.State is { } state)
         {
             ApplyThxState(state);
@@ -261,8 +263,11 @@ public sealed partial class RazerHeadsetAudioViewModel
                 {
                     "ThxServiceMissing" => ThxHeadsetAvailability.ServiceMissing,
                     "ThxNativeMissing" => ThxHeadsetAvailability.NativeMissing,
-                    // The helper only runs after admission, so a failure here means the
-                    // components are present; do not offer a reinstall for it.
+                    // The helper got past the file checks but the native stack refused
+                    // to initialize or write. Keep the install entry available: the
+                    // APO for this model is usually the missing piece.
+                    "ThxNativeFailure" or "ThxOperationRejected" =>
+                        ThxHeadsetAvailability.NativeMissing,
                     _ => ThxHeadsetAvailability.Available,
                 },
                 status.Error);
