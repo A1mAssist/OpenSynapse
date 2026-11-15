@@ -74,6 +74,7 @@ public sealed partial class DevicesPage : UserControl
         }
 
         SyncTouchpadToggle();
+        HeadsetAudioPanel.Attach(viewModel.Accessories, Lifetime);
 
         if (!_bladeFanTelemetryHooked)
         {
