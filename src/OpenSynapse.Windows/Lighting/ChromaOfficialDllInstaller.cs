@@ -124,6 +124,19 @@ internal static class ChromaOfficialDllInstaller
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
             }
+
+            // The service downloads into its own ProgramData\OpenSynapse\Chroma
+            // folder; the app uses the shared Temp folder. Deleting a non-empty
+            // directory throws, so only the one-off Chroma folder is removed.
+            try
+            {
+                Directory.Delete(directory);
+            }
+            catch (Exception exception) when (
+                exception is IOException or UnauthorizedAccessException or
+                    System.Security.SecurityException)
+            {
+            }
         }
     }
 

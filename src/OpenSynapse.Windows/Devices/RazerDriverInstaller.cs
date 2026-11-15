@@ -1,10 +1,10 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Security.AccessControl;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using System.Security.Principal;
+using OpenSynapse.Core.Storage;
+using OpenSynapse.Windows.Lifecycle;
 
 namespace OpenSynapse.Windows.Devices;
 
@@ -56,10 +56,7 @@ internal static class RazerDriverInstaller
         Timeout = TimeSpan.FromMinutes(5),
     };
 
-    internal static string CacheDirectory => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "OpenSynapse",
-        "DriverCache");
+    internal static string CacheDirectory => AppDataPaths.Combine("DriverCache");
 
     internal static string ServiceCacheDirectory => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
@@ -197,6 +194,11 @@ internal static class RazerDriverInstaller
         CancellationToken cancellationToken)
     {
         Directory.CreateDirectory(cacheDirectory);
+        if (StringComparer.OrdinalIgnoreCase.Equals(cacheDirectory, CacheDirectory))
+        {
+            DeleteLegacyCacheDirectory();
+        }
+
         var fileName = Path.GetFileName(new Uri(package.Url).AbsolutePath);
         var path = Path.Combine(cacheDirectory, fileName);
         if (File.Exists(path) && TryVerifyPackage(path, requireRazerPublisher: true, out _))
@@ -338,26 +340,32 @@ internal static class RazerDriverInstaller
 
     internal static bool IsSuccessfulExitCode(int exitCode) => exitCode is 0 or 3010 or 1641;
 
-    internal static void EnsureServiceCacheDirectory()
+    internal static void EnsureServiceCacheDirectory() =>
+        ProgramDataSecurity.ProtectDirectory(ServiceCacheDirectory, allowUsersRead: false);
+
+    /// <summary>
+    /// The user cache used to live under the Velopack per-user install root,
+    /// which an upgrade or uninstall may delete. Remove that leftover once;
+    /// only the cache subfolder is touched, never the surrounding install.
+    /// </summary>
+    private static void DeleteLegacyCacheDirectory()
     {
-        Directory.CreateDirectory(ServiceCacheDirectory);
-        var security = new DirectorySecurity();
-        security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
-        const InheritanceFlags inheritance =
-            InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit;
-        security.AddAccessRule(new FileSystemAccessRule(
-            new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null),
-            FileSystemRights.FullControl,
-            inheritance,
-            PropagationFlags.None,
-            AccessControlType.Allow));
-        security.AddAccessRule(new FileSystemAccessRule(
-            new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null),
-            FileSystemRights.FullControl,
-            inheritance,
-            PropagationFlags.None,
-            AccessControlType.Allow));
-        new DirectoryInfo(ServiceCacheDirectory).SetAccessControl(security);
+        try
+        {
+            var legacy = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "OpenSynapse",
+                "DriverCache");
+            if (Directory.Exists(legacy))
+            {
+                Directory.Delete(legacy, recursive: true);
+            }
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+                System.Security.SecurityException)
+        {
+        }
     }
 
     private static async Task<RazerDriverInstallResult> RunInstallerAsync(
