@@ -120,32 +120,6 @@ public sealed partial class RazerHidDeviceService
         ExecuteWithoutResultAsync(connection,
             RazerHidLightingProtocol.SetCustomRow(connection.Definition, row, startColumn, colors), cancellationToken);
 
-    public async Task SetCustomFrameAsync(
-        RazerHidDeviceConnection connection,
-        IReadOnlyList<RazerHidColor> frame,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(frame);
-        var dimensions = connection.Definition.MatrixDimensions ??
-            throw new NotSupportedException("The RazerHid device does not expose matrix dimensions.");
-        if (!connection.Capabilities.Contains(RazerHidBackendCapability.MatrixFrameWrite) ||
-            frame.Count != dimensions.Rows * dimensions.Columns)
-        {
-            throw new NotSupportedException(
-                $"RazerHid device 1532:{connection.Definition.ProductId:X4} does not support this matrix frame.");
-        }
-
-        for (var row = 0; row < dimensions.Rows; row++)
-        {
-            await SetCustomRowAsync(
-                connection,
-                checked((byte)row),
-                0,
-                frame.Skip(row * dimensions.Columns).Take(dimensions.Columns).ToArray(),
-                cancellationToken).ConfigureAwait(false);
-        }
-    }
-
     /// <summary>
     /// Matrix rows only display while the device is on its custom-frame effect.
     /// A firmware effect otherwise keeps running and the row writes are ignored.
