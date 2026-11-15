@@ -1,8 +1,11 @@
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.Windows.Lifecycle;
 using OpenSynapse.Core.Storage;
+using Microsoft.Windows.AppNotifications;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Velopack;
+using Velopack.Locators;
 
 namespace OpenSynapse.App;
 
@@ -193,6 +196,125 @@ public partial class App
                     "behavior",
                     $"Lite mode rollback save failed: {saveException.Message}");
             }
+        }
+    }
+
+    internal async Task ApplyUpdateAndRestartAsync(UpdateManager updateManager, VelopackAsset release)
+    {
+        if (_audioMuteViewModel is null)
+        {
+            throw new InvalidOperationException("OpenSynapse is not ready to restart for an update.");
+        }
+
+        if (OpenSynapseServiceInstaller.IsMachineInstallPath(Environment.ProcessPath))
+        {
+            var locator = VelopackLocator.Current;
+            var root = locator.RootAppDir
+                ?? throw new InvalidOperationException("The OpenSynapse install root is unavailable.");
+            var packages = locator.PackagesDir
+                ?? throw new InvalidOperationException("The OpenSynapse package directory is unavailable.");
+            var packagePath = Path.Combine(packages, release.FileName);
+            var attempt = await OpenSynapseServiceClient
+                .TryApplyUpdateAsync(
+                    release.FileName,
+                    packagePath,
+                    release.Version.ToString(),
+                    Environment.ProcessId)
+                .ConfigureAwait(false);
+            if (attempt.Started)
+            {
+                await GetShutdownTask(_audioMuteViewModel);
+                Environment.Exit(0);
+            }
+
+            if (attempt.ViaService)
+            {
+                throw new InvalidOperationException(
+                    attempt.Error ?? "The OpenSynapse service could not start the update task.");
+            }
+
+            _ = MachineWideUpdateLauncher.Start(
+                Path.Combine(root, "Update.exe"),
+                packagePath,
+                root,
+                packages,
+                Environment.ProcessId);
+            await GetShutdownTask(_audioMuteViewModel);
+            Environment.Exit(0);
+        }
+
+        await GetShutdownTask(_audioMuteViewModel);
+        updateManager.ApplyUpdatesAndRestart(release);
+    }
+
+    private Task GetShutdownTask(MainViewModel viewModel)
+    {
+        lock (_shutdownGate)
+        {
+            return _shutdownTask ??= ShutdownApplicationAsync(viewModel);
+        }
+    }
+
+    private async Task ShutdownApplicationAsync(MainViewModel viewModel)
+    {
+        Interlocked.Exchange(ref _closing, 1);
+        Interlocked.Increment(ref _audioMuteGeneration);
+        await DisposeChromaHostsAsync().ConfigureAwait(false);
+        if (_audioMuteViewModel is not null)
+        {
+            _audioMuteViewModel.Blade.ControlDeviceChanged -= OnBladeControlDeviceChanged;
+            _audioMuteViewModel.Blade.PerformanceModeChangedByUser -= OnBladePerformanceModeChangedByUser;
+            _audioMuteViewModel.Blade.GamingModeChangedByUser -= OnBladeGamingModeChangedByUser;
+            _audioMuteViewModel.Blade.GamingModeStateChanged -= OnBladeGamingModeStateChanged;
+            _audioMuteViewModel.Blade.TouchpadChangedByUser -= OnBladeTouchpadChangedByUser;
+            _audioMuteViewModel.Blade.OneTimeFullChargeChangedByUser -= OnBladeOneTimeFullChargeChangedByUser;
+            _audioMuteViewModel.InternalDisplayRefreshRateChangedByUser -= OnInternalDisplayRefreshRateChangedByUser;
+            _audioMuteViewModel.Blade.InputProfileChanged -= OnBladeInputProfileChanged;
+        _audioMuteViewModel.Telemetry.BatteryObserved -= OnPeripheralBatteryObserved;
+            _audioMuteViewModel.Macros.MacroContinuousPlaybackStarted -= OnMacroContinuousPlaybackStarted;
+            _audioMuteViewModel = null;
+        }
+        if (_razerHidDeviceService is not null)
+        {
+            _razerHidDeviceService.BatteryObserved -= OnPeripheralBatteryObserved;
+            _razerHidDeviceService = null;
+        }
+        try
+        {
+            await DisposeHardwareForExitAsync(viewModel).WaitAsync(ExitCleanupTimeout);
+        }
+        catch (TimeoutException)
+        {
+            _diagnosticLog.TryWrite(
+                "application",
+                "Exit cleanup timed out; stale-session recovery remains armed.");
+        }
+        _diagnosticLog.TryWrite("application", "OpenSynapse stopped.");
+        _taskbarStatusPresenter?.Dispose();
+        _taskbarStatusPresenter = null;
+        _trayIcon?.Dispose();
+        _trayIcon = null;
+        _trayMenuWindow?.CloseMenuHost();
+        _trayMenuWindow = null;
+        _performanceMonitor?.Dispose();
+        _performanceMonitor = null;
+        _activationCancellation?.Cancel();
+        _activationCancellation?.Dispose();
+        _activationCancellation = null;
+        _singleInstanceGuard?.Dispose();
+        _singleInstanceGuard = null;
+        _razerTransport = null;
+        if (_appNotificationsRegistered)
+        {
+            try
+            {
+                AppNotificationManager.Default.Unregister();
+            }
+            catch (Exception exception)
+            {
+                _diagnosticLog.TryWrite("notifications", $"unregistration failed: {exception}");
+            }
+            _appNotificationsRegistered = false;
         }
     }
 }
