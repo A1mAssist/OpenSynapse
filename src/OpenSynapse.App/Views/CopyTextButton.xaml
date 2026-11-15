@@ -1,0 +1,12 @@
+<UserControl
+    x:Class="OpenSynapse.App.Views.CopyTextButton"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Button x:Name="CopyButton"
+          Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0"
+          Style="{StaticResource IconButtonStyle}"
+          Click="CopyClick"
+          VerticalAlignment="Center">
+    <FontIcon x:Name="Glyph" Glyph="&#xE8C8;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
+  </Button>
+</UserControl>

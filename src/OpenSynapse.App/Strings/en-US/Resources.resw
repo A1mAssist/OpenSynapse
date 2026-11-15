@@ -990,6 +990,9 @@
   <data name="CopyDiagnostics" xml:space="preserve">
     <value>Copy diagnostics</value>
   </data>
+  <data name="CopyTextTooltip" xml:space="preserve">
+    <value>Copy</value>
+  </data>
   <data name="DiagnosticsCopied" xml:space="preserve">
     <value>Diagnostics copied</value>
   </data>
