@@ -13,7 +13,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 - **Mapping and macros**: special keys, Viper private keys and keyboard keys can all bind software macros; HyperShift gates their triggers; the key page owns execution settings and the macro trigger card moved into the left inspector; changing a key action clears its old macro trigger.
 - **Blade**: Fn row primary switch and live Fn profile (including 023A and 02C6), logo effects decoded from the Synapse bundle (including 02B6 and 029D), a redrawn fixed-fan slider with Synapse fan icons, and batched matrix frame writes for lower lighting latency.
 - **Kraken V4 lighting**: completed the Billie T2 Starlight, Fire, AudioMeter and Wheel effects; the V4 static frame now follows the device ring size.
-- **Mako X**: EQ presets and the 10-band curve, Wave/Starlight/Fire/Audio Meter firmware effects, screen-sampled Ambient Awareness, Chroma SDK frames and auto-sleep; the 65-byte Jolie frame and 64-byte feature report are handled separately.
+- **Mako X**: EQ presets and the 10-band curve, the six lighting effects its firmware really has (Off, Static, Breathing, Spectrum and Wave on class 0x0F, plus the per-LED CustomFrame channel), Starlight, Fire and Audio Meter rendered as 25 fps frames because the firmware has no ids for them, screen-sampled Ambient Awareness, Chroma SDK frames and auto-sleep; the 65-byte Jolie frame and 64-byte feature report are handled separately.
 - **Protocol-25 headsets**: EQ, microphone, input source and ANC now follow the Synapse bundles; MXIC headsets use Synapse's HID write and input-report path.
 - **Lighting Studio**: gradient, ripple, tidal and radiate effects, native 25 fps device output, and faster zoom, canvas rebuild and mask caching.
 - **Diagnostics**: crash reports, a log bundle export, and reports stamped with date and app version.
@@ -43,6 +43,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
+- Ambient Awareness now works on desktops and clamshell laptops: when Windows reports no internal panel the capture follows the primary monitor, and when Graphics Capture is denied (`E_ACCESSDENIED`) it falls back to a 25 fps desktop copy. The copy leaves out layered windows so the screen cursor no longer flickers while the effect runs.
+- Mako X Starlight, Fire and Audio Meter no longer blank the light strip: the Joliet firmware answers status `0x05` for every effect id outside `0`/`1`/`2`/`3`/`4`/`8` and leaves the LEDs dark, so those effects are now streamed as per-LED frames instead of unsupported ids.
 - Shutdown lighting now covers Mako X, whose Chroma channel lives on the audio HID collection rather than the RazerHid catalogue.
 - BlackShark V2 Pro (0555) no longer stalls on “reading”: timed-out HID control requests are actually cancelled instead of piling up in the driver queue; USB-only headsets stay visible before HID is ready.
 - Kiyo, sensor rotation, smart tracking and software-lighting cleanup no longer raise `PropertyChanged` on the thread pool, fixing the `0x8001010E` settings-page failure.

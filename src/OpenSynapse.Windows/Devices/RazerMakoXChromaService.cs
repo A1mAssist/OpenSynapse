@@ -4,7 +4,11 @@ namespace OpenSynapse.Windows.Devices;
 
 /// <summary>
 /// Mako X lighting over the rzDeviceJolie class 0x0F commands on the same 64-byte
-/// feature report as its audio page. Ten LEDs are exposed as one region.
+/// feature report as its audio page. Ten LEDs are exposed as one region. The
+/// firmware only implements Off, Static, Breathing, Spectrum, Wave and the
+/// per-LED CustomFrame mode; probes of 0x00-0x7F answer status 0x05 (and blank
+/// the strip) for every other id, so Starlight/Fire/Audio Meter are streamed as
+/// frames by the app instead of being sent as firmware effects.
 /// </summary>
 internal sealed class RazerMakoXChromaService : IRazerHeadsetLightingService, IAsyncDisposable
 {
@@ -80,14 +84,24 @@ internal sealed class RazerMakoXChromaService : IRazerHeadsetLightingService, IA
     {
         ArgumentNullException.ThrowIfNull(colors);
         if (!Enum.IsDefined(effect)) throw new ArgumentOutOfRangeException(nameof(effect));
+        if (!IsFirmwareEffect(effect))
+        {
+            // 1532:05AD answers status 0x05 and blanks the strip for every id
+            // outside its six firmware effects, so an unsupported id must never
+            // reach the wire. Starlight/Fire/Audio Meter are rendered as frames.
+            throw new ArgumentOutOfRangeException(
+                nameof(effect),
+                effect,
+                "The Mako X firmware only has Off, Static, Breathing, Spectrum, Wave and CustomFrame.");
+        }
+
         if (colors.Count % 3 != 0) throw new ArgumentException("Lighting colors must be RGB triples.", nameof(colors));
 
         var colorCount = colors.Count / 3;
         var flags = effect switch
         {
-            RazerChromaEffect.Breathing or RazerChromaEffect.Starlight => (byte)(colorCount > 1 ? 2 : 1),
+            RazerChromaEffect.Breathing => (byte)(colorCount > 1 ? 2 : 1),
             RazerChromaEffect.Wave => (byte)1,
-            RazerChromaEffect.Fire => (byte)10,
             _ => (byte)0,
         };
         var rate = effect == RazerChromaEffect.Wave ? (byte)40 : (byte)0;
@@ -111,7 +125,8 @@ internal sealed class RazerMakoXChromaService : IRazerHeadsetLightingService, IA
     internal Task SetFrameAsync(IReadOnlyList<byte> colors, CancellationToken cancellationToken = default)
     {
         var payload = CreateFramePayload(colors);
-        return SendAsync(Create(0x03, payload), "set frame", cancellationToken);
+        // A 25 fps effect pump would otherwise write one log line per frame.
+        return SendAsync(Create(0x03, payload), "set frame", cancellationToken, log: false);
     }
 
     internal static byte[] CreateEffectPayload(
@@ -135,24 +150,33 @@ internal sealed class RazerMakoXChromaService : IRazerHeadsetLightingService, IA
         return payload;
     }
 
-    private static byte ToFirmwareEffectId(RazerChromaEffect effect) => effect switch
+    internal static bool IsFirmwareEffect(RazerChromaEffect effect) => effect is
+        RazerChromaEffect.Off or RazerChromaEffect.Static or RazerChromaEffect.Breathing or
+        RazerChromaEffect.Spectrum or RazerChromaEffect.Wave or RazerChromaEffect.CustomFrame;
+
+    internal static byte ToFirmwareEffectId(RazerChromaEffect effect) => effect switch
     {
-        // The Joliet audio enum uses 13 for Starlight; 7 is the mouse/keyboard
-        // spelling. Fire and Audio Meter already match that enum.
-        RazerChromaEffect.Starlight => 13,
-        RazerChromaEffect.Fire => 9,
-        RazerChromaEffect.AudioMeter => 10,
-        _ => (byte)effect,
+        // 1532:05AD accepts 0/1/2/3/4/8 on class 0x0F command 0x02 and answers
+        // success for each. Off/Static/Breathing/Spectrum/Wave keep the shared
+        // middleware numbering; 8 selects the per-LED frame mode.
+        RazerChromaEffect.Off or RazerChromaEffect.Static or RazerChromaEffect.Breathing or
+            RazerChromaEffect.Spectrum or RazerChromaEffect.Wave or RazerChromaEffect.CustomFrame =>
+            (byte)effect,
+        _ => throw new ArgumentOutOfRangeException(
+            nameof(effect),
+            effect,
+            "The Mako X firmware has no id for this effect."),
     };
 
-    private static RazerChromaEffect? FromFirmwareEffectId(byte effect) => effect switch
+    internal static RazerChromaEffect? FromFirmwareEffectId(byte effect) => effect switch
     {
-        13 => RazerChromaEffect.Starlight,
-        9 => RazerChromaEffect.Fire,
-        10 => RazerChromaEffect.AudioMeter,
-        _ => Enum.IsDefined(typeof(RazerChromaEffect), effect)
-            ? (RazerChromaEffect)effect
-            : null,
+        0x00 => RazerChromaEffect.Off,
+        0x01 => RazerChromaEffect.Static,
+        0x02 => RazerChromaEffect.Breathing,
+        0x03 => RazerChromaEffect.Spectrum,
+        0x04 => RazerChromaEffect.Wave,
+        0x08 => RazerChromaEffect.CustomFrame,
+        _ => null,
     };
 
     internal static byte[] CreateFramePayload(IReadOnlyList<byte> colors)
@@ -175,17 +199,25 @@ internal sealed class RazerMakoXChromaService : IRazerHeadsetLightingService, IA
             ? _transport ??= new RazerValkyrieT3Transport(_devicePath)
             : new RazerValkyrieT3Transport(_devicePath);
 
-    private async Task SendAsync(byte[] report, string label, CancellationToken cancellationToken)
+    private async Task SendAsync(
+        byte[] report,
+        string label,
+        CancellationToken cancellationToken,
+        bool log = true)
     {
         var transport = GetTransport();
         try
         {
-            var payloadLength = Math.Min(report[6], (byte)12);
-            var payload = payloadLength > 0
-                ? $" payload={Convert.ToHexString(report, 9, payloadLength)}"
-                : string.Empty;
-            _diagnostic?.Invoke(
-                $"mako-x lighting {label}: class=0x{report[7]:X2} id=0x{report[8]:X2} size=0x{report[6]:X2}{payload}");
+            if (log)
+            {
+                var payloadLength = Math.Min(report[6], (byte)12);
+                var payload = payloadLength > 0
+                    ? $" payload={Convert.ToHexString(report, 9, payloadLength)}"
+                    : string.Empty;
+                _diagnostic?.Invoke(
+                    $"mako-x lighting {label}: class=0x{report[7]:X2} id=0x{report[8]:X2} size=0x{report[6]:X2}{payload}");
+            }
+
             await transport.SendAsync(report, cancellationToken).ConfigureAwait(false);
         }
         catch

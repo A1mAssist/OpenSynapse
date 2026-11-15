@@ -6,11 +6,11 @@ public sealed partial class RazerHeadsetAudioViewModel
     {
         try
         {
-            await StopAmbientCoreAsync();
+            await StopSoftwareEffectCoreAsync();
         }
         catch (Exception exception) when (IsExpectedException(exception))
         {
-            _diagnostic?.Invoke($"mako-x ambient dispose failed: {exception.Message}");
+            _diagnostic?.Invoke($"mako-x effect dispose failed: {exception.Message}");
         }
 
         var controller = _thxController;
