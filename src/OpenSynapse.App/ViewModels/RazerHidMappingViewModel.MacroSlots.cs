@@ -192,7 +192,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             RazerHidMappingFunctions.MacroTypeIV) ||
             data.Count < 2)
         {
-            return RazerMappingButtonNames.Localize(_catalog.Describe(functionId, data, _slotChoices));
+            return RazerMappingActionNames.Localize(_catalog.Describe(functionId, data, _slotChoices));
         }
 
         var slot = (data[0] << 8) | data[1];

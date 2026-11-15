@@ -135,7 +135,8 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
         }
     }
     public IReadOnlyList<string> GroupNames => _groupOptions.Select(option => option.Name).ToArray();
-    public IReadOnlyList<string> ModifierNames => RazerHidMappingActions.ModifierNames;
+    public IReadOnlyList<string> ModifierNames => RazerHidMappingActions.ModifierNames
+        .Select(RazerMappingActionNames.Localize).ToArray();
     public string CurrentActionText
     {
         get => _currentActionText;

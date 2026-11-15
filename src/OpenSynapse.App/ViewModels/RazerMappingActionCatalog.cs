@@ -45,8 +45,13 @@ public class RazerHidMappingActionCatalog : IRazerMappingActionCatalog
 
     public IReadOnlyList<string> OptionNames(
         RazerHidMappingGroup group,
-        IReadOnlyList<RazerHidMacroOption>? macros = null) =>
-        RazerHidMappingActions.OptionNames(group, macros);
+        IReadOnlyList<RazerHidMacroOption>? macros = null)
+    {
+        var names = RazerHidMappingActions.OptionNames(group, macros);
+        return group == RazerHidMappingGroup.Macro
+            ? names
+            : names.Select(RazerMappingActionNames.Localize).ToArray();
+    }
 
     public RazerHidMappingAction? CreateAction(
         RazerHidMappingGroup group,
@@ -114,15 +119,21 @@ public sealed class RazerViperMappingActionCatalog : IRazerMappingActionCatalog
 
     public IReadOnlyList<string> OptionNames(
         RazerHidMappingGroup group,
-        IReadOnlyList<RazerHidMacroOption>? macros = null) => group switch
+        IReadOnlyList<RazerHidMacroOption>? macros = null)
     {
-        RazerHidMappingGroup.Keep => [],
-        RazerHidMappingGroup.Macro => RazerHidMappingActions.OptionNames(group, macros),
-        RazerHidMappingGroup.KeyboardKey or RazerHidMappingGroup.TurboKey =>
-            RazerHidMappingActions.OptionNames(group),
-        RazerHidMappingGroup.TurboButton => TurboButtonNames(),
-        _ => ForGroup(group).Select(item => Name(item.Definition)).ToArray(),
-    };
+        var names = group switch
+        {
+            RazerHidMappingGroup.Keep => [],
+            RazerHidMappingGroup.Macro => RazerHidMappingActions.OptionNames(group, macros),
+            RazerHidMappingGroup.KeyboardKey or RazerHidMappingGroup.TurboKey =>
+                RazerHidMappingActions.OptionNames(group),
+            RazerHidMappingGroup.TurboButton => TurboButtonNames(),
+            _ => ForGroup(group).Select(item => Name(item.Definition)).ToArray(),
+        };
+        return group == RazerHidMappingGroup.Macro
+            ? names
+            : names.Select(RazerMappingActionNames.Localize).ToArray();
+    }
 
     public RazerHidMappingAction? CreateAction(
         RazerHidMappingGroup group,
@@ -234,12 +245,13 @@ public sealed class RazerViperMappingActionCatalog : IRazerMappingActionCatalog
 
     private static string Name(ViperMappingActionDefinition definition) =>
         definition.Function == ViperButtonMappingFunction.MouseButton
-            ? RazerMappingButtonNames.Localize(RazerHidMappingActions.DescribeButton(definition.Value))
+            ? RazerMappingActionNames.Localize(RazerHidMappingActions.DescribeButton(definition.Value))
             : AppStrings.Text(definition.NameKey);
 
     private static IReadOnlyList<string> TurboButtonNames() =>
         TurboButtons
-            .Select(button => $"Turbo {RazerMappingButtonNames.Localize(RazerHidMappingActions.DescribeButton(button))}")
+            .Select(button => RazerMappingActionNames.Localize(
+                $"Turbo {RazerHidMappingActions.DescribeButton(button)}"))
             .ToArray();
 
     private static ushort Interval(int keysPerSecond)

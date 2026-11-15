@@ -3652,6 +3652,49 @@
   <data name="RazerMappingButtonMute" xml:space="preserve"><value>Mute</value></data>
   <data name="RazerMappingButtonScrollModeSwitch" xml:space="preserve"><value>Scroll mode switch</value></data>
   <data name="RazerMappingButtonNumber" xml:space="preserve"><value>Button {0}</value></data>
+  <data name="RazerMappingActionOff" xml:space="preserve"><value>Off</value></data>
+  <data name="RazerMappingActionMouseButton" xml:space="preserve"><value>Mouse button</value></data>
+  <data name="RazerMappingActionKeyboardKey" xml:space="preserve"><value>Keyboard key</value></data>
+  <data name="RazerMappingActionDoubleClick" xml:space="preserve"><value>Double click</value></data>
+  <data name="RazerMappingActionTurbo" xml:space="preserve"><value>Turbo</value></data>
+  <data name="RazerMappingActionMacro" xml:space="preserve"><value>Macro</value></data>
+  <data name="RazerMappingActionCreateMacroFirst" xml:space="preserve"><value>Create a macro in the macro editor first</value></data>
+  <data name="RazerMappingActionMacroNumber" xml:space="preserve"><value>Macro {0}</value></data>
+  <data name="RazerMappingActionFunctionNumber" xml:space="preserve"><value>Function {0}</value></data>
+  <data name="RazerMappingActionProfileNumber" xml:space="preserve"><value>Profile {0}</value></data>
+  <data name="RazerMappingActionMediaKeyNumber" xml:space="preserve"><value>Media key {0}</value></data>
+  <data name="RazerMappingActionPowerKeyNumber" xml:space="preserve"><value>Power key {0}</value></data>
+  <data name="RazerMappingActionScrollModeNumber" xml:space="preserve"><value>Scroll mode {0}</value></data>
+  <data name="RazerMappingActionRazerKeyNumber" xml:space="preserve"><value>Razer key {0}</value></data>
+  <data name="RazerMappingActionShortcutNumber" xml:space="preserve"><value>Shortcut {0}</value></data>
+  <data name="RazerMappingActionToggleScrollMode" xml:space="preserve"><value>Toggle scroll mode</value></data>
+  <data name="RazerMappingActionSuffixHold" xml:space="preserve"><value> (hold)</value></data>
+  <data name="RazerMappingActionSuffixToggle" xml:space="preserve"><value> (toggle)</value></data>
+  <data name="RazerMappingActionSuffixSequence" xml:space="preserve"><value> (sequence)</value></data>
+  <data name="RazerMappingModifierNone" xml:space="preserve"><value>None</value></data>
+  <data name="RazerMappingKeyEnter" xml:space="preserve"><value>Enter</value></data>
+  <data name="RazerMappingKeyEsc" xml:space="preserve"><value>Esc</value></data>
+  <data name="RazerMappingKeyBackspace" xml:space="preserve"><value>Backspace</value></data>
+  <data name="RazerMappingKeyTab" xml:space="preserve"><value>Tab</value></data>
+  <data name="RazerMappingKeySpace" xml:space="preserve"><value>Space</value></data>
+  <data name="RazerMappingKeyCapsLock" xml:space="preserve"><value>Caps Lock</value></data>
+  <data name="RazerMappingKeyPrintScreen" xml:space="preserve"><value>Print Screen</value></data>
+  <data name="RazerMappingKeyScrollLock" xml:space="preserve"><value>Scroll Lock</value></data>
+  <data name="RazerMappingKeyPause" xml:space="preserve"><value>Pause</value></data>
+  <data name="RazerMappingKeyInsert" xml:space="preserve"><value>Insert</value></data>
+  <data name="RazerMappingKeyHome" xml:space="preserve"><value>Home</value></data>
+  <data name="RazerMappingKeyPageUp" xml:space="preserve"><value>Page Up</value></data>
+  <data name="RazerMappingKeyDelete" xml:space="preserve"><value>Delete</value></data>
+  <data name="RazerMappingKeyEnd" xml:space="preserve"><value>End</value></data>
+  <data name="RazerMappingKeyPageDown" xml:space="preserve"><value>Page Down</value></data>
+  <data name="RazerMappingKeyRightArrow" xml:space="preserve"><value>Right Arrow</value></data>
+  <data name="RazerMappingKeyLeftArrow" xml:space="preserve"><value>Left Arrow</value></data>
+  <data name="RazerMappingKeyDownArrow" xml:space="preserve"><value>Down Arrow</value></data>
+  <data name="RazerMappingKeyUpArrow" xml:space="preserve"><value>Up Arrow</value></data>
+  <data name="RazerMappingKeyNumLock" xml:space="preserve"><value>Num Lock</value></data>
+  <data name="RazerMappingKeyNumpad" xml:space="preserve"><value>Numpad {0}</value></data>
+  <data name="RazerMappingKeyLeft" xml:space="preserve"><value>Left</value></data>
+  <data name="RazerMappingKeyRight" xml:space="preserve"><value>Right</value></data>
   <data name="RazerMappingCurrentColumn" xml:space="preserve"><value>Current action</value></data>
   <data name="RazerMappingTypeColumn" xml:space="preserve"><value>Type</value></data>
   <data name="RazerMappingActionColumn" xml:space="preserve"><value>Target action</value></data>
