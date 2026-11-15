@@ -4086,6 +4086,49 @@
   <data name="RazerMappingButtonMute" xml:space="preserve"><value>静音</value></data>
   <data name="RazerMappingButtonScrollModeSwitch" xml:space="preserve"><value>滚轮模式切换</value></data>
   <data name="RazerMappingButtonNumber" xml:space="preserve"><value>按键 {0}</value></data>
+  <data name="RazerMappingActionOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="RazerMappingActionMouseButton" xml:space="preserve"><value>鼠标按键</value></data>
+  <data name="RazerMappingActionKeyboardKey" xml:space="preserve"><value>键盘按键</value></data>
+  <data name="RazerMappingActionDoubleClick" xml:space="preserve"><value>双击</value></data>
+  <data name="RazerMappingActionTurbo" xml:space="preserve"><value>Turbo</value></data>
+  <data name="RazerMappingActionMacro" xml:space="preserve"><value>宏</value></data>
+  <data name="RazerMappingActionCreateMacroFirst" xml:space="preserve"><value>请先在宏编辑器中创建宏</value></data>
+  <data name="RazerMappingActionMacroNumber" xml:space="preserve"><value>宏 {0}</value></data>
+  <data name="RazerMappingActionFunctionNumber" xml:space="preserve"><value>功能 {0}</value></data>
+  <data name="RazerMappingActionProfileNumber" xml:space="preserve"><value>配置 {0}</value></data>
+  <data name="RazerMappingActionMediaKeyNumber" xml:space="preserve"><value>媒体键 {0}</value></data>
+  <data name="RazerMappingActionPowerKeyNumber" xml:space="preserve"><value>电源键 {0}</value></data>
+  <data name="RazerMappingActionScrollModeNumber" xml:space="preserve"><value>滚轮模式 {0}</value></data>
+  <data name="RazerMappingActionRazerKeyNumber" xml:space="preserve"><value>Razer 键 {0}</value></data>
+  <data name="RazerMappingActionShortcutNumber" xml:space="preserve"><value>快捷键 {0}</value></data>
+  <data name="RazerMappingActionToggleScrollMode" xml:space="preserve"><value>切换滚轮模式</value></data>
+  <data name="RazerMappingActionSuffixHold" xml:space="preserve"><value>（按住）</value></data>
+  <data name="RazerMappingActionSuffixToggle" xml:space="preserve"><value>（按一下开始/再按停止）</value></data>
+  <data name="RazerMappingActionSuffixSequence" xml:space="preserve"><value>（依次）</value></data>
+  <data name="RazerMappingModifierNone" xml:space="preserve"><value>无</value></data>
+  <data name="RazerMappingKeyEnter" xml:space="preserve"><value>回车</value></data>
+  <data name="RazerMappingKeyEsc" xml:space="preserve"><value>Esc</value></data>
+  <data name="RazerMappingKeyBackspace" xml:space="preserve"><value>退格</value></data>
+  <data name="RazerMappingKeyTab" xml:space="preserve"><value>Tab</value></data>
+  <data name="RazerMappingKeySpace" xml:space="preserve"><value>空格</value></data>
+  <data name="RazerMappingKeyCapsLock" xml:space="preserve"><value>大写锁定</value></data>
+  <data name="RazerMappingKeyPrintScreen" xml:space="preserve"><value>打印屏幕</value></data>
+  <data name="RazerMappingKeyScrollLock" xml:space="preserve"><value>滚动锁定</value></data>
+  <data name="RazerMappingKeyPause" xml:space="preserve"><value>暂停</value></data>
+  <data name="RazerMappingKeyInsert" xml:space="preserve"><value>插入</value></data>
+  <data name="RazerMappingKeyHome" xml:space="preserve"><value>Home</value></data>
+  <data name="RazerMappingKeyPageUp" xml:space="preserve"><value>向上翻页</value></data>
+  <data name="RazerMappingKeyDelete" xml:space="preserve"><value>删除</value></data>
+  <data name="RazerMappingKeyEnd" xml:space="preserve"><value>End</value></data>
+  <data name="RazerMappingKeyPageDown" xml:space="preserve"><value>向下翻页</value></data>
+  <data name="RazerMappingKeyRightArrow" xml:space="preserve"><value>右方向键</value></data>
+  <data name="RazerMappingKeyLeftArrow" xml:space="preserve"><value>左方向键</value></data>
+  <data name="RazerMappingKeyDownArrow" xml:space="preserve"><value>下方向键</value></data>
+  <data name="RazerMappingKeyUpArrow" xml:space="preserve"><value>上方向键</value></data>
+  <data name="RazerMappingKeyNumLock" xml:space="preserve"><value>数字锁定</value></data>
+  <data name="RazerMappingKeyNumpad" xml:space="preserve"><value>小键盘 {0}</value></data>
+  <data name="RazerMappingKeyLeft" xml:space="preserve"><value>左</value></data>
+  <data name="RazerMappingKeyRight" xml:space="preserve"><value>右</value></data>
   <data name="RazerMappingCurrentColumn" xml:space="preserve"><value>当前动作</value></data>
   <data name="RazerMappingTypeColumn" xml:space="preserve"><value>类型</value></data>
   <data name="RazerMappingActionColumn" xml:space="preserve"><value>目标动作</value></data>
