@@ -3298,6 +3298,13 @@
   <data name="RazerLightingEffectTidal" xml:space="preserve"><value>潮汐</value></data>
   <data name="RazerLightingEffectWave" xml:space="preserve"><value>波浪</value></data>
   <data name="RazerLightingEffectWheel" xml:space="preserve"><value>旋转</value></data>
+  <data name="MakoXLightingEffectStatic" xml:space="preserve"><value>静态效果</value></data>
+  <data name="MakoXLightingEffectBreathing" xml:space="preserve"><value>呼吸效果</value></data>
+  <data name="MakoXLightingEffectSpectrum" xml:space="preserve"><value>光谱循环</value></data>
+  <data name="MakoXLightingEffectStarlight" xml:space="preserve"><value>星光效果</value></data>
+  <data name="MakoXLightingEffectFire" xml:space="preserve"><value>火焰效果</value></data>
+  <data name="MakoXLightingEffectAudioMeter" xml:space="preserve"><value>音频计</value></data>
+  <data name="MakoXLightingEffectWheel" xml:space="preserve"><value>旋转效果</value></data>
   <data name="CoolingPadLightingDirectionHeader/Header" xml:space="preserve"><value>方向</value></data>
   <data name="CoolingPadLightingDirectionLeft" xml:space="preserve"><value>左</value></data>
   <data name="CoolingPadLightingDirectionRight" xml:space="preserve"><value>右</value></data>

@@ -13,12 +13,13 @@ public sealed partial class RazerHeadsetAudioViewModel
     private static readonly RazerChromaEffect[] DefaultLightingEffects =
         [RazerChromaEffect.Off, RazerChromaEffect.Static, RazerChromaEffect.Breathing, RazerChromaEffect.Spectrum];
 
+    // Synapse 4 shows these quick effects for the Mako X, in its own order and
+    // wording; Wave has no counterpart on this device and is not offered.
     private static readonly RazerChromaEffect[] JolietLightingEffects =
     [
-        RazerChromaEffect.Off, RazerChromaEffect.Static, RazerChromaEffect.Breathing,
-        RazerChromaEffect.Spectrum, RazerChromaEffect.Wave, RazerChromaEffect.Wheel,
-        RazerChromaEffect.Starlight, RazerChromaEffect.Fire, RazerChromaEffect.AudioMeter,
-        RazerChromaEffect.CustomFrame,
+        RazerChromaEffect.Off, RazerChromaEffect.AudioMeter, RazerChromaEffect.Breathing,
+        RazerChromaEffect.Fire, RazerChromaEffect.Spectrum, RazerChromaEffect.Starlight,
+        RazerChromaEffect.Static, RazerChromaEffect.Wheel, RazerChromaEffect.CustomFrame,
     ];
 
     private static readonly (RazerChromaEffect Effect, string Key)[] DefaultLightingEffectOptions =
@@ -32,26 +33,17 @@ public sealed partial class RazerHeadsetAudioViewModel
     private static readonly (RazerChromaEffect Effect, string Key)[] JolietLightingEffectOptions =
     [
         (RazerChromaEffect.Off, "RazerLightingEffectOff"),
-        (RazerChromaEffect.Static, "RazerLightingEffectStatic"),
-        (RazerChromaEffect.Breathing, "RazerLightingEffectBreathing"),
-        (RazerChromaEffect.Spectrum, "RazerLightingEffectSpectrum"),
-        (RazerChromaEffect.Wave, "RazerHidEffectWave"),
-        (RazerChromaEffect.Wheel, "RazerLightingEffectWheel"),
-        (RazerChromaEffect.Starlight, "RazerHidEffectStarlightSingle"),
-        (RazerChromaEffect.Fire, "RazerHidEffectFire"),
-        (RazerChromaEffect.AudioMeter, "RazerHidEffectAudioMeter"),
+        (RazerChromaEffect.AudioMeter, "MakoXLightingEffectAudioMeter"),
+        (RazerChromaEffect.Breathing, "MakoXLightingEffectBreathing"),
+        (RazerChromaEffect.Fire, "MakoXLightingEffectFire"),
+        (RazerChromaEffect.Spectrum, "MakoXLightingEffectSpectrum"),
+        (RazerChromaEffect.Starlight, "MakoXLightingEffectStarlight"),
+        (RazerChromaEffect.Static, "MakoXLightingEffectStatic"),
+        (RazerChromaEffect.Wheel, "MakoXLightingEffectWheel"),
         (RazerChromaEffect.CustomFrame, "RazerHeadsetAmbientAwareness"),
     ];
 
-    private static readonly (byte Flag, string Key)[] MakoXWaveDirections =
-    [
-        (1, "CoolingPadLightingDirectionLeft"),
-        (2, "CoolingPadLightingDirectionRight"),
-        (3, "CoolingPadLightingDirectionUp"),
-        (4, "CoolingPadLightingDirectionDown"),
-    ];
-
-    /// <summary>The rotation effect takes the engine's two directions, not four.</summary>
+    /// <summary>The rotation effect takes the engine's two directions.</summary>
     private static readonly (bool Counterclockwise, string Key)[] MakoXWheelDirections =
     [
         (false, "CoolingPadLightingDirectionClockwise"),
@@ -65,15 +57,11 @@ public sealed partial class RazerHeadsetAudioViewModel
     private IReadOnlyList<(RazerChromaEffect Effect, string Key)> LightingEffectChoices =>
         IsJolie ? JolietLightingEffectOptions : DefaultLightingEffectOptions;
 
-    private bool IsWheelEffect => LightingEffects[_selectedEffectIndex] == RazerChromaEffect.Wheel;
-
     private static bool IsDirectionEffect(RazerChromaEffect effect) =>
-        effect is RazerChromaEffect.Wave or RazerChromaEffect.Wheel;
+        effect == RazerChromaEffect.Wheel;
 
-    public IReadOnlyList<string> WaveDirectionOptions => (IsWheelEffect
-            ? MakoXWheelDirections.Select(direction => direction.Key)
-            : MakoXWaveDirections.Select(direction => direction.Key))
-        .Select(key => AppStrings.Text(key))
+    public IReadOnlyList<string> WaveDirectionOptions => MakoXWheelDirections
+        .Select(direction => AppStrings.Text(direction.Key))
         .ToArray();
 
     public int SelectedWaveDirectionIndex
@@ -82,7 +70,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         set => SetField(ref _waveDirectionIndex, Math.Clamp(value, 0, DirectionOptionCount - 1));
     }
 
-    private int DirectionOptionCount => IsWheelEffect ? MakoXWheelDirections.Length : MakoXWaveDirections.Length;
+    private int DirectionOptionCount => MakoXWheelDirections.Length;
 
     public Visibility WaveDirectionVisibility => IsJolie &&
         IsDirectionEffect(LightingEffects[_selectedEffectIndex])

@@ -240,20 +240,6 @@ public sealed partial class RazerHeadsetAudioViewModel
                 $"{effect} is rendered as frames by the software effect pump.");
         }
 
-        if (service is RazerMakoXChromaService mako)
-        {
-            if (effect == RazerChromaEffect.Wave)
-            {
-                await mako.SetEffectAsync(
-                    effect,
-                    [],
-                    MakoXWaveDirections[SelectedWaveDirectionIndex].Flag,
-                    40,
-                    cancellationToken).ConfigureAwait(false);
-                return;
-            }
-        }
-
         var colors = effect switch
         {
             RazerChromaEffect.Static => new byte[] { primary.R, primary.G, primary.B },
