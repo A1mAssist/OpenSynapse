@@ -333,9 +333,9 @@ internal static partial class RazerHidMouseProtocol
 
     internal static RazerHidRequest SetLowBatteryThreshold(RazerHidDeviceDefinition device, int percent)
     {
-        if (percent is < 5 or > 25 || percent % 5 != 0)
+        if (percent is < 5 or > 100 || percent % 5 != 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(percent), "Threshold must be 5%..25% in 5% steps.");
+            throw new ArgumentOutOfRangeException(nameof(percent), "Threshold must be 5%..100% in 5% steps.");
         }
         // The middleware writes `Math.ceil(percent / 100 * 255)`. Truncating puts
         // the threshold one unit below the official app for most of the range.

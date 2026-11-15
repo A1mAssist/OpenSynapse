@@ -441,7 +441,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
     public bool IsLowBatteryBusy { get => _isLowBatteryBusy; private set => SetBusy(ref _isLowBatteryBusy, value, nameof(CanEditLowBattery), nameof(CanWriteLowBattery)); }
     public bool CanWriteLowBattery => CanUse(RazerHidBackendCapability.LowBatteryThresholdWrite) && !IsLowBatteryBusy;
     public bool CanEditLowBattery => CanUse(RazerHidBackendCapability.LowBatteryThresholdWrite) &&
-        LowBatteryThresholdPercent is >= 5 and <= 25 && LowBatteryThresholdPercent % 5 == 0;
+        LowBatteryThresholdPercent is >= 5 and <= 100 && LowBatteryThresholdPercent % 5 == 0;
     public Visibility AutoSleepVisibility => VisibleWhen(HasAny(
         RazerHidBackendCapability.AutoSleepRead,
         RazerHidBackendCapability.AutoSleepWrite));

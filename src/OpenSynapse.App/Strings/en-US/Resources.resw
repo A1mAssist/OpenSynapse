@@ -199,7 +199,7 @@
     <value>Save sleep timeout</value>
   </data>
   <data name="Loc_76FCF14149.Text" xml:space="preserve">
-    <value>Low-battery alert</value>
+    <value>Low power mode threshold</value>
   </data>
   <data name="ViperLowBatteryThresholdInput.Header" xml:space="preserve">
     <value>Percentage</value>
@@ -208,7 +208,7 @@
     <value>Type</value>
   </data>
   <data name="ViperLowBatteryThresholdSave.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Save low-battery alert</value>
+    <value>Save low power mode threshold</value>
   </data>
   <data name="Loc_FCAB5D1B32.Text" xml:space="preserve">
     <value>DPI stages</value>
@@ -1519,7 +1519,7 @@
   <data name="RazerHidPollingTitle.Text" xml:space="preserve"><value>Polling rate</value></data>
   <data name="RazerHidPowerTitle.Text" xml:space="preserve"><value>Power management</value></data>
   <data name="RazerHidIdleLabel.Text" xml:space="preserve"><value>Idle timeout (seconds)</value></data>
-  <data name="RazerHidLowBatteryLabel.Text" xml:space="preserve"><value>Low battery warning (%)</value></data>
+  <data name="RazerHidLowBatteryLabel.Text" xml:space="preserve"><value>Low power mode threshold (%)</value></data>
   <data name="RazerHidAutoSleepLabel.Text" xml:space="preserve"><value>Auto sleep</value></data>
   <data name="RazerHidChargeLimiterLabel.Text" xml:space="preserve"><value>Charge limit (%)</value></data>
   <data name="Text_RazerHidAutoSleepOn" xml:space="preserve"><value>On</value></data>
@@ -3364,7 +3364,7 @@
   <data name="BleMappingHelp" xml:space="preserve"><value>Reassigns button actions per layer; Apply writes them to the onboard mapping.</value></data>
   <data name="BleDpiStagesHelp" xml:space="preserve"><value>Sets each DPI stage and the active stage; Apply writes the whole table.</value></data>
   <data name="BleScrollHelp" xml:space="preserve"><value>Sets scroll mode, Smart Reel, acceleration, and tactile steps; Apply writes them to the device.</value></data>
-  <data name="BlePowerHelp" xml:space="preserve"><value>Sets low-battery alerts, auto sleep, auto dim, and power plan; Apply writes them to the device.</value></data>
+  <data name="BlePowerHelp" xml:space="preserve"><value>Sets the low power mode threshold, auto sleep, auto dim, and power plan; Apply writes them to the device.</value></data>
   <data name="BleBatteryHelp" xml:space="preserve"><value>Selects the battery chemistry used to convert the charge percentage; reselect it after replacing the battery.</value></data>
   <data name="BleSmartIlluminationHelp" xml:space="preserve"><value>Dims lighting when idle and selects the dim level; Apply writes it to the device.</value></data>
   <data name="BleKeysHelp" xml:space="preserve"><value>Configures Snap Tap and key debounce timing; Apply writes them to the device.</value></data>
@@ -3372,7 +3372,7 @@
   <data name="RazerHidDpiHelp" xml:space="preserve"><value>Reads or writes the mouse X/Y DPI; the maximum depends on the device.</value></data>
   <data name="RazerHidDpiStagesHelp" xml:space="preserve"><value>Sets each DPI stage and the active stage; Save writes the whole table.</value></data>
   <data name="RazerHidMappingHelp" xml:space="preserve"><value>Reads and edits onboard button mappings per layer; Save writes them to the device.</value></data>
-  <data name="RazerHidPowerHelp" xml:space="preserve"><value>Sets idle sleep, low-battery alerts, charge limit, auto dim, and battery curve; Save writes them to the device.</value></data>
+  <data name="RazerHidPowerHelp" xml:space="preserve"><value>Sets idle sleep, low power mode threshold, charge limit, auto dim, and battery curve; Save writes them to the device.</value></data>
   <data name="RazerHidMacroStorageHelp" xml:space="preserve"><value>Shows onboard macro storage capacity and usage; read-only.</value></data>
   <data name="RazerHidLightingHelp" xml:space="preserve"><value>Sets lighting effect, brightness, color, direction, and speed per zone; Save writes them to the device.</value></data>
   <data name="RazerHidOnboardProfileHelp" xml:space="preserve"><value>View, switch, create, or delete onboard profiles.</value></data>
@@ -3387,7 +3387,7 @@
   <data name="RazerHidKeyswitchHelp" xml:space="preserve"><value>Selects the keyswitch optimization profile and saves it to the device; available profiles are reported by the device.</value></data>
   <data name="RazerHidMatrixHelp" xml:space="preserve"><value>Sets individual matrix LED colors, or fills with the current color, then applies the whole frame.</value></data>
   <data name="RazerKeyboardStatusHelp" xml:space="preserve"><value>Shows the keyboard's reported battery level and charging state; read-only.</value></data>
-  <data name="ViperLowBatteryHelp" xml:space="preserve"><value>Sets the low-battery notification threshold used by OpenSynapse.</value></data>
+  <data name="ViperLowBatteryHelp" xml:space="preserve"><value>Sets the low power mode threshold written as the device's critical battery level.</value></data>
   <data name="ViperBatteryChemistryHelp" xml:space="preserve"><value>Selects the battery chemistry; the percentage is scaled by this type, so update it after replacing the battery.</value></data>
   <data name="ViperDpiHelp" xml:space="preserve"><value>Sets the current X/Y DPI; range 100–30000 in steps of 50.</value></data>
   <data name="ViperBatteryHelp" xml:space="preserve"><value>Read-only: shows the mouse battery level reported over the wireless link; no value is written to the device.</value></data>
@@ -3843,7 +3843,7 @@
   <data name="ProfileSummary_Item_DpiStages" xml:space="preserve"><value>DPI stages</value></data>
   <data name="ProfileSummary_Item_PollingRate" xml:space="preserve"><value>Polling rate</value></data>
   <data name="ProfileSummary_Item_IdleTimeout" xml:space="preserve"><value>Idle timeout</value></data>
-  <data name="ProfileSummary_Item_LowBattery" xml:space="preserve"><value>Low battery alert</value></data>
+  <data name="ProfileSummary_Item_LowBattery" xml:space="preserve"><value>Low power mode threshold</value></data>
   <data name="ProfileSummary_Item_BatteryChemistry" xml:space="preserve"><value>Battery type</value></data>
   <data name="ProfileSummary_Item_ScrollMode" xml:space="preserve"><value>Scroll wheel mode</value></data>
   <data name="ProfileSummary_Item_ScrollAcceleration" xml:space="preserve"><value>Scroll acceleration</value></data>
@@ -3988,7 +3988,7 @@
   <data name="RazerGamepadApplyConnection.Content" xml:space="preserve"><value>Apply connection settings</value></data>
   <data name="RazerGamepadConnectionTitle.Text" xml:space="preserve"><value>Connection</value></data>
   <data name="RazerHidAutoSleepLabel.Header" xml:space="preserve"><value>Auto sleep</value></data>
-  <data name="RazerHidLowBatteryLabel.Header" xml:space="preserve"><value>Low battery warning (%)</value></data>
+  <data name="RazerHidLowBatteryLabel.Header" xml:space="preserve"><value>Low power mode threshold (%)</value></data>
   <data name="RazerHidOnboardProfileActiveLabel.Header" xml:space="preserve"><value>Active</value></data>
   <data name="RazerHidPollingTitle.Header" xml:space="preserve"><value>Polling rate</value></data>
   <data name="RazerHidScrollAccelerationLabel.Header" xml:space="preserve"><value>Scroll acceleration</value></data>

@@ -261,8 +261,8 @@
     <comment>保存休眠时间</comment>
   </data>
   <data name="Loc_76FCF14149.Text" xml:space="preserve">
-    <value>低电量提醒</value>
-    <comment>低电量提醒</comment>
+    <value>低能耗模式阈值</value>
+    <comment>低能耗模式阈值</comment>
   </data>
   <data name="ViperLowBatteryThresholdInput.Header" xml:space="preserve">
     <value>百分比</value>
@@ -272,8 +272,8 @@
     <value>类型</value>
   </data>
   <data name="ViperLowBatteryThresholdSave.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>保存低电量提醒</value>
-    <comment>保存低电量提醒</comment>
+    <value>保存低能耗模式阈值</value>
+    <comment>保存低能耗模式阈值</comment>
   </data>
   <data name="Loc_FCAB5D1B32.Text" xml:space="preserve">
     <value>DPI 档位</value>
@@ -1900,7 +1900,7 @@
   <data name="RazerHidPollingTitle.Text" xml:space="preserve"><value>轮询率</value></data>
   <data name="RazerHidPowerTitle.Text" xml:space="preserve"><value>电源管理</value></data>
   <data name="RazerHidIdleLabel.Text" xml:space="preserve"><value>空闲休眠（秒）</value></data>
-  <data name="RazerHidLowBatteryLabel.Text" xml:space="preserve"><value>低电量提醒（%）</value></data>
+  <data name="RazerHidLowBatteryLabel.Text" xml:space="preserve"><value>低能耗模式阈值（%）</value></data>
   <data name="RazerHidAutoSleepLabel.Text" xml:space="preserve"><value>自动休眠</value></data>
   <data name="RazerHidChargeLimiterLabel.Text" xml:space="preserve"><value>充电限制（%）</value></data>
   <data name="Text_RazerHidAutoSleepOn" xml:space="preserve"><value>开启</value></data>
@@ -3799,7 +3799,7 @@
   <data name="BleMappingHelp" xml:space="preserve"><value>按层重新分配按键动作，应用后写入板载映射。</value></data>
   <data name="BleDpiStagesHelp" xml:space="preserve"><value>设置各档 DPI 和当前档位，应用后整体写入。</value></data>
   <data name="BleScrollHelp" xml:space="preserve"><value>调整滚轮模式、Smart Reel、加速和触感档位，应用后写入设备。</value></data>
-  <data name="BlePowerHelp" xml:space="preserve"><value>设置低电量提醒、自动休眠、自动变暗和电源方案，应用后写入设备。</value></data>
+  <data name="BlePowerHelp" xml:space="preserve"><value>设置低能耗模式阈值、自动休眠、自动变暗和电源方案，应用后写入设备。</value></data>
   <data name="BleBatteryHelp" xml:space="preserve"><value>选择电池类型；电量百分比按该类型换算，换电池后需要重新选择。</value></data>
   <data name="BleSmartIlluminationHelp" xml:space="preserve"><value>闲置时自动调暗灯光，并可选择调暗档位，应用后写入设备。</value></data>
   <data name="BleKeysHelp" xml:space="preserve"><value>配置 Snap Tap 和按键去抖时间，应用后写入设备。</value></data>
@@ -3807,7 +3807,7 @@
   <data name="RazerHidDpiHelp" xml:space="preserve"><value>读取或写入鼠标 X/Y DPI；上限由设备能力决定。</value></data>
   <data name="RazerHidDpiStagesHelp" xml:space="preserve"><value>设置各档 DPI 和当前档位，保存后整体写入。</value></data>
   <data name="RazerHidMappingHelp" xml:space="preserve"><value>读取并按层修改板载按键映射，保存后写入设备。</value></data>
-  <data name="RazerHidPowerHelp" xml:space="preserve"><value>设置空闲休眠、低电量提醒、充电限制、自动变暗和电池曲线等电源选项，保存后写入设备。</value></data>
+  <data name="RazerHidPowerHelp" xml:space="preserve"><value>设置空闲休眠、低能耗模式阈值、充电限制、自动变暗和电池曲线等电源选项，保存后写入设备。</value></data>
   <data name="RazerHidMacroStorageHelp" xml:space="preserve"><value>只读显示板载宏存储的容量和占用。</value></data>
   <data name="RazerHidLightingHelp" xml:space="preserve"><value>按区域设置灯效、亮度、颜色、方向和速度，保存后写入设备。</value></data>
   <data name="RazerHidOnboardProfileHelp" xml:space="preserve"><value>查看、切换、新建或删除板载配置文件。</value></data>
@@ -3822,7 +3822,7 @@
   <data name="RazerHidKeyswitchHelp" xml:space="preserve"><value>选择键轴优化档位，保存后写入设备；可选档位由设备报告。</value></data>
   <data name="RazerHidMatrixHelp" xml:space="preserve"><value>逐颗设置矩阵灯珠颜色，或一次填充当前颜色，然后应用整帧。</value></data>
   <data name="RazerKeyboardStatusHelp" xml:space="preserve"><value>只读显示键盘报告的电量和充电状态。</value></data>
-  <data name="ViperLowBatteryHelp" xml:space="preserve"><value>设置低电量提醒阈值，达到后由 OpenSynapse 发送通知。</value></data>
+  <data name="ViperLowBatteryHelp" xml:space="preserve"><value>设置低能耗模式阈值，写入设备的临界电量。</value></data>
   <data name="ViperBatteryChemistryHelp" xml:space="preserve"><value>选择电池类型；电量百分比会按该类型换算，换电池后要选对。</value></data>
   <data name="ViperDpiHelp" xml:space="preserve"><value>设置当前 X/Y DPI；范围 100–30000，步进 50。</value></data>
   <data name="ViperBatteryHelp" xml:space="preserve"><value>只读：显示鼠标当前电量；电量由鼠标通过无线链路报告，不会写回设备。</value></data>
@@ -4278,7 +4278,7 @@
   <data name="ProfileSummary_Item_DpiStages" xml:space="preserve"><value>DPI 档位</value></data>
   <data name="ProfileSummary_Item_PollingRate" xml:space="preserve"><value>轮询率</value></data>
   <data name="ProfileSummary_Item_IdleTimeout" xml:space="preserve"><value>空闲超时</value></data>
-  <data name="ProfileSummary_Item_LowBattery" xml:space="preserve"><value>低电量提醒</value></data>
+  <data name="ProfileSummary_Item_LowBattery" xml:space="preserve"><value>低能耗模式阈值</value></data>
   <data name="ProfileSummary_Item_BatteryChemistry" xml:space="preserve"><value>电池类型</value></data>
   <data name="ProfileSummary_Item_ScrollMode" xml:space="preserve"><value>滚轮模式</value></data>
   <data name="ProfileSummary_Item_ScrollAcceleration" xml:space="preserve"><value>滚轮加速</value></data>
@@ -4423,7 +4423,7 @@
   <data name="RazerGamepadApplyConnection.Content" xml:space="preserve"><value>应用连接设置</value></data>
   <data name="RazerGamepadConnectionTitle.Text" xml:space="preserve"><value>连接</value></data>
   <data name="RazerHidAutoSleepLabel.Header" xml:space="preserve"><value>自动休眠</value></data>
-  <data name="RazerHidLowBatteryLabel.Header" xml:space="preserve"><value>低电量提醒 (%)</value></data>
+  <data name="RazerHidLowBatteryLabel.Header" xml:space="preserve"><value>低能耗模式阈值 (%)</value></data>
   <data name="RazerHidOnboardProfileActiveLabel.Header" xml:space="preserve"><value>当前配置</value></data>
   <data name="RazerHidPollingTitle.Header" xml:space="preserve"><value>轮询率</value></data>
   <data name="RazerHidScrollAccelerationLabel.Header" xml:space="preserve"><value>滚轮加速</value></data>
