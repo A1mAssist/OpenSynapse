@@ -46,6 +46,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 - Ambient Awareness now works on desktops and clamshell laptops: when Windows reports no internal panel the capture follows the primary monitor, and when Graphics Capture is denied (`E_ACCESSDENIED`) it falls back to a 25 fps desktop copy. The copy leaves out layered windows so the screen cursor no longer flickers while the effect runs.
 - Mako X Starlight, Fire and Audio Meter no longer blank the light strip: the Joliet firmware answers status `0x05` for every effect id outside `0`/`1`/`2`/`3`/`4`/`8` and leaves the LEDs dark, so those effects are now streamed as per-LED frames instead of unsupported ids.
+- Mako X no longer reports a failed state query while a frame effect is running: every service opens its own HID handle, so feature-report writes and reads for the same device now share one gate instead of overwriting each other's replies.
 - Shutdown lighting now covers Mako X, whose Chroma channel lives on the audio HID collection rather than the RazerHid catalogue.
 - BlackShark V2 Pro (0555) no longer stalls on “reading”: timed-out HID control requests are actually cancelled instead of piling up in the driver queue; USB-only headsets stay visible before HID is ready.
 - Kiyo, sensor rotation, smart tracking and software-lighting cleanup no longer raise `PropertyChanged` on the thread pool, fixing the `0x8001010E` settings-page failure.
