@@ -2,7 +2,8 @@
     x:Class="OpenSynapse.App.Views.DevicePanels.HeadsetAudioPanel"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:OpenSynapse.App">
+    xmlns:local="using:OpenSynapse.App"
+    xmlns:views="using:OpenSynapse.App.Views">
   <StackPanel Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                     <StackPanel Spacing="4"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><TextBlock Text="{Binding CategoryText}" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel>
@@ -79,12 +80,12 @@
                   </Grid>
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding AvneraInfoVisibility}">
                     <StackPanel Spacing="8"><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="RazerHeadsetInfoTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
-                      <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="6">
-                        <TextBlock local:Localized.Uid="RazerHidSerialLabel" Foreground="{StaticResource MutedBrush}" /><TextBlock Grid.Column="1" Text="{Binding SerialText}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" />
+                      <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="6">
+                        <TextBlock local:Localized.Uid="RazerHidSerialLabel" Foreground="{StaticResource MutedBrush}" /><TextBlock Grid.Column="1" Text="{Binding SerialText}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /><views:CopyTextButton Grid.Column="2" Text="{Binding SerialText}" />
                         <TextBlock Grid.Row="1" local:Localized.Uid="RazerHeadsetEditionLabel" Text="Edition" Foreground="{StaticResource MutedBrush}" /><TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding EditionText}" FontFamily="Cascadia Mono,Consolas" />
                         <TextBlock Grid.Row="2" local:Localized.Uid="RazerHeadsetLinkStatusLabel" Foreground="{StaticResource MutedBrush}" /><TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LinkStatusText}" FontFamily="Cascadia Mono,Consolas" />
                         <TextBlock Grid.Row="3" local:Localized.Uid="RazerHeadsetDockFirmwareLabel" Foreground="{StaticResource MutedBrush}" Visibility="{Binding DockInfoVisibility}" /><TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding DockFirmwareText}" FontFamily="Cascadia Mono,Consolas" Visibility="{Binding DockInfoVisibility}" />
-                        <TextBlock Grid.Row="4" local:Localized.Uid="RazerHeadsetDockSerialLabel" Foreground="{StaticResource MutedBrush}" Visibility="{Binding DockInfoVisibility}" /><TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding DockSerialText}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" Visibility="{Binding DockInfoVisibility}" />
+                        <TextBlock Grid.Row="4" local:Localized.Uid="RazerHeadsetDockSerialLabel" Foreground="{StaticResource MutedBrush}" Visibility="{Binding DockInfoVisibility}" /><TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding DockSerialText}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" Visibility="{Binding DockInfoVisibility}" /><views:CopyTextButton Grid.Row="4" Grid.Column="2" Text="{Binding DockSerialText}" Visibility="{Binding DockInfoVisibility}" />
                         <TextBlock Grid.Row="5" local:Localized.Uid="RazerHeadsetDockEditionLabel" Foreground="{StaticResource MutedBrush}" Visibility="{Binding DockInfoVisibility}" /><TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding DockEditionText}" FontFamily="Cascadia Mono,Consolas" Visibility="{Binding DockInfoVisibility}" />
                       </Grid>
                     </StackPanel>

@@ -1292,6 +1292,10 @@
     <value>复制诊断信息</value>
     <comment>复制诊断信息</comment>
   </data>
+  <data name="CopyTextTooltip" xml:space="preserve">
+    <value>复制</value>
+    <comment>复制旁边的文本</comment>
+  </data>
   <data name="DiagnosticsCopied" xml:space="preserve">
     <value>诊断信息已复制</value>
     <comment>诊断信息已复制</comment>
