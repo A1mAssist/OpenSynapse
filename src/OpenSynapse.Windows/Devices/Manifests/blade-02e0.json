@@ -59,6 +59,20 @@
       "commandId": "10",
       "arguments": ""
     },
+    "gpu-card-detection.get": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "A0",
+      "arguments": "00"
+    },
+    "gpu-card-detection.set": {
+      "transactionId": "03",
+      "dataSize": "03",
+      "commandClass": "03",
+      "commandId": "20",
+      "arguments": ""
+    },
     "thermal-state.get": {
       "transactionId": "1F",
       "dataSize": "04",
