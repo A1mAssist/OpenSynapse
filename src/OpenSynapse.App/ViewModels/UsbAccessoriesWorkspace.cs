@@ -216,15 +216,27 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
             _razerHid.CreateKrakenLighting(connection.ProductId),
             _getProfile,
             _saveProfile);
+        var keepAlive = false;
         try
         {
             await probe.LoadAsync(cancellationToken);
             row.SetProbeResult(
                 probe.ProbeState, probe.CapabilityText, probe.ErrorText, probe.BatteryPercent);
+            // Mako X renders frame effects inside this view model. Before the device
+            // page is opened the probe is the only instance, so keep it instead of
+            // disposing the pump after its first frame.
+            if (connection.Transport == RazerHeadsetAudioTransport.Jolie64 &&
+                probe.ProbeState is RazerHeadsetProbeState.Ready or RazerHeadsetProbeState.Partial &&
+                SelectedHeadsetAudio is null)
+            {
+                _selectedHeadsetAudioDevice = row;
+                SelectedHeadsetAudio = probe;
+                keepAlive = true;
+            }
         }
         finally
         {
-            await probe.DisposeAsync();
+            if (!keepAlive) await probe.DisposeAsync();
         }
     }
 
