@@ -48,6 +48,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 - Mako X Starlight, Fire and Audio Meter no longer blank the light strip: the Joliet firmware answers status `0x05` for every effect id outside `0`/`1`/`2`/`3`/`4`/`8` and leaves the LEDs dark, so those effects are now streamed as per-LED frames instead of unsupported ids.
 - Mako X no longer reports a failed state query while a frame effect is running: every service opens its own HID handle, so feature-report writes and reads for the same device now share one gate instead of overwriting each other's replies.
 - Mako X restores frame-rendered effects (including rotation) on launch and profile replay; the frame pump is not persistent, so it is started again from the saved effect instead of leaving the strip dark until Apply.
+- Mako X frame effects keep animating through a transient HID failure instead of freezing on the first missed frame; the pump retries and only stops after repeated failures.
 - Shutdown lighting now covers Mako X, whose Chroma channel lives on the audio HID collection rather than the RazerHid catalogue.
 - BlackShark V2 Pro (0555) no longer stalls on “reading”: timed-out HID control requests are actually cancelled instead of piling up in the driver queue; USB-only headsets stay visible before HID is ready.
 - Kiyo, sensor rotation, smart tracking and software-lighting cleanup no longer raise `PropertyChanged` on the thread pool, fixing the `0x8001010E` settings-page failure.
