@@ -27,6 +27,9 @@ public sealed partial class LightingStudioPage
         SetButtonLabel(ClearSelectionButton, "LightingStudioClearSelection");
         AutomationProperties.SetName(ToolPicker, AppStrings.Text("LightingStudioToolLabel"));
         AutomationProperties.SetName(ZoomPicker, AppStrings.Text("LightingStudioZoomLabel"));
+        var regionHint = AppStrings.Text("LightingStudioRegionHint");
+        AutomationProperties.SetName(RegionPicker, AppStrings.Text("LightingStudioRegionLabel"));
+        ToolTipService.SetToolTip(RegionPicker, regionHint);
         AutomationProperties.SetName(ProjectExpander, AppStrings.Text("LightingStudioProject"));
     }
 

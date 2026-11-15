@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Lighting;
 
 namespace OpenSynapse.App.Views;
 
@@ -53,6 +54,7 @@ public sealed partial class LightingStudioPage
         DeviceCanvas.Devices = visuals.ToArray();
         DeviceCanvas.Profile = _viewModel.Profile;
         DeviceCanvas.Refresh();
+        ApplyRegionHighlight();
         _builtVisualSignature = visualSignature;
         DeviceCanvas.Visibility = Visibility.Visible;
         FallbackPreview.Visibility = Visibility.Collapsed;
@@ -87,5 +89,35 @@ public sealed partial class LightingStudioPage
             FitCanvas();
             DispatcherQueue.TryEnqueue(FitCanvas);
         });
+    }
+
+    private void ApplyRegionHighlight()
+    {
+        if (_viewModel is null)
+        {
+            DeviceCanvas.ClearRegionHighlight();
+            return;
+        }
+
+        if (_viewModel.SelectedRegionChoice?.Region is not { } region)
+        {
+            DeviceCanvas.ClearRegionHighlight();
+            return;
+        }
+
+        var cells = new List<StudioLedRef>();
+        foreach (var target in region.Devices)
+        {
+            var visual = _viewModel.DeviceVisuals.FirstOrDefault(item =>
+                StudioLedSelection.SameInstance(item.InstanceId, target.InstanceId));
+            if (visual is null) continue;
+            foreach (var led in target.Leds)
+            {
+                var cell = StudioLedSelection.CellFor(visual, led.Row, led.Col);
+                if (StudioLedSelection.IndexOfCell(cells, cell) < 0) cells.Add(cell);
+            }
+        }
+
+        DeviceCanvas.HighlightRegion(cells);
     }
 }

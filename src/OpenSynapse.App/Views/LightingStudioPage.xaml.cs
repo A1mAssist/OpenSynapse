@@ -109,6 +109,8 @@ public sealed partial class LightingStudioPage : UserControl
             if (args.PropertyName == nameof(LightingStudioViewModel.DeviceVisual) ||
                 args.PropertyName == nameof(LightingStudioViewModel.DeviceVisuals) ||
                 args.PropertyName == nameof(LightingStudioViewModel.Profile)) RefreshCanvas();
+            else if (args.PropertyName is nameof(LightingStudioViewModel.SelectedRegionChoice) or
+                     nameof(LightingStudioViewModel.RegionChoices)) ApplyRegionHighlight();
             else if (args.PropertyName == nameof(LightingStudioViewModel.SelectedParams)) BindInspector();
             else if (args.PropertyName == nameof(LightingStudioViewModel.SelectedEffectChoice))
             {

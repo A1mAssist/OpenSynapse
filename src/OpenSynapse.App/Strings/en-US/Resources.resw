@@ -3433,6 +3433,7 @@
   <data name="LightingStudioAllRegions" xml:space="preserve"><value>Whole layer</value></data>
   <data name="LightingStudioRegionLabel" xml:space="preserve"><value>Region</value></data>
   <data name="LightingStudioRegionName" xml:space="preserve"><value>Region {0}</value></data>
+  <data name="LightingStudioRegionHint" xml:space="preserve"><value>Highlighted LEDs belong to the selected region</value></data>
   <data name="LightingStudioProfileLabel" xml:space="preserve"><value>Profiles</value></data>
   <data name="LightingStudioAddGroup" xml:space="preserve"><value>Group</value></data>
   <data name="LightingStudioDuplicate" xml:space="preserve"><value>Duplicate</value></data>

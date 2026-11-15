@@ -74,7 +74,7 @@ public sealed partial class StudioCanvas
         _zoomViewPending = false;
     }
 
-    /// <summary>Selects a preset stop: 10, 25, 50, 100, 200, 300 or 400 percent.</summary>
+    /// <summary>Selects a preset stop from <see cref="_zoomSteps"/>.</summary>
     public void SetZoomStep(int step) => SetZoomStep(step, null);
 
     private void SetZoomStep(int step, Point? anchor) =>

@@ -30,13 +30,15 @@ public sealed partial class StudioCanvas : UserControl
     private const double MinZoom = 10;
     private const double MaxZoom = 400;
     private const double MarqueeThreshold = 3;
-    private static readonly double[] _zoomSteps = [10, 25, 50, 100, 200, 300, 400];
+    private static readonly double[] _zoomSteps = [10, 25, 50, 75, 100, 200, 300, 400];
     private readonly List<HostState> _hosts = new();
     private readonly List<LedEntry> _ledEntries = new();
     private readonly List<StudioLedRef> _selection = new();
+    private readonly List<StudioLedRef> _regionHighlight = new();
     private readonly HashSet<(string InstanceId, int Row, int Col)> _penVisited = new();
     private const double SelectionStrokePixels = 2.5;
     private readonly SolidColorBrush _selectionBrush = new(Color.FromArgb(255, 0xB6, 0xFF, 0x6B));
+    private readonly SolidColorBrush _regionHighlightBrush = new(Color.FromArgb(255, 0xFF, 0xB8, 0x4D));
     private readonly SolidColorBrush _marqueeFill = new(Color.FromArgb(56, 0xB6, 0xFF, 0x6B));
     private int _topZIndex;
     private int _moveOriginalZIndex;
@@ -182,6 +184,24 @@ public sealed partial class StudioCanvas : UserControl
         _selection.Clear();
         UpdateSelectionVisuals();
         SelectionChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Highlights the selected region without changing the editable selection.</summary>
+    public void HighlightRegion(IEnumerable<StudioLedRef> leds)
+    {
+        var next = new List<StudioLedRef>();
+        foreach (var led in leds) AddCell(next, led);
+        if (SameSelection(_regionHighlight, next)) return;
+        _regionHighlight.Clear();
+        _regionHighlight.AddRange(next);
+        UpdateSelectionVisuals();
+    }
+
+    public void ClearRegionHighlight()
+    {
+        if (_regionHighlight.Count == 0) return;
+        _regionHighlight.Clear();
+        UpdateSelectionVisuals();
     }
 
     public void SelectLeds(IEnumerable<StudioLedRef> leds)
@@ -473,20 +493,23 @@ public sealed partial class StudioCanvas : UserControl
         var thickness = SelectionStrokePixels / Math.Max(factor, 0.1);
         foreach (var entry in _ledEntries)
         {
-            var selected = IndexOfCell(
-                _selection, new StudioLedRef(
-                    entry.Led.MatrixRow, entry.Led.MatrixCol, InstanceId: entry.InstanceId)) >= 0;
+            var cell = new StudioLedRef(
+                entry.Led.MatrixRow, entry.Led.MatrixCol, InstanceId: entry.InstanceId);
+            var selected = IndexOfCell(_selection, cell) >= 0;
+            var highlighted = !selected && IndexOfCell(_regionHighlight, cell) >= 0;
             if (entry.Selection is { } selection)
             {
-                selection.Visibility = selected ? Visibility.Visible : Visibility.Collapsed;
-                if (selected)
+                selection.Visibility = selected || highlighted ? Visibility.Visible : Visibility.Collapsed;
+                if (selected || highlighted)
                 {
-                    selection.Stroke = _selectionBrush;
+                    selection.Stroke = selected ? _selectionBrush : _regionHighlightBrush;
                     selection.StrokeThickness = thickness;
                 }
             }
-            var usePath = selected && entry.Selection is null;
-            entry.Element.Stroke = usePath ? _selectionBrush : entry.Stroke;
+            var usePath = (selected || highlighted) && entry.Selection is null;
+            entry.Element.Stroke = usePath
+                ? selected ? _selectionBrush : _regionHighlightBrush
+                : entry.Stroke;
             entry.Element.StrokeThickness = usePath ? thickness : entry.Thickness;
         }
     }

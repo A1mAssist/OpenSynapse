@@ -3868,6 +3868,7 @@
   <data name="LightingStudioAllRegions" xml:space="preserve"><value>整个图层</value></data>
   <data name="LightingStudioRegionLabel" xml:space="preserve"><value>区域</value></data>
   <data name="LightingStudioRegionName" xml:space="preserve"><value>区域 {0}</value></data>
+  <data name="LightingStudioRegionHint" xml:space="preserve"><value>画布上高亮的灯属于选中区域</value></data>
   <data name="LightingStudioProfileLabel" xml:space="preserve"><value>配置档</value></data>
   <data name="LightingStudioAddGroup" xml:space="preserve"><value>组</value></data>
   <data name="LightingStudioDuplicate" xml:space="preserve"><value>复制</value></data>
