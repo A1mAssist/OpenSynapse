@@ -164,8 +164,10 @@ public sealed partial class DiagnosticsWorkspace
     {
         var group = new DiagnosticRowViewModel(
             row.Name,
-            AppStrings.Text("Text_5EAB9F51"),
             row.Capability,
+            row.IsPresent
+                ? AppStrings.Text("BlackSharkStatusConnected")
+                : row.Access,
             $"{row.Access} · {row.ReportInfo}",
             row.StatusBrush);
         foreach (var detail in row.ProtocolDetails)
