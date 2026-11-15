@@ -66,7 +66,7 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         var profileId = await ResolveMappingProfileIdAsync(connection, cancellationToken).ConfigureAwait(false);
-        if (UsesMultiKeyReads(connection))
+        if (UsesMultiKeyAssignments(connection))
         {
             return RazerHidMappingProtocol.ParseMultiKeyAssignment(
                 await ExecuteAsync(connection,
@@ -95,20 +95,15 @@ public sealed partial class RazerHidDeviceService
     private static bool UsesKeyAssignments(RazerHidDeviceConnection connection) =>
         connection.Definition.Category == DeviceCategory.Keyboard;
 
-    // 0266 Huntsman V2 Analog and 0282 Huntsman Mini Analog declare the analog OBM engine.
+    // 0266/0282 Huntsman analog and 0244 Tartarus Pro declare the analogV1 OBM engine.
+    // Their key table carries the actuation band through 0x92/0x12.
     private static bool UsesAnalogKeyAssignments(RazerHidDeviceConnection connection) =>
-        connection.Definition.ProductId is 0x0266 or 0x0282;
+        connection.Definition.ProductId is 0x0266 or 0x0282 or 0x0244;
 
     // Huntsman V3 Pro firmware rejects 0x8D for modifiers and navigation keys. Synapse
     // reads and writes those keyboards through the 0x9E/0x1E multi-key table instead.
     private static bool UsesMultiKeyAssignments(RazerHidDeviceConnection connection) =>
         connection.Definition.ProductId is 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
-
-    // 0244 reads its key table through the multi-key command but still writes a
-    // single key through 0x0D. Keep the write family on UsesKeyAssignments.
-    private static bool UsesMultiKeyReads(RazerHidDeviceConnection connection) =>
-        UsesMultiKeyAssignments(connection) ||
-        connection.Definition.ProductId == 0x0244;
 
     public async Task SetButtonAssignmentAsync(
         RazerHidDeviceConnection connection,
@@ -168,8 +163,8 @@ public sealed partial class RazerHidDeviceService
         string devicePath,
         CancellationToken cancellationToken)
     {
-        var analog = definition.ProductId is 0x0266 or 0x0282;
-        var multi = definition.ProductId is 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF or 0x0244;
+        var analog = definition.ProductId is 0x0266 or 0x0282 or 0x0244;
+        var multi = definition.ProductId is 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
         // 0244/022B keypads map the first art key to SPAD_NUM_1, firmware key id 64 (0x40).
         // Some firmware refuses that row while still answering the generic 0x02 key, so
         // try both; otherwise one rejected row hides the whole mapping page.
