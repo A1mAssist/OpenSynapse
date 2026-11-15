@@ -87,7 +87,9 @@ public sealed class RazerKeyboardMappingActionCatalog : RazerHidMappingActionCat
     public static new RazerKeyboardMappingActionCatalog Instance { get; } = new();
 
     public override string DescribeButton(byte buttonId) =>
-        AppStrings.FormatText("RazerMappingKeyboardButton", buttonId);
+        buttonId is 0x03 or 0x09 or 0x0A
+            ? RazerHidMappingActions.DescribeButton(buttonId)
+            : AppStrings.FormatText("RazerMappingKeyboardButton", buttonId);
 }
 
 /// <summary>

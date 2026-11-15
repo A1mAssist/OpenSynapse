@@ -10,6 +10,13 @@ namespace OpenSynapse.Core.Devices;
 /// </summary>
 public static class RazerKeypadKeyCatalog
 {
+    /// <summary>
+    /// 0244 exposes the wheel directions outside the numbered SVG selection paths.
+    /// The keypad bundle maps ScrollUp/ScrollDown to firmware ids 9/10.
+    /// </summary>
+    public static IReadOnlyList<byte> ExtraButtonIds(ushort productId) =>
+        productId == 0x0244 ? [0x09, 0x0A] : [];
+
     public static IReadOnlyDictionary<string, byte> Resolve(
         ushort productId,
         IEnumerable<StudioKeyboardKey> keys)

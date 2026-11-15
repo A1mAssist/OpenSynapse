@@ -66,7 +66,7 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         var profileId = await ResolveMappingProfileIdAsync(connection, cancellationToken).ConfigureAwait(false);
-        if (UsesMultiKeyAssignments(connection))
+        if (UsesMultiKeyReads(connection))
         {
             return RazerHidMappingProtocol.ParseMultiKeyAssignment(
                 await ExecuteAsync(connection,
@@ -103,6 +103,12 @@ public sealed partial class RazerHidDeviceService
     // reads and writes those keyboards through the 0x9E/0x1E multi-key table instead.
     private static bool UsesMultiKeyAssignments(RazerHidDeviceConnection connection) =>
         connection.Definition.ProductId is 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
+
+    // 0244 reads its key table through the multi-key command but still writes a
+    // single key through 0x0D. Keep the write family on UsesKeyAssignments.
+    private static bool UsesMultiKeyReads(RazerHidDeviceConnection connection) =>
+        UsesMultiKeyAssignments(connection) ||
+        connection.Definition.ProductId == 0x0244;
 
     public async Task SetButtonAssignmentAsync(
         RazerHidDeviceConnection connection,
@@ -163,7 +169,7 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken)
     {
         var analog = definition.ProductId is 0x0266 or 0x0282;
-        var multi = definition.ProductId is 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
+        var multi = definition.ProductId is 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF or 0x0244;
         // 0244/022B keypads map the first art key to SPAD_NUM_1, firmware key id 64 (0x40).
         // Some firmware refuses that row while still answering the generic 0x02 key, so
         // try both; otherwise one rejected row hides the whole mapping page.
@@ -243,7 +249,7 @@ public sealed partial class RazerHidDeviceService
                 {
                     if (RazerHidMappingProtocol.IsValidKeyIdList(keyIds))
                     {
-                        return keyIds;
+                        return AddKeypadWheelDirections(connection.Definition.ProductId, keyIds);
                     }
 
                     // 0x8F can answer with assignment records after a driver rebind.
@@ -267,7 +273,8 @@ public sealed partial class RazerHidDeviceService
                 RazerHidMappingProtocol.GetButtonList(), cancellationToken).ConfigureAwait(false);
             // The middleware only builds a button list when the reply declares data; a
             // zero-length success means the firmware stores no table, not that the read failed.
-            return response[6] == 0 ? [] : RazerHidMappingProtocol.ParseButtonList(response);
+            var ids = response[6] == 0 ? [] : RazerHidMappingProtocol.ParseButtonList(response);
+            return AddKeypadWheelDirections(connection.Definition.ProductId, ids);
         }
         catch (Exception exception) when (exception is NotSupportedException or RazerDeviceTimeoutException)
         {
@@ -275,5 +282,15 @@ public sealed partial class RazerHidDeviceService
             // answers the assignment table. The caller falls back to the product bundle ids.
             return [];
         }
+    }
+
+    private static IReadOnlyList<byte> AddKeypadWheelDirections(
+        ushort productId,
+        IReadOnlyList<byte> ids)
+    {
+        var extra = RazerKeypadKeyCatalog.ExtraButtonIds(productId);
+        return extra.Count == 0 || ids.Count == 0
+            ? ids
+            : ids.Concat(extra).Distinct().Order().ToArray();
     }
 }
