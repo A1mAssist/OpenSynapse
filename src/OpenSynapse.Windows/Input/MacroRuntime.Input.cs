@@ -1,0 +1,511 @@
+using OpenSynapse.Core.Macros;
+
+namespace OpenSynapse.Windows.Input;
+
+internal sealed partial class MacroRuntime
+{
+    public void SetHyperShiftHeld(bool held)
+    {
+        var stopPlayback = false;
+        lock (_gate)
+        {
+            if (_hyperShiftHeld == held)
+            {
+                return;
+            }
+
+            _hyperShiftHeld = held;
+            if (_isPlaying &&
+                _activePlaybackMacroId is { } activeId &&
+                _macroMap.TryGetValue(activeId, out var active) &&
+                active.Trigger is { } trigger &&
+                trigger.HyperShiftLayer != held)
+            {
+                stopPlayback = true;
+            }
+        }
+
+        if (stopPlayback)
+        {
+            StopPlayback();
+        }
+    }
+
+    private bool HandleInput(MacroInputEvent value)
+    {
+        TrackPhysicalModifier(value);
+        if (value.IsMouseMove)
+        {
+            MacroRecordingSession? mouseRecording;
+            lock (_gate)
+            {
+                mouseRecording = _recording;
+            }
+            if (mouseRecording is not null &&
+                _isOwnWindowForeground?.Invoke() != true)
+            {
+                mouseRecording.TryAddMouseMove(
+                    value.X,
+                    value.Y,
+                    value.TimestampMilliseconds,
+                    value.WindowLeft,
+                    value.WindowTop,
+                    value.WindowWidth,
+                    value.WindowHeight);
+            }
+            return false;
+        }
+
+        if (MacroInputTrace.Enabled)
+        {
+            _log?.Invoke(
+                $"input {MacroInputFormatter.Describe(value.Input)} down={value.IsDown} " +
+                $"modifiers={value.Modifiers} hyperShift={_hyperShiftHeld}");
+        }
+
+        if (value.Input.Kind == MacroInputKind.RazerKey &&
+            value.Input.DeviceId is > 0 and <= 0xFFFF &&
+            RazerPrivateKeyCatalog.IsHyperShift(
+                (ushort)value.Input.DeviceId,
+                value.Input.RazerKeyCode))
+        {
+            SetHyperShiftHeld(value.IsDown);
+        }
+
+        MacroDefinition? playMacro = null;
+        var playModifiers = MacroModifierKeys.None;
+        var playRepeatUntilStopped = false;
+        var suppress = false;
+        var stopRequested = false;
+        var stopPlayback = false;
+        var startPlayback = false;
+        var playbackShortcutHandled = false;
+        CancellationTokenSource? holdCancellation = null;
+        MacroInput? holdInput = null;
+        MacroInput? unhandledRazerKey = null;
+
+        // Playback shortcuts take priority over macro triggers, but never while
+        // recording or capturing a key.
+        lock (_gate)
+        {
+            var canUsePlaybackShortcuts =
+                _recording is null &&
+                _stepCapture is null &&
+                _triggerCapture is null &&
+                !_recordingPending;
+            if (canUsePlaybackShortcuts)
+            {
+                var matchesStart = _playbackStartShortcut?.Matches(value.Input) == true;
+                var matchesStop = _playbackStopShortcut.Matches(value.Input);
+                if (value.IsDown)
+                {
+                    if (matchesStart && _playbackStartHotkeyHeld)
+                    {
+                        playbackShortcutHandled = true;
+                    }
+                    else if (matchesStop && _playbackStopHotkeyHeld)
+                    {
+                        playbackShortcutHandled = true;
+                    }
+                    else if (matchesStop && _isPlaying)
+                    {
+                        _playbackStopHotkeyHeld = true;
+                        stopPlayback = true;
+                        playbackShortcutHandled = true;
+                    }
+                    else if (matchesStart)
+                    {
+                        _playbackStartHotkeyHeld = true;
+                        startPlayback = !_isPlaying;
+                        playbackShortcutHandled = true;
+                    }
+                }
+                else
+                {
+                    if (matchesStart && _playbackStartHotkeyHeld)
+                    {
+                        _playbackStartHotkeyHeld = false;
+                        playbackShortcutHandled = true;
+                    }
+                    if (matchesStop && _playbackStopHotkeyHeld)
+                    {
+                        _playbackStopHotkeyHeld = false;
+                        playbackShortcutHandled = true;
+                    }
+                }
+            }
+        }
+
+        if (playbackShortcutHandled)
+        {
+            if (stopPlayback)
+            {
+                StopPlayback();
+            }
+            if (startPlayback)
+            {
+                PlaybackStartRequested?.Invoke();
+            }
+            return true;
+        }
+
+        lock (_gate)
+        {
+            if (_disposed)
+            {
+                return false;
+            }
+
+            if (_recordingStopInput is { } heldStop &&
+                heldStop.Matches(value.Input))
+            {
+                if (!value.IsDown)
+                {
+                    _recordingStopInput = null;
+                }
+                return true;
+            }
+
+            if (_recording is { } recording)
+            {
+                if (_recordingOptions.StopShortcut is { } stopShortcut &&
+                    stopShortcut.Matches(value.Input))
+                {
+                    _recordingStopInput = value.IsDown ? value.Input.Clone() : null;
+                    if (value.IsDown)
+                    {
+                        stopRequested = true;
+                    }
+                    suppress = true;
+                    goto InputHandled;
+                }
+
+                // Do not record input in our own editor.
+                if (_isOwnWindowForeground?.Invoke() == true)
+                {
+                    return false;
+                }
+
+                // Record the standard hook key, not unreplayable device-scoped triggers.
+                if (value.Input.Kind is MacroInputKind.NagaSideButton or
+                    MacroInputKind.DeviceButton or MacroInputKind.RazerKey)
+                {
+                    return false;
+                }
+
+                recording.TryAdd(value.Input, value.IsDown, value.TimestampMilliseconds);
+                return false;
+            }
+
+            if (_stepCapture is { } stepCapture)
+            {
+                if (value.Input.Kind == MacroInputKind.MouseButton &&
+                    value.Input.MouseButton is 1 or 2 &&
+                    _isOwnWindowForeground?.Invoke() == true)
+                {
+                    return false;
+                }
+
+                var isWheel = value.Input.Kind == MacroInputKind.MouseWheel;
+                if ((!value.IsDown && !isWheel) ||
+                    !value.Input.IsValid(allowPrimaryMouseButton: true, allowWheel: true))
+                {
+                    return false;
+                }
+
+                _stepCapture = null;
+                if (!isWheel)
+                {
+                    _suppressedCapture = value.Input.Clone();
+                }
+                stepCapture.TrySetResult(value.Input.Clone());
+                return true;
+            }
+
+            if (_triggerCapture is { } capture)
+            {
+                if (value.Input.Kind == MacroInputKind.RazerKey &&
+                    value.Input.DeviceId is > 0 and <= 0xFFFF &&
+                    RazerPrivateKeyCatalog.IsHyperShift(
+                        (ushort)value.Input.DeviceId,
+                        value.Input.RazerKeyCode))
+                {
+                    return false;
+                }
+
+                if (!value.IsDown ||
+                    !value.Input.IsValid(
+                        allowPrimaryMouseButton: false,
+                        allowWheel: false,
+                        allowNagaSideButton: _triggerCaptureAllowsNagaSideButton,
+                        allowDeviceButton: _triggerCaptureAllowsDeviceButton))
+                {
+                    return false;
+                }
+
+                if (value.Input.IsModifierKey)
+                {
+                    return false;
+                }
+
+                var modifiers = _triggerCaptureAllowsModifiers
+                    ? value.Modifiers
+                    : MacroModifierKeys.None;
+                _triggerCapture = null;
+                _suppressedCapture = value.Input.Clone();
+                capture.TrySetResult(new MacroTrigger
+                {
+                    Input = value.Input.Clone(),
+                    Modifiers = modifiers,
+                    HyperShiftLayer = _hyperShiftHeld,
+                });
+                return true;
+            }
+
+            if (_recordingPending)
+            {
+                return false;
+            }
+
+            if (_suppressedCapture is { } captureSuppressed &&
+                captureSuppressed.Matches(value.Input))
+            {
+                if (!value.IsDown)
+                {
+                    _suppressedCapture = null;
+                }
+                return true;
+            }
+
+            var key = KeyOf(value.Input);
+            if (_suppressedInputs.TryGetValue(key, out var suppressed))
+            {
+                if (!value.IsDown)
+                {
+                    _suppressedInputs.Remove(key);
+                    suppressed.HoldCancellation?.Cancel();
+                    if (suppressed.Mode is MacroTriggerMode.Hold or MacroTriggerMode.HoldRepeat &&
+                        StringComparer.Ordinal.Equals(
+                            _activePlaybackMacroId,
+                            suppressed.MacroId))
+                    {
+                        stopPlayback = true;
+                    }
+                    return true;
+                }
+
+                // A second down without an up is normal auto-repeat for the
+                // hold-family modes. Toggle needs it to reach the stop branch
+                // so a lost release can never leave the macro unstoppable.
+                if (suppressed.Mode != MacroTriggerMode.Toggle &&
+                    value.Input.Kind != MacroInputKind.MouseButton)
+                {
+                    return true;
+                }
+
+                _suppressedInputs.Remove(key);
+                suppressed.HoldCancellation?.Cancel();
+            }
+
+            if (!value.IsDown)
+            {
+                return false;
+            }
+
+            foreach (var macro in _macros)
+            {
+                if (!macro.Enabled)
+                {
+                    TraceSkipped(macro, "disabled");
+                    continue;
+                }
+                if (macro.Steps.Count == 0)
+                {
+                    TraceSkipped(macro, "no steps");
+                    continue;
+                }
+                if (macro.Trigger is not { } trigger)
+                {
+                    TraceSkipped(macro, "no trigger");
+                    continue;
+                }
+                if (trigger.HyperShiftLayer != _hyperShiftHeld)
+                {
+                    TraceSkipped(
+                        macro,
+                        $"hyperShift={trigger.HyperShiftLayer} active={_hyperShiftHeld}");
+                    continue;
+                }
+                if (!trigger.Matches(value.Input, value.Modifiers))
+                {
+                    TraceSkipped(
+                        macro,
+                        $"trigger={MacroInputFormatter.Describe(trigger.Input)} " +
+                        $"modifiers={trigger.Modifiers}");
+                    continue;
+                }
+
+                if (MacroInputTrace.Enabled)
+                {
+                    _log?.Invoke(
+                        $"trigger matched macro={macro.Name} id={macro.Id} mode={trigger.Mode}");
+                }
+                suppress = true;
+                playModifiers = trigger.Modifiers;
+                _suppressedInputs[key] = new SuppressedInput(trigger.Mode, macro.Id);
+                switch (trigger.Mode)
+                {
+                    case MacroTriggerMode.Hold:
+                    case MacroTriggerMode.HoldRepeat:
+                        if (!_isPlaying ||
+                            !StringComparer.Ordinal.Equals(_activePlaybackMacroId, macro.Id))
+                        {
+                            playMacro = macro;
+                            playRepeatUntilStopped = trigger.Mode == MacroTriggerMode.HoldRepeat;
+                        }
+                        break;
+
+                    case MacroTriggerMode.Toggle:
+                        if (_isPlaying &&
+                            StringComparer.Ordinal.Equals(_activePlaybackMacroId, macro.Id))
+                        {
+                            stopPlayback = true;
+                        }
+                        else
+                        {
+                            playMacro = macro;
+                        }
+                        break;
+
+                    case MacroTriggerMode.Sequence:
+                        if (macro.Steps.Count > 0)
+                        {
+                            var index = _sequencePositions.GetValueOrDefault(macro.Id) %
+                                macro.Steps.Count;
+                            _sequencePositions[macro.Id] = (index + 1) % macro.Steps.Count;
+                            playMacro = new MacroDefinition
+                            {
+                                Id = macro.Id,
+                                Name = macro.Name,
+                                PlaybackMode = MacroPlaybackMode.Once,
+                                PlaybackSpeed = macro.PlaybackSpeed,
+                                MouseTrackingMode = macro.MouseTrackingMode,
+                                Steps = [macro.Steps[index]],
+                            };
+                        }
+                        break;
+
+                    default:
+                        playMacro = macro;
+                        break;
+                }
+
+                if (playMacro is not null &&
+                    trigger.Mode is MacroTriggerMode.Hold or MacroTriggerMode.HoldRepeat)
+                {
+                    holdCancellation = new CancellationTokenSource();
+                    holdInput = value.Input.Clone();
+                    _suppressedInputs[key] = _suppressedInputs[key] with
+                    {
+                        HoldCancellation = holdCancellation,
+                    };
+                }
+                break;
+            }
+
+            if (!suppress &&
+                value.IsDown &&
+                value.Input.Kind == MacroInputKind.RazerKey &&
+                _recording is null &&
+                _stepCapture is null &&
+                _triggerCapture is null &&
+                !_recordingPending)
+            {
+                unhandledRazerKey = value.Input.Clone();
+            }
+        }
+
+    InputHandled:
+        if (stopRequested)
+        {
+            RecordingStopRequested?.Invoke();
+        }
+        if (stopPlayback)
+        {
+            StopPlayback();
+        }
+        if (playMacro is not null)
+        {
+            // Never build a playback plan or send the first input on the
+            // low-level hook thread. Windows drops slow hooks and the desktop
+            // would stall until the plan finishes.
+            _ = Task.Run(() => ObservePlaybackAsync(
+                playMacro, playModifiers, holdCancellation, holdInput, playRepeatUntilStopped));
+        }
+        if (unhandledRazerKey is not null)
+        {
+            // The fallback reads and writes the device, never the hook thread.
+            _ = Task.Run(() => UnhandledRazerKeyHandler?.Invoke(unhandledRazerKey));
+        }
+        return suppress;
+    }
+
+    private void TrackPhysicalModifier(MacroInputEvent value)
+    {
+        if (value.Input.Kind != MacroInputKind.Keyboard ||
+            !value.Input.IsModifierKey)
+        {
+            return;
+        }
+
+        lock (_gate)
+        {
+            if (value.IsDown)
+            {
+                _physicalModifierKeys.Add(value.Input.VirtualKey);
+            }
+            else
+            {
+                _physicalModifierKeys.Remove(value.Input.VirtualKey);
+            }
+        }
+    }
+
+    private static MacroModifierKeys ModifierFlag(int virtualKey) => virtualKey switch
+    {
+        0xA0 or 0xA1 => MacroModifierKeys.Shift,
+        0xA2 or 0xA3 => MacroModifierKeys.Control,
+        0xA4 or 0xA5 => MacroModifierKeys.Alt,
+        0x5B or 0x5C => MacroModifierKeys.Windows,
+        _ => MacroModifierKeys.None,
+    };
+
+    private static InputKey KeyOf(MacroInput input) =>
+        input.Kind switch
+        {
+            MacroInputKind.MouseButton => new InputKey(input.Kind, input.MouseButton, false),
+            MacroInputKind.NagaSideButton => new InputKey(input.Kind, input.SideButton, false),
+            MacroInputKind.DeviceButton => new InputKey(
+                input.Kind,
+                (input.VirtualKey << 16) | input.ScanCode,
+                input.Extended,
+                input.DeviceId),
+            MacroInputKind.RazerKey => new InputKey(
+                input.Kind,
+                input.RazerKeyCode,
+                false,
+                input.DeviceId),
+            _ => new InputKey(input.Kind, input.VirtualKey, input.Extended),
+        };
+
+    private readonly record struct InputKey(
+        MacroInputKind Kind,
+        int Code,
+        bool Extended,
+        int DeviceId = 0);
+
+    private readonly record struct SuppressedInput(
+        MacroTriggerMode Mode,
+        string? MacroId,
+        CancellationTokenSource? HoldCancellation = null);
+}
