@@ -20,6 +20,8 @@ internal sealed partial class BladeTelemetryReader
         _client = client ?? throw new ArgumentNullException(nameof(client));
         _fan = new BladeFanTelemetryReader(resolver, client);
         _power = new BladePowerTelemetryReader(resolver, client, _validation, _fan);
+        _fan.CaptureBoostState = _power.ReadBoostStateAsync;
+        _fan.RestoreBoostState = _power.TryRestoreBoostLevelsAsync;
         _display = new BladeDisplayTelemetryReader(resolver, client, _validation);
     }
 

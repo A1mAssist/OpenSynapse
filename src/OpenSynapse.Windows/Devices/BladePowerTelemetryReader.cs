@@ -700,7 +700,7 @@ internal sealed class BladePowerTelemetryReader
         }
     }
 
-    private async Task<bool> TryRestoreBoostLevelsAsync(ResolvedRazerDevice device, BladeBoostState state)
+    internal async Task<bool> TryRestoreBoostLevelsAsync(ResolvedRazerDevice device, BladeBoostState state)
     {
         try
         {

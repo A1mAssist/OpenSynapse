@@ -306,6 +306,15 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             if (args.PropertyName is null or nameof(BladeWorkspace.PerformanceModeIndex))
                 CpuPower.NotifyModeChanged();
         };
+        Blade.PerformanceModeChangedByUser += mode =>
+        {
+            if (mode == BladePerformanceMode.Custom)
+            {
+                // The EC re-applies its own wall on the mode write; restore the
+                // watt preset the profile names once the switch is confirmed.
+                _ = CpuPower.ReplayCpuPowerLimitAsync(CancellationToken.None);
+            }
+        };
         ThxAudio = new ThxAudioViewModel(thxAudioController, thxAudioSupported);
     }
 
