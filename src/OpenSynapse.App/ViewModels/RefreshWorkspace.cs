@@ -259,12 +259,9 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
             {
                 return;
             }
-            var telemetry = await _deviceTelemetryReader.ReadAsync(PeripheralDescriptors, cancellationToken);
-            _applyDeviceTelemetry(telemetry);
-            // The first row set is painted before the slow probes finish. If that full
-            // refresh then fails, the rows stay at their empty-telemetry counts; rebuild
-            // them once a readout proves the device answered, without touching steady state.
-            RefreshDeviceRowsIfStale(telemetry);
+            var live = await _deviceTelemetryReader.ReadLiveAsync(PeripheralDescriptors, cancellationToken);
+            _blade.ApplyLiveTelemetry(live);
+            _viper.ApplyLiveTelemetry(live);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

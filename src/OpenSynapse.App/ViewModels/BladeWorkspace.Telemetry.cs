@@ -267,6 +267,55 @@ public sealed partial class BladeWorkspace
         // rebuild every bound option list, closing an open combo box each time.
     }
 
+    internal void ApplyLiveTelemetry(RazerDeviceLiveTelemetry telemetry)
+    {
+        if (telemetry.BladePerformanceMode is BladePerformanceMode performanceMode)
+        {
+            SetPerformanceMode(performanceMode);
+            CanSetPerformanceMode = true;
+        }
+        if (telemetry.BladeFanMode is BladeFanMode fanMode)
+        {
+            _blade._bladeTelemetryFanMode = fanMode;
+            _blade._bladeTelemetryFanTargetRpm = telemetry.BladeFanTargetRpm;
+            _fan().ObserveFanTelemetry(fanMode, telemetry.BladeFanTargetRpm);
+            CanSetFan = true;
+            FanText = fanMode switch
+            {
+                BladeFanMode.Automatic when telemetry.BladeCurrentFanCpuRpm is int cpu && telemetry.BladeCurrentFanGpuRpm is int gpu =>
+                    AppStrings.FormatText("AutomaticFanSpeed", cpu, gpu),
+                BladeFanMode.Automatic => AppStrings.Text("Text_E3D822CF"),
+                BladeFanMode.Manual when telemetry.BladeFanTargetRpm is int target && telemetry.BladeCurrentFanCpuRpm is int cpu && telemetry.BladeCurrentFanGpuRpm is int gpu =>
+                    AppStrings.FormatText("ManualFanCurrentSpeed", target, cpu, gpu),
+                BladeFanMode.Manual when telemetry.BladeFanTargetRpm is int rpm =>
+                    AppStrings.FormatText("ManualFanSpeed", rpm),
+                BladeFanMode.Manual => AppStrings.Text("Text_85CC42C6"),
+                _ => FanText,
+            };
+            FanModeText = fanMode switch
+            {
+                BladeFanMode.Automatic => AppStrings.Text("Text_E3D822CF"),
+                BladeFanMode.Manual => AppStrings.Text("Text_71816F86"),
+                _ => FanModeText,
+            };
+            FanTargetRpmText = fanMode == BladeFanMode.Automatic
+                ? "--"
+                : telemetry.BladeFanTargetRpm is int targetRpm
+                    ? $"{targetRpm:N0} RPM"
+                    : FanTargetRpmText;
+        }
+        if (telemetry.BladeCurrentFanCpuRpm is int cpuRpm)
+        {
+            CurrentFanCpuRpm = cpuRpm;
+            CurrentFanCpuRpmText = $"{cpuRpm:N0} RPM";
+        }
+        if (telemetry.BladeCurrentFanGpuRpm is int gpuRpm)
+        {
+            CurrentFanGpuRpm = gpuRpm;
+            CurrentFanGpuRpmText = $"{gpuRpm:N0} RPM";
+        }
+    }
+
     internal void ResetTelemetry()
     {
         StatusText = AppStrings.Text("Text_4626A505");

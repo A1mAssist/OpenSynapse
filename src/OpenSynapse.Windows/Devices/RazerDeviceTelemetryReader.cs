@@ -151,6 +151,42 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
         };
     }
 
+    public async ValueTask<RazerDeviceLiveTelemetry> ReadLiveAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(devices);
+        var blade = _resolver.FindReadyBlade(devices);
+        var mouse = _resolver.FindReadyDevice(devices, "viper-184");
+        var bladeResult = blade is null
+            ? null
+            : await _bladeReader.ReadLiveAsync(blade, cancellationToken);
+        var mouseResult = mouse is null
+            ? null
+            : await _razerHidReader.ReadLiveAsync(mouse, cancellationToken);
+
+        var errors = new List<string>();
+        if (bladeResult is not null)
+        {
+            errors.AddRange(bladeResult.Errors);
+        }
+        if (mouseResult is not null)
+        {
+            errors.AddRange(mouseResult.Errors);
+        }
+
+        return new RazerDeviceLiveTelemetry(
+            bladeResult?.PerformanceMode,
+            bladeResult?.FanMode,
+            bladeResult?.FanTargetRpm,
+            bladeResult?.CurrentFanCpuRpm,
+            bladeResult?.CurrentFanGpuRpm,
+            mouseResult?.BatteryPercent,
+            mouseResult?.WirelessLinkDown ?? false,
+            errors,
+            DateTimeOffset.UtcNow);
+    }
+
     public ValueTask<byte> SetBladeKeyboardBrightnessAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         byte brightness,
