@@ -275,6 +275,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         HeadsetProfileSettings profile,
         CancellationToken cancellationToken)
     {
+        var restoreSoftwareEffect = false;
         if (!string.IsNullOrWhiteSpace(profile.ChromaEffect) &&
             Enum.TryParse<RazerChromaEffect>(profile.ChromaEffect, ignoreCase: true, out var effect) &&
             LightingEffects.Contains(effect))
@@ -289,8 +290,8 @@ public sealed partial class RazerHeadsetAudioViewModel
             }
             try
             {
-                // Software-rendered effects resume on Apply only: probes also call
-                // LoadAsync and must not start screen capture or a frame pump.
+                // Software effects need their saved colors selected first; the pump
+                // starts after this block. Firmware effects can be written now.
                 if (!IsSoftwareRenderedEffect(effect))
                 {
                     await StopSoftwareEffectCoreAsync();
@@ -300,6 +301,7 @@ public sealed partial class RazerHeadsetAudioViewModel
                 SelectedLightingEffectIndex = Array.IndexOf(LightingEffects, effect);
                 PrimaryColor = primary;
                 SecondaryColor = secondary;
+                restoreSoftwareEffect = IsSoftwareRenderedEffect(effect);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -326,6 +328,23 @@ public sealed partial class RazerHeadsetAudioViewModel
             catch (Exception exception) when (IsExpectedException(exception))
             {
                 _diagnostic?.Invoke($"profile headset.lighting.brightness: {exception.Message}");
+            }
+        }
+
+        if (restoreSoftwareEffect)
+        {
+            try
+            {
+                // The frame pump does not survive a restart; replay the saved effect now.
+                await ResumeSoftwareEffectIfNeededAsync(cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception) when (IsExpectedException(exception))
+            {
+                _diagnostic?.Invoke($"profile headset.lighting.resume: {exception.Message}");
             }
         }
     }

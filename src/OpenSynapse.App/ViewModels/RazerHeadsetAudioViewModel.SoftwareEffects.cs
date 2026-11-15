@@ -25,6 +25,10 @@ public sealed partial class RazerHeadsetAudioViewModel
     private CancellationTokenSource? _softwareCancellation;
     private Task? _softwarePump;
     private byte[]? _softwareLastFrame;
+    private RazerChromaEffect? _softwareEffect;
+    private Color _softwarePrimary;
+    private Color _softwareSecondary;
+    private int _softwareDirection;
 
     /// <summary>Below this audio level the meter goes dark instead of holding one LED.</summary>
     private const double AudioMeterSilenceLevel = 0.02;
@@ -339,6 +343,10 @@ public sealed partial class RazerHeadsetAudioViewModel
             () => PumpSoftwareEffectAsync(
                 parameters, sampler, service, crossfadeFrom, Stopwatch.GetTimestamp(), stop.Token),
             CancellationToken.None);
+        _softwareEffect = effect;
+        _softwarePrimary = primary;
+        _softwareSecondary = secondary;
+        _softwareDirection = directionIndex;
     }
 
     private static StudioEffectInput ReadSoftwareEffectInput(StudioInputSampler? sampler) =>
@@ -413,6 +421,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         _softwarePump = null;
         _softwareSampler = null;
         _softwareService = null;
+        _softwareEffect = null;
 
         stop?.Cancel();
         if (pump is not null)
@@ -467,6 +476,31 @@ public sealed partial class RazerHeadsetAudioViewModel
         // The strip no longer holds this frame once the pump has stopped or faded out.
         _softwareLastFrame = null;
         stop?.Dispose();
+    }
+
+    /// <summary>
+    /// Restarts the persisted frame effect after a launch or a profile replay.
+    /// The frame pump is not persistent across process restarts, unlike the six
+    /// firmware effects, so the saved effect has to be streamed again.
+    /// </summary>
+    private async Task ResumeSoftwareEffectIfNeededAsync(CancellationToken cancellationToken)
+    {
+        if (!IsJolie) return;
+
+        var effect = LightingEffects[SelectedLightingEffectIndex];
+        if (!IsSoftwareRenderedEffect(effect)) return;
+        if (_softwarePump is { IsCompleted: false } &&
+            _softwareEffect == effect &&
+            _softwarePrimary == PrimaryColor &&
+            _softwareSecondary == SecondaryColor &&
+            _softwareDirection == SelectedWaveDirectionIndex)
+        {
+            return;
+        }
+
+        await StartSoftwareEffectCoreAsync(
+            effect, PrimaryColor, SecondaryColor, SelectedWaveDirectionIndex, cancellationToken)
+            .ConfigureAwait(true);
     }
 
     private Task RestoreEffectAsync(
