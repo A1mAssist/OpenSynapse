@@ -401,6 +401,8 @@ Kraken 7.1 uses the 37-byte output-report path; Kraken V4 wired and its 2.4 GHz 
 
 The lighting channel is class `0x0F` on the same 64-byte report-id-7 feature report as the audio page: one 1 x 10 LED region, frames written with command `0x03`. Probes of `0x0F:0x02` ids `0x00`-`0x7F` on a retail unit answered status `0x02` for `0x00`, `0x01`, `0x02`, `0x03`, `0x04` and `0x08`, and status `0x05` for everything else, including the `0x09`/`0x0A`/`0x0D` ids other bundles use for Fire/Audio Meter/Starlight. An id outside the six is accepted into the readback but leaves the strip dark, so the app never sends one.
 
+The probe above is from `1532:05AD`. `1532:05AB` (Razer Mako) shares the same Joliet lighting path but was not re-probed in this round.
+
 | Effect | Wire | Notes |
 |---|---|---|
 | Off | `0x0F:0x02` id `0x00` | |
