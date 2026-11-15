@@ -125,9 +125,8 @@ public sealed partial class RazerHidDeviceViewModel
     public bool IsIndicatorLedV2Busy { get => _isIndicatorLedV2Busy; private set => SetBusy(ref _isIndicatorLedV2Busy, value, nameof(CanWriteIndicatorLedV2)); }
     public bool CanWriteIndicatorLedV2 => CanUse(RazerHidBackendCapability.IndicatorLedConfigurationV2Write) && !IsIndicatorLedV2Busy;
 
-    public Visibility BatteryCurveVisibility => VisibleWhen(HasAny(
-        RazerHidBackendCapability.BatteryDischargeCurveRead,
-        RazerHidBackendCapability.BatteryDischargeCurveWrite));
+    public Visibility BatteryCurveVisibility =>
+        VisibleWhen(Has(RazerHidBackendCapability.BatteryDischargeCurveRead));
     public Visibility BatteryCurveWriteVisibility => VisibleWhen(Has(RazerHidBackendCapability.BatteryDischargeCurveWrite));
     public IReadOnlyList<string> BatteryCurveOptions => [
         AppStrings.Text("Text_RazerHidBatteryAlkaline"),

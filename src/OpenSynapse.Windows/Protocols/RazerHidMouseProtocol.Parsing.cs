@@ -161,8 +161,13 @@ internal static partial class RazerHidMouseProtocol
         return new RazerHidChromaTap(arguments[0], arguments[1], arguments[2], arguments[3]);
     }
 
-    internal static byte ParseBatteryDischargeCurve(ReadOnlySpan<byte> response) =>
-        RazerHidStandardProtocol.Arguments(response, 1)[0];
+    internal static byte ParseBatteryDischargeCurve(ReadOnlySpan<byte> response)
+    {
+        var chemistry = RazerHidStandardProtocol.Arguments(response, 1)[0];
+        return chemistry <= 2
+            ? chemistry
+            : throw new InvalidDataException($"Unknown battery discharge curve: 0x{chemistry:X2}.");
+    }
 
     internal static RazerHidLkScrollWheelMode ParseLkScrollWheelMode(ReadOnlySpan<byte> response)
     {
