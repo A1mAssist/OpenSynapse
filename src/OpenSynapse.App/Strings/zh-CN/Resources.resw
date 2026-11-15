@@ -1855,6 +1855,8 @@
   <data name="GpuModeStatusDiscreteRouteLocked" xml:space="preserve"><value>当前挂在独显直连，先切回标准并重启，才能关闭独显。</value><comment>独显直连下不能禁用独显</comment></data>
   <data name="GpuModeStatusNoHybrid" xml:space="preserve"><value>这台设备没有报告混合输出能力，无法切到标准。</value><comment>缺少 Hybrid 能力</comment></data>
   <data name="GpuModeStatusOnlyDiscrete" xml:space="preserve"><value>固件当前只报告独显直连。标准/自动需要 BIOS 或 NVIDIA 控制面板开放动态显示切换。</value><comment>只有独显直连可选</comment></data>
+  <data name="GpuModeStatusNoMuxCapability" xml:space="preserve"><value>此机型固件未提供独显直连，当前为{0}。</value><comment>固件没有提供 MUX 切换能力</comment></data>
+  <data name="GpuModeStandardOptimus" xml:space="preserve"><value>标准（Optimus）模式</value><comment>无 MUX 时的标准模式说明</comment></data>
   <data name="DisplayMuxModeError" xml:space="preserve"><value>MUX 模式设置：{0}</value><comment>MUX 模式异常</comment></data>
   <data name="SettingsAboutTitle.Text" xml:space="preserve"><value>关于 OpenSynapse</value><comment>设置页关于入口标题</comment></data>
   <data name="SettingsAboutDescription.Text" xml:space="preserve"><value>查看版本、项目主页和许可信息。</value><comment>设置页关于入口说明</comment></data>

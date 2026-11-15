@@ -105,7 +105,7 @@ public sealed partial class DevicesPage
                         (mode == current || BladeGpuModes.IsAvailable(snapshot, mode))))
                 .ToArray();
             GpuModeOptionsList.ItemsSource = options;
-            GpuModeOptionsList.Visibility = options.Length > 0
+            GpuModeOptionsList.Visibility = options.Any(option => option.Mode != current)
                 ? Visibility.Visible
                 : Visibility.Collapsed;
             GpuModeStatusText.Text = AppStrings.FormatText("GpuModeStatusCurrent", GpuModeLabel(current));
@@ -136,7 +136,12 @@ public sealed partial class DevicesPage
 
         if (!dedicated.IsSupported && !snapshot.MuxPresent)
         {
-            return AppStrings.Text("DedicatedGpuModeStatusBlockedUnsupported");
+            var current = BladeGpuModes.GetCurrentMode(snapshot);
+            return AppStrings.FormatText(
+                "GpuModeStatusNoMuxCapability",
+                current == BladeGpuMode.Standard
+                    ? AppStrings.Text("GpuModeStandardOptimus")
+                    : GpuModeLabel(current));
         }
 
         var available = BladeGpuModes.GetAvailableModes(snapshot);

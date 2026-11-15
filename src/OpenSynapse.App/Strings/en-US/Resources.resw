@@ -1474,6 +1474,8 @@
   <data name="GpuModeStatusDiscreteRouteLocked" xml:space="preserve"><value>The panel is on the discrete route. Switch back to Standard and restart before disabling the GPU.</value></data>
   <data name="GpuModeStatusNoHybrid" xml:space="preserve"><value>This device did not report hybrid output, so Standard is unavailable.</value></data>
   <data name="GpuModeStatusOnlyDiscrete" xml:space="preserve"><value>The firmware currently reports discrete-direct only. Enable dynamic display switching in BIOS or NVIDIA Control Panel to unlock Standard or Auto.</value></data>
+  <data name="GpuModeStatusNoMuxCapability" xml:space="preserve"><value>This model's firmware does not provide a discrete-direct mode; currently using {0}.</value></data>
+  <data name="GpuModeStandardOptimus" xml:space="preserve"><value>Standard (Optimus) mode</value></data>
   <data name="DisplayMuxModeError" xml:space="preserve"><value>MUX mode: {0}</value></data>
   <data name="SettingsAboutTitle.Text" xml:space="preserve"><value>About OpenSynapse</value></data>
   <data name="SettingsAboutDescription.Text" xml:space="preserve"><value>View the version, project page, and license information.</value></data>
