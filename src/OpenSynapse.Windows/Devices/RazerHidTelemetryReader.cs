@@ -3,7 +3,7 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
 
-internal sealed class RazerHidTelemetryReader
+internal sealed partial class RazerHidTelemetryReader
 {
     private readonly RazerDeviceResolver _resolver;
     private readonly RazerCapabilityClient _client;

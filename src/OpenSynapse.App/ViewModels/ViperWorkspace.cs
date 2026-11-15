@@ -304,6 +304,38 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
         }
     }
 
+    internal void ApplyLiveTelemetry(RazerDeviceLiveTelemetry telemetry)
+    {
+        var linkChanged = _wirelessLinkDown != telemetry.ViperWirelessLinkDown;
+        _wirelessLinkDown = telemetry.ViperWirelessLinkDown;
+        var viper = _deviceDescriptors().FirstOrDefault(device =>
+            device.ProtocolFamily == DeviceProtocolFamilies.Viper &&
+            device.Access == DeviceAccessState.Available);
+        if (telemetry.ViperBatteryPercent is int battery)
+        {
+            var text = $"{battery}%";
+            if (!StringComparer.Ordinal.Equals(BatteryText, text))
+            {
+                BatteryText = text;
+                _deviceRow()?.SetBatteryPercent(battery);
+                if (viper is not null)
+                {
+                    _notifyBatteryObserved(new DeviceBatteryReading(
+                        $"viper:{viper.Id}", viper.Name, battery, null));
+                }
+            }
+        }
+
+        if (viper is not null && (linkChanged || _wirelessLinkDown))
+        {
+            StatusText = _wirelessLinkDown
+                ? AppStrings.Text("ViperStatusWirelessIdle")
+                : telemetry.ViperBatteryPercent is not null
+                    ? AppStrings.Text("Text_7EEF96A9")
+                    : StatusText;
+        }
+    }
+
     internal async Task<string?> ApplyProfileMappingAsync(
         DeviceDescriptor? viper,
         PowerSourceKind powerState,

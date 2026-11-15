@@ -428,7 +428,7 @@ public sealed record RazerDeviceTelemetry(
     IReadOnlyDictionary<string, IReadOnlySet<string>>? DeclaredCapabilities = null,
     bool ViperWirelessLinkDown = false);
 
-public interface IRazerDeviceTelemetryReader
+public partial interface IRazerDeviceTelemetryReader
 {
     ValueTask<RazerDeviceTelemetry> ReadAsync(
         IReadOnlyList<DeviceDescriptor> devices,

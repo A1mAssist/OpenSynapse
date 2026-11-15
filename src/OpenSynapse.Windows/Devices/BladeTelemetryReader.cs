@@ -101,67 +101,11 @@ internal sealed partial class BladeTelemetryReader
         // independent facts. A model whose firmware reports a performance mode the
         // contract does not know must not lose its fan controls, so each is read on
         // its own and a failure of one does not hide the other.
-        IReadOnlyList<byte[]>? thermalReports = null;
-        try
-        {
-            thermalReports = await _fan.ReadThermalReportsAsync(blade, cancellationToken);
-        }
-        catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
-        {
-            errors.Add($"Performance and fan state: {exception.Message}");
-        }
-
-        if (thermalReports is not null)
-        {
-            BladePerformanceMode? performanceMode = null;
-            BladeFanMode? fanMode = null;
-            var performanceBytes = new HashSet<byte>();
-            var fanBytes = new HashSet<byte>();
-            foreach (var report in thermalReports)
-            {
-                var performanceByte = report[RazerFeatureReport.ArgumentsOffset + 2];
-                var fanByte = report[RazerFeatureReport.ArgumentsOffset + 3];
-                performanceBytes.Add(performanceByte);
-                fanBytes.Add(fanByte);
-                try
-                {
-                    performanceMode = ParseBladePerformanceMode(performanceByte);
-                }
-                catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
-                {
-                    errors.Add($"Performance mode: {exception.Message}");
-                }
-
-                try
-                {
-                    fanMode = ParseBladeFanMode(fanByte);
-                }
-                catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
-                {
-                    errors.Add($"Fan mode: {exception.Message}");
-                }
-            }
-
-            // The two zones describe one machine, so a split between them is a
-            // fault worth reporting even when each byte decodes on its own.
-            if (performanceBytes.Count > 1)
-            {
-                errors.Add("Blade fan zones report different performance modes.");
-            }
-
-            if (fanBytes.Count > 1)
-            {
-                errors.Add("Blade fan zones report different fan modes.");
-            }
-
-            bladePerformanceMode = performanceMode;
-            bladeFanMode = fanMode;
-            if (performanceMode is not null)
-            {
-                _validation.PerformancePath = blade.Descriptor.Id;
-                bladeThermalReadSucceeded = true;
-            }
-        }
+        var thermal = await ReadThermalStateAsync(
+            blade, errors, updateValidation: true, cancellationToken);
+        bladePerformanceMode = thermal.PerformanceMode;
+        bladeFanMode = thermal.FanMode;
+        bladeThermalReadSucceeded = thermal.Succeeded;
 
         if (owns(CapabilityIds.FanTargetGet))
         {
