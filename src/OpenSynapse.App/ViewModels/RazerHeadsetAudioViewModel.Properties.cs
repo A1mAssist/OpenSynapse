@@ -104,7 +104,13 @@ public sealed partial class RazerHeadsetAudioViewModel
     public bool ThxSpatialEnabled
     {
         get => _thxSpatialEnabled;
-        set => SetField(ref _thxSpatialEnabled, value);
+        set
+        {
+            if (SetField(ref _thxSpatialEnabled, value) && CanApplyThx)
+            {
+                _ = ApplyThxSpatialAsync();
+            }
+        }
     }
 
     public bool ThxEqualizerEnabled

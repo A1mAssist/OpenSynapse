@@ -111,9 +111,6 @@ public sealed partial class HeadsetAudioPanel : UserControl
     private async void HeadsetAudioApplyLightingClick(object sender, RoutedEventArgs e) =>
         await (ViewModel?.Lighting?.ApplyAsync(Lifetime) ?? Task.CompletedTask);
 
-    private async void HeadsetAudioApplyThxSpatialClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyThxSpatialAsync(Lifetime) ?? Task.CompletedTask);
-
     private async void HeadsetAudioApplyThxPresetClick(object sender, RoutedEventArgs e) =>
         await (ViewModel?.ApplyThxPresetAsync(Lifetime) ?? Task.CompletedTask);
 
