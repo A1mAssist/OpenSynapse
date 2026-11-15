@@ -800,6 +800,14 @@
       "0F": {
         "code": 81,
         "label": "SensitivityClutch"
+      },
+      "60": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
+      },
+      "6A": {
+        "code": 84,
+        "label": "ScrollModeSwitch"
       }
     }
   },
@@ -814,6 +822,14 @@
       "0F": {
         "code": 81,
         "label": "SensitivityClutch"
+      },
+      "60": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
+      },
+      "6A": {
+        "code": 84,
+        "label": "ScrollModeSwitch"
       }
     }
   },
@@ -828,6 +844,14 @@
       "0F": {
         "code": 81,
         "label": "SensitivityClutch"
+      },
+      "60": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
+      },
+      "6A": {
+        "code": 84,
+        "label": "ScrollModeSwitch"
       }
     }
   },

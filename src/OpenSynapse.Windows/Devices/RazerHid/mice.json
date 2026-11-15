@@ -8607,8 +8607,6 @@
         "razer_chroma_misc_get_scroll_acceleration": "1F",
         "razer_chroma_misc_set_scroll_smart_reel": "1F",
         "razer_chroma_misc_get_scroll_smart_reel": "1F",
-        "razer_chroma_misc_set_scroll_smart_reel_threshold": "1F",
-        "razer_chroma_misc_get_scroll_smart_reel_threshold": "1F",
         "razer_chroma_misc_get_low_battery_threshold": "1F",
         "razer_chroma_misc_set_low_battery_threshold": "1F",
         "razer_chroma_standard_get_device_mode": "00",
