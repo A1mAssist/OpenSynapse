@@ -5,6 +5,7 @@ using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using OpenSynapse.Core.Macros;
 
 namespace OpenSynapse.Windows.Input;
@@ -19,6 +20,7 @@ namespace OpenSynapse.Windows.Input;
 /// </summary>
 public static class ElevatedMacroAgent
 {
+    private static readonly TimeSpan HostCheckInterval = TimeSpan.FromSeconds(2);
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -62,7 +64,11 @@ public static class ElevatedMacroAgent
                 {
                     try
                     {
-                        await pipe.WaitForConnectionAsync(cancellationToken).ConfigureAwait(false);
+                        if (!await WaitForHostConnectionAsync(pipe, cancellationToken).ConfigureAwait(false))
+                        {
+                            break;
+                        }
+
                         using var requestTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                         requestTimeout.CancelAfter(TimeSpan.FromSeconds(10));
                         var response = await HandleAsync(pipe, sink, pressed, requestTimeout.Token).ConfigureAwait(false);
@@ -83,6 +89,64 @@ public static class ElevatedMacroAgent
             }
             finally { pipe?.Dispose(); }
         });
+    }
+
+    private static async Task<bool> WaitForHostConnectionAsync(
+        NamedPipeServerStream pipe,
+        CancellationToken cancellationToken)
+    {
+        using var waitCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var connection = pipe.WaitForConnectionAsync(waitCancellation.Token);
+        while (!connection.IsCompleted)
+        {
+            var check = Task.Delay(HostCheckInterval, waitCancellation.Token);
+            if (await Task.WhenAny(connection, check).ConfigureAwait(false) == connection)
+            {
+                break;
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return false;
+            }
+
+            if (IsHostInstanceRunning())
+            {
+                continue;
+            }
+
+            waitCancellation.Cancel();
+            try
+            {
+                await connection.ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+            }
+
+            return false;
+        }
+
+        await connection.ConfigureAwait(false);
+        return true;
+    }
+
+    internal static bool IsHostInstanceRunning(string instanceName = ElevatedMacroProtocol.HostInstanceName)
+    {
+        try
+        {
+            using var mutex = Mutex.OpenExisting(instanceName);
+            return true;
+        }
+        catch (WaitHandleCannotBeOpenedException)
+        {
+            return false;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Never kill the agent just because the host handle cannot be inspected.
+            return true;
+        }
     }
 
     internal static async Task RunWithCleanupAsync(IMacroInputSink sink, Func<List<MacroInput>, Task> run)
