@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Threading.Channels;
+using OpenSynapse.Core.Displays;
 using OpenSynapse.Windows.Displays;
 using OpenSynapse.Windows.Protocols;
 using global::Windows.Foundation.Metadata;
@@ -304,6 +305,7 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
         throw new InvalidOperationException("Display capture has stopped.");
     }
 
+
     private sealed class WindowsGraphicsCaptureSession : IDisplayCaptureSession
     {
         private const string GraphicsCaptureItemRuntimeClass = "Windows.Graphics.Capture.GraphicsCaptureItem";
@@ -366,7 +368,27 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
                 }
             }
 
-            return OpenInternalDisplay(borderless);
+            try
+            {
+                return OpenInternalDisplay(borderless);
+            }
+            catch (Exception exception) when (
+                !cancellationToken.IsCancellationRequested &&
+                exception is AmbientCaptureException or UnauthorizedAccessException)
+            {
+                try
+                {
+                    return new GdiDesktopCaptureSession();
+                }
+                catch (Exception fallback) when (
+                    fallback is AmbientCaptureException or Win32Exception or InvalidOperationException)
+                {
+                    throw new AmbientCaptureException(
+                        AmbientCaptureFailure.CaptureFailed,
+                        "Windows denied screen capture and the desktop copy fallback failed.",
+                        new AggregateException(exception, fallback));
+                }
+            }
         }
 
         private static IDisplayCaptureSession OpenInternalDisplay(bool borderless)
@@ -382,6 +404,13 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
             try
             {
                 sourceName = new WindowsInternalDisplayController().ResolveSourceName();
+            }
+            catch (NoActiveInternalDisplayException)
+            {
+                // Desktops and clamshell laptops have no internal panel. Ambient
+                // Awareness still has to sample something, so follow the primary
+                // monitor instead of reporting that capture is unavailable.
+                sourceName = ResolvePrimarySourceName();
             }
             catch (Exception exception) when (exception is InvalidOperationException or Win32Exception)
             {
@@ -399,6 +428,15 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
             }
             catch (COMException exception) when (exception.HResult == unchecked((int)0x80070005))
             {
+                throw new AmbientCaptureException(
+                    AmbientCaptureFailure.PermissionDenied,
+                    "Windows denied internal display capture permission.",
+                    exception);
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                // CreateForMonitor reports E_ACCESSDENIED through CreateForMonitor's
+                // HRESULT path, which .NET maps to UnauthorizedAccessException.
                 throw new AmbientCaptureException(
                     AmbientCaptureFailure.PermissionDenied,
                     "Windows denied internal display capture permission.",
@@ -551,8 +589,42 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
             return ValueTask.CompletedTask;
         }
 
-        private static nint FindMonitor(string sourceName)
+        private const uint MonitorInfoPrimary = 0x00000001;
+
+        /// <summary>
+        /// Fallback capture source when the machine has no active internal panel.
+        /// </summary>
+        private static string ResolvePrimarySourceName()
         {
+            string? primary = null;
+            // A callback that returns false ends the enumeration, which also makes
+            // EnumDisplayMonitors report false, so only the found name matters here.
+            _ = EnumDisplayMonitors(0, 0, (monitor, _, _, _) =>
+            {
+                var info = new MonitorInfoEx
+                {
+                    Size = checked((uint)Marshal.SizeOf<MonitorInfoEx>()),
+                    DeviceName = string.Empty,
+                };
+                if (GetMonitorInfo(monitor, ref info) && (info.Flags & MonitorInfoPrimary) != 0)
+                {
+                    primary = info.DeviceName.TrimEnd('\0');
+                    return false;
+                }
+
+                return true;
+            }, 0);
+            if (primary is null)
+            {
+                throw new AmbientCaptureException(
+                    AmbientCaptureFailure.TopologyUnavailable,
+                    "Windows did not report a primary monitor to capture.");
+            }
+
+            return primary;
+        }
+
+        private static nint FindMonitor(string sourceName)        {
             var matches = new List<nint>();
             if (!EnumDisplayMonitors(0, 0, (monitor, _, _, _) =>
             {
@@ -654,7 +726,7 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
         private void OnItemClosed(GraphicsCaptureItem sender, object args) =>
             _arrivals.Writer.TryComplete(new AmbientCaptureException(
                 AmbientCaptureFailure.TopologyUnavailable,
-                "The internal display capture item has closed."));
+                "The display capture item has closed."));
 
         private static void ThrowIfFailed(int result)
         {

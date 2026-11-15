@@ -2864,6 +2864,13 @@
   <data name="RazerLightingEffectTidal" xml:space="preserve"><value>Tidal</value></data>
   <data name="RazerLightingEffectWave" xml:space="preserve"><value>Wave</value></data>
   <data name="RazerLightingEffectWheel" xml:space="preserve"><value>Wheel</value></data>
+  <data name="MakoXLightingEffectStatic" xml:space="preserve"><value>Static</value></data>
+  <data name="MakoXLightingEffectBreathing" xml:space="preserve"><value>Breathing</value></data>
+  <data name="MakoXLightingEffectSpectrum" xml:space="preserve"><value>Spectrum cycling</value></data>
+  <data name="MakoXLightingEffectStarlight" xml:space="preserve"><value>Starlight</value></data>
+  <data name="MakoXLightingEffectFire" xml:space="preserve"><value>Fire</value></data>
+  <data name="MakoXLightingEffectAudioMeter" xml:space="preserve"><value>Audio meter</value></data>
+  <data name="MakoXLightingEffectWheel" xml:space="preserve"><value>Rotation</value></data>
   <data name="CoolingPadLightingDirectionHeader/Header" xml:space="preserve"><value>Direction</value></data>
   <data name="CoolingPadLightingDirectionLeft" xml:space="preserve"><value>Left</value></data>
   <data name="CoolingPadLightingDirectionRight" xml:space="preserve"><value>Right</value></data>

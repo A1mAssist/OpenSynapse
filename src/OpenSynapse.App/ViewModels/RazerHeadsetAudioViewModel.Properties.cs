@@ -141,6 +141,11 @@ public sealed partial class RazerHeadsetAudioViewModel
             if (!SetField(ref _selectedEffectIndex, Math.Clamp(value, 0, LightingEffects.Length - 1))) return;
             OnPropertyChanged(nameof(SecondaryColorVisibility));
             OnPropertyChanged(nameof(WaveDirectionVisibility));
+            OnPropertyChanged(nameof(WaveDirectionOptions));
+            // Replacing ItemsSource clears the ComboBox selection; push the value
+            // back so the direction box is never left blank.
+            SelectedWaveDirectionIndex = Math.Clamp(_waveDirectionIndex, 0, DirectionOptionCount - 1);
+            OnPropertyChanged(nameof(SelectedWaveDirectionIndex));
         }
     }
 

@@ -99,7 +99,8 @@ public sealed partial class RazerHeadsetAudioViewModel
                     SelectedWaveDirectionIndex = previousAvneraDirection;
                 },
                 token => WriteChromaEffectHardwareAsync(
-                    LightingEffects[previousAvneraIndex], previousAvneraPrimary, previousAvneraSecondary, token),
+                    LightingEffects[previousAvneraIndex], previousAvneraPrimary, previousAvneraSecondary,
+                    previousAvneraDirection, token),
                 cancellationToken);
             return;
         }
@@ -110,15 +111,10 @@ public sealed partial class RazerHeadsetAudioViewModel
         var previousDirection = SelectedWaveDirectionIndex;
         var previousEffect = LightingEffects[previousEffectIndex];
         var effect = LightingEffects[SelectedLightingEffectIndex];
-        if (IsJolie && IsSoftwareLightingEffect(effect))
+        if (IsJolie && IsSoftwareRenderedEffect(effect))
         {
             if (!await RunSoftwareEffectAsync(
-                    CreateSoftwareEffect(effect, PrimaryColor, SecondaryColor),
-                    effect == RazerChromaEffect.CustomFrame,
-                    effect == RazerChromaEffect.AudioMeter,
-                    previousEffect,
-                    previousPrimary,
-                    previousSecondary,
+                    effect, previousEffect, previousPrimary, previousSecondary, previousDirection,
                     cancellationToken))
             {
                 SelectedLightingEffectIndex = previousEffectIndex;
@@ -127,7 +123,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         }
         else
         {
-            await StopAmbientCoreAsync();
+            await StopSoftwareEffectCoreAsync(fadeOut: true);
             var applied = false;
             await RunChromaWriteAsync(async (service, token) =>
             {
@@ -166,7 +162,7 @@ public sealed partial class RazerHeadsetAudioViewModel
                 SelectedWaveDirectionIndex = previousDirection;
             },
             token => RestoreEffectAsync(
-                previousEffect, previousPrimary, previousSecondary, token),
+                previousEffect, previousPrimary, previousSecondary, previousDirection, token),
             cancellationToken);
     }
 
@@ -237,35 +233,11 @@ public sealed partial class RazerHeadsetAudioViewModel
         Color secondary,
         CancellationToken cancellationToken)
     {
-        if (effect == RazerChromaEffect.CustomFrame)
+        if (effect == RazerChromaEffect.CustomFrame ||
+            (service is RazerMakoXChromaService && IsSoftwareRenderedEffect(effect)))
         {
-            throw new InvalidOperationException("Ambient uses the screen-sampling frame pump.");
-        }
-
-        if (service is RazerMakoXChromaService mako)
-        {
-            if (effect == RazerChromaEffect.Wave)
-            {
-                await mako.SetEffectAsync(
-                    effect,
-                    [],
-                    MakoXWaveDirections[SelectedWaveDirectionIndex].Flag,
-                    40,
-                    cancellationToken).ConfigureAwait(false);
-                return;
-            }
-
-            if (effect == RazerChromaEffect.Starlight)
-            {
-                // Synapse's Joliet defaults use duration 2 for Starlight.
-                await mako.SetEffectAsync(
-                    effect,
-                    [primary.R, primary.G, primary.B],
-                    1,
-                    2,
-                    cancellationToken).ConfigureAwait(false);
-                return;
-            }
+            throw new InvalidOperationException(
+                $"{effect} is rendered as frames by the software effect pump.");
         }
 
         var colors = effect switch
@@ -292,7 +264,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             return false;
         }
 
-        await StopAmbientCoreAsync();
+        await StopSoftwareEffectCoreAsync(fadeOut: true);
         await OpenChromaService()
             .SetEffectAsync(RazerChromaEffect.Off, [], cancellationToken)
             .ConfigureAwait(false);
@@ -317,11 +289,13 @@ public sealed partial class RazerHeadsetAudioViewModel
             }
             try
             {
-                // Ambient resumes on Apply; probes also call LoadAsync and must not start capture.
-                if (!IsSoftwareLightingEffect(effect))
+                // Software-rendered effects resume on Apply only: probes also call
+                // LoadAsync and must not start screen capture or a frame pump.
+                if (!IsSoftwareRenderedEffect(effect))
                 {
-                    await StopAmbientCoreAsync();
-                    await WriteChromaEffectHardwareAsync(effect, primary, secondary, cancellationToken);
+                    await StopSoftwareEffectCoreAsync();
+                    await WriteChromaEffectHardwareAsync(
+                        effect, primary, secondary, SelectedWaveDirectionIndex, cancellationToken);
                 }
                 SelectedLightingEffectIndex = Array.IndexOf(LightingEffects, effect);
                 PrimaryColor = primary;
