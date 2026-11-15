@@ -16,6 +16,15 @@ $labelToMappingId = @{
     ScrollModeSwitch           = 0x6A
 }
 
+# Bundles that carry only the DKM id and the private key code, without a
+# buttonKey label, still pin these four mapping-page ids.
+$inputIdToMapping = @{
+    DKM_SB_01  = @{ Id = 0x0E; Label = 'CycleUpProfile' }
+    DKM_SB_02  = @{ Id = 0x0F; Label = 'SensitivityClutch' }
+    DKM_SB_03  = @{ Id = 0x60; Label = 'CycleUpSensitivityStages' }
+    DKM_M_106  = @{ Id = 0x6A; Label = 'ScrollModeSwitch' }
+}
+
 $definitions = Get-Content (Join-Path $Root 'device-definitions.json') -Raw | ConvertFrom-Json
 $bundleDirs = @{}
 Get-ChildItem (Join-Path $Root 'bundles') -Directory | ForEach-Object { $bundleDirs[$_.Name] = $_.FullName }
@@ -57,6 +66,17 @@ foreach ($definition in $definitions | Where-Object { $_.category -eq 'mouse' -a
             throw "Key code $code is outside one byte for $($definition.productId) $label"
         }
         $keys[('{0:X2}' -f $id)] = [ordered]@{ code = $code; label = $label }
+    }
+    foreach ($match in [regex]::Matches($text, '\{inputID:"(DKM_SB_01|DKM_SB_02|DKM_SB_03|DKM_M_106)",key:(\d+)\}')) {
+        $inputId = $match.Groups[1].Value
+        $mapping = $inputIdToMapping[$inputId]
+        $keyId = '{0:X2}' -f [int]$mapping.Id
+        if ($keys.Contains($keyId)) { continue }
+        $code = [int]$match.Groups[2].Value
+        if ($code -lt 0 -or $code -gt 255) {
+            throw "Key code $code is outside one byte for $($definition.productId) $inputId"
+        }
+        $keys[$keyId] = [ordered]@{ code = $code; label = $mapping.Label }
     }
 
     if ($keys.Count -eq 0) { continue }
@@ -105,6 +125,8 @@ Assert-Key '00CD' '0E' 80
 Assert-Key '00CD' '0F' 81
 Assert-Key '00C1' '60' 82
 Assert-Key '00BF' '60' 82
+Assert-Key '00AB' '60' 82
+Assert-Key '00AB' '6A' 84
 
 $json = $result | ConvertTo-Json -Depth 6
 Set-Content -LiteralPath $Output -Value $json -Encoding utf8
