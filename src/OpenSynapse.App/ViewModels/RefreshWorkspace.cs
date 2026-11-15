@@ -386,11 +386,6 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
                 await ApplyBleProfileAsync(powerState, cancellationToken);
                 await ApplyAccessoryProfilesAsync(powerState, cancellationToken);
             }
-            if (profileApply is { AppliedCount: > 0 })
-            {
-                telemetry = await _deviceTelemetryReader.ReadAsync(PeripheralDescriptors, cancellationToken);
-                _applyDeviceTelemetry(telemetry);
-            }
             if (!_liteMode)
             {
                 _blade.RefreshLightingEditor();
@@ -412,17 +407,17 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
                     : await _fan.ApplyProfileAsync(blade, powerState, cancellationToken, writeStoredTarget: false);
             var viperMappingError = await _viper.ApplyProfileMappingAsync(
                 viperAvailable ? viper : null, powerState, cancellationToken);
-            if (fanApply.Changed && blade is { Access: DeviceAccessState.Available })
-            {
-                telemetry = await _deviceTelemetryReader.ReadAsync(PeripheralDescriptors, cancellationToken);
-                _applyDeviceTelemetry(telemetry);
-            }
             var lightingError = _liteMode
                 ? null
                 : profileApply?.Errors.Any(error =>
                         error.StartsWith("Blade", StringComparison.OrdinalIgnoreCase)) == true
                     ? null
                     : await _lighting.ApplyLoadedProfileAsync(blade, powerState, cancellationToken);
+            if (profileApply is { AppliedCount: > 0 } || fanApply.Changed)
+            {
+                telemetry = await _deviceTelemetryReader.ReadAsync(PeripheralDescriptors, cancellationToken);
+                _applyDeviceTelemetry(telemetry);
+            }
             var profileOperationErrors = profileApply?.Errors
                 .Where(error => viperPresent ||
                     !error.StartsWith("Viper", StringComparison.OrdinalIgnoreCase))
