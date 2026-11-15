@@ -445,6 +445,9 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             if (!SetField(ref _selectedEffectIndex, Math.Clamp(value, 0, LightingEffects.Length - 1))) return;
             OnPropertyChanged(nameof(SecondaryColorVisibility));
             OnPropertyChanged(nameof(WaveDirectionVisibility));
+            OnPropertyChanged(nameof(WaveDirectionOptions));
+            var direction = Math.Clamp(_waveDirectionIndex, 0, DirectionOptionCount - 1);
+            if (direction != _waveDirectionIndex) SelectedWaveDirectionIndex = direction;
         }
     }
 

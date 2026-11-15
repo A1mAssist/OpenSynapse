@@ -413,6 +413,8 @@ The lighting channel is class `0x0F` on the same 64-byte report-id-7 feature rep
 
 `0x0F:0x80` (region list) and `0x0F:0x81` (effect id list) answer status `0x05` on this unit, so region and effect capabilities are not enumerable.
 
+The device page mirrors what Synapse 4 does on this unit: every effect is streamed as per-LED frames (about 24 fps, unchanged frames skipped), effects crossfade over 1.5 s, rotation is the measured 25-frame cycle played forward or backward, and the audio meter paints the whole strip one palette colour from green (quiet) through yellow to red (loud) and turns off below the noise floor.
+
 Ambient Awareness samples the internal display through Graphics Capture. When Windows reports no internal panel (desktops, clamshell laptops) it samples the primary monitor instead, and when Graphics Capture itself is denied it falls back to a 25 fps desktop copy that excludes layered windows.
 
 ## Speakers
