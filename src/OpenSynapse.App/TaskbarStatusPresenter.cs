@@ -44,7 +44,7 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         _timer = _dispatcherQueue?.CreateTimer();
         if (_timer is not null)
         {
-            _timer.Interval = TimeSpan.FromSeconds(1);
+            _timer.Interval = BatteryReadInterval;
             _timer.Tick += (_, _) => Refresh();
         }
         SetEnabled(settings.TaskbarStatusEnabled);
@@ -118,8 +118,8 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         if (selected.Count == 0)
         {
             _lastBatterySummary = string.Empty;
-            // Nothing to draw: keep the ten-second battery retry, not a one-second
-            // UI tick for a window that is not there.
+            // Nothing to draw: keep the battery retry, no faster UI tick for a
+            // window that is not there.
             SetTimerInterval(BatteryReadInterval);
             _statusWindow?.Clear();
             return;
@@ -133,7 +133,7 @@ internal sealed class TaskbarStatusPresenter : IDisposable
             _diagnosticLog.TryWrite("taskbar-status", $"strip shows {summary}");
         }
 
-        SetTimerInterval(TimeSpan.FromSeconds(1));
+        SetTimerInterval(BatteryReadInterval);
 
         var snapshot = new TaskbarStatusSnapshot(selected);
         if (!TaskbarStatusPolicy.ShouldShow(snapshot, enabled: true))
