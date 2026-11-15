@@ -149,24 +149,33 @@ public sealed class MouseProfileSettings
         }
     }
 
-    internal static void ValidateButtonMappings(IReadOnlyCollection<ButtonMappingProfile>? mappings)
+    internal static void ValidateButtonMappings(List<ButtonMappingProfile>? mappings)
     {
         if (mappings is null)
         {
             return;
         }
-        if (mappings.Count > 64 || mappings.Any(mapping => mapping is null))
+        if (mappings.Any(mapping => mapping is null))
         {
-            throw new InvalidDataException("Button mappings must contain at most 64 valid entries.");
+            throw new InvalidDataException("Button mappings cannot contain null entries.");
         }
 
         foreach (var mapping in mappings)
         {
             mapping.ApplySafeDefaults();
         }
-        if (mappings.Select(mapping => mapping.ButtonId).Distinct().Count() != mappings.Count)
+
+        // A TKL or full-size keyboard can legitimately carry more than 64 keys.
+        // The real bound is one entry per mode/button pair; keep the newest entry
+        // so a repeated apply repairs an older duplicated profile instead of failing.
+        var seen = new HashSet<(byte Mode, byte ButtonId)>();
+        for (var index = mappings.Count - 1; index >= 0; index--)
         {
-            throw new InvalidDataException("Button mappings must use each button ID at most once.");
+            var mapping = mappings[index];
+            if (!seen.Add(((byte)(mapping.Mode ?? 0), mapping.ButtonId)))
+            {
+                mappings.RemoveAt(index);
+            }
         }
     }
 

@@ -62,7 +62,16 @@ public sealed partial class RazerHidDeviceViewModel
 
         var settings = ResolveDeviceProfileSettings()!;
         edit(settings);
-        if (await _saveProfileAsync(cancellationToken))
+        var saved = false;
+        try
+        {
+            saved = await _saveProfileAsync(cancellationToken);
+        }
+        catch (InvalidDataException)
+        {
+            // Profile validation is a save failure, not a malformed device reply.
+        }
+        if (saved)
         {
             _operationStatusOverride = AppStrings.Text("RazerHidOperationSaved");
             return;

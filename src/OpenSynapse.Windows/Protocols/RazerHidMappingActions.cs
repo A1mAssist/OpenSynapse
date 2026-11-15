@@ -484,10 +484,9 @@ public static partial class RazerHidMappingActions
         IReadOnlyCollection<ButtonMappingProfile> updates,
         byte mode)
     {
-        var merged = existing?
-            .Where(mapping => (mapping.Mode ?? 0) != mode)
-            .Select(mapping => mapping.Clone())
-            .ToList() ?? [];
+        var updated = updates.Where(m => (m.Mode ?? 0) == mode).Select(m => m.ButtonId).ToHashSet();
+        var merged = existing?.Where(m => (m.Mode ?? 0) != mode || !updated.Contains(m.ButtonId))
+            .Select(m => m.Clone()).ToList() ?? [];
         merged.AddRange(updates.Where(mapping => (mapping.Mode ?? 0) == mode)
             .Select(mapping => mapping.Clone()));
         return merged;
