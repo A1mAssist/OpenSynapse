@@ -3629,6 +3629,29 @@
   <data name="RazerMappingKeyboardButton" xml:space="preserve"><value>Key {0}</value></data>
   <data name="RazerMappingNagaSideButton" xml:space="preserve"><value>Side button {0}</value></data>
   <data name="RazerMappingButtonColumn" xml:space="preserve"><value>Button</value></data>
+  <data name="RazerMappingButtonLeft" xml:space="preserve"><value>Left</value></data>
+  <data name="RazerMappingButtonRight" xml:space="preserve"><value>Right</value></data>
+  <data name="RazerMappingButtonMiddle" xml:space="preserve"><value>Middle</value></data>
+  <data name="RazerMappingButtonBack" xml:space="preserve"><value>Back</value></data>
+  <data name="RazerMappingButtonForward" xml:space="preserve"><value>Forward</value></data>
+  <data name="RazerMappingButtonScrollUp" xml:space="preserve"><value>Scroll up</value></data>
+  <data name="RazerMappingButtonScrollDown" xml:space="preserve"><value>Scroll down</value></data>
+  <data name="RazerMappingButtonScrollLeft" xml:space="preserve"><value>Scroll left</value></data>
+  <data name="RazerMappingButtonScrollRight" xml:space="preserve"><value>Scroll right</value></data>
+  <data name="RazerMappingButtonDpiUp" xml:space="preserve"><value>DPI up</value></data>
+  <data name="RazerMappingButtonDpiDown" xml:space="preserve"><value>DPI down</value></data>
+  <data name="RazerMappingButtonUserSelect" xml:space="preserve"><value>User select</value></data>
+  <data name="RazerMappingButtonProfileSwitch" xml:space="preserve"><value>Profile switch</value></data>
+  <data name="RazerMappingButtonSniper" xml:space="preserve"><value>Sniper</value></data>
+  <data name="RazerMappingButtonDpiCycleUp" xml:space="preserve"><value>DPI cycle up</value></data>
+  <data name="RazerMappingButtonDpiCycleDown" xml:space="preserve"><value>DPI cycle down</value></data>
+  <data name="RazerMappingButtonPreviousPage" xml:space="preserve"><value>Previous page</value></data>
+  <data name="RazerMappingButtonNextPage" xml:space="preserve"><value>Next page</value></data>
+  <data name="RazerMappingButtonVolumeUp" xml:space="preserve"><value>Volume up</value></data>
+  <data name="RazerMappingButtonVolumeDown" xml:space="preserve"><value>Volume down</value></data>
+  <data name="RazerMappingButtonMute" xml:space="preserve"><value>Mute</value></data>
+  <data name="RazerMappingButtonScrollModeSwitch" xml:space="preserve"><value>Scroll mode switch</value></data>
+  <data name="RazerMappingButtonNumber" xml:space="preserve"><value>Button {0}</value></data>
   <data name="RazerMappingCurrentColumn" xml:space="preserve"><value>Current action</value></data>
   <data name="RazerMappingTypeColumn" xml:space="preserve"><value>Type</value></data>
   <data name="RazerMappingActionColumn" xml:space="preserve"><value>Target action</value></data>
