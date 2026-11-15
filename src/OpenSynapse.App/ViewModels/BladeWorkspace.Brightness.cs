@@ -7,6 +7,20 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class BladeWorkspace
 {
+    public async Task ApplyBrightnessAsync(CancellationToken cancellationToken = default)
+    {
+        if (!_blade._canSetBladeBrightness)
+        {
+            return;
+        }
+
+        await RunDeviceOperationAsync(
+            AppStrings.Text("Text_5F0C27DB"),
+            () => ApplyBrightnessCoreAsync(cancellationToken),
+            cancellationToken,
+            () => BrightnessPercent = _blade._confirmedBladeBrightnessPercent);
+    }
+
     private sealed record BladeBrightnessRequest(
         BladeLightingProfileEdit Edit, byte Value, IReadOnlyList<DeviceDescriptor> Devices, long Generation);
 
@@ -165,4 +179,8 @@ public sealed partial class BladeWorkspace
             RefreshLightingEditor();
         }, CancellationToken.None, RequestDeviceRefresh);
     }
+
+    private static byte ToBladeBrightness(double percent) => checked((byte)Math.Round(
+        Math.Clamp(percent, 0, 100) * 255 / 100,
+        MidpointRounding.AwayFromZero));
 }
