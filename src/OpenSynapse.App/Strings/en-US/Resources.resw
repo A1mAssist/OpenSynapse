@@ -449,7 +449,7 @@
     <value>Performance mode</value>
   </data>
   <data name="Text_40985721" xml:space="preserve">
-    <value>Control channel unavailable</value>
+    <value>Control unavailable</value>
   </data>
   <data name="Text_949856B3" xml:space="preserve">
     <value>Cancel</value>
@@ -485,7 +485,7 @@
     <value>Undervolt preset</value>
   </data>
   <data name="Text_5965520A" xml:space="preserve">
-    <value>HID control channel accessible</value>
+    <value>Control available</value>
   </data>
   <data name="Text_388555B3" xml:space="preserve">
     <value>Tidal</value>
