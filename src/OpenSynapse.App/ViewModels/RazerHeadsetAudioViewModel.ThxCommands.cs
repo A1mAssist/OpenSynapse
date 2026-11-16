@@ -158,6 +158,16 @@ public sealed partial class RazerHeadsetAudioViewModel
             return;
         }
 
+        if (ThxHeadsetAdmission.Check(_connection.ProductId) is
+            { RebootRequired: true } rebootStatus)
+        {
+            _thxStatus = rebootStatus;
+            _thxState = null;
+            _thxErrorText = ThxMessage(rebootStatus.ErrorCode);
+            NotifyThxStatus();
+            return;
+        }
+
         // VSSrv is demand-start. A machine that already has the THX stack must
         // not look like a fresh install just because the service is stopped.
         if (ThxAudioAdmission.HasService(ThxHeadsetAdmission.ServiceName) &&

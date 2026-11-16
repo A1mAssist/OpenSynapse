@@ -63,6 +63,8 @@ internal static class ThxHeadsetAdmission
 {
     internal const string ServiceName = "VSSrv";
 
+    private static readonly ThxRebootMarkerStore RebootMarker = new();
+
     private const string V3DllName = "ThxV3Native_v1.1.42.1.dll";
     private const string V3DllUri =
         "https://app-assets.razer.com/files/synapse/devices/common/THX/ThxV3Native_v1.1.42.1.dll";
@@ -138,6 +140,9 @@ internal static class ThxHeadsetAdmission
         profile.NativeDllName);
 
     internal static ThxHeadsetStatus Check(ushort productId)
+        => Check(productId, RebootMarker);
+
+    internal static ThxHeadsetStatus Check(ushort productId, ThxRebootMarkerStore rebootMarker)
     {
         var profile = GetProfile(productId);
         if (profile is null)
@@ -145,12 +150,25 @@ internal static class ThxHeadsetAdmission
             return new(ThxHeadsetAvailability.UnsupportedDevice, "ThxHeadsetUnsupported");
         }
 
+        if (rebootMarker.IsPending(productId))
+        {
+            return new(
+                ThxHeadsetAvailability.ServiceMissing,
+                "ThxRebootRequired",
+                RebootRequired: true);
+        }
+
         // V4 does not expose a stable service name in the payload we have. Its
         // native client is the reliable gate; a missing APO shows up when the
         // helper initializes and the card keeps the installer entry available.
         var serviceRunning = profile.NativeVersion == ThxNativeVersion.V3 &&
             ThxAudioAdmission.HasRunningService(ServiceName);
-        return Evaluate(profile, serviceRunning, HasVerifiedNativeClient(profile));
+        var status = Evaluate(profile, serviceRunning, HasVerifiedNativeClient(profile));
+        if (status.Availability == ThxHeadsetAvailability.Available)
+        {
+            rebootMarker.Clear();
+        }
+        return status;
     }
 
     internal static ThxHeadsetStatus Evaluate(ushort productId, bool serviceRunning, bool nativePresent)
@@ -232,15 +250,31 @@ internal static class ThxHeadsetAdmission
             var running = await ThxAudioAdmission
                 .EnsureServiceRunningAsync(ServiceName, cancellationToken)
                 .ConfigureAwait(false);
-            return CombineInstallResult(
+            return TrackInstallResult(productId, CombineInstallResult(
                 install.RebootRequired ||
                     (profile.PresetInstaller is not null && !install.AlreadyInstalled),
                 nativeError,
                 running,
-                ThxAudioAdmission.HasService(ServiceName));
+                ThxAudioAdmission.HasService(ServiceName)));
         }
 
-        return await InstallNativeComponentAsync(productId, cancellationToken).ConfigureAwait(false);
+        return TrackInstallResult(
+            productId,
+            await InstallNativeComponentAsync(productId, cancellationToken).ConfigureAwait(false));
+    }
+
+    private static ThxHeadsetStatus TrackInstallResult(ushort productId, ThxHeadsetStatus status)
+    {
+        if (status.RebootRequired)
+        {
+            RebootMarker.MarkPending(productId);
+        }
+        else if (status.Availability == ThxHeadsetAvailability.Available)
+        {
+            RebootMarker.Clear();
+        }
+
+        return status;
     }
 
     internal static ThxHeadsetStatus CombineInstallResult(
