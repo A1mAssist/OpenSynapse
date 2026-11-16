@@ -80,7 +80,7 @@ public sealed class VerifiedProfileApplier
             (await reader.SetBladeGpuCardDetectionAsync(devices, value, token)).Enabled;
 
         var blade = devices.FirstOrDefault(device =>
-            device.ProtocolFamily is "blade-710" or "blade-671" &&
+            DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
             device.Access == DeviceAccessState.Available);
         if (blade is not null)
         {

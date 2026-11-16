@@ -1038,6 +1038,9 @@
   <data name="RazerHidSettingProfileSaveFailed" xml:space="preserve">
     <value>The setting reached the device, but saving it to this profile failed; the previous device value was restored.</value>
   </data>
+  <data name="RazerHidSettingProfileSaveRollbackFailed" xml:space="preserve">
+    <value>The setting reached the device, but saving it to this profile failed and the previous device value could not be restored. Re-read the device to confirm its current value.</value>
+  </data>
   <data name="RazerHidCapabilityUnanswered" xml:space="preserve">
     <value>The firmware did not answer "{0}" this time. Try again shortly.</value>
   </data>

@@ -1356,6 +1356,10 @@
     <value>设置已写入设备，但保存到当前配置失败，已尝试恢复原来的设备值。</value>
     <comment>设备设置写入成功但配置保存失败</comment>
   </data>
+  <data name="RazerHidSettingProfileSaveRollbackFailed" xml:space="preserve">
+    <value>设置已写入设备，但保存到当前配置失败，恢复原设备值也失败；设备可能仍保持新值，请重新读取确认。</value>
+    <comment>设备设置写入成功、配置保存失败且硬件回滚失败</comment>
+  </data>
   <data name="RazerHidCapabilityUnanswered" xml:space="preserve">
     <value>固件暂时未回应「{0}」，请稍后重试。</value>
     <comment>固件暂时未回应某个能力，保持可重试。</comment>
