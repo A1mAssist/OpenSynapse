@@ -164,7 +164,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     private bool IsFeature91 => !IsMxic && !IsValkyrie && !IsMixer053E && !IsKrakenBase &&
         !IsAvnera65 && !IsProtocol25;
     private (byte Value, string Key)[] ActivePresets =>
-        IsJolie ? JolietPresets : IsT3 ? Presets[..4] : IsFeature91 || IsProtocol25 ? Presets : MxicPresets;
+        IsJolie ? JolietPresets : IsT3 ? Presets[..4] : IsFeature91 || IsProtocol25 || _connection.ProductId == 0x0574 ? Presets : MxicPresets;
 
     private static bool SupportsS3Baseline(ushort productId) =>
         productId is 0x0521 or 0x0549;

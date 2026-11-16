@@ -143,7 +143,9 @@ public sealed class RazerHidSpecialLightingService
         IEnumerable<WindowsHidDiscovery.HidInterfaceDescriptor> interfaces)
     {
         var channel = RazerHeadsetChannelCatalog.Resolve(productId);
-        return channel is RazerHeadsetChannel.Feature91 or RazerHeadsetChannel.KrakenBase37 &&
+        // Mabel T3C carries audio and lighting on the same 64-byte FF14 collection.
+        return (channel is RazerHeadsetChannel.Feature91 or RazerHeadsetChannel.KrakenBase37 ||
+                (productId == 0x0574 && channel == RazerHeadsetChannel.Billie64)) &&
             interfaces.Any(item => RazerHeadsetAudioService.MatchesChannel(channel, item));
     }
 
