@@ -12,18 +12,22 @@ namespace OpenSynapse.Windows.Audio;
 internal sealed class ThxHelperProcess : IAsyncDisposable
 {
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(15);
+    private static readonly TimeSpan IdleTimeout = TimeSpan.FromMinutes(2);
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly Func<ProcessStartInfo>? _startInfoFactory;
     internal ThxHelperProcess(Func<ProcessStartInfo>? startInfoFactory = null) => _startInfoFactory = startInfoFactory;
     private Process? _process;
     private StreamWriter? _input;
     private StreamReader? _output;
+    private CancellationTokenSource? _idleCancellation;
+    private DateTimeOffset _lastRequestAt;
 
     internal async Task<ThxAudioStatus> SendAsync(
         ThxAudioHelperRequest request,
         CancellationToken cancellationToken)
     {
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        CancelIdleStop();
         try
         {
             var error = await EnsureHelperAsync(cancellationToken).ConfigureAwait(false);
@@ -79,12 +83,18 @@ internal sealed class ThxHelperProcess : IAsyncDisposable
         }
         finally
         {
+            _lastRequestAt = DateTimeOffset.UtcNow;
+            if (_process is { HasExited: false })
+            {
+                ScheduleIdleStop();
+            }
             _gate.Release();
         }
     }
 
     public async ValueTask DisposeAsync()
     {
+        CancelIdleStop();
         await _gate.WaitAsync().ConfigureAwait(false);
         try
         {
@@ -209,6 +219,44 @@ internal sealed class ThxHelperProcess : IAsyncDisposable
         finally
         {
             process.Dispose();
+        }
+    }
+
+    private void ScheduleIdleStop()
+    {
+        CancelIdleStop();
+        var cancellation = new CancellationTokenSource();
+        _idleCancellation = cancellation;
+        _ = StopIfIdleAsync(cancellation.Token);
+    }
+
+    private void CancelIdleStop()
+    {
+        var cancellation = Interlocked.Exchange(ref _idleCancellation, null);
+        cancellation?.Cancel();
+        cancellation?.Dispose();
+    }
+
+    private async Task StopIfIdleAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(IdleTimeout, cancellationToken).ConfigureAwait(false);
+            await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                if (DateTimeOffset.UtcNow - _lastRequestAt >= IdleTimeout)
+                {
+                    await StopHelperAsync().ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                _gate.Release();
+            }
+        }
+        catch (OperationCanceledException)
+        {
         }
     }
 }
