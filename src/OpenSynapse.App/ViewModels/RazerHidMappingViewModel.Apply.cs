@@ -189,7 +189,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
 
                 try
                 {
-                    await WriteSoftwareModeRowAsync(row, backups, cancellationToken)
+                    await WriteSoftwareModeRowAsync(row, backups, clears, cancellationToken)
                         .ConfigureAwait(true);
                 }
                 catch

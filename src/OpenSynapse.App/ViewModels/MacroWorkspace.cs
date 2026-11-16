@@ -669,9 +669,11 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         }
 
         var wasDirty = _dirtyMacroIds.Contains(selected.Id);
-        if (selected.Definition.SoftwareBinding is { } binding)
+        if (selected.Definition.SoftwareBinding is { } binding &&
+            !await RestoreSoftwareBindingAsync(binding, cancellationToken))
         {
-            await RestoreSoftwareBindingAsync(binding, cancellationToken);
+            StatusText = AppStrings.Text("MacroTriggerRestoreFailed");
+            return;
         }
 
         profile.Macros.RemoveAt(index);
