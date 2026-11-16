@@ -112,11 +112,7 @@ public readonly record struct BladeSkuHardwareConfiguration(
     bool Dds,
     bool MiniLedResolution,
     bool IllegalBatterySupport,
-    byte Raw)
-{
-    /// <summary>The UHD/FHD selector belongs to the dual-resolution mini-LED panel.</summary>
-    public bool SupportsNativeDisplayMode => MiniLedResolution;
-}
+    byte Raw);
 
 /// <summary>Screen dim delay as the old Blade firmware reports it.</summary>
 public readonly record struct BladeTimeToDimTelemetry(bool Enabled, int Seconds, byte Percentage);
@@ -195,8 +191,8 @@ public static class DeviceCapabilitySummaryCalculator
         var supportsStartupAnimation =
             BladeModelCapabilities.SupportsStartupAnimation(descriptor.ProductId);
         var supportsNativeDisplay =
-            telemetry.BladeSkuHardwareConfiguration?.SupportsNativeDisplayMode == true &&
-            BladeModelCapabilities.SupportsNativeDisplayMode(descriptor.ProductId);
+            BladeModelCapabilities.SupportsNativeDisplayMode(
+                descriptor.ProductId, telemetry.BladeSkuHardwareConfiguration);
         if (descriptor.ProtocolFamily == "blade-671")
         {
             // Blade 16 (2023): its own uniform lighting reports are admitted, but the
@@ -318,8 +314,8 @@ public static class DeviceCapabilitySummaryCalculator
         Row(Owns(CapabilityIds.GamingModeGet), telemetry.BladeGameMode);
         Row(Owns(CapabilityIds.StartupAnimationGet), telemetry.BladeStartupAnimationEnabled);
         Row(Owns(CapabilityIds.NativeDisplayModeGet) &&
-            telemetry.BladeSkuHardwareConfiguration?.SupportsNativeDisplayMode == true &&
-            BladeModelCapabilities.SupportsNativeDisplayMode(descriptor.ProductId),
+            BladeModelCapabilities.SupportsNativeDisplayMode(
+                descriptor.ProductId, telemetry.BladeSkuHardwareConfiguration),
             telemetry.BladeNativeDisplayMode);
         Row(sku, telemetry.BladeSkuHardwareConfiguration);
         Row(Owns(CapabilityIds.AdapterPowerGet), telemetry.BladeAdapterPower);

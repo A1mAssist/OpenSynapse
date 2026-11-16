@@ -502,8 +502,8 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     }
     public bool CanSetNativeDisplayMode =>
         _blade._bladeNativeDisplayMode is not null &&
-        _blade._bladeSkuHardwareConfiguration?.SupportsNativeDisplayMode == true &&
-        BladeModelCapabilities.SupportsNativeDisplayMode(_blade._bladeProductId);
+        BladeModelCapabilities.SupportsNativeDisplayMode(
+            _blade._bladeProductId, _blade._bladeSkuHardwareConfiguration);
     public bool CanApplyNativeDisplayMode =>
         CanSetNativeDisplayMode &&
         NativeDisplayModeIndex is >= 0 and <= 1 &&

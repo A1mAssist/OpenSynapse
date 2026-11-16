@@ -231,10 +231,14 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged, IDeviceBatteryR
                 Add("ProfileSummary_Item_CpuPowerBoost", telemetry.BladeCpuPowerBoostEnabled,
                     capability: CapabilityIds.PowerModeGet);
             }
-            if (telemetry.BladeSkuHardwareConfiguration?.SupportsNativeDisplayMode == true)
+            if (BladeModelCapabilities.SupportsNativeDisplayMode(
+                    descriptor.ProductId, telemetry.BladeSkuHardwareConfiguration))
             {
                 Add("Text_24A8C247", telemetry.BladeNativeDisplayMode,
                     capability: CapabilityIds.NativeDisplayModeGet);
+            }
+            if (telemetry.BladeSkuHardwareConfiguration?.MiniLedResolution == true)
+            {
                 Add("DiagnosticLocalDimming", telemetry.BladeLocalDimmingEnabled,
                     capability: CapabilityIds.PowerModeGet);
             }

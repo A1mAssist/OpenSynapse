@@ -200,8 +200,9 @@ public sealed partial class BladeWorkspace
             telemetry.BladeGpuCardDetectionWritable);
         _applyFirmwareMcuVersion(telemetry.BladeMcuVersion);
         _blade._bladeSkuHardwareConfiguration = telemetry.BladeSkuHardwareConfiguration;
-        if (_blade._bladeSkuHardwareConfiguration?.SupportsNativeDisplayMode == true &&
-            telemetry.BladeNativeDisplayMode is BladeNativeDisplayMode nativeDisplayMode)
+        if (telemetry.BladeNativeDisplayMode is BladeNativeDisplayMode nativeDisplayMode &&
+            BladeModelCapabilities.SupportsNativeDisplayMode(
+                _blade._bladeProductId, _blade._bladeSkuHardwareConfiguration))
         {
             _blade._bladeNativeDisplayMode = nativeDisplayMode;
             NativeDisplayModeIndex = (int)nativeDisplayMode;
