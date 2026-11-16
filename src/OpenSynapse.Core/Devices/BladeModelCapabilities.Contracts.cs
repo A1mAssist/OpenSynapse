@@ -194,12 +194,13 @@ public static partial class BladeModelCapabilities
                 FixedFan: true,
                 MinimumFanTargetRpm: 3300,
                 MaximumFanTargetRpm: 5400,
+                MinimumCurveFanTargetRpm: 1600,
                 ModeFanRanges: Ranges(
                     (BladePerformanceMode.Balanced, 3400, 5200, 4100),
                     (BladePerformanceMode.Silent, 3400, 5200, 4100),
                     (BladePerformanceMode.Performance, 3300, 5400, 4300),
                     (BladePerformanceMode.Gaming, 3300, 5400, 4300),
-                    (BladePerformanceMode.Custom, 4000, 5300, 4600),
+                    (BladePerformanceMode.Custom, 3300, 5400, 4300),
                     (BladePerformanceMode.BatterySaver, 3300, 5400, 4300)),
                 Modes: Modes02C7),
 

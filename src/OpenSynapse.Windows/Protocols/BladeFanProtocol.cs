@@ -16,7 +16,7 @@ public static class BladeFanProtocol
     public const int MinimumRpm = BladeFanLimits.MinimumRpm;
     public const int MaximumRpm = BladeFanLimits.MaximumRpm;
     public const int StepRpm = BladeFanLimits.StepRpm;
-    internal const int MinimumCurveRpm = 1900;
+    internal const int MinimumCurveRpm = 1600;
     internal const byte DefaultClassId = 0x01;
     internal const byte ThermalProfileId = 0x01;
 
