@@ -158,7 +158,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                     _macrosAvailable && _onboardWritable,
                     softwareTrigger is not null &&
                     _softwareTriggerBinder is not null &&
-                    (_canWrite || !RazerSoftwareMacroAssignmentPolicy.NeedsOff(softwareTrigger)) &&
+                    (_canWrite ||
+                     !RazerSoftwareMacroAssignmentPolicy.NeedsDeviceAssignment(softwareTrigger)) &&
                     (LayerIndex == 0 || _canObserveHyperShiftLayer),
                     _catalog);
                 row.PropertyChanged += OnRowPropertyChanged;

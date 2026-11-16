@@ -112,19 +112,17 @@ public sealed partial class RazerHidMappingViewModel
                 };
             }
 
-            if (RazerSoftwareMacroAssignmentPolicy.NeedsOff(input))
+            if (RazerSoftwareMacroAssignmentPolicy.NeedsDeviceAssignment(input))
             {
-                var writeOff = assignment is not null;
-                if (!writeOff)
-                {
-                    writeOff = await _transport.GetAssignmentAsync(
-                            row.ButtonId, Mode, cancellationToken)
-                        .ConfigureAwait(true) is { FunctionId: not RazerHidMappingFunctions.Off };
-                }
-                if (writeOff)
+                assignment ??= await _transport.GetAssignmentAsync(
+                        row.ButtonId, Mode, cancellationToken)
+                    .ConfigureAwait(true);
+                var (functionId, data) = BindingAssignment(input, row.ButtonId);
+                if (assignment.FunctionId != functionId ||
+                    !assignment.Data.SequenceEqual(data))
                 {
                     await _transport.SetAssignmentAsync(
-                            row.ButtonId, Mode, RazerHidMappingFunctions.Off, [], cancellationToken)
+                            row.ButtonId, Mode, functionId, data, cancellationToken)
                         .ConfigureAwait(true);
                 }
             }
@@ -171,6 +169,11 @@ public sealed partial class RazerHidMappingViewModel
         StatusText = AppStrings.FormatText("RazerMappingMacroSoftwareApplied", macro.Name);
         return null;
     }
+
+    private static (byte FunctionId, byte[] Data) BindingAssignment(MacroInput input, byte buttonId) =>
+        RazerSoftwareMacroAssignmentPolicy.NeedsOff(input)
+            ? (RazerHidMappingFunctions.Off, [])
+            : (RazerHidMappingFunctions.ButtonCode, [buttonId]);
 
     private async Task RestoreBindingAssignmentAsync(
         byte buttonId,

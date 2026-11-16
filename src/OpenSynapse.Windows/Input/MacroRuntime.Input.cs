@@ -188,7 +188,9 @@ internal sealed partial class MacroRuntime
 
                 // Record the standard hook key, not unreplayable device-scoped triggers.
                 if (value.Input.Kind is MacroInputKind.NagaSideButton or
-                    MacroInputKind.DeviceButton or MacroInputKind.RazerKey)
+                    MacroInputKind.DeviceButton or MacroInputKind.RazerKey ||
+                    value.Input.Kind == MacroInputKind.MouseButton &&
+                    value.Input.MouseButton > 5)
                 {
                     return false;
                 }
@@ -238,7 +240,8 @@ internal sealed partial class MacroRuntime
                         allowPrimaryMouseButton: false,
                         allowWheel: false,
                         allowNagaSideButton: _triggerCaptureAllowsNagaSideButton,
-                        allowDeviceButton: _triggerCaptureAllowsDeviceButton))
+                        allowDeviceButton: _triggerCaptureAllowsDeviceButton,
+                        allowExtraMouseButton: true))
                 {
                     return false;
                 }

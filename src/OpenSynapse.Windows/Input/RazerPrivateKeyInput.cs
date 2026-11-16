@@ -9,8 +9,10 @@ namespace OpenSynapse.Windows.Input;
 
 /// <summary>
 /// Reads Razer report 4 (or the wireless slave report 8) from the private HID
-/// collections. These key slots are not HID usages and never reach Raw Input.
-/// A failed read is non-fatal; normal keyboard and mouse triggers keep working.
+/// collections, plus the standard mouse-button collection for devices whose
+/// extra side buttons are HID usages above XBUTTON2 and therefore never reach
+/// Raw Input. A failed read is non-fatal; normal keyboard and mouse triggers
+/// keep working.
 /// </summary>
 internal sealed class RazerPrivateKeyInput : IDisposable
 {
@@ -29,10 +31,12 @@ internal sealed class RazerPrivateKeyInput : IDisposable
     private readonly CancellationTokenSource _stop = new();
     private readonly Dictionary<string, HashSet<int>> _pressed =
         new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, HashSet<int>> _pressedMouseButtons =
+        new(StringComparer.OrdinalIgnoreCase);
     private readonly List<FileStream> _streams = [];
     private readonly HashSet<string> _loggedOpenFailures = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _loggedReaders = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _loggedReports = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<(string DevicePath, byte ReportId)> _loggedReports = [];
     private readonly object _gate = new();
     private bool _loggedNoCollections;
     private Task? _completion;
@@ -87,6 +91,7 @@ internal sealed class RazerPrivateKeyInput : IDisposable
                 lock (_gate)
                 {
                     _pressed.Clear();
+                    _pressedMouseButtons.Clear();
                 }
                 await ReadAvailableAsync(cancellationToken).ConfigureAwait(false);
             }
@@ -191,8 +196,21 @@ internal sealed class RazerPrivateKeyInput : IDisposable
     {
         var buffer = new byte[Math.Max(16, (int)device.InputReportByteLength)];
         var keys = new HashSet<byte>();
+        var readsExtraMouseButtons = device.UsagePage == 0x0001 &&
+            device.Usage == 0x0002;
+        var usages = new ushort[16];
+        var currentMouseButtons = new HashSet<int>();
+        nint preparsedData = 0;
         try
         {
+            if (readsExtraMouseButtons &&
+                !NativeMethods.HidD_GetPreparsedData(stream.SafeFileHandle, out preparsedData))
+            {
+                _log?.Invoke(
+                    $"Razer private key input: {device.DevicePath} preparsed data failed");
+                return;
+            }
+
             while (!cancellationToken.IsCancellationRequested)
             {
                 var length = await stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
@@ -206,7 +224,7 @@ internal sealed class RazerPrivateKeyInput : IDisposable
                     continue;
                 }
 
-                var reportKey = $"{device.DevicePath}:{buffer[0]:X2}";
+                var reportKey = (device.DevicePath, buffer[0]);
                 bool firstReport;
                 lock (_gate)
                 {
@@ -216,6 +234,18 @@ internal sealed class RazerPrivateKeyInput : IDisposable
                 {
                     _log?.Invoke(
                         $"Razer private key input: {device.DevicePath} report id=0x{buffer[0]:X2} len={length} data={Convert.ToHexString(buffer.AsSpan(0, Math.Min(length, 16)))}");
+                }
+
+                if (readsExtraMouseButtons)
+                {
+                    PublishMouseButtons(
+                        device,
+                        buffer,
+                        length,
+                        preparsedData,
+                        usages,
+                        currentMouseButtons);
+                    continue;
                 }
 
                 if (buffer[0] is not (RazerKeyReportId or SlaveKeyReportId))
@@ -250,6 +280,86 @@ internal sealed class RazerPrivateKeyInput : IDisposable
         {
             // HID collections can disappear on wireless reconnects. Keep the
             // other readers alive; the hook is detached and reattached later.
+        }
+        finally
+        {
+            if (preparsedData != 0)
+            {
+                _ = NativeMethods.HidD_FreePreparsedData(preparsedData);
+            }
+        }
+    }
+
+    private void PublishMouseButtons(
+        WindowsHidDiscovery.HidInterfaceDescriptor device,
+        byte[] buffer,
+        int length,
+        nint preparsedData,
+        ushort[] usages,
+        HashSet<int> current)
+    {
+        var usageLength = (uint)usages.Length;
+        if (NativeMethods.HidP_GetUsages(
+                0,
+                0x09,
+                0,
+                usages,
+                ref usageLength,
+                preparsedData,
+                buffer,
+                checked((uint)length)) < 0)
+        {
+            return;
+        }
+
+        current.Clear();
+        for (var index = 0; index < usageLength && index < usages.Length; index++)
+        {
+            if (usages[index] > 5)
+            {
+                current.Add(usages[index]);
+            }
+        }
+
+        int[]? releases = null;
+        int[]? presses = null;
+        lock (_gate)
+        {
+            if (!_pressedMouseButtons.TryGetValue(device.PhysicalDeviceKey, out var pressed))
+            {
+                pressed = [];
+                _pressedMouseButtons[device.PhysicalDeviceKey] = pressed;
+            }
+
+            if (!pressed.SetEquals(current))
+            {
+                releases = pressed.Except(current).Order().ToArray();
+                presses = current.Except(pressed).Order().ToArray();
+                pressed.Clear();
+                pressed.UnionWith(current);
+            }
+        }
+
+        if (releases is null || presses is null)
+        {
+            return;
+        }
+
+        foreach (var button in releases)
+        {
+            _handler(new MacroInput
+            {
+                Kind = MacroInputKind.MouseButton,
+                MouseButton = button,
+            }, false);
+        }
+        foreach (var button in presses)
+        {
+            _handler(new MacroInput
+            {
+                Kind = MacroInputKind.MouseButton,
+                MouseButton = button,
+            }, true);
         }
     }
 
@@ -298,6 +408,9 @@ internal sealed class RazerPrivateKeyInput : IDisposable
         // Razer mouse whose private keys live there. Mice also send the
         // 16-byte report 4 through their keyboard-protocol collection
         // (Usage 0x0006); do not open that stream for real keyboards.
+        (device.UsagePage == 0x0001 &&
+         device.Usage == 0x0002 &&
+         RazerMouseMacroTriggerResolver.SupportsExtraMouseButtons(device.ProductId)) ||
         (device.Usage is 0x0000 or 0x0080 ||
          device.UsagePage == 0x0001 &&
          device.Usage == 0x0006 &&
@@ -379,5 +492,26 @@ internal sealed class RazerPrivateKeyInput : IDisposable
             uint creationDisposition,
             uint flagsAndAttributes,
             IntPtr templateFile);
+
+        [DllImport("hid.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool HidD_GetPreparsedData(
+            SafeFileHandle device,
+            out nint preparsedData);
+
+        [DllImport("hid.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool HidD_FreePreparsedData(nint preparsedData);
+
+        [DllImport("hid.dll")]
+        internal static extern int HidP_GetUsages(
+            int reportType,
+            ushort usagePage,
+            ushort linkCollection,
+            [Out] ushort[] usageList,
+            ref uint usageLength,
+            nint preparsedData,
+            byte[] report,
+            uint reportLength);
     }
 }
