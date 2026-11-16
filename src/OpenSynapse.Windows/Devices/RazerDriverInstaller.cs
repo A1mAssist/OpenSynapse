@@ -340,6 +340,13 @@ internal static class RazerDriverInstaller
 
     internal static bool IsSuccessfulExitCode(int exitCode) => exitCode is 0 or 3010 or 1641;
 
+    /// <summary>
+    /// DPInst answers 259 (ERROR_NO_MORE_ITEMS) when every matching device already
+    /// has the driver. Nothing was installed, but the device stack is the state the
+    /// caller wants, so it must verify the attachment instead of reporting a failure.
+    /// </summary>
+    internal static bool IsAlreadyInstalledExitCode(int exitCode) => exitCode == 259;
+
     internal static void EnsureServiceCacheDirectory() =>
         ProgramDataSecurity.ProtectDirectory(ServiceCacheDirectory, allowUsersRead: false);
 

@@ -271,7 +271,16 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                 var result = serviceResult ??
                     await RazerDriverInstaller.InstallAsync(package, progress, cancellationToken)
                         .ConfigureAwait(true);
-                if (result.Success)
+                if (!result.Success &&
+                    !RazerDriverInstaller.IsAlreadyInstalledExitCode(result.ExitCode))
+                {
+                    var message = DescribeFailure(result);
+                    foreach (var row in rowsForPackage)
+                    {
+                        row.StatusText = message;
+                    }
+                }
+                else
                 {
                     installed++;
                     foreach (var row in rowsForPackage)
@@ -357,14 +366,6 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
 
                         row.StatusText = AppStrings.Text("RazerDriverInstalledOnline");
                         _missing.Remove(row);
-                    }
-                }
-                else
-                {
-                    var message = DescribeFailure(result);
-                    foreach (var row in rowsForPackage)
-                    {
-                        row.StatusText = message;
                     }
                 }
             }
