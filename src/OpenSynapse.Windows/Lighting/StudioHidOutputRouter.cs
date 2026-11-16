@@ -13,6 +13,8 @@ namespace OpenSynapse.Windows.Lighting;
 /// </summary>
 public sealed partial class StudioHidOutputRouter : IAsyncDisposable
 {
+    private const long OfflineRetentionMs = 10 * 60 * 1000;
+
     private readonly RazerHidDeviceService _service;
     private readonly Func<IReadOnlyList<RazerHidDeviceConnection>> _connections;
     private readonly Func<RazerHidDeviceConnection, bool> _isEnabled;
@@ -162,9 +164,20 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
 
             var liveIds = targets.Select(target => target.InstanceId)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            foreach (var staleId in _outputs.Keys.Where(id => !liveIds.Contains(id)).ToArray())
+            // A device that briefly drops out keeps its baseline so Stop can restore it
+            // after the same physical instance reconnects. Only a long absence is dropped.
+            foreach (var (id, output) in _outputs.ToArray())
             {
-                _outputs.TryRemove(staleId, out _);
+                if (liveIds.Contains(id))
+                {
+                    output.OfflineSince = 0;
+                    continue;
+                }
+                output.OfflineSince = output.OfflineSince == 0 ? now : output.OfflineSince;
+                if (now - output.OfflineSince > OfflineRetentionMs)
+                {
+                    _outputs.TryRemove(id, out _);
+                }
             }
 
             foreach (var target in targets)
@@ -207,9 +220,10 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                     {
                         Connection = target,
                     };
-                    if (previousOutput is not null &&
-                        ReferenceEquals(previousOutput.Connection, target))
+                    if (previousOutput is not null)
                     {
+                        // The physical instance owns the baseline even when the endpoint
+                        // object changes after a reconnect.
                         output.Baseline = previousOutput.Baseline;
                         output.BaselineAttempted = previousOutput.BaselineAttempted;
                         output.Touched = previousOutput.Touched;
@@ -327,7 +341,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                         StringComparison.OrdinalIgnoreCase));
                 if (current is null)
                 {
-                    _outputs.TryRemove(key, out _);
+                    // Keep the baseline so a later Stop can restore the reconnected instance.
                     continue;
                 }
 
@@ -467,6 +481,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
         internal RazerHidDeviceConnection? Connection { get; set; }
         internal RazerHidColor[]? Frame { get; set; }
         internal long LastWriteTimestamp { get; set; }
+        internal long OfflineSince { get; set; }
         internal long LayersVersion { get; set; } = -1;
         internal DeviceBaseline? Baseline { get; set; }
         internal bool BaselineAttempted { get; set; }
