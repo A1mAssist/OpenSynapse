@@ -3062,6 +3062,8 @@
   <data name="MacroRecordMouseRelative.Text" xml:space="preserve"><value>相对移动</value></data>
   <data name="MacroRecordMouseStart.Text" xml:space="preserve"><value>相对起点</value></data>
   <data name="MacroRecordMouseForeground.Text" xml:space="preserve"><value>相对前台窗口</value></data>
+  <data name="MacroRecordOwnWindow.Text" xml:space="preserve"><value>录制本软件窗口</value></data>
+  <data name="MacroRecordOwnWindowDescription.Text" xml:space="preserve"><value>开启后，宏编辑器和主窗口内的键鼠操作也会被录制。停止请按 F9，避免把点击“停止”也录进去。</value></data>
   <data name="MacroRecordStopShortcut.Text" xml:space="preserve"><value>按 F9 停止录制并保存。</value></data>
   <data name="MacroRecordStopShortcutHint.Text" xml:space="preserve"><value>录制时按 F9 可停止并保存</value></data>
   <data name="MacroStepArgumentsLabel.Text" xml:space="preserve"><value>参数</value></data>

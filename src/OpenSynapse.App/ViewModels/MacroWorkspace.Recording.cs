@@ -4,6 +4,23 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MacroWorkspace
 {
+    private bool _macroRecordingOwnWindow;
+
+    public bool IsMacroRecordingOwnWindow
+    {
+        get => _macroRecordingOwnWindow;
+        set
+        {
+            if (_macroRecordingOwnWindow == value)
+            {
+                return;
+            }
+
+            _macroRecordingOwnWindow = value;
+            OnPropertyChanged();
+        }
+    }
+
     public Task StartMacroRecordingAsync(CancellationToken cancellationToken = default) =>
         StartMacroRecordingAsync(append: false, cancellationToken);
 
@@ -265,6 +282,7 @@ public sealed partial class MacroWorkspace
     private MacroRecordingOptions BuildRecordingOptions() => new()
     {
         RecordDelays = _macroRecordingDelayMode != MacroDelayMode.None,
+        RecordOwnWindow = _macroRecordingOwnWindow,
         DelayMode = _macroRecordingDelayMode,
         FixedDelayMilliseconds = (int)Math.Round(_macroRecordingFixedDelayMilliseconds),
         MouseTrackingMode = _macroRecordingMouseTrackingMode,

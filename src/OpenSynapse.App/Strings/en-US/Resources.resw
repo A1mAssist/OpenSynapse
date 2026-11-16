@@ -2627,6 +2627,8 @@
   <data name="MacroRecordMouseRelative.Text" xml:space="preserve"><value>Relative movement</value></data>
   <data name="MacroRecordMouseStart.Text" xml:space="preserve"><value>Relative to start</value></data>
   <data name="MacroRecordMouseForeground.Text" xml:space="preserve"><value>Relative to foreground window</value></data>
+  <data name="MacroRecordOwnWindow.Text" xml:space="preserve"><value>Record inside OpenSynapse</value></data>
+  <data name="MacroRecordOwnWindowDescription.Text" xml:space="preserve"><value>When enabled, keyboard and mouse actions inside the macro editor and main window are recorded too. Press F9 to stop so the Stop click is not recorded.</value></data>
   <data name="MacroRecordStopShortcut.Text" xml:space="preserve"><value>Press F9 to stop recording and save.</value></data>
   <data name="MacroRecordStopShortcutHint.Text" xml:space="preserve"><value>Press F9 while recording to stop and save</value></data>
   <data name="MacroStepArgumentsLabel.Text" xml:space="preserve"><value>Arguments</value></data>

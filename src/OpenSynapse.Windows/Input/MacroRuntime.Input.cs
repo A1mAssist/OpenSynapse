@@ -37,12 +37,14 @@ internal sealed partial class MacroRuntime
         if (value.IsMouseMove)
         {
             MacroRecordingSession? mouseRecording;
+            bool recordOwnWindow;
             lock (_gate)
             {
                 mouseRecording = _recording;
+                recordOwnWindow = _recordingOptions.RecordOwnWindow;
             }
             if (mouseRecording is not null &&
-                _isOwnWindowForeground?.Invoke() != true)
+                (recordOwnWindow || _isOwnWindowForeground?.Invoke() != true))
             {
                 mouseRecording.TryAddMouseMove(
                     value.X,
@@ -180,8 +182,9 @@ internal sealed partial class MacroRuntime
                     goto InputHandled;
                 }
 
-                // Do not record input in our own editor.
-                if (_isOwnWindowForeground?.Invoke() == true)
+                // Do not record input in our own editor unless the user opted in.
+                if (!_recordingOptions.RecordOwnWindow &&
+                    _isOwnWindowForeground?.Invoke() == true)
                 {
                     return false;
                 }
