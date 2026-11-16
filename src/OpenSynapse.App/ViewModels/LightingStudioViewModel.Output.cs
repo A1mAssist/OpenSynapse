@@ -289,30 +289,14 @@ public sealed partial class LightingStudioViewModel
     }
 
     /// <summary>
-    /// Hands the devices to another lighting surface. Stops writing frames and
-    /// releases the Blade controller, but never restores a baseline: the caller
-    /// writes its own effect immediately afterwards.
+    /// Hands the devices to another lighting surface by fully stopping the studio
+    /// session. StopAsync restores the captured baseline (or the documented exit
+    /// effect), so a keyboard leaves custom-frame mode before the device page writes.
     /// </summary>
     internal async Task SuspendOutputAsync()
     {
         if (!IsApplied) return;
-        // Clear first so a second device apply cannot race the in-flight stop.
-        IsApplied = false;
-        IsPlaying = false;
-        await StopOutputPumpAsync();
-        try
-        {
-            if (_source is not null && _lighting is not null) await _lighting.StopAsync();
-            if (_inputSampler is not null) await _inputSampler.StopAsync();
-        }
-        catch (Exception exception) when (IsExpected(exception))
-        {
-            // The device page writes its own effect next; do not block it.
-        }
-        _source = null;
-        _appliedBlade = null;
-        _needsExternalRestore = false;
-        StatusText = AppStrings.Text("LightingStudioStatusStopped");
+        await StopAsync();
     }
 
     public async Task StopAsync()
