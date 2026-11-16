@@ -48,6 +48,14 @@ public static partial class RazerMappingBundleParser
         """drawLines?\(\s*(?<index>\d+)\s*,\s*(?:[A-Za-z_$][\w$]*\.props\.buttonList\[(?<button>\d+)\]|(?<buttonArray>[A-Za-z_$][\w$]*)\[(?<arrayButton>\d+)\])(?:\s*\|\|\s*[A-Za-z_$][\w$]*)?\s*,\s*(?<x>-?\d+(?:\.\d+)?)\s*,\s*(?<y>-?\d+(?:\.\d+)?)(?:\s*,\s*!(?<left>[01]))?\s*\)""",
         RegexOptions.CultureInvariant);
 
+    private static readonly Regex DrawSideLineRegex = new(
+        """draw(?<dir>Left|Right)Line\(\s*(?<index>\d+)\s*,\s*(?:[A-Za-z_$][\w$]*\.props\.buttonList\[(?<button>\d+)\]|(?<buttonArray>[A-Za-z_$][\w$]*)\[(?<arrayButton>\d+)\])(?:\s*\|\|\s*[A-Za-z_$][\w$]*)?\s*,\s*(?<x>-?\d+(?:\.\d+)?)\s*,\s*(?<y>-?\d+(?:\.\d+)?)\s*\)""",
+        RegexOptions.CultureInvariant);
+
+    private static readonly Regex DrawBlockRegex = new(
+        """drawLines\s*=\s*(?:(?:async\s*)?\(\)\s*=>|function\s*\(\)\s*)\{""",
+        RegexOptions.CultureInvariant);
+
     private static readonly Regex ButtonListAliasRegex = new(
         """(?:const|let|var)\s+(?<name>[A-Za-z_$][\w$]*)\s*=\s*this\.props\.buttonList\s*(?:\|\|\s*\[\s*\])?""",
         RegexOptions.CultureInvariant);
@@ -113,10 +121,10 @@ public static partial class RazerMappingBundleParser
             ReadPositive(CanvasHeightRegex, mainJs) ?? DefaultImageHeight;
         var dotRadius = ReadPositive(DotRadiusRegex, canvasText) ??
             ReadPositive(DotRadiusRegex, mainJs) ?? DefaultDotRadius;
-        var (buttonScope, includeInputIdOnly) = FindButtonListScope(mainJs);
-        var buttons = ParseButtonObjects(buttonScope, includeInputIdOnly);
+        var scopes = ParseButtonScopes(mainJs);
+        var primaryButtons = scopes.FirstOrDefault() ?? [];
         var explicitButtonIds = ParseExplicitButtonIds(mainJs);
-        var keyIds = ParseKeyIds(mainJs, buttons);
+        var keyIds = ParseKeyIds(mainJs, primaryButtons);
         var anchors = new List<RazerMappingBundleAnchor>();
         var seenButtonIds = new HashSet<byte>();
         var imageOffsetX = (canvasWidth - DefaultImageWidth) / 2;
@@ -125,44 +133,27 @@ public static partial class RazerMappingBundleParser
         var buttonListAliases = new HashSet<string>(
             ButtonListAliasRegex.Matches(mainJs).Select(match => match.Groups["name"].Value),
             StringComparer.Ordinal);
-        var drawLines = new List<(int Index, int MatchOffset, int ButtonIndex, double X, double Y, bool IsLeft)>();
-        foreach (Match match in DrawLineRegex.Matches(mainJs))
+        var drawCalls = ParseDrawCalls(mainJs, buttonListAliases);
+        var scopeByBlock = drawCalls
+            .GroupBy(call => call.BlockId)
+            .ToDictionary(
+                group => group.Key,
+                group => group.Key < 0
+                    ? scopes.FirstOrDefault() ?? []
+                    : SelectScope(group.ToList(), scopes));
+        var namedButtons = scopeByBlock.Count > 0
+            ? scopeByBlock.Values.SelectMany(scope => scope).Distinct().ToList()
+            : primaryButtons;
+
+        foreach (var drawCall in drawCalls.OrderBy(line => line.Index).ThenBy(line => line.MatchOffset))
         {
-            var buttonGroup = match.Groups["button"];
-            if (!buttonGroup.Success)
-            {
-                if (!buttonListAliases.Contains(match.Groups["buttonArray"].Value))
-                {
-                    continue;
-                }
-
-                buttonGroup = match.Groups["arrayButton"];
-            }
-
-            if (!int.TryParse(match.Groups["index"].Value, NumberStyles.None, CultureInfo.InvariantCulture,
-                    out var index) ||
-                !int.TryParse(buttonGroup.Value, NumberStyles.None, CultureInfo.InvariantCulture,
-                    out var buttonIndex) ||
-                !double.TryParse(match.Groups["x"].Value, NumberStyles.Float, CultureInfo.InvariantCulture,
-                    out var x) ||
-                !double.TryParse(match.Groups["y"].Value, NumberStyles.Float, CultureInfo.InvariantCulture,
-                    out var y))
+            var scope = scopeByBlock[drawCall.BlockId];
+            if (drawCall.ButtonIndex < 0 || drawCall.ButtonIndex >= scope.Count)
             {
                 continue;
             }
 
-            var isLeft = !match.Groups["left"].Success || match.Groups["left"].Value == "0";
-            drawLines.Add((index, match.Index, buttonIndex, x, y, isLeft));
-        }
-
-        foreach (var drawLine in drawLines.OrderBy(line => line.Index).ThenBy(line => line.MatchOffset))
-        {
-            if (drawLine.ButtonIndex < 0 || drawLine.ButtonIndex >= buttons.Count)
-            {
-                continue;
-            }
-
-            var button = buttons[drawLine.ButtonIndex];
+            var button = scope[drawCall.ButtonIndex];
             if (button.ResolveButtonId(explicitButtonIds) is not { } buttonId || !seenButtonIds.Add(buttonId))
             {
                 continue;
@@ -172,14 +163,14 @@ public static partial class RazerMappingBundleParser
             {
                 not null when button.ButtonPos.Equals("left", StringComparison.OrdinalIgnoreCase) => true,
                 not null when button.ButtonPos.Equals("right", StringComparison.OrdinalIgnoreCase) => false,
-                _ => drawLine.IsLeft,
+                _ => drawCall.IsLeft,
             };
 
             // drawLine draws the dot at (x + 3r, y + r), not at the raw pair.
             anchors.Add(new RazerMappingBundleAnchor(
                 buttonId,
-                drawLine.X + (3 * dotRadius) - imageOffsetX,
-                drawLine.Y + dotRadius - imageOffsetY,
+                drawCall.X + (3 * dotRadius) - imageOffsetX,
+                drawCall.Y + dotRadius - imageOffsetY,
                 isLeft));
         }
 
@@ -191,7 +182,7 @@ public static partial class RazerMappingBundleParser
             anchors,
             keyIds)
         {
-            ButtonNamesById = BuildButtonNames(buttons, explicitButtonIds),
+            ButtonNamesById = BuildButtonNames(namedButtons, explicitButtonIds),
         };
     }
 
