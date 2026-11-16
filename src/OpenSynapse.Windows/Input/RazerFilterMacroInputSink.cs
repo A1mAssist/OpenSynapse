@@ -35,8 +35,7 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
     private readonly HashSet<int> _pressedMouseButtons = [];
     private IRazerFilterDriverChannel? _driver;
     private IRazerFilterDriverChannel? _mouseDriver;
-    private bool _driverUnavailable;
-    private bool _mouseDriverUnavailable;
+    private readonly long _retryMilliseconds;
     private long _driverRetryAtTicks;
     private long _mouseDriverRetryAtTicks;
     private bool _disposed;
@@ -49,11 +48,13 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
     internal RazerFilterMacroInputSink(
         IMacroInputSink fallback,
         Func<bool, CancellationToken, ValueTask<IRazerFilterDriverChannel?>> open,
-        Action<string>? log = null)
+        Action<string>? log = null,
+        long retryMilliseconds = RetryMilliseconds)
     {
         _fallback = fallback ?? throw new ArgumentNullException(nameof(fallback));
         _open = open ?? throw new ArgumentNullException(nameof(open));
         _log = log;
+        _retryMilliseconds = retryMilliseconds;
     }
 
     public async Task SendAsync(MacroStep step, CancellationToken cancellationToken = default)
@@ -345,7 +346,7 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
         bool mouse,
         CancellationToken cancellationToken)
     {
-        if (_disposed || (mouse ? _mouseDriverUnavailable : _driverUnavailable))
+        if (_disposed)
         {
             return false;
         }
@@ -370,14 +371,14 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
             // current event through the fallback path.
             if (mouse)
             {
-                _mouseDriverUnavailable = true;
                 DisposeDriverLocked(mouse: true);
+                _mouseDriverRetryAtTicks = Environment.TickCount64 + _retryMilliseconds;
                 await ReleaseMouseThroughFallbackAsync(CancellationToken.None).ConfigureAwait(false);
             }
             else
             {
-                _driverUnavailable = true;
                 DisposeDriverLocked(mouse: false);
+                _driverRetryAtTicks = Environment.TickCount64 + _retryMilliseconds;
                 await ReleasePressedThroughFallbackAsync(CancellationToken.None).ConfigureAwait(false);
             }
             return false;
@@ -415,7 +416,7 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
         var now = Environment.TickCount64;
         if (mouse)
         {
-            if (_mouseDriver is not null || _mouseDriverUnavailable)
+            if (_mouseDriver is not null)
             {
                 return _mouseDriver;
             }
@@ -427,7 +428,7 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
         }
         else
         {
-            if (_driver is not null || _driverUnavailable)
+            if (_driver is not null)
             {
                 return _driver;
             }
@@ -456,14 +457,6 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
         {
             // RazerFilterInputHost also treats a missing endpoint as a normal
             // condition. Macro playback must keep working without Razer's driver.
-            if (mouse)
-            {
-                _mouseDriverUnavailable = true;
-            }
-            else
-            {
-                _driverUnavailable = true;
-            }
         }
 
         // No suitable endpoint is a normal state, not a permanent failure: the user
@@ -473,14 +466,14 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
         {
             if (_mouseDriver is null)
             {
-                _mouseDriverRetryAtTicks = Environment.TickCount64 + RetryMilliseconds;
+                _mouseDriverRetryAtTicks = Environment.TickCount64 + _retryMilliseconds;
             }
             return _mouseDriver;
         }
 
         if (_driver is null)
         {
-            _driverRetryAtTicks = Environment.TickCount64 + RetryMilliseconds;
+            _driverRetryAtTicks = Environment.TickCount64 + _retryMilliseconds;
         }
         return _driver;
     }
