@@ -46,7 +46,7 @@ public sealed partial class RazerValkyrieHeadsetService : IAsyncDisposable
         // Dongle-forwarded commands set byte 9; wired cables leave it zero.
         _direction = productId is
             BlackSharkV3ProProtocol.HyperSpeedWirelessProductId or
-            0x0568 or 0x056C or 0x0588 or 0x057A or 0x0A55 or 0x0A58
+            0x0568 or 0x056C or 0x0574 or 0x0588 or 0x057A or 0x0A55 or 0x0A58
             ? (byte)0x80
             : (byte)0x00;
         _eqBandsWithProfile = UsesProfilePrefixedEqBands(productId);
