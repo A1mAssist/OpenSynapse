@@ -31,6 +31,20 @@ public sealed partial class RazerFeatureTransport
             }
             return RazerResponseMatch.Matched;
         }
-        return candidate[1] == 0x01 ? RazerResponseMatch.BusyReceipt : RazerResponseMatch.Mismatched;
+        if (candidate[1] != 0x01)
+        {
+            return RazerResponseMatch.Mismatched;
+        }
+
+        // A same-exchange BUSY that failed validation (CRC or report id) is corruption,
+        // not a receipt left by an earlier command; keep its mismatch reason.
+        var sameExchange =
+            candidate.Length == request.Length &&
+            (candidate[2] == request[2] || request[2] == 0xFF) &&
+            (allowRemainingPacketsMismatch ||
+             (candidate[3] == request[3] && candidate[4] == request[4])) &&
+            candidate[7] == request[7] &&
+            candidate[8] == request[8];
+        return sameExchange ? RazerResponseMatch.Mismatched : RazerResponseMatch.BusyReceipt;
     }
 }

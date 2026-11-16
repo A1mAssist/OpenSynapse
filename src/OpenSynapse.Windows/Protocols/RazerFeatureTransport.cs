@@ -492,24 +492,12 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
             }
             else if (response[1] == 0x01)
             {
-                if (IsRetryableBusyResponse(response[1], request[8]))
-                {
-                    // A busy read has no trustworthy payload; firmware may echo the requested
-                    // length while returning an empty reply, so the length alone is not data.
-                    lastError = "The device is busy (0x01).";
-                    silentResponses++;
-                    busyResponses++;
-                    diagnostic?.Invoke($"attempt {attempt}: {lastError}; retrying read");
-                }
-                else
-                {
-                    // RazerHid treats BUSY as an accepted command for writes.
-                    if (LocalDiagnosticLog.TraceSuccessfulHidRequests)
-                    {
-                        diagnostic?.Invoke($"attempt {attempt}: accepted, status=0x01 (busy)");
-                    }
-                    return response;
-                }
+                // Busy is a resend request for reads and writes alike; it never confirms
+                // that a write reached the device.
+                lastError = "The device is busy (0x01).";
+                silentResponses++;
+                busyResponses++;
+                diagnostic?.Invoke($"attempt {attempt}: {lastError}; retrying");
             }
             else if (response[1] == 0x05)
             {
@@ -628,9 +616,6 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
             "razer-hid",
             $"path={DescribeDevicePath(devicePath)}, txn=0x{request[2]:X2}, size={request[6]}, class=0x{request[7]:X2}, command=0x{request[8]:X2}: {message}");
     }
-
-    internal static bool IsRetryableBusyResponse(byte status, byte commandId) =>
-        status == 0x01 && (commandId & 0x80) != 0;
 
     internal static string DescribeDevicePath(string devicePath)
     {
