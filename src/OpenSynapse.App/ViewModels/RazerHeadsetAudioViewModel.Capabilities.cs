@@ -128,6 +128,11 @@ public sealed partial class RazerHeadsetAudioViewModel
         HeadsetCapability.MicMonitoring,
     ];
 
+    private HeadsetCapability[] ValkyrieT3ProductCapabilities =>
+        _connection.ProductId == 0x05B3
+            ? [HeadsetCapability.Battery, .. ValkyrieT3Capabilities]
+            : ValkyrieT3Capabilities;
+
     private static readonly HeadsetCapability[] Protocol40Capabilities =
     [
         HeadsetCapability.Battery,
@@ -199,7 +204,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             RazerHeadsetAudioTransport.Mxic64 => MxicProductCapabilities,
             RazerHeadsetAudioTransport.Valkyrie64 => ValkyrieProductCapabilities,
             RazerHeadsetAudioTransport.Billie64 => ValkyrieCapabilities,
-            RazerHeadsetAudioTransport.ValkyrieT3Feature64 => ValkyrieT3Capabilities,
+            RazerHeadsetAudioTransport.ValkyrieT3Feature64 => ValkyrieT3ProductCapabilities,
             RazerHeadsetAudioTransport.Feature91 => Feature91Capabilities,
             _ => [],
         };

@@ -175,13 +175,23 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
             RazerMxicHeadsetProtocol.ReadFirmware,
             errors,
             cancellationToken).ConfigureAwait(false);
-        var battery = _dialect == MxicDialect.ValkyrieT3 ? (Ok: false, Value: (byte)0) : await ProbeAsync(
-            "battery",
-            RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetBattery, reportId: ReportId),
-            RazerMxicHeadsetProtocol.BatteryHeader,
-            ReadBatteryWithLog,
-            errors,
-            cancellationToken).ConfigureAwait(false);
+        var battery = _dialect == MxicDialect.ValkyrieT3
+            ? _productId == BarracudaV2XProductId
+                ? await ProbeAsync(
+                    "battery",
+                    CreateValkyrieT3BatteryRead(),
+                    [0x02],
+                    ReadValkyrieT3BatteryPercent,
+                    errors,
+                    cancellationToken).ConfigureAwait(false)
+                : (Ok: false, Value: (byte)0)
+            : await ProbeAsync(
+                "battery",
+                RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetBattery, reportId: ReportId),
+                RazerMxicHeadsetProtocol.BatteryHeader,
+                ReadBatteryWithLog,
+                errors,
+                cancellationToken).ConfigureAwait(false);
         var charging = _dialect == MxicDialect.ValkyrieT3 ? (Ok: false, Value: false) : await ProbeAsync(
             "charging",
             RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetCharging, reportId: ReportId),
