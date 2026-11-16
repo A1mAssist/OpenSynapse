@@ -209,7 +209,8 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
                         previous.Intensity is >= 0 and <= 255 ? (byte)previous.Intensity : null,
                         CancellationToken.None);
                 }
-                catch (Exception exception) when (exception is IOException or InvalidOperationException)
+                catch (Exception exception) when (
+                    exception is IOException or InvalidOperationException or TimeoutException or Win32Exception)
                 {
                     // The save failure is the actionable error; a restore failure only loses the old look.
                 }
@@ -242,6 +243,10 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
         catch (RazerDeviceTimeoutException)
         {
             // A silent device is transient; keep the controls available for a retry.
+            ErrorText = AppStrings.Text("RazerHidProtocolQueryFailed");
+        }
+        catch (Exception exception) when (exception is TimeoutException or Win32Exception)
+        {
             ErrorText = AppStrings.Text("RazerHidProtocolQueryFailed");
         }
         catch (Exception exception) when (exception is IOException or InvalidOperationException)

@@ -147,8 +147,13 @@ public sealed class RazerHidSpecialLightingService
             interfaces.Any(item => RazerHeadsetAudioService.MatchesChannel(channel, item));
     }
 
+    /// <summary>
+    /// AudioMabelT3C (Barracuda X Chroma) uses hid.write; HidD_SetOutputReport stalls on 0574.
+    /// </summary>
+    internal static bool KrakenV4UsesSetOutputReport(ushort productId) => productId != 0x0574;
+
     private readonly Func<string, ReadOnlyMemory<byte>, CancellationToken, Task> _sendOutput;
-    private readonly Func<string, IReadOnlyList<byte[]>, bool, CancellationToken, Task> _sendKrakenV4;
+    private readonly Func<string, IReadOnlyList<byte[]>, bool, bool, CancellationToken, Task> _sendKrakenV4;
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _gates =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, byte> _krakenV4Armed =
@@ -163,14 +168,14 @@ public sealed class RazerHidSpecialLightingService
     internal RazerHidSpecialLightingService(
         Func<string, ReadOnlyMemory<byte>, CancellationToken, Task> sendOutput, Action<string>? diagnostic = null)
         : this(sendOutput,
-            (path, reports, _, cancellationToken) => SendAllAsync(sendOutput, path, reports, cancellationToken),
+            (path, reports, _, _, cancellationToken) => SendAllAsync(sendOutput, path, reports, cancellationToken),
             diagnostic)
     {
     }
 
     private RazerHidSpecialLightingService(
         Func<string, ReadOnlyMemory<byte>, CancellationToken, Task> sendOutput,
-        Func<string, IReadOnlyList<byte[]>, bool, CancellationToken, Task>? sendKrakenV4,
+        Func<string, IReadOnlyList<byte[]>, bool, bool, CancellationToken, Task>? sendKrakenV4,
         Action<string>? diagnostic)
     {
         _sendOutput = sendOutput;
@@ -405,7 +410,12 @@ public sealed class RazerHidSpecialLightingService
 
             try
             {
-                await _sendKrakenV4(devicePath, reportsToSend, arm, cancellationToken)
+                await _sendKrakenV4(
+                        devicePath,
+                        reportsToSend,
+                        arm,
+                        KrakenV4UsesSetOutputReport(connection.ProductId),
+                        cancellationToken)
                     .ConfigureAwait(false);
             }
             catch
@@ -429,12 +439,13 @@ public sealed class RazerHidSpecialLightingService
     /// <summary>
     /// Billie T2 writes through HidD_SetOutputReport and answers every general
     /// command. The old WriteFile-only path never drained those replies, so the
-    /// firmware stopped accepting the static frame.
+    /// firmware stopped accepting the static frame. AudioMabelT3C instead uses hid.write.
     /// </summary>
     private async Task SendKrakenV4Async(
         string devicePath,
         IReadOnlyList<byte[]> reports,
         bool sendHandshake,
+        bool useSetOutputReport,
         CancellationToken cancellationToken)
     {
         // Synapse keeps one HID handle open for the lighting session. 056B drops
@@ -445,7 +456,7 @@ public sealed class RazerHidSpecialLightingService
             var created = new RazerMxicHeadsetTransport(
                 devicePath,
                 RazerHidKrakenV4Protocol.ReportLength,
-                useSetOutputReport: true,
+                useSetOutputReport,
                 useControlStatusReport: false);
             if (_krakenV4Transports.TryAdd(devicePath, created))
             {
