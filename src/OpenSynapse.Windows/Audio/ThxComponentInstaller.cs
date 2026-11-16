@@ -271,6 +271,10 @@ internal static class ThxComponentInstaller
         // The same pinned version is already installed. The service restart
         // above still re-binds the APO to the current endpoint.
         1638 => new(null, AlreadyInstalled: true),
+        // The per-model package returns 3 when a matching service is already
+        // present (for example after Razer's own THX installer). The native
+        // client is still staged by the caller.
+        3 => new(null, AlreadyInstalled: true),
         1618 => new("ThxInstallerBusy"),
         _ => new($"ThxInstallerExit{exitCode}"),
     };
