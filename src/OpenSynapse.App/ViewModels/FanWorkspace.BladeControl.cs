@@ -45,14 +45,5 @@ public sealed partial class FanWorkspace
     /// curve's last target immediately instead of waiting for a temperature change.
     /// </summary>
     internal async Task ReapplyAfterPerformanceModeChangeAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            await _bladeFanRuntime.ReapplyAsync(cancellationToken).ConfigureAwait(false);
-        }
-        catch (Exception exception) when (IsExpectedFanException(exception))
-        {
-            _diagnosticLog.TryWrite("blade-fan", $"performance-mode reapply failed: {exception}");
-        }
-    }
+        => await _bladeFanRuntime.ReapplyAsync(cancellationToken).ConfigureAwait(false);
 }
