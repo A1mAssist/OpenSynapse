@@ -83,9 +83,21 @@ public sealed partial class BladeWorkspace
                 TouchpadEnabled = actual;
                 _blade._confirmedBladeTouchpadEnabled = actual;
                 TouchpadText = actual ? AppStrings.Text("Text_F55AD712") : AppStrings.Text("Text_7E3B0F3C");
+                if (!await _deviceTelemetryReader.SetBladeTouchpadStatusAsync(
+                        ActiveDescriptors, actual, cancellationToken))
+                {
+                    // The Windows state is already committed, so retry once after the
+                    // EC settles instead of rolling the touchpad back.
+                    await Task.Delay(200, cancellationToken);
+                    if (!await _deviceTelemetryReader.SetBladeTouchpadStatusAsync(
+                            ActiveDescriptors, actual, cancellationToken))
+                    {
+                        _diagnosticLog.TryWrite(
+                            "device-operation",
+                            $"touchpad indicator did not acknowledge enabled={actual}");
+                    }
+                }
                 TouchpadChangedByUser?.Invoke(actual);
-                await _deviceTelemetryReader.SetBladeTouchpadStatusAsync(
-                    ActiveDescriptors, actual, cancellationToken);
             },
             cancellationToken,
             () =>
