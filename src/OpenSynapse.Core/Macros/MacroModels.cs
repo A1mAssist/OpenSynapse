@@ -371,6 +371,7 @@ public sealed class MacroDefinition
 public sealed class MacroRecordingOptions
 {
     public bool RecordDelays { get; set; } = true;
+    public bool RecordOwnWindow { get; set; }
     public MacroDelayMode DelayMode { get; set; }
     public int FixedDelayMilliseconds { get; set; } = 100;
     public MacroMouseTrackingMode MouseTrackingMode { get; set; }
@@ -379,6 +380,7 @@ public sealed class MacroRecordingOptions
     public MacroRecordingOptions Clone() => new()
     {
         RecordDelays = RecordDelays,
+        RecordOwnWindow = RecordOwnWindow,
         DelayMode = DelayMode,
         FixedDelayMilliseconds = FixedDelayMilliseconds,
         MouseTrackingMode = MouseTrackingMode,

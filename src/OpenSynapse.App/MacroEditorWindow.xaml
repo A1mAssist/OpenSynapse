@@ -216,6 +216,11 @@
                     </Button.Flyout>
                   </Button>
                 </StackPanel>
+                <StackPanel Spacing="4">
+                  <TextBlock x:Name="MacroRecordOwnWindowLabel" local:Localized.Uid="MacroRecordOwnWindow" Style="{StaticResource MetricLabelStyle}" TextWrapping="Wrap" />
+                  <ToggleSwitch IsOn="{Binding Macros.IsMacroRecordingOwnWindow, Mode=TwoWay}" OnContent="" OffContent="" MinWidth="44" HorizontalAlignment="Left" AutomationProperties.LabeledBy="{Binding ElementName=MacroRecordOwnWindowLabel}" />
+                  <TextBlock local:Localized.Uid="MacroRecordOwnWindowDescription" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
+                </StackPanel>
               </StackPanel>
             </ContentControl>
           </Border>
