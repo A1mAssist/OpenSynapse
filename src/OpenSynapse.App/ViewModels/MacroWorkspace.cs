@@ -649,12 +649,9 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
             return;
         }
 
-        if (IsMacroRecording)
+        if (IsMacroRecording && !await StopMacroRecordingAsync(cancellationToken))
         {
-            if (!await StopMacroRecordingAsync(cancellationToken))
-            {
-                return;
-            }
+            return;
         }
 
         CancelMacroCountdown();
