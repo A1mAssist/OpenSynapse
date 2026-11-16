@@ -225,7 +225,6 @@ public sealed partial class StudioCanvas : UserControl
 
         ApplySelection(next);
     }
-
     private void ApplyZoom()
     {
         var factor = _zoom / 100;
@@ -235,7 +234,8 @@ public sealed partial class StudioCanvas : UserControl
             {
                 if (path.Data is { } geometry)
                 {
-                    geometry.Transform = new ScaleTransform { ScaleX = factor, ScaleY = factor };
+                    // Identity geometry transforms hide paths in WinUI.
+                    geometry.Transform = factor == 1 ? null : new ScaleTransform { ScaleX = factor, ScaleY = factor };
                 }
             }
 

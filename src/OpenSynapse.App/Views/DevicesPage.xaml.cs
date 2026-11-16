@@ -49,6 +49,7 @@ public sealed partial class DevicesPage : UserControl
     public DevicesPage()
     {
         InitializeComponent();
+        GpuModeStatusText.Text = AppStrings.Text("GpuModeReading");
         Loaded += DevicesPageLoaded;
         Unloaded += DevicesPageUnloaded;
         RegisterPropertyChangedCallback(UIElement.VisibilityProperty, DevicesPageVisibilityChanged);

@@ -1264,7 +1264,7 @@
                           </StackPanel>
                           <TextBlock local:Localized.Uid="GpuModeDescription" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
                         </StackPanel>
-                        <TextBlock local:Localized.Uid="GpuModeReading" x:Name="GpuModeStatusText" Grid.Column="1" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Top" />
+                        <TextBlock x:Name="GpuModeStatusText" Grid.Column="1" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Top" />
                       </Grid>
                       <ItemsRepeater x:Name="GpuModeOptionsList" HorizontalAlignment="Stretch">
                         <ItemsRepeater.Layout>

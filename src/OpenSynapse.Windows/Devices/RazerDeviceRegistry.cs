@@ -530,15 +530,16 @@ internal sealed partial class RazerDeviceRegistry
                 (source.ProtocolFamily switch
                 {
                     "blade-710" => capabilityId is not (CapabilityIds.AdapterPowerGet or CapabilityIds.ChargeLimitGet or
-                        CapabilityIds.PowerModeGet or CapabilityIds.NativeDisplayModeGet or CapabilityIds.SkuHardwareConfigurationGet),
+                        CapabilityIds.PowerModeGet or CapabilityIds.NativeDisplayModeGet or CapabilityIds.SkuHardwareConfigurationGet or
+                        CapabilityIds.FanInformationGet),
                     "blade-710-chroma" => capabilityId is not (CapabilityIds.AdapterPowerGet or CapabilityIds.ChargeLimitGet or
                         CapabilityIds.PowerModeGet or CapabilityIds.NativeDisplayModeGet or CapabilityIds.SkuHardwareConfigurationGet or
-                        CapabilityIds.KeyboardBrightnessGet or CapabilityIds.KeyboardBrightnessSet),
+                        CapabilityIds.KeyboardBrightnessGet or CapabilityIds.KeyboardBrightnessSet or CapabilityIds.FanInformationGet),
                     "blade-671" => capabilityId is not (CapabilityIds.AdapterPowerGet or CapabilityIds.ChargeLimitGet or CapabilityIds.PowerModeGet or
                         CapabilityIds.NativeDisplayModeGet or CapabilityIds.SkuHardwareConfigurationGet or
                         CapabilityIds.KeyboardBrightnessGet or CapabilityIds.KeyboardBrightnessSet or
                         CapabilityIds.KeyboardEffectGet or CapabilityIds.KeyboardEffectSet or
-                        CapabilityIds.FnKeySwapGet),
+                        CapabilityIds.FnKeySwapGet or CapabilityIds.FanInformationGet),
                     "blade-597" => capabilityId is not (CapabilityIds.KeyboardBrightnessGet or
                         CapabilityIds.AdapterPowerGet or CapabilityIds.ChargeLimitGet or CapabilityIds.PowerModeGet or
                         CapabilityIds.NativeDisplayModeGet or CapabilityIds.SkuHardwareConfigurationGet),
