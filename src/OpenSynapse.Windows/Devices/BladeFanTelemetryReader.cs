@@ -54,6 +54,9 @@ internal sealed partial class BladeFanTelemetryReader
         {
             // Synapse publishes a different fixed-speed range per performance mode, so the
             // check needs the mode the device is actually in, not a single model range.
+            // A captured curve target can sit below the floor; raise it so the restore succeeds.
+            cpuTargetRpm = await ClampToModeFloorAsync(blade, original.Thermal.PerformanceMode, cpuTargetRpm!.Value, cancellationToken);
+            gpuTargetRpm = await ClampToModeFloorAsync(blade, original.Thermal.PerformanceMode, gpuTargetRpm!.Value, cancellationToken);
             ValidateModelFanTargetRpm(blade, original.Thermal.PerformanceMode, cpuTargetRpm!.Value);
             ValidateModelFanTargetRpm(blade, original.Thermal.PerformanceMode, gpuTargetRpm!.Value);
         }
