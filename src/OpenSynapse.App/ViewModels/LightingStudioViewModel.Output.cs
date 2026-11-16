@@ -232,6 +232,8 @@ public sealed partial class LightingStudioViewModel
     private void StartOutputPump()
     {
         if (_hidRouter is null && _argbRouter is null && _headsetRouter is null) return;
+        // Re-applying must not reset the effect clock or spawn a second pump.
+        if (_outputTask is { IsCompleted: false }) return;
         _outputCancellation?.Cancel();
         _outputCancellation?.Dispose();
         _outputCancellation = new CancellationTokenSource();
@@ -284,6 +286,33 @@ public sealed partial class LightingStudioViewModel
 
         _outputTask = null;
         cancellation.Dispose();
+    }
+
+    /// <summary>
+    /// Hands the devices to another lighting surface. Stops writing frames and
+    /// releases the Blade controller, but never restores a baseline: the caller
+    /// writes its own effect immediately afterwards.
+    /// </summary>
+    internal async Task SuspendOutputAsync()
+    {
+        if (!IsApplied) return;
+        // Clear first so a second device apply cannot race the in-flight stop.
+        IsApplied = false;
+        IsPlaying = false;
+        await StopOutputPumpAsync();
+        try
+        {
+            if (_source is not null && _lighting is not null) await _lighting.StopAsync();
+            if (_inputSampler is not null) await _inputSampler.StopAsync();
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            // The device page writes its own effect next; do not block it.
+        }
+        _source = null;
+        _appliedBlade = null;
+        _needsExternalRestore = false;
+        StatusText = AppStrings.Text("LightingStudioStatusStopped");
     }
 
     public async Task StopAsync()

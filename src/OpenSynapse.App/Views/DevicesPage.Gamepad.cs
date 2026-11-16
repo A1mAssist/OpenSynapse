@@ -36,6 +36,7 @@ public sealed partial class DevicesPage : UserControl
 
     private async void GamepadApplyLightingClick(object sender, RoutedEventArgs e)
     {
+        await SuspendStudioLightingAsync();
         await (ViewModel.Accessories.SelectedGamepad?.ApplyLightingAsync(Lifetime) ?? Task.CompletedTask);
     }
 

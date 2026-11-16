@@ -18,8 +18,11 @@ public sealed partial class DevicesPage : UserControl
     private async void CoolingPadApplyClick(object sender, RoutedEventArgs e) =>
         await ViewModel.CoolingPad.ApplyAsync(Lifetime);
 
-    private async void CoolingPadApplyLightingClick(object sender, RoutedEventArgs e) =>
+    private async void CoolingPadApplyLightingClick(object sender, RoutedEventArgs e)
+    {
+        await SuspendStudioLightingAsync();
         await ViewModel.CoolingPad.ApplyLightingAsync(Lifetime);
+    }
 
     private async void CoolingPadApplyFixedModeClick(object sender, RoutedEventArgs e) =>
         await ViewModel.CoolingPad.ApplyFixedModeAsync(Lifetime);

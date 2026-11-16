@@ -201,7 +201,7 @@ public sealed partial class LightingStudioPage : UserControl
         RenderPreview();
     }
 
-    internal async void OnNavigatedFrom()
+    internal void OnNavigatedFrom()
     {
         _timer.Stop();
         _historyTimer.Stop();
@@ -209,22 +209,13 @@ public sealed partial class LightingStudioPage : UserControl
 #if DEBUG
         _studioBenchmark?.Stop();
 #endif
-        // A running studio frame pump keeps re-arming the device's custom effect.
-        // Leaving the page must release it, otherwise the basic lighting controls
-        // appear dead until the app restarts.
-        if (_viewModel is { IsApplied: true } viewModel)
-        {
-            try
-            {
-                await viewModel.StopAsync();
-            }
-            catch (Exception exception) when (exception is not OperationCanceledException)
-            {
-                // StopAsync reports device failures in StatusText; navigation must not crash.
-            }
-        }
+        // The hardware pump keeps running off-page on purpose; Studio effects
+        // continue while the user browses other tabs. The device page suspends
+        // it only when another lighting surface actually takes over.
     }
 
+    internal Task SuspendAppliedEffectAsync() =>
+        _viewModel?.SuspendOutputAsync() ?? Task.CompletedTask;
 
     private void BuildPreview()
     {
