@@ -31,6 +31,7 @@ internal sealed partial class RazerDeviceRegistry
                 [CapabilityIds.TimeToDimGet] = new(0x05, 0x07, 0x8B, "00"),
                 [CapabilityIds.TimeToDimSet] = new(0x05, 0x07, 0x0B, ""),
                 [CapabilityIds.GamingModeSet] = new(0x04, 0x00, 0x08, "", AllowZeroTransactionId: true),
+                [CapabilityIds.TouchpadStatusSet] = new(0x03, 0x00, 0x59, "", AllowZeroTransactionId: true),
                 [CapabilityIds.FnKeyGet] = new(0x02, 0x02, 0x86, "0000", AllowZeroTransactionId: true),
                 [CapabilityIds.McuVersionGet] = new(0x04, 0x00, 0x87, "00000000", AllowZeroTransactionId: true),
                 [CapabilityIds.FnKeySet] = new(0x02, 0x02, 0x06, "", AllowZeroTransactionId: true),
@@ -88,6 +89,7 @@ internal sealed partial class RazerDeviceRegistry
                 [CapabilityIds.SkuHardwareConfigurationGet] = new(0x01, 0x0D, 0x8F, "00", true),
                 [CapabilityIds.GamingModeGet] = new(0x04, 0x00, 0x88, "", AllowZeroTransactionId: true),
                 [CapabilityIds.GamingModeSet] = new(0x04, 0x00, 0x08, "", AllowZeroTransactionId: true),
+                [CapabilityIds.TouchpadStatusSet] = new(0x03, 0x00, 0x59, "", AllowZeroTransactionId: true),
                 [CapabilityIds.StartupAnimationGet] = new(0x01, 0x0F, 0x98, "00"),
                 [CapabilityIds.StartupAnimationSet] = new(0x02, 0x0F, 0x18, ""),
                 [CapabilityIds.KeyboardBrightnessGet] = new(0x03, 0x03, 0x83, "010500", true),
@@ -170,6 +172,7 @@ internal sealed partial class RazerDeviceRegistry
                     CapabilityIds.TimeToDimGet or CapabilityIds.TimeToDimSet or
                     CapabilityIds.IndicatorLedGet or CapabilityIds.IndicatorLedSet or
                     CapabilityIds.GpuCardDetectionGet or CapabilityIds.GpuCardDetectionSet or
+                    CapabilityIds.TouchpadStatusSet or
                     CapabilityIds.FanInformationGet))
                 .ToHashSet(StringComparer.Ordinal),
             // The Blade 18 (2024) firmware rejects 0F:98/18, even though the family
@@ -180,6 +183,7 @@ internal sealed partial class RazerDeviceRegistry
                     CapabilityIds.TimeToDimGet or CapabilityIds.TimeToDimSet or
                     CapabilityIds.IndicatorLedGet or CapabilityIds.IndicatorLedSet or
                     CapabilityIds.GpuCardDetectionGet or CapabilityIds.GpuCardDetectionSet or
+                    CapabilityIds.TouchpadStatusSet or
                     CapabilityIds.FnKeySwapGet or CapabilityIds.FnKeySwapSet or
                     CapabilityIds.FanInformationGet))
                 .ToHashSet(StringComparer.Ordinal),
@@ -203,6 +207,7 @@ internal sealed partial class RazerDeviceRegistry
                     CapabilityIds.TimeToDimGet or CapabilityIds.TimeToDimSet or
                     CapabilityIds.IndicatorLedGet or CapabilityIds.IndicatorLedSet or
                     CapabilityIds.GpuCardDetectionGet or CapabilityIds.GpuCardDetectionSet or
+                    CapabilityIds.TouchpadStatusSet or
                     CapabilityIds.FnKeySwapGet or CapabilityIds.FnKeySwapSet))
                 .ToHashSet(StringComparer.Ordinal),
             ["blade-597"] = FamilyCapabilities["blade-597"].Keys

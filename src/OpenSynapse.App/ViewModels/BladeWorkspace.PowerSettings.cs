@@ -84,6 +84,8 @@ public sealed partial class BladeWorkspace
                 _blade._confirmedBladeTouchpadEnabled = actual;
                 TouchpadText = actual ? AppStrings.Text("Text_F55AD712") : AppStrings.Text("Text_7E3B0F3C");
                 TouchpadChangedByUser?.Invoke(actual);
+                await _deviceTelemetryReader.SetBladeTouchpadStatusAsync(
+                    ActiveDescriptors, actual, cancellationToken);
             },
             cancellationToken,
             () =>
