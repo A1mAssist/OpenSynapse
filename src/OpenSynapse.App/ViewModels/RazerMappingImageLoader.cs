@@ -15,6 +15,8 @@ namespace OpenSynapse.App.ViewModels;
 /// </summary>
 internal static class RazerMappingImageLoader
 {
+    private const int MappingDecodeWidth = 330;
+
     public static async Task<ImageSource?> LoadAsync(Uri uri)
     {
         if (uri.LocalPath.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
@@ -32,7 +34,9 @@ internal static class RazerMappingImageLoader
 
         try
         {
-            return new BitmapImage(uri);
+            var image = new BitmapImage { DecodePixelWidth = MappingDecodeWidth };
+            image.UriSource = uri;
+            return image;
         }
         catch (Exception exception) when (exception is ArgumentException or UriFormatException)
         {
@@ -50,6 +54,7 @@ internal static class RazerMappingImageLoader
                 return null;
             }
 
+            pixels = DownscaleBgra(pixels, width, height, MappingDecodeWidth, out width, out height);
             using var bitmap = new SoftwareBitmap(
                 BitmapPixelFormat.Bgra8, width, height, BitmapAlphaMode.Straight);
             using (var writer = new DataWriter())
@@ -72,6 +77,62 @@ internal static class RazerMappingImageLoader
         {
             return null;
         }
+    }
+
+    private static byte[] DownscaleBgra(
+        byte[] source,
+        int width,
+        int height,
+        int targetWidth,
+        out int scaledWidth,
+        out int scaledHeight)
+    {
+        if (targetWidth >= width)
+        {
+            scaledWidth = width;
+            scaledHeight = height;
+            return source;
+        }
+
+        scaledWidth = targetWidth;
+        scaledHeight = Math.Max(1, (int)Math.Round(height * (double)targetWidth / width));
+        var target = new byte[scaledWidth * scaledHeight * 4];
+        for (var y = 0; y < scaledHeight; y++)
+        {
+            var sourceTop = y * height / scaledHeight;
+            var sourceBottom = Math.Max(sourceTop + 1, (y + 1) * height / scaledHeight);
+            for (var x = 0; x < scaledWidth; x++)
+            {
+                var sourceLeft = x * width / scaledWidth;
+                var sourceRight = Math.Max(sourceLeft + 1, (x + 1) * width / scaledWidth);
+                var blue = 0;
+                var green = 0;
+                var red = 0;
+                var alpha = 0;
+                var count = 0;
+                for (var sourceY = sourceTop; sourceY < sourceBottom; sourceY++)
+                {
+                    var row = sourceY * width * 4;
+                    for (var sourceX = sourceLeft; sourceX < sourceRight; sourceX++)
+                    {
+                        var index = row + sourceX * 4;
+                        blue += source[index];
+                        green += source[index + 1];
+                        red += source[index + 2];
+                        alpha += source[index + 3];
+                        count++;
+                    }
+                }
+
+                var offset = (y * scaledWidth + x) * 4;
+                target[offset] = (byte)(blue / count);
+                target[offset + 1] = (byte)(green / count);
+                target[offset + 2] = (byte)(red / count);
+                target[offset + 3] = (byte)(alpha / count);
+            }
+        }
+
+        return target;
     }
 
     private static async Task<Uri> PrepareSvgAsync(Uri uri)
