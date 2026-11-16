@@ -23,7 +23,11 @@ public sealed partial class LightingStudioViewModel
         _outputCancellation?.Cancel();
         _outputCancellation?.Dispose();
         if (_inputSampler is { } sampler) _ = sampler.DisposeAsync().AsTask();
+        if (_hidRouter is not null) _ = _hidRouter.DisposeAsync().AsTask();
+        if (_argbRouter is not null) _ = _argbRouter.DisposeAsync().AsTask();
         if (_headsetRouter is not null) _ = _headsetRouter.DisposeAsync().AsTask();
+        _layerCache.Clear();
+        _loadedMedia.Clear();
         _source = null;
         _appliedBlade = null;
     }

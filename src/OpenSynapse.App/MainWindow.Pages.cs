@@ -2,8 +2,10 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Animation;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.App.Views;
+using OpenSynapse.Core.Storage;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Lighting;
+using OpenSynapse.App.Runtime;
 
 namespace OpenSynapse.App;
 
@@ -17,6 +19,9 @@ public sealed partial class MainWindow
     private SettingsPage? _settingsPage;
     private DiagnosticsPage? _diagnosticsPage;
     private string _currentPage = "overview";
+    private readonly List<string> _pageUseOrder = [];
+
+    private int PageCacheLimit => LiteModePolicy.PageCacheLimit(_viewModel.IsLiteMode);
 
     private OverviewPage OverviewPage => _overviewPage ??= CreateOverviewPage();
     private DevicesPage DevicesPage => _devicesPage ??= CreateDevicesPage();
@@ -48,14 +53,16 @@ public sealed partial class MainWindow
     private LightingStudioPage CreateLightingStudioPage()
     {
         var page = new LightingStudioPage { Host = this };
+        var sampler = new StudioInputSampler();
+        _studioInputSampler = sampler;
         page.Initialize(
             _bladeLightingController,
             () => _viewModel.CurrentDeviceDescriptors,
             BuildStudioDevices,
-            CreateStudioHidRouter(_studioInputSampler!),
-            _studioInputSampler!,
-            CreateStudioArgbRouter(_studioInputSampler!),
-            CreateStudioHeadsetRouter(_studioInputSampler!),
+            CreateStudioHidRouter(sampler),
+            sampler,
+            CreateStudioArgbRouter(sampler),
+            CreateStudioHeadsetRouter(sampler),
             _viewModel.RestoreLightingAfterExternalAsync);
         _studioDevicesDirty = true;
         return AddPage(page);
@@ -125,16 +132,21 @@ public sealed partial class MainWindow
         return page;
     }
 
-    private FrameworkElement EnsurePage(string page) => page switch
+    private FrameworkElement EnsurePage(string page)
     {
-        "devices" => DevicesPage,
-        "studio" => LightingStudioPage,
-        "profiles" => ProfilesPage,
-        "macros" => MacrosPage,
-        "settings" => SettingsPage,
-        "diagnostics" => DiagnosticsPage,
-        _ => OverviewPage,
-    };
+        FrameworkElement view = page switch
+        {
+            "devices" => DevicesPage,
+            "studio" => LightingStudioPage,
+            "profiles" => ProfilesPage,
+            "macros" => MacrosPage,
+            "settings" => SettingsPage,
+            "diagnostics" => DiagnosticsPage,
+            _ => OverviewPage,
+        };
+        TouchPage(page);
+        return view;
+    }
 
     private void ShowPage(string page)
     {
@@ -150,6 +162,8 @@ public sealed partial class MainWindow
 
         _currentPage = page;
         view.Visibility = Visibility.Visible;
+        TrimPageCache();
+        MemoryTrace.Snapshot($"page-{page}");
         if (wasVisible)
         {
             return;
@@ -173,4 +187,88 @@ public sealed partial class MainWindow
 
     private bool IsPageCurrent(string page) =>
         StringComparer.Ordinal.Equals(_currentPage, page);
+
+    private void TouchPage(string page)
+    {
+        _pageUseOrder.Remove(page);
+        _pageUseOrder.Add(page);
+        MemoryTrace.PageCacheCount = _pageUseOrder.Count;
+    }
+
+    private void TrimPageCache()
+    {
+        while (_pageUseOrder.Count > PageCacheLimit)
+        {
+            var oldest = _pageUseOrder.FirstOrDefault(page =>
+                !StringComparer.Ordinal.Equals(page, _currentPage));
+            if (oldest is null)
+            {
+                break;
+            }
+
+            ReleasePage(oldest);
+        }
+    }
+
+    private void ReleasePage(string page)
+    {
+        FrameworkElement? view = page switch
+        {
+            "overview" => _overviewPage,
+            "devices" => _devicesPage,
+            "studio" => _lightingStudioPage,
+            "profiles" => _profilesPage,
+            "macros" => _macrosPage,
+            "settings" => _settingsPage,
+            "diagnostics" => _diagnosticsPage,
+            _ => null,
+        };
+        if (view is not null)
+        {
+            PageHost.Children.Remove(view);
+            switch (view)
+            {
+                case OverviewPage overview:
+                    overview.DataContext = null;
+                    break;
+                case DevicesPage devices:
+                    devices.Shutdown();
+                    break;
+                case LightingStudioPage studio:
+                    studio.Shutdown();
+                    _studioInputSampler = null;
+                    break;
+                case SettingsPage settings:
+                    settings.Shutdown();
+                    break;
+            }
+        }
+
+        switch (page)
+        {
+            case "overview":
+                _overviewPage = null;
+                break;
+            case "devices":
+                _devicesPage = null;
+                break;
+            case "studio":
+                _lightingStudioPage = null;
+                break;
+            case "profiles":
+                _profilesPage = null;
+                break;
+            case "macros":
+                _macrosPage = null;
+                break;
+            case "settings":
+                _settingsPage = null;
+                break;
+            case "diagnostics":
+                _diagnosticsPage = null;
+                break;
+        }
+        _pageUseOrder.Remove(page);
+        MemoryTrace.PageCacheCount = _pageUseOrder.Count;
+    }
 }

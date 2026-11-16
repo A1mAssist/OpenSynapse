@@ -36,7 +36,7 @@ public sealed partial class MainWindow : Window
     private readonly Action<bool>? _setTaskbarStatusEnabled;
     private readonly Action? _refreshTaskbarStatus;
     private readonly IBladeLightingController? _bladeLightingController;
-    private readonly StudioInputSampler? _studioInputSampler;
+    private StudioInputSampler? _studioInputSampler;
     private DisplayPowerNotification? _displayPowerNotification;
     private bool _trayLifecycleEnabled;
     private bool _performanceOverlayEnabled;
@@ -87,7 +87,6 @@ public sealed partial class MainWindow : Window
         // Lite hides CPU advanced controls; skip startup reads that touch PawnIO/the service.
         if (!_viewModel.IsLiteMode) { _ = _viewModel.CpuPower.RefreshCpuPowerLimitSafelyAsync(); _ = _viewModel.CpuCurve.RefreshSafelyAsync(); }
         RootNavigationView.DataContext = _viewModel;
-        _studioInputSampler = new StudioInputSampler();
         ApplyLiteMode();
         _viewModel.Hue.Configure(_behaviorSettings.HueBridgeHost, _behaviorSettings.HueAppKey);
         _viewModel.Hue.Persist = (host, appKey) =>
@@ -427,6 +426,7 @@ public sealed partial class MainWindow : Window
     {
         SaveWindowSize();
         _settingsPage?.Shutdown();
+        _lightingStudioPage?.Shutdown();
         _aboutWindow?.Close();
         _aboutWindow = null;
         CloseThxAudioWindow();
@@ -446,6 +446,6 @@ public sealed partial class MainWindow : Window
         _displayPowerNotification = null;
         _lifetime.Cancel();
         _lifetime.Dispose();
-        if (_studioInputSampler is { } sampler) _ = sampler.DisposeAsync().AsTask();
+        _studioInputSampler = null;
     }
 }
