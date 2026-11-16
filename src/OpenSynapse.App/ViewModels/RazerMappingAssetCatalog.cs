@@ -41,8 +41,8 @@ internal static class RazerMappingKnownHotspots
 {
     // Razer Viper (0078): products/120/ui/static/js/main.90154a92.js.
     // drawLines() authors a 310x340 canvas; the 3x product image is 900x1024.
-    // The 0x06/0x07/0x0E ids are the firmware's HyperShift aliases of the same
-    // side/DPI buttons, so they intentionally share the normal button's point.
+    // 0x04/0x05 are the left side buttons; 0x06/0x07 are the right side buttons.
+    // 0x0E is the DPI button under the wheel.
     internal static IReadOnlyDictionary<byte, RazerMappingPoint> Viper { get; } =
         new Dictionary<byte, RazerMappingPoint>
         {
@@ -51,8 +51,8 @@ internal static class RazerMappingKnownHotspots
             [0x03] = new(451.5, 259.5, true),
             [0x04] = new(271.5, 541.5, true),
             [0x05] = new(265.5, 427.5, true),
-            [0x06] = new(271.5, 541.5, true),
-            [0x07] = new(265.5, 427.5, true),
+            [0x06] = new(628.5, 541.5, false),
+            [0x07] = new(634.5, 427.5, false),
             [0x09] = new(451.5, 208.5, false),
             [0x0A] = new(451.5, 313.5, false),
             [0x0E] = new(451.5, 751.5, true),
