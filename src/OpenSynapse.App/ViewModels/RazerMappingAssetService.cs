@@ -125,6 +125,7 @@ public sealed partial class RazerMappingAssetService
             return null;
         }
 
+        RazerMappingBundle? bundle = null;
         if (manifest.MainJs is { Length: > 0 } mainJs)
         {
             var scriptPath = await CacheRemoteFileAsync(
@@ -132,7 +133,7 @@ public sealed partial class RazerMappingAssetService
             if (scriptPath is not null)
             {
                 var script = await File.ReadAllTextAsync(scriptPath, cancellationToken).ConfigureAwait(false);
-                var bundle = RazerMappingBundleParser.Parse(script, manifest.Image3x);
+                bundle = RazerMappingBundleParser.Parse(script, manifest.Image3x);
                 if (bundle.Image3x is { Length: > 0 } image)
                 {
                     var imagePath = await CacheRemoteFileAsync(
@@ -187,7 +188,11 @@ public sealed partial class RazerMappingAssetService
                 productId, svg, MaxImageBytes, "svg", cancellationToken).ConfigureAwait(false);
             if (svgPath is not null)
             {
-                return await CreateImageOnlyAsync(new Uri(svgPath), cancellationToken).ConfigureAwait(false);
+                var imageOnly = await CreateImageOnlyAsync(new Uri(svgPath), cancellationToken)
+                    .ConfigureAwait(false);
+                return imageOnly is null || bundle is null
+                    ? imageOnly
+                    : ApplyBundleAnchors(productId, imageOnly, bundle);
             }
         }
 
