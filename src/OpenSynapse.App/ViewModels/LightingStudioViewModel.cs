@@ -756,6 +756,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         if (_source is not null && _appliedBlade is not null) _source.Update(BuildLayersFor(_appliedBlade));
         if (IsApplied && _hidRouter is not null) RefreshHidSnapshots();
         if (IsApplied && _argbRouter is not null) RefreshArgbSnapshots(_argbRouter.GetTargets());
+        if (IsApplied && _headsetRouter is not null) _headsetRouter.Update(BuildHeadsetLayers);
         DocumentChanged?.Invoke(this, EventArgs.Empty);
     }
 

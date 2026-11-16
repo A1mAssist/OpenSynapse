@@ -219,14 +219,18 @@ public sealed partial class LightingStudioViewModel
             return false;
         }
 
-        var device = Devices.FirstOrDefault(item => item.HasMatrix &&
-            StudioLedSelection.SameInstance(item.EffectiveInstanceId, _headsetRouter.InstanceId));
-        var layers = device is null
-            ? BuildLayersFor(0x05AD, _headsetRouter.InstanceId, 1, RazerMakoXChromaService.LedCount)
-            : BuildLayersFor(device);
-        _headsetRouter.Update(() => layers);
+        _headsetRouter.Update(BuildHeadsetLayers);
         applied.Add(_headsetRouter.DisplayName ?? "Razer Mako X");
         return true;
+    }
+
+    private IReadOnlyList<StudioLayerRender> BuildHeadsetLayers()
+    {
+        var device = Devices.FirstOrDefault(item => item.HasMatrix &&
+            StudioLedSelection.SameInstance(item.EffectiveInstanceId, _headsetRouter!.InstanceId));
+        return device is null
+            ? BuildLayersFor(0x05AD, _headsetRouter!.InstanceId, 1, RazerMakoXChromaService.LedCount)
+            : BuildLayersFor(device);
     }
 
     private void StartOutputPump()

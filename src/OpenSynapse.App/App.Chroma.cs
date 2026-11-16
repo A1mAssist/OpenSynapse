@@ -102,7 +102,8 @@ public partial class App
                 (kind, frame, rows, columns, token) =>
                     _chromaDeviceRouter?.ApplyAsync(kind, frame, rows, columns, token) ?? Task.FromResult(false),
                 viewModel.Lighting.IsBladeChromaOverrideEnabled,
-                _behaviorSettings.ChromaBlockedSources);
+                _behaviorSettings.ChromaBlockedSources,
+                suspendLighting: () => viewModel.SuspendStudioLightingAsync());
             _chromaRestHost = host;
             _ = StartChromaRestHostAsync(host);
         }
