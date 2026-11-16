@@ -238,7 +238,7 @@ internal static class RazerCommonDriverInstaller
         using (process)
         {
             process.WaitForExit();
-            return process.ExitCode is 0 or 3010 or 1641
+            return IsSuccessfulExitCode(process.ExitCode)
                 ? new RazerDriverInstallResult(true)
                 : new RazerDriverInstallResult(
                     false,
@@ -276,7 +276,7 @@ internal static class RazerCommonDriverInstaller
         using (process)
         {
             process.WaitForExit();
-            return process.ExitCode is 0 or 3010 or 1641
+            return IsSuccessfulExitCode(process.ExitCode)
                 ? new RazerDriverInstallResult(true)
                 : new RazerDriverInstallResult(
                     false,
@@ -290,4 +290,14 @@ internal static class RazerCommonDriverInstaller
         using var stream = File.OpenRead(path);
         return Convert.ToHexString(SHA256.HashData(stream));
     }
+
+    /// <summary>
+    /// RzCommonU.inf only matches <c>RAZER\DeviceContol</c>, the child the device
+    /// filter creates after it attaches. On a clean install that device does not
+    /// exist yet, so pnputil stages the package and answers 259 (NO_MORE_ITEMS).
+    /// That is the expected first pass; the package binds once the child appears.
+    /// </summary>
+    internal static bool IsSuccessfulExitCode(int exitCode) =>
+        exitCode is 0 or 3010 or 1641 ||
+        RazerDriverInstaller.IsAlreadyInstalledExitCode(exitCode);
 }
