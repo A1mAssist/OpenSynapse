@@ -24,18 +24,23 @@ internal sealed class RazerDeviceButtonInput : IDisposable
     private const uint RazerVendorId = 0x1532;
 
     private readonly Action<MacroInput, bool> _handler;
+    private readonly Action<string>? _log;
     private readonly Dictionary<string, RazerDeviceInfo?> _devices =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, long> _failedDeviceAt =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, HashSet<int>> _pressed = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, HashSet<int>> _pressedExtraMouseButtons =
+        new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _loggedExtraMouseDevices = new(StringComparer.OrdinalIgnoreCase);
     private IDisposable? _subscription;
     private bool _started;
     private bool _disposed;
 
-    internal RazerDeviceButtonInput(Action<MacroInput, bool> handler)
+    internal RazerDeviceButtonInput(Action<MacroInput, bool> handler, Action<string>? log = null)
     {
         _handler = handler ?? throw new ArgumentNullException(nameof(handler));
+        _log = log;
     }
 
     public void Start()
@@ -68,8 +73,14 @@ internal sealed class RazerDeviceButtonInput : IDisposable
 
     private void ProcessFrame(RawInputFrame frame)
     {
-        if (_disposed || frame.IsHid)
+        if (_disposed)
         {
+            return;
+        }
+
+        if (frame.IsHid)
+        {
+            ProcessExtraMouseButtons(frame);
             return;
         }
 
@@ -113,6 +124,61 @@ internal sealed class RazerDeviceButtonInput : IDisposable
             ScanCode = frame.MakeCode,
             Extended = (frame.Flags & RiKeyE0) != 0,
         }, isDown);
+    }
+
+    private void ProcessExtraMouseButtons(RawInputFrame frame)
+    {
+        if (frame.UsagePage != 0x0001 ||
+            frame.Usage != 0x0002 ||
+            frame.ExtraButtons is not { } buttons ||
+            !RazerMouseMacroTriggerResolver.SupportsExtraMouseButtons(frame.ProductId))
+        {
+            return;
+        }
+
+        if (_loggedExtraMouseDevices.Add(frame.DevicePath))
+        {
+            _log?.Invoke(
+                $"Razer extra mouse buttons: listening {frame.DevicePath} pid=0x{frame.ProductId:X4}");
+        }
+
+        var current = new HashSet<int>(buttons);
+        int[]? releases = null;
+        int[]? presses = null;
+        if (!_pressedExtraMouseButtons.TryGetValue(frame.DevicePath, out var pressed))
+        {
+            pressed = [];
+            _pressedExtraMouseButtons[frame.DevicePath] = pressed;
+        }
+        if (!pressed.SetEquals(current))
+        {
+            releases = pressed.Except(current).Order().ToArray();
+            presses = current.Except(pressed).Order().ToArray();
+            pressed.Clear();
+            pressed.UnionWith(current);
+        }
+
+        if (releases is null || presses is null)
+        {
+            return;
+        }
+
+        foreach (var button in releases)
+        {
+            _handler(new MacroInput
+            {
+                Kind = MacroInputKind.MouseButton,
+                MouseButton = button,
+            }, false);
+        }
+        foreach (var button in presses)
+        {
+            _handler(new MacroInput
+            {
+                Kind = MacroInputKind.MouseButton,
+                MouseButton = button,
+            }, true);
+        }
     }
 
     private bool UpdatePressed(string devicePath, int sideButton, bool isDown)

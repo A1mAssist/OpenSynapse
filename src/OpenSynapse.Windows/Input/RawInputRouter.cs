@@ -11,7 +11,12 @@ internal readonly record struct RawInputFrame(
     ushort MakeCode,
     ushort Flags,
     ushort VirtualKey,
-    byte[]? Report);
+    byte[]? Report,
+    ushort VendorId = 0,
+    ushort ProductId = 0,
+    ushort UsagePage = 0,
+    ushort Usage = 0,
+    int[]? ExtraButtons = null);
 
 /// <summary>
 /// The single owner of this process's keyboard Raw Input registration. Windows keeps
@@ -120,6 +125,7 @@ internal static class RawInputRouter
         private readonly ManualResetEventSlim _ready = new(false);
         private readonly WindowProc _windowProc;
         private readonly Dictionary<nint, string> _devicePaths = [];
+        private readonly RawInputHid _hid = new();
         private Thread? _thread;
         private nint _window;
         private nint _previousWindowProc;
@@ -226,6 +232,8 @@ internal static class RawInputRouter
                     _ = DestroyWindow(_window);
                     _window = 0;
                 }
+
+                _hid.ReleaseAll();
             }
         }
 
@@ -317,7 +325,22 @@ internal static class RawInputRouter
                 {
                     var report = new byte[reportSize];
                     Marshal.Copy(nint.Add(data, 8 + (index * reportSize)), report, 0, reportSize);
-                    Dispatch(new RawInputFrame(devicePath, true, 0, 0, 0, report));
+                    var info = _hid.GetDeviceInfo(header.Device, devicePath);
+                    var extraButtons = info is { } known
+                        ? _hid.ReadExtraButtons(known, report)
+                        : null;
+                    Dispatch(new RawInputFrame(
+                        devicePath,
+                        true,
+                        0,
+                        0,
+                        0,
+                        report,
+                        info?.VendorId ?? 0,
+                        info?.ProductId ?? 0,
+                        info?.UsagePage ?? 0,
+                        info?.Usage ?? 0,
+                        extraButtons));
                 }
             }
             finally
@@ -334,7 +357,7 @@ internal static class RawInputRouter
             }
 
             uint characterCount = 0;
-            if (GetRawInputDeviceInfo(device, RidiDeviceName, null, ref characterCount) == uint.MaxValue ||
+            if (GetRawInputDeviceInfo(device, RidiDeviceName, (StringBuilder?)null, ref characterCount) == uint.MaxValue ||
                 characterCount == 0)
             {
                 return _devicePaths[device] = string.Empty;

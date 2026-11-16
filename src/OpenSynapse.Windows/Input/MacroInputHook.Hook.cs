@@ -190,7 +190,7 @@ public sealed partial class MacroInputHook : IDisposable
             // Force the message queue into existence so Dispose can post WM_QUIT before the loop starts.
             PeekMessage(out _, 0, 0, 0, 0);
             _modifierBits = ReadModifierBits();
-            var razerDeviceButtons = new RazerDeviceButtonInput(HandleRazerDeviceButton);
+            var razerDeviceButtons = new RazerDeviceButtonInput(HandleRazerDeviceButton, _log);
             try
             {
                 razerDeviceButtons.Start();
