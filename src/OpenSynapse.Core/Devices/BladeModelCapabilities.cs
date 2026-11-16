@@ -202,6 +202,17 @@ public static partial class BladeModelCapabilities
             0x02C5 or 0x02C6 or 0x02C7 or 0x02E0 or 0x02E1;
 
     /// <summary>
+    /// True when the model publishes the selector and the panel reports the dual-mode
+    /// bit. Blade 18 (02C7) is the exception: its 0D:8F byte can report 0x01 without
+    /// the mini-LED bit, and the official deviceUI forces the selector on for it.
+    /// </summary>
+    public static bool SupportsNativeDisplayMode(
+        ushort productId,
+        BladeSkuHardwareConfiguration? sku) =>
+        SupportsNativeDisplayMode(productId) &&
+        (sku?.MiniLedResolution == true || productId == 0x02C7);
+
+    /// <summary>
     /// True only where the deviceUI publishes hasCpuBoostEnabled (028C, 029D, 02B6).
     /// The bit reads back on every model that shares the Power Mode Control mask, so a
     /// readable bit is not evidence of support.
