@@ -9,7 +9,6 @@ using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 using Windows.UI;
-
 namespace OpenSynapse.App.ViewModels;
 
 public sealed class ArgbLedViewModel : INotifyPropertyChanged
@@ -112,6 +111,7 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
         _specialLighting = specialLighting;
         _getProfile = getActiveProfile;
         _saveProfile = saveProfileAsync;
+        Body = RazerAccessoryBodyViewModel.Create(connection, diagnostic);
         _argbLedCount = _argbLedCounts[0];
     }
 
@@ -298,6 +298,7 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
                 ? AppStrings.Text("RazerHeadsetReadFailed")
                 : string.Empty;
             await LoadArgbAsync(cancellationToken);
+            if (Body is { } body) await body.LoadAsync(cancellationToken);
             await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

@@ -430,8 +430,8 @@ Speaker controls cover EQ presets, bands, bass, input source and lighting where 
 | Razer Leviathan V2 ECR | `1532:05A3` | Audio page (Protocol 25, 64-byte feature reports) |
 | Razer Leviathan V2 X | `1532:054A` | Soundbar audio and lighting; physical validation still pending |
 | Razer Mako | `1532:05AB` | Audio page (`rzDeviceJolie`); Mako X remains `1532:05AD` |
-| Razer Nommo Chroma | `1532:0517` | Chroma lighting |
-| Razer Nommo Pro | `1532:0518` | Chroma lighting |
+| Razer Nommo Chroma | `1532:0517` | Audio page: volume/mute/bass/EQ/input-output/microphone; class 0x08 commands, not hardware-verified |
+| Razer Nommo Pro | `1532:0518` | Audio page: volume/mute/bass/EQ/input-output/microphone; class 0x08 commands, not hardware-verified |
 | Razer Nommo V2 | `1532:055C` | Audio page |
 | Razer Nommo V2 Pro | `1532:055A` | Audio page |
 | Razer Nommo V2 X | `1532:055E` | Audio page |
@@ -519,8 +519,8 @@ Accessory controls cover lighting, docks, stands, fan control and presence signa
 | Razer Core | `1532:0215` | — |
 | Razer Core X Chroma | `1532:0F1A` | — |
 | Razer Core X V2 | `1532:0F51` | Lighting only |
-| Razer Freyja | `1532:0F45` | Lighting only (`LegacyPerLed`: 0F:80 regions, 03:83/03:03 brightness, 0F:82/0F:02 effects) |
-| Razer Hanbo AIO 240MM | `1532:0F35` | Lighting only |
+| Razer Freyja | `1532:0F45` | Lighting + Sensa HD haptics page: enable, intensity, gain, perception/transient/signal gain |
+| Razer Hanbo AIO 240MM | `1532:0F35` | Lighting + AIO page: fan/pump RPM, duty, quiet/balanced/performance modes, temperatures; curve controls are not exposed |
 | Razer Handheld Dock Chroma | `1532:0F5C` | Lighting only |
 | Razer Head Cushion Chroma | `1532:0F36` | Lighting only |
 | Razer Key Light Chroma | `1532:030C` | Lighting only |
@@ -532,16 +532,16 @@ Accessory controls cover lighting, docks, stands, fan control and presence signa
 | Razer Mouse Bungee V3 Chroma | `1532:0F1D` | — |
 | Razer Mouse Dock | `1532:007E` | — |
 | Razer Mouse Dock Pro | `1532:00A4` | — |
-| Razer Mouse Dock V2 Pro | `1532:00F1` | Lighting only |
-| Razer PWM PC Fan Controller | `1532:0F3C` | Lighting only |
+| Razer Mouse Dock V2 Pro | `1532:00F1` | Lighting + dock page: lighting sync and charging effect; writes appear only after the read succeeds |
+| Razer PWM PC Fan Controller | `1532:0F3C` | Lighting + fan-controller page: 7 channels with RPM write and read-back |
 | Razer Soma Chroma | `1532:0F64` | Lighting only |
-| Razer Soma Sensa HD Haptics | `1532:0F6D` | Lighting only (`LegacyPerLed`: 0F:80 regions, 03:83/03:03 brightness, 0F:82/0F:02 effects) |
+| Razer Soma Sensa HD Haptics | `1532:0F6D` | Lighting + Sensa HD haptics page: enable, intensity, gain, perception/transient/signal gain |
 | Razer Thunderbolt 4 Dock Chroma | `1532:0F21` | — |
 | Razer Thunderbolt 5 Dock Chroma | `1532:0F52` | Lighting only |
 | Razer Tomahawk ATX | `1532:0F17` | — |
 | Razer Tomahawk Gaming Desktop | `1532:0F27` | Lighting only |
 | Razer USB Sound Card | `1532:0529` | Audio controller page; sound-card controls |
-| Razer Wireless Control Pod | `1532:0566` | Lighting only |
+| Razer Wireless Control Pod | `1532:0566` | Lighting + audio page: volume/mute/input-output/microphone; OLED brightness/roller direction/low-battery warning; remaining OLED enums are not exposed |
 
 ## Network lighting
 

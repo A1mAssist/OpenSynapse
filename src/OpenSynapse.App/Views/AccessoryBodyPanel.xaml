@@ -1,0 +1,225 @@
+<UserControl
+    x:Class="OpenSynapse.App.Views.AccessoryBodyPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App">
+  <StackPanel x:Name="Root" Spacing="16">
+    <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
+
+    <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding SpeakerVisibility}">
+      <StackPanel Spacing="12" DataContext="{Binding Speaker}">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{Binding Title}" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+            <TextBlock local:Localized.Uid="AccessoryAudioDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+          </StackPanel>
+          <Button Grid.Column="1" local:Localized.Uid="CoolingPadRefreshButton" Click="SpeakerRefreshClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+        </Grid>
+        <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
+        <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+
+        <StackPanel Spacing="4">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <TextBlock local:Localized.Uid="AccessoryAudioVolume" Style="{StaticResource MetricLabelStyle}" />
+            <TextBlock Grid.Column="1" Text="{Binding Volume}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+          </Grid>
+          <Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding Volume, Mode=TwoWay}" IsEnabled="{Binding CanEditVolume}" />
+        </StackPanel>
+
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+          <TextBlock local:Localized.Uid="AccessoryAudioMute" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
+          <ToggleSwitch Grid.Column="1" IsOn="{Binding IsMuted, Mode=TwoWay}" IsEnabled="{Binding CanEditMute}" OnContent="" OffContent="" MinWidth="44" />
+        </Grid>
+
+        <StackPanel Spacing="4" Visibility="{Binding BassVisibility}">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <TextBlock local:Localized.Uid="AccessoryAudioBass" Style="{StaticResource MetricLabelStyle}" />
+            <TextBlock Grid.Column="1" Text="{Binding Bass}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+          </Grid>
+          <Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding Bass, Mode=TwoWay}" IsEnabled="{Binding CanEditBass}" />
+        </StackPanel>
+
+        <StackPanel Spacing="4" Visibility="{Binding EqVisibility}">
+          <TextBlock local:Localized.Uid="AccessoryAudioEqPreset" Style="{StaticResource MetricLabelStyle}" />
+          <ComboBox ItemsSource="{Binding EqPresetOptions}" SelectedIndex="{Binding EqPresetIndex, Mode=TwoWay}"
+                    IsEnabled="{Binding CanEditEq}" HorizontalAlignment="Stretch" />
+        </StackPanel>
+
+        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+          <StackPanel Spacing="4">
+            <TextBlock local:Localized.Uid="AccessoryAudioInput" Style="{StaticResource MetricLabelStyle}" />
+            <ComboBox ItemsSource="{Binding InputSourceOptions}" SelectedIndex="{Binding InputSourceIndex, Mode=TwoWay}"
+                      IsEnabled="{Binding CanEditInput}" HorizontalAlignment="Stretch" />
+          </StackPanel>
+          <StackPanel Grid.Column="1" Spacing="4">
+            <TextBlock local:Localized.Uid="AccessoryAudioOutput" Style="{StaticResource MetricLabelStyle}" />
+            <ComboBox ItemsSource="{Binding OutputSourceOptions}" SelectedIndex="{Binding OutputSourceIndex, Mode=TwoWay}"
+                      IsEnabled="{Binding CanEditOutput}" HorizontalAlignment="Stretch" />
+          </StackPanel>
+        </Grid>
+
+        <StackPanel Spacing="8" Visibility="{Binding MicrophoneVisibility}">
+          <StackPanel Spacing="4">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+              <TextBlock local:Localized.Uid="AccessoryAudioMicVolume" Style="{StaticResource MetricLabelStyle}" />
+              <TextBlock Grid.Column="1" Text="{Binding MicVolume}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+            </Grid>
+            <Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding MicVolume, Mode=TwoWay}" IsEnabled="{Binding CanEditMicVolume}" />
+          </StackPanel>
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+            <TextBlock local:Localized.Uid="AccessoryAudioMicMute" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
+            <ToggleSwitch Grid.Column="1" IsOn="{Binding IsMicMuted, Mode=TwoWay}" IsEnabled="{Binding CanEditMicMute}" OnContent="" OffContent="" MinWidth="44" />
+          </Grid>
+        </StackPanel>
+
+        <Button local:Localized.Uid="AccessoryApplyButton" Click="SpeakerApplyClick" IsEnabled="{Binding CanEdit}"
+                Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
+      </StackPanel>
+    </Border>
+
+    <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding DockVisibility}">
+      <StackPanel Spacing="12" DataContext="{Binding Dock}">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{Binding Title}" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+            <TextBlock local:Localized.Uid="AccessoryDockDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+          </StackPanel>
+          <Button Grid.Column="1" local:Localized.Uid="CoolingPadRefreshButton" Click="DockRefreshClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+        </Grid>
+        <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
+        <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+          <TextBlock local:Localized.Uid="AccessoryDockSync" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
+          <ToggleSwitch Grid.Column="1" IsOn="{Binding DockSync, Mode=TwoWay}" IsEnabled="{Binding CanEditDockSync}" OnContent="" OffContent="" MinWidth="44" />
+        </Grid>
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+          <TextBlock local:Localized.Uid="AccessoryDockChargingEffect" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
+          <ToggleSwitch Grid.Column="1" IsOn="{Binding ChargingEffect, Mode=TwoWay}" IsEnabled="{Binding CanEditChargingEffect}" OnContent="" OffContent="" MinWidth="44" />
+        </Grid>
+        <Button local:Localized.Uid="AccessoryApplyButton" Click="DockApplyClick" IsEnabled="{Binding CanEdit}"
+                Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
+      </StackPanel>
+    </Border>
+
+    <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ControlPodVisibility}">
+      <StackPanel Spacing="12" DataContext="{Binding ControlPod}">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{Binding Title}" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+            <TextBlock local:Localized.Uid="AccessoryControlPodDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+          </StackPanel>
+          <Button Grid.Column="1" local:Localized.Uid="CoolingPadRefreshButton" Click="ControlPodRefreshClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+        </Grid>
+        <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
+        <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+        <StackPanel Spacing="4">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <TextBlock local:Localized.Uid="AccessoryControlPodBrightness" Style="{StaticResource MetricLabelStyle}" />
+            <TextBlock Grid.Column="1" Text="{Binding Brightness}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+          </Grid>
+          <Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding Brightness, Mode=TwoWay}" IsEnabled="{Binding CanEditBrightness}" />
+        </StackPanel>
+        <StackPanel Spacing="4">
+          <TextBlock local:Localized.Uid="AccessoryControlPodDirection" Style="{StaticResource MetricLabelStyle}" />
+          <ComboBox ItemsSource="{Binding DirectionOptions}" SelectedIndex="{Binding RollerDirectionIndex, Mode=TwoWay}"
+                    IsEnabled="{Binding CanEditDirection}" HorizontalAlignment="Stretch" />
+        </StackPanel>
+        <StackPanel Spacing="4">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <TextBlock local:Localized.Uid="AccessoryControlPodLowBattery" Style="{StaticResource MetricLabelStyle}" />
+            <TextBlock Grid.Column="1" Text="{Binding LowBatteryPercent}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+          </Grid>
+          <Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding LowBatteryPercent, Mode=TwoWay}" IsEnabled="{Binding CanEditLowBattery}" />
+        </StackPanel>
+        <Button local:Localized.Uid="AccessoryApplyButton" Click="ControlPodApplyClick" IsEnabled="{Binding CanEdit}"
+                Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
+      </StackPanel>
+    </Border>
+
+    <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding HapticsVisibility}">
+      <StackPanel Spacing="12">
+        <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="AccessoryHapticsTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+          <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+            <TextBlock local:Localized.Uid="AccessoryHapticsEnable" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
+            <ToggleSwitch IsOn="{Binding Haptics.Enabled, Mode=TwoWay}" IsEnabled="{Binding Haptics.CanEdit}" OnContent="" OffContent="" MinWidth="44" />
+          </StackPanel>
+          <TextBlock Grid.Column="1" Text="{Binding Haptics.StatusText}" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" TextWrapping="Wrap" />
+        </Grid>
+        <StackPanel Spacing="4">
+          <TextBlock local:Localized.Uid="AccessoryHapticsIntensity" Style="{StaticResource MetricLabelStyle}" />
+          <Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding Haptics.Intensity, Mode=TwoWay}" IsEnabled="{Binding Haptics.CanEdit}" />
+        </StackPanel>
+        <StackPanel Spacing="4">
+          <TextBlock local:Localized.Uid="AccessoryHapticsGain" Style="{StaticResource MetricLabelStyle}" />
+          <Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding Haptics.Gain, Mode=TwoWay}" IsEnabled="{Binding Haptics.CanEdit}" />
+        </StackPanel>
+        <StackPanel Spacing="4">
+          <TextBlock local:Localized.Uid="AccessoryHapticsPerception" Style="{StaticResource MetricLabelStyle}" />
+          <Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding Haptics.Perception, Mode=TwoWay}" IsEnabled="{Binding Haptics.CanEdit}" />
+        </StackPanel>
+        <StackPanel Spacing="4">
+          <TextBlock local:Localized.Uid="AccessoryHapticsTransient" Style="{StaticResource MetricLabelStyle}" />
+          <Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding Haptics.Transient, Mode=TwoWay}" IsEnabled="{Binding Haptics.CanEdit}" />
+        </StackPanel>
+        <StackPanel Spacing="4">
+          <TextBlock local:Localized.Uid="AccessoryHapticsSignal" Style="{StaticResource MetricLabelStyle}" />
+          <Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding Haptics.SignalGain, Mode=TwoWay}" IsEnabled="{Binding Haptics.CanEdit}" />
+        </StackPanel>
+        <Button local:Localized.Uid="AccessoryApplyButton" Click="HapticsApplyClick" IsEnabled="{Binding Haptics.CanEdit}"
+                Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
+      </StackPanel>
+    </Border>
+
+    <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ThermalVisibility}">
+      <StackPanel Spacing="12">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{Binding Thermal.Name}" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+            <TextBlock local:Localized.Uid="CoolingPadDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+          </StackPanel>
+          <Button Grid.Column="1" local:Localized.Uid="CoolingPadRefreshButton" Click="ThermalRefreshClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+        </Grid>
+
+        <Grid ColumnDefinitions="*,*" ColumnSpacing="16" Visibility="{Binding Thermal.ShowTemperatures}">
+          <StackPanel Spacing="4">
+            <TextBlock Text="CPU" Style="{StaticResource MetricLabelStyle}" />
+            <TextBlock Text="{Binding Thermal.CpuTemperatureText}" Style="{StaticResource MetricValueStyle}" />
+          </StackPanel>
+          <StackPanel Grid.Column="1" Spacing="4">
+            <TextBlock Text="GPU" Style="{StaticResource MetricLabelStyle}" />
+            <TextBlock Text="{Binding Thermal.GpuTemperatureText}" Style="{StaticResource MetricValueStyle}" />
+          </StackPanel>
+        </Grid>
+
+        <ComboBox ItemsSource="{Binding Thermal.ModeOptions}" SelectedIndex="{Binding Thermal.SelectedModeIndex, Mode=TwoWay}"
+                  Visibility="{Binding Thermal.ShowModes}" HorizontalAlignment="Stretch" />
+
+        <ItemsControl ItemsSource="{Binding Thermal.Channels}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Border Style="{StaticResource CardStyle}" Padding="12" Margin="0,0,0,8">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="{Binding Name}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                      <TextBlock Text="{Binding CurrentRpmText}" FontFamily="Cascadia Mono,Consolas" />
+                      <TextBlock Text="{Binding ModeText}" Foreground="{StaticResource MutedBrush}" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <NumberBox Value="{Binding Target, Mode=TwoWay}" Minimum="{Binding Minimum}" Maximum="{Binding Maximum}"
+                               SmallChange="{Binding Step}" SpinButtonPlacementMode="Compact" Width="150" IsEnabled="{Binding CanApply}" />
+                    <Button local:Localized.Uid="CoolingPadApplyButton" Tag="{Binding}" Click="ThermalChannelApplyClick"
+                            IsEnabled="{Binding CanApply}" Style="{StaticResource RazerHidSaveButtonStyle}" VerticalAlignment="Center" />
+                  </StackPanel>
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

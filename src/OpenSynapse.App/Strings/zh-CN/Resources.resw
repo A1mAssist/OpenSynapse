@@ -3435,6 +3435,40 @@
   <data name="CoolingPadModePerformance/Text" xml:space="preserve"><value>性能</value></data>
   <data name="CoolingPadModeOff/Text" xml:space="preserve"><value>关闭</value></data>
   <data name="CoolingPadModeUnknown/Text" xml:space="preserve"><value>模式 {0}</value></data>
+  <data name="AccessoryHapticsTitle/Text" xml:space="preserve"><value>触觉</value></data>
+  <data name="AccessoryHapticsEnable/Text" xml:space="preserve"><value>启用</value></data>
+  <data name="AccessoryHapticsIntensity/Text" xml:space="preserve"><value>强度</value></data>
+  <data name="AccessoryHapticsGain/Text" xml:space="preserve"><value>增益</value></data>
+  <data name="AccessoryHapticsPerception/Text" xml:space="preserve"><value>感知音量</value></data>
+  <data name="AccessoryHapticsTransient/Text" xml:space="preserve"><value>瞬态音量</value></data>
+  <data name="AccessoryHapticsSignal/Text" xml:space="preserve"><value>信号增益</value></data>
+  <data name="AccessoryApplyButton/Content" xml:space="preserve"><value>应用</value></data>
+  <data name="AccessoryAudioDescription/Text" xml:space="preserve"><value>音量、麦克风与音效控制；读取失败的项会保持禁用。</value></data>
+  <data name="AccessoryAudioVolume/Text" xml:space="preserve"><value>主音量</value></data>
+  <data name="AccessoryAudioMute/Text" xml:space="preserve"><value>静音</value></data>
+  <data name="AccessoryAudioBass/Text" xml:space="preserve"><value>低音</value></data>
+  <data name="AccessoryAudioEqPreset/Text" xml:space="preserve"><value>EQ 预设</value></data>
+  <data name="AccessoryAudioInput/Text" xml:space="preserve"><value>输入源</value></data>
+  <data name="AccessoryAudioOutput/Text" xml:space="preserve"><value>输出源</value></data>
+  <data name="AccessoryAudioMicVolume/Text" xml:space="preserve"><value>麦克风音量</value></data>
+  <data name="AccessoryAudioMicMute/Text" xml:space="preserve"><value>麦克风静音</value></data>
+  <data name="AccessoryAudioEqDefault" xml:space="preserve"><value>默认</value></data>
+  <data name="AccessoryAudioEqGame" xml:space="preserve"><value>游戏</value></data>
+  <data name="AccessoryAudioEqMusic" xml:space="preserve"><value>音乐</value></data>
+  <data name="AccessoryAudioEqMovie" xml:space="preserve"><value>电影</value></data>
+  <data name="AccessoryAudioEqTreble" xml:space="preserve"><value>高音</value></data>
+  <data name="AccessoryAudioInputNone" xml:space="preserve"><value>无</value></data>
+  <data name="AccessoryAudioOutputSpeaker" xml:space="preserve"><value>音箱与低音炮</value></data>
+  <data name="AccessoryAudioOutputHeadset" xml:space="preserve"><value>耳机</value></data>
+  <data name="AccessoryDockDescription/Text" xml:space="preserve"><value>底座同步与充电灯效；读不到的命令不会显示为可写。</value></data>
+  <data name="AccessoryDockSync/Text" xml:space="preserve"><value>底座灯光同步</value></data>
+  <data name="AccessoryDockChargingEffect/Text" xml:space="preserve"><value>充电灯效</value></data>
+  <data name="AccessoryControlPodDescription/Text" xml:space="preserve"><value>OLED 亮度、旋钮方向与低电量提醒；其余 OLED 枚举仍保留给原生控制。</value></data>
+  <data name="AccessoryControlPodBrightness/Text" xml:space="preserve"><value>OLED 亮度</value></data>
+  <data name="AccessoryControlPodDirection/Text" xml:space="preserve"><value>旋钮方向</value></data>
+  <data name="AccessoryControlPodLowBattery/Text" xml:space="preserve"><value>低电量提醒 (%)</value></data>
+  <data name="AccessoryControlPodDirectionNormal" xml:space="preserve"><value>标准</value></data>
+  <data name="AccessoryControlPodDirectionInverted" xml:space="preserve"><value>反向</value></data>
   <data name="AwBleHeadsetBatteryLabel/Text" xml:space="preserve"><value>电量</value></data>
   <data name="AwBleHeadsetDescription/Text" xml:space="preserve"><value>电量与设备信息只读；下方控件仅在设备报告支持时显示。</value></data>
   <data name="AwBleHeadsetControlsTitle/Text" xml:space="preserve"><value>设备控制</value></data>
