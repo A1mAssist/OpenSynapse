@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
+using OpenSynapse.App.Runtime;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Lighting;
 using OpenSynapse.Windows.Devices;
@@ -133,6 +134,7 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(CanPairNewDevice));
         // Card art comes from the same product-image cache the lighting studio fills.
         ApplyDeviceImages();
+        MemoryTrace.Snapshot("devices-refresh");
     }
 
     private void ApplyDeviceImages()
