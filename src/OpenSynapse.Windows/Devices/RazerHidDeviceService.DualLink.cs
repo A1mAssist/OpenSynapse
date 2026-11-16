@@ -118,7 +118,8 @@ public sealed partial class RazerHidDeviceService
         ushort productId,
         IReadOnlyList<string> devicePaths,
         string parentDeviceKey,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool allowDockLinker = false)
     {
         var definition = _catalog.Find(RazerHidDeviceDefinition.VendorId, productId);
         if (definition is null || definition.Category != DeviceCategory.Mouse)
@@ -132,13 +133,18 @@ public sealed partial class RazerHidDeviceService
             return null;
         }
 
-        // The native bundle selects productId/container/interface separately. Until
-        // that bridge is proved here, a parent battery reply cannot identify a child.
+        // The native bundle selects productId/container/interface separately. 00A4
+        // exposes the paired mouse over the dock's own linker collection, so probe
+        // that path when Windows does not enumerate a separate child HID.
         string? linkedPath = null;
+        var viaDockLinker = false;
         foreach (var devicePath in devicePaths)
         {
             if (!DeviceIdParser.TryParse(devicePath, out var vendorId, out var endpointProductId) ||
-                vendorId != RazerHidDeviceDefinition.VendorId || endpointProductId != productId)
+                vendorId != RazerHidDeviceDefinition.VendorId)
+                continue;
+            var isDockLinker = allowDockLinker && endpointProductId == MouseDockProProductId;
+            if (endpointProductId != productId && !isDockLinker)
                 continue;
             try
             {
@@ -149,6 +155,7 @@ public sealed partial class RazerHidDeviceService
                     throw new InvalidDataException("Linked battery response did not match the child request.");
                 _ = RazerHidMouseProtocol.ParseBatteryPercent(response);
                 linkedPath = devicePath;
+                viaDockLinker = isDockLinker;
                 break;
             }
             catch (Exception exception) when (exception is Win32Exception or IOException or
@@ -164,7 +171,7 @@ public sealed partial class RazerHidDeviceService
             return null;
         }
         WriteDiagnostic(productId,
-            $"dual-link child resolved path={RazerFeatureTransport.DescribeDevicePath(linkedPath)}");
+            $"dual-link child resolved path={RazerFeatureTransport.DescribeDevicePath(linkedPath)} viaDockLinker={viaDockLinker}");
 
         var linkedDefinition = definition.WithDisplayName(LinkedDisplayName(definition.DisplayName));
         // Only battery has answered on this path. Normal discovery can independently
@@ -213,7 +220,8 @@ public sealed partial class RazerHidDeviceService
                 ? await TryCreateHyperPollingConnectionAsync(
                     linkedProductId, resolvedPath, parentDeviceKey, cancellationToken).ConfigureAwait(false)
                 : await TryCreateLinkedConnectionAsync(
-                    linkedProductId, linkedPaths, parentDeviceKey, cancellationToken).ConfigureAwait(false);
+                    linkedProductId, linkedPaths, parentDeviceKey, cancellationToken,
+                    allowDockLinker: dockDefinition.ProductId == MouseDockProProductId).ConfigureAwait(false);
             if (linked is not null)
             {
                 results.Add(linked);
