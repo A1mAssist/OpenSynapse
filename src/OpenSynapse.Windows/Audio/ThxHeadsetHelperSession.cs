@@ -55,7 +55,7 @@ internal sealed class ThxHeadsetHelperSession
             };
             if (!accepted)
             {
-                return Fail("ThxOperationRejected");
+                return Fail($"ThxOperationRejected:{request.Operation}");
             }
 
             return new ThxAudioHelperResponse(

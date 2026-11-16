@@ -24,6 +24,32 @@ public sealed partial class DiagnosticsWorkspace
         {
             AddArchiveFile(archive, crashReport, Path.GetFileName(crashReport));
         }
+        var thxLogDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Razer",
+            "RazerAppEngine",
+            "User Data",
+            "Logs");
+        foreach (var thxLog in Directory.Exists(thxLogDirectory)
+            ? Directory.EnumerateFiles(thxLogDirectory, "Thx*.log")
+            : [])
+        {
+            AddArchiveFile(archive, thxLog, Path.Combine("thx", Path.GetFileName(thxLog)));
+        }
+        var thxV3LogDirectory = Path.Combine(thxLogDirectory, "ThxV3Native");
+        if (Directory.Exists(thxV3LogDirectory))
+        {
+            foreach (var thxLog in Directory.EnumerateFiles(
+                thxV3LogDirectory,
+                "*",
+                SearchOption.AllDirectories))
+            {
+                AddArchiveFile(
+                    archive,
+                    thxLog,
+                    Path.Combine("thx", Path.GetRelativePath(thxLogDirectory, thxLog)));
+            }
+        }
         var reportEntry = archive.CreateEntry("diagnostics.txt", CompressionLevel.Optimal);
         using var writer = new StreamWriter(reportEntry.Open(), new UTF8Encoding(false));
         writer.Write(CreateReport());
