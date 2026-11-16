@@ -455,6 +455,22 @@ public sealed partial class DevicesPage : UserControl
         }
     }
 
+    internal void Shutdown()
+    {
+        Microsoft.Win32.SystemEvents.PowerModeChanged -= SystemPowerModeChanged;
+        if (DataContext is not MainViewModel viewModel)
+        {
+            return;
+        }
+
+        UnhookDeviceBatterySources(viewModel);
+        if (_bladeFanTelemetryHooked)
+        {
+            _bladeFanTelemetryHooked = false;
+            viewModel.Blade.PropertyChanged -= BladeFanTelemetryChanged;
+        }
+    }
+
     internal void SyncBladeComboSelections()
     {
         if (DataContext is not MainViewModel viewModel || _syncingBladeCombos)

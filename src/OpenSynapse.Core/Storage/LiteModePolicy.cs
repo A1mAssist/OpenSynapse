@@ -9,4 +9,5 @@ public static class LiteModePolicy
     public static bool ShouldCreateBladeLighting(bool liteMode) => !liteMode;
     public static bool ShouldStartPerformanceSampling(bool liteMode) => !liteMode;
     public static bool ShouldStartChromaRest(bool liteMode) => !liteMode;
+    public static int PageCacheLimit(bool liteMode) => liteMode ? 1 : 2;
 }
