@@ -102,7 +102,23 @@ public sealed partial class RazerHidMappingViewModel
                 assignment = await _transport.GetAssignmentAsync(
                         row.ButtonId, Mode, cancellationToken)
                     .ConfigureAwait(true);
-                binding = new MacroSoftwareBinding
+                var previous = row.SoftwareMacroId is { } oldMacroId
+                    ? _localMacros.FirstOrDefault(candidate =>
+                        StringComparer.Ordinal.Equals(candidate.Id, oldMacroId))?.SoftwareBinding
+                    : null;
+                binding = previous is not null &&
+                    previous.Layer == Mode &&
+                    previous.ButtonId == row.ButtonId &&
+                    IsAssignmentWrittenByBinding(row, assignment)
+                    ? new MacroSoftwareBinding
+                    {
+                        ProductId = _productId,
+                        Layer = Mode,
+                        ButtonId = row.ButtonId,
+                        OriginalFunctionId = previous.OriginalFunctionId,
+                        OriginalData = previous.OriginalData.ToList(),
+                    }
+                    : new MacroSoftwareBinding
                 {
                     ProductId = _productId,
                     Layer = Mode,
@@ -174,6 +190,19 @@ public sealed partial class RazerHidMappingViewModel
         RazerSoftwareMacroAssignmentPolicy.NeedsOff(input)
             ? (RazerHidMappingFunctions.Off, [])
             : (RazerHidMappingFunctions.ButtonCode, [buttonId]);
+
+    private bool IsAssignmentWrittenByBinding(
+        RazerHidMappingRowViewModel row,
+        RazerMappingAssignment assignment)
+    {
+        if (_softwareTriggerResolver?.Invoke(row.ButtonId) is not { } input)
+        {
+            return false;
+        }
+
+        var (functionId, data) = BindingAssignment(input, row.ButtonId);
+        return assignment.FunctionId == functionId && assignment.Data.SequenceEqual(data);
+    }
 
     private async Task RestoreBindingAssignmentAsync(
         byte buttonId,

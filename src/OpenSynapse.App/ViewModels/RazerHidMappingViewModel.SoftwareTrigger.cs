@@ -41,9 +41,29 @@ public sealed partial class RazerHidMappingViewModel
 
     private MacroSoftwareBinding? CreateSoftwareBinding(
         RazerHidMappingRowViewModel row,
-        IReadOnlyList<AssignmentBackup> backups)
+        IReadOnlyList<AssignmentBackup> backups,
+        IReadOnlyList<ClearedSoftwareTrigger> clears)
     {
         var backup = backups.FirstOrDefault(item => ReferenceEquals(item.Row, row));
+        var previous = clears
+            .Select(item => item.SoftwareBinding)
+            .FirstOrDefault(binding => binding is not null &&
+                binding.Layer == Mode &&
+                binding.ButtonId == row.ButtonId);
+        if (previous is not null &&
+            (backup is null || IsAssignmentWrittenByBinding(row, backup.Assignment)))
+        {
+            // The old macro left this key Off; its binding holds the true original.
+            return new MacroSoftwareBinding
+            {
+                ProductId = _productId,
+                Layer = Mode,
+                ButtonId = row.ButtonId,
+                OriginalFunctionId = previous.OriginalFunctionId,
+                OriginalData = previous.OriginalData.ToList(),
+            };
+        }
+
         return backup is null
             ? null
             : new MacroSoftwareBinding
@@ -71,6 +91,7 @@ public sealed partial class RazerHidMappingViewModel
     private async Task WriteSoftwareModeRowAsync(
         RazerHidMappingRowViewModel row,
         IReadOnlyList<AssignmentBackup> backups,
+        IReadOnlyList<ClearedSoftwareTrigger> clears,
         CancellationToken cancellationToken)
     {
         var macro = ResolveSoftwareMacro(row)!;
@@ -82,7 +103,7 @@ public sealed partial class RazerHidMappingViewModel
                 row.ExecutionMode,
                 row.EffectiveExecutionRepeatCount,
                 LayerIndex == 1,
-                CreateSoftwareBinding(row, backups),
+                CreateSoftwareBinding(row, backups, clears),
                 cancellationToken)
             .ConfigureAwait(true);
         if (error is not null)

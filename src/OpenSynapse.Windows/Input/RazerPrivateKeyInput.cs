@@ -251,6 +251,14 @@ internal sealed class RazerPrivateKeyInput : IDisposable
             // HID collections can disappear on wireless reconnects. Keep the
             // other readers alive; the hook is detached and reattached later.
         }
+        finally
+        {
+            // A vanished stream never sends the release report.
+            foreach (var key in keys.Order())
+            {
+                Publish(device, key, isDown: false);
+            }
+        }
     }
 
     private void Publish(

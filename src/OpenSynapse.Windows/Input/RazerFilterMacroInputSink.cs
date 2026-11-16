@@ -225,7 +225,11 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
         MacroInput input,
         CancellationToken cancellationToken)
     {
-        if (input.WheelHorizontal || input.WheelDelta == 0)
+        // Non-multiple deltas must reach the fallback unchanged; splitting them
+        // would round ±60 up to ±120 and truncate ±180.
+        if (input.WheelHorizontal ||
+            input.WheelDelta == 0 ||
+            Math.Abs(input.WheelDelta) % MouseWheelStep != 0)
         {
             return false;
         }
