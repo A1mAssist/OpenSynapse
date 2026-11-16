@@ -82,7 +82,9 @@ public sealed partial class MainWindow
     private StudioHeadsetOutputRouter? CreateStudioHeadsetRouter(StudioInputSampler sampler) =>
         new(
             () => _viewModel.Accessories.SelectedHeadsetAudioConnection,
-            (rows, columns) => sampler.Sample(rows, columns));
+            (rows, columns) => sampler.Sample(rows, columns),
+            () => _viewModel.Accessories.SelectedHeadsetAudio?.StopSoftwareEffectForExternalAsync() ??
+                Task.CompletedTask);
 
     private ProfilesPage CreateProfilesPage()
     {

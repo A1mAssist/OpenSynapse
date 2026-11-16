@@ -12,6 +12,7 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
 {
     private readonly Func<RazerHeadsetAudioConnection?> _connection;
     private readonly Func<int, int, StudioEffectInput>? _inputProvider;
+    private readonly Func<Task>? _beforeTakeOver;
     private readonly Action<string>? _diagnostic;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly object _updateGate = new();
@@ -29,10 +30,12 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
     public StudioHeadsetOutputRouter(
         Func<RazerHeadsetAudioConnection?> connection,
         Func<int, int, StudioEffectInput>? inputProvider = null,
+        Func<Task>? beforeTakeOver = null,
         Action<string>? diagnostic = null)
     {
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));
         _inputProvider = inputProvider;
+        _beforeTakeOver = beforeTakeOver;
         _diagnostic = diagnostic;
     }
 
@@ -72,12 +75,19 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
                     keepOpen: true);
             }
 
-            if (!_prepared && _service is not null)
+            if (_service is not null)
             {
                 try
                 {
-                    await _service.SetCustomFrameEffectAsync(cancellationToken).ConfigureAwait(false);
-                    _prepared = true;
+                    if (_beforeTakeOver is not null)
+                    {
+                        await _beforeTakeOver().ConfigureAwait(false);
+                    }
+                    if (!_prepared)
+                    {
+                        await _service.SetCustomFrameEffectAsync(cancellationToken).ConfigureAwait(false);
+                        _prepared = true;
+                    }
                 }
                 catch (Exception exception) when (IsWriteFailure(exception))
                 {
