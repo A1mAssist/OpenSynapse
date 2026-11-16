@@ -16,7 +16,7 @@ internal static class DeviceCardImage
         string path,
         CancellationToken cancellationToken)
     {
-        var croppedPath = Path.ChangeExtension(path, ".card.png");
+        var croppedPath = Path.ChangeExtension(path, ".card-256.png");
         if (File.Exists(croppedPath))
         {
             return croppedPath;
@@ -34,13 +34,22 @@ internal static class DeviceCardImage
                 return path;
             }
 
+            var scale = Math.Min(1.0, 256.0 / width);
+            var scaledWidth = Math.Max(1, (int)Math.Round(width * scale));
+            var scaledHeight = Math.Max(1, (int)Math.Round(height * scale));
             var data = await decoder.GetPixelDataAsync(
                 BitmapPixelFormat.Bgra8,
                 BitmapAlphaMode.Straight,
-                new BitmapTransform(),
+                new BitmapTransform
+                {
+                    ScaledWidth = (uint)scaledWidth,
+                    ScaledHeight = (uint)scaledHeight,
+                },
                 ExifOrientationMode.IgnoreExifOrientation,
                 ColorManagementMode.DoNotColorManage);
             var pixels = data.DetachPixelData();
+            width = scaledWidth;
+            height = scaledHeight;
             if (!TryGetContentBounds(pixels, width, height, out var bounds))
             {
                 return path;

@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
+using OpenSynapse.App.Runtime;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Lighting;
 using Windows.Foundation;
@@ -65,10 +66,16 @@ public sealed partial class RazerMappingView : UserControl
         var collapse = MappingBody.Visibility == Visibility.Visible;
         MappingBody.Visibility = collapse ? Visibility.Collapsed : Visibility.Visible;
         CollapseButton.Content = AppStrings.Text(collapse ? "RazerMappingExpand" : "RazerMappingCollapse");
-        if (!collapse)
+        if (collapse)
         {
+            Mapping?.ReleaseVisual();
+        }
+        else
+        {
+            Mapping?.StartVisualLoad();
             RequestConnectors();
         }
+        MemoryTrace.Snapshot(collapse ? "mapping-collapse" : "mapping-expand");
     }
 
     private void CalloutClick(object sender, RoutedEventArgs e)
@@ -90,18 +97,25 @@ public sealed partial class RazerMappingView : UserControl
 
     private void MappingDataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
     {
+        var previous = _mapping;
         BindRows();
+        if (!ReferenceEquals(previous, _mapping))
+        {
+            previous?.ReleaseVisual();
+        }
         RequestConnectors();
     }
 
     private void MappingLoaded(object sender, RoutedEventArgs e)
     {
+        Mapping?.StartVisualLoad();
         BindRows();
         RequestConnectors();
     }
 
     private void MappingUnloaded(object sender, RoutedEventArgs e)
     {
+        Mapping?.ReleaseVisual();
         UnbindRows();
         ConnectorCanvas.Children.Clear();
     }

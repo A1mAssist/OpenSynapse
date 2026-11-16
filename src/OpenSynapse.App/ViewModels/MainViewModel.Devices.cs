@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using OpenSynapse.App.Runtime;
 using OpenSynapse.Core.Devices;
@@ -10,8 +11,10 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
+    private const int DeviceCardDecodeWidth = 256;
     private readonly Dictionary<string, string> _deviceSerials = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<ushort, string> _deviceImagePaths = new();
+    private readonly Dictionary<ushort, ImageSource> _deviceImageCache = new();
     private readonly ConcurrentDictionary<ushort, bool> _deviceImageRequests = new();
     private IReadOnlyList<ConnectedDeviceRowViewModel>? _connectedDevicesCache;
     private StudioDeviceVisualLoader? _deviceImages;
@@ -147,9 +150,16 @@ public sealed partial class MainViewModel
                 continue;
             }
 
-            if (_deviceImagePaths.TryGetValue(productId, out var path))
+            if (_deviceImageCache.TryGetValue(productId, out var cached))
             {
-                row.SetProductImage(new BitmapImage(new Uri(path)));
+                row.SetProductImage(cached);
+            }
+            else if (_deviceImagePaths.TryGetValue(productId, out var path))
+            {
+                var image = CreateDeviceCardImage(path);
+                _deviceImageCache[productId] = image;
+                MemoryTrace.DeviceImageCacheCount = _deviceImageCache.Count;
+                row.SetProductImage(image);
             }
             else if (_deviceImageRequests.TryAdd(productId, true))
             {
@@ -181,9 +191,12 @@ public sealed partial class MainViewModel
             _dispatcher?.TryEnqueue(() =>
             {
                 _deviceImagePaths[productId] = path;
+                var image = CreateDeviceCardImage(path);
+                _deviceImageCache[productId] = image;
+                MemoryTrace.DeviceImageCacheCount = _deviceImageCache.Count;
                 foreach (var row in ConnectedDevices.Where(row => row.ProductId == productId))
                 {
-                    row.SetProductImage(new BitmapImage(new Uri(path)));
+                    row.SetProductImage(image);
                 }
             });
         }
@@ -199,6 +212,14 @@ public sealed partial class MainViewModel
         {
             _deviceImageRequests.TryRemove(productId, out _);
         }
+    }
+
+    // DecodePixelWidth must be set before UriSource or the decoder ignores it.
+    private static ImageSource CreateDeviceCardImage(string path)
+    {
+        var image = new BitmapImage { DecodePixelWidth = DeviceCardDecodeWidth };
+        image.UriSource = new Uri(path);
+        return image;
     }
 
     private void RefreshDeviceSelectorItems()

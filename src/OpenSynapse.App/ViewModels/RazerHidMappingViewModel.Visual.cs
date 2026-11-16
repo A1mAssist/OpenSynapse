@@ -1,8 +1,12 @@
 namespace OpenSynapse.App.ViewModels;
 
+using OpenSynapse.App.Runtime;
+
 public sealed partial class RazerHidMappingViewModel
 {
-    private void StartVisualLoad()
+    private bool _visualCounted;
+
+    internal void StartVisualLoad()
     {
         if (_visualLoadStarted || _productId == 0)
         {
@@ -11,6 +15,27 @@ public sealed partial class RazerHidMappingViewModel
 
         _visualLoadStarted = true;
         _ = LoadVisualAsync();
+    }
+
+    internal void ReleaseVisual()
+    {
+        if (_visualCounted)
+        {
+            _visualCounted = false;
+            MemoryTrace.MappingVisualReleased();
+        }
+
+        _layout = null;
+        _keyboardLayout = null;
+        LayoutImage = null;
+        _visualLoadStarted = false;
+        OnPropertyChanged(nameof(Layout));
+        OnPropertyChanged(nameof(StageVisibility));
+        OnPropertyChanged(nameof(TableVisibility));
+        OnPropertyChanged(nameof(KeyboardLayout));
+        OnPropertyChanged(nameof(KeyboardStageVisibility));
+        OnPropertyChanged(nameof(KeyboardWidth));
+        OnPropertyChanged(nameof(KeyboardHeight));
     }
 
     private async Task LoadVisualAsync()
@@ -34,6 +59,7 @@ public sealed partial class RazerHidMappingViewModel
                     OnPropertyChanged(nameof(TableVisibility));
                     RazerHidMappingRowViewModel.ApplyButtonNames(Rows, mouse.ButtonNames, _productId);
                     PopulateStageRows();
+                    MarkVisualLoaded();
                 }
             }
 
@@ -45,6 +71,7 @@ public sealed partial class RazerHidMappingViewModel
                 OnPropertyChanged(nameof(KeyboardWidth));
                 OnPropertyChanged(nameof(KeyboardHeight));
                 OnPropertyChanged(nameof(TableVisibility));
+                MarkVisualLoaded();
             }
 
             if (!string.IsNullOrWhiteSpace(visual.Error))
@@ -56,5 +83,16 @@ public sealed partial class RazerHidMappingViewModel
         {
             _log?.Invoke($"mapping visual failed: {exception.Message}");
         }
+    }
+
+    private void MarkVisualLoaded()
+    {
+        if (_visualCounted)
+        {
+            return;
+        }
+
+        _visualCounted = true;
+        MemoryTrace.MappingVisualLoaded();
     }
 }
