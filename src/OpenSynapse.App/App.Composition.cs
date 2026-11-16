@@ -257,6 +257,7 @@ public partial class App
     private void RegisterMainWindow(MainWindow window, MainViewModel viewModel)
     {
         _window = window;
+        MemoryTrace.Start(_diagnosticLog);
         window.Closed += async (_, _) => await CloseApplicationAsync(window, viewModel);
     }
 }
