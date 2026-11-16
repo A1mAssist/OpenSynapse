@@ -20,12 +20,31 @@ public sealed partial class RazerHeadsetAudioViewModel
         {
             OperationStatusText = AppStrings.Text("RazerHeadsetThxDownloading");
             _thxStatus = await install();
+            _diagnostic?.Invoke(
+                $"thx install availability={_thxStatus.Availability} " +
+                $"error={_thxStatus.ErrorCode ?? "-"} reboot={_thxStatus.RebootRequired}");
             ErrorText = _thxStatus.RebootRequired
                 ? AppStrings.Text("RazerHeadsetThxRebootRequired")
-                : (_thxStatus.ErrorCode is "ThxDownloadFailed" or "ThxDownloadVerificationFailed") ||
-                    _thxStatus.ErrorCode?.StartsWith("ThxInstaller", StringComparison.Ordinal) == true
-                        ? AppStrings.Text("RazerHeadsetThxDownloadFailed")
-                        : string.Empty;
+                : _thxStatus.ErrorCode switch
+                {
+                    "ThxInstallerCancelled" =>
+                        AppStrings.Text("RazerHeadsetThxInstallCancelled"),
+                    "ThxInstallerBusy" =>
+                        AppStrings.Text("RazerHeadsetThxInstallBusy"),
+                    "ThxDownloadFailed" or "ThxDownloadVerificationFailed" =>
+                        AppStrings.Text("RazerHeadsetThxDownloadFailed"),
+                    var code when code?.StartsWith(
+                        "ThxInstallerExit",
+                        StringComparison.Ordinal) == true =>
+                        AppStrings.FormatText(
+                            "RazerHeadsetThxInstallerExited",
+                            code["ThxInstallerExit".Length..]),
+                    var code when code?.StartsWith(
+                        "ThxInstaller",
+                        StringComparison.Ordinal) == true =>
+                        AppStrings.Text("RazerHeadsetThxDownloadFailed"),
+                    _ => string.Empty,
+                };
             // A silent installer that exits 0 without starting the service used to look
             // like a no-op: say what is still missing instead of resetting the card.
             if (_thxStatus.Availability != ThxHeadsetAvailability.Available &&

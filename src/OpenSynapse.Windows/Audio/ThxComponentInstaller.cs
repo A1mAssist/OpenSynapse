@@ -12,7 +12,10 @@ internal sealed record ThxInstallerPackage(
     string Sha256,
     string Arguments);
 
-internal sealed record ThxComponentInstallResult(string? Error, bool RebootRequired = false);
+internal sealed record ThxComponentInstallResult(
+    string? Error,
+    bool RebootRequired = false,
+    bool AlreadyInstalled = false);
 
 /// <summary>
 /// Downloads the official per-device THX package and runs its silent installer.
@@ -187,24 +190,38 @@ internal static class ThxComponentInstaller
             var commandArguments = arguments;
             if (startService is not null || extraPath is not null)
             {
-                // Run the installer and sc start under the same elevated token, so
-                // a stopped service does not force a second UAC prompt or a reboot.
+                // Run the installer and the service restart under the same elevated
+                // token, so a stopped or stale service does not force a second UAC
+                // prompt or a reboot.
                 commandFile = Path.Combine(
                     Path.GetDirectoryName(path)!,
                     $"thx-{Guid.NewGuid():N}.cmd");
                 var script = new StringBuilder()
                     .AppendLine("@echo off")
                     .AppendLine($"\"{path}\" {arguments}")
-                    .AppendLine("set RC=%ERRORLEVEL%");
+                    .AppendLine("set RC=%ERRORLEVEL%")
+                    .AppendLine("set REBOOT=0");
                 if (extraPath is not null)
                 {
+                    // The preset package is supplementary. Keep
+                    // only its reboot signal so a preset failure cannot mask the
+                    // APO installer's exit code.
                     script
                         .AppendLine($"\"{extraPath}\" {extraArguments}")
-                        .AppendLine("if %RC%==0 set RC=%ERRORLEVEL%");
+                        .AppendLine("if %ERRORLEVEL%==1641 set REBOOT=1")
+                        .AppendLine("if %ERRORLEVEL%==3010 set REBOOT=1");
                 }
+                script
+                    .AppendLine("if %REBOOT%==1 if %RC%==0 set RC=3010")
+                    .AppendLine("if %REBOOT%==1 if %RC%==1638 set RC=3010");
                 if (startService is not null)
                 {
-                    script.AppendLine($"sc start {startService} >nul 2>&1");
+                    // The THX APO is bound per audio endpoint. A device that
+                    // re-enumerated keeps the old endpoint state in VSSrv, so a
+                    // plain start is not enough: restart it after the installer.
+                    script
+                        .AppendLine($"net stop {startService} /y >nul 2>&1")
+                        .AppendLine($"net start {startService} >nul 2>&1");
                 }
                 script.AppendLine("exit /b %RC%");
                 await File.WriteAllTextAsync(
@@ -230,12 +247,7 @@ internal static class ThxComponentInstaller
             }
 
             await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
-            return process.ExitCode switch
-            {
-                0 => new(null),
-                1641 or 3010 => new(null, RebootRequired: true),
-                _ => new("ThxInstallerFailed"),
-            };
+            return ClassifyExitCode(process.ExitCode);
         }
         finally
         {
@@ -251,4 +263,15 @@ internal static class ThxComponentInstaller
             }
         }
     }
+
+    internal static ThxComponentInstallResult ClassifyExitCode(int exitCode) => exitCode switch
+    {
+        0 => new(null),
+        1641 or 3010 => new(null, RebootRequired: true),
+        // The same pinned version is already installed. The service restart
+        // above still re-binds the APO to the current endpoint.
+        1638 => new(null, AlreadyInstalled: true),
+        1618 => new("ThxInstallerBusy"),
+        _ => new($"ThxInstallerExit{exitCode}"),
+    };
 }

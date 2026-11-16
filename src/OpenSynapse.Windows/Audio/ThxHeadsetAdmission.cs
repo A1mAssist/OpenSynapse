@@ -233,7 +233,8 @@ internal static class ThxHeadsetAdmission
                 .EnsureServiceRunningAsync(ServiceName, cancellationToken)
                 .ConfigureAwait(false);
             return CombineInstallResult(
-                install.RebootRequired || profile.PresetInstaller is not null,
+                install.RebootRequired ||
+                    (profile.PresetInstaller is not null && !install.AlreadyInstalled),
                 nativeError,
                 running,
                 ThxAudioAdmission.HasService(ServiceName));

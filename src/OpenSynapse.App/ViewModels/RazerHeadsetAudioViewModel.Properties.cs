@@ -82,6 +82,12 @@ public sealed partial class RazerHeadsetAudioViewModel
             "ThxDownloadFailed" or "ThxDownloadVerificationFailed" =>
                 AppStrings.Text("RazerHeadsetThxDownloadFailed"),
             "ThxRebootRequired" => AppStrings.Text("RazerHeadsetThxRebootRequired"),
+            "ThxInstallerCancelled" => AppStrings.Text("RazerHeadsetThxInstallCancelled"),
+            "ThxInstallerBusy" => AppStrings.Text("RazerHeadsetThxInstallBusy"),
+            _ when _thxStatus.ErrorCode?.StartsWith("ThxInstallerExit", StringComparison.Ordinal) == true =>
+                AppStrings.FormatText(
+                    "RazerHeadsetThxInstallerExited",
+                    _thxStatus.ErrorCode["ThxInstallerExit".Length..]),
             _ when _thxStatus.ErrorCode?.StartsWith("ThxInstaller", StringComparison.Ordinal) == true =>
                 AppStrings.Text("RazerHeadsetThxDownloadFailed"),
             _ when _thxStatus.Availability == ThxHeadsetAvailability.Available =>

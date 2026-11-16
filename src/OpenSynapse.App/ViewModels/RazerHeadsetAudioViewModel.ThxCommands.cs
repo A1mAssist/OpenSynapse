@@ -204,7 +204,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         catch (Exception exception) when (IsExpectedException(exception))
         {
             _thxState = null;
-            _thxErrorText = exception.Message;
+            _diagnostic?.Invoke($"thx read failed error={exception.Message}");
+            _thxErrorText = AppStrings.Text("RazerHeadsetThxRejectedInstalled");
             NotifyThxStatus();
         }
     }
@@ -251,7 +252,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         }
         catch (Exception exception) when (IsExpectedException(exception))
         {
-            _thxErrorText = exception.Message;
+            _diagnostic?.Invoke($"thx operation failed error={exception.Message}");
+            _thxErrorText = AppStrings.Text("RazerHeadsetThxRejectedInstalled");
             OperationStatusText = string.Empty;
             return false;
         }
