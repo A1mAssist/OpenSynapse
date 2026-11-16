@@ -26,6 +26,7 @@ internal sealed partial class ChromaRestHost : IAsyncDisposable
     private readonly Func<IReadOnlyList<DeviceDescriptor>> _devices;
     private readonly IBladeLightingController _lighting;
     private readonly Func<Task> _restoreLighting;
+    private readonly Func<Task>? _suspendLighting;
     private readonly Func<bool> _bladeChromaOverrideEnabled;
     private readonly Func<ChromaDeviceKind, IReadOnlyList<RazerRgb>, int, int, CancellationToken, Task<bool>>? _applyEffect;
     private readonly Func<bool> _restorePersistentEffect;
@@ -58,11 +59,13 @@ internal sealed partial class ChromaRestHost : IAsyncDisposable
         Func<ChromaDeviceKind, IReadOnlyList<RazerRgb>, int, int, CancellationToken, Task<bool>>? applyEffect = null,
         Func<bool>? bladeChromaOverrideEnabled = null,
         IEnumerable<string>? blockedSources = null,
-        int port = Port, TimeSpan? requestTimeout = null)
+        int port = Port, TimeSpan? requestTimeout = null,
+        Func<Task>? suspendLighting = null)
     {
         _devices = devices ?? throw new ArgumentNullException(nameof(devices));
         _lighting = lighting ?? throw new ArgumentNullException(nameof(lighting));
         _restoreLighting = restoreLighting ?? throw new ArgumentNullException(nameof(restoreLighting));
+        _suspendLighting = suspendLighting;
         _bladeChromaOverrideEnabled = bladeChromaOverrideEnabled ?? (() => true);
         _applyEffect = applyEffect;
         _restorePersistentEffect = restorePersistentEffect ?? (() => true);
@@ -463,6 +466,7 @@ internal sealed partial class ChromaRestHost : IAsyncDisposable
         string? effectId = null;
         try
         {
+            bool wasActive;
             lock (_gate)
             {
                 if (!_sessions.TryGetValue(session.Id, out var current) || !ReferenceEquals(current, session))
@@ -529,10 +533,15 @@ internal sealed partial class ChromaRestHost : IAsyncDisposable
                     return (ClientLimit, null);
                 }
 
+                wasActive = session.Active;
                 session.Active = true;
                 session.LastHeartbeat = DateTimeOffset.UtcNow;
                 session.ApplyInProgress = true;
                 claimedSession = true;
+            }
+            if (!wasActive && _suspendLighting is not null)
+            {
+                await _suspendLighting().ConfigureAwait(false);
             }
             if (createEffect)
             {

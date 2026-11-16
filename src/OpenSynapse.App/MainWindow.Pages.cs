@@ -67,6 +67,7 @@ public sealed partial class MainWindow
     private LightingStudioPage CreateLightingStudioPage()
     {
         var page = new LightingStudioPage { Host = this };
+        _viewModel.SuspendStudioLighting = SuspendStudioLightingAsync;
         var sampler = new StudioInputSampler();
         _studioInputSampler = sampler;
         page.Initialize(

@@ -393,6 +393,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
     internal IReadOnlyList<DeviceDescriptor> CurrentDeviceDescriptors => _deviceDescriptors;
 
+    internal Func<Task>? SuspendStudioLighting { get; set; }
+
+    internal Task SuspendStudioLightingAsync() =>
+        SuspendStudioLighting?.Invoke() ?? Task.CompletedTask;
+
     // Shared hand-back path for Chroma hosts and Lighting Studio.
     internal async Task RestoreLightingAfterExternalAsync()
     {
