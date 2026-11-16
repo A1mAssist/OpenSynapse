@@ -79,6 +79,7 @@ public sealed partial class RazerHidDeviceViewModel
 
         revert(settings);
         revertUi?.Invoke();
+        var rollbackFailed = false;
         if (revertHardware is not null)
         {
             try
@@ -87,13 +88,19 @@ public sealed partial class RazerHidDeviceViewModel
             }
             catch
             {
-                // The save failure is what the user must see; a failed hardware
-                // rollback must not replace it.
+                rollbackFailed = true;
             }
         }
 
-        throw new RazerHidSettingProfileSaveException("RazerHid setting could not be saved.");
+        throw new RazerHidSettingProfileSaveException(
+            "RazerHid setting could not be saved.",
+            rollbackFailed);
     }
 }
 
-internal sealed class RazerHidSettingProfileSaveException(string message) : IOException(message);
+internal sealed class RazerHidSettingProfileSaveException(
+    string message,
+    bool rollbackFailed = false) : IOException(message)
+{
+    public bool RollbackFailed { get; } = rollbackFailed;
+}

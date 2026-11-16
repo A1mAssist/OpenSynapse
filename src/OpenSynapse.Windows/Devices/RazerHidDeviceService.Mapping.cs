@@ -5,9 +5,6 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed partial class RazerHidDeviceService
 {
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> _mappingProfileIds =
-        new(StringComparer.OrdinalIgnoreCase);
-
     private enum MappingReadFamily
     {
         Analog,
@@ -26,11 +23,8 @@ public sealed partial class RazerHidDeviceService
         RazerHidDeviceConnection connection,
         CancellationToken cancellationToken)
     {
-        if (_mappingProfileIds.TryGetValue(connection.DevicePath ?? connection.InstanceId, out var cached))
-        {
-            return cached;
-        }
-
+        // The active profile is firmware state: keys, Synapse or another host can
+        // change it between calls, so every read/write resolves it again.
         var profileId = RazerHidMappingProtocol.ProfileId;
         if (connection.Capabilities.Contains(RazerHidBackendCapability.OnboardProfileRead))
         {
@@ -53,7 +47,6 @@ public sealed partial class RazerHidDeviceService
             profileId = RazerHidMappingProtocol.ProfileId;
         }
 
-        _mappingProfileIds[connection.DevicePath ?? connection.InstanceId] = profileId;
         return profileId;
     }
 
@@ -65,9 +58,6 @@ public sealed partial class RazerHidDeviceService
         RazerHidDeviceConnection connection,
         CancellationToken cancellationToken = default) =>
         ResolveMappingProfileIdAsync(connection, cancellationToken);
-
-    internal void ForgetMappingProfile(RazerHidDeviceConnection connection) =>
-        _mappingProfileIds.TryRemove(connection.DevicePath ?? connection.InstanceId, out _);
 
     public async Task<RazerHidButtonAssignment> GetButtonAssignmentAsync(
         RazerHidDeviceConnection connection,

@@ -119,7 +119,6 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
-        ForgetMappingProfile(connection);
         return ExecuteWithoutResultAsync(connection,
             new RazerHidRequest("razer_onboard_set_active_profile",
                 UsesAltProfileClass(connection)
@@ -134,7 +133,6 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
-        ForgetMappingProfile(connection);
         return ExecuteWithoutResultAsync(connection,
             new RazerHidRequest("razer_onboard_create_profile",
                 UsesAltProfileClass(connection)
@@ -149,7 +147,6 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
-        ForgetMappingProfile(connection);
         return ExecuteWithoutResultAsync(connection,
             new RazerHidRequest("razer_onboard_delete_profile",
                 UsesAltProfileClass(connection)
@@ -164,7 +161,6 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
-        ForgetMappingProfile(connection);
         return ExecuteWithoutResultAsync(connection,
             new RazerHidRequest("razer_onboard_reset_profile",
                 // The class 0x03 dialect has no reset command, so a DeathAdder V4 Pro

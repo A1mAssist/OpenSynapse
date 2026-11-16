@@ -481,6 +481,7 @@ public sealed partial class RazerKeyboardViewModel
             document.Devices.Remove(ProfileDeviceKey);
         }
         revertUi?.Invoke();
+        var rollbackFailed = false;
         if (revertHardware is not null)
         {
             try
@@ -489,9 +490,11 @@ public sealed partial class RazerKeyboardViewModel
             }
             catch
             {
-                // The save failure is the error the user must see.
+                rollbackFailed = true;
             }
         }
-        ErrorText = AppStrings.Text("RazerHidSettingProfileSaveFailed");
+        ErrorText = AppStrings.Text(rollbackFailed
+            ? "RazerHidSettingProfileSaveRollbackFailed"
+            : "RazerHidSettingProfileSaveFailed");
     }
 }
