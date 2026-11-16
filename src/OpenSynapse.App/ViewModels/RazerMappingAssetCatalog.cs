@@ -32,3 +32,29 @@ public sealed record RazerMappingVisual(
     public static RazerMappingVisual Empty { get; } = new(null, null, null);
     public bool HasVisual => Mouse is not null || Keyboard is not null;
 }
+
+/// <summary>
+/// Hotspots that the product bundle itself does not expose. Coordinates are
+/// source-image pixels, taken from the official mapping page's drawLines().
+/// </summary>
+internal static class RazerMappingKnownHotspots
+{
+    // Razer Viper (0078): products/120/ui/static/js/main.90154a92.js.
+    // drawLines() authors a 310x340 canvas; the 3x product image is 900x1024.
+    // The 0x06/0x07/0x0E ids are the firmware's HyperShift aliases of the same
+    // side/DPI buttons, so they intentionally share the normal button's point.
+    internal static IReadOnlyDictionary<byte, RazerMappingPoint> Viper { get; } =
+        new Dictionary<byte, RazerMappingPoint>
+        {
+            [0x01] = new(349.5, 166.5, true),
+            [0x02] = new(550.5, 166.5, false),
+            [0x03] = new(451.5, 259.5, true),
+            [0x04] = new(271.5, 541.5, true),
+            [0x05] = new(265.5, 427.5, true),
+            [0x06] = new(271.5, 541.5, true),
+            [0x07] = new(265.5, 427.5, true),
+            [0x09] = new(451.5, 208.5, false),
+            [0x0A] = new(451.5, 313.5, false),
+            [0x0E] = new(451.5, 751.5, true),
+        };
+}

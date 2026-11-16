@@ -145,7 +145,7 @@ public sealed partial class RazerMappingAssetService
                                 new Uri(imagePath), cancellationToken).ConfigureAwait(false);
                             return imageOnly is null
                                 ? null
-                                : imageOnly with
+                                : ApplyKnownHotspots(productId, imageOnly) with
                                 {
                                     ButtonNames = MapButtonNames(productId, bundle.ButtonNamesById),
                                 };
@@ -167,8 +167,10 @@ public sealed partial class RazerMappingAssetService
 
                             if (hotspots.Count > 0)
                             {
-                                return new RazerMappingImageLayout(
-                                    new Uri(imagePath), bundle.ImageWidth, bundle.ImageHeight, hotspots)
+                                return ApplyKnownHotspots(
+                                    productId,
+                                    new RazerMappingImageLayout(
+                                        new Uri(imagePath), bundle.ImageWidth, bundle.ImageHeight, hotspots)) with
                                 {
                                     ButtonNames = MapButtonNames(productId, bundle.ButtonNamesById),
                                 };
