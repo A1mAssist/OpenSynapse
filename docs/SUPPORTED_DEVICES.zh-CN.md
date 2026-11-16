@@ -429,8 +429,8 @@ Kraken 7.1 使用 37-byte output-report 通道；Kraken V4 有线版及其 2.4 G
 | Razer Leviathan V2 ECR | `1532:05A3` | 音频页（Protocol 25，64 字节 Feature Report） |
 | Razer Leviathan V2 X | `1532:054A` | 声霸音频与灯光；仍待实机验证 |
 | Razer Mako | `1532:05AB` | 音频页（`rzDeviceJolie`）；Mako X 仍为 `1532:05AD` |
-| Razer Nommo Chroma | `1532:0517` | Chroma 灯光 |
-| Razer Nommo Pro | `1532:0518` | Chroma 灯光 |
+| Razer Nommo Chroma | `1532:0517` | 音频页：主音量/静音/低音/EQ/输入输出/麦克风；0x08 类命令，未实机验证 |
+| Razer Nommo Pro | `1532:0518` | 音频页：主音量/静音/低音/EQ/输入输出/麦克风；0x08 类命令，未实机验证 |
 | Razer Nommo V2 | `1532:055C` | 音频页 |
 | Razer Nommo V2 Pro | `1532:055A` | 音频页 |
 | Razer Nommo V2 X | `1532:055E` | 音频页 |
@@ -497,9 +497,9 @@ Raptor 27 提供对应型号的 Chroma 灯光控制。
 
 | 设备 | USB VID:PID | 说明 |
 |---|---|---|
-| Esther | `1532:0F45` | 仅灯光 |
+| Razer Freyja | `1532:0F45` | 灯光 + Sensa HD 触觉页：开关、强度、增益、感知/瞬态/信号增益 |
 | Lian Li O11 Dynamic - Razer Edition | `1532:0F13` | — |
-| MarciT2H | `1532:0F6D` | 仅灯光 |
+| Razer Soma Sensa HD Haptics | `1532:0F6D` | 灯光 + Sensa HD 触觉页：开关、强度、增益、感知/瞬态/信号增益 |
 | Razer Aether Lamp | `1532:030E` | 仅灯光 |
 | Razer Aether Lamp Pro | `1532:030D` | 仅灯光 |
 | Razer Aether Light Bulb | `1532:030F` | 仅灯光 |
@@ -520,7 +520,7 @@ Raptor 27 提供对应型号的 Chroma 灯光控制。
 | Razer Core | `1532:0215` | — |
 | Razer Core X Chroma | `1532:0F1A` | — |
 | Razer Core X V2 | `1532:0F51` | 仅灯光 |
-| Razer Hanbo AIO | `1532:0F35` | 仅灯光 |
+| Razer Hanbo AIO | `1532:0F35` | 灯光 + AIO 页：风扇/水泵转速、占空比、静音/均衡/性能模式、温度；曲线接口未暴露 |
 | Razer Handheld Dock Chroma | `1532:0F5C` | 仅灯光 |
 | Razer Head Cushion Chroma | `1532:0F36` | 仅灯光 |
 | Razer Key Light Chroma | `1532:030C` | 仅灯光 |
@@ -532,15 +532,15 @@ Raptor 27 提供对应型号的 Chroma 灯光控制。
 | Razer Mouse Bungee V3 Chroma | `1532:0F1D` | — |
 | Razer Mouse Dock | `1532:007E` | — |
 | Razer Mouse Dock Pro | `1532:00A4` | — |
-| Razer Mouse Dock V2 Pro | `1532:00F1` | 仅灯光 |
-| Razer PWM PC Fan Controller | `1532:0F3C` | 仅灯光 |
+| Razer Mouse Dock V2 Pro | `1532:00F1` | 灯光 + 底座页：灯光同步、充电灯效；读成功的命令才开放写入 |
+| Razer PWM PC Fan Controller | `1532:0F3C` | 灯光 + 风扇控制器页：7 通道转速读写与回读 |
 | Razer Soma Chroma | `1532:0F64` | 仅灯光 |
 | Razer Thunderbolt 4 Dock Chroma | `1532:0F21` | — |
 | Razer Thunderbolt 5 Dock Chroma | `1532:0F52` | 仅灯光 |
 | Razer Tomahawk ATX | `1532:0F17` | — |
 | Razer Tomahawk Gaming Desktop | `1532:0F27` | 仅灯光 |
 | Razer USB Sound Card | `1532:0529` | 音频控制器页面；声卡控制 |
-| Razer Wireless Control Pod | `1532:0566` | 仅灯光 |
+| Razer Wireless Control Pod | `1532:0566` | 灯光 + 音频页：主音量/静音/输入输出/麦克风；OLED 亮度/旋钮方向/低电量提醒；其余 OLED 枚举未暴露 |
 
 ## 网络灯光
 

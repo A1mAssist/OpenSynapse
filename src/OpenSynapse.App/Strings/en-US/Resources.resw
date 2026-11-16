@@ -3000,6 +3000,40 @@
   <data name="CoolingPadModePerformance/Text" xml:space="preserve"><value>Performance</value></data>
   <data name="CoolingPadModeOff/Text" xml:space="preserve"><value>Off</value></data>
   <data name="CoolingPadModeUnknown/Text" xml:space="preserve"><value>Mode {0}</value></data>
+  <data name="AccessoryHapticsTitle/Text" xml:space="preserve"><value>Haptics</value></data>
+  <data name="AccessoryHapticsEnable/Text" xml:space="preserve"><value>Enabled</value></data>
+  <data name="AccessoryHapticsIntensity/Text" xml:space="preserve"><value>Intensity</value></data>
+  <data name="AccessoryHapticsGain/Text" xml:space="preserve"><value>Gain</value></data>
+  <data name="AccessoryHapticsPerception/Text" xml:space="preserve"><value>Perception volume</value></data>
+  <data name="AccessoryHapticsTransient/Text" xml:space="preserve"><value>Transient volume</value></data>
+  <data name="AccessoryHapticsSignal/Text" xml:space="preserve"><value>Signal gain</value></data>
+  <data name="AccessoryApplyButton/Content" xml:space="preserve"><value>Apply</value></data>
+  <data name="AccessoryAudioDescription/Text" xml:space="preserve"><value>Volume, microphone and audio controls; fields that fail to read stay disabled.</value></data>
+  <data name="AccessoryAudioVolume/Text" xml:space="preserve"><value>Master volume</value></data>
+  <data name="AccessoryAudioMute/Text" xml:space="preserve"><value>Mute</value></data>
+  <data name="AccessoryAudioBass/Text" xml:space="preserve"><value>Bass</value></data>
+  <data name="AccessoryAudioEqPreset/Text" xml:space="preserve"><value>EQ preset</value></data>
+  <data name="AccessoryAudioInput/Text" xml:space="preserve"><value>Input source</value></data>
+  <data name="AccessoryAudioOutput/Text" xml:space="preserve"><value>Output source</value></data>
+  <data name="AccessoryAudioMicVolume/Text" xml:space="preserve"><value>Mic volume</value></data>
+  <data name="AccessoryAudioMicMute/Text" xml:space="preserve"><value>Mic mute</value></data>
+  <data name="AccessoryAudioEqDefault" xml:space="preserve"><value>Default</value></data>
+  <data name="AccessoryAudioEqGame" xml:space="preserve"><value>Game</value></data>
+  <data name="AccessoryAudioEqMusic" xml:space="preserve"><value>Music</value></data>
+  <data name="AccessoryAudioEqMovie" xml:space="preserve"><value>Movie</value></data>
+  <data name="AccessoryAudioEqTreble" xml:space="preserve"><value>Treble</value></data>
+  <data name="AccessoryAudioInputNone" xml:space="preserve"><value>None</value></data>
+  <data name="AccessoryAudioOutputSpeaker" xml:space="preserve"><value>Speaker + subwoofer</value></data>
+  <data name="AccessoryAudioOutputHeadset" xml:space="preserve"><value>Headset</value></data>
+  <data name="AccessoryDockDescription/Text" xml:space="preserve"><value>Dock sync and charging lighting; commands that fail to read stay unavailable.</value></data>
+  <data name="AccessoryDockSync/Text" xml:space="preserve"><value>Dock lighting sync</value></data>
+  <data name="AccessoryDockChargingEffect/Text" xml:space="preserve"><value>Charging effect</value></data>
+  <data name="AccessoryControlPodDescription/Text" xml:space="preserve"><value>OLED brightness, roller direction and low-battery warning; the remaining OLED enums stay in the native bundle.</value></data>
+  <data name="AccessoryControlPodBrightness/Text" xml:space="preserve"><value>OLED brightness</value></data>
+  <data name="AccessoryControlPodDirection/Text" xml:space="preserve"><value>Roller direction</value></data>
+  <data name="AccessoryControlPodLowBattery/Text" xml:space="preserve"><value>Low-battery warning (%)</value></data>
+  <data name="AccessoryControlPodDirectionNormal" xml:space="preserve"><value>Normal</value></data>
+  <data name="AccessoryControlPodDirectionInverted" xml:space="preserve"><value>Inverted</value></data>
   <data name="AwBleHeadsetBatteryLabel/Text" xml:space="preserve"><value>Battery</value></data>
   <data name="AwBleHeadsetDescription/Text" xml:space="preserve"><value>Battery and device info are read-only; controls appear only when supported.</value></data>
   <data name="AwBleHeadsetControlsTitle/Text" xml:space="preserve"><value>Device controls</value></data>

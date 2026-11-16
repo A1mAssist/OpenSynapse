@@ -201,7 +201,6 @@
                         </ItemsControl.ItemTemplate>
                       </ItemsControl>
                       <Button local:Localized.Uid="RazerOnboardMacroReadButton" Click="KeyboardReadOnboardMacrosClick" IsEnabled="{Binding Onboard.CanLoad}" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" />
-
                       <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Visibility="{Binding Onboard.WriteVisibility}">
                         <ComboBox local:Localized.Uid="RazerOnboardMacroLocalLabel" ItemsSource="{Binding Onboard.LocalMacroNames}" SelectedIndex="{Binding Onboard.SelectedLocalMacroIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" IsEnabled="{Binding Onboard.CanLoad}" />
                         <NumberBox Grid.Column="1" local:Localized.Uid="RazerOnboardMacroSlotLabel" Value="{Binding Onboard.TargetMacroId, Mode=TwoWay}" Minimum="1" Maximum="{Binding Onboard.MaxMacroId}" SmallChange="1" SpinButtonPlacementMode="Compact" Width="120" IsEnabled="{Binding Onboard.CanWrite}" />
@@ -465,6 +464,7 @@
                       <Button local:Localized.Uid="RazerArgbDriverButton" Click="ArgbInstallDriverClick" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Left" />
                     </StackPanel>
                   </Border>
+                  <views:AccessoryBodyPanel DataContext="{Binding Body}" />
                 </StackPanel>
                 <StackPanel x:Name="AwBleHeadsetPanel" DataContext="{Binding SelectedAwBleHeadset}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><StackPanel Spacing="4"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel><Button Grid.Column="1" local:Localized.Uid="RazerKeyboardRefreshButton" Click="AwBleHeadsetRefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" /></Grid>
