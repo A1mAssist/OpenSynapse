@@ -13,10 +13,19 @@ public sealed partial class RazerFeatureTransport
         vendorId == 0x1532 && (productId == 0x025C || productId is 0x0086 or 0x0088);
 
     internal static byte PrepareTransactionId(
-        string devicePath, byte requested, byte commandClass, byte commandId, ref int sequence)
+        string devicePath, byte requested, byte commandClass, byte commandId, ref int sequence,
+        ushort? logicalProductId = null)
     {
         if (UsesMouseDockLinker(devicePath))
         {
+            if (logicalProductId is { } logicalProduct && logicalProduct != 0x00A4)
+            {
+                // rzDevice25DualLinkMouse sends the paired mouse's commands with
+                // 0x80 | sequence. Scan(46)/Pair(41) use the low bank.
+                if (commandClass == 0x00 && commandId is 0x46 or 0x41)
+                    return NextDockTransactionId(ref sequence);
+                return (byte)(0x80 | NextDockTransactionId(ref sequence));
+            }
             // 00A4 rzDevice25Linker uses E0 | 0..30 for linker and child battery/charging
             // commands; Scan(46)/Pair(41) clear the high bits. OpenRazer's
             // razeraccessory_driver sends FF for the 00A4 firmware, serial and brightness
@@ -92,9 +101,11 @@ public sealed partial class RazerFeatureTransport
     private static byte NextDockTransactionId(ref int sequence) =>
         (byte)(unchecked((uint)Interlocked.Increment(ref sequence)) % 31);
 
-    private static void PrepareStandardTransaction(string devicePath, byte[] request)
+    private static void PrepareStandardTransaction(
+        string devicePath, byte[] request, ushort? logicalProductId = null)
     {
         var sequence = _transactionSequences.GetOrAdd(devicePath, static _ => [-1]);
-        request[2] = PrepareTransactionId(devicePath, request[2], request[7], request[8], ref sequence[0]);
+        request[2] = PrepareTransactionId(
+            devicePath, request[2], request[7], request[8], ref sequence[0], logicalProductId);
     }
 }

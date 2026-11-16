@@ -149,8 +149,8 @@ public sealed partial class RazerHidDeviceService
             try
             {
                 var probe = RazerHidMouseProtocol.GetBattery(definition);
-                var response = await _transport.QueryPreparedAsync(
-                    devicePath, probe.Report, definition.DeviceWait, cancellationToken).ConfigureAwait(false);
+                var response = await _transport.QueryPreparedForProductAsync(
+                    devicePath, productId, probe.Report, definition.DeviceWait, cancellationToken).ConfigureAwait(false);
                 if (!RazerFeatureReport.IsSuccessfulResponse(probe.Report, response, 2))
                     throw new InvalidDataException("Linked battery response did not match the child request.");
                 _ = RazerHidMouseProtocol.ParseBatteryPercent(response);
@@ -174,16 +174,19 @@ public sealed partial class RazerHidDeviceService
             $"dual-link child resolved path={RazerFeatureTransport.DescribeDevicePath(linkedPath)} viaDockLinker={viaDockLinker}");
 
         var linkedDefinition = definition.WithDisplayName(LinkedDisplayName(definition.DisplayName));
-        // Only battery has answered on this path. Normal discovery can independently
-        // admit the direct endpoint; this fallback must not publish inherited writes.
-        return new RazerHidDeviceConnection(
+        var extraCapabilities = viaDockLinker
+            ? await ProbeMiddlewareCapabilitiesAsync(
+                linkedDefinition, linkedPath, cancellationToken).ConfigureAwait(false)
+            : null;
+        // The child definition's command set is sent over the same dock container
+        // with the child transaction bank; publish the declared controls.
+        return CreateConnection(
             linkedDefinition,
             linkedPath,
             $"{parentDeviceKey}#linked-{productId:X4}",
             RazerHidEndpointState.Resolved,
-            new HashSet<RazerHidBackendCapability> { RazerHidBackendCapability.BatteryRead },
-            new Dictionary<RazerHidLedZone, RazerHidLightingZoneCapabilities>(),
-            null);
+            null,
+            extraCapabilities);
     }
 
     internal async Task AddLinkedConnectionsAsync(
