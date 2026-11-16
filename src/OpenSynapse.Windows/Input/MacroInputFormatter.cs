@@ -21,6 +21,8 @@ public static class MacroInputFormatter
                 6 => "Mouse 6",
                 7 => "Mouse 7",
                 8 => "Mouse 8",
+                9 => "Mouse 9",
+                10 => "Mouse 10",
                 _ => "Mouse ?",
             };
         }

@@ -17,9 +17,12 @@ public static class RazerMouseMacroTriggerResolver
     ];
 
     // The Viper bundle exposes the right-side pair as standard HID buttons 6/7.
+    // The Basilisk X HyperSpeed reports its side pair as usages 9/10, which no
+    // game reads; without this reader the buttons do nothing outside Synapse.
     private static readonly HashSet<ushort> ExtraMouseButtonProducts =
     [
         0x0078,
+        0x0083,
     ];
 
     internal static bool SupportsExtraMouseButtons(ushort productId) =>
@@ -45,7 +48,7 @@ public static class RazerMouseMacroTriggerResolver
         }
 
         if (SupportsExtraMouseButtons(productId) &&
-            buttonId is >= 6 and <= 8)
+            buttonId is >= 6 and <= 10)
         {
             return new MacroInput
             {
