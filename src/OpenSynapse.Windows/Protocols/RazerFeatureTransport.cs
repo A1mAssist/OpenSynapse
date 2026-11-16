@@ -28,6 +28,17 @@ public interface IRazerFeatureTransport
         bool allowRemainingPacketsMismatch = false) =>
         throw new NotSupportedException("This transport does not support prepared feature requests.");
 
+    async Task<byte[]> QueryPreparedForProductAsync(
+        string devicePath,
+        ushort logicalProductId,
+        ReadOnlyMemory<byte> request,
+        TimeSpan deviceWait,
+        CancellationToken cancellationToken,
+        bool allowRemainingPacketsMismatch = false) =>
+        await QueryPreparedAsync(
+            devicePath, request, deviceWait, cancellationToken, allowRemainingPacketsMismatch)
+            .ConfigureAwait(false);
+
     Task<IRazerFeatureSession> OpenSessionAsync(
         string devicePath,
         CancellationToken cancellationToken) =>
@@ -311,7 +322,8 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
         TimeSpan deviceWait,
         byte responseReportId,
         CancellationToken cancellationToken,
-        bool allowRemainingPacketsMismatch)
+        bool allowRemainingPacketsMismatch,
+        ushort? logicalProductId = null)
     {
         // ponytail: paths are bounded by locally attached HID collections; prune only if
         // long-running hot-plug churn ever makes this cache measurably large.
@@ -328,7 +340,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
                 request[2] = NextLeviathanTransactionId(ref sequence[0]);
                 responseReportId = LeviathanV2XProtocol.ReportId;
             }
-            else PrepareStandardTransaction(devicePath, request);
+            else PrepareStandardTransaction(devicePath, request, logicalProductId);
 
             try
             {

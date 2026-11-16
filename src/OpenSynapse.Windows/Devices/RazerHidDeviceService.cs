@@ -26,7 +26,7 @@ public sealed partial class RazerHidDeviceService
     private readonly LocalDiagnosticLog? _diagnosticLog;
     private readonly ConcurrentDictionary<string, string> _endpointCache = new(StringComparer.OrdinalIgnoreCase);
     private readonly RazerHidRequestExecutor _executor;
-    private readonly ConcurrentDictionary<(string DevicePath, string Probe), DateTimeOffset>
+    private readonly ConcurrentDictionary<(string DevicePath, ushort ProductId, string Probe), DateTimeOffset>
         _middlewareProbeCache = new();
     private static readonly TimeSpan MiddlewareProbePositiveTtl = TimeSpan.FromHours(12);
     // Middleware bundles increment the transaction id per exchange; the firmware only

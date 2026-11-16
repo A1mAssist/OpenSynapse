@@ -41,8 +41,9 @@ public sealed partial class RazerHidDeviceService
                 byte[]? response;
                 try
                 {
-                    response = await _transport.QueryPreparedAsync(
-                        connection.DevicePath!, request, connection.Definition.DeviceWait,
+                    response = await _transport.QueryPreparedForProductAsync(
+                        connection.DevicePath!, connection.Definition.ProductId, request,
+                        connection.Definition.DeviceWait,
                         cancellationToken, allowRemainingPacketsMismatch: true).ConfigureAwait(false);
                 }
                 catch (Exception exception) when (
@@ -192,7 +193,7 @@ public sealed partial class RazerHidDeviceService
         Action<byte[]?, Exception?>? observed = null)
     {
         var now = DateTimeOffset.UtcNow;
-        var key = (devicePath.ToUpperInvariant(), probe);
+        var key = (devicePath.ToUpperInvariant(), productId, probe);
         if (_middlewareProbeCache.TryGetValue(key, out var expiresAt) && expiresAt > now)
         {
             return true;
@@ -203,8 +204,8 @@ public sealed partial class RazerHidDeviceService
         Exception? error = null;
         try
         {
-            response = await _transport.QueryPreparedAsync(
-                devicePath, request, deviceWait, cancellationToken).ConfigureAwait(false);
+            response = await _transport.QueryPreparedForProductAsync(
+                devicePath, productId, request, deviceWait, cancellationToken).ConfigureAwait(false);
             supported = accepts(response);
         }
         catch (Exception exception) when (exception is Win32Exception or IOException or
