@@ -14,6 +14,8 @@ internal static class MemoryTrace
     private static int _mappingVisuals;
 
     public static int PageCacheCount { get; set; }
+    public static int PageHostCount { get; set; }
+    public static string PageCacheKeys { get; set; } = string.Empty;
     public static int DeviceImageCacheCount { get; set; }
     public static int MappingVisualCount => Volatile.Read(ref _mappingVisuals);
 
@@ -55,7 +57,8 @@ internal static class MemoryTrace
             $"reason={reason} workingSet={process.WorkingSet64 / megabyte:0.0}MB " +
             $"private={process.PrivateMemorySize64 / megabyte:0.0}MB " +
             $"managed={GC.GetTotalMemory(false) / megabyte:0.0}MB " +
-            $"pages={PageCacheCount} cardImages={DeviceImageCacheCount} " +
+            $"pages={PageCacheCount} hostPages={PageHostCount} pageKeys={PageCacheKeys} " +
+            $"cardImages={DeviceImageCacheCount} " +
             $"mappingVisuals={MappingVisualCount} " +
             $"gc0={GC.CollectionCount(0)} gc1={GC.CollectionCount(1)} gc2={GC.CollectionCount(2)}");
     }

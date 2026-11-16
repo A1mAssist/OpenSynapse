@@ -23,13 +23,27 @@ public sealed partial class MainWindow
 
     private int PageCacheLimit => LiteModePolicy.PageCacheLimit(_viewModel.IsLiteMode);
 
-    private OverviewPage OverviewPage => _overviewPage ??= CreateOverviewPage();
-    private DevicesPage DevicesPage => _devicesPage ??= CreateDevicesPage();
-    private LightingStudioPage LightingStudioPage => _lightingStudioPage ??= CreateLightingStudioPage();
-    private ProfilesPage ProfilesPage => _profilesPage ??= CreateProfilesPage();
-    private MacrosPage MacrosPage => _macrosPage ??= CreateMacrosPage();
-    private SettingsPage SettingsPage => _settingsPage ??= CreateSettingsPage();
-    private DiagnosticsPage DiagnosticsPage => _diagnosticsPage ??= CreateDiagnosticsPage();
+    private OverviewPage OverviewPage => EnsureCachedPage("overview", ref _overviewPage, CreateOverviewPage);
+    private DevicesPage DevicesPage => EnsureCachedPage("devices", ref _devicesPage, CreateDevicesPage);
+    private LightingStudioPage LightingStudioPage =>
+        EnsureCachedPage("studio", ref _lightingStudioPage, CreateLightingStudioPage);
+    private ProfilesPage ProfilesPage => EnsureCachedPage("profiles", ref _profilesPage, CreateProfilesPage);
+    private MacrosPage MacrosPage => EnsureCachedPage("macros", ref _macrosPage, CreateMacrosPage);
+    private SettingsPage SettingsPage => EnsureCachedPage("settings", ref _settingsPage, CreateSettingsPage);
+    private DiagnosticsPage DiagnosticsPage =>
+        EnsureCachedPage("diagnostics", ref _diagnosticsPage, CreateDiagnosticsPage);
+
+    private T EnsureCachedPage<T>(string key, ref T? page, Func<T> create)
+        where T : FrameworkElement
+    {
+        if (page is null)
+        {
+            page = create();
+            TouchPage(key);
+            TrimPageCache();
+        }
+        return page;
+    }
 
     private OverviewPage CreateOverviewPage()
     {
@@ -128,6 +142,7 @@ public sealed partial class MainWindow
     {
         page.Visibility = Visibility.Collapsed;
         PageHost.Children.Add(page);
+        MemoryTrace.PageHostCount = PageHost.Children.Count;
         Localized.RefreshTree(page);
         return page;
     }
@@ -150,6 +165,7 @@ public sealed partial class MainWindow
 
     private void ShowPage(string page)
     {
+        _currentPage = page;
         var view = EnsurePage(page);
         var wasVisible = view.Visibility == Visibility.Visible;
         foreach (var child in PageHost.Children.OfType<FrameworkElement>())
@@ -160,7 +176,6 @@ public sealed partial class MainWindow
             }
         }
 
-        _currentPage = page;
         view.Visibility = Visibility.Visible;
         TrimPageCache();
         MemoryTrace.Snapshot($"page-{page}");
@@ -193,6 +208,7 @@ public sealed partial class MainWindow
         _pageUseOrder.Remove(page);
         _pageUseOrder.Add(page);
         MemoryTrace.PageCacheCount = _pageUseOrder.Count;
+        MemoryTrace.PageCacheKeys = string.Join(',', _pageUseOrder);
     }
 
     private void TrimPageCache()
@@ -226,6 +242,7 @@ public sealed partial class MainWindow
         if (view is not null)
         {
             PageHost.Children.Remove(view);
+            MemoryTrace.PageHostCount = PageHost.Children.Count;
             switch (view)
             {
                 case OverviewPage overview:
@@ -270,5 +287,6 @@ public sealed partial class MainWindow
         }
         _pageUseOrder.Remove(page);
         MemoryTrace.PageCacheCount = _pageUseOrder.Count;
+        MemoryTrace.PageCacheKeys = string.Join(',', _pageUseOrder);
     }
 }
