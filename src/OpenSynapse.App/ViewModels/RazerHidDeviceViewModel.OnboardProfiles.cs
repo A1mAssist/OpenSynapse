@@ -66,9 +66,11 @@ public sealed partial class RazerHidDeviceViewModel
         get => _selectedOnboardProfileIndex;
         set
         {
-            var normalized = _onboardProfileIds.Count == 0
+            // -1 is the ComboBox's own reset while ItemsSource is replaced; clamping
+            // it to 0 is what made the selector drift back to profile 1.
+            var normalized = value < 0 || _onboardProfileIds.Count == 0
                 ? -1
-                : Math.Clamp(value, 0, _onboardProfileIds.Count - 1);
+                : Math.Min(value, _onboardProfileIds.Count - 1);
             if (!SetField(ref _selectedOnboardProfileIndex, normalized))
             {
                 return;
@@ -240,6 +242,7 @@ public sealed partial class RazerHidDeviceViewModel
         }
 
         _onboardProfileIds = ids ?? BuildFallbackProfileIds(OnboardProfileCount, OnboardMaxProfiles);
+        OnPropertyChanged(nameof(OnboardProfileOptions));
 
         if (idsUnavailable && OnboardMaxProfiles > 0)
         {
