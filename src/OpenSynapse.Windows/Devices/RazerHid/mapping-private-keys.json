@@ -31,6 +31,14 @@
     "source": "0059/main.9e6fff5a75e370f2c96e.js",
     "catalogPid": "0059",
     "keys": {
+      "04": {
+        "code": 34,
+        "label": "Button4"
+      },
+      "05": {
+        "code": 35,
+        "label": "Button5"
+      },
       "0B": {
         "code": 32,
         "label": "SensitivityStageUp"
@@ -49,6 +57,14 @@
     "source": "0059/main.9e6fff5a75e370f2c96e.js",
     "catalogPid": "0059",
     "keys": {
+      "04": {
+        "code": 34,
+        "label": "Button4"
+      },
+      "05": {
+        "code": 35,
+        "label": "Button5"
+      },
       "0B": {
         "code": 32,
         "label": "SensitivityStageUp"
@@ -185,6 +201,14 @@
     "source": "0070/main.1002da9aa45d964ee122.js",
     "catalogPid": "0070",
     "keys": {
+      "04": {
+        "code": 34,
+        "label": "Button4"
+      },
+      "05": {
+        "code": 35,
+        "label": "Button5"
+      },
       "0B": {
         "code": 32,
         "label": "SensitivityStageUp"
@@ -203,6 +227,14 @@
     "source": "0070/main.1002da9aa45d964ee122.js",
     "catalogPid": "0070",
     "keys": {
+      "04": {
+        "code": 34,
+        "label": "Button4"
+      },
+      "05": {
+        "code": 35,
+        "label": "Button5"
+      },
       "0B": {
         "code": 32,
         "label": "SensitivityStageUp"
@@ -293,6 +325,14 @@
     "source": "0078/main.c9bf2b39e806a185c188.js",
     "catalogPid": "0078",
     "keys": {
+      "04": {
+        "code": 34,
+        "label": "Button4"
+      },
+      "05": {
+        "code": 35,
+        "label": "Button5"
+      },
       "60": {
         "code": 82,
         "label": "CycleUpSensitivityStages"
@@ -303,6 +343,14 @@
     "source": "007A/main.96e14b8fd25ee30cb401.js",
     "catalogPid": "007A",
     "keys": {
+      "04": {
+        "code": 34,
+        "label": "Button4"
+      },
+      "05": {
+        "code": 35,
+        "label": "Button5"
+      },
       "60": {
         "code": 82,
         "label": "CycleUpSensitivityStages"
@@ -313,6 +361,14 @@
     "source": "007A/main.96e14b8fd25ee30cb401.js",
     "catalogPid": "007A",
     "keys": {
+      "04": {
+        "code": 34,
+        "label": "Button4"
+      },
+      "05": {
+        "code": 35,
+        "label": "Button5"
+      },
       "60": {
         "code": 82,
         "label": "CycleUpSensitivityStages"
@@ -575,6 +631,14 @@
     "source": "0091/main.02a5e75c4dfad4dd3008.js",
     "catalogPid": "0091",
     "keys": {
+      "04": {
+        "code": 34,
+        "label": "Button4"
+      },
+      "05": {
+        "code": 35,
+        "label": "Button5"
+      },
       "60": {
         "code": 82,
         "label": "CycleUpSensitivityStages"

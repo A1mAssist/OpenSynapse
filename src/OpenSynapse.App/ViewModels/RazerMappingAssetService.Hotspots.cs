@@ -8,7 +8,7 @@ public sealed partial class RazerMappingAssetService
         ushort productId,
         RazerMappingImageLayout layout)
     {
-        if (productId != 0x0078)
+        if (productId is not (0x0078 or 0x007A or 0x0091))
         {
             return layout;
         }
