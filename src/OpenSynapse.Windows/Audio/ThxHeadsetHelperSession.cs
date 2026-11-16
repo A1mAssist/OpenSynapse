@@ -461,8 +461,11 @@ internal sealed class ThxHeadsetHelperSession
 
     private IReadOnlyList<ThxAudioPreset> ReadV3Presets(string containerId)
     {
-        var entries = TryRead(() => ThxVendorJson.ParsePresetEntries(_v3!.GetPresetList(containerId)));
-        return WithDefaultPreset(entries?.Select(entry => new ThxAudioPreset(entry.Id, entry.Name)).ToArray());
+        // An empty fallback list hides an endpoint that never answered. The V3
+        // preset package is required, so a failed list read is a native failure.
+        var entries = TryRead(() => ThxVendorJson.ParsePresetEntries(_v3!.GetPresetList(containerId)))
+            ?? throw new InvalidOperationException("The THX endpoint did not return a preset list.");
+        return WithDefaultPreset(entries.Select(entry => new ThxAudioPreset(entry.Id, entry.Name)).ToArray());
     }
 
     private IReadOnlyList<ThxAudioPreset> ReadV4Presets()
