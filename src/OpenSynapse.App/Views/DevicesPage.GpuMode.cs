@@ -39,6 +39,18 @@ public sealed partial class DevicesPage
         {
             if (version == _gpuModeRefreshVersion)
             {
+                GpuModeStatusText.Text = AppStrings.Text("DiagnosticProtocolFailedStatus");
+                SetGpuModeDetail(AppStrings.FormatText(
+                    "DedicatedGpuModeError",
+                    exception.Message));
+            }
+            return;
+        }
+        catch (Exception exception)
+        {
+            if (version == _gpuModeRefreshVersion)
+            {
+                GpuModeStatusText.Text = AppStrings.Text("DiagnosticProtocolFailedStatus");
                 SetGpuModeDetail(AppStrings.FormatText(
                     "DedicatedGpuModeError",
                     exception.Message));

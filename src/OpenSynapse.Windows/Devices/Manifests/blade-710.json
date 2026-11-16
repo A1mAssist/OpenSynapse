@@ -59,7 +59,8 @@
       "dataSize": "0C",
       "commandClass": "0D",
       "commandId": "83",
-      "arguments": ""
+      "arguments": "",
+      "allowRemainingPacketsMismatch": true
     },
     "current-fan-rpm.get": {
       "transactionId": "1F",

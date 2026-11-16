@@ -1,5 +1,3 @@
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using OpenSynapse.Core.Profiles;
 
@@ -23,25 +21,50 @@ public sealed class WindowsActiveApplicationProvider : IActiveApplicationProvide
                 return null;
             }
 
-            try
-            {
-                using var process = Process.GetProcessById(checked((int)processId));
-                return process.MainModule?.FileName;
-            }
-            catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or
-                                               Win32Exception or NotSupportedException)
+            var handle = NativeMethods.OpenProcess(
+                NativeMethods.ProcessQueryLimitedInformation,
+                false,
+                processId);
+            if (handle == IntPtr.Zero)
             {
                 return null;
+            }
+
+            try
+            {
+                var buffer = new char[1024];
+                var length = (uint)buffer.Length;
+                return NativeMethods.QueryFullProcessImageName(handle, 0, buffer, ref length)
+                    ? new string(buffer, 0, (int)length)
+                    : null;
+            }
+            finally
+            {
+                NativeMethods.CloseHandle(handle);
             }
         }
     }
 
     private static class NativeMethods
     {
+        internal const uint ProcessQueryLimitedInformation = 0x1000;
+
         [DllImport("user32.dll", ExactSpelling = true)]
         internal static extern IntPtr GetForegroundWindow();
 
         [DllImport("user32.dll", ExactSpelling = true)]
         internal static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern IntPtr OpenProcess(uint access, bool inheritHandle, uint processId);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool QueryFullProcessImageName(
+            IntPtr process, uint flags, [Out] char[] buffer, ref uint length);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool CloseHandle(IntPtr handle);
     }
 }
