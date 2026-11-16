@@ -223,9 +223,18 @@ public sealed partial class RazerHeadsetAudioViewModel
                 // panel the last admission check proved and report the reason.
                 _diagnostic?.Invoke(
                     $"thx operation failed availability={status.Availability} error={status.Error ?? "-"}");
-                _thxErrorText = status.Error == "ThxOperationRejected"
+                _thxErrorText = status.Error?.StartsWith(
+                    "ThxOperationRejected",
+                    StringComparison.Ordinal) == true
                     ? AppStrings.Text("RazerHeadsetThxRejectedInstalled")
                     : ThxMessage(status.Error);
+                if (status.Error?.StartsWith("ThxOperationRejected", StringComparison.Ordinal) == true ||
+                    status.Error == "ThxNativeFailure")
+                {
+                    _thxStatus = new ThxHeadsetStatus(
+                        ThxHeadsetAvailability.NativeMissing,
+                        status.Error);
+                }
                 OperationStatusText = string.Empty;
                 return false;
             }
@@ -280,6 +289,10 @@ public sealed partial class RazerHeadsetAudioViewModel
                     // APO for this model is usually the missing piece.
                     "ThxNativeFailure" or "ThxOperationRejected" =>
                         ThxHeadsetAvailability.NativeMissing,
+                    _ when status.Error?.StartsWith(
+                        "ThxOperationRejected:",
+                        StringComparison.Ordinal) == true =>
+                        ThxHeadsetAvailability.NativeMissing,
                     _ => ThxHeadsetAvailability.Available,
                 },
                 status.Error);
@@ -333,6 +346,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         "ThxHelperMissing" or "ThxHelperStartFailed" or "ThxHelperExited" =>
             AppStrings.Text("RazerHeadsetThxHelperFailed"),
         "ThxOperationRejected" or "ThxNativeFailure" or "ThxInvalidRequest" =>
+            AppStrings.Text("RazerHeadsetThxOperationRejected"),
+        _ when error?.StartsWith("ThxOperationRejected:", StringComparison.Ordinal) == true =>
             AppStrings.Text("RazerHeadsetThxOperationRejected"),
         "ThxRebootRequired" => AppStrings.Text("RazerHeadsetThxRebootRequired"),
         _ when error?.StartsWith("ThxHelperFailed", StringComparison.Ordinal) == true =>

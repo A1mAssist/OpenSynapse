@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Security.Cryptography;
+using System.Text;
 using OpenSynapse.Core.Storage;
 
 namespace OpenSynapse.Windows.Audio;
@@ -28,55 +29,39 @@ internal static class ThxComponentInstaller
         ThxInstallerPackage package,
         CancellationToken cancellationToken,
         bool repair = false,
-        string? startService = null)
+        string? startService = null,
+        ThxInstallerPackage? extra = null)
     {
         if (package.Length <= 0 || package.Sha256.Length != 64)
+        {
+            return new("ThxInstallerVerificationFailed");
+        }
+        if (extra is not null && (extra.Length <= 0 || extra.Sha256.Length != 64))
         {
             return new("ThxInstallerVerificationFailed");
         }
 
         var directory = Path.Combine(AppDataPaths.Combine("Temp"), "Thx");
         var temporary = Path.Combine(directory, $"thx-{Guid.NewGuid():N}.exe");
+        var extraTemporary = extra is null
+            ? null
+            : Path.Combine(directory, $"thx-{Guid.NewGuid():N}.exe");
         try
         {
             Directory.CreateDirectory(directory);
-            using var response = await Client.GetAsync(
-                package.Uri,
-                HttpCompletionOption.ResponseHeadersRead,
-                cancellationToken).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
-            if (response.Content.Headers.ContentLength is { } declaredLength &&
-                declaredLength != package.Length)
+            var downloadError = await DownloadAsync(package, temporary, cancellationToken)
+                .ConfigureAwait(false);
+            if (downloadError is not null)
             {
-                return new("ThxInstallerVerificationFailed");
+                return new(downloadError);
             }
-
-            await using (var source = await response.Content
-                .ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
-            await using (var target = new FileStream(
-                temporary,
-                FileMode.CreateNew,
-                FileAccess.Write,
-                FileShare.None,
-                bufferSize: 81920,
-                FileOptions.Asynchronous | FileOptions.SequentialScan))
+            if (extra is not null)
             {
-                await source.CopyToAsync(target, cancellationToken).ConfigureAwait(false);
-            }
-
-            if (new FileInfo(temporary).Length != package.Length)
-            {
-                return new("ThxInstallerVerificationFailed");
-            }
-
-            using (var stream = new FileStream(temporary, FileMode.Open, FileAccess.Read, FileShare.Read))
-            {
-                if (!string.Equals(
-                        Convert.ToHexString(SHA256.HashData(stream)),
-                        package.Sha256,
-                        StringComparison.OrdinalIgnoreCase))
+                downloadError = await DownloadAsync(extra, extraTemporary!, cancellationToken)
+                    .ConfigureAwait(false);
+                if (downloadError is not null)
                 {
-                    return new("ThxInstallerVerificationFailed");
+                    return new(downloadError);
                 }
             }
 
@@ -84,13 +69,19 @@ internal static class ThxComponentInstaller
             var result = await RunAsync(
                 temporary,
                 repair ? $"/repair {package.Arguments}" : package.Arguments,
-                startService).ConfigureAwait(false);
+                startService,
+                extraTemporary,
+                extra?.Arguments).ConfigureAwait(false);
             if (repair && result.Error is not null)
             {
                 // A leftover service with no registered bundle cannot be repaired:
                 // retry the cached installer as a plain install.
-                result = await RunAsync(temporary, package.Arguments, startService)
-                    .ConfigureAwait(false);
+                result = await RunAsync(
+                    temporary,
+                    package.Arguments,
+                    startService,
+                    extraTemporary,
+                    extra?.Arguments).ConfigureAwait(false);
             }
             return result;
         }
@@ -120,36 +111,105 @@ internal static class ThxComponentInstaller
         }
         finally
         {
-            try
+            TryDelete(temporary);
+            if (extraTemporary is not null)
             {
-                File.Delete(temporary);
-            }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-            {
+                TryDelete(extraTemporary);
             }
         }
+    }
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            File.Delete(path);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+        }
+    }
+
+    private static async Task<string?> DownloadAsync(
+        ThxInstallerPackage package,
+        string path,
+        CancellationToken cancellationToken)
+    {
+        using var response = await Client.GetAsync(
+            package.Uri,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+        if (response.Content.Headers.ContentLength is { } declaredLength &&
+            declaredLength != package.Length)
+        {
+            return "ThxInstallerVerificationFailed";
+        }
+
+        await using (var source = await response.Content
+            .ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
+        await using (var target = new FileStream(
+            path,
+            FileMode.CreateNew,
+            FileAccess.Write,
+            FileShare.None,
+            bufferSize: 81920,
+            FileOptions.Asynchronous | FileOptions.SequentialScan))
+        {
+            await source.CopyToAsync(target, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (new FileInfo(path).Length != package.Length)
+        {
+            return "ThxInstallerVerificationFailed";
+        }
+
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        return string.Equals(
+            Convert.ToHexString(SHA256.HashData(stream)),
+            package.Sha256,
+            StringComparison.OrdinalIgnoreCase)
+                ? null
+                : "ThxInstallerVerificationFailed";
     }
 
     private static async Task<ThxComponentInstallResult> RunAsync(
         string path,
         string arguments,
-        string? startService)
+        string? startService,
+        string? extraPath = null,
+        string? extraArguments = null)
     {
         string? commandFile = null;
         try
         {
             var fileName = path;
             var commandArguments = arguments;
-            if (startService is not null)
+            if (startService is not null || extraPath is not null)
             {
                 // Run the installer and sc start under the same elevated token, so
                 // a stopped service does not force a second UAC prompt or a reboot.
                 commandFile = Path.Combine(
                     Path.GetDirectoryName(path)!,
                     $"thx-{Guid.NewGuid():N}.cmd");
+                var script = new StringBuilder()
+                    .AppendLine("@echo off")
+                    .AppendLine($"\"{path}\" {arguments}")
+                    .AppendLine("set RC=%ERRORLEVEL%");
+                if (extraPath is not null)
+                {
+                    script
+                        .AppendLine($"\"{extraPath}\" {extraArguments}")
+                        .AppendLine("if %RC%==0 set RC=%ERRORLEVEL%");
+                }
+                if (startService is not null)
+                {
+                    script.AppendLine($"sc start {startService} >nul 2>&1");
+                }
+                script.AppendLine("exit /b %RC%");
                 await File.WriteAllTextAsync(
                     commandFile,
-                    $"@echo off\r\n\"{path}\" {arguments}\r\nset RC=%ERRORLEVEL%\r\nsc start {startService} >nul 2>&1\r\nexit /b %RC%\r\n",
+                    script.ToString(),
                     CancellationToken.None).ConfigureAwait(false);
                 fileName = Environment.GetEnvironmentVariable("ComSpec") ?? "cmd.exe";
                 commandArguments = $"/d /c call \"{commandFile}\"";
