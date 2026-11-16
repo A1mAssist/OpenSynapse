@@ -6264,6 +6264,7 @@
         "razer_chroma_standard_get_serial": "FF",
         "razer_chroma_standard_get_firmware_version": "FF",
         "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
         "razer_chroma_extended_matrix_brightness": "1F",
         "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
         "razer_chroma_extended_matrix_effect_breathing_random": "1F",
@@ -6278,7 +6279,6 @@
         "razer_chroma_extended_matrix_effect_wave": "1F",
         "razer_chroma_extended_matrix_set_custom_frame": "1F",
         "razer_chroma_misc_get_blade_brightness": "FF",
-        "razer_chroma_standard_get_led_brightness": "FF",
         "razer_chroma_standard_get_led_state": "FF",
         "razer_chroma_standard_set_led_effect": "FF",
         "razer_chroma_standard_set_led_state": "FF",
@@ -6295,6 +6295,9 @@
         "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
         "razer_chroma_extended_matrix_brightness": [
           "0105"
         ],
@@ -6326,9 +6329,6 @@
           "0105"
         ],
         "razer_chroma_extended_matrix_effect_wave": [
-          "0105"
-        ],
-        "razer_chroma_standard_get_led_brightness": [
           "0105"
         ],
         "razer_chroma_standard_get_led_state": [
@@ -6363,6 +6363,7 @@
         "razer_chroma_standard_get_serial": "FF",
         "razer_chroma_standard_get_firmware_version": "FF",
         "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
         "razer_chroma_extended_matrix_brightness": "1F",
         "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
         "razer_chroma_extended_matrix_effect_breathing_random": "1F",
@@ -6391,6 +6392,9 @@
         "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
         "razer_chroma_extended_matrix_brightness": [
           "0105"
         ],
@@ -6453,6 +6457,7 @@
         "razer_chroma_standard_get_serial": "FF",
         "razer_chroma_standard_get_firmware_version": "FF",
         "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
         "razer_chroma_extended_matrix_brightness": "1F",
         "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
         "razer_chroma_extended_matrix_effect_breathing_random": "1F",
@@ -6467,7 +6472,6 @@
         "razer_chroma_extended_matrix_effect_wave": "1F",
         "razer_chroma_extended_matrix_set_custom_frame": "1F",
         "razer_chroma_misc_get_blade_brightness": "FF",
-        "razer_chroma_standard_get_led_brightness": "FF",
         "razer_chroma_standard_get_led_state": "FF",
         "razer_chroma_standard_set_led_effect": "FF",
         "razer_chroma_standard_set_led_state": "FF",
@@ -6484,6 +6488,9 @@
         "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
         "razer_chroma_extended_matrix_brightness": [
           "0105"
         ],
@@ -6515,9 +6522,6 @@
           "0105"
         ],
         "razer_chroma_extended_matrix_effect_wave": [
-          "0105"
-        ],
-        "razer_chroma_standard_get_led_brightness": [
           "0105"
         ],
         "razer_chroma_standard_get_led_state": [
@@ -6854,6 +6858,7 @@
         "razer_chroma_standard_get_serial": "FF",
         "razer_chroma_standard_get_firmware_version": "FF",
         "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
         "razer_chroma_extended_matrix_brightness": "1F",
         "razer_chroma_extended_matrix_effect_breathing_dual": "1F",
         "razer_chroma_extended_matrix_effect_breathing_random": "1F",
@@ -6871,7 +6876,6 @@
         "razer_chroma_misc_set_polling_rate2": "1F",
         "razer_chroma_misc_get_active_profile": "1F",
         "razer_chroma_misc_get_blade_brightness": "FF",
-        "razer_chroma_standard_get_led_brightness": "FF",
         "razer_chroma_standard_get_led_state": "FF",
         "razer_chroma_standard_set_led_effect": "FF",
         "razer_chroma_standard_set_led_state": "FF",
@@ -6888,6 +6892,9 @@
         "razer_chroma_misc_set_battery_charge_limiter": "1F"
       },
       "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0105"
+        ],
         "razer_chroma_extended_matrix_brightness": [
           "0105"
         ],
@@ -6919,9 +6926,6 @@
           "0105"
         ],
         "razer_chroma_extended_matrix_effect_wave": [
-          "0105"
-        ],
-        "razer_chroma_standard_get_led_brightness": [
           "0105"
         ],
         "razer_chroma_standard_get_led_state": [
