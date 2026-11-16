@@ -108,8 +108,17 @@ internal sealed partial class BladeTelemetryReader
             var request = BladeSynapsePolicyProtocol.CreateSetTouchpadStatusRequest(enabled);
             var response = await _client.QueryBuiltRequestAsync(
                 blade, CapabilityIds.TouchpadStatusSet, request, cancellationToken);
-            return response.Length == RazerFeatureReport.Length &&
-                   RazerFeatureReport.IsAcceptedStatus(response[1]);
+            if (response.Length != RazerFeatureReport.Length ||
+                !RazerFeatureReport.IsAcceptedStatus(response[1]))
+            {
+                return false;
+            }
+
+            // Synapse reads the applied value back from the echoed
+            // [profile, type, status] payload; an accepted report alone does not
+            // mean the EC actually changed the indicator.
+            return response[6] < 3 ||
+                   response[RazerFeatureReport.ArgumentsOffset + 2] == (enabled ? (byte)0x01 : (byte)0x00);
         }
         catch (Exception exception) when (
             RazerCapabilityClient.IsExpectedHardwareException(exception) ||

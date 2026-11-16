@@ -39,6 +39,23 @@ public sealed partial class BladeWorkspace
                     exception.Message));
             }
         }
+
+        if (_touchpadController?.GetEnabled() is bool touchpadEnabled)
+        {
+            try
+            {
+                // Synapse mirrors the Windows touchpad state onto the EC on
+                // startup so the indicator does not stay stale across restarts.
+                await _deviceTelemetryReader.SetBladeTouchpadStatusAsync(
+                    ActiveDescriptors, touchpadEnabled, cancellationToken);
+            }
+            catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
+            {
+                _diagnosticLog.TryWrite(
+                    "device-operation",
+                    $"touchpad indicator startup sync failed: {exception}");
+            }
+        }
     }
 
     internal void ApplyTelemetry(RazerDeviceTelemetry telemetry)
