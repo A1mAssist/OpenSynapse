@@ -8,6 +8,33 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerHidWorkspace
 {
+    private bool _restoredLightingOnDiscovery;
+
+    private async Task RestoreInitialLightingAsync(
+        IReadOnlyList<RazerHidDeviceConnection> connections,
+        CancellationToken cancellationToken)
+    {
+        if (_restoredLightingOnDiscovery || connections.Count == 0)
+        {
+            return;
+        }
+
+        _restoredLightingOnDiscovery = true;
+        try
+        {
+            // A tray start has no selected device, so nothing used to replay the
+            // saved lighting profiles until the user clicked a row.
+            await _softwareLightingOwner.RestoreAsync(
+                connections, SelectedDevice, cancellationToken).ConfigureAwait(true);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _diagnosticLog.TryWrite(
+                "razer-hid",
+                $"initial lighting restore failed: {exception.Message}");
+        }
+    }
+
     private async Task<bool> SaveLightingAsync(
         RazerHidDeviceConnection connection,
         PowerSourceKind powerState,

@@ -198,8 +198,8 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
             connections = RazerHidDeviceConnectionSiblings.Collapse(connections);
             await RestoreDriverModeAsync(connections, cancellationToken);
             await SyncPrivateKeyDriverModeAsync(cancellationToken);
-            // After pruning, this method rebuilds bound collections and selects a device;
-            // keep the refresh loop's UI context instead of continuing on the pool.
+            await RestoreInitialLightingAsync(connections, cancellationToken).ConfigureAwait(true);
+            // Rebuild bound collections and keep the refresh loop's UI context.
             await _softwareLightingOwner.PruneAsync(connections, cancellationToken).ConfigureAwait(true);
             if (Devices.Count != connections.Length ||
                 !Devices.Zip(connections)
