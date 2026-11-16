@@ -44,6 +44,33 @@ public static class RazerProductAliases
             // Razer Basilisk V3 Pro 35K Xbox 25th Anniversary Edition
             [0xB00B] = 0xB00A,
             [0xB00C] = 0xB00A,
+            // Wireless receivers and Bluetooth identities share the wired model's
+            // product page and driver package.
+            [0x005A] = 0x0059,
+            [0x006F] = 0x0070,
+            [0x0072] = 0x0073,
+            [0x0077] = 0x0080,
+            [0x007B] = 0x007A,
+            [0x007D] = 0x007C,
+            [0x0090] = 0x008F,
+            [0x0095] = 0x0094,
+            [0x009F] = 0x009E,
+            [0x00A6] = 0x00A5,
+            [0x00A8] = 0x00A7,
+            [0x00AB] = 0x00AA,
+            [0x00B0] = 0x00AF,
+            [0x00B7] = 0x00B6,
+            [0x00BF] = 0x00BE,
+            [0x00C1] = 0x00C0,
+            [0x00C3] = 0x00C2,
+            [0x00C5] = 0x00C4,
+            [0x00C8] = 0x00C7,
+            [0x00CD] = 0x00CC,
+            [0x00D1] = 0x00D0,
+            [0x00D4] = 0x00D3,
+            [0x00D7] = 0x00D6,
+            [0x00DB] = 0x00DA,
+            [0x00E6] = 0x00E5,
         };
 
     // These siblings expose the protocol-30 BLE page, not the 91-byte protocol-25 keyboard path.
