@@ -110,13 +110,14 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
 
             clears = SoftwareTriggersToClear(pending, softwareRows);
 
-            var offRows = softwareRows
+            var softwareAssignmentRows = softwareRows
                 .Where(row => _softwareTriggerResolver?.Invoke(row.ButtonId) is { } input &&
-                    RazerSoftwareMacroAssignmentPolicy.NeedsOff(input))
+                    RazerSoftwareMacroAssignmentPolicy.NeedsDeviceAssignment(input))
                 .ToArray();
 
-            var backups = new List<AssignmentBackup>(assignmentRows.Length + offRows.Length);
-            foreach (var row in assignmentRows.Concat(offRows))
+            var backups = new List<AssignmentBackup>(
+                assignmentRows.Length + softwareAssignmentRows.Length);
+            foreach (var row in assignmentRows.Concat(softwareAssignmentRows))
             {
                 backups.Add(new AssignmentBackup(
                     row,
@@ -165,12 +166,14 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 applied++;
             }
 
-            foreach (var row in offRows)
+            foreach (var row in softwareAssignmentRows)
             {
+                var input = _softwareTriggerResolver!(row.ButtonId)!;
+                var (functionId, data) = BindingAssignment(input, row.ButtonId);
                 try
                 {
                     await _transport.SetAssignmentAsync(
-                        row.ButtonId, Mode, RazerHidMappingFunctions.Off, Array.Empty<byte>(),
+                        row.ButtonId, Mode, functionId, data,
                         cancellationToken).ConfigureAwait(true);
                 }
                 catch

@@ -67,6 +67,23 @@ public sealed partial class RazerHidWorkspace
             }
         }
 
+        if (input.Kind == MacroInputKind.MouseButton && input.MouseButton > 5)
+        {
+            if (SelectedDevice is { } selected && IsMouse(selected.Connection))
+            {
+                return selected;
+            }
+
+            var mouse = Devices.FirstOrDefault(row =>
+                row.Connection.IsReady && IsMouse(row.Connection));
+            if (mouse is not null)
+            {
+                var device = mouse.Detail ?? CreateDeviceViewModel(mouse.Connection);
+                mouse.AttachDetail(device);
+                return device;
+            }
+        }
+
         if (input.DeviceId is > 0 and <= ushort.MaxValue)
         {
             var productId = (ushort)input.DeviceId;
@@ -97,4 +114,7 @@ public sealed partial class RazerHidWorkspace
             0x1532,
             connection.Definition.ProductId,
             connection.Definition.DisplayName);
+
+    private static bool IsMouse(RazerHidDeviceConnection connection) =>
+        connection.Definition.Category == DeviceCategory.Mouse;
 }

@@ -135,7 +135,7 @@ public sealed partial class MacroWorkspace
             return;
         }
 
-        if (RazerSoftwareMacroAssignmentPolicy.NeedsOff(trigger.Input))
+        if (RazerSoftwareMacroAssignmentPolicy.NeedsDeviceAssignment(trigger.Input))
         {
             await BindDeviceTriggerAsync(selected, trigger, cancellationToken).ConfigureAwait(true);
             return;
@@ -235,7 +235,7 @@ public sealed partial class MacroWorkspace
         NotifySelectedMacroChanged();
         NotifyTriggerChanged();
         StatusText = AppStrings.Text(clearedInput is { } input &&
-            RazerSoftwareMacroAssignmentPolicy.NeedsOff(input) && !restored
+            RazerSoftwareMacroAssignmentPolicy.NeedsDeviceAssignment(input) && !restored
                 ? "MacroTriggerClearedRestoreAssignment"
                 : "MacroTriggerCleared");
     }

@@ -13,4 +13,13 @@ public static class RazerSoftwareMacroAssignmentPolicy
         input.Kind is MacroInputKind.RazerKey or
             MacroInputKind.NagaSideButton or
             MacroInputKind.DeviceButton;
+
+    // Standard HID buttons above XBUTTON2 have no low-level hook to suppress them.
+    // Keep the device emitting the same usage so OpenSynapse's HID reader can own it.
+    public static bool NeedsSelfMapping(MacroInput input) =>
+        input.Kind == MacroInputKind.MouseButton &&
+        input.MouseButton is >= 6 and <= 8;
+
+    public static bool NeedsDeviceAssignment(MacroInput input) =>
+        NeedsOff(input) || NeedsSelfMapping(input);
 }

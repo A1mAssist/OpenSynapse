@@ -126,14 +126,15 @@ public sealed class MacroInput
         bool allowPrimaryMouseButton,
         bool allowWheel = true,
         bool allowNagaSideButton = false,
-        bool allowDeviceButton = false)
+        bool allowDeviceButton = false,
+        bool allowExtraMouseButton = false)
     {
         return Kind switch
         {
             MacroInputKind.Keyboard => VirtualKey is > 0 and <= 0xFF && ScanCode is >= 0 and <= 0xFFFF,
             MacroInputKind.MouseButton => allowPrimaryMouseButton
-                ? MouseButton is >= 1 and <= 5
-                : MouseButton is >= 3 and <= 5,
+                ? MouseButton >= 1 && MouseButton <= (allowExtraMouseButton ? 8 : 5)
+                : MouseButton >= 3 && MouseButton <= (allowExtraMouseButton ? 8 : 5),
             MacroInputKind.NagaSideButton => allowNagaSideButton && SideButton is >= 1 and <= 12,
             MacroInputKind.DeviceButton => allowDeviceButton &&
                 DeviceId is > 0 and <= 0xFFFF &&
@@ -296,7 +297,8 @@ public sealed class MacroDefinition
                 allowPrimaryMouseButton: true,
                 allowWheel: false,
                 allowNagaSideButton: true,
-                allowDeviceButton: true))
+                allowDeviceButton: true,
+                allowExtraMouseButton: true))
         {
             Trigger = null;
         }

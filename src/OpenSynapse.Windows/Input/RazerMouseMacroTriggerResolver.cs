@@ -16,6 +16,15 @@ public static class RazerMouseMacroTriggerResolver
         0xB00A, 0xB00B, 0xB00C,
     ];
 
+    // The Viper bundle exposes the right-side pair as standard HID buttons 6/7.
+    private static readonly HashSet<ushort> ExtraMouseButtonProducts =
+    [
+        0x0078,
+    ];
+
+    internal static bool SupportsExtraMouseButtons(ushort productId) =>
+        ExtraMouseButtonProducts.Contains(productId);
+
     public static MacroInput? Resolve(ushort productId, byte buttonId, bool isNaga)
     {
         // The mapping page uses the standard button ids: 1 left, 2 right, 3 middle,
@@ -33,6 +42,16 @@ public static class RazerMouseMacroTriggerResolver
         if (isNaga && RazerNagaSideButtonResolver.Resolve(buttonId) is { } naga)
         {
             return naga;
+        }
+
+        if (SupportsExtraMouseButtons(productId) &&
+            buttonId is >= 6 and <= 8)
+        {
+            return new MacroInput
+            {
+                Kind = MacroInputKind.MouseButton,
+                MouseButton = buttonId,
+            };
         }
 
         // The HyperShift layer reports the side buttons as DKM_M_03/M_04

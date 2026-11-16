@@ -245,7 +245,8 @@ public static class MacroFileStore
                  allowPrimaryMouseButton: true,
                  allowWheel: false,
                  allowNagaSideButton: true,
-                 allowDeviceButton: true)))
+                 allowDeviceButton: true,
+                 allowExtraMouseButton: true)))
         {
             return false;
         }
