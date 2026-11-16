@@ -26,6 +26,11 @@ public enum RazerMappingDeviceKind
 public sealed partial class RazerMappingAssetService
 {
     private const string UiRoot = "https://apps.razer.com/synapse/products/";
+
+    // Viper V4 Pro (00E5/00E6) publishes its UI under page 167, not the decimal PID.
+    private static ushort UiPageId(ushort productId) =>
+        productId is 0x00E5 or 0x00E6 ? (ushort)167 : productId;
+
     private const int MaxManifestBytes = 1024 * 1024;
     private const int MaxScriptBytes = 16 * 1024 * 1024;
     private const int MaxImageBytes = 4 * 1024 * 1024;
@@ -255,7 +260,7 @@ public sealed partial class RazerMappingAssetService
         var cached = TryReadCachedManifest(cachePath);
         var etag = TryReadText(etagPath);
 
-        var uri = FormattableString.Invariant($"{UiRoot}{productId}/ui/asset-manifest.json");
+        var uri = FormattableString.Invariant($"{UiRoot}{UiPageId(productId)}/ui/asset-manifest.json");
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(RequestTimeout);
         try
@@ -477,7 +482,7 @@ public sealed partial class RazerMappingAssetService
 
     private static string ResolveProductUrl(ushort productId, string relativeUrl) =>
         FormattableString.Invariant(
-            $"{UiRoot}{productId}/ui/{relativeUrl.TrimStart('.', '/')}");
+            $"{UiRoot}{UiPageId(productId)}/ui/{relativeUrl.TrimStart('.', '/')}");
 
 }
 
