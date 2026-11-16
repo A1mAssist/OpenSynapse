@@ -13,6 +13,7 @@ public sealed partial class SettingsPage
         ModeNotificationCard.Visibility = visibility;
         PerformanceOverlayCard.Visibility = visibility;
         ChromaRestCard.Visibility = visibility;
+        TaskbarStatusCard.Visibility = visibility;
     }
 
     private async void LiteModeToggled(object sender, RoutedEventArgs e)
