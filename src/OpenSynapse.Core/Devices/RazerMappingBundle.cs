@@ -45,7 +45,7 @@ public static partial class RazerMappingBundleParser
         RegexOptions.CultureInvariant);
 
     private static readonly Regex DrawLineRegex = new(
-        """drawLines?\(\s*(?<index>\d+)\s*,\s*(?:this\.props\.buttonList\[(?<button>\d+)\]|(?<buttonArray>[A-Za-z_$][\w$]*)\[(?<arrayButton>\d+)\])(?:\s*\|\|\s*[A-Za-z_$][\w$]*)?\s*,\s*(?<x>-?\d+(?:\.\d+)?)\s*,\s*(?<y>-?\d+(?:\.\d+)?)(?:\s*,\s*!(?<left>[01]))?\s*\)""",
+        """drawLines?\(\s*(?<index>\d+)\s*,\s*(?:[A-Za-z_$][\w$]*\.props\.buttonList\[(?<button>\d+)\]|(?<buttonArray>[A-Za-z_$][\w$]*)\[(?<arrayButton>\d+)\])(?:\s*\|\|\s*[A-Za-z_$][\w$]*)?\s*,\s*(?<x>-?\d+(?:\.\d+)?)\s*,\s*(?<y>-?\d+(?:\.\d+)?)(?:\s*,\s*!(?<left>[01]))?\s*\)""",
         RegexOptions.CultureInvariant);
 
     private static readonly Regex ButtonListAliasRegex = new(
