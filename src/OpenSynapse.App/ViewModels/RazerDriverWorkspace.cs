@@ -194,6 +194,7 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
 
         IsBusy = true;
         var installed = 0;
+        var commonMayBindLate = false;
         try
         {
             var commonProgress = new Progress<RazerDriverInstallProgress>(update =>
@@ -215,17 +216,25 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                 : await RazerCommonDriverInstaller
                     .InstallAsync(commonProgress, cancellationToken)
                     .ConfigureAwait(true);
-            if (!common.Success)
+            if (common.Success)
+            {
+                commonMayBindLate = RazerDriverInstaller.IsAlreadyInstalledExitCode(common.ExitCode);
+            }
+            else
             {
                 var commonMessage = DescribeFailure(common);
-                foreach (var row in _missing)
+                _diagnosticLog.TryWrite("razer-driver", $"RzCommon: {commonMessage}");
+                commonMayBindLate = true;
+                if (common.Failure == RazerDriverInstallFailure.Cancelled)
                 {
-                    row.StatusText = commonMessage;
-                }
+                    foreach (var row in _missing)
+                    {
+                        row.StatusText = commonMessage;
+                    }
 
-                StatusText = commonMessage;
-                _diagnosticLog.TryWrite("razer-driver", StatusText);
-                return;
+                    StatusText = commonMessage;
+                    return;
+                }
             }
 
             if (await RazerCommonDriverInstaller.EnsureStartedAsync(cancellationToken)
@@ -271,7 +280,16 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                 var result = serviceResult ??
                     await RazerDriverInstaller.InstallAsync(package, progress, cancellationToken)
                         .ConfigureAwait(true);
-                if (result.Success)
+                if (!result.Success &&
+                    !RazerDriverInstaller.IsAlreadyInstalledExitCode(result.ExitCode))
+                {
+                    var message = DescribeFailure(result);
+                    foreach (var row in rowsForPackage)
+                    {
+                        row.StatusText = message;
+                    }
+                }
+                else
                 {
                     installed++;
                     foreach (var row in rowsForPackage)
@@ -348,6 +366,27 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                             row.EndpointVerified = await WaitForEndpointAsync(
                                 row.CandidateProductIds, cancellationToken, attempts: 10)
                                 .ConfigureAwait(true);
+                            if (!row.EndpointVerified && commonMayBindLate)
+                            {
+                                // The filter has created RAZER\DeviceContol by now, so
+                                // RzCommon can finally bind and expose the endpoint.
+                                var commonRetry = await RazerCommonDriverInstaller
+                                    .InstallAsync(commonProgress, cancellationToken)
+                                    .ConfigureAwait(true);
+                                commonMayBindLate = false;
+                                _diagnosticLog.TryWrite(
+                                    "razer-driver",
+                                    commonRetry.Success
+                                        ? "RzCommon bound after the filter attached."
+                                        : $"RzCommon after filter attach: {DescribeFailure(commonRetry)}");
+                                if (commonRetry.Success)
+                                {
+                                    row.EndpointVerified = await WaitForEndpointAsync(
+                                        row.CandidateProductIds, cancellationToken, attempts: 10)
+                                        .ConfigureAwait(true);
+                                }
+                            }
+
                             if (!row.EndpointVerified)
                             {
                                 row.StatusText = AppStrings.Text("RazerDriverEndpointPending");
@@ -357,14 +396,6 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
 
                         row.StatusText = AppStrings.Text("RazerDriverInstalledOnline");
                         _missing.Remove(row);
-                    }
-                }
-                else
-                {
-                    var message = DescribeFailure(result);
-                    foreach (var row in rowsForPackage)
-                    {
-                        row.StatusText = message;
                     }
                 }
             }

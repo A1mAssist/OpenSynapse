@@ -28,6 +28,17 @@ public interface IRazerFeatureTransport
         bool allowRemainingPacketsMismatch = false) =>
         throw new NotSupportedException("This transport does not support prepared feature requests.");
 
+    async Task<byte[]> QueryPreparedForProductAsync(
+        string devicePath,
+        ushort logicalProductId,
+        ReadOnlyMemory<byte> request,
+        TimeSpan deviceWait,
+        CancellationToken cancellationToken,
+        bool allowRemainingPacketsMismatch = false) =>
+        await QueryPreparedAsync(
+            devicePath, request, deviceWait, cancellationToken, allowRemainingPacketsMismatch)
+            .ConfigureAwait(false);
+
     Task<IRazerFeatureSession> OpenSessionAsync(
         string devicePath,
         CancellationToken cancellationToken) =>
@@ -311,12 +322,14 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
         TimeSpan deviceWait,
         byte responseReportId,
         CancellationToken cancellationToken,
-        bool allowRemainingPacketsMismatch)
+        bool allowRemainingPacketsMismatch,
+        ushort? logicalProductId = null)
     {
         // ponytail: paths are bounded by locally attached HID collections; prune only if
         // long-running hot-plug churn ever makes this cache measurably large.
         var gate = _gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
         var usesLeviathanReportId = UsesLeviathanReportId(devicePath);
+        var usesMouseDockLinker = UsesMouseDockLinker(devicePath);
         await gate.WaitAsync(cancellationToken);
         try
         {
@@ -327,7 +340,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
                 request[2] = NextLeviathanTransactionId(ref sequence[0]);
                 responseReportId = LeviathanV2XProtocol.ReportId;
             }
-            else PrepareStandardTransaction(devicePath, request);
+            else PrepareStandardTransaction(devicePath, request, logicalProductId);
 
             try
             {
@@ -340,6 +353,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
                     cancellationToken,
                     allowRemainingPacketsMismatch,
                     usesLeviathanReportId,
+                    usesMouseDockLinker,
                     directIo: false,
                     message => WriteDiagnostic(devicePath, request, message)).ConfigureAwait(false);
             }
@@ -388,6 +402,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
         CancellationToken cancellationToken,
         bool allowRemainingPacketsMismatch,
         bool usesLeviathanReportId,
+        bool usesMouseDockLinker,
         bool directIo = false,
         Action<string>? diagnostic = null)
     {
@@ -431,7 +446,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
                 }
 
                 var classification = ClassifyResponse(request, candidate, responseReportId,
-                    usesLeviathanReportId, allowRemainingPacketsMismatch);
+                    usesLeviathanReportId, allowRemainingPacketsMismatch, usesMouseDockLinker);
                 if (classification == RazerResponseMatch.BusyReceipt)
                 {
                     // A busy receipt left by an earlier command must not be reported as a
@@ -616,27 +631,6 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
 
     internal static bool IsRetryableBusyResponse(byte status, byte commandId) =>
         status == 0x01 && (commandId & 0x80) != 0;
-
-    internal static RazerResponseMatch ClassifyResponse(
-        ReadOnlySpan<byte> request,
-        byte[] candidate,
-        byte responseReportId,
-        bool usesLeviathanReportId,
-        bool allowRemainingPacketsMismatch)
-    {
-        var matches = usesLeviathanReportId
-            ? RazerFeatureReport.MatchesLeviathanResponse(request, candidate, allowRemainingPacketsMismatch)
-            : RazerFeatureReport.Matches(request, candidate, allowRemainingPacketsMismatch);
-        // The 1354 middleware never checks the reply's report id; the feature collection
-        // only has one feature report and the transaction plus command identify it.
-        if (!usesLeviathanReportId && !RazerFeatureReport.MatchesReportId(candidate, responseReportId))
-        {
-            matches = false;
-        }
-        if (matches)
-            return RazerResponseMatch.Matched;
-        return candidate[1] == 0x01 ? RazerResponseMatch.BusyReceipt : RazerResponseMatch.Mismatched;
-    }
 
     internal static string DescribeDevicePath(string devicePath)
     {

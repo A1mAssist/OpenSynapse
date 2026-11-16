@@ -173,6 +173,7 @@ public sealed partial class RazerFeatureTransport
                     cancellationToken,
                     allowRemainingPacketsMismatch: true,
                     usesLeviathanReportId: false,
+                    usesMouseDockLinker: UsesMouseDockLinker(devicePath),
                     directIo: true).ConfigureAwait(false);
             }
             finally
@@ -201,6 +202,7 @@ public sealed partial class RazerFeatureTransport
                     cancellationToken,
                     allowRemainingPacketsMismatch,
                     usesLeviathanReportId: false,
+                    usesMouseDockLinker: UsesMouseDockLinker(devicePath),
                     directIo: directIo).ConfigureAwait(false);
             }
             finally

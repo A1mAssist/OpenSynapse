@@ -53,4 +53,19 @@ internal sealed partial class BladeFanTelemetryReader
             return null;
         }
     }
+
+    /// <summary>
+    /// Raises a target to the mode's published floor. A captured state can hold a
+    /// lower value than the fixed slider offers, and restoring it must not fail.
+    /// </summary>
+    private async ValueTask<int> ClampToModeFloorAsync(
+        ResolvedRazerDevice blade,
+        BladePerformanceMode mode,
+        int rpm,
+        CancellationToken cancellationToken)
+    {
+        var range = await ReadFanRangeAsync(blade, mode, cancellationToken).ConfigureAwait(false)
+            ?? blade.GetBladeFanTargetRange(mode);
+        return Math.Max(rpm, range.MinimumRpm);
+    }
 }

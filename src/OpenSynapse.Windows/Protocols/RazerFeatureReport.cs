@@ -231,6 +231,25 @@ public static class RazerFeatureReport
         response[7] == request[7] &&
         response[8] == request[8];
 
+    /// <summary>
+    /// The 00A4 linker answers with the same checksum for every transaction; the dock
+    /// firmware does not produce the checksum this shared range expects. The official
+    /// middleware matches the transaction, payload size, class and command, and ignores
+    /// the checksum. Keep the same gate for that one HID path.
+    /// </summary>
+    internal static bool MatchesMouseDockLinkerResponse(
+        ReadOnlySpan<byte> request,
+        ReadOnlySpan<byte> response,
+        bool allowRemainingPacketsMismatch = false) =>
+        request.Length == Length &&
+        response.Length == Length &&
+        (response[2] == request[2] || request[2] == 0xFF) &&
+        (allowRemainingPacketsMismatch ||
+         (response[3] == request[3] && response[4] == request[4])) &&
+        (allowRemainingPacketsMismatch || response[6] == request[6]) &&
+        response[7] == request[7] &&
+        response[8] == request[8];
+
     private static byte CalculateCrcIncludingTransaction(ReadOnlySpan<byte> report)
     {
         if (report.Length != Length)
