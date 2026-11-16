@@ -231,6 +231,7 @@ public sealed partial class BladeWorkspace
             return;
         }
 
+        var failures = new List<string>();
         if (profile.CpuBoostMode is byte rawCpu &&
             Enum.IsDefined(typeof(BladeCpuBoostMode), rawCpu))
         {
@@ -241,9 +242,7 @@ public sealed partial class BladeWorkspace
             }
             catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
             {
-                _diagnosticLog.TryWrite(
-                    "blade-performance",
-                    $"Custom CPU level reapply failed: {exception.Message}");
+                failures.Add($"CPU level: {exception.Message}");
             }
         }
 
@@ -257,10 +256,14 @@ public sealed partial class BladeWorkspace
             }
             catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
             {
-                _diagnosticLog.TryWrite(
-                    "blade-performance",
-                    $"Custom GPU level reapply failed: {exception.Message}");
+                failures.Add($"GPU level: {exception.Message}");
             }
+        }
+
+        if (failures.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"The performance mode changed, but the custom power levels could not be replayed: {string.Join("; ", failures)}.");
         }
     }
 
