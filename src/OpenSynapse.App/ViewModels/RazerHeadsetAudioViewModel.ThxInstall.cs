@@ -70,7 +70,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             IsBusy = false;
         }
 
-        if (!cancellationToken.IsCancellationRequested)
+        if (!cancellationToken.IsCancellationRequested && !_thxStatus.RebootRequired)
         {
             await RefreshThxAsync(cancellationToken);
         }
