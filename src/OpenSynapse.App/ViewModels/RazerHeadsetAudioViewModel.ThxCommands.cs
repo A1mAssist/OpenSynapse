@@ -196,6 +196,10 @@ public sealed partial class RazerHeadsetAudioViewModel
             ApplyThxStatus(await ThxController.ReadAsync(
                 ThxAudioEndpoint.Headphones,
                 cancellationToken).ConfigureAwait(true));
+            if (_thxState is null)
+            {
+                OperationStatusText = string.Empty;
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -206,6 +210,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             _thxState = null;
             _diagnostic?.Invoke($"thx read failed error={exception.Message}");
             _thxErrorText = AppStrings.Text("RazerHeadsetThxRejectedInstalled");
+            OperationStatusText = string.Empty;
             NotifyThxStatus();
         }
     }
