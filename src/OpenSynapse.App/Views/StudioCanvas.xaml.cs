@@ -77,7 +77,6 @@ public sealed partial class StudioCanvas : UserControl
         Refresh();
     }
     public event EventHandler? SelectionChanged;
-
     /// <summary>Shift-click on one LED: (instanceId, matrix row, matrix column).</summary>
     public event Action<string, int, int>? LedShiftClicked;
     /// <summary>Bucket click: the page resolves the region/device cells and calls SelectLeds.</summary>

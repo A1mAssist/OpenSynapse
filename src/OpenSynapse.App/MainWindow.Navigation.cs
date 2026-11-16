@@ -19,7 +19,7 @@ public sealed partial class MainWindow
 
     internal void RequestNavigation(string page) => _dispatcherQueue.TryEnqueue(() =>
     {
-        if (_viewModel.IsLiteMode && page is "overview" or "studio")
+        if (_viewModel.IsLiteMode && page is "overview")
         {
             page = "devices";
         }
