@@ -363,7 +363,9 @@ public sealed class RazerHidSpecialLightingService
                 $"RazerHid Kraken V4 1532:{connection.ProductId:X4} does not support {settings.Effect}.");
         }
 
-        var isDongle = connection.ProductId == 0x056C;
+        // AudioMabelT3CDongle (0574) also sets isDongleCommand=false in the bundle,
+        // so its lighting frames carry the same 0x80 direction byte as 056C.
+        var isDongle = connection.ProductId is 0x056C or 0x0574;
         var device = KrakenDevices[connection.ProductId];
         IReadOnlyList<byte[]> reports = settings.Effect switch
         {
