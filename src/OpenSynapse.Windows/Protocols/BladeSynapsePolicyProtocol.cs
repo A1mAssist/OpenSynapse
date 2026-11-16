@@ -31,6 +31,8 @@ public static class BladeSynapsePolicyProtocol
     public const byte StartupAnimationSetCommandId = 0x18;
     public const byte AudioMuteCommandClass = 0x18;
     public const byte AudioMuteSetCommandId = 0x04;
+    public const byte TouchpadStatusSetCommandId = 0x59;
+    public const byte TouchpadFunctionType = 0x01;
 
     public static byte[] CreateSetFnKeyStateRequest(
         bool multiFunctionPrimary,
@@ -68,6 +70,16 @@ public static class BladeSynapsePolicyProtocol
             FnSwapCommandClass,
             FnSwapSetCommandId,
             new[] { multiFunctionPrimary ? (byte)0x01 : (byte)0x00 });
+
+    // Synapse mirrors the Windows precision-touchpad state onto the EC so the
+    // dedicated touchpad key's indicator follows software toggles.
+    public static byte[] CreateSetTouchpadStatusRequest(bool enabled) =>
+        RazerFeatureReport.CreateRequest(
+            SynapseTransactionId,
+            0x03,
+            0x00,
+            TouchpadStatusSetCommandId,
+            new byte[] { 0x00, TouchpadFunctionType, enabled ? (byte)0x01 : (byte)0x00 });
 
     public static BladeFnKeyState ParseFnKeySwap(
         ReadOnlySpan<byte> response,

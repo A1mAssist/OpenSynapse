@@ -17,6 +17,13 @@
     "waitMilliseconds": 2
   },
   "capabilities": {
+    "touchpad-status.set": {
+      "transactionId": "00",
+      "dataSize": "03",
+      "commandClass": "00",
+      "commandId": "59",
+      "arguments": ""
+    },
     "auto-sleep.get": {
       "transactionId": "1F",
       "dataSize": "02",

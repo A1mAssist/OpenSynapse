@@ -88,6 +88,37 @@ internal sealed partial class BladeTelemetryReader
             cancellationToken);
     }
 
+    // Best effort: the Windows precision-touchpad toggle already succeeded, so a
+    // missing or rejected EC status write must not roll that toggle back.
+    public async ValueTask<bool> SetBladeTouchpadStatusAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default)
+    {
+        var blade = _resolver.FindReadyBlade(devices);
+        if (blade is null ||
+            !blade.Owns(CapabilityIds.TouchpadStatusSet) ||
+            !blade.AllowsControlWrites)
+        {
+            return false;
+        }
+
+        try
+        {
+            var request = BladeSynapsePolicyProtocol.CreateSetTouchpadStatusRequest(enabled);
+            var response = await _client.QueryBuiltRequestAsync(
+                blade, CapabilityIds.TouchpadStatusSet, request, cancellationToken);
+            return response.Length == RazerFeatureReport.Length &&
+                   RazerFeatureReport.IsAcceptedStatus(response[1]);
+        }
+        catch (Exception exception) when (
+            RazerCapabilityClient.IsExpectedHardwareException(exception) ||
+            exception is OperationCanceledException)
+        {
+            return false;
+        }
+    }
+
     public async ValueTask<BladeGpuCardDetectionTelemetry> SetBladeGpuCardDetectionAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         bool enabled,

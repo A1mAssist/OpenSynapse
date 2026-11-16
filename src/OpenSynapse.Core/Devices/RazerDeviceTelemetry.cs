@@ -573,6 +573,8 @@ public partial interface IRazerDeviceTelemetryReader
         CancellationToken cancellationToken = default) =>
         throw new NotSupportedException();
 
+    ValueTask<bool> SetBladeTouchpadStatusAsync(IReadOnlyList<DeviceDescriptor> devices, bool enabled, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+
     ValueTask<BladeGpuCardDetectionTelemetry> SetBladeGpuCardDetectionAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         bool enabled,

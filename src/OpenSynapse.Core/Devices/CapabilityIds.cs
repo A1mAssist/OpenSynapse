@@ -75,6 +75,7 @@ public static class CapabilityIds
     public const string ThermalStateSet = "thermal-state.set";
     public const string TimeToDimGet = "time-to-dim.get";
     public const string TimeToDimSet = "time-to-dim.set";
+    public const string TouchpadStatusSet = "touchpad-status.set";
     /// <summary>
     /// Receiver-level link status (class 0x00, command 0xBF). The dongle keeps answering
     /// while the paired device sleeps or is switched off, so this is what separates a dead
@@ -153,6 +154,7 @@ public static class CapabilityIds
         ThermalStateSet,
         TimeToDimGet,
         TimeToDimSet,
+        TouchpadStatusSet,
         WirelessLinkStatusGet,
     });
 }

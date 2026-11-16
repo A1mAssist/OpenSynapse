@@ -337,6 +337,12 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
         CancellationToken cancellationToken = default) =>
         _bladeReader.SetBladeIndicatorLedAsync(devices, enabled, cancellationToken);
 
+    public ValueTask<bool> SetBladeTouchpadStatusAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled,
+        CancellationToken cancellationToken = default) =>
+        _bladeReader.SetBladeTouchpadStatusAsync(devices, enabled, cancellationToken);
+
     public ValueTask<BladeGpuCardDetectionTelemetry> SetBladeGpuCardDetectionAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         bool enabled,
