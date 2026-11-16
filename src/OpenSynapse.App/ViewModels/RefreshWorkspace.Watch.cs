@@ -1,5 +1,6 @@
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Storage;
 
 namespace OpenSynapse.App.ViewModels;
 
@@ -13,7 +14,7 @@ public sealed partial class RefreshWorkspace
             {
                 var interval = Volatile.Read(ref _deviceWatchActive) != 0 &&
                                IsDisplayAvailable
-                    ? TimeSpan.FromSeconds(1)
+                    ? LiteModePolicy.DeviceReadoutInterval(_liteMode)
                     : Profile.ApplicationBindings.Count > 0
                         ? TimeSpan.FromSeconds(10)
                         : Timeout.InfiniteTimeSpan;
