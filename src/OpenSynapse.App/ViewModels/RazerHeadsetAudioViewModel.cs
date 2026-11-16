@@ -599,7 +599,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         }
         if (state.AncLevel is byte level) AncLevel = level;
     }
-
     private static string LocalizeHeadsetReadFailure(string raw) =>
         raw.Contains("does not support seeking", StringComparison.OrdinalIgnoreCase) ||
         raw.Contains("does not support", StringComparison.OrdinalIgnoreCase) ||
