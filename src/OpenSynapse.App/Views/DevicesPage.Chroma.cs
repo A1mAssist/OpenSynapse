@@ -25,8 +25,11 @@ public sealed partial class DevicesPage : UserControl
     private async void ChromaApplyBrightnessClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.Accessories.SelectedChroma?.ApplyBrightnessAsync(Lifetime) ?? Task.CompletedTask);
 
-    private async void ChromaApplyEffectClick(object sender, RoutedEventArgs e) =>
+    private async void ChromaApplyEffectClick(object sender, RoutedEventArgs e)
+    {
+        await SuspendStudioLightingAsync();
         await (ViewModel.Accessories.SelectedChroma?.ApplyEffectAsync(Lifetime) ?? Task.CompletedTask);
+    }
 
 
     private void ArgbLedClick(object sender, RoutedEventArgs e)

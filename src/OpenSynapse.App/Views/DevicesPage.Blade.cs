@@ -68,8 +68,11 @@ public sealed partial class DevicesPage : UserControl
     private async void ApplyBrightnessClick(object sender, RoutedEventArgs e) =>
         await ViewModel.Blade.ApplyBrightnessAsync(Lifetime);
 
-    private async void ApplyLightingEffectClick(object sender, RoutedEventArgs e) =>
+    private async void ApplyLightingEffectClick(object sender, RoutedEventArgs e)
+    {
+        await SuspendStudioLightingAsync();
         await ViewModel.Blade.ApplySelectedLightingEffectAsync(Lifetime);
+    }
 
     private async void LightingPresetButtonClick(object sender, RoutedEventArgs e)
     {
@@ -93,6 +96,7 @@ public sealed partial class DevicesPage : UserControl
         var file = await picker.PickSingleFileAsync();
         if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
         {
+            await SuspendStudioLightingAsync();
             await ViewModel.Blade.ImportChromaFileAsync(file.Path, Lifetime);
         }
     }
@@ -104,6 +108,7 @@ public sealed partial class DevicesPage : UserControl
 
     private async Task ApplyLightingPresetAsync(string target, LightingPresetOption preset)
     {
+        await SuspendStudioLightingAsync();
         if (target == "blade")
         {
             // Ask the view model which effect is selected; the admitted list differs per
@@ -233,10 +238,12 @@ public sealed partial class DevicesPage : UserControl
                 break;
             case "lighting":
                 // These combos already wrote their value through the TwoWay binding.
+                await SuspendStudioLightingAsync();
                 await ViewModel.Blade.ApplySelectedLightingEffectAsync(Lifetime);
                 break;
             case "lightingMode":
                 ViewModel.Blade.LightingModeIndex = combo.SelectedIndex;
+                await SuspendStudioLightingAsync();
                 await ViewModel.Blade.ApplySelectedLightingEffectAsync(Lifetime);
                 break;
             case "logo":
@@ -460,6 +467,7 @@ public sealed partial class DevicesPage : UserControl
         _bladeLightingSettingsInFlight = true;
         try
         {
+            await SuspendStudioLightingAsync();
             await ViewModel.Blade.ApplyLightingSettingsAsync(Lifetime);
         }
         finally
@@ -602,6 +610,7 @@ public sealed partial class DevicesPage : UserControl
                 ViewModel.Blade.LightingSecondColor = picker!.Color;
             else
                 ViewModel.Blade.LightingTertiaryColor = picker!.Color;
+            await SuspendStudioLightingAsync();
             await ViewModel.Blade.ApplySelectedLightingEffectAsync(Lifetime);
         }
         else if (ReferenceEquals(sender, RazerHidPrimaryColorFlyout) ||
@@ -615,6 +624,7 @@ public sealed partial class DevicesPage : UserControl
                     razerHid.TertiaryColor = picker!.Color;
                 else if (ReferenceEquals(sender, RazerHidSecondaryColorFlyout))
                     razerHid.SecondaryColor = picker!.Color;
+                await SuspendStudioLightingAsync();
                 await razerHid.ApplyLightingAsync(Lifetime);
             }
         }
@@ -632,6 +642,7 @@ public sealed partial class DevicesPage : UserControl
                     kraken.Secondary = picker.Color;
                 else
                     kraken.Tertiary = picker.Color;
+                await SuspendStudioLightingAsync();
                 await kraken.ApplyAsync(Lifetime);
             }
         }

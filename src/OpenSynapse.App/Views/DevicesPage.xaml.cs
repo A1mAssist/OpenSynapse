@@ -37,6 +37,7 @@ public sealed partial class DevicesPage : UserControl
 
     private MainViewModel ViewModel => (MainViewModel)DataContext;
     private CancellationToken Lifetime => Host.LifetimeToken;
+    private Task SuspendStudioLightingAsync() => Host.SuspendStudioLightingAsync();
 
     private bool _razerDriversRequested;
     private bool _deviceBatterySourcesHooked;

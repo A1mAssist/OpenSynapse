@@ -14,6 +14,9 @@ public sealed partial class MainWindow
     private static string? CategoryName(DeviceCategory category) =>
         category == DeviceCategory.Unknown ? null : category.ToString().ToLowerInvariant();
 
+    internal Task SuspendStudioLightingAsync() =>
+        _lightingStudioPage?.SuspendAppliedEffectAsync() ?? Task.CompletedTask;
+
     private IReadOnlyList<StudioDeviceOption> BuildStudioDevices()
     {
         var options = new List<StudioDeviceOption>();

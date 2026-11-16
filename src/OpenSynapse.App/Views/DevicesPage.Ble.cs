@@ -27,8 +27,11 @@ public sealed partial class DevicesPage : UserControl
     private async void BleApplyDpiClick(object sender, RoutedEventArgs e) =>
         await ViewModel.ApplyBleDpiAsync(Lifetime);
 
-    private async void BleApplyLightingClick(object sender, RoutedEventArgs e) =>
+    private async void BleApplyLightingClick(object sender, RoutedEventArgs e)
+    {
+        await SuspendStudioLightingAsync();
         await (ViewModel.SelectedBle?.ApplyLightingAsync(Lifetime) ?? Task.CompletedTask);
+    }
 
     private async void BleApplyMappingClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.SelectedBle?.ApplyMappingAsync(Lifetime) ?? Task.CompletedTask);

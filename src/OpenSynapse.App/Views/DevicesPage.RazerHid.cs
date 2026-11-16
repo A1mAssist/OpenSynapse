@@ -199,8 +199,11 @@ public sealed partial class DevicesPage : UserControl
         await ViewModel.SelectBlackSharkAsync(row, Lifetime);
     }
 
-    private async void RazerHidKrakenApplyClick(object sender, RoutedEventArgs e) =>
+    private async void RazerHidKrakenApplyClick(object sender, RoutedEventArgs e)
+    {
+        await SuspendStudioLightingAsync();
         await (ViewModel.RazerHid.SelectedKraken?.ApplyAsync(Lifetime) ?? Task.CompletedTask);
+    }
 
     private async void RazerHidKrakenInstallThxClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidKraken?.InstallThxComponentsAsync(Lifetime) ?? Task.CompletedTask);
@@ -325,6 +328,7 @@ public sealed partial class DevicesPage : UserControl
             return;
         }
 
+        await SuspendStudioLightingAsync();
         await device.ApplyLightingAsync(Lifetime);
         await device.ApplyBrightnessAsync(Lifetime);
         await device.ApplyLedStateAsync(Lifetime);
@@ -334,11 +338,17 @@ public sealed partial class DevicesPage : UserControl
         }
     }
 
-    private async void RazerHidApplyWristRestClick(object sender, RoutedEventArgs e) =>
+    private async void RazerHidApplyWristRestClick(object sender, RoutedEventArgs e)
+    {
+        await SuspendStudioLightingAsync();
         await (SelectedRazerHidDevice?.ApplyWristRestAsync(Lifetime) ?? Task.CompletedTask);
+    }
 
-    private async void RazerHidLightingSettingsToggled(object sender, RoutedEventArgs e) =>
+    private async void RazerHidLightingSettingsToggled(object sender, RoutedEventArgs e)
+    {
+        await SuspendStudioLightingAsync();
         await (SelectedRazerHidDevice?.ApplyLightingSettingsAsync(Lifetime) ?? Task.CompletedTask);
+    }
 
     private async void RazerHidApplyLedStateClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.ApplyLedStateAsync(Lifetime) ?? Task.CompletedTask);
