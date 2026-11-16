@@ -163,6 +163,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         RazerValkyrieHeadsetProtocol.SupportsAnc.Contains(_connection.ProductId);
     private bool IsFeature91 => !IsMxic && !IsValkyrie && !IsMixer053E && !IsKrakenBase &&
         !IsAvnera65 && !IsProtocol25;
+    // AudioMabelT3C (0574) uses the Mxic bundle indices 0/7/8/9/255, not the Billie 0..4 list.
     private (byte Value, string Key)[] ActivePresets =>
         IsJolie ? JolietPresets : IsT3 ? Presets[..4] : IsFeature91 || IsProtocol25 ? Presets : MxicPresets;
 
@@ -598,7 +599,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         }
         if (state.AncLevel is byte level) AncLevel = level;
     }
-
     private static string LocalizeHeadsetReadFailure(string raw) =>
         raw.Contains("does not support seeking", StringComparison.OrdinalIgnoreCase) ||
         raw.Contains("does not support", StringComparison.OrdinalIgnoreCase) ||

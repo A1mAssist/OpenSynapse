@@ -29,7 +29,11 @@ public sealed class BladeFanCurve
     public const int DefaultMinimumCpuTemperatureCelsius = 40;
     public const int DefaultMinimumGpuTemperatureCelsius = 30;
     public const int DefaultMinimumFanSpeedRpm = 2300;
-    public const int MinimumPointFanSpeedRpm = 1900;
+    /// <summary>
+    /// Lowest curve point any supported model writes. The 02C7 bundle starts its
+    /// published curves at 1600 RPM and the EC reports that value back.
+    /// </summary>
+    public const int MinimumPointFanSpeedRpm = 1600;
     /// <summary>
     /// Highest speed any supported curve point may carry. 5600 is the highest write
     /// ceiling published by a supported Blade contract; per-model and per-mode limits

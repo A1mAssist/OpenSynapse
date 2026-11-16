@@ -18,7 +18,7 @@ public static class RazerSoftwareMacroAssignmentPolicy
     // Keep the device emitting the same usage so OpenSynapse's HID reader can own it.
     public static bool NeedsSelfMapping(MacroInput input) =>
         input.Kind == MacroInputKind.MouseButton &&
-        input.MouseButton is >= 6 and <= 8;
+        input.MouseButton is >= 6 and <= 10;
 
     public static bool NeedsDeviceAssignment(MacroInput input) =>
         NeedsOff(input) || NeedsSelfMapping(input);

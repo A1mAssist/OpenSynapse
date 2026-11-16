@@ -271,6 +271,13 @@ public sealed partial class RazerHeadsetAudioViewModel
         return true;
     }
 
+    /// <summary>
+    /// Hands the Mako X strip to Lighting Studio: stop the device-page frame pump
+    /// before Studio enters CustomFrame, otherwise both pumps overwrite each other.
+    /// </summary>
+    internal Task StopSoftwareEffectForExternalAsync() =>
+        IsJolie ? StopSoftwareEffectCoreAsync(fadeOut: true) : Task.CompletedTask;
+
     private async Task ApplyPersistedJolietLightingAsync(
         HeadsetProfileSettings profile,
         CancellationToken cancellationToken)

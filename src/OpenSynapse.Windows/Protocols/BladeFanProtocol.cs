@@ -16,7 +16,7 @@ public static class BladeFanProtocol
     public const int MinimumRpm = BladeFanLimits.MinimumRpm;
     public const int MaximumRpm = BladeFanLimits.MaximumRpm;
     public const int StepRpm = BladeFanLimits.StepRpm;
-    internal const int MinimumCurveRpm = 1900;
+    internal const int MinimumCurveRpm = 1600;
     internal const byte DefaultClassId = 0x01;
     internal const byte ThermalProfileId = 0x01;
 
@@ -160,9 +160,13 @@ public static class BladeFanProtocol
         }
 
         var rpm = arguments[2] * StepRpm;
-        // 0 means the firmware has no stored target (automatic mode). Writes still
-        // validate against the model floor; reads must not turn that into a failure.
-        if (rpm != 0 && (rpm < minimumRpm || rpm > maximumRpm || rpm % StepRpm != 0))
+        // 02C7 firmware reports its idle speed (1600 RPM) instead of zero when no
+        // fixed target is stored. Below the model floor means automatic, not corrupt.
+        if (rpm < minimumRpm)
+        {
+            return 0;
+        }
+        if (rpm > maximumRpm || rpm % StepRpm != 0)
         {
             var kind = minimumRpm == MinimumRpm ? "fixed fan speed" : "fan-curve speed";
             throw new InvalidOperationException(

@@ -133,8 +133,8 @@ public sealed class MacroInput
         {
             MacroInputKind.Keyboard => VirtualKey is > 0 and <= 0xFF && ScanCode is >= 0 and <= 0xFFFF,
             MacroInputKind.MouseButton => allowPrimaryMouseButton
-                ? MouseButton >= 1 && MouseButton <= (allowExtraMouseButton ? 8 : 5)
-                : MouseButton >= 3 && MouseButton <= (allowExtraMouseButton ? 8 : 5),
+                ? MouseButton >= 1 && MouseButton <= (allowExtraMouseButton ? 10 : 5)
+                : MouseButton >= 3 && MouseButton <= (allowExtraMouseButton ? 10 : 5),
             MacroInputKind.NagaSideButton => allowNagaSideButton && SideButton is >= 1 and <= 12,
             MacroInputKind.DeviceButton => allowDeviceButton &&
                 DeviceId is > 0 and <= 0xFFFF &&

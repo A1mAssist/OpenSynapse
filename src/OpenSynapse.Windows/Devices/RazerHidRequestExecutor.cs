@@ -53,8 +53,9 @@ internal sealed class RazerHidRequestExecutor
         }
         try
         {
-            return await _transport.QueryPreparedAsync(
-                connection.DevicePath!, request.Report, connection.Definition.DeviceWait,
+            return await _transport.QueryPreparedForProductAsync(
+                connection.DevicePath!, connection.Definition.ProductId, request.Report,
+                connection.Definition.DeviceWait,
                 cancellationToken).ConfigureAwait(false);
         }
         catch (RazerCommandRejectedException exception)
