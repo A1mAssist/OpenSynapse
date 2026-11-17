@@ -41,7 +41,12 @@ public sealed partial class RazerHidDeviceViewModel
                 : RazerMappingDeviceKind.Mouse,
             actionCatalog: IsNagaMouse
                 ? RazerNagaMappingActionCatalog.Instance
-                : IsKeypad ? RazerKeypadMappingActionCatalog.Instance : null,
+                : IsKeypad
+                    ? RazerKeypadMappingActionCatalog.Instance
+                    : Connection.Definition.Category == DeviceCategory.Keyboard &&
+                      RazerKeyboardExtraKeyCatalog.ExtraButtonIds(Connection.Definition.ProductId).Count > 0
+                        ? new RazerKeyboardMappingActionCatalog(Connection.Definition.ProductId)
+                        : null,
             mappingProfileSaver: PersistMappingProfileAsync,
             canWriteOnboardMacros:
                 Has(RazerHidBackendCapability.MacroStorageDataWrite) &&
