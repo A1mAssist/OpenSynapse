@@ -128,6 +128,12 @@ public sealed partial class TrayMenuWindow : Window
             _widthProbe.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             widest = Math.Max(widest, 32 + _widthProbe.DesiredSize.Width + BatteryValueWidthDip);
         }
+        foreach (var mode in _performanceModes)
+        {
+            _widthProbe.Text = mode.Label;
+            _widthProbe.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            widest = Math.Max(widest, 32 + _widthProbe.DesiredSize.Width + 20);
+        }
         _widthProbe.FontSize = 14;
 
         return Math.Max(MinPanelWidthDip, Math.Ceiling(PanelLeadingDip + widest + PanelTrailingDip));
@@ -137,8 +143,13 @@ public sealed partial class TrayMenuWindow : Window
     {
         // Counted, not measured: MenuRoot stretches to the client area, so DesiredSize
         // would feed the previous window size back in.
-        var separators = _batteryValues.Count > 0 ? 2 : 1;
-        return 4 * 32 + separators * 5 + 8 + _batteryValues.Count * BatteryRowHeightDip;
+        var separators = 1 +
+            (_batteryValues.Count > 0 ? 1 : 0) +
+            (_performanceModes.Count > 0 ? 1 : 0);
+        return 4 * 32 + separators * 5 + 8 +
+            _batteryValues.Count * BatteryRowHeightDip +
+            _performanceModes.Count * PerformanceRowHeightDip +
+            (_performanceModes.Count > 0 ? PerformanceStatusHeightDip : 0);
     }
 
     /// <summary>
@@ -282,6 +293,7 @@ public sealed partial class TrayMenuWindow : Window
 
         _showPending = true;
         PopulateBatteryRows(BatterySnapshot?.Invoke() ?? []);
+        PopulatePerformanceRows(PerformanceSnapshot?.Invoke() ?? []);
         SetLayeredWindowAttributes(_windowHandle, 0, 0, LwaAlpha);
         if (!SetWindowPos(
                 _windowHandle,

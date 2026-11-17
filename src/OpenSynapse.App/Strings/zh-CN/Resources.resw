@@ -1638,6 +1638,9 @@
     <value>托盘初始化：{0}</value>
     <comment>托盘初始化：{0}</comment>
   </data>
+  <data name="TrayPerformanceApplyFailed" xml:space="preserve">
+    <value>性能模式切换失败。</value>
+  </data>
   <data name="ScreenBrightnessLabel.Text" xml:space="preserve">
     <value>屏幕亮度</value>
     <comment>屏幕亮度</comment>

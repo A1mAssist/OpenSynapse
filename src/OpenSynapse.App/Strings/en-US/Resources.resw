@@ -1269,6 +1269,9 @@
   <data name="TrayInitializationError" xml:space="preserve">
     <value>Tray initialization: {0}</value>
   </data>
+  <data name="TrayPerformanceApplyFailed" xml:space="preserve">
+    <value>Could not switch the performance mode.</value>
+  </data>
   <data name="ScreenBrightnessLabel.Text" xml:space="preserve">
     <value>Screen brightness</value>
   </data>
