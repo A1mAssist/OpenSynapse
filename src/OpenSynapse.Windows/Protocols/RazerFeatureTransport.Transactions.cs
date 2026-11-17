@@ -38,6 +38,15 @@ public sealed partial class RazerFeatureTransport
                 return (byte)(0xE0 | NextDockTransactionId(ref sequence));
             return 0xFF;
         }
+        if (DeviceIdParser.TryParse(devicePath, out _, out var productId) &&
+            RazerKeyboardProtocol.UsesDualLinkTransaction(productId))
+        {
+            // DualLinkKeyboard rotates every command from the same high-bank sequence,
+            // including the firmware handshake whose catalog transaction is the 0xFF wildcard.
+            if (commandClass == 0x00 && commandId is 0x41 or 0x46)
+                return NextTransactionId(ref sequence);
+            return (byte)(0x80 | NextTransactionId(ref sequence));
+        }
         if (requested == 0xFF)
         {
             // Only the devices that opt in rotate the wildcard. Everyone else keeps
@@ -47,15 +56,6 @@ public sealed partial class RazerFeatureTransport
                 RazerHidDeviceCatalog.BuiltIn.Find(vendorId, dynamicProductId)?.UsesDynamicTransactions == true
                     ? NextTransactionId(ref sequence)
                     : requested;
-        }
-        if (DeviceIdParser.TryParse(devicePath, out _, out var productId) &&
-            RazerKeyboardProtocol.UsesDualLinkTransaction(productId))
-        {
-            // DualLinkKeyboard clears the high bit for Set Device Pairing Mode (0x41)
-            // and Set Device Scan (0x46); every other command keeps 0x80 | sequence.
-            if (commandClass == 0x00 && commandId is 0x41 or 0x46)
-                return NextTransactionId(ref sequence);
-            return (byte)(0x80 | NextTransactionId(ref sequence));
         }
         if (TryGetKnownWirelessTransaction(devicePath, commandClass, commandId, out var known))
         {
