@@ -328,12 +328,14 @@ internal static partial class RazerFilterInfBinder
                     continue;
                 }
 
+                var productHasCoverage = coveredInterfaces?.Any(
+                    entry => entry.ProductId == productId) == true;
                 foreach (var (deviceName, instanceName) in InstanceNames(root, productId))
                 {
                     if (!IsPresentInstance(presentInstanceIds, deviceName, instanceName) ||
-                        (coveredInterfaces is not null &&
-                         (!TryGetInterfaceNumber(deviceName, out var interfaceNumber) ||
-                          !coveredInterfaces.Contains((productId, interfaceNumber)))))
+                        (productHasCoverage &&
+                         TryGetInterfaceNumber(deviceName, out var interfaceNumber) &&
+                         !coveredInterfaces!.Contains((productId, interfaceNumber))))
                     {
                         continue;
                     }

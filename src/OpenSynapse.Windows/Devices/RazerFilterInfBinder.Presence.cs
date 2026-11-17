@@ -89,12 +89,14 @@ internal static partial class RazerFilterInfBinder
                     continue;
                 }
 
+                var productHasCoverage = coveredInterfaces?.Any(
+                    entry => entry.ProductId == productId) == true;
                 foreach (var (deviceName, instanceName) in InstanceNames(root, productId))
                 {
                     if (!IsPresentInstance(presentInstanceIds, deviceName, instanceName) ||
-                        (coveredInterfaces is not null &&
-                         (!TryGetInterfaceNumber(deviceName, out var interfaceNumber) ||
-                          !coveredInterfaces.Contains((productId, interfaceNumber)))))
+                        (productHasCoverage &&
+                         TryGetInterfaceNumber(deviceName, out var interfaceNumber) &&
+                         !coveredInterfaces!.Contains((productId, interfaceNumber))))
                     {
                         continue;
                     }
@@ -159,10 +161,15 @@ internal static partial class RazerFilterInfBinder
         RegistryKey root,
         ushort productId)
     {
-        var marker = $"VID_1532&PID_{productId:X4}&MI_";
+        // Wireless receivers expose a non-composite HID node without &MI_.
+        // Requiring &MI_ here hid every collection on those devices.
+        var marker = $"VID_1532&PID_{productId:X4}";
         foreach (var deviceName in root.GetSubKeyNames())
         {
-            if (!deviceName.Contains(marker, StringComparison.OrdinalIgnoreCase))
+            var index = deviceName.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+            if (index < 0 ||
+                (index + marker.Length < deviceName.Length &&
+                 deviceName[index + marker.Length] != '&'))
             {
                 continue;
             }
