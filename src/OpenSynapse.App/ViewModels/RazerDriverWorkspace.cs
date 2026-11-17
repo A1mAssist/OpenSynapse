@@ -232,7 +232,9 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
             else
             {
                 var commonMessage = DescribeFailure(common);
-                _diagnosticLog.TryWrite("razer-driver", $"RzCommon: {commonMessage}");
+                _diagnosticLog.TryWrite(
+                    "razer-driver",
+                    $"RzCommon: {common.Error ?? commonMessage}");
                 commonMayBindLate = true;
                 if (common.Failure == RazerDriverInstallFailure.Cancelled)
                 {
@@ -456,6 +458,10 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                 result.Error is { Length: > 0 } error
                     ? AppStrings.FormatText("RazerDriverInstallFailed", error)
                     : AppStrings.FormatText("RazerDriverInstallExitCode", $"0x{result.ExitCode:X8}"),
+            RazerDriverInstallFailure.InvalidPackage when IsCommonCabFailure(result.Error) =>
+                AppStrings.Text("RazerDriverCommonOffline"),
+            RazerDriverInstallFailure.DownloadFailed when IsCommonCabFailure(result.Error) =>
+                AppStrings.Text("RazerDriverCommonOffline"),
             RazerDriverInstallFailure.InvalidPackage =>
                 AppStrings.Text("RazerDriverInstallInvalidPackage"),
             RazerDriverInstallFailure.DownloadFailed =>
@@ -464,6 +470,12 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                 AppStrings.Text("RazerDriverInstallStartFailed"),
             _ => AppStrings.FormatText("RazerDriverInstallFailed", string.Empty),
         };
+
+    private static bool IsCommonCabFailure(string? error) =>
+        error is not null &&
+        (error.StartsWith(RazerCommonDriverInstaller.CabNotFound, StringComparison.Ordinal) ||
+            error.StartsWith(RazerCommonDriverInstaller.CabNetwork, StringComparison.Ordinal) ||
+            error.StartsWith(RazerCommonDriverInstaller.CabVerification, StringComparison.Ordinal));
 
     /// <summary>
     /// The vendor package keeps its uninstaller under this per-product folder,
