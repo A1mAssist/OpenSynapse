@@ -87,16 +87,18 @@ public sealed partial class RazerHidWorkspace
         if (input.DeviceId is > 0 and <= ushort.MaxValue)
         {
             var productId = (ushort)input.DeviceId;
-            if (SelectedDevice is { } selected &&
-                selected.Connection.Definition.ProductId == productId &&
-                selected.Connection.IsReady)
+            bool Fits(RazerHidDeviceConnection connection) =>
+                connection.Definition.ProductId == productId &&
+                connection.IsReady &&
+                (string.IsNullOrWhiteSpace(input.InstanceId) ||
+                 StringComparer.OrdinalIgnoreCase.Equals(
+                     connection.InstanceId, input.InstanceId));
+            if (SelectedDevice is { } selected && Fits(selected.Connection))
             {
                 return selected;
             }
 
-            var row = Devices.FirstOrDefault(candidate =>
-                candidate.Connection.Definition.ProductId == productId &&
-                candidate.Connection.IsReady);
+            var row = Devices.FirstOrDefault(candidate => Fits(candidate.Connection));
             if (row is not null)
             {
                 var device = row.Detail ?? CreateDeviceViewModel(row.Connection);
