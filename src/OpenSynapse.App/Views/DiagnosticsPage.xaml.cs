@@ -15,6 +15,10 @@ public sealed partial class DiagnosticsPage : UserControl
 
     public DiagnosticsPage() => InitializeComponent();
 
+    // A cached page is removed from the tree, but its ItemsRepeater keeps listening
+    // to the shared row collection; the next rebuild then calls into the dead peer.
+    internal void Shutdown() => RowsRepeater.ItemsSource = null;
+
     private async void RefreshClick(object sender, RoutedEventArgs e)
     {
         ViewModel.Refresh.SetDiagnosticsRebuildEnabled(true);
