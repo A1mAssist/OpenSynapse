@@ -21,9 +21,11 @@ public static class BladeFunctionRowState
                     responseReportId: 0,
                     cancellationToken)
                 .ConfigureAwait(false);
-            return !BladeSynapsePolicyProtocol
+            var primary = !BladeSynapsePolicyProtocol
                 .ParseFnKeyState(response, request)
                 .MultiFunctionPrimary;
+            diagnostic?.Invoke($"fn row primary={primary} (EC 02:86)");
+            return primary;
         }
         catch (Exception exception)
         {
@@ -42,9 +44,11 @@ public static class BladeFunctionRowState
                         responseReportId: 0,
                         cancellationToken)
                     .ConfigureAwait(false);
-                return !BladeSynapsePolicyProtocol
+                var primary = !BladeSynapsePolicyProtocol
                     .ParseFnKeySwap(swapResponse, swapRequest)
                     .MultiFunctionPrimary;
+                diagnostic?.Invoke($"fn row primary={primary} (EC 07:8B swap)");
+                return primary;
             }
             catch (Exception swapException)
             {
