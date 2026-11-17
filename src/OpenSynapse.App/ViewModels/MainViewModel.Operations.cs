@@ -25,6 +25,7 @@ public sealed partial class MainViewModel
         try
         {
             await operation();
+            Refresh.MarkManualDeviceChange();
             if (!string.IsNullOrWhiteSpace(_deviceOperationErrorText))
             {
                 return;

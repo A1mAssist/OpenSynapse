@@ -4092,6 +4092,47 @@
   <data name="RazerDualDongleNoCandidate" xml:space="preserve"><value>No free slot on this receiver.</value></data>
   <data name="RazerDualDongleStatusUnknown" xml:space="preserve"><value>Could not read the current connection state.</value></data>
   <data name="RazerDualDongleInvalid" xml:space="preserve"><value>The receiver rejected the pairing.</value></data>
+  <data name="DeviceIdentityUnavailable" xml:space="preserve"><value>Device identity unavailable</value></data>
+  <data name="ProfileDeleteDeviceBindings" xml:space="preserve"><value>{0} device application rules use this profile. Deletion keeps the rules and marks them as missing.</value></data>
+  <data name="HomeLayoutLoadFailed" xml:space="preserve"><value>Could not load the home layout: {0}</value></data>
+  <data name="HomeLayoutSaved" xml:space="preserve"><value>Home layout saved.</value></data>
+  <data name="HomeLayoutNotSaved" xml:space="preserve"><value>Home layout was not saved.</value></data>
+  <data name="HomeLayoutSaveFailed" xml:space="preserve"><value>Could not save the home layout: {0}</value></data>
+  <data name="HomeLayoutReset" xml:space="preserve"><value>Home layout restored to default.</value></data>
+  <data name="HomeOpenStudio" xml:space="preserve"><value>Open Lighting Studio</value></data>
+  <data name="HomeStatusCard" xml:space="preserve"><value>Status</value></data>
+  <data name="HomeDevicesCard" xml:space="preserve"><value>Devices</value></data>
+  <data name="HomePerformanceCard" xml:space="preserve"><value>Performance</value></data>
+  <data name="HomeCyclePerformance" xml:space="preserve"><value>Cycle performance mode</value></data>
+  <data name="HomePerformanceUnavailable" xml:space="preserve"><value>No controllable laptop detected</value></data>
+  <data name="HomeActiveProfileSummary.Text" xml:space="preserve"><value>Active profile</value></data>
+  <data name="HomeProfilesCard" xml:space="preserve"><value>Current profile</value></data>
+  <data name="HomeTelemetryCard" xml:space="preserve"><value>Telemetry</value></data>
+  <data name="HomeCustomize.Content" xml:space="preserve"><value>Customize home</value></data>
+  <data name="HomeCustomizeTitle.Text" xml:space="preserve"><value>Customize home</value></data>
+  <data name="HomeCustomizeDescription.Text" xml:space="preserve"><value>Choose visible cards and their order. Pin moves a card to the top; layout is saved separately from profiles.</value></data>
+  <data name="HomePinCard.Content" xml:space="preserve"><value>Pin to top</value></data>
+  <data name="HomeSaveLayout.Content" xml:space="preserve"><value>Save layout</value></data>
+  <data name="HomeCancelLayout.Content" xml:space="preserve"><value>Cancel</value></data>
+  <data name="HomeResetLayout.Content" xml:space="preserve"><value>Reset to default</value></data>
+  <data name="DeviceRuleProfileMissing" xml:space="preserve"><value>profile missing</value></data>
+  <data name="DeviceRuleWaiting" xml:space="preserve"><value>Waiting for a matching application.</value></data>
+  <data name="DeviceRuleApplied" xml:space="preserve"><value>Applied “{0}”.</value></data>
+  <data name="DeviceRulesHeader.Header" xml:space="preserve"><value>Switch by application</value></data>
+  <data name="DeviceRulesEnable.Header" xml:space="preserve"><value>Enable automatic switching</value></data>
+  <data name="DeviceRulesPickRunning.PlaceholderText" xml:space="preserve"><value>Choose a running application</value></data>
+  <data name="DeviceRulesAdd.Content" xml:space="preserve"><value>Add</value></data>
+  <data name="DeviceRulesRemove.Content" xml:space="preserve"><value>Remove</value></data>
+  <data name="DeviceRulesBrowse.Content" xml:space="preserve"><value>Choose an exe and link it to this device</value></data>
+  <data name="HomeConnectedDevices.Text" xml:space="preserve"><value>Connected devices</value></data>
+  <data name="HomeActiveProfile.Text" xml:space="preserve"><value>Active profile</value></data>
+  <data name="HomeApplicationSwitching.Text" xml:space="preserve"><value>Application switching</value></data>
+  <data name="HomeApplicationSwitchingEnabled" xml:space="preserve"><value>Application switching is on</value></data>
+  <data name="HomeApplicationSwitchingDisabled" xml:space="preserve"><value>Application switching is paused</value></data>
+  <data name="HomeCustomize.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Customize home</value></data>
+  <data name="HomeMoveCardUp.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Move card up</value></data>
+  <data name="HomeMoveCardDown.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Move card down</value></data>
+  <data name="HomePinCard.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Pin card to top</value></data>
   <data name="RazerMappingKeyM1.Text" xml:space="preserve"><value>M1</value></data>
   <data name="RazerMappingKeyM2.Text" xml:space="preserve"><value>M2</value></data>
   <data name="RazerMappingKeyM3.Text" xml:space="preserve"><value>M3</value></data>

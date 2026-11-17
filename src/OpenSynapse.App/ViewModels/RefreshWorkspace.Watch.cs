@@ -22,55 +22,9 @@ public sealed partial class RefreshWorkspace
                 try
                 {
                     var powerState = _currentPowerSource();
-                    var executablePath = Profile.ApplicationBindings.Count == 0
-                        ? null
-                        : _activeApplicationProvider.ExecutablePath;
-                    var applicationBindings = Profile.ApplicationBindings.Count == 0
-                        ? string.Empty
-                        : string.Join(
-                            '\n',
-                            Profile.ApplicationBindings
-                                .OrderBy(binding => binding.Key, StringComparer.OrdinalIgnoreCase)
-                                .Select(binding => $"{binding.Key}\0{binding.Value}"));
+                    var executablePath = _activeApplicationProvider.ExecutablePath;
+                    await SwitchDeviceProfilesAsync(executablePath, cancellationToken);
                     var profileChanged = false;
-                    if (_lastObservedApplicationBindings is null ||
-                        !StringComparer.OrdinalIgnoreCase.Equals(
-                            _lastObservedForegroundExecutablePath, executablePath) ||
-                        !StringComparer.Ordinal.Equals(
-                            _lastObservedApplicationBindings, applicationBindings) ||
-                        !StringComparer.OrdinalIgnoreCase.Equals(
-                            _lastObservedActiveProfileName, Profile.ActiveProfileName))
-                    {
-                        var previousProfile = Profile.Clone();
-                        var previousProfileSwitcher = _applicationProfileSwitcher.Clone();
-                        profileChanged = _applicationProfileSwitcher.Update(Profile, executablePath);
-                        _lastObservedForegroundExecutablePath = executablePath;
-                        _lastObservedApplicationBindings = applicationBindings;
-                        _lastObservedActiveProfileName = Profile.ActiveProfileName;
-                        if (profileChanged)
-                        {
-                            _profiles.RefreshProfileState();
-                            try
-                            {
-                                await _profileStore.SaveAsync(Profile, cancellationToken);
-                                _profiles.ProfileStatusText = AppStrings.FormatText("ProfileAutoSwitched", _profiles.ActiveProfileName);
-                            }
-                            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                            {
-                                throw;
-                            }
-                            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-                            {
-                                _setProfile(previousProfile);
-                                _applicationProfileSwitcher = previousProfileSwitcher;
-                                _lastObservedApplicationBindings = null;
-                                _profiles.RefreshProfileState();
-                                _setDeviceOperationError(AppStrings.FormatText("AutomaticProfileSaveError",
-                                    exception.Message));
-                                profileChanged = false;
-                            }
-                        }
-                    }
 
                     // Discovery is event-driven: startup, device notifications, resume,
                     // and explicit refresh requests set this flag. A request arriving

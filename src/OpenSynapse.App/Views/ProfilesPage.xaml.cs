@@ -191,7 +191,10 @@ public sealed partial class ProfilesPage : UserControl
         {
             Title = AppStrings.Text("Text_4BC87173"),
             Content = AppStrings.FormatText("DeleteProfileMessage",
-                ViewModel.Profiles.ActiveProfileName),
+                ViewModel.Profiles.ActiveProfileName) + Environment.NewLine +
+                AppStrings.FormatText("ProfileDeleteDeviceBindings",
+                    ViewModel.DeviceRules.Document.Rules.Count(rule => StringComparer.OrdinalIgnoreCase.Equals(
+                        rule.ProfileName, ViewModel.Profiles.ActiveProfileName))),
             PrimaryButtonText = AppStrings.Text("Text_EA8D5381"),
             CloseButtonText = AppStrings.Text("Text_949856B3"),
             DefaultButton = ContentDialogButton.Close,
@@ -220,9 +223,9 @@ public sealed partial class ProfilesPage : UserControl
 
     private async void UnbindApplicationClick(object sender, RoutedEventArgs e)
     {
-        if (sender is Button { Tag: string executablePath })
+        if (sender is Button { Tag: string id })
         {
-            await ViewModel.Profiles.UnbindApplicationAsync(executablePath, Lifetime);
+            await ViewModel.DeviceRules.RemoveAsync(id, Lifetime);
         }
     }
 
@@ -239,6 +242,14 @@ public sealed partial class ProfilesPage : UserControl
         {
             await ViewModel.Profiles.ImportProfilesAsync(file.Path, Lifetime);
         }
+    }
+
+    private void OpenBoundDeviceClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: OpenSynapse.Core.Profiles.DeviceBindingKey key } &&
+            ViewModel.RazerHid.Devices.FirstOrDefault(row => row.Connection.Definition.ProductId == key.ProductId &&
+                row.Connection.InstanceId.Equals(key.InstanceId, StringComparison.OrdinalIgnoreCase)) is { } device)
+            Host.RequestDeviceNavigation(device);
     }
 
     private async void ExportProfilesClick(object sender, RoutedEventArgs e)

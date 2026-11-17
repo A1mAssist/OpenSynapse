@@ -36,9 +36,6 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
     private readonly DispatcherQueue? _dispatcherQueue;
     private IReadOnlyList<RazerHidSpecialLightingConnection> _krakenConnections = [];
     private CancellationTokenSource? _selectionCancellation;
-    // A device whose mode was already repaired must not be rewritten on every device-tree
-    // change; three HID round trips at the 31 ms device wait is not free.
-    private readonly HashSet<string> _driverModeChecked = new(StringComparer.OrdinalIgnoreCase);
     // Software frame-pump effects outlive a single apply call, so their view model must
     // stay alive instead of being disposed right after the profile is restored.
     private readonly RazerHidSoftwareLightingOwner _softwareLightingOwner;
@@ -156,7 +153,8 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
     internal RazerHidDeviceConnection? ResolveConnection(DeviceDescriptor descriptor) =>
         CurrentConnections.FirstOrDefault(connection =>
             connection.Definition.ProductId == descriptor.ProductId &&
-            connection.Definition.Category == descriptor.Category);
+            connection.Definition.Category == descriptor.Category &&
+            (descriptor.Id.Contains("/" + Uri.EscapeDataString(connection.InstanceId), StringComparison.OrdinalIgnoreCase) || StringComparer.OrdinalIgnoreCase.Equals(connection.DevicePath, descriptor.Id)));
 
     internal Task<bool> ApplyChromaFrameAsync(
         IReadOnlyList<RazerRgb> sourceFrame,

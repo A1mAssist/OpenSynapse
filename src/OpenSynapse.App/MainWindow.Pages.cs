@@ -2,9 +2,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Animation;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.App.Views;
-using OpenSynapse.Core.Storage;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Lighting;
+using OpenSynapse.Core.Storage;
 using OpenSynapse.App.Runtime;
 
 namespace OpenSynapse.App;
@@ -47,9 +47,22 @@ public sealed partial class MainWindow
 
     private OverviewPage CreateOverviewPage()
     {
-        var page = new OverviewPage();
+        var page = new OverviewPage { DataContext = _viewModel };
         page.DeviceRequested += OnOverviewDeviceRequested;
+        page.VisibilityChanged += UpdatePerformanceSamplingState;
         return AddPage(page);
+    }
+
+    private void InitializeHome()
+    {
+        _viewModel.Home.QuickActionRequested += OnHomeQuickActionAsync;
+        _viewModel.DeviceRules.EnabledChanged += enabled => _viewModel.SetApplicationSwitchingEnabled(enabled);
+    }
+
+    private Task OnHomeQuickActionAsync(string id, string? argument, CancellationToken cancellationToken)
+    {
+        if (id == HomeLayoutSettings.OpenStudio) RequestNavigation("studio");
+        return Task.CompletedTask;
     }
 
     private DevicesPage CreateDevicesPage()
@@ -180,6 +193,11 @@ public sealed partial class MainWindow
         view.Visibility = Visibility.Visible;
         TrimPageCache();
         MemoryTrace.Snapshot($"page-{page}");
+        if (view is OverviewPage overview)
+        {
+            overview.RefreshLayout();
+            UpdatePerformanceSamplingState();
+        }
         if (wasVisible)
         {
             return;

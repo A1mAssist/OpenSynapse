@@ -2,12 +2,71 @@ using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.App.Runtime;
 
 namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RefreshWorkspace
 {
     private readonly DeviceProfileApplyCoordinator? _razerHidProfileApplier;
+
+    [NotProfileScoped]
+    private async Task ApplyDeviceApplicationRulesAsync(string? executablePath, CancellationToken token)
+    {
+        if (_razerHidProfileApplier is null) return;
+        await _deviceOperationGate.WaitAsync(token);
+        try
+        {
+            await ApplyDeviceApplicationRulesCoreAsync(executablePath, token);
+        }
+        finally
+        {
+            _deviceOperationGate.Release();
+        }
+    }
+
+    [NotProfileScoped]
+    private async Task ApplyDeviceApplicationRulesCoreAsync(string? executablePath, CancellationToken token)
+    {
+        if (_razerHidProfileApplier is null) return;
+        var connections = _razerHid.CurrentConnections
+            .Where(connection => connection.Definition.Category is DeviceCategory.Mouse or DeviceCategory.Keyboard)
+            .Select(connection => new DeviceApplicationSwitchDevice(
+                new DeviceBindingKey(RazerHidDeviceDefinition.VendorId, connection.Definition.ProductId, connection.InstanceId),
+                connection.ToDescriptor()))
+            .ToArray();
+        var foregroundChanged = !StringComparer.OrdinalIgnoreCase.Equals(_lastObservedForegroundExecutablePath, executablePath);
+        var changes = _applicationSwitch.Update(_rulesDocument(), connections, Profile, executablePath,
+            foregroundChanged: foregroundChanged,
+            manualChange: Interlocked.Exchange(ref _applicationSwitchRequested, 0) == 2);
+        _lastObservedForegroundExecutablePath = executablePath;
+        foreach (var change in changes)
+        {
+            var descriptor = connections.Single(device => device.Binding.Equals(change.Device)).Descriptor;
+            var selected = DeviceProfileSelection.For(Profile, change.ProfileName);
+            var result = await _razerHidProfileApplier.ApplyAsync(
+                selected, [descriptor], _currentPowerSource(), token);
+            _applicationSwitch.Complete(change.Device, change.ProfileName, change.RuleId, result.Succeeded);
+        }
+        _rulesChanged();
+    }
+
+    [NotProfileScoped]
+    internal async Task<bool> ApplyProfileToDeviceAsync(object source, string profileName, CancellationToken token)
+    {
+        if (_razerHidProfileApplier is null || source is not RazerHidDeviceRowViewModel row ||
+            !Profile.Profiles.ContainsKey(profileName)) return false;
+        await _deviceOperationGate.WaitAsync(token);
+        try
+        {
+            var descriptor = row.Connection.ToDescriptor();
+            var selected = DeviceProfileSelection.For(Profile, profileName);
+            var result = await _razerHidProfileApplier.ApplyAsync(selected, [descriptor], _currentPowerSource(), token);
+            _applicationSwitch.MarkManualOverride(new DeviceBindingKey(descriptor.VendorId, descriptor.ProductId, row.Connection.InstanceId));
+            return result.Succeeded;
+        }
+        finally { _deviceOperationGate.Release(); }
+    }
 
     [NotProfileScoped]
     private async Task<ProfileApplyResult?> ApplyLoadedProfileAsync(

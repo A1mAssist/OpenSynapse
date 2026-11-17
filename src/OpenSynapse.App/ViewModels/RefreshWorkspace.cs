@@ -6,6 +6,7 @@ using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.App.Runtime;
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
 using static OpenSynapse.App.ViewModels.DeviceUiCatalog;
@@ -56,14 +57,15 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
     private readonly bool _liteMode;
     private readonly VerifiedProfileApplier _profileApplier = new();
     private readonly SemaphoreSlim _deviceWatchSignal = new(0, 1);
-    private ApplicationProfileSwitcher _applicationProfileSwitcher = new();
+    private DeviceApplicationSwitchCoordinator _applicationSwitch;
+    private Func<DeviceApplicationRuleDocument> _rulesDocument;
+    private Action _rulesChanged;
     private PowerSourceKind? _lastPowerState;
     private string _deviceFingerprint = string.Empty;
     private string _lastRefreshText = AppStrings.Text("Text_E19E170A");
     private string? _lastObservedForegroundExecutablePath;
-    private string? _lastObservedApplicationBindings;
-    private string? _lastObservedActiveProfileName;
     private int _deviceRefreshRequested;
+    private int _applicationSwitchRequested;
     private int _displayProfileApplyRequested;
     private int _deviceReadoutSamplingEnabled = 1;
     private int _diagnosticsRebuildEnabled = 1;
@@ -110,6 +112,9 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
         Action<string> notifyPropertyChanged,
         Func<PowerSourceKind, CancellationToken, Task>? applyBleProfile = null,
         Func<PowerSourceKind, CancellationToken, Task>? applyAccessoryProfiles = null,
+        DeviceApplicationSwitchCoordinator? applicationSwitch = null,
+        Func<DeviceApplicationRuleDocument>? rulesDocument = null,
+        Action? rulesChanged = null,
         bool liteMode = false)
     {
         _discovery = discovery;
@@ -152,11 +157,24 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
         _applyBleProfile = applyBleProfile;
         _applyAccessoryProfiles = applyAccessoryProfiles;
         _liteMode = liteMode;
+        _applicationSwitch = applicationSwitch ?? new DeviceApplicationSwitchCoordinator();
+        _rulesDocument = rulesDocument ?? (() => new DeviceApplicationRuleDocument(1, true, []));
+        _rulesChanged = rulesChanged ?? (() => { });
         if (razerHid.DeviceService is { } razerHidService)
         {
             _razerHidProfileApplier = new DeviceProfileApplyCoordinator(
                 [new RazerHidProfileApplier(razerHidService, razerHid.ResolveConnection)]);
         }
+    }
+
+    internal void ConfigureDeviceApplicationSwitch(
+        DeviceApplicationSwitchCoordinator applicationSwitch,
+        Func<DeviceApplicationRuleDocument> rulesDocument,
+        Action rulesChanged)
+    {
+        _applicationSwitch = applicationSwitch;
+        _rulesDocument = rulesDocument;
+        _rulesChanged = rulesChanged;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -214,6 +232,24 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
         Interlocked.Exchange(ref _displayProfileApplyRequested, 1);
         RequestDeviceRefresh();
     }
+
+    internal void RequestApplicationSwitch()
+    {
+        RequestDeviceRefresh();
+    }
+
+    internal void RequestApplicationSwitch(bool manualChange)
+    {
+        _applicationSwitchRequested = manualChange ? 2 : 1;
+        RequestDeviceRefresh();
+    }
+
+    internal void MarkManualDeviceChange() => _applicationSwitch.MarkManualOverrides(
+        _razerHid.CurrentConnections.Select(connection => new DeviceBindingKey(
+            RazerHidDeviceDefinition.VendorId, connection.Definition.ProductId, connection.InstanceId)));
+
+    internal Task SwitchDeviceProfilesAsync(string? executablePath, CancellationToken token) =>
+        ApplyDeviceApplicationRulesAsync(executablePath, token);
 
     internal bool IsDisplayAvailable => Volatile.Read(ref _displayAvailable) != 0;
 
@@ -381,6 +417,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
                 telemetry,
                 powerState,
                 cancellationToken);
+            await ApplyDeviceApplicationRulesCoreAsync(_activeApplicationProvider.ExecutablePath, cancellationToken);
             if (applyDisplayProfile)
             {
                 await ApplyBleProfileAsync(powerState, cancellationToken);
