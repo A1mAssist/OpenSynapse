@@ -341,14 +341,24 @@ public sealed partial class DevicesPage : UserControl
 
     private async void RazerHidApplyWristRestClick(object sender, RoutedEventArgs e)
     {
+        if (SelectedRazerHidDevice is not { } device)
+        {
+            return;
+        }
+
         await SuspendStudioLightingAsync();
-        await (SelectedRazerHidDevice?.ApplyWristRestAsync(Lifetime) ?? Task.CompletedTask);
+        await device.ApplyWristRestAsync(Lifetime);
     }
 
     private async void RazerHidLightingSettingsToggled(object sender, RoutedEventArgs e)
     {
+        if (SelectedRazerHidDevice is not { } device)
+        {
+            return;
+        }
+
         await SuspendStudioLightingAsync();
-        await (SelectedRazerHidDevice?.ApplyLightingSettingsAsync(Lifetime) ?? Task.CompletedTask);
+        await device.ApplyLightingSettingsAsync(Lifetime);
     }
 
     private async void RazerHidApplyLedStateClick(object sender, RoutedEventArgs e) =>
