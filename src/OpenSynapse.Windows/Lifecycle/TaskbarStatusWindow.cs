@@ -6,8 +6,8 @@ using static OpenSynapse.Windows.Lifecycle.TaskbarStatusNative;
 namespace OpenSynapse.Windows.Lifecycle;
 
 /// <summary>
-/// A small GDI popup owned by the taskbar. The host window stays alive when
-/// Explorer restarts; the popup is recreated and reattached by the host timer.
+/// A small GDI strip hosted by the taskbar. The host window stays alive when
+/// Explorer restarts; the strip is recreated and reattached by the host timer.
 /// </summary>
 public sealed partial class TaskbarStatusWindow : IDisposable
 {
@@ -41,6 +41,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     private IntPtr _batteryFont;
     private IntPtr _iconFont;
     private Rect _lastStatusRect;
+    private bool _isChild;
     private TaskbarStatusSnapshot _snapshot = new([]);
     private int _visibleBatteryCount;
     private string _automationText = string.Empty;
@@ -209,9 +210,10 @@ public sealed partial class TaskbarStatusWindow : IDisposable
                 WsExToolWindow | WsExNoActivate | WsExLayered | WsExTransparent,
                 _statusClassName,
                 string.Empty,
-                // Win11 paints its taskbar above child windows, so stay an owned popup.
                 WsPopup,
                 0, 0, 0, 0,
+                // Owner until the child conversion succeeds; this is also the
+                // fallback if Explorer refuses SetParent.
                 taskbar,
                 IntPtr.Zero,
                 instance,
@@ -224,20 +226,33 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             }
 
             ShowWindow(status, SwHide);
+            var style = GetWindowLongW(status, GwlStyle);
+            SetWindowLongW(status, GwlStyle, (style & ~WsPopup) | WsChild);
+            SetLastError(0);
+            _ = SetParent(status, taskbar);
+            var parentError = Marshal.GetLastWin32Error();
+            if ((GetWindowLongW(status, GwlStyle) & WsChild) != 0 &&
+                GetParent(status) == taskbar &&
+                GetAncestor(status, GaRoot) == taskbar)
+            {
+                // A child is painted with the taskbar itself, so Show desktop
+                // and auto-hide carry it along without a z-order race.
+                _isChild = true;
+            }
+            else
+            {
+                _log?.Invoke(
+                    $"taskbar-status: child attach failed ({parentError}); using an owner popup.");
+                var currentStyle = GetWindowLongW(status, GwlStyle);
+                SetWindowLongW(status, GwlStyle, (currentStyle & ~WsChild) | WsPopup);
+                _isChild = false;
+            }
+
             // Black is the transparent color key; the icon badge and text stay.
             if (!SetLayeredWindowAttributes(status, 0, 255, LwaColorKey))
             {
                 _log?.Invoke(
                     $"taskbar-status: transparency failed ({Marshal.GetLastWin32Error()}).");
-            }
-            SetLastError(0);
-            var parent = GetParent(status);
-            var parentError = Marshal.GetLastWin32Error();
-            if (parent != taskbar)
-            {
-                DestroyWindow(status);
-                RecordAttachFailure("attach failed", parentError);
-                return;
             }
 
             _statusWindow = status;
@@ -273,6 +288,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             _statusWindow = IntPtr.Zero;
         }
         _lastStatusRect = default;
+        _isChild = false;
     }
 
     private void RecordAttachFailure(string message, int error)
@@ -291,7 +307,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     {
         if (_statusWindow == IntPtr.Zero || !_contentAvailable) return;
         var taskbar = FindWindowW("Shell_TrayWnd", null);
-        if (taskbar == IntPtr.Zero || IsTaskbarHidden(taskbar) || IsFullscreenAppActive())
+        if (taskbar == IntPtr.Zero || !IsWindowVisible(taskbar) || IsFullscreenAppActive())
         {
             Hide();
             return;
@@ -306,6 +322,20 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             return;
         }
         _layoutFailures = 0;
+
+        if (!_isChild)
+        {
+            var origin = new Point { X = x, Y = y };
+            if (!ClientToScreen(taskbar, ref origin))
+            {
+                _log?.Invoke(
+                    $"taskbar-status: positioning failed ({Marshal.GetLastWin32Error()}).");
+                Hide();
+                return;
+            }
+            x = origin.X;
+            y = origin.Y;
+        }
 
         var rect = new Rect { Left = x, Top = y, Right = x + width, Bottom = y + height };
         var visible = IsWindowVisible(_statusWindow);
@@ -337,62 +367,6 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         {
             ShowWindow(_statusWindow, SwShowNoActivate);
         }
-
-        RaiseAboveTaskbar(taskbar);
-    }
-
-    /// <summary>
-    /// Show-desktop re-orders the topmost band and leaves this owned popup behind
-    /// the taskbar while it still reports itself visible, so re-insert it above.
-    /// </summary>
-    private void RaiseAboveTaskbar(IntPtr taskbar)
-    {
-        var above = GetWindow(taskbar, GwHwndPrev);
-        if (above == _statusWindow) return;
-        // Nothing above the taskbar means it is the top window; join the topmost
-        // band so the strip still lands above it.
-        if (above == IntPtr.Zero) above = new IntPtr(-1);
-        SetWindowPos(
-            _statusWindow,
-            above,
-            0, 0, 0, 0,
-            SwpNoMove | SwpNoSize | SwpNoActivate);
-    }
-
-    /// <summary>
-    /// True when the taskbar is hidden or slid past its monitor edge. The strip
-    /// must not infer visibility from whatever window happens to sit on top.
-    /// </summary>
-    private static bool IsTaskbarHidden(IntPtr taskbar)
-    {
-        if (!IsWindowVisible(taskbar))
-        {
-            return true;
-        }
-        if (!GetWindowRect(taskbar, out var rect))
-        {
-            return true;
-        }
-
-        var monitor = MonitorFromWindow(taskbar, MonitorDefaultToNearest);
-        var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
-        if (monitor == IntPtr.Zero || !GetMonitorInfoW(monitor, ref info))
-        {
-            return false;
-        }
-
-        // Auto-hide slides the taskbar past the monitor edge while it still
-        // reports itself visible. Use a DPI-scaled edge instead of raw pixels.
-        var edge = (int)Math.Round(4 * GetDpiForWindow(taskbar) / 96.0);
-        if (rect.Top <= info.Monitor.Top + edge)
-        {
-            return rect.Bottom <= info.Monitor.Top + edge;
-        }
-        if (rect.Bottom >= info.Monitor.Bottom - edge)
-        {
-            return rect.Top >= info.Monitor.Bottom - edge;
-        }
-        return false;
     }
 
     private static bool IsFullscreenAppActive()
@@ -474,20 +448,10 @@ public sealed partial class TaskbarStatusWindow : IDisposable
                 continue;
             }
 
-            var origin = new Point
-            {
-                X = left,
-                Y = Math.Max(0, (clientHeight - height) / 2),
-            };
-            if (!ClientToScreen(taskbar, ref origin))
-            {
-                return false;
-            }
-
             _visibleBatteryCount = count;
             width = candidate;
-            x = origin.X;
-            y = origin.Y;
+            x = left;
+            y = Math.Max(0, (clientHeight - height) / 2);
             return true;
         }
         return false;
