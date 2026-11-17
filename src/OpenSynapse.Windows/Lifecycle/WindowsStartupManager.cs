@@ -37,6 +37,32 @@ public sealed class WindowsStartupManager
         }
     }
 
+    /// <summary>
+    /// Re-applies a persisted startup intent. The MSI is an early major upgrade:
+    /// the old product's uninstall hook removes the Run value before the new
+    /// product's install hook runs, so the registry alone cannot carry the choice
+    /// across versions.
+    /// </summary>
+    public static void EnsureRegistration(bool enabled, bool silent, string executablePath)
+    {
+        if (!enabled)
+        {
+            Remove();
+            return;
+        }
+
+        var command = FormatCommand(executablePath, silent);
+        using var key = Registry.CurrentUser.CreateSubKey(RunKeyPath, writable: true)
+            ?? throw new InvalidOperationException("Unable to open the current-user startup registry key.");
+        if (key.GetValue(ValueName) is string actual &&
+            StringComparer.OrdinalIgnoreCase.Equals(actual, command))
+        {
+            return;
+        }
+
+        key.SetValue(ValueName, command, RegistryValueKind.String);
+    }
+
     /// <summary>Removes the current user's startup entry, if present.</summary>
     public static void Remove()
     {

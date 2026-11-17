@@ -34,6 +34,7 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
     private readonly Action<string> _reportApplicationError;
     private readonly Action _requestProfileApply;
     private readonly Func<string, string, CancellationToken, Task> _renameProfileReferences;
+    private readonly Action<bool, bool>? _persistStartup;
     private string _profileStatusText = AppStrings.Text("Text_A9AE645B");
     private string _activeProfileName = ProfileCatalog.DefaultProfileName;
     private string _profileNameInput = string.Empty;
@@ -59,7 +60,8 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
         Action<string> setDeviceOperationError,
         Action<string> reportApplicationError,
         Action requestProfileApply,
-        Func<string, string, CancellationToken, Task>? renameProfileReferences = null)
+        Func<string, string, CancellationToken, Task>? renameProfileReferences = null,
+        Action<bool, bool>? persistStartup = null)
     {
         _profileStore = profileStore;
         _getProfile = getProfile;
@@ -80,6 +82,7 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
         _reportApplicationError = reportApplicationError;
         _requestProfileApply = requestProfileApply;
         _renameProfileReferences = renameProfileReferences ?? ((_, _, _) => Task.CompletedTask);
+        _persistStartup = persistStartup;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -300,6 +303,7 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
             {
                 IsSilentStartupEnabled = false;
             }
+            _persistStartup?.Invoke(IsStartupEnabled, IsSilentStartupEnabled);
             ProfileStatusText = enabled ? AppStrings.Text("Text_62E1155B") : AppStrings.Text("Text_8FAB6EC0");
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Security.SecurityException or InvalidOperationException)
@@ -333,6 +337,7 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
         {
             _startupManager!.SetEnabled(true, _executablePath!, enabled);
             IsSilentStartupEnabled = enabled;
+            _persistStartup?.Invoke(IsStartupEnabled, IsSilentStartupEnabled);
             ProfileStatusText = AppStrings.Text(
                 enabled ? "SilentStartupEnabled" : "SilentStartupDisabled");
         }
