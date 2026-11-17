@@ -10,7 +10,8 @@ internal sealed record ThxInstallerPackage(
     string Uri,
     long Length,
     string Sha256,
-    string Arguments);
+    string Arguments,
+    Version? Version = null);
 
 internal sealed record ThxComponentInstallResult(
     string? Error,

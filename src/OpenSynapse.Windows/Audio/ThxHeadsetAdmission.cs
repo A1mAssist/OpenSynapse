@@ -38,8 +38,7 @@ internal sealed record ThxHeadsetProfile(
     string? GameProfilesUri = null,
     string? PatcherUri = null,
     long InstallerLength = 0,
-    string? InstallerSha256 = null,
-    ThxInstallerPackage? PresetInstaller = null)
+    string? InstallerSha256 = null)
 {
     internal string NativeVersionName => NativeVersion == ThxNativeVersion.V3 ? "v3" : "v4";
 
@@ -84,35 +83,6 @@ internal static partial class ThxHeadsetAdmission
         "https://app-assets.razer.com/files/synapse/devices/common/THX/ThxV4Native_v1.1.3.0.dll";
     private const string V4Dll113Sha256 =
         "0D88696C023364588AC2C21624F1EA1074DB74DEFAB1F67A41F60D5866B2D4D5";
-
-    // THX V3 spatial processing loads its default room/preset data from the
-    // per-model preset package; an APO-only install leaves every write rejected.
-    private static readonly IReadOnlyDictionary<ushort, ThxInstallerPackage> V3PresetInstallers =
-        new Dictionary<ushort, ThxInstallerPackage>
-        {
-            [0x051A] = new("https://app-assets.razer.com/files/synapse/devices/1306/1.0.2.9/THX-051A-Presets-NariUltimate-v3.2.18.0.exe", 1_268_936, "B1C9CA83751042F1DDAF4651B576764B12FF8F89F9DA2515413777174F3B4702", "/S"),
-            [0x051C] = new("https://app-assets.razer.com/files/synapse/devices/1308/1.0.2.9/THX-051C-Presets-Nari-v3.2.18.0.exe", 1_267_632, "1AAE380CB16687309E70D2884DF8DFF10023E1E40C452B24D45FE7EE59D0B3E9", "/S"),
-            [0x051E] = new("https://app-assets.razer.com/files/synapse/devices/1310/1.0.2.9/THX-051E-Presets-NariEssential-v3.2.18.0.exe", 1_268_416, "7512D09C918BFF586206EEFEBC3577735B7BB3FEFCBD4E05EC4661C25CD84512", "/S"),
-            [0x0520] = new("https://app-assets.razer.com/files/synapse/devices/1312/1.0.1.9/THX-0520-Presets-KrakenTE-v3.2.18.0.exe", 1_267_928, "083B1FFCAA1561F0CA0B459815411CF079EB2919CD875BC2A5091CE4E5F04405", "/S"),
-            [0x0521] = new("https://app-assets.razer.com/files/synapse/devices/1313/1.0.2.9/THX-0521-Presets-KrakenKitty-v3.2.18.0.exe", 1_268_104, "09A2B282C7F6012BF33598C9E376C4C1D37C17DE784075E7A82DBCAE5CA80521", "/S"),
-            [0x0527] = new("https://app-assets.razer.com/files/synapse/devices/1319/1.0.2.9/THX-0527-Presets-KrakenUltimate-v3.2.18.0.exe", 1_267_992, "3D67616F1A3D072237ED8D3FFFCBCDB9A16CA046E3CBBF3D04D3300B63C0DD34", "/S"),
-            [0x0528] = new("https://app-assets.razer.com/files/synapse/devices/1320/1.0.4.10/THX-0528-Presets-BlackSharkV2Pro2020-v3.2.18.0.exe", 1_267_832, "0D81F36D7742078B0BD89A8FC79817630C73028651F2274842DDCA664DB7CB21", "/S"),
-            [0x0529] = new("https://app-assets.razer.com/files/synapse/devices/1321/1.0.2.9/THX-0529-Presets-RazerUSBSoundCard-v3.2.18.0.exe", 1_267_512, "EAD505A9EDF8791A8EAC14518DA3601113F08F08D2E07F3E8BBE75E60AE018DD", "/S"),
-            [0x052D] = new("https://app-assets.razer.com/files/synapse/devices/1325/1.0.0.11/THX-052C-Presets-KrakenV3Pro-v3.2.18.0.exe", 1_268_008, "08D5B259EEF21E8D8F5C3F33FE959216041300F390ACA51310D34E44A3149859", "/S"),
-            [0x0533] = new("https://app-assets.razer.com/files/synapse/devices/1331/1.0.1.12/THX-0533-Presets-KrakenV3HyperSense-v3.2.18.5.exe", 1_232_168, "00E33A93E28FDA3B771C6EDF8CB432FB74E338451F797D08339B4EA195935498", "/S"),
-            [0x053C] = new("https://app-assets.razer.com/files/synapse/devices/1339/1.0.0.11/THX-053C-Presets-Barracuda-v3.2.18.0.exe", 1_268_584, "CCBB4473944A2E0DA0700684F2F915A9612355F48E87D43C41F4E35F24045DC9", "/S"),
-            [0x0549] = new("https://app-assets.razer.com/files/synapse/devices/1353/1.0.1.12/THX-0549-Presets-KrakenV3-v3.2.18.5.exe", 1_232_392, "0A8296C26E6C4E5E8BD12F4E532A1EFD8B74E17DD6E2E674F80CDD2A59EFFA42", "/S"),
-            [0x0554] = new("https://app-assets.razer.com/files/synapse/devices/1364/1.0.1.9/THX-0554-Presets-KrakenKittyV2Pro-v3.2.18.0.exe", 1_267_456, "27B3382B04DC5C973E6B0028F1A36E9A46CF921AB1D7E573F2B62BD5541AA763", "/S"),
-            [0x0555] = new("https://app-assets.razer.com/files/synapse/devices/1365/1.0.1.9/THX-0555-Presets-BlackSharkV2Pro2023-v3.2.18.0.exe", 1_266_944, "FBCB585B0524CC40EA3CDA268D60CEE02CE4CC733F40740C832DB6244CD61324", "/S"),
-            [0x0565] = new("https://app-assets.razer.com/files/synapse/devices/1390/1.0.0.19/THX-0565-Presets-BlackSharkV2HyperSpeed-v3.2.18.0.exe", 1_267_704, "53FAEC188719106B1BEED8D5777CEA8FB0EDE8A6CE3FB3ACB26B5082B10AD77E", "/S"),
-            [0x0567] = new("https://app-assets.razer.com/files/synapse/devices/1383/1.0.1.10/THX-0567-Presets-KrakenV4Pro-v3.2.18.0.exe", 1_268_032, "A5F511B4287CF9AD030D459AF4B84E049EC6A45283BE327D480B096A8CE8E2AB", "/S"),
-            [0x0568] = new("https://app-assets.razer.com/files/synapse/devices/1383/1.0.1.10/THX-0568-Presets-KrakenV4Pro-v3.2.18.0.exe", 1_267_984, "4552F33E37CE40AAC484B0C8DD65F4F20C59261C03B65C71F4E6F9A4969556A7", "/S"),
-            [0x056B] = new("https://app-assets.razer.com/files/synapse/devices/1387/1.0.1.9/THX-056B-Presets-KrakenV4-v3.2.18.0.exe", 1_268_240, "7BF9EF93E59C952FCE08653F7102ABC26AD69AE7771C9B80B414D8D446EA5EE0", "/S"),
-            [0x056C] = new("https://app-assets.razer.com/files/synapse/devices/1387/1.0.1.9/THX-056C-Presets-KrakenV4-v3.2.18.0.exe", 1_268_032, "D451416F679C09524A10C731FC6EAE9B7B5377742D1F308CD69E8DA0E7C68029", "/S"),
-            [0x056E] = new("https://app-assets.razer.com/files/synapse/devices/1390/1.0.0.19/THX-056E-Presets-BlackSharkV2HyperSpeed-v3.2.18.0.exe", 1_267_944, "EC8C8CAEBC613EA5EA56EE528B91FB194CDA2D775DD0EF713E75E4288822C0C7", "/S"),
-            [0x0583] = new("https://app-assets.razer.com/files/synapse/devices/1411/1.0.0.7/THX-0583-Presets-BarracudaProRefresh-v3.2.18.0.exe", 1_267_840, "C32578A929BA84F4107430AF5DC82C3E95A5046D5CAC279653A02D803216D9B0", "/S"),
-            [0x0584] = new("https://app-assets.razer.com/files/synapse/devices/1412/1.0.0.7/THX-0584-Presets-BarracudaRefresh-v3.2.18.0.exe", 1_267_896, "DF2828DD9B5305C5510DB5A7CE014236E6F3C52EB3C4F1110D79189BC5D0BB91", "/S"),
-        };
 
     private static readonly IReadOnlyDictionary<ushort, ThxHeadsetProfile> Profiles =
         BuildProfiles();
@@ -229,11 +199,10 @@ internal static partial class ThxHeadsetAdmission
             {
                 return new(ThxHeadsetAvailability.ServiceMissing, "ThxInstallerUnavailable");
             }
-            var preset = profile.PresetInstaller;
+            var preset = await ResolvePresetInstallerAsync(profile, cancellationToken)
+                .ConfigureAwait(false);
             var installPreset = preset is not null &&
-                ShouldInstallPresetPackage(
-                    ReadInstalledPresetVersion()?.ToString(),
-                    preset.Uri);
+                ShouldInstallPreset(ReadInstalledPresetVersion(), preset.Version);
             // A live VSSrv does not prove this model's APO is bound: another THX
             // headset can own the service. Always run the pinned per-model package;
             // a leftover service is repaired instead of treated as complete.
@@ -516,8 +485,7 @@ internal static partial class ThxHeadsetAdmission
             V3DllSha256,
             HasSidetone: true,
             InstallerLength: installerLength,
-            InstallerSha256: installerSha256,
-            PresetInstaller: V3PresetInstallers.GetValueOrDefault(productId));
+            InstallerSha256: installerSha256);
 
     private static void AddV4(
         IDictionary<ushort, ThxHeadsetProfile> profiles,
