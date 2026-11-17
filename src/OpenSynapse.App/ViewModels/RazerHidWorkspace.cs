@@ -653,11 +653,13 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
             return;
         }
 
+        PruneDriverModeChecked(connections);
+
         foreach (var connection in connections)
         {
             if (!connection.IsReady ||
                 !connection.Capabilities.Contains(RazerHidBackendCapability.DeviceModeWrite) ||
-                _driverModeChecked.Contains(connection.InstanceId))
+                _driverModeChecked.ContainsKey(connection.InstanceId))
             {
                 continue;
             }
@@ -666,7 +668,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
             {
                 await _deviceService.EnsureDriverModeAsync(connection, cancellationToken)
                     .ConfigureAwait(false);
-                _driverModeChecked.Add(connection.InstanceId);
+                _driverModeChecked.TryAdd(connection.InstanceId, 0);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
