@@ -190,6 +190,13 @@ public static class RazerHeadsetChannelCatalog
     /// <summary>True when the PID has an audited catalog entry, even if that entry is Unsupported.</summary>
     internal static bool IsKnown(ushort productId) => Entries.ContainsKey(productId);
 
+    internal static IEnumerable<ushort> ProductIds => Entries.Keys;
+
+    /// <summary>BLE identities live outside the HID product tables on purpose.</summary>
+    internal static bool IsBluetoothIdentity(ushort productId) =>
+        Entries.TryGetValue(productId, out var entry) &&
+        entry.DeviceType.Contains("Ble", StringComparison.OrdinalIgnoreCase);
+
     public static string Describe(ushort productId) =>
         Entries.TryGetValue(productId, out var entry)
             ? $"{productId:X4} {entry.DeviceType} {entry.Channel}"
