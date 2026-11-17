@@ -22,6 +22,7 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
     private Color _secondary = Color.FromArgb(255, 0, 153, 255);
     private Color _tertiary = Color.FromArgb(255, 255, 0, 153);
     private double _intensity = 255;
+    private int _brightness = 100;
     private bool _isBusy;
     private bool _requiresRescan;
     private string _errorText;
@@ -109,6 +110,10 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
     public Color Tertiary { get => _tertiary; set => SetField(ref _tertiary, value); }
     public double Intensity { get => _intensity; set => SetField(ref _intensity, value); }
     public string IntensityText => $"{Math.Round(Intensity / 255d * 100)}%";
+    public int Brightness { get => _brightness; set => SetField(ref _brightness, Math.Clamp(value, 0, 100)); }
+    public string BrightnessText => $"{Brightness}%";
+    public Visibility BrightnessVisibility =>
+        VisibleWhen(Connection.Kind == RazerHidSpecialLightingKind.KrakenV4);
     public Visibility LightingPresetVisibility => SecondaryVisibility;
     public Visibility PrimaryVisibility => VisibleWhen(SelectedEffect is
         RazerHidLightingEffect.BreathingSingle or
@@ -173,7 +178,8 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
             Primary,
             Secondary,
             Tertiary,
-            Intensity);
+            Intensity,
+            Brightness);
         IsBusy = true;
         OnPropertyChanged(nameof(CanApply));
         try
@@ -184,11 +190,12 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
             await _service.SetKrakenLightingAsync(Connection, new RazerHidLightingSettings(
                 effect, Primary: ToColor(Primary), Secondary: ToColor(Secondary), Tertiary: ToColor(Tertiary)),
                 intensity,
+                (byte)Brightness,
                 cancellationToken);
             if (!await PersistHeadsetAsync(headset =>
                 {
                     headset.ChromaEffect = effect.ToString();
-                    headset.ChromaBrightness = (int)Math.Round(Intensity / 255d * 100d);
+                    headset.ChromaBrightness = Brightness;
                     headset.ChromaParameters = new Dictionary<string, string>(
                         StringComparer.OrdinalIgnoreCase)
                     {
@@ -207,6 +214,7 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
                         Connection,
                         BuildSettings(previous),
                         previous.Intensity is >= 0 and <= 255 ? (byte)previous.Intensity : null,
+                        (byte)previous.Brightness,
                         CancellationToken.None);
                 }
                 catch (Exception exception) when (
@@ -287,6 +295,7 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
         Secondary = state.Secondary;
         Tertiary = state.Tertiary;
         Intensity = state.Intensity;
+        Brightness = state.Brightness;
     }
 
     private static Visibility VisibleWhen(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
@@ -311,6 +320,7 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(ControlsVisibility));
         }
         if (name == nameof(Intensity)) OnPropertyChanged(nameof(IntensityText));
+        if (name == nameof(Brightness)) OnPropertyChanged(nameof(BrightnessText));
         return true;
     }
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>
@@ -323,5 +333,6 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
         Color Primary,
         Color Secondary,
         Color Tertiary,
-        double Intensity);
+        double Intensity,
+        int Brightness);
 }
