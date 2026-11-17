@@ -1,5 +1,6 @@
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Lighting;
 using OpenSynapse.Windows.Protocols;
@@ -8,6 +9,9 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class BladeWorkspace
 {
+    private readonly Func<RazerCoolingPadViewModel?> _coolingPad;
+    private int _coolingPadMissedRefreshes;
+
     public async ValueTask DisposeAsync()
     {
         Task brightnessWriter;
@@ -31,15 +35,114 @@ public sealed partial class BladeWorkspace
 
     internal async Task RefreshCoolingPadPresenceAsync(CancellationToken cancellationToken)
     {
-        var connected = await RazerCoolingPad.IsConnectedAsync(cancellationToken);
-        if (_bladeCoolingPadConnected == connected)
+        var pad = _coolingPad();
+        var ready = pad?.IsReady ??
+            await RazerCoolingPad.IsConnectedAsync(cancellationToken);
+        if (ready)
+        {
+            _coolingPadMissedRefreshes = 0;
+            if (_bladeCoolingPadConnected)
+            {
+                return;
+            }
+
+            _bladeCoolingPadConnected = true;
+            OnPropertyChanged(nameof(HyperboostOptionVisibility));
+            OnPropertyChanged(nameof(HyperboostNeedsCoolingPadWarning));
+            return;
+        }
+
+        _coolingPadMissedRefreshes++;
+        if (!_bladeCoolingPadConnected)
         {
             return;
         }
 
-        _bladeCoolingPadConnected = connected;
+        // A pad that is gone is gone. A pad that is still connected but missed one read
+        // gets a second refresh: a single HID timeout must not switch the performance mode.
+        if (pad is not null && pad.IsConnected && _coolingPadMissedRefreshes < 2)
+        {
+            return;
+        }
+
+        _bladeCoolingPadConnected = false;
         OnPropertyChanged(nameof(HyperboostOptionVisibility));
         OnPropertyChanged(nameof(HyperboostNeedsCoolingPadWarning));
+        await RevertHyperBoostAfterPadLossAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// A HyperBoost entry that needed the pad must not keep running unmanaged once the
+    /// pad stops answering: either roll back to the previous mode, or — when the user
+    /// accepted pad-less HyperBoost — hand the airflow back to the laptop fans.
+    /// This runs inside the refresh gate, so the write can go straight to the reader.
+    /// </summary>
+    private async Task RevertHyperBoostAfterPadLossAsync(CancellationToken cancellationToken)
+    {
+        if (_blade._confirmedBladePerformanceModeIndex < 0 ||
+            _blade.PerformanceModes[_blade._confirmedBladePerformanceModeIndex] !=
+                BladePerformanceMode.Hyperboost)
+        {
+            return;
+        }
+
+        if (_padlessHyperBoostAccepted)
+        {
+            // HyperBoost started with the pad attached, so the Max Fan pin was never set.
+            // Re-sending the mode pad-less is what pins the laptop fans on models with
+            // that bit; on the others the EC preset curve already owns them.
+            if (!_blade.SupportsMaxFan)
+            {
+                return;
+            }
+
+            try
+            {
+                SetPerformanceMode(await _deviceTelemetryReader.SetBladePerformanceModeAsync(
+                    ActiveDescriptors,
+                    BladePerformanceMode.Hyperboost,
+                    cancellationToken,
+                    coolingPadConnected: false));
+            }
+            catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
+            {
+                _diagnosticLog.TryWrite(
+                    "blade-performance",
+                    $"HyperBoost could not pin the laptop fans after the pad left: {exception.Message}");
+            }
+
+            return;
+        }
+
+        var modes = _blade.PerformanceModes;
+        var target = modes.Contains(_blade.LastNonHyperboostMode)
+            ? _blade.LastNonHyperboostMode
+            : modes.Contains(BladePerformanceMode.Performance)
+                ? BladePerformanceMode.Performance
+                : BladePerformanceMode.Balanced;
+        try
+        {
+            SetPerformanceMode(await _deviceTelemetryReader.SetBladePerformanceModeAsync(
+                ActiveDescriptors, target, cancellationToken, coolingPadConnected: false));
+            // Keep the profile in step, or every refresh would try HyperBoost again and
+            // rewrite the same fallback mode.
+            await BladePerformanceProfileEdit.SaveModeAsync(
+                EditablePerformanceProfile, (byte)target, SaveProfileAsync, cancellationToken,
+                AppStrings.Text("Text_CC12A6F5"));
+            _diagnosticLog.TryWrite(
+                "blade-performance",
+                $"HyperBoost left for {target}: the cooling pad stopped answering.");
+        }
+        catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
+        {
+            _diagnosticLog.TryWrite(
+                "blade-performance",
+                $"HyperBoost fallback to {target} failed: {exception.Message}");
+            SetDeviceOperationError(AppStrings.FormatText(
+                "LabeledError",
+                AppStrings.Text("BladeHyperboostCoolingPadLost"),
+                exception.Message));
+        }
     }
 
     internal bool CoolingPadConnected => _bladeCoolingPadConnected;
@@ -196,8 +299,8 @@ public sealed partial class BladeWorkspace
     /// </summary>
     public bool CanApplyPerformanceModeFromTray(BladePerformanceMode mode) =>
         mode != BladePerformanceMode.Hyperboost ||
-        !HyperboostNeedsCoolingPadWarning ||
-        _padlessHyperBoostAccepted;
+        (PowerSourceResolver.IsVerifiedFullPower(CurrentPowerSourceEvidence) &&
+         (!HyperboostNeedsCoolingPadWarning || _padlessHyperBoostAccepted));
 
     internal BladeLightingDialect LightingDialect =>
         BladeLightingRuntimeDialect.Get(_blade._bladeProductId);

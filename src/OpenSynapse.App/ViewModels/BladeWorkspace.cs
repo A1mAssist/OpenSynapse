@@ -35,7 +35,6 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     private readonly Func<CancellationToken, Task<bool>> _saveMachineSettingsAsync;
     private readonly Func<string, Func<Task>, CancellationToken, Action?, string?, string?, Task> _runDeviceOperation;
     private readonly Func<IReadOnlyList<DeviceDescriptor>> _deviceDescriptors;
-    private readonly Func<PowerSourceKind> _currentPowerSource;
     private readonly Func<RazerDeviceTelemetry?> _lastTelemetry;
     private readonly Func<IReadOnlySet<int>?> _refreshRateCycle;
     private readonly Func<bool> _isDisplayAvailable;
@@ -92,7 +91,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         Func<CancellationToken, Task<bool>> saveMachineSettingsAsync,
         Func<string, Func<Task>, CancellationToken, Action?, string?, string?, Task> runDeviceOperation,
         Func<IReadOnlyList<DeviceDescriptor>> deviceDescriptors,
-        Func<PowerSourceKind> currentPowerSource,
+        Func<PowerSourceResolver.PowerSourceEvidence> powerSourceEvidence,
         Func<RazerDeviceTelemetry?> lastTelemetry,
         Func<IReadOnlySet<int>?> refreshRateCycle,
         Func<bool> isDisplayAvailable,
@@ -106,7 +105,8 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         Func<FanWorkspace> fan,
         Func<LightingWorkspace> lighting,
         Func<DeviceRowViewModel?> bladeRow,
-        Func<DeviceDescriptor?, CancellationToken, Task<string?>> readSerialAsync)
+        Func<DeviceDescriptor?, CancellationToken, Task<string?>> readSerialAsync,
+        Func<RazerCoolingPadViewModel?> coolingPad)
     {
         _deviceTelemetryReader = deviceTelemetryReader;
         _bladeLightingController = bladeLightingController;
@@ -119,8 +119,9 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
         _saveMachineSettingsAsync = saveMachineSettingsAsync;
         _runDeviceOperation = runDeviceOperation;
         _deviceDescriptors = deviceDescriptors;
-        _currentPowerSource = currentPowerSource;
+        _powerSourceEvidence = powerSourceEvidence;
         _lastTelemetry = lastTelemetry;
+        _coolingPad = coolingPad;
         _refreshRateCycle = refreshRateCycle;
         _isDisplayAvailable = isDisplayAvailable;
         _isBrightnessRestorePending = isBrightnessRestorePending;
@@ -158,8 +159,6 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     private RazerDeviceTelemetry? LastTelemetry => _lastTelemetry();
     private bool IsDisplayAvailable => _isDisplayAvailable();
     private bool IsDisposed => _isDisposed();
-    internal PowerSourceKind CurrentPowerSource => _currentPowerSource();
-
     private Task<bool> SaveProfileAsync(CancellationToken cancellationToken) =>
         _saveProfileAsync(cancellationToken);
 

@@ -1,11 +1,18 @@
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
 using static OpenSynapse.App.ViewModels.DeviceUiCatalog;
 
 namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class BladeWorkspace
 {
+    private readonly Func<PowerSourceResolver.PowerSourceEvidence> _powerSourceEvidence;
+
+    internal PowerSourceKind CurrentPowerSource => _powerSourceEvidence().Kind;
+
+    internal PowerSourceResolver.PowerSourceEvidence CurrentPowerSourceEvidence => _powerSourceEvidence();
+
     /// <summary>
     /// Asks the user to accept the cooling risk before HyperBoost is written without a
     /// Razer Cooling Pad. The UI owns the dialog, so the ViewModel stays headless.
@@ -74,6 +81,28 @@ public sealed partial class BladeWorkspace
             SetDeviceOperationError(AppStrings.Text("BladeHyperboostUnsupportedModel"));
             return;
         }
+        // HyperBoost is a preset that only holds on the supplied adapter. On battery or
+        // a lower-wattage supply the EC throttles straight back, so refuse it here rather
+        // than writing a mode the hardware cannot sustain.
+        if (requested == BladePerformanceMode.Hyperboost &&
+            !PowerSourceResolver.IsVerifiedFullPower(CurrentPowerSourceEvidence))
+        {
+            _diagnosticLog.TryWrite(
+                "blade-performance",
+                $"HyperBoost refused: power={CurrentPowerSource}, adapter=" +
+                $"{DescribeAdapterPower(LastTelemetry?.BladeAdapterPower)}.");
+            _suppressBladePerformanceApply = true;
+            try
+            {
+                PerformanceModeIndex = _blade._confirmedBladePerformanceModeIndex;
+            }
+            finally
+            {
+                _suppressBladePerformanceApply = false;
+            }
+            SetDeviceOperationError(AppStrings.Text("BladeHyperboostPowerSource"));
+            return;
+        }
         if (requested == BladePerformanceMode.Hyperboost &&
             HyperboostNeedsCoolingPadWarning &&
             !_padlessHyperBoostAccepted &&
@@ -93,12 +122,6 @@ public sealed partial class BladeWorkspace
             }
             return;
         }
-        // The mode still applies when the adapter cannot hold the raised limit. The
-        // middleware reports that shortage separately instead of hiding the option,
-        // so the user is told after the write rather than blocked before it.
-        var limitedAdapter = requested == BladePerformanceMode.Hyperboost &&
-            LastTelemetry?.BladeAdapterPower is { } adapter &&
-            adapter.IsLimitedAdapter;
         await RunDeviceOperationAsync(AppStrings.Text("Text_98C30F5D"), async () =>
         {
             if (!IsSelectedPerformancePowerActive)
@@ -136,10 +159,6 @@ public sealed partial class BladeWorkspace
             RequestDeviceRefresh();
             PerformanceModeChangedByUser?.Invoke(actual);
         }, cancellationToken, RefreshPerformanceEditor);
-        if (limitedAdapter)
-        {
-            SetDeviceOperationError(AppStrings.Text("BladeHyperboostLimitedAdapter"));
-        }
     }
 
     /// <summary>
@@ -376,10 +395,11 @@ public sealed partial class BladeWorkspace
 
             var cycleModes = _bladePerformanceCycleModes;
             // The shortcut cycle has no place to ask for the cooling-risk
-            // confirmation, so it skips HyperBoost unless the pad is connected or
-            // the user already accepted the pad-less warning.
+            // confirmation, so it skips HyperBoost unless the pad is connected, the
+            // user already accepted the pad-less warning, and the adapter can feed it.
             if (!BladeModelCapabilities.IsHyperBoostAvailable(
                     _blade._bladeProductId) ||
+                !PowerSourceResolver.IsVerifiedFullPower(CurrentPowerSourceEvidence) ||
                 (HyperboostNeedsCoolingPadWarning && !_padlessHyperBoostAccepted))
             {
                 cycleModes = [.. cycleModes.Where(mode => mode != BladePerformanceMode.Hyperboost)];

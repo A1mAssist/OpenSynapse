@@ -35,9 +35,7 @@ public static partial class BladeModelCapabilities
             ? modes
             : productId == Blade14_2022ProductId
                 ? Blade14_2022PerformanceModes
-                : SupportsHyperBoost(productId)
-                    ? HyperBoostPerformanceModes
-                    : StandardPerformanceModes;
+                : StandardPerformanceModes;
 
     /// <summary>Lower bound the exact model accepts for a fixed fan target.</summary>
     public static int MinimumFanTargetRpmFor(ushort productId) =>
@@ -129,11 +127,9 @@ public static partial class BladeModelCapabilities
         Contracts.TryGetValue(productId, out var contract) && contract.HyperBoost;
 
     /// <summary>
-    /// HyperBoost is offered on every model whose middleware lists it. The adapter
-    /// wattage report only tells the user that the current supply may not hold the
-    /// raised power limit, so it must not close the option: the middleware keeps the
-    /// mode selectable and reports the shortage separately. The cooling pad is not
-    /// required either, because the pad only hosts the temperature-to-fan curve.
+    /// HyperBoost is offered only where the middleware lists it. The mode list is
+    /// whatever the contract names, so a new model must copy its bundle's card list
+    /// instead of inheriting HyperBoost from a shared default.
     /// </summary>
     public static bool IsHyperBoostAvailable(ushort productId) =>
         SupportsHyperBoost(productId);

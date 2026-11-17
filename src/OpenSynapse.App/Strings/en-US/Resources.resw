@@ -2048,6 +2048,8 @@
   <data name="BladeHyperboostDisclaimerMessage" xml:space="preserve"><value>HyperBoost raises the sustained CPU and GPU power limits; without the Razer Cooling Pad it also pins the fans to maximum speed on models that support it. Without the Razer Laptop Cooling Pad, cooling still depends on your own third-party setup. Sustained heavy load may cause thermal throttling or hardware damage. Continuing means you accept this risk.</value></data>
   <data name="BladeHyperboostDisclaimerAccept" xml:space="preserve"><value>I understand the risk, enable it</value></data>
   <data name="BladeHyperboostLimitedAdapter" xml:space="preserve"><value>HyperBoost is enabled, but the current power adapter is below the recommended wattage, so the machine may not sustain full power and will throttle.</value></data>
+  <data name="BladeHyperboostPowerSource" xml:space="preserve"><value>HyperBoost requires a power adapter whose wattage was confirmed. It is unavailable on battery, on a lower-wattage adapter, or while the adapter reading fails; connect the supplied adapter and try again.</value></data>
+  <data name="BladeHyperboostCoolingPadLost" xml:space="preserve"><value>The cooling pad stopped answering, so HyperBoost was rolled back</value></data>
   <data name="AdvancedFeaturesTitle" xml:space="preserve"><value>Advanced features (danger)</value></data>
   <data name="AdvancedFeaturesSettingDescription" xml:space="preserve"><value>Show GPU overclocking, CPU power limits, Curve Optimizer, and other direct-hardware settings on the Devices page.</value></data>
   <data name="BladeChargeLimitHelp" xml:space="preserve"><value>Set the charge level where the battery stops charging; around 80% helps battery life when mostly plugged in.</value></data>

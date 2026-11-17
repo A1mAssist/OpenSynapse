@@ -77,10 +77,14 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _powerSourceProvider = powerSourceProvider ?? UnknownPowerSourceProvider.Instance;
         _diagnosticLog = diagnosticLog ?? new LocalDiagnosticLog();
         CoolingPad = new RazerCoolingPadViewModel(
-            message => _diagnosticLog.TryWrite("cooling-pad", message),
+            cancellationToken => RazerCoolingPadService.ConnectAsync(
+                message => _diagnosticLog.TryWrite("cooling-pad", message), cancellationToken),
             performanceMonitor,
             () => _profile,
-            SaveProfileAsync);
+            SaveProfileAsync,
+            () => _lastDeviceTelemetry?.BladePerformanceMode,
+            () => (ushort)(_deviceDescriptors.FirstOrDefault(device =>
+                DeviceProtocolFamilies.IsBlade(device.ProtocolFamily))?.ProductId ?? 0));
         Kiyo = new RazerKiyoViewModel(
             message => _diagnosticLog.TryWrite("kiyo", message),
             () => _profile,
@@ -120,7 +124,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             SaveMachineSettingsAsync,
             RunDeviceOperationAsync,
             () => _deviceDescriptors,
-            () => CurrentPowerSource,
+            () => CurrentPowerSourceEvidence,
             () => _lastDeviceTelemetry,
             () => _internalDisplayRefreshRateCycleHertz,
             () => Refresh!.IsDisplayAvailable,
@@ -134,7 +138,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             () => Fan!,
             () => Lighting!,
             () => Devices.FirstOrDefault(device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily)),
-            GetDeviceSerialAsync);
+            GetDeviceSerialAsync,
+            () => CoolingPad);
         RazerDrivers = new RazerDriverWorkspace(_diagnosticLog);
         Display = new DisplayWorkspace(
             internalDisplayController,
@@ -437,6 +442,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
     private PowerSourceKind CurrentPowerSource =>
         PowerSourceResolver.Resolve(
+            _powerSourceProvider.IsPluggedIn,
+            _lastDeviceTelemetry?.BladeAdapterPower);
+
+    private PowerSourceResolver.PowerSourceEvidence CurrentPowerSourceEvidence =>
+        PowerSourceResolver.ResolveEvidence(
             _powerSourceProvider.IsPluggedIn,
             _lastDeviceTelemetry?.BladeAdapterPower);
 

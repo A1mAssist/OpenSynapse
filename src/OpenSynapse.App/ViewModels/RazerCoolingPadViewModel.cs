@@ -22,36 +22,30 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
     private readonly Func<CancellationToken, Task<bool>>? _saveProfile;
     private RazerCoolingPadService? _service;
     private bool _isConnected;
+    private bool _isReady;
     private bool _isBusy;
     private bool _hasInitialTarget;
     private double _targetRpm = RazerCoolingPadProtocol.MinimumRpm;
     private string _currentRpmText = "--";
     private string _operationStatusText = string.Empty;
     private string _errorText = string.Empty;
-
-    public RazerCoolingPadViewModel(
-        Action<string>? diagnostic = null,
-        IPerformanceMonitor? performanceMonitor = null,
-        Func<ProfileDocument>? getProfile = null,
-        Func<CancellationToken, Task<bool>>? saveProfileAsync = null)
-        : this(
-            cancellationToken => RazerCoolingPadService.ConnectAsync(diagnostic, cancellationToken),
-            performanceMonitor,
-            getProfile,
-            saveProfileAsync)
-    {
-    }
+    private readonly Func<BladePerformanceMode?>? _getBladePerformanceMode;
+    private readonly Func<ushort>? _getBladeProductId;
 
     internal RazerCoolingPadViewModel(
         Func<CancellationToken, Task<RazerCoolingPadService?>> connect,
         IPerformanceMonitor? performanceMonitor = null,
         Func<ProfileDocument>? getProfile = null,
-        Func<CancellationToken, Task<bool>>? saveProfileAsync = null)
+        Func<CancellationToken, Task<bool>>? saveProfileAsync = null,
+        Func<BladePerformanceMode?>? getBladePerformanceMode = null,
+        Func<ushort>? getBladeProductId = null)
     {
         _connect = connect ?? throw new ArgumentNullException(nameof(connect));
         _performanceMonitor = performanceMonitor;
         _getProfile = getProfile;
         _saveProfile = saveProfileAsync;
+        _getBladePerformanceMode = getBladePerformanceMode;
+        _getBladeProductId = getBladeProductId;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -72,6 +66,12 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
     public string ErrorText => _errorText;
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);
     public bool IsConnected => _isConnected;
+
+    /// <summary>
+    /// Connected and answering a speed read. HyperBoost needs the fan to actually run,
+    /// so a merely enumerated HID node is not enough.
+    /// </summary>
+    public bool IsReady => _isReady;
     public int MinimumRpm => RazerCoolingPadProtocol.MinimumRpm;
     public int MaximumRpm => RazerCoolingPadProtocol.MaximumRpm;
     public int RpmStep => RazerCoolingPadProtocol.RpmPerUnit;
@@ -131,9 +131,11 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
             {
                 await ReadCurrentAsync(cancellationToken);
                 await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
+                SetReady(true);
             }
             catch (Exception exception) when (IsExpected(exception))
             {
+                SetReady(false);
                 // A cached path can be stale after a replug; re-discover once before
                 // reporting the read failure.
                 await ConnectAndReadAsync(cancellationToken, exception.Message);
@@ -182,9 +184,11 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
         {
             await ReadCurrentAsync(cancellationToken);
             await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
+            SetReady(true);
         }
         catch (Exception exception) when (IsExpected(exception))
         {
+            SetReady(false);
             SetError(AppStrings.FormatText("CoolingPadErrorRead", exception.Message));
         }
     }
@@ -196,6 +200,12 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
     {
         if (_service is null || _getProfile?.Invoke() is not { } document)
         {
+            return;
+        }
+
+        if (_hyperBoostActive)
+        {
+            // HyperBoost owns the fan speed until the mode leaves the preset.
             return;
         }
 
@@ -228,6 +238,11 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
         if (!CanApply || _service is null)
         {
             return;
+        }
+
+        if (_hyperBoostActive)
+        {
+            await ExitHyperBoostTakeoverAsync();
         }
 
         StopCurveAndSelectManual();
@@ -305,7 +320,17 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
 
         if (!connected)
         {
+            _hyperBoostActive = false;
             StopCurveTimer();
+            SetReady(false);
+        }
+        else
+        {
+            // The ticker stays on while the pad answers: it detects the EC entering
+            // HyperBoost, not just a user-started curve.
+            EnsureCurveTimer();
+            _curveCancellation ??= new CancellationTokenSource();
+            _curveTimer!.Start();
         }
 
         OnPropertyChanged(nameof(StatusText));
@@ -331,6 +356,8 @@ public sealed partial class RazerCoolingPadViewModel : INotifyPropertyChanged, I
         OnPropertyChanged(nameof(ErrorText));
         OnPropertyChanged(nameof(HasError));
     }
+
+    private void SetReady(bool ready) => SetField(ref _isReady, ready, nameof(IsReady));
 
     private static int NormalizeTarget(int rpm)
     {

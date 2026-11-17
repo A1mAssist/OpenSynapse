@@ -140,8 +140,15 @@ internal sealed class BladeViewModel
             // confirmed mode, so clearing them only left the controls blank until
             // the next successful telemetry read.
             _confirmedBladePerformanceModeIndex = _bladePerformanceModeIndex;
+            if (index >= 0 && mode != BladePerformanceMode.Hyperboost)
+            {
+                // HyperBoost without a pad has to fall back to the mode the user came from.
+                LastNonHyperboostMode = mode;
+            }
         }
     }
+
+    internal BladePerformanceMode LastNonHyperboostMode { get; private set; } = BladePerformanceMode.Balanced;
 
     private static int IndexOf(IReadOnlyList<BladePerformanceMode> modes, BladePerformanceMode mode)
     {

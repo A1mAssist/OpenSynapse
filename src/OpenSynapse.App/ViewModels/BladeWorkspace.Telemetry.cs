@@ -20,6 +20,11 @@ public sealed partial class BladeWorkspace
 {
     internal async Task InitializeAsync(CancellationToken cancellationToken)
     {
+        // Recorded for diagnosis only: this build does not gate any mode on the SKU.
+        _diagnosticLog.TryWrite(
+            "blade",
+            $"SystemSKU={SystemSkuReader.TryRead() ?? "<unreadable>"}");
+
         if (_blade._bladeGameModeState is byte gameMode)
         {
             try

@@ -324,13 +324,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
         }
         _setDeviceQueryError(string.Empty);
         _setDeviceOperationError(string.Empty);
-        var powerState = _currentPowerSource();
-        var powerChanged = _lastPowerState != powerState;
-        applyDisplayProfile |= powerChanged;
-        if (powerChanged)
-        {
-            await _telemetry.RefreshBatteryHealthAsync(cancellationToken);
-        }
+        var powerState = _lastPowerState ?? _currentPowerSource();
         try
         {
             var snapshot = knownSnapshot ?? await _discovery.DiscoverAsync(cancellationToken);
@@ -385,15 +379,15 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
 
             var telemetry = await _deviceTelemetryReader.ReadAsync(PeripheralDescriptors, cancellationToken);
             _applyDeviceTelemetry(telemetry);
-            var observedPowerState = PowerSourceResolver.Resolve(
+            // The pre-read only has the previous snapshot; this reading came with the
+            // devices just queried, so a transient mismatch must not survive the pass.
+            powerState = PowerSourceResolver.Resolve(
                 _powerSourceProvider.IsPluggedIn,
                 telemetry.BladeAdapterPower);
-            var observedPowerChanged = _lastPowerState != observedPowerState;
-            if (observedPowerChanged)
+            var powerChanged = _lastPowerState != powerState;
+            applyDisplayProfile |= powerChanged;
+            if (powerChanged)
             {
-                powerState = observedPowerState;
-                powerChanged = true;
-                applyDisplayProfile = true;
                 await _telemetry.RefreshBatteryHealthAsync(cancellationToken);
             }
             _lastPowerState = powerState;
