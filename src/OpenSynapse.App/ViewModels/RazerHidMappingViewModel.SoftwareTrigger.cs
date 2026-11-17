@@ -57,6 +57,7 @@ public sealed partial class RazerHidMappingViewModel
             return new MacroSoftwareBinding
             {
                 ProductId = _productId,
+                InstanceId = previous.InstanceId ?? DeviceInstanceId,
                 Layer = Mode,
                 ButtonId = row.ButtonId,
                 OriginalFunctionId = previous.OriginalFunctionId,
@@ -69,6 +70,7 @@ public sealed partial class RazerHidMappingViewModel
             : new MacroSoftwareBinding
             {
                 ProductId = _productId,
+                InstanceId = DeviceInstanceId,
                 Layer = Mode,
                 ButtonId = row.ButtonId,
                 OriginalFunctionId = backup.Assignment.FunctionId,
@@ -95,7 +97,7 @@ public sealed partial class RazerHidMappingViewModel
         CancellationToken cancellationToken)
     {
         var macro = ResolveSoftwareMacro(row)!;
-        var input = _softwareTriggerResolver!.Invoke(row.ButtonId)!;
+        var input = ResolveSoftwareTrigger(row.ButtonId)!;
         var error = await _softwareTriggerBinder!(
                 macro.Id,
                 input,
@@ -136,7 +138,7 @@ public sealed partial class RazerHidMappingViewModel
         var macro = ResolveSoftwareMacro(row);
         if (macro is null ||
             !StringComparer.Ordinal.Equals(macro.Id, boundId) ||
-            _softwareTriggerResolver(row.ButtonId) is not { } input)
+            ResolveSoftwareTrigger(row.ButtonId) is not { } input)
         {
             return;
         }

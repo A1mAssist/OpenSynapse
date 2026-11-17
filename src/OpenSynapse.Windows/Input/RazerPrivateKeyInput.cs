@@ -290,6 +290,7 @@ internal sealed class RazerPrivateKeyInput : IDisposable
         {
             Kind = MacroInputKind.RazerKey,
             DeviceId = device.ProductId,
+            InstanceId = device.PhysicalDeviceKey,
             DeviceName = string.IsNullOrWhiteSpace(device.ProductName)
                 ? $"Razer {device.ProductId:X4}"
                 : device.ProductName,

@@ -86,6 +86,7 @@ public sealed class MacroInput
     public int MouseButton { get; set; }
     public int SideButton { get; set; }
     public int DeviceId { get; set; }
+    public string? InstanceId { get; set; }
     public string? DeviceName { get; set; }
     public int RazerKeyCode { get; set; }
     public int WheelDelta { get; set; }
@@ -108,9 +109,11 @@ public sealed class MacroInput
             MacroInputKind.DeviceButton => DeviceId == other.DeviceId &&
                 VirtualKey == other.VirtualKey &&
                 ScanCode == other.ScanCode &&
-                Extended == other.Extended,
+                Extended == other.Extended &&
+                MatchesInstance(other),
             MacroInputKind.RazerKey => DeviceId == other.DeviceId &&
-                RazerKeyCode == other.RazerKeyCode,
+                RazerKeyCode == other.RazerKeyCode &&
+                MatchesInstance(other),
             MacroInputKind.MouseWheel => WheelDelta == other.WheelDelta &&
                 WheelHorizontal == other.WheelHorizontal,
             _ => false,
@@ -156,6 +159,7 @@ public sealed class MacroInput
         MouseButton = MouseButton,
         SideButton = SideButton,
         DeviceId = DeviceId,
+        InstanceId = InstanceId,
         DeviceName = DeviceName,
         RazerKeyCode = RazerKeyCode,
         WheelDelta = WheelDelta,
@@ -167,6 +171,23 @@ public sealed class MacroInput
     {
         var name = DeviceName?.Trim();
         DeviceName = string.IsNullOrEmpty(name) ? null : name[..Math.Min(name.Length, 128)];
+        InstanceId = NormalizeOptional(InstanceId, 256);
+    }
+
+    private bool MatchesInstance(MacroInput other) =>
+        string.IsNullOrWhiteSpace(InstanceId) ||
+        string.IsNullOrWhiteSpace(other.InstanceId) ||
+        StringComparer.OrdinalIgnoreCase.Equals(InstanceId.Trim(), other.InstanceId.Trim());
+
+    private static string? NormalizeOptional(string? value, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        value = value.Trim();
+        return value.Length > maxLength ? value[..maxLength] : value;
     }
 }
 
@@ -241,6 +262,7 @@ public sealed class MacroMousePoint
 public sealed class MacroSoftwareBinding
 {
     public ushort ProductId { get; set; }
+    public string? InstanceId { get; set; }
     public byte Layer { get; set; }
     public byte ButtonId { get; set; }
     public byte OriginalFunctionId { get; set; }
@@ -249,6 +271,7 @@ public sealed class MacroSoftwareBinding
     public MacroSoftwareBinding Clone() => new()
     {
         ProductId = ProductId,
+        InstanceId = InstanceId,
         Layer = Layer,
         ButtonId = ButtonId,
         OriginalFunctionId = OriginalFunctionId,

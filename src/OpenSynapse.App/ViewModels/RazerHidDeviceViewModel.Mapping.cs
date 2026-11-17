@@ -55,7 +55,7 @@ public sealed partial class RazerHidDeviceViewModel
                 SoftwareMacroTriggerResolver ?? ResolveDefaultSoftwareMacroTrigger,
             softwareTriggerBinder: SoftwareMacroBinder,
             softwareTriggerClearer: SoftwareMacroClearer,
-            log: _log);
+            log: _log) { DeviceInstanceId = Connection.InstanceId };
 
     private MacroInput? ResolveDefaultSoftwareMacroTrigger(byte buttonId)
     {

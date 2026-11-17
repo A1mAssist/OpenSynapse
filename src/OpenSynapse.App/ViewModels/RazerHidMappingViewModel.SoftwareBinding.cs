@@ -36,6 +36,15 @@ public sealed partial class RazerHidMappingViewModel
         {
             return AppStrings.Text("RazerMappingMacroSoftwareUnavailable");
         }
+        if (string.IsNullOrWhiteSpace(input.InstanceId))
+        {
+            input.InstanceId = DeviceInstanceId;
+        }
+        else if (!string.IsNullOrWhiteSpace(DeviceInstanceId) &&
+                 !StringComparer.OrdinalIgnoreCase.Equals(input.InstanceId, DeviceInstanceId))
+        {
+            return AppStrings.Text("RazerMappingMacroSoftwareUnavailable");
+        }
 
         var layer = (byte)(hyperShiftLayer ? 1 : 0);
         var layerChanged = LayerIndex != layer;
@@ -63,7 +72,7 @@ public sealed partial class RazerHidMappingViewModel
         var row = existingBinding is { } bound
             ? Rows.FirstOrDefault(candidate => candidate.ButtonId == bound.ButtonId)
             : Rows.FirstOrDefault(candidate =>
-                _softwareTriggerResolver(candidate.ButtonId) is { } candidateInput &&
+                ResolveSoftwareTrigger(candidate.ButtonId) is { } candidateInput &&
                 candidateInput.Matches(input));
         if (row is null)
         {
@@ -80,7 +89,10 @@ public sealed partial class RazerHidMappingViewModel
             return AppStrings.Text("MacroTriggerMacroMissing");
         }
         if (existingBinding is { } existing &&
-            (existing.ProductId != _productId || existing.Layer != layer))
+            (existing.ProductId != _productId ||
+             existing.Layer != layer ||
+             (!string.IsNullOrWhiteSpace(existing.InstanceId) &&
+              !StringComparer.OrdinalIgnoreCase.Equals(existing.InstanceId, DeviceInstanceId))))
         {
             return AppStrings.Text("RazerMappingMacroSoftwareUnavailable");
         }
@@ -113,6 +125,7 @@ public sealed partial class RazerHidMappingViewModel
                     ? new MacroSoftwareBinding
                     {
                         ProductId = _productId,
+                        InstanceId = previous.InstanceId ?? DeviceInstanceId,
                         Layer = Mode,
                         ButtonId = row.ButtonId,
                         OriginalFunctionId = previous.OriginalFunctionId,
@@ -121,6 +134,7 @@ public sealed partial class RazerHidMappingViewModel
                     : new MacroSoftwareBinding
                 {
                     ProductId = _productId,
+                    InstanceId = DeviceInstanceId,
                     Layer = Mode,
                     ButtonId = row.ButtonId,
                     OriginalFunctionId = assignment.FunctionId,
