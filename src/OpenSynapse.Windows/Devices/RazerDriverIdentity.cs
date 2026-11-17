@@ -50,10 +50,10 @@ internal static class RazerDriverIdentity
         foreach (var productId in endpointProductIds)
         {
             ready.Add(productId);
-            if (RazerDriverPackageCatalog.TryResolve(productId, out var package))
+            if (RazerDriverPackageCatalog.TryGetEntry(productId, out var entry))
             {
                 ready.UnionWith(
-                    RazerDriverPackageCatalog.GetCandidateProductIds(productId, package));
+                    RazerDriverPackageCatalog.GetCandidateProductIds(productId, entry));
             }
         }
 

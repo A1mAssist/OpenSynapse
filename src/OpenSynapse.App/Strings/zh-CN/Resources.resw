@@ -4287,6 +4287,7 @@
   <data name="RazerDriverInstallFailed" xml:space="preserve"><value>Razer 驱动安装失败：{0}</value></data>
   <data name="RazerDriverMissingStatus" xml:space="preserve"><value>缺少驱动</value></data>
   <data name="RazerDriverDetail" xml:space="preserve"><value>VID_1532 / PID_{0} · 驱动 v{1}</value></data>
+  <data name="RazerDriverUnavailableDetail" xml:space="preserve"><value>VID_1532 / PID_{0} · 无法获取官方驱动包</value></data>
   <data name="RazerDriverDownloading" xml:space="preserve"><value>正在下载 {0} 驱动…</value></data>
   <data name="RazerDriverInstalling" xml:space="preserve"><value>正在安装 {0} 驱动…</value></data>
   <data name="RazerDriverInstallTimeout" xml:space="preserve"><value>Razer 驱动安装超时。</value></data>

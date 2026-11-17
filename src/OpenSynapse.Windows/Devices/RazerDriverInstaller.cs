@@ -116,7 +116,9 @@ internal static partial class RazerDriverInstaller
         ushort productId,
         CancellationToken cancellationToken = default)
     {
-        if (!RazerDriverPackageCatalog.TryResolve(productId, out var package))
+        if (await RazerDriverPackageCatalog
+                .ResolveAsync(productId, cancellationToken)
+                .ConfigureAwait(false) is not { } package)
         {
             return new RazerDriverInstallResult(
                 false,

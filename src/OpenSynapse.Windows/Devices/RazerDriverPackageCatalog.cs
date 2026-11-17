@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 
 namespace OpenSynapse.Windows.Devices;
@@ -10,10 +11,21 @@ internal sealed record RazerDriverPackage(
     long Size,
     string Url);
 
+internal sealed record RazerDriverEntry(
+    string ProductId,
+    string InstallProductId,
+    string Name,
+    int Page,
+    string Version,
+    long Size,
+    string Url);
+
 /// <summary>
 /// Maps a connected Razer product to the official per-device driver package
-/// published in the Synapse device bundles. A wireless dongle PID resolves to
-/// the base product package, whose INF covers both hardware IDs.
+/// published in the Synapse device bundles. The package url, version and size
+/// come from <c>products/&lt;page&gt;/mw/manifest.json</c>; the local table keeps
+/// only the product page and the PID in the installer file name. A wireless
+/// dongle PID resolves to the base product package, whose INF covers both.
 /// </summary>
 internal static class RazerDriverPackageCatalog
 {
@@ -22,18 +34,21 @@ internal static class RazerDriverPackageCatalog
 
     private static readonly Lazy<CatalogData> Data = new(Load);
 
-    internal static bool TryResolve(ushort productId, out RazerDriverPackage package)
+    private static readonly ConcurrentDictionary<int, Lazy<Task<IReadOnlyList<RazerManifestResource>?>>>
+        Manifests = new();
+
+    internal static bool TryGetEntry(ushort productId, out RazerDriverEntry entry)
     {
-        package = null!;
+        entry = null!;
         var key = productId.ToString("X4");
         var data = Data.Value;
-        if (!data.Packages.TryGetValue(key, out var entry))
+        if (!data.Packages.TryGetValue(key, out var found))
         {
             if (data.Aliases.TryGetValue(key, out var baseProductId) ||
                 data.InstallPackages.TryGetValue(key, out baseProductId))
             {
-                entry = data.Packages[baseProductId];
                 key = baseProductId;
+                found = data.Packages[key];
             }
             else
             {
@@ -41,14 +56,47 @@ internal static class RazerDriverPackageCatalog
             }
         }
 
-        package = new RazerDriverPackage(
+        entry = new RazerDriverEntry(
             key,
-            entry.InstallProductId,
-            entry.Name,
-            entry.Version,
-            entry.Size,
-            entry.Url);
+            found.InstallPid,
+            found.Name,
+            found.Page,
+            found.Version,
+            found.Size,
+            found.Url);
         return true;
+    }
+
+    /// <summary>
+    /// The manifest is authoritative; entries whose product page carries no
+    /// driver resource keep their pinned url as a fallback, so a Razer outage
+    /// does not remove a card that used to work.
+    /// </summary>
+    internal static async Task<RazerDriverPackage?> ResolveAsync(
+        ushort productId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!TryGetEntry(productId, out var entry))
+        {
+            return null;
+        }
+
+        if (entry.Page > 0 &&
+            await ResolveFromManifestAsync(entry, cancellationToken).ConfigureAwait(false)
+                is { } resolved)
+        {
+            return resolved;
+        }
+
+        return entry.Url.Length > 0
+            ? new RazerDriverPackage(
+                entry.ProductId,
+                entry.InstallProductId,
+                entry.Name,
+                entry.Version,
+                entry.Size,
+                entry.Url)
+            : null;
     }
 
     /// <summary>
@@ -58,12 +106,12 @@ internal static class RazerDriverPackageCatalog
     /// </summary>
     internal static IReadOnlyList<ushort> GetCandidateProductIds(
         ushort connectedProductId,
-        RazerDriverPackage package)
+        RazerDriverEntry entry)
     {
         var candidates = new List<ushort>(3);
         Add(connectedProductId);
-        Add(Parse(package.ProductId));
-        Add(Parse(package.InstallProductId));
+        Add(Parse(entry.ProductId));
+        Add(Parse(entry.InstallProductId));
         return candidates;
 
         void Add(ushort? productId)
@@ -82,6 +130,47 @@ internal static class RazerDriverPackageCatalog
                 out var productId)
                 ? productId
                 : null;
+    }
+
+    private static async Task<RazerDriverPackage?> ResolveFromManifestAsync(
+        RazerDriverEntry entry,
+        CancellationToken cancellationToken)
+    {
+        var lazy = Manifests.GetOrAdd(
+            entry.Page,
+            static page => new Lazy<Task<IReadOnlyList<RazerManifestResource>?>>(
+                () => LoadManifestAsync(page)));
+        var resources = await lazy.Value.WaitAsync(cancellationToken).ConfigureAwait(false);
+        if (resources is null)
+        {
+            // Do not cache a transient network failure for the whole process.
+            Manifests.TryRemove(entry.Page, out _);
+            return null;
+        }
+
+        var resource = resources.FirstOrDefault(item =>
+            item.Name.StartsWith("NormalDriver_", StringComparison.OrdinalIgnoreCase) &&
+            item.Name.Contains(entry.InstallProductId, StringComparison.OrdinalIgnoreCase));
+        if (resource?.Package is not { } package)
+        {
+            return null;
+        }
+
+        return new RazerDriverPackage(
+            entry.ProductId,
+            entry.InstallProductId,
+            entry.Name,
+            package.Version?.ToString() ?? string.Empty,
+            package.Length,
+            package.Uri.ToString());
+    }
+
+    private static async Task<IReadOnlyList<RazerManifestResource>?> LoadManifestAsync(int page)
+    {
+        using var document = await RazerManifestResources
+            .FetchAsync(page, CancellationToken.None)
+            .ConfigureAwait(false);
+        return document is null ? null : RazerManifestResources.Read(document.RootElement);
     }
 
     private static CatalogData Load()
@@ -105,21 +194,30 @@ internal static class RazerDriverPackageCatalog
                     out _) ||
                 pair.Key.Length != 4 ||
                 string.IsNullOrWhiteSpace(pair.Value.Name) ||
-                string.IsNullOrWhiteSpace(pair.Value.Version) ||
-                pair.Value.Size <= 0 ||
-                !Uri.TryCreate(pair.Value.Url, UriKind.Absolute, out var uri) ||
-                uri.Scheme != Uri.UriSchemeHttps ||
-                !string.Equals(uri.Host, "app-assets.razer.com", StringComparison.OrdinalIgnoreCase))
+                pair.Value.Page < 0 ||
+                pair.Value.InstallPid.Length != 4 ||
+                !ushort.TryParse(
+                    pair.Value.InstallPid,
+                    System.Globalization.NumberStyles.HexNumber,
+                    null,
+                    out _))
             {
                 throw new InvalidOperationException(
                     $"Razer driver package {pair.Key} has invalid metadata.");
             }
 
-            pair.Value.InstallProductId = ResolveInstallProductId(pair.Value.Url);
-            if (pair.Value.InstallProductId.Length == 0)
+            if (pair.Value.Page == 0 ||
+                pair.Value.Url.Length > 0)
             {
-                throw new InvalidOperationException(
-                    $"Razer driver package {pair.Key} has no PID in its installer file name.");
+                if (!Uri.TryCreate(pair.Value.Url, UriKind.Absolute, out var uri) ||
+                    uri.Scheme != Uri.UriSchemeHttps ||
+                    !string.Equals(uri.Host, "app-assets.razer.com", StringComparison.OrdinalIgnoreCase) ||
+                    pair.Value.Size <= 0 ||
+                    string.IsNullOrWhiteSpace(pair.Value.Version))
+                {
+                    throw new InvalidOperationException(
+                        $"Razer driver package {pair.Key} has no usable fallback.");
+                }
             }
 
             packages[pair.Key.ToUpperInvariant()] = pair.Value;
@@ -152,29 +250,10 @@ internal static class RazerDriverPackageCatalog
 
         foreach (var pair in packages)
         {
-            installPackages.TryAdd(pair.Value.InstallProductId, pair.Key);
+            installPackages.TryAdd(pair.Value.InstallPid, pair.Key);
         }
 
         return new CatalogData(packages, aliases, installPackages);
-    }
-
-    private static string ResolveInstallProductId(string url)
-    {
-        var fileName = Path.GetFileName(new Uri(url).AbsolutePath);
-        var marker = fileName.IndexOf("PID", StringComparison.OrdinalIgnoreCase);
-        if (marker < 0 || marker + 7 > fileName.Length)
-        {
-            return string.Empty;
-        }
-
-        var candidate = fileName.AsSpan(marker + 3, 4);
-        return ushort.TryParse(
-            candidate,
-            System.Globalization.NumberStyles.HexNumber,
-            System.Globalization.CultureInfo.InvariantCulture,
-            out _)
-            ? candidate.ToString().ToUpperInvariant()
-            : string.Empty;
     }
 
     private sealed record CatalogData(
@@ -191,8 +270,9 @@ internal static class RazerDriverPackageCatalog
     private sealed class PackageJson
     {
         public string Name { get; init; } = string.Empty;
+        public int Page { get; init; }
+        public string InstallPid { get; init; } = string.Empty;
         public string Version { get; init; } = string.Empty;
-        public string InstallProductId { get; set; } = string.Empty;
         public long Size { get; init; }
         public string Url { get; init; } = string.Empty;
     }
