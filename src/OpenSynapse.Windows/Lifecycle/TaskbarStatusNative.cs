@@ -50,6 +50,7 @@ internal static class TaskbarStatusNative
     public const int FwNormal = 400;
     public const int FwSemibold = 600;
     public const uint AntialiasedQuality = 4;
+    public const uint NonAntialiasedQuality = 3;
     public const uint DefaultCharset = 1;
     public const uint DefaultPitch = 0;
     public const uint FrPrivate = 0x10;
