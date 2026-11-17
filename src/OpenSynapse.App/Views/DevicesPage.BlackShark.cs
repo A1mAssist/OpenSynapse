@@ -11,6 +11,12 @@ public sealed partial class DevicesPage : UserControl
     private async void BlackSharkApplyThxClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.SelectedBlackShark?.SetThxAsync(Lifetime) ?? Task.CompletedTask);
 
+    private void BlackSharkRefreshThxClick(object sender, RoutedEventArgs e) =>
+        ViewModel.SelectedBlackShark?.RefreshThx();
+
+    private async void BlackSharkInstallThxClick(object sender, RoutedEventArgs e) =>
+        await (ViewModel.SelectedBlackShark?.InstallThxComponentsAsync(Lifetime) ?? Task.CompletedTask);
+
     private async void BlackSharkApplyAncClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.SelectedBlackShark?.SetAncAsync(Lifetime) ?? Task.CompletedTask);
 

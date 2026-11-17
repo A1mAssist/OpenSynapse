@@ -9,7 +9,7 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed class BlackSharkHeadsetViewModel : INotifyPropertyChanged
+public sealed partial class BlackSharkHeadsetViewModel : INotifyPropertyChanged
 {
     private static readonly BlackSharkAncMode[] AncModes =
         [BlackSharkAncMode.Off, BlackSharkAncMode.Anc, BlackSharkAncMode.Ambient];
@@ -178,6 +178,7 @@ public sealed class BlackSharkHeadsetViewModel : INotifyPropertyChanged
                 _connection.DevicePath, cancellationToken);
             await ApplyPersistedProfileAsync(service, PowerSourceKind.Unknown, cancellationToken);
             OnPropertyChanged(nameof(SerialVisibility));
+            RefreshThx();
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
