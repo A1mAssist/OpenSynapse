@@ -56,7 +56,9 @@ public static class RazerKeyboardExtraKeyCatalog
             [0x02A5] = [MuteOrDialClick],
             [0x02A6] = [MuteOrDialClick, 208, Side3],
             [0x02A7] = [MuteOrDialClick],
-            [0x02CF] = [MuteOrDialClick, 208, Side3],
+            // 02CF rejects 0x9E for 0xD0/0xD1 with status 0x03; they are
+            // reserved ids in its table, not readable side keys.
+            [0x02CF] = [MuteOrDialClick],
             [0x02D5] = [MuteOrDialClick],
             [0x02D7] = [MuteOrDialClick],
         }.ToFrozenDictionary();
