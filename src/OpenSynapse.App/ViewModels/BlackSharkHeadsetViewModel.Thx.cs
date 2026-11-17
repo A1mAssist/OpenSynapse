@@ -27,6 +27,14 @@ public sealed partial class BlackSharkHeadsetViewModel
             "ThxRebootRequired" => AppStrings.Text("RazerHeadsetThxRebootRequired"),
             "ThxDownloadFailed" or "ThxDownloadVerificationFailed" =>
                 AppStrings.Text("RazerHeadsetThxDownloadFailed"),
+            "ThxInstallerCancelled" => AppStrings.Text("RazerHeadsetThxInstallCancelled"),
+            "ThxInstallerBusy" => AppStrings.Text("RazerHeadsetThxInstallBusy"),
+            var code when code?.StartsWith("ThxInstallerExit", StringComparison.Ordinal) == true =>
+                AppStrings.FormatText(
+                    "RazerHeadsetThxInstallerExited",
+                    code["ThxInstallerExit".Length..]),
+            var code when code?.StartsWith("ThxInstaller", StringComparison.Ordinal) == true =>
+                AppStrings.Text("RazerHeadsetThxDownloadFailed"),
             _ when ThxStatus.Availability == ThxHeadsetAvailability.Available =>
                 AppStrings.Text("RazerHeadsetThxReady"),
             _ => string.Empty,
