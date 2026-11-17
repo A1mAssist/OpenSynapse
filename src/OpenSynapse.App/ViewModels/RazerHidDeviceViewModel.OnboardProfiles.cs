@@ -305,6 +305,10 @@ public sealed partial class RazerHidDeviceViewModel
                     },
                     token => _service.SetActiveOnboardProfileIdAsync(Connection, previous, token),
                     cancellationToken);
+                // The readouts above the card still hold the previous slot's DPI,
+                // lighting and mapping until they are re-read from the device.
+                await LoadBasicStateAsync(cancellationToken);
+                await LoadMappingAsync(cancellationToken);
                 SetOnboardProfileStatus(AppStrings.Text("RazerHidOperationApplied"), isError: false);
             }, cancellationToken);
 
