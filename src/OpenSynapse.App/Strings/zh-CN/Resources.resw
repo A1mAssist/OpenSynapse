@@ -4536,7 +4536,7 @@
   <data name="RazerDualDongleTimeout" xml:space="preserve"><value>没检测到设备。确认它已进入配对模式，必要时先更新接收器固件再试。</value></data>
   <data name="RazerDualDongleNoCandidate" xml:space="preserve"><value>这个接收器没有空位（已连 1 个键盘 + 1 个鼠标）。</value></data>
   <data name="RazerDualDongleStatusUnknown" xml:space="preserve"><value>无法读取当前连接状态。</value></data>
-  <data name="RazerDualDongleInvalid" xml:space="preserve"><value>接收器拒绝了这次配对。</value></data>
+  <data name="RazerDualDongleInvalid" xml:space="preserve"><value>配对失败。接收器可能仍在扫描或正被雷云占用；请关闭雷云后重试。Mouse Dock Pro 如果还是 1.xx 固件，请先升级。</value></data>
   <data name="DeviceIdentityUnavailable" xml:space="preserve"><value>设备标识不可用</value></data>
   <data name="ProfileDeleteDeviceBindings" xml:space="preserve"><value>此配置有 {0} 条设备程序绑定。删除后绑定会保留并标记为配置缺失。</value></data>
   <data name="HomeLayoutLoadFailed" xml:space="preserve"><value>主页布局无法读取：{0}</value></data>

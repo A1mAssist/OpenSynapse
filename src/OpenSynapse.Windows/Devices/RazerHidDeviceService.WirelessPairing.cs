@@ -65,8 +65,18 @@ public sealed partial class RazerHidDeviceService
         ushort candidateProductId,
         CancellationToken cancellationToken = default)
     {
-        await SetDeviceScanAsync(connection, RazerPairingProtocol.ScanStart, cancellationToken)
-            .ConfigureAwait(false);
+        try
+        {
+            await SetDeviceScanAsync(connection, RazerPairingProtocol.ScanStart, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (RazerDeviceTimeoutException exception) when (
+            connection.Definition.ProductId == MouseDockProProductId && exception.IsRetryableBusy)
+        {
+            // A Dock left scanning by an earlier attempt answers Busy; pairing can still proceed.
+            WriteDiagnostic(connection.Definition.ProductId,
+                "wireless pairing scan is already in progress; sending pairing mode");
+        }
         await Task.Delay(300, cancellationToken).ConfigureAwait(false);
         await SetDevicePairingModeAsync(connection, RazerPairingProtocol.PairModeDefault,
             candidateProductId, cancellationToken).ConfigureAwait(false);
