@@ -105,6 +105,7 @@ public sealed partial class RefreshWorkspace
                         // This path only reads; it never writes a setting back to the device.
                         await _pollHeadsetPower(cancellationToken);
                         await RefreshDeviceReadoutsAsync(cancellationToken);
+                        await _razerHid.KeepAliveDriverModeAsync(cancellationToken);
                     }
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
