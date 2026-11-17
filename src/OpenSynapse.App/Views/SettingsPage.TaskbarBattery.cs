@@ -32,6 +32,23 @@ public sealed partial class SettingsPage
     private void OnTaskbarBatterySourcesChanged(object? sender, NotifyCollectionChangedEventArgs args) =>
         RefreshTaskbarBatteryChoices();
 
+    internal void ShutdownTaskbarBatteryUi()
+    {
+        if (_taskbarBatterySourcesHooked && DataContext is MainViewModel viewModel)
+        {
+            _taskbarBatterySourcesHooked = false;
+            viewModel.Devices.CollectionChanged -= OnTaskbarBatterySourcesChanged;
+            viewModel.RazerHid.Devices.CollectionChanged -= OnTaskbarBatterySourcesChanged;
+            viewModel.Accessories.HeadsetAudioDevices.CollectionChanged -= OnTaskbarBatterySourcesChanged;
+            viewModel.Accessories.KeyboardDevices.CollectionChanged -= OnTaskbarBatterySourcesChanged;
+            viewModel.BlackSharkDevices.CollectionChanged -= OnTaskbarBatterySourcesChanged;
+            viewModel.BleDevices.CollectionChanged -= OnTaskbarBatterySourcesChanged;
+            viewModel.AwBleHeadsetDevices.CollectionChanged -= OnTaskbarBatterySourcesChanged;
+        }
+        ObserveTaskbarBatteryRows([]);
+        TaskbarBatteryChoices.ItemsSource = null;
+    }
+
     private void RefreshTaskbarBatteryChoices()
     {
         if (Host?.BehaviorSettings is null) return;

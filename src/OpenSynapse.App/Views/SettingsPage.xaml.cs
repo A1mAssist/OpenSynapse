@@ -141,6 +141,7 @@ public sealed partial class SettingsPage : UserControl
     {
         _chromaRestStatusTimer.Stop();
         _chromaRestStatusTimer.Tick -= OnChromaRestStatusTick;
+        ShutdownTaskbarBatteryUi();
     }
 
     internal async Task CheckForUpdatesAsync(bool downloadAutomatically)
