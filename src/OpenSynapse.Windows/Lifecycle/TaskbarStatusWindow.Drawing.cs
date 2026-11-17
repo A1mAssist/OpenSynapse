@@ -14,6 +14,7 @@ public sealed partial class TaskbarStatusWindow
     ];
     private static bool _displayFontsLoaded;
     private static bool _displayFontsAvailable;
+    private static bool _displayFontLogged;
 
     private static bool EnsureDisplayFonts()
     {
@@ -22,12 +23,14 @@ public sealed partial class TaskbarStatusWindow
         foreach (var relativePath in BundledDisplayFonts)
         {
             var path = Path.Combine(AppContext.BaseDirectory, relativePath);
-            if (File.Exists(path) &&
-                AddFontResourceExW(path, FrPrivate, IntPtr.Zero) > 0)
+            if (!File.Exists(path) ||
+                AddFontResourceExW(path, FrPrivate, IntPtr.Zero) == 0)
             {
-                _displayFontsAvailable = true;
+                return false;
             }
         }
+
+        _displayFontsAvailable = true;
         return _displayFontsAvailable;
     }
 
@@ -36,11 +39,21 @@ public sealed partial class TaskbarStatusWindow
         DeleteFont(ref _batteryFont);
         DeleteFont(ref _iconFont);
         var scale = _dpi / 96.0;
-        var displayFamily = EnsureDisplayFonts() ? "Titillium Web" : "Segoe UI Variable Text";
+        var bundled = EnsureDisplayFonts();
+        // The bundled TTF registers as family "Titillium Web SemiBold" with a
+        // Regular style; asking for "Titillium Web" + 600 makes GDI synthesize
+        // bold from the Regular face.
+        var displayFamily = bundled ? "Titillium Web SemiBold" : "Segoe UI Variable Text";
+        var displayWeight = bundled ? FwNormal : FwSemibold;
         _batteryFont = CreateFontW(
-            -(int)Math.Round(14 * scale), 0, 0, 0, FwSemibold,
+            -(int)Math.Round(14 * scale), 0, 0, 0, displayWeight,
             0, 0, 0, DefaultCharset, 0, 0, NonAntialiasedQuality, DefaultPitch,
             displayFamily);
+        if (!_displayFontLogged)
+        {
+            _displayFontLogged = true;
+            _log?.Invoke($"taskbar battery font: {displayFamily}/{displayWeight}");
+        }
 
         _iconFont = CreateFontW(
             -(int)Math.Round(13 * scale), 0, 0, 0, FwNormal,
