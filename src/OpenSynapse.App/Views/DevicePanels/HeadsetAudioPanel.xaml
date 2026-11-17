@@ -19,9 +19,6 @@
                       <TextBlock Text="{Binding ThxStatusText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                       <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button local:Localized.Uid="RazerHeadsetThxInstallButton" Click="HeadsetAudioInstallThxClick" Visibility="{Binding ThxInstallerVisibility}" IsEnabled="{Binding CanInstallThx}" Style="{StaticResource PrimaryButtonStyle}" />
-                        <Button local:Localized.Uid="RazerHeadsetThxInstallerLinkButton" Click="HeadsetAudioOpenThxInstallerClick" Visibility="{Binding ThxInstallerLinkVisibility}" Style="{StaticResource SecondaryButtonStyle}" />
-                        <Button local:Localized.Uid="RazerHeadsetThxGameProfilesButton" Click="HeadsetAudioOpenThxGameProfilesClick" Visibility="{Binding ThxGameProfilesVisibility}" Style="{StaticResource SecondaryButtonStyle}" />
-                        <Button local:Localized.Uid="RazerHeadsetThxPatcherButton" Click="HeadsetAudioOpenThxPatcherClick" Visibility="{Binding ThxPatcherVisibility}" Style="{StaticResource SecondaryButtonStyle}" />
                       </StackPanel>
                       <StackPanel Spacing="12" Visibility="{Binding ThxControlsVisibility}">
                         <ToggleSwitch local:Localized.Uid="RazerHeadsetThxSpatialToggle" IsOn="{Binding ThxSpatialEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />

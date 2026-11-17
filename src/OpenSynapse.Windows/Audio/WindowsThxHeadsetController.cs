@@ -81,7 +81,7 @@ public sealed class WindowsThxHeadsetController : IThxAudioController, IAsyncDis
             levelPercent: levelPercent);
 
     public bool CanInstallComponents =>
-        ThxHeadsetAdmission.GetProfile(_productId)?.Installer is not null;
+        ThxHeadsetAdmission.GetProfile(_productId)?.InstallerPage > 0;
 
     public async Task<ThxAudioStatus> InstallComponentsAsync(
         ThxAudioEndpoint endpoint,

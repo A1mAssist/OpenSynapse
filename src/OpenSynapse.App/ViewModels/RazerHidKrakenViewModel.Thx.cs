@@ -48,18 +48,6 @@ public sealed partial class RazerHidKrakenViewModel
         !_thxBusy && ThxStatus.Availability != ThxHeadsetAvailability.Available &&
         !ThxStatus.RebootRequired;
 
-    public string ThxGameProfilesUri =>
-        ThxHeadsetAdmission.GetProfile(Connection.ProductId)?.GameProfilesUri ?? string.Empty;
-
-    public Visibility ThxGameProfilesVisibility =>
-        ThxGameProfilesUri.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
-
-    public string ThxPatcherUri =>
-        ThxHeadsetAdmission.GetProfile(Connection.ProductId)?.PatcherUri ?? string.Empty;
-
-    public Visibility ThxPatcherVisibility =>
-        ThxPatcherUri.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
-
     public async Task InstallThxComponentsAsync(CancellationToken cancellationToken = default)
     {
         if (!CanInstallThx)
