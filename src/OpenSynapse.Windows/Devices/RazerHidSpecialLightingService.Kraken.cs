@@ -174,7 +174,7 @@ public sealed partial class RazerHidSpecialLightingService
         var reports = new List<byte[]>(3);
         if (!_protocol40Armed.ContainsKey(path))
         {
-            reports.Add(RazerProtocol40HeadsetProtocol.CreateConnect());
+            reports.Add(RazerProtocol40HeadsetProtocol.CreateChromaConnect());
         }
         if (brightness is { } percent &&
             (!_protocol40Brightness.TryGetValue(path, out var sent) || sent != percent))
