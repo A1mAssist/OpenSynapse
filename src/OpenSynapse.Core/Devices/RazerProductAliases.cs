@@ -83,6 +83,8 @@ public static class RazerProductAliases
     public static ushort Canonical(ushort productId) =>
         CanonicalProductIds.TryGetValue(productId, out var canonical) ? canonical : productId;
 
+    internal static IReadOnlyDictionary<ushort, ushort> Aliases => CanonicalProductIds;
+
     /// <summary>True when the PID is a wireless sibling of a wired model.</summary>
     public static bool IsWirelessAlias(ushort productId) => CanonicalProductIds.ContainsKey(productId);
 
