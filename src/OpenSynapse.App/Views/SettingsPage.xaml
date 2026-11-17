@@ -56,6 +56,15 @@
                 <Border Style="{StaticResource CardStyle}" Padding="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                     <StackPanel Spacing="4">
+                      <TextBlock local:Localized.Uid="MacroPlaybackNotificationTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="MacroPlaybackNotificationDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch local:Localized.Uid="MacroPlaybackNotificationToggle" x:Name="MacroPlaybackNotificationToggle" Grid.Column="1" Toggled="MacroPlaybackNotificationToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
+                  </Grid>
+                </Border>
+                <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                    <StackPanel Spacing="4">
                       <TextBlock local:Localized.Uid="LowBatteryNotificationTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
                       <TextBlock local:Localized.Uid="LowBatteryNotificationDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                     </StackPanel>
