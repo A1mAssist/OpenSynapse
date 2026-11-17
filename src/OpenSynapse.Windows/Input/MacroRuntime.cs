@@ -364,7 +364,7 @@ internal sealed partial class MacroRuntime : IDisposable
         macros.Any(macro =>
             macro.Enabled &&
             macro.Steps.Count > 0 &&
-            macro.Trigger?.Input is not null);
+            macro.AllTriggers.Any(trigger => trigger.Input is not null));
 
     private static MacroInput CreateDefaultStopShortcut() => new()
     {

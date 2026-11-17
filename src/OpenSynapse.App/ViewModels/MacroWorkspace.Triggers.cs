@@ -219,12 +219,26 @@ public sealed partial class MacroWorkspace
         }
 
         CancelMacroCapture();
-        var clearedInput = selected.Definition.Trigger?.Input;
-        var binding = selected.Definition.SoftwareBinding;
-        var restored = binding is not null &&
-            await RestoreSoftwareBindingAsync(binding, cancellationToken);
+        var triggers = selected.Definition.AllTriggers.ToArray();
+        var clearedInput = triggers.FirstOrDefault()?.Input;
+        var bindings = triggers
+            .Select(trigger => trigger.SoftwareBinding ??
+                (ReferenceEquals(trigger, selected.Definition.Trigger)
+                    ? selected.Definition.SoftwareBinding
+                    : null))
+            .Where(binding => binding is not null)
+            .ToArray();
+        var restored = true;
+        foreach (var binding in bindings)
+        {
+            if (!await RestoreSoftwareBindingAsync(binding!, cancellationToken))
+            {
+                restored = false;
+            }
+        }
         selected.Definition.SoftwareBinding = null;
         selected.SetTrigger(null);
+        selected.Definition.AdditionalTriggers.Clear();
         MarkMacroDirty(selected);
         if (!await TrySaveMacroProfileAsync(cancellationToken))
         {
@@ -373,10 +387,10 @@ public sealed partial class MacroWorkspace
         Items.FirstOrDefault(other =>
             !ReferenceEquals(other.Definition, macro) &&
             !ReferenceEquals(other, current) &&
-            other.Definition.Trigger is { } otherTrigger &&
-            otherTrigger.Input.Matches(trigger.Input) &&
-            otherTrigger.Modifiers == trigger.Modifiers &&
-            otherTrigger.HyperShiftLayer == trigger.HyperShiftLayer &&
-            StringComparer.Ordinal.Equals(otherTrigger.DeviceId, trigger.DeviceId) &&
-            StringComparer.Ordinal.Equals(otherTrigger.ControlId, trigger.ControlId));
+            other.Definition.AllTriggers.Any(otherTrigger =>
+                otherTrigger.Input.Matches(trigger.Input) &&
+                otherTrigger.Modifiers == trigger.Modifiers &&
+                otherTrigger.HyperShiftLayer == trigger.HyperShiftLayer &&
+                StringComparer.Ordinal.Equals(otherTrigger.DeviceId, trigger.DeviceId) &&
+                StringComparer.Ordinal.Equals(otherTrigger.ControlId, trigger.ControlId)));
 }

@@ -56,7 +56,7 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
         }
     }
 
-    public bool HasTrigger => Definition.Trigger is not null;
+    public bool HasTrigger => Definition.AllTriggers.Any();
 
     public Visibility TriggerToggleVisibility =>
         HasTrigger ? Visibility.Visible : Visibility.Collapsed;
@@ -64,13 +64,13 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
     public Visibility TriggerUnsetBadgeVisibility =>
         HasTrigger ? Visibility.Collapsed : Visibility.Visible;
 
-    public string TriggerText => Definition.Trigger is { } trigger
+    public string TriggerText => Definition.AllTriggers.FirstOrDefault() is { } trigger
         ? Definition.Enabled
             ? AppStrings.FormatText("MacroTriggerValue", DescribeTrigger(trigger))
             : AppStrings.FormatText("MacroTriggerValueDisabled", DescribeTrigger(trigger))
         : AppStrings.Text("MacroTriggerUnset");
 
-    public string TriggerChipText => Definition.Trigger is { } trigger
+    public string TriggerChipText => Definition.AllTriggers.FirstOrDefault() is { } trigger
         ? Definition.Enabled
             ? DescribeTrigger(trigger)
             : AppStrings.FormatText("MacroTriggerChipDisabled", DescribeTrigger(trigger))

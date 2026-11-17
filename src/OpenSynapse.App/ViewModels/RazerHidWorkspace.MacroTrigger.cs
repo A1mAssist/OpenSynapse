@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using System.IO;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Macros;
@@ -8,6 +10,47 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerHidWorkspace
 {
+    /// <summary>
+    /// Keeps driver mode in step with the bindings. A mouse only needs it while a
+    /// macro is bound to one of its private keys; otherwise the firmware keeps the
+    /// key and nothing changes for the user.
+    /// </summary>
+    internal async Task SyncPrivateKeyDriverModeAsync(CancellationToken cancellationToken = default)
+    {
+        var wanted = new HashSet<ushort>();
+        foreach (var macro in _localMacros())
+        {
+            if (!macro.Enabled)
+            {
+                continue;
+            }
+
+            foreach (var trigger in macro.AllTriggers)
+            {
+                if (trigger.Input.Kind == MacroInputKind.RazerKey &&
+                    trigger.Input.DeviceId is > 0 and <= 0xFFFF)
+                {
+                    wanted.Add((ushort)trigger.Input.DeviceId);
+                }
+            }
+        }
+
+        try
+        {
+            await _privateKeyRuntime
+                .SyncAsync(wanted, cancellationToken)
+                .ConfigureAwait(true);
+        }
+        catch (Exception exception) when (
+            !cancellationToken.IsCancellationRequested &&
+            exception is Win32Exception or IOException or InvalidOperationException)
+        {
+            _diagnosticLog.TryWrite(
+                "mouse-private-key",
+                $"driver-mode sync failed: {exception.Message}");
+        }
+    }
+
     internal async Task<string?> BindSoftwareMacroTriggerAsync(
         string macroId,
         MacroInput input,

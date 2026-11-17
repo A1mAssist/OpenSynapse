@@ -199,6 +199,7 @@ public sealed class MacroTrigger
     public bool HyperShiftLayer { get; set; }
     public string? DeviceId { get; set; }
     public string? ControlId { get; set; }
+    public MacroSoftwareBinding? SoftwareBinding { get; set; }
 
     public bool Matches(MacroInput input, MacroModifierKeys modifiers)
     {
@@ -227,6 +228,7 @@ public sealed class MacroTrigger
         HyperShiftLayer = HyperShiftLayer,
         DeviceId = DeviceId,
         ControlId = ControlId,
+        SoftwareBinding = SoftwareBinding?.Clone(),
     };
 
     private static string? NormalizeOptional(string? value, int maxLength)
@@ -283,6 +285,7 @@ public sealed class MacroSoftwareBinding
 public sealed class MacroDefinition
 {
     public const int MaxSteps = 1024;
+    public const int MaxTriggers = 64;
     public const int MaxDelayMilliseconds = 60_000;
     public const int MaxRepeatCount = 999;
     public const int MaxNameLength = 64;
@@ -294,6 +297,7 @@ public sealed class MacroDefinition
     public string Name { get; set; } = string.Empty;
     public bool Enabled { get; set; } = true;
     public MacroTrigger? Trigger { get; set; }
+    public List<MacroTrigger> AdditionalTriggers { get; set; } = [];
     public MacroSoftwareBinding? SoftwareBinding { get; set; }
     public MacroPlaybackMode PlaybackMode { get; set; }
     public int RepeatCount { get; set; } = 1;
@@ -314,20 +318,45 @@ public sealed class MacroDefinition
             Name = Name[..MaxNameLength];
         }
 
-        if (Trigger?.Input is not { } triggerInput ||
-            triggerInput.IsModifierKey ||
-            !triggerInput.IsValid(
-                allowPrimaryMouseButton: true,
-                allowWheel: false,
-                allowNagaSideButton: true,
-                allowDeviceButton: true,
-                allowExtraMouseButton: true))
+        if (!IsValidTrigger(Trigger))
         {
             Trigger = null;
         }
-        else
+        else if (Trigger is { } trigger)
         {
-            Trigger.ApplySafeDefaults();
+            trigger.ApplySafeDefaults();
+        }
+
+        AdditionalTriggers = (AdditionalTriggers ?? [])
+            .Where(trigger => IsValidTrigger(trigger))
+            .Take(MaxTriggers)
+            .ToList();
+        foreach (var trigger in AdditionalTriggers)
+        {
+            trigger.ApplySafeDefaults();
+        }
+
+        if (Trigger is null && AdditionalTriggers.Count > 0)
+        {
+            Trigger = AdditionalTriggers[0];
+            AdditionalTriggers.RemoveAt(0);
+        }
+
+        for (var index = AdditionalTriggers.Count - 1; index >= 0; index--)
+        {
+            var trigger = AdditionalTriggers[index];
+            if ((Trigger is not null && SameTrigger(Trigger, trigger)) ||
+                AdditionalTriggers.Take(index).Any(item => SameTrigger(item, trigger)))
+            {
+                AdditionalTriggers.RemoveAt(index);
+            }
+        }
+
+        if (AdditionalTriggers.Count > MaxTriggers - (Trigger is null ? 0 : 1))
+        {
+            AdditionalTriggers.RemoveRange(
+                MaxTriggers - (Trigger is null ? 0 : 1),
+                AdditionalTriggers.Count - (MaxTriggers - (Trigger is null ? 0 : 1)));
         }
 
         if (!Enum.IsDefined(PlaybackMode))
@@ -375,6 +404,10 @@ public sealed class MacroDefinition
             Name = Name,
             Enabled = Enabled,
             Trigger = Trigger?.Clone(),
+            AdditionalTriggers = (AdditionalTriggers ?? [])
+                .Where(trigger => trigger is not null)
+                .Select(trigger => trigger.Clone())
+                .ToList(),
             SoftwareBinding = SoftwareBinding?.Clone(),
             PlaybackMode = PlaybackMode,
             RepeatCount = RepeatCount,
@@ -389,6 +422,65 @@ public sealed class MacroDefinition
         clone.ApplySafeDefaults();
         return clone;
     }
+
+    public IEnumerable<MacroTrigger> AllTriggers
+    {
+        get
+        {
+            if (Trigger is not null)
+            {
+                yield return Trigger;
+            }
+
+            foreach (var trigger in AdditionalTriggers ?? [])
+            {
+                if (trigger is not null)
+                {
+                    yield return trigger;
+                }
+            }
+        }
+    }
+
+    public MacroTrigger? FindTrigger(
+        MacroInput input,
+        MacroModifierKeys modifiers,
+        bool hyperShiftLayer)
+    {
+        foreach (var trigger in AllTriggers)
+        {
+            if (trigger.Modifiers == modifiers &&
+                trigger.HyperShiftLayer == hyperShiftLayer &&
+                trigger.Input.Matches(input))
+            {
+                return trigger;
+            }
+        }
+
+        return null;
+    }
+
+    public MacroTrigger? FindTrigger(MacroInput input, bool hyperShiftLayer) =>
+        FindTrigger(input, MacroModifierKeys.None, hyperShiftLayer);
+
+    internal static bool IsValidTrigger(MacroTrigger? trigger) =>
+        trigger is { Input: { } input } &&
+        Enum.IsDefined(trigger.Mode) &&
+        (trigger.Modifiers & ~MacroModifierKeys.All) == 0 &&
+        !input.IsModifierKey &&
+        input.IsValid(
+            allowPrimaryMouseButton: true,
+            allowWheel: false,
+            allowNagaSideButton: true,
+            allowDeviceButton: true,
+            allowExtraMouseButton: true);
+
+    private static bool SameTrigger(MacroTrigger left, MacroTrigger right) =>
+        left.Input.Matches(right.Input) &&
+        left.Modifiers == right.Modifiers &&
+        left.HyperShiftLayer == right.HyperShiftLayer &&
+        StringComparer.Ordinal.Equals(left.DeviceId, right.DeviceId) &&
+        StringComparer.Ordinal.Equals(left.ControlId, right.ControlId);
 }
 
 public sealed class MacroRecordingOptions

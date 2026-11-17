@@ -236,17 +236,7 @@ public static class MacroFileStore
             return false;
         }
 
-        if (macro.Trigger is { } trigger &&
-            (!Enum.IsDefined(trigger.Mode) ||
-             (trigger.Modifiers & ~MacroModifierKeys.All) != 0 ||
-             trigger.Input is not { } triggerInput ||
-             triggerInput.IsModifierKey ||
-             !triggerInput.IsValid(
-                 allowPrimaryMouseButton: true,
-                 allowWheel: false,
-                 allowNagaSideButton: true,
-                 allowDeviceButton: true,
-                 allowExtraMouseButton: true)))
+        if (macro.AllTriggers.Any(trigger => !MacroDefinition.IsValidTrigger(trigger)))
         {
             return false;
         }

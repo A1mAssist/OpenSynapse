@@ -25,7 +25,8 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
     private readonly Func<IReadOnlyList<MacroDefinition>>? _localMacros;
     private readonly Func<string, MacroInput, MacroTriggerMode, MacroPlaybackMode, int, bool,
         MacroSoftwareBinding?, CancellationToken, Task<string?>>? _softwareMacroBinder;
-    private readonly Func<string, CancellationToken, Task<string?>>? _softwareMacroClearer;
+    private readonly Func<string, MacroInput, bool, CancellationToken, Task<string?>>?
+        _softwareMacroClearer;
     private string _deviceName = "Razer Viper V3 HyperSpeed";
     private Visibility _deviceVisibility = Visibility.Collapsed;
     private string _statusText = AppStrings.Text("Text_DB0974DC");
@@ -75,7 +76,7 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
         Func<IReadOnlyList<MacroDefinition>>? localMacros = null,
         Func<string, MacroInput, MacroTriggerMode, MacroPlaybackMode, int, bool,
             MacroSoftwareBinding?, CancellationToken, Task<string?>>? softwareMacroBinder = null,
-        Func<string, CancellationToken, Task<string?>>? softwareMacroClearer = null)
+        Func<string, MacroInput, bool, CancellationToken, Task<string?>>? softwareMacroClearer = null)
     {
         _deviceTelemetryReader = deviceTelemetryReader;
         _getProfile = getProfile;
