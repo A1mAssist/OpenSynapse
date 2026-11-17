@@ -333,6 +333,14 @@
         "code": 35,
         "label": "Button5"
       },
+      "06": {
+        "code": 34,
+        "label": "DKM_SidePrevious"
+      },
+      "07": {
+        "code": 35,
+        "label": "DKM_SideNext"
+      },
       "60": {
         "code": 82,
         "label": "CycleUpSensitivityStages"

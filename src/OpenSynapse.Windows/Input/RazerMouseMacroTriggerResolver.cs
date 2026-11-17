@@ -16,12 +16,13 @@ public static class RazerMouseMacroTriggerResolver
         0xB00A, 0xB00B, 0xB00C,
     ];
 
-    // The Viper bundle exposes the right-side pair as standard HID buttons 6/7.
     // The Basilisk X HyperSpeed reports its side pair as usages 9/10, which no
     // game reads; without this reader the buttons do nothing outside Synapse.
+    // The Viper's right-side pair is firmware ids 6/7: they emit DKM_M_03/04
+    // (private keys 34/35), not HID usages 6/7, so they resolve through the
+    // bundle map below instead of the extra-mouse path.
     private static readonly HashSet<ushort> ExtraMouseButtonProducts =
     [
-        0x0078,
         0x0083,
     ];
 
