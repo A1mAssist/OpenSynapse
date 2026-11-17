@@ -123,6 +123,27 @@ public partial class App
                 ? viewModel.Tray.ConnectedBatteries
                 : Array.Empty<PeripheralBattery>();
             _trayMenuWindow.BatteryReader = viewModel.Tray.ReadBatteriesAsync;
+            _trayMenuWindow.PerformanceSnapshot = () =>
+                viewModel.Blade.CanWritePerformanceMode && viewModel.Blade.PerformanceModes.Count > 0
+                    ? viewModel.Blade.PerformanceModeCards
+                        .Where(card => viewModel.Blade.CanApplyPerformanceModeFromTray(card.Mode))
+                        .Select(static card => new TrayPerformanceMode(
+                            card.Index, card.Name, card.IconGlyph, card.IsSelected))
+                        .ToArray()
+                    : Array.Empty<TrayPerformanceMode>();
+            _trayMenuWindow.PerformanceApplier = async (index, cancellationToken) =>
+            {
+                var blade = viewModel.Blade;
+                if (!blade.CanWritePerformanceMode ||
+                    index < 0 || index >= blade.PerformanceModes.Count)
+                {
+                    return false;
+                }
+
+                blade.PerformanceModeIndex = index;
+                await blade.ApplyPerformanceModeAsync(cancellationToken);
+                return blade.PerformanceModeIndex == index;
+            };
             _trayMenuWindow.ShowRequested += window.RequestActivation;
             _trayMenuWindow.NavigationRequested += window.RequestNavigation;
             _trayMenuWindow.DeviceRequested += window.RequestDeviceNavigation;

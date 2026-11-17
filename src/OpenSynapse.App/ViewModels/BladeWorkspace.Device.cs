@@ -190,6 +190,15 @@ public sealed partial class BladeWorkspace
 
     internal IReadOnlyList<BladePerformanceMode> PerformanceModes => _blade.PerformanceModes;
 
+    /// <summary>
+    /// HyperBoost without a cooling pad needs the main window's disclaimer, which
+    /// cannot be shown from the tray menu.
+    /// </summary>
+    public bool CanApplyPerformanceModeFromTray(BladePerformanceMode mode) =>
+        mode != BladePerformanceMode.Hyperboost ||
+        !HyperboostNeedsCoolingPadWarning ||
+        _padlessHyperBoostAccepted;
+
     internal BladeLightingDialect LightingDialect =>
         BladeLightingRuntimeDialect.Get(_blade._bladeProductId);
 
