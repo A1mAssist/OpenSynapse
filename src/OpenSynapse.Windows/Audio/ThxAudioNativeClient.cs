@@ -200,6 +200,10 @@ internal sealed record ThxVendorPreset(string Id, string Name);
 
 internal static class ThxVendorJson
 {
+    // The V3 preset package ships the full game list, which is far past the old
+    // 256-entry cap. Keep a bound, but do not fail the whole card on a long list.
+    private const int MaximumPresetCount = 1024;
+
     internal static bool ParseBoolean(string json)
     {
         using var document = Parse(json);
@@ -231,9 +235,9 @@ internal static class ThxVendorJson
                 throw new InvalidDataException("The THX preset list contains an invalid ID.");
             }
             ids.Add(id);
-            if (ids.Count > 256)
+            if (ids.Count == MaximumPresetCount)
             {
-                throw new InvalidDataException("The THX preset list is too long.");
+                break;
             }
         }
         return ids;
@@ -305,9 +309,9 @@ internal static class ThxVendorJson
                 continue;
             }
             entries.Add(entry);
-            if (entries.Count > 256)
+            if (entries.Count == MaximumPresetCount)
             {
-                throw new InvalidDataException("The THX preset list is too long.");
+                break;
             }
         }
         return entries;
