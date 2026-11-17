@@ -219,22 +219,6 @@ public sealed partial class DevicesPage : UserControl
     private void RazerHidKrakenRefreshThxClick(object sender, RoutedEventArgs e) =>
         SelectedRazerHidKraken?.RefreshThx();
 
-    private async void RazerHidKrakenOpenThxGameProfilesClick(object sender, RoutedEventArgs e)
-    {
-        if (SelectedRazerHidKraken is { ThxGameProfilesUri: { Length: > 0 } uri })
-        {
-            await Launcher.LaunchUriAsync(new Uri(uri));
-        }
-    }
-
-    private async void RazerHidKrakenOpenThxPatcherClick(object sender, RoutedEventArgs e)
-    {
-        if (SelectedRazerHidKraken is { ThxPatcherUri: { Length: > 0 } uri })
-        {
-            await Launcher.LaunchUriAsync(new Uri(uri));
-        }
-    }
-
     private RazerHidDeviceViewModel? SelectedRazerHidDevice =>
         (DataContext as MainViewModel)?.RazerHid?.SelectedDevice;
     private RazerHidKrakenViewModel? SelectedRazerHidKraken =>

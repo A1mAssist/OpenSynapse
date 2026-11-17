@@ -50,31 +50,6 @@ public sealed partial class RazerHeadsetAudioViewModel
         _thxStatus.Availability != ThxHeadsetAvailability.Available &&
         !_thxStatus.RebootRequired;
 
-    public string ThxGameProfilesUri =>
-        ThxHeadsetAdmission.GetProfile(_connection.ProductId)?.GameProfilesUri ?? string.Empty;
-
-    public Visibility ThxGameProfilesVisibility =>
-        ThxGameProfilesUri.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
-
-    public string ThxPatcherUri =>
-        ThxHeadsetAdmission.GetProfile(_connection.ProductId)?.PatcherUri ?? string.Empty;
-
-    /// <summary>The pinned official installer, for a manual retry when the silent run fails.</summary>
-    public string ThxInstallerUri =>
-        ThxHeadsetAdmission.GetProfile(_connection.ProductId)?.InstallerUri ?? string.Empty;
-
-    public Visibility ThxInstallerLinkVisibility =>
-        ThxVisibility == Visibility.Visible &&
-        ThxInstallerUri.Length > 0 &&
-        ((_thxStatus.ErrorCode is "ThxServiceMissing" or "ThxNativeMissing" or
-             "ThxDownloadFailed" or "ThxDownloadVerificationFailed") ||
-         _thxStatus.ErrorCode?.StartsWith("ThxInstaller", StringComparison.Ordinal) == true)
-            ? Visibility.Visible
-            : Visibility.Collapsed;
-
-    public Visibility ThxPatcherVisibility =>
-        ThxPatcherUri.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
-
     public string ThxStatusText => !string.IsNullOrEmpty(_thxErrorText)
         ? _thxErrorText
         : _thxStatus.ErrorCode switch

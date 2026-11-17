@@ -376,7 +376,6 @@ public sealed partial class RazerHeadsetAudioViewModel
     {
         OnPropertyChanged(nameof(ThxStatusText));
         OnPropertyChanged(nameof(ThxInstallerVisibility));
-        OnPropertyChanged(nameof(ThxInstallerLinkVisibility));
         OnPropertyChanged(nameof(ThxControlsVisibility));
         OnPropertyChanged(nameof(CanInstallThx));
         OnPropertyChanged(nameof(CanApplyThx));

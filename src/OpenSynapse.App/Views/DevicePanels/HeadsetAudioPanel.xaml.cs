@@ -1,7 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using OpenSynapse.App.ViewModels;
-using Windows.System;
 
 namespace OpenSynapse.App.Views.DevicePanels;
 
@@ -29,30 +28,6 @@ public sealed partial class HeadsetAudioPanel : UserControl
 
     private async void HeadsetAudioInstallThxClick(object sender, RoutedEventArgs e) =>
         await (ViewModel?.InstallThxComponentsAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioOpenThxGameProfilesClick(object sender, RoutedEventArgs e)
-    {
-        if (ViewModel is { ThxGameProfilesUri: { Length: > 0 } uri })
-        {
-            await Launcher.LaunchUriAsync(new Uri(uri));
-        }
-    }
-
-    private async void HeadsetAudioOpenThxInstallerClick(object sender, RoutedEventArgs e)
-    {
-        if (ViewModel is { ThxInstallerUri: { Length: > 0 } uri })
-        {
-            await Launcher.LaunchUriAsync(new Uri(uri));
-        }
-    }
-
-    private async void HeadsetAudioOpenThxPatcherClick(object sender, RoutedEventArgs e)
-    {
-        if (ViewModel is { ThxPatcherUri: { Length: > 0 } uri })
-        {
-            await Launcher.LaunchUriAsync(new Uri(uri));
-        }
-    }
 
     private async void HeadsetAudioApplyEqPresetClick(object sender, RoutedEventArgs e) =>
         await (ViewModel?.ApplyEqPresetAsync(Lifetime) ?? Task.CompletedTask);
