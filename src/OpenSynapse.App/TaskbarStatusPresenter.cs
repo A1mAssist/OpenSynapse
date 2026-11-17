@@ -11,6 +11,7 @@ namespace OpenSynapse.App;
 internal sealed class TaskbarStatusPresenter : IDisposable
 {
     private static readonly TimeSpan BatteryReadInterval = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan EmptyGrace = TimeSpan.FromSeconds(30);
     private readonly MainViewModel _viewModel;
     private readonly AppBehaviorSettings _settings;
     private readonly LocalDiagnosticLog _diagnosticLog;
@@ -20,6 +21,9 @@ internal sealed class TaskbarStatusPresenter : IDisposable
     private TaskbarStatusWindow? _statusWindow;
     private CancellationTokenSource? _batteryReadCancellation;
     private string _lastBatterySummary = string.Empty;
+    private TaskbarStatusSnapshot? _lastSnapshot;
+    private string _lastAutomationText = string.Empty;
+    private DateTimeOffset? _emptySince;
     private DateTimeOffset _lastBatteryReadAt = DateTimeOffset.MinValue;
     private bool _batteryReadRequested = true;
     private bool _enabled;
@@ -59,6 +63,9 @@ internal sealed class TaskbarStatusPresenter : IDisposable
             _timer?.Stop();
             CancelBatteryRead();
             _batteryReadings.Clear();
+            _lastSnapshot = null;
+            _lastAutomationText = string.Empty;
+            _emptySince = null;
             _statusWindow?.Dispose();
             _statusWindow = null;
             return;
@@ -117,7 +124,19 @@ internal sealed class TaskbarStatusPresenter : IDisposable
 
         if (selected.Count == 0)
         {
+            // Device rescans empty the source list for a few seconds; keep the last frame.
+            _emptySince ??= DateTimeOffset.UtcNow;
+            if (_lastSnapshot is { } previous &&
+                DateTimeOffset.UtcNow - _emptySince < EmptyGrace)
+            {
+                SetTimerInterval(BatteryReadInterval);
+                _statusWindow?.Update(previous, _lastAutomationText);
+                return;
+            }
+
             _lastBatterySummary = string.Empty;
+            _lastSnapshot = null;
+            _lastAutomationText = string.Empty;
             // Nothing to draw: keep the battery retry, no faster UI tick for a
             // window that is not there.
             SetTimerInterval(BatteryReadInterval);
@@ -125,6 +144,7 @@ internal sealed class TaskbarStatusPresenter : IDisposable
             return;
         }
 
+        _emptySince = null;
         var summary = string.Join(
             ", ", selected.Select(item => $"{item.Name} {item.Percent}%"));
         if (!StringComparer.Ordinal.Equals(_lastBatterySummary, summary))
@@ -151,6 +171,8 @@ internal sealed class TaskbarStatusPresenter : IDisposable
                     message => _diagnosticLog.TryWrite("taskbar-status", message));
             }
             _statusWindow.Update(snapshot, automationText);
+            _lastSnapshot = snapshot;
+            _lastAutomationText = automationText;
         }
         catch (Exception exception) when (
             exception is InvalidOperationException or System.ComponentModel.Win32Exception)
