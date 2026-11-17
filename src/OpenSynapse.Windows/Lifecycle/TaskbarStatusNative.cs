@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace OpenSynapse.Windows.Lifecycle;
 
@@ -26,6 +27,8 @@ internal static class TaskbarStatusNative
     public const uint WmDpiChangedAfterParent = 0x02E3;
     public const uint WmThemeChanged = 0x031A;
 
+    internal const uint SwpNoSize = 0x0001;
+    internal const uint SwpNoMove = 0x0002;
     public const uint SwpNoZOrder = 0x0004;
     public const uint SwpNoActivate = 0x0010;
     public const uint SwpFrameChanged = 0x0020;
@@ -35,6 +38,8 @@ internal static class TaskbarStatusNative
 
     public const int SwHide = 0;
     public const int SwShowNoActivate = 4;
+
+    internal const uint GwHwndPrev = 3;
 
     public const uint MonitorDefaultToNearest = 2;
 
@@ -116,6 +121,9 @@ internal static class TaskbarStatusNative
     public delegate IntPtr WndProc(IntPtr windowHandle, uint message, UIntPtr wParam, IntPtr lParam);
 
     [return: MarshalAs(UnmanagedType.Bool)]
+    internal delegate bool EnumWindowsProc(IntPtr windowHandle, IntPtr parameter);
+
+    [return: MarshalAs(UnmanagedType.Bool)]
     internal delegate bool EnumChildWindow(IntPtr windowHandle, IntPtr parameter);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -153,11 +161,16 @@ internal static class TaskbarStatusNative
     public static extern IntPtr GetAncestor(IntPtr windowHandle, uint flags);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    public static extern IntPtr FindWindowW(string? className, string? windowName);
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     public static extern IntPtr FindWindowExW(
         IntPtr parent, IntPtr childAfter, string? className, string? windowName);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool EnumWindows(EnumWindowsProc callback, IntPtr parameter);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    internal static extern int GetClassNameW(
+        IntPtr windowHandle, StringBuilder name, int capacity);
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
@@ -212,6 +225,9 @@ internal static class TaskbarStatusNative
     [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool GetWindowRect(IntPtr windowHandle, out Rect rect);
+
+    [DllImport("user32.dll")]
+    internal static extern IntPtr GetWindow(IntPtr windowHandle, uint command);
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]

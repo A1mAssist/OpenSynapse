@@ -34,19 +34,19 @@ public sealed partial class TaskbarStatusWindow
         return _displayFontsAvailable;
     }
 
-    private void CreateFonts()
+    private void CreateFonts(StatusSurface surface)
     {
-        DeleteFont(ref _batteryFont);
-        DeleteFont(ref _iconFont);
-        var scale = _dpi / 96.0;
+        DeleteSurfaceFonts(surface);
+        var scale = surface.Dpi / 96.0;
         var bundled = EnsureDisplayFonts();
         // The bundled TTF registers as family "Titillium Web SemiBold" with a
         // Regular style; asking for "Titillium Web" + 600 makes GDI synthesize
         // bold from the Regular face.
         var displayFamily = bundled ? "Titillium Web SemiBold" : "Segoe UI Variable Text";
         var displayWeight = bundled ? FwNormal : FwSemibold;
-        _batteryFont = CreateFontW(
-            -(int)Math.Round(14 * scale), 0, 0, 0, displayWeight,
+        var fontSize = surface.Vertical ? 13 : 14;
+        surface.BatteryFont = CreateFontW(
+            -(int)Math.Round(fontSize * scale), 0, 0, 0, displayWeight,
             0, 0, 0, DefaultCharset, 0, 0, NonAntialiasedQuality, DefaultPitch,
             displayFamily);
         if (!_displayFontLogged)
@@ -55,31 +55,37 @@ public sealed partial class TaskbarStatusWindow
             _log?.Invoke($"taskbar battery font: {displayFamily}/{displayWeight}");
         }
 
-        _iconFont = CreateFontW(
+        surface.IconFont = CreateFontW(
             -(int)Math.Round(13 * scale), 0, 0, 0, FwNormal,
             0, 0, 0, DefaultCharset, 0, 0, AntialiasedQuality, DefaultPitch,
             "Segoe MDL2 Assets");
-        if (_batteryFont == IntPtr.Zero)
+        if (surface.BatteryFont == IntPtr.Zero)
         {
-            _batteryFont = CreateFontW(
-                -(int)Math.Round(14 * scale), 0, 0, 0, FwSemibold,
+            surface.BatteryFont = CreateFontW(
+                -(int)Math.Round(fontSize * scale), 0, 0, 0, FwSemibold,
                 0, 0, 0, DefaultCharset, 0, 0, NonAntialiasedQuality, DefaultPitch,
                 "Segoe UI Variable Text");
         }
 
-        if (_iconFont == IntPtr.Zero)
+        if (surface.IconFont == IntPtr.Zero)
         {
-            _iconFont = CreateFontW(
+            surface.IconFont = CreateFontW(
                 -(int)Math.Round(13 * scale), 0, 0, 0, FwNormal,
                 0, 0, 0, DefaultCharset, 0, 0, AntialiasedQuality, DefaultPitch,
                 "Segoe UI Symbol");
         }
     }
 
-    private int MeasureWidth(int count)
+    private void DeleteSurfaceFonts(StatusSurface surface)
     {
-        var scale = _dpi / 96.0;
-        var dc = GetDC(_statusWindow);
+        DeleteFont(ref surface.BatteryFont);
+        DeleteFont(ref surface.IconFont);
+    }
+
+    private int MeasureWidth(StatusSurface surface, int count)
+    {
+        var scale = surface.Dpi / 96.0;
+        var dc = GetDC(surface.Window);
         if (dc == IntPtr.Zero) return (int)Math.Round(BaseWidthDip * scale);
         try
         {
@@ -92,7 +98,8 @@ public sealed partial class TaskbarStatusWindow
                 {
                     width += (IconBadgeDip + BatteryIconGapDip) * scale;
                 }
-                width += MeasureText(dc, _batteryFont,
+                width += MeasureText(
+                    dc, surface.BatteryFont,
                     TaskbarStatusPolicy.FormatBattery(battery.Percent));
                 if (battery.IsCharging == true)
                 {
@@ -104,7 +111,7 @@ public sealed partial class TaskbarStatusWindow
         }
         finally
         {
-            ReleaseDC(_statusWindow, dc);
+            ReleaseDC(surface.Window, dc);
         }
     }
 
@@ -114,7 +121,9 @@ public sealed partial class TaskbarStatusWindow
         var previous = SelectObject(dc, font);
         try
         {
-            return GetTextExtentPoint32W(dc, text, text.Length, out var size) ? size.Cx : text.Length * 7;
+            return GetTextExtentPoint32W(dc, text, text.Length, out var size)
+                ? size.Cx
+                : text.Length * 7;
         }
         finally
         {
@@ -122,8 +131,23 @@ public sealed partial class TaskbarStatusWindow
         }
     }
 
+    private int MeasureTextWidth(StatusSurface surface, string text)
+    {
+        var dc = GetDC(surface.Window);
+        if (dc == IntPtr.Zero) return text.Length * 7;
+        try
+        {
+            return MeasureText(dc, surface.BatteryFont, text);
+        }
+        finally
+        {
+            ReleaseDC(surface.Window, dc);
+        }
+    }
+
     private void Draw(IntPtr window)
     {
+        if (!_surfacesByWindow.TryGetValue(window, out var surface)) return;
         var dc = GetDC(window);
         if (dc == IntPtr.Zero) return;
         try
@@ -145,14 +169,14 @@ public sealed partial class TaskbarStatusWindow
             {
                 if (bitmap != IntPtr.Zero) DeleteObject(bitmap);
                 if (memory != IntPtr.Zero) DeleteDC(memory);
-                Draw(dc, client);
+                Draw(dc, client, surface);
                 return;
             }
 
             var previous = SelectObject(memory, bitmap);
             try
             {
-                Draw(memory, client);
+                Draw(memory, client, surface);
                 BitBlt(
                     dc, 0, 0, client.Width, client.Height,
                     memory, 0, 0, Srccopy);
@@ -170,9 +194,9 @@ public sealed partial class TaskbarStatusWindow
         }
     }
 
-    private void Draw(IntPtr dc, Rect client)
+    private void Draw(IntPtr dc, Rect client, StatusSurface surface)
     {
-        var scale = _dpi / 96.0;
+        var scale = surface.Dpi / 96.0;
         // The window is layered with black as its color key, so only the badge and
         // text survive; the taskbar background shows through the padding.
         var primary = _themeDark ? Rgb(255, 255, 255) : Rgb(1, 1, 1);
@@ -181,46 +205,121 @@ public sealed partial class TaskbarStatusWindow
         DeleteObject(backgroundBrush);
         SetBkMode(dc, Transparent);
 
-        var count = _visibleBatteryCount > 0
-            ? _visibleBatteryCount
+        var count = surface.VisibleBatteryCount > 0
+            ? surface.VisibleBatteryCount
             : Math.Min(_snapshot.Batteries.Count, TaskbarStatusPolicy.MaximumBatteryCount);
-        var x = PaddingDip * scale;
-        var previousFont = SelectObject(dc, _batteryFont);
-        for (var index = 0; index < count && index < _snapshot.Batteries.Count; index++)
+        if (surface.Vertical)
         {
-            var battery = _snapshot.Batteries[index];
-            if (index > 0) x += DeviceGapDip * scale;
-            if (!string.IsNullOrWhiteSpace(battery.Icon))
-            {
-                DrawIconBadge(dc, x, client.Height, scale, battery.Icon);
-                x += (IconBadgeDip + BatteryIconGapDip) * scale;
-            }
-
-            var percent = TaskbarStatusPolicy.FormatBattery(battery.Percent);
-            SetTextColor(dc, primary);
-            var batteryWidth = MeasureText(dc, _batteryFont, percent);
-            var batteryRect = new Rect
-            {
-                Left = (int)Math.Round(x),
-                Top = 0,
-                Right = (int)Math.Round(x + batteryWidth + 2),
-                Bottom = client.Bottom,
-            };
-            DrawTextW(dc, percent, percent.Length, ref batteryRect, DtSingleLine | DtVCenter | DtNoPrefix);
-            x += batteryWidth;
-
-            if (battery.IsCharging == true)
-            {
-                x += ChargingGapDip * scale;
-                DrawBolt(dc, x, client.Height, scale);
-                x += BoltWidthDip * scale;
-            }
+            DrawVertical(dc, client, surface, scale, count, primary);
         }
-
-        SelectObject(dc, previousFont);
+        else
+        {
+            DrawHorizontal(dc, client, surface, scale, count, primary);
+        }
     }
 
-    private void DrawIconBadge(IntPtr dc, double x, int height, double scale, string glyph)
+    private void DrawHorizontal(
+        IntPtr dc,
+        Rect client,
+        StatusSurface surface,
+        double scale,
+        int count,
+        uint primary)
+    {
+        var x = PaddingDip * scale;
+        var previousFont = SelectObject(dc, surface.BatteryFont);
+        try
+        {
+            for (var index = 0; index < count && index < _snapshot.Batteries.Count; index++)
+            {
+                var battery = _snapshot.Batteries[index];
+                if (index > 0) x += DeviceGapDip * scale;
+                if (!string.IsNullOrWhiteSpace(battery.Icon))
+                {
+                    DrawIconBadge(
+                        dc, x, client.Height, scale, battery.Icon, surface.IconFont);
+                    x += (IconBadgeDip + BatteryIconGapDip) * scale;
+                }
+
+                var percent = TaskbarStatusPolicy.FormatBattery(battery.Percent);
+                SetTextColor(dc, primary);
+                var batteryWidth = MeasureText(dc, surface.BatteryFont, percent);
+                var batteryRect = new Rect
+                {
+                    Left = (int)Math.Round(x),
+                    Top = 0,
+                    Right = (int)Math.Round(x + batteryWidth + 2),
+                    Bottom = client.Bottom,
+                };
+                DrawTextW(
+                    dc, percent, percent.Length, ref batteryRect,
+                    DtSingleLine | DtVCenter | DtNoPrefix);
+                x += batteryWidth;
+
+                if (battery.IsCharging == true)
+                {
+                    x += ChargingGapDip * scale;
+                    var boltTop = (client.Height - BoltHeightDip * scale) / 2;
+                    DrawBolt(dc, x, boltTop, scale);
+                    x += BoltWidthDip * scale;
+                }
+            }
+        }
+        finally
+        {
+            SelectObject(dc, previousFont);
+        }
+    }
+
+    private void DrawVertical(
+        IntPtr dc,
+        Rect client,
+        StatusSurface surface,
+        double scale,
+        int count,
+        uint primary)
+    {
+        var rowHeight = VerticalRowHeightDip * scale;
+        var padding = VerticalPaddingDip * scale;
+        var previousFont = SelectObject(dc, surface.BatteryFont);
+        try
+        {
+            for (var index = 0; index < count && index < _snapshot.Batteries.Count; index++)
+            {
+                var battery = _snapshot.Batteries[index];
+                var top = index * rowHeight;
+                var bottom = top + rowHeight;
+                var percent = TaskbarStatusPolicy.FormatBattery(battery.Percent);
+                // A vertical taskbar is too narrow for the inline bolt; use the
+                // same green as the bolt so charging still reads at a glance.
+                SetTextColor(dc, battery.IsCharging == true
+                    ? Rgb(68, 214, 44)
+                    : primary);
+                var textRect = new Rect
+                {
+                    Left = (int)Math.Round(padding),
+                    Top = (int)Math.Round(top),
+                    Right = (int)Math.Round(client.Right - padding),
+                    Bottom = (int)Math.Round(bottom),
+                };
+                DrawTextW(
+                    dc, percent, percent.Length, ref textRect,
+                    DtSingleLine | DtVCenter | DtCenter | DtNoPrefix);
+            }
+        }
+        finally
+        {
+            SelectObject(dc, previousFont);
+        }
+    }
+
+    private void DrawIconBadge(
+        IntPtr dc,
+        double x,
+        int height,
+        double scale,
+        string glyph,
+        IntPtr iconFont)
     {
         var size = IconBadgeDip * scale;
         var left = (int)Math.Round(x);
@@ -246,7 +345,7 @@ public sealed partial class TaskbarStatusWindow
         }
 
         SetTextColor(dc, foreground);
-        var previousFont = SelectObject(dc, _iconFont);
+        var previousFont = SelectObject(dc, iconFont);
         try
         {
             var iconRect = new Rect { Left = left, Top = top, Right = right, Bottom = bottom };
@@ -263,11 +362,10 @@ public sealed partial class TaskbarStatusWindow
         }
     }
 
-    private static void DrawBolt(IntPtr dc, double x, int height, double scale)
+    private static void DrawBolt(IntPtr dc, double x, double top, double scale)
     {
         var width = BoltWidthDip * scale;
         var boltHeight = BoltHeightDip * scale;
-        var top = (height - boltHeight) / 2;
         var points = new[]
         {
             new Point { X = (int)(x + width * 0.45), Y = (int)top },
@@ -297,10 +395,7 @@ public sealed partial class TaskbarStatusWindow
     {
         if (message == _taskbarCreatedMessage)
         {
-            _attachFailures = 0;
-            _nextAttachAttempt = 0;
-            DestroyStatusWindow();
-            _taskbarWindow = IntPtr.Zero;
+            DestroyAllSurfaces();
             EnsureAttached();
             return IntPtr.Zero;
         }
@@ -312,9 +407,9 @@ public sealed partial class TaskbarStatusWindow
                 return IntPtr.Zero;
             case WmDisplayChange:
             case WmDpiChanged:
-                _lastStatusRect = default;
+                ResetLayouts();
                 EnsureAttached();
-                InvalidateStatusWindow();
+                InvalidateAll();
                 return IntPtr.Zero;
             case WmSettingChange:
                 var setting = lParam == IntPtr.Zero
@@ -323,14 +418,14 @@ public sealed partial class TaskbarStatusWindow
                 if (setting is null or "TraySettings" or "ImmersiveColorSet")
                 {
                     _themeDark = ReadThemeDark();
-                    _lastStatusRect = default;
+                    ResetLayouts();
                     EnsureAttached();
-                    InvalidateStatusWindow();
+                    InvalidateAll();
                 }
                 return IntPtr.Zero;
             case WmThemeChanged:
                 _themeDark = ReadThemeDark();
-                InvalidateStatusWindow();
+                InvalidateAll();
                 return IntPtr.Zero;
             default:
                 return DefWindowProcW(window, message, wParam, lParam);
@@ -340,6 +435,11 @@ public sealed partial class TaskbarStatusWindow
     private IntPtr StatusWindowProcedure(
         IntPtr window, uint message, UIntPtr wParam, IntPtr lParam)
     {
+        if (!_surfacesByWindow.TryGetValue(window, out var surface))
+        {
+            return DefWindowProcW(window, message, wParam, lParam);
+        }
+
         switch (message)
         {
             case WmEraseBkgnd:
@@ -351,37 +451,32 @@ public sealed partial class TaskbarStatusWindow
             case WmPrintClient:
                 if (GetClientRect(window, out var printClient))
                 {
-                    Draw(new IntPtr(unchecked((long)wParam.ToUInt64())), printClient);
+                    Draw(
+                        new IntPtr(unchecked((long)wParam.ToUInt64())),
+                        printClient,
+                        surface);
                 }
                 return IntPtr.Zero;
             case WmDpiChanged:
             case WmDpiChangedAfterParent:
                 var parent = GetParent(window);
-                _dpi = (int)GetDpiForWindow(parent != IntPtr.Zero ? parent : window);
-                if (_dpi <= 0) _dpi = 96;
-                CreateFonts();
-                _lastStatusRect = default;
-                RepositionAndShow();
+                surface.Dpi = (int)GetDpiForWindow(parent != IntPtr.Zero ? parent : window);
+                if (surface.Dpi <= 0) surface.Dpi = 96;
+                CreateFonts(surface);
+                surface.LastRect = default;
+                RepositionAndShow(surface);
                 InvalidateRect(window, IntPtr.Zero, false);
                 return IntPtr.Zero;
             case WmDisplayChange:
             case WmSettingChange:
             case WmThemeChanged:
                 _themeDark = ReadThemeDark();
-                _lastStatusRect = default;
-                RepositionAndShow();
+                surface.LastRect = default;
+                RepositionAndShow(surface);
                 InvalidateRect(window, IntPtr.Zero, false);
                 return IntPtr.Zero;
             default:
                 return DefWindowProcW(window, message, wParam, lParam);
-        }
-    }
-
-    private void InvalidateStatusWindow()
-    {
-        if (_statusWindow != IntPtr.Zero)
-        {
-            InvalidateRect(_statusWindow, IntPtr.Zero, false);
         }
     }
 
