@@ -44,6 +44,32 @@ internal static class RazerMappingImageLoader
         }
     }
 
+    /// <summary>Decodes the small PNG payloads Razer inlines in its mapping bundle.</summary>
+    public static async Task<ImageSource?> LoadEmbeddedAsync(string base64, int decodeWidth)
+    {
+        try
+        {
+            var bytes = Convert.FromBase64String(base64);
+            using var stream = new InMemoryRandomAccessStream();
+            using (var writer = new DataWriter(stream))
+            {
+                writer.WriteBytes(bytes);
+                await writer.StoreAsync();
+                writer.DetachStream();
+            }
+
+            stream.Seek(0);
+            var image = new BitmapImage { DecodePixelWidth = decodeWidth };
+            await image.SetSourceAsync(stream);
+            return image;
+        }
+        catch (Exception exception) when (exception is FormatException or IOException or
+            UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return null;
+        }
+    }
+
     private static async Task<ImageSource?> TryLoadAvifAsync(Uri uri, int decodeWidth)
     {
         try

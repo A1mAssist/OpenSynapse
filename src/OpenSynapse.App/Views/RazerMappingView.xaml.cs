@@ -148,6 +148,7 @@ public sealed partial class RazerMappingView : UserControl
             _mapping.PropertyChanged += MappingPropertyChanged;
             DrawKeyboard();
             UpdateKeyboardSelection();
+            UpdateKeypadWidgets();
         }
     }
 
@@ -164,11 +165,22 @@ public sealed partial class RazerMappingView : UserControl
         _mapping.PropertyChanged -= MappingPropertyChanged;
         _mapping = null;
         KeyboardCanvas.Children.Clear();
+        KeypadConnectorCanvas.Children.Clear();
+        foreach (var button in KeypadWidgetButtons())
+        {
+            button.Content = null;
+            button.Tag = null;
+            button.Visibility = Visibility.Collapsed;
+        }
         _keyboardKeyPaths.Clear();
         _keyboardPathsByButton.Clear();
     }
 
-    private void RowsChanged(object? sender, NotifyCollectionChangedEventArgs e) => RequestConnectors();
+    private void RowsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        UpdateKeypadWidgets();
+        RequestConnectors();
+    }
 
     private void MappingPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
@@ -176,10 +188,16 @@ public sealed partial class RazerMappingView : UserControl
         {
             DrawKeyboard();
             UpdateKeyboardSelection();
+            UpdateKeypadWidgets();
         }
         else if (args.PropertyName == nameof(RazerHidMappingViewModel.SelectedRow))
         {
             UpdateKeyboardSelection();
+            UpdateKeypadWidgetSelection();
+        }
+        else if (args.PropertyName == nameof(RazerHidMappingViewModel.KeypadWidgetsVisibility))
+        {
+            UpdateKeypadWidgets();
         }
         else if (args.PropertyName is nameof(RazerHidMappingViewModel.LayoutImage) or
             nameof(RazerHidMappingViewModel.Layout))
@@ -375,30 +393,36 @@ public sealed partial class RazerMappingView : UserControl
                     container.ActualHeight / 2));
             var start = new Point(labelEdge.X + (left ? 8 : -8), labelEdge.Y);
             var corner = new Point(start.X + (left ? 53 : -53), start.Y);
-            AddConnector(start, corner, target, accent);
-            AddDot(start, 5, accent, 0.65);
-            AddDot(target, 7, accent, 0.95);
-            AddRing(target, 13, accent, 0.55);
+            AddConnector(ConnectorCanvas, start, corner, target, accent);
+            AddDot(ConnectorCanvas, start, 5, accent, 0.65);
+            AddDot(ConnectorCanvas, target, 7, accent, 0.95);
+            AddRing(ConnectorCanvas, target, 13, accent, 0.55);
         }
     }
 
-    private void AddConnector(Point start, Point corner, Point target, Brush accent)
+    private static void AddConnector(
+        Canvas canvas,
+        Point start,
+        Point corner,
+        Point target,
+        Brush accent,
+        double opacity = 1)
     {
-        foreach (var (thickness, opacity) in new[] { (4.0, 0.12), (1.1, 0.72) })
+        foreach (var (thickness, lineOpacity) in new[] { (4.0, 0.12), (1.1, 0.72) })
         {
-            ConnectorCanvas.Children.Add(new Polyline
+            canvas.Children.Add(new Polyline
             {
                 Points = new PointCollection { start, corner, target },
                 Stroke = accent,
                 StrokeThickness = thickness,
-                Opacity = opacity,
+                Opacity = lineOpacity * opacity,
                 StrokeLineJoin = PenLineJoin.Round,
                 IsHitTestVisible = false,
             });
         }
     }
 
-    private void AddRing(Point point, double size, Brush brush, double opacity)
+    private static void AddRing(Canvas canvas, Point point, double size, Brush brush, double opacity)
     {
         var ring = new Ellipse
         {
@@ -411,10 +435,10 @@ public sealed partial class RazerMappingView : UserControl
         };
         Canvas.SetLeft(ring, point.X - size / 2);
         Canvas.SetTop(ring, point.Y - size / 2);
-        ConnectorCanvas.Children.Add(ring);
+        canvas.Children.Add(ring);
     }
 
-    private void AddDot(Point point, double size, Brush brush, double opacity)
+    private static void AddDot(Canvas canvas, Point point, double size, Brush brush, double opacity)
     {
         var dot = new Ellipse
         {
@@ -426,6 +450,6 @@ public sealed partial class RazerMappingView : UserControl
         };
         Canvas.SetLeft(dot, point.X - size / 2);
         Canvas.SetTop(dot, point.Y - size / 2);
-        ConnectorCanvas.Children.Add(dot);
+        canvas.Children.Add(dot);
     }
 }
