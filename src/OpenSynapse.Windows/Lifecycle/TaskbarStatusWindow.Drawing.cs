@@ -295,13 +295,46 @@ public sealed partial class TaskbarStatusWindow
     private IntPtr HostWindowProcedure(
         IntPtr window, uint message, UIntPtr wParam, IntPtr lParam)
     {
-        if (message == _taskbarCreatedMessage || message == WmTimer)
+        if (message == _taskbarCreatedMessage)
         {
-            if (message == _taskbarCreatedMessage) _attachFailed = false;
+            _attachFailures = 0;
+            _nextAttachAttempt = 0;
+            DestroyStatusWindow();
+            _taskbarWindow = IntPtr.Zero;
             EnsureAttached();
             return IntPtr.Zero;
         }
-        return DefWindowProcW(window, message, wParam, lParam);
+
+        switch (message)
+        {
+            case WmTimer:
+                EnsureAttached();
+                return IntPtr.Zero;
+            case WmDisplayChange:
+            case WmDpiChanged:
+                _lastStatusRect = default;
+                EnsureAttached();
+                InvalidateStatusWindow();
+                return IntPtr.Zero;
+            case WmSettingChange:
+                var setting = lParam == IntPtr.Zero
+                    ? null
+                    : Marshal.PtrToStringUni(lParam);
+                if (setting is null or "TraySettings" or "ImmersiveColorSet")
+                {
+                    _themeDark = ReadThemeDark();
+                    _lastStatusRect = default;
+                    EnsureAttached();
+                    InvalidateStatusWindow();
+                }
+                return IntPtr.Zero;
+            case WmThemeChanged:
+                _themeDark = ReadThemeDark();
+                InvalidateStatusWindow();
+                return IntPtr.Zero;
+            default:
+                return DefWindowProcW(window, message, wParam, lParam);
+        }
     }
 
     private IntPtr StatusWindowProcedure(
@@ -321,6 +354,7 @@ public sealed partial class TaskbarStatusWindow
                     Draw(new IntPtr(unchecked((long)wParam.ToUInt64())), printClient);
                 }
                 return IntPtr.Zero;
+            case WmDpiChanged:
             case WmDpiChangedAfterParent:
                 var parent = GetParent(window);
                 _dpi = (int)GetDpiForWindow(parent != IntPtr.Zero ? parent : window);
@@ -340,6 +374,14 @@ public sealed partial class TaskbarStatusWindow
                 return IntPtr.Zero;
             default:
                 return DefWindowProcW(window, message, wParam, lParam);
+        }
+    }
+
+    private void InvalidateStatusWindow()
+    {
+        if (_statusWindow != IntPtr.Zero)
+        {
+            InvalidateRect(_statusWindow, IntPtr.Zero, false);
         }
     }
 

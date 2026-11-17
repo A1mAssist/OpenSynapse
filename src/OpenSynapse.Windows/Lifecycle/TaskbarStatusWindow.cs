@@ -45,11 +45,12 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     private int _visibleBatteryCount;
     private string _automationText = string.Empty;
     private bool _themeDark = true;
-    private bool _attachFailed;
     private bool _contentAvailable;
     private bool _disposed;
     private int _dpi = 96;
     private int _layoutFailures;
+    private int _attachFailures;
+    private long _nextAttachAttempt;
 
     public TaskbarStatusWindow(Action<string>? log = null)
     {
@@ -110,14 +111,13 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         _snapshot = snapshot;
         _automationText = automationText;
         _contentAvailable = true;
-        if (_statusWindow == IntPtr.Zero) return;
 
-        if (contentChanged)
+        if (_statusWindow != IntPtr.Zero && contentChanged)
         {
             SetWindowTextW(_statusWindow, _automationText);
         }
-        RepositionAndShow();
-        if (contentChanged)
+        EnsureAttached();
+        if (_statusWindow != IntPtr.Zero && contentChanged)
         {
             InvalidateRect(_statusWindow, IntPtr.Zero, false);
         }
@@ -177,21 +177,24 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         {
             DestroyStatusWindow();
             _taskbarWindow = taskbar;
-            _attachFailed = false;
+            _attachFailures = 0;
+            _nextAttachAttempt = 0;
         }
 
-        if (_attachFailed) return;
-
-        if (_statusWindow == IntPtr.Zero || !IsWindow(_statusWindow))
+        if (_statusWindow != IntPtr.Zero &&
+            (!IsWindow(_statusWindow) || GetParent(_statusWindow) != taskbar))
         {
             DestroyStatusWindow();
-            CreateStatusWindow(taskbar);
         }
 
-        if (_statusWindow != IntPtr.Zero)
+        if (_statusWindow == IntPtr.Zero)
         {
-            RepositionAndShow();
+            if (Environment.TickCount64 < _nextAttachAttempt) return;
+            CreateStatusWindow(taskbar);
+            if (_statusWindow == IntPtr.Zero) return;
         }
+
+        RepositionAndShow();
     }
 
     private void CreateStatusWindow(IntPtr taskbar)
@@ -215,9 +218,8 @@ public sealed partial class TaskbarStatusWindow : IDisposable
                 IntPtr.Zero);
             if (status == IntPtr.Zero)
             {
-                _log?.Invoke(
-                    $"taskbar-status: status window creation failed ({Marshal.GetLastWin32Error()}).");
-                _attachFailed = true;
+                RecordAttachFailure(
+                    "status window creation failed", Marshal.GetLastWin32Error());
                 return;
             }
 
@@ -229,17 +231,19 @@ public sealed partial class TaskbarStatusWindow : IDisposable
                     $"taskbar-status: transparency failed ({Marshal.GetLastWin32Error()}).");
             }
             SetLastError(0);
-            if (GetParent(status) != taskbar)
+            var parent = GetParent(status);
+            var parentError = Marshal.GetLastWin32Error();
+            if (parent != taskbar)
             {
-                _log?.Invoke(
-                    $"taskbar-status: attach failed (owner error {Marshal.GetLastWin32Error()}).");
                 DestroyWindow(status);
-                _attachFailed = true;
+                RecordAttachFailure("attach failed", parentError);
                 return;
             }
 
             _statusWindow = status;
             _taskbarWindow = taskbar;
+            _attachFailures = 0;
+            _nextAttachAttempt = 0;
             _lastStatusRect = default;
             _dpi = (int)GetDpiForWindow(taskbar);
             if (_dpi <= 0) _dpi = (int)GetDpiForWindow(status);
@@ -269,6 +273,18 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             _statusWindow = IntPtr.Zero;
         }
         _lastStatusRect = default;
+    }
+
+    private void RecordAttachFailure(string message, int error)
+    {
+        _attachFailures++;
+        var delay = Math.Min(4000, 500 << Math.Min(_attachFailures - 1, 3));
+        _nextAttachAttempt = Environment.TickCount64 + delay;
+        if (_attachFailures == 1 || _attachFailures % 10 == 0)
+        {
+            _log?.Invoke(
+                $"taskbar-status: {message} ({error}); retry {_attachFailures} in {delay} ms.");
+        }
     }
 
     private void RepositionAndShow()
