@@ -10,6 +10,7 @@ public enum RazerHidSpecialLightingKind
     Argb320,
     Kraken37,
     KrakenV4,
+    KrystalT2,
 }
 
 public sealed class RazerHidSpecialLightingConnection
@@ -59,7 +60,7 @@ public sealed class RazerHidSpecialLightingConnection
     internal string? FeatureDevicePath { get; }
 }
 
-public sealed class RazerHidSpecialLightingService
+public sealed partial class RazerHidSpecialLightingService
 {
     public Task<string?> TryReadSerialAsync(
         RazerHidSpecialLightingConnection connection,
@@ -120,6 +121,8 @@ public sealed class RazerHidSpecialLightingService
                 true,
                 RazerHidSpecialLightingKind.KrakenV4,
                 LedCount: 6),
+            [0x0533] = Krystal("Razer Kraken V3 HyperSense"),
+            [0x0549] = Krystal("Razer Kraken V3"),
         }.ToFrozenDictionary();
 
     /// <summary>
@@ -218,7 +221,10 @@ public sealed class RazerHidSpecialLightingService
                       item.OutputReportByteLength == RazerHidKrakenV4Protocol.ReportLength
                     : !argb &&
                       item.DevicePath.Contains("&MI_03", StringComparison.OrdinalIgnoreCase) &&
-                      item.OutputReportByteLength == RazerHidKrakenProtocol.ReportLength));
+                      item.OutputReportByteLength == (definition!.Kind ==
+                          RazerHidSpecialLightingKind.KrystalT2
+                              ? RazerKrystalT2LightingProtocol.OutputReportLength
+                              : RazerHidKrakenProtocol.ReportLength)));
             var name = argb
                 ? "Razer Chroma Addressable RGB Controller"
                 : definition!.Name;
@@ -236,7 +242,7 @@ public sealed class RazerHidSpecialLightingService
                 : !argb && endpoint is null
                     ? krakenV4
                         ? "No available FF14:0001 64-byte Output Report collection was found."
-                        : "No available MI_03 37-byte Output Report collection was found."
+                        : $"No available MI_03 {(definition!.Kind == RazerHidSpecialLightingKind.KrystalT2 ? 62 : 37)}-byte Output Report collection was found."
                     : null;
             // The audio page only finds a headset whose bundle channel has a matching
             // interface. The Kraken V4 channel is not handled there, so its lighting
@@ -304,6 +310,13 @@ public sealed class RazerHidSpecialLightingService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(settings);
+        if (connection.Kind == RazerHidSpecialLightingKind.KrystalT2)
+        {
+            await SetKrystalLightingAsync(connection, settings, cancellationToken)
+                .ConfigureAwait(false);
+            return;
+        }
+
         if (connection.Kind == RazerHidSpecialLightingKind.KrakenV4)
         {
             await SetKrakenV4LightingAsync(connection, settings, intensity, brightness, cancellationToken)

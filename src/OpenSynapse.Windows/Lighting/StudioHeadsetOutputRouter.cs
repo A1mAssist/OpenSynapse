@@ -14,11 +14,14 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
     private readonly Func<int, int, StudioEffectInput>? _inputProvider;
     private readonly Func<Task>? _beforeTakeOver;
     private readonly Action<string>? _diagnostic;
+    private readonly RazerHidSpecialLightingService? _krakenLighting;
+    private readonly Func<ushort, RazerHidSpecialLightingConnection?>? _krakenConnection;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly object _updateGate = new();
     private Func<IReadOnlyList<StudioLayerRender>>? _layersForDevice;
     private StudioDeviceFrameSource? _source;
     private RazerMakoXChromaService? _service;
+    private RazerHidSpecialLightingConnection? _kraken;
     private RazerRgb[]? _lastFrame;
     private string? _path;
     private string? _displayName;
@@ -31,12 +34,16 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
         Func<RazerHeadsetAudioConnection?> connection,
         Func<int, int, StudioEffectInput>? inputProvider = null,
         Func<Task>? beforeTakeOver = null,
-        Action<string>? diagnostic = null)
+        Action<string>? diagnostic = null,
+        RazerHidSpecialLightingService? krakenLighting = null,
+        Func<ushort, RazerHidSpecialLightingConnection?>? krakenConnection = null)
     {
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));
         _inputProvider = inputProvider;
         _beforeTakeOver = beforeTakeOver;
         _diagnostic = diagnostic;
+        _krakenLighting = krakenLighting;
+        _krakenConnection = krakenConnection;
     }
 
     /// <summary>Raised off the UI thread when the headset rejects a frame.</summary>
@@ -45,6 +52,10 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
     public string? InstanceId => _path;
 
     public string? DisplayName => _displayName;
+
+    public ushort ProductId => _kraken?.ProductId ?? 0x05AD;
+
+    public int LedCount => _kraken is null ? RazerMakoXChromaService.LedCount : 1;
 
     /// <summary>Discovers Mako X and enters its custom-frame effect once per endpoint.</summary>
     public async Task<bool> RefreshAsync(CancellationToken cancellationToken = default)
@@ -57,10 +68,38 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
         {
             Volatile.Write(ref _stopped, 1);
             var connection = _connection();
+            if (connection is { Transport: RazerHeadsetAudioTransport.KrakenBase37 })
+            {
+                if (_krakenLighting is null ||
+                    _krakenConnection?.Invoke(connection.ProductId) is not { IsReady: true } kraken)
+                {
+                    await ReleaseServiceAsync().ConfigureAwait(false);
+                    return false;
+                }
+
+                if (!string.Equals(_path, connection.DevicePath, StringComparison.OrdinalIgnoreCase) ||
+                    _kraken?.InstanceId != kraken.InstanceId)
+                {
+                    await ReleaseServiceAsync().ConfigureAwait(false);
+                    _kraken = kraken;
+                    _path = connection.DevicePath;
+                    _displayName = connection.Name;
+                    _source = null;
+                    _sourceLayersVersion = -1;
+                }
+
+                return true;
+            }
+
             if (connection is not { Transport: RazerHeadsetAudioTransport.Jolie64 })
             {
                 await ReleaseServiceAsync().ConfigureAwait(false);
                 return false;
+            }
+
+            if (_kraken is not null)
+            {
+                await ReleaseServiceAsync().ConfigureAwait(false);
             }
 
             if (!string.Equals(_path, connection.DevicePath, StringComparison.OrdinalIgnoreCase))
@@ -126,7 +165,7 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (Volatile.Read(ref _stopped) != 0 || _service is not { } service)
+            if (Volatile.Read(ref _stopped) != 0 || (_service is null && _kraken is null))
             {
                 return false;
             }
@@ -139,7 +178,9 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
                 layersVersion = _layersVersion;
             }
 
-            _source ??= new StudioDeviceFrameSource(1, RazerMakoXChromaService.LedCount, _inputProvider);
+            _source ??= _kraken is null
+                ? new StudioDeviceFrameSource(1, RazerMakoXChromaService.LedCount, _inputProvider)
+                : new StudioDeviceFrameSource(1, 1, _inputProvider);
             if (_sourceLayersVersion != layersVersion)
             {
                 _source.Update(layersForDevice?.Invoke() ?? []);
@@ -147,6 +188,41 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
             }
 
             var colors = await _source.RenderAsync(elapsed, cancellationToken).ConfigureAwait(false);
+            if (_kraken is { } kraken)
+            {
+                var color = colors.Count == 0 ? default : colors[0];
+                if (_lastFrame is { Length: 1 } last &&
+                    last[0].Red == color.Red &&
+                    last[0].Green == color.Green &&
+                    last[0].Blue == color.Blue)
+                {
+                    return true;
+                }
+
+                try
+                {
+                    await _krakenLighting!.SetKrystalFrameAsync(
+                            kraken,
+                            new RazerHidColor(color.Red, color.Green, color.Blue),
+                            cancellationToken)
+                        .ConfigureAwait(false);
+                    _lastFrame = [color];
+                    return true;
+                }
+                catch (Exception exception) when (IsWriteFailure(exception))
+                {
+                    _lastFrame = null;
+                    WriteFailed?.Invoke(_displayName ?? "Razer Kraken V3", exception);
+                    return false;
+                }
+            }
+
+            var service = _service;
+            if (service is null)
+            {
+                return false;
+            }
+
             if (_lastFrame is { } previous && colors.SequenceEqual(previous))
             {
                 return true;
@@ -198,6 +274,23 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
                     WriteFailed?.Invoke(_displayName ?? "Razer Mako X", exception);
                 }
             }
+            else if (applyFallback &&
+                _kraken is { } kraken &&
+                _krakenLighting is not null)
+            {
+                try
+                {
+                    await _krakenLighting.SetKrakenLightingAsync(
+                            kraken,
+                            new RazerHidLightingSettings(RazerHidLightingEffect.Off),
+                            cancellationToken: cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception exception) when (IsWriteFailure(exception))
+                {
+                    WriteFailed?.Invoke(_displayName ?? "Razer Kraken V3", exception);
+                }
+            }
 
             await ReleaseServiceAsync().ConfigureAwait(false);
             _source = null;
@@ -233,6 +326,7 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
     {
         var service = _service;
         _service = null;
+        _kraken = null;
         _path = null;
         _displayName = null;
         _prepared = false;
@@ -242,5 +336,6 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
 
     private static bool IsWriteFailure(Exception exception) =>
         exception is IOException or InvalidOperationException or TimeoutException or
-            UnauthorizedAccessException or System.ComponentModel.Win32Exception;
+            UnauthorizedAccessException or System.ComponentModel.Win32Exception or
+            NotSupportedException;
 }
