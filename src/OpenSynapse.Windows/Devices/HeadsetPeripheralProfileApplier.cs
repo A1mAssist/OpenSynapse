@@ -275,7 +275,7 @@ public sealed class HeadsetPeripheralProfileApplier : IDeviceProfileApplier
                 context.Device.Id, ProfileDeviceApplyStatus.Skipped, []);
         }
 
-        if (!TryBuildKrakenLighting(settings, out var lighting, out var intensity, out var error))
+        if (!TryBuildKrakenLighting(settings, out var lighting, out var intensity, out var brightness, out var error))
         {
             return new ProfileDeviceApplyResult(
                 context.Device.Id,
@@ -290,6 +290,7 @@ public sealed class HeadsetPeripheralProfileApplier : IDeviceProfileApplier
                 session.Value.Connection,
                 lighting,
                 intensity,
+                brightness,
                 cancellationToken);
             return new ProfileDeviceApplyResult(
                 context.Device.Id,
@@ -421,10 +422,12 @@ public sealed class HeadsetPeripheralProfileApplier : IDeviceProfileApplier
         HeadsetProfileSettings settings,
         out RazerHidLightingSettings lighting,
         out byte? intensity,
+        out byte? brightness,
         out string? error)
     {
         lighting = new RazerHidLightingSettings(RazerHidLightingEffect.Off);
         intensity = null;
+        brightness = settings.ChromaBrightness is int percent ? (byte)Math.Clamp(percent, 0, 100) : null;
         error = null;
         if (!Enum.TryParse<RazerHidLightingEffect>(
                 settings.ChromaEffect, ignoreCase: true, out var effect))
@@ -440,7 +443,7 @@ public sealed class HeadsetPeripheralProfileApplier : IDeviceProfileApplier
             parameters.TryGetValue("intensity", out var text) &&
             double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
                 ? Math.Round(parsed)
-                : Math.Round((settings.ChromaBrightness ?? 100) * 255d / 100d);
+                : 255d;
         intensity = (byte)Math.Clamp(rawIntensity, 0, 255);
         lighting = new RazerHidLightingSettings(
             effect,

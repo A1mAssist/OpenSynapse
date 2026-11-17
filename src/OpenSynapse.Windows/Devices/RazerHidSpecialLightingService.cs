@@ -160,6 +160,8 @@ public sealed class RazerHidSpecialLightingService
         new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, byte> _krakenV4Armed =
         new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, byte> _krakenV4Brightness =
+        new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, RazerMxicHeadsetTransport> _krakenV4Transports =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly Action<string>? _diagnostic;
@@ -298,12 +300,13 @@ public sealed class RazerHidSpecialLightingService
         RazerHidSpecialLightingConnection connection,
         RazerHidLightingSettings settings,
         byte? intensity = null,
+        byte? brightness = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(settings);
         if (connection.Kind == RazerHidSpecialLightingKind.KrakenV4)
         {
-            await SetKrakenV4LightingAsync(connection, settings, intensity, cancellationToken)
+            await SetKrakenV4LightingAsync(connection, settings, intensity, brightness, cancellationToken)
                 .ConfigureAwait(false);
             return;
         }
@@ -356,6 +359,7 @@ public sealed class RazerHidSpecialLightingService
         RazerHidSpecialLightingConnection connection,
         RazerHidLightingSettings settings,
         byte? intensity,
+        byte? brightness,
         CancellationToken cancellationToken)
     {
         RequireReady(connection, RazerHidSpecialLightingKind.KrakenV4);
@@ -394,14 +398,22 @@ public sealed class RazerHidSpecialLightingService
         {
             var devicePath = connection.DevicePath!;
             var arm = !_krakenV4Armed.ContainsKey(devicePath);
-            var reportsToSend = new List<byte[]>(reports.Count + (arm ? 3 : 0));
+            var percent = brightness ??
+                (_krakenV4Brightness.TryGetValue(devicePath, out var known) ? known : (byte)100);
+            var resendBrightness = !arm &&
+                _krakenV4Brightness.TryGetValue(devicePath, out var sent) && sent != percent;
+            var reportsToSend = new List<byte[]>(reports.Count + (arm ? 3 : resendBrightness ? 1 : 0));
             if (arm)
             {
                 // Re-taking Chroma control on every click makes 056B fade to the
                 // old colour, so the handshake only runs once per device path.
                 reportsToSend.Add(RazerHidKrakenV4Protocol.CreateConnect(isDongle));
                 reportsToSend.Add(RazerHidKrakenV4Protocol.CreateForceChroma(enabled: true, isDongle));
-                reportsToSend.Add(RazerHidKrakenV4Protocol.CreateBrightness(100, isDongle));
+                reportsToSend.Add(RazerHidKrakenV4Protocol.CreateBrightness(percent, isDongle));
+            }
+            else if (resendBrightness)
+            {
+                reportsToSend.Add(RazerHidKrakenV4Protocol.CreateBrightness(percent, isDongle));
             }
 
             reportsToSend.AddRange(reports);
@@ -433,6 +445,7 @@ public sealed class RazerHidSpecialLightingService
             {
                 _krakenV4Armed.TryAdd(devicePath, 0);
             }
+            _krakenV4Brightness[devicePath] = percent;
         }
         finally
         {
