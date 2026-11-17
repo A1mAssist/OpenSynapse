@@ -197,7 +197,10 @@ public sealed class BladeRecoveryClient : IAsyncDisposable
         if (!File.Exists(markerPath)) return;
 
         var stale = await BladeRecoveryProtocol.ReadMarkerAsync(markerPath, cancellationToken).ConfigureAwait(false);
-        if (ownerAlive(stale))
+        // A marker this process wrote is left over from a runtime whose host died
+        // before it could recover. Treating it as a live owner would block every
+        // retry until the whole app restarts.
+        if (stale.OwnerPid != Environment.ProcessId && ownerAlive(stale))
             throw new InvalidOperationException("An existing OpenSynapse owner still owns the recovery marker.");
         await recover(stale).ConfigureAwait(false);
         await DeleteMatchingMarkerAsync(markerPath, stale).ConfigureAwait(false);
