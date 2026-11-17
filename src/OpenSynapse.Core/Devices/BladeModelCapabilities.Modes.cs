@@ -32,14 +32,6 @@ public static partial class BladeModelCapabilities
         BladePerformanceMode.Performance,
     ];
 
-    // HyperBoost only exists on the models whose middleware lists it. It rides the same
-    // thermal channel as the presets, so the write itself needs no extra capability.
-    private static readonly BladePerformanceMode[] HyperBoostPerformanceModes =
-    [
-        .. StandardPerformanceModes,
-        BladePerformanceMode.Hyperboost,
-    ];
-
     // Exact mode lists the middleware publishes, in the order its UI shows them.
     private static readonly BladePerformanceMode[] Modes16Hyper =
     [

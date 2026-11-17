@@ -46,6 +46,11 @@ public sealed partial class RazerCoolingPadViewModel
             return;
         }
 
+        if (_hyperBoostActive)
+        {
+            await ExitHyperBoostTakeoverAsync();
+        }
+
         IsBusy = true;
         StopCurveAndSelectManual();
         try

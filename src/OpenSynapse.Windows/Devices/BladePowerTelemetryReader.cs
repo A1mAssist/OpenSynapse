@@ -4,7 +4,7 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
 
-internal sealed class BladePowerTelemetryReader
+internal sealed partial class BladePowerTelemetryReader
 {
     private readonly RazerDeviceResolver _resolver;
     private readonly RazerCapabilityClient _client;
@@ -529,30 +529,6 @@ internal sealed class BladePowerTelemetryReader
             BladeBoostProtocol.CreateSetArguments(cluster, value),
             cancellationToken);
 
-    private async Task<bool> TryRestoreBoostStateAsync(
-        ResolvedRazerDevice device,
-        BladeBoostState state)
-    {
-        try
-        {
-            var thermal = await _fan.ReadThermalStateAsync(device, CancellationToken.None);
-            if (thermal.PerformanceMode != BladePerformanceMode.Custom)
-            {
-                return false;
-            }
-
-            await WriteBoostModeAsync(
-                device, BladeBoostProtocol.CpuCluster, (byte)state.Cpu, CancellationToken.None);
-            await WriteBoostModeAsync(
-                device, BladeBoostProtocol.GpuCluster, (byte)state.Gpu, CancellationToken.None);
-            return await ReadBoostStateAsync(device, CancellationToken.None) == state;
-        }
-        catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
-        {
-            return false;
-        }
-    }
-
     public ValueTask<BladeMaxFanMode> SetBladeMaxFanModeAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         BladeMaxFanMode mode,
@@ -697,22 +673,6 @@ internal sealed class BladePowerTelemetryReader
                 throw new OperationCanceledException(message, exception, cancellationToken);
             }
             throw new InvalidOperationException(message, exception);
-        }
-    }
-
-    internal async Task<bool> TryRestoreBoostLevelsAsync(ResolvedRazerDevice device, BladeBoostState state)
-    {
-        try
-        {
-            await WriteBoostModeAsync(
-                device, BladeBoostProtocol.CpuCluster, (byte)state.Cpu, CancellationToken.None);
-            await WriteBoostModeAsync(
-                device, BladeBoostProtocol.GpuCluster, (byte)state.Gpu, CancellationToken.None);
-            return await ReadBoostStateAsync(device, CancellationToken.None) == state;
-        }
-        catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
-        {
-            return false;
         }
     }
 

@@ -84,6 +84,9 @@ public sealed partial class RefreshWorkspace
             return null;
         }
 
+        var powerEvidence = PowerSourceResolver.ResolveEvidence(
+            _powerSourceProvider.IsPluggedIn,
+            telemetry.BladeAdapterPower);
         var result = await _profileApplier.ApplyAsync(
             Profile,
             devices,
@@ -94,6 +97,7 @@ public sealed partial class RefreshWorkspace
             applyKeyboardBrightness: IsDisplayAvailable,
             coolingPadConnected: _blade.CoolingPadConnected,
             padlessHyperBoostAccepted: _blade.PadlessHyperBoostAccepted,
+            adapterPowerVerified: PowerSourceResolver.IsVerifiedFullPower(powerEvidence),
             displayController: _liteMode ? null : _display.Controller,
             applyBladeTuningAsync: _liteMode ? null : _blade.ApplyProfileTuningAsync);
         if (_razerHidProfileApplier is null)

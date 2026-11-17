@@ -11,6 +11,11 @@ public sealed partial class RazerCoolingPadViewModel
     private DispatcherTimer? _curveTimer;
     private bool _curveTickRunning;
     private bool _disposed;
+    private bool _curveActive;
+    private bool _hyperBoostActive;
+    private IReadOnlyList<HyperBoostFanStep> _hyperBoostTable = [];
+    private RazerCoolingPadCoolingMode? _hyperBoostPreviousMode;
+    private int? _hyperBoostLastRpm;
     private int _curveGeneration;
     private CancellationTokenSource? _curveCancellation;
     private Task _curveTask = Task.CompletedTask;
@@ -75,6 +80,11 @@ public sealed partial class RazerCoolingPadViewModel
             return;
         }
 
+        if (_hyperBoostActive)
+        {
+            await ExitHyperBoostTakeoverAsync();
+        }
+
         if (SelectedCurveModeIndex == 0)
         {
             StopCurveAndSelectManual();
@@ -125,7 +135,8 @@ public sealed partial class RazerCoolingPadViewModel
         finally { IsBusy = false; }
 
         if (_disposed || !IsConnected || cancellationToken.IsCancellationRequested) return;
-        _curveCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _curveActive = true;
+        _curveCancellation ??= new CancellationTokenSource();
         _lastCurveUnits = null;
         EnsureCurveTimer();
         _curveTimer!.Start();
@@ -154,10 +165,10 @@ public sealed partial class RazerCoolingPadViewModel
 
     private async Task RunCurveTickAsync(CancellationToken cancellationToken)
     {
-        if (_disposed || _curveCancellation is null || _curveCancellation.IsCancellationRequested ||
-            IsBusy ||
+        if (_disposed || IsBusy ||
             _service is null ||
             _performanceMonitor is null ||
+            _curveCancellation is null || _curveCancellation.IsCancellationRequested ||
             _curveTimer is not { IsEnabled: true })
         {
             return;
@@ -169,6 +180,23 @@ public sealed partial class RazerCoolingPadViewModel
         cancellationToken = linked.Token;
         try
         {
+            // HyperBoost owns the pad while the EC runs that preset. It replaces any
+            // user curve, which is restored from the saved mode when the preset leaves.
+            var table = HyperBoostTable();
+            if (table.Count > 0)
+            {
+                await RunHyperBoostTickAsync(table, cancellationToken);
+                return;
+            }
+            if (_hyperBoostActive)
+            {
+                await ExitHyperBoostTakeoverAsync();
+            }
+            if (!_curveActive)
+            {
+                return;
+            }
+
             var source = _activeCurveSource;
             var (cpu, gpu) = await _performanceMonitor.SampleTemperaturesAsync(
                 includeCpu: source != RazerCoolingPadTemperatureSource.Gpu,
@@ -220,9 +248,70 @@ public sealed partial class RazerCoolingPadViewModel
         }
     }
 
+    private IReadOnlyList<HyperBoostFanStep> HyperBoostTable()
+    {
+        var mode = _getBladePerformanceMode?.Invoke();
+        if (mode == BladePerformanceMode.Hyperboost)
+        {
+            return _hyperBoostActive
+                ? _hyperBoostTable
+                : HyperBoostFanTables.For(_getBladeProductId?.Invoke() ?? 0);
+        }
+
+        // A failed thermal read must not hand the pad back mid-preset.
+        return mode is null && _hyperBoostActive ? _hyperBoostTable : [];
+    }
+
+    private async Task RunHyperBoostTickAsync(
+        IReadOnlyList<HyperBoostFanStep> table,
+        CancellationToken cancellationToken)
+    {
+        if (!_hyperBoostActive)
+        {
+            _curveActive = false;
+            _selectedCurveModeIndex = 0;
+            _lastCurveUnits = null;
+            OnPropertyChanged(nameof(SelectedCurveModeIndex));
+            _hyperBoostPreviousMode = await ReadCoolingModeOrDefaultAsync(cancellationToken);
+            _hyperBoostActive = true;
+            _hyperBoostTable = table;
+            _hyperBoostLastRpm = null;
+        }
+
+        var (cpu, gpu) = await _performanceMonitor!.SampleTemperaturesAsync(
+            includeCpu: true, includeGpu: true, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!_hyperBoostActive || _service is null)
+        {
+            return;
+        }
+
+        var rpm = HyperBoostFanTables.SelectRpm(table, cpu, gpu, _hyperBoostLastRpm);
+        if (rpm > 0 && rpm != _hyperBoostLastRpm)
+        {
+            await _service.SetCurveSpeedAsync(rpm, cancellationToken);
+            if (!_hyperBoostActive) return;
+            _hyperBoostLastRpm = rpm;
+            SetCurveStatus(AppStrings.FormatText("CoolingPadCurveActive", "HyperBoost", rpm));
+        }
+    }
+
+    /// <summary>A manual apply or the preset leaving must hand the pad back to its own mode.</summary>
+    private async Task ExitHyperBoostTakeoverAsync()
+    {
+        _hyperBoostActive = false;
+        _hyperBoostTable = [];
+        var previous = _hyperBoostPreviousMode;
+        _hyperBoostPreviousMode = null;
+        _hyperBoostLastRpm = null;
+        await RestoreCoolingModeAsync(previous, CancellationToken.None);
+        SetCurveStatus(string.Empty);
+    }
+
     private void StopCurveTimer()
     {
         ++_curveGeneration;
+        _curveActive = false;
         _curveTimer?.Stop();
         _curveCancellation?.Cancel();
         _curveCancellation?.Dispose();
@@ -231,7 +320,7 @@ public sealed partial class RazerCoolingPadViewModel
 
     private void StopCurveAndSelectManual()
     {
-        StopCurveTimer();
+        _curveActive = false;
         _selectedCurveModeIndex = 0;
         _lastCurveUnits = null;
         OnPropertyChanged(nameof(SelectedCurveModeIndex));

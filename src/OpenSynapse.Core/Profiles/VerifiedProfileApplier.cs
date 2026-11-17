@@ -29,6 +29,7 @@ public sealed class VerifiedProfileApplier
         bool applyKeyboardBrightness = true,
         bool coolingPadConnected = true,
         bool padlessHyperBoostAccepted = false,
+        bool adapterPowerVerified = true,
         IInternalDisplayController? displayController = null,
         Func<BladeProfileSettings, BladePerformanceMode?, CancellationToken, Task<int>>? applyBladeTuningAsync = null)
     {
@@ -107,13 +108,18 @@ public sealed class VerifiedProfileApplier
                     {
                         var modeSupported = BladeModelCapabilities.IsHyperBoostAvailable(blade.ProductId);
                         var padReady = coolingPadConnected || padlessHyperBoostAccepted;
-                        if (!modeSupported || !padReady)
+                        var powerReady = powerSource == PowerSourceKind.FullPowerAdapter &&
+                            adapterPowerVerified;
+                        if (!modeSupported || !padReady || !powerReady)
                         {
                             requested = BladeModelCapabilities.PublishesPerformanceMode(blade.ProductId, BladePerformanceMode.Performance)
                                 ? BladePerformanceMode.Performance : BladePerformanceMode.Balanced;
-                            bladeErrors.Add(!BladeModelCapabilities.SupportsHyperBoost(blade.ProductId)
-                                ? $"HyperBoost is not supported on this model; {requested} mode was selected instead."
-                                : $"HyperBoost requires the Razer Laptop Cooling Pad and a recorded disclaimer acceptance; {requested} mode was selected instead.");
+                            bladeErrors.Add(
+                                !BladeModelCapabilities.SupportsHyperBoost(blade.ProductId)
+                                    ? $"HyperBoost is not supported on this model; {requested} mode was selected instead."
+                                    : !powerReady
+                                        ? $"HyperBoost requires a verified full-power adapter; {requested} mode was selected instead."
+                                        : $"HyperBoost requires the Razer Laptop Cooling Pad and a recorded disclaimer acceptance; {requested} mode was selected instead.");
                         }
                     }
                     effectivePerformanceMode = current;

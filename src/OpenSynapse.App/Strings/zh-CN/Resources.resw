@@ -2430,6 +2430,8 @@
   <data name="BladeHyperboostDisclaimerMessage" xml:space="preserve"><value>HyperBoost 会提高 CPU 和 GPU 的持续功耗上限；未连接雷蛇散热垫且机型支持时，会同时把风扇拉到最高转速。未连接雷蛇笔记本散热垫时，散热仍依赖你自备的第三方方案。长时间高负载可能导致过热降频或硬件损伤。继续启用即表示你已自行承担这一风险。</value></data>
   <data name="BladeHyperboostDisclaimerAccept" xml:space="preserve"><value>我已了解风险，继续启用</value></data>
   <data name="BladeHyperboostLimitedAdapter" xml:space="preserve"><value>已启用 HyperBoost，但当前电源适配器功率低于建议值，机器可能无法维持满功耗并出现降频。</value></data>
+  <data name="BladeHyperboostPowerSource" xml:space="preserve"><value>HyperBoost 需要已确认功率的电源适配器。当前在电池供电、低功率适配器或未读到适配器功率时不提供该模式，请接上随附电源后重试。</value></data>
+  <data name="BladeHyperboostCoolingPadLost" xml:space="preserve"><value>散热垫已停止响应，HyperBoost 已回退</value></data>
   <data name="AdvancedFeaturesTitle" xml:space="preserve"><value>高级功能（危险）</value></data>
   <data name="AdvancedFeaturesSettingDescription" xml:space="preserve"><value>在设备页显示 GPU 超频、CPU 功耗墙和 Curve Optimizer 等直接写入硬件的设置。</value></data>
   <data name="BladeChargeLimitHelp" xml:space="preserve"><value>设置电池停止充电的电量上限；80% 左右有助于延长长期插电时的电池寿命。</value></data>
