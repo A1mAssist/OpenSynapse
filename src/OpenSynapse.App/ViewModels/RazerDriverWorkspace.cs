@@ -145,9 +145,13 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                         $"dkm={RazerFilterInfBinder.IsDkmAttached(productId)}; " +
                         $"keyboard={attachment.AttachedKeyboardInstances}/{attachment.KeyboardInstances}; " +
                         $"missing: {string.Join(", ", RazerFilterInfBinder.FindUnfilteredKeyboardInstances(candidates, presentProductIds: _presentProductIds, coveredInterfaces: coveredInterfaces, presentInstanceIds: _presentInstanceIds))}");
+                    row.RestartPending = !attachment.IsAttached &&
+                        RazerFilterInfBinder.IsLowerFilterPendingRestart(candidates);
                     row.StatusText = attachment.IsAttached
                         ? AppStrings.Text("RazerDriverEndpointPending")
-                        : AppStrings.Text("RazerDriverFilterMissing");
+                        : row.RestartPending
+                            ? AppStrings.Text("RazerDriverRestartRequired")
+                            : AppStrings.Text("RazerDriverFilterMissing");
                 }
                 rows.Add(row);
             }
@@ -160,9 +164,11 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
 
             StatusText = _missing.Count == 0
                 ? AppStrings.Text("RazerDriverAllReady")
-                : _missing.All(static row => row.IsInstalled)
-                    ? AppStrings.FormatText("RazerDriverPendingCount", _missing.Count)
-                    : AppStrings.FormatText("RazerDriverMissingCount", _missing.Count);
+                : _missing.All(static row => row.RestartPending)
+                    ? AppStrings.Text("RazerDriverRestartSummary")
+                    : _missing.All(static row => row.IsInstalled)
+                        ? AppStrings.FormatText("RazerDriverPendingCount", _missing.Count)
+                        : AppStrings.FormatText("RazerDriverMissingCount", _missing.Count);
             _diagnosticLog.TryWrite("razer-driver", StatusText);
             OnPropertyChanged(nameof(HasMissing));
             OnPropertyChanged(nameof(CanInstall));
@@ -359,7 +365,11 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                                 $"missing: {string.Join(", ", RazerFilterInfBinder.FindUnfilteredKeyboardInstances(row.CandidateProductIds, presentProductIds: _presentProductIds, coveredInterfaces: coveredInterfaces, presentInstanceIds: _presentInstanceIds))}");
                             if (!attachment.IsAttached)
                             {
-                                row.StatusText = AppStrings.Text("RazerDriverFilterMissing");
+                                row.RestartPending = RazerFilterInfBinder
+                                    .IsLowerFilterPendingRestart(row.CandidateProductIds);
+                                row.StatusText = row.RestartPending
+                                    ? AppStrings.Text("RazerDriverRestartRequired")
+                                    : AppStrings.Text("RazerDriverFilterMissing");
                                 continue;
                             }
 
@@ -402,7 +412,9 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
 
             StatusText = _missing.Count == 0
                 ? AppStrings.FormatText("RazerDriverInstallSummary", installed)
-                : AppStrings.FormatText("RazerDriverInstallSummaryPartial", installed, _missing.Count);
+                : _missing.All(static row => row.RestartPending)
+                    ? AppStrings.Text("RazerDriverRestartSummary")
+                    : AppStrings.FormatText("RazerDriverInstallSummaryPartial", installed, _missing.Count);
             OnPropertyChanged(nameof(HasMissing));
             OnPropertyChanged(nameof(CanInstall));
             _diagnosticLog.TryWrite("razer-driver", StatusText);
@@ -577,6 +589,7 @@ public sealed class RazerDriverRowViewModel : INotifyPropertyChanged
     internal IReadOnlyList<ushort> CandidateProductIds { get; }
     internal bool IsInstalled { get; set; }
     internal bool EndpointVerified { get; set; }
+    internal bool RestartPending { get; set; }
 
     public string StatusText
     {

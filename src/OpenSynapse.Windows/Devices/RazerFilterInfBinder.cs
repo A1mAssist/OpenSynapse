@@ -130,6 +130,43 @@ internal static partial class RazerFilterInfBinder
         return matches;
     }
 
+    /// <summary>
+    /// A lower-filter INF writes LowerFilters during a device install. Its
+    /// service can already be running while the present node still has no
+    /// filter, which means Windows queued the value and only a restart (or a
+    /// replug) applies it.
+    /// </summary>
+    internal static bool IsLowerFilterPendingRestart(IReadOnlyList<ushort> productIds)
+    {
+        ArgumentNullException.ThrowIfNull(productIds);
+        return productIds.Any(productId =>
+            HasLowerFilterInf(productId) && IsServiceInstalled(productId));
+    }
+
+    internal static bool HasLowerFilterInf(ushort productId, string? infDirectory = null) =>
+        FindStagedInfs(productId, infDirectory ?? WindowsInfDirectory).Any(IsLowerFilterInf) ||
+        (infDirectory is null && FindVendorInfs(productId).Any(IsLowerFilterInf));
+
+    internal static bool IsLowerFilterInf(string infPath)
+    {
+        try
+        {
+            return File.ReadAllText(infPath)
+                .Contains("LowerFilters", StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    private static bool IsServiceInstalled(ushort productId)
+    {
+        using var key = Registry.LocalMachine.OpenSubKey(
+            $@"SYSTEM\CurrentControlSet\Services\RzDev_{productId:X4}");
+        return key is not null;
+    }
+
     internal static async Task<RazerFilterBindResult> ApplyAsync(
         ushort productId,
         CancellationToken cancellationToken,
