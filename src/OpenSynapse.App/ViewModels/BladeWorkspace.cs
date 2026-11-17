@@ -299,14 +299,14 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
 
     private static string BladePerformanceModeGlyph(BladePerformanceMode mode) => mode switch
     {
-        BladePerformanceMode.Balanced => "\uE9D2",
+        BladePerformanceMode.Balanced => "\uE9E9",
         BladePerformanceMode.Gaming => "\uE7FC",
-        BladePerformanceMode.Performance => "\uE945",
-        BladePerformanceMode.BatterySaver => "\uE83F",
+        BladePerformanceMode.Performance => "\uEC4A",
+        BladePerformanceMode.BatterySaver => "\uE8BE",
         BladePerformanceMode.Custom => "\uE713",
         BladePerformanceMode.Silent => "\uE74F",
         BladePerformanceMode.BalancedDc => "\uE80F",
-        BladePerformanceMode.Hyperboost => "\uEC4A",
+        BladePerformanceMode.Hyperboost => "\uE9D9",
         _ => "\uE945",
     };
 
