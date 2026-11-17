@@ -35,7 +35,7 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
 
     public bool HasMissing => _missing.Count > 0;
 
-    public bool CanInstall => !_isBusy && _missing.Count > 0;
+    public bool CanInstall => !_isBusy && _missing.Any(static row => row.Package is not null);
 
     public bool IsBusy
     {
@@ -100,12 +100,12 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                     continue;
                 }
 
-                if (!RazerDriverPackageCatalog.TryResolve(productId, out var package))
+                if (!RazerDriverPackageCatalog.TryGetEntry(productId, out var entry))
                 {
                     continue;
                 }
 
-                var candidates = RazerDriverPackageCatalog.GetCandidateProductIds(productId, package);
+                var candidates = RazerDriverPackageCatalog.GetCandidateProductIds(productId, entry);
                 var coveredInterfaces = RazerFilterInfBinder.FindCoveredInterfaces(candidates);
                 // The endpoint only proves the package reached the device stack. A mouse
                 // endpoint can exist while its keyboard collections still run on kbdhid,
@@ -125,7 +125,10 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
 
                 var name = group.Select(static item => item.ProductName)
                     .FirstOrDefault(static value => !string.IsNullOrWhiteSpace(value));
-                var row = new RazerDriverRowViewModel(name ?? package.Name, productId, package, candidates);
+                var package = await RazerDriverPackageCatalog
+                    .ResolveAsync(productId, cancellationToken)
+                    .ConfigureAwait(true);
+                var row = new RazerDriverRowViewModel(name ?? entry.Name, productId, package, candidates);
                 if (hasEndpoint || _installedProductIds.Overlaps(candidates) || IsPackageInstalled(candidates))
                 {
                     // The package is installed but the endpoint is still missing. Start
@@ -569,7 +572,7 @@ public sealed class RazerDriverRowViewModel : INotifyPropertyChanged
     internal RazerDriverRowViewModel(
         string name,
         ushort productId,
-        RazerDriverPackage package,
+        RazerDriverPackage? package,
         IReadOnlyList<ushort> candidateProductIds)
     {
         Name = name;
@@ -577,7 +580,9 @@ public sealed class RazerDriverRowViewModel : INotifyPropertyChanged
         ProductIdValue = productId;
         Package = package;
         CandidateProductIds = candidateProductIds;
-        Detail = AppStrings.FormatText("RazerDriverDetail", ProductId, package.Version);
+        Detail = package is null
+            ? AppStrings.FormatText("RazerDriverUnavailableDetail", ProductId)
+            : AppStrings.FormatText("RazerDriverDetail", ProductId, package.Version);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

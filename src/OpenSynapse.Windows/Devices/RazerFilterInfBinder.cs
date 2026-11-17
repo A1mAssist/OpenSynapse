@@ -333,8 +333,8 @@ internal static partial class RazerFilterInfBinder
     }
 
     private static IReadOnlyList<ushort> GetCandidateProductIds(ushort productId) =>
-        RazerDriverPackageCatalog.TryResolve(productId, out var package)
-            ? RazerDriverPackageCatalog.GetCandidateProductIds(productId, package)
+        RazerDriverPackageCatalog.TryGetEntry(productId, out var entry)
+            ? RazerDriverPackageCatalog.GetCandidateProductIds(productId, entry)
             : [productId];
 
     private const string HidEnumPath = @"SYSTEM\CurrentControlSet\Enum\HID";

@@ -3851,6 +3851,7 @@
   <data name="RazerDriverInstallFailed" xml:space="preserve"><value>Razer driver installation failed: {0}</value></data>
   <data name="RazerDriverMissingStatus" xml:space="preserve"><value>Driver missing</value></data>
   <data name="RazerDriverDetail" xml:space="preserve"><value>VID_1532 / PID_{0} · driver v{1}</value></data>
+  <data name="RazerDriverUnavailableDetail" xml:space="preserve"><value>VID_1532 / PID_{0} · official driver package unavailable</value></data>
   <data name="RazerDriverDownloading" xml:space="preserve"><value>Downloading the {0} driver…</value></data>
   <data name="RazerDriverInstalling" xml:space="preserve"><value>Installing the {0} driver…</value></data>
   <data name="RazerDriverInstallTimeout" xml:space="preserve"><value>Razer driver installation timed out.</value></data>
