@@ -17,6 +17,56 @@ internal sealed class RazerHidHidReportTransport
         CancellationToken cancellationToken = default) =>
         SendAsync(devicePath, report, cancellationToken);
 
+    /// <summary>
+    /// Feature reports are the only writable path for the Avnera and rzDevice40
+    /// Chroma families; HidD_SetOutputReport never reaches their lighting engine.
+    /// </summary>
+    internal async Task SendFeatureAsync(
+        string devicePath,
+        ReadOnlyMemory<byte> report,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
+        if (report.IsEmpty)
+        {
+            throw new ArgumentException("The HID report cannot be empty.", nameof(report));
+        }
+
+        var gate = _gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await CancellableNativeCall.RunAsync(() =>
+            {
+                using var handle = NativeMethods.CreateFile(
+                    devicePath,
+                    NativeMethods.GenericWrite,
+                    NativeMethods.FileShareRead | NativeMethods.FileShareWrite,
+                    IntPtr.Zero,
+                    NativeMethods.OpenExisting,
+                    0,
+                    IntPtr.Zero);
+                if (handle.IsInvalid)
+                {
+                    throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not open the RazerHid HID collection.");
+                }
+
+                var bytes = report.ToArray();
+                if (!NativeMethods.HidD_SetFeature(handle, bytes, bytes.Length))
+                {
+                    throw new Win32Exception(Marshal.GetLastWin32Error(),
+                        "RazerHid feature report write failed.");
+                }
+
+                return true;
+            }, SendTimeout, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
     internal async Task<byte[]> QueryAsync(
         string devicePath,
         ReadOnlyMemory<byte> report,
@@ -173,5 +223,12 @@ internal sealed class RazerHidHidReportTransport
             uint bytesToRead,
             out uint bytesRead,
             IntPtr overlapped);
+
+        [DllImport("hid.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool HidD_SetFeature(
+            SafeFileHandle handle,
+            byte[] report,
+            int length);
     }
 }

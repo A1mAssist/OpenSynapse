@@ -68,6 +68,57 @@ public static class RazerProtocol40HeadsetProtocol
     public static byte[] CreateGetDnd() =>
         CreateRequest(GetDnd, [LiveProfile]);
 
+    // The Chroma engine ignores the 0x18 audio class. The bundle's
+    // _createDataSend writes both the data size (3..4) and the packet size
+    // (5..6) for an effect, while set-brightness leaves the data size at zero
+    // and only announces the three-byte packet.
+    public static byte[] CreateSetChromaEffect(
+        byte effect,
+        byte rate,
+        ReadOnlySpan<byte> rgb)
+    {
+        if (rgb.Length % 3 != 0)
+        {
+            throw new ArgumentException("A Chroma colour array must be RGB triplets.", nameof(rgb));
+        }
+
+        Span<byte> data = stackalloc byte[6 + rgb.Length];
+        data[0] = 0x00; // live profile
+        data[1] = 0x00; // all-region
+        data[2] = effect;
+        data[3] = 0x00; // flags
+        data[4] = rate;
+        data[5] = (byte)(rgb.Length / 3);
+        rgb.CopyTo(data[6..]);
+        return CreateChromaWrite(0x02, data, declareSize: true);
+    }
+
+    public static byte[] CreateSetChromaBrightness(byte percent)
+    {
+        Span<byte> data = [0x00, 0x00, (byte)Math.Clamp(percent * 255 / 100, 0, 255)];
+        return CreateChromaWrite(0x04, data, declareSize: false);
+    }
+
+    private static byte[] CreateChromaWrite(byte command, ReadOnlySpan<byte> data, bool declareSize)
+    {
+        var report = new byte[ReportLength];
+        report[0] = ReportId;
+        // deviceType 0 (Mouse): the bundle starts its transaction counter at 1.
+        report[2] = 0x01;
+        if (declareSize)
+        {
+            report[3] = (byte)(data.Length >> 8);
+            report[4] = (byte)data.Length;
+        }
+        report[5] = (byte)(data.Length >> 8);
+        report[6] = (byte)data.Length;
+        report[7] = 0x0F;
+        report[8] = command;
+        data.CopyTo(report.AsSpan(9));
+        report[62] = Checksum(report);
+        return report;
+    }
+
     public static byte[] CreateRequest(
         ReadOnlySpan<byte> command,
         ReadOnlySpan<byte> data = default)

@@ -11,6 +11,8 @@ public enum RazerHidSpecialLightingKind
     Kraken37,
     KrakenV4,
     KrystalT2,
+    AvneraChroma,
+    Protocol40Chroma,
 }
 
 public sealed class RazerHidSpecialLightingConnection
@@ -85,8 +87,11 @@ public sealed partial class RazerHidSpecialLightingService
                 Effects(RazerHidLightingEffect.Off, RazerHidLightingEffect.Static), false),
             [0x0510] = Kylie("Razer Kraken 7.1 V2"),
             [0x0520] = Kylie("Razer Kraken Tournament Edition"),
+            [0x0521] = Kylie("Razer Kraken Kitty Edition"),
+            [0x0526] = Kylie("Razer Kraken X USB"),
             [0x0527] = Kylie("Razer Kraken Ultimate"),
             [0x0560] = Kylie("Razer Kraken Kitty V2"),
+            [0x0554] = Kylie("Razer Kraken Kitty V2 Pro"),
             // The Kraken V4 exposes a 64-byte FF14 output report on the USB-C cable.
             // The 2.4 GHz receiver (056C) inherits the same collection and lighting
             // methods from AudioBillieT2Dongle; its report byte 9 is 0x80.
@@ -126,8 +131,19 @@ public sealed partial class RazerHidSpecialLightingService
                 LedCount: 6),
             [0x0533] = Krystal("Razer Kraken V3 HyperSense"),
             [0x0549] = Krystal("Razer Kraken V3"),
+            // AudioAvneraDevice: 64-byte feature frame, report id 255.
+            [0x051A] = new("Razer Nari Ultimate", RazerHidKrakenLayout.Kylie,
+                Effects(RazerHidLightingEffect.Off, RazerHidLightingEffect.Static,
+                    RazerHidLightingEffect.Custom),
+                true, RazerHidSpecialLightingKind.AvneraChroma, LedCount: 1),
+            // rzDevice40 Chroma family 1: 64-byte feature frame, report id 2.
+            [0x05B9] = new("Razer Hammerhead V3 Chroma", RazerHidKrakenLayout.Kylie,
+                Effects(RazerHidLightingEffect.Off, RazerHidLightingEffect.Static,
+                    RazerHidLightingEffect.BreathingSingle, RazerHidLightingEffect.Spectrum),
+                true, RazerHidSpecialLightingKind.Protocol40Chroma, LedCount: 1),
         };
         AddBillieDevices(devices);
+        AddKrystalT3Devices(devices);
         return devices.ToFrozenDictionary();
     }
 
@@ -164,6 +180,7 @@ public sealed partial class RazerHidSpecialLightingService
     internal static bool KrakenV4UsesSetOutputReport(ushort productId) => productId != 0x0574;
 
     private readonly Func<string, ReadOnlyMemory<byte>, CancellationToken, Task> _sendOutput;
+    private readonly Func<string, ReadOnlyMemory<byte>, CancellationToken, Task> _sendFeature;
     private readonly Func<string, IReadOnlyList<byte[]>, bool, bool, CancellationToken, Task> _sendKrakenV4;
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _gates =
         new(StringComparer.OrdinalIgnoreCase);
@@ -176,12 +193,24 @@ public sealed partial class RazerHidSpecialLightingService
     private readonly Action<string>? _diagnostic;
 
     public RazerHidSpecialLightingService(Action<string>? diagnostic = null)
-        : this(new RazerHidHidReportTransport().SendOutputAsync, null, diagnostic) { }
+        : this(new RazerHidHidReportTransport().SendOutputAsync, null, null, diagnostic) { }
 
     internal RazerHidSpecialLightingService(
         Func<string, ReadOnlyMemory<byte>, CancellationToken, Task> sendOutput, Action<string>? diagnostic = null)
         : this(sendOutput,
             (path, reports, _, _, cancellationToken) => SendAllAsync(sendOutput, path, reports, cancellationToken),
+            null,
+            diagnostic)
+    {
+    }
+
+    internal RazerHidSpecialLightingService(
+        Func<string, ReadOnlyMemory<byte>, CancellationToken, Task> sendOutput,
+        Func<string, ReadOnlyMemory<byte>, CancellationToken, Task> sendFeature,
+        Action<string>? diagnostic = null)
+        : this(sendOutput,
+            (path, reports, _, _, cancellationToken) => SendAllAsync(sendOutput, path, reports, cancellationToken),
+            sendFeature,
             diagnostic)
     {
     }
@@ -189,9 +218,11 @@ public sealed partial class RazerHidSpecialLightingService
     private RazerHidSpecialLightingService(
         Func<string, ReadOnlyMemory<byte>, CancellationToken, Task> sendOutput,
         Func<string, IReadOnlyList<byte[]>, bool, bool, CancellationToken, Task>? sendKrakenV4,
+        Func<string, ReadOnlyMemory<byte>, CancellationToken, Task>? sendFeature,
         Action<string>? diagnostic)
     {
         _sendOutput = sendOutput;
+        _sendFeature = sendFeature ?? new RazerHidHidReportTransport().SendFeatureAsync;
         _sendKrakenV4 = sendKrakenV4 ?? SendKrakenV4Async;
         _diagnostic = diagnostic;
     }
@@ -221,10 +252,16 @@ public sealed partial class RazerHidSpecialLightingService
             var argb = group.Key.ProductId == ArgbProductId;
             var definition = argb ? null : KrakenDevices[group.Key.ProductId];
             var krakenV4 = definition?.Kind == RazerHidSpecialLightingKind.KrakenV4;
+            var avnera = definition?.Kind == RazerHidSpecialLightingKind.AvneraChroma;
+            var protocol40 = definition?.Kind == RazerHidSpecialLightingKind.Protocol40Chroma;
             var endpoint = group.FirstOrDefault(item => item.Access == DeviceAccessState.Available &&
                 (krakenV4
                     ? item.UsagePage == 0xFF14 && item.Usage == 0x0001 &&
                       item.OutputReportByteLength == RazerHidKrakenV4Protocol.ReportLength
+                    : avnera
+                        ? item.FeatureReportByteLength == RazerAvnera65Protocol.ReadLength
+                    : protocol40
+                        ? item.FeatureReportByteLength == RazerProtocol40HeadsetProtocol.ReportLength
                     : !argb &&
                       item.DevicePath.Contains("&MI_03", StringComparison.OrdinalIgnoreCase) &&
                       item.OutputReportByteLength == (definition!.Kind ==
@@ -248,7 +285,11 @@ public sealed partial class RazerHidSpecialLightingService
                 : !argb && endpoint is null
                     ? krakenV4
                         ? "No available FF14:0001 64-byte Output Report collection was found."
-                        : $"No available MI_03 {(definition!.Kind == RazerHidSpecialLightingKind.KrystalT2 ? 62 : 37)}-byte Output Report collection was found."
+                        : avnera
+                            ? "No available 65-byte Avnera feature collection was found."
+                        : protocol40
+                            ? "No available 64-byte rzDevice40 feature collection was found."
+                            : $"No available MI_03 {(definition!.Kind == RazerHidSpecialLightingKind.KrystalT2 ? 62 : 37)}-byte Output Report collection was found."
                     : null;
             // The audio page only finds a headset whose bundle channel has a matching
             // interface. The Kraken V4 channel is not handled there, so its lighting
@@ -306,72 +347,6 @@ public sealed partial class RazerHidSpecialLightingService
             TimeSpan.FromMilliseconds(20),
             _diagnostic);
         await service.SetCustomFrameModeAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    public async Task SetKrakenLightingAsync(
-        RazerHidSpecialLightingConnection connection,
-        RazerHidLightingSettings settings,
-        byte? intensity = null,
-        byte? brightness = null,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(settings);
-        if (connection.Kind == RazerHidSpecialLightingKind.KrystalT2)
-        {
-            await SetKrystalLightingAsync(connection, settings, cancellationToken)
-                .ConfigureAwait(false);
-            return;
-        }
-
-        if (connection.Kind == RazerHidSpecialLightingKind.KrakenV4)
-        {
-            await SetKrakenV4LightingAsync(connection, settings, intensity, brightness, cancellationToken)
-                .ConfigureAwait(false);
-            return;
-        }
-
-        RequireReady(connection, RazerHidSpecialLightingKind.Kraken37);
-        if (!connection.SupportedEffects.Contains(settings.Effect))
-        {
-            throw new NotSupportedException(
-                $"RazerHid Kraken 1532:{connection.ProductId:X4} does not support {settings.Effect}.");
-        }
-
-        var device = KrakenDevices[connection.ProductId];
-        var reports = settings.Effect switch
-        {
-            RazerHidLightingEffect.Off => RazerHidKrakenProtocol.CreateOff(device.Layout),
-            RazerHidLightingEffect.Static => RazerHidKrakenProtocol.CreateStatic(
-                device.Layout, settings.Primary, intensity, device.WritesColor),
-            RazerHidLightingEffect.Spectrum => RazerHidKrakenProtocol.CreateSpectrum(device.Layout),
-            RazerHidLightingEffect.BreathingSingle => RazerHidKrakenProtocol.CreateBreathing(
-                device.Layout, [settings.Primary]),
-            RazerHidLightingEffect.BreathingDual => RazerHidKrakenProtocol.CreateBreathing(
-                device.Layout, [settings.Primary, settings.Secondary]),
-            RazerHidLightingEffect.BreathingTriple => RazerHidKrakenProtocol.CreateBreathing(
-                device.Layout, [settings.Primary, settings.Secondary, settings.Tertiary]),
-            RazerHidLightingEffect.Custom => RazerHidKrakenProtocol.CreateCustom(
-                device.Layout, settings.Primary, intensity),
-            _ => throw new NotSupportedException(),
-        };
-
-        var gate = _gates.GetOrAdd(connection.InstanceId, static _ => new SemaphoreSlim(1, 1));
-        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            foreach (var report in reports)
-            {
-                await _sendOutput(connection.DevicePath!, report, cancellationToken).ConfigureAwait(false);
-                if (settings.Effect != RazerHidLightingEffect.Custom)
-                {
-                    await Task.Delay(TimeSpan.FromMilliseconds(report[2] * 15), cancellationToken).ConfigureAwait(false);
-                }
-            }
-        }
-        finally
-        {
-            gate.Release();
-        }
     }
 
     private async Task SetKrakenV4LightingAsync(

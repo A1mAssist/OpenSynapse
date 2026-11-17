@@ -140,4 +140,15 @@ public sealed partial class RazerHidSpecialLightingService
         true,
         RazerHidSpecialLightingKind.KrystalT2,
         LedCount: 1);
+
+    /// <summary>
+    /// AudioKrystalT3 (0537/056D/0582) is a thin wrapper over the same 62-byte
+    /// MI_03 frame and 0x40 command table as T2.
+    /// </summary>
+    private static void AddKrystalT3Devices(Dictionary<ushort, KrakenDefinition> devices)
+    {
+        devices[0x0537] = Krystal("Razer Kraken V3 X");
+        devices[0x056D] = Krystal("Razer Kraken V4 X");
+        devices[0x0582] = Krystal("Razer Kraken V3 X");
+    }
 }
