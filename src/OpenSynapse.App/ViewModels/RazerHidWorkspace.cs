@@ -149,7 +149,6 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
 
     internal IReadOnlyList<RazerHidDeviceConnection> CurrentConnections =>
         Devices.Select(row => row.Connection).ToArray();
-
     internal RazerHidDeviceConnection? ResolveConnection(DeviceDescriptor descriptor) =>
         CurrentConnections.FirstOrDefault(connection =>
             connection.Definition.ProductId == descriptor.ProductId &&
@@ -194,6 +193,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
                 .ThenBy(connection => connection.Definition.DisplayName, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
             connections = RazerHidDeviceConnectionSiblings.Collapse(connections);
+            await MigrateProfileInstanceKeysAsync(connections, cancellationToken).ConfigureAwait(true);
             await RestoreDriverModeAsync(connections, cancellationToken);
             await SyncPrivateKeyDriverModeAsync(cancellationToken);
             await RestoreInitialLightingAsync(connections, cancellationToken).ConfigureAwait(true);
