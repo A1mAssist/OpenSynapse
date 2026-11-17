@@ -40,6 +40,10 @@ internal static class TaskbarStatusNative
 
     public const uint MonitorDefaultToNearest = 2;
 
+    public const int QunsBusy = 2;
+    public const int QunsRunningD3dFullScreen = 3;
+    public const int QunsPresentationMode = 4;
+
     public const uint DtCenter = 0x0001;
     public const uint DtVCenter = 0x0004;
     public const uint DtSingleLine = 0x0020;
@@ -209,12 +213,6 @@ internal static class TaskbarStatusNative
     public static extern bool GetWindowRect(IntPtr windowHandle, out Rect rect);
 
     [DllImport("user32.dll")]
-    public static extern IntPtr WindowFromPoint(Point point);
-
-    [DllImport("user32.dll")]
-    public static extern IntPtr GetAncestor(IntPtr windowHandle, uint flags);
-
-    [DllImport("user32.dll")]
     public static extern IntPtr GetWindow(IntPtr windowHandle, uint command);
 
     [DllImport("user32.dll")]
@@ -351,6 +349,12 @@ internal static class TaskbarStatusNative
 
     [DllImport("kernel32.dll")]
     public static extern void SetLastError(uint errorCode);
+
+    [DllImport("shell32.dll")]
+    public static extern int SHQueryUserNotificationState(out int state);
+
+    internal static bool IsFullscreenNotificationState(int state) =>
+        state is QunsBusy or QunsRunningD3dFullScreen or QunsPresentationMode;
 
     public static uint Rgb(int red, int green, int blue) =>
         (uint)(red | (green << 8) | (blue << 16));

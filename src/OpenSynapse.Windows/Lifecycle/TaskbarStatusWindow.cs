@@ -13,7 +13,6 @@ public sealed partial class TaskbarStatusWindow : IDisposable
 {
     private const uint HostTimerId = 1;
     private const uint HostTimerInterval = 250;
-    private const uint GetAncestorRoot = 2;
     private const int BaseWidthDip = 64;
     private const int MaximumWidthDip = 240;
     private const int TargetHeightDip = 30;
@@ -276,7 +275,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     {
         if (_statusWindow == IntPtr.Zero || !_contentAvailable) return;
         var taskbar = FindWindowW("Shell_TrayWnd", null);
-        if (taskbar == IntPtr.Zero || IsTaskbarCovered(taskbar))
+        if (taskbar == IntPtr.Zero || IsTaskbarHidden(taskbar) || IsFullscreenAppActive())
         {
             Hide();
             return;
@@ -285,7 +284,8 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         {
             // Explorer briefly invalidates the taskbar while input methods and
             // overflow flyouts change. Keep the last frame instead of blinking out.
-            if (++_layoutFailures < 4) return;
+            if (++_layoutFailures < 30) return;
+            _log?.Invoke("taskbar-status: layout unavailable; hiding the strip.");
             Hide();
             return;
         }
@@ -344,10 +344,10 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     }
 
     /// <summary>
-    /// True when the taskbar is hidden, slid off-screen, or covered by another
-    /// window. The strip is an owned popup, so it must stand down on its own.
+    /// True when the taskbar is hidden or slid past its monitor edge. The strip
+    /// must not infer visibility from whatever window happens to sit on top.
     /// </summary>
-    private static bool IsTaskbarCovered(IntPtr taskbar)
+    private static bool IsTaskbarHidden(IntPtr taskbar)
     {
         if (!IsWindowVisible(taskbar))
         {
@@ -360,22 +360,29 @@ public sealed partial class TaskbarStatusWindow : IDisposable
 
         var monitor = MonitorFromWindow(taskbar, MonitorDefaultToNearest);
         var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
-        if (monitor == IntPtr.Zero || !GetMonitorInfoW(monitor, ref info) ||
-            rect.Top >= info.Monitor.Bottom - 4)
+        if (monitor == IntPtr.Zero || !GetMonitorInfoW(monitor, ref info))
         {
-            return true;
+            return false;
         }
 
-        var y = rect.Top + rect.Height / 2;
-        foreach (var x in new[] { rect.Left + rect.Width / 4, rect.Left + rect.Width / 2 })
+        // Auto-hide slides the taskbar past the monitor edge while it still
+        // reports itself visible. Use a DPI-scaled edge instead of raw pixels.
+        var edge = (int)Math.Round(4 * GetDpiForWindow(taskbar) / 96.0);
+        if (rect.Top <= info.Monitor.Top + edge)
         {
-            var hit = WindowFromPoint(new Point { X = x, Y = y });
-            if (hit == IntPtr.Zero || GetAncestor(hit, GetAncestorRoot) != taskbar)
-            {
-                return true;
-            }
+            return rect.Bottom <= info.Monitor.Top + edge;
+        }
+        if (rect.Bottom >= info.Monitor.Bottom - edge)
+        {
+            return rect.Top >= info.Monitor.Bottom - edge;
         }
         return false;
+    }
+
+    private static bool IsFullscreenAppActive()
+    {
+        return SHQueryUserNotificationState(out var state) == 0 &&
+            IsFullscreenNotificationState(state);
     }
 
     private bool TryGetLayout(out int x, out int y, out int width, out int height)
