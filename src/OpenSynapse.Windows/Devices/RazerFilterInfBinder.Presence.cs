@@ -161,15 +161,18 @@ internal static partial class RazerFilterInfBinder
         RegistryKey root,
         ushort productId)
     {
-        // Wireless receivers expose a non-composite HID node without &MI_.
-        // Requiring &MI_ here hid every collection on those devices.
-        var marker = $"VID_1532&PID_{productId:X4}";
+        // USB uses VID_1532&PID_xxxx; Bluetooth HID uses VID&021532_PID&xxxx
+        // (USB vendor id) or VID&02068E_PID&xxxx (Razer's Bluetooth company id).
+        var hex = productId.ToString("X4");
+        var markers = new[]
+        {
+            $"VID_1532&PID_{hex}",
+            $"VID&021532_PID&{hex}",
+            $"VID&02068E_PID&{hex}",
+        };
         foreach (var deviceName in root.GetSubKeyNames())
         {
-            var index = deviceName.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
-            if (index < 0 ||
-                (index + marker.Length < deviceName.Length &&
-                 deviceName[index + marker.Length] != '&'))
+            if (!markers.Any(marker => MatchesMarker(deviceName, marker)))
             {
                 continue;
             }
@@ -190,5 +193,13 @@ internal static partial class RazerFilterInfBinder
                 yield return (deviceName, instanceName);
             }
         }
+    }
+
+    private static bool MatchesMarker(string deviceName, string marker)
+    {
+        var index = deviceName.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+        return index >= 0 &&
+            (index + marker.Length == deviceName.Length ||
+             deviceName[index + marker.Length] == '&');
     }
 }
