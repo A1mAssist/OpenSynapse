@@ -13,7 +13,14 @@ public sealed record RazerKeypadMappingKey(byte Id, string Label, string Path);
 public sealed record RazerKeypadMappingLayout(
     double Width,
     double Height,
-    IReadOnlyList<RazerKeypadMappingKey> Keys);
+    IReadOnlyList<RazerKeypadMappingKey> Keys)
+{
+    /// <summary>3x PNG data URL payload for the wheel widget, without the data: prefix.</summary>
+    public string? ScrollImage { get; init; }
+
+    /// <summary>3x PNG data URL payload for the D-pad centre, without the data: prefix.</summary>
+    public string? DpadImage { get; init; }
+}
 
 /// <summary>
 /// Paths copied from Razer's 580 (0244) mapping bundle groupList. Only products
@@ -49,10 +56,19 @@ public static class RazerKeypadMappingLayoutCatalog
                 pair.Value.Height,
                 pair.Value.Keys
                     .Select(key => new RazerKeypadMappingKey(key.Id, key.Label, key.Path))
-                    .ToArray()));
+                    .ToArray())
+            {
+                ScrollImage = pair.Value.ScrollImage,
+                DpadImage = pair.Value.DpadImage,
+            });
     }
 
-    private sealed record LayoutJson(double Width, double Height, IReadOnlyList<KeyJson> Keys);
+    private sealed record LayoutJson(
+        double Width,
+        double Height,
+        IReadOnlyList<KeyJson> Keys,
+        string? ScrollImage,
+        string? DpadImage);
 
     private sealed record KeyJson(byte Id, string Label, string Path);
 }

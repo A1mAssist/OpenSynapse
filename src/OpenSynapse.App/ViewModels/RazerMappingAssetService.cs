@@ -306,7 +306,12 @@ public sealed partial class RazerMappingAssetService
         {
             IsKeypad = true,
         };
-        return new RazerMappingKeyboardLayout(visual, buttonIds) { BackgroundImage = background };
+        return new RazerMappingKeyboardLayout(visual, buttonIds)
+        {
+            BackgroundImage = background,
+            ScrollImageData = source.ScrollImage,
+            DpadImageData = source.DpadImage,
+        };
     }
 
     private async Task<AssetManifest?> ReadAssetManifestAsync(

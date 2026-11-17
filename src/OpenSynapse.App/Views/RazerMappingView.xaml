@@ -177,6 +177,24 @@
         </StackPanel>
       </Button>
     </DataTemplate>
+
+    <DataTemplate x:Key="KeypadWidgetButtonTemplate">
+      <StackPanel Spacing="0">
+        <TextBlock Text="{Binding ButtonName}" FontSize="11" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+        <TextBlock Text="{Binding CurrentActionText}" FontSize="10" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" />
+      </StackPanel>
+    </DataTemplate>
+
+    <Style x:Key="KeypadWidgetButtonStyle" TargetType="Button">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Padding" Value="8,3" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="MinHeight" Value="0" />
+    </Style>
   </UserControl.Resources>
 
   <StackPanel x:Name="MappingRoot" Spacing="14">
@@ -261,18 +279,107 @@
     </Grid>
 
     <StackPanel Spacing="8" Visibility="{Binding KeyboardStageVisibility}">
-      <Viewbox Stretch="Uniform" MaxHeight="420" HorizontalAlignment="Center">
-        <Grid>
-          <Image Source="{Binding KeyboardBackgroundImage}"
-                 Width="{Binding KeyboardWidth}"
-                 Height="{Binding KeyboardHeight}"
-                 Stretch="Fill"
-                 IsHitTestVisible="False" />
-          <Canvas x:Name="KeyboardCanvas"
-                  Width="{Binding KeyboardWidth}"
-                  Height="{Binding KeyboardHeight}"
-                  Background="Transparent" />
-        </Grid>
+      <Viewbox Stretch="Uniform" MaxHeight="460" HorizontalAlignment="Center">
+        <StackPanel Orientation="Horizontal" Spacing="18">
+          <Grid Width="{Binding KeyboardWidth}" Height="{Binding KeyboardHeight}">
+            <Image Source="{Binding KeyboardBackgroundImage}"
+                   Width="{Binding KeyboardWidth}"
+                   Height="{Binding KeyboardHeight}"
+                   Stretch="Fill"
+                   IsHitTestVisible="False" />
+            <Canvas x:Name="KeyboardCanvas"
+                    Width="{Binding KeyboardWidth}"
+                    Height="{Binding KeyboardHeight}"
+                    Background="Transparent" />
+          </Grid>
+
+          <Grid Width="400" Height="450" Visibility="{Binding KeypadWidgetsVisibility}">
+            <Border Width="390" Height="150"
+                    HorizontalAlignment="Left" VerticalAlignment="Top"
+                    Background="{StaticResource SurfaceRaisedBrush}"
+                    BorderBrush="{StaticResource LineBrush}"
+                    BorderThickness="1" CornerRadius="5">
+              <Grid>
+                <Image Source="{Binding KeyboardScrollImage}"
+                       Width="26" Height="50" Margin="128,50,0,0"
+                       HorizontalAlignment="Left" VerticalAlignment="Top"
+                       Stretch="Fill" />
+                <StackPanel Width="150" Spacing="10" Margin="195,22,0,0"
+                            HorizontalAlignment="Left" VerticalAlignment="Top">
+                  <Button x:Name="KeypadScrollUpButton" Width="150" Height="30"
+                          Visibility="Collapsed"
+                          Style="{StaticResource KeypadWidgetButtonStyle}"
+                          ContentTemplate="{StaticResource KeypadWidgetButtonTemplate}"
+                          Click="KeypadWidgetClick" />
+                  <Button x:Name="KeypadScrollClickButton" Width="150" Height="30"
+                          Visibility="Collapsed"
+                          Style="{StaticResource KeypadWidgetButtonStyle}"
+                          ContentTemplate="{StaticResource KeypadWidgetButtonTemplate}"
+                          Click="KeypadWidgetClick" />
+                  <Button x:Name="KeypadScrollDownButton" Width="150" Height="30"
+                          Visibility="Collapsed"
+                          Style="{StaticResource KeypadWidgetButtonStyle}"
+                          ContentTemplate="{StaticResource KeypadWidgetButtonTemplate}"
+                          Click="KeypadWidgetClick" />
+                </StackPanel>
+              </Grid>
+            </Border>
+
+            <Border Width="390" Height="272" Margin="0,170,0,0"
+                    HorizontalAlignment="Left" VerticalAlignment="Top"
+                    Background="{StaticResource SurfaceRaisedBrush}"
+                    BorderBrush="{StaticResource LineBrush}"
+                    BorderThickness="1" CornerRadius="5">
+              <Grid>
+                <Border Width="95" Height="34" Margin="147,20,0,0"
+                        HorizontalAlignment="Left" VerticalAlignment="Top"
+                        BorderBrush="{StaticResource LineBrush}"
+                        BorderThickness="1" CornerRadius="17">
+                  <Grid ColumnDefinitions="*,*">
+                    <Border Grid.Column="0" Margin="3"
+                            Background="{StaticResource AccentBrush}" CornerRadius="13">
+                      <TextBlock Text="4" FontSize="12" FontWeight="SemiBold"
+                                 Foreground="Black"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Grid.Column="1" Text="8" FontSize="12"
+                               Foreground="{StaticResource MutedBrush}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  </Grid>
+                </Border>
+
+                <Image Source="{Binding KeyboardDpadImage}"
+                       Width="50" Height="50" Margin="176,129,0,0"
+                       HorizontalAlignment="Left" VerticalAlignment="Top"
+                       Stretch="Fill" />
+                <Button x:Name="KeypadDpadUpButton" Width="70" Height="30" Margin="160,87,0,0"
+                        Visibility="Collapsed"
+                        Style="{StaticResource KeypadWidgetButtonStyle}"
+                        ContentTemplate="{StaticResource KeypadWidgetButtonTemplate}"
+                        Click="KeypadWidgetClick" />
+                <Button x:Name="KeypadDpadLeftButton" Width="70" Height="30" Margin="60,143,0,0"
+                        Visibility="Collapsed"
+                        Style="{StaticResource KeypadWidgetButtonStyle}"
+                        ContentTemplate="{StaticResource KeypadWidgetButtonTemplate}"
+                        Click="KeypadWidgetClick" />
+                <Button x:Name="KeypadDpadRightButton" Width="70" Height="30" Margin="260,143,0,0"
+                        Visibility="Collapsed"
+                        Style="{StaticResource KeypadWidgetButtonStyle}"
+                        ContentTemplate="{StaticResource KeypadWidgetButtonTemplate}"
+                        Click="KeypadWidgetClick" />
+                <Button x:Name="KeypadDpadDownButton" Width="70" Height="30" Margin="160,242,0,0"
+                        Visibility="Collapsed"
+                        Style="{StaticResource KeypadWidgetButtonStyle}"
+                        ContentTemplate="{StaticResource KeypadWidgetButtonTemplate}"
+                        Click="KeypadWidgetClick" />
+              </Grid>
+            </Border>
+
+            <Canvas x:Name="KeypadConnectorCanvas"
+                    Width="400" Height="450"
+                    IsHitTestVisible="False" />
+          </Grid>
+        </StackPanel>
       </Viewbox>
       <TextBlock local:Localized.Uid="RazerMappingKeyboardHint"
 

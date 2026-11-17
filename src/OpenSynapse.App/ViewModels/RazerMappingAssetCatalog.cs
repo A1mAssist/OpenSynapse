@@ -25,6 +25,12 @@ public sealed record RazerMappingKeyboardLayout(
 {
     /// <summary>Official product photo drawn under the key paths; null for a Chroma SVG.</summary>
     public Uri? BackgroundImage { get; init; }
+
+    /// <summary>Official wheel widget art, base64 PNG; null when the product has no wheel widget.</summary>
+    public string? ScrollImageData { get; init; }
+
+    /// <summary>Official D-pad centre art, base64 PNG; null when the product has no D-pad widget.</summary>
+    public string? DpadImageData { get; init; }
 }
 
 /// <summary>Optional device art. Null members mean the table-only fallback is used.</summary>
