@@ -326,4 +326,5 @@ public sealed record RazerHidLightingSettings(
     RazerHidColor Secondary = default,
     RazerHidStorage? Storage = null,
     RazerHidLedZone? Zone = null,
-    RazerHidColor Tertiary = default);
+    RazerHidColor Tertiary = default,
+    byte Brightness = 255);

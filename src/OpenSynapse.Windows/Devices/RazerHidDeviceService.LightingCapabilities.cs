@@ -48,7 +48,10 @@ public sealed partial class RazerHidDeviceService
             var canReadBrightness = HasSourceBrightness(device, zone, write: false) &&
                 CanBuild(() => RazerHidLightingProtocol.GetBrightness(
                 device, device.DefaultStorage, zone));
-            var canWriteBrightness = HasSourceBrightness(device, zone, write: true) &&
+            var canWriteBrightness = (HasSourceBrightness(device, zone, write: true) ||
+                    zone == RazerHidLedZone.All &&
+                    effects.Any(effect => effect != RazerHidLightingEffect.Custom) &&
+                    HasAnyBrightnessWriter(device)) &&
                 CanBuild(() => RazerHidLightingProtocol.SetBrightness(
                 device, device.DefaultStorage, zone, 0));
             var canReadState = device.HasSourceCapability("get_logo_active") && zone == RazerHidLedZone.Logo &&
@@ -202,6 +205,12 @@ public sealed partial class RazerHidDeviceService
         var name = SourceZones.SingleOrDefault(candidate => candidate.Zone == zone).Name;
         return name is not null && device.HasSourceCapability($"{operation}_{name}_brightness");
     }
+
+    private static bool HasAnyBrightnessWriter(RazerHidDeviceDefinition device) =>
+        device.Transactions.ContainsKey("razer_chroma_extended_matrix_brightness") ||
+        device.Transactions.ContainsKey("razer_chroma_standard_set_led_brightness") ||
+        device.Transactions.ContainsKey("razer_chroma_misc_set_blade_brightness") ||
+        device.Transactions.ContainsKey("razer_chroma_misc_set_dock_brightness");
 
     private static bool SupportsStorageAndZone(
         RazerHidDeviceDefinition device,

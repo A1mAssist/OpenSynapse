@@ -12,6 +12,12 @@ internal static class RazerHidLightingProtocol
         RazerHidDeviceDefinition device,
         RazerHidLightingSettings settings)
     {
+        settings = settings with
+        {
+            Primary = Dim(settings.Primary, settings.Brightness),
+            Secondary = Dim(settings.Secondary, settings.Brightness),
+            Tertiary = Dim(settings.Tertiary, settings.Brightness),
+        };
         var suffix = GetEffectSuffix(settings.Effect);
         var storage = settings.Storage ?? device.DefaultStorage;
         var candidates = GetEffectBuilders(suffix);
@@ -54,6 +60,14 @@ internal static class RazerHidLightingProtocol
                 ? CreateExtended(device, builder, settings, storage, zone)
                 : CreateMouse(device, builder, settings, storage, zone);
     }
+
+    private static RazerHidColor Dim(RazerHidColor color, byte brightness) =>
+        brightness == 255
+            ? color
+            : new RazerHidColor(
+                (byte)(color.Red * brightness / 255),
+                (byte)(color.Green * brightness / 255),
+                (byte)(color.Blue * brightness / 255));
 
     internal static IReadOnlyList<RazerHidRequest> CreateEffectRequests(
         RazerHidDeviceDefinition device,
