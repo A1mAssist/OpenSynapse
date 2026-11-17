@@ -16,7 +16,13 @@ internal sealed record ThxAudioProfile(
     string ServiceName,
     int SpeakerBandCount,
     IReadOnlyDictionary<string, double[]> SpeakerFactoryCurves,
-    IReadOnlyDictionary<string, double[]> HeadphoneFactoryCurves);
+    IReadOnlyDictionary<string, double[]> HeadphoneFactoryCurves,
+    ThxInstallerPackage? Installer = null,
+    ThxNativeVersion NativeVersion = ThxNativeVersion.V4,
+    string NativeDllName = ThxAudioAdmission.NativeDllName,
+    string NativeDllUri = ThxAudioAdmission.NativeDllUri,
+    long NativeDllLength = ThxAudioAdmission.NativeDllLength,
+    string NativeDllSha256 = ThxAudioAdmission.NativeDllSha256);
 
 internal sealed record ThxAudioAdmissionResult(
     ThxAudioStatus Status,
@@ -70,7 +76,8 @@ internal static class ThxAudioAdmission
                 ["voice"] = [-4, 0, 3, 6, 5, 1, -6],
                 ["custom"] = [0, 0, 0, 0, 0, 0, 0],
             },
-            HeadphoneCurves),
+            HeadphoneCurves,
+            Installer: null),
         new(
             "RZ09-0528",
             "Blade 16 - RZ09-0528",
@@ -86,7 +93,8 @@ internal static class ThxAudioAdmission
                 ["voice"] = [-5, -1, 2, 5, 4, 0, -7],
                 ["custom"] = [0, 0, 0, 0, 0, 0, 0],
             },
-            HeadphoneCurves),
+            HeadphoneCurves,
+            Installer: BladeInstaller),
         new(
             "RZ09-0530",
             "Blade 14 - RZ09-0530",
@@ -102,17 +110,36 @@ internal static class ThxAudioAdmission
                 ["voice"] = [-4, -1, 2, 5, 4, -1, -6],
                 ["custom"] = [0, 0, 0, 0, 0, 0, 0],
             },
-            HeadphoneCurves),
+            HeadphoneCurves,
+            Installer: BladeInstaller),
+        new(
+            "RZ09-0529",
+            "Blade 18 - RZ09-0529",
+            "rznb11",
+            "02C7",
+            "thx_rznb11_service",
+            7,
+            new Dictionary<string, double[]>(StringComparer.Ordinal),
+            HeadphoneCurves,
+            Installer: BladeInstaller),
+        new(
+            "RZ09-0582",
+            "Blade 18 - RZ09-0582",
+            "rznb12",
+            "02E1",
+            "thx_rznb12_service",
+            7,
+            new Dictionary<string, double[]>(StringComparer.Ordinal),
+            HeadphoneCurves,
+            Installer: null),
     ];
 
     internal static IReadOnlyList<int> EqualizerFrequencies => Frequencies;
 
-    internal static ThxInstallerPackage ServiceInstaller => BladeInstaller;
-
     internal static bool CanInstallService()
     {
         var profile = FindHostProfile();
-        return profile?.UsbProductId is "02C5" or "02C6";
+        return profile?.Installer is not null;
     }
 
     internal static async Task<ThxAudioStatus> InstallServiceAsync(
@@ -125,7 +152,7 @@ internal static class ThxAudioAdmission
         }
 
         var profile = FindHostProfile();
-        if (profile?.UsbProductId is not ("02C5" or "02C6"))
+        if (profile?.Installer is not { } installer)
         {
             return new ThxAudioStatus(
                 ThxAudioAvailability.ComponentsUnavailable,
@@ -134,7 +161,7 @@ internal static class ThxAudioAdmission
         }
 
         var install = await ThxComponentInstaller.InstallAsync(
-            BladeInstaller,
+            installer,
             cancellationToken,
             startService: profile.ServiceName).ConfigureAwait(false);
         if (install.Error is not null)
@@ -172,21 +199,17 @@ internal static class ThxAudioAdmission
     }
 
     internal static bool IsSupportedHostModel()
-    {
-        var model = ReadHostModel();
-        return Profiles.Any(profile =>
-            string.Equals(profile.ProductName, model, StringComparison.Ordinal));
-    }
+        => ResolveHostProfile() is not null;
 
-    internal static string NativeDllPath => Path.Combine(
+    internal static string NativeDllPath(ThxAudioProfile profile) => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "Razer",
         "RazerAppEngine",
         "User Data",
         "Apps",
         "Common",
-        "thxv4common",
-        NativeDllName);
+        profile.NativeVersion == ThxNativeVersion.V3 ? "thxv3common" : "thxv4common",
+        profile.NativeDllName);
 
     internal static ThxAudioAdmissionResult Check()
     {
@@ -205,17 +228,24 @@ internal static class ThxAudioAdmission
     }
 
     private static ThxAudioProfile? FindHostProfile()
+        => ResolveHostProfile();
+
+    internal static ThxAudioProfile? ResolveHostProfile(string? modelCode = null)
     {
-        var model = ReadHostModel();
+        modelCode = string.IsNullOrWhiteSpace(modelCode) ? ReadHostModelCode() : modelCode;
+        if (modelCode is { Length: > 9 })
+        {
+            modelCode = modelCode[..9];
+        }
+
         return Profiles.FirstOrDefault(candidate =>
-            string.Equals(candidate.ProductName, model, StringComparison.Ordinal));
+            string.Equals(candidate.ModelNumber, modelCode, StringComparison.OrdinalIgnoreCase));
     }
 
     private static ThxAudioAdmissionResult CheckCore()
     {
-        var model = ReadHostModel();
-        var profile = Profiles.FirstOrDefault(candidate =>
-            string.Equals(candidate.ProductName, model, StringComparison.Ordinal));
+        var model = ReadHostModelCode();
+        var profile = ResolveHostProfile(model);
         if (profile is null)
         {
             return new(new ThxAudioStatus(
@@ -240,7 +270,7 @@ internal static class ThxAudioAdmission
                 null));
         }
 
-        if (!HasVerifiedNativeClient())
+        if (!HasVerifiedNativeClient(profile))
         {
             return new(new ThxAudioStatus(
                 ThxAudioAvailability.ComponentsUnavailable,
@@ -289,7 +319,7 @@ internal static class ThxAudioAdmission
             ? [0, 0, 0, .. visibleGains]
             : [.. visibleGains];
 
-    private static string? ReadHostModel() => RazerHostModel.Read();
+    private static string? ReadHostModelCode() => RazerHostModel.ReadModelCode();
 
     private static bool HasUsbIdentity(ThxAudioProfile profile)
     {
@@ -299,14 +329,15 @@ internal static class ThxAudioAdmission
         return key is not null;
     }
 
-    private static bool HasVerifiedNativeClient()
+    private static bool HasVerifiedNativeClient(ThxAudioProfile profile)
     {
-        var path = NativeDllPath;
+        var path = NativeDllPath(profile);
         try
         {
             using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-            return CryptographicOperations.FixedTimeEquals(
-                Convert.FromHexString(NativeDllSha256),
+            return stream.Length == profile.NativeDllLength &&
+                CryptographicOperations.FixedTimeEquals(
+                Convert.FromHexString(profile.NativeDllSha256),
                 SHA256.HashData(stream));
         }
         catch (Exception exception) when (

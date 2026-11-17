@@ -40,7 +40,13 @@ internal sealed class ThxAudioNativeClient : IDisposable
     private readonly FreeMallocCall _freeMalloc;
 
     internal ThxAudioNativeClient()
-        : this(ThxAudioAdmission.NativeDllPath, ThxAudioAdmission.NativeDllLength, ThxAudioAdmission.NativeDllSha256)
+        : this(ThxAudioAdmission.ResolveHostProfile()
+            ?? throw new InvalidOperationException("THX is not supported on this host."))
+    {
+    }
+
+    internal ThxAudioNativeClient(ThxAudioProfile profile)
+        : this(ThxAudioAdmission.NativeDllPath(profile), profile.NativeDllLength, profile.NativeDllSha256)
     {
     }
 
