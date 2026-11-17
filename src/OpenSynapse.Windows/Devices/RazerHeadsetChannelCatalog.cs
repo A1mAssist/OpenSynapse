@@ -56,7 +56,8 @@ public static class RazerHeadsetChannelCatalog
             [0x05AB] = new("rzDeviceJolie", RazerHeadsetChannel.Jolie64),
             [0x05AD] = new("rzDeviceJolie", RazerHeadsetChannel.Jolie64),
 
-            // rzDevice40: class 0x18 triplets inside the 64-byte 50 41 envelope.
+            // rzDevice40: 64-byte report-id-2 protocol40 frame (transaction at 2,
+            // size/class/id at 6..8), not the AudioMxicDevice 50 41 envelope.
             [0x0A61] = new("rzDevice40", RazerHeadsetChannel.Mxic64),
             [0x0A64] = new("rzDevice40", RazerHeadsetChannel.Mxic64),
             [0x0A68] = new("rzDevice40", RazerHeadsetChannel.Mxic64),

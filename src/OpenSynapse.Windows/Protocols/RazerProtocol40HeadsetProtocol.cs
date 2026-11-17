@@ -1,11 +1,12 @@
 namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
-/// protocol40 headset channel selected by rzDevice40Headset / rzDevice40HeadsetAiroha
-/// (1532:0593 Barracuda V2 Pro and its 0592 receiver). The bundle builds 64-byte report id 2 with the
+/// protocol40 headset channel selected by rzDevice40 / rzDevice40Headset /
+/// rzDevice40HeadsetAiroha. The bundle builds 64-byte report id 2 with the
 /// 0x60 transaction at byte 2, class/id/size at 5..8, payload at 9 and XOR of
-/// bytes 3..61 at 62. The Airoha class only exposes battery and charging; EQ and
-/// microphone mute live in rzDevice40, which this PID does not select.
+/// bytes 3..61 at 62. The Airoha 0592/0593 pair only exposes battery and charging;
+/// rzDevice40 (05B9 and the Hammerhead V3 HyperSpeed family) adds class 0x18 EQ,
+/// microphone, sidetone and DND reads.
 /// </summary>
 public static class RazerProtocol40HeadsetProtocol
 {
@@ -18,7 +19,32 @@ public static class RazerProtocol40HeadsetProtocol
     public static readonly byte[] GetCharging = [0x02, 0x07, 0x84];
     public static readonly byte[] GetConnect = [0x00, 0x00, 0x87];
 
-    public static bool IsSupported(ushort productId) => productId is 0x0592 or 0x0593;
+    public static readonly byte[] GetEqPreset = [0x02, 0x18, 0x80];
+    public static readonly byte[] GetEqBands = [0x02, 0x18, 0x81];
+    public static readonly byte[] GetMicState = [0x03, 0x18, 0x84];
+    public static readonly byte[] GetDnd = [0x02, 0x18, 0x85];
+
+    private const byte LiveProfile = 0x00;
+    private const byte SpeakerSource = 0x01;
+    private const byte MicrophoneSource = 0x02;
+    private const byte SidetoneSource = 0x03;
+
+    public static bool IsSupported(ushort productId) =>
+        productId is 0x0592 or 0x0593 or 0x05B9 or
+            0x0A61 or 0x0A64 or 0x0A68 or 0x0A6C or 0x0A81;
+
+    // 05B9's bundle proves EQ, microphone mute, sidetone and DND. The HyperSpeed
+    // family shares the frame and EQ/DND read commands; its ANC and sidetone
+    // flags need that PID's own bundle before they are exposed.
+    public static bool SupportsEq(ushort productId) =>
+        productId is 0x05B9 or 0x0A61 or 0x0A64 or 0x0A68 or 0x0A6C or 0x0A81;
+
+    public static bool SupportsDnd(ushort productId) =>
+        SupportsEq(productId);
+
+    public static bool SupportsMic(ushort productId) => productId == 0x05B9;
+
+    public static bool SupportsSidetone(ushort productId) => productId == 0x05B9;
 
     // rzDevice40Headset.connectDevice writes [0,0,135] once to wake the HID channel.
     public static byte[] CreateConnect() => CreateRequest(GetConnect);
@@ -26,6 +52,21 @@ public static class RazerProtocol40HeadsetProtocol
     public static byte[] CreateGetBattery() => CreateRequest(GetBattery);
 
     public static byte[] CreateGetCharging() => CreateRequest(GetCharging, [0x00, 0x00]);
+
+    public static byte[] CreateGetEqPreset() =>
+        CreateRequest(GetEqPreset, [LiveProfile, SpeakerSource]);
+
+    public static byte[] CreateGetEqBands() =>
+        CreateRequest(GetEqBands, [LiveProfile, SpeakerSource]);
+
+    public static byte[] CreateGetMicMute() =>
+        CreateRequest(GetMicState, [LiveProfile, MicrophoneSource, 0x00]);
+
+    public static byte[] CreateGetSidetone() =>
+        CreateRequest(GetMicState, [LiveProfile, SidetoneSource, 0x00]);
+
+    public static byte[] CreateGetDnd() =>
+        CreateRequest(GetDnd, [LiveProfile]);
 
     public static byte[] CreateRequest(
         ReadOnlySpan<byte> command,
@@ -95,6 +136,41 @@ public static class RazerProtocol40HeadsetProtocol
         Require(value, 2);
         return value[1] == 1;
     }
+
+    // rzDevice40 replies echo [profile, source, ...].
+    public static byte ReadEqPreset(ReadOnlySpan<byte> value)
+    {
+        Require(value, 4);
+        return value[3];
+    }
+
+    public static byte[] ReadEqBands(ReadOnlySpan<byte> value)
+    {
+        Require(value, 12);
+        return value[2..12].ToArray();
+    }
+
+    public static bool ReadMicMute(ReadOnlySpan<byte> value)
+    {
+        Require(value, 3);
+        return value[2] == 1;
+    }
+
+    public static bool ReadSidetone(ReadOnlySpan<byte> value)
+    {
+        Require(value, 3);
+        return value[2] == 1;
+    }
+
+    public static bool ReadDnd(ReadOnlySpan<byte> value)
+    {
+        Require(value, 2);
+        return value[1] == 1;
+    }
+
+    // The bundle stores EQ levels as sign-magnitude bytes (0x80 | abs(level)).
+    public static double DecodeEqBandLevel(byte level) =>
+        (level & 0x80) != 0 ? -(level & 0x7F) : level;
 
     private static byte Checksum(ReadOnlySpan<byte> report)
     {

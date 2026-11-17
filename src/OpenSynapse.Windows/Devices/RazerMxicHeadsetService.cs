@@ -6,8 +6,8 @@ namespace OpenSynapse.Windows.Devices;
 /// <summary>
 /// Audio controls for the 64-byte MXIC / class-0x18 channels and the protocol40
 /// headset channel (1532:0593). These models use report id 2 instead of the
-/// 91-byte protocol 25 feature reports; protocol40 only exposes battery and
-/// charging in its selected device class.
+/// 91-byte protocol 25 feature reports. Airoha 0592/0593 expose battery and
+/// charging; rzDevice40 adds class 0x18 EQ, microphone, sidetone and DND reads.
 /// </summary>
 public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
 {
@@ -76,6 +76,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
         MxicDialect.ValkyrieT3 => RazerMxicHeadsetProtocol.CreateGetEqPresetValkyrie(),
         MxicDialect.Class18 => RazerMxicHeadsetProtocol.CreateGetEqPresetClass18(),
         MxicDialect.Joliet => RazerMxicHeadsetProtocol.CreateGetEqPresetJoliet(),
+        MxicDialect.Protocol40 => RazerProtocol40HeadsetProtocol.CreateGetEqPreset(),
         _ => RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetEqPreset, reportId: ReportId),
     };
 
@@ -84,18 +85,24 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
         MxicDialect.ValkyrieT3 => RazerMxicHeadsetProtocol.EqHeaderValkyrie,
         MxicDialect.Class18 => RazerMxicHeadsetProtocol.EqPresetHeaderClass18,
         MxicDialect.Joliet => RazerMxicHeadsetProtocol.EqPresetHeaderClass18,
+        MxicDialect.Protocol40 => [],
         _ => RazerMxicHeadsetProtocol.EqPresetHeader,
     };
 
-    private byte ReadEqPreset(ReadOnlySpan<byte> value) => _dialect is MxicDialect.Class18 or MxicDialect.ValkyrieT3 or MxicDialect.Joliet
-        ? RazerMxicHeadsetProtocol.ReadEqPresetClass18(value)
-        : RazerMxicHeadsetProtocol.ReadEqPreset(value);
+    private byte ReadEqPreset(ReadOnlySpan<byte> value) => _dialect switch
+    {
+        MxicDialect.Protocol40 => RazerProtocol40HeadsetProtocol.ReadEqPreset(value),
+        MxicDialect.Class18 or MxicDialect.ValkyrieT3 or MxicDialect.Joliet =>
+            RazerMxicHeadsetProtocol.ReadEqPresetClass18(value),
+        _ => RazerMxicHeadsetProtocol.ReadEqPreset(value),
+    };
 
     private byte[] CreateEqBandsRead() => _dialect switch
     {
         MxicDialect.ValkyrieT3 => RazerMxicHeadsetProtocol.CreateGetEqBandsValkyrie(),
         MxicDialect.Class18 => RazerMxicHeadsetProtocol.CreateGetEqBandsClass18(),
         MxicDialect.Joliet => RazerMxicHeadsetProtocol.CreateGetEqBandsJoliet(),
+        MxicDialect.Protocol40 => RazerProtocol40HeadsetProtocol.CreateGetEqBands(),
         _ => RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetEqBands, reportId: ReportId),
     };
 
@@ -104,6 +111,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
         MxicDialect.ValkyrieT3 => RazerMxicHeadsetProtocol.EqHeaderValkyrie,
         MxicDialect.Class18 => RazerMxicHeadsetProtocol.EqBandsHeaderClass18,
         MxicDialect.Joliet => RazerMxicHeadsetProtocol.EqBandsHeaderClass18,
+        MxicDialect.Protocol40 => [],
         _ => RazerMxicHeadsetProtocol.EqBandsHeader,
     };
 
@@ -123,21 +131,30 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
         _ => RazerMxicHeadsetProtocol.SetEqBandsHeader,
     };
 
-    private byte[] CreateMicMuteRead() => _dialect == MxicDialect.Class18
-        ? RazerMxicHeadsetProtocol.CreateGetMicMuteClass18(ReportId)
-        : RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetMicMute, reportId: ReportId);
+    private byte[] CreateMicMuteRead() => _dialect switch
+    {
+        MxicDialect.Class18 => RazerMxicHeadsetProtocol.CreateGetMicMuteClass18(ReportId),
+        MxicDialect.Protocol40 => RazerProtocol40HeadsetProtocol.CreateGetMicMute(),
+        _ => RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetMicMute, reportId: ReportId),
+    };
 
-    private byte[] MicMuteHeader => _dialect == MxicDialect.Class18
-        ? RazerMxicHeadsetProtocol.MicMuteHeaderClass18
-        : RazerMxicHeadsetProtocol.MicMuteHeader;
+    private byte[] MicMuteHeader => _dialect switch
+    {
+        MxicDialect.Class18 => RazerMxicHeadsetProtocol.MicMuteHeaderClass18,
+        MxicDialect.Protocol40 => [],
+        _ => RazerMxicHeadsetProtocol.MicMuteHeader,
+    };
 
     private byte[] CreateSetMicMute(bool muted) => _dialect == MxicDialect.Class18
         ? RazerMxicHeadsetProtocol.CreateSetMicMuteClass18(muted, ReportId)
         : RazerMxicHeadsetProtocol.CreateSetMicMute(muted, ReportId);
 
-    private byte[] SetMicMuteHeader => _dialect == MxicDialect.Class18
-        ? RazerMxicHeadsetProtocol.MicMuteHeaderClass18
-        : RazerMxicHeadsetProtocol.SetMicMuteHeader;
+    private byte[] SetMicMuteHeader => _dialect switch
+    {
+        MxicDialect.Class18 => RazerMxicHeadsetProtocol.MicMuteHeaderClass18,
+        MxicDialect.Protocol40 => [],
+        _ => RazerMxicHeadsetProtocol.SetMicMuteHeader,
+    };
 
     private byte[] CreateSetEqPreset(byte preset) => _dialect switch
     {
@@ -256,44 +273,6 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
             SidetonePercent = sidetoneOk ? (sidetone ? (byte)100 : (byte)0) : null,
             MicReturnSwitch = sidetoneOk ? sidetone : null,
         };
-    }
-
-    private async Task<RazerHeadsetAudioState> ReadProtocol40StateAsync(
-        CancellationToken cancellationToken)
-    {
-        var errors = new List<string>();
-        await _transport.SendAsync(
-            RazerProtocol40HeadsetProtocol.CreateConnect(), cancellationToken).ConfigureAwait(false);
-        var battery = await ProbeAsync(
-            "battery",
-            RazerProtocol40HeadsetProtocol.CreateGetBattery(),
-            [],
-            RazerProtocol40HeadsetProtocol.ReadBatteryPercent,
-            errors,
-            cancellationToken).ConfigureAwait(false);
-        var charging = await ProbeAsync(
-            "charging",
-            RazerProtocol40HeadsetProtocol.CreateGetCharging(),
-            [],
-            RazerProtocol40HeadsetProtocol.ReadChargingStatus,
-            errors,
-            cancellationToken).ConfigureAwait(false);
-        var dnd = await ReadAudioDndAsync(errors, cancellationToken).ConfigureAwait(false);
-
-        return new RazerHeadsetAudioState(
-            Firmware: null,
-            BatteryPercent: battery.Ok ? battery.Value : null,
-            Charging: charging.Ok ? charging.Value : null,
-            EqPreset: null,
-            EqBands: null,
-            Bass: null,
-            MicMuted: null,
-            MicVolume: null,
-            AudioSource: null,
-            NoiseSuppression: null,
-            AncState: null,
-            AncLevel: null,
-            Errors: errors) { Dnd = dnd };
     }
 
     private async Task<RazerHeadsetAudioState> ReadJolietStateAsync(
@@ -533,7 +512,7 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
     {
         await EnsureRemoteModeAsync(cancellationToken).ConfigureAwait(false);
         _diagnostic?.Invoke(_dialect == MxicDialect.Protocol40
-            ? $"protocol40 {label}: class=0x{report[6]:X2} id=0x{report[7]:X2} size=0x{report[8]:X2}"
+            ? $"protocol40 {label}: size=0x{report[6]:X2} class=0x{report[7]:X2} id=0x{report[8]:X2}"
             : $"mxic {label}: command=0x{report[10]:X2} 0x{report[11]:X2} 0x{report[12]:X2}");
         var value = await _transport.QueryAsync(report, expectedHeader, cancellationToken)
             .ConfigureAwait(false);

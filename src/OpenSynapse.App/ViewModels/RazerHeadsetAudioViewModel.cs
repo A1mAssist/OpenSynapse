@@ -180,30 +180,6 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
     private static readonly double[] FlatThxBands = new double[10];
 
-    private byte ToFirmwareBand(double level) => _connection.Transport switch
-    {
-        RazerHeadsetAudioTransport.Mxic64 => RazerHeadsetEqScale.ToStep(level),
-        RazerHeadsetAudioTransport.ValkyrieT3Feature64 => RazerValkyrieHeadsetProtocol.EncodeEqBandLevel((sbyte)Math.Round(level)),
-        RazerHeadsetAudioTransport.Jolie64 => (byte)(level < 0
-            ? 0x80 | (byte)Math.Abs(Math.Round(level))
-            : (byte)Math.Round(level)),
-        RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
-            RazerValkyrieHeadsetProtocol.EncodeEqBandLevel((sbyte)Math.Round(level)),
-        RazerHeadsetAudioTransport.Protocol25Feature65 => unchecked((byte)(sbyte)Math.Round(level)),
-        _ => (byte)Math.Round(level),
-    };
-
-    private double FromFirmwareBand(byte level) => _connection.Transport switch
-    {
-        RazerHeadsetAudioTransport.Mxic64 => RazerHeadsetEqScale.ToDecibels(level),
-        RazerHeadsetAudioTransport.ValkyrieT3Feature64 => RazerValkyrieHeadsetProtocol.DecodeEqBandLevel(level),
-        RazerHeadsetAudioTransport.Jolie64 => (level & 0x80) != 0 ? -(level & 0x7F) : level,
-        RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
-            RazerValkyrieHeadsetProtocol.DecodeEqBandLevel(level),
-        RazerHeadsetAudioTransport.Protocol25Feature65 => unchecked((sbyte)level),
-        _ => level,
-    };
-
     // Noa firmware stores bass as 1..7; the shared slider stays 0..100.
     private byte ToFirmwareBass(double percent) => IsNoaBass
         ? (byte)Math.Clamp(1 + (int)Math.Round(percent * 6 / 100), 1, 7)
@@ -473,7 +449,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             _hasMicMuted = !IsT3;
             OnPropertyChanged(nameof(MicCardVisibility));
         }
-        if (state.Dnd is bool dnd) { Dnd = dnd; _hasDnd = !IsProtocol40; OnPropertyChanged(nameof(DndVisibility)); }
+        if (state.Dnd is bool dnd) { Dnd = dnd; _hasDnd = true; OnPropertyChanged(nameof(DndVisibility)); }
         if (state.SilenceDetectionPeriod is ushort period) _silenceDetectionPeriod = period;
         if (state.AutoPause is bool autoPause)
         {

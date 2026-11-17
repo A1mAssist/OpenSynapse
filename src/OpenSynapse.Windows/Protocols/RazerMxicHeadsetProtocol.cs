@@ -157,22 +157,12 @@ public static class RazerMxicHeadsetProtocol
     public static bool UsesMabelT1(ushort productId) => MabelT1ProductIds.Contains(productId);
 
     /// <summary>
-    /// The Hammerhead V3 dongles select the rzDevice40 audio chunk. Its command tuple is
-    /// [dataSize, class, id] where this 2023 class uses [class, id, dataSize], EQ and mute
-    /// moved to class 0x18, and every response echoes the request payload instead of the
-    /// command bytes. The 64-byte 50 41 envelope is unchanged. 059F (BillieT3H) and
-    /// 05B9 (Hammerhead V3 Chroma) inherit the same channel; 059F only exposes sidetone
-    /// and haptics in its bundle, so unsupported probes surface as partial reads.
+    /// BillieT3H (059F) keeps the class 0x18 triplets of this MXIC envelope. It
+    /// does not select rzDevice40's protocol40 frame.
     /// </summary>
     private static readonly FrozenSet<ushort> Class18ProductIds = new ushort[]
     {
-        0x0A61,
-        0x0A64,
-        0x0A68,
-        0x0A6C,
-        0x0A81,
         0x059F,
-        0x05B9,
     }.ToFrozenSet();
 
     public static bool UsesClass18Commands(ushort productId) => Class18ProductIds.Contains(productId);
