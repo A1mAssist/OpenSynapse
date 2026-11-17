@@ -237,7 +237,8 @@ public sealed partial class DevicesPage : UserControl
 
     private RazerHidDeviceViewModel? SelectedRazerHidDevice =>
         (DataContext as MainViewModel)?.RazerHid?.SelectedDevice;
-    private RazerHidKrakenViewModel? SelectedRazerHidKraken => ViewModel.RazerHid.SelectedKraken;
+    private RazerHidKrakenViewModel? SelectedRazerHidKraken =>
+        (DataContext as MainViewModel)?.RazerHid?.SelectedKraken;
 
     private async void RazerHidApplyPollingClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.ApplyPollingAsync(Lifetime) ?? Task.CompletedTask);

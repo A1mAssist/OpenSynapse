@@ -36,13 +36,18 @@ public sealed partial class MainWindow
     private T EnsureCachedPage<T>(string key, ref T? page, Func<T> create)
         where T : FrameworkElement
     {
-        if (page is null)
+        if (page is { } existing)
         {
-            page = create();
-            TouchPage(key);
-            TrimPageCache();
+            return existing;
         }
-        return page;
+
+        // The page must survive its own trim, or the ref above is cleared and
+        // this returns null while the caller still holds the instance.
+        var created = create();
+        page = created;
+        TouchPage(key);
+        TrimPageCache(key);
+        return created;
     }
 
     private OverviewPage CreateOverviewPage()
@@ -248,12 +253,13 @@ public sealed partial class MainWindow
         MemoryTrace.PageCacheKeys = string.Join(',', _pageUseOrder);
     }
 
-    private void TrimPageCache()
+    private void TrimPageCache(string? keep = null)
     {
         while (_pageUseOrder.Count > PageCacheLimit)
         {
             var oldest = _pageUseOrder.FirstOrDefault(page =>
-                !StringComparer.Ordinal.Equals(page, _currentPage));
+                !StringComparer.Ordinal.Equals(page, _currentPage) &&
+                !StringComparer.Ordinal.Equals(page, keep));
             if (oldest is null)
             {
                 break;
