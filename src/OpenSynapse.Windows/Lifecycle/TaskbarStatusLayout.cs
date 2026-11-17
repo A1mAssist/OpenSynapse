@@ -2,8 +2,71 @@ namespace OpenSynapse.Windows.Lifecycle;
 
 internal readonly record struct TaskbarStatusObstacle(int Left, int Right);
 
+internal enum TaskbarOrientation
+{
+    Horizontal,
+    Vertical,
+}
+
 internal static class TaskbarStatusLayout
 {
+    internal static TaskbarOrientation? GetOrientation(int width, int height)
+    {
+        if (width >= height * 3) return TaskbarOrientation.Horizontal;
+        if (height >= width * 3) return TaskbarOrientation.Vertical;
+        return null;
+    }
+
+    internal static bool TryFindSlot(
+        int regionStart,
+        int regionEnd,
+        int size,
+        int gap,
+        IReadOnlyList<TaskbarStatusObstacle> obstacles,
+        bool fromStart,
+        out int start)
+    {
+        start = 0;
+        var extent = regionEnd - regionStart;
+        if (size <= 0 || extent < size + gap)
+        {
+            return false;
+        }
+
+        var relative = new List<TaskbarStatusObstacle>(obstacles.Count);
+        foreach (var obstacle in obstacles)
+        {
+            var left = Math.Max(0, obstacle.Left - regionStart);
+            var right = Math.Min(extent, obstacle.Right - regionStart);
+            if (right > left)
+            {
+                relative.Add(new(left, right));
+            }
+        }
+
+        if (!fromStart)
+        {
+            if (!TryFindRightmostSlot(0, extent, size, gap, relative, out var offset))
+            {
+                return false;
+            }
+            start = regionStart + offset;
+            return true;
+        }
+
+        var mirrored = new List<TaskbarStatusObstacle>(relative.Count);
+        foreach (var obstacle in relative)
+        {
+            mirrored.Add(new(extent - obstacle.Right, extent - obstacle.Left));
+        }
+        if (!TryFindRightmostSlot(0, extent, size, gap, mirrored, out var mirroredOffset))
+        {
+            return false;
+        }
+        start = regionStart + extent - mirroredOffset - size;
+        return true;
+    }
+
     internal static bool TryFindRightmostSlot(
         int leftBound,
         int rightBound,

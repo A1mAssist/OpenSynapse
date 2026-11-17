@@ -1,13 +1,13 @@
 using System.Runtime.InteropServices;
-using Microsoft.Win32;
+using System.Text;
 using OpenSynapse.Core.Sensors;
 using static OpenSynapse.Windows.Lifecycle.TaskbarStatusNative;
 
 namespace OpenSynapse.Windows.Lifecycle;
 
 /// <summary>
-/// A small GDI strip hosted by the taskbar. The host window stays alive when
-/// Explorer restarts; the strip is recreated and reattached by the host timer.
+/// A small GDI strip hosted by each taskbar. The host window stays alive when
+/// Explorer restarts; every strip is recreated and reattached by the host timer.
 /// </summary>
 public sealed partial class TaskbarStatusWindow : IDisposable
 {
@@ -18,8 +18,11 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     private const int TargetHeightDip = 30;
     private const int MinimumHeightDip = 22;
     private const int MaximumHeightDip = 36;
+    private const int VerticalRowHeightDip = 24;
+    private const int VerticalMinimumWidthDip = 28;
     private const int GapDip = 6;
     private const int PaddingDip = 8;
+    private const int VerticalPaddingDip = 3;
     private const int BatteryIconGapDip = 5;
     private const int DeviceGapDip = 8;
     private const int IconBadgeDip = 18;
@@ -29,29 +32,36 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     private const int BoltHeightDip = 12;
     private const int NullPen = 8;
 
+    private sealed class StatusSurface
+    {
+        public IntPtr Taskbar;
+        public IntPtr Window;
+        public Rect LastRect;
+        public int Dpi = 96;
+        public int VisibleBatteryCount;
+        public int LayoutFailures;
+        public int AttachFailures;
+        public long NextAttachAttempt;
+        public bool IsChild;
+        public bool Vertical;
+        public IntPtr BatteryFont;
+        public IntPtr IconFont;
+    }
+
     private readonly Action<string>? _log;
     private readonly WndProc _hostProcedure;
     private readonly WndProc _statusProcedure;
     private readonly string _hostClassName;
     private readonly string _statusClassName;
     private readonly uint _taskbarCreatedMessage;
+    private readonly List<StatusSurface> _surfaces = [];
+    private readonly Dictionary<IntPtr, StatusSurface> _surfacesByWindow = [];
     private IntPtr _hostWindow;
-    private IntPtr _statusWindow;
-    private IntPtr _taskbarWindow;
-    private IntPtr _batteryFont;
-    private IntPtr _iconFont;
-    private Rect _lastStatusRect;
-    private bool _isChild;
     private TaskbarStatusSnapshot _snapshot = new([]);
-    private int _visibleBatteryCount;
     private string _automationText = string.Empty;
     private bool _themeDark = true;
     private bool _contentAvailable;
     private bool _disposed;
-    private int _dpi = 96;
-    private int _layoutFailures;
-    private int _attachFailures;
-    private long _nextAttachAttempt;
 
     public TaskbarStatusWindow(Action<string>? log = null)
     {
@@ -113,23 +123,25 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         _automationText = automationText;
         _contentAvailable = true;
 
-        if (_statusWindow != IntPtr.Zero && contentChanged)
+        if (contentChanged)
         {
-            SetWindowTextW(_statusWindow, _automationText);
+            foreach (var surface in _surfaces)
+            {
+                if (surface.Window != IntPtr.Zero)
+                {
+                    SetWindowTextW(surface.Window, _automationText);
+                }
+            }
         }
         EnsureAttached();
-        if (_statusWindow != IntPtr.Zero && contentChanged)
-        {
-            InvalidateRect(_statusWindow, IntPtr.Zero, false);
-        }
+        if (contentChanged) InvalidateAll();
     }
 
     public void Hide()
     {
-        _layoutFailures = 0;
-        if (_statusWindow != IntPtr.Zero)
+        foreach (var surface in _surfaces)
         {
-            ShowWindow(_statusWindow, SwHide);
+            HideSurface(surface);
         }
     }
 
@@ -149,8 +161,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             DestroyWindow(_hostWindow);
             _hostWindow = IntPtr.Zero;
         }
-        DestroyStatusWindow();
-        _taskbarWindow = IntPtr.Zero;
+        DestroyAllSurfaces();
         GC.SuppressFinalize(this);
     }
 
@@ -166,45 +177,80 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     private void EnsureAttached()
     {
         if (_disposed) return;
-        var taskbar = FindWindowW("Shell_TrayWnd", null);
-        if (taskbar == IntPtr.Zero)
+        var taskbars = EnumerateTaskbars();
+        if (taskbars.Count == 0)
         {
-            DestroyStatusWindow();
-            _taskbarWindow = IntPtr.Zero;
+            DestroyAllSurfaces();
             return;
         }
 
-        if (taskbar != _taskbarWindow)
+        for (var index = _surfaces.Count - 1; index >= 0; index--)
         {
-            DestroyStatusWindow();
-            _taskbarWindow = taskbar;
-            _attachFailures = 0;
-            _nextAttachAttempt = 0;
+            if (!taskbars.Contains(_surfaces[index].Taskbar))
+            {
+                DestroySurface(_surfaces[index]);
+            }
         }
 
-        if (_statusWindow != IntPtr.Zero &&
-            (!IsWindow(_statusWindow) || GetParent(_statusWindow) != taskbar))
+        foreach (var taskbar in taskbars)
         {
-            DestroyStatusWindow();
-        }
+            var surface = FindSurface(taskbar);
+            if (surface is null)
+            {
+                surface = new StatusSurface { Taskbar = taskbar };
+                _surfaces.Add(surface);
+            }
 
-        if (_statusWindow == IntPtr.Zero)
-        {
-            if (Environment.TickCount64 < _nextAttachAttempt) return;
-            CreateStatusWindow(taskbar);
-            if (_statusWindow == IntPtr.Zero) return;
-        }
+            if (surface.Window != IntPtr.Zero &&
+                (!IsWindow(surface.Window) || GetParent(surface.Window) != taskbar))
+            {
+                DestroySurfaceWindow(surface);
+            }
 
-        RepositionAndShow();
+            if (surface.Window == IntPtr.Zero)
+            {
+                if (Environment.TickCount64 < surface.NextAttachAttempt) continue;
+                CreateStatusWindow(surface);
+                if (surface.Window == IntPtr.Zero) continue;
+            }
+
+            RepositionAndShow(surface);
+        }
     }
 
-    private void CreateStatusWindow(IntPtr taskbar)
+    private StatusSurface? FindSurface(IntPtr taskbar)
     {
+        foreach (var surface in _surfaces)
+        {
+            if (surface.Taskbar == taskbar) return surface;
+        }
+        return null;
+    }
+
+    private static List<IntPtr> EnumerateTaskbars()
+    {
+        var taskbars = new List<IntPtr>(3);
+        EnumWindows((window, _) =>
+        {
+            var name = new StringBuilder(64);
+            GetClassNameW(window, name, name.Capacity);
+            var className = name.ToString();
+            if (className is "Shell_TrayWnd" or "Shell_SecondaryTrayWnd")
+            {
+                taskbars.Add(window);
+            }
+            return true;
+        }, IntPtr.Zero);
+        return taskbars;
+    }
+
+    private void CreateStatusWindow(StatusSurface surface)
+    {
+        var taskbar = surface.Taskbar;
         var previousContext = SetThreadDpiAwarenessContext(GetWindowDpiAwarenessContext(taskbar));
         try
         {
             var instance = GetModuleHandleW(null);
-
             var status = CreateWindowExW(
                 // Click-through: the strip is display only, so taskbar clicks must reach the taskbar.
                 WsExToolWindow | WsExNoActivate | WsExLayered | WsExTransparent,
@@ -221,7 +267,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             if (status == IntPtr.Zero)
             {
                 RecordAttachFailure(
-                    "status window creation failed", Marshal.GetLastWin32Error());
+                    surface, "status window creation failed", Marshal.GetLastWin32Error());
                 return;
             }
 
@@ -237,15 +283,21 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             {
                 // A child is painted with the taskbar itself, so Show desktop
                 // and auto-hide carry it along without a z-order race.
-                _isChild = true;
+                surface.IsChild = true;
+                // Join the taskbar's child band once; later positioning keeps
+                // this z-order instead of re-inserting on every timer tick.
+                SetWindowPos(
+                    status, IntPtr.Zero, 0, 0, 0, 0,
+                    SwpNoMove | SwpNoSize | SwpNoActivate);
             }
             else
             {
                 _log?.Invoke(
-                    $"taskbar-status: child attach failed ({parentError}); using an owner popup.");
+                    $"taskbar-status: child attach failed on 0x{taskbar.ToInt64():X} " +
+                    $"({parentError}); using an owner popup.");
                 var currentStyle = GetWindowLongW(status, GwlStyle);
                 SetWindowLongW(status, GwlStyle, (currentStyle & ~WsChild) | WsPopup);
-                _isChild = false;
+                surface.IsChild = false;
             }
 
             // Black is the transparent color key; the icon badge and text stay.
@@ -255,18 +307,19 @@ public sealed partial class TaskbarStatusWindow : IDisposable
                     $"taskbar-status: transparency failed ({Marshal.GetLastWin32Error()}).");
             }
 
-            _statusWindow = status;
-            _taskbarWindow = taskbar;
-            _attachFailures = 0;
-            _nextAttachAttempt = 0;
-            _lastStatusRect = default;
-            _dpi = (int)GetDpiForWindow(taskbar);
-            if (_dpi <= 0) _dpi = (int)GetDpiForWindow(status);
-            if (_dpi <= 0) _dpi = 96;
+            surface.Window = status;
+            surface.AttachFailures = 0;
+            surface.NextAttachAttempt = 0;
+            surface.LastRect = default;
+            surface.Dpi = (int)GetDpiForWindow(taskbar);
+            if (surface.Dpi <= 0) surface.Dpi = (int)GetDpiForWindow(status);
+            if (surface.Dpi <= 0) surface.Dpi = 96;
+            surface.Vertical = IsVerticalTaskbar(taskbar);
             _themeDark = ReadThemeDark();
-            CreateFonts();
+            CreateFonts(surface);
+            _surfacesByWindow[status] = surface;
             SetWindowTextW(status, _automationText);
-            RepositionAndShow();
+            RepositionAndShow(surface);
             InvalidateRect(status, IntPtr.Zero, false);
         }
         finally
@@ -278,59 +331,76 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         }
     }
 
-    private void DestroyStatusWindow()
+    private void DestroySurface(StatusSurface surface)
     {
-        DeleteFont(ref _batteryFont);
-        DeleteFont(ref _iconFont);
-        if (_statusWindow != IntPtr.Zero)
-        {
-            DestroyWindow(_statusWindow);
-            _statusWindow = IntPtr.Zero;
-        }
-        _lastStatusRect = default;
-        _isChild = false;
+        DestroySurfaceWindow(surface);
+        _surfaces.Remove(surface);
     }
 
-    private void RecordAttachFailure(string message, int error)
+    private void DestroySurfaceWindow(StatusSurface surface)
     {
-        _attachFailures++;
-        var delay = Math.Min(4000, 500 << Math.Min(_attachFailures - 1, 3));
-        _nextAttachAttempt = Environment.TickCount64 + delay;
-        if (_attachFailures == 1 || _attachFailures % 10 == 0)
+        DeleteSurfaceFonts(surface);
+        if (surface.Window != IntPtr.Zero)
+        {
+            _surfacesByWindow.Remove(surface.Window);
+            DestroyWindow(surface.Window);
+            surface.Window = IntPtr.Zero;
+        }
+        surface.LastRect = default;
+        surface.IsChild = false;
+    }
+
+    private void DestroyAllSurfaces()
+    {
+        for (var index = _surfaces.Count - 1; index >= 0; index--)
+        {
+            DestroySurface(_surfaces[index]);
+        }
+    }
+
+    private void RecordAttachFailure(StatusSurface surface, string message, int error)
+    {
+        surface.AttachFailures++;
+        var delay = Math.Min(4000, 500 << Math.Min(surface.AttachFailures - 1, 3));
+        surface.NextAttachAttempt = Environment.TickCount64 + delay;
+        if (surface.AttachFailures == 1 || surface.AttachFailures % 10 == 0)
         {
             _log?.Invoke(
-                $"taskbar-status: {message} ({error}); retry {_attachFailures} in {delay} ms.");
+                $"taskbar-status: {message} on 0x{surface.Taskbar.ToInt64():X} " +
+                $"({error}); retry {surface.AttachFailures} in {delay} ms.");
         }
     }
 
-    private void RepositionAndShow()
+    private void RepositionAndShow(StatusSurface surface)
     {
-        if (_statusWindow == IntPtr.Zero || !_contentAvailable) return;
-        var taskbar = FindWindowW("Shell_TrayWnd", null);
-        if (taskbar == IntPtr.Zero || !IsWindowVisible(taskbar) || IsFullscreenAppActive())
+        if (surface.Window == IntPtr.Zero || !_contentAvailable) return;
+        var taskbar = surface.Taskbar;
+        if (!IsWindow(taskbar) || !IsWindowVisible(taskbar) || IsFullscreenAppActive())
         {
-            Hide();
+            HideSurface(surface);
             return;
         }
-        if (!TryGetLayout(out var x, out var y, out var width, out var height))
+        if (!TryGetLayout(surface, out var x, out var y, out var width, out var height))
         {
             // Explorer briefly invalidates the taskbar while input methods and
             // overflow flyouts change. Keep the last frame instead of blinking out.
-            if (++_layoutFailures < 30) return;
-            _log?.Invoke("taskbar-status: layout unavailable; hiding the strip.");
-            Hide();
+            if (++surface.LayoutFailures < 30) return;
+            _log?.Invoke(
+                $"taskbar-status: layout unavailable on 0x{taskbar.ToInt64():X}; " +
+                "hiding the strip.");
+            HideSurface(surface);
             return;
         }
-        _layoutFailures = 0;
+        surface.LayoutFailures = 0;
 
-        if (!_isChild)
+        if (!surface.IsChild)
         {
             var origin = new Point { X = x, Y = y };
             if (!ClientToScreen(taskbar, ref origin))
             {
                 _log?.Invoke(
                     $"taskbar-status: positioning failed ({Marshal.GetLastWin32Error()}).");
-                Hide();
+                HideSurface(surface);
                 return;
             }
             x = origin.X;
@@ -338,163 +408,81 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         }
 
         var rect = new Rect { Left = x, Top = y, Right = x + width, Bottom = y + height };
-        var visible = IsWindowVisible(_statusWindow);
-        var changed = rect.Left != _lastStatusRect.Left ||
-                      rect.Top != _lastStatusRect.Top ||
-                      rect.Right != _lastStatusRect.Right ||
-                      rect.Bottom != _lastStatusRect.Bottom;
+        var visible = IsWindowVisible(surface.Window);
+        var changed = rect.Left != surface.LastRect.Left ||
+                      rect.Top != surface.LastRect.Top ||
+                      rect.Right != surface.LastRect.Right ||
+                      rect.Bottom != surface.LastRect.Bottom;
         if (changed)
         {
             var flags = SwpNoActivate | SwpNoZOrder;
             if (!visible) flags |= SwpShowWindow;
             if (!SetWindowPos(
-                    _statusWindow,
+                    surface.Window,
                     IntPtr.Zero,
                     x, y, width, height,
                     flags))
             {
                 _log?.Invoke(
                     $"taskbar-status: positioning failed ({Marshal.GetLastWin32Error()}).");
-                Hide();
+                HideSurface(surface);
                 return;
             }
 
-            _lastStatusRect = rect;
+            surface.LastRect = rect;
+            if (!surface.IsChild) RaiseOwnerAboveTaskbar(surface);
             return;
         }
 
         if (!visible)
         {
-            ShowWindow(_statusWindow, SwShowNoActivate);
+            ShowWindow(surface.Window, SwShowNoActivate);
         }
+        if (!surface.IsChild) RaiseOwnerAboveTaskbar(surface);
     }
 
-    private static bool IsFullscreenAppActive()
+    private static void HideSurface(StatusSurface surface)
     {
-        return SHQueryUserNotificationState(out var state) == 0 &&
-            IsFullscreenNotificationState(state);
+        surface.LayoutFailures = 0;
+        if (surface.Window != IntPtr.Zero)
+        {
+            ShowWindow(surface.Window, SwHide);
+        }
     }
 
-    private bool TryGetLayout(out int x, out int y, out int width, out int height)
+    /// <summary>
+    /// The child path inherits taskbar z-order. This is only for the elevated
+    /// fallback, where SetParent is refused and Show desktop would cover an
+    /// owned popup.
+    /// </summary>
+    private void RaiseOwnerAboveTaskbar(StatusSurface surface)
     {
-        x = y = width = height = 0;
-        var taskbar = FindWindowW("Shell_TrayWnd", null);
-        if (taskbar == IntPtr.Zero || !GetWindowRect(taskbar, out var taskbarRect) ||
-            !GetClientRect(taskbar, out var client))
-        {
-            return false;
-        }
-
-        var taskbarDpi = (int)GetDpiForWindow(taskbar);
-        if (taskbarDpi > 0 && taskbarDpi != _dpi)
-        {
-            _dpi = taskbarDpi;
-            CreateFonts();
-        }
-
-        var monitor = MonitorFromWindow(taskbar, MonitorDefaultToNearest);
-        var monitorInfo = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
-        if (monitor == IntPtr.Zero || !GetMonitorInfoW(monitor, ref monitorInfo) ||
-            taskbarRect.Width < taskbarRect.Height * 3)
-        {
-            return false;
-        }
-
-        var scale = _dpi / 96.0;
-        var clientHeight = client.Height;
-        height = Math.Min(
-            (int)Math.Round(TargetHeightDip * scale),
-            (int)Math.Round(MaximumHeightDip * scale));
-        height = Math.Min(clientHeight, Math.Max((int)Math.Round(MinimumHeightDip * scale), height));
-        if (clientHeight < (int)Math.Round(8 * scale))
-        {
-            return false;
-        }
-
-        var tray = FindWindowExW(taskbar, IntPtr.Zero, "TrayNotifyWnd", null);
-        var right = client.Width;
-        if (tray != IntPtr.Zero && GetWindowRect(tray, out var trayRect))
-        {
-            var point = new Point { X = trayRect.Left, Y = trayRect.Top };
-            if (ScreenToClient(taskbar, ref point))
-            {
-                right = point.X;
-            }
-        }
-
-        var gap = (int)Math.Round(GapDip * scale);
-        var available = Math.Max(0, right - gap);
-        var maximumWidth = (int)Math.Round(MaximumWidthDip * scale);
-        var minimumWidth = (int)Math.Round(BaseWidthDip * scale);
-
-        var obstacles = GetForeignTaskbarObstacles(taskbar, client.Height, right);
-        var batteryCount = Math.Min(
-            _snapshot.Batteries.Count, TaskbarStatusPolicy.MaximumBatteryCount);
-        for (var count = batteryCount; count >= 1; count--)
-        {
-            var candidate = Math.Clamp(MeasureWidth(count), minimumWidth, maximumWidth);
-            if (candidate > available)
-            {
-                continue;
-            }
-            if (!TaskbarStatusLayout.TryFindRightmostSlot(
-                    leftBound: 0,
-                    rightBound: right,
-                    width: candidate,
-                    gap: gap,
-                    obstacles: obstacles,
-                    out var left))
-            {
-                continue;
-            }
-
-            _visibleBatteryCount = count;
-            width = candidate;
-            x = left;
-            y = Math.Max(0, (clientHeight - height) / 2);
-            return true;
-        }
-        return false;
+        var above = GetWindow(surface.Taskbar, GwHwndPrev);
+        if (above == surface.Window) return;
+        if (above == IntPtr.Zero) above = new IntPtr(-1);
+        SetWindowPos(
+            surface.Window,
+            above,
+            0, 0, 0, 0,
+            SwpNoMove | SwpNoSize | SwpNoActivate);
     }
 
-    private static IReadOnlyList<TaskbarStatusObstacle> GetForeignTaskbarObstacles(
-        IntPtr taskbar,
-        int taskbarHeight,
-        int right)
+    private void InvalidateAll()
     {
-        // Taskbar overlays such as TrafficMonitor are child windows owned by another process.
-        var obstacles = new List<TaskbarStatusObstacle>();
-        _ = GetWindowThreadProcessId(taskbar, out var shellProcessId);
-        var ownProcessId = (uint)Environment.ProcessId;
-        _ = EnumChildWindows(taskbar, (child, _) =>
+        foreach (var surface in _surfaces)
         {
-            if (!IsWindowVisible(child) ||
-                !GetWindowRect(child, out var rect) ||
-                rect.Width <= 0 || rect.Height <= 0)
+            if (surface.Window != IntPtr.Zero)
             {
-                return true;
+                InvalidateRect(surface.Window, IntPtr.Zero, false);
             }
-
-            GetWindowThreadProcessId(child, out var processId);
-            if (processId == shellProcessId || processId == ownProcessId)
-            {
-                return true;
-            }
-
-            var topLeft = new Point { X = rect.Left, Y = rect.Top };
-            var bottomRight = new Point { X = rect.Right, Y = rect.Bottom };
-            if (!ScreenToClient(taskbar, ref topLeft) ||
-                !ScreenToClient(taskbar, ref bottomRight) ||
-                bottomRight.Y <= 0 || topLeft.Y >= taskbarHeight ||
-                bottomRight.X <= 0 || topLeft.X >= right)
-            {
-                return true;
-            }
-
-            obstacles.Add(new TaskbarStatusObstacle(topLeft.X, bottomRight.X));
-            return true;
-        }, IntPtr.Zero);
-        return obstacles;
+        }
     }
 
+    private void ResetLayouts()
+    {
+        foreach (var surface in _surfaces)
+        {
+            surface.LastRect = default;
+        }
+    }
 }
