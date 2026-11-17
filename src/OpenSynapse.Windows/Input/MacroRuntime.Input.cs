@@ -18,8 +18,8 @@ internal sealed partial class MacroRuntime
             if (_isPlaying &&
                 _activePlaybackMacroId is { } activeId &&
                 _macroMap.TryGetValue(activeId, out var active) &&
-                active.Trigger is { } trigger &&
-                trigger.HyperShiftLayer != held)
+                active.AllTriggers.Any() &&
+                !active.AllTriggers.Any(trigger => trigger.HyperShiftLayer == held))
             {
                 stopPlayback = true;
             }
@@ -330,24 +330,10 @@ internal sealed partial class MacroRuntime
                     TraceSkipped(macro, "no steps");
                     continue;
                 }
-                if (macro.Trigger is not { } trigger)
+                var trigger = macro.FindTrigger(value.Input, value.Modifiers, _hyperShiftHeld);
+                if (trigger is null)
                 {
-                    TraceSkipped(macro, "no trigger");
-                    continue;
-                }
-                if (trigger.HyperShiftLayer != _hyperShiftHeld)
-                {
-                    TraceSkipped(
-                        macro,
-                        $"hyperShift={trigger.HyperShiftLayer} active={_hyperShiftHeld}");
-                    continue;
-                }
-                if (!trigger.Matches(value.Input, value.Modifiers))
-                {
-                    TraceSkipped(
-                        macro,
-                        $"trigger={MacroInputFormatter.Describe(trigger.Input)} " +
-                        $"modifiers={trigger.Modifiers}");
+                    TraceSkipped(macro, "no matching trigger");
                     continue;
                 }
 

@@ -121,7 +121,7 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
         int, bool, OpenSynapse.Core.Macros.MacroSoftwareBinding?, CancellationToken,
         Task<string?>>? SoftwareMacroBinder { get; set; }
 
-    public Func<string, CancellationToken, Task<string?>>? SoftwareMacroClearer { get; set; }
+    public Func<string, OpenSynapse.Core.Macros.MacroInput, bool, CancellationToken, Task<string?>>? SoftwareMacroClearer { get; set; }
 
     public RazerKeyboardViewModel(
         RazerKeyboardConnection connection,

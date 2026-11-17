@@ -6,7 +6,8 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerHidMappingViewModel
 {
-    private readonly Func<string, CancellationToken, Task<string?>>? _softwareTriggerClearer;
+    private readonly Func<string, MacroInput, bool, CancellationToken, Task<string?>>?
+        _softwareTriggerClearer;
 
     private sealed record ClearedSoftwareTrigger(
         string MacroId,
@@ -17,6 +18,19 @@ public sealed partial class RazerHidMappingViewModel
 
     private int FindSoftwareMacro(MacroInput input, bool hyperShiftLayer, out MacroTriggerMode mode) =>
         RazerSoftwareMacroTriggerMatcher.FindIndex(_localMacros, input, hyperShiftLayer, out mode);
+
+    private static MacroSoftwareBinding? SoftwareBindingFor(
+        MacroDefinition macro,
+        MacroInput input,
+        bool hyperShiftLayer)
+    {
+        var trigger = macro.FindTrigger(input, hyperShiftLayer);
+        var binding = trigger?.SoftwareBinding ??
+            (trigger is not null && ReferenceEquals(trigger, macro.Trigger)
+                ? macro.SoftwareBinding
+                : null);
+        return binding?.Clone();
+    }
 
     private MacroDefinition? ResolveSoftwareMacro(RazerHidMappingRowViewModel row)
     {
@@ -152,7 +166,7 @@ public sealed partial class RazerHidMappingViewModel
                     row.ExecutionMode,
                     row.EffectiveExecutionRepeatCount,
                     LayerIndex == 1,
-                    macro.SoftwareBinding?.Clone(),
+                    SoftwareBindingFor(macro, input, LayerIndex == 1),
                     CancellationToken.None)
                 .ConfigureAwait(true);
             if (error is not null)
@@ -192,24 +206,47 @@ public sealed partial class RazerHidMappingViewModel
         var clears = new List<ClearedSoftwareTrigger>();
         foreach (var row in pending)
         {
-            if (row.SoftwareMacroId is not { } oldId ||
-                (keptMacroIds.TryGetValue(row.ButtonId, out var nextId) &&
-                 StringComparer.Ordinal.Equals(nextId, oldId)) ||
-                clears.Any(item => StringComparer.Ordinal.Equals(item.MacroId, oldId)))
+            if (row.SoftwareMacroId is not { } oldId)
             {
                 continue;
             }
 
-            if (_localMacros.FirstOrDefault(
-                    macro => StringComparer.Ordinal.Equals(macro.Id, oldId)) is { Trigger: { } trigger } macro)
+            if (keptMacroIds.TryGetValue(row.ButtonId, out var nextId) &&
+                StringComparer.Ordinal.Equals(nextId, oldId))
             {
-                clears.Add(new ClearedSoftwareTrigger(
-                    oldId,
-                    trigger.Clone(),
-                    macro.PlaybackMode,
-                    macro.RepeatCount,
-                    macro.SoftwareBinding?.Clone()));
+                continue;
             }
+
+            var input = ResolveSoftwareTrigger(row.ButtonId);
+            var macro = _localMacros.FirstOrDefault(
+                candidate => StringComparer.Ordinal.Equals(candidate.Id, oldId));
+            if (input is null || macro is null)
+            {
+                continue;
+            }
+
+            var trigger = macro.FindTrigger(input, LayerIndex == 1);
+            if (trigger is null)
+            {
+                continue;
+            }
+
+            if (clears.Any(item =>
+                    StringComparer.Ordinal.Equals(item.MacroId, oldId) &&
+                    item.Trigger.HyperShiftLayer == trigger.HyperShiftLayer &&
+                    item.Trigger.Input.Matches(trigger.Input)))
+            {
+                continue;
+            }
+
+            var binding = trigger.SoftwareBinding ??
+                (ReferenceEquals(trigger, macro.Trigger) ? macro.SoftwareBinding : null);
+            clears.Add(new ClearedSoftwareTrigger(
+                oldId,
+                trigger.Clone(),
+                macro.PlaybackMode,
+                macro.RepeatCount,
+                binding?.Clone()));
         }
 
         return clears.ToArray();
@@ -226,7 +263,11 @@ public sealed partial class RazerHidMappingViewModel
 
         foreach (var clear in clears)
         {
-            var error = await _softwareTriggerClearer(clear.MacroId, cancellationToken)
+            var error = await _softwareTriggerClearer(
+                    clear.MacroId,
+                    clear.Trigger.Input,
+                    clear.Trigger.HyperShiftLayer,
+                    cancellationToken)
                 .ConfigureAwait(true);
             if (error is not null)
             {

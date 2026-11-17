@@ -17,7 +17,11 @@ public sealed partial class RazerHidDeviceViewModel
     public Func<string, MacroInput, MacroTriggerMode, MacroPlaybackMode, int, bool,
         MacroSoftwareBinding?, CancellationToken, Task<string?>>? SoftwareMacroBinder { get; set; }
 
-    public Func<string, CancellationToken, Task<string?>>? SoftwareMacroClearer { get; set; }
+    public Func<string, MacroInput, bool, CancellationToken, Task<string?>>? SoftwareMacroClearer
+    {
+        get;
+        set;
+    }
 
     public Func<byte, MacroInput?>? SoftwareMacroTriggerResolver { get; set; }
 
@@ -171,7 +175,11 @@ public sealed partial class RazerHidDeviceViewModel
     private string MacroContextSignature() =>
         string.Join(';', (_localMacros?.Invoke() ?? Array.Empty<MacroDefinition>())
             .Select(macro => FormattableString.Invariant(
-                $"{macro.Id}|{macro.Name}|{macro.Trigger?.Mode}|{macro.Trigger?.Input?.Kind}|{macro.Trigger?.Input?.VirtualKey}|{macro.Trigger?.Input?.MouseButton}|{macro.Trigger?.Input?.RazerKeyCode}|{macro.Trigger?.Input?.DeviceId}|{macro.Trigger?.HyperShiftLayer}")));
+                $"{macro.Id}|{macro.Name}|{TriggersSignature(macro)}")));
+
+    private static string TriggersSignature(MacroDefinition macro) =>
+        string.Join('+', macro.AllTriggers.Select(trigger => FormattableString.Invariant(
+            $"{trigger.Mode}|{trigger.Input.Kind}|{trigger.Input.VirtualKey}|{trigger.Input.MouseButton}|{trigger.Input.RazerKeyCode}|{trigger.Input.DeviceId}|{trigger.HyperShiftLayer}")));
 
     public Task ApplyMappingAsync(CancellationToken cancellationToken = default) =>
         Mapping.ApplyAsync(cancellationToken);

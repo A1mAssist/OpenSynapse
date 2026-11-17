@@ -16,12 +16,12 @@ public static class RazerSoftwareMacroTriggerMatcher
     {
         for (var index = 0; index < macros.Count; index++)
         {
-            var trigger = macros[index].Trigger;
-            if (trigger is null ||
-                !string.IsNullOrEmpty(trigger.DeviceId) ||
-                trigger.Modifiers != MacroModifierKeys.None ||
-                trigger.HyperShiftLayer != hyperShiftLayer ||
-                !trigger.Input.Matches(input))
+            var trigger = macros[index].AllTriggers.FirstOrDefault(candidate =>
+                string.IsNullOrEmpty(candidate.DeviceId) &&
+                candidate.Modifiers == MacroModifierKeys.None &&
+                candidate.HyperShiftLayer == hyperShiftLayer &&
+                candidate.Input.Matches(input));
+            if (trigger is null)
             {
                 continue;
             }

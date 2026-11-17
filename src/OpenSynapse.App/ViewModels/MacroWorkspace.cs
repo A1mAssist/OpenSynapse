@@ -612,6 +612,8 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         copy.Id = Guid.NewGuid().ToString("N");
         copy.Name = CopyName(selected.Definition.Name);
         copy.Trigger = null;
+        copy.AdditionalTriggers.Clear();
+        copy.SoftwareBinding = null;
         if (!ValidateMacroTree(copy))
         {
             StatusText = AppStrings.Text("MacroStepIncomplete");
@@ -666,8 +668,7 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         }
 
         var wasDirty = _dirtyMacroIds.Contains(selected.Id);
-        if (selected.Definition.SoftwareBinding is { } binding &&
-            !await RestoreSoftwareBindingAsync(binding, cancellationToken))
+        if (!await RestoreSoftwareBindingsAsync(selected.Definition, cancellationToken))
         {
             StatusText = AppStrings.Text("MacroTriggerRestoreFailed");
             return;

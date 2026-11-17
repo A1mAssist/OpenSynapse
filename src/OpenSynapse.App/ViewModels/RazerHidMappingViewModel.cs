@@ -68,7 +68,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         Func<byte, MacroInput?>? softwareTriggerResolver = null,
         Func<string, MacroInput, MacroTriggerMode, MacroPlaybackMode, int, bool,
             MacroSoftwareBinding?, CancellationToken, Task<string?>>? softwareTriggerBinder = null,
-        Func<string, CancellationToken, Task<string?>>? softwareTriggerClearer = null)
+        Func<string, MacroInput, bool, CancellationToken, Task<string?>>? softwareTriggerClearer = null)
     {
         _transport = transport;
         _catalog = actionCatalog ?? RazerHidMappingActionCatalog.Instance;

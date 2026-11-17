@@ -116,7 +116,9 @@ public sealed partial class RazerHidMappingViewModel
                     .ConfigureAwait(true);
                 var previous = row.SoftwareMacroId is { } oldMacroId
                     ? _localMacros.FirstOrDefault(candidate =>
-                        StringComparer.Ordinal.Equals(candidate.Id, oldMacroId))?.SoftwareBinding
+                        StringComparer.Ordinal.Equals(candidate.Id, oldMacroId)) is { } oldMacro
+                        ? SoftwareBindingFor(oldMacro, input, hyperShiftLayer)
+                        : null
                     : null;
                 binding = previous is not null &&
                     previous.Layer == Mode &&
