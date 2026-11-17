@@ -183,43 +183,6 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         }
     }
 
-    public Task ApplyBrightnessAsync(CancellationToken cancellationToken = default)
-    {
-        var zone = SelectedLightingZone;
-        var capabilities = SelectedZoneCapabilities;
-        return RunZoneWriteAsync(() => capabilities?.CanWriteBrightness == true &&
-                !_unsupportedBrightnessWrites.Contains(zone),
-            () => IsBrightnessBusy, value => IsBrightnessBusy = value,
-            async () =>
-            {
-                if (IsSelectedLightingPowerActive)
-                {
-                    await _service.SetBrightnessAsync(Connection, Brightness,
-                        Connection.Definition.DefaultStorage, zone, cancellationToken);
-                    if (capabilities?.CanReadBrightness == true)
-                    {
-                        try
-                        {
-                            Brightness = await _service.GetBrightnessAsync(Connection,
-                                Connection.Definition.DefaultStorage, zone, cancellationToken);
-                        }
-                        catch (NotSupportedException)
-                        {
-                            _unsupportedBrightnessReads.Add(zone);
-                            OnLightingSelectionChanged();
-                        }
-                    }
-                }
-                await SaveLightingProfileAsync(cancellationToken);
-                OnPropertyChanged(nameof(BrightnessText));
-            }, cancellationToken,
-            () =>
-            {
-                _unsupportedBrightnessWrites.Add(zone);
-                OnLightingSelectionChanged();
-            });
-    }
-
     public Task ApplyLedStateAsync(CancellationToken cancellationToken = default)
     {
         var zone = SelectedLightingZone;
@@ -312,7 +275,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                         ToRazerHidColor(PrimaryColor),
                         ToRazerHidColor(SecondaryColor),
                         null,
-                        zone), cancellationToken);
+                        zone, Brightness: EffectBrightness), cancellationToken);
                 }
                 await SaveLightingProfileAsync(cancellationToken);
             },
@@ -440,11 +403,18 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
     }
 
     private LightingPalette CreateSoftwarePalette() => LightingPalette.Create(
-        ToRazerRgb(PrimaryColor),
-        ToRazerRgb(SecondaryColor),
-        ToRazerRgb(TertiaryColor));
+        Dim(ToRazerRgb(PrimaryColor)),
+        Dim(ToRazerRgb(SecondaryColor)),
+        Dim(ToRazerRgb(TertiaryColor)));
 
     private static RazerRgb ToRazerRgb(Color color) => new(color.R, color.G, color.B);
+
+    private RazerRgb Dim(RazerRgb color) => EffectBrightness == byte.MaxValue
+        ? color
+        : new RazerRgb(
+            (byte)(color.Red * EffectBrightness / 255),
+            (byte)(color.Green * EffectBrightness / 255),
+            (byte)(color.Blue * EffectBrightness / 255));
 
     private async Task StopSoftwareLightingAsync(CancellationToken cancellationToken)
     {
@@ -541,7 +511,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                     ToRazerHidColor(PrimaryColor),
                     ToRazerHidColor(SecondaryColor),
                     null,
-                    zone), cancellationToken);
+                    zone, Brightness: EffectBrightness), cancellationToken);
             }
             catch (NotSupportedException)
             {

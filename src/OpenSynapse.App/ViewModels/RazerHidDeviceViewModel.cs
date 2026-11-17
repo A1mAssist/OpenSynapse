@@ -655,6 +655,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
                 OnPropertyChanged(nameof(LightingSpeedOptions));
                 OnPropertyChanged(nameof(LightingDirectionVisibility));
                 OnPropertyChanged(nameof(CanApplyLighting));
+                NotifyBrightnessPolicyChanged();
             }
         }
     }
@@ -770,9 +771,9 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         (CanApplyLightingEffect || CanEditBrightness || CanWriteLedState);
     public Visibility BrightnessVisibility => VisibleWhen(SelectedZoneCapabilities is { } zone &&
         (zone.CanReadBrightness && !_unsupportedBrightnessReads.Contains(SelectedLightingZone) ||
-         zone.CanWriteBrightness && !_unsupportedBrightnessWrites.Contains(SelectedLightingZone)));
+         zone.CanWriteBrightness && !_unsupportedBrightnessWrites.Contains(SelectedLightingZone) || SupportsVirtualBrightness));
     public Visibility BrightnessWriteVisibility => VisibleWhen(SelectedZoneCapabilities?.CanWriteBrightness == true &&
-        !_unsupportedBrightnessWrites.Contains(SelectedLightingZone));
+        !_unsupportedBrightnessWrites.Contains(SelectedLightingZone) || SupportsVirtualBrightness);
     public Visibility BrightnessEditorVisibility => BrightnessWriteVisibility;
     public byte Brightness
     {
@@ -782,16 +783,16 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
             if (SetField(ref _brightness, value)) OnPropertyChanged(nameof(BrightnessText));
         }
     }
-    public string BrightnessText => _brightnessKnown
+    public string BrightnessText => _brightnessKnown || SupportsVirtualBrightness
         ? $"{Math.Round(Brightness / 255d * 100)}%"
         : "--";
     public bool IsBrightnessBusy { get => _isBrightnessBusy; private set => SetBusy(ref _isBrightnessBusy, value, nameof(CanEditBrightness), nameof(CanWriteBrightness)); }
     public bool CanWriteBrightness => CanWrite && !IsBrightnessBusy &&
-        SelectedZoneCapabilities?.CanWriteBrightness == true &&
-        !_unsupportedBrightnessWrites.Contains(SelectedLightingZone);
+        (SelectedZoneCapabilities?.CanWriteBrightness == true &&
+        !_unsupportedBrightnessWrites.Contains(SelectedLightingZone) || SupportsVirtualBrightness);
     public bool CanEditBrightness => CanWrite &&
-        SelectedZoneCapabilities?.CanWriteBrightness == true &&
-        !_unsupportedBrightnessWrites.Contains(SelectedLightingZone);
+        (SelectedZoneCapabilities?.CanWriteBrightness == true &&
+        !_unsupportedBrightnessWrites.Contains(SelectedLightingZone) || SupportsVirtualBrightness);
     public Visibility LedStateVisibility => VisibleWhen(SelectedZoneCapabilities is { } zone &&
         (zone.CanReadState && !_unsupportedLedStateReads.Contains(SelectedLightingZone) ||
          zone.CanWriteState && !_unsupportedLedStateWrites.Contains(SelectedLightingZone)));
