@@ -308,7 +308,7 @@ public sealed partial class LightingStudioPage : UserControl
 
     private void LayerDragStarting(object sender, DragItemsStartingEventArgs e)
     {
-        var layer = e.Items.Count == 1 ? e.Items[0] as StudioLayerItem : null;
+        var layer = e.Items.Count == 1 && e.Items[0] is StudioLayerRow row ? row.Layer : null;
         if (layer is null || _viewModel?.CanDragLayer(layer) != true)
         {
             e.Cancel = true;

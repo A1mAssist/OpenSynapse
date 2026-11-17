@@ -261,16 +261,27 @@ public sealed partial class BladeLightingController
         CancellationToken cancellationToken)
     {
         var request = manifest.GetRequiredCapability(CapabilityIds.KeyboardBrightnessGet);
-        var response = await _transport.QueryAsync(
-            devicePath,
-            request.TransactionId,
-            request.MaximumDataSize,
-            request.CommandClass,
-            request.CommandId,
-            request.Arguments,
-            request.Wait,
-            cancellationToken,
-            request.AllowRemainingPacketsMismatch).ConfigureAwait(false);
+        byte[] response;
+        try
+        {
+            response = await _transport.QueryAsync(
+                devicePath,
+                request.TransactionId,
+                request.MaximumDataSize,
+                request.CommandClass,
+                request.CommandId,
+                request.Arguments,
+                request.Wait,
+                cancellationToken,
+                request.AllowRemainingPacketsMismatch).ConfigureAwait(false);
+        }
+        catch (NotSupportedException)
+        {
+            // The firmware answered on this path; it just does not implement the
+            // brightness probe. A stale handle throws IO/timeout, not this.
+            return;
+        }
+
         if (response[6] < 2)
         {
             throw new InvalidOperationException("Keyboard brightness readback is too short; matrix lighting will not start.");

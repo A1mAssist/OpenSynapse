@@ -465,13 +465,34 @@ public sealed partial class DevicesPage : UserControl
 
     private async void RazerHidLightingSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        var device = SelectedRazerHidDevice;
-        if (device?.IsLightingPowerProfileActive != true)
+        if (Visibility != Visibility.Visible)
         {
             return;
         }
 
-        await device.LoadLightingAsync(Lifetime);
+        await ReloadSelectedRazerHidLightingAsync();
+    }
+
+    private async Task ReloadSelectedRazerHidLightingAsync()
+    {
+        if (Host is null ||
+            SelectedRazerHidDevice is not { IsLightingPowerProfileActive: true } device)
+        {
+            return;
+        }
+
+        try
+        {
+            await device.LoadLightingAsync(Lifetime);
+        }
+        catch (OperationCanceledException) when (Lifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception)
+        {
+            // A rescan can replace the device while the combo box is updating;
+            // the next visible selection reloads. Never let that race kill the UI.
+        }
     }
 
     private async void RazerHidScrollExpanding(Expander sender, ExpanderExpandingEventArgs args) =>

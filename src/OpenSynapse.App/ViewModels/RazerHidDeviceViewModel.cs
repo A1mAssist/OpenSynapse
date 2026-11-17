@@ -783,7 +783,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
             if (SetField(ref _brightness, value)) OnPropertyChanged(nameof(BrightnessText));
         }
     }
-    public string BrightnessText => _brightnessKnown || SupportsVirtualBrightness
+    public string BrightnessText => _brightnessKnown || SupportsVirtualBrightness || CanWriteBrightness
         ? $"{Math.Round(Brightness / 255d * 100)}%"
         : "--";
     public bool IsBrightnessBusy { get => _isBrightnessBusy; private set => SetBusy(ref _isBrightnessBusy, value, nameof(CanEditBrightness), nameof(CanWriteBrightness)); }
