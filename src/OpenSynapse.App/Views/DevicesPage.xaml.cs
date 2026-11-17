@@ -122,6 +122,9 @@ public sealed partial class DevicesPage : UserControl
         ApplicationRulesPanel.DataContext = viewModel.DeviceRules;
         SyncApplicationRules(viewModel);
         _ = viewModel.PrimeDeviceBatteriesAsync(Lifetime);
+        // A rescan can replace the selected device while this page is hidden;
+        // refresh the lighting controls now that they are visible again.
+        _ = ReloadSelectedRazerHidLightingAsync();
     }
 
     private void SyncApplicationRules(MainViewModel viewModel)

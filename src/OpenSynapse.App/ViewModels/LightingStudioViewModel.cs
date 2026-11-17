@@ -762,7 +762,8 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
 
     private static bool IsExpected(Exception exception) =>
         exception is IOException or InvalidOperationException or JsonException or
-            UnauthorizedAccessException or System.ComponentModel.Win32Exception or ArgumentException;
+            UnauthorizedAccessException or System.ComponentModel.Win32Exception or ArgumentException or
+            NotSupportedException;
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
