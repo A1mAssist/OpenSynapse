@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using OpenSynapse.Core.Devices;
 using Windows.Graphics.Imaging;
 using StorageFile = global::Windows.Storage.StorageFile;
 
@@ -13,6 +14,21 @@ public sealed partial class RazerMappingAssetService
     /// </summary>
     private static async Task<(double Width, double Height)?> ReadImageSizeAsync(string imagePath)
     {
+        if (imagePath.EndsWith(".avif", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var bytes = await File.ReadAllBytesAsync(imagePath).ConfigureAwait(false);
+                return RazerAvifDecoder.TryDecode(bytes, out _, out var width, out var height)
+                    ? (width, height)
+                    : null;
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                return null;
+            }
+        }
+
         try
         {
             var file = await StorageFile.GetFileFromPathAsync(imagePath);
@@ -33,21 +49,17 @@ public sealed partial class RazerMappingAssetService
         string imagePath, double expectedWidth, double expectedHeight)
     {
         if (expectedWidth <= 0 || expectedHeight <= 0) return true;
-        try
+
+        var size = await ReadImageSizeAsync(imagePath).ConfigureAwait(false);
+        if (size is not { } value || value.Height <= 0)
         {
-            var file = await StorageFile.GetFileFromPathAsync(imagePath);
-            using var stream = await file.OpenReadAsync();
-            var decoder = await BitmapDecoder.CreateAsync(stream);
-            if (decoder.PixelHeight == 0) return true;
-            var actual = (double)decoder.PixelWidth / decoder.PixelHeight;
-            var expected = expectedWidth / expectedHeight;
-            return Math.Abs(actual - expected) <= expected * 0.02;
+            // An unreadable size does not mean the art is wrong; the display decoder decides.
+            return true;
         }
-        catch (Exception exception) when (exception is COMException or IOException or
-            InvalidOperationException or UnauthorizedAccessException or ArgumentException)
-        {
-            return false;
-        }
+
+        var actual = value.Width / value.Height;
+        var expected = expectedWidth / expectedHeight;
+        return Math.Abs(actual - expected) <= expected * 0.02;
     }
 
 }
