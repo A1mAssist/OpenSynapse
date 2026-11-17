@@ -132,6 +132,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 var keyboardIds = visual.Keyboard is { } keyboard
                     ? keyboard.ButtonIdsByKeyName.Values
                         .Concat(RazerKeypadKeyCatalog.ExtraButtonIds(_productId))
+                        .Concat(RazerKeyboardExtraKeyCatalog.ExtraButtonIds(_productId))
                         .Distinct()
                         .Order()
                         .ToArray()
