@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Net;
 using System.Security.Cryptography;
 using OpenSynapse.Windows.Lifecycle;
 
@@ -19,6 +20,10 @@ internal static class RazerCommonDriverInstaller
     private const string CabSha256 =
         "68ECDD94589C1B05F66FB4D758CE95700599E59DBF769A70424098B93434C3B2";
     private const long CabSize = 83089;
+
+    internal const string CabNotFound = "RzCommonCabNotFound";
+    internal const string CabNetwork = "RzCommonCabNetwork";
+    internal const string CabVerification = "RzCommonCabVerification";
 
     private static readonly HttpClient Client = new()
     {
@@ -136,6 +141,11 @@ internal static class RazerCommonDriverInstaller
                 progress?.Report(new RazerDriverInstallProgress(
                     RazerDriverInstallStage.DownloadingCommon,
                     "RzCommon"));
+                if (await ProbeCabAsync(cancellationToken).ConfigureAwait(false) is { } probe)
+                {
+                    return (null, new RazerDriverInstallResult(
+                        false, RazerDriverInstallFailure.DownloadFailed, Error: probe));
+                }
                 await DownloadCabAsync(cabPath, cancellationToken).ConfigureAwait(false);
             }
 
@@ -148,15 +158,54 @@ internal static class RazerCommonDriverInstaller
             RazerDriverInstaller.VerifyPackage(sysPath, requireRazerPublisher: false);
             return (infPath, null);
         }
-        catch (Exception exception) when (
-            exception is IOException or HttpRequestException or InvalidOperationException or
-                CryptographicException)
+        catch (Exception exception) when (exception is InvalidDataException or CryptographicException)
         {
             return (null, new RazerDriverInstallResult(
                 false,
-                exception is InvalidDataException or CryptographicException
-                    ? RazerDriverInstallFailure.InvalidPackage
-                    : RazerDriverInstallFailure.DownloadFailed));
+                RazerDriverInstallFailure.InvalidPackage,
+                Error: $"{CabVerification}: {exception.Message}"));
+        }
+        catch (HttpRequestException exception)
+        {
+            return (null, new RazerDriverInstallResult(
+                false,
+                RazerDriverInstallFailure.DownloadFailed,
+                Error: $"{CabNetwork}: {CabUrl} {exception.Message}"));
+        }
+        catch (Exception exception) when (
+            exception is IOException or InvalidOperationException)
+        {
+            return (null, new RazerDriverInstallResult(
+                false,
+                RazerDriverInstallFailure.DownloadFailed,
+                Error: exception.Message));
+        }
+    }
+
+    /// <summary>
+    /// A definitive 404 means the catalog link rotted; any other answer is left to
+    /// the GET, because some proxies reject HEAD but serve the download.
+    /// </summary>
+    internal static string? ClassifyCabProbe(HttpStatusCode status) =>
+        status == HttpStatusCode.NotFound ? $"{CabNotFound}: {CabUrl} returned 404" : null;
+
+    private static async Task<string?> ProbeCabAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Head, CabUrl);
+            using var response = await Client
+                .SendAsync(request, cancellationToken)
+                .ConfigureAwait(false);
+            return ClassifyCabProbe(response.StatusCode);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
+        {
+            return $"{CabNetwork}: {CabUrl} {exception.Message}";
         }
     }
 
