@@ -4,6 +4,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Lighting;
 using OpenSynapse.Core.Storage;
 using OpenSynapse.Windows.Devices;
@@ -37,10 +38,12 @@ public sealed partial class RazerMappingAssetService
     private const string UserAgent = "OpenSynapse-Mapping/1.0";
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(8);
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(20) };
+    private static readonly LocalDiagnosticLog Log = new();
 
     private readonly string _cacheRoot;
     private readonly StudioManifestService _studio;
     private readonly ConcurrentDictionary<(ushort ProductId, RazerMappingDeviceKind Kind), Lazy<Task<RazerMappingVisual>>> _cache = new();
+    private readonly ConcurrentDictionary<ushort, byte> _sourceChecked = new();
 
     public RazerMappingAssetService()
     {
@@ -129,6 +132,8 @@ public sealed partial class RazerMappingAssetService
         {
             return null;
         }
+
+        ReportStaleSource(productId, manifest.MainJs);
 
         RazerMappingBundle? bundle = null;
         if (manifest.MainJs is { Length: > 0 } mainJs)
@@ -385,6 +390,24 @@ public sealed partial class RazerMappingAssetService
             UnauthorizedAccessException or JsonException)
         {
             return cached;
+        }
+    }
+
+    private void ReportStaleSource(ushort productId, string? liveMainJs)
+    {
+        if (liveMainJs is not { Length: > 0 } ||
+            !RazerSpecialKeyMap.TryGetEmbeddedSource(productId, out var embedded) ||
+            !_sourceChecked.TryAdd(productId, 0))
+        {
+            return;
+        }
+
+        var live = Path.GetFileName(liveMainJs.Split('?')[0]);
+        if (!string.Equals(Path.GetFileName(embedded), live, StringComparison.OrdinalIgnoreCase))
+        {
+            Log.TryWrite(
+                "mapping-catalog",
+                $"pid={productId:X4} stale embedded={embedded} live={live}");
         }
     }
 

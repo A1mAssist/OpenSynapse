@@ -15,6 +15,7 @@ internal static class RazerSpecialKeyMap
         PropertyNameCaseInsensitive = true,
     };
     private static readonly FrozenDictionary<ushort, IReadOnlyDictionary<byte, byte>> Maps = Load();
+    private static readonly FrozenDictionary<ushort, string> Sources = LoadSources();
 
     // Bundle anchors carry the private-key code (32 = DPI+) while the profile
     // reports the mapping button id (0x0B). The JSON proves the pair.
@@ -49,6 +50,10 @@ internal static class RazerSpecialKeyMap
         return false;
     }
 
+    /// <summary>The bundle anchor this map was generated from, for staleness checks only.</summary>
+    internal static bool TryGetEmbeddedSource(ushort productId, out string source) =>
+        Sources.TryGetValue(productId, out source!);
+
     private static FrozenDictionary<ushort, IReadOnlyDictionary<byte, byte>> Load()
     {
         var assembly = typeof(RazerSpecialKeyMap).Assembly;
@@ -73,6 +78,25 @@ internal static class RazerSpecialKeyMap
         return result.ToFrozenDictionary();
     }
 
-    private sealed record Entry(Dictionary<string, KeyEntry> Keys);
+    private static FrozenDictionary<ushort, string> LoadSources()
+    {
+        var assembly = typeof(RazerSpecialKeyMap).Assembly;
+        var resourceName = assembly.GetManifestResourceNames()
+            .SingleOrDefault(name => name.EndsWith(".Devices.RazerHid.mapping-private-keys.json",
+                StringComparison.Ordinal))
+            ?? throw new InvalidOperationException("Missing embedded mapping-private-keys.json.");
+        using var stream = assembly.GetManifestResourceStream(resourceName)
+            ?? throw new InvalidOperationException($"Cannot open {resourceName}.");
+        var entries = JsonSerializer.Deserialize<Dictionary<string, Entry>>(stream, JsonOptions)
+            ?? throw new InvalidOperationException("mapping-private-keys.json is empty.");
+
+        return entries
+            .Where(pair => !string.IsNullOrWhiteSpace(pair.Value.Source))
+            .ToFrozenDictionary(
+                pair => Convert.ToUInt16(pair.Key, 16),
+                pair => pair.Value.Source!);
+    }
+
+    private sealed record Entry(string? Source, Dictionary<string, KeyEntry> Keys);
     private sealed record KeyEntry(int Code);
 }
