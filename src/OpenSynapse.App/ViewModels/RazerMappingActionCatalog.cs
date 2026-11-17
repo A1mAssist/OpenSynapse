@@ -84,12 +84,18 @@ public class RazerHidMappingActionCatalog : IRazerMappingActionCatalog
 /// </summary>
 public class RazerKeyboardMappingActionCatalog : RazerHidMappingActionCatalog
 {
+    private readonly ushort _productId;
+
+    public RazerKeyboardMappingActionCatalog(ushort productId = 0) => _productId = productId;
+
     public static new RazerKeyboardMappingActionCatalog Instance { get; } = new();
 
     public override string DescribeButton(byte buttonId) =>
-        buttonId is 0x03 or 0x09 or 0x0A
-            ? RazerHidMappingActions.DescribeButton(buttonId)
-            : AppStrings.FormatText("RazerMappingKeyboardButton", buttonId);
+        RazerKeyboardExtraKeyCatalog.DescribeResourceKey(_productId, buttonId) is { } key
+            ? AppStrings.Text(key)
+            : buttonId is 0x03 or 0x09 or 0x0A
+                ? RazerHidMappingActions.DescribeButton(buttonId)
+                : AppStrings.FormatText("RazerMappingKeyboardButton", buttonId);
 }
 
 /// <summary>

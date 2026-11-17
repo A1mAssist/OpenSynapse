@@ -4092,4 +4092,21 @@
   <data name="RazerDualDongleNoCandidate" xml:space="preserve"><value>No free slot on this receiver.</value></data>
   <data name="RazerDualDongleStatusUnknown" xml:space="preserve"><value>Could not read the current connection state.</value></data>
   <data name="RazerDualDongleInvalid" xml:space="preserve"><value>The receiver rejected the pairing.</value></data>
+  <data name="RazerMappingKeyM1.Text" xml:space="preserve"><value>M1</value></data>
+  <data name="RazerMappingKeyM2.Text" xml:space="preserve"><value>M2</value></data>
+  <data name="RazerMappingKeyM3.Text" xml:space="preserve"><value>M3</value></data>
+  <data name="RazerMappingKeyM4.Text" xml:space="preserve"><value>M4</value></data>
+  <data name="RazerMappingKeyM5.Text" xml:space="preserve"><value>M5</value></data>
+  <data name="RazerMappingKeyM6.Text" xml:space="preserve"><value>M6</value></data>
+  <data name="RazerMappingMediaPrev.Text" xml:space="preserve"><value>Previous Track</value></data>
+  <data name="RazerMappingMediaPlay.Text" xml:space="preserve"><value>Play/Pause</value></data>
+  <data name="RazerMappingMediaNext.Text" xml:space="preserve"><value>Next Track</value></data>
+  <data name="RazerMappingDialClick.Text" xml:space="preserve"><value>Dial Click</value></data>
+  <data name="RazerMappingSideKey1.Text" xml:space="preserve"><value>Side Key 1</value></data>
+  <data name="RazerMappingSideKey2.Text" xml:space="preserve"><value>Side Key 2</value></data>
+  <data name="RazerMappingSideKey3.Text" xml:space="preserve"><value>Side Key 3</value></data>
+  <data name="RazerMappingCommandDial.Text" xml:space="preserve"><value>Command Dial</value></data>
+  <data name="RazerMappingVolumeDown.Text" xml:space="preserve"><value>Volume -</value></data>
+  <data name="RazerMappingVolumeUp.Text" xml:space="preserve"><value>Volume +</value></data>
+  <data name="RazerMappingMute.Text" xml:space="preserve"><value>Mute</value></data>
 </root>

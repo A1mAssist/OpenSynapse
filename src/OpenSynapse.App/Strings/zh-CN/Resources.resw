@@ -4528,4 +4528,21 @@
   <data name="RazerDualDongleNoCandidate" xml:space="preserve"><value>这个接收器没有空位（已连 1 个键盘 + 1 个鼠标）。</value></data>
   <data name="RazerDualDongleStatusUnknown" xml:space="preserve"><value>无法读取当前连接状态。</value></data>
   <data name="RazerDualDongleInvalid" xml:space="preserve"><value>接收器拒绝了这次配对。</value></data>
+  <data name="RazerMappingKeyM1.Text" xml:space="preserve"><value>M1</value></data>
+  <data name="RazerMappingKeyM2.Text" xml:space="preserve"><value>M2</value></data>
+  <data name="RazerMappingKeyM3.Text" xml:space="preserve"><value>M3</value></data>
+  <data name="RazerMappingKeyM4.Text" xml:space="preserve"><value>M4</value></data>
+  <data name="RazerMappingKeyM5.Text" xml:space="preserve"><value>M5</value></data>
+  <data name="RazerMappingKeyM6.Text" xml:space="preserve"><value>M6</value></data>
+  <data name="RazerMappingMediaPrev.Text" xml:space="preserve"><value>上一曲</value></data>
+  <data name="RazerMappingMediaPlay.Text" xml:space="preserve"><value>播放/暂停</value></data>
+  <data name="RazerMappingMediaNext.Text" xml:space="preserve"><value>下一曲</value></data>
+  <data name="RazerMappingDialClick.Text" xml:space="preserve"><value>旋钮按下</value></data>
+  <data name="RazerMappingSideKey1.Text" xml:space="preserve"><value>侧键 1</value></data>
+  <data name="RazerMappingSideKey2.Text" xml:space="preserve"><value>侧键 2</value></data>
+  <data name="RazerMappingSideKey3.Text" xml:space="preserve"><value>侧键 3</value></data>
+  <data name="RazerMappingCommandDial.Text" xml:space="preserve"><value>命令拨盘</value></data>
+  <data name="RazerMappingVolumeDown.Text" xml:space="preserve"><value>音量 -</value></data>
+  <data name="RazerMappingVolumeUp.Text" xml:space="preserve"><value>音量 +</value></data>
+  <data name="RazerMappingMute.Text" xml:space="preserve"><value>静音</value></data>
 </root>
