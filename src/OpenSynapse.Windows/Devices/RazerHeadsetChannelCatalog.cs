@@ -176,8 +176,9 @@ public static class RazerHeadsetChannelCatalog
             [0x0534] = new("AudioAWKittyBLE", RazerHeadsetChannel.Unsupported),
             [0x0562] = new("AudioAWKittyBLE", RazerHeadsetChannel.Unsupported),
             [0x052D] = new("AudioNXPDevice", RazerHeadsetChannel.Unsupported),
-            // 053C has no bundle in the CDN snapshot, so its device type is unknown.
-            [0x053C] = new("unknown", RazerHeadsetChannel.Unsupported),
+            // 053C is the Barracuda 2.4 dongle of the 053B bundle (dongleId 1340) and
+            // uses the same AudioMxicDevice / Mabel T1 transport as 053B.
+            [0x053C] = new("AudioMxicDevice", RazerHeadsetChannel.Mxic64),
         }.ToFrozenDictionary();
 
     public static RazerHeadsetChannel Resolve(ushort productId) =>

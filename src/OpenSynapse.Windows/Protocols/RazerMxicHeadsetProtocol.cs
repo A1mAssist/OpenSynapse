@@ -83,6 +83,7 @@ public static class RazerMxicHeadsetProtocol
         0x0539,
         0x053A,
         0x053B,
+        0x053C,
         0x0583,
         0x0584,
         0x0A61,
@@ -125,6 +126,7 @@ public static class RazerMxicHeadsetProtocol
         0x0539,
         0x053A,
         0x053B,
+        0x053C,
         ProductId,
         0x0583,
         0x0584,
@@ -152,6 +154,7 @@ public static class RazerMxicHeadsetProtocol
         0x0539,
         0x053A,
         0x053B,
+        0x053C,
     }.ToFrozenSet();
 
     public static bool UsesMabelT1(ushort productId) => MabelT1ProductIds.Contains(productId);
