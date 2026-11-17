@@ -222,6 +222,14 @@ public sealed partial class RazerMappingAssetService
         ushort productId,
         CancellationToken cancellationToken)
     {
+        // 0244's own page draws these 20 paths over its 3x product photo; use that
+        // art instead of the Chroma studio SVG when the photo is available.
+        if (RazerKeypadMappingLayoutCatalog.TryGet(productId, out var keypadLayout) &&
+            await LoadKeypadBackgroundAsync(productId, cancellationToken).ConfigureAwait(false) is { } background)
+        {
+            return CreateOfficialKeypadLayout(keypadLayout, background);
+        }
+
         // 0244 declares editions [0, 128]; other catalog keyboards expose 129. Probe 0 first
         // so the existing art keeps winning, then keep both known alternate editions.
         foreach (var edition in new[] { 0, 129, 128 })
@@ -251,6 +259,54 @@ public sealed partial class RazerMappingAssetService
         }
 
         return null;
+    }
+
+    private async Task<Uri?> LoadKeypadBackgroundAsync(
+        ushort productId,
+        CancellationToken cancellationToken)
+    {
+        var manifest = await ReadAssetManifestAsync(productId, cancellationToken).ConfigureAwait(false);
+        if (manifest?.Image3x is not { Length: > 0 } image)
+        {
+            return null;
+        }
+
+        var path = await CacheRemoteFileAsync(productId, image, MaxImageBytes, "image", cancellationToken)
+            .ConfigureAwait(false);
+        if (path is null)
+        {
+            return null;
+        }
+
+        // A broken cache entry would leave the stage blank instead of falling back to the SVG.
+        var uri = new Uri(path);
+        return await CreateImageOnlyAsync(uri, cancellationToken).ConfigureAwait(false) is null
+            ? null
+            : uri;
+    }
+
+    private static RazerMappingKeyboardLayout CreateOfficialKeypadLayout(
+        RazerKeypadMappingLayout source,
+        Uri background)
+    {
+        var paths = new StudioSvgPath[source.Keys.Count];
+        var visualKeys = new StudioKeyboardKey[source.Keys.Count];
+        var buttonIds = new Dictionary<string, byte>(source.Keys.Count, StringComparer.OrdinalIgnoreCase);
+        for (var index = 0; index < source.Keys.Count; index++)
+        {
+            var key = source.Keys[index];
+            var pathId = FormattableString.Invariant($"keypad-{key.Id:X2}");
+            paths[index] = new StudioSvgPath(
+                pathId, key.Path, null, null, 1, StudioSvgRole.Selection, null, null, key.Label, null);
+            visualKeys[index] = new StudioKeyboardKey(key.Label, pathId, key.Path, null);
+            buttonIds[key.Label] = key.Id;
+        }
+
+        var visual = new StudioKeyboardVisual(source.Width, source.Height, paths, visualKeys)
+        {
+            IsKeypad = true,
+        };
+        return new RazerMappingKeyboardLayout(visual, buttonIds) { BackgroundImage = background };
     }
 
     private async Task<AssetManifest?> ReadAssetManifestAsync(

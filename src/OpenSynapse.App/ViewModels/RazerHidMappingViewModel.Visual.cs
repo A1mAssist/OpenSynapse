@@ -1,10 +1,23 @@
 namespace OpenSynapse.App.ViewModels;
 
+using Microsoft.UI.Xaml.Media;
 using OpenSynapse.App.Runtime;
 
 public sealed partial class RazerHidMappingViewModel
 {
     private bool _visualCounted;
+    private ImageSource? _keyboardBackgroundImage;
+
+    public ImageSource? KeyboardBackgroundImage
+    {
+        get => _keyboardBackgroundImage;
+        private set
+        {
+            if (ReferenceEquals(_keyboardBackgroundImage, value)) return;
+            _keyboardBackgroundImage = value;
+            OnPropertyChanged();
+        }
+    }
 
     internal void StartVisualLoad()
     {
@@ -28,6 +41,7 @@ public sealed partial class RazerHidMappingViewModel
         _layout = null;
         _keyboardLayout = null;
         LayoutImage = null;
+        KeyboardBackgroundImage = null;
         _visualLoadStarted = false;
         OnPropertyChanged(nameof(Layout));
         OnPropertyChanged(nameof(StageVisibility));
@@ -65,6 +79,13 @@ public sealed partial class RazerHidMappingViewModel
 
             if (visual.Keyboard is { } keyboard)
             {
+                if (keyboard.BackgroundImage is { } background)
+                {
+                    KeyboardBackgroundImage = await RazerMappingImageLoader
+                        .LoadAsync(background, (int)Math.Ceiling(keyboard.Visual.Width))
+                        .ConfigureAwait(true);
+                }
+
                 _keyboardLayout = keyboard;
                 OnPropertyChanged(nameof(KeyboardLayout));
                 OnPropertyChanged(nameof(KeyboardStageVisibility));
