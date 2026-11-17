@@ -26,17 +26,12 @@ public sealed partial class RazerFeatureTransport
                     return NextDockTransactionId(ref sequence);
                 return (byte)(0x80 | NextDockTransactionId(ref sequence));
             }
-            // 00A4 rzDevice25Linker uses E0 | 0..30 for linker and child battery/charging
-            // commands; Scan(46)/Pair(41) clear the high bits. OpenRazer's
-            // razeraccessory_driver sends FF for the 00A4 firmware, serial and brightness
-            // commands, and FF is the wildcard that accepts any echoed transaction id.
-            if (commandClass == 0x07 && commandId is 0x80 or 0x84)
-                return (byte)(0xE0 | NextDockTransactionId(ref sequence));
-            if (commandClass != 0x00) return 0xFF;
-            if (commandId is 0x46 or 0x41) return NextDockTransactionId(ref sequence);
-            if (commandId is 0xBF or 0xC7 or 0x47)
-                return (byte)(0xE0 | NextDockTransactionId(ref sequence));
-            return 0xFF;
+            // 00A4 rzDevice25Linker uses E0 | 0..30 for every command. Scan(46)/Pair(41)
+            // clear the high bits. The linker firmware leaves later commands busy when
+            // the initial firmware/serial handshake uses OpenRazer's FF wildcard.
+            if (commandClass == 0x00 && commandId is 0x46 or 0x41)
+                return NextDockTransactionId(ref sequence);
+            return (byte)(0xE0 | NextDockTransactionId(ref sequence));
         }
         if (DeviceIdParser.TryParse(devicePath, out _, out var productId) &&
             RazerKeyboardProtocol.UsesDualLinkTransaction(productId))

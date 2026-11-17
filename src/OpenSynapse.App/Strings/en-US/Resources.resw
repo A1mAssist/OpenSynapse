@@ -4100,7 +4100,7 @@
   <data name="RazerDualDongleTimeout" xml:space="preserve"><value>Device not detected. Check pairing mode, update the dongle firmware if needed.</value></data>
   <data name="RazerDualDongleNoCandidate" xml:space="preserve"><value>No free slot on this receiver.</value></data>
   <data name="RazerDualDongleStatusUnknown" xml:space="preserve"><value>Could not read the current connection state.</value></data>
-  <data name="RazerDualDongleInvalid" xml:space="preserve"><value>The receiver rejected the pairing.</value></data>
+  <data name="RazerDualDongleInvalid" xml:space="preserve"><value>Pairing failed. The receiver may still be scanning or controlled by Razer Synapse; close Synapse and retry. If you use a Mouse Dock Pro on firmware 1.xx, update it first.</value></data>
   <data name="DeviceIdentityUnavailable" xml:space="preserve"><value>Device identity unavailable</value></data>
   <data name="ProfileDeleteDeviceBindings" xml:space="preserve"><value>{0} device application rules use this profile. Deletion keeps the rules and marks them as missing.</value></data>
   <data name="HomeLayoutLoadFailed" xml:space="preserve"><value>Could not load the home layout: {0}</value></data>
