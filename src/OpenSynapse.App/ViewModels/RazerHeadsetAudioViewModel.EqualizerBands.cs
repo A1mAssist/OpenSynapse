@@ -11,7 +11,9 @@ public sealed partial class RazerHeadsetAudioViewModel
         var frequencies = bands.Count == 10
             ? RazerHeadsetAudioProtocol.TenBandFrequencies
             : RazerHeadsetAudioProtocol.EightBandFrequencies;
-        var (minimum, maximum, step) = _connection.Transport switch
+        var (minimum, maximum, step) = IsProtocol40
+            ? (-12d, 12d, 1d)
+            : _connection.Transport switch
         {
             RazerHeadsetAudioTransport.ValkyrieT3Feature64 or RazerHeadsetAudioTransport.Jolie64 =>
                 (-6d, 6d, 1d),

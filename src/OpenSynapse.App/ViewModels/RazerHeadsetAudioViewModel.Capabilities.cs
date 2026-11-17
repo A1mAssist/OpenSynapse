@@ -133,11 +133,33 @@ public sealed partial class RazerHeadsetAudioViewModel
             ? [HeadsetCapability.Battery, .. ValkyrieT3Capabilities]
             : ValkyrieT3Capabilities;
 
-    private static readonly HeadsetCapability[] Protocol40Capabilities =
-    [
-        HeadsetCapability.Battery,
-        HeadsetCapability.Charging,
-    ];
+    private HeadsetCapability[] Protocol40ProductCapabilities =>
+        _connection.ProductId switch
+        {
+            0x05B9 =>
+            [
+                HeadsetCapability.Battery,
+                HeadsetCapability.Charging,
+                HeadsetCapability.EqPreset,
+                HeadsetCapability.EqBands,
+                HeadsetCapability.MicMuted,
+                HeadsetCapability.MicMonitoring,
+                HeadsetCapability.Dnd,
+            ],
+            0x0A61 or 0x0A64 or 0x0A68 or 0x0A6C or 0x0A81 =>
+            [
+                HeadsetCapability.Battery,
+                HeadsetCapability.Charging,
+                HeadsetCapability.EqPreset,
+                HeadsetCapability.EqBands,
+                HeadsetCapability.Dnd,
+            ],
+            _ =>
+            [
+                HeadsetCapability.Battery,
+                HeadsetCapability.Charging,
+            ],
+        };
 
     private HeadsetCapability[] Protocol25Capabilities
     {
@@ -196,7 +218,7 @@ public sealed partial class RazerHeadsetAudioViewModel
     };
 
     private HeadsetCapability[] SupportedCapabilities =>
-        IsProtocol40 ? Protocol40Capabilities : _connection.Transport switch
+        IsProtocol40 ? Protocol40ProductCapabilities : _connection.Transport switch
         {
             RazerHeadsetAudioTransport.AvneraFeature65 => AvneraCapabilities,
             RazerHeadsetAudioTransport.KrakenBase37 => KrakenBaseCapabilities,

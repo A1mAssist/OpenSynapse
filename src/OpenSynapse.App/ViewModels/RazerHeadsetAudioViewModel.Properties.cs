@@ -232,7 +232,7 @@ public sealed partial class RazerHeadsetAudioViewModel
     public Visibility EqBandsVisibility => _hasEqBands ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility EqPresetVisibility => _hasEqPreset &&
-        !(IsMixer053E || IsProtocol40 || IsKrakenBase || IsAvnera65)
+        !(IsMixer053E || IsKrakenBase || IsAvnera65)
             ? Visibility.Visible
             : Visibility.Collapsed;
 
@@ -251,9 +251,7 @@ public sealed partial class RazerHeadsetAudioViewModel
     public Visibility BassVisibility => _hasBass ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility MicCardVisibility =>
-        IsProtocol40
-            ? Visibility.Collapsed
-            : _hasMicMuted || _hasMicVolume ? Visibility.Visible : Visibility.Collapsed;
+        _hasMicMuted || _hasMicVolume ? Visibility.Visible : Visibility.Collapsed;
 
     public bool MicMuted
     {

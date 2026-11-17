@@ -6,7 +6,7 @@ public sealed partial class RazerMxicHeadsetService
 {
     private byte[] CreateAudioDndRead() =>
         _dialect == MxicDialect.Protocol40
-            ? RazerProtocol40HeadsetProtocol.CreateRequest([1, 0x18, 0x85], [0x00])
+            ? RazerProtocol40HeadsetProtocol.CreateGetDnd()
             : RazerMxicHeadsetProtocol.CreateGetAudioDnd(_productId);
 
     private byte[] AudioDndReadHeader => _dialect switch

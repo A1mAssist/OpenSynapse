@@ -6,7 +6,9 @@ namespace OpenSynapse.App.ViewModels;
 public sealed partial class RazerHeadsetAudioViewModel
 {
     public bool Dnd { get => _dnd; set => SetField(ref _dnd, value); }
-    public Visibility DndVisibility => _hasDnd && !IsProtocol40 ? Visibility.Visible : Visibility.Collapsed;
+    private bool SupportsDnd =>
+        !IsProtocol40 || RazerProtocol40HeadsetProtocol.SupportsDnd(_connection.ProductId);
+    public Visibility DndVisibility => _hasDnd && SupportsDnd ? Visibility.Visible : Visibility.Collapsed;
 
     public bool AutoPause { get => _autoPause; set => SetField(ref _autoPause, value); }
     public Visibility AutoPauseVisibility => _hasAutoPause ? Visibility.Visible : Visibility.Collapsed;
@@ -77,7 +79,7 @@ public sealed partial class RazerHeadsetAudioViewModel
     public Visibility MicReverbVisibility => _hasMicReverb ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility AdvancedAudioVisibility =>
-        !IsProtocol40 && (_hasDnd || _hasAutoPause || _hasGestureControl || _hasDolby || _hasNightMode || _hasVoicePrompts)
+        SupportsDnd && (_hasDnd || _hasAutoPause || _hasGestureControl || _hasDolby || _hasNightMode || _hasVoicePrompts)
             ? Visibility.Visible
             : Visibility.Collapsed;
 
