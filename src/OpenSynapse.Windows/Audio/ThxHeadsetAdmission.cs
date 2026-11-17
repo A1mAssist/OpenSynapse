@@ -59,7 +59,7 @@ internal sealed record ThxHeadsetProfile(
 /// (V3) or the V4 audio stack, and a native control DLL. The APO and the service
 /// come from the per-model Razer THX installer; the DLL is downloaded here.
 /// </summary>
-internal static class ThxHeadsetAdmission
+internal static partial class ThxHeadsetAdmission
 {
     internal const string ServiceName = "VSSrv";
 
@@ -487,6 +487,7 @@ internal static class ThxHeadsetAdmission
             "https://app-assets.razer.com/files/synapse/devices/1427/properties-updater/thx_razer_barracudav2pro_properties_updater_v4.3.13-18360025_main.exe",
             installerLength: 59075216,
             installerSha256: "4BE69E9764A4B44CA809FDA01387D2B5D8E40944F8A5F78F804FCB0580E8C264");
+        AddConsoleProfiles(profiles);
         return profiles;
     }
 
@@ -523,10 +524,11 @@ internal static class ThxHeadsetAdmission
         string v4ProductId,
         string v4EndpointId,
         string installerUri,
-        string gameProfilesUri,
+        string? gameProfilesUri = null,
         string? patcherUri = null,
         long installerLength = 0,
-        string? installerSha256 = null) =>
+        string? installerSha256 = null,
+        long nativeDllLength = V4DllLength) =>
         profiles[productId] = new ThxHeadsetProfile(
             productId,
             name,
@@ -536,7 +538,7 @@ internal static class ThxHeadsetAdmission
             v4EndpointId,
             dllName,
             dllUri,
-            V4DllLength,
+            nativeDllLength,
             dllSha256,
             HasSidetone: false,
             gameProfilesUri,
