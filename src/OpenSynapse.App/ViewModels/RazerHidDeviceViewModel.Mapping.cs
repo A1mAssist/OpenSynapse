@@ -26,6 +26,9 @@ public sealed partial class RazerHidDeviceViewModel
         RazerNagaSideButtons.IsNaga(
             0x1532, Connection.Definition.ProductId, Connection.Definition.DisplayName);
 
+    private bool IsKeypad =>
+        Connection.Definition.ProductId is 0x022B or 0x0244 or 0x02EB;
+
     public RazerHidMappingViewModel Mapping =>
         _mapping ??= new RazerHidMappingViewModel(
             new RazerHidMappingTransport(_service, Connection),
@@ -36,7 +39,9 @@ public sealed partial class RazerHidDeviceViewModel
             deviceKind: Connection.Definition.Category == DeviceCategory.Keyboard
                 ? RazerMappingDeviceKind.Keyboard
                 : RazerMappingDeviceKind.Mouse,
-            actionCatalog: IsNagaMouse ? RazerNagaMappingActionCatalog.Instance : null,
+            actionCatalog: IsNagaMouse
+                ? RazerNagaMappingActionCatalog.Instance
+                : IsKeypad ? RazerKeypadMappingActionCatalog.Instance : null,
             mappingProfileSaver: PersistMappingProfileAsync,
             canWriteOnboardMacros:
                 Has(RazerHidBackendCapability.MacroStorageDataWrite) &&

@@ -4211,6 +4211,11 @@
   <data name="RazerMappingKeyLeftArrow" xml:space="preserve"><value>左方向键</value></data>
   <data name="RazerMappingKeyDownArrow" xml:space="preserve"><value>下方向键</value></data>
   <data name="RazerMappingKeyUpArrow" xml:space="preserve"><value>上方向键</value></data>
+  <data name="RazerMappingKeypadDpadUp" xml:space="preserve"><value>方向键上</value></data>
+  <data name="RazerMappingKeypadDpadDown" xml:space="preserve"><value>方向键下</value></data>
+  <data name="RazerMappingKeypadDpadLeft" xml:space="preserve"><value>方向键左</value></data>
+  <data name="RazerMappingKeypadDpadRight" xml:space="preserve"><value>方向键右</value></data>
+  <data name="RazerMappingKeypadThumbKey" xml:space="preserve"><value>拇指键 {0}</value></data>
   <data name="RazerMappingKeyNumLock" xml:space="preserve"><value>数字锁定</value></data>
   <data name="RazerMappingKeyNumpad" xml:space="preserve"><value>小键盘 {0}</value></data>
   <data name="RazerMappingKeyLeft" xml:space="preserve"><value>左</value></data>
