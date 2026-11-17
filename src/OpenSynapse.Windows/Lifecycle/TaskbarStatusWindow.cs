@@ -398,8 +398,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         var monitor = MonitorFromWindow(taskbar, MonitorDefaultToNearest);
         var monitorInfo = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
         if (monitor == IntPtr.Zero || !GetMonitorInfoW(monitor, ref monitorInfo) ||
-            taskbarRect.Width <= taskbarRect.Height ||
-            taskbarRect.Bottom < monitorInfo.Monitor.Bottom - 2)
+            taskbarRect.Width < taskbarRect.Height * 3)
         {
             return false;
         }
@@ -409,9 +408,8 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         height = Math.Min(
             (int)Math.Round(TargetHeightDip * scale),
             (int)Math.Round(MaximumHeightDip * scale));
-        height = Math.Min(height, clientHeight - (int)Math.Round(8 * scale));
-        height = Math.Max((int)Math.Round(MinimumHeightDip * scale), height);
-        if (height > clientHeight || clientHeight < MinimumHeightDip * scale)
+        height = Math.Min(clientHeight, Math.Max((int)Math.Round(MinimumHeightDip * scale), height));
+        if (clientHeight < (int)Math.Round(8 * scale))
         {
             return false;
         }
