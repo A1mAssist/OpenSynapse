@@ -69,8 +69,11 @@ public sealed partial class RazerHidSpecialLightingService
             : Task.FromResult<string?>(null);
 
     private const ushort ArgbProductId = 0x0F1F;
-    private static readonly FrozenDictionary<ushort, KrakenDefinition> KrakenDevices =
-        new Dictionary<ushort, KrakenDefinition>
+    private static readonly FrozenDictionary<ushort, KrakenDefinition> KrakenDevices = BuildKrakenDevices();
+
+    private static FrozenDictionary<ushort, KrakenDefinition> BuildKrakenDevices()
+    {
+        var devices = new Dictionary<ushort, KrakenDefinition>
         {
             [0x0501] = new("Razer Kraken 7.1", RazerHidKrakenLayout.Rainie,
                 Effects(RazerHidLightingEffect.Off, RazerHidLightingEffect.Static), false),
@@ -123,7 +126,10 @@ public sealed partial class RazerHidSpecialLightingService
                 LedCount: 6),
             [0x0533] = Krystal("Razer Kraken V3 HyperSense"),
             [0x0549] = Krystal("Razer Kraken V3"),
-        }.ToFrozenDictionary();
+        };
+        AddBillieDevices(devices);
+        return devices.ToFrozenDictionary();
+    }
 
     /// <summary>
     /// Headsets that already own an audio page keep their 37-byte lighting there, so the
@@ -578,15 +584,6 @@ public sealed partial class RazerHidSpecialLightingService
             throw new InvalidOperationException(connection.Error ?? "The special lighting endpoint is not resolved.");
         }
     }
-
-    private static FrozenSet<RazerHidLightingEffect> Effects(params RazerHidLightingEffect[] effects) =>
-        effects.ToFrozenSet();
-
-    private static KrakenDefinition Kylie(string name) => new(name, RazerHidKrakenLayout.Kylie,
-        Effects(RazerHidLightingEffect.Off, RazerHidLightingEffect.Static,
-            RazerHidLightingEffect.Spectrum, RazerHidLightingEffect.BreathingSingle,
-            RazerHidLightingEffect.BreathingDual, RazerHidLightingEffect.BreathingTriple,
-            RazerHidLightingEffect.Custom), true);
 
     private sealed record KrakenDefinition(
         string Name,
