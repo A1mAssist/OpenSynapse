@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using Windows.Foundation;
 using Windows.UI.ViewManagement;
+using Microsoft.UI.Xaml.Automation;
 
 namespace OpenSynapse.App;
 
@@ -175,6 +176,8 @@ public sealed partial class MainWindow
 
     private void FinishLaunchOverlay()
     {
+        AutomationProperties.SetAccessibilityView(LaunchContent, Microsoft.UI.Xaml.Automation.Peers.AccessibilityView.Raw);
+        LaunchContent.Visibility = Visibility.Collapsed;
         ShowTitleBarBrand();
         CollapseLaunchLayers();
         ApplyTitleBarColors();

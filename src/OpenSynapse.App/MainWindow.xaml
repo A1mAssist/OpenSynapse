@@ -55,7 +55,7 @@
     </NavigationView>
     <Grid x:Name="LaunchVeil" Grid.RowSpan="2" Canvas.ZIndex="90" IsHitTestVisible="False" Background="#D9171717" />
     <Grid x:Name="LaunchBackdrop" Grid.RowSpan="2" Canvas.ZIndex="100" Background="{StaticResource CanvasBrush}" IsHitTestVisible="False" />
-    <Grid x:Name="LaunchContent" Grid.RowSpan="2" Canvas.ZIndex="110" Background="Transparent" IsHitTestVisible="False">
+    <Grid x:Name="LaunchContent" AutomationProperties.AutomationId="LaunchContent" Grid.RowSpan="2" Canvas.ZIndex="110" Background="Transparent" IsHitTestVisible="False">
       <StackPanel x:Name="LaunchPanel" Width="420" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
         <Grid x:Name="LaunchMarkHost" Width="112" Height="112" HorizontalAlignment="Center">
           <ProgressRing local:Localized.Uid="Loc_A7FABDAFBA" x:Name="LaunchProgressRing" Width="108" Height="108" IsActive="True" Foreground="{StaticResource AccentBrush}" />
