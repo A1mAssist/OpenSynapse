@@ -3775,6 +3775,11 @@
   <data name="RazerMappingKeyLeftArrow" xml:space="preserve"><value>Left Arrow</value></data>
   <data name="RazerMappingKeyDownArrow" xml:space="preserve"><value>Down Arrow</value></data>
   <data name="RazerMappingKeyUpArrow" xml:space="preserve"><value>Up Arrow</value></data>
+  <data name="RazerMappingKeypadDpadUp" xml:space="preserve"><value>D-pad up</value></data>
+  <data name="RazerMappingKeypadDpadDown" xml:space="preserve"><value>D-pad down</value></data>
+  <data name="RazerMappingKeypadDpadLeft" xml:space="preserve"><value>D-pad left</value></data>
+  <data name="RazerMappingKeypadDpadRight" xml:space="preserve"><value>D-pad right</value></data>
+  <data name="RazerMappingKeypadThumbKey" xml:space="preserve"><value>Thumb key {0}</value></data>
   <data name="RazerMappingKeyNumLock" xml:space="preserve"><value>Num Lock</value></data>
   <data name="RazerMappingKeyNumpad" xml:space="preserve"><value>Numpad {0}</value></data>
   <data name="RazerMappingKeyLeft" xml:space="preserve"><value>Left</value></data>

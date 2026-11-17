@@ -82,7 +82,7 @@ public class RazerHidMappingActionCatalog : IRazerMappingActionCatalog
 /// Keyboard button lists identify physical keys, not mouse buttons. Keep the shared
 /// action names but avoid telling the user that key 4 is a mouse Back button.
 /// </summary>
-public sealed class RazerKeyboardMappingActionCatalog : RazerHidMappingActionCatalog
+public class RazerKeyboardMappingActionCatalog : RazerHidMappingActionCatalog
 {
     public static new RazerKeyboardMappingActionCatalog Instance { get; } = new();
 
@@ -90,6 +90,27 @@ public sealed class RazerKeyboardMappingActionCatalog : RazerHidMappingActionCat
         buttonId is 0x03 or 0x09 or 0x0A
             ? RazerHidMappingActions.DescribeButton(buttonId)
             : AppStrings.FormatText("RazerMappingKeyboardButton", buttonId);
+}
+
+/// <summary>
+/// Keypads expose their main pad, thumb pad, wheel and D-pad as firmware ids.
+/// Name the rows by what is printed on the device instead of "Button 44".
+/// </summary>
+public sealed class RazerKeypadMappingActionCatalog : RazerKeyboardMappingActionCatalog
+{
+    public static new RazerKeypadMappingActionCatalog Instance { get; } = new();
+
+    public override string DescribeButton(byte buttonId) => buttonId switch
+    {
+        0x2C => AppStrings.Text("RazerMappingKeypadDpadUp"),
+        0x2D => AppStrings.Text("RazerMappingKeypadDpadDown"),
+        0x2E => AppStrings.Text("RazerMappingKeypadDpadLeft"),
+        0x2F => AppStrings.Text("RazerMappingKeypadDpadRight"),
+        >= 0x40 and <= 0x4B => AppStrings.FormatText("RazerMappingKeyboardButton", buttonId - 0x3F),
+        >= 0x50 and <= 0x56 => AppStrings.FormatText("RazerMappingKeypadThumbKey", buttonId - 0x4F),
+        0x60 => AppStrings.FormatText("RazerMappingKeypadThumbKey", 8),
+        _ => base.DescribeButton(buttonId),
+    };
 }
 
 /// <summary>
