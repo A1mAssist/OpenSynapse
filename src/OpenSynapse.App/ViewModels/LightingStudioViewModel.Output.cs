@@ -220,7 +220,7 @@ public sealed partial class LightingStudioViewModel
         }
 
         _headsetRouter.Update(BuildHeadsetLayers);
-        applied.Add(_headsetRouter.DisplayName ?? "Razer Mako X");
+        applied.Add(_headsetRouter.DisplayName ?? "Razer headset");
         return true;
     }
 
@@ -229,7 +229,11 @@ public sealed partial class LightingStudioViewModel
         var device = Devices.FirstOrDefault(item => item.HasMatrix &&
             StudioLedSelection.SameInstance(item.EffectiveInstanceId, _headsetRouter!.InstanceId));
         return device is null
-            ? BuildLayersFor(0x05AD, _headsetRouter!.InstanceId, 1, RazerMakoXChromaService.LedCount)
+            ? BuildLayersFor(
+                _headsetRouter!.ProductId,
+                _headsetRouter.InstanceId,
+                1,
+                _headsetRouter.LedCount)
             : BuildLayersFor(device);
     }
 

@@ -96,22 +96,38 @@ public sealed partial class MainWindow
         return AddPage(page);
     }
 
-    private void AddMakoXStudioDevice(List<StudioDeviceOption> options)
+    private void AddHeadsetStudioDevice(List<StudioDeviceOption> options)
     {
-        if (_viewModel.Accessories.SelectedHeadsetAudioConnection is not
-            { Transport: RazerHeadsetAudioTransport.Jolie64 } mako)
+        if (_viewModel.Accessories.SelectedHeadsetAudioConnection is not { } headset)
         {
             return;
         }
 
-        options.Add(new StudioDeviceOption(
-            mako.Name,
-            null,
-            mako.DevicePath,
-            mako.ProductId,
-            1,
-            RazerMakoXChromaService.LedCount,
-            Category: "headset"));
+        if (headset.Transport == RazerHeadsetAudioTransport.Jolie64)
+        {
+            options.Add(new StudioDeviceOption(
+                headset.Name,
+                null,
+                headset.DevicePath,
+                headset.ProductId,
+                1,
+                RazerMakoXChromaService.LedCount,
+                Category: "headset"));
+            return;
+        }
+
+        if (headset.Transport == RazerHeadsetAudioTransport.KrakenBase37 &&
+            _viewModel.RazerHid.FindKrakenConnection(headset.ProductId) is { IsReady: true })
+        {
+            options.Add(new StudioDeviceOption(
+                headset.Name,
+                null,
+                headset.DevicePath,
+                headset.ProductId,
+                1,
+                1,
+                Category: "headset"));
+        }
     }
 
     private StudioHeadsetOutputRouter? CreateStudioHeadsetRouter(StudioInputSampler sampler) =>
@@ -119,7 +135,9 @@ public sealed partial class MainWindow
             () => _viewModel.Accessories.SelectedHeadsetAudioConnection,
             (rows, columns) => sampler.Sample(rows, columns),
             () => _viewModel.Accessories.SelectedHeadsetAudio?.StopSoftwareEffectForExternalAsync() ??
-                Task.CompletedTask);
+                Task.CompletedTask,
+            krakenLighting: _viewModel.RazerHid.SpecialLightingService,
+            krakenConnection: _viewModel.RazerHid.FindKrakenConnection);
 
     private ProfilesPage CreateProfilesPage()
     {

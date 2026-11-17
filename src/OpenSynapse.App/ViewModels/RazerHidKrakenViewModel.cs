@@ -49,7 +49,8 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
     public string InstanceId => Connection.InstanceId;
     public string Name => Connection.DisplayName;
     public string CategoryText => (Connection.Kind is
-        RazerHidSpecialLightingKind.Kraken37 or RazerHidSpecialLightingKind.KrakenV4)
+        RazerHidSpecialLightingKind.Kraken37 or RazerHidSpecialLightingKind.KrakenV4 or
+        RazerHidSpecialLightingKind.KrystalT2)
             ? AppStrings.Text("RazerHidKrakenSubtitle/Text")
             : AppStrings.Text("Text_71E692AA");
     public string Identity => $"VID_1532 / PID_{Connection.ProductId:X4}";
@@ -77,7 +78,8 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);
     public bool RequiresRescan { get => _requiresRescan; private set => SetField(ref _requiresRescan, value); }
     public Visibility ControlsVisibility => VisibleWhen(Connection.IsReady && !RequiresRescan &&
-        (Connection.Kind is RazerHidSpecialLightingKind.Kraken37 or RazerHidSpecialLightingKind.KrakenV4) &&
+        (Connection.Kind is RazerHidSpecialLightingKind.Kraken37 or RazerHidSpecialLightingKind.KrakenV4 or
+            RazerHidSpecialLightingKind.KrystalT2) &&
         Effects.Count > 0);
     public IReadOnlyList<RazerHidLightingEffect> Effects => Connection.SupportedEffects
         .Where(effect => !_unsupported.Contains(effect)).Order().ToArray();
@@ -123,9 +125,10 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
     public Visibility SecondaryVisibility => VisibleWhen(SelectedEffect is
         RazerHidLightingEffect.BreathingDual or RazerHidLightingEffect.BreathingTriple);
     public Visibility TertiaryVisibility => VisibleWhen(SelectedEffect == RazerHidLightingEffect.BreathingTriple);
-    public Visibility IntensityVisibility => VisibleWhen(SelectedEffect is
-        RazerHidLightingEffect.Custom ||
-        SelectedEffect == RazerHidLightingEffect.Static && Connection.SupportsStaticColor);
+    public Visibility IntensityVisibility => VisibleWhen(Connection.Kind !=
+        RazerHidSpecialLightingKind.KrystalT2 &&
+        (SelectedEffect is RazerHidLightingEffect.Custom ||
+         SelectedEffect == RazerHidLightingEffect.Static && Connection.SupportsStaticColor));
     public bool IsBusy { get => _isBusy; private set => SetField(ref _isBusy, value); }
     public bool CanApply => Connection.IsReady && !RequiresRescan && !IsBusy && Effects.Contains(SelectedEffect);
 

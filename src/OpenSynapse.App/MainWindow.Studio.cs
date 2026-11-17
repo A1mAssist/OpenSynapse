@@ -114,7 +114,7 @@ public sealed partial class MainWindow
                 Category: "argb"));
         }
 
-        AddMakoXStudioDevice(options);
+        AddHeadsetStudioDevice(options);
 
         return options;
     }

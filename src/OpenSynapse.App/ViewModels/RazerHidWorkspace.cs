@@ -244,7 +244,9 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
             var connections = await _specialLightingService.DiscoverAsync(cancellationToken);
             CacheArgb(connections);
             _krakenConnections = connections.Where(connection =>
-                    connection.Kind is RazerHidSpecialLightingKind.Kraken37 or RazerHidSpecialLightingKind.KrakenV4)
+                    connection.Kind is RazerHidSpecialLightingKind.Kraken37 or
+                        RazerHidSpecialLightingKind.KrakenV4 or
+                        RazerHidSpecialLightingKind.KrystalT2)
                 .OrderBy(connection => connection.DisplayName, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
             // Headsets that already own an audio page get the lighting card there, so a
@@ -541,6 +543,9 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
                 _saveProfileAsync)
             : null;
     }
+
+    internal RazerHidSpecialLightingConnection? FindKrakenConnection(ushort productId) =>
+        _krakenConnections.FirstOrDefault(item => item.ProductId == productId);
 
     internal async Task<int?> ReadBatteryPercentAsync(
         RazerHidDeviceRowViewModel row,
