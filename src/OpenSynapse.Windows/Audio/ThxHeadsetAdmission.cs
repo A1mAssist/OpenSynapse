@@ -229,6 +229,11 @@ internal static partial class ThxHeadsetAdmission
             {
                 return new(ThxHeadsetAvailability.ServiceMissing, "ThxInstallerUnavailable");
             }
+            var preset = profile.PresetInstaller;
+            var installPreset = preset is not null &&
+                ShouldInstallPresetPackage(
+                    ReadInstalledPresetVersion()?.ToString(),
+                    preset.Uri);
             // A live VSSrv does not prove this model's APO is bound: another THX
             // headset can own the service. Always run the pinned per-model package;
             // a leftover service is repaired instead of treated as complete.
@@ -237,7 +242,7 @@ internal static partial class ThxHeadsetAdmission
                 cancellationToken,
                 repair: ThxAudioAdmission.HasService(ServiceName),
                 startService: ServiceName,
-                extra: profile.PresetInstaller).ConfigureAwait(false);
+                extra: installPreset ? preset : null).ConfigureAwait(false);
             if (install.Error is not null)
             {
                 return new(ThxHeadsetAvailability.ServiceMissing, install.Error);
@@ -252,7 +257,7 @@ internal static partial class ThxHeadsetAdmission
                 .ConfigureAwait(false);
             return TrackInstallResult(productId, CombineInstallResult(
                 install.RebootRequired ||
-                    (profile.PresetInstaller is not null && !install.AlreadyInstalled),
+                    (installPreset && !install.AlreadyInstalled),
                 nativeError,
                 running,
                 ThxAudioAdmission.HasService(ServiceName)));

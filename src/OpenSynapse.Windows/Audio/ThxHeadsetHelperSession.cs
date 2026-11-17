@@ -459,13 +459,17 @@ internal sealed class ThxHeadsetHelperSession
         Func<float> level) =>
         TryRead(() => new ThxAudioEnhancement(enabled(), VoiceGatePercent(level())));
 
-    private IReadOnlyList<ThxAudioPreset> ReadV3Presets(string containerId)
+    private IReadOnlyList<ThxAudioPreset> ReadV3Presets(string containerId) =>
+        ReadV3PresetList(() => _v3!.GetPresetList(containerId));
+
+    internal static IReadOnlyList<ThxAudioPreset> ReadV3PresetList(Func<string> read)
     {
-        // An empty fallback list hides an endpoint that never answered. The V3
-        // preset package is required, so a failed list read is a native failure.
-        var entries = TryRead(() => ThxVendorJson.ParsePresetEntries(_v3!.GetPresetList(containerId)))
-            ?? throw new InvalidOperationException("The THX endpoint did not return a preset list.");
-        return WithDefaultPreset(entries.Select(entry => new ThxAudioPreset(entry.Id, entry.Name)).ToArray());
+        // The 3.2.18.0 package can return a truncated preset list; spatial and EQ
+        // still answer, so a broken list must not fail the whole card.
+        var entries = TryRead(() => ThxVendorJson.ParsePresetEntries(read()));
+        return entries is null
+            ? [DefaultPreset]
+            : WithDefaultPreset(entries.Select(entry => new ThxAudioPreset(entry.Id, entry.Name)).ToArray());
     }
 
     private IReadOnlyList<ThxAudioPreset> ReadV4Presets()
