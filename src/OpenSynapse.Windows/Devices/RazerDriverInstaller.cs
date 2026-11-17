@@ -44,7 +44,7 @@ internal sealed record RazerDriverInstallResult(
 /// service or the elevated app fallback. The package is the same one Synapse
 /// uses; no third-party driver is accepted.
 /// </summary>
-internal static class RazerDriverInstaller
+internal static partial class RazerDriverInstaller
 {
     private const uint WtdUiNone = 2;
     private const uint WtdChoiceFile = 1;
@@ -65,6 +65,7 @@ internal static class RazerDriverInstaller
         "DriverCache");
 
     internal static async Task<RazerDriverInstallResult> InstallAsync(
+        ushort productId,
         RazerDriverPackage package,
         IProgress<RazerDriverInstallProgress>? progress = null,
         CancellationToken cancellationToken = default)
@@ -100,19 +101,11 @@ internal static class RazerDriverInstaller
             package.Name));
         var result = await RunInstallerAsync(path, elevated: true, cancellationToken)
             .ConfigureAwait(false);
-        if (!result.Success ||
-            !ushort.TryParse(
-                package.ProductId,
-                System.Globalization.NumberStyles.HexNumber,
-                null,
-                out var productId))
-        {
-            return result;
-        }
-
-        return await CompleteLowerFilterAsync(
-                productId, path, result, elevated: true, cancellationToken)
-            .ConfigureAwait(false);
+        return result.Success
+            ? await CompleteInstallAsync(
+                    productId, path, result, elevated: true, cancellationToken)
+                .ConfigureAwait(false)
+            : result;
     }
 
     /// <summary>
@@ -174,7 +167,7 @@ internal static class RazerDriverInstaller
         var result = await RunInstallerAsync(path, elevated: false, cancellationToken)
             .ConfigureAwait(false);
         return result.Success
-            ? await CompleteLowerFilterAsync(
+            ? await CompleteInstallAsync(
                     productId, path, result, elevated: false, cancellationToken)
                 .ConfigureAwait(false)
             : result;
@@ -234,54 +227,64 @@ internal static class RazerDriverInstaller
     }
 
     /// <summary>
-    /// The vendor package is an NSIS self-extractor: it ignores /D and deletes
-    /// its staging directory, so the lower-filter INFs it never installs can
-    /// only be read by unpacking the executable. 7za exits 1 for its benign
-    /// "data after the end of archive" warning.
+    /// Razer's silent installer can return 0 without staging its filter INFs.
+    /// When that happens, unpack the verified package and bind the INFs from
+    /// the package itself instead of reporting an installed driver that does
+    /// not exist.
     /// </summary>
-    internal static async Task<string?> ExtractLowerFiltersAsync(
+    private static async Task<RazerDriverInstallResult> CompleteInstallAsync(
+        ushort productId,
         string packagePath,
-        string outputDirectory,
+        RazerDriverInstallResult result,
+        bool elevated,
         CancellationToken cancellationToken)
     {
-        var extractor = Path.Combine(AppContext.BaseDirectory, "7za.exe");
-        if (!File.Exists(extractor))
+        if (RazerDeviceRegistry.BuiltIn.Find(0x1532, productId)?.Category ==
+            OpenSynapse.Core.Devices.DeviceCategory.Laptop)
         {
-            return null;
+            return await CompleteLowerFilterAsync(
+                    productId, packagePath, result, elevated, cancellationToken)
+                .ConfigureAwait(false);
         }
 
-        Directory.CreateDirectory(outputDirectory);
-        var startInfo = new ProcessStartInfo
+        if (RazerFilterInfBinder.FindStagedInfs(productId).Count > 0)
         {
-            FileName = extractor,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            WindowStyle = ProcessWindowStyle.Hidden,
-        };
-        startInfo.ArgumentList.Add("x");
-        startInfo.ArgumentList.Add("-tNsis");
-        startInfo.ArgumentList.Add(packagePath);
-        startInfo.ArgumentList.Add($"-o{outputDirectory}");
-        startInfo.ArgumentList.Add(@"Drivers\x64\Lower\*");
-        startInfo.ArgumentList.Add(@"Drivers\x64\VCon\*");
-        startInfo.ArgumentList.Add("-y");
+            return result;
+        }
 
-        try
+        var extractRoot = Path.Combine(
+            Path.GetDirectoryName(packagePath)!,
+            "extracted",
+            Path.GetFileNameWithoutExtension(packagePath));
+        var extracted = await ExtractDriverPackageAsync(
+                packagePath, extractRoot, cancellationToken)
+            .ConfigureAwait(false);
+        if (extracted is null)
         {
-            using var process = Process.Start(startInfo);
-            if (process is null)
+            return result with
             {
-                return null;
-            }
+                Success = false,
+                Error = "The Razer filter INF could not be unpacked from the driver package.",
+            };
+        }
 
-            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
-            return process.ExitCode is 0 or 1 ? outputDirectory : null;
-        }
-        catch (Exception exception) when (
-            exception is Win32Exception or IOException or InvalidOperationException)
+        var bind = elevated
+            ? await RazerFilterInfBinder.ApplyAsync(
+                    productId, cancellationToken, extracted)
+                .ConfigureAwait(false)
+            : await RazerFilterInfBinder.ApplyDirectAsync(
+                    productId, cancellationToken, extracted)
+                .ConfigureAwait(false);
+        if (!bind.Applied)
         {
-            return null;
+            return result with
+            {
+                Success = false,
+                Error = bind.Error ?? "The Razer filter INF could not be bound.",
+            };
         }
+
+        return result with { RequiresRestart = true };
     }
 
     /// <summary>

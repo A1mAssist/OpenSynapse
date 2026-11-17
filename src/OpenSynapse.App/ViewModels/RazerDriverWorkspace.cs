@@ -284,7 +284,8 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                     .TryInstallRazerDeviceDriverAsync(rowsForPackage[0].ProductIdValue, cancellationToken)
                     .ConfigureAwait(true);
                 var result = serviceResult ??
-                    await RazerDriverInstaller.InstallAsync(package, progress, cancellationToken)
+                    await RazerDriverInstaller.InstallAsync(
+                            rowsForPackage[0].ProductIdValue, package, progress, cancellationToken)
                         .ConfigureAwait(true);
                 if (!result.Success &&
                     !RazerDriverInstaller.IsAlreadyInstalledExitCode(result.ExitCode))
