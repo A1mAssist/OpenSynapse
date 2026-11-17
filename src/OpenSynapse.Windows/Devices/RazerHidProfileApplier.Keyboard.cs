@@ -93,9 +93,21 @@ public sealed partial class RazerHidProfileApplier
                 connection, wristRest, lighting, results, cancellationToken);
         }
 
+        // Disable first, then restore the key table; enabling only after the controller
+        // mappings are in place keeps the keyboard usable if the profile fails halfway.
+        if (profile.GamepadRemapEnabled == false)
+        {
+            await ApplyJoystickModeAsync(connection, false, results, cancellationToken);
+        }
+
         if (profile.ButtonMappings is { Count: > 0 } mappings)
         {
             await ApplyButtonMappingsAsync(connection, mappings, results, cancellationToken);
+        }
+
+        if (profile.GamepadRemapEnabled == true)
+        {
+            await ApplyJoystickModeAsync(connection, true, results, cancellationToken);
         }
     }
 
@@ -251,6 +263,35 @@ public sealed partial class RazerHidProfileApplier
             results.Add((byte)applied.Stage.Mode == mode
                 ? Applied(key)
                 : Mismatch(key, $"expected {mode}, got {(byte)applied.Stage.Mode}"));
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            results.Add(Failed(key, exception));
+        }
+    }
+
+    private async Task ApplyJoystickModeAsync(
+        RazerHidDeviceConnection connection,
+        bool enabled,
+        List<ProfileSettingApplyResult> results,
+        CancellationToken cancellationToken)
+    {
+        const string key = "keyboard.gamepad-remap";
+        if (!Has(connection, RazerHidBackendCapability.AnalogJoystickWrite))
+        {
+            results.Add(Unsupported(key, RazerHidBackendCapability.AnalogJoystickWrite));
+            return;
+        }
+
+        try
+        {
+            await _service.SetAnalogJoystickReportModeAsync(
+                connection, enabled ? (byte)0x01 : (byte)0x00, cancellationToken);
+            results.Add(Applied(key));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

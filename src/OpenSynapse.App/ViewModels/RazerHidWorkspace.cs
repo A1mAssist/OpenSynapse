@@ -195,6 +195,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
             connections = RazerHidDeviceConnectionSiblings.Collapse(connections);
             await MigrateProfileInstanceKeysAsync(connections, cancellationToken).ConfigureAwait(true);
             await RestoreDriverModeAsync(connections, cancellationToken);
+            await RestoreAnalogJoystickModesAsync(connections, cancellationToken);
             await SyncPrivateKeyDriverModeAsync(cancellationToken);
             await RestoreInitialLightingAsync(connections, cancellationToken).ConfigureAwait(true);
             // Rebuild bound collections and keep the refresh loop's UI context.
@@ -567,6 +568,20 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         _selectionCancellation?.Dispose();
         await _privateKeyRuntime.ResetAsync().ConfigureAwait(false);
         await _softwareLightingOwner.DisposeAsync().ConfigureAwait(false);
+        if (SelectedDevice is { AnalogJoystickActive: true } joystickDevice)
+        {
+            try
+            {
+                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                await joystickDevice.DisableAnalogJoystickOnExitAsync(timeout.Token)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                _diagnosticLog.TryWrite("analog-joystick",
+                    $"shutdown restore failed: {exception.GetType().Name}: {exception.Message}");
+            }
+        }
         if (SelectedDevice is { } device)
         {
             await device.DisposeAsync().ConfigureAwait(false);

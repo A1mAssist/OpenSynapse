@@ -169,6 +169,7 @@ public sealed partial class RazerHidDeviceService
         await ProbeWirelessPairingAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
         await ProbeKnobAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
         await ProbeAnalogKeyAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
+        await ProbeAnalogJoystickAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
         await ProbeOledAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
         await ProbeHapticScrollAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
 

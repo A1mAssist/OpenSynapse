@@ -47,6 +47,7 @@ internal static partial class ProfileSettingsRegistration
         ProfileSettingCatalog.Register(new("keyboard.keyswitch", DeviceCategory.Keyboard, false));
         ProfileSettingCatalog.Register(new("keyboard.snap-tap", DeviceCategory.Keyboard, true));
         ProfileSettingCatalog.Register(new("keyboard.analog-key", DeviceCategory.Keyboard, true));
+        ProfileSettingCatalog.Register(new("keyboard.gamepad-remap", DeviceCategory.Keyboard, true));
         ProfileSettingCatalog.Register(new("keyboard.oled", DeviceCategory.Keyboard, false));
         ProfileSettingCatalog.Register(new("keyboard.knob", DeviceCategory.Keyboard, false));
         ProfileSettingCatalog.Register(new("keyboard.wrist-rest", DeviceCategory.Keyboard, false));

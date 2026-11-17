@@ -164,6 +164,7 @@ public sealed partial class ProfileDefinition
         GamingModeEnabled = source.GamingModeEnabled,
         SwitchType = source.SwitchType,
         AnalogKeyEnabled = source.AnalogKeyEnabled,
+        GamepadRemapEnabled = source.GamepadRemapEnabled,
         SnapTapEnabled = source.SnapTapEnabled,
         DebounceMilliseconds = source.DebounceMilliseconds,
         OledBrightness = source.OledBrightness,

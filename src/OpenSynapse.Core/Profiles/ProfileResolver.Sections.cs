@@ -161,6 +161,10 @@ public static partial class ProfileResolver
         GamingModeEnabled = First(power?.GamingModeEnabled, device?.GamingModeEnabled, global?.GamingModeEnabled),
         SwitchType = power?.SwitchType ?? device?.SwitchType ?? global?.SwitchType,
         AnalogKeyEnabled = First(power?.AnalogKeyEnabled, device?.AnalogKeyEnabled, global?.AnalogKeyEnabled),
+        GamepadRemapEnabled = First(
+            power?.GamepadRemapEnabled,
+            device?.GamepadRemapEnabled,
+            global?.GamepadRemapEnabled),
         SnapTapEnabled = First(power?.SnapTapEnabled, device?.SnapTapEnabled, global?.SnapTapEnabled),
         DebounceMilliseconds = First(
             power?.DebounceMilliseconds,

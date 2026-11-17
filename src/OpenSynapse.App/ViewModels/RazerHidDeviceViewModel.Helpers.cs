@@ -517,6 +517,10 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(AnalogKeyVisibility));
         OnPropertyChanged(nameof(AnalogKeyWriteVisibility));
         OnPropertyChanged(nameof(CanEditAnalogKey));
+        OnPropertyChanged(nameof(AnalogJoystickVisibility));
+        OnPropertyChanged(nameof(AnalogJoystickWriteVisibility));
+        OnPropertyChanged(nameof(CanEditAnalogJoystick));
+        OnPropertyChanged(nameof(CanApplyAnalogJoystick));
         OnPropertyChanged(nameof(OledVisibility));
         OnPropertyChanged(nameof(OledWriteVisibility));
         OnPropertyChanged(nameof(CanEditOled));

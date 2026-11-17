@@ -66,6 +66,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             await LoadKnobAsync(cancellationToken);
             await LoadGameModeAsync(cancellationToken);
             await LoadAnalogKeyAsync(cancellationToken);
+            await LoadAnalogJoystickAsync(cancellationToken);
             await LoadOledAsync(cancellationToken);
             await LoadHapticScrollAsync(cancellationToken);
         }

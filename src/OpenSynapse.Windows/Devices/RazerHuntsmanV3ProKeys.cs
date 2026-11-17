@@ -4,7 +4,7 @@ namespace OpenSynapse.Windows.Devices;
 /// Razer 6737 bundle: the mapping page addresses keys by firmware id, not by USB HID
 /// usage. The table is identical for 02A6 / 02A7 / 02B0 / 02CF.
 /// </summary>
-internal static class RazerHuntsmanV3ProKeys
+public static class RazerHuntsmanV3ProKeys
 {
     public const string ProfileKeyIdMarker = "key-id";
     public const string ProfileFirmwareKeyIds = "firmware";

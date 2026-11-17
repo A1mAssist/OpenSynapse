@@ -2,7 +2,8 @@
     x:Class="OpenSynapse.App.Views.AnalogKeyEditor"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:OpenSynapse.App">
+    xmlns:local="using:OpenSynapse.App"
+    xmlns:views="using:OpenSynapse.App.Views">
   <UserControl.Resources>
     <Style x:Key="AnalogKeyToggleStyle" TargetType="ToggleButton">
       <Setter Property="MinWidth" Value="0" />
@@ -135,5 +136,6 @@
         </Grid>
       </StackPanel>
     </Border>
+    <views:GamepadRemapEditor />
   </StackPanel>
 </UserControl>

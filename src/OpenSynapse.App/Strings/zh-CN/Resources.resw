@@ -4596,4 +4596,18 @@
   <data name="RazerMappingVolumeUp.Text" xml:space="preserve"><value>音量 +</value></data>
   <data name="RazerMappingMute.Text" xml:space="preserve"><value>静音</value></data>
   <data name="RazerHidProfileInstanceAmbiguous" xml:space="preserve"><value>检测到多台相同型号的设备，旧配置无法自动分配：{0}。请重新选择设备并保存一次以建立独立配置。</value></data>
+  <data name="GamepadRemapTitle.Text" xml:space="preserve"><value>模拟手柄</value></data>
+  <data name="GamepadRemapEnabled.Text" xml:space="preserve"><value>将模拟键映射为手柄</value></data>
+  <data name="GamepadRemapPresetWasd.Text" xml:space="preserve"><value>WASD → 左摇杆</value></data>
+  <data name="GamepadRemapPresetTriggers.Text" xml:space="preserve"><value>Q/E → 扳机</value></data>
+  <data name="GamepadRemapReset.Text" xml:space="preserve"><value>重置</value></data>
+  <data name="GamepadRemapPhysicalKey.Text" xml:space="preserve"><value>物理键</value></data>
+  <data name="GamepadRemapButton.Text" xml:space="preserve"><value>手柄按键</value></data>
+  <data name="GamepadRemapApply.Text" xml:space="preserve"><value>应用</value></data>
+  <data name="GamepadRemapNone.Text" xml:space="preserve"><value>无</value></data>
+  <data name="GamepadRemapModeStatus" xml:space="preserve"><value>上报模式 0x{0:X2} · 映射模式 {1}</value></data>
+  <data name="GamepadRemapUnknownMode" xml:space="preserve"><value>设备已有自定义模式 0x{0:X2}，只读</value></data>
+  <data name="GamepadRemapReadFailed" xml:space="preserve"><value>无法读取当前模式</value></data>
+  <data name="RazerHidCapabilityAnalogJoystickRead" xml:space="preserve"><value>模拟手柄模式读取</value></data>
+  <data name="RazerHidCapabilityAnalogJoystickWrite" xml:space="preserve"><value>模拟手柄模式写入</value></data>
 </root>
