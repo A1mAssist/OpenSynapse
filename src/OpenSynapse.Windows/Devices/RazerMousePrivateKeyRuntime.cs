@@ -31,28 +31,36 @@ internal sealed class RazerMousePrivateKeyRuntime
     private readonly Action<string>? _log;
     private readonly object _gate = new();
     private readonly Dictionary<ushort, string> _paths = [];
-    // The mode this run established for a pid, plus the pids already probed
-    // once, so a periodic refresh cannot turn into a stream of device reads.
+    // The last mode this run observed, so a periodic refresh cannot turn into a
+    // stream of device reads, and the mode each pid had before this run took it
+    // over. Only an entry here is a mode this run may write back on exit.
     private readonly Dictionary<ushort, bool> _applied = [];
-    private readonly HashSet<ushort> _probed = [];
+    private readonly Dictionary<ushort, byte> _originalModes = [];
     private readonly Dictionary<ushort, byte> _activeStage = [];
     private readonly Dictionary<ushort, DateTime> _verifiedAt = [];
-    private bool _recovered;
 
     internal RazerMousePrivateKeyRuntime(Action<string>? log = null) => _log = log;
+
+    internal enum DeviceModeAction
+    {
+        None,
+        Write,
+        Release,
+        Unreadable,
+    }
 
     internal bool IsDriverMode(ushort productId)
     {
         lock (_gate)
         {
-            return _applied.TryGetValue(productId, out var enabled) && enabled;
+            return _originalModes.ContainsKey(productId);
         }
     }
 
     /// <summary>
-    /// Brings every mouse in line with the bindings. The first call also probes
-    /// the mice that are present, so one a crashed session left in driver mode
-    /// goes back to its firmware without a replug.
+    /// Brings the mice that carry a private-key binding into driver mode. A mode
+    /// that this run did not write - Razer Synapse holding the same mouse, or a
+    /// firmware default - is observed and left alone.
     /// </summary>
     internal async Task SyncAsync(
         IReadOnlyCollection<ushort> wanted,
@@ -63,18 +71,7 @@ internal sealed class RazerMousePrivateKeyRuntime
         lock (_gate)
         {
             targets.UnionWith(_applied.Keys);
-        }
-
-        if (!_recovered)
-        {
-            foreach (var productId in await PresentMiceAsync(cancellationToken).ConfigureAwait(false))
-            {
-                if (!OwnsItsOwnMode(productId))
-                {
-                    targets.Add(productId);
-                }
-            }
-            _recovered = true;
+            targets.UnionWith(_originalModes.Keys);
         }
 
         foreach (var productId in targets)
@@ -88,48 +85,72 @@ internal sealed class RazerMousePrivateKeyRuntime
                 {
                     continue;
                 }
-                if (!enable && !_probed.Add(productId))
-                {
-                    continue;
-                }
             }
 
             var mode = await ReadModeAsync(productId, cancellationToken).ConfigureAwait(false);
-            if (mode is null)
-            {
-                lock (_gate)
-                {
-                    _applied[productId] = false;
-                }
-                continue;
-            }
-
-            var changed = (mode == DriverDeviceMode) != enable;
-            if (changed &&
-                !await WriteModeAsync(
-                        productId,
-                        enable ? DriverDeviceMode : NormalDeviceMode,
-                        cancellationToken)
-                    .ConfigureAwait(false))
-            {
-                continue;
-            }
-
+            bool owned;
             lock (_gate)
             {
-                _applied[productId] = enable;
-                _verifiedAt[productId] = DateTime.UtcNow;
-                if (!enable)
-                {
-                    _activeStage.Remove(productId);
-                }
+                owned = _originalModes.ContainsKey(productId);
             }
 
-            if (changed)
+            switch (Decide(mode, enable, owned))
             {
-                _log?.Invoke(
-                    $"1532:{productId:X4} driver mode {(enable ? "on for a private-key macro" : "off")}");
+                case DeviceModeAction.Unreadable:
+                    lock (_gate)
+                    {
+                        _applied[productId] = false;
+                    }
+                    continue;
+                case DeviceModeAction.None:
+                    lock (_gate)
+                    {
+                        _applied[productId] = enable;
+                        _verifiedAt[productId] = DateTime.UtcNow;
+                    }
+                    break;
+                case DeviceModeAction.Release:
+                    lock (_gate)
+                    {
+                        _applied.Remove(productId);
+                    }
+                    _log?.Invoke(
+                        $"1532:{productId:X4} driver mode belongs to another owner; left alone");
+                    continue;
+                case DeviceModeAction.Write:
+                    if (enable)
+                    {
+                        lock (_gate)
+                        {
+                            if (!_originalModes.ContainsKey(productId))
+                            {
+                                _originalModes[productId] = mode!.Value;
+                            }
+                        }
+                    }
+
+                    var target = enable ? DriverDeviceMode : NormalDeviceMode;
+                    if (!await WriteModeAsync(productId, target, cancellationToken).ConfigureAwait(false))
+                    {
+                        continue;
+                    }
+
+                    lock (_gate)
+                    {
+                        _applied[productId] = enable;
+                        _verifiedAt[productId] = DateTime.UtcNow;
+                        if (!enable)
+                        {
+                            _originalModes.Remove(productId);
+                            _activeStage.Remove(productId);
+                        }
+                    }
+                    _log?.Invoke(
+                        $"1532:{productId:X4} device mode 0x{mode!.Value:X2} -> 0x{target:X2}" +
+                        (enable ? " for a private-key macro" : string.Empty));
+                    break;
             }
+
             if (!enable)
             {
                 continue;
@@ -146,34 +167,50 @@ internal sealed class RazerMousePrivateKeyRuntime
         }
     }
 
+    // Decides what a sync does for one device. Equal modes never write: a driver
+    // mode this run did not set belongs to whoever set it.
+    internal static DeviceModeAction Decide(byte? current, bool enable, bool owned)
+    {
+        if (current is not { } mode)
+        {
+            return DeviceModeAction.Unreadable;
+        }
+        if ((mode == DriverDeviceMode) == enable)
+        {
+            return DeviceModeAction.None;
+        }
+        return !enable && !owned ? DeviceModeAction.Release : DeviceModeAction.Write;
+    }
+
     /// <summary>
-    /// Hands every mouse this run moved to driver mode back to its firmware, so
-    /// the private keys keep their stock behavior once OpenSynapse exits.
+    /// Hands every mouse this run moved to driver mode back to the mode it had
+    /// before, so a mode another owner set is never overwritten on exit.
     /// </summary>
     internal async Task ResetAsync()
     {
-        ushort[] enabled;
+        KeyValuePair<ushort, byte>[] restore;
         lock (_gate)
         {
-            enabled = _applied.Where(pair => pair.Value).Select(pair => pair.Key).ToArray();
+            restore = _originalModes.ToArray();
         }
-        if (enabled.Length == 0)
+        if (restore.Length == 0)
         {
             return;
         }
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-        foreach (var productId in enabled)
+        foreach (var (productId, original) in restore)
         {
             try
             {
-                if (!await WriteModeAsync(productId, NormalDeviceMode, timeout.Token).ConfigureAwait(false))
+                if (!await WriteModeAsync(productId, original, timeout.Token).ConfigureAwait(false))
                 {
                     continue;
                 }
                 lock (_gate)
                 {
-                    _applied[productId] = false;
+                    _applied[productId] = original == DriverDeviceMode;
+                    _originalModes.Remove(productId);
                     _activeStage.Remove(productId);
                 }
             }
@@ -181,7 +218,7 @@ internal sealed class RazerMousePrivateKeyRuntime
                 exception is Win32Exception or IOException or OperationCanceledException)
             {
                 _log?.Invoke(
-                    $"1532:{productId:X4} could not return to normal mode: {exception.Message}");
+                    $"1532:{productId:X4} could not restore device mode 0x{original:X2}: {exception.Message}");
             }
         }
     }
@@ -406,19 +443,6 @@ internal sealed class RazerMousePrivateKeyRuntime
             .OrderBy(item => item.UsagePage == 0x0001 && item.Usage == 0x0002 ? 0 : 1)
             .Select(item => item.DevicePath)
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-    }
-
-    private async Task<IReadOnlyList<ushort>> PresentMiceAsync(CancellationToken cancellationToken)
-    {
-        var interfaces = await WindowsHidDiscovery
-            .FindVendorInterfacesAsync(RazerVendorId, cancellationToken).ConfigureAwait(false);
-        return interfaces
-            .Where(item => item.FeatureReportByteLength == RazerFeatureReport.Length &&
-                item.Access == DeviceAccessState.Available &&
-                IsMouseProduct(item.ProductId))
-            .Select(item => item.ProductId)
-            .Distinct()
             .ToArray();
     }
 
