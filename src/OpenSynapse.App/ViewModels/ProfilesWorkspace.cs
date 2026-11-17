@@ -33,6 +33,7 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
     private readonly Action<string> _setDeviceOperationError;
     private readonly Action<string> _reportApplicationError;
     private readonly Action _requestProfileApply;
+    private readonly Func<string, string, CancellationToken, Task> _renameProfileReferences;
     private string _profileStatusText = AppStrings.Text("Text_A9AE645B");
     private string _activeProfileName = ProfileCatalog.DefaultProfileName;
     private string _profileNameInput = string.Empty;
@@ -57,7 +58,8 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
         Action<bool> setBusy,
         Action<string> setDeviceOperationError,
         Action<string> reportApplicationError,
-        Action requestProfileApply)
+        Action requestProfileApply,
+        Func<string, string, CancellationToken, Task>? renameProfileReferences = null)
     {
         _profileStore = profileStore;
         _getProfile = getProfile;
@@ -77,9 +79,11 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
         _setDeviceOperationError = setDeviceOperationError;
         _reportApplicationError = reportApplicationError;
         _requestProfileApply = requestProfileApply;
+        _renameProfileReferences = renameProfileReferences ?? ((_, _, _) => Task.CompletedTask);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+    internal event Action<string>? ProfileDeleted;
 
     public ObservableCollection<string> ProfileNames { get; } = new();
     public ObservableCollection<ApplicationBindingRowViewModel> ApplicationBindings { get; } = new();
@@ -161,12 +165,14 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
             return;
         }
 
+        var name = ActiveProfileName;
         await RunProfileOperationAsync(AppStrings.FormatText("DeleteProfile", ActiveProfileName), () =>
         {
             ProfileCatalog.Delete(_getProfile(), ActiveProfileName);
             RefreshProfileState();
             return Task.CompletedTask;
         }, cancellationToken);
+        if (!_getProfile().Profiles.ContainsKey(name)) ProfileDeleted?.Invoke(name);
     }
 
     public async Task CloneActiveProfileAsync(CancellationToken cancellationToken = default)
@@ -195,12 +201,13 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
         }
 
         var name = ProfileNameInput;
+        var previousName = ActiveProfileName;
         await RunProfileOperationAsync(AppStrings.FormatText("RenameProfile", name), () =>
         {
             ProfileCatalog.Rename(_getProfile(), ActiveProfileName, name);
             ProfileNameInput = string.Empty;
             RefreshProfileState();
-            return Task.CompletedTask;
+            return _renameProfileReferences(previousName, ActiveProfileName, cancellationToken);
         }, cancellationToken);
     }
 

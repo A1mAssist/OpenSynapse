@@ -4528,6 +4528,47 @@
   <data name="RazerDualDongleNoCandidate" xml:space="preserve"><value>这个接收器没有空位（已连 1 个键盘 + 1 个鼠标）。</value></data>
   <data name="RazerDualDongleStatusUnknown" xml:space="preserve"><value>无法读取当前连接状态。</value></data>
   <data name="RazerDualDongleInvalid" xml:space="preserve"><value>接收器拒绝了这次配对。</value></data>
+  <data name="DeviceIdentityUnavailable" xml:space="preserve"><value>设备标识不可用</value></data>
+  <data name="ProfileDeleteDeviceBindings" xml:space="preserve"><value>此配置有 {0} 条设备程序绑定。删除后绑定会保留并标记为配置缺失。</value></data>
+  <data name="HomeLayoutLoadFailed" xml:space="preserve"><value>主页布局无法读取：{0}</value></data>
+  <data name="HomeLayoutSaved" xml:space="preserve"><value>主页布局已保存。</value></data>
+  <data name="HomeLayoutNotSaved" xml:space="preserve"><value>主页布局未保存。</value></data>
+  <data name="HomeLayoutSaveFailed" xml:space="preserve"><value>主页布局保存失败：{0}</value></data>
+  <data name="HomeLayoutReset" xml:space="preserve"><value>主页布局已恢复默认。</value></data>
+  <data name="HomeOpenStudio" xml:space="preserve"><value>打开灯效工作室</value></data>
+  <data name="HomeStatusCard" xml:space="preserve"><value>状态与异常</value></data>
+  <data name="HomeDevicesCard" xml:space="preserve"><value>常用设备</value></data>
+  <data name="HomePerformanceCard" xml:space="preserve"><value>性能</value></data>
+  <data name="HomeCyclePerformance" xml:space="preserve"><value>循环性能模式</value></data>
+  <data name="HomePerformanceUnavailable" xml:space="preserve"><value>未检测到可控的笔记本</value></data>
+  <data name="HomeActiveProfileSummary.Text" xml:space="preserve"><value>当前配置</value></data>
+  <data name="HomeProfilesCard" xml:space="preserve"><value>当前配置</value></data>
+  <data name="HomeTelemetryCard" xml:space="preserve"><value>遥测</value></data>
+  <data name="HomeCustomize.Content" xml:space="preserve"><value>自定义主页</value></data>
+  <data name="HomeCustomizeTitle.Text" xml:space="preserve"><value>自定义主页</value></data>
+  <data name="HomeCustomizeDescription.Text" xml:space="preserve"><value>选择卡片显隐和顺序。置顶会将卡片移到最前面；布局独立保存，不随配置切换。</value></data>
+  <data name="HomePinCard.Content" xml:space="preserve"><value>置顶</value></data>
+  <data name="HomeSaveLayout.Content" xml:space="preserve"><value>保存布局</value></data>
+  <data name="HomeCancelLayout.Content" xml:space="preserve"><value>取消</value></data>
+  <data name="HomeResetLayout.Content" xml:space="preserve"><value>恢复默认</value></data>
+  <data name="DeviceRuleProfileMissing" xml:space="preserve"><value>配置不存在</value></data>
+  <data name="DeviceRuleWaiting" xml:space="preserve"><value>等待匹配的程序前台。</value></data>
+  <data name="DeviceRuleApplied" xml:space="preserve"><value>已应用「{0}」。</value></data>
+  <data name="DeviceRulesHeader.Header" xml:space="preserve"><value>按程序自动切换</value></data>
+  <data name="DeviceRulesEnable.Header" xml:space="preserve"><value>启用程序自动切换</value></data>
+  <data name="DeviceRulesPickRunning.PlaceholderText" xml:space="preserve"><value>选择正在运行的程序</value></data>
+  <data name="DeviceRulesAdd.Content" xml:space="preserve"><value>添加</value></data>
+  <data name="DeviceRulesRemove.Content" xml:space="preserve"><value>删除</value></data>
+  <data name="DeviceRulesBrowse.Content" xml:space="preserve"><value>选择 exe 并重新关联当前设备</value></data>
+  <data name="HomeConnectedDevices.Text" xml:space="preserve"><value>已连接设备</value></data>
+  <data name="HomeActiveProfile.Text" xml:space="preserve"><value>当前配置</value></data>
+  <data name="HomeApplicationSwitching.Text" xml:space="preserve"><value>程序自动切换</value></data>
+  <data name="HomeApplicationSwitchingEnabled" xml:space="preserve"><value>程序自动切换已启用</value></data>
+  <data name="HomeApplicationSwitchingDisabled" xml:space="preserve"><value>程序自动切换已暂停</value></data>
+  <data name="HomeCustomize.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>自定义主页</value></data>
+  <data name="HomeMoveCardUp.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>上移卡片</value></data>
+  <data name="HomeMoveCardDown.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>下移卡片</value></data>
+  <data name="HomePinCard.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>置顶卡片</value></data>
   <data name="RazerMappingKeyM1.Text" xml:space="preserve"><value>M1</value></data>
   <data name="RazerMappingKeyM2.Text" xml:space="preserve"><value>M2</value></data>
   <data name="RazerMappingKeyM3.Text" xml:space="preserve"><value>M3</value></data>

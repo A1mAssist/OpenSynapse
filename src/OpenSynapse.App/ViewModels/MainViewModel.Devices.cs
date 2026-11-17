@@ -57,6 +57,43 @@ public sealed partial class MainViewModel
 
     public IReadOnlyList<ConnectedDeviceRowViewModel> AdditionalDevices => ConnectedDevices.Skip(4).ToArray();
 
+    public IReadOnlyList<HomeDeviceOption> HomeDevices => DeviceSelectorItems
+        .Select(item => new HomeDeviceOption(item.Name, HomeDeviceIdentity(item), HomeDeviceSource(item), item.IconGlyph))
+        .OrderBy(item => item.Source switch
+        {
+            DeviceRowViewModel row => row.HardwareCategory,
+            RazerHidDeviceRowViewModel row => row.HardwareCategory,
+            RazerHidKrakenDeviceRowViewModel row => row.HardwareCategory,
+            _ => DeviceCategory.Accessory,
+        })
+        .ThenBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
+        .ThenBy(item => item.Identity, StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+
+    private object? HomeDeviceSource(DeviceSelectorItemViewModel item) => item.Source ?? item.Kind switch
+    {
+        DeviceSelectorItemKind.Blade => Devices.FirstOrDefault(row => DeviceProtocolFamilies.IsBlade(row.ProtocolFamily)),
+        DeviceSelectorItemKind.Viper => Devices.FirstOrDefault(row => row.ProtocolFamily == DeviceProtocolFamilies.Viper),
+        DeviceSelectorItemKind.CoolingPad => CoolingPad,
+        DeviceSelectorItemKind.Kiyo => Kiyo,
+        _ => null,
+    };
+
+    private static string HomeDeviceIdentity(DeviceSelectorItemViewModel item) => item.Source switch
+    {
+        DeviceRowViewModel row => row.Id,
+        RazerHidDeviceRowViewModel row => row.Connection.InstanceId,
+        RazerHidKrakenDeviceRowViewModel row => row.Connection.InstanceId,
+        BlackSharkDeviceRowViewModel row => row.Connection.DevicePath,
+        RazerHeadsetAudioDeviceRowViewModel row => row.Connection.DevicePath,
+        RazerKeyboardDeviceRowViewModel row => row.Connection.DevicePath,
+        RazerGamepadDeviceRowViewModel row => row.Connection.DevicePath,
+        RazerChromaDeviceRowViewModel row => row.Connection.DevicePath,
+        RazerBleDeviceRowViewModel row => row.Device.Id,
+        RazerAwBleHeadsetRowViewModel row => row.Device.Id,
+        _ => item.Name,
+    };
+
     public bool CanPairNewDevice =>
         !IsLiteMode && RazerHid.Devices.Any(device => device.CanPairNewDevice);
 
@@ -224,124 +261,7 @@ public sealed partial class MainViewModel
 
     private void RefreshDeviceSelectorItems()
     {
-        DeviceSelectorItems.Clear();
-        if (!IsLiteMode &&
-            _deviceDescriptors.Any(device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily)))
-        {
-            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
-                DeviceSelectorItemKind.Blade,
-                Blade.DeviceName,
-                "\uE7F8"));
-        }
-        if (Viper.DeviceVisibility == Microsoft.UI.Xaml.Visibility.Visible)
-        {
-            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
-                DeviceSelectorItemKind.Viper,
-                Viper.DeviceName,
-                "\uE962"));
-        }
-
-        foreach (var row in RazerHid.Devices.Where(row =>
-                     row.Connection.IsReady && row.Connection.Capabilities.Count > 0))
-        {
-            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
-                DeviceSelectorItemKind.RazerHid,
-                row.Name,
-                row.IconGlyph,
-                row));
-        }
-
-        foreach (var row in RazerHid.KrakenDevices.Where(row => row.Connection.IsReady))
-        {
-            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
-                DeviceSelectorItemKind.Kraken,
-                row.Name,
-                row.IconGlyph,
-                row));
-        }
-
-        foreach (var row in BlackSharkDevices)
-        {
-            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
-                DeviceSelectorItemKind.BlackShark,
-                row.Name,
-                row.IconGlyph,
-                row));
-        }
-
-        foreach (var row in Accessories.HeadsetAudioDevices)
-        {
-            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
-                DeviceSelectorItemKind.HeadsetAudio,
-                row.Name,
-                row.IconGlyph,
-                row));
-        }
-
-        foreach (var row in Accessories.KeyboardDevices)
-        {
-            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
-                DeviceSelectorItemKind.Keyboard,
-                row.Name,
-                row.IconGlyph,
-                row));
-        }
-
-        foreach (var row in Accessories.GamepadDevices)
-        {
-            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
-                DeviceSelectorItemKind.Gamepad,
-                row.Name,
-                row.IconGlyph,
-                row));
-        }
-
-        if (CoolingPad.IsConnected)
-        {
-            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
-                DeviceSelectorItemKind.CoolingPad,
-                CoolingPad.Name,
-                CoolingPad.IconGlyph,
-                CoolingPad));
-        }
-
-        if (Kiyo.IsConnected)
-        {
-            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
-                DeviceSelectorItemKind.Kiyo,
-                Kiyo.Name,
-                Kiyo.IconGlyph,
-                Kiyo));
-        }
-
-        foreach (var row in Accessories.ChromaDevices)
-        {
-            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
-                DeviceSelectorItemKind.Chroma,
-                row.Name,
-                row.IconGlyph,
-                row));
-        }
-
-        foreach (var row in BleDevices)
-        {
-            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
-                DeviceSelectorItemKind.Ble,
-                row.Name,
-                row.IconGlyph,
-                row));
-        }
-
-        foreach (var row in AwBleHeadsetDevices)
-        {
-            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
-                DeviceSelectorItemKind.AwBleHeadset,
-                row.Name,
-                row.IconGlyph,
-                row));
-        }
-
-        OnPropertyChanged(nameof(DeviceSelectorItems));
+        RefreshDeviceSelectorItemsCore();
     }
 
     private async Task<string?> GetDeviceSerialAsync(DeviceDescriptor? device, CancellationToken cancellationToken)

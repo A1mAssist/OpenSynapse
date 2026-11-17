@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using OpenSynapse.Core.Profiles;
 
@@ -5,6 +6,27 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed class WindowsActiveApplicationProvider : IActiveApplicationProvider
 {
+    public IReadOnlyList<string> RunningExecutablePaths()
+    {
+        var paths = new List<string>();
+        foreach (var process in Process.GetProcesses())
+        {
+            using (process)
+            {
+                try
+                {
+                    if (process.MainWindowHandle != IntPtr.Zero && process.MainModule?.FileName is { } path)
+                        paths.Add(path);
+                }
+                catch (Exception exception) when (exception is InvalidOperationException or
+                    System.ComponentModel.Win32Exception or NotSupportedException or PlatformNotSupportedException)
+                {
+                }
+            }
+        }
+        return paths;
+    }
+
     public string? ExecutablePath
     {
         get

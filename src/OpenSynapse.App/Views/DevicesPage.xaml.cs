@@ -5,6 +5,8 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Profiles;
+using OpenSynapse.Windows.Devices;
 using Windows.UI;
 
 namespace OpenSynapse.App.Views;
@@ -85,6 +87,9 @@ public sealed partial class DevicesPage : UserControl
         }
 
         HookDeviceBatterySources(viewModel);
+        ApplicationRulesPanel.Host = Host;
+        ApplicationRulesPanel.DataContext = viewModel.DeviceRules;
+        SyncApplicationRules(viewModel);
         _ = viewModel.PrimeDeviceBatteriesAsync(Lifetime);
 
         if (_razerDriversRequested)
@@ -113,7 +118,20 @@ public sealed partial class DevicesPage : UserControl
         }
 
         HookDeviceBatterySources(viewModel);
+        ApplicationRulesPanel.Host = Host;
+        ApplicationRulesPanel.DataContext = viewModel.DeviceRules;
+        SyncApplicationRules(viewModel);
         _ = viewModel.PrimeDeviceBatteriesAsync(Lifetime);
+    }
+
+    private void SyncApplicationRules(MainViewModel viewModel)
+    {
+        if (viewModel.RazerHid.SelectedDevice is not { } selected) return;
+        viewModel.DeviceRules.Select(new DeviceBindingKey(
+            RazerHidDeviceDefinition.VendorId,
+            selected.Connection.Definition.ProductId,
+            selected.Connection.InstanceId));
+        ApplicationRulesPanel.BindDeviceRules();
     }
 
     private void HookDeviceBatterySources(MainViewModel viewModel)
@@ -374,6 +392,7 @@ public sealed partial class DevicesPage : UserControl
             RazerHidDevicePanel.Visibility == Visibility.Visible)
         {
             DispatcherQueue.TryEnqueue(() => UpdateDeviceSelector("razer-hid"));
+            SyncApplicationRules(ViewModel);
         }
         if (propertyName == nameof(UsbAccessoriesWorkspace.SelectedHeadsetAudio) &&
             ViewModel.Accessories.SelectedHeadsetAudio is null &&

@@ -43,6 +43,27 @@ public sealed class ProfileDocument
         return clone;
     }
 
+    internal ProfileDocument CloneWithActiveProfile(string profileName)
+    {
+        EnsureProfileCatalog();
+        if (!Profiles.TryGetValue(profileName, out var selected))
+        {
+            throw new KeyNotFoundException($"Profile '{profileName}' does not exist.");
+        }
+        return new ProfileDocument
+        {
+            Version = Version,
+            ActiveProfileName = profileName,
+            Profiles = Profiles,
+            Global = selected.Global,
+            Devices = selected.Devices,
+            PluggedIn = selected.PluggedIn,
+            LowPowerAdapter = selected.LowPowerAdapter,
+            OnBattery = selected.OnBattery,
+            ApplicationBindings = ApplicationBindings,
+        };
+    }
+
     internal void ApplySafeDefaults()
     {
         Global ??= new ProfileSettings();

@@ -289,6 +289,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             (power, token) => SelectedBle?.ApplyPersistedProfileAsync(power, token) ?? Task.CompletedTask,
             (power, token) => AccessoryProfileReplay.ApplyAsync(this, _diagnosticLog, power, token),
             liteMode: liteMode);
+        InitializeDeviceHome(activeApplicationProvider);
         Tray = new TrayWorkspace(
             () => Devices, RazerHid, Accessories,
             () => BlackSharkDevices, () => BleDevices, () => AwBleHeadsetDevices);
@@ -431,89 +432,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
     public void RefreshLocalization()
     {
-        Profiles.ProfileStatusText = AppStrings.FormatText("ProfileLoaded",
-            Profiles.ActiveProfileName);
-
-        if (_lastDeviceTelemetry is { } telemetry)
-        {
-            ApplyDeviceTelemetry(telemetry);
-        }
-        Blade.RefreshLocalization();
-
-        foreach (var row in Devices)
-        {
-            row.RefreshLocalization();
-        }
-        RazerHid.RefreshLocalization();
-        foreach (var row in BlackSharkDevices)
-        {
-            row.RefreshLocalization();
-        }
-        SelectedBlackShark?.RefreshLocalization();
-        Accessories.SelectedGamepad?.RefreshLocalization();
-        CoolingPad.RefreshLocalization();
-        Kiyo.RefreshLocalization();
-        foreach (var row in Diagnostics.Rows)
-        {
-            row.RefreshLocalization();
-        }
-        Viper.RefreshLocalization();
-
-        Telemetry.RefreshLocalization();
-
-        OnPropertyChanged(string.Empty);
-    }
-
-    public async Task InitializeAsync(CancellationToken cancellationToken = default)
-    {
-        await Profiles.LoadAsync(cancellationToken);
-        await Telemetry.RefreshBatteryHealthAsync(cancellationToken);
-        await Refresh.RefreshDevicesAsync(cancellationToken);
-        Firmware.RefreshVersions();
-        await Blade.InitializeAsync(cancellationToken);
-        if (Telemetry.IsSamplingEnabled)
-        {
-            await Telemetry.RefreshPerformanceAsync(cancellationToken);
-        }
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (Interlocked.Exchange(ref _disposed, 1) != 0)
-        {
-            return;
-        }
-
-        _deviceImages?.Dispose();
-        // Dispose runs on the UI thread and still touches bound collections and
-        // selections below; keep every continuation there.
-        await RazerHid.DisposeAsync().ConfigureAwait(true);
-        Macros.Dispose();
-        _hue?.Dispose();
-        CoolingPad.Dispose();
-        Kiyo.Dispose();
-
-        SelectedBlackShark = null;
-
-        if (SelectedBle is { } ble)
-        {
-            await ble.DisposeAsync().ConfigureAwait(true);
-            SelectedBle = null;
-        }
-
-        if (SelectedAwBleHeadset is { } awBleHeadset)
-        {
-            await awBleHeadset.DisposeAsync().ConfigureAwait(true);
-            SelectedAwBleHeadset = null;
-        }
-        _selectedBlackSharkDevice = null;
-        BlackSharkDevices.Clear();
-
-        await Accessories.DisposeAsync().ConfigureAwait(true);
-
-        await Blade.DisposeAsync().ConfigureAwait(true);
-        _ = await Fan.StopAsync("application-exit").ConfigureAwait(true);
-        await Fan.DisposeAsync().ConfigureAwait(true);
+        RefreshLocalizationCore();
     }
 
     private PowerSourceKind CurrentPowerSource =>
@@ -524,6 +443,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     internal async Task InitializeProfileAsync(CancellationToken cancellationToken = default)
     {
         await Profiles.LoadAsync(cancellationToken);
+        await InitializeDeviceHomeAsync(cancellationToken);
         _machineSettings = await _machineSettingsStore.LoadAsync(cancellationToken);
         Macros.InitializeMacroRuntime();
         Firmware.RefreshVersions();
@@ -585,115 +505,6 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         _profile.Profiles.TryGetValue(_profile.ActiveProfileName, out var profile)
             ? profile
             : throw new InvalidOperationException("The active profile is missing from the profile catalog.");
-
-    private static string FormatOperationException(Exception exception)
-    {
-        var exceptions = exception is AggregateException aggregate
-            ? aggregate.Flatten().InnerExceptions
-            : [exception];
-        return string.Join(
-            "; ",
-            exceptions
-                .Select(error => error.Message)
-                .Where(message => !string.IsNullOrWhiteSpace(message)));
-    }
-
-    private static string FormatDeviceStatus(DeviceDescriptor? device) => device switch
-    {
-        null => AppStrings.Text("Text_DB0974DC"),
-        { Access: DeviceAccessState.Available, Capability: DeviceCapabilityState.PendingValidation } => AppStrings.Text("Text_95979F99"),
-        _ => AppStrings.Text("Text_A14B88EA"),
-    };
-
-    private static string FormatDuration(int seconds) => seconds switch
-    {
-        < 60 => AppStrings.FormatText("DurationSeconds", seconds),
-        _ when seconds % 60 == 0 => AppStrings.FormatText("DurationMinutes", seconds / 60),
-        _ => AppStrings.FormatText("DurationMinutesSeconds", seconds / 60, seconds % 60),
-    };
-
-    private static string FormatOptionalState(bool? value) => value switch
-    {
-        true => AppStrings.Text("Text_F55AD712"),
-        false => AppStrings.Text("Text_7E3B0F3C"),
-        null => "--",
-    };
-
-    private static string FormatState(bool value) => AppStrings.Text(value ? "Text_2AA0915E" : "Text_2351D059");
-
-    private void UpdateErrorText()
-    {
-        ErrorText = string.Join(
-            Environment.NewLine,
-            new[] { DeviceErrorText, _displayErrorText, _performanceErrorText }.Where(error => !string.IsNullOrWhiteSpace(error)));
-    }
-
-    private void SetDisplayError(string error)
-    {
-        LogChangedError("display", _displayErrorText, error);
-        _displayErrorText = error;
-        UpdateErrorText();
-    }
-
-    private void SetDeviceQueryError(string error)
-    {
-        LogChangedError("device-query", _deviceQueryErrorText, error);
-        _deviceQueryErrorText = error;
-        UpdateDeviceErrorText();
-    }
-
-    private void SetDeviceOperationError(string error)
-    {
-        LogChangedError("device-operation", _deviceOperationErrorText, error);
-        _deviceOperationErrorText = error;
-        UpdateDeviceErrorText();
-    }
-
-    private void UpdateDeviceErrorText()
-    {
-        DeviceErrorText = string.Join(
-            Environment.NewLine,
-            new[] { _deviceQueryErrorText, _deviceOperationErrorText }.Where(error => !string.IsNullOrWhiteSpace(error)));
-    }
-
-    public void ReportApplicationError(string message)
-    {
-        LogChangedError("application", _performanceErrorText, message);
-        _performanceErrorText = message;
-        UpdateErrorText();
-    }
-
-    private void SetPerformanceError(string error)
-    {
-        LogChangedError("performance", _performanceErrorText, error);
-        _performanceErrorText = error;
-        UpdateErrorText();
-    }
-
-    private void LogChangedError(string source, string previous, string current)
-    {
-        if (!string.IsNullOrWhiteSpace(current) && !StringComparer.Ordinal.Equals(previous, current))
-        {
-            _diagnosticLog.TryWrite(source, current);
-        }
-    }
-
-    private static bool IsExpectedRuntimeException(Exception exception) =>
-        exception is Win32Exception or IOException or UnauthorizedAccessException or
-        InvalidOperationException or NotSupportedException or COMException;
-
-    private static int FindDiagnosticSeparator(string value)
-    {
-        var ascii = value.IndexOf(':');
-        var fullWidth = value.IndexOf('\uFF1A');
-        return ascii < 0 ? fullWidth : fullWidth < 0 ? ascii : Math.Min(ascii, fullWidth);
-    }
-
-    private static bool IsExpectedFanException(Exception exception) =>
-        IsExpectedRuntimeException(exception) ||
-        exception is ArgumentException or AggregateException or ObjectDisposedException;
-
-    private static string FormatRawByte(byte? value) => value is byte raw ? $"0x{raw:X2} ({raw})" : AppStrings.Text("Text_D0003708");
 
     private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {

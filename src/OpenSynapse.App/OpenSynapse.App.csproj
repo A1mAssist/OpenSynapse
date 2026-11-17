@@ -30,6 +30,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="Runtime\DeviceApplicationSwitchCoordinator.cs;Runtime\DeviceApplicationSwitchState.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="..\..\LICENSE"
              Link="LICENSE"
              CopyToOutputDirectory="PreserveNewest"

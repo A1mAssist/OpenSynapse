@@ -215,7 +215,7 @@ public sealed partial class MainWindow
         _viewModel.Telemetry.SetPerformanceSamplingEnabled(
             _performanceOverlayEnabled || curveWindowOpen ||
             (AppWindow.IsVisible &&
-             (IsPageCurrent("overview") ||
+             ((IsPageCurrent("overview") && _viewModel.Home.IsCardVisible("telemetry")) ||
               (IsPageCurrent("devices") && _devicesPage?.IsBladePanelVisible == true))));
         _viewModel.Refresh.SetDeviceReadoutSamplingEnabled(
             curveWindowOpen ||

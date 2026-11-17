@@ -5,12 +5,47 @@
     xmlns:local="using:OpenSynapse.App"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    x:Name="PageRoot"
     mc:Ignorable="d">
+  <UserControl.Resources>
+    <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+  </UserControl.Resources>
   <ScrollViewer x:Name="PageScrollViewer" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
               <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
                 <StackPanel Spacing="5"><TextBlock local:Localized.Uid="Loc_16E65B7F4A" Style="{StaticResource PageTitleStyle}" /><TextBlock local:Localized.Uid="Loc_6F843C9A12" Foreground="{StaticResource MutedBrush}" /></StackPanel>
                 <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
-                <StackPanel x:Name="SystemTelemetrySection" Spacing="12">
+                <TextBlock Text="{Binding Home.StatusText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Visibility="{Binding Home.HasStatus, Converter={StaticResource BoolToVisibilityConverter}}" />
+                <Border x:Name="HomeEditorPanel" Style="{StaticResource CardStyle}" Padding="16" Visibility="Collapsed" DataContext="{Binding Home}">
+                  <StackPanel Spacing="14">
+                    <StackPanel Spacing="4"><TextBlock local:Localized.Uid="HomeCustomizeTitle" Text="Customize home" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock local:Localized.Uid="HomeCustomizeDescription" Text="Choose which cards appear and arrange them. Pin moves a card to the top; changes are saved separately from profiles." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" /></StackPanel>
+                    <ItemsControl ItemsSource="{Binding EditorCards}"><ItemsControl.ItemTemplate><DataTemplate>
+                      <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="8" Margin="0,0,0,8">
+                        <ToggleSwitch IsOn="{Binding IsVisible, Mode=TwoWay}" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" AutomationProperties.Name="{Binding Label}" />
+                        <TextBlock Grid.Column="1" Text="{Binding Label}" VerticalAlignment="Center" TextWrapping="Wrap" MinWidth="130" />
+                        <Button Grid.Column="2" Click="MoveHomeCardUpClick" Style="{StaticResource IconButtonStyle}" local:Localized.Uid="HomeMoveCardUp" AutomationProperties.Name="Move card up"><FontIcon Glyph="&#xE74A;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" /></Button>
+                        <Button Grid.Column="3" Click="MoveHomeCardDownClick" Style="{StaticResource IconButtonStyle}" local:Localized.Uid="HomeMoveCardDown" AutomationProperties.Name="Move card down"><FontIcon Glyph="&#xE74B;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" /></Button>
+                        <Button Grid.Column="4" Click="PinHomeCardClick" Style="{StaticResource SecondaryButtonStyle}" local:Localized.Uid="HomePinCard" Content="Pin to top" AutomationProperties.Name="Pin card to top" />
+                      </Grid>
+                    </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+                    <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="8"><Button Click="SaveHomeClick" Style="{StaticResource PrimaryButtonStyle}" local:Localized.Uid="HomeSaveLayout" Content="Save layout" AutomationProperties.AutomationId="HomeSaveLayoutButton" /><Button Click="CancelHomeClick" Style="{StaticResource SecondaryButtonStyle}" local:Localized.Uid="HomeCancelLayout" Content="Cancel" AutomationProperties.AutomationId="HomeCancelLayoutButton" /><Button Click="ResetHomeClick" Style="{StaticResource SecondaryButtonStyle}" local:Localized.Uid="HomeResetLayout" Content="Reset to default" AutomationProperties.AutomationId="HomeResetLayoutButton" /></StackPanel>
+                  </StackPanel>
+                </Border>
+                <Grid x:Name="HomeCardsPanel" ColumnDefinitions="*,*" ColumnSpacing="16" RowSpacing="16" DataContext="{Binding Home}">
+                <StackPanel x:Name="StatusSection" Tag="status" Spacing="8" DataContext="{Binding DataContext, ElementName=PageRoot}">
+                  <TextBlock local:Localized.Uid="HomeStatusCard" Text="Status" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
+                  <Border Style="{StaticResource CardStyle}" Padding="16">
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="16" RowSpacing="10">
+                      <TextBlock local:Localized.Uid="HomeConnectedDevices" Text="Connected devices" Style="{StaticResource MetricLabelStyle}" />
+                      <TextBlock Grid.Row="1" Text="{Binding ConnectedDevices.Count}" Style="{StaticResource MetricValueStyle}" />
+                      <TextBlock Grid.Column="1" local:Localized.Uid="HomeActiveProfile" Text="Active profile" Style="{StaticResource MetricLabelStyle}" />
+                      <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding Profiles.ActiveProfileName}" Foreground="{StaticResource AccentBrush}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" FontSize="18" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Grid.Row="2" Grid.ColumnSpan="2" local:Localized.Uid="HomeApplicationSwitching" Text="Application switching" Style="{StaticResource MetricLabelStyle}" />
+                      <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Text="{Binding Home.ApplicationSwitchingStateText}" Foreground="{StaticResource MutedBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+                    </Grid>
+                  </Border>
+                </StackPanel>
+                <StackPanel x:Name="SystemTelemetrySection" Tag="telemetry" Spacing="12" DataContext="{Binding DataContext, ElementName=PageRoot}">
                   <TextBlock local:Localized.Uid="Loc_643DCA0BC0" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
                   <Border Style="{StaticResource CardStyle}" Padding="16">
                     <StackPanel Spacing="12">
@@ -26,22 +61,16 @@
                       <ProgressBar Value="{Binding Telemetry.GpuPercent}" Maximum="100" Style="{StaticResource TelemetryBarStyle}" Foreground="{StaticResource GpuBrush}" />
                     </StackPanel>
                   </Border>
-                  <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                  <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
                     <Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock Text="MEMORY" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding Telemetry.MemoryValue}" Style="{StaticResource MetricValueStyle}" /><ProgressBar Value="{Binding Telemetry.MemoryPercent}" Maximum="100" Style="{StaticResource TelemetryBarStyle}" Foreground="{StaticResource ThermalBrush}" /><TextBlock Text="{Binding Telemetry.MemoryDetail}" Foreground="{StaticResource MutedBrush}" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></StackPanel></Border>
                     <Border Grid.Column="1" Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="8"><TextBlock Text="STORAGE" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding Telemetry.StorageValue}" Style="{StaticResource MetricValueStyle}" /><ProgressBar Value="{Binding Telemetry.StoragePercent}" Maximum="100" Style="{StaticResource TelemetryBarStyle}" Foreground="{StaticResource AccentBrush}" /><TextBlock Text="{Binding Telemetry.StorageDetail}" Foreground="{StaticResource MutedBrush}" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></StackPanel></Border>
                   </Grid>
                 </StackPanel>
-                <StackPanel Spacing="8"><Grid ColumnDefinitions="*,Auto"><TextBlock local:Localized.Uid="Loc_B7D0B7C1CD" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" /><TextBlock Grid.Column="1" Text="{Binding ConnectedDevices.Count}" Style="{StaticResource MetricLabelStyle}" /></Grid>
-                  <ListView ItemsSource="{Binding ConnectedDevices}" SelectionMode="None" Background="Transparent" BorderThickness="0">
-                    <ListView.ItemContainerStyle>
-                      <Style TargetType="ListViewItem">
-                        <Setter Property="Margin" Value="0,0,0,8" />
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                      </Style>
-                    </ListView.ItemContainerStyle>
-                    <ListView.ItemTemplate>
+                <StackPanel x:Name="DevicesSection" Tag="devices" Spacing="8" DataContext="{Binding DataContext, ElementName=PageRoot}"><Grid ColumnDefinitions="*,Auto"><TextBlock local:Localized.Uid="Loc_B7D0B7C1CD" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" /><TextBlock Grid.Column="1" Text="{Binding ConnectedDevices.Count}" Style="{StaticResource MetricLabelStyle}" /></Grid>
+                  <ItemsControl ItemsSource="{Binding ConnectedDevices}" HorizontalAlignment="Stretch">
+                    <ItemsControl.ItemTemplate>
                       <DataTemplate>
-                        <Button Tag="{Binding Source}" Click="ConnectedDeviceCardClick" Style="{StaticResource QuickActionButtonStyle}" Padding="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="{Binding Name}">
+                        <Button Tag="{Binding Source}" Click="ConnectedDeviceCardClick" Style="{StaticResource QuickActionButtonStyle}" Padding="16" Margin="0,0,0,8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="{Binding Name}">
                           <Grid ColumnDefinitions="42,*,Auto" ColumnSpacing="13">
                             <Border Width="42" Height="42" Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="4">
                               <Grid>
@@ -60,9 +89,26 @@
                           </Grid>
                         </Button>
                       </DataTemplate>
-                    </ListView.ItemTemplate>
-                  </ListView>
-                  <TextBlock Text="{Binding EmptyStateText}" Foreground="{StaticResource MutedBrush}" /></StackPanel>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <TextBlock Text="{Binding EmptyStateText}" Foreground="{StaticResource MutedBrush}" Visibility="{Binding EmptyStateVisibility}" /></StackPanel>
+                <StackPanel x:Name="QuickActionsSection" Tag="quick-actions" Spacing="8">
+                  <TextBlock Text="{Binding PerformanceCardTitle}" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
+                  <Border Style="{StaticResource CardStyle}" Padding="16">
+                    <StackPanel Spacing="12">
+                      <TextBlock Text="{Binding PerformanceModeText}" FontSize="20" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                      <TextBlock Text="{Binding PerformancePowerText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <Button Click="CyclePerformanceModeClick" IsEnabled="{Binding CanCyclePerformanceMode}" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Stretch" Content="{Binding CyclePerformanceLabel}" AutomationProperties.AutomationId="HomeCyclePerformanceButton" AutomationProperties.Name="{Binding CyclePerformanceLabel}" />
+                      <Button Click="OpenStudioClick" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Stretch" Content="{Binding OpenStudioLabel}" AutomationProperties.AutomationId="HomeOpenStudioButton" AutomationProperties.Name="{Binding OpenStudioLabel}" />
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+                <StackPanel x:Name="ProfilesSection" Tag="profiles" Spacing="8" DataContext="{Binding DataContext, ElementName=PageRoot}">
+                  <TextBlock local:Localized.Uid="HomeProfilesCard" Text="Profiles" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
+                  <Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="10"><Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock local:Localized.Uid="HomeActiveProfileSummary" Text="Active profile" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="{Binding Profiles.ActiveProfileName}" Foreground="{StaticResource AccentBrush}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center" /></Grid><TextBlock Text="{Binding Home.ApplicationSwitchingStateText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" /></StackPanel></Border>
+                </StackPanel>
+                 <Button Click="EditHomeClick" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" local:Localized.Uid="HomeCustomize" Content="Customize home" AutomationProperties.AutomationId="HomeCustomizeButton" />
+                 </Grid>
               </StackPanel>
   </ScrollViewer>
 </UserControl>
