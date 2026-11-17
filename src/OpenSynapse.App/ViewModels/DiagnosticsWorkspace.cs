@@ -3,6 +3,8 @@ using System.Reflection;
 using System.Text;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Lighting;
+using OpenSynapse.Windows.Lighting;
 using Windows.UI;
 
 namespace OpenSynapse.App.ViewModels;
@@ -46,6 +48,10 @@ public sealed partial class DiagnosticsWorkspace
         report.AppendLine(AppStrings.FormatText("DiagnosticsReportGenerated",
             DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm")));
         report.AppendLine(AppStrings.FormatText("DiagnosticsReportVersion", CurrentVersion));
+        report.AppendLine(AppStrings.FormatText(
+            "DiagnosticsReportChroma",
+            ChromaOfficialDllInstaller.CoreVersion,
+            ChromaDeviceCatalog.SourceVersion));
         report.AppendLine(AppStrings.FormatText("DiagnosticsReportDeviceRefresh", _lastRefreshText()));
         report.AppendLine(AppStrings.FormatText("DiagnosticsReportDeviceTelemetry", _telemetryTimeText()));
         report.AppendLine();

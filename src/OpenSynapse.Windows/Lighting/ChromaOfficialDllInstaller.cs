@@ -21,8 +21,15 @@ internal enum ChromaOfficialDllInstallOutcome
 /// </summary>
 internal static class ChromaOfficialDllInstaller
 {
+    /// <summary>
+    /// The device catalog is generated from a newer Chroma package than the DLL
+    /// we can ship, so a PID that only exists in the newer catalog is accepted
+    /// here but rejected by the DLL. Diagnostics reports both versions.
+    /// </summary>
+    internal const string CoreVersion = "4.1.0.10151444";
+
     private const string DownloadUrl =
-        "https://github.com/A1mAssist/OpenSynapse/releases/download/chroma-sdk-4.1.0.10151444/RzChromaSDK64.dll";
+        $"https://github.com/A1mAssist/OpenSynapse/releases/download/chroma-sdk-{CoreVersion}/RzChromaSDK64.dll";
     private const long PackageLength = 273096;
     private const string PackageSha256 =
         "7AB56EA40C67450F81772CD35C3DAE8E36FC2CA43110A2D8294DCAC4B2E364E7";

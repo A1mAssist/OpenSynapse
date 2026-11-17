@@ -2176,6 +2176,7 @@
   <data name="Text_046A57B8" xml:space="preserve"><value>键盘设备</value></data>
   <data name="DiagnosticsReportTitle" xml:space="preserve"><value>OpenSynapse 诊断信息</value></data>
   <data name="DiagnosticsReportGenerated" xml:space="preserve"><value>生成时间：{0}</value></data>
+  <data name="DiagnosticsReportChroma" xml:space="preserve"><value>Chroma：SDK 核心 {0} · 设备目录 {1}</value></data>
   <data name="DiagnosticsReportVersion" xml:space="preserve"><value>版本：{0}</value></data>
   <data name="DiagnosticsReportDeviceRefresh" xml:space="preserve"><value>设备刷新：{0}</value></data>
   <data name="DiagnosticsReportDeviceTelemetry" xml:space="preserve"><value>设备遥测：{0}</value></data>

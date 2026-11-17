@@ -22,6 +22,9 @@ public enum ChromaDeviceKind
 /// </summary>
 public static class ChromaDeviceCatalog
 {
+    /// <summary>Devices.xml version this table was generated from.</summary>
+    public const string SourceVersion = "4.1.0.10151513";
+
     private static readonly IReadOnlyDictionary<ushort, ChromaDeviceKind> Devices =
         new Dictionary<ushort, ChromaDeviceKind>
         {
