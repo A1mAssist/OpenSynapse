@@ -39,7 +39,7 @@ public sealed partial class TaskbarStatusWindow
         var displayFamily = EnsureDisplayFonts() ? "Titillium Web" : "Segoe UI Variable Text";
         _batteryFont = CreateFontW(
             -(int)Math.Round(14 * scale), 0, 0, 0, FwSemibold,
-            0, 0, 0, DefaultCharset, 0, 0, AntialiasedQuality, DefaultPitch,
+            0, 0, 0, DefaultCharset, 0, 0, NonAntialiasedQuality, DefaultPitch,
             displayFamily);
 
         _iconFont = CreateFontW(
@@ -50,7 +50,7 @@ public sealed partial class TaskbarStatusWindow
         {
             _batteryFont = CreateFontW(
                 -(int)Math.Round(14 * scale), 0, 0, 0, FwSemibold,
-                0, 0, 0, DefaultCharset, 0, 0, AntialiasedQuality, DefaultPitch,
+                0, 0, 0, DefaultCharset, 0, 0, NonAntialiasedQuality, DefaultPitch,
                 "Segoe UI Variable Text");
         }
 
