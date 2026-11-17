@@ -1,5 +1,6 @@
 <UserControl
     x:Class="OpenSynapse.App.Views.ProfilesPage"
+    Loaded="ProfilesPageLoaded"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:OpenSynapse.App"
@@ -36,6 +37,15 @@
                       <ItemsRepeater.Layout><StackLayout Spacing="6" /></ItemsRepeater.Layout>
                       <ItemsRepeater.ItemTemplate><DataTemplate><Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="10" MinHeight="34"><Button Tag="{Binding Device}" Click="OpenBoundDeviceClick" Style="{StaticResource QuickActionButtonStyle}"><StackPanel VerticalAlignment="Center"><TextBlock Text="{Binding ExecutableName}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /><TextBlock Text="{Binding DeviceName}" FontFamily="Cascadia Mono,Consolas" FontSize="10" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" /></StackPanel></Button><TextBlock Grid.Column="1" Text="{Binding ProfileName}" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" /><Button local:Localized.Uid="Loc_5DAE9E5AB4" Grid.Column="2" Tag="{Binding Id}" Click="UnbindApplicationClick" Style="{StaticResource IconButtonStyle}"><SymbolIcon Symbol="Delete" /></Button></Grid></DataTemplate></ItemsRepeater.ItemTemplate>
                     </ItemsRepeater>
+                    <Grid ColumnDefinitions="*,180,Auto" ColumnSpacing="8">
+                      <ComboBox x:Name="BindingDevicePicker" ItemsSource="{Binding BindableDevices}" DisplayMemberPath="DisplayName" PlaceholderText="设备" DropDownOpened="BindingDevicePickerDropDownOpened" HorizontalAlignment="Stretch" />
+                      <ComboBox x:Name="BindingProfilePicker" Grid.Column="1" PlaceholderText="配置" DropDownOpened="BindingProfilePickerDropDownOpened" HorizontalAlignment="Stretch" />
+                      <Button local:Localized.Uid="Loc_EB8ED8250D" Grid.Column="2" Click="BindApplicationClick" IsEnabled="{Binding HasBindableDevices}" Style="{StaticResource PrimaryButtonStyle}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <ComboBox x:Name="BindingApplicationPicker" local:Localized.Uid="DeviceRulesPickRunning" ItemsSource="{Binding RunningApplications}" DropDownOpened="BindingApplicationPickerDropDownOpened" HorizontalAlignment="Stretch" />
+                      <Button Grid.Column="1" Content="exe…" Click="BrowseApplicationBindingClick" IsEnabled="{Binding HasBindableDevices}" Style="{StaticResource SecondaryButtonStyle}" ToolTipService.ToolTip="选择 exe 并绑定到所选设备" />
+                    </Grid>
                   </StackPanel>
                 </Border>
                 <Border Style="{StaticResource CardStyle}" Padding="16">

@@ -206,18 +206,63 @@ public sealed partial class ProfilesPage : UserControl
         }
     }
 
+    private void ProfilesPageLoaded(object sender, RoutedEventArgs e)
+    {
+        ViewModel.DeviceRules.RefreshView();
+        RefreshBindingProfilePicker();
+        BindingDevicePicker.SelectedItem ??= ViewModel.DeviceRules.BindableDevices.FirstOrDefault();
+    }
+
+    private void BindingDevicePickerDropDownOpened(object sender, object e)
+    {
+        ViewModel.DeviceRules.RefreshView();
+        BindingDevicePicker.SelectedItem ??= ViewModel.DeviceRules.BindableDevices.FirstOrDefault();
+    }
+
+    private void BindingProfilePickerDropDownOpened(object sender, object e) =>
+        RefreshBindingProfilePicker();
+
+    private void RefreshBindingProfilePicker()
+    {
+        var names = ViewModel.DeviceRules.ProfileNames;
+        BindingProfilePicker.ItemsSource = names;
+        if (BindingProfilePicker.SelectedItem is not string selected ||
+            !names.Contains(selected, StringComparer.OrdinalIgnoreCase))
+        {
+            BindingProfilePicker.SelectedItem = ViewModel.Profiles.ActiveProfileName;
+        }
+    }
+
+    private void BindingApplicationPickerDropDownOpened(object sender, object e) =>
+        ViewModel.DeviceRules.RefreshRunningApplications();
+
     private async void BindApplicationClick(object sender, RoutedEventArgs e)
     {
+        if (BindingDevicePicker.SelectedItem is not DeviceRuleDeviceOption device ||
+            BindingProfilePicker.SelectedItem is not string profile ||
+            BindingApplicationPicker.SelectedItem is not string path)
+        {
+            return;
+        }
+        await ViewModel.DeviceRules.AddAsync(device.Device, path, profile, Lifetime);
+    }
+
+    private async void BrowseApplicationBindingClick(object sender, RoutedEventArgs e)
+    {
+        if (BindingDevicePicker.SelectedItem is not DeviceRuleDeviceOption device ||
+            BindingProfilePicker.SelectedItem is not string profile)
+        {
+            return;
+        }
         var picker = new FileOpenPicker
         {
             SuggestedStartLocation = PickerLocationId.ComputerFolder,
         };
         picker.FileTypeFilter.Add(".exe");
         Host.InitializePicker(picker);
-        var file = await picker.PickSingleFileAsync();
-        if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
+        if (await picker.PickSingleFileAsync() is { Path.Length: > 0 } file)
         {
-            await ViewModel.Profiles.BindApplicationAsync(file.Path, Lifetime);
+            await ViewModel.DeviceRules.AddAsync(device.Device, file.Path, profile, Lifetime);
         }
     }
 

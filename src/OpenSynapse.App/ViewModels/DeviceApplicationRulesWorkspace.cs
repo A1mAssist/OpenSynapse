@@ -28,6 +28,8 @@ public sealed class DeviceApplicationRuleRowViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 }
 
+public sealed record DeviceRuleDeviceOption(DeviceBindingKey Device, string DisplayName);
+
 public sealed partial class DeviceApplicationRulesWorkspace : INotifyPropertyChanged
 {
     private readonly DeviceApplicationRuleStore _store;
@@ -37,6 +39,8 @@ public sealed partial class DeviceApplicationRulesWorkspace : INotifyPropertyCha
     private readonly Action _changed;
     private DeviceApplicationRuleDocument _document = new(1, true, []);
     private DeviceBindingKey? _selected;
+    private string _bindableDevicesSignature = string.Empty;
+    private string _runningApplicationsSignature = string.Empty;
     private bool _migrated;
 
     internal DeviceApplicationRulesWorkspace(
@@ -56,11 +60,13 @@ public sealed partial class DeviceApplicationRulesWorkspace : INotifyPropertyCha
     public event PropertyChangedEventHandler? PropertyChanged;
     public ObservableCollection<DeviceApplicationRuleRowViewModel> Rules { get; } = new();
     public ObservableCollection<DeviceApplicationRuleRowViewModel> DeviceRules { get; } = new();
+    public ObservableCollection<DeviceRuleDeviceOption> BindableDevices { get; } = new();
     public string StatusText { get; internal set; } = string.Empty;
     public ObservableCollection<string> RunningApplications { get; } = new();
     public IReadOnlyList<string> ProfileNames => _profiles().Profiles.Keys.Order().ToArray();
     public bool Enabled { get => _document.Enabled; set => _ = SetEnabledAsync(value); }
     public bool CanAdd => _selected is not null;
+    public bool HasBindableDevices => BindableDevices.Count > 0;
     public string DeviceIdentityUnavailable => CanAdd ? string.Empty : AppStrings.Text("DeviceIdentityUnavailable");
     internal DeviceApplicationRuleDocument Document => _document;
 
@@ -90,6 +96,15 @@ public sealed partial class DeviceApplicationRulesWorkspace : INotifyPropertyCha
     internal async Task AddAsync(string executablePath, string profileName, CancellationToken token)
     {
         if (_selected is not { } device) throw new InvalidOperationException(AppStrings.Text("DeviceIdentityUnavailable"));
+        await AddAsync(device, executablePath, profileName, token);
+    }
+
+    internal async Task AddAsync(
+        DeviceBindingKey device,
+        string executablePath,
+        string profileName,
+        CancellationToken token)
+    {
         await SaveAsync(DeviceApplicationRuleCatalog.AddOrUpdate(_document,
             new DeviceApplicationRule(Guid.NewGuid().ToString("N"), device, profileName,
                 executablePath, true)), token);
@@ -113,9 +128,16 @@ public sealed partial class DeviceApplicationRulesWorkspace : INotifyPropertyCha
 
     internal void RefreshRunningApplications(IEnumerable<string> paths)
     {
+        var ordered = paths.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).ToArray();
+        var signature = string.Join('\n', ordered);
+        if (StringComparer.Ordinal.Equals(signature, _runningApplicationsSignature)) return;
+        _runningApplicationsSignature = signature;
         RunningApplications.Clear();
-        foreach (var path in paths.Distinct(StringComparer.OrdinalIgnoreCase).Order()) RunningApplications.Add(path);
+        foreach (var path in ordered) RunningApplications.Add(path);
     }
+
+    internal void RefreshRunningApplications() =>
+        RefreshRunningApplications(new WindowsActiveApplicationProvider().RunningExecutablePaths());
 
     private async Task SaveAsync(DeviceApplicationRuleDocument document, CancellationToken token)
     {
@@ -147,6 +169,7 @@ public sealed partial class DeviceApplicationRulesWorkspace : INotifyPropertyCha
             .ThenBy(rule => rule.ExecutablePath, StringComparer.OrdinalIgnoreCase)
             .ThenBy(rule => rule.Device.InstanceId, StringComparer.OrdinalIgnoreCase));
         Fill(DeviceRules, _document.Rules.Where(rule => _selected is { } device && rule.Device.Equals(device)));
+        RefreshBindableDevices();
         var states = _coordinator().States;
         foreach (var row in Rules.Concat(DeviceRules))
         {
@@ -172,6 +195,35 @@ public sealed partial class DeviceApplicationRulesWorkspace : INotifyPropertyCha
             : string.Empty;
         OnPropertyChanged(null);
     }
+
+    private void RefreshBindableDevices()
+    {
+        var connections = _connections()
+            .Where(connection => connection.Definition.Category is DeviceCategory.Mouse or DeviceCategory.Keyboard)
+            .GroupBy(connection => connection.InstanceId, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .OrderBy(connection => connection.Definition.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var duplicateNames = connections
+            .GroupBy(connection => connection.Definition.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .Where(group => group.Count() > 1)
+            .Select(group => group.Key)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var options = connections.Select(connection => new DeviceRuleDeviceOption(
+            new DeviceBindingKey(RazerHidDeviceDefinition.VendorId, connection.Definition.ProductId, connection.InstanceId),
+            duplicateNames.Contains(connection.Definition.DisplayName)
+                ? $"{connection.Definition.DisplayName} · {ShortId(connection.InstanceId)}"
+                : connection.Definition.DisplayName)).ToArray();
+        var signature = string.Join('\n', options.Select(option =>
+            $"{option.Device.ProductId:X4}:{option.Device.InstanceId}"));
+        if (StringComparer.Ordinal.Equals(signature, _bindableDevicesSignature)) return;
+        _bindableDevicesSignature = signature;
+        BindableDevices.Clear();
+        foreach (var option in options) BindableDevices.Add(option);
+    }
+
+    private static string ShortId(string instanceId) =>
+        instanceId.Length <= 8 ? instanceId : instanceId[^8..];
 
     private void OnPropertyChanged([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new(name));
 }

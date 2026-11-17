@@ -182,7 +182,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
             return;
         }
 
-        DisposeMatrixEditor();
+        DisposeMatrixEditor(); CancelRotationCalibration();
         try
         {
             await StopSoftwareLightingAsync(CancellationToken.None).ConfigureAwait(false);

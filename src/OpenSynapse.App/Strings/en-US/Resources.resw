@@ -1689,6 +1689,11 @@
   <data name="RazerHidSensorRotationAngle.Header" xml:space="preserve"><value>Angle</value></data>
   <data name="RazerHidSensorRotationApplied" xml:space="preserve"><value>Applied</value></data>
   <data name="RazerHidSensorRotationInvalid" xml:space="preserve"><value>The stored angle raw value {0} is outside the valid range. Re-detect the device, then set the angle again.</value></data>
+  <data name="RazerHidSensorRotationCalibrate.Content" xml:space="preserve"><value>Calibrate</value></data>
+  <data name="RazerHidSensorRotationCalibrated" xml:space="preserve"><value>Filled {0}°. Review it, then save to the device.</value></data>
+  <data name="RazerHidSensorRotationCalibrateHint" xml:space="preserve"><value>Move the pointer to an empty desktop area, hold the left button and sweep left/right 3–5 times, then click the right button to finish.</value></data>
+  <data name="RazerHidSensorRotationCalibrateTooShort" xml:space="preserve"><value>No valid sweep was captured. Try again.</value></data>
+  <data name="RazerHidSensorRotationCalibrateZeroFirst" xml:space="preserve"><value>Turn sensor rotation off and set the angle to 0 before calibrating.</value></data>
   <data name="RazerHidSmartTrackingTitle.Text" xml:space="preserve"><value>Smart tracking</value></data>
   <data name="RazerHidSmartTrackingDescription.Text" xml:space="preserve"><value>Choose adaptive lift-off, or set lift-off and landing distances independently.</value></data>
   <data name="RazerHidSmartTrackingMode.Header" xml:space="preserve"><value>Mode</value></data>
@@ -3852,6 +3857,8 @@
   <data name="RazerDriverInstallStartFailed" xml:space="preserve"><value>The Razer driver installer did not start.</value></data>
   <data name="RazerDriverNoStagedInf" xml:space="preserve"><value>The driver is installed, but no matching filter INF was found. Restart and retry, or reinstall the package.</value></data>
   <data name="RazerDriverFilterMissing" xml:space="preserve"><value>The package is installed, but the filter driver is not attached to the device. Click Install or repair driver to retry.</value></data>
+  <data name="RazerDriverRestartRequired" xml:space="preserve"><value>The filter driver is queued and takes effect after Windows restarts (or the device is replugged).</value></data>
+  <data name="RazerDriverRestartSummary" xml:space="preserve"><value>Restart Windows to finish the Razer driver installation.</value></data>
   <data name="RazerDriverEndpointPending" xml:space="preserve"><value>The filter driver is attached, but the device is not ready. Click Install or repair driver to retry; replug only if that does not help.</value></data>
   <data name="RazerDriverInstallUncertain" xml:space="preserve"><value>The driver install was submitted, but the service did not return a result. Wait a minute and refresh; do not reinstall.</value></data>
   <data name="RazerDriverCommonDownloading" xml:space="preserve"><value>Downloading the Razer common control driver…</value></data>
