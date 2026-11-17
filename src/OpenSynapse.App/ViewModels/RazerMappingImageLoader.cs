@@ -17,7 +17,7 @@ internal static class RazerMappingImageLoader
 {
     private const int MappingDecodeWidth = 330;
 
-    public static async Task<ImageSource?> LoadAsync(Uri uri)
+    public static async Task<ImageSource?> LoadAsync(Uri uri, int decodeWidth = MappingDecodeWidth)
     {
         if (uri.LocalPath.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
         {
@@ -29,12 +29,12 @@ internal static class RazerMappingImageLoader
 
         if (uri.LocalPath.EndsWith(".avif", StringComparison.OrdinalIgnoreCase))
         {
-            return await TryLoadAvifAsync(uri).ConfigureAwait(true);
+            return await TryLoadAvifAsync(uri, decodeWidth).ConfigureAwait(true);
         }
 
         try
         {
-            var image = new BitmapImage { DecodePixelWidth = MappingDecodeWidth };
+            var image = new BitmapImage { DecodePixelWidth = decodeWidth };
             image.UriSource = uri;
             return image;
         }
@@ -44,7 +44,7 @@ internal static class RazerMappingImageLoader
         }
     }
 
-    private static async Task<ImageSource?> TryLoadAvifAsync(Uri uri)
+    private static async Task<ImageSource?> TryLoadAvifAsync(Uri uri, int decodeWidth)
     {
         try
         {
@@ -54,7 +54,7 @@ internal static class RazerMappingImageLoader
                 return null;
             }
 
-            pixels = DownscaleBgra(pixels, width, height, MappingDecodeWidth, out width, out height);
+            pixels = DownscaleBgra(pixels, width, height, decodeWidth, out width, out height);
             using var bitmap = new SoftwareBitmap(
                 BitmapPixelFormat.Bgra8, width, height, BitmapAlphaMode.Straight);
             using (var writer = new DataWriter())

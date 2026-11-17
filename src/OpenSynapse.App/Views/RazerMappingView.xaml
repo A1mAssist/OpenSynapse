@@ -262,10 +262,17 @@
 
     <StackPanel Spacing="8" Visibility="{Binding KeyboardStageVisibility}">
       <Viewbox Stretch="Uniform" MaxHeight="420" HorizontalAlignment="Center">
-        <Canvas x:Name="KeyboardCanvas"
-                Width="{Binding KeyboardWidth}"
-                Height="{Binding KeyboardHeight}"
-                Background="Transparent" />
+        <Grid>
+          <Image Source="{Binding KeyboardBackgroundImage}"
+                 Width="{Binding KeyboardWidth}"
+                 Height="{Binding KeyboardHeight}"
+                 Stretch="Fill"
+                 IsHitTestVisible="False" />
+          <Canvas x:Name="KeyboardCanvas"
+                  Width="{Binding KeyboardWidth}"
+                  Height="{Binding KeyboardHeight}"
+                  Background="Transparent" />
+        </Grid>
       </Viewbox>
       <TextBlock local:Localized.Uid="RazerMappingKeyboardHint"
 

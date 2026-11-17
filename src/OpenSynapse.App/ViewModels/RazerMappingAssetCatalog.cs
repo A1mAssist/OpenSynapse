@@ -21,7 +21,11 @@ public sealed record RazerMappingImageLayout(
 /// <summary>A keyboard SVG plus the firmware key id resolved for each key name.</summary>
 public sealed record RazerMappingKeyboardLayout(
     StudioKeyboardVisual Visual,
-    IReadOnlyDictionary<string, byte> ButtonIdsByKeyName);
+    IReadOnlyDictionary<string, byte> ButtonIdsByKeyName)
+{
+    /// <summary>Official product photo drawn under the key paths; null for a Chroma SVG.</summary>
+    public Uri? BackgroundImage { get; init; }
+}
 
 /// <summary>Optional device art. Null members mean the table-only fallback is used.</summary>
 public sealed record RazerMappingVisual(
