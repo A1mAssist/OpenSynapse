@@ -5,16 +5,6 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed partial class RazerHidDeviceService
 {
-    private enum MappingReadFamily
-    {
-        Analog,
-        Key,
-        Button,
-    }
-
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<(string Device, byte ButtonId), MappingReadFamily>
-        _mappingReadFamilies = new();
-
     /// <summary>
     /// Mapping tables are keyed by the profile the device is actually on. Profile 1 is only a
     /// fallback: a user can delete it and keep working on a later profile.
@@ -66,12 +56,6 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         var profileId = await ResolveMappingProfileIdAsync(connection, cancellationToken).ConfigureAwait(false);
-        if (connection.Definition.ProductId == 0x0244)
-        {
-            return await GetTartarusAssignmentAsync(
-                connection, profileId, buttonId, mode, cancellationToken).ConfigureAwait(false);
-        }
-
         if (UsesMultiKeyAssignments(connection))
         {
             return RazerHidMappingProtocol.ParseMultiKeyAssignment(
@@ -101,72 +85,15 @@ public sealed partial class RazerHidDeviceService
     private static bool UsesKeyAssignments(RazerHidDeviceConnection connection) =>
         connection.Definition.Category == DeviceCategory.Keyboard;
 
-    // 0266/0282 Huntsman analog and 0244 Tartarus Pro declare the analogV1 OBM engine.
-    // Their key table carries the actuation band through 0x92/0x12.
+    // 0266/0282 Huntsman analog read the key table with the actuation band through 0x92/0x12.
     private static bool UsesAnalogKeyAssignments(RazerHidDeviceConnection connection) =>
         connection.Definition.ProductId is 0x0266 or 0x0282;
 
-    // Huntsman V3 Pro firmware rejects 0x8D for modifiers and navigation keys. Synapse
-    // reads and writes those keyboards through the 0x9E/0x1E multi-key table instead.
+    // Huntsman V3 Pro firmware rejects 0x8D for modifiers and navigation keys. The
+    // Tartarus Pro OBM engine reads every keypad row (main pad, thumb pad, wheel and
+    // D-pad) through the same 0x9E/0x1E multi-key table.
     private static bool UsesMultiKeyAssignments(RazerHidDeviceConnection connection) =>
-        connection.Definition.ProductId is 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
-
-    // The Tartarus Pro mixes three tables: analog side-pad keys answer 0x92,
-    // digital thumb keys answer the key table, and the wheel/D-pad answer the
-    // button table. The firmware rejects the wrong family with status 0x05, so
-    // negotiate per id instead of picking one command for the whole product.
-    private static MappingReadFamily[] TartarusFamilies(byte buttonId) =>
-        buttonId is >= 0x40 and <= 0x4B
-            ? [MappingReadFamily.Analog, MappingReadFamily.Key, MappingReadFamily.Button]
-            : [MappingReadFamily.Button, MappingReadFamily.Key, MappingReadFamily.Analog];
-
-    private async Task<RazerHidButtonAssignment> GetTartarusAssignmentAsync(
-        RazerHidDeviceConnection connection,
-        byte profileId,
-        byte buttonId,
-        byte mode,
-        CancellationToken cancellationToken)
-    {
-        var cacheKey = (connection.DevicePath ?? connection.InstanceId, buttonId);
-        var preferred = _mappingReadFamilies.TryGetValue(cacheKey, out var cached)
-            ? cached
-            : TartarusFamilies(buttonId)[0];
-        var order = new[] { preferred }
-            .Concat(TartarusFamilies(buttonId).Where(family => family != preferred));
-
-        Exception? last = null;
-        foreach (var family in order)
-        {
-            try
-            {
-                var request = family switch
-                {
-                    MappingReadFamily.Analog =>
-                        RazerHidMappingProtocol.GetAnalogKeyAssignment(profileId, buttonId, mode),
-                    MappingReadFamily.Key =>
-                        RazerHidMappingProtocol.GetKeyAssignment(profileId, buttonId, mode),
-                    _ => RazerHidMappingProtocol.GetAssignment(profileId, buttonId, mode),
-                };
-                var response = await ExecuteAsync(connection, request, cancellationToken)
-                    .ConfigureAwait(false);
-                var assignment = family == MappingReadFamily.Analog
-                    ? RazerHidMappingProtocol.ParseAnalogAssignment(response)
-                    : RazerHidMappingProtocol.ParseAssignment(response);
-                _mappingReadFamilies[cacheKey] = family;
-                return assignment;
-            }
-            catch (Exception exception) when (IsUnsupportedMappingCommand(exception))
-            {
-                last = exception;
-            }
-        }
-
-        throw last ?? new NotSupportedException(
-            $"Tartarus Pro key 0x{buttonId:X2} did not answer any mapping table.");
-    }
-
-    private static bool IsUnsupportedMappingCommand(Exception exception) =>
-        exception is NotSupportedException or RazerCommandRejectedException;
+        connection.Definition.ProductId is 0x0244 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
 
     public async Task SetButtonAssignmentAsync(
         RazerHidDeviceConnection connection,
@@ -190,14 +117,6 @@ public sealed partial class RazerHidDeviceService
             functionId, data, connection.Definition.ProductId);
 
         var profileId = await ResolveMappingProfileIdAsync(connection, cancellationToken).ConfigureAwait(false);
-        if (connection.Definition.ProductId == 0x0244)
-        {
-            await SetTartarusAssignmentAsync(
-                connection, profileId, buttonId, mode, functionId, data, cancellationToken)
-                .ConfigureAwait(false);
-            return;
-        }
-
         RazerHidRequest request;
         if (UsesMultiKeyAssignments(connection))
         {
@@ -229,92 +148,24 @@ public sealed partial class RazerHidDeviceService
         }
     }
 
-    private async Task SetTartarusAssignmentAsync(
-        RazerHidDeviceConnection connection,
-        byte profileId,
-        byte buttonId,
-        byte mode,
-        byte functionId,
-        IReadOnlyList<byte> data,
-        CancellationToken cancellationToken)
-    {
-        var cacheKey = (connection.DevicePath ?? connection.InstanceId, buttonId);
-        var preferred = _mappingReadFamilies.TryGetValue(cacheKey, out var cached)
-            ? cached
-            : TartarusFamilies(buttonId)[0];
-        var order = new[] { preferred }
-            .Concat(TartarusFamilies(buttonId).Where(family => family != preferred));
-
-        Exception? last = null;
-        foreach (var family in order)
-        {
-            try
-            {
-                RazerHidRequest request;
-                if (family == MappingReadFamily.Analog)
-                {
-                    // Preserve the key's actuation band; changing it would alter how the key feels.
-                    var current = await GetTartarusAssignmentAsync(
-                            connection, profileId, buttonId, mode, cancellationToken)
-                        .ConfigureAwait(false);
-                    request = RazerHidMappingProtocol.SetAnalogKeyAssignment(
-                        profileId, buttonId, mode,
-                        current.ThresholdL, current.ThresholdH, functionId, data.ToArray());
-                }
-                else
-                {
-                    request = family == MappingReadFamily.Key
-                        ? RazerHidMappingProtocol.SetKeyAssignment(
-                            profileId, buttonId, mode, functionId, data.ToArray())
-                        : RazerHidMappingProtocol.SetAssignment(
-                            profileId, buttonId, mode, functionId, data.ToArray());
-                }
-
-                await ExecuteWithoutResultAsync(connection, request, cancellationToken)
-                    .ConfigureAwait(false);
-                var applied = await GetTartarusAssignmentAsync(
-                        connection, profileId, buttonId, mode, cancellationToken)
-                    .ConfigureAwait(false);
-                if (applied.FunctionId == functionId && applied.Data.SequenceEqual(data))
-                {
-                    _mappingReadFamilies[cacheKey] = family;
-                    return;
-                }
-
-                last = new InvalidOperationException(
-                    "The device kept a different button assignment. Reconnect it over its 2.4 GHz " +
-                    "receiver or USB cable, then retry; Bluetooth links cannot write onboard mappings.");
-            }
-            catch (Exception exception) when (IsUnsupportedMappingCommand(exception))
-            {
-                last = exception;
-            }
-        }
-
-        throw last ?? new NotSupportedException(
-            $"Tartarus Pro key 0x{buttonId:X2} rejected every mapping table.");
-    }
-
     private async Task<bool> ProbeKeyAssignmentAsync(
         RazerHidDeviceDefinition definition,
         string devicePath,
         CancellationToken cancellationToken)
     {
         var analog = definition.ProductId is 0x0266 or 0x0282;
-        var multi = definition.ProductId is 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
+        var multi = definition.ProductId is 0x0244 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
         // 022B keypads map the first art key to SPAD_NUM_1, firmware key id 64 (0x40).
-        // 0244 additionally answers the digital wheel/thumb rows only through 0x8C.
-        (MappingReadFamily Family, byte Id)[] probes = definition.ProductId switch
+        // 0244 reads the main pad and wheel/D-pad rows through the multi-key table.
+        (bool Multi, byte Id)[] probes = definition.ProductId switch
         {
-            0x0244 =>
+            0x0244 => [(true, 0x40), (true, 0x03)],
+            0x022B =>
             [
-                (MappingReadFamily.Analog, 0x40),
-                (MappingReadFamily.Analog, 0x02),
-                (MappingReadFamily.Button, 0x03),
-                (MappingReadFamily.Button, 0x09),
+                (false, 0x40),
+                (false, 0x02),
             ],
-            0x022B => [(MappingReadFamily.Analog, 0x40), (MappingReadFamily.Analog, 0x02)],
-            _ => [(analog ? MappingReadFamily.Analog : MappingReadFamily.Key, (byte)0x02)],
+            _ => [(multi, (byte)0x02)],
         };
 
         // A deleted profile 1 must not hide the whole mapping page; ask which profile is live.
@@ -332,37 +183,29 @@ public sealed partial class RazerHidDeviceService
             : [RazerHidMappingProtocol.ProfileId];
 
         foreach (var profileId in profileIds)
-        foreach (var (family, keyId) in probes)
+        foreach (var (useMulti, keyId) in probes)
         {
             WriteDiagnostic(definition.ProductId,
-                $"mapping probe profile={profileId} key=0x{keyId:X2} family={family}");
-            var assignment = family switch
-            {
-                MappingReadFamily.Analog => RazerHidMappingProtocol.GetAnalogKeyAssignment(
-                    profileId, keyId, RazerHidMappingProtocol.NormalMode),
-                MappingReadFamily.Button => RazerHidMappingProtocol.GetAssignment(
-                    profileId, keyId, RazerHidMappingProtocol.NormalMode),
-                _ => multi
-                    ? RazerHidMappingProtocol.GetMultiKeyAssignment(
+                $"mapping probe profile={profileId} key=0x{keyId:X2} multi={useMulti} analog={analog}");
+            var assignment = useMulti
+                ? RazerHidMappingProtocol.GetMultiKeyAssignment(
+                    profileId, keyId, RazerHidMappingProtocol.NormalMode)
+                : analog
+                    ? RazerHidMappingProtocol.GetAnalogKeyAssignment(
                         profileId, keyId, RazerHidMappingProtocol.NormalMode)
                     : RazerHidMappingProtocol.GetKeyAssignment(
-                        profileId, keyId, RazerHidMappingProtocol.NormalMode),
-            };
+                        profileId, keyId, RazerHidMappingProtocol.NormalMode);
             if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
                     "mapping.keyAssignment", assignment.Report,
                     response =>
                     {
-                        if (family == MappingReadFamily.Analog)
-                        {
-                            _ = RazerHidMappingProtocol.ParseAnalogAssignment(response);
-                        }
-                        else if (family == MappingReadFamily.Button)
-                        {
-                            _ = RazerHidMappingProtocol.ParseAssignment(response);
-                        }
-                        else if (multi)
+                        if (useMulti)
                         {
                             _ = RazerHidMappingProtocol.ParseMultiKeyAssignment(response, keyId);
+                        }
+                        else if (analog)
+                        {
+                            _ = RazerHidMappingProtocol.ParseAnalogAssignment(response);
                         }
                         else
                         {
