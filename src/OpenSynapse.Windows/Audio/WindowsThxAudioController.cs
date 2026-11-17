@@ -122,22 +122,30 @@ public sealed class WindowsThxAudioController : IThxAudioController, IAsyncDispo
             return admission.Status;
         }
 
-        var destination = ThxAudioAdmission.NativeDllPath;
+        var profile = ThxAudioAdmission.ResolveHostProfile();
+        if (profile is null)
+        {
+            return new ThxAudioStatus(
+                ThxAudioAvailability.UnsupportedModel,
+                "ThxModelUnsupported",
+                null);
+        }
+        var destination = ThxAudioAdmission.NativeDllPath(profile);
         var directory = Path.GetDirectoryName(destination)
             ?? throw new InvalidOperationException("The THX component path has no directory.");
         var temporary = Path.Combine(
             directory,
-            $"{ThxAudioAdmission.NativeDllName}.{Guid.NewGuid():N}.download");
+            $"{profile.NativeDllName}.{Guid.NewGuid():N}.download");
         try
         {
             Directory.CreateDirectory(directory);
             using var response = await ComponentClient.GetAsync(
-                ThxAudioAdmission.NativeDllUri,
+                profile.NativeDllUri,
                 HttpCompletionOption.ResponseHeadersRead,
                 cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
             if (response.Content.Headers.ContentLength is { } declaredLength &&
-                declaredLength != ThxAudioAdmission.NativeDllLength)
+                declaredLength != profile.NativeDllLength)
             {
                 return DownloadFailure("ThxDownloadVerificationFailed");
             }
@@ -155,7 +163,7 @@ public sealed class WindowsThxAudioController : IThxAudioController, IAsyncDispo
                 await source.CopyToAsync(target, cancellationToken).ConfigureAwait(false);
             }
 
-            if (new FileInfo(temporary).Length != ThxAudioAdmission.NativeDllLength)
+            if (new FileInfo(temporary).Length != profile.NativeDllLength)
             {
                 return DownloadFailure("ThxDownloadVerificationFailed");
             }
@@ -165,7 +173,7 @@ public sealed class WindowsThxAudioController : IThxAudioController, IAsyncDispo
             {
                 if (!string.Equals(
                         Convert.ToHexString(SHA256.HashData(stream)),
-                        ThxAudioAdmission.NativeDllSha256,
+                        profile.NativeDllSha256,
                         StringComparison.OrdinalIgnoreCase))
                 {
                     return DownloadFailure("ThxDownloadVerificationFailed");
