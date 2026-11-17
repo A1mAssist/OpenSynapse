@@ -9,11 +9,9 @@ public sealed record TrayPerformanceMode(int Index, string Label, string Glyph, 
 
 public sealed partial class TrayMenuWindow
 {
-    private const double PerformanceRowHeightDip = 32;
-    private const double PerformanceStatusHeightDip = 18;
+    private const double PerformanceRowHeightDip = 30;
     private readonly List<Button> _performanceRows = [];
     private readonly List<TrayPerformanceMode> _performanceModes = [];
-    private TextBlock? _performanceStatus;
 
     /// <summary>Modes to show; empty hides the panel, including a disconnected Blade.</summary>
     public Func<IReadOnlyList<TrayPerformanceMode>>? PerformanceSnapshot { get; set; }
@@ -27,7 +25,6 @@ public sealed partial class TrayMenuWindow
         _performanceRows.Clear();
         _performanceModes.Clear();
         _performanceModes.AddRange(modes);
-        _performanceStatus = null;
         if (modes.Count == 0)
         {
             PerformancePanel.Visibility = Visibility.Collapsed;
@@ -37,11 +34,18 @@ public sealed partial class TrayMenuWindow
 
         foreach (var mode in modes)
         {
-            var icon = new FontIcon
+            var icon = new Viewbox
             {
-                Glyph = mode.Glyph,
-                FontFamily = (FontFamily)Application.Current.Resources["IconFontFamily"],
-                FontSize = 14,
+                Width = 16,
+                Height = 16,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Center,
+                Child = new FontIcon
+                {
+                    Glyph = mode.Glyph,
+                    FontFamily = (FontFamily)Application.Current.Resources["IconFontFamily"],
+                    FontSize = 14,
+                },
             };
             var label = new TextBlock
             {
@@ -51,9 +55,12 @@ public sealed partial class TrayMenuWindow
                 Margin = new Thickness(12, 0, 0, 0),
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            var check = new SymbolIcon
+            var check = new FontIcon
             {
-                Symbol = Symbol.Accept,
+                Glyph = "\uE8FB",
+                FontFamily = (FontFamily)Application.Current.Resources["IconFontFamily"],
+                FontSize = 12,
+                Margin = new Thickness(0, 0, 8, 0),
                 Visibility = mode.Selected ? Visibility.Visible : Visibility.Collapsed,
                 VerticalAlignment = VerticalAlignment.Center,
             };
@@ -80,16 +87,6 @@ public sealed partial class TrayMenuWindow
             _performanceRows.Add(row);
         }
 
-        // Reserve one line so an error does not resize the open menu.
-        _performanceStatus = new TextBlock
-        {
-            FontSize = 12,
-            Height = PerformanceStatusHeightDip,
-            Margin = new Thickness(12, 0, 12, 2),
-            TextTrimming = TextTrimming.CharacterEllipsis,
-            TextWrapping = TextWrapping.NoWrap,
-        };
-        PerformancePanel.Children.Add(_performanceStatus);
         PerformancePanel.Visibility = Visibility.Visible;
         PerformanceSeparator.Visibility = Visibility.Visible;
     }
@@ -102,10 +99,9 @@ public sealed partial class TrayMenuWindow
         }
 
         SetPerformanceBusy(true);
-        var applied = false;
         try
         {
-            applied = await PerformanceApplier(index, CancellationToken.None);
+            await PerformanceApplier(index, CancellationToken.None);
         }
         catch (Exception)
         {
@@ -117,10 +113,6 @@ public sealed partial class TrayMenuWindow
         }
 
         PopulatePerformanceRows(PerformanceSnapshot?.Invoke() ?? []);
-        if (!applied && _performanceStatus is not null)
-        {
-            _performanceStatus.Text = AppStrings.Text("TrayPerformanceApplyFailed");
-        }
     }
 
     private void SetPerformanceBusy(bool busy)

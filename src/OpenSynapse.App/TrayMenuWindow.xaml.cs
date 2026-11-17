@@ -146,10 +146,10 @@ public sealed partial class TrayMenuWindow : Window
         var separators = 1 +
             (_batteryValues.Count > 0 ? 1 : 0) +
             (_performanceModes.Count > 0 ? 1 : 0);
+        // Generated rows keep the button style's 1-DIP top and bottom margin.
         return 4 * 32 + separators * 5 + 8 +
-            _batteryValues.Count * BatteryRowHeightDip +
-            _performanceModes.Count * PerformanceRowHeightDip +
-            (_performanceModes.Count > 0 ? PerformanceStatusHeightDip : 0);
+            _batteryValues.Count * (BatteryRowHeightDip + 2) +
+            _performanceModes.Count * (PerformanceRowHeightDip + 2);
     }
 
     /// <summary>
