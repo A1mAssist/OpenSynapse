@@ -27,6 +27,7 @@ public sealed class AppBehaviorSettings
     [JsonIgnore] public string? RecoveryFilePath { get; private set; }
 
     public bool ModeChangeNotificationsEnabled { get; set; } = true;
+    public bool MacroPlaybackNotificationsEnabled { get; set; } = true;
     public bool LowBatteryNotificationsEnabled { get; set; } = true;
     public bool TrayBatteryLevelsEnabled { get; set; } = true;
     public bool TaskbarStatusEnabled { get; set; }

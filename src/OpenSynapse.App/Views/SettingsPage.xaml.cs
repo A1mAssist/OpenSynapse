@@ -61,6 +61,7 @@ public sealed partial class SettingsPage : UserControl
         LiteModeToggle.IsOn = settings.LiteModeEnabled;
         AdvancedFeaturesToggle.IsOn = settings.AdvancedFeaturesEnabled;
         ModeNotificationToggle.IsOn = settings.ModeChangeNotificationsEnabled;
+        MacroPlaybackNotificationToggle.IsOn = settings.MacroPlaybackNotificationsEnabled;
         LowBatteryNotificationToggle.IsOn = settings.LowBatteryNotificationsEnabled;
         TrayBatteryToggle.IsOn = settings.TrayBatteryLevelsEnabled;
         TaskbarStatusToggle.IsOn = settings.TaskbarStatusEnabled;
@@ -434,6 +435,27 @@ public sealed partial class SettingsPage : UserControl
             InvalidOperationException or System.Security.SecurityException)
         {
             settings.LowBatteryNotificationsEnabled = previous;
+            _behaviorUiReady = false;
+            toggle.IsOn = previous;
+            _behaviorUiReady = true;
+            ViewModel.ReportApplicationError(AppStrings.FormatText("BehaviorSettingError", exception.Message));
+        }
+    }
+
+    private void MacroPlaybackNotificationToggled(object sender, RoutedEventArgs e)
+    {
+        if (!_behaviorUiReady || sender is not ToggleSwitch toggle) return;
+        var settings = Host.BehaviorSettings;
+        var previous = settings.MacroPlaybackNotificationsEnabled;
+        try
+        {
+            settings.MacroPlaybackNotificationsEnabled = toggle.IsOn;
+            settings.Save();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
+            InvalidOperationException or System.Security.SecurityException)
+        {
+            settings.MacroPlaybackNotificationsEnabled = previous;
             _behaviorUiReady = false;
             toggle.IsOn = previous;
             _behaviorUiReady = true;

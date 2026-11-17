@@ -1378,6 +1378,9 @@
   <data name="ModeNotificationTitle.Text" xml:space="preserve"><value>Mode change notifications</value></data>
   <data name="ModeNotificationDescription.Text" xml:space="preserve"><value>Send a Windows notification after a performance or gaming mode change succeeds.</value></data>
   <data name="ModeNotificationToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Mode change notifications</value></data>
+  <data name="MacroPlaybackNotificationTitle.Text" xml:space="preserve"><value>Continuous macro notifications</value></data>
+  <data name="MacroPlaybackNotificationDescription.Text" xml:space="preserve"><value>Show a Windows notification when a continuous macro starts, including the key that stops it.</value></data>
+  <data name="MacroPlaybackNotificationToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Continuous macro notifications</value></data>
   <data name="StartupToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Start with Windows</value></data>
   <data name="SilentStartupToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Silent startup</value></data>
   <data name="ActiveProfileShortcutsTitle.Text" xml:space="preserve"><value>Active profile shortcuts</value></data>

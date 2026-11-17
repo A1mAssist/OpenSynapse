@@ -73,8 +73,13 @@ public partial class App
         AppStrings.Text("Text_8A7CE3A6"),
         AppStrings.FormatText("RefreshRateNotification", hertz));
 
-    private void OnMacroContinuousPlaybackStarted(string title, string body) =>
-        ShowNotification(title, body, "macro-playback");
+    private void OnMacroContinuousPlaybackStarted(string title, string body)
+    {
+        if (_behaviorSettings.MacroPlaybackNotificationsEnabled)
+        {
+            ShowNotification(title, body, "macro-playback");
+        }
+    }
 
     private void ShowModeNotification(string title, string body)
     {
