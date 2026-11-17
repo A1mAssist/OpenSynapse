@@ -26,18 +26,15 @@ internal static class TaskbarStatusNative
     public const uint WmDpiChangedAfterParent = 0x02E3;
     public const uint WmThemeChanged = 0x031A;
 
-    public const uint SwpNoSize = 0x0001;
-    public const uint SwpNoMove = 0x0002;
     public const uint SwpNoZOrder = 0x0004;
     public const uint SwpNoActivate = 0x0010;
     public const uint SwpFrameChanged = 0x0020;
     public const uint SwpShowWindow = 0x0040;
-    public const uint SwpHideWindow = 0x0080;
+
+    public const uint GaRoot = 2;
 
     public const int SwHide = 0;
     public const int SwShowNoActivate = 4;
-
-    public const uint GwHwndPrev = 3;
 
     public const uint MonitorDefaultToNearest = 2;
 
@@ -152,6 +149,9 @@ internal static class TaskbarStatusNative
     [DllImport("user32.dll")]
     public static extern IntPtr GetParent(IntPtr windowHandle);
 
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetAncestor(IntPtr windowHandle, uint flags);
+
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     public static extern IntPtr FindWindowW(string? className, string? windowName);
 
@@ -212,9 +212,6 @@ internal static class TaskbarStatusNative
     [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool GetWindowRect(IntPtr windowHandle, out Rect rect);
-
-    [DllImport("user32.dll")]
-    public static extern IntPtr GetWindow(IntPtr windowHandle, uint command);
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
