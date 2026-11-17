@@ -4588,4 +4588,5 @@
   <data name="RazerMappingVolumeDown.Text" xml:space="preserve"><value>音量 -</value></data>
   <data name="RazerMappingVolumeUp.Text" xml:space="preserve"><value>音量 +</value></data>
   <data name="RazerMappingMute.Text" xml:space="preserve"><value>静音</value></data>
+  <data name="RazerHidProfileInstanceAmbiguous" xml:space="preserve"><value>检测到多台相同型号的设备，旧配置无法自动分配：{0}。请重新选择设备并保存一次以建立独立配置。</value></data>
 </root>

@@ -42,4 +42,5 @@ public sealed record DeviceDescriptor(
     ushort UsagePage,
     ushort Usage,
     string ProtocolFamily,
-    DeviceCategory Category = DeviceCategory.Unknown);
+    DeviceCategory Category = DeviceCategory.Unknown,
+    string? InstanceId = null);

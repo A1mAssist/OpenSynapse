@@ -259,7 +259,8 @@ public sealed class RazerHidDeviceConnection
         0,
         0,
         "razer-hid-standard",
-        Definition.Category);
+        Definition.Category,
+        InstanceId);
 }
 
 public sealed record RazerHidBasicState(

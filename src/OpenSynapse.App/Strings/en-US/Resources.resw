@@ -4152,4 +4152,5 @@
   <data name="RazerMappingVolumeDown.Text" xml:space="preserve"><value>Volume -</value></data>
   <data name="RazerMappingVolumeUp.Text" xml:space="preserve"><value>Volume +</value></data>
   <data name="RazerMappingMute.Text" xml:space="preserve"><value>Mute</value></data>
+  <data name="RazerHidProfileInstanceAmbiguous" xml:space="preserve"><value>Multiple devices share this model, so the legacy profile could not be assigned safely: {0}. Reselect the device and save once to create an instance-specific profile.</value></data>
 </root>

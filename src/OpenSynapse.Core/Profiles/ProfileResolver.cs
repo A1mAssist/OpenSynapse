@@ -73,7 +73,8 @@ public static partial class ProfileResolver
     public static string GetDeviceKey(DeviceDescriptor device)
     {
         ArgumentNullException.ThrowIfNull(device);
-        return $"{device.VendorId:X4}:{device.ProductId:X4}";
+        return $"{device.VendorId:X4}:{device.ProductId:X4}" +
+            (string.IsNullOrWhiteSpace(device.InstanceId) ? string.Empty : $":{device.InstanceId.Trim()}");
     }
 
     /// <summary>
