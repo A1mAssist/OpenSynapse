@@ -4160,4 +4160,18 @@
   <data name="RazerMappingVolumeUp.Text" xml:space="preserve"><value>Volume +</value></data>
   <data name="RazerMappingMute.Text" xml:space="preserve"><value>Mute</value></data>
   <data name="RazerHidProfileInstanceAmbiguous" xml:space="preserve"><value>Multiple devices share this model, so the legacy profile could not be assigned safely: {0}. Reselect the device and save once to create an instance-specific profile.</value></data>
+  <data name="GamepadRemapTitle.Text" xml:space="preserve"><value>Controller mode</value></data>
+  <data name="GamepadRemapEnabled.Text" xml:space="preserve"><value>Map analog keys to a controller</value></data>
+  <data name="GamepadRemapPresetWasd.Text" xml:space="preserve"><value>WASD → left stick</value></data>
+  <data name="GamepadRemapPresetTriggers.Text" xml:space="preserve"><value>Q/E → triggers</value></data>
+  <data name="GamepadRemapReset.Text" xml:space="preserve"><value>Reset</value></data>
+  <data name="GamepadRemapPhysicalKey.Text" xml:space="preserve"><value>Physical key</value></data>
+  <data name="GamepadRemapButton.Text" xml:space="preserve"><value>Controller button</value></data>
+  <data name="GamepadRemapApply.Text" xml:space="preserve"><value>Apply</value></data>
+  <data name="GamepadRemapNone.Text" xml:space="preserve"><value>None</value></data>
+  <data name="GamepadRemapModeStatus" xml:space="preserve"><value>Report mode 0x{0:X2} · mapping mode {1}</value></data>
+  <data name="GamepadRemapUnknownMode" xml:space="preserve"><value>This device already uses a custom mode 0x{0:X2}; read-only</value></data>
+  <data name="GamepadRemapReadFailed" xml:space="preserve"><value>The current mode could not be read</value></data>
+  <data name="RazerHidCapabilityAnalogJoystickRead" xml:space="preserve"><value>Controller mode read</value></data>
+  <data name="RazerHidCapabilityAnalogJoystickWrite" xml:space="preserve"><value>Controller mode write</value></data>
 </root>

@@ -194,6 +194,7 @@ public sealed class KeyboardProfileSettings
     public bool? GamingModeEnabled { get; set; }
     public string? SwitchType { get; set; }
     public bool? AnalogKeyEnabled { get; set; }
+    public bool? GamepadRemapEnabled { get; set; }
     public bool? SnapTapEnabled { get; set; }
     public int? DebounceMilliseconds { get; set; }
     public int? OledBrightness { get; set; }
