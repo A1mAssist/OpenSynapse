@@ -63,23 +63,7 @@ public partial class App
         _startupArguments = Environment.GetCommandLineArgs().Skip(1).ToArray();
         var liteMode = _behaviorSettings.LiteModeEnabled;
         LogLiteModeState(liteMode);
-        try
-        {
-            if (Environment.ProcessPath is string executablePath &&
-                OpenSynapseServiceInstaller.IsMachineInstallPath(executablePath) &&
-                WindowsStartupManager.TryRepairStaleRegistration(executablePath))
-            {
-                _diagnosticLog.TryWrite(
-                    "startup",
-                    "Migrated the startup registration to the machine-wide executable.");
-            }
-        }
-        catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException or
-                System.Security.SecurityException)
-        {
-            _diagnosticLog.TryWrite("startup", $"migration failed: {exception}");
-        }
+        EnsureStartupIntent();
 
         _lowBatteryNotifications = new LowBatteryNotificationTracker(_behaviorSettings.LowBatteryNotifiedLevels);
         RegisterAppNotifications();
@@ -152,7 +136,8 @@ public partial class App
             thxAudioController: _thxAudioController,
             thxAudioSupported: WindowsThxAudioController.IsSupportedModel(),
             macroInputSink: _razerFilterMacroSink,
-            liteMode: liteMode);
+            liteMode: liteMode,
+            persistStartup: SaveStartupIntent);
         _ = EnsureMacroAgentAsync();
         _audioMuteViewModel = viewModel;
         viewModel.Blade.ControlDeviceChanged += OnBladeControlDeviceChanged;

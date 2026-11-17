@@ -1,5 +1,6 @@
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Storage;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Lifecycle;
@@ -63,6 +64,7 @@ public static class Program
             {
                 MigrateLegacyInstall();
                 RepairStartupRegistration();
+                RestoreStartupIntent();
                 EnsureOpenSynapseService();
                 EnsureMacroAgentTask();
                 MigrateChromaShim();
@@ -78,6 +80,7 @@ public static class Program
                     EnsureOpenSynapseService();
                     EnsureMacroAgentTask();
                     RepairStartupRegistration();
+                    RestoreStartupIntent();
                     PreserveExistingShortcuts();
                 }
             })
@@ -184,6 +187,30 @@ public static class Program
             }
         }
         catch (Exception)
+        {
+        }
+    }
+
+    private static void RestoreStartupIntent()
+    {
+        try
+        {
+            if (Environment.ProcessPath is not { } executablePath)
+            {
+                return;
+            }
+
+            var settings = AppBehaviorSettings.Load();
+            if (settings.StartWithWindows is not { } enabled)
+            {
+                return;
+            }
+
+            WindowsStartupManager.EnsureRegistration(enabled, settings.StartSilent, executablePath);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+                InvalidOperationException or System.Security.SecurityException)
         {
         }
     }

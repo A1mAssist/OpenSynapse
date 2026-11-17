@@ -68,7 +68,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         bool thxAudioSupported = false,
         IMacroInputSink? macroInputSink = null,
         MachineSettingsStore? machineSettingsStore = null,
-        bool liteMode = false)
+        bool liteMode = false,
+        Action<bool, bool>? persistStartup = null)
     {
         ProfileSettingsRegistration.EnsureRegistered();
         IsLiteMode = liteMode;
@@ -172,7 +173,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             busy => IsBusy = busy,
             SetDeviceOperationError,
             ReportApplicationError,
-            () => Refresh!.RequestProfileApply());
+            () => Refresh!.RequestProfileApply(),
+            persistStartup: persistStartup);
         Fan = new FanWorkspace(
             deviceTelemetryReader,
             performanceMonitor,

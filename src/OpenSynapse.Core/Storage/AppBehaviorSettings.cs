@@ -30,6 +30,12 @@ public sealed class AppBehaviorSettings
     public bool LowBatteryNotificationsEnabled { get; set; } = true;
     public bool TrayBatteryLevelsEnabled { get; set; } = true;
     public bool TaskbarStatusEnabled { get; set; }
+    /// <summary>
+    /// Null until the user first toggles startup (or an existing Run entry is
+    /// adopted); a plain bool would make a fresh install look "disabled".
+    /// </summary>
+    public bool? StartWithWindows { get; set; }
+    public bool StartSilent { get; set; }
     public List<TaskbarBatteryPreference> TaskbarBatteryDisplay { get; set; } = [];
     public bool TurnOffPeripheralLightingOnShutdown { get; set; }
     public bool LiteModeEnabled { get; set; }

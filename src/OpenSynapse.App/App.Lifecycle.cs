@@ -28,6 +28,56 @@ public partial class App
         }
     }
 
+    private void EnsureStartupIntent()
+    {
+        if (Environment.ProcessPath is not { } executablePath)
+        {
+            return;
+        }
+
+        try
+        {
+            var manager = new WindowsStartupManager();
+            if (_behaviorSettings.StartWithWindows is not { } enabled)
+            {
+                // First run after this setting existed: adopt whatever the Run key
+                // says, including a path repaired to the current executable.
+                if (!manager.IsEnabled(executablePath) &&
+                    !manager.IsSilentEnabled(executablePath) &&
+                    !WindowsStartupManager.TryRepairStaleRegistration(executablePath))
+                {
+                    return;
+                }
+
+                _behaviorSettings.StartWithWindows = true;
+                _behaviorSettings.StartSilent = manager.IsSilentEnabled(executablePath);
+                _behaviorSettings.Save();
+                _diagnosticLog.TryWrite("startup", "Adopted the existing startup registration.");
+                return;
+            }
+
+            WindowsStartupManager.EnsureRegistration(
+                enabled,
+                _behaviorSettings.StartSilent,
+                executablePath);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+                InvalidOperationException or System.Security.SecurityException)
+        {
+            _diagnosticLog.TryWrite("startup", $"registration failed: {exception}");
+        }
+    }
+
+    private void SaveStartupIntent(bool enabled, bool silent)
+    {
+        _behaviorSettings.StartWithWindows = enabled;
+        _behaviorSettings.StartSilent = silent;
+        // The caller (ProfilesWorkspace) surfaces a failed save as a startup
+        // setting error, so a persistence failure must not be swallowed here.
+        _behaviorSettings.Save();
+    }
+
     private void LogLiteModeState(bool liteMode)
     {
         if (liteMode)
