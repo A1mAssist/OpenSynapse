@@ -186,7 +186,7 @@ internal sealed class WindowsKeyboardLightingAdapter : ILightingInputAdapter
 
     private void ProcessFrame(RawInputFrame frame)
     {
-        if (Volatile.Read(ref _disposed) != 0 || !IsBladeKeyboardDevice(frame.DevicePath))
+        if (Volatile.Read(ref _disposed) != 0 || frame.IsMouse || !IsBladeKeyboardDevice(frame.DevicePath))
         {
             return;
         }

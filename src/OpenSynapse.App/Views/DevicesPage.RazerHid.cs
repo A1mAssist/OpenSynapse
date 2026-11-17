@@ -110,10 +110,18 @@ public sealed partial class DevicesPage : UserControl
 
     private async Task SelectDeviceSourceAsync(object? source)
     {
+        if (source is RazerHidDeviceRowViewModel applicationRow)
+        {
+            ViewModel.DeviceRules.Select(new OpenSynapse.Core.Profiles.DeviceBindingKey(
+                0x1532, applicationRow.Connection.Definition.ProductId, applicationRow.Connection.InstanceId));
+            ApplicationRulesPanel.BindDeviceRules();
+        }
         switch (source)
         {
             case RazerHidDeviceRowViewModel row:
                 SelectDevice("razer-hid");
+                ViewModel.DeviceRules.Select(new OpenSynapse.Core.Profiles.DeviceBindingKey(
+                    0x1532, row.Connection.Definition.ProductId, row.Connection.InstanceId));
                 await ViewModel.RazerHid.SelectDeviceAsync(row, Lifetime);
                 break;
             case RazerHidKrakenDeviceRowViewModel row:
@@ -242,6 +250,9 @@ public sealed partial class DevicesPage : UserControl
 
     private async void RazerHidApplySensorRotationClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.ApplySensorRotationAsync(Lifetime) ?? Task.CompletedTask);
+
+    private void RazerHidCalibrateSensorRotationClick(object sender, RoutedEventArgs e) =>
+        SelectedRazerHidDevice?.BeginRotationCalibration();
 
     private async void RazerHidApplySmartTrackingClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.ApplySmartTrackingAsync(Lifetime) ?? Task.CompletedTask);

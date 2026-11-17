@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using OpenSynapse.App.Runtime;
 using OpenSynapse.Core.Audio;
 using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Devices;

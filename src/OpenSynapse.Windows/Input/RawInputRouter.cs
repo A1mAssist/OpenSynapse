@@ -16,7 +16,11 @@ internal readonly record struct RawInputFrame(
     ushort ProductId = 0,
     ushort UsagePage = 0,
     ushort Usage = 0,
-    int[]? ExtraButtons = null);
+    int[]? ExtraButtons = null,
+    bool IsMouse = false,
+    ushort MouseFlags = 0,
+    int DeltaX = 0,
+    int DeltaY = 0);
 
 /// <summary>
 /// The single owner of this process's keyboard Raw Input registration. Windows keeps
@@ -30,18 +34,22 @@ internal static class RawInputRouter
     private const uint WmQuit = 0x0012;
     private const uint RidInput = 0x10000003;
     private const uint RidiDeviceName = 0x20000007;
+    private const uint RimTypeMouse = 0;
     private const uint RimTypeKeyboard = 1;
     private const uint RimTypeHid = 2;
     private const uint RidevInputSink = 0x00000100;
     private const uint RidevRemove = 0x00000001;
     private const uint RidevPageOnly = 0x00000020;
+    private const ushort RiMouseMoveAbsolute = 0x0001;
     private const int StartTimeoutMilliseconds = 10_000;
     private static readonly nint MessageOnlyWindow = new(-3);
 
     private static readonly object Gate = new();
     private static readonly List<(int Id, Action<RawInputFrame> Handler)> Subscribers = [];
+    private static readonly HashSet<int> MouseSubscribers = [];
     private static Host? _host;
     private static int _nextId;
+    private static int _mouseSubscriberCount;
 
     internal static RawInputDevice[] CreateRegistration(nint target, bool removing) =>
     [
@@ -58,7 +66,12 @@ internal static class RawInputRouter
         internal nint Target;
     }
 
-    internal static IDisposable Subscribe(Action<RawInputFrame> handler)
+    /// <param name="includeMouse">
+    /// Mouse frames are parsed and dispatched only while at least one subscriber asks
+    /// for them: pointing devices report far faster than keyboards, and every frame
+    /// would otherwise allocate a subscriber snapshot for consumers that ignore them.
+    /// </param>
+    internal static IDisposable Subscribe(Action<RawInputFrame> handler, bool includeMouse = false)
     {
         ArgumentNullException.ThrowIfNull(handler);
         lock (Gate)
@@ -66,6 +79,11 @@ internal static class RawInputRouter
             _host ??= Host.Start();
             var id = ++_nextId;
             Subscribers.Add((id, handler));
+            if (includeMouse)
+            {
+                MouseSubscribers.Add(id);
+                _mouseSubscriberCount = MouseSubscribers.Count;
+            }
             return new Token(id);
         }
     }
@@ -76,6 +94,10 @@ internal static class RawInputRouter
         lock (Gate)
         {
             Subscribers.RemoveAll(entry => entry.Id == id);
+            if (MouseSubscribers.Remove(id))
+            {
+                _mouseSubscriberCount = MouseSubscribers.Count;
+            }
             if (Subscribers.Count == 0)
             {
                 host = _host;
@@ -285,7 +307,7 @@ internal static class RawInputRouter
                 }
 
                 var header = Marshal.PtrToStructure<RawInputHeader>(buffer);
-                if (header.Type is not (RimTypeKeyboard or RimTypeHid))
+                if (header.Type is not (RimTypeMouse or RimTypeKeyboard or RimTypeHid))
                 {
                     return;
                 }
@@ -293,6 +315,35 @@ internal static class RawInputRouter
                 var devicePath = GetDevicePath(header.Device);
                 if (string.IsNullOrEmpty(devicePath))
                 {
+                    return;
+                }
+
+                if (header.Type == RimTypeMouse)
+                {
+                    if (Volatile.Read(ref _mouseSubscriberCount) == 0)
+                    {
+                        return;
+                    }
+
+                    var mouse = Marshal.PtrToStructure<RawMouse>(nint.Add(buffer, checked((int)headerSize)));
+                    // Absolute coordinates (tablets, remote sessions) carry no relative delta.
+                    if ((mouse.Flags & RiMouseMoveAbsolute) != 0 ||
+                        (mouse.ButtonFlags == 0 && mouse.LastX == 0 && mouse.LastY == 0))
+                    {
+                        return;
+                    }
+
+                    Dispatch(new RawInputFrame(
+                        devicePath,
+                        false,
+                        0,
+                        0,
+                        0,
+                        null,
+                        IsMouse: true,
+                        MouseFlags: mouse.ButtonFlags,
+                        DeltaX: mouse.LastX,
+                        DeltaY: mouse.LastY));
                     return;
                 }
 
@@ -379,6 +430,20 @@ internal static class RawInputRouter
             internal readonly uint Size;
             internal readonly nint Device;
             internal readonly nuint WParam;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private readonly struct RawMouse
+        {
+            // RAWMOUSE: the button bits live in the ulButtons union at offset 4, not usFlags.
+            internal readonly ushort Flags;
+            internal readonly ushort Padding;
+            internal readonly ushort ButtonFlags;
+            internal readonly ushort ButtonData;
+            internal readonly uint RawButtons;
+            internal readonly int LastX;
+            internal readonly int LastY;
+            internal readonly uint ExtraInformation;
         }
 
         [StructLayout(LayoutKind.Sequential)]

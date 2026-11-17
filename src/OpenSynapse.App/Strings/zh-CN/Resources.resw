@@ -2071,6 +2071,11 @@
   <data name="RazerHidSensorRotationAngle.Header" xml:space="preserve"><value>角度</value></data>
   <data name="RazerHidSensorRotationApplied" xml:space="preserve"><value>已应用</value></data>
   <data name="RazerHidSensorRotationInvalid" xml:space="preserve"><value>设备里的角度原始值 {0} 超出有效范围，请重新探测后再设置。</value></data>
+  <data name="RazerHidSensorRotationCalibrate.Content" xml:space="preserve"><value>校准</value></data>
+  <data name="RazerHidSensorRotationCalibrated" xml:space="preserve"><value>已回填 {0}°，确认后点保存写入设备。</value></data>
+  <data name="RazerHidSensorRotationCalibrateHint" xml:space="preserve"><value>先把指针移到桌面空白处，按住左键左右往返滑动 3~5 次，然后按右键结束。</value></data>
+  <data name="RazerHidSensorRotationCalibrateTooShort" xml:space="preserve"><value>没有采集到有效滑动，请重试。</value></data>
+  <data name="RazerHidSensorRotationCalibrateZeroFirst" xml:space="preserve"><value>请先关闭传感器旋转并把角度归零，再开始校准。</value></data>
   <data name="RazerHidSmartTrackingTitle.Text" xml:space="preserve"><value>智能追踪</value></data>
   <data name="RazerHidSmartTrackingDescription.Text" xml:space="preserve"><value>选择自适应高低，或分别设置抬起与落下距离。</value></data>
   <data name="RazerHidSmartTrackingMode.Header" xml:space="preserve"><value>模式</value></data>
@@ -4288,6 +4293,8 @@
   <data name="RazerDriverInstallStartFailed" xml:space="preserve"><value>Razer 驱动安装程序没有启动。</value></data>
   <data name="RazerDriverNoStagedInf" xml:space="preserve"><value>驱动已安装，但没有找到匹配的过滤 INF。请重启后重试，或重新安装驱动包。</value></data>
   <data name="RazerDriverFilterMissing" xml:space="preserve"><value>驱动包已安装，但过滤驱动没有挂到设备上。点“安装或修复驱动”重试。</value></data>
+  <data name="RazerDriverRestartRequired" xml:space="preserve"><value>过滤驱动已排队，需要重启系统（或重新插拔设备）后生效。</value></data>
+  <data name="RazerDriverRestartSummary" xml:space="preserve"><value>需要重启系统才能完成 Razer 驱动安装。</value></data>
   <data name="RazerDriverEndpointPending" xml:space="preserve"><value>过滤驱动已挂载，但设备没有就绪。点“安装或修复驱动”重试；仍无效再重新插拔。</value></data>
   <data name="RazerDriverInstallUncertain" xml:space="preserve"><value>驱动安装已提交，但服务没有返回结果。请等待一分钟后重新检查，不要重复安装。</value></data>
   <data name="RazerDriverCommonDownloading" xml:space="preserve"><value>正在下载 Razer 通用控制驱动…</value></data>

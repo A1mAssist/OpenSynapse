@@ -78,6 +78,11 @@ internal sealed class RazerDeviceButtonInput : IDisposable
             return;
         }
 
+        if (frame.IsMouse)
+        {
+            return;
+        }
+
         if (frame.IsHid)
         {
             ProcessExtraMouseButtons(frame);

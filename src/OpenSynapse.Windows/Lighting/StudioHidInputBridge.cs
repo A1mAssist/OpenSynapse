@@ -50,7 +50,7 @@ internal sealed class StudioHidInputBridge : IDisposable
     /// </summary>
     internal int ProcessFrame(RawInputFrame frame)
     {
-        if (Volatile.Read(ref _disposed) != 0 || frame.IsHid ||
+        if (Volatile.Read(ref _disposed) != 0 || frame.IsMouse || frame.IsHid ||
             string.IsNullOrWhiteSpace(frame.DevicePath))
         {
             return 0;
