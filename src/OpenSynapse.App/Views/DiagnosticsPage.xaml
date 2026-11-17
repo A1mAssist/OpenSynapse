@@ -25,7 +25,7 @@
                 <Border Style="{StaticResource CardStyle}" Padding="16">
                   <StackPanel Spacing="13">
                     <TextBlock local:Localized.Uid="Loc_BD61CEC3FA" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                      <ItemsRepeater ItemsSource="{Binding Diagnostics.Rows}">
+                      <ItemsRepeater x:Name="RowsRepeater" ItemsSource="{Binding Diagnostics.Rows}">
                       <ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout>
                       <ItemsRepeater.ItemTemplate>
                         <DataTemplate>

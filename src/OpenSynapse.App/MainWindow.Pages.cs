@@ -260,6 +260,12 @@ public sealed partial class MainWindow
         };
         if (view is not null)
         {
+            if (view is DiagnosticsPage diagnostics)
+            {
+                // Clear the repeater's source while its native peer is still alive;
+                // a removed ItemsRepeater keeps the subscription and fails later.
+                diagnostics.Shutdown();
+            }
             PageHost.Children.Remove(view);
             MemoryTrace.PageHostCount = PageHost.Children.Count;
             switch (view)
