@@ -48,9 +48,17 @@ internal static partial class RazerFilterInfBinder
             return [];
         }
 
+        var windowsInf = string.Equals(
+            infDirectory,
+            WindowsInfDirectory,
+            StringComparison.OrdinalIgnoreCase);
+        var searchPattern = windowsInf ? "oem*.inf" : "*.inf";
+        var searchOption = windowsInf
+            ? SearchOption.TopDirectoryOnly
+            : SearchOption.AllDirectories;
         var candidates = GetCandidateProductIds(productId);
         var matches = new List<string>();
-        foreach (var path in Directory.EnumerateFiles(infDirectory, "oem*.inf"))
+        foreach (var path in Directory.EnumerateFiles(infDirectory, searchPattern, searchOption))
         {
             try
             {
@@ -172,8 +180,10 @@ internal static partial class RazerFilterInfBinder
         CancellationToken cancellationToken,
         string? infDirectory = null)
     {
-        var infs = FindStagedInfs(productId, infDirectory ?? WindowsInfDirectory);
-        if (infs.Count == 0)
+        var infs = FindStagedInfs(productId, infDirectory ?? WindowsInfDirectory)
+            .Where(static inf => !IsVirtualConsumerInf(inf))
+            .ToArray();
+        if (infs.Length == 0)
         {
             return new(RazerFilterBindStatus.NoStagedInf, null);
         }
@@ -223,15 +233,17 @@ internal static partial class RazerFilterInfBinder
         CancellationToken cancellationToken,
         string? infDirectory = null)
     {
-        var infs = FindStagedInfs(productId, infDirectory ?? WindowsInfDirectory);
-        if (infs.Count == 0)
+        var infs = FindStagedInfs(productId, infDirectory ?? WindowsInfDirectory)
+            .Where(static inf => !IsVirtualConsumerInf(inf))
+            .ToArray();
+        if (infs.Length == 0)
         {
             return new(RazerFilterBindStatus.NoStagedInf, null);
         }
 
         try
         {
-            var exitCodes = new List<string>(infs.Count);
+            var exitCodes = new List<string>(infs.Length);
             var succeeded = true;
             foreach (var inf in infs)
             {
@@ -300,6 +312,24 @@ internal static partial class RazerFilterInfBinder
             ?? throw new InvalidOperationException("The driver binder did not start.");
         await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
         return process.ExitCode;
+    }
+
+    /// <summary>
+    /// The virtual consumer node is created by the lower filter after that
+    /// filter is installed. Trying to install its INF against the present
+    /// device returns ERROR_NO_MORE_ITEMS and must not fail the whole bind.
+    /// </summary>
+    internal static bool IsVirtualConsumerInf(string infPath)
+    {
+        try
+        {
+            return File.ReadAllText(infPath)
+                .Contains(@"RZVIRTUAL\", StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
     }
 
     private static IReadOnlyList<ushort> GetCandidateProductIds(ushort productId) =>
@@ -526,8 +556,9 @@ internal static partial class RazerFilterInfBinder
     private static string CommandLine(IReadOnlyList<string> infs)
     {
         const char quote = '"';
-        // Every argument is a drive path from the Windows INF directory, so no
-        // caller-controlled text reaches the command line.
+        // Every argument is a local INF path: either the Windows INF directory
+        // or the verified package cache. No caller-controlled text reaches the
+        // command line.
         // Register first: /install is refused while the inbox driver still owns
         // the collection, which would otherwise abort the whole && chain.
         var register = infs.Select(inf => string.Concat(
