@@ -34,7 +34,19 @@ internal static partial class RazerFilterInfBinder
                             continue;
                         }
 
-                        for (var index = line.IndexOf("MI_", StringComparison.OrdinalIgnoreCase);
+                        // Only HID/USB hardware ids describe physical collections.
+                        // RzDevU_*_VCon/VJs name RZVIRTUAL\...&MI_00&Colxx nodes the
+                        // filter creates itself; counting those would demand the real
+                        // MI_00 parent carry a filter its INF never binds.
+                        var hid = line.IndexOf("HID\\", StringComparison.OrdinalIgnoreCase);
+                        var usb = line.IndexOf("USB\\", StringComparison.OrdinalIgnoreCase);
+                        var hardwareId = hid < 0 ? usb : usb < 0 ? hid : Math.Min(hid, usb);
+                        if (hardwareId < 0)
+                        {
+                            continue;
+                        }
+
+                        for (var index = line.IndexOf("MI_", hardwareId, StringComparison.OrdinalIgnoreCase);
                              index >= 0;
                              index = line.IndexOf("MI_", index + 3, StringComparison.OrdinalIgnoreCase))
                         {
