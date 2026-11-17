@@ -95,6 +95,12 @@ public sealed partial class RazerHidDeviceService
     private static bool UsesMultiKeyAssignments(RazerHidDeviceConnection connection) =>
         connection.Definition.ProductId is 0x0244 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
 
+    // Huntsman V3 Pro runs the OBM engine with analogKeyboard=false: it reads the
+    // multi-key table but writes through the normal 0x0D key command. 0x1E is
+    // acknowledged and leaves the key unchanged, which looked like a dead Apply.
+    private static bool WritesMultiKeyThroughKeyTable(RazerHidDeviceConnection connection) =>
+        connection.Definition.ProductId is 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
+
     public async Task SetButtonAssignmentAsync(
         RazerHidDeviceConnection connection,
         byte buttonId,
@@ -120,8 +126,11 @@ public sealed partial class RazerHidDeviceService
         RazerHidRequest request;
         if (UsesMultiKeyAssignments(connection))
         {
-            request = RazerHidMappingProtocol.SetMultiKeyAssignment(
-                profileId, buttonId, mode, functionId, data.ToArray());
+            request = WritesMultiKeyThroughKeyTable(connection)
+                ? RazerHidMappingProtocol.SetKeyAssignment(
+                    profileId, buttonId, mode, functionId, data.ToArray())
+                : RazerHidMappingProtocol.SetMultiKeyAssignment(
+                    profileId, buttonId, mode, functionId, data.ToArray());
         }
         else if (UsesAnalogKeyAssignments(connection))
         {
