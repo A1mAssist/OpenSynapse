@@ -242,7 +242,7 @@ public sealed partial class RazerHidDeviceService
                 {
                     if (RazerHidMappingProtocol.IsValidKeyIdList(keyIds))
                     {
-                        return AddKeypadWheelDirections(connection.Definition.ProductId, keyIds);
+                        return AddExtraButtonIds(connection.Definition.ProductId, keyIds);
                     }
 
                     // 0x8F can answer with assignment records after a driver rebind.
@@ -267,7 +267,7 @@ public sealed partial class RazerHidDeviceService
             // The middleware only builds a button list when the reply declares data; a
             // zero-length success means the firmware stores no table, not that the read failed.
             var ids = response[6] == 0 ? [] : RazerHidMappingProtocol.ParseButtonList(response);
-            return AddKeypadWheelDirections(connection.Definition.ProductId, ids);
+            return AddExtraButtonIds(connection.Definition.ProductId, ids);
         }
         catch (Exception exception) when (exception is NotSupportedException or RazerDeviceTimeoutException)
         {
@@ -277,11 +277,15 @@ public sealed partial class RazerHidDeviceService
         }
     }
 
-    private static IReadOnlyList<byte> AddKeypadWheelDirections(
+    private static IReadOnlyList<byte> AddExtraButtonIds(
         ushort productId,
         IReadOnlyList<byte> ids)
     {
         var extra = RazerKeypadKeyCatalog.ExtraButtonIds(productId);
+        if (extra.Count == 0)
+        {
+            extra = RazerKeyboardExtraKeyCatalog.ExtraButtonIds(productId);
+        }
         return extra.Count == 0 || ids.Count == 0
             ? ids
             : ids.Concat(extra).Distinct().Order().ToArray();
