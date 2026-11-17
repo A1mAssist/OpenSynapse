@@ -41,6 +41,7 @@ public static class BladeLighting2023Protocol
     public const int BrightnessMaximum = 255;
 
     public const byte EffectOff = 0x00;
+    public const byte EffectStatic = 0x01;
     public const byte EffectBreathing = 0x02;
     public const byte EffectSpectrum = 0x03;
     public const byte EffectWave = 0x04;
@@ -129,6 +130,7 @@ public static class BladeLighting2023Protocol
         return arguments[2] switch
         {
             EffectOff => BladeLighting2023Effect.Off,
+            EffectStatic => BladeLighting2023Effect.Static,
             EffectBreathing => BladeLighting2023Effect.Breathing,
             EffectSpectrum => BladeLighting2023Effect.Spectrum,
             EffectWave => BladeLighting2023Effect.Wave,
