@@ -171,7 +171,6 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                     WriteDiagnostic,
                     cancellationToken)
                 .ConfigureAwait(false);
-            WriteDiagnostic($"fn row primary={functionPrimary} (EC 02:86)");
             _mapping = await LoadMappingAsync(
                     _productId,
                     _mappingPreset,
@@ -376,6 +375,24 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
                     WriteDiagnostic(
                         $"razerKey {input.Code} (0x{input.Code:X2}) " +
                         $"{(input.IsDown ? "down" : "up")}{detail}");
+                }
+                if (input.Kind == BladeMappingInputKind.Keyboard &&
+                    input.IsDown &&
+                    _diagnostic is not null)
+                {
+                    var detail = action switch
+                    {
+                        BladeCommandMappingAction command =>
+                            $" -> {command.CommandKind}:{command.Command}",
+                        BladeBacklightMappingAction backlight =>
+                            $" -> backlight:{backlight.Command}",
+                        _ when passThrough => " -> pass-through",
+                        _ when outputs.Count > 0 => $" -> keys:{outputs.Count}",
+                        _ => string.Empty,
+                    };
+                    WriteDiagnostic(
+                        $"keyboard {input.Code} (0x{input.Code:X2}) down " +
+                        $"hypershift={mapping.HyperShiftEnabled}{detail}");
                 }
                 if (passThrough)
                 {
