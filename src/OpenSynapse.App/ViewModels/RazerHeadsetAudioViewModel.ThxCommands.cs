@@ -239,16 +239,17 @@ public sealed partial class RazerHeadsetAudioViewModel
                 // panel the last admission check proved and report the reason.
                 _diagnostic?.Invoke(
                     $"thx operation failed availability={status.Availability} error={status.Error ?? "-"}");
-                _thxErrorText = status.Error?.StartsWith(
-                    "ThxOperationRejected",
-                    StringComparison.Ordinal) == true
+                _thxErrorText = status.Error is "ThxNativeFailure" or "ThxOperationRejected" ||
+                    status.Error?.StartsWith(
+                        "ThxOperationRejected",
+                        StringComparison.Ordinal) == true
                     ? AppStrings.Text("RazerHeadsetThxRejectedInstalled")
                     : ThxMessage(status.Error);
                 if (status.Error?.StartsWith("ThxOperationRejected", StringComparison.Ordinal) == true ||
                     status.Error == "ThxNativeFailure")
                 {
                     _thxStatus = new ThxHeadsetStatus(
-                        ThxHeadsetAvailability.NativeMissing,
+                        ThxHeadsetAvailability.InstalledButInactive,
                         status.Error);
                 }
                 OperationStatusText = string.Empty;
@@ -287,6 +288,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         {
             ApplyThxState(state);
             _thxStatus = new ThxHeadsetStatus(ThxHeadsetAvailability.Available, null);
+            ThxHeadsetAdmission.ClearRebootMarker();
             // A missing enhancement is a failed read, not a missing capability.
             // Keep the controls visible with defaults and say so.
             _thxErrorText = state.SoundNormalization is null || state.VoiceClarity is null
@@ -302,18 +304,21 @@ public sealed partial class RazerHeadsetAudioViewModel
                     "ThxServiceMissing" => ThxHeadsetAvailability.ServiceMissing,
                     "ThxNativeMissing" => ThxHeadsetAvailability.NativeMissing,
                     // The helper got past the file checks but the native stack refused
-                    // to initialize or write. Keep the install entry available: the
-                    // APO for this model is usually the missing piece.
+                    // to initialize or write. The components are already installed;
+                    // showing the installer again only starts an install loop.
                     "ThxNativeFailure" or "ThxOperationRejected" =>
-                        ThxHeadsetAvailability.NativeMissing,
+                        ThxHeadsetAvailability.InstalledButInactive,
                     _ when status.Error?.StartsWith(
                         "ThxOperationRejected:",
                         StringComparison.Ordinal) == true =>
-                        ThxHeadsetAvailability.NativeMissing,
+                        ThxHeadsetAvailability.InstalledButInactive,
                     _ => ThxHeadsetAvailability.Available,
                 },
                 status.Error);
-            _thxErrorText = ThxMessage(status.Error);
+            _thxErrorText = status.Error is "ThxNativeFailure" or "ThxOperationRejected" ||
+                status.Error?.StartsWith("ThxOperationRejected:", StringComparison.Ordinal) == true
+                ? AppStrings.Text("RazerHeadsetThxRejectedInstalled")
+                : ThxMessage(status.Error);
         }
         NotifyThxStatus();
     }

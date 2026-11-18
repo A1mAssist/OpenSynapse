@@ -10,6 +10,7 @@ internal enum ThxHeadsetAvailability
     ServiceMissing,
     NativeMissing,
     Available,
+    InstalledButInactive,
 }
 
 internal enum ThxNativeVersion
@@ -119,13 +120,14 @@ internal static partial class ThxHeadsetAdmission
         // helper initializes and the card keeps the installer entry available.
         var serviceRunning = profile.NativeVersion == ThxNativeVersion.V3 &&
             ThxAudioAdmission.HasRunningService(ServiceName);
-        var status = Evaluate(profile, serviceRunning, HasVerifiedNativeClient(profile));
-        if (status.Availability == ThxHeadsetAvailability.Available)
-        {
-            rebootMarker.Clear();
-        }
-        return status;
+        return Evaluate(profile, serviceRunning, HasVerifiedNativeClient(profile));
     }
+
+    /// <summary>
+    /// The native stack only proves the install once it returns a state. Until
+    /// then a pending reboot marker must survive the service/native file checks.
+    /// </summary>
+    internal static void ClearRebootMarker() => RebootMarker.Clear();
 
     internal static ThxHeadsetStatus Evaluate(ushort productId, bool serviceRunning, bool nativePresent)
     {
