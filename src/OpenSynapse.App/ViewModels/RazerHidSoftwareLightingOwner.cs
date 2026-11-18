@@ -19,6 +19,9 @@ internal sealed class RazerHidSoftwareLightingOwner : IAsyncDisposable
     internal RazerHidDeviceViewModel? Take(string instanceId) =>
         _devices.Remove(instanceId, out var device) ? device : null;
 
+    internal bool HasRunning(string instanceId) =>
+        _devices.TryGetValue(instanceId, out var device) && device.HasRunningSoftwareLighting;
+
     internal async Task RestoreAsync(
         IReadOnlyList<RazerHidDeviceConnection> connections,
         RazerHidDeviceViewModel? selected,
@@ -96,11 +99,13 @@ internal sealed class RazerHidSoftwareLightingOwner : IAsyncDisposable
     /// Stops every frame pump without disposing its view model. Shutdown needs the
     /// last frame to stop before the firmware Off write can take effect.
     /// </summary>
-    internal async Task StopAllAsync(CancellationToken cancellationToken)
+    internal async Task StopAllAsync(
+        CancellationToken cancellationToken,
+        bool restore = true)
     {
         foreach (var device in _devices.Values.ToArray())
         {
-            await device.StopLightingRuntimeAsync(cancellationToken).ConfigureAwait(false);
+            await device.StopLightingRuntimeAsync(cancellationToken, restore).ConfigureAwait(false);
         }
     }
 

@@ -2251,6 +2251,9 @@
   <data name="ShutdownLightingTitle.Text" xml:space="preserve"><value>關機時關閉外設燈光</value></data>
   <data name="ShutdownLightingDescription.Text" xml:space="preserve"><value>Windows 關機或登出前，向 OpenSynapse 支援燈效寫入的 Razer 外設傳送 Off；下次啟動後按已儲存的燈光設定恢復。</value></data>
   <data name="ShutdownLightingToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>關機時關閉外設燈光</value></data>
+  <data name="DisplayOffLightingTitle.Text" xml:space="preserve"><value>螢幕關閉時關閉外設燈光</value></data>
+  <data name="DisplayOffLightingDescription.Text" xml:space="preserve"><value>Windows 關閉顯示輸出時，向 OpenSynapse 支援燈效寫入的 Razer 外設傳送 Off；螢幕亮起後恢復關閉前的燈效。</value></data>
+  <data name="DisplayOffLightingToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>螢幕關閉時關閉外設燈光</value></data>
   <data name="PerformanceOverlayTitle" xml:space="preserve"><value>效能懸浮窗</value></data>
   <data name="PerformanceOverlayDescription" xml:space="preserve"><value>在桌面顯示效能模式、CPU/GPU 溫度與頻率、記憶體佔用與頻率，以及風扇轉速；可拖曳並記住位置，右鍵可切換卡片、重置位置或關閉。</value></data>
   <data name="PerformanceOverlayDetailedTitle" xml:space="preserve"><value>詳細卡片</value></data>

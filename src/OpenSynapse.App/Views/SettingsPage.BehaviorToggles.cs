@@ -139,4 +139,26 @@ public sealed partial class SettingsPage
             ViewModel.ReportApplicationError(AppStrings.FormatText("BehaviorSettingError", exception.Message));
         }
     }
+
+    private void DisplayOffLightingToggled(object sender, RoutedEventArgs e)
+    {
+        if (!_behaviorUiReady || sender is not ToggleSwitch toggle) return;
+        var settings = Host.BehaviorSettings;
+        var previous = settings.TurnOffPeripheralLightingOnDisplayOff;
+        try
+        {
+            settings.TurnOffPeripheralLightingOnDisplayOff = toggle.IsOn;
+            settings.Save();
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+                InvalidOperationException or System.Security.SecurityException)
+        {
+            settings.TurnOffPeripheralLightingOnDisplayOff = previous;
+            _behaviorUiReady = false;
+            toggle.IsOn = previous;
+            _behaviorUiReady = true;
+            ViewModel.ReportApplicationError(AppStrings.FormatText("BehaviorSettingError", exception.Message));
+        }
+    }
 }

@@ -27,6 +27,7 @@ internal sealed class DisplayPowerNotification
     private readonly DispatcherQueue _dispatcherQueue;
     private readonly Func<bool, Task>? _setBladeIndicatorDisplayAvailable;
     private readonly Func<bool>? _turnOffLightingOnSessionEnding;
+    private readonly Func<bool>? _turnOffPeripheralLightingOnDisplayOff;
     private readonly CancellationToken _lifetime;
     private readonly Action<string>? _diagnostic;
     private SubclassProcedure? _powerSubclassProcedure;
@@ -46,13 +47,15 @@ internal sealed class DisplayPowerNotification
         Func<bool, Task>? setBladeIndicatorDisplayAvailable,
         CancellationToken lifetime,
         Action<string>? diagnostic = null,
-        Func<bool>? turnOffLightingOnSessionEnding = null)
+        Func<bool>? turnOffLightingOnSessionEnding = null,
+        Func<bool>? turnOffPeripheralLightingOnDisplayOff = null)
     {
         _window = window;
         _viewModel = viewModel;
         _dispatcherQueue = dispatcherQueue;
         _setBladeIndicatorDisplayAvailable = setBladeIndicatorDisplayAvailable;
         _turnOffLightingOnSessionEnding = turnOffLightingOnSessionEnding;
+        _turnOffPeripheralLightingOnDisplayOff = turnOffPeripheralLightingOnDisplayOff;
         _lifetime = lifetime;
         _diagnostic = diagnostic;
     }
@@ -270,6 +273,23 @@ internal sealed class DisplayPowerNotification
             {
                 await _viewModel.Lighting.PrepareForSuspendAsync().ConfigureAwait(false);
             }
+            else if (_turnOffPeripheralLightingOnDisplayOff?.Invoke() == true)
+            {
+                if (available)
+                {
+                    await _viewModel.Lighting.SetDisplayAvailableAsync(true).ConfigureAwait(false);
+                    await RunOnDispatcherAsync(
+                            _viewModel.ResumePeripheralLightingForDisplayAsync)
+                        .ConfigureAwait(false);
+                }
+                else
+                {
+                    await RunOnDispatcherAsync(
+                            _viewModel.SuspendPeripheralLightingForDisplayAsync)
+                        .ConfigureAwait(false);
+                    await _viewModel.Lighting.SetDisplayAvailableAsync(false).ConfigureAwait(false);
+                }
+            }
             else
             {
                 await _viewModel.Lighting.SetDisplayAvailableAsync(available).ConfigureAwait(false);
@@ -288,6 +308,29 @@ internal sealed class DisplayPowerNotification
                     "SuspendFanRestoreError",
                     exception.Message)));
         }
+    }
+
+    private Task RunOnDispatcherAsync(Func<Task> action)
+    {
+        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (!_dispatcherQueue.TryEnqueue(async () =>
+            {
+                try
+                {
+                    await action();
+                    completion.TrySetResult();
+                }
+                catch (Exception exception)
+                {
+                    completion.TrySetException(exception);
+                }
+            }))
+        {
+            completion.TrySetException(
+                new InvalidOperationException("The main window dispatcher is unavailable."));
+        }
+
+        return completion.Task;
     }
 
     private uint HandleSuspendResumeNotification(nint context, uint eventType, nint setting)

@@ -145,7 +145,8 @@ public sealed partial class MainWindow : Window
             _setBladeIndicatorDisplayAvailable,
             _lifetime.Token,
             displayPowerDiagnostic,
-            () => _behaviorSettings.TurnOffPeripheralLightingOnShutdown);
+            () => _behaviorSettings.TurnOffPeripheralLightingOnShutdown,
+            () => _behaviorSettings.TurnOffPeripheralLightingOnDisplayOff);
         _displayPowerNotification.Initialize();
         _settingsPage?.UpdateChromaRestStatusTimer(AppWindow.IsVisible);
     }
