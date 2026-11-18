@@ -28,9 +28,10 @@ public sealed partial class RazerMappingAssetService
 {
     private const string UiRoot = "https://apps.razer.com/synapse/products/";
 
-    // Viper V4 Pro (00E5/00E6) publishes its UI under page 167, not the decimal PID.
+    // Viper V4 Pro (00E5/00E6) publishes its UI under page 229; the wireless model
+    // shares the wired page. Page 167 is the Naga V2 Pro.
     private static ushort UiPageId(ushort productId) =>
-        productId is 0x00E5 or 0x00E6 ? (ushort)167 : productId;
+        productId is 0x00E5 or 0x00E6 ? (ushort)229 : productId;
 
     private const int MaxManifestBytes = 1024 * 1024;
     private const int MaxScriptBytes = 16 * 1024 * 1024;
