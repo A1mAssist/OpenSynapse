@@ -32,6 +32,35 @@ public static partial class RazerHidMappingActions
         new(shortcut.Name, shortcut.FunctionId, shortcut.Data.ToArray());
 
     /// <summary>
+    /// The assignment that puts a keyboard key back to its own key code. A key
+    /// left on a firmware shortcut never reaches the low-level hook, so a
+    /// software binding for it would never fire.
+    /// </summary>
+    public static (byte FunctionId, byte[] Data)? NativeKeyboardAssignment(
+        byte buttonId,
+        ushort productId)
+    {
+        if (RazerHuntsmanV3ProKeys.UsesFirmwareKeyIds(productId))
+        {
+            if (!RazerHuntsmanV3ProKeys.TryGetHidUsage(buttonId, out var hid))
+            {
+                return null;
+            }
+
+            return (RazerHidMappingFunctions.KeyCode, [0, hid]);
+        }
+
+        // Keypad rows use firmware ids, not HID usages; writing one as a key code
+        // would land on the wrong key.
+        if (buttonId is 0 or > 0xA4)
+        {
+            return null;
+        }
+
+        return (RazerHidMappingFunctions.KeyCode, [0, buttonId]);
+    }
+
+    /// <summary>
     /// The firmware keeps Win down when these are sent as raw chords. Synapse uses its
     /// native shortcut ids instead, which release the modifier themselves.
     /// </summary>

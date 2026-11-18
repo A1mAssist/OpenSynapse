@@ -1,4 +1,5 @@
 using OpenSynapse.Core.Macros;
+using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Protocols;
 
@@ -159,6 +160,17 @@ public sealed partial class RazerHidMappingViewModel
                         row.ButtonId, Mode, functionId, data, cancellationToken)
                     .ConfigureAwait(true);
             }
+            else if (backups.FirstOrDefault(item =>
+                         ReferenceEquals(item.Row, row))?.Assignment is { } current &&
+                     NeedsNativeKeyboardAssignment(current) &&
+                     NativeKeyboardAssignment(row.ButtonId) is { } native)
+            {
+                // The device still plays the firmware shortcut, so the physical
+                // key never reaches the hook. Give the key back to the keyboard.
+                await _transport.SetAssignmentAsync(
+                        row.ButtonId, Mode, native.FunctionId, native.Data, cancellationToken)
+                    .ConfigureAwait(true);
+            }
 
             var error = await _softwareTriggerBinder!(
                     action.MacroId,
@@ -243,6 +255,20 @@ public sealed partial class RazerHidMappingViewModel
         MacroTriggerMode.HoldRepeat => 2,
         _ => 0,
     };
+
+    private bool NeedsNativeKeyboardAssignment(RazerMappingAssignment assignment) =>
+        _deviceKind == RazerMappingDeviceKind.Keyboard &&
+        _catalog is not RazerViperMappingActionCatalog &&
+        (assignment.FunctionId == RazerHidMappingFunctions.Off ||
+         _catalog.Decode(assignment.FunctionId, assignment.Data)?.Group ==
+             RazerHidMappingGroup.WindowsShortcut);
+
+    private (byte FunctionId, byte[] Data)? NativeKeyboardAssignment(byte buttonId) =>
+        _deviceKind == RazerMappingDeviceKind.Keyboard
+            // Keypad rows are firmware ids; writing one as a key code lands on another key.
+            && _productId is not (0x022B or 0x0244 or 0x02EB)
+            ? RazerHidMappingActions.NativeKeyboardAssignment(buttonId, _productId)
+            : null;
 
     /// <summary>
     /// The triggers a pending key is about to abandon: the row had a software macro
