@@ -4,6 +4,13 @@ namespace OpenSynapse.Windows.Input;
 
 internal sealed partial class MacroRuntime
 {
+    /// <summary>
+    /// A press that arrives this long after an unreleased down cannot be an
+    /// auto-repeat; it is the release the device never sent. Keeping the
+    /// suppression entry would swallow every later press until the app restarts.
+    /// </summary>
+    internal long StaleSuppressedInputMilliseconds { get; set; } = 10_000;
+
     public void SetHyperShiftHeld(bool held)
     {
         var stopPlayback = false;
@@ -63,6 +70,17 @@ internal sealed partial class MacroRuntime
             _log?.Invoke(
                 $"input {MacroInputFormatter.Describe(value.Input)} down={value.IsDown} " +
                 $"modifiers={value.Modifiers} hyperShift={_hyperShiftHeld}");
+        }
+
+        // A Razer private key only exists on the device's own report stream; the
+        // once-per-collection reader log cannot tell "the key never arrived" from
+        // "the trigger stopped matching". Never write the log on the hook thread.
+        if (value.IsDown && value.Input.Kind == MacroInputKind.RazerKey)
+        {
+            var message =
+                $"razer-key down code=0x{value.Input.RazerKeyCode:X2} " +
+                $"device=0x{value.Input.DeviceId:X4}";
+            _ = Task.Run(() => _log?.Invoke(message));
         }
 
         if (value.Input.Kind == MacroInputKind.RazerKey &&
@@ -303,9 +321,20 @@ internal sealed partial class MacroRuntime
                 // A second down without an up is normal auto-repeat for the
                 // hold-family modes. Toggle needs it to reach the stop branch
                 // so a lost release can never leave the macro unstoppable.
+                // Past the stale window the entry is a release the device never
+                // sent: drop it and match this press instead of swallowing it.
+                var stale = Environment.TickCount64 - suppressed.DownTick >=
+                    StaleSuppressedInputMilliseconds;
                 if (suppressed.Mode != MacroTriggerMode.Toggle &&
-                    value.Input.Kind != MacroInputKind.MouseButton)
+                    value.Input.Kind != MacroInputKind.MouseButton &&
+                    !stale)
                 {
+                    // A genuinely held key keeps resetting this, so only a real
+                    // gap between presses can reach the stale branch.
+                    _suppressedInputs[key] = suppressed with
+                    {
+                        DownTick = Environment.TickCount64,
+                    };
                     return true;
                 }
 
@@ -344,7 +373,8 @@ internal sealed partial class MacroRuntime
                 }
                 suppress = true;
                 playModifiers = trigger.Modifiers;
-                _suppressedInputs[key] = new SuppressedInput(trigger.Mode, macro.Id);
+                _suppressedInputs[key] = new SuppressedInput(
+                    trigger.Mode, macro.Id, DownTick: Environment.TickCount64);
                 switch (trigger.Mode)
                 {
                     case MacroTriggerMode.Hold:
@@ -499,5 +529,6 @@ internal sealed partial class MacroRuntime
     private readonly record struct SuppressedInput(
         MacroTriggerMode Mode,
         string? MacroId,
-        CancellationTokenSource? HoldCancellation = null);
+        CancellationTokenSource? HoldCancellation = null,
+        long DownTick = 0);
 }
