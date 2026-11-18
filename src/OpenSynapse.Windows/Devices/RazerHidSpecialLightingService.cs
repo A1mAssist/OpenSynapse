@@ -401,7 +401,12 @@ public sealed partial class RazerHidSpecialLightingService
             {
                 // Re-taking Chroma control on every click makes 056B fade to the
                 // old colour, so the handshake only runs once per device path.
-                reportsToSend.Add(RazerHidKrakenV4Protocol.CreateConnect(isDongle));
+                // AudioMabelT3CDongle (0574) has no 02 00 00 connect step in its
+                // bundle; sending it left the headset answering 0x05 and dropping.
+                if (connection.ProductId != 0x0574)
+                {
+                    reportsToSend.Add(RazerHidKrakenV4Protocol.CreateConnect(isDongle));
+                }
                 reportsToSend.Add(RazerHidKrakenV4Protocol.CreateForceChroma(enabled: true, isDongle));
                 reportsToSend.Add(RazerHidKrakenV4Protocol.CreateBrightness(percent, isDongle));
             }
