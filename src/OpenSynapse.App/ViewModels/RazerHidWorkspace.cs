@@ -421,6 +421,10 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
             CurrentConnections, SelectedDevice, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>A Chroma session ended; hand back the keyboards it left on custom frames.</summary>
+    internal Task RestoreChromaFrameSinkAsync(CancellationToken cancellationToken = default) =>
+        _chromaFrameSink?.RestoreAsync(cancellationToken) ?? Task.CompletedTask;
+
     /// <summary>
     /// Session ending runs on the UI thread, so the HID writes happen on a worker
     /// with a bounded wait. A device that does not answer must not delay shutdown.

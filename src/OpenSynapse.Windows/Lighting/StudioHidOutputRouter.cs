@@ -265,7 +265,8 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
 
                 if (!output.BaselineAttempted)
                 {
-                    output.Baseline = await CaptureBaselineAsync(target, cancellationToken).ConfigureAwait(false);
+                    output.Baseline = await RazerHidLightingBaseline
+                        .CaptureAsync(_service, target, cancellationToken).ConfigureAwait(false);
                     output.BaselineAttempted = true;
                 }
 
@@ -291,7 +292,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                     output.Frame = frame;
                     output.LastWriteTimestamp = now;
                 }
-                catch (Exception exception) when (IsDeviceFailure(exception))
+                catch (Exception exception) when (RazerHidLightingBaseline.IsDeviceFailure(exception))
                 {
                     // One endpoint dropping out must not skip the remaining devices.
                     // A failed write may have landed partially, so force a full rewrite next tick.
@@ -347,7 +348,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
 
                 if (output.Baseline is { } baseline)
                 {
-                    var restoreFailures = await RestoreAsync(current, baseline, cancellationToken)
+                    var restoreFailures = await baseline.RestoreAsync(_service, current, cancellationToken)
                         .ConfigureAwait(false);
                     if (restoreFailures.Count == 0)
                     {
@@ -374,10 +375,10 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                 bool exitApplied;
                 try
                 {
-                    exitApplied = await ApplyOfficialExitEffectAsync(current, cancellationToken)
-                        .ConfigureAwait(false);
+                    exitApplied = await RazerHidLightingBaseline
+                        .ApplyExitEffectAsync(_service, current, cancellationToken).ConfigureAwait(false);
                 }
-                catch (Exception exception) when (IsDeviceFailure(exception))
+                catch (Exception exception) when (RazerHidLightingBaseline.IsDeviceFailure(exception))
                 {
                     ReportRestoreFailure(current, [exception], failures);
                     // Keep the entry so a later Stop retries the exit effect.
@@ -418,7 +419,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
         {
             await StopAsync().ConfigureAwait(false);
         }
-        catch (Exception exception) when (IsDeviceFailure(exception))
+        catch (Exception exception) when (RazerHidLightingBaseline.IsDeviceFailure(exception))
         {
             // Disposal has no caller to report to; RestoreFailed already recorded it.
         }
@@ -483,7 +484,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
         internal long LastWriteTimestamp { get; set; }
         internal long OfflineSince { get; set; }
         internal long LayersVersion { get; set; } = -1;
-        internal DeviceBaseline? Baseline { get; set; }
+        internal RazerHidLightingBaseline? Baseline { get; set; }
         internal bool BaselineAttempted { get; set; }
         internal bool CustomEffectAttempted { get; set; }
         internal bool Touched { get; set; }

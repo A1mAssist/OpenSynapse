@@ -16,6 +16,9 @@ internal sealed class RazerHidChromaFrameSink
     private readonly Dictionary<string, FrameState> _lastFrames = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, RazerHidDeviceConnection> _customEffectPrepared =
         new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, RazerHidLightingBaseline?> _baselines =
+        new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _baselineAttempted = new(StringComparer.OrdinalIgnoreCase);
     private long _latestFrameVersion;
 
     internal RazerHidChromaFrameSink(
@@ -117,6 +120,11 @@ internal sealed class RazerHidChromaFrameSink
                 if (!_customEffectPrepared.TryGetValue(target.InstanceId, out var prepared) ||
                     !ReferenceEquals(prepared, target))
                 {
+                    if (_baselineAttempted.Add(target.InstanceId))
+                    {
+                        _baselines[target.InstanceId] = await RazerHidLightingBaseline
+                            .CaptureAsync(_service, target, cancellationToken).ConfigureAwait(false);
+                    }
                     await _service.SetCustomFrameEffectAsync(target, cancellationToken).ConfigureAwait(false);
                     _customEffectPrepared[target.InstanceId] = target;
                 }
@@ -124,6 +132,47 @@ internal sealed class RazerHidChromaFrameSink
                 _lastFrames[target.InstanceId] = new FrameState(target, frame);
             }
             return true;
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    /// <summary>Hands every device that received a frame back to its own effect.</summary>
+    internal async Task RestoreAsync(CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            foreach (var (instanceId, baseline) in _baselines.ToArray())
+            {
+                var connection = _connections().FirstOrDefault(candidate =>
+                    candidate.IsReady &&
+                    StringComparer.OrdinalIgnoreCase.Equals(candidate.InstanceId, instanceId));
+                if (connection is null) continue;
+                try
+                {
+                    if (baseline is null)
+                    {
+                        await RazerHidLightingBaseline.ApplyExitEffectAsync(
+                            _service, connection, cancellationToken).ConfigureAwait(false);
+                        continue;
+                    }
+                    await baseline.RestoreAsync(_service, connection, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception exception) when (RazerHidLightingBaseline.IsDeviceFailure(exception))
+                {
+                    // A live REST client re-enters custom mode with its next frame; a
+                    // failed restore must not break the session teardown.
+                }
+            }
+
+            _lastFrames.Clear();
+            _customEffectPrepared.Clear();
+            _baselines.Clear();
+            _baselineAttempted.Clear();
         }
         finally
         {

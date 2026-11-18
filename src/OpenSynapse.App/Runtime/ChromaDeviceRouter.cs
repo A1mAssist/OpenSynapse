@@ -30,7 +30,7 @@ internal sealed record ChromaTarget(
 /// manifest assigns to that channel. Matrix devices get the resized frame; every
 /// other device gets the frame's average colour through its static path.
 /// </summary>
-internal sealed class ChromaDeviceRouter
+internal sealed partial class ChromaDeviceRouter
 {
     private readonly RazerHidDeviceService? _hid;
     private readonly RazerHidSpecialLightingService? _special;
@@ -47,6 +47,9 @@ internal sealed class ChromaDeviceRouter
     private readonly Dictionary<string, RazerRgb> _lastColors = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, RazerHidDeviceConnection> _customEffectPrepared =
         new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, RazerHidLightingBaseline?> _hidBaselines =
+        new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _hidBaselineAttempted = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _joliePrepared = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, RazerChromaStandardState> _jolieBaselines = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _jolieBaselineAttempted = new(StringComparer.OrdinalIgnoreCase);
@@ -215,6 +218,11 @@ internal sealed class ChromaDeviceRouter
             if (!_customEffectPrepared.TryGetValue(target.InstanceId, out var prepared) ||
                 !ReferenceEquals(prepared, connection))
             {
+                if (_hidBaselineAttempted.Add(target.InstanceId))
+                {
+                    _hidBaselines[target.InstanceId] = await RazerHidLightingBaseline
+                        .CaptureAsync(_hid, connection, cancellationToken).ConfigureAwait(false);
+                }
                 await _hid.SetCustomFrameEffectAsync(connection, cancellationToken).ConfigureAwait(false);
                 _customEffectPrepared[target.InstanceId] = connection;
             }
@@ -326,74 +334,6 @@ internal sealed class ChromaDeviceRouter
         catch (Exception exception) when (IsDeviceFailure(exception))
         {
             _diagnostic?.Invoke($"Chroma baseline for {instanceId} unavailable: {exception.Message}");
-        }
-    }
-
-    /// <summary>Restores the effect each whole-device target had before the session.</summary>
-    internal async Task RestoreAsync(CancellationToken cancellationToken = default)
-    {
-        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            foreach (var (instanceId, state) in _standardBaselines.ToArray())
-            {
-                if (state.Effect is not { } effect ||
-                    !_standardServices.TryGetValue(instanceId, out var service))
-                {
-                    continue;
-                }
-
-                try
-                {
-                    await service.SetEffectAsync(effect, state.Colors, cancellationToken).ConfigureAwait(false);
-                    if (state.BrightnessPercent is byte brightness)
-                    {
-                        await service.SetBrightnessAsync(brightness, cancellationToken).ConfigureAwait(false);
-                    }
-                }
-                catch (Exception exception) when (IsDeviceFailure(exception))
-                {
-                    _diagnostic?.Invoke($"Chroma restore for {instanceId} failed: {exception.Message}");
-                }
-            }
-
-            foreach (var (instanceId, state) in _jolieBaselines.ToArray())
-            {
-                if (state.Effect is not { } effect || _makoService is null ||
-                    !StringComparer.OrdinalIgnoreCase.Equals(_makoPath, instanceId))
-                {
-                    continue;
-                }
-
-                try
-                {
-                    await _makoService.SetEffectAsync(effect, state.Colors, cancellationToken)
-                        .ConfigureAwait(false);
-                }
-                catch (Exception exception) when (IsDeviceFailure(exception))
-                {
-                    _diagnostic?.Invoke($"Chroma restore for {instanceId} failed: {exception.Message}");
-                }
-            }
-        }
-        finally
-        {
-            foreach (var instanceId in _jolieBaselines.Keys)
-            {
-                _lastFrames.Remove(instanceId);
-            }
-            _standardBaselines.Clear();
-            _baselineAttempted.Clear();
-            _jolieBaselines.Clear();
-            _jolieBaselineAttempted.Clear();
-            _joliePrepared.Clear();
-            if (_makoService is not null)
-            {
-                await _makoService.DisposeAsync().ConfigureAwait(false);
-                _makoService = null;
-                _makoPath = null;
-            }
-            _gate.Release();
         }
     }
 

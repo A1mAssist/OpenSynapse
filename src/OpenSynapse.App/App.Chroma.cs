@@ -74,11 +74,12 @@ public partial class App
 
     private async Task RestoreChromaAsync(MainViewModel viewModel)
     {
-        await viewModel.RestoreLightingAfterExternalAsync().ConfigureAwait(false);
+        await viewModel.RazerHid.RestoreChromaFrameSinkAsync().ConfigureAwait(false);
         if (_chromaDeviceRouter is not null)
         {
             await _chromaDeviceRouter.RestoreAsync().ConfigureAwait(false);
         }
+        await viewModel.RestoreLightingAfterExternalAsync().ConfigureAwait(false);
     }
 
     private void StartChromaRestHost(MainViewModel viewModel)
