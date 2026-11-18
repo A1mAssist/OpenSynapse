@@ -72,7 +72,9 @@ public sealed partial class MainWindow
 
     private DevicesPage CreateDevicesPage()
     {
-        var page = new DevicesPage { Host = this };
+        // An inherited DataContext goes null when the page cache detaches this page,
+        // so a refresh that resumes after eviction would crash on ViewModel.
+        var page = new DevicesPage { Host = this, DataContext = _viewModel };
         page.SetLiteMode(_viewModel.IsLiteMode);
         page.RefreshAdvancedFeaturesVisibility();
         page.RefreshLightingPresetOptions();
@@ -171,7 +173,9 @@ public sealed partial class MainWindow
 
     private DiagnosticsPage CreateDiagnosticsPage()
     {
-        var page = new DiagnosticsPage { Host = this };
+        // Same reason as the devices page: an evicted page must keep a view model,
+        // or the refresh that resumes after the detach crashes on ViewModel.
+        var page = new DiagnosticsPage { Host = this, DataContext = _viewModel };
         return AddPage(page);
     }
 
