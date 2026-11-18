@@ -72,7 +72,9 @@ public sealed partial class BladeLightingController : IBladeLightingController
 {
     // The matrix path is seven feature reports per frame. Keep only the latest
     // frame if the device cannot sustain this target; never build a stale queue.
-    private static readonly TimeSpan FrameInterval = TimeSpan.FromMilliseconds(1000d / 60d);
+    // Synapse's engine and the Studio both tick at 25 fps, so 60 fps only
+    // multiplied those writes without a visible gain.
+    private static readonly TimeSpan FrameInterval = TimeSpan.FromMilliseconds(1000d / 25d);
     // Stay well below the observed sub-30-second firmware idle window without becoming a frame pump.
     private static readonly TimeSpan NativeEffectKeepAliveInterval = TimeSpan.FromSeconds(5);
     private static readonly RazerRgb DefaultRestoreColor = new(0x99, 0xDD, 0x72);
