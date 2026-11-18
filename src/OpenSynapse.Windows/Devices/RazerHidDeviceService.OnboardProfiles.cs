@@ -69,7 +69,22 @@ public sealed partial class RazerHidDeviceService
         var request = RazerOnboardProfileProtocol.CreateGetProfileIdsRequest(MiddlewareTransactionId);
         var response = await ExecuteAsync(connection,
             new RazerHidRequest("razer_onboard_get_profile_ids", request), cancellationToken).ConfigureAwait(false);
-        return RazerOnboardProfileProtocol.ParseProfileIds(response, request);
+        try
+        {
+            return RazerOnboardProfileProtocol.ParseProfileIds(response, request);
+        }
+        catch (InvalidOperationException exception)
+        {
+            // The transport only logs failed statuses; a rejected payload would otherwise
+            // leave no trace of what the device actually answered.
+            var size = Math.Min((int)response[6], response.Length - RazerFeatureReport.ArgumentsOffset);
+            _diagnosticLog?.TryWrite(
+                $"razer-hid-{connection.Definition.ProductId:X4}",
+                $"onboard profile ids rejected: {exception.Message}; " +
+                $"status=0x{response[1]:X2}, dataSize={response[6]}, " +
+                $"args={Convert.ToHexString(response.AsSpan(RazerFeatureReport.ArgumentsOffset, size))}");
+            throw;
+        }
     }
 
     public async Task<byte> GetMaxOnboardProfilesAsync(
@@ -99,6 +114,35 @@ public sealed partial class RazerHidDeviceService
         var response = await ExecuteAsync(connection,
             new RazerHidRequest("razer_onboard_get_active_profile", request), cancellationToken).ConfigureAwait(false);
         return RazerOnboardProfileProtocol.ParseProfileId(response, request);
+    }
+
+    public async Task<string> GetOnboardProfileNameAsync(
+        RazerHidDeviceConnection connection,
+        byte profileId,
+        CancellationToken cancellationToken = default)
+    {
+        RequireReady(connection);
+        if (UsesAltProfileClass(connection))
+        {
+            throw new NotSupportedException(
+                "The class 0x03 profile dialect has no profile name structure.");
+        }
+
+        var structure = new byte[RazerOnboardProfileProtocol.ProfileNameStructureLength];
+        for (var offset = 0; offset < structure.Length; offset += RazerOnboardProfileProtocol.ProfileNameChunkSize)
+        {
+            var size = Math.Min(
+                RazerOnboardProfileProtocol.ProfileNameChunkSize, structure.Length - offset);
+            var request = RazerOnboardProfileProtocol.CreateGetProfileNameRequest(
+                MiddlewareTransactionId, profileId, offset, size);
+            var response = await ExecuteAsync(connection,
+                new RazerHidRequest("razer_onboard_get_profile_name", request), cancellationToken).ConfigureAwait(false);
+            var chunk = RazerOnboardProfileProtocol.ParseProfileNameChunk(
+                response, request, profileId, offset);
+            chunk.AsSpan(0, Math.Min(chunk.Length, size)).CopyTo(structure.AsSpan(offset));
+        }
+
+        return RazerOnboardProfileProtocol.DecodeProfileName(structure);
     }
 
     public async Task<RazerProfileColor> GetOnboardProfileColorAsync(
