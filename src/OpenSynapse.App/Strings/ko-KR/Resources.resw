@@ -4211,7 +4211,7 @@
   <data name="LightingStudioStudioGenerateBlendPatternLerpGT20Color1" xml:space="preserve"><value>20% 초과 시 보간 패턴, 그 외에는 첫 번째 색상</value></data>
   <data name="LightingStudioStudioGenerateBlendMix3ColorsLerp" xml:space="preserve"><value>세 색상 혼합 및 보간</value></data>
   <data name="LightingStudioStudioGenerateBlendPatternMixColorsLerp" xml:space="preserve"><value>혼합 및 보간된 색상의 패턴</value></data>
-  <data name="ShellLocalDeviceControl" xml:space="preserve"><value>로컬 장치 제어</value></data>
+  <data name="ShellLocalDeviceControl" xml:space="preserve"><value>LOCAL DEVICE CONTROL</value></data>
   <data name="AboutWindowCredit" xml:space="preserve"><value>A1mAssist가 C#으로 ❤를 담아 만들었습니다.</value></data>
   <data name="OverviewMemoryLabel" xml:space="preserve"><value>메모리</value></data>
   <data name="OverviewStorageLabel" xml:space="preserve"><value>저장소</value></data>

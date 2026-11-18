@@ -9502,7 +9502,7 @@
     <value>Узор со смешиванием и плавными переходами цветов</value>
   </data>
   <data name="ShellLocalDeviceControl" xml:space="preserve">
-    <value>УПРАВЛЕНИЕ УСТРОЙСТВАМИ</value>
+    <value>LOCAL DEVICE CONTROL</value>
   </data>
   <data name="AboutWindowCredit" xml:space="preserve">
     <value>Сделано с ❤ на C# автором A1mAssist.</value>

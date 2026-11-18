@@ -4646,7 +4646,7 @@
   <data name="LightingStudioStudioGenerateBlendPatternLerpGT20Color1" xml:space="preserve"><value>高于 20% 时使用插值图案，否则使用第一色</value></data>
   <data name="LightingStudioStudioGenerateBlendMix3ColorsLerp" xml:space="preserve"><value>混合三色并插值</value></data>
   <data name="LightingStudioStudioGenerateBlendPatternMixColorsLerp" xml:space="preserve"><value>混色插值图案</value></data>
-  <data name="ShellLocalDeviceControl" xml:space="preserve"><value>本地设备控制</value></data>
+  <data name="ShellLocalDeviceControl" xml:space="preserve"><value>LOCAL DEVICE CONTROL</value></data>
   <data name="AboutWindowCredit" xml:space="preserve"><value>由 A1mAssist 用 C# 用心制作。</value></data>
   <data name="OverviewMemoryLabel" xml:space="preserve"><value>内存</value></data>
   <data name="OverviewStorageLabel" xml:space="preserve"><value>存储</value></data>
