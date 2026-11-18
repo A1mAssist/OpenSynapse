@@ -131,6 +131,12 @@ public sealed partial class RazerHidDeviceService
     private static bool UsesPerInputAssignmentTables(RazerHidDeviceConnection connection) =>
         connection.Definition.ProductId == 0x0244;
 
+    // Synapse switches these keyboards to driver mode before its mapping page. In normal
+    // mode the Tartarus Pro answers 0x05 and the Huntsman V3 Pro family answers 0x01 busy
+    // for the OBM tables, which looks like a dead device.
+    private static bool RequiresMappingDriverMode(RazerHidDeviceConnection connection) =>
+        connection.Definition.ProductId is 0x0244 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
+
     private async Task<(AssignmentTable Table, RazerHidButtonAssignment Assignment)>
         ReadKeypadAssignmentAsync(
             RazerHidDeviceConnection connection,
@@ -222,7 +228,7 @@ public sealed partial class RazerHidDeviceService
         // mappings; in normal mode the firmware accepts the frame but keeps the old
         // assignment, which looked like "this device refuses edits". The Tartarus Pro
         // takes the scoped mapping-mode wrapper instead, which restores normal mode.
-        if (!UsesPerInputAssignmentTables(connection) &&
+        if (!RequiresMappingDriverMode(connection) &&
             connection.Capabilities.Contains(RazerHidBackendCapability.DeviceModeWrite))
         {
             await EnsureDriverModeAsync(connection, cancellationToken).ConfigureAwait(false);
@@ -461,7 +467,7 @@ public sealed partial class RazerHidDeviceService
         Func<Task<T>> action,
         CancellationToken cancellationToken)
     {
-        if (!UsesPerInputAssignmentTables(connection))
+        if (!RequiresMappingDriverMode(connection))
         {
             return await action().ConfigureAwait(false);
         }
@@ -521,10 +527,11 @@ public sealed partial class RazerHidDeviceService
         {
             await ExecuteWithoutResultAsync(connection, request, cancellationToken).ConfigureAwait(false);
         }
-        catch (RazerDeviceTimeoutException)
+        catch (Exception exception) when (exception is RazerDeviceTimeoutException or NotSupportedException)
         {
             // Some firmware applies driver mode without acknowledging 00:04; Synapse
-            // ignores the same timeout. The read-back decides whether it took.
+            // ignores the same timeout. The read-back decides whether it took. A firmware
+            // that rejects 00:04 still gets the mapping attempt in its current mode.
         }
 
         var after = await ReadMappingDeviceModeAsync(connection, cancellationToken).ConfigureAwait(false);
