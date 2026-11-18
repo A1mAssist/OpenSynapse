@@ -266,8 +266,19 @@ public static class RazerOnboardProfileProtocol
     /// </summary>
     public static byte[] ParseProfileIds(ReadOnlySpan<byte> response, ReadOnlySpan<byte> request)
     {
-        var arguments = Arguments(response, request, 1, "Profile id list");
-        var payload = arguments[..response[6]];
+        // The reply only carries count + ids, so its declared size is shorter than the
+        // 80-byte receive buffer the request asks for; the transport already matched
+        // transaction, class and command.
+        if (response.Length != RazerFeatureReport.Length ||
+            response[6] > 80 ||
+            !RazerFeatureReport.IsSuccessfulResponse(
+                request, response, 1, allowRemainingPacketsMismatch: true))
+        {
+            throw new InvalidOperationException(
+                "Profile id list returned an invalid or out-of-order feature report.");
+        }
+
+        var payload = response[RazerFeatureReport.ArgumentsOffset..][..response[6]];
         return payload.Slice(1, Math.Min(payload[0], payload.Length - 1)).ToArray();
     }
 
