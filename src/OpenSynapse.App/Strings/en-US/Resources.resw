@@ -1080,6 +1080,15 @@
   <data name="RazerHidOnboardProfileTimeout" xml:space="preserve">
     <value>The device did not respond in time. Try again.</value>
   </data>
+  <data name="RazerHidOnboardProfileBusy" xml:space="preserve">
+    <value>The device is still busy with the previous command. Try again shortly.</value>
+  </data>
+  <data name="RazerHidOnboardProfileAppliedUnverified" xml:space="preserve">
+    <value>The profile was sent; its state will be confirmed on the next refresh.</value>
+  </data>
+  <data name="RazerHidOnboardProfileNotApplied" xml:space="preserve">
+    <value>The device did not switch to the selected profile. Try again.</value>
+  </data>
   <data name="RazerHidOnboardProfileMismatch" xml:space="preserve">
     <value>The device returned a mismatched report. Try again.</value>
   </data>

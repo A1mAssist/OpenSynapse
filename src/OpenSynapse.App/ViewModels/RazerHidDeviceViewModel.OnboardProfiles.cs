@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Globalization;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
@@ -338,6 +337,7 @@ public sealed partial class RazerHidDeviceViewModel
     [ProfileSetting("mouse.onboard-profile", DeviceCategory.Mouse, powerScoped: true)]
     public Task ApplyActiveOnboardProfileAsync(CancellationToken cancellationToken = default) =>
         RunOnboardProfileWriteAsync(
+            "switch",
             () => IsOnboardProfileBusy, value => IsOnboardProfileBusy = value,
             async () =>
             {
@@ -352,6 +352,13 @@ public sealed partial class RazerHidDeviceViewModel
                 await _service.SetActiveOnboardProfileIdAsync(
                     Connection, requested, cancellationToken);
                 await ReadOnboardProfilesAsync(cancellationToken);
+                if (_activeOnboardProfileKnown && ActiveOnboardProfileId != requested)
+                {
+                    SetOnboardProfileStatus(
+                        AppStrings.Text("RazerHidOnboardProfileNotApplied"), isError: true);
+                    return;
+                }
+                var verified = _activeOnboardProfileKnown;
                 await SaveProfileAsync(
                     settings => settings.Viper.ActiveOnboardProfileId = requested,
                     settings => settings.Viper.ActiveOnboardProfileId = previousProfile,
@@ -365,13 +372,26 @@ public sealed partial class RazerHidDeviceViewModel
                     cancellationToken);
                 // The readouts above the card still hold the previous slot's DPI,
                 // lighting and mapping until they are re-read from the device.
-                await LoadBasicStateAsync(cancellationToken);
-                await LoadMappingAsync(cancellationToken);
-                SetOnboardProfileStatus(AppStrings.Text("RazerHidOperationApplied"), isError: false);
+                var readoutsUnverified = false;
+                try
+                {
+                    await LoadBasicStateAsync(cancellationToken);
+                    await LoadMappingAsync(cancellationToken);
+                }
+                catch (Exception exception) when (IsExpectedOnboardProfileReadFailure(exception))
+                {
+                    readoutsUnverified = true;
+                }
+                SetOnboardProfileStatus(
+                    AppStrings.Text(verified && !readoutsUnverified
+                        ? "RazerHidOperationApplied"
+                        : "RazerHidOnboardProfileAppliedUnverified"),
+                    isError: false);
             }, cancellationToken);
 
     public Task CreateOnboardProfileAsync(CancellationToken cancellationToken = default) =>
         RunOnboardProfileWriteAsync(
+            "create",
             () => IsOnboardProfileBusy, value => IsOnboardProfileBusy = value,
             async () =>
             {
@@ -384,6 +404,7 @@ public sealed partial class RazerHidDeviceViewModel
                 var previousCount = OnboardProfileCount;
                 await _service.CreateOnboardProfileAsync(Connection, newId, cancellationToken);
                 var created = false;
+                var readbackAnswered = false;
                 for (var attempt = 0; attempt < 4 && !created; attempt++)
                 {
                     if (attempt > 0)
@@ -391,15 +412,19 @@ public sealed partial class RazerHidDeviceViewModel
                         await Task.Delay(120, cancellationToken);
                     }
 
-                    created = await ReadOnboardProfilesAsync(cancellationToken)
-                        ? _onboardProfileIds.Contains(newId)
-                        : OnboardProfileCount > previousCount;
+                    var idsRead = await ReadOnboardProfilesAsync(cancellationToken);
+                    var countGrew = OnboardProfileCount > previousCount;
+                    readbackAnswered |= idsRead || countGrew;
+                    created = idsRead ? _onboardProfileIds.Contains(newId) : countGrew;
                 }
 
                 if (!created)
                 {
                     SetOnboardProfileStatus(
-                        AppStrings.Text("RazerHidOnboardProfileCreateNotApplied"), isError: true);
+                        AppStrings.Text(readbackAnswered
+                            ? "RazerHidOnboardProfileCreateNotApplied"
+                            : "RazerHidOnboardProfileAppliedUnverified"),
+                        isError: readbackAnswered);
                     return;
                 }
 
@@ -409,6 +434,7 @@ public sealed partial class RazerHidDeviceViewModel
 
     public Task DeleteOnboardProfileAsync(CancellationToken cancellationToken = default) =>
         RunOnboardProfileWriteAsync(
+            "delete",
             () => IsOnboardProfileBusy, value => IsOnboardProfileBusy = value,
             async () =>
             {
@@ -418,8 +444,10 @@ public sealed partial class RazerHidDeviceViewModel
                     return;
                 }
 
+                var previousCount = OnboardProfileCount;
                 await _service.DeleteOnboardProfileAsync(Connection, deleted, cancellationToken);
                 var removed = false;
+                var readbackAnswered = false;
                 for (var attempt = 0; attempt < 4 && !removed; attempt++)
                 {
                     if (attempt > 0)
@@ -427,14 +455,19 @@ public sealed partial class RazerHidDeviceViewModel
                         await Task.Delay(120, cancellationToken);
                     }
 
-                    removed = !await ReadOnboardProfilesAsync(cancellationToken) ||
-                        !_onboardProfileIds.Contains(deleted);
+                    var idsRead = await ReadOnboardProfilesAsync(cancellationToken);
+                    var countShrank = OnboardProfileCount < previousCount;
+                    readbackAnswered |= idsRead || countShrank;
+                    removed = idsRead ? !_onboardProfileIds.Contains(deleted) : countShrank;
                 }
 
                 if (!removed)
                 {
                     SetOnboardProfileStatus(
-                        AppStrings.Text("RazerHidOnboardProfileDeleteNotApplied"), isError: true);
+                        AppStrings.Text(readbackAnswered
+                            ? "RazerHidOnboardProfileDeleteNotApplied"
+                            : "RazerHidOnboardProfileAppliedUnverified"),
+                        isError: readbackAnswered);
                     return;
                 }
 
@@ -443,6 +476,7 @@ public sealed partial class RazerHidDeviceViewModel
 
     public Task ResetOnboardProfileAsync(CancellationToken cancellationToken = default) =>
         RunOnboardProfileWriteAsync(
+            "reset",
             () => IsOnboardProfileBusy, value => IsOnboardProfileBusy = value,
             async () =>
             {
@@ -463,8 +497,12 @@ public sealed partial class RazerHidDeviceViewModel
                     return;
                 }
 
-                await ReadOnboardProfilesAsync(cancellationToken);
-                SetOnboardProfileStatus(AppStrings.Text("RazerHidOperationApplied"), isError: false);
+                var readback = await ReadOnboardProfilesAsync(cancellationToken);
+                SetOnboardProfileStatus(
+                    AppStrings.Text(readback
+                        ? "RazerHidOperationApplied"
+                        : "RazerHidOnboardProfileAppliedUnverified"),
+                    isError: false);
             }, cancellationToken);
 
     /// <summary>
@@ -472,6 +510,7 @@ public sealed partial class RazerHidDeviceViewModel
     /// failure: the card keeps working and the reason is shown next to the buttons.
     /// </summary>
     private async Task RunOnboardProfileWriteAsync(
+        string operationName,
         Func<bool> isBusy,
         Action<bool> setBusy,
         Func<Task> operation,
@@ -493,7 +532,9 @@ public sealed partial class RazerHidDeviceViewModel
         }
         catch (Exception exception)
         {
-            Trace.WriteLine($"Onboard profile operation failed: {exception}");
+            _log?.Invoke(
+                $"onboard-profile pid={Connection.Definition.ProductId:X4} " +
+                $"operation={operationName} failed: {exception.GetType().Name}: {exception.Message}");
             SetOnboardProfileError(exception);
         }
         finally
@@ -520,6 +561,7 @@ public sealed partial class RazerHidDeviceViewModel
         {
             RazerCommandRejectedException => "RazerHidOnboardProfileRejected",
             NotSupportedException => "RazerHidOnboardProfileUnsupported",
+            RazerDeviceTimeoutException { IsRetryableBusy: true } => "RazerHidOnboardProfileBusy",
             RazerDeviceTimeoutException => "RazerHidOnboardProfileTimeout",
             RazerReportMismatchException => "RazerHidOnboardProfileMismatch",
             InvalidOperationException => "RazerHidOnboardProfileInvalidResponse",
