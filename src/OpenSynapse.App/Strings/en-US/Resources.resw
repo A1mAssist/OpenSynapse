@@ -3765,6 +3765,12 @@
   <data name="RazerMappingActionScrollModeNumber" xml:space="preserve"><value>Scroll mode {0}</value></data>
   <data name="RazerMappingActionRazerKeyNumber" xml:space="preserve"><value>Razer key {0}</value></data>
   <data name="RazerMappingActionShortcutNumber" xml:space="preserve"><value>Shortcut {0}</value></data>
+  <data name="RazerMappingActionTaskManager" xml:space="preserve"><value>Task Manager</value></data>
+  <data name="RazerMappingActionCloseApp" xml:space="preserve"><value>Close app</value></data>
+  <data name="RazerMappingActionSwitchApps" xml:space="preserve"><value>Switch apps</value></data>
+  <data name="RazerMappingActionCut" xml:space="preserve"><value>Cut</value></data>
+  <data name="RazerMappingActionCopy" xml:space="preserve"><value>Copy</value></data>
+  <data name="RazerMappingActionPaste" xml:space="preserve"><value>Paste</value></data>
   <data name="RazerMappingActionToggleScrollMode" xml:space="preserve"><value>Toggle scroll mode</value></data>
   <data name="RazerMappingActionSuffixHold" xml:space="preserve"><value> (hold)</value></data>
   <data name="RazerMappingActionSuffixToggle" xml:space="preserve"><value> (toggle)</value></data>
