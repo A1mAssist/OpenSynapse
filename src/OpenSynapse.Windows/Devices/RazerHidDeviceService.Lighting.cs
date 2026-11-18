@@ -107,7 +107,35 @@ public sealed partial class RazerHidDeviceService
             capability => capability.LightingEffects.Contains(settings.Effect), "lighting effect");
         foreach (var request in RazerHidLightingProtocol.CreateEffectRequests(connection.Definition, settings))
         {
-            await ExecuteWithoutResultAsync(connection, request, cancellationToken).ConfigureAwait(false);
+            await ExecuteEffectAsync(connection, request, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// The LED engine keeps answering busy for tens of milliseconds after the previous
+    /// effect; the transport's short busy window used to drop a user's effect click.
+    /// </summary>
+    private async Task ExecuteEffectAsync(
+        RazerHidDeviceConnection connection,
+        RazerHidRequest request,
+        CancellationToken cancellationToken)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                await ExecuteWithoutResultAsync(connection, request, cancellationToken)
+                    .ConfigureAwait(false);
+                return;
+            }
+            catch (RazerDeviceTimeoutException exception) when (
+                exception.IsRetryableBusy && attempt < 3)
+            {
+                WriteDiagnostic(connection.Definition.ProductId,
+                    $"lighting effect busy (attempt {attempt}); retrying");
+                await Task.Delay(TimeSpan.FromMilliseconds(80), cancellationToken)
+                    .ConfigureAwait(false);
+            }
         }
     }
 
