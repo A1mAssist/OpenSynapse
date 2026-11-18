@@ -9,7 +9,9 @@ public static class LiteModePolicy
     public static bool ShouldCreateBladeLighting(bool liteMode) => !liteMode;
     public static bool ShouldStartPerformanceSampling(bool liteMode) => !liteMode;
     public static bool ShouldStartChromaRest(bool liteMode) => !liteMode;
-    public static int PageCacheLimit(bool liteMode) => liteMode ? 1 : 2;
+    // Lite navigation walks device hub -> diagnostics -> studio; keeping three
+    // pages stops the return leg from rebuilding the 1500-line device tree.
+    public static int PageCacheLimit(bool liteMode) => liteMode ? 3 : 2;
     public static TimeSpan DeviceReadoutInterval(bool liteMode) =>
         TimeSpan.FromSeconds(liteMode ? 3 : 1);
 }

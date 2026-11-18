@@ -196,6 +196,11 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
     public void RequestDeviceRefresh()
     {
         Interlocked.Exchange(ref _deviceRefreshRequested, 1);
+        SignalDeviceWatch();
+    }
+
+    private void SignalDeviceWatch()
+    {
         try
         {
             _deviceWatchSignal.Release();
@@ -235,14 +240,19 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
 
     internal void RequestApplicationSwitch()
     {
-        RequestDeviceRefresh();
+        // A foreground change only re-evaluates the per-application rules. The watch
+        // loop already does that on every wake, so a full HID discovery here turned
+        // every window activation into a device rescan.
+        SignalDeviceWatch();
     }
 
     internal void RequestApplicationSwitch(bool manualChange)
     {
         _applicationSwitchRequested = manualChange ? 2 : 1;
-        RequestDeviceRefresh();
+        SignalDeviceWatch();
     }
+
+    internal void RequestDeviceReadout() => SignalDeviceWatch();
 
     internal void MarkManualDeviceChange() => _applicationSwitch.MarkManualOverrides(
         _razerHid.CurrentConnections.Select(connection => new DeviceBindingKey(
