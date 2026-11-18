@@ -204,6 +204,18 @@ public static partial class RazerHidMappingActions
                 return new(mouse.Name, RazerHidMappingFunctions.ButtonCode, [mouse.Id]);
             case RazerHidMappingGroup.KeyboardKey when optionIndex < Keys.Length:
                 var key = Keys[optionIndex];
+                // The firmware keeps Win down when these are sent as raw chords. Synapse uses
+                // its native shortcut ids instead, which release the modifier themselves.
+                var windowsShortcut = modifierMask == 0x08
+                    ? key.Hid switch { 0x0A => (byte)100, 0x2B => (byte)101, _ => (byte)0 }
+                    : (byte)0;
+                if (windowsShortcut != 0)
+                {
+                    var native = WindowsShortcuts.First(item => item.Code == windowsShortcut);
+                    return new(native.Name, RazerHidMappingFunctions.Win8ShortcutsKey,
+                        [windowsShortcut]);
+                }
+
                 return new(key.Name, RazerHidMappingFunctions.KeyCode, [modifierMask, key.Hid]);
             case RazerHidMappingGroup.Dpi when optionIndex < DpiActions.Length:
                 var dpi = DpiActions[optionIndex];
