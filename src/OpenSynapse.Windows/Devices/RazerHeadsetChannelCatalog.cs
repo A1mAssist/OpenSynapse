@@ -100,6 +100,7 @@ public static class RazerHeadsetChannelCatalog
             [0x0592] = new("rzDevice40HeadsetAiroha", RazerHeadsetChannel.Mxic64),
             [0x0593] = new("rzDevice40HeadsetAiroha", RazerHeadsetChannel.Mxic64),
             [0x059F] = new("rzDevice40BillieT3H", RazerHeadsetChannel.Mxic64),
+            // 05B9 exposes the rzDevice40 frame only as a 64-byte FF14 feature report.
             [0x05B9] = new("rzDevice40", RazerHeadsetChannel.Mxic64),
 
             // BlackShark V3 Pro keeps its own THX panel instead of the generic headset page.

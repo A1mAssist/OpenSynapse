@@ -327,7 +327,13 @@ public sealed partial class RazerHeadsetAudioService
                 item.InputReportByteLength >= 33,
             RazerHeadsetChannel.ValkyrieT3Feature64 => item.FeatureReportByteLength == 64,
             RazerHeadsetChannel.Jolie64 => item.FeatureReportByteLength == 64,
-            RazerHeadsetChannel.Mxic64 or RazerHeadsetChannel.Valkyrie64 or RazerHeadsetChannel.Billie64 => item.OutputReportByteLength == RazerMxicHeadsetProtocol.ReportLength && item.InputReportByteLength >= RazerMxicHeadsetProtocol.ReportLength,
+            // 05B9 carries the rzDevice40 frame on a 64-byte feature collection only.
+            RazerHeadsetChannel.Mxic64 when
+                RazerProtocol40HeadsetProtocol.UsesFeatureReportChannel(item.ProductId) =>
+                item.FeatureReportByteLength == RazerProtocol40HeadsetProtocol.ReportLength,
+            RazerHeadsetChannel.Mxic64 or RazerHeadsetChannel.Valkyrie64 or RazerHeadsetChannel.Billie64 =>
+                item.OutputReportByteLength == RazerMxicHeadsetProtocol.ReportLength &&
+                item.InputReportByteLength >= RazerMxicHeadsetProtocol.ReportLength,
             RazerHeadsetChannel.Mixer053E => item.FeatureReportByteLength == RazerMixer053EProtocol.FeatureReportLength && item.InputReportByteLength == RazerMixer053EProtocol.StatusReportLength && item.OutputReportByteLength == RazerMixer053EProtocol.OutputReportLength,
             _ => false,
         };
