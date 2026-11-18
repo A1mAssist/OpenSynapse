@@ -16,6 +16,7 @@ public sealed partial class RazerHidDeviceViewModel
     private byte _onboardMaxProfiles;
     private byte _activeOnboardProfileId;
     private IReadOnlyList<byte> _onboardProfileIds = [];
+    private readonly Dictionary<byte, string> _onboardProfileNames = [];
     private int _selectedOnboardProfileIndex = -1;
     private bool _activeOnboardProfileKnown;
     private string _onboardProfileStatusText = string.Empty;
@@ -60,7 +61,12 @@ public sealed partial class RazerHidDeviceViewModel
     /// built from count/max when 0x81 is unavailable.
     /// </summary>
     public IReadOnlyList<string> OnboardProfileOptions =>
-        _onboardProfileIds.Select(id => id.ToString(CultureInfo.InvariantCulture)).ToArray();
+        _onboardProfileIds.Select(OnboardProfileLabel).ToArray();
+
+    private string OnboardProfileLabel(byte id) =>
+        _onboardProfileNames.TryGetValue(id, out var name)
+            ? $"{name} ({id.ToString(CultureInfo.InvariantCulture)})"
+            : id.ToString(CultureInfo.InvariantCulture);
     public int SelectedOnboardProfileIndex
     {
         get => _selectedOnboardProfileIndex;
@@ -96,7 +102,7 @@ public sealed partial class RazerHidDeviceViewModel
         ? Color.FromArgb(255, 255, 107, 107)
         : Color.FromArgb(255, 160, 160, 160));
     public string ActiveOnboardProfileText => _activeOnboardProfileKnown
-        ? ActiveOnboardProfileId.ToString(CultureInfo.InvariantCulture)
+        ? OnboardProfileLabel(ActiveOnboardProfileId)
         : AppStrings.Text("RazerHidOnboardProfileUnknown");
     /// <summary>
     /// Profile ids are one-based; a device that reports one profile only knows id 1.
@@ -241,8 +247,38 @@ public sealed partial class RazerHidDeviceViewModel
             _activeOnboardProfileKnown = false;
         }
 
+        _onboardProfileNames.Clear();
+        if (ids is not null)
+        {
+            // The middleware only reads name structures for profiles after the first
+            // slot; slot 1 is the default profile and has no stored name.
+            foreach (var id in ids.Skip(1))
+            {
+                try
+                {
+                    var name = await _service
+                        .GetOnboardProfileNameAsync(Connection, id, cancellationToken);
+                    if (!string.IsNullOrWhiteSpace(name))
+                    {
+                        _onboardProfileNames[id] = name.Trim();
+                    }
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception exception) when (IsExpectedOnboardProfileReadFailure(exception))
+                {
+                    // Names are optional; one rejected 0x88 means this firmware will
+                    // reject the rest too, so don't delay the card with every profile.
+                    break;
+                }
+            }
+        }
+
         _onboardProfileIds = ids ?? BuildFallbackProfileIds(OnboardProfileCount, OnboardMaxProfiles);
         OnPropertyChanged(nameof(OnboardProfileOptions));
+        OnPropertyChanged(nameof(ActiveOnboardProfileText));
 
         if (idsUnavailable && OnboardMaxProfiles > 0)
         {
