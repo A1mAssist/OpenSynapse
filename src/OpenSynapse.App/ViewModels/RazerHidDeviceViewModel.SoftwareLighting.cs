@@ -28,8 +28,10 @@ public sealed partial class RazerHidDeviceViewModel
         }
     }
 
-    internal Task StopLightingRuntimeAsync(CancellationToken cancellationToken = default) =>
-        StopSoftwareLightingAsync(cancellationToken);
+    internal Task StopLightingRuntimeAsync(
+        CancellationToken cancellationToken = default,
+        bool restore = true) =>
+        StopSoftwareLightingAsync(cancellationToken, restore);
 
     private async Task RestoreCustomFrameAsync()
     {

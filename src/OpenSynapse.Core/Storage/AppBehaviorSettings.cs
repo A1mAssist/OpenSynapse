@@ -39,6 +39,7 @@ public sealed class AppBehaviorSettings
     public bool StartSilent { get; set; }
     public List<TaskbarBatteryPreference> TaskbarBatteryDisplay { get; set; } = [];
     public bool TurnOffPeripheralLightingOnShutdown { get; set; }
+    public bool TurnOffPeripheralLightingOnDisplayOff { get; set; }
     public bool LiteModeEnabled { get; set; }
     public bool PerformanceOverlayEnabled { get; set; }
     public bool PerformanceOverlayDetailed { get; set; }

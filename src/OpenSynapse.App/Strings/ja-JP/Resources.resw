@@ -1869,6 +1869,9 @@
   <data name="ShutdownLightingTitle.Text" xml:space="preserve"><value>シャットダウン時に周辺デバイスのライティングをオフにする</value></data>
   <data name="ShutdownLightingDescription.Text" xml:space="preserve"><value>Windows のシャットダウンまたはサインアウト前に、ライティング書き込みに対応する Razer 周辺デバイスへオフを送信します。次回起動時に保存済みのライティングを復元します。</value></data>
   <data name="ShutdownLightingToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>シャットダウン時に周辺デバイスのライティングをオフにする</value></data>
+  <data name="DisplayOffLightingTitle.Text" xml:space="preserve"><value>画面オフ時に周辺デバイスのライティングをオフにする</value></data>
+  <data name="DisplayOffLightingDescription.Text" xml:space="preserve"><value>Windows が画面出力をオフにしたとき、ライティング書き込みに対応する Razer 周辺デバイスへオフを送信します。画面オフ前に有効だったライティングを復元します。</value></data>
+  <data name="DisplayOffLightingToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>画面オフ時に周辺デバイスのライティングをオフにする</value></data>
   <data name="PerformanceOverlayTitle" xml:space="preserve"><value>パフォーマンス オーバーレイ</value></data>
   <data name="PerformanceOverlayDescription" xml:space="preserve"><value>パフォーマンス モード、CPU/GPU の温度とクロック、メモリ使用量とクロック、ファン速度をデスクトップに表示します。任意の場所にドラッグでき、位置は記憶されます。右クリックすると、カードの切り替え、位置のリセット、終了ができます。</value></data>
   <data name="PerformanceOverlayDetailedTitle" xml:space="preserve"><value>詳細カード</value></data>

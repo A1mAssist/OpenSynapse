@@ -3014,6 +3014,15 @@
   <data name="ShutdownLightingToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Выключать подсветку устройств при завершении работы</value>
   </data>
+  <data name="DisplayOffLightingTitle.Text" xml:space="preserve">
+    <value>Выключать подсветку периферии при выключении экрана</value>
+  </data>
+  <data name="DisplayOffLightingDescription.Text" xml:space="preserve">
+    <value>Когда Windows отключает вывод изображения, отправьте команду выключения периферийным устройствам Razer, поддерживающим запись подсветки. После включения экрана восстановите подсветку, действовавшую до выключения.</value>
+  </data>
+  <data name="DisplayOffLightingToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Выключать подсветку периферии при выключении экрана</value>
+  </data>
   <data name="PerformanceOverlayTitle" xml:space="preserve">
     <value>Монитор производительности</value>
   </data>

@@ -62,6 +62,8 @@ public sealed partial class MainWindow
     {
         _viewModel.Home.QuickActionRequested += OnHomeQuickActionAsync;
         _viewModel.DeviceRules.EnabledChanged += enabled => _viewModel.SetApplicationSwitchingEnabled(enabled);
+        _viewModel.SuspendStudioLightingForDisplay = SuspendStudioLightingForDisplayAsync;
+        _viewModel.ResumeStudioLightingForDisplay = ResumeStudioLightingForDisplayAsync;
     }
 
     private Task OnHomeQuickActionAsync(string id, string? argument, CancellationToken cancellationToken)

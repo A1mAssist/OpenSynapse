@@ -17,6 +17,24 @@ public sealed partial class MainWindow
     internal Task SuspendStudioLightingAsync() =>
         _lightingStudioPage?.SuspendAppliedEffectAsync() ?? Task.CompletedTask;
 
+    private bool _studioAppliedBeforeDisplayOff;
+
+    private async Task SuspendStudioLightingForDisplayAsync()
+    {
+        _studioAppliedBeforeDisplayOff = _lightingStudioPage?.ViewModel?.IsApplied == true;
+        await SuspendStudioLightingAsync();
+    }
+
+    private async Task ResumeStudioLightingForDisplayAsync()
+    {
+        var reapply = _studioAppliedBeforeDisplayOff;
+        _studioAppliedBeforeDisplayOff = false;
+        if (reapply && _lightingStudioPage?.ViewModel is { } viewModel)
+        {
+            await viewModel.ApplyAsync();
+        }
+    }
+
     private IReadOnlyList<StudioDeviceOption> BuildStudioDevices()
     {
         var options = new List<StudioDeviceOption>();

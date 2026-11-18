@@ -1869,6 +1869,9 @@
   <data name="ShutdownLightingTitle.Text" xml:space="preserve"><value>Éteindre l’éclairage des périphériques à l’arrêt</value></data>
   <data name="ShutdownLightingDescription.Text" xml:space="preserve"><value>Avant l’arrêt ou la déconnexion de Windows, envoyez l’extinction aux périphériques Razer qui prennent en charge l’écriture de l’éclairage. Restaurez l’éclairage enregistré au prochain lancement.</value></data>
   <data name="ShutdownLightingToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Éteindre l’éclairage des périphériques à l’arrêt</value></data>
+  <data name="DisplayOffLightingTitle.Text" xml:space="preserve"><value>Éteindre l’éclairage des périphériques à l’extinction de l’écran</value></data>
+  <data name="DisplayOffLightingDescription.Text" xml:space="preserve"><value>Lorsque Windows coupe la sortie d’affichage, envoyez l’extinction aux périphériques Razer qui prennent en charge l’écriture de l’éclairage. Restaurez l’éclairage actif avant l’extinction de l’écran.</value></data>
+  <data name="DisplayOffLightingToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Éteindre l’éclairage des périphériques à l’extinction de l’écran</value></data>
   <data name="PerformanceOverlayTitle" xml:space="preserve"><value>Superposition de performances</value></data>
   <data name="PerformanceOverlayDescription" xml:space="preserve"><value>Affichez le mode de performances, les températures et fréquences CPU/GPU, l’utilisation et la fréquence de la mémoire, ainsi que la vitesse des ventilateurs sur le bureau. Faites-le glisser n’importe où ; sa position est mémorisée. Cliquez avec le bouton droit pour changer de carte, réinitialiser la position ou le fermer.</value></data>
   <data name="PerformanceOverlayDetailedTitle" xml:space="preserve"><value>Carte détaillée</value></data>

@@ -1869,6 +1869,9 @@
   <data name="ShutdownLightingTitle.Text" xml:space="preserve"><value>종료 시 주변 장치 조명 끄기</value></data>
   <data name="ShutdownLightingDescription.Text" xml:space="preserve"><value>Windows가 종료되거나 로그아웃되기 전에 조명 쓰기를 지원하는 Razer 주변 장치에 끄기 명령을 보냅니다. 다음 시작 후 저장된 조명을 복원합니다.</value></data>
   <data name="ShutdownLightingToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>종료 시 주변 장치 조명 끄기</value></data>
+  <data name="DisplayOffLightingTitle.Text" xml:space="preserve"><value>화면이 꺼질 때 주변 장치 조명 끄기</value></data>
+  <data name="DisplayOffLightingDescription.Text" xml:space="preserve"><value>Windows가 화면 출력을 끄면 조명 쓰기를 지원하는 Razer 주변 장치에 끄기 명령을 보냅니다. 화면이 꺼지기 전에 사용 중이던 조명을 복원합니다.</value></data>
+  <data name="DisplayOffLightingToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>화면이 꺼질 때 주변 장치 조명 끄기</value></data>
   <data name="PerformanceOverlayTitle" xml:space="preserve"><value>성능 오버레이</value></data>
   <data name="PerformanceOverlayDescription" xml:space="preserve"><value>데스크톱에 성능 모드, CPU/GPU 온도 및 클록, 메모리 사용량 및 클록, 팬 속도를 표시합니다. 어디로든 끌 수 있으며 위치가 기억됩니다. 마우스 오른쪽 버튼을 클릭하여 카드를 전환하거나 위치를 재설정하거나 닫으세요.</value></data>
   <data name="PerformanceOverlayDetailedTitle" xml:space="preserve"><value>상세 카드</value></data>
