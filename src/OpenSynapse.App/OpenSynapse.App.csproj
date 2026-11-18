@@ -33,6 +33,14 @@
     <Compile Remove="Runtime\DeviceApplicationSwitchCoordinator.cs;Runtime\DeviceApplicationSwitchState.cs" />
   </ItemGroup>
 
+  <!-- .NET 10 keeps a diagnostics-only CCW list that grows on every COM marshal.
+       Disabling the debugger registry keeps it flat (dotnet/runtime#129191). -->
+  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+    <RuntimeHostConfigurationOption Include="System.Diagnostics.Debugger.IsSupported"
+                                    Value="false"
+                                    Trim="true" />
+  </ItemGroup>
+
   <ItemGroup>
     <Content Include="..\..\LICENSE"
              Link="LICENSE"
