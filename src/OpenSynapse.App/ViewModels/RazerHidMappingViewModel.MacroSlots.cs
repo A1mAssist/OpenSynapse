@@ -18,9 +18,12 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
 {
+    private IReadOnlyList<MacroDefinition> _systemMacros = [];
+
     private async Task RefreshMacroContextAsync(CancellationToken cancellationToken)
     {
         _localMacros = _localMacroProvider?.Invoke() ?? [];
+        _systemMacros = _systemMacroProvider?.Invoke() ?? [];
         _localMacroOptions = _localMacros
             .Select((macro, index) => new RazerHidMacroOption(
                 (byte)Math.Min(index + 1, byte.MaxValue),

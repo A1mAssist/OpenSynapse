@@ -135,6 +135,12 @@ public sealed partial class ProfileDefinition
     public ProfileShortcutSettings Shortcuts { get; set; } = new();
     public List<LightingColorPreset> LightingColorPresets { get; set; } = [];
     public List<MacroDefinition> Macros { get; set; } = [];
+    /// <summary>
+    /// Built-in actions (Windows shortcuts) bound to device buttons. They are
+    /// stored like macros so a binding survives a restart, but they never show
+    /// up in the macro library.
+    /// </summary>
+    public List<MacroDefinition> SystemMacros { get; set; } = [];
 
     internal void ApplySafeDefaults()
     {
@@ -152,6 +158,15 @@ public sealed partial class ProfileDefinition
             .Take(64)
             .ToList();
         foreach (var macro in Macros)
+        {
+            macro.ApplySafeDefaults();
+        }
+
+        SystemMacros = (SystemMacros ?? [])
+            .Where(macro => macro is not null)
+            .Take(64)
+            .ToList();
+        foreach (var macro in SystemMacros)
         {
             macro.ApplySafeDefaults();
         }

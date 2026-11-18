@@ -19,6 +19,13 @@ public sealed partial class RazerHidMappingViewModel
     private int FindSoftwareMacro(MacroInput input, bool hyperShiftLayer, out MacroTriggerMode mode) =>
         RazerSoftwareMacroTriggerMatcher.FindIndex(_localMacros, input, hyperShiftLayer, out mode);
 
+    private MacroDefinition? FindShortcutMacro(MacroInput input, bool hyperShiftLayer) =>
+        _systemMacros.FirstOrDefault(macro =>
+            SoftwareShortcutCatalog.ActionOf(macro.Id) is not null &&
+            macro.AllTriggers.Any(trigger =>
+                trigger.HyperShiftLayer == hyperShiftLayer &&
+                trigger.Input.Matches(input)));
+
     private static MacroSoftwareBinding? SoftwareBindingFor(
         MacroDefinition macro,
         MacroInput input,
@@ -131,6 +138,51 @@ public sealed partial class RazerHidMappingViewModel
     }
 
     /// <summary>
+    /// A Windows shortcut is never written to the device. The button keeps
+    /// reporting (or is turned off for private keys) and the runtime plays the
+    /// sequence, exactly like a software macro.
+    /// </summary>
+    private async Task WriteShortcutRowAsync(
+        RazerHidMappingRowViewModel row,
+        IReadOnlyList<AssignmentBackup> backups,
+        IReadOnlyList<ClearedSoftwareTrigger> clears,
+        CancellationToken cancellationToken)
+    {
+        var action = SoftwareShortcutCatalog.Actions[row.OptionIndex];
+        var input = _softwareTriggerResolver!(row.ButtonId)!;
+        try
+        {
+            if (RazerSoftwareMacroAssignmentPolicy.NeedsDeviceAssignment(input))
+            {
+                var (functionId, data) = BindingAssignment(input, row.ButtonId);
+                await _transport.SetAssignmentAsync(
+                        row.ButtonId, Mode, functionId, data, cancellationToken)
+                    .ConfigureAwait(true);
+            }
+
+            var error = await _softwareTriggerBinder!(
+                    action.MacroId,
+                    input,
+                    MacroTriggerMode.Press,
+                    MacroPlaybackMode.Once,
+                    1,
+                    LayerIndex == 1,
+                    CreateSoftwareBinding(row, backups, clears),
+                    cancellationToken)
+                .ConfigureAwait(true);
+            if (error is not null)
+            {
+                throw new InvalidOperationException(error);
+            }
+        }
+        catch
+        {
+            await RestoreAsync(clears, backups).ConfigureAwait(true);
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Applies a trigger/playback choice made on an already-bound row without
     /// waiting for the mapping page's Save. The key assignment is untouched.
     /// </summary>
@@ -200,11 +252,27 @@ public sealed partial class RazerHidMappingViewModel
         IReadOnlyList<RazerHidMappingRowViewModel> pending,
         IReadOnlyList<RazerHidMappingRowViewModel> softwareRows)
     {
-        var keptMacroIds = softwareRows.ToDictionary(
-            row => row.ButtonId,
-            row => _localMacros[row.OptionIndex].Id);
+        var keptMacroIds = new Dictionary<byte, string>();
+        foreach (var row in softwareRows.Where(row =>
+                     row.Group == RazerHidMappingGroup.Macro &&
+                     row.OptionIndex >= 0 &&
+                     row.OptionIndex < _localMacros.Count))
+        {
+            keptMacroIds[row.ButtonId] = _localMacros[row.OptionIndex].Id;
+        }
+        foreach (var row in pending.Where(row =>
+                     row.Group == RazerHidMappingGroup.WindowsShortcut &&
+                     row.OptionIndex >= 0 &&
+                     row.OptionIndex < SoftwareShortcutCatalog.Actions.Count))
+        {
+            keptMacroIds[row.ButtonId] = SoftwareShortcutCatalog.Actions[row.OptionIndex].MacroId;
+        }
+
         var clears = new List<ClearedSoftwareTrigger>();
-        foreach (var row in pending)
+        // "Keep" never reaches the pending set, but a row that used to run a
+        // software action must still give that action up.
+        foreach (var row in pending.Concat(Rows.Where(row =>
+                     row.Group == RazerHidMappingGroup.Keep && row.SoftwareMacroId is not null)))
         {
             if (row.SoftwareMacroId is not { } oldId)
             {
@@ -218,8 +286,7 @@ public sealed partial class RazerHidMappingViewModel
             }
 
             var input = ResolveSoftwareTrigger(row.ButtonId);
-            var macro = _localMacros.FirstOrDefault(
-                candidate => StringComparer.Ordinal.Equals(candidate.Id, oldId));
+            var macro = FindMacroById(oldId);
             if (input is null || macro is null)
             {
                 continue;
@@ -251,6 +318,12 @@ public sealed partial class RazerHidMappingViewModel
 
         return clears.ToArray();
     }
+
+    private MacroDefinition? FindMacroById(string macroId) =>
+        _localMacros.FirstOrDefault(candidate =>
+            StringComparer.Ordinal.Equals(candidate.Id, macroId)) ??
+        _systemMacros.FirstOrDefault(candidate =>
+            StringComparer.Ordinal.Equals(candidate.Id, macroId));
 
     private async Task ClearSoftwareTriggersAsync(
         IReadOnlyList<ClearedSoftwareTrigger> clears,

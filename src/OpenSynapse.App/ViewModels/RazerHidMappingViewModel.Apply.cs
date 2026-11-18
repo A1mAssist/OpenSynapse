@@ -41,7 +41,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 row.CanApply &&
                 (_canWrite ||
                  row.Group == RazerHidMappingGroup.Macro &&
-                 row.MacroTarget == MacroExecutionTarget.Software)).ToArray();
+                 row.MacroTarget == MacroExecutionTarget.Software ||
+                 row.Group == RazerHidMappingGroup.WindowsShortcut)).ToArray();
             var onboardRows = pending
                 .Where(row => row.Group == RazerHidMappingGroup.Macro &&
                               row.MacroTarget == MacroExecutionTarget.Onboard)
@@ -51,9 +52,13 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                               row.MacroTarget == MacroExecutionTarget.Software)
                 .ToArray();
             var softwareModeRows = SoftwareModeRows(softwareRows);
+            var shortcutRows = pending
+                .Where(row => row.Group == RazerHidMappingGroup.WindowsShortcut)
+                .ToArray();
             var assignmentRows = pending
-                .Where(row => row.Group != RazerHidMappingGroup.Macro ||
-                              row.MacroTarget == MacroExecutionTarget.Onboard)
+                .Where(row => (row.Group != RazerHidMappingGroup.Macro ||
+                               row.MacroTarget == MacroExecutionTarget.Onboard) &&
+                              row.Group != RazerHidMappingGroup.WindowsShortcut)
                 .ToArray();
 
             var duplicate = onboardRows
@@ -110,14 +115,37 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
 
             clears = SoftwareTriggersToClear(pending, softwareRows);
 
+            foreach (var row in shortcutRows)
+            {
+                if (_softwareTriggerBinder is null ||
+                    _softwareTriggerResolver?.Invoke(row.ButtonId) is null)
+                {
+                    throw new InvalidOperationException(
+                        AppStrings.Text("RazerMappingMacroSoftwareUnavailable"));
+                }
+
+                if (row.OptionIndex < 0 ||
+                    row.OptionIndex >= SoftwareShortcutCatalog.Actions.Count)
+                {
+                    throw new InvalidOperationException(
+                        AppStrings.Text("RazerMappingMacroSelectionMissing"));
+                }
+            }
+
             var softwareAssignmentRows = softwareRows
+                .Where(row => _softwareTriggerResolver?.Invoke(row.ButtonId) is { } input &&
+                    RazerSoftwareMacroAssignmentPolicy.NeedsDeviceAssignment(input))
+                .ToArray();
+            var shortcutAssignmentRows = shortcutRows
                 .Where(row => _softwareTriggerResolver?.Invoke(row.ButtonId) is { } input &&
                     RazerSoftwareMacroAssignmentPolicy.NeedsDeviceAssignment(input))
                 .ToArray();
 
             var backups = new List<AssignmentBackup>(
-                assignmentRows.Length + softwareAssignmentRows.Length);
-            foreach (var row in assignmentRows.Concat(softwareAssignmentRows))
+                assignmentRows.Length + softwareAssignmentRows.Length + shortcutAssignmentRows.Length);
+            foreach (var row in assignmentRows
+                         .Concat(softwareAssignmentRows)
+                         .Concat(shortcutAssignmentRows))
             {
                 backups.Add(new AssignmentBackup(
                     row,
@@ -199,6 +227,16 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 }
 
                 applied++;
+            }
+
+            foreach (var row in shortcutRows)
+            {
+                await WriteShortcutRowAsync(row, backups, clears, cancellationToken)
+                    .ConfigureAwait(true);
+                applied++;
+                row.CurrentActionText = SoftwareShortcutCatalog.Actions[row.OptionIndex].Name;
+                row.SoftwareMacroId = SoftwareShortcutCatalog.Actions[row.OptionIndex].MacroId;
+                row.LoadedOptionIndex = row.OptionIndex;
             }
 
             foreach (var row in softwareRows)

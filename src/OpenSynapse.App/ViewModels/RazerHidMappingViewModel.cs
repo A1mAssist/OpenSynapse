@@ -27,6 +27,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         MacroSoftwareBinding?, CancellationToken, Task<string?>>? _softwareTriggerBinder;
     private readonly Func<RazerOnboardMacroService>? _macroServiceFactory;
     private readonly Func<IReadOnlyList<MacroDefinition>>? _localMacroProvider;
+    private readonly Func<IReadOnlyList<MacroDefinition>>? _systemMacroProvider;
     private readonly Func<CancellationToken, Task>? _afterApplyAsync;
     private readonly Func<IReadOnlyList<ButtonMappingProfile>, CancellationToken, Task>? _mappingProfileSaver;
     private readonly Action<string>? _log;
@@ -68,7 +69,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         Func<byte, MacroInput?>? softwareTriggerResolver = null,
         Func<string, MacroInput, MacroTriggerMode, MacroPlaybackMode, int, bool,
             MacroSoftwareBinding?, CancellationToken, Task<string?>>? softwareTriggerBinder = null,
-        Func<string, MacroInput, bool, CancellationToken, Task<string?>>? softwareTriggerClearer = null)
+        Func<string, MacroInput, bool, CancellationToken, Task<string?>>? softwareTriggerClearer = null,
+        Func<IReadOnlyList<MacroDefinition>>? systemMacros = null)
     {
         _transport = transport;
         _catalog = actionCatalog ?? RazerHidMappingActionCatalog.Instance;
@@ -79,6 +81,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         _softwareTriggerClearer = softwareTriggerClearer;
         _macroServiceFactory = macroServiceFactory;
         _localMacroProvider = localMacros;
+        _systemMacroProvider = systemMacros;
         _afterApplyAsync = afterApplyAsync;
         _mappingProfileSaver = mappingProfileSaver;
         _log = log;
@@ -116,8 +119,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
     public bool CanApply => !IsBusy && _loaded && Rows.Any(row =>
         row.CanApply &&
         (_canWrite ||
-         row.Group == RazerHidMappingGroup.Macro &&
-         row.MacroTarget == MacroExecutionTarget.Software));
+         row.Group == RazerHidMappingGroup.Macro && row.MacroTarget == MacroExecutionTarget.Software ||
+         row.Group == RazerHidMappingGroup.WindowsShortcut && _softwareTriggerBinder is not null));
     public string StatusText
     {
         get => _statusText;

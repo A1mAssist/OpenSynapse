@@ -258,8 +258,23 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                     row.OptionIndex = localMacroIndex;
                 }
 
-                var softwareMacroIndex = -1;
+                var shortcutIndex = -1;
                 if (softwareTrigger is not null &&
+                    (LayerIndex == 0 || _canObserveHyperShiftLayer) &&
+                    FindShortcutMacro(softwareTrigger, LayerIndex == 1) is { } shortcutMacro &&
+                    SoftwareShortcutCatalog.ActionOf(shortcutMacro.Id) is { } shortcut)
+                {
+                    shortcutIndex = SoftwareShortcutCatalog.IndexOf(shortcut.Id);
+                    row.GroupIndex = (int)RazerHidMappingGroup.WindowsShortcut;
+                    row.OptionIndex = shortcutIndex;
+                    row.SoftwareMacroId = shortcut.MacroId;
+                    row.LoadedOptionIndex = shortcutIndex;
+                    row.CurrentActionText = shortcut.Name;
+                }
+
+                var softwareMacroIndex = -1;
+                if (shortcutIndex < 0 &&
+                    softwareTrigger is not null &&
                     (LayerIndex == 0 || _canObserveHyperShiftLayer))
                 {
                     softwareMacroIndex = FindSoftwareMacro(
@@ -285,7 +300,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
 
                 UpdateMacroValidation(row);
                 UpdateMacroSlotWarning(row);
-                if (softwareMacroIndex >= 0 && assignmentIsOff == false &&
+                if ((softwareMacroIndex >= 0 || shortcutIndex >= 0) && assignmentIsOff == false &&
                     RazerSoftwareMacroAssignmentPolicy.NeedsOff(softwareTrigger!))
                 {
                     row.SetMacroSlotWarning(
