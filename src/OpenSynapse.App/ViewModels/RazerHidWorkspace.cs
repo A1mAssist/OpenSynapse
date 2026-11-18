@@ -34,6 +34,9 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
     private readonly Action _refreshDeviceOverview;
     private readonly Action<string> _setDeviceOperationError;
     private readonly DispatcherQueue? _dispatcherQueue;
+    // Device rows are rebuilt on the UI thread, but private-key triggers and the
+    // lighting pump read connections from their own threads.
+    private volatile RazerHidDeviceConnection[] _connectionSnapshot = [];
     private IReadOnlyList<RazerHidSpecialLightingConnection> _krakenConnections = [];
     private CancellationTokenSource? _selectionCancellation;
     // Software frame-pump effects outlive a single apply call, so their view model must
@@ -148,7 +151,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
     internal IReadOnlyList<RazerHidSpecialLightingConnection> KrakenConnections => _krakenConnections;
 
     internal IReadOnlyList<RazerHidDeviceConnection> CurrentConnections =>
-        Devices.Select(row => row.Connection).ToArray();
+        _connectionSnapshot;
     internal RazerHidDeviceConnection? ResolveConnection(DeviceDescriptor descriptor) =>
         CurrentConnections.FirstOrDefault(connection =>
             connection.Definition.ProductId == descriptor.ProductId &&
@@ -193,6 +196,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
                 .ThenBy(connection => connection.Definition.DisplayName, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
             connections = RazerHidDeviceConnectionSiblings.Collapse(connections);
+            _connectionSnapshot = connections;
             await MigrateProfileInstanceKeysAsync(connections, cancellationToken).ConfigureAwait(true);
             await RestoreDriverModeAsync(connections, cancellationToken);
             await RestoreAnalogJoystickModesAsync(connections, cancellationToken);

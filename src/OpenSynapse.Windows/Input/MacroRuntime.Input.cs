@@ -447,6 +447,24 @@ internal sealed partial class MacroRuntime
             }
         }
 
+        if (value.Input.Kind == MacroInputKind.RazerKey &&
+            value.Input.DeviceId is > 0 and <= 0xFFFF)
+        {
+            if (value.IsDown)
+            {
+                if (!suppress &&
+                    playMacro is null &&
+                    TurboResolver?.Invoke(value.Input, _hyperShiftHeld) is { } turbo)
+                {
+                    StartTurbo(value.Input, turbo);
+                }
+            }
+            else
+            {
+                StopTurbo(value.Input);
+            }
+        }
+
     InputHandled:
         if (stopRequested)
         {

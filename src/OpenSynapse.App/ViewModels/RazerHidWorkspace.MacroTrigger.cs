@@ -3,6 +3,7 @@ using System.IO;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Macros;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Input;
 
@@ -89,6 +90,42 @@ public sealed partial class RazerHidWorkspace
         {
             row.Detail?.InvalidateMapping();
         }
+    }
+
+    /// <summary>
+    /// Driver mode makes the firmware stop applying its own mappings, so a
+    /// TurboButton row has to repeat on the host while a macro holds the mouse there.
+    /// </summary>
+    internal RazerTurboBinding? ResolveTurboBinding(MacroInput input, bool hyperShift)
+    {
+        if (input.Kind != MacroInputKind.RazerKey ||
+            input.DeviceId is not (> 0 and <= ushort.MaxValue))
+        {
+            return null;
+        }
+
+        var productId = (ushort)input.DeviceId;
+        bool Fits(RazerHidDeviceConnection connection) =>
+            connection.Definition.ProductId == productId &&
+            connection.IsReady &&
+            (string.IsNullOrWhiteSpace(input.InstanceId) ||
+             StringComparer.OrdinalIgnoreCase.Equals(
+                 connection.InstanceId, input.InstanceId));
+
+        var connection = SelectedDevice is { } selected && Fits(selected.Connection)
+            ? selected.Connection
+            : CurrentConnections.FirstOrDefault(Fits);
+        if (connection is null || connection.Definition.Category != DeviceCategory.Mouse)
+        {
+            return null;
+        }
+
+        var key = ProfileResolver.GetDeviceKey(connection.ToDescriptor());
+        return _getActiveProfile().Devices.TryGetValue(key, out var settings) &&
+               settings.Viper.ButtonMappings is { } mappings
+            ? RazerTurboBindingResolver.Resolve(
+                mappings, productId, input.RazerKeyCode, IsNaga(connection), hyperShift)
+            : null;
     }
 
     private RazerHidDeviceViewModel? FindDeviceForTrigger(MacroInput input)
