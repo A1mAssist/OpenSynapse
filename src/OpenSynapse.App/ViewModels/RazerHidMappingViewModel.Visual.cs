@@ -90,7 +90,9 @@ public sealed partial class RazerHidMappingViewModel
     {
         try
         {
-            var visual = await _assetService.GetAsync(_productId, _deviceKind).ConfigureAwait(true);
+            var visual = await _assetService
+                .GetAsync(_productId, _deviceKind, await ReadEditionIdAsync().ConfigureAwait(true))
+                .ConfigureAwait(true);
             if (visual.Mouse is { } mouse)
             {
                 var image = await RazerMappingImageLoader.LoadAsync(mouse.ImageUri).ConfigureAwait(true);
@@ -150,6 +152,25 @@ public sealed partial class RazerHidMappingViewModel
         catch (Exception exception) when (IsExpected(exception) || exception is ArgumentException)
         {
             _log?.Invoke($"mapping visual failed: {exception.Message}");
+        }
+    }
+
+    /// <summary>The device is the only source of its edition; unsupported firmware means standard.</summary>
+    private async Task<int> ReadEditionIdAsync()
+    {
+        try
+        {
+            var edition = await _transport.ReadEditionAsync().ConfigureAwait(true);
+            if (edition is not null)
+            {
+                _log?.Invoke($"mapping edition pid=0x{_productId:X4} edition={edition}");
+            }
+
+            return edition ?? 0;
+        }
+        catch (Exception)
+        {
+            return 0;
         }
     }
 

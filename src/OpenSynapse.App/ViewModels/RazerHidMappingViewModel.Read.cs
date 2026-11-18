@@ -146,7 +146,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             if (ids.Length == 0)
             {
                 // Razer's UI keeps these ids in the product bundle when the firmware returns no button list.
-                var visual = await _assetService.GetAsync(_productId, _deviceKind, cancellationToken)
+                var visual = await _assetService.GetAsync(
+                        _productId, _deviceKind, cancellationToken: cancellationToken)
                     .ConfigureAwait(true);
                 var keyboardIds = visual.Keyboard is { } keyboard
                     ? keyboard.ButtonIdsByKeyName.Values

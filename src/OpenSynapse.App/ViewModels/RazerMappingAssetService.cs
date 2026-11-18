@@ -43,7 +43,7 @@ public sealed partial class RazerMappingAssetService
 
     private readonly string _cacheRoot;
     private readonly StudioManifestService _studio;
-    private readonly ConcurrentDictionary<(ushort ProductId, RazerMappingDeviceKind Kind), Lazy<Task<RazerMappingVisual>>> _cache = new();
+    private readonly ConcurrentDictionary<(ushort ProductId, RazerMappingDeviceKind Kind, int EditionId), Lazy<Task<RazerMappingVisual>>> _cache = new();
     private readonly ConcurrentDictionary<ushort, byte> _sourceChecked = new();
 
     public RazerMappingAssetService()
@@ -60,24 +60,25 @@ public sealed partial class RazerMappingAssetService
     public Task<RazerMappingVisual> GetAsync(
         ushort productId,
         RazerMappingDeviceKind kind,
+        int editionId = 0,
         CancellationToken cancellationToken = default)
     {
         if (productId == 0) return Task.FromResult(RazerMappingVisual.Empty);
         var lazy = _cache.GetOrAdd(
-            (productId, kind),
+            (productId, kind, editionId),
             key => new Lazy<Task<RazerMappingVisual>>(
-                () => LoadAsync(key.ProductId, key.Kind),
+                () => LoadAsync(key.ProductId, key.Kind, key.EditionId),
                 LazyThreadSafetyMode.ExecutionAndPublication));
         return lazy.Value.WaitAsync(cancellationToken);
     }
 
-    private async Task<RazerMappingVisual> LoadAsync(ushort productId, RazerMappingDeviceKind kind)
+    private async Task<RazerMappingVisual> LoadAsync(ushort productId, RazerMappingDeviceKind kind, int editionId)
     {
         try
         {
             if (kind == RazerMappingDeviceKind.Mouse)
             {
-                return await LoadMouseOrKeyboardAsync(productId).ConfigureAwait(false);
+                return await LoadMouseOrKeyboardAsync(productId, editionId).ConfigureAwait(false);
             }
 
             if (kind == RazerMappingDeviceKind.Keyboard)
@@ -88,13 +89,13 @@ public sealed partial class RazerMappingAssetService
                 }
 
                 // Keyboards outside the studio catalog still get bundle art with drawLines hotspots.
-                var image = await LoadBundleAsync(productId, CancellationToken.None).ConfigureAwait(false);
+                var image = await LoadBundleAsync(productId, editionId, CancellationToken.None).ConfigureAwait(false);
                 return image is null
                     ? new RazerMappingVisual(null, null, "keyboard-svg-unavailable")
                     : new RazerMappingVisual(image, null, null);
             }
 
-            return await LoadMouseOrKeyboardAsync(productId).ConfigureAwait(false);
+            return await LoadMouseOrKeyboardAsync(productId, editionId).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -107,12 +108,12 @@ public sealed partial class RazerMappingAssetService
         }
     }
 
-    private async Task<RazerMappingVisual> LoadMouseOrKeyboardAsync(ushort productId)
+    private async Task<RazerMappingVisual> LoadMouseOrKeyboardAsync(ushort productId, int editionId)
     {
         // The wireless receiver shares the wired model's product page. 0086 owns
         // the mapping art and button keys; 0088 only adds a battery endpoint.
         var assetProductId = RazerProductAliases.Canonical(productId);
-        var mouse = await LoadBundleAsync(assetProductId, CancellationToken.None).ConfigureAwait(false);
+        var mouse = await LoadBundleAsync(assetProductId, editionId, CancellationToken.None).ConfigureAwait(false);
         if (mouse is not null)
         {
             return new RazerMappingVisual(mouse, null, null);
@@ -126,6 +127,7 @@ public sealed partial class RazerMappingAssetService
 
     private async Task<RazerMappingImageLayout?> LoadBundleAsync(
         ushort productId,
+        int editionId,
         CancellationToken cancellationToken)
     {
         var manifest = await ReadAssetManifestAsync(productId, cancellationToken).ConfigureAwait(false);
@@ -146,9 +148,14 @@ public sealed partial class RazerMappingAssetService
                 var script = await File.ReadAllTextAsync(scriptPath, cancellationToken).ConfigureAwait(false);
                 bundle = RazerMappingBundleParser.Parse(script);
                 if (bundle is null || !IsExpectedBundle(productId, bundle)) return null;
+                var editionImage = bundle.EditionImages.TryGetValue(editionId, out var exact)
+                    ? exact
+                    : bundle.EditionImages.TryGetValue(0, out var standard)
+                        ? standard
+                        : null;
                 bundle = bundle with
                 {
-                    Image3x = await SelectProductImageAsync(
+                    Image3x = editionImage ?? await SelectProductImageAsync(
                         productId, manifest.Images3x, cancellationToken).ConfigureAwait(false),
                 };
                 if (bundle.Image3x is { Length: > 0 } image)

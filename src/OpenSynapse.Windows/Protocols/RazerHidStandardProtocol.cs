@@ -64,6 +64,20 @@ internal static class RazerHidStandardProtocol
         Create(device, "razer_chroma_standard_get_serial", 0x16, 0x00,
             RazerHidDeviceCatalog.UsesLegacyDockTypeZero(device.ProductId) ? (byte)0x92 : (byte)0x82, []);
 
+    /// <summary>
+    /// Razer's "Get Edition Information": Synapse keys every product render and lighting
+    /// manifest by edition ("165_0" standard, "165_130" PUBG), and the device is the only
+    /// thing that knows which edition it is. The reply is layout, edition, firmware id.
+    /// </summary>
+    internal static RazerHidRequest GetEditionInformation(RazerHidDeviceDefinition device) =>
+        Create(device, "razer_chroma_standard_get_device_mode", 0x03, 0x00, 0x86, [0, 0, 0]);
+
+    internal static (byte LayoutId, int EditionId, byte FirmwareId) ParseEdition(ReadOnlySpan<byte> response)
+    {
+        var arguments = Arguments(response, 3);
+        return (arguments[0], arguments[1], arguments[2]);
+    }
+
     internal const byte NormalDeviceMode = 0x00;
     internal const byte DriverDeviceMode = 0x03;
 

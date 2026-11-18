@@ -298,6 +298,28 @@ public sealed partial class RazerHidDeviceService
         RazerHidStandardProtocol.ParseSerial(await ExecuteAsync(connection,
             RazerHidStandardProtocol.GetSerial(connection.Definition), cancellationToken).ConfigureAwait(false));
 
+    /// <summary>Null when the firmware does not expose the edition (most pre-2021 devices).</summary>
+    public async Task<int?> GetEditionIdAsync(
+        RazerHidDeviceConnection connection,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await ExecuteAsync(connection,
+                RazerHidStandardProtocol.GetEditionInformation(connection.Definition), cancellationToken)
+                .ConfigureAwait(false);
+            return RazerHidStandardProtocol.ParseEdition(response).EditionId;
+        }
+        catch (Exception exception) when (exception is RazerDeviceTimeoutException or
+            RazerCommandRejectedException or RazerReportMismatchException or NotSupportedException or
+            InvalidDataException)
+        {
+            WriteDiagnostic(connection.Definition.ProductId,
+                $"edition read unavailable: {DescribeProbeFailure(exception)}");
+            return null;
+        }
+    }
+
     public async Task<bool> GetSoftwareModeAsync(RazerHidDeviceConnection connection, CancellationToken cancellationToken = default)
     {
         var response = await ExecuteAsync(connection,
