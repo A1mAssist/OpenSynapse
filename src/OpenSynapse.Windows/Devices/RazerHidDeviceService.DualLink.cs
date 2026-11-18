@@ -32,9 +32,25 @@ public sealed partial class RazerHidDeviceService
             transactionId);
         try
         {
-            var response = await _transport.QueryPreparedAsync(
-                devicePath, request, parentDefinition.DeviceWait, cancellationToken).ConfigureAwait(false);
-            return RazerPairingProtocol.ParseMultipleDeviceWirelessConnectionStatusV2(response, request);
+            // The linker reports busy until its wireless bank is ready. The official
+            // middleware retries this read for hundreds of milliseconds; the shared
+            // transport's 5 x 10 ms budget is tuned for ordinary commands.
+            for (var attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    var response = await _transport.QueryPreparedAsync(
+                        devicePath, request, parentDefinition.DeviceWait, cancellationToken).ConfigureAwait(false);
+                    return RazerPairingProtocol.ParseMultipleDeviceWirelessConnectionStatusV2(response, request);
+                }
+                catch (RazerDeviceTimeoutException exception) when (
+                    exception.IsRetryableBusy && attempt < 4)
+                {
+                    WriteDiagnostic(parentDefinition.ProductId,
+                        $"linked-device query busy; retrying ({attempt}/4)");
+                    await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                }
+            }
         }
         catch (Exception exception) when (exception is Win32Exception or IOException or
             InvalidOperationException or NotSupportedException or InvalidDataException or TimeoutException or
