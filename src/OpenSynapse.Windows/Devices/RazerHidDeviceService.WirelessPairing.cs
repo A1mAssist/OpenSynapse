@@ -54,7 +54,9 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
-        return ExecuteWithoutResultAsync(connection,
+        // A dock already scanning answers busy; PairWirelessCandidateAsync treats that
+        // as success, so this command must not spend the write retry budget first.
+        return ExecuteOnceWithoutResultAsync(connection,
             new RazerHidRequest("razer_device_set_device_scan",
                 RazerPairingProtocol.CreateSetDeviceScanRequest(PairingTransactionId, mode)),
             cancellationToken);
