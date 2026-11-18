@@ -140,12 +140,13 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
 
             var softwareAssignmentRows = softwareRows
                 .Where(row => _softwareTriggerResolver?.Invoke(row.ButtonId) is { } input &&
-                    RazerSoftwareMacroAssignmentPolicy.NeedsDeviceAssignment(input))
+                    (RazerSoftwareMacroAssignmentPolicy.NeedsDeviceAssignment(input) ||
+                     softwareModeRows.Contains(row) &&
+                     NativeKeyboardAssignment(row.ButtonId) is not null))
                 .ToArray();
-            var shortcutAssignmentRows = shortcutRows
-                .Where(row => _softwareTriggerResolver?.Invoke(row.ButtonId) is { } input &&
-                    RazerSoftwareMacroAssignmentPolicy.NeedsDeviceAssignment(input))
-                .ToArray();
+            // A shortcut row may still carry the firmware action a previous build
+            // wrote; its current assignment is what tells us to take the key back.
+            var shortcutAssignmentRows = shortcutRows;
 
             var backups = new List<AssignmentBackup>(
                 assignmentRows.Length + softwareAssignmentRows.Length + shortcutAssignmentRows.Length);
@@ -205,12 +206,24 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             foreach (var row in softwareAssignmentRows)
             {
                 var input = _softwareTriggerResolver!(row.ButtonId)!;
-                var (functionId, data) = BindingAssignment(input, row.ButtonId);
                 try
                 {
-                    await _transport.SetAssignmentAsync(
-                        row.ButtonId, Mode, functionId, data,
-                        cancellationToken).ConfigureAwait(true);
+                    if (RazerSoftwareMacroAssignmentPolicy.NeedsDeviceAssignment(input))
+                    {
+                        var (functionId, data) = BindingAssignment(input, row.ButtonId);
+                        await _transport.SetAssignmentAsync(
+                            row.ButtonId, Mode, functionId, data,
+                            cancellationToken).ConfigureAwait(true);
+                    }
+                    else if (backups.FirstOrDefault(item =>
+                                 ReferenceEquals(item.Row, row))?.Assignment is { } current &&
+                             NeedsNativeKeyboardAssignment(current) &&
+                             NativeKeyboardAssignment(row.ButtonId) is { } native)
+                    {
+                        await _transport.SetAssignmentAsync(
+                            row.ButtonId, Mode, native.FunctionId, native.Data,
+                            cancellationToken).ConfigureAwait(true);
+                    }
                 }
                 catch
                 {

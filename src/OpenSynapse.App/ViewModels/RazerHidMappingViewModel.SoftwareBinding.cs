@@ -158,6 +158,20 @@ public sealed partial class RazerHidMappingViewModel
                         .ConfigureAwait(true);
                 }
             }
+            else if (NativeKeyboardAssignment(row.ButtonId) is { } native)
+            {
+                assignment ??= await _transport.GetAssignmentAsync(
+                        row.ButtonId, Mode, cancellationToken)
+                    .ConfigureAwait(true);
+                if (NeedsNativeKeyboardAssignment(assignment) &&
+                    (assignment.FunctionId != native.FunctionId ||
+                     !assignment.Data.SequenceEqual(native.Data)))
+                {
+                    await _transport.SetAssignmentAsync(
+                            row.ButtonId, Mode, native.FunctionId, native.Data, cancellationToken)
+                        .ConfigureAwait(true);
+                }
+            }
 
             var error = await _softwareTriggerBinder(
                     macroId,
