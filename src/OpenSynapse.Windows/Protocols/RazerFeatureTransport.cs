@@ -464,7 +464,10 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
                     staleBusy = true;
                     lastError = $"The device is busy (0x01). want txn=0x{request[2]:X2}, class=0x{request[7]:X2}, command=0x{request[8]:X2}; received txn=0x{candidate[2]:X2}, class=0x{candidate[7]:X2}, command=0x{candidate[8]:X2}, len={candidate[6]}.";
                     diagnostic?.Invoke($"attempt {attempt}: stale busy receipt ({lastError})");
-                    break;
+                    // Another writer (a lighting frame pump) leaves its reply in the same
+                    // collection. Drain it here instead of re-sending on top of it; the
+                    // reply to this request is usually the next one in the buffer.
+                    continue;
                 }
                 if (classification == RazerResponseMatch.Mismatched)
                 {
