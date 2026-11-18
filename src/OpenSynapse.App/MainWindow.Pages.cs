@@ -98,6 +98,7 @@ public sealed partial class MainWindow
             sampler,
             CreateStudioArgbRouter(sampler),
             CreateStudioHeadsetRouter(sampler),
+            CreateStudioChromaRouter(sampler),
             _viewModel.RestoreLightingAfterExternalAsync);
         _studioDevicesDirty = true;
         return AddPage(page);

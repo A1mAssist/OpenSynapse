@@ -136,7 +136,12 @@ public sealed partial class MainWindow
                     $"{row.Connection.InstanceId}:{row.Connection.Definition.ProductId}:" +
                     $"{row.Connection.Definition.MatrixDimensions?.Rows}x" +
                     $"{row.Connection.Definition.MatrixDimensions?.Columns}:{row.Connection.IsReady}")) +
-        "#" + (_viewModel.RazerHid.ArgbConnection?.InstanceId ?? string.Empty);
+        "#" + (_viewModel.RazerHid.ArgbConnection?.InstanceId ?? string.Empty) +
+        "#" + string.Join(
+            "|",
+            _viewModel.Accessories.ChromaDevices
+                .OrderBy(row => row.Connection.DevicePath, StringComparer.OrdinalIgnoreCase)
+                .Select(row => $"{row.Connection.DevicePath}:{row.Connection.ProductId}"));
 
 #if DEBUG
     /// <summary>Lets background UI QA open a page without synthesizing pointer input.</summary>

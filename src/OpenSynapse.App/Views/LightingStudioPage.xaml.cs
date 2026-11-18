@@ -96,6 +96,7 @@ public sealed partial class LightingStudioPage : UserControl
         StudioInputSampler? inputSampler = null,
         StudioArgbOutputRouter? argbRouter = null,
         StudioHeadsetOutputRouter? headsetRouter = null,
+        StudioChromaStandardOutputRouter? chromaRouter = null,
         Func<Task>? restoreAfterExternal = null)
     {
         _viewModel?.Dispose();
@@ -104,7 +105,7 @@ public sealed partial class LightingStudioPage : UserControl
         _inputSampler = inputSampler;
         _viewModel = new LightingStudioViewModel(
             lighting, devices, matrixDevices, hidRouter, inputSampler, argbRouter,
-            headsetRouter, restoreAfterExternal);
+            headsetRouter, chromaRouter, restoreAfterExternal);
         StartStudioTimingIfRequested();
         StudioTimingAttachViewModel();
         RefreshDevicesWithTiming("initialize");

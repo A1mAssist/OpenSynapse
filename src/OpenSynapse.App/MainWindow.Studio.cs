@@ -76,6 +76,23 @@ public sealed partial class MainWindow
             }
         }
 
+        // Class-0x10 devices (mice, lamps, docks) have no frame channel on either
+        // stack; the studio drives them through one representative colour.
+        foreach (var chroma in _viewModel.Accessories.ChromaDevices)
+        {
+            var connection = chroma.Connection;
+            if (connection.ProductId == StudioArgbDevice.ProductId) continue;
+            options.Add(new StudioDeviceOption(
+                connection.Name,
+                null,
+                connection.DevicePath,
+                connection.ProductId,
+                1,
+                1,
+                IsSingleZone: true,
+                Category: CategoryName(connection.Category)));
+        }
+
         // Keyboards owned by the keyboard page join the canvas through a synthetic
         // matrix definition; their settings page stays unchanged.
         foreach (var keyboard in _viewModel.Accessories.KeyboardDevices)
@@ -162,6 +179,14 @@ public sealed partial class MainWindow
             () => ArgbStripSettings.Load(),
             (rows, columns) => sampler.Sample(rows, columns));
     }
+
+    private StudioChromaStandardOutputRouter CreateStudioChromaRouter(StudioInputSampler sampler) =>
+        new(
+            () => _viewModel.Accessories.ChromaDevices
+                .Select(row => row.Connection)
+                .Where(connection => connection.ProductId != StudioArgbDevice.ProductId)
+                .ToArray(),
+            (rows, columns) => sampler.Sample(rows, columns));
 
     internal void ForwardBladeMappingInput(BladeMappingInputEvent input)
     {

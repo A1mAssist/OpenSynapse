@@ -74,49 +74,6 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
     private bool _isPlaying;
     private int _disposed;
 
-    internal LightingStudioViewModel(
-        IBladeLightingController? lighting,
-        Func<IReadOnlyList<DeviceDescriptor>> devices,
-        Func<IReadOnlyList<StudioDeviceOption>>? matrixDevices = null,
-        StudioHidOutputRouter? hidRouter = null,
-        StudioInputSampler? inputSampler = null,
-        StudioArgbOutputRouter? argbRouter = null,
-        StudioHeadsetOutputRouter? headsetRouter = null,
-        Func<Task>? restoreAfterExternal = null)
-    {
-        _lighting = lighting;
-        _devices = devices ?? throw new ArgumentNullException(nameof(devices));
-        _matrixDevices = matrixDevices;
-        _hidRouter = hidRouter;
-        _argbRouter = argbRouter;
-        _headsetRouter = headsetRouter;
-        _inputSampler = inputSampler;
-        _restoreAfterExternal = restoreAfterExternal;
-        _dispatcher = DispatcherQueue.GetForCurrentThread();
-        if (_hidRouter is not null)
-        {
-            _hidRouter.WriteFailed += OnOutputWriteFailed;
-            _hidRouter.RestoreFailed += OnHidRestoreFailed;
-        }
-        if (_argbRouter is not null) _argbRouter.WriteFailed += OnOutputWriteFailed;
-        if (_headsetRouter is not null) _headsetRouter.WriteFailed += OnOutputWriteFailed;
-        if (_lighting is not null) _lighting.RestoreFailed += OnHidRestoreFailed;
-
-        _project = StudioProject.CreateDefault();
-        LocalizeDefaultProject(_project);
-        _history = new StudioHistory(_project);
-        Layers.CollectionChanged += OnLayersChanged;
-        LoadLocalizedChoices();
-
-        AttachProfile(_project.SelectedProfile);
-        SyncLayersFromProfile();
-        _selectedLayer = Layers.FirstOrDefault();
-        RefreshRegionChoices();
-        // The first screen must already show Ambient/Audio/Generate instead of a black frame.
-        _ = EnsureInputAsync();
-        _ = EnsureMediaSamplerAsync();
-    }
-
     internal void RefreshLocalization()
     {
         LoadLocalizedChoices();
@@ -479,8 +436,11 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
 
     public async Task ApplyAsync()
     {
-        if (_isBusy || (_lighting is null && _hidRouter is null && _argbRouter is null && _headsetRouter is null))
+        if (_isBusy || (_lighting is null && _hidRouter is null && _argbRouter is null &&
+            _headsetRouter is null && _chromaRouter is null))
+        {
             return;
+        }
         var applied = new List<string>();
         var startOutputPump = false;
         IsBusy = true;
@@ -550,6 +510,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
             }
 
             await ApplyArgbAsync(applied, startOutputPump);
+            ApplyChroma(applied, ref startOutputPump);
             if (await ApplyHeadsetAsync(applied) && !startOutputPump)
             {
                 StartOutputPump();
