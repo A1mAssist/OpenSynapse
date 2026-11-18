@@ -19,9 +19,12 @@ public sealed partial class RazerChromaStandardService
     internal static IReadOnlyList<RazerChromaDeviceConnection> SelectConnections(
         IEnumerable<WindowsHidDiscovery.HidInterfaceDescriptor> interfaces) =>
         interfaces
-            // The official Chroma manifest is the allowlist; curated entries keep their names.
+            // Curated class-0x10 devices keep their names. The manifest is the
+            // fallback only for devices with no native definition: a native
+            // definition without lighting builders (Viper V2 Pro) is not a light.
             .Where(item => Products.ContainsKey(item.ProductId) ||
-                ChromaDeviceCatalog.Resolve(item.ProductId) is not null)
+                (ChromaDeviceCatalog.Resolve(item.ProductId) is not null &&
+                 RazerHidDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null))
             // A native definition only owns the lighting when it can actually write it.
             // Catalog clones that keep DPI/polling and drop the lighting builders (Basilisk
             // V4 family and friends) used to vanish from both stacks: the native page had
