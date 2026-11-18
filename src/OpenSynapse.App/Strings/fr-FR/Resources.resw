@@ -4211,7 +4211,7 @@ Les modifications de macro non enregistrées seront perdues.</value></data>
   <data name="LightingStudioStudioGenerateBlendPatternLerpGT20Color1" xml:space="preserve"><value>Motif interpolé au-dessus de 20 %, sinon première couleur</value></data>
   <data name="LightingStudioStudioGenerateBlendMix3ColorsLerp" xml:space="preserve"><value>Mélanger et interpoler trois couleurs</value></data>
   <data name="LightingStudioStudioGenerateBlendPatternMixColorsLerp" xml:space="preserve"><value>Motif avec couleurs mélangées et interpolées</value></data>
-  <data name="ShellLocalDeviceControl" xml:space="preserve"><value>CONTRÔLE LOCAL DE L’APPAREIL</value></data>
+  <data name="ShellLocalDeviceControl" xml:space="preserve"><value>LOCAL DEVICE CONTROL</value></data>
   <data name="AboutWindowCredit" xml:space="preserve"><value>Réalisé avec ❤ en C# par A1mAssist.</value></data>
   <data name="OverviewMemoryLabel" xml:space="preserve"><value>MÉMOIRE</value></data>
   <data name="OverviewStorageLabel" xml:space="preserve"><value>STOCKAGE</value></data>
