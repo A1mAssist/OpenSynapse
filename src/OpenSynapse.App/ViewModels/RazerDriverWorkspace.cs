@@ -71,6 +71,8 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
         StatusText = AppStrings.Text("RazerDriverChecking");
         try
         {
+            // The user asked for a check, so it must reflect the current topology.
+            WindowsHidDiscovery.InvalidateInterfaceCache();
             var interfaces = await WindowsHidDiscovery.FindVendorInterfacesAsync(
                 0x1532,
                 cancellationToken).ConfigureAwait(true);

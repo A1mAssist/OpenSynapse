@@ -1,6 +1,7 @@
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using OpenSynapse.App.ViewModels;
+using OpenSynapse.Windows.Devices;
 using System.Runtime.InteropServices;
 
 namespace OpenSynapse.App;
@@ -134,6 +135,7 @@ internal sealed class DisplayPowerNotification
         if (message == WmDeviceChange &&
             (unchecked((nuint)wParam.ToInt64()) is DbtDeviceArrival or DbtDeviceRemoveComplete or DbtDevNodesChanged))
         {
+            WindowsHidDiscovery.InvalidateInterfaceCache();
             _viewModel.Refresh.RequestDeviceRefresh();
         }
 
@@ -217,6 +219,7 @@ internal sealed class DisplayPowerNotification
                 return;
             }
             _systemSuspended = false;
+            WindowsHidDiscovery.InvalidateInterfaceCache();
             _viewModel.Refresh.RequestDeviceRefresh();
             QueueDisplayTransition(suspending: false);
             _dispatcherQueue.TryEnqueue(ReplayCpuPowerLimitAfterResume);
