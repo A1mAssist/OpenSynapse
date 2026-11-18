@@ -15,6 +15,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
 {
     private static readonly TimeSpan BatteryRefreshInterval = TimeSpan.FromSeconds(10);
     private DateTimeOffset _lastBatteryRefresh;
+    private DateTimeOffset _lastSlowCardLoad;
 
     public Task LoadBasicStateAsync(CancellationToken cancellationToken = default) =>
         !IsReady || RequiresRescan
@@ -66,10 +67,6 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             }
             OnBasicStateChanged();
             await LoadMappingIfNeededAsync(cancellationToken);
-            // Each optional card reports its own failure. Letting one of them throw
-            // here would label the whole device "channel read failed" while the basic
-            // state and the key map were already read.
-            await LoadOptionalCardsAsync(cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -82,6 +79,35 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         {
             IsBasicBusy = false;
         }
+    }
+
+    /// <summary>
+    /// Optional cards are read on selection and then at most every ten seconds. The
+    /// one-second refresh used to re-read every profile name and card and kept the
+    /// keyboard busy while the user was writing a setting.
+    /// </summary>
+    internal Task LoadSlowCardsAsync(
+        bool force = false,
+        CancellationToken cancellationToken = default) =>
+        !IsReady || RequiresRescan
+            ? Task.CompletedTask
+            : _service.RunExclusiveAsync(
+                Connection,
+                token => LoadSlowCardsCoreAsync(force, token),
+                cancellationToken);
+
+    private async Task LoadSlowCardsCoreAsync(
+        bool force,
+        CancellationToken cancellationToken)
+    {
+        if (!force &&
+            DateTimeOffset.UtcNow - _lastSlowCardLoad < TimeSpan.FromSeconds(10))
+        {
+            return;
+        }
+
+        _lastSlowCardLoad = DateTimeOffset.UtcNow;
+        await LoadOptionalCardsAsync(cancellationToken);
     }
 
     // Static so the poll that runs this every second allocates nothing.
