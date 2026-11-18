@@ -36,19 +36,65 @@ public sealed partial class WindowsHidDiscovery : IDeviceDiscovery
             () => discovery.Discover(cancellationToken, collapseProductIds: false), cancellationToken));
     }
 
+    private const long InterfaceCacheMilliseconds = 60_000;
+    private static readonly object InterfaceCacheGate = new();
+    private static readonly Dictionary<(ushort VendorId, ushort? FeatureReportLength),
+        (long At, IReadOnlyList<HidInterfaceDescriptor> Items)> s_interfaceCache = new();
+
+    /// <summary>
+    /// WM_DEVICECHANGE and resume are the only events that change the HID topology,
+    /// so the vendor enumeration is cached and callers stop re-probing every refresh.
+    /// </summary>
+    public static void InvalidateInterfaceCache()
+    {
+        lock (InterfaceCacheGate)
+        {
+            s_interfaceCache.Clear();
+        }
+    }
+
     internal static Task<IReadOnlyList<HidInterfaceDescriptor>> FindVendorFeatureInterfacesAsync(
         ushort vendorId,
         ushort featureReportLength,
         CancellationToken cancellationToken = default,
         Action<HidInterfaceDescriptor>? observeInterface = null) =>
-        Task.Run(() => FindVendorFeatureInterfaces(
-            vendorId, featureReportLength, cancellationToken, observeInterface), cancellationToken);
+        FindVendorInterfacesCachedAsync(vendorId, featureReportLength, cancellationToken, observeInterface);
 
     internal static Task<IReadOnlyList<HidInterfaceDescriptor>> FindVendorInterfacesAsync(
         ushort vendorId,
         CancellationToken cancellationToken = default,
         Action<HidInterfaceDescriptor>? observeInterface = null) =>
-        Task.Run(() => FindVendorFeatureInterfaces(vendorId, null, cancellationToken, observeInterface), cancellationToken);
+        FindVendorInterfacesCachedAsync(vendorId, null, cancellationToken, observeInterface);
+
+    private static Task<IReadOnlyList<HidInterfaceDescriptor>> FindVendorInterfacesCachedAsync(
+        ushort vendorId,
+        ushort? featureReportLength,
+        CancellationToken cancellationToken,
+        Action<HidInterfaceDescriptor>? observeInterface)
+    {
+        var key = (vendorId, featureReportLength);
+        lock (InterfaceCacheGate)
+        {
+            if (s_interfaceCache.TryGetValue(key, out var cached) &&
+                Environment.TickCount64 - cached.At < InterfaceCacheMilliseconds)
+            {
+                // Observations are diagnostics for the probe itself; replaying them
+                // on every cache hit would restore the log spam this removes.
+                return Task.FromResult(cached.Items);
+            }
+        }
+
+        return Task.Run(() =>
+        {
+            var items = FindVendorFeatureInterfaces(
+                vendorId, featureReportLength, cancellationToken, observeInterface);
+            lock (InterfaceCacheGate)
+            {
+                s_interfaceCache[key] = (Environment.TickCount64, items);
+            }
+            return items;
+        }, cancellationToken);
+    }
 
     public static Task<string?> TryReadSerialNumberAsync(string devicePath, CancellationToken cancellationToken = default) =>
         Task.Run(() => TryReadSerialNumber(devicePath), cancellationToken);
