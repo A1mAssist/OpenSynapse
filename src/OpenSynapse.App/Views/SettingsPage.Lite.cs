@@ -9,6 +9,7 @@ public sealed partial class SettingsPage
     internal void SetLiteMode(bool liteMode)
     {
         var visibility = liteMode ? Visibility.Collapsed : Visibility.Visible;
+        HomeLayoutCard.Visibility = visibility;
         AdvancedFeaturesCard.Visibility = visibility;
         ModeNotificationCard.Visibility = visibility;
         PerformanceOverlayCard.Visibility = visibility;

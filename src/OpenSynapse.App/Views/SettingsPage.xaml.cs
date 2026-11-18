@@ -40,6 +40,12 @@ public sealed partial class SettingsPage : UserControl
     private MainViewModel ViewModel => (MainViewModel)DataContext;
     private CancellationToken Lifetime => Host.LifetimeToken;
 
+    private void CustomizeHomeClick(object sender, RoutedEventArgs e)
+    {
+        ViewModel.Home.BeginEdit();
+        Host.RequestNavigation("overview");
+    }
+
     public SettingsPage()
     {
         InitializeComponent();

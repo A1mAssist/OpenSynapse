@@ -128,24 +128,6 @@ public sealed partial class OverviewPage : UserControl
             }
             HomeCardsPanel.Children.Add(card);
         }
-        var editButton = HomeCardsPanel.Children.OfType<Button>().FirstOrDefault(button => Microsoft.UI.Xaml.Automation.AutomationProperties.GetAutomationId(button) == "HomeCustomizeButton");
-        if (editButton is not null)
-        {
-            HomeCardsPanel.Children.Remove(editButton);
-            // The loop leaves row/column at the next free cell. The button spans both
-            // columns, so a half-filled row needs the next one; telemetry already
-            // advanced row on its own.
-            if (column != 0)
-            {
-                row++;
-                column = 0;
-            }
-            HomeCardsPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            Grid.SetRow(editButton, row);
-            Grid.SetColumn(editButton, 0);
-            Grid.SetColumnSpan(editButton, 2);
-            HomeCardsPanel.Children.Add(editButton);
-        }
         VisibilityChanged?.Invoke();
     }
 
@@ -157,7 +139,6 @@ public sealed partial class OverviewPage : UserControl
         }
     }
 
-    private void EditHomeClick(object sender, RoutedEventArgs e) => _viewModel?.Home.BeginEdit();
     private void CancelHomeClick(object sender, RoutedEventArgs e) => _viewModel?.Home.CancelEdit();
     private async void SaveHomeClick(object sender, RoutedEventArgs e)
     {

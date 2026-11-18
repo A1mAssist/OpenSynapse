@@ -26,6 +26,15 @@
                     </Grid>
                   </StackPanel>
                 </Border>
+                <Border x:Name="HomeLayoutCard" Style="{StaticResource CardStyle}" Padding="16">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                    <StackPanel Spacing="4">
+                      <TextBlock local:Localized.Uid="HomeCustomizeTitle" Text="Customize home" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="HomeCustomizeDescription" Text="Choose which cards appear and arrange them." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Button local:Localized.Uid="HomeCustomize" Content="Customize home" Grid.Column="1" Click="CustomizeHomeClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" AutomationProperties.AutomationId="SettingsCustomizeHomeButton" />
+                  </Grid>
+                </Border>
                 <Border x:Name="LiteModeCard" Style="{StaticResource CardStyle}" Padding="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                     <StackPanel Spacing="4">
