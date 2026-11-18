@@ -4652,4 +4652,8 @@
   <data name="ProfileBrowseApplication.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>选择 exe 并绑定到所选设备</value></data>
   <data name="ProfileBrowseApplication.Content" xml:space="preserve"><value>exe…</value></data>
   <data name="AppLanguageTraditionalChinese.Content" xml:space="preserve"><value>繁體中文</value></data>
+  <data name="AppLanguageJapanese.Content" xml:space="preserve"><value>日本語</value></data>
+  <data name="AppLanguageKorean.Content" xml:space="preserve"><value>한국어</value></data>
+  <data name="AppLanguageGerman.Content" xml:space="preserve"><value>Deutsch</value></data>
+  <data name="AppLanguageFrench.Content" xml:space="preserve"><value>Français</value></data>
 </root>
