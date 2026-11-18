@@ -46,6 +46,7 @@ public static class RazerHidMappingFunctions
     public const byte RazerKey = 0x11;
     public const byte ScrollWheelMode = 0x12;
     public const byte Win8ShortcutsKey = 0x15;
+    public const byte Perfect180 = 0x16;
 }
 
 public enum RazerHidBackendCapability

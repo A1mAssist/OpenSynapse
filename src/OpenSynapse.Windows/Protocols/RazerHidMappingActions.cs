@@ -320,6 +320,7 @@ public static partial class RazerHidMappingActions
         RazerHidMappingFunctions.Win8ShortcutsKey when data.Count > 0 =>
             WindowsShortcutName(functionId, data) ?? $"Shortcut {data[0]}",
         RazerHidMappingFunctions.ModeButtonkey => "HyperShift",
+        RazerHidMappingFunctions.Perfect180 => "Perfect 180",
         RazerHidMappingFunctions.TurboModeButton when data.Count > 0 =>
             $"Turbo {DescribeButton(data[0])}",
         RazerHidMappingFunctions.TurboModeKey when data.Count >= 2 =>

@@ -273,6 +273,7 @@ public sealed class RazerViperMappingActionCatalog : IRazerMappingActionCatalog
                 RazerHidMappingGroup.TurboKey,
             ViperMappingActionGroup.Turbo when definition.Function == ViperButtonMappingFunction.MouseTurbo =>
                 RazerHidMappingGroup.TurboButton,
+            ViperMappingActionGroup.Perfect180 => RazerHidMappingGroup.MouseButton,
             _ => null,
         };
 

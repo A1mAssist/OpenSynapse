@@ -28,6 +28,7 @@ public enum ViperObmFunctionId : byte
     RazerKey = 17,
     ScrollWheelMode = 18,
     WindowsShortcutsKey = 21,
+    Perfect180 = 22,
 }
 
 public sealed record ViperObmAssignment(
@@ -249,6 +250,11 @@ public static class ViperObmProtocol
             ViperObmFunctionId.ScrollWheelMode => data.Count == 1 && data[0] is 2 or 3 or 4 or 5,
             ViperObmFunctionId.WindowsShortcutsKey => data.Count == 1 &&
                 Enum.IsDefined((RazerGamepadWindowsShortcut)data[0]),
+            // direction (0 right / 1 left), 16-bit report count, enabled flag
+            ViperObmFunctionId.Perfect180 => data.Count == 4 &&
+                data[0] is 0 or 1 &&
+                ((data[1] << 8) | data[2]) is >= 100 and <= 5000 &&
+                data[3] is 0 or 1,
             _ => false,
         };
 

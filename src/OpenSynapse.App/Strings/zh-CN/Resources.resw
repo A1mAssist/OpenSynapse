@@ -3628,6 +3628,7 @@
   <data name="ViperMappingGroupHyperShift" xml:space="preserve"><value>HyperShift</value></data>
   <data name="ViperMappingGroupTurbo" xml:space="preserve"><value>Turbo</value></data>
   <data name="ViperMappingDpiUp" xml:space="preserve"><value>DPI 上</value></data>
+  <data name="ViperMappingPerfect180" xml:space="preserve"><value>完美 180</value></data>
   <data name="ViperMappingDpiDown" xml:space="preserve"><value>DPI 下</value></data>
   <data name="ViperMappingDpiCycleDown" xml:space="preserve"><value>DPI 循环下</value></data>
   <data name="ViperMappingDpiClutch" xml:space="preserve"><value>DPI 离合</value></data>

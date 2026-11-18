@@ -505,6 +505,7 @@ internal sealed class ViperTelemetryReader
             ViperButtonMappingFunction.RazerKey => ViperObmFunctionId.RazerKey,
             ViperButtonMappingFunction.ScrollWheelMode => ViperObmFunctionId.ScrollWheelMode,
             ViperButtonMappingFunction.WindowsShortcut => ViperObmFunctionId.WindowsShortcutsKey,
+            ViperButtonMappingFunction.Perfect180 => ViperObmFunctionId.Perfect180,
             _ => throw new NotSupportedException("Product 184 does not support this mapping function."),
         };
         var snapshot = new ViperObmAssignment(
@@ -547,6 +548,7 @@ internal sealed class ViperTelemetryReader
             ViperObmFunctionId.RazerKey => true,
             ViperObmFunctionId.ScrollWheelMode => true,
             ViperObmFunctionId.WindowsShortcutsKey => true,
+            ViperObmFunctionId.Perfect180 => true,
             _ => false,
         };
         if (!bundleAligned)
@@ -587,6 +589,7 @@ internal sealed class ViperTelemetryReader
                 ViperObmFunctionId.RazerKey => ViperButtonMappingFunction.RazerKey,
                 ViperObmFunctionId.ScrollWheelMode => ViperButtonMappingFunction.ScrollWheelMode,
                 ViperObmFunctionId.WindowsShortcutsKey => ViperButtonMappingFunction.WindowsShortcut,
+                ViperObmFunctionId.Perfect180 => ViperButtonMappingFunction.Perfect180,
                 // Unknown ids stay raw so the row renders as "Function NN" instead of
                 // failing every other mapping on the device.
                 _ => (ViperButtonMappingFunction)(byte)assignment.Function,
