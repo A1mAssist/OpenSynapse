@@ -254,8 +254,17 @@ public sealed partial class DevicesPage : UserControl
             await ViewModel.Display.ApplyInternalDisplayRefreshRateAsync(Lifetime);
                 break;
             case "nativeDisplayMode":
+            {
+                var target = combo.SelectedIndex;
                 await ViewModel.Blade.ApplyNativeDisplayModeAsync(Lifetime);
+                // Razer's own panel-mode write is followed by a system restart; the
+                // new native resolution only lands after the display stack re-enumerates.
+                if (ViewModel.Blade.NativeDisplayModeIndex == target)
+                {
+                    await ShowDisplayMuxRestartPromptAsync();
+                }
                 break;
+            }
             case "timeToDim":
                 await ViewModel.Blade.ApplyTimeToDimAsync(Lifetime);
                 break;
