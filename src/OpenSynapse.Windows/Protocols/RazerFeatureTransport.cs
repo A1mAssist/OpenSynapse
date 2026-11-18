@@ -200,6 +200,8 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
         new(StringComparer.OrdinalIgnoreCase);
     private const int MaxQueryAttempts = 5;
     private const int MaxReadAttempts = 10;
+    private const int ErrorTimeout = 1460;
+    private static readonly TimeSpan NativeCallTimeout = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan ReadRetryDelay = TimeSpan.FromMilliseconds(5);
     private static readonly TimeSpan QueryRetryDelay = TimeSpan.FromMilliseconds(10);
 
@@ -418,6 +420,9 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
                 .ConfigureAwait(false);
             if (!setResult.Success)
             {
+                if (setResult.Error == ErrorTimeout)
+                    throw new RazerDeviceTimeoutException(
+                        "The HID feature write did not complete; the endpoint is not answering.");
                 lastError = new Win32Exception(setResult.Error).Message;
                 diagnostic?.Invoke($"attempt {attempt}: HidD_SetFeature failed, win32={setResult.Error} ({lastError})");
                 await WaitAsync(QueryRetryDelay, directIo, cancellationToken).ConfigureAwait(false);
@@ -441,6 +446,9 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
                     .ConfigureAwait(false);
                 if (!getResult.Success)
                 {
+                    if (getResult.Error == ErrorTimeout)
+                        throw new RazerDeviceTimeoutException(
+                            "The HID feature read did not complete; the endpoint is not answering.");
                     readError = new Win32Exception(getResult.Error).Message;
                     break;
                 }
@@ -562,11 +570,20 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
             return (success, Marshal.GetLastWin32Error());
         }
 
-        return await Task.Run(() =>
+        try
         {
-            var success = NativeMethods.HidD_SetFeature(handle, request, request.Length);
-            return (Success: success, Error: Marshal.GetLastWin32Error());
-        }, cancellationToken).ConfigureAwait(false);
+            return await CancellableNativeCall.RunAsync(() =>
+            {
+                var success = NativeMethods.HidD_SetFeature(handle, request, request.Length);
+                return (Success: success, Error: Marshal.GetLastWin32Error());
+            }, NativeCallTimeout, cancellationToken).ConfigureAwait(false);
+        }
+        catch (TimeoutException)
+        {
+            // A wedged endpoint keeps the request queued in the HID driver and every
+            // later call queues behind it, so the attempt has to fail instead of wait.
+            return (false, ErrorTimeout);
+        }
     }
 
     private static async Task<(bool Success, int Error)> GetFeatureAsync(
@@ -582,11 +599,18 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
             return (success, Marshal.GetLastWin32Error());
         }
 
-        return await Task.Run(() =>
+        try
         {
-            var success = NativeMethods.HidD_GetFeature(handle, request, request.Length);
-            return (Success: success, Error: Marshal.GetLastWin32Error());
-        }, cancellationToken).ConfigureAwait(false);
+            return await CancellableNativeCall.RunAsync(() =>
+            {
+                var success = NativeMethods.HidD_GetFeature(handle, request, request.Length);
+                return (Success: success, Error: Marshal.GetLastWin32Error());
+            }, NativeCallTimeout, cancellationToken).ConfigureAwait(false);
+        }
+        catch (TimeoutException)
+        {
+            return (false, ErrorTimeout);
+        }
     }
 
     private static async Task WaitAsync(
