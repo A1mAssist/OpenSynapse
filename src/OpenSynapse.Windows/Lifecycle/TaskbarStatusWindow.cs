@@ -393,6 +393,21 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         }
         surface.LayoutFailures = 0;
 
+        // Explorer raises its own content bridge when Start or a flyout opens; a
+        // child strip below it is painted over. Re-assert the top of the child band.
+        if (surface.IsChild)
+        {
+            var above = GetWindow(surface.Window, GwHwndPrev);
+            if (above != IntPtr.Zero && IsWindowVisible(above))
+            {
+                SetWindowPos(
+                    surface.Window,
+                    IntPtr.Zero,
+                    0, 0, 0, 0,
+                    SwpNoMove | SwpNoSize | SwpNoActivate);
+            }
+        }
+
         if (!surface.IsChild)
         {
             var origin = new Point { X = x, Y = y };
