@@ -489,9 +489,17 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
             var blade = Devices.FirstOrDefault(device =>
                 device.IsBlade || (device.Descriptor is not null &&
                     DeviceProtocolFamilies.UsesBladeMatrix(device.Descriptor.ProtocolFamily)));
-            if (_inputSampler is not null && NeedsLiveInput())
+            if (_inputSampler is not null)
             {
-                await _inputSampler.StartAsync(CancellationToken.None);
+                if (NeedsLiveInput())
+                {
+                    await _inputSampler.StartAsync(CancellationToken.None);
+                }
+                else
+                {
+                    // Switching away from an audio/ambient layer must release the capture.
+                    await _inputSampler.StopAsync();
+                }
             }
 
             if (_lighting is not null && blade is not null)

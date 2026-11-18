@@ -51,7 +51,9 @@ internal sealed class StudioInputSampler : ILightingInputAdapter
             ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
             if (Volatile.Read(ref _started))
             {
-                throw new InvalidOperationException("Studio input sampling is already running.");
+                // Apply and the layer editors share one sampler; a live session is exactly
+                // what they are asking for, so a second start is a no-op rather than a failure.
+                return;
             }
 
             var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
