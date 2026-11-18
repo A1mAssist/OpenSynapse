@@ -4,7 +4,7 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerMappingAssetService
 {
-    private sealed record AssetManifest(string? MainJs, string? Image3x, string? Svg)
+    private sealed record AssetManifest(string? MainJs, IReadOnlyList<string> Images3x, string? Svg)
     {
         public static AssetManifest? Parse(string json)
         {
@@ -18,7 +18,7 @@ public sealed partial class RazerMappingAssetService
                 }
 
                 string? mainJs = null;
-                string? image = null;
+                var images = new List<string>();
                 string? svg = null;
                 foreach (var property in files.EnumerateObject())
                 {
@@ -26,10 +26,11 @@ public sealed partial class RazerMappingAssetService
                     {
                         mainJs = Value(property.Value);
                     }
-                    else if (image is null &&
-                        IsPrd3x(property.Name))
+                    else if (IsPrd3x(property.Name) &&
+                        Value(property.Value) is { Length: > 0 } image &&
+                        !images.Contains(image, StringComparer.OrdinalIgnoreCase))
                     {
-                        image = Value(property.Value);
+                        images.Add(image);
                     }
                     else if (svg is null &&
                         property.Name.Equals("static/media/prd.svg", StringComparison.OrdinalIgnoreCase))
@@ -38,7 +39,7 @@ public sealed partial class RazerMappingAssetService
                     }
                 }
 
-                return new AssetManifest(mainJs, image, svg);
+                return new AssetManifest(mainJs, images, svg);
             }
             catch (JsonException)
             {

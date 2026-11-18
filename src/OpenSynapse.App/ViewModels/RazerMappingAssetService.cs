@@ -144,8 +144,13 @@ public sealed partial class RazerMappingAssetService
             if (scriptPath is not null)
             {
                 var script = await File.ReadAllTextAsync(scriptPath, cancellationToken).ConfigureAwait(false);
-                bundle = RazerMappingBundleParser.Parse(script, manifest.Image3x);
+                bundle = RazerMappingBundleParser.Parse(script);
                 if (bundle is null || !IsExpectedBundle(productId, bundle)) return null;
+                bundle = bundle with
+                {
+                    Image3x = await SelectProductImageAsync(
+                        productId, manifest.Images3x, cancellationToken).ConfigureAwait(false),
+                };
                 if (bundle.Image3x is { Length: > 0 } image)
                 {
                     var imagePath = await CacheRemoteFileAsync(
@@ -273,7 +278,14 @@ public sealed partial class RazerMappingAssetService
         CancellationToken cancellationToken)
     {
         var manifest = await ReadAssetManifestAsync(productId, cancellationToken).ConfigureAwait(false);
-        if (manifest?.Image3x is not { Length: > 0 } image)
+        if (manifest is null)
+        {
+            return null;
+        }
+
+        var image = await SelectProductImageAsync(productId, manifest.Images3x, cancellationToken)
+            .ConfigureAwait(false);
+        if (image is not { Length: > 0 })
         {
             return null;
         }
