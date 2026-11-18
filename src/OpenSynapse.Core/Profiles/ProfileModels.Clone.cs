@@ -16,6 +16,7 @@ public sealed partial class ProfileDefinition
             Shortcuts = Shortcuts.Clone(),
             LightingColorPresets = LightingColorPresets.Select(preset => preset.Clone()).ToList(),
             Macros = Macros.Select(macro => macro.Clone()).ToList(),
+            SystemMacros = SystemMacros.Select(macro => macro.Clone()).ToList(),
         };
         foreach (var (key, settings) in Devices)
         {

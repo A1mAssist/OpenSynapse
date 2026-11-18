@@ -285,7 +285,21 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
             softwareTriggerResolver: buttonId =>
                 RazerKeyboardMacroTriggerResolver.Resolve(buttonId, _connection.ProductId),
             softwareTriggerBinder: SoftwareMacroBinder,
-            softwareTriggerClearer: SoftwareMacroClearer);
+            softwareTriggerClearer: SoftwareMacroClearer,
+            systemMacros: ActiveSystemMacros);
+
+    private IReadOnlyList<OpenSynapse.Core.Macros.MacroDefinition> ActiveSystemMacros()
+    {
+        if (_getProfile is null)
+        {
+            return [];
+        }
+
+        var document = _getProfile();
+        return document.Profiles.TryGetValue(document.ActiveProfileName, out var active)
+            ? OpenSynapse.Core.Macros.SoftwareShortcutCatalog.Bindings(active.SystemMacros)
+            : [];
+    }
 
     private RazerKeyboardService MappingService => _mappingService ??= OpenService();
 

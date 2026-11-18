@@ -765,7 +765,7 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         _macroRuntime.SetPlaybackShortcuts(
             profile.Shortcuts.MacroPlaybackStart,
             profile.Shortcuts.MacroPlaybackStop);
-        _macroRuntime.UpdateMacros(profile.Macros);
+        _macroRuntime.UpdateMacros(profile.Macros.Concat(SystemShortcuts));
         OnPropertyChanged(nameof(CanPlayMacro));
         OnPropertyChanged(nameof(MacroPlaybackShortcutText));
         MacrosChanged?.Invoke();

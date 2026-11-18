@@ -5,6 +5,13 @@ namespace OpenSynapse.App.ViewModels;
 public sealed partial class MacroWorkspace
 {
     /// <summary>
+    /// Built-in actions with their saved bindings. Not part of <see cref="Items"/>:
+    /// the macro editor only ever shows the user's own library.
+    /// </summary>
+    public IReadOnlyList<MacroDefinition> SystemShortcuts =>
+        SoftwareShortcutCatalog.Bindings(_getActiveProfile().SystemMacros);
+
+    /// <summary>
     /// Binds a private Razer key through the device workspace, which owns the
     /// assignment backup and the Off write. Null keeps the local trigger path.
     /// </summary>

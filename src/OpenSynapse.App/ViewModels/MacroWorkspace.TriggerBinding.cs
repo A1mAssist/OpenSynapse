@@ -77,7 +77,15 @@ public sealed partial class MacroWorkspace
             StringComparer.Ordinal.Equals(item.Id, macroId));
         if (row is null)
         {
-            return AppStrings.Text("MacroTriggerMacroMissing");
+            return SoftwareShortcutCatalog.ActionOf(macroId) is { } shortcut
+                ? await TryApplyShortcutBindingAsync(
+                        shortcut,
+                        input,
+                        hyperShiftLayer,
+                        softwareBinding,
+                        cancellationToken)
+                    .ConfigureAwait(true)
+                : AppStrings.Text("MacroTriggerMacroMissing");
         }
 
         if (IsMacroRecording || IsMacroCountdown)
@@ -166,6 +174,15 @@ public sealed partial class MacroWorkspace
     {
         var row = Items.FirstOrDefault(item =>
             StringComparer.Ordinal.Equals(item.Id, macroId));
+        if (row is null)
+        {
+            return SoftwareShortcutCatalog.ActionOf(macroId) is null
+                ? null
+                : await TryClearShortcutTriggerAsync(
+                        macroId, input, hyperShiftLayer, cancellationToken)
+                    .ConfigureAwait(true);
+        }
+
         var trigger = row?.Definition.FindTrigger(input, MacroModifierKeys.None, hyperShiftLayer);
         return row is null || trigger is null
             ? null
@@ -178,10 +195,157 @@ public sealed partial class MacroWorkspace
     {
         var row = Items.FirstOrDefault(item =>
             StringComparer.Ordinal.Equals(item.Id, macroId));
+        if (row is null && SoftwareShortcutCatalog.ActionOf(macroId) is not null)
+        {
+            return TryClearShortcutTriggersAsync(macroId, cancellationToken);
+        }
+
         var triggers = row?.Definition.AllTriggers.ToArray() ?? [];
         return triggers.Length == 0
             ? Task.FromResult<string?>(null)
             : ClearMacroTriggersAsync(row!, triggers, cancellationToken);
+    }
+
+    /// <summary>
+    /// A built-in action ignores the trigger/playback choice: the mapping page
+    /// only needs the button and the original assignment it has to restore.
+    /// </summary>
+    private async Task<string?> TryApplyShortcutBindingAsync(
+        SoftwareShortcutAction action,
+        MacroInput input,
+        bool hyperShiftLayer,
+        MacroSoftwareBinding? softwareBinding,
+        CancellationToken cancellationToken)
+    {
+        if (IsMacroRecording || IsMacroCountdown)
+        {
+            return AppStrings.Text("MacroEditBusy");
+        }
+
+        var profile = _getActiveProfile();
+        var stored = profile.SystemMacros.FirstOrDefault(item =>
+            StringComparer.Ordinal.Equals(item.Id, action.MacroId));
+        var added = stored is null;
+        stored ??= action.CreateMacro();
+        var previousTrigger = stored.Trigger;
+        var previousAdditional = CloneTriggers(stored.AdditionalTriggers);
+        var previousBinding = stored.SoftwareBinding?.Clone();
+        var trigger = stored.FindTrigger(input, MacroModifierKeys.None, hyperShiftLayer);
+        if (trigger is null)
+        {
+            trigger = new MacroTrigger
+            {
+                Input = input.Clone(),
+                Mode = MacroTriggerMode.Press,
+                HyperShiftLayer = hyperShiftLayer,
+            };
+            stored.AdditionalTriggers.Add(trigger);
+        }
+
+        trigger.Mode = MacroTriggerMode.Press;
+        trigger.SoftwareBinding = softwareBinding?.Clone();
+        stored.PlaybackMode = MacroPlaybackMode.Once;
+        stored.RepeatCount = 1;
+        if (added)
+        {
+            profile.SystemMacros.Add(stored);
+        }
+
+        if (!await TrySaveMacroProfileAsync(cancellationToken, prepareDirtyMacros: false)
+                .ConfigureAwait(true))
+        {
+            stored.Trigger = previousTrigger;
+            stored.AdditionalTriggers = previousAdditional;
+            stored.SoftwareBinding = previousBinding;
+            if (added)
+            {
+                profile.SystemMacros.Remove(stored);
+            }
+
+            return AppStrings.Text("MacroSaveFailed");
+        }
+
+        RefreshMacroRuntime();
+        return null;
+    }
+
+    private async Task<string?> TryClearShortcutTriggerAsync(
+        string macroId,
+        MacroInput input,
+        bool hyperShiftLayer,
+        CancellationToken cancellationToken)
+    {
+        var stored = FindSystemMacro(macroId);
+        var trigger = stored?.FindTrigger(input, MacroModifierKeys.None, hyperShiftLayer);
+        return stored is null || trigger is null
+            ? null
+            : await RemoveSystemMacroTriggersAsync(stored, [trigger], cancellationToken)
+                .ConfigureAwait(true);
+    }
+
+    private Task<string?> TryClearShortcutTriggersAsync(
+        string macroId,
+        CancellationToken cancellationToken)
+    {
+        var stored = FindSystemMacro(macroId);
+        return stored is null || !stored.AllTriggers.Any()
+            ? Task.FromResult<string?>(null)
+            : RemoveSystemMacroTriggersAsync(stored, stored.AllTriggers.ToArray(), cancellationToken);
+    }
+
+    private MacroDefinition? FindSystemMacro(string macroId) =>
+        _getActiveProfile().SystemMacros.FirstOrDefault(item =>
+            StringComparer.Ordinal.Equals(item.Id, macroId));
+
+    private async Task<string?> RemoveSystemMacroTriggersAsync(
+        MacroDefinition stored,
+        IReadOnlyList<MacroTrigger> triggers,
+        CancellationToken cancellationToken)
+    {
+        if (IsMacroRecording || IsMacroCountdown)
+        {
+            return AppStrings.Text("MacroEditBusy");
+        }
+
+        var previousTrigger = stored.Trigger;
+        var previousAdditional = CloneTriggers(stored.AdditionalTriggers);
+        var previousBinding = stored.SoftwareBinding?.Clone();
+        var removed = triggers.ToHashSet();
+        stored.AdditionalTriggers.RemoveAll(removed.Contains);
+        if (stored.Trigger is { } primary && removed.Contains(primary))
+        {
+            stored.Trigger = stored.AdditionalTriggers.FirstOrDefault();
+            if (stored.Trigger is not null)
+            {
+                stored.AdditionalTriggers.Remove(stored.Trigger);
+            }
+
+            stored.SoftwareBinding = stored.Trigger?.SoftwareBinding?.Clone();
+        }
+
+        var profile = _getActiveProfile();
+        var dropping = !stored.AllTriggers.Any();
+        if (dropping)
+        {
+            profile.SystemMacros.Remove(stored);
+        }
+
+        if (!await TrySaveMacroProfileAsync(cancellationToken, prepareDirtyMacros: false)
+                .ConfigureAwait(true))
+        {
+            if (dropping)
+            {
+                profile.SystemMacros.Add(stored);
+            }
+
+            stored.Trigger = previousTrigger;
+            stored.AdditionalTriggers = previousAdditional;
+            stored.SoftwareBinding = previousBinding;
+            return AppStrings.Text("MacroSaveFailed");
+        }
+
+        RefreshMacroRuntime();
+        return null;
     }
 
     private async Task<string?> ClearMacroTriggersAsync(
