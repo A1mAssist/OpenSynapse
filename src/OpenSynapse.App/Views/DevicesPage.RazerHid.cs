@@ -68,6 +68,7 @@ public sealed partial class DevicesPage : UserControl
 
         SelectDevice("razer-hid");
         await ViewModel.RazerHid.SelectDeviceAsync(row, Lifetime);
+        await SyncChromaLightingAsync();
         UpdateDeviceSelector("razer-hid");
     }
 
@@ -123,6 +124,7 @@ public sealed partial class DevicesPage : UserControl
                 ViewModel.DeviceRules.Select(new OpenSynapse.Core.Profiles.DeviceBindingKey(
                     0x1532, row.Connection.Definition.ProductId, row.Connection.InstanceId));
                 await ViewModel.RazerHid.SelectDeviceAsync(row, Lifetime);
+                await SyncChromaLightingAsync();
                 break;
             case RazerHidKrakenDeviceRowViewModel row:
                 SelectDevice("kraken");
