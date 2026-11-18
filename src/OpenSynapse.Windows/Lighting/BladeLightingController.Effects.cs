@@ -194,7 +194,8 @@ public sealed partial class BladeLightingController
     private Func<IReadOnlyList<RazerRgb>, int, int, byte[][]> CreateFrameRequestBuilder() =>
         _lightingDialect switch
         {
-            BladeLightingDialect.LedMatrixBlade or BladeLightingDialect.LedMatrixBlade2 =>
+            BladeLightingDialect.LedMatrixBlade or BladeLightingDialect.LedMatrixBlade2
+                or BladeLightingDialect.LedMatrix710 =>
                 (frame, rows, columns) => BladeLightingLedMatrixBladeProtocol.CreateMatrixFrameRequests(
                     frame, rows, columns, NextTransactionId),
             _ => BladeLightingProtocol.CreateMatrixFrameRequests,

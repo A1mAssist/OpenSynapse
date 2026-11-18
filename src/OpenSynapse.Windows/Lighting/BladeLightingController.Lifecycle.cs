@@ -136,8 +136,7 @@ public sealed partial class BladeLightingController
                     token => RestoreAsync(device.Id, device.Name, reportFallback: false, token),
                     _matrixRows,
                     _matrixColumns,
-                    CreateFrameRequestBuilder(),
-                    writeOnlyFrames: _lightingDialect == BladeLightingDialect.LedMatrixBlade2);
+                    CreateFrameRequestBuilder());
                 ILightingInputAdapter? inputAdapter = null;
                 ISoftwareLightingFrameSource source;
                 if (effect.Mode is BladeLightingMode.Reactive or BladeLightingMode.Ripple)
@@ -248,8 +247,7 @@ public sealed partial class BladeLightingController
                         : token => ReleaseModeLeaseAsync(CancellationToken.None),
                     _matrixRows,
                     _matrixColumns,
-                    CreateFrameRequestBuilder(),
-                    writeOnlyFrames: _lightingDialect == BladeLightingDialect.LedMatrixBlade2);
+                    CreateFrameRequestBuilder());
                 await StartRuntimeAsync(pump, source, null, cancellationToken).ConfigureAwait(false);
                 _externalSource = source;
             }
