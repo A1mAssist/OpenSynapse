@@ -489,6 +489,10 @@ public sealed partial class RazerHidSpecialLightingService
 
         try
         {
+            // AudioMabelT3CDongle answers the force-chroma command but not the
+            // brightness or effect frames; waiting on those only stalls the write.
+            var waitForEffectResponse =
+                !devicePath.Contains("pid_0574", StringComparison.OrdinalIgnoreCase);
             for (var index = 0; index < reports.Count; index++)
             {
                 var report = reports[index];
@@ -499,7 +503,9 @@ public sealed partial class RazerHidSpecialLightingService
                     continue;
                 }
 
-                await SendKrakenV4ReportAsync(transport, report, cancellationToken).ConfigureAwait(false);
+                await SendKrakenV4ReportAsync(
+                        transport, report, waitForEffectResponse, cancellationToken)
+                    .ConfigureAwait(false);
                 await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken).ConfigureAwait(false);
             }
 
@@ -511,7 +517,9 @@ public sealed partial class RazerHidSpecialLightingService
                 _diagnostic?.Invoke("kraken lighting retry=1");
                 foreach (var report in reports.Skip(Math.Max(0, reports.Count - 2)))
                 {
-                    await SendKrakenV4ReportAsync(transport, report, cancellationToken).ConfigureAwait(false);
+                    await SendKrakenV4ReportAsync(
+                            transport, report, waitForEffectResponse, cancellationToken)
+                        .ConfigureAwait(false);
                 }
             }
         }
@@ -530,9 +538,11 @@ public sealed partial class RazerHidSpecialLightingService
     private async Task SendKrakenV4ReportAsync(
         RazerMxicHeadsetTransport transport,
         byte[] report,
+        bool waitForEffectResponse,
         CancellationToken cancellationToken)
     {
-        if (RazerHidKrakenV4Protocol.ExpectsResponse(report))
+        if (RazerHidKrakenV4Protocol.ExpectsResponse(report) &&
+            (waitForEffectResponse || report[10] == 0xE8))
         {
             var response = await transport.QueryRawAsync(
                 report, data => RazerHidKrakenV4Protocol.IsCommandResponse(report, data), cancellationToken)
