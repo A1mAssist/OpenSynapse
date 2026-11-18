@@ -230,6 +230,9 @@ public sealed partial class DevicesPage : UserControl
         GamepadPanel.Visibility = device == "gamepad" ? Visibility.Visible : Visibility.Collapsed;
         CoolingPadPanel.Visibility = device == "coolingpad" ? Visibility.Visible : Visibility.Collapsed;
         ChromaPanel.Visibility = device == "chroma" ? Visibility.Visible : Visibility.Collapsed;
+        // The Chroma panel doubles as the lighting card under a native device that
+        // has no lighting zone; its own header would repeat the native one.
+        ChromaHeaderGrid.Visibility = device == "chroma" ? Visibility.Visible : Visibility.Collapsed;
         BlePanel.Visibility = device == "ble" ? Visibility.Visible : Visibility.Collapsed;
         AwBleHeadsetPanel.Visibility = device == "awbleheadset" ? Visibility.Visible : Visibility.Collapsed;
         KiyoPanel.Visibility = device == "kiyo" ? Visibility.Visible : Visibility.Collapsed;

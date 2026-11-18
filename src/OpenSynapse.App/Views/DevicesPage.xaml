@@ -414,7 +414,7 @@
                   </Border>
                 </StackPanel>
                 <StackPanel x:Name="ChromaPanel" DataContext="{Binding Accessories.SelectedChroma}" Visibility="Collapsed" Spacing="16">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                  <Grid x:Name="ChromaHeaderGrid" ColumnDefinitions="*,Auto" ColumnSpacing="12">
                     <StackPanel Spacing="4"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><TextBlock Text="{Binding CategoryText}" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding BatterySummary}" Visibility="{Binding BatteryVisibility}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding HardwareSummary}" Visibility="{Binding HardwareVisibility}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel>
                     <TextBlock Grid.Column="1" Text="{Binding StatusText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                   </Grid>

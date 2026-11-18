@@ -96,7 +96,9 @@ public sealed partial class MainViewModel
                 Kiyo));
         }
 
-        foreach (var row in Accessories.ChromaDevices)
+        foreach (var row in Accessories.ChromaDevices.Where(row =>
+                     !RazerHid.Devices.Any(hid =>
+                         hid.Connection.Definition.ProductId == row.Connection.ProductId)))
         {
             DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
                 DeviceSelectorItemKind.Chroma,

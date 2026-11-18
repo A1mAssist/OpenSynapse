@@ -39,7 +39,12 @@ public sealed partial class MainViewModel
             // The Viper owns a native page and still answers Chroma discovery; its lighting page
             // opens from there, so list the device once.
             .Concat(Accessories.ChromaDevices
-                .Where(chroma => !Devices.Any(native => native.ProductId == chroma.Connection.ProductId))
+                // The Viper and the Basilisk V4 family own a native card; the class-0x10
+                // lighting card is embedded in that page, not listed beside it.
+                .Where(chroma =>
+                    !Devices.Any(native => native.ProductId == chroma.Connection.ProductId) &&
+                    !RazerHid.Devices.Any(hid =>
+                        hid.Connection.Definition.ProductId == chroma.Connection.ProductId))
                 .Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(BleDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(AwBleHeadsetDevices.Select(device => new ConnectedDeviceRowViewModel(device)))

@@ -31,6 +31,30 @@ public sealed partial class DevicesPage : UserControl
         await (ViewModel.Accessories.SelectedChroma?.ApplyEffectAsync(Lifetime) ?? Task.CompletedTask);
     }
 
+    /// <summary>
+    /// A class-0x10 device (Basilisk V4 Pro and friends) owns no native lighting
+    /// zone, so a Chroma card would be a second entry for the same mouse. Its
+    /// lighting card rides under the native page instead.
+    /// </summary>
+    private async Task SyncChromaLightingAsync()
+    {
+        var device = ViewModel.RazerHid.SelectedDevice;
+        var twin = device is { LightingZones.Count: 0 }
+            ? ViewModel.Accessories.ChromaDevices.FirstOrDefault(row =>
+                row.Connection.ProductId == device.Connection.Definition.ProductId)
+            : null;
+        if (twin is null) return;
+
+        if (!StringComparer.OrdinalIgnoreCase.Equals(
+                ViewModel.Accessories.SelectedChroma?.DevicePath, twin.Connection.DevicePath))
+        {
+            await ViewModel.Accessories.SelectChromaAsync(twin, Lifetime);
+        }
+
+        ChromaHeaderGrid.Visibility = Visibility.Collapsed;
+        ChromaPanel.Visibility = Visibility.Visible;
+    }
+
 
     private void ArgbLedClick(object sender, RoutedEventArgs e)
     {
