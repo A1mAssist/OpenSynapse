@@ -199,7 +199,9 @@
                     <ComboBox local:Localized.Uid="Loc_C3B65B0A4F" x:Name="AppLanguageComboBox" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" SelectionChanged="LanguageSelectionChanged">
                       <ComboBoxItem local:Localized.Uid="Loc_6E1BBAA0E8" Tag="system" />
                       <ComboBoxItem local:Localized.Uid="Loc_5C8A32D3B1" Tag="zh-CN" />
+                      <ComboBoxItem local:Localized.Uid="AppLanguageTraditionalChinese" Tag="zh-TW" />
                       <ComboBoxItem local:Localized.Uid="Loc_F08B7A510E" Content="English" Tag="en-US" />
+                      <ComboBoxItem local:Localized.Uid="AppLanguageRussian" Tag="ru-RU" />
                     </ComboBox>
                   </Grid>
                 </Border>

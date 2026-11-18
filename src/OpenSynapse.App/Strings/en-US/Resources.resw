@@ -4186,4 +4186,34 @@
   <data name="GamepadRemapReadFailed" xml:space="preserve"><value>The current mode could not be read</value></data>
   <data name="RazerHidCapabilityAnalogJoystickRead" xml:space="preserve"><value>Controller mode read</value></data>
   <data name="RazerHidCapabilityAnalogJoystickWrite" xml:space="preserve"><value>Controller mode write</value></data>
+  <data name="AppLanguageRussian.Content" xml:space="preserve"><value>Русский</value></data>
+  <data name="LightingStudioChromaFileType" xml:space="preserve"><value>Chroma effects</value></data>
+  <data name="LightingStudioStudioPlaybackStartRandom" xml:space="preserve"><value>Random</value></data>
+  <data name="LightingStudioStudioPlaybackStartOnPress" xml:space="preserve"><value>On key press</value></data>
+  <data name="LightingStudioStudioPlaybackStartOnSelectedKeys" xml:space="preserve"><value>On selected key press</value></data>
+  <data name="LightingStudioStudioPlaybackEndNever" xml:space="preserve"><value>Never</value></data>
+  <data name="LightingStudioStudioPlaybackEndAfter" xml:space="preserve"><value>After the specified cycles</value></data>
+  <data name="LightingStudioStudioPlaybackEndToggle" xml:space="preserve"><value>On the next press</value></data>
+  <data name="LightingStudioStudioGenerateBlendPattern" xml:space="preserve"><value>Pattern</value></data>
+  <data name="LightingStudioStudioGenerateBlendSample" xml:space="preserve"><value>Sample</value></data>
+  <data name="LightingStudioStudioGenerateBlendGrayscale" xml:space="preserve"><value>Grayscale</value></data>
+  <data name="LightingStudioStudioGenerateBlendLerp2Colors" xml:space="preserve"><value>Interpolate two colors</value></data>
+  <data name="LightingStudioStudioGenerateBlendDarkenLighten20P" xml:space="preserve"><value>Darken or lighten by 20%</value></data>
+  <data name="LightingStudioStudioGenerateBlendSplit2Colors" xml:space="preserve"><value>Split into two colors</value></data>
+  <data name="LightingStudioStudioGenerateBlendMix2Colors" xml:space="preserve"><value>Mix two colors</value></data>
+  <data name="LightingStudioStudioGenerateBlendMix3Colors" xml:space="preserve"><value>Mix three colors</value></data>
+  <data name="LightingStudioStudioGenerateBlendLerpColors" xml:space="preserve"><value>Interpolate colors</value></data>
+  <data name="LightingStudioStudioGenerateBlendPatternLerp" xml:space="preserve"><value>Pattern with interpolation</value></data>
+  <data name="LightingStudioStudioGenerateBlendPatternLerpGT20" xml:space="preserve"><value>Pattern with interpolation above 20%</value></data>
+  <data name="LightingStudioStudioGenerateBlendPatternGT20Color1" xml:space="preserve"><value>Pattern above 20%, otherwise first color</value></data>
+  <data name="LightingStudioStudioGenerateBlendPatternLerpGT20Color1" xml:space="preserve"><value>Interpolated pattern above 20%, otherwise first color</value></data>
+  <data name="LightingStudioStudioGenerateBlendMix3ColorsLerp" xml:space="preserve"><value>Mix and interpolate three colors</value></data>
+  <data name="LightingStudioStudioGenerateBlendPatternMixColorsLerp" xml:space="preserve"><value>Pattern with mixed and interpolated colors</value></data>
+  <data name="ShellLocalDeviceControl" xml:space="preserve"><value>LOCAL DEVICE CONTROL</value></data>
+  <data name="AboutWindowCredit" xml:space="preserve"><value>Made with ❤ in C# by A1mAssist.</value></data>
+  <data name="OverviewMemoryLabel" xml:space="preserve"><value>MEMORY</value></data>
+  <data name="OverviewStorageLabel" xml:space="preserve"><value>STORAGE</value></data>
+  <data name="ProfileBrowseApplication.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Choose an .exe and link it to the selected device</value></data>
+  <data name="ProfileBrowseApplication.Content" xml:space="preserve"><value>exe…</value></data>
+  <data name="AppLanguageTraditionalChinese.Content" xml:space="preserve"><value>繁體中文</value></data>
 </root>

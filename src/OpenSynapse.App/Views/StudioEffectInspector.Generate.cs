@@ -102,13 +102,9 @@ public sealed partial class StudioEffectInspector
             SelectedItem = config.Pattern.ToString(CultureInfo.InvariantCulture),
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
-        var blend = new ComboBox
-        {
-            Header = AppStrings.Text("LightingStudioGenerateBlend"),
-            ItemsSource = Enum.GetValues<StudioGenerateBlend>(),
-            SelectedItem = config.Blend,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-        };
+        var blend = CreateEnumPicker<StudioGenerateBlend>();
+        blend.Header = AppStrings.Text("LightingStudioGenerateBlend");
+        blend.SelectedValue = config.Blend;
         var spread = NumberField(AppStrings.Text("LightingStudioGenerateSpread"), config.PatternSpread, 1, 50, 0.1);
         var speed = NumberField(AppStrings.Text("LightingStudioGenerateSpeed"), config.PatternSpeed, -10, 10, 0.1);
 
@@ -167,7 +163,7 @@ public sealed partial class StudioEffectInspector
         };
         blend.SelectionChanged += (_, _) =>
         {
-            if (blend.SelectedItem is StudioGenerateBlend value)
+            if (blend.SelectedValue is StudioGenerateBlend value)
             {
                 Commit(current => current with { Blend = value });
             }

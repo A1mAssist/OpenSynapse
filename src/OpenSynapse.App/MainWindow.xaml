@@ -19,7 +19,7 @@
             <Grid.Clip><RectangleGeometry x:Name="TitleBarTitleClipGeometry" Rect="0,0,600,40" /></Grid.Clip>
             <StackPanel x:Name="TitleBarTextStack" Spacing="0" VerticalAlignment="Center">
               <TextBlock x:Name="TitleBarTitleText" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" Opacity="0"><Run Text="OpenSynapse" /><Run x:Name="LiteModeBadgeRun" Text="" FontSize="9.5" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" /></TextBlock>
-              <TextBlock x:Name="TitleBarSubtitleText" Text="LOCAL DEVICE CONTROL" FontFamily="Cascadia Mono,Consolas" FontSize="8" Foreground="{StaticResource MutedBrush}" CharacterSpacing="70" Opacity="0" />
+              <TextBlock x:Name="TitleBarSubtitleText" local:Localized.Uid="ShellLocalDeviceControl" Text="LOCAL DEVICE CONTROL" FontFamily="Cascadia Mono,Consolas" FontSize="8" Foreground="{StaticResource MutedBrush}" CharacterSpacing="70" Opacity="0" />
             </StackPanel>
           </Grid>
         </Grid>
@@ -62,7 +62,7 @@
           <Image local:Localized.Uid="Loc_BA196502D0" x:Name="LaunchMarkImage" Width="70" Height="70" Stretch="Uniform"><Image.Source><SvgImageSource UriSource="ms-appx:///Assets/OpenSynapseLogo.svg" /></Image.Source></Image>
         </Grid>
         <TextBlock x:Name="LaunchTitleText" Text="OpenSynapse" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontSize="32" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" HorizontalAlignment="Center" />
-        <TextBlock x:Name="LaunchSubtitleText" Text="LOCAL DEVICE CONTROL" FontFamily="Cascadia Mono,Consolas" FontSize="10" CharacterSpacing="40" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
+        <TextBlock x:Name="LaunchSubtitleText" local:Localized.Uid="ShellLocalDeviceControl" Text="LOCAL DEVICE CONTROL" FontFamily="Cascadia Mono,Consolas" FontSize="10" CharacterSpacing="40" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
         <TextBlock local:Localized.Uid="Loc_D21D65F64A" x:Name="LaunchStatusText" FontSize="14" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
         <StackPanel Width="300" Margin="0,10,0,0" HorizontalAlignment="Center" Spacing="6">
           <ProgressBar x:Name="LaunchProgressBar" Height="12" Minimum="0" Maximum="100" Value="0" Foreground="{StaticResource AccentBrush}" Background="{StaticResource SurfaceRaisedBrush}" AutomationProperties.Name="{Binding Text, ElementName=LaunchStatusText}" IsHitTestVisible="False" />

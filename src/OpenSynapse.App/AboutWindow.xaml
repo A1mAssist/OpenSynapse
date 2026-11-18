@@ -14,7 +14,7 @@
         <TextBlock x:Name="VersionText" FontFamily="Cascadia Mono,Consolas" FontSize="12" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" />
         <Border Height="1" Background="{StaticResource LineBrush}" />
         <TextBlock local:Localized.Uid="Loc_C3734BA5BC" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" TextAlignment="Center" />
-        <TextBlock Text="Made with ❤ in C# by A1mAssist." FontFamily="{StaticResource AppFontFamily}" FontSize="12" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
+        <TextBlock local:Localized.Uid="AboutWindowCredit" Text="Made with ❤ in C# by A1mAssist." FontFamily="{StaticResource AppFontFamily}" FontSize="12" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
         <TextBlock Text="AGPL-3.0" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
         <HyperlinkButton local:Localized.Uid="Loc_502B244806" NavigateUri="https://github.com/A1mAssist/OpenSynapse" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center">
           <StackPanel Orientation="Horizontal" Spacing="7">

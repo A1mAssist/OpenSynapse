@@ -44,7 +44,7 @@
                     </Grid>
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                       <ComboBox x:Name="BindingApplicationPicker" local:Localized.Uid="DeviceRulesPickRunning" ItemsSource="{Binding RunningApplications}" DropDownOpened="BindingApplicationPickerDropDownOpened" HorizontalAlignment="Stretch" />
-                      <Button Grid.Column="1" Content="exe…" Click="BrowseApplicationBindingClick" IsEnabled="{Binding HasBindableDevices}" Style="{StaticResource SecondaryButtonStyle}" ToolTipService.ToolTip="选择 exe 并绑定到所选设备" />
+                      <Button Grid.Column="1" Content="exe…" Click="BrowseApplicationBindingClick" IsEnabled="{Binding HasBindableDevices}" Style="{StaticResource SecondaryButtonStyle}" local:Localized.Uid="ProfileBrowseApplication" />
                     </Grid>
                   </StackPanel>
                 </Border>

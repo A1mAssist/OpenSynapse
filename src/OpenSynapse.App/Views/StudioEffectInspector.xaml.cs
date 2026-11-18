@@ -68,8 +68,8 @@ public sealed partial class StudioEffectInspector : UserControl
         StudioParameterField.Duration => BuildDurationRow(descriptor),
         StudioParameterField.Pause => BuildPauseRow(),
         StudioParameterField.Cycles => BuildCyclesRow(),
-        StudioParameterField.PlaybackStart => BuildPlaybackRow("LightingStudioParamPlaybackStart", nameof(StudioEffectParams.PlaybackStart), Enum.GetValues<StudioPlaybackStart>()),
-        StudioParameterField.PlaybackEnd => BuildPlaybackRow("LightingStudioParamPlaybackEnd", nameof(StudioEffectParams.PlaybackEnd), Enum.GetValues<StudioPlaybackEnd>()),
+        StudioParameterField.PlaybackStart => BuildPlaybackRow<StudioPlaybackStart>("LightingStudioParamPlaybackStart", nameof(StudioEffectParams.PlaybackStart)),
+        StudioParameterField.PlaybackEnd => BuildPlaybackRow<StudioPlaybackEnd>("LightingStudioParamPlaybackEnd", nameof(StudioEffectParams.PlaybackEnd)),
         StudioParameterField.Speed => BuildRangeSlider("LightingStudioParamSpeed", nameof(StudioEffectParams.Speed), descriptor.Ranges[StudioParameterField.Speed]),
         StudioParameterField.Width => BuildRangeSlider("LightingStudioParamWidth", nameof(StudioEffectParams.Width), descriptor.Ranges[StudioParameterField.Width]),
         StudioParameterField.Angle => BuildRangeSlider("LightingStudioParamAngle", nameof(StudioEffectParams.Angle), descriptor.Ranges[StudioParameterField.Angle], new RoundedIntConverter()),
@@ -299,17 +299,22 @@ public sealed partial class StudioEffectInspector : UserControl
         return Rowed("LightingStudioParamCycles", box);
     }
 
-    private FrameworkElement BuildPlaybackRow(string labelKey, string path, Array values)
+    private FrameworkElement BuildPlaybackRow<T>(string labelKey, string path) where T : struct, Enum
     {
-        var combo = new ComboBox
-        {
-            ItemsSource = values,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-        };
-        Bind(combo, Selector.SelectedItemProperty, path);
+        var combo = CreateEnumPicker<T>();
+        Bind(combo, Selector.SelectedValueProperty, path);
         combo.SelectionChanged += (_, _) => RaiseChanged();
         return Rowed(labelKey, combo);
     }
+
+    private static ComboBox CreateEnumPicker<T>() where T : struct, Enum => new()
+    {
+        ItemsSource = Enum.GetValues<T>().Select(value => new KeyValuePair<T, string>(
+            value, AppStrings.Text($"LightingStudio{typeof(T).Name}{value}"))).ToArray(),
+        SelectedValuePath = "Key",
+        DisplayMemberPath = "Value",
+        HorizontalAlignment = HorizontalAlignment.Stretch,
+    };
 
     private FrameworkElement BuildScreenRow()
     {

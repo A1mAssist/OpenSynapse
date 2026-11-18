@@ -24,6 +24,7 @@ public sealed class StudioEffectLabelConverter : IValueConverter
         StudioEffectKind.Wheel => AppStrings.Text("LightingStudioEffectWheel"),
         StudioEffectKind.ChromaGenerate => AppStrings.Text("LightingStudioEffectGenerate"),
         StudioEffectKind.Tidal => AppStrings.Text("LightingStudioEffectTidal"),
+        StudioEffectKind.Radiate => AppStrings.Text("LightingStudioEffectRadiate"),
         _ => value?.ToString() ?? string.Empty,
     };
 
