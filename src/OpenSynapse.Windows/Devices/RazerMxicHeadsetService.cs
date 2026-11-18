@@ -29,18 +29,31 @@ public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
 
     public RazerMxicHeadsetService(ushort productId, string devicePath, Action<string>? diagnostic = null)
         : this(
-            RazerMxicHeadsetProtocol.UsesValkyrieT3Commands(productId) ||
-            RazerMxicHeadsetProtocol.UsesJolietCommands(productId)
-                ? new RazerValkyrieT3Transport(devicePath)
-                : new RazerMxicHeadsetTransport(
-                    devicePath,
-                    RazerMxicHeadsetProtocol.ReportLength,
-                    useControlStatusReport:
-                        !RazerProtocol40HeadsetProtocol.IsSupported(productId) &&
-                        !RazerMxicHeadsetProtocol.UsesMabelT1(productId)),
+            CreateTransport(productId, devicePath),
             productId,
             diagnostic)
     {
+    }
+
+    private static IRazerMxicHeadsetTransport CreateTransport(ushort productId, string devicePath)
+    {
+        if (RazerProtocol40HeadsetProtocol.UsesFeatureReportChannel(productId))
+        {
+            return new RazerMxicHeadsetFeatureTransport(devicePath);
+        }
+
+        if (RazerMxicHeadsetProtocol.UsesValkyrieT3Commands(productId) ||
+            RazerMxicHeadsetProtocol.UsesJolietCommands(productId))
+        {
+            return new RazerValkyrieT3Transport(devicePath);
+        }
+
+        return new RazerMxicHeadsetTransport(
+            devicePath,
+            RazerMxicHeadsetProtocol.ReportLength,
+            useControlStatusReport:
+                !RazerProtocol40HeadsetProtocol.IsSupported(productId) &&
+                !RazerMxicHeadsetProtocol.UsesMabelT1(productId));
     }
 
     internal RazerMxicHeadsetService(

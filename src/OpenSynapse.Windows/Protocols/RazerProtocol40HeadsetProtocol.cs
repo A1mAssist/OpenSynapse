@@ -46,6 +46,11 @@ public static class RazerProtocol40HeadsetProtocol
 
     public static bool SupportsSidetone(ushort productId) => productId == 0x05B9;
 
+    // The Hammerhead V3 Chroma exposes the rzDevice40 frame only as a 64-byte FF14
+    // feature report; its FF13 collection is 62 bytes, so Mxic64's output path
+    // cannot address it.
+    public static bool UsesFeatureReportChannel(ushort productId) => productId == 0x05B9;
+
     // rzDevice40Headset.connectDevice writes [0,0,135] once to wake the HID channel.
     public static byte[] CreateConnect() => CreateRequest(GetConnect);
 
