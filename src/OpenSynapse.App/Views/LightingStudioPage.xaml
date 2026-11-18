@@ -41,8 +41,7 @@
       <StackPanel Spacing="4">
         <TextBlock local:Localized.Uid="LightingStudioTitle"
                    FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
-        <TextBlock local:Localized.Uid="LightingStudioSubtitle"
-
+        <TextBlock local:Localized.Uid="LightingStudioSubtitle" TextWrapping="Wrap"
                    FontSize="13" Foreground="{StaticResource MutedBrush}" />
       </StackPanel>
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">

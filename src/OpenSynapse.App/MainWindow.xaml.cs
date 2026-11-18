@@ -151,6 +151,7 @@ public sealed partial class MainWindow : Window
     internal void RefreshLocalizationAfterLanguageChange()
     {
         Localized.RefreshTree(RootLayout);
+        _lightingStudioPage?.RefreshLocalization();
         _devicesPage?.RefreshLightingPresetOptions();
         if (!_viewModel.IsLiteMode)
         {

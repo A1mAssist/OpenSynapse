@@ -13,8 +13,8 @@
     <!-- Win10 22H2 without the 2024 CET update cannot launch a CET-marked apphost. -->
     <CetCompat>false</CetCompat>
     <ApplicationIcon>Assets\OpenSynapse.ico</ApplicationIcon>
-    <SatelliteResourceLanguages>zh-CN;en-US</SatelliteResourceLanguages>
-    <DefaultLanguage>zh-CN</DefaultLanguage>
+    <SatelliteResourceLanguages>zh-CN;zh-TW;en-US;ru-RU</SatelliteResourceLanguages>
+    <DefaultLanguage>en-US</DefaultLanguage>
     <DebugType>embedded</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <Nullable>enable</Nullable>
@@ -218,7 +218,7 @@
           Condition="'$(Configuration)' == 'Release' and '$(PublishDir)' != ''">
     <ItemGroup>
       <_UnusedMui Include="$(PublishDir)*\*.mui"
-                  Exclude="$(PublishDir)en-US\*.mui;$(PublishDir)en-us\*.mui;$(PublishDir)zh-CN\*.mui" />
+                  Exclude="$(PublishDir)en-US\*.mui;$(PublishDir)en-us\*.mui;$(PublishDir)zh-CN\*.mui;$(PublishDir)zh-TW\*.mui;$(PublishDir)ru-RU\*.mui" />
       <_UnusedReleaseFile Include="$(PublishDir)createdump.exe;
                                   $(PublishDir)clrgcexp.dll;
                                   $(PublishDir)Microsoft.DiaSymReader.Native.amd64.dll;

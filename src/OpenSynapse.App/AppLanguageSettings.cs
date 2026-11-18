@@ -7,7 +7,9 @@ internal static class AppLanguageSettings
 {
     public const string System = "system";
     public const string Chinese = "zh-CN";
+    public const string TraditionalChinese = "zh-TW";
     public const string English = "en-US";
+    public const string Russian = "ru-RU";
 
     private static readonly string SettingsPath = AppDataPaths.Combine("language.txt");
 
@@ -52,7 +54,7 @@ internal static class AppLanguageSettings
     }
 
     private static bool IsSupported(string language) =>
-        language is System or Chinese or English;
+        language is System or Chinese or TraditionalChinese or English or Russian;
 
     internal static string ResolveSystemLanguage(IEnumerable<string> languages)
     {
@@ -60,7 +62,19 @@ internal static class AppLanguageSettings
         {
             if (language.StartsWith("zh", StringComparison.OrdinalIgnoreCase))
             {
+                if (language.Equals("zh-TW", StringComparison.OrdinalIgnoreCase) ||
+                    language.Equals("zh-HK", StringComparison.OrdinalIgnoreCase) ||
+                    language.Equals("zh-MO", StringComparison.OrdinalIgnoreCase) ||
+                    language.Contains("-Hant", StringComparison.OrdinalIgnoreCase))
+                {
+                    return TraditionalChinese;
+                }
                 return Chinese;
+            }
+            if (language.Equals("ru", StringComparison.OrdinalIgnoreCase) ||
+                language.StartsWith("ru-", StringComparison.OrdinalIgnoreCase))
+            {
+                return Russian;
             }
             if (language.StartsWith("en", StringComparison.OrdinalIgnoreCase))
             {

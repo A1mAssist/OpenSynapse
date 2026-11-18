@@ -106,6 +106,35 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         LocalizeDefaultProject(_project);
         _history = new StudioHistory(_project);
         Layers.CollectionChanged += OnLayersChanged;
+        LoadLocalizedChoices();
+
+        AttachProfile(_project.SelectedProfile);
+        SyncLayersFromProfile();
+        _selectedLayer = Layers.FirstOrDefault();
+        RefreshRegionChoices();
+        // The first screen must already show Ambient/Audio/Generate instead of a black frame.
+        _ = EnsureInputAsync();
+        _ = EnsureMediaSamplerAsync();
+    }
+
+    internal void RefreshLocalization()
+    {
+        LoadLocalizedChoices();
+        OnPropertyChanged(nameof(EffectChoices));
+        OnPropertyChanged(nameof(BlendChoices));
+        OnPropertyChanged(nameof(ColorChoices));
+        OnPropertyChanged(nameof(SelectedEffectChoice));
+        OnPropertyChanged(nameof(SelectedBlendChoice));
+        foreach (var row in LayerRows)
+        {
+            row.Layer.NotifyEffectChanged();
+        }
+        RefreshRegionChoices();
+        StatusText = AppStrings.Text("LightingStudioStatusHint");
+    }
+
+    private void LoadLocalizedChoices()
+    {
         EffectChoices =
         [
             new(StudioEffectKind.Solid, AppStrings.Text("LightingStudioEffectSolid")),
@@ -137,14 +166,6 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
                 item.Hex,
                 new SolidColorBrush(ParseColor(item.Hex))))
             .ToArray();
-
-        AttachProfile(_project.SelectedProfile);
-        SyncLayersFromProfile();
-        _selectedLayer = Layers.FirstOrDefault();
-        RefreshRegionChoices();
-        // The first screen must already show Ambient/Audio/Generate instead of a black frame.
-        _ = EnsureInputAsync();
-        _ = EnsureMediaSamplerAsync();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -159,11 +180,11 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
 
     public ObservableCollection<StudioDeviceOption> Devices { get; } = new();
 
-    public IReadOnlyList<StudioEffectChoice> EffectChoices { get; }
+    public IReadOnlyList<StudioEffectChoice> EffectChoices { get; private set; } = [];
 
-    public IReadOnlyList<StudioBlendChoice> BlendChoices { get; }
+    public IReadOnlyList<StudioBlendChoice> BlendChoices { get; private set; } = [];
 
-    public IReadOnlyList<StudioColorChoice> ColorChoices { get; }
+    public IReadOnlyList<StudioColorChoice> ColorChoices { get; private set; } = [];
 
     public string DocumentName
     {

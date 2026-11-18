@@ -4622,4 +4622,34 @@
   <data name="GamepadRemapReadFailed" xml:space="preserve"><value>无法读取当前模式</value></data>
   <data name="RazerHidCapabilityAnalogJoystickRead" xml:space="preserve"><value>模拟手柄模式读取</value></data>
   <data name="RazerHidCapabilityAnalogJoystickWrite" xml:space="preserve"><value>模拟手柄模式写入</value></data>
+  <data name="AppLanguageRussian.Content" xml:space="preserve"><value>Русский</value></data>
+  <data name="LightingStudioChromaFileType" xml:space="preserve"><value>Chroma 灯效</value></data>
+  <data name="LightingStudioStudioPlaybackStartRandom" xml:space="preserve"><value>随机</value></data>
+  <data name="LightingStudioStudioPlaybackStartOnPress" xml:space="preserve"><value>按下键时</value></data>
+  <data name="LightingStudioStudioPlaybackStartOnSelectedKeys" xml:space="preserve"><value>按下选定键时</value></data>
+  <data name="LightingStudioStudioPlaybackEndNever" xml:space="preserve"><value>永不</value></data>
+  <data name="LightingStudioStudioPlaybackEndAfter" xml:space="preserve"><value>完成指定循环后</value></data>
+  <data name="LightingStudioStudioPlaybackEndToggle" xml:space="preserve"><value>再次按下时</value></data>
+  <data name="LightingStudioStudioGenerateBlendPattern" xml:space="preserve"><value>图案</value></data>
+  <data name="LightingStudioStudioGenerateBlendSample" xml:space="preserve"><value>取样</value></data>
+  <data name="LightingStudioStudioGenerateBlendGrayscale" xml:space="preserve"><value>灰度</value></data>
+  <data name="LightingStudioStudioGenerateBlendLerp2Colors" xml:space="preserve"><value>双色插值</value></data>
+  <data name="LightingStudioStudioGenerateBlendDarkenLighten20P" xml:space="preserve"><value>变暗或变亮 20%</value></data>
+  <data name="LightingStudioStudioGenerateBlendSplit2Colors" xml:space="preserve"><value>分为两色</value></data>
+  <data name="LightingStudioStudioGenerateBlendMix2Colors" xml:space="preserve"><value>混合两色</value></data>
+  <data name="LightingStudioStudioGenerateBlendMix3Colors" xml:space="preserve"><value>混合三色</value></data>
+  <data name="LightingStudioStudioGenerateBlendLerpColors" xml:space="preserve"><value>颜色插值</value></data>
+  <data name="LightingStudioStudioGenerateBlendPatternLerp" xml:space="preserve"><value>插值图案</value></data>
+  <data name="LightingStudioStudioGenerateBlendPatternLerpGT20" xml:space="preserve"><value>高于 20% 时使用插值图案</value></data>
+  <data name="LightingStudioStudioGenerateBlendPatternGT20Color1" xml:space="preserve"><value>高于 20% 时使用图案，否则使用第一色</value></data>
+  <data name="LightingStudioStudioGenerateBlendPatternLerpGT20Color1" xml:space="preserve"><value>高于 20% 时使用插值图案，否则使用第一色</value></data>
+  <data name="LightingStudioStudioGenerateBlendMix3ColorsLerp" xml:space="preserve"><value>混合三色并插值</value></data>
+  <data name="LightingStudioStudioGenerateBlendPatternMixColorsLerp" xml:space="preserve"><value>混色插值图案</value></data>
+  <data name="ShellLocalDeviceControl" xml:space="preserve"><value>本地设备控制</value></data>
+  <data name="AboutWindowCredit" xml:space="preserve"><value>由 A1mAssist 用 C# 用心制作。</value></data>
+  <data name="OverviewMemoryLabel" xml:space="preserve"><value>内存</value></data>
+  <data name="OverviewStorageLabel" xml:space="preserve"><value>存储</value></data>
+  <data name="ProfileBrowseApplication.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>选择 exe 并绑定到所选设备</value></data>
+  <data name="ProfileBrowseApplication.Content" xml:space="preserve"><value>exe…</value></data>
+  <data name="AppLanguageTraditionalChinese.Content" xml:space="preserve"><value>繁體中文</value></data>
 </root>

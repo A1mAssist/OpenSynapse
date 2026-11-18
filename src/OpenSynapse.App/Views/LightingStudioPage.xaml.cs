@@ -72,6 +72,13 @@ public sealed partial class LightingStudioPage : UserControl
 
     internal LightingStudioViewModel? ViewModel => _viewModel;
 
+    internal void RefreshLocalization()
+    {
+        SetIconButtonLabels();
+        UpdatePlayButton();
+        _viewModel?.RefreshLocalization();
+    }
+
     /// <summary>
     /// Applies one decoded Blade key to the studio. The hardware frame source
     /// runs on its own clock; the preview uses this page's preview clock.
@@ -549,7 +556,7 @@ public sealed partial class LightingStudioPage : UserControl
             SuggestedFileName = "chroma-studio-profiles",
         };
         picker.FileTypeChoices.Add(
-            "Chroma Effects",
+            AppStrings.Text("LightingStudioChromaFileType"),
             [OpenSynapse.Core.Lighting.StudioChromaFileService.Extension]);
         Host.InitializePicker(picker);
         var file = await picker.PickSaveFileAsync();
