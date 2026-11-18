@@ -16,6 +16,10 @@ public sealed record RazerMappingBundle(
 {
     public string? DeviceName { get; init; }
 
+    /// <summary>Edition id → product render, from Razer's "{page}_{edition}/img_prods" module map.</summary>
+    public IReadOnlyDictionary<int, string> EditionImages { get; init; } =
+        new Dictionary<int, string>();
+
     public IReadOnlyDictionary<byte, string> ButtonNamesById { get; init; } =
         new Dictionary<byte, string>();
 }
@@ -106,6 +110,14 @@ public static partial class RazerMappingBundleParser
         "deviceName:\\s*\"(?<name>Razer[^\"]+)\"",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
+    private static readonly Regex PrdModuleRegex = new(
+        "(?<id>\\d+):\\(\\w+,\\w+,\\w+\\)=>\\{[^}]*?exports=\\w+\\.p\\+\"(?<file>static/media/prd-3x[^\"]+)\"",
+        RegexOptions.CultureInvariant);
+
+    private static readonly Regex EditionModuleRegex = new(
+        "\"\\.?/?\\d+_(?<edition>\\d+)/img_prods/prd-3x\\.png\":(?<id>\\d+)",
+        RegexOptions.CultureInvariant);
+
     public static RazerMappingBundle Parse(string mainJs, string? image3xUrl = null)
     {
         if (string.IsNullOrEmpty(mainJs))
@@ -134,6 +146,7 @@ public static partial class RazerMappingBundleParser
         var deviceName = DeviceNameRegex.Match(mainJs) is { Success: true } nameMatch
             ? nameMatch.Groups["name"].Value
             : null;
+        var editionImages = ParseEditionImages(mainJs);
         var anchors = new List<RazerMappingBundleAnchor>();
         var seenButtonIds = new HashSet<byte>();
         var imageOffsetX = (canvasWidth - DefaultImageWidth) / 2;
@@ -192,8 +205,39 @@ public static partial class RazerMappingBundleParser
             keyIds)
         {
             DeviceName = deviceName,
+            EditionImages = editionImages,
             ButtonNamesById = BuildButtonNames(namedButtons, explicitButtonIds),
         };
+    }
+
+    /// <summary>
+    /// Razer keys its product renders by edition ("165_0" standard, "165_130" PUBG).
+    /// The webpack context maps that folder to a module id, and the module id to the
+    /// hashed file; both halves are needed to know which file belongs to which edition.
+    /// </summary>
+    private static IReadOnlyDictionary<int, string> ParseEditionImages(string mainJs)
+    {
+        var files = new Dictionary<int, string>();
+        foreach (Match match in PrdModuleRegex.Matches(mainJs))
+        {
+            if (int.TryParse(match.Groups["id"].Value, out var id))
+            {
+                files[id] = match.Groups["file"].Value;
+            }
+        }
+
+        var images = new Dictionary<int, string>();
+        foreach (Match match in EditionModuleRegex.Matches(mainJs))
+        {
+            if (int.TryParse(match.Groups["edition"].Value, out var edition) &&
+                int.TryParse(match.Groups["id"].Value, out var id) &&
+                files.TryGetValue(id, out var file))
+            {
+                images[edition] = file;
+            }
+        }
+
+        return images;
     }
 
     public static string? FindMainJs(string assetManifestJson)

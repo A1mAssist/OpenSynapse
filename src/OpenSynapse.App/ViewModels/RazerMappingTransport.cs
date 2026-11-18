@@ -25,6 +25,13 @@ public interface IRazerMappingTransport
         byte functionId,
         IReadOnlyList<byte> data,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Synapse keys product art by edition ("165_130" is the PUBG skin). Only the HID path
+    /// can ask the device; everything else reports unknown and gets the standard render.
+    /// </summary>
+    Task<int?> ReadEditionAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult<int?>(null);
 }
 
 public sealed class RazerHidMappingTransport(
@@ -52,6 +59,9 @@ public sealed class RazerHidMappingTransport(
         CancellationToken cancellationToken = default) =>
         service.SetButtonAssignmentAsync(
             connection, buttonId, mode, functionId, data, cancellationToken);
+
+    public Task<int?> ReadEditionAsync(CancellationToken cancellationToken = default) =>
+        service.GetEditionIdAsync(connection, cancellationToken);
 }
 
 public sealed class RazerBleMappingTransport(RazerBleDeviceService service) : IRazerMappingTransport

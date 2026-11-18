@@ -224,7 +224,7 @@ public sealed partial class RazerHidDeviceViewModel
             var visual = await RazerMappingAssetService.Shared.GetAsync(
                 Connection.Definition.ProductId,
                 RazerMappingDeviceKind.Keyboard,
-                cancellationToken).ConfigureAwait(true);
+                cancellationToken: cancellationToken).ConfigureAwait(true);
             if (visual.Keyboard?.Visual is not { Paths.Count: > 0 } keyboard)
             {
                 return;
