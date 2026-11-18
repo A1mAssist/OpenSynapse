@@ -275,7 +275,12 @@ public sealed class VerifiedProfileApplier
                     telemetry.BladeNativeDisplayMode,
                     (value, token) => reader.SetBladeNativeDisplayModeAsync(devices, value, token));
             }
-            if (bladeErrors.Count == 0 && profile.Blade.LocalDimmingEnabled is bool localDimming)
+            // 029F/02A0/02B6/02C7 carry the dual-resolution panel but the firmware
+            // rejects the dimming switch; a profile made elsewhere must not block the
+            // rest of the Blade settings on those models.
+            if (bladeErrors.Count == 0 &&
+                profile.Blade.LocalDimmingEnabled is bool localDimming &&
+                BladeModelCapabilities.SupportsLocalDimming(blade.ProductId))
             {
                 await ApplyValueAsync(
                     bladeErrors,

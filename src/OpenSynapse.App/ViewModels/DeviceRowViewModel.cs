@@ -237,7 +237,8 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged, IDeviceBatteryR
                 Add("Text_24A8C247", telemetry.BladeNativeDisplayMode,
                     capability: CapabilityIds.NativeDisplayModeGet);
             }
-            if (telemetry.BladeSkuHardwareConfiguration?.MiniLedResolution == true)
+            if (telemetry.BladeSkuHardwareConfiguration?.MiniLedResolution == true &&
+                BladeModelCapabilities.SupportsLocalDimming(descriptor.ProductId))
             {
                 Add("DiagnosticLocalDimming", telemetry.BladeLocalDimmingEnabled,
                     capability: CapabilityIds.PowerModeGet);
