@@ -309,7 +309,13 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                 await SaveLightingProfileAsync(cancellationToken);
                 return;
             }
-            await StopSoftwareLightingAsync(cancellationToken);
+            await StopSoftwareLightingAsync(cancellationToken, restore: false);
+            if (!_softwareCustomFrameActive)
+            {
+                _softwareLightingBaseline = await RazerHidLightingBaseline
+                    .CaptureAsync(_service, Connection, cancellationToken);
+                _softwareCustomFrameActive = true;
+            }
             await _service.SetCustomFrameEffectAsync(Connection, cancellationToken);
             if (effect == RazerHidLightingEffect.SoftwareAudioMeter)
             {
@@ -416,23 +422,6 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             (byte)(color.Green * EffectBrightness / 255),
             (byte)(color.Blue * EffectBrightness / 255));
 
-    private async Task StopSoftwareLightingAsync(CancellationToken cancellationToken)
-    {
-        if (_softwareLightingRuntime is not null)
-        {
-            await _softwareLightingRuntime.StopAsync(cancellationToken).ConfigureAwait(false);
-        }
-        if (_softwareAudioInput is not null)
-        {
-            await _softwareAudioInput.DisposeAsync().ConfigureAwait(false);
-            _softwareAudioInput = null;
-        }
-    }
-
-    internal Task StopLightingRuntimeAsync(CancellationToken cancellationToken = default) =>
-        StopSoftwareLightingAsync(cancellationToken);
-
-
     private PowerSourceKind SelectedLightingPowerState => _lightingPowerProfileIndex switch
     {
         1 => PowerSourceKind.FullPowerAdapter,
@@ -504,6 +493,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         {
             try
             {
+                await StopSoftwareLightingAsync(cancellationToken).ConfigureAwait(true);
                 await _service.SetLightingAsync(Connection, new RazerHidLightingSettings(
                     effect,
                     LightingSpeed,
