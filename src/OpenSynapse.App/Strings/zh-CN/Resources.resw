@@ -4201,12 +4201,12 @@
   <data name="RazerMappingActionScrollModeNumber" xml:space="preserve"><value>滚轮模式 {0}</value></data>
   <data name="RazerMappingActionRazerKeyNumber" xml:space="preserve"><value>Razer 键 {0}</value></data>
   <data name="RazerMappingActionShortcutNumber" xml:space="preserve"><value>快捷键 {0}</value></data>
-  <data name="RazerMappingActionTaskManager" xml:space="preserve"><value>任务管理器</value></data>
-  <data name="RazerMappingActionCloseApp" xml:space="preserve"><value>关闭应用</value></data>
-  <data name="RazerMappingActionSwitchApps" xml:space="preserve"><value>切换应用</value></data>
-  <data name="RazerMappingActionCut" xml:space="preserve"><value>剪切</value></data>
-  <data name="RazerMappingActionCopy" xml:space="preserve"><value>复制</value></data>
-  <data name="RazerMappingActionPaste" xml:space="preserve"><value>粘贴</value></data>
+  <data name="RazerMappingActionTaskManager" xml:space="preserve"><value>任务管理器（Ctrl+Shift+Esc）</value></data>
+  <data name="RazerMappingActionCloseApp" xml:space="preserve"><value>关闭应用（Alt+F4）</value></data>
+  <data name="RazerMappingActionSwitchApps" xml:space="preserve"><value>切换应用（Alt+Tab）</value></data>
+  <data name="RazerMappingActionCut" xml:space="preserve"><value>剪切（Ctrl+X）</value></data>
+  <data name="RazerMappingActionCopy" xml:space="preserve"><value>复制（Ctrl+C）</value></data>
+  <data name="RazerMappingActionPaste" xml:space="preserve"><value>粘贴（Ctrl+V）</value></data>
   <data name="RazerMappingActionToggleScrollMode" xml:space="preserve"><value>切换滚轮模式</value></data>
   <data name="RazerMappingActionSuffixHold" xml:space="preserve"><value>（按住）</value></data>
   <data name="RazerMappingActionSuffixToggle" xml:space="preserve"><value>（按一下开始/再按停止）</value></data>
