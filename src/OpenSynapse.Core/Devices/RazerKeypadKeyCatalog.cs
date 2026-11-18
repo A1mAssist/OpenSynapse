@@ -12,11 +12,11 @@ public static class RazerKeypadKeyCatalog
 {
     /// <summary>
     /// 0244 exposes the wheel and D-pad outside the numbered SVG selection paths.
-    /// The keypad bundle maps ScrollUp/ScrollDown to firmware ids 9/10 and the
-    /// four D-pad directions to 44..47 (0x2C..0x2F).
+    /// The keypad bundle maps ScrollClick to firmware id 3, ScrollUp/ScrollDown to
+    /// 9/10 and the four D-pad directions to 44..47 (0x2C..0x2F).
     /// </summary>
     public static IReadOnlyList<byte> ExtraButtonIds(ushort productId) =>
-        productId == 0x0244 ? [0x09, 0x0A, 0x2C, 0x2D, 0x2E, 0x2F] : [];
+        productId == 0x0244 ? [0x03, 0x09, 0x0A, 0x2C, 0x2D, 0x2E, 0x2F] : [];
 
     public static IReadOnlyDictionary<string, byte> Resolve(
         ushort productId,
