@@ -81,7 +81,7 @@ public static partial class RazerHidMappingActions
 
     // USB HID usage page 0x07. Modifier keys carry the usage in the first byte and 0 in the
     // second, which is what the middleware's keyboardGroupToFnDataByte writes.
-    private static readonly (string Name, byte Hid)[] Keys =
+    internal static readonly (string Name, byte Hid)[] Keys =
     [
         ("A", 4), ("B", 5), ("C", 6), ("D", 7), ("E", 8), ("F", 9), ("G", 10), ("H", 11),
         ("I", 12), ("J", 13), ("K", 14), ("L", 15), ("M", 16), ("N", 17), ("O", 18), ("P", 19),

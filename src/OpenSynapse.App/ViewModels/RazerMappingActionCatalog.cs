@@ -93,8 +93,12 @@ public class RazerKeyboardMappingActionCatalog : RazerHidMappingActionCatalog
     public override string DescribeButton(byte buttonId) =>
         RazerKeyboardExtraKeyCatalog.DescribeResourceKey(_productId, buttonId) is { } key
             ? AppStrings.Text(key)
-            : buttonId is 0x03 or 0x09 or 0x0A
-                ? RazerHidMappingActions.DescribeButton(buttonId)
+            // Firmware-key-id keyboards use 1..15 and 0x60.. for real keys, so the
+            // reverse HID map names them instead of the mouse button table.
+            : RazerHuntsmanV3ProKeys.UsesFirmwareKeyIds(_productId) &&
+              RazerHuntsmanV3ProKeys.TryGetHidUsage(buttonId, out var hid) &&
+              RazerHidKeyNames.Describe(hid) is { } label
+                ? label
                 : AppStrings.FormatText("RazerMappingKeyboardButton", buttonId);
 }
 
