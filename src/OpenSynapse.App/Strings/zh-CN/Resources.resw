@@ -2465,8 +2465,14 @@
   <data name="FirmwareUpdateCurrent" xml:space="preserve"><value>已是最新版本。</value></data>
   <data name="FirmwareUpdateAvailable" xml:space="preserve"><value>有可用更新：{0}。</value></data>
   <data name="FirmwareUpdateFailed" xml:space="preserve"><value>检查失败：{0}</value></data>
-  <data name="FirmwareUpdateSupportPageUnavailable" xml:space="preserve"><value>Razer 官方支持页没有这款机型的自动更新入口，请手动访问 mysupport.razer.com 检查 BIOS 和 EC。</value></data>
+  <data name="FirmwareUpdateSupportPageUnavailable" xml:space="preserve"><value>Razer 官方支持页没有这款设备的自动更新入口，请手动访问 mysupport.razer.com 检查固件更新。</value></data>
   <data name="FirmwareDownloadButton" xml:space="preserve"><value>前往下载</value></data>
+  <data name="FirmwareDownloadAndRunButton" xml:space="preserve"><value>下载并启动</value></data>
+  <data name="FirmwareUpdateDownloading" xml:space="preserve"><value>正在下载固件更新包…</value></data>
+  <data name="FirmwareUpdateInstallerStarted" xml:space="preserve"><value>已启动 Razer 官方升级程序，请按提示完成更新。</value></data>
+  <data name="FirmwareUpdateSignatureFailed" xml:space="preserve"><value>更新包签名校验失败，已删除。</value></data>
+  <data name="FirmwareUpdateLaunchFailed" xml:space="preserve"><value>启动失败：{0}</value></data>
+  <data name="FirmwareUpdateCancelled" xml:space="preserve"><value>已取消。</value></data>
   <data name="BladeFnKeyLabel" xml:space="preserve"><value>Fn 行行为</value></data>
   <data name="BladeFnKeyMultimediaPrimaryText" xml:space="preserve"><value>多媒体键优先</value></data>
   <data name="BladeFnKeyFunctionPrimaryText" xml:space="preserve"><value>功能键优先</value></data>

@@ -2083,8 +2083,14 @@
   <data name="FirmwareUpdateCurrent" xml:space="preserve"><value>Le micrologiciel est à jour.</value></data>
   <data name="FirmwareUpdateAvailable" xml:space="preserve"><value>Mise à jour disponible : {0}.</value></data>
   <data name="FirmwareUpdateFailed" xml:space="preserve"><value>Échec de la vérification : {0}</value></data>
-  <data name="FirmwareUpdateSupportPageUnavailable" xml:space="preserve"><value>Le site d’assistance de Razer n’a pas de page de mise à jour automatique pour ce modèle. Vérifiez le BIOS et l’EC manuellement sur mysupport.razer.com.</value></data>
+  <data name="FirmwareUpdateSupportPageUnavailable" xml:space="preserve"><value>Le site d’assistance de Razer n’a pas d’entrée de mise à jour automatique pour cet appareil. Vérifiez les mises à jour de firmware manuellement sur mysupport.razer.com.</value></data>
   <data name="FirmwareDownloadButton" xml:space="preserve"><value>Ouvrir la page de téléchargement</value></data>
+  <data name="FirmwareDownloadAndRunButton" xml:space="preserve"><value>Télécharger et lancer</value></data>
+  <data name="FirmwareUpdateDownloading" xml:space="preserve"><value>Téléchargement du package de mise à jour du firmware…</value></data>
+  <data name="FirmwareUpdateInstallerStarted" xml:space="preserve"><value>Le programme de mise à jour officiel Razer a démarré. Suivez les instructions pour terminer.</value></data>
+  <data name="FirmwareUpdateSignatureFailed" xml:space="preserve"><value>La vérification de signature du package a échoué ; le fichier a été supprimé.</value></data>
+  <data name="FirmwareUpdateLaunchFailed" xml:space="preserve"><value>Impossible de lancer le programme de mise à jour : {0}</value></data>
+  <data name="FirmwareUpdateCancelled" xml:space="preserve"><value>Annulé.</value></data>
   <data name="BladeFnKeyLabel" xml:space="preserve"><value>Comportement de la rangée Fn</value></data>
   <data name="BladeFnKeyMultimediaPrimaryText" xml:space="preserve"><value>Touches multimédia en premier</value></data>
   <data name="BladeFnKeyFunctionPrimaryText" xml:space="preserve"><value>Touches de fonction en premier</value></data>

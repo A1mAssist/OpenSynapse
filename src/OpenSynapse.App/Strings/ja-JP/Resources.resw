@@ -2083,8 +2083,14 @@
   <data name="FirmwareUpdateCurrent" xml:space="preserve"><value>ファームウェアは最新です。</value></data>
   <data name="FirmwareUpdateAvailable" xml:space="preserve"><value>アップデートがあります: {0}。</value></data>
   <data name="FirmwareUpdateFailed" xml:space="preserve"><value>確認に失敗しました: {0}</value></data>
-  <data name="FirmwareUpdateSupportPageUnavailable" xml:space="preserve"><value>Razer のサポート サイトには、このモデル用の自動更新ページがありません。mysupport.razer.com で BIOS と EC を手動で確認してください。</value></data>
+  <data name="FirmwareUpdateSupportPageUnavailable" xml:space="preserve"><value>Razer のサポート サイトには、このデバイス用の自動更新ページがありません。mysupport.razer.com でファームウェア更新を手動で確認してください。</value></data>
   <data name="FirmwareDownloadButton" xml:space="preserve"><value>ダウンロード ページを開く</value></data>
+  <data name="FirmwareDownloadAndRunButton" xml:space="preserve"><value>ダウンロードして起動</value></data>
+  <data name="FirmwareUpdateDownloading" xml:space="preserve"><value>ファームウェア更新パッケージをダウンロードしています…</value></data>
+  <data name="FirmwareUpdateInstallerStarted" xml:space="preserve"><value>Razer 公式アップデーターを起動しました。画面の指示に従って更新を完了してください。</value></data>
+  <data name="FirmwareUpdateSignatureFailed" xml:space="preserve"><value>更新パッケージの署名検証に失敗したため、削除しました。</value></data>
+  <data name="FirmwareUpdateLaunchFailed" xml:space="preserve"><value>起動できませんでした：{0}</value></data>
+  <data name="FirmwareUpdateCancelled" xml:space="preserve"><value>キャンセルしました。</value></data>
   <data name="BladeFnKeyLabel" xml:space="preserve"><value>Fn 行の動作</value></data>
   <data name="BladeFnKeyMultimediaPrimaryText" xml:space="preserve"><value>マルチメディア キーを優先</value></data>
   <data name="BladeFnKeyFunctionPrimaryText" xml:space="preserve"><value>ファンクション キーを優先</value></data>
