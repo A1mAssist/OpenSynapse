@@ -50,7 +50,7 @@ public sealed partial class TrayMenuWindow
             var label = new TextBlock
             {
                 Text = mode.Label,
-                FontSize = 13,
+                FontSize = 14,
                 FontFamily = new FontFamily("Microsoft YaHei UI,Segoe UI"),
                 Margin = new Thickness(12, 0, 0, 0),
                 VerticalAlignment = VerticalAlignment.Center,
