@@ -267,12 +267,15 @@ public static class RazerOnboardProfileProtocol
     public static byte[] ParseProfileIds(ReadOnlySpan<byte> response, ReadOnlySpan<byte> request)
     {
         // The reply only carries count + ids, so its declared size is shorter than the
-        // 80-byte receive buffer the request asks for; the transport already matched
-        // transaction, class and command.
+        // 80-byte receive buffer the request asks for. The transport already matched the
+        // report id, transaction, command and checksum; re-checking the checksum here
+        // rejected the 7-byte reply some firmware sends, because its CRC covers only the
+        // bytes it actually filled.
         if (response.Length != RazerFeatureReport.Length ||
             response[6] > 80 ||
-            !RazerFeatureReport.IsSuccessfulResponse(
-                request, response, 1, allowRemainingPacketsMismatch: true))
+            !RazerFeatureReport.IsAcceptedStatus(response[1]) ||
+            response[7] != request[7] ||
+            response[8] != request[8])
         {
             throw new InvalidOperationException(
                 "Profile id list returned an invalid or out-of-order feature report.");
