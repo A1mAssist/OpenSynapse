@@ -138,8 +138,8 @@ internal sealed class RazerAmdPowerLimitController : ICpuPowerLimitController
                 BadImageFormatException or IOException or InvalidOperationException or
                 UnauthorizedAccessException)
         {
-            // The files exist, so this is a real failure; falling back to the SMU path
-            // would hide it behind a write the firmware ignores.
+            // The files exist, so this is a real failure of this path. CpuPowerLimitLocal
+            // decides whether the direct SMU path can still serve the same wall.
             detail = $"The Razer AMD OverClock path could not be opened: {exception.Message}";
             return CpuPowerLimitAvailability.Failed;
         }
