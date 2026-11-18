@@ -227,6 +227,35 @@ internal static class ThxAudioAdmission
         }
     }
 
+    /// <summary>
+    /// The Blade THX service is demand-start. Reinstalling it after every reboot
+    /// because the service is merely stopped is not a repair; wake it first and
+    /// only report a missing package when it is not even registered.
+    /// </summary>
+    internal static async Task<ThxAudioAdmissionResult> CheckAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var admission = Check();
+        if (admission.Profile is not { } profile ||
+            admission.Status.Error != "ThxServiceMissing" ||
+            !HasService(profile.ServiceName))
+        {
+            return admission;
+        }
+
+        await EnsureServiceRunningAsync(profile.ServiceName, cancellationToken)
+            .ConfigureAwait(false);
+        admission = Check();
+        return admission.Status.Error == "ThxServiceMissing"
+            ? new ThxAudioAdmissionResult(
+                new ThxAudioStatus(
+                    ThxAudioAvailability.ComponentsUnavailable,
+                    "ThxServiceStopped",
+                    null),
+                profile)
+            : admission;
+    }
+
     private static ThxAudioProfile? FindHostProfile()
         => ResolveHostProfile();
 

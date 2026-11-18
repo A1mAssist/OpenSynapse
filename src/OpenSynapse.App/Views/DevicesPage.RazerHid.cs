@@ -132,6 +132,7 @@ public sealed partial class DevicesPage : UserControl
                 if (ViewModel.RazerHid.SelectedKraken is { } kraken)
                 {
                     await kraken.LoadSerialAsync(Lifetime);
+                    await kraken.RefreshThxAsync(Lifetime);
                 }
                 break;
             case BlackSharkDeviceRowViewModel row:
@@ -199,7 +200,10 @@ public sealed partial class DevicesPage : UserControl
         await ViewModel.RazerHid.SelectKrakenAsync(row);
         SelectDevice("kraken");
         if (ViewModel.RazerHid.SelectedKraken is { } kraken)
+        {
             await kraken.LoadSerialAsync(Lifetime);
+            await kraken.RefreshThxAsync(Lifetime);
+        }
     }
 
     private async void BlackSharkSelectorClick(object sender, RoutedEventArgs e)
@@ -218,8 +222,8 @@ public sealed partial class DevicesPage : UserControl
     private async void RazerHidKrakenInstallThxClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidKraken?.InstallThxComponentsAsync(Lifetime) ?? Task.CompletedTask);
 
-    private void RazerHidKrakenRefreshThxClick(object sender, RoutedEventArgs e) =>
-        SelectedRazerHidKraken?.RefreshThx();
+    private async void RazerHidKrakenRefreshThxClick(object sender, RoutedEventArgs e) =>
+        await (SelectedRazerHidKraken?.RefreshThxAsync(Lifetime) ?? Task.CompletedTask);
 
     private RazerHidDeviceViewModel? SelectedRazerHidDevice =>
         (DataContext as MainViewModel)?.RazerHid?.SelectedDevice;

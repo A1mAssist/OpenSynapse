@@ -34,18 +34,24 @@ public sealed partial class RazerHidKrakenViewModel
                 AppStrings.Text("RazerHeadsetThxDownloadFailed"),
             _ when ThxStatus.ErrorCode?.StartsWith("ThxInstaller", StringComparison.Ordinal) == true =>
                 AppStrings.Text("RazerHeadsetThxDownloadFailed"),
+            _ when ThxStatus.Availability == ThxHeadsetAvailability.InstalledButInactive =>
+                AppStrings.Text("RazerHeadsetThxRejectedInstalled"),
             _ when ThxStatus.Availability == ThxHeadsetAvailability.Available =>
                 AppStrings.Text("RazerHeadsetThxReady"),
             _ => string.Empty,
         };
 
     public Visibility ThxInstallerVisibility =>
-        ThxStatus.Availability == ThxHeadsetAvailability.Available || ThxStatus.RebootRequired
+        ThxStatus.Availability is ThxHeadsetAvailability.Available or
+            ThxHeadsetAvailability.InstalledButInactive ||
+        ThxStatus.RebootRequired
             ? Visibility.Collapsed
             : ThxVisibility;
 
     public bool CanInstallThx =>
-        !_thxBusy && ThxStatus.Availability != ThxHeadsetAvailability.Available &&
+        !_thxBusy &&
+        ThxStatus.Availability is not (ThxHeadsetAvailability.Available or
+            ThxHeadsetAvailability.InstalledButInactive) &&
         !ThxStatus.RebootRequired;
 
     public async Task InstallThxComponentsAsync(CancellationToken cancellationToken = default)
@@ -79,10 +85,12 @@ public sealed partial class RazerHidKrakenViewModel
         }
     }
 
-    public void RefreshThx()
+    public async Task RefreshThxAsync(CancellationToken cancellationToken = default)
     {
         _thxErrorText = string.Empty;
-        _thxStatus = ThxHeadsetAdmission.Check(Connection.ProductId);
+        _thxStatus = await ThxHeadsetAdmission
+            .CheckAsync(Connection.ProductId, cancellationToken)
+            .ConfigureAwait(true);
         NotifyStateChanged();
     }
 }
