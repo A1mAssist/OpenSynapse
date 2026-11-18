@@ -211,6 +211,7 @@ public sealed partial class LightingStudioPage : UserControl
     internal void OnNavigatedFrom()
     {
         _timer.Stop();
+        _previewSuspended = false;
         _historyTimer.Stop();
         _viewModel?.CommitHistory();
 #if DEBUG
