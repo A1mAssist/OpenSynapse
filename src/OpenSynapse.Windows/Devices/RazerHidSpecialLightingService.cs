@@ -363,9 +363,10 @@ public sealed partial class RazerHidSpecialLightingService
                 $"RazerHid Kraken V4 1532:{connection.ProductId:X4} does not support {settings.Effect}.");
         }
 
-        // AudioMabelT3CDongle (0574) also sets isDongleCommand=false in the bundle,
-        // so its lighting frames carry the same 0x80 direction byte as 056C.
-        var isDongle = connection.ProductId is 0x056C or 0x0574;
+        // The Billie/Mabel dongle classes set isDongleCommand=false in the bundle,
+        // so their lighting frames carry the 0x80 direction byte. The wired classes
+        // and AudioValkyrieDongle keep it at zero.
+        var isDongle = connection.ProductId is 0x056C or 0x0574 or 0x0588;
         var device = KrakenDevices[connection.ProductId];
         IReadOnlyList<byte[]> reports = settings.Effect switch
         {
@@ -401,12 +402,7 @@ public sealed partial class RazerHidSpecialLightingService
             {
                 // Re-taking Chroma control on every click makes 056B fade to the
                 // old colour, so the handshake only runs once per device path.
-                // AudioMabelT3CDongle (0574) has no 02 00 00 connect step in its
-                // bundle; sending it left the headset answering 0x05 and dropping.
-                if (connection.ProductId != 0x0574)
-                {
-                    reportsToSend.Add(RazerHidKrakenV4Protocol.CreateConnect(isDongle));
-                }
+                reportsToSend.Add(RazerHidKrakenV4Protocol.CreateConnect(isDongle));
                 reportsToSend.Add(RazerHidKrakenV4Protocol.CreateForceChroma(enabled: true, isDongle));
                 reportsToSend.Add(RazerHidKrakenV4Protocol.CreateBrightness(percent, isDongle));
             }
