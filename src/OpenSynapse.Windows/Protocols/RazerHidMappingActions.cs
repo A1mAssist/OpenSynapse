@@ -64,9 +64,9 @@ public enum RazerHidMacroPlayback
 /// </summary>
 public static partial class RazerHidMappingActions
 {
-    public static IReadOnlyList<string> ModifierNames { get; } = ["None", "Ctrl", "Shift", "Alt", "Win"];
-
-    public static IReadOnlyList<byte> ModifierMasks { get; } = [0x00, 0x01, 0x02, 0x04, 0x08];
+    // Append combinations; profiles store the index, so existing entries must not move.
+    public static IReadOnlyList<string> ModifierNames { get; } = ["None", "Ctrl", "Shift", "Alt", "Win", "Ctrl+Shift", "Ctrl+Alt", "Shift+Alt", "Ctrl+Shift+Alt"];
+    public static IReadOnlyList<byte> ModifierMasks { get; } = [0x00, 0x01, 0x02, 0x04, 0x08, 0x03, 0x05, 0x06, 0x07];
 
     private static readonly (string Name, byte Id)[] MouseButtons =
     [
@@ -146,11 +146,6 @@ public static partial class RazerHidMappingActions
         ("Rapid trigger adjustment", 113), ("SnapTap toggle", 117), ("Mic mute", 216),
     ];
 
-    private static readonly (string Name, byte Code)[] WindowsShortcuts =
-    [
-        ("Screenshot", 99), ("Xbox Game Bar", 100), ("Cycle apps", 101),
-    ];
-
     public static IReadOnlyList<string> OptionNames(
         RazerHidMappingGroup group,
         IReadOnlyList<RazerHidMacroOption>? macros = null) => group switch
@@ -165,7 +160,7 @@ public static partial class RazerHidMappingActions
         RazerHidMappingGroup.DoubleClick => ["Double click"],
         RazerHidMappingGroup.ScrollWheelMode => Names(ScrollWheelModes),
         RazerHidMappingGroup.RazerKey => Names(RazerKeys),
-        RazerHidMappingGroup.WindowsShortcut => Names(WindowsShortcuts),
+        RazerHidMappingGroup.WindowsShortcut => WindowsShortcutNames(),
         RazerHidMappingGroup.HyperShiftToggle => ["HyperShift"],
         RazerHidMappingGroup.Macro when macros is { Count: > 0 } =>
             macros.Select(macro => macro.Name).ToArray(),
@@ -204,16 +199,9 @@ public static partial class RazerHidMappingActions
                 return new(mouse.Name, RazerHidMappingFunctions.ButtonCode, [mouse.Id]);
             case RazerHidMappingGroup.KeyboardKey when optionIndex < Keys.Length:
                 var key = Keys[optionIndex];
-                // The firmware keeps Win down when these are sent as raw chords. Synapse uses
-                // its native shortcut ids instead, which release the modifier themselves.
-                var windowsShortcut = modifierMask == 0x08
-                    ? key.Hid switch { 0x0A => (byte)100, 0x2B => (byte)101, _ => (byte)0 }
-                    : (byte)0;
-                if (windowsShortcut != 0)
+                if (CreateNativeWindowsShortcut(modifierMask, key.Hid) is { } native)
                 {
-                    var native = WindowsShortcuts.First(item => item.Code == windowsShortcut);
-                    return new(native.Name, RazerHidMappingFunctions.Win8ShortcutsKey,
-                        [windowsShortcut]);
+                    return native;
                 }
 
                 return new(key.Name, RazerHidMappingFunctions.KeyCode, [modifierMask, key.Hid]);
@@ -238,10 +226,8 @@ public static partial class RazerHidMappingActions
             case RazerHidMappingGroup.RazerKey when optionIndex < RazerKeys.Length:
                 var razer = RazerKeys[optionIndex];
                 return new(razer.Name, RazerHidMappingFunctions.RazerKey, [razer.Code]);
-            case RazerHidMappingGroup.WindowsShortcut when optionIndex < WindowsShortcuts.Length:
-                var shortcut = WindowsShortcuts[optionIndex];
-                return new(shortcut.Name, RazerHidMappingFunctions.Win8ShortcutsKey,
-                    [shortcut.Code]);
+            case RazerHidMappingGroup.WindowsShortcut:
+                return CreateWindowsShortcut(optionIndex);
             case RazerHidMappingGroup.HyperShiftToggle:
                 return new("HyperShift", RazerHidMappingFunctions.ModeButtonkey, [0x01]);
             case RazerHidMappingGroup.Macro when macros is not null && optionIndex < macros.Count:
@@ -311,7 +297,8 @@ public static partial class RazerHidMappingActions
         RazerHidMappingFunctions.Off => "Off",
         RazerHidMappingFunctions.ButtonCode when data.Count > 0 => DescribeButton(data[0]),
         RazerHidMappingFunctions.ButtonCode => "Mouse button",
-        RazerHidMappingFunctions.KeyCode when data.Count >= 2 => DescribeKey(data[0], data[1]),
+        RazerHidMappingFunctions.KeyCode when data.Count >= 2 =>
+            WindowsShortcutName(functionId, data) ?? DescribeKey(data[0], data[1]),
         RazerHidMappingFunctions.KeyCode => "Keyboard key",
         RazerHidMappingFunctions.Dpi when data.Count >= 5 && data[0] == 0x05 => "DPI clutch",
         RazerHidMappingFunctions.Dpi when data.Count > 0 => DpiActions
@@ -330,8 +317,8 @@ public static partial class RazerHidMappingActions
             .FirstOrDefault(mode => mode.Code == data[0]).Name ?? $"Scroll mode {data[0]}",
         RazerHidMappingFunctions.RazerKey when data.Count > 0 => RazerKeys
             .FirstOrDefault(key => key.Code == data[0]).Name ?? $"Razer key {data[0]}",
-        RazerHidMappingFunctions.Win8ShortcutsKey when data.Count > 0 => WindowsShortcuts
-            .FirstOrDefault(key => key.Code == data[0]).Name ?? $"Shortcut {data[0]}",
+        RazerHidMappingFunctions.Win8ShortcutsKey when data.Count > 0 =>
+            WindowsShortcutName(functionId, data) ?? $"Shortcut {data[0]}",
         RazerHidMappingFunctions.ModeButtonkey => "HyperShift",
         RazerHidMappingFunctions.TurboModeButton when data.Count > 0 =>
             $"Turbo {DescribeButton(data[0])}",
@@ -356,6 +343,11 @@ public static partial class RazerHidMappingActions
             case RazerHidMappingFunctions.ButtonCode when data.Count > 0:
                 return Map(RazerHidMappingGroup.MouseButton, MouseButtons, data[0]);
             case RazerHidMappingFunctions.KeyCode when data.Count >= 2:
+                if (WindowsShortcutIndex(functionId, data) is { } shortcutIndex)
+                {
+                    return new(RazerHidMappingGroup.WindowsShortcut, shortcutIndex);
+                }
+
                 if (data[1] == 0)
                 {
                     // [single modifier bit, 0] is the canonical bare-modifier form.
@@ -403,7 +395,9 @@ public static partial class RazerHidMappingActions
             case RazerHidMappingFunctions.RazerKey when data.Count > 0:
                 return MapCode(RazerHidMappingGroup.RazerKey, RazerKeys, data[0]);
             case RazerHidMappingFunctions.Win8ShortcutsKey when data.Count > 0:
-                return MapCode(RazerHidMappingGroup.WindowsShortcut, WindowsShortcuts, data[0]);
+                return WindowsShortcutIndex(functionId, data) is { } presetIndex
+                    ? new(RazerHidMappingGroup.WindowsShortcut, presetIndex)
+                    : null;
             case RazerHidMappingFunctions.ModeButtonkey:
                 return new(RazerHidMappingGroup.HyperShiftToggle, 0);
             case RazerHidMappingFunctions.TurboModeButton when data.Count > 0:
@@ -546,14 +540,7 @@ public static partial class RazerHidMappingActions
             return name;
         }
 
-        var modifier = modifierMask switch
-        {
-            0x01 => "Ctrl",
-            0x02 => "Shift",
-            0x04 => "Alt",
-            0x08 => "Win",
-            _ => $"{modifierMask:X2}",
-        };
+        var modifier = ModifierLabel(modifierMask);
         return $"{modifier}+{name}";
     }
 
