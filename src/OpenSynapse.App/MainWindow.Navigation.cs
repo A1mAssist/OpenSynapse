@@ -205,10 +205,10 @@ public sealed partial class MainWindow
         _settingsPage?.UpdateChromaRestStatusTimer(AppWindow.IsVisible);
         if (page == "diagnostics")
         {
-            // The rebuild is skipped while this page is hidden, so entering it must refresh
-            // once or the list would show whatever was captured before the user left.
+            // Rebuild from the current snapshot and wake the readout pass. A full HID
+            // discovery here made every visit to diagnostics stall on a device rescan.
             _viewModel.Diagnostics.EnsureRazerHidRows();
-            _viewModel.Refresh.RequestDeviceRefresh();
+            _viewModel.Refresh.RequestDeviceReadout();
         }
     }
 
