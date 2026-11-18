@@ -72,13 +72,10 @@ public static class ViperDpiStagesProtocol
                 throw new InvalidOperationException(
                     $"Viper DPI stage numbers are not contiguous: expected {expectedRawNumber}, received {arguments[offset]}.");
             }
-            if (arguments[offset + 5] != 0x00 || arguments[offset + 6] != 0x00)
-            {
-                throw new InvalidOperationException($"Viper DPI stage {number} has a nonzero reserved field.");
-            }
-
             var x = (arguments[offset + 1] << 8) | arguments[offset + 2];
             var y = (arguments[offset + 3] << 8) | arguments[offset + 4];
+            // Bytes +5/+6 of the seven-byte record carry device data on 00B8; the
+            // parser only depends on the number and the DPI pair.
             if (!IsValidDpi(x) || !IsValidDpi(y))
             {
                 throw new InvalidOperationException(
