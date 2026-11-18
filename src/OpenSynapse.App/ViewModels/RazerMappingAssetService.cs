@@ -145,6 +145,7 @@ public sealed partial class RazerMappingAssetService
             {
                 var script = await File.ReadAllTextAsync(scriptPath, cancellationToken).ConfigureAwait(false);
                 bundle = RazerMappingBundleParser.Parse(script, manifest.Image3x);
+                if (bundle is null || !IsExpectedBundle(productId, bundle)) return null;
                 if (bundle.Image3x is { Length: > 0 } image)
                 {
                     var imagePath = await CacheRemoteFileAsync(

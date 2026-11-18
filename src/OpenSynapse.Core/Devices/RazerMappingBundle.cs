@@ -14,6 +14,8 @@ public sealed record RazerMappingBundle(
     IReadOnlyList<RazerMappingBundleAnchor> MouseAnchors,
     IReadOnlyDictionary<string, byte> KeyIdsByName)
 {
+    public string? DeviceName { get; init; }
+
     public IReadOnlyDictionary<byte, string> ButtonNamesById { get; init; } =
         new Dictionary<byte, string>();
 }
@@ -100,6 +102,10 @@ public static partial class RazerMappingBundleParser
         """^(?:\./)?static/media/prd-3x[^/]*\.(?:avif|png|webp)$""",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
+    private static readonly Regex DeviceNameRegex = new(
+        "deviceName:\\s*\"(?<name>Razer[^\"]+)\"",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
     public static RazerMappingBundle Parse(string mainJs, string? image3xUrl = null)
     {
         if (string.IsNullOrEmpty(mainJs))
@@ -125,6 +131,9 @@ public static partial class RazerMappingBundleParser
         var primaryButtons = scopes.FirstOrDefault() ?? [];
         var explicitButtonIds = ParseExplicitButtonIds(mainJs);
         var keyIds = ParseKeyIds(mainJs, primaryButtons);
+        var deviceName = DeviceNameRegex.Match(mainJs) is { Success: true } nameMatch
+            ? nameMatch.Groups["name"].Value
+            : null;
         var anchors = new List<RazerMappingBundleAnchor>();
         var seenButtonIds = new HashSet<byte>();
         var imageOffsetX = (canvasWidth - DefaultImageWidth) / 2;
@@ -182,6 +191,7 @@ public static partial class RazerMappingBundleParser
             anchors,
             keyIds)
         {
+            DeviceName = deviceName,
             ButtonNamesById = BuildButtonNames(namedButtons, explicitButtonIds),
         };
     }
