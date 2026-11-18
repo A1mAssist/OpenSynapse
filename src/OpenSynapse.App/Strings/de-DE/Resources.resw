@@ -2083,8 +2083,14 @@
   <data name="FirmwareUpdateCurrent" xml:space="preserve"><value>Die Firmware ist auf dem neuesten Stand.</value></data>
   <data name="FirmwareUpdateAvailable" xml:space="preserve"><value>Update verfügbar: {0}.</value></data>
   <data name="FirmwareUpdateFailed" xml:space="preserve"><value>Prüfung fehlgeschlagen: {0}</value></data>
-  <data name="FirmwareUpdateSupportPageUnavailable" xml:space="preserve"><value>Die Supportseite von Razer bietet für dieses Modell keine Seite für automatische Updates. Prüfen Sie BIOS und EC manuell unter mysupport.razer.com.</value></data>
+  <data name="FirmwareUpdateSupportPageUnavailable" xml:space="preserve"><value>Die Supportseite von Razer bietet für dieses Gerät keinen automatischen Update-Eintrag. Prüfen Sie Firmware-Updates manuell unter mysupport.razer.com.</value></data>
   <data name="FirmwareDownloadButton" xml:space="preserve"><value>Downloadseite öffnen</value></data>
+  <data name="FirmwareDownloadAndRunButton" xml:space="preserve"><value>Herunterladen und starten</value></data>
+  <data name="FirmwareUpdateDownloading" xml:space="preserve"><value>Firmware-Update-Paket wird heruntergeladen…</value></data>
+  <data name="FirmwareUpdateInstallerStarted" xml:space="preserve"><value>Das offizielle Razer-Updater-Programm wurde gestartet. Folgen Sie den Anweisungen, um das Update abzuschließen.</value></data>
+  <data name="FirmwareUpdateSignatureFailed" xml:space="preserve"><value>Die Signaturprüfung des Update-Pakets ist fehlgeschlagen; die Datei wurde gelöscht.</value></data>
+  <data name="FirmwareUpdateLaunchFailed" xml:space="preserve"><value>Updater konnte nicht gestartet werden: {0}</value></data>
+  <data name="FirmwareUpdateCancelled" xml:space="preserve"><value>Abgebrochen.</value></data>
   <data name="BladeFnKeyLabel" xml:space="preserve"><value>Verhalten der Fn-Reihe</value></data>
   <data name="BladeFnKeyMultimediaPrimaryText" xml:space="preserve"><value>Multimedientasten zuerst</value></data>
   <data name="BladeFnKeyFunctionPrimaryText" xml:space="preserve"><value>Funktionstasten zuerst</value></data>

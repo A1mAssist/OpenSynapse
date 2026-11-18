@@ -2083,8 +2083,14 @@
   <data name="FirmwareUpdateCurrent" xml:space="preserve"><value>Firmware is up to date.</value></data>
   <data name="FirmwareUpdateAvailable" xml:space="preserve"><value>Update available: {0}.</value></data>
   <data name="FirmwareUpdateFailed" xml:space="preserve"><value>Check failed: {0}</value></data>
-  <data name="FirmwareUpdateSupportPageUnavailable" xml:space="preserve"><value>Razer's support site has no automatic update page for this model. Check BIOS and EC manually at mysupport.razer.com.</value></data>
+  <data name="FirmwareUpdateSupportPageUnavailable" xml:space="preserve"><value>Razer's support site has no automatic firmware update entry for this device. Check mysupport.razer.com manually.</value></data>
   <data name="FirmwareDownloadButton" xml:space="preserve"><value>Open download page</value></data>
+  <data name="FirmwareDownloadAndRunButton" xml:space="preserve"><value>Download &amp; run</value></data>
+  <data name="FirmwareUpdateDownloading" xml:space="preserve"><value>Downloading the firmware package…</value></data>
+  <data name="FirmwareUpdateInstallerStarted" xml:space="preserve"><value>The official Razer updater has started. Follow its steps to finish.</value></data>
+  <data name="FirmwareUpdateSignatureFailed" xml:space="preserve"><value>The update package failed signature verification and was deleted.</value></data>
+  <data name="FirmwareUpdateLaunchFailed" xml:space="preserve"><value>Could not start the updater: {0}</value></data>
+  <data name="FirmwareUpdateCancelled" xml:space="preserve"><value>Cancelled.</value></data>
   <data name="BladeFnKeyLabel" xml:space="preserve"><value>Fn row behavior</value></data>
   <data name="BladeFnKeyMultimediaPrimaryText" xml:space="preserve"><value>Multimedia keys first</value></data>
   <data name="BladeFnKeyFunctionPrimaryText" xml:space="preserve"><value>Function keys first</value></data>

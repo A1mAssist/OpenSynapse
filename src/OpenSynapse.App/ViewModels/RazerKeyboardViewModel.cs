@@ -545,6 +545,7 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
     private void ApplyState(RazerKeyboardState state)
     {
         FirmwareText = state.Firmware?.ToString() ?? "--";
+        OnPropertyChanged(nameof(CanCheckFirmwareUpdate));
         _hasFirmware = state.Firmware is not null;
         SerialText = string.IsNullOrWhiteSpace(state.Serial) ? "--" : state.Serial;
         _hasSerial = !string.IsNullOrWhiteSpace(state.Serial);

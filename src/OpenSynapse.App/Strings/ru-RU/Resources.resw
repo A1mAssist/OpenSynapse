@@ -3669,10 +3669,28 @@
     <value>Проверка не удалась: {0}</value>
   </data>
   <data name="FirmwareUpdateSupportPageUnavailable" xml:space="preserve">
-    <value>На сайте поддержки Razer нет страницы автоматического обновления для этой модели. Проверьте BIOS и EC вручную на сайте mysupport.razer.com.</value>
+    <value>На сайте поддержки Razer нет страницы автоматического обновления для этого устройства. Проверьте обновления встроенного ПО вручную на сайте mysupport.razer.com.</value>
   </data>
   <data name="FirmwareDownloadButton" xml:space="preserve">
     <value>Открыть страницу загрузки</value>
+  </data>
+  <data name="FirmwareDownloadAndRunButton" xml:space="preserve">
+    <value>Скачать и запустить</value>
+  </data>
+  <data name="FirmwareUpdateDownloading" xml:space="preserve">
+    <value>Загрузка пакета обновления встроенного ПО…</value>
+  </data>
+  <data name="FirmwareUpdateInstallerStarted" xml:space="preserve">
+    <value>Официальная программа обновления Razer запущена. Следуйте инструкциям, чтобы завершить обновление.</value>
+  </data>
+  <data name="FirmwareUpdateSignatureFailed" xml:space="preserve">
+    <value>Проверка подписи пакета обновления не прошла; файл удалён.</value>
+  </data>
+  <data name="FirmwareUpdateLaunchFailed" xml:space="preserve">
+    <value>Не удалось запустить программу обновления: {0}</value>
+  </data>
+  <data name="FirmwareUpdateCancelled" xml:space="preserve">
+    <value>Отменено.</value>
   </data>
   <data name="BladeFnKeyLabel" xml:space="preserve">
     <value>Поведение строки Fn</value>

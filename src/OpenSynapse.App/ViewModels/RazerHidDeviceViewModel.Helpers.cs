@@ -294,6 +294,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(BatteryPollingVisibility));
         OnPropertyChanged(nameof(SerialVisibility));
         OnPropertyChanged(nameof(FirmwareText));
+        OnPropertyChanged(nameof(CanCheckFirmwareUpdate));
         OnPropertyChanged(nameof(SerialText));
         OnPropertyChanged(nameof(SoftwareModeText));
         OnPropertyChanged(nameof(BatteryText));
