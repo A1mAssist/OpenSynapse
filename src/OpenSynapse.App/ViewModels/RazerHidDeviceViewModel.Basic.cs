@@ -16,7 +16,12 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
     private static readonly TimeSpan BatteryRefreshInterval = TimeSpan.FromSeconds(10);
     private DateTimeOffset _lastBatteryRefresh;
 
-    public async Task LoadBasicStateAsync(CancellationToken cancellationToken = default)
+    public Task LoadBasicStateAsync(CancellationToken cancellationToken = default) =>
+        !IsReady || RequiresRescan
+            ? Task.CompletedTask
+            : _service.RunExclusiveAsync(Connection, LoadBasicStateCoreAsync, cancellationToken);
+
+    private async Task LoadBasicStateCoreAsync(CancellationToken cancellationToken)
     {
         if (!IsReady || RequiresRescan || IsBasicBusy)
         {
