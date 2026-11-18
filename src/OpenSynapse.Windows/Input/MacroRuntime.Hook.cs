@@ -48,6 +48,27 @@ internal sealed partial class MacroRuntime
         return hook;
     }
 
+    /// <summary>
+    /// Rebuilds the input hook after a suspend: a pending HID read can outlive the
+    /// sleep and never deliver another report, which silently stops every
+    /// device-scoped trigger until the app restarts.
+    /// </summary>
+    internal void RestartInputHook()
+    {
+        MacroInputHook? hook;
+        lock (_gate)
+        {
+            hook = DetachHookLocked();
+            // Nothing to restart when no macro needed the hook in the first place.
+            if (hook is not null)
+            {
+                EnsureHookLocked();
+            }
+        }
+
+        DisposeHook(hook);
+    }
+
     // Outside _gate: Dispose joins a hook thread that may be waiting for that lock.
     private static void DisposeHook(MacroInputHook? hook) => hook?.Dispose();
 

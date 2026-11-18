@@ -221,6 +221,12 @@ internal sealed class DisplayPowerNotification
             _systemSuspended = false;
             WindowsHidDiscovery.InvalidateInterfaceCache();
             _viewModel.Refresh.RequestDeviceRefresh();
+            // A private-key read can stay pending across the suspend and never
+            // deliver another report, so the mouse keeps its firmware keys and the
+            // macros look dead until the app restarts. Rebuild the hook off the
+            // dispatcher: disposing it joins the hook thread.
+            var macros = _viewModel.Macros;
+            _ = Task.Run(macros.RestartInputHook);
             QueueDisplayTransition(suspending: false);
             _dispatcherQueue.TryEnqueue(ReplayCpuPowerLimitAfterResume);
         }

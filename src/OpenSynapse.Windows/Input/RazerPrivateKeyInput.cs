@@ -23,6 +23,10 @@ internal sealed class RazerPrivateKeyInput : IDisposable
     private const byte SlaveKeyReportId = 8;
     private const byte DevicePickUpKey = 93;
     private const byte DevicePutDownKey = 94;
+    // A collection that stays unreadable is the difference between "the mouse
+    // never sent the key" and "we stopped listening", and it used to be logged
+    // once for the whole session.
+    private const long FailureLogIntervalMilliseconds = 5 * 60 * 1000;
 
     private readonly Action<MacroInput, bool> _handler;
     private readonly Action<string>? _log;
@@ -30,11 +34,12 @@ internal sealed class RazerPrivateKeyInput : IDisposable
     private readonly Dictionary<string, HashSet<int>> _pressed =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly List<FileStream> _streams = [];
-    private readonly HashSet<string> _loggedOpenFailures = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, long> _openFailureLoggedAt =
+        new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _loggedReaders = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<(string DevicePath, byte ReportId)> _loggedReports = [];
     private readonly object _gate = new();
-    private bool _loggedNoCollections;
+    private long _noCollectionsLoggedAt;
     private Task? _completion;
     private bool _started;
     private bool _disposed;
@@ -123,9 +128,10 @@ internal sealed class RazerPrivateKeyInput : IDisposable
             .ToArray();
         if (candidates.Length == 0)
         {
-            if (!_loggedNoCollections)
+            var now = Environment.TickCount64;
+            if (now - _noCollectionsLoggedAt >= FailureLogIntervalMilliseconds)
             {
-                _loggedNoCollections = true;
+                _noCollectionsLoggedAt = now;
                 _log?.Invoke("Razer private key input: no readable VID_1532 collections");
             }
             return;
@@ -165,7 +171,7 @@ internal sealed class RazerPrivateKeyInput : IDisposable
                 {
                     // A collection may be present but not readable. Skip it and
                     // keep the other collections on the same device available.
-                    if (_loggedOpenFailures.Add(device.DevicePath))
+                    if (ShouldLogFailure(device.DevicePath))
                     {
                         _log?.Invoke(
                             $"Razer private key input: {device.DevicePath} open failed: {exception.Message}");
@@ -334,6 +340,19 @@ internal sealed class RazerPrivateKeyInput : IDisposable
     private static bool IsBladeVendorEventCollection(string path) =>
         path.Contains("&MI_01&COL04#", StringComparison.OrdinalIgnoreCase) ||
         path.Contains("&MI_01&COL05#", StringComparison.OrdinalIgnoreCase);
+
+    private bool ShouldLogFailure(string devicePath)
+    {
+        var now = Environment.TickCount64;
+        if (_openFailureLoggedAt.TryGetValue(devicePath, out var last) &&
+            now - last < FailureLogIntervalMilliseconds)
+        {
+            return false;
+        }
+
+        _openFailureLoggedAt[devicePath] = now;
+        return true;
+    }
 
     private void DisposeStreams()
     {

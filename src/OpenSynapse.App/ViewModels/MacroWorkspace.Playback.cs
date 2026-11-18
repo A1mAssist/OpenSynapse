@@ -4,6 +4,9 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class MacroWorkspace
 {
+    /// <summary>Rebuilds the input hook and its private-key readers after a suspend.</summary>
+    internal void RestartInputHook() => _macroRuntime.RestartInputHook();
+
     private void OnMacroPlaybackStartRequested()
     {
         if (_macroDispatcherQueue is not { } dispatcher)
