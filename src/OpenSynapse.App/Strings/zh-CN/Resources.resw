@@ -1404,6 +1404,18 @@
   <data name="RazerHidOnboardProfileTimeout" xml:space="preserve">
     <value>设备在规定时间内没有响应，请重试。</value>
   </data>
+  <data name="RazerHidOnboardProfileBusy" xml:space="preserve">
+    <value>设备仍在处理上一条命令，请稍后再试。</value>
+    <comment>板载配置写入的 busy 重试已耗尽</comment>
+  </data>
+  <data name="RazerHidOnboardProfileAppliedUnverified" xml:space="preserve">
+    <value>配置已下发，状态将在下次刷新时确认。</value>
+    <comment>板载配置写入成功但读回未完成</comment>
+  </data>
+  <data name="RazerHidOnboardProfileNotApplied" xml:space="preserve">
+    <value>设备没有切换到所选配置，请重试。</value>
+    <comment>板载配置切换后读回的当前配置仍不一致</comment>
+  </data>
   <data name="RazerHidOnboardProfileMismatch" xml:space="preserve">
     <value>设备返回了不匹配的报文，请重试。</value>
   </data>
