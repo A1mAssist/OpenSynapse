@@ -177,10 +177,15 @@ public sealed partial class RazerHidDeviceViewModel
         }
     }
 
-    private string MacroContextSignature() =>
-        string.Join(';', (_localMacros?.Invoke() ?? Array.Empty<MacroDefinition>())
-            .Select(macro => FormattableString.Invariant(
-                $"{macro.Id}|{macro.Name}|{TriggersSignature(macro)}")));
+    private string MacroContextSignature()
+    {
+        // Shortcuts live in the profile's system macros; a new trigger there must
+        // reload the rows even when the user macro library did not change.
+        var macros = (_localMacros?.Invoke() ?? Array.Empty<MacroDefinition>())
+            .Concat(_getActiveProfile?.Invoke().SystemMacros ?? []);
+        return string.Join(';', macros.Select(macro => FormattableString.Invariant(
+            $"{macro.Id}|{macro.Name}|{TriggersSignature(macro)}")));
+    }
 
     private static string TriggersSignature(MacroDefinition macro) =>
         string.Join('+', macro.AllTriggers.Select(trigger => FormattableString.Invariant(

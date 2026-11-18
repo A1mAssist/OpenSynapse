@@ -81,24 +81,55 @@ internal static class RazerHidStandardProtocol
     internal const byte NormalDeviceMode = 0x00;
     internal const byte DriverDeviceMode = 0x03;
 
-    // The Basilisk V3 Pro pair speaks the protocol-25 mode pair: 01:82 reads
-    // [mode, param] and 01:02 writes it. Both reject the standard 00:84/00:04.
+    // The rzDevice30 mice speak the protocol-25 mode pair: 01:82 reads
+    // [mode, param] and 01:02 writes it. 00AA/00AB reject the standard
+    // 00:84/00:04; 00BE/00BF declare it but answer only the class-01 pair.
     internal static bool UsesProtocol25DeviceMode(RazerHidDeviceDefinition device) =>
-        device.ProductId is 0x00AA or 0x00AB;
+        device.ProductId is 0x00AA or 0x00AB or 0x00BE or 0x00BF;
 
     internal static RazerHidRequest GetDeviceMode(RazerHidDeviceDefinition device) =>
-        UsesProtocol25DeviceMode(device)
+        GetDeviceMode(device, UsesProtocol25DeviceMode(device));
+
+    internal static RazerHidRequest GetDeviceMode(
+        RazerHidDeviceDefinition device,
+        bool protocol25) =>
+        protocol25
             ? Create(device, DeviceModeBuilder(device), 0x00, 0x01, 0x82, [])
             : Create(device, DeviceModeBuilder(device), 0x02, 0x00, 0x84, []);
+
+    // Registry-only mice (for example 00B8) have no catalog definition but still
+    // answer the rzDevice30 pair. Callers pass the transaction the bundle uses.
+    internal static RazerHidRequest GetDeviceMode(byte transactionId, bool protocol25) =>
+        new(
+            "razer_chroma_standard_get_device_mode",
+            protocol25
+                ? RazerFeatureReport.CreateRequest(transactionId, 0x00, 0x01, 0x82, [])
+                : RazerFeatureReport.CreateRequest(transactionId, 0x02, 0x00, 0x84, []));
 
     /// <summary>
     /// Writes the driver or normal mode. A wireless mouse left in normal mode never
     /// joins the 2.4 GHz link, so the restore path also uses this.
     /// </summary>
     internal static RazerHidRequest SetDeviceMode(RazerHidDeviceDefinition device, byte mode) =>
-        UsesProtocol25DeviceMode(device)
+        SetDeviceMode(device, mode, UsesProtocol25DeviceMode(device));
+
+    internal static RazerHidRequest SetDeviceMode(
+        RazerHidDeviceDefinition device,
+        byte mode,
+        bool protocol25) =>
+        protocol25
             ? Create(device, DeviceModeBuilder(device), 0x02, 0x01, 0x02, [mode, NoStore])
             : Create(device, DeviceModeBuilder(device), 0x02, 0x00, 0x04, [mode, NoStore]);
+
+    internal static RazerHidRequest SetDeviceMode(
+        byte transactionId,
+        byte mode,
+        bool protocol25) =>
+        new(
+            "razer_chroma_standard_set_device_mode",
+            protocol25
+                ? RazerFeatureReport.CreateRequest(transactionId, 0x02, 0x01, 0x02, [mode, NoStore])
+                : RazerFeatureReport.CreateRequest(transactionId, 0x02, 0x00, 0x04, [mode, NoStore]));
 
     private static string DeviceModeBuilder(RazerHidDeviceDefinition device) =>
         device.Transactions.ContainsKey("razer_chroma_standard_set_device_mode")

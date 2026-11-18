@@ -1,3 +1,5 @@
+using OpenSynapse.Core.Devices;
+
 namespace OpenSynapse.Windows.Input;
 
 /// <summary>
@@ -14,7 +16,9 @@ internal static class RazerPrivateKeyCatalog
         "028F,0294,02A1,02A2,02A3|80=MEDIA_VOLUME_DOWN;81=MEDIA_VOLUME_UP;82=DIAL_CLICK;83=MEDIA_NEXT;84=MEDIA_PREV;85=MEDIA_PAUSE_PLAY",
         "0078,007A,0091,0094,00E0|34=Button4;35=Button5;82=CycleUpSensitivityStages",
         "0099,00CB,00CC,00D6|80=CycleUpProfile;81=SensitivityClutch",
-        "00AA,00AB|34=Button4;35=Button5;80=CycleUpProfile;81=SensitivityClutch;82=CycleUpSensitivityStages;84=ScrollModeSwitch", // DKM_M_03/04, DKM_SB_01/02/03, DKM_M_106
+        "00AA,00AB,00AC|34=Button4;35=Button5;52=Button4;53=Button5;80=CycleUpProfile;81=SensitivityClutch;82=CycleUpSensitivityStages;84=ScrollModeSwitch", // DKM_M_03/04, DKM_SB_01/02/03, DKM_M_106
+        "00E2,00E3|34=Button4;35=Button5;80=CycleUpProfile;82=CycleUpSensitivityStages;84=ScrollModeSwitch;89=HyperShift;210=AI_Launcher",
+        "00EB|80=CycleUpProfile;89=HyperShift;210=AI_Launcher",
         "009E,00B2,00B4,00B6,00C2|32=SensitivityStageUp;33=SensitivityStageDown;82=CycleUpSensitivityStages",
         "0067,008D,008F,0093|2=Key1;3=Key2;32=SensitivityStageUp;33=SensitivityStageDown;4=Key3;5=Key4;6=Key5;7=Key6;8=Key7;80=CycleUpProfile",
         "0063,006A,006B|32=SensitivityStageUp;33=SensitivityStageDown;34=Button5;35=Button4",
@@ -25,7 +29,6 @@ internal static class RazerPrivateKeyCatalog
         "00A4,00CF|210=Key9;32=SensitivityStageUp;33=SensitivityStageDown;80=CycleUpProfile;82=CycleUpSensitivityStages;84=ScrollModeSwitch;87=CycleUpScrollStages;89=Key8",
         "0203,0221|32=M1;33=M2;34=M3;35=M4;36=M5",
         "0287,0293|32=M1;33=M2;34=M3;35=M4;36=M5;37=M6;82=DIAL_CLICK;83=MEDIA_NEXT;84=MEDIA_PREV;85=MEDIA_PAUSE_PLAY",
-        "00E2,00E3,00EB|80=CycleUpProfile",
         "0085,0086,0088|32=SensitivityStageUp;33=SensitivityStageDown;80=CycleUpProfile;81=SensitivityClutch",
         "00C7,00D0|210=AI_Launcher;82=CycleUpSensitivityStages",
         "0096|2=Key1;3=Key2;4=Key3;5=Key4;6=Key5;7=Key6;8=Key7;80=CycleUpProfile;82=CycleUpSensitivityStages",
@@ -57,7 +60,7 @@ internal static class RazerPrivateKeyCatalog
 
     internal static string Describe(ushort productId, int keyCode)
     {
-        if (Mappings.TryGetValue(productId, out var mapping) &&
+        if (TryGetMapping(productId, out var mapping) &&
             mapping.TryGetValue(keyCode, out var label))
         {
             return Friendly(label);
@@ -67,20 +70,24 @@ internal static class RazerPrivateKeyCatalog
     }
 
     internal static bool IsPrivate(ushort productId, int keyCode) =>
-        Mappings.TryGetValue(productId, out var mapping) && mapping.ContainsKey(keyCode);
+        TryGetMapping(productId, out var mapping) && mapping.ContainsKey(keyCode);
 
     internal static bool SupportsThirdSideButton(ushort productId) =>
-        Mappings.TryGetValue(productId, out var mapping) &&
+        TryGetMapping(productId, out var mapping) &&
         mapping.Values.Any(label => label == "MultiFunctionTrigger");
 
     internal static bool HasHyperShiftKey(ushort productId) =>
-        Mappings.TryGetValue(productId, out var mapping) &&
+        TryGetMapping(productId, out var mapping) &&
         mapping.Values.Any(label => label == "HyperShift");
 
     internal static bool IsHyperShift(ushort productId, int keyCode) =>
-        Mappings.TryGetValue(productId, out var mapping) &&
+        TryGetMapping(productId, out var mapping) &&
         mapping.TryGetValue(keyCode, out var label) &&
         label == "HyperShift";
+
+    // Wireless receivers report their own PID; the wired identity owns the layout.
+    private static bool TryGetMapping(ushort productId, out IReadOnlyDictionary<int, string> mapping) =>
+        Mappings.TryGetValue(RazerProductAliases.Canonical(productId), out mapping!);
 
     private static string Friendly(string label) => label switch
     {

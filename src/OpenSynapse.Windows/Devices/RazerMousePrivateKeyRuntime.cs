@@ -19,6 +19,7 @@ internal sealed class RazerMousePrivateKeyRuntime
     private const byte DpiStorage = 0x01;
     private const byte DriverDeviceMode = 0x03;
     private const byte NormalDeviceMode = 0x00;
+    private const byte DefaultModeTransaction = 0x00;
     private const byte DpiStageUpKey = 32;
     private const byte DpiStageDownKey = 33;
     private const byte DpiCycleKey = 82;
@@ -38,6 +39,9 @@ internal sealed class RazerMousePrivateKeyRuntime
     private readonly Dictionary<ushort, byte> _originalModes = [];
     private readonly Dictionary<ushort, byte> _activeStage = [];
     private readonly Dictionary<ushort, DateTime> _verifiedAt = [];
+    // The mode pair is not uniform across mice: legacy firmware answers 00:84/00:04,
+    // every rzDevice30 mouse answers 01:82/01:02. Probe once, then keep the winner.
+    private readonly Dictionary<ushort, bool> _protocol25Modes = [];
 
     internal RazerMousePrivateKeyRuntime(Action<string>? log = null) => _log = log;
 
@@ -318,13 +322,113 @@ internal sealed class RazerMousePrivateKeyRuntime
 
     private async Task<byte?> ReadModeAsync(ushort productId, CancellationToken cancellationToken)
     {
-        if (RazerHidDeviceCatalog.BuiltIn.Find(RazerVendorId, productId) is not { } definition)
+        var definition = RazerHidDeviceCatalog.BuiltIn.Find(RazerVendorId, productId);
+        bool? cached = null;
+        lock (_gate)
         {
-            return null;
+            if (_protocol25Modes.TryGetValue(productId, out var known))
+            {
+                cached = known;
+            }
         }
 
-        var report = RazerHidStandardProtocol.GetDeviceMode(definition).Report;
-        var response = await ExchangeAsync(
+        foreach (var protocol25 in Dialects(cached))
+        {
+            byte[]? response;
+            try
+            {
+                response = await ReadModeCoreAsync(
+                        productId, definition, protocol25, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (InvalidDataException)
+            {
+                continue;
+            }
+            if (!TryParseDeviceMode(response, out var mode))
+            {
+                continue;
+            }
+
+            lock (_gate)
+            {
+                _protocol25Modes[productId] = protocol25;
+            }
+            return mode;
+        }
+
+        return null;
+    }
+
+    private async Task<bool> WriteModeAsync(
+        ushort productId,
+        byte mode,
+        CancellationToken cancellationToken)
+    {
+        if (await ReadModeAsync(productId, cancellationToken).ConfigureAwait(false) is not { } current)
+        {
+            return false;
+        }
+
+        if (current == mode)
+        {
+            return true;
+        }
+
+        var definition = RazerHidDeviceCatalog.BuiltIn.Find(RazerVendorId, productId);
+        bool protocol25;
+        lock (_gate)
+        {
+            protocol25 = _protocol25Modes.GetValueOrDefault(productId);
+        }
+        await SendModeAsync(productId, definition, protocol25, mode, cancellationToken)
+            .ConfigureAwait(false);
+
+        var readback = await ReadModeAsync(productId, cancellationToken).ConfigureAwait(false);
+        if (readback == mode)
+        {
+            return true;
+        }
+
+        // A frame the device answered for the read can still be the wrong write
+        // pair; retry once with the dialect the read-back identified.
+        bool retry;
+        lock (_gate)
+        {
+            retry = _protocol25Modes.TryGetValue(productId, out var identified) &&
+                identified != protocol25;
+            if (retry)
+            {
+                protocol25 = identified;
+            }
+        }
+        if (retry)
+        {
+            await SendModeAsync(productId, definition, protocol25, mode, cancellationToken)
+                .ConfigureAwait(false);
+            readback = await ReadModeAsync(productId, cancellationToken).ConfigureAwait(false);
+            if (readback == mode)
+            {
+                return true;
+            }
+        }
+
+        _log?.Invoke(
+            $"1532:{productId:X4} device mode is " +
+            $"{(readback is { } answered ? $"0x{answered:X2}" : "unknown")}, expected 0x{mode:X2}");
+        return false;
+    }
+
+    private async Task<byte[]?> ReadModeCoreAsync(
+        ushort productId,
+        RazerHidDeviceDefinition? definition,
+        bool protocol25,
+        CancellationToken cancellationToken)
+    {
+        var report = definition is null
+            ? RazerHidStandardProtocol.GetDeviceMode(DefaultModeTransaction, protocol25).Report
+            : RazerHidStandardProtocol.GetDeviceMode(definition, protocol25).Report;
+        return await ExchangeAsync(
                 productId,
                 report[6],
                 report[7],
@@ -333,40 +437,66 @@ internal sealed class RazerMousePrivateKeyRuntime
                 cancellationToken,
                 report[2])
             .ConfigureAwait(false);
-        return response?[RazerFeatureReport.ArgumentsOffset];
     }
 
-    private async Task<bool> WriteModeAsync(
+    private async Task SendModeAsync(
         ushort productId,
+        RazerHidDeviceDefinition? definition,
+        bool protocol25,
         byte mode,
         CancellationToken cancellationToken)
     {
-        if (RazerHidDeviceCatalog.BuiltIn.Find(RazerVendorId, productId) is not { } definition)
+        var report = definition is null
+            ? RazerHidStandardProtocol.SetDeviceMode(DefaultModeTransaction, mode, protocol25).Report
+            : RazerHidStandardProtocol.SetDeviceMode(definition, mode, protocol25).Report;
+        // Synapse treats a driver-mode timeout as success; the caller's read-back decides.
+        try
+        {
+            await ExchangeAsync(
+                    productId,
+                    report[6],
+                    report[7],
+                    report[8],
+                    report.AsMemory(RazerFeatureReport.ArgumentsOffset, report[6]),
+                    cancellationToken,
+                    report[2])
+                .ConfigureAwait(false);
+        }
+        catch (InvalidDataException)
+        {
+        }
+    }
+
+    private static IEnumerable<bool> Dialects(bool? cached)
+    {
+        if (cached is { } known)
+        {
+            yield return known;
+            yield return !known;
+            yield break;
+        }
+
+        yield return false;
+        yield return true;
+    }
+
+    private static bool TryParseDeviceMode(byte[]? response, out byte mode)
+    {
+        mode = 0;
+        if (response is null)
         {
             return false;
         }
 
-        var report = RazerHidStandardProtocol.SetDeviceMode(definition, mode).Report;
-        // Synapse treats a driver-mode timeout as success; only the read-back
-        // decides whether the firmware actually changed mode.
-        await ExchangeAsync(
-            productId,
-            report[6],
-            report[7],
-            report[8],
-            report.AsMemory(RazerFeatureReport.ArgumentsOffset, report[6]),
-            cancellationToken,
-            report[2]).ConfigureAwait(false);
-        var readback = await ReadModeAsync(productId, cancellationToken).ConfigureAwait(false);
-        if (readback == mode)
+        try
         {
-            return true;
+            mode = RazerHidStandardProtocol.ParseDeviceMode(response);
+            return mode <= DriverDeviceMode;
         }
-
-        _log?.Invoke(
-            $"1532:{productId:X4} device mode is " +
-            $"{(readback is { } answered ? $"0x{answered:X2}" : "unknown")}, expected 0x{mode:X2}");
-        return false;
+        catch (InvalidDataException)
+        {
+            return false;
+        }
     }
 
     private async Task<byte[]?> ReadStagesAsync(ushort productId, CancellationToken cancellationToken)
