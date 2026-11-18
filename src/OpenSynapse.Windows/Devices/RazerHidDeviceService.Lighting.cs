@@ -93,7 +93,7 @@ public sealed partial class RazerHidDeviceService
             // The soundbar's effect write needs the region it reports, not the enum's All
             // placeholder, so it bypasses the RazerHid zone resolution below.
             var region = await GetLeviathanRegionAsync(connection, cancellationToken).ConfigureAwait(false);
-            await ExecuteWithoutResultAsync(connection,
+            await ExecuteEffectAsync(connection,
                 new RazerHidRequest("razer_chroma_extended_matrix_effect_leviathan",
                     LeviathanV2XProtocol.CreateEffect(region, settings.Effect, settings.Direction,
                         settings.Primary, settings.Secondary)),
