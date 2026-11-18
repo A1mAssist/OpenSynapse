@@ -17,6 +17,7 @@ public sealed partial class RazerHidDeviceViewModel
     private byte _activeOnboardProfileId;
     private IReadOnlyList<byte> _onboardProfileIds = [];
     private readonly Dictionary<byte, string> _onboardProfileNames = [];
+    private string _onboardProfileNameSignature = string.Empty;
     private int _selectedOnboardProfileIndex = -1;
     private bool _activeOnboardProfileKnown;
     private string _onboardProfileStatusText = string.Empty;
@@ -247,9 +248,15 @@ public sealed partial class RazerHidDeviceViewModel
             _activeOnboardProfileKnown = false;
         }
 
-        _onboardProfileNames.Clear();
-        if (ids is not null)
+        var nameSignature = string.Join(',', ids ?? []) +
+            $"|{OnboardProfileCount}|{OnboardMaxProfiles}";
+        var namesChanged = !StringComparer.Ordinal.Equals(
+            _onboardProfileNameSignature, nameSignature);
+        var namesResolved = true;
+        if (ids is not null && namesChanged)
         {
+            // Read into a scratch table so a timeout keeps the names already on screen.
+            var names = new Dictionary<byte, string>();
             // The middleware only reads name structures for profiles after the first
             // slot; slot 1 is the default profile and has no stored name.
             foreach (var id in ids.Skip(1))
@@ -260,7 +267,7 @@ public sealed partial class RazerHidDeviceViewModel
                         .GetOnboardProfileNameAsync(Connection, id, cancellationToken);
                     if (!string.IsNullOrWhiteSpace(name))
                     {
-                        _onboardProfileNames[id] = name.Trim();
+                        names[id] = name.Trim();
                     }
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -271,9 +278,24 @@ public sealed partial class RazerHidDeviceViewModel
                 {
                     // Names are optional; one rejected 0x88 means this firmware will
                     // reject the rest too, so don't delay the card with every profile.
+                    // A timeout is different: the table may still answer next refresh.
+                    namesResolved = exception is not (RazerDeviceTimeoutException or
+                        RazerReportMismatchException);
                     break;
                 }
             }
+            if (namesResolved)
+            {
+                _onboardProfileNames.Clear();
+            }
+            foreach (var pair in names)
+            {
+                _onboardProfileNames[pair.Key] = pair.Value;
+            }
+        }
+        if (namesChanged && namesResolved)
+        {
+            _onboardProfileNameSignature = nameSignature;
         }
 
         _onboardProfileIds = ids ?? BuildFallbackProfileIds(OnboardProfileCount, OnboardMaxProfiles);
