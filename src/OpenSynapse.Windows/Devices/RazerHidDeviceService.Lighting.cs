@@ -71,13 +71,13 @@ public sealed partial class RazerHidDeviceService
         if (connection.Definition.ProductId == LeviathanV2XProtocol.ProductId)
         {
             var region = await GetLeviathanRegionAsync(connection, cancellationToken).ConfigureAwait(false);
-            await ExecuteWithoutResultAsync(connection, RazerHidStandardProtocol.Create(connection.Definition,
+            await ExecuteOnceWithoutResultAsync(connection, RazerHidStandardProtocol.Create(connection.Definition,
                 "razer_chroma_extended_matrix_brightness", 0x03, 0x0F, 0x04,
                 [(byte)RazerHidStorage.Temporary, region, brightness]), cancellationToken).ConfigureAwait(false);
             return;
         }
 
-        await ExecuteWithoutResultAsync(connection,
+        await ExecuteOnceWithoutResultAsync(connection,
             RazerHidLightingProtocol.SetBrightness(connection.Definition, storage, zone, brightness), cancellationToken)
             .ConfigureAwait(false);
     }
@@ -124,7 +124,7 @@ public sealed partial class RazerHidDeviceService
         {
             try
             {
-                await ExecuteWithoutResultAsync(connection, request, cancellationToken)
+                await ExecuteOnceWithoutResultAsync(connection, request, cancellationToken)
                     .ConfigureAwait(false);
                 return;
             }
@@ -145,7 +145,7 @@ public sealed partial class RazerHidDeviceService
         byte startColumn,
         IReadOnlyList<RazerHidColor> colors,
         CancellationToken cancellationToken = default) =>
-        ExecuteWithoutResultAsync(connection,
+        ExecuteOnceWithoutResultAsync(connection,
             RazerHidLightingProtocol.SetCustomRow(connection.Definition, row, startColumn, colors), cancellationToken);
 
     /// <summary>
@@ -180,7 +180,7 @@ public sealed partial class RazerHidDeviceService
             throw new NotSupportedException(
                 $"RazerHid device 1532:{connection.Definition.ProductId:X4} does not support LED state storage {storage} on zone {ledId}.");
         }
-        return ExecuteWithoutResultAsync(connection,
+        return ExecuteOnceWithoutResultAsync(connection,
             RazerHidStandardProtocol.SetLedState(connection.Definition, (byte)storage, (byte)ledId, enabled), cancellationToken);
     }
 
@@ -247,7 +247,7 @@ public sealed partial class RazerHidDeviceService
         RequireClassicLedOperation(connection, storage, ledId,
             capability => capability.CanWriteEffect, "classic LED effect write",
             "razer_chroma_standard_set_led_effect");
-        return ExecuteWithoutResultAsync(connection,
+        return ExecuteOnceWithoutResultAsync(connection,
             RazerHidStandardProtocol.SetLedEffect(connection.Definition, (byte)storage, (byte)ledId, effect),
             cancellationToken);
     }
@@ -276,7 +276,7 @@ public sealed partial class RazerHidDeviceService
         RequireClassicLedOperation(connection, storage, ledId,
             capability => capability.CanWriteColor, "LED color write",
             "razer_chroma_standard_set_led_rgb");
-        return ExecuteWithoutResultAsync(connection,
+        return ExecuteOnceWithoutResultAsync(connection,
             RazerHidStandardProtocol.SetLedColor(connection.Definition, (byte)storage, (byte)ledId, color),
             cancellationToken);
     }
@@ -290,13 +290,13 @@ public sealed partial class RazerHidDeviceService
         RequireClassicLedOperation(connection, storage, ledId,
             capability => capability.CanWriteBlinking, "LED blinking write",
             "razer_chroma_standard_set_led_blinking");
-        return ExecuteWithoutResultAsync(connection,
+        return ExecuteOnceWithoutResultAsync(connection,
             RazerHidStandardProtocol.SetLedBlinking(connection.Definition, (byte)storage, (byte)ledId),
             cancellationToken);
     }
 
     public Task TriggerReactiveAsync(RazerHidDeviceConnection connection, CancellationToken cancellationToken = default) =>
-        ExecuteWithoutResultAsync(connection, RazerHidStandardProtocol.Create(connection.Definition,
+        ExecuteOnceWithoutResultAsync(connection, RazerHidStandardProtocol.Create(connection.Definition,
             "razer_chroma_misc_matrix_reactive_trigger", 0x05, 0x03, 0x0A,
             [0x02, 0x00, 0x00, 0x00, 0x00]), cancellationToken);
 

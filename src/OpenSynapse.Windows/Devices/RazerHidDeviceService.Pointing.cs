@@ -23,7 +23,7 @@ public sealed partial class RazerHidDeviceService
         var profileId = await ReadActiveProfileIdAsync(connection, cancellationToken).ConfigureAwait(false) ?? 0x00;
         foreach (var request in RazerHidMouseProtocol.SetPollingRate(connection.Definition, hertz, profileId))
         {
-            await ExecuteAsync(connection, request, cancellationToken).ConfigureAwait(false);
+            await ExecuteWithoutResultAsync(connection, request, cancellationToken).ConfigureAwait(false);
         }
 
         if (!connection.Capabilities.Contains(RazerHidBackendCapability.PollingRateRead))
