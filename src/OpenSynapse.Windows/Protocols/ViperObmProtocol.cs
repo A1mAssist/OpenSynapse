@@ -173,10 +173,8 @@ public static class ViperObmProtocol
         }
 
         var functionData = response.Slice(offset + 5, dataSize).ToArray();
-        if (response.Slice(offset + 5 + dataSize, 5 - dataSize).ContainsAnyExcept((byte)0))
-        {
-            throw new InvalidOperationException("Viper OBM mapping response contains a nonzero undeclared function-data tail.");
-        }
+        // The five-byte data slot is a fixed buffer; 00B8 leaves firmware data after
+        // the declared payload, so only the declared bytes belong to the assignment.
         try
         {
             ValidateProduct184Function(function, functionData);
