@@ -42,6 +42,7 @@ public sealed partial class MainWindow : Window
     private bool _performanceOverlayEnabled;
     private bool _exitRequested;
     private bool _enforcingMinimumSize;
+    private int _workingSetTrimVersion;
 
     internal MainViewModel ViewModel => _viewModel;
     internal CancellationToken LifetimeToken => _lifetime.Token;
@@ -223,6 +224,24 @@ public sealed partial class MainWindow : Window
     [DllImport("user32.dll")]
     private static extern nint GetForegroundWindow();
 
+    [DllImport("psapi.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool EmptyWorkingSet(nint process);
+
+    /// <summary>
+    /// A tray app's resident pages are pure cost while hidden. Windows pages them
+    /// back in on the next activation, so a short grace period avoids churn from
+    /// quick open/close.
+    /// </summary>
+    private async Task TrimWorkingSetAfterHideAsync()
+    {
+        var version = ++_workingSetTrimVersion;
+        await Task.Delay(TimeSpan.FromSeconds(5));
+        if (version != _workingSetTrimVersion || _exitRequested || AppWindow.IsVisible) return;
+        using var process = Process.GetCurrentProcess();
+        _ = EmptyWorkingSet(process.Handle);
+    }
+
     private void SaveWindowSize()
     {
         var size = AppWindow.Size;
@@ -262,6 +281,15 @@ public sealed partial class MainWindow : Window
         if (args.DidVisibilityChange)
         {
             UpdatePerformanceSamplingState();
+            _lightingStudioPage?.SetPreviewSuspended(!sender.IsVisible);
+            if (sender.IsVisible)
+            {
+                _workingSetTrimVersion++;
+            }
+            else
+            {
+                _ = TrimWorkingSetAfterHideAsync();
+            }
             _viewModel.Refresh.SetDeviceWatchActive(
                 sender.IsVisible || _bladeFanCurveWindow is not null);
             _settingsPage?.UpdateChromaRestStatusTimer(sender.IsVisible);
