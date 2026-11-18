@@ -48,6 +48,17 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
                     "The RazerHid connection is not available.")]);
         }
 
+        return await _service.RunExclusiveAsync(
+            connection,
+            token => ApplyLockedAsync(context, connection, token),
+            cancellationToken);
+    }
+
+    private async Task<ProfileDeviceApplyResult> ApplyLockedAsync(
+        DeviceProfileApplyContext context,
+        RazerHidDeviceConnection connection,
+        CancellationToken cancellationToken)
+    {
         var results = new List<ProfileSettingApplyResult>();
         if (context.Device.Category == DeviceCategory.Mouse)
         {

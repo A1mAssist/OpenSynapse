@@ -464,7 +464,7 @@ public sealed partial class RazerHidDeviceViewModel
         SetOnboardProfileStatus(string.Empty, isError: false);
         try
         {
-            await operation();
+            await _service.RunExclusiveAsync(Connection, _ => operation(), cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

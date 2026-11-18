@@ -220,7 +220,17 @@ public sealed partial class RazerHidDeviceService
     private static bool WritesMultiKeyThroughKeyTable(RazerHidDeviceConnection connection) =>
         connection.Definition.ProductId is 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
 
-    public async Task SetButtonAssignmentAsync(
+    public Task SetButtonAssignmentAsync(
+        RazerHidDeviceConnection connection,
+        byte buttonId,
+        byte mode,
+        byte functionId,
+        IReadOnlyList<byte> data,
+        CancellationToken cancellationToken = default) =>
+        RunExclusiveAsync(connection, _ => SetButtonAssignmentCoreAsync(
+            connection, buttonId, mode, functionId, data, cancellationToken), cancellationToken);
+
+    private async Task SetButtonAssignmentCoreAsync(
         RazerHidDeviceConnection connection,
         byte buttonId,
         byte mode,
