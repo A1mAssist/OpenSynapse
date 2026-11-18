@@ -118,17 +118,6 @@ internal sealed class RazerMousePrivateKeyRuntime
                         $"1532:{productId:X4} driver mode belongs to another owner; left alone");
                     continue;
                 case DeviceModeAction.Write:
-                    if (enable)
-                    {
-                        lock (_gate)
-                        {
-                            if (!_originalModes.ContainsKey(productId))
-                            {
-                                _originalModes[productId] = mode!.Value;
-                            }
-                        }
-                    }
-
                     var target = enable ? DriverDeviceMode : NormalDeviceMode;
                     if (!await WriteModeAsync(productId, target, cancellationToken).ConfigureAwait(false))
                     {
@@ -137,6 +126,10 @@ internal sealed class RazerMousePrivateKeyRuntime
 
                     lock (_gate)
                     {
+                        if (enable && !_originalModes.ContainsKey(productId))
+                        {
+                            _originalModes[productId] = mode!.Value;
+                        }
                         _applied[productId] = enable;
                         _verifiedAt[productId] = DateTime.UtcNow;
                         if (!enable)
@@ -325,9 +318,22 @@ internal sealed class RazerMousePrivateKeyRuntime
 
     private async Task<byte?> ReadModeAsync(ushort productId, CancellationToken cancellationToken)
     {
-        var response = await ExchangeAsync(productId, 0x02, 0x00, 0x84, ReadOnlyMemory<byte>.Empty, cancellationToken)
+        if (RazerHidDeviceCatalog.BuiltIn.Find(RazerVendorId, productId) is not { } definition)
+        {
+            return null;
+        }
+
+        var report = RazerHidStandardProtocol.GetDeviceMode(definition).Report;
+        var response = await ExchangeAsync(
+                productId,
+                report[6],
+                report[7],
+                report[8],
+                report.AsMemory(RazerFeatureReport.ArgumentsOffset, report[6]),
+                cancellationToken,
+                report[2])
             .ConfigureAwait(false);
-        return response?[9];
+        return response?[RazerFeatureReport.ArgumentsOffset];
     }
 
     private async Task<bool> WriteModeAsync(
@@ -335,17 +341,22 @@ internal sealed class RazerMousePrivateKeyRuntime
         byte mode,
         CancellationToken cancellationToken)
     {
-        if (await ExchangeAsync(
-                productId,
-                0x02,
-                0x00,
-                0x04,
-                new byte[] { mode, RazerHidStandardProtocol.NoStore },
-                cancellationToken).ConfigureAwait(false) is null)
+        if (RazerHidDeviceCatalog.BuiltIn.Find(RazerVendorId, productId) is not { } definition)
         {
             return false;
         }
 
+        var report = RazerHidStandardProtocol.SetDeviceMode(definition, mode).Report;
+        // Synapse treats a driver-mode timeout as success; only the read-back
+        // decides whether the firmware actually changed mode.
+        await ExchangeAsync(
+            productId,
+            report[6],
+            report[7],
+            report[8],
+            report.AsMemory(RazerFeatureReport.ArgumentsOffset, report[6]),
+            cancellationToken,
+            report[2]).ConfigureAwait(false);
         var readback = await ReadModeAsync(productId, cancellationToken).ConfigureAwait(false);
         if (readback == mode)
         {
@@ -390,7 +401,8 @@ internal sealed class RazerMousePrivateKeyRuntime
         byte commandClass,
         byte commandId,
         ReadOnlyMemory<byte> arguments,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        byte? transactionId = null)
     {
         var paths = await ResolvePathsAsync(productId, cancellationToken).ConfigureAwait(false);
         foreach (var path in paths)
@@ -398,7 +410,7 @@ internal sealed class RazerMousePrivateKeyRuntime
             try
             {
                 var response = await _transport
-                    .QueryAsync(path, TransactionId, dataSize, commandClass, commandId,
+                    .QueryAsync(path, transactionId ?? TransactionId, dataSize, commandClass, commandId,
                         arguments, DeviceWait, cancellationToken)
                     .ConfigureAwait(false);
                 lock (_gate)

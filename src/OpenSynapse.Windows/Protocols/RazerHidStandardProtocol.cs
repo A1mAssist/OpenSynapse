@@ -81,17 +81,29 @@ internal static class RazerHidStandardProtocol
     internal const byte NormalDeviceMode = 0x00;
     internal const byte DriverDeviceMode = 0x03;
 
+    // The Basilisk V3 Pro pair speaks the protocol-25 mode pair: 01:82 reads
+    // [mode, param] and 01:02 writes it. Both reject the standard 00:84/00:04.
+    internal static bool UsesProtocol25DeviceMode(RazerHidDeviceDefinition device) =>
+        device.ProductId is 0x00AA or 0x00AB;
+
     internal static RazerHidRequest GetDeviceMode(RazerHidDeviceDefinition device) =>
-        Create(device, "razer_chroma_standard_get_device_mode", 0x02, 0x00, 0x84, []);
+        UsesProtocol25DeviceMode(device)
+            ? Create(device, DeviceModeBuilder(device), 0x00, 0x01, 0x82, [])
+            : Create(device, DeviceModeBuilder(device), 0x02, 0x00, 0x84, []);
 
     /// <summary>
-    /// Writes device mode back to driver mode. RazerHid sends mode 0x03 with a zero parameter
-    /// for every wireless mouse it drives. A wireless mouse left in normal mode never joins
-    /// the 2.4 GHz link, so this restores it.
+    /// Writes the driver or normal mode. A wireless mouse left in normal mode never
+    /// joins the 2.4 GHz link, so the restore path also uses this.
     /// </summary>
-    internal static RazerHidRequest SetDriverDeviceMode(RazerHidDeviceDefinition device) =>
-        Create(device, "razer_chroma_standard_set_device_mode", 0x02, 0x00, 0x04,
-            [DriverDeviceMode, NoStore]);
+    internal static RazerHidRequest SetDeviceMode(RazerHidDeviceDefinition device, byte mode) =>
+        UsesProtocol25DeviceMode(device)
+            ? Create(device, DeviceModeBuilder(device), 0x02, 0x01, 0x02, [mode, NoStore])
+            : Create(device, DeviceModeBuilder(device), 0x02, 0x00, 0x04, [mode, NoStore]);
+
+    private static string DeviceModeBuilder(RazerHidDeviceDefinition device) =>
+        device.Transactions.ContainsKey("razer_chroma_standard_set_device_mode")
+            ? "razer_chroma_standard_set_device_mode"
+            : "razer_chroma_standard_get_device_mode";
 
     internal static byte ParseDeviceMode(ReadOnlySpan<byte> response) => Arguments(response, 2)[0];
 

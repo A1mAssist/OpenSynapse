@@ -354,7 +354,9 @@ public sealed partial class RazerHidDeviceService
         WriteDiagnostic(connection.Definition.ProductId,
             $"device mode was 0x{before:X2}; writing driver mode to restore the 2.4 GHz link");
         await ExecuteWithoutResultAsync(connection,
-            RazerHidStandardProtocol.SetDriverDeviceMode(connection.Definition), cancellationToken)
+            RazerHidStandardProtocol.SetDeviceMode(
+                connection.Definition, RazerHidStandardProtocol.DriverDeviceMode),
+            cancellationToken)
             .ConfigureAwait(false);
 
         var after = RazerHidStandardProtocol.ParseDeviceMode(await ExecuteAsync(connection,

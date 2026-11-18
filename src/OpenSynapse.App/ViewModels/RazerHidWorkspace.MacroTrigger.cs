@@ -19,7 +19,9 @@ public sealed partial class RazerHidWorkspace
     internal async Task SyncPrivateKeyDriverModeAsync(CancellationToken cancellationToken = default)
     {
         var wanted = new HashSet<ushort>();
-        foreach (var macro in _localMacros())
+        // Windows shortcuts are profile-scoped system macros; a shortcut bound to a
+        // private key needs the same driver mode as a user macro.
+        foreach (var macro in _localMacros().Concat(_getActiveProfile().SystemMacros))
         {
             if (!macro.Enabled)
             {
