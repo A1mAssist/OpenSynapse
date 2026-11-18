@@ -21,6 +21,10 @@ public sealed partial class RazerHidDeviceService
 
     private readonly ConcurrentDictionary<(string InstanceId, byte ButtonId), AssignmentTable>
         _assignmentTables = new();
+    // Firmware that rejects the 00:84 mode read cannot be switched into driver mode,
+    // so remember it instead of failing (and re-logging) every mapping operation.
+    private readonly ConcurrentDictionary<string, bool> _mappingModeUnavailable =
+        new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Mapping tables are keyed by the profile the device is actually on. Profile 1 is only a
@@ -472,7 +476,30 @@ public sealed partial class RazerHidDeviceService
             return await action().ConfigureAwait(false);
         }
 
-        var original = await ReadMappingDeviceModeAsync(connection, cancellationToken).ConfigureAwait(false);
+        if (_mappingModeUnavailable.ContainsKey(connection.InstanceId))
+        {
+            return await action().ConfigureAwait(false);
+        }
+
+        byte original;
+        try
+        {
+            original = await ReadMappingDeviceModeAsync(connection, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception exception) when (
+            exception is InvalidDataException or NotSupportedException or
+                RazerCommandRejectedException)
+        {
+            // Some keyboards (02CF) reject 00:84 outright but still answer their OBM
+            // tables in normal mode, so a mode read they do not implement must not
+            // take the whole mapping page down.
+            _mappingModeUnavailable.TryAdd(connection.InstanceId, true);
+            WriteDiagnostic(connection.Definition.ProductId,
+                $"mapping device mode unavailable: {exception.Message}");
+            return await action().ConfigureAwait(false);
+        }
+
         var switched = false;
         try
         {
