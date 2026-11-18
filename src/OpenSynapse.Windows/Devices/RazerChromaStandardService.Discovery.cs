@@ -22,7 +22,12 @@ public sealed partial class RazerChromaStandardService
             // The official Chroma manifest is the allowlist; curated entries keep their names.
             .Where(item => Products.ContainsKey(item.ProductId) ||
                 ChromaDeviceCatalog.Resolve(item.ProductId) is not null)
-            .Where(item => RazerHidDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
+            // A native definition only owns the lighting when it can actually write it.
+            // Catalog clones that keep DPI/polling and drop the lighting builders (Basilisk
+            // V4 family and friends) used to vanish from both stacks: the native page had
+            // nothing to write and this generic class-0x10 path skipped them for merely
+            // having a definition.
+            .Where(item => !NativeDefinitionOwnsLighting(item.ProductId))
             // A device with its own native page owns its card; Chroma never adds a second one.
             .Where(item => RazerDeviceRegistry.BuiltIn.Find(0x1532, item.ProductId) is null)
             .Where(item => !RazerHeadsetAudioService.IsKnown(item.ProductId))
@@ -47,6 +52,21 @@ public sealed partial class RazerChromaStandardService
                     CategoryFor(ChromaDeviceCatalog.Resolve(item.ProductId)!.Value),
                     ChannelFor(item.ProductId)))
             .ToArray();
+
+    internal static bool NativeDefinitionOwnsLighting(ushort productId)
+    {
+        if (RazerHidDeviceCatalog.BuiltIn.Find(0x1532, productId) is not { } definition)
+        {
+            return false;
+        }
+
+        return RazerHidDeviceService.GetLightingZoneCapabilities(definition).Values.Any(zone =>
+            zone.LightingEffects.Count > 0 ||
+            zone.CanWriteBrightness ||
+            zone.CanWriteColor ||
+            zone.CanWriteEffect ||
+            zone.CanWriteState);
+    }
 
     private static DeviceCategory CategoryFor(ChromaDeviceKind kind) => kind switch
     {
