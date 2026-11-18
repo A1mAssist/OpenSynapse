@@ -58,6 +58,17 @@ public static class RazerMouseMacroTriggerResolver
             };
         }
 
+        // The mapping page names the wheel directions as button ids 9/10; the
+        // input hook reports them as a wheel delta, so bind the macro to that.
+        if (buttonId is 0x09 or 0x0A)
+        {
+            return new MacroInput
+            {
+                Kind = MacroInputKind.MouseWheel,
+                WheelDelta = buttonId == 0x09 ? 120 : -120,
+            };
+        }
+
         // The HyperShift layer reports the side buttons as DKM_M_03/M_04
         // (Previous/Next), which the mapping page exposes as 0x22/0x23.
         if (HyperShiftSideButtonProducts.Contains(productId) &&

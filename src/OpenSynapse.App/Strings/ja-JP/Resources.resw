@@ -1161,6 +1161,12 @@
   <data name="RazerHidMappingSavedCount" xml:space="preserve">
     <value>{0} 件の割り当てを保存しました</value>
   </data>
+  <data name="RazerHidMappingSkippedRows" xml:space="preserve">
+    <value>{0} 件の割り当ては保存されませんでした: {1}</value>
+  </data>
+  <data name="RazerHidMappingUnsupportedAction" xml:space="preserve">
+    <value>このアクションはデバイスに書き込めません</value>
+  </data>
   <data name="ProfileOperationFailed" xml:space="preserve">
     <value>{0} に失敗しました: {1}</value>
   </data>

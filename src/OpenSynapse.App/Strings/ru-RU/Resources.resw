@@ -1209,6 +1209,12 @@
   <data name="RazerHidMappingSavedCount" xml:space="preserve">
     <value>Сохраненные назначения {0}.</value>
   </data>
+  <data name="RazerHidMappingSkippedRows" xml:space="preserve">
+    <value>Не сохранено назначений: {0}. {1}</value>
+  </data>
+  <data name="RazerHidMappingUnsupportedAction" xml:space="preserve">
+    <value>это действие нельзя записать на устройство</value>
+  </data>
   <data name="ProfileOperationFailed" xml:space="preserve">
     <value>{0} не удалось: {1}</value>
   </data>
