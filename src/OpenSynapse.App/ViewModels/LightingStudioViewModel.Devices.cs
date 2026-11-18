@@ -85,14 +85,11 @@ public sealed partial class LightingStudioViewModel
             if (cancellation.IsCancellationRequested) return;
             if (device.EffectiveProductId == 0) continue;
             var instanceId = device.EffectiveInstanceId ?? string.Empty;
+            // A plain grid is only a placeholder; a cancelled batch must not leave the
+            // device stuck on it, so only a real manifest visual ends the retry.
             if (DeviceVisuals.Any(visual =>
-                string.Equals(visual.InstanceId, instanceId, StringComparison.OrdinalIgnoreCase))) continue;
-            if (device.IsSingleZone)
-            {
-                if (GridVisual(device) is { } zoneVisual) AddVisual(zoneVisual);
-                continue;
-            }
-
+                string.Equals(visual.InstanceId, instanceId, StringComparison.OrdinalIgnoreCase) &&
+                visual.UsesSvg)) continue;
             if (device.IsArgb && device.Layout is { } argbLayout)
             {
                 AddVisual(StudioDeviceVisualBuilder.BuildGrid(
@@ -265,13 +262,6 @@ public sealed partial class LightingStudioViewModel
         if (option is null || option.EffectiveProductId == 0)
         {
             SetDeviceVisual(null);
-            return;
-        }
-
-        if (option.IsSingleZone)
-        {
-            SetDeviceVisual(GridVisual(option));
-            StatusText = AppStrings.Text("LightingStudioStatusHint");
             return;
         }
 
