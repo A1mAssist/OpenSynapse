@@ -201,6 +201,10 @@
                       <ComboBoxItem local:Localized.Uid="Loc_5C8A32D3B1" Tag="zh-CN" />
                       <ComboBoxItem local:Localized.Uid="AppLanguageTraditionalChinese" Tag="zh-TW" />
                       <ComboBoxItem local:Localized.Uid="Loc_F08B7A510E" Content="English" Tag="en-US" />
+                      <ComboBoxItem local:Localized.Uid="AppLanguageJapanese" Tag="ja-JP" />
+                      <ComboBoxItem local:Localized.Uid="AppLanguageKorean" Tag="ko-KR" />
+                      <ComboBoxItem local:Localized.Uid="AppLanguageGerman" Tag="de-DE" />
+                      <ComboBoxItem local:Localized.Uid="AppLanguageFrench" Tag="fr-FR" />
                       <ComboBoxItem local:Localized.Uid="AppLanguageRussian" Tag="ru-RU" />
                     </ComboBox>
                   </Grid>

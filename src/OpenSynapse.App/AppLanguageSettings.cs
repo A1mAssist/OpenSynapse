@@ -10,6 +10,10 @@ internal static class AppLanguageSettings
     public const string TraditionalChinese = "zh-TW";
     public const string English = "en-US";
     public const string Russian = "ru-RU";
+    public const string Japanese = "ja-JP";
+    public const string Korean = "ko-KR";
+    public const string German = "de-DE";
+    public const string French = "fr-FR";
 
     private static readonly string SettingsPath = AppDataPaths.Combine("language.txt");
 
@@ -54,7 +58,8 @@ internal static class AppLanguageSettings
     }
 
     private static bool IsSupported(string language) =>
-        language is System or Chinese or TraditionalChinese or English or Russian;
+        language is System or Chinese or TraditionalChinese or English or Russian or
+            Japanese or Korean or German or French;
 
     internal static string ResolveSystemLanguage(IEnumerable<string> languages)
     {
@@ -75,6 +80,26 @@ internal static class AppLanguageSettings
                 language.StartsWith("ru-", StringComparison.OrdinalIgnoreCase))
             {
                 return Russian;
+            }
+            if (language.Equals("ja", StringComparison.OrdinalIgnoreCase) ||
+                language.StartsWith("ja-", StringComparison.OrdinalIgnoreCase))
+            {
+                return Japanese;
+            }
+            if (language.Equals("ko", StringComparison.OrdinalIgnoreCase) ||
+                language.StartsWith("ko-", StringComparison.OrdinalIgnoreCase))
+            {
+                return Korean;
+            }
+            if (language.Equals("de", StringComparison.OrdinalIgnoreCase) ||
+                language.StartsWith("de-", StringComparison.OrdinalIgnoreCase))
+            {
+                return German;
+            }
+            if (language.Equals("fr", StringComparison.OrdinalIgnoreCase) ||
+                language.StartsWith("fr-", StringComparison.OrdinalIgnoreCase))
+            {
+                return French;
             }
             if (language.StartsWith("en", StringComparison.OrdinalIgnoreCase))
             {
