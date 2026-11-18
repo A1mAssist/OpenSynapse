@@ -239,6 +239,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
                 // so the rescan the user just asked for can actually recover.
                 selectedDevice.ClearRequiresRescan();
                 await selectedDevice.LoadBasicStateAsync(cancellationToken);
+                await selectedDevice.LoadSlowCardsAsync(cancellationToken: cancellationToken);
                 await selectedDevice.LoadSoundbarAsync(cancellationToken);
             }
         }
@@ -327,6 +328,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         SelectedKraken = null;
         SelectedDevice = selected;
         await selected.LoadBasicStateAsync(selectionToken);
+        await selected.LoadSlowCardsAsync(force: true, selectionToken);
         await selected.LoadSoundbarAsync(selectionToken);
         await selected.LoadDpiStagesAsync(selectionToken);
         await selected.ApplyConfiguredLightingAsync(selectionToken);
