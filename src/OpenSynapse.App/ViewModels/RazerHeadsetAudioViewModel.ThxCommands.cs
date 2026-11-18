@@ -168,27 +168,9 @@ public sealed partial class RazerHeadsetAudioViewModel
             return;
         }
 
-        // VSSrv is demand-start. A machine that already has the THX stack must
-        // not look like a fresh install just because the service is stopped.
-        if (ThxAudioAdmission.HasService(ThxHeadsetAdmission.ServiceName) &&
-            !ThxAudioAdmission.HasRunningService(ThxHeadsetAdmission.ServiceName))
-        {
-            using var start = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            start.CancelAfter(TimeSpan.FromSeconds(2));
-            try
-            {
-                await ThxAudioAdmission
-                    .EnsureServiceRunningAsync(ThxHeadsetAdmission.ServiceName, start.Token)
-                    .ConfigureAwait(true);
-            }
-            catch (Exception exception) when (
-                exception is OperationCanceledException or InvalidOperationException or
-                    System.ComponentModel.Win32Exception or UnauthorizedAccessException)
-            {
-            }
-        }
-
-        _thxStatus = ThxHeadsetAdmission.Check(_connection.ProductId);
+        _thxStatus = await ThxHeadsetAdmission
+            .CheckAsync(_connection.ProductId, cancellationToken)
+            .ConfigureAwait(true);
         _diagnostic?.Invoke(
             $"thx status availability={_thxStatus.Availability} error={_thxStatus.ErrorCode ?? "-"} " +
             $"service={ThxAudioAdmission.HasService(ThxHeadsetAdmission.ServiceName)} " +
@@ -302,6 +284,7 @@ public sealed partial class RazerHeadsetAudioViewModel
                 status.Error switch
                 {
                     "ThxServiceMissing" => ThxHeadsetAvailability.ServiceMissing,
+                    "ThxServiceStopped" => ThxHeadsetAvailability.InstalledButInactive,
                     "ThxNativeMissing" => ThxHeadsetAvailability.NativeMissing,
                     // The helper got past the file checks but the native stack refused
                     // to initialize or write. The components are already installed;
@@ -372,6 +355,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         _ when error?.StartsWith("ThxOperationRejected:", StringComparison.Ordinal) == true =>
             AppStrings.Text("RazerHeadsetThxOperationRejected"),
         "ThxRebootRequired" => AppStrings.Text("RazerHeadsetThxRebootRequired"),
+        "ThxServiceStopped" => AppStrings.Text("RazerHeadsetThxRejectedInstalled"),
         _ when error?.StartsWith("ThxHelperFailed", StringComparison.Ordinal) == true =>
             AppStrings.Text("RazerHeadsetThxHelperFailed"),
         _ => AppStrings.Text("RazerHeadsetThxFailed"),

@@ -230,7 +230,7 @@ public sealed class WindowsThxAudioController : IThxAudioController, IAsyncDispo
         ThxAudioHelperRequest request,
         CancellationToken cancellationToken)
     {
-        var admission = ThxAudioAdmission.Check();
+        var admission = await ThxAudioAdmission.CheckAsync(cancellationToken).ConfigureAwait(false);
         if (admission.Profile is null || !admission.Status.IsAvailable)
         {
             return admission.Status;

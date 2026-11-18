@@ -150,6 +150,7 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
         "ThxModelUnknown" or "ThxModelUnsupported" => AppStrings.Text("ThxHintModelUnsupported"),
         "ThxControllerActive" => AppStrings.Text("ThxHintControllerActive"),
         "ThxServiceMissing" => AppStrings.Text("ThxHintServiceMissing"),
+        "ThxServiceStopped" => AppStrings.Text("ThxHintServiceStopped"),
         "ThxNativeMissing" => AppStrings.Text("ThxHintNativeMissing"),
         "ThxHelperMissing" => AppStrings.Text("ThxHintHelperMissing"),
         _ when IsNativeMissingError => AppStrings.Text("ThxHintNativeMissing"),

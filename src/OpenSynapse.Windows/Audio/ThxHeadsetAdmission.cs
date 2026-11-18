@@ -99,6 +99,42 @@ internal static partial class ThxHeadsetAdmission
     internal static ThxHeadsetStatus Check(ushort productId)
         => Check(productId, RebootMarker);
 
+    /// <summary>
+    /// VSSrv is demand-start. A registered service that is not running yet is not a
+    /// missing install, so wake it before deciding; if it stays down, keep the
+    /// installer away and report the components as installed but inactive.
+    /// </summary>
+    internal static async Task<ThxHeadsetStatus> CheckAsync(
+        ushort productId,
+        CancellationToken cancellationToken = default)
+    {
+        var status = Check(productId);
+        if (status.ErrorCode != "ThxServiceMissing" ||
+            !ThxAudioAdmission.HasService(ServiceName))
+        {
+            return status;
+        }
+
+        using var start = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        start.CancelAfter(TimeSpan.FromSeconds(2));
+        try
+        {
+            await ThxAudioAdmission
+                .EnsureServiceRunningAsync(ServiceName, start.Token)
+                .ConfigureAwait(false);
+        }
+        catch (Exception exception) when (
+            exception is OperationCanceledException or InvalidOperationException or
+                System.ComponentModel.Win32Exception or UnauthorizedAccessException)
+        {
+        }
+
+        status = Check(productId);
+        return status.ErrorCode == "ThxServiceMissing"
+            ? new ThxHeadsetStatus(ThxHeadsetAvailability.InstalledButInactive, "ThxServiceStopped")
+            : status;
+    }
+
     internal static ThxHeadsetStatus Check(ushort productId, ThxRebootMarkerStore rebootMarker)
     {
         var profile = GetProfile(productId);

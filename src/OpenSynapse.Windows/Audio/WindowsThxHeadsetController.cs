@@ -143,7 +143,9 @@ public sealed class WindowsThxHeadsetController : IThxAudioController, IAsyncDis
         string? enhancement = null,
         int? levelPercent = null)
     {
-        var admission = ThxHeadsetAdmission.Check(_productId);
+        var admission = await ThxHeadsetAdmission
+            .CheckAsync(_productId, cancellationToken)
+            .ConfigureAwait(false);
         if (admission.Availability != ThxHeadsetAvailability.Available)
         {
             return new ThxAudioStatus(
