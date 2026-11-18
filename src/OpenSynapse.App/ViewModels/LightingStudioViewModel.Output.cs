@@ -15,12 +15,13 @@ public sealed partial class LightingStudioViewModel
 {
     private readonly Dictionary<(ushort ProductId, string InstanceId, int Rows, int Columns), StudioLayerRender[]>
         _layerCache = new();
+    private readonly StudioChromaStandardOutputRouter? _chromaRouter;
 
     /// <summary>Latest failure per device and operation, observable without hiding the global status.</summary>
     public ObservableCollection<StudioOutputFailure> OutputFailures { get; } = new();
 
     public bool CanApply =>
-        !_isBusy && (_argbRouter is not null || _headsetRouter is not null ||
+        !_isBusy && (_argbRouter is not null || _headsetRouter is not null || _chromaRouter is not null ||
             ((_lighting is not null || _hidRouter is not null) &&
              Devices.Any(device => device.Descriptor is not null || device.HasMatrix)));
 
@@ -212,6 +213,36 @@ public sealed partial class LightingStudioViewModel
     }
 
     [NotProfileScoped]
+    private bool ApplyChroma(List<string> applied, ref bool outputPumpStarted)
+    {
+        if (_chromaRouter is null) return false;
+        var targets = _chromaRouter.GetTargets();
+        if (targets.Count == 0) return false;
+        RefreshChromaSnapshots(targets);
+        if (!outputPumpStarted)
+        {
+            StartOutputPump();
+            outputPumpStarted = true;
+        }
+
+        applied.AddRange(targets.Select(target => target.Name));
+        return true;
+    }
+
+    private void RefreshChromaSnapshots(IReadOnlyList<RazerChromaDeviceConnection> targets)
+    {
+        if (_chromaRouter is null) return;
+        var snapshots = new Dictionary<string, StudioLayerRender[]>(StringComparer.OrdinalIgnoreCase);
+        foreach (var target in targets)
+        {
+            snapshots[target.DevicePath] = BuildLayersFor(target.ProductId, target.DevicePath, 1, 1);
+        }
+
+        _chromaRouter.Update(connection =>
+            snapshots.TryGetValue(connection.DevicePath, out var layers) ? layers : []);
+    }
+
+    [NotProfileScoped]
     private async Task<bool> ApplyHeadsetAsync(List<string> applied)
     {
         if (_headsetRouter is null || !await _headsetRouter.RefreshAsync().ConfigureAwait(true))
@@ -239,7 +270,7 @@ public sealed partial class LightingStudioViewModel
 
     private void StartOutputPump()
     {
-        if (_hidRouter is null && _argbRouter is null && _headsetRouter is null) return;
+        if (_hidRouter is null && _argbRouter is null && _headsetRouter is null && _chromaRouter is null) return;
         // Re-applying must not reset the effect clock or spawn a second pump.
         if (_outputTask is { IsCompleted: false }) return;
         _outputCancellation?.Cancel();
@@ -263,6 +294,8 @@ public sealed partial class LightingStudioViewModel
                         await _argbRouter.ApplyAsync(_outputClock.Elapsed, token).ConfigureAwait(false);
                     if (_headsetRouter is not null)
                         await _headsetRouter.ApplyAsync(_outputClock.Elapsed, token).ConfigureAwait(false);
+                    if (_chromaRouter is not null)
+                        await _chromaRouter.ApplyAsync(_outputClock.Elapsed, token).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException)
@@ -309,7 +342,11 @@ public sealed partial class LightingStudioViewModel
 
     public async Task StopAsync()
     {
-        if (_lighting is null && _hidRouter is null && _argbRouter is null && _headsetRouter is null) return;
+        if (_lighting is null && _hidRouter is null && _argbRouter is null &&
+            _headsetRouter is null && _chromaRouter is null)
+        {
+            return;
+        }
         IsPlaying = false;
         IsBusy = true;
         var failures = new List<string>();
@@ -333,6 +370,7 @@ public sealed partial class LightingStudioViewModel
             if (_argbRouter is not null) await StopPartAsync(() => _argbRouter.StopAsync());
             if (_headsetRouter is not null) await StopPartAsync(() =>
                 _headsetRouter.StopAsync(applyFallback: _restoreAfterExternal is null));
+            if (_chromaRouter is not null) await StopPartAsync(() => _chromaRouter.StopAsync());
             // Set the neutral status first; a restore-failure event that follows must win.
             StatusText = AppStrings.Text("LightingStudioStatusStopped");
             if (_lighting is not null) await StopPartAsync(() => _lighting.StopAsync());

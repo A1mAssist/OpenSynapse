@@ -97,6 +97,14 @@ public sealed partial class LightingStudioViewModel
                 continue;
             }
 
+            // A device that cannot address LEDs must not borrow a per-key manifest:
+            // one cell is the only promise the canvas can keep.
+            if (device.IsSingleZone)
+            {
+                if (GridVisual(device) is { } single) AddVisual(single);
+                continue;
+            }
+
             // The manifest fetch can take seconds; paint the packaged layout (or an editable
             // grid) now and replace it when the live manifest lands.
             if ((_visualLoader.LoadOfflineVisual(
@@ -272,6 +280,13 @@ public sealed partial class LightingStudioViewModel
                 option.EffectiveInstanceId ?? string.Empty,
                 option.Name,
                 argbLayout));
+            StatusText = AppStrings.Text("LightingStudioStatusHint");
+            return;
+        }
+
+        if (option.IsSingleZone)
+        {
+            SetDeviceVisual(GridVisual(option));
             StatusText = AppStrings.Text("LightingStudioStatusHint");
             return;
         }
