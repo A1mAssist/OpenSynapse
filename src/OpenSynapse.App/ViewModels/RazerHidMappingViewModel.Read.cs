@@ -24,6 +24,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         Rows.Clear();
         LeftRows.Clear();
         RightRows.Clear();
+        TableRows.Clear();
         SelectedRow = null;
         OnPropertyChanged(nameof(TableVisibility));
         OnPropertyChanged(nameof(CanApply));
@@ -61,7 +62,25 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             }
         }
 
+        PopulateFallbackRows();
         OnPropertyChanged(nameof(TableVisibility));
+    }
+
+    // Keep only the rows the art cannot address: the keyboard SVG selects one key
+    // per click, and mouse callouts already cover every hotspot row.
+    private void PopulateFallbackRows()
+    {
+        TableRows.Clear();
+        if (_layout is not null)
+        {
+            return;
+        }
+
+        var mapped = _keyboardLayout?.ButtonIdsByKeyName.Values.ToHashSet();
+        foreach (var row in Rows.Where(row => mapped is null || !mapped.Contains(row.ButtonId)))
+        {
+            TableRows.Add(row);
+        }
     }
 
     private void ReplaceRows(

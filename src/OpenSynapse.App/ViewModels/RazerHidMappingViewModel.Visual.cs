@@ -74,6 +74,7 @@ public sealed partial class RazerHidMappingViewModel
         KeyboardBackgroundImage = null;
         KeyboardScrollImage = null;
         KeyboardDpadImage = null;
+        PopulateFallbackRows();
         OnPropertyChanged(nameof(KeypadWidgetsVisibility));
         _visualLoadStarted = false;
         OnPropertyChanged(nameof(Layout));
@@ -137,7 +138,7 @@ public sealed partial class RazerHidMappingViewModel
                 OnPropertyChanged(nameof(KeyboardStageVisibility));
                 OnPropertyChanged(nameof(KeyboardWidth));
                 OnPropertyChanged(nameof(KeyboardHeight));
-                OnPropertyChanged(nameof(TableVisibility));
+                PopulateStageRows();
                 MarkVisualLoaded();
             }
 

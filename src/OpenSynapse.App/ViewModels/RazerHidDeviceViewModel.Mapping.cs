@@ -47,8 +47,9 @@ public sealed partial class RazerHidDeviceViewModel
                 ? RazerNagaMappingActionCatalog.Instance
                 : IsKeypad
                     ? RazerKeypadMappingActionCatalog.Instance
-                    : Connection.Definition.Category == DeviceCategory.Keyboard &&
-                      RazerKeyboardExtraKeyCatalog.ExtraButtonIds(Connection.Definition.ProductId).Count > 0
+                    // Every keyboard needs its own names: the shared catalog maps
+                    // firmware/HID ids 1..15 and 0x34..0x6A to mouse buttons.
+                    : Connection.Definition.Category == DeviceCategory.Keyboard
                         ? new RazerKeyboardMappingActionCatalog(Connection.Definition.ProductId)
                         : null,
             mappingProfileSaver: PersistMappingProfileAsync,

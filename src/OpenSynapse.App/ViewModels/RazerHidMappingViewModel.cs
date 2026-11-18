@@ -93,6 +93,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
     public ObservableCollection<RazerHidMappingRowViewModel> Rows { get; } = [];
     public ObservableCollection<RazerHidMappingRowViewModel> LeftRows { get; } = [];
     public ObservableCollection<RazerHidMappingRowViewModel> RightRows { get; } = [];
+    /// <summary>Rows with no hotspot on the device art; empty when every row is clickable.</summary>
+    public ObservableCollection<RazerHidMappingRowViewModel> TableRows { get; } = [];
     public bool IsLoaded => _loaded;
     public bool IsBusy
     {
@@ -184,13 +186,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
     public double KeyboardWidth => _keyboardLayout?.Visual.Width ?? 0;
     public double KeyboardHeight => _keyboardLayout?.Visual.Height ?? 0;
     public string KeyboardHint => AppStrings.Text("RazerMappingKeyboardHint");
-    // The keyboard keeps the row table below the device so a key that has no
-    // reliable name-to-HID match is still editable.
     public Visibility TableVisibility =>
-        _keyboardLayout is not null || _layout is null ||
-        Rows.Count > LeftRows.Count + RightRows.Count
-            ? Visibility.Visible
-            : Visibility.Collapsed;
+        TableRows.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
     public bool SupportsMacros => _macrosAvailable || _softwareTriggerBinder is not null;
 
     private byte Mode => (byte)LayerIndex;
