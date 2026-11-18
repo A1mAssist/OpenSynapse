@@ -139,7 +139,10 @@ public sealed partial class RazerHidDeviceService
     // mode the Tartarus Pro answers 0x05 and the Huntsman V3 Pro family answers 0x01 busy
     // for the OBM tables, which looks like a dead device.
     private static bool RequiresMappingDriverMode(RazerHidDeviceConnection connection) =>
-        connection.Definition.ProductId is 0x0244 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
+        // The Basilisk V3 Pro pair accepts an OBM write in normal mode but keeps
+        // applying the old assignment until the host switches to driver mode.
+        connection.Definition.ProductId is 0x00AA or 0x00AB or
+            0x0244 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
 
     private async Task<(AssignmentTable Table, RazerHidButtonAssignment Assignment)>
         ReadKeypadAssignmentAsync(
@@ -553,13 +556,7 @@ public sealed partial class RazerHidDeviceService
         byte mode,
         CancellationToken cancellationToken)
     {
-        // 0244 declares no set_device_mode builder; the standard 00:04 frame shares the
-        // transaction of its 00:84 mode read.
-        var request = RazerHidStandardProtocol.Create(
-            connection.Definition,
-            "razer_chroma_standard_get_device_mode",
-            0x02, 0x00, 0x04,
-            [mode, RazerHidStandardProtocol.NoStore]);
+        var request = RazerHidStandardProtocol.SetDeviceMode(connection.Definition, mode);
         try
         {
             await ExecuteWithoutResultAsync(connection, request, cancellationToken).ConfigureAwait(false);
