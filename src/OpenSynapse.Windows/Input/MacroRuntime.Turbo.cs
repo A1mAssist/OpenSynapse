@@ -76,11 +76,11 @@ internal sealed partial class MacroRuntime
         {
             while (!token.IsCancellationRequested)
             {
-                held = true;
                 await SendInputAsync(target, isDown: true, token).ConfigureAwait(false);
+                held = true;
                 await Task.Delay(TurboHoldMilliseconds, token).ConfigureAwait(false);
-                held = false;
                 await SendInputAsync(target, isDown: false, token).ConfigureAwait(false);
+                held = false;
                 await Task.Delay(
                         Math.Max(1, binding.IntervalMilliseconds - TurboHoldMilliseconds),
                         token)
@@ -106,6 +106,16 @@ internal sealed partial class MacroRuntime
                 catch (Exception exception)
                 {
                     _log?.Invoke($"turbo release failed: {exception.Message}");
+                    // A rejected key-up leaves the synthetic button held for the
+                    // whole desktop, so clear the sink's pressed set as a last resort.
+                    try
+                    {
+                        await _sink.ReleaseAllAsync().ConfigureAwait(false);
+                    }
+                    catch (Exception fallback)
+                    {
+                        _log?.Invoke($"turbo release-all failed: {fallback.Message}");
+                    }
                 }
             }
 
