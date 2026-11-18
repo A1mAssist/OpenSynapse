@@ -154,6 +154,7 @@ public enum ViperButtonMappingFunction : byte
     RazerKey = 17,
     ScrollWheelMode = 18,
     WindowsShortcut = 21,
+    Perfect180 = 22,
 }
 
 public sealed record ViperButtonAssignment(

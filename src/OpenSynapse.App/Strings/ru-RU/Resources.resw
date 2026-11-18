@@ -6431,6 +6431,9 @@
   <data name="ViperMappingDpiUp" xml:space="preserve">
     <value>Разрешение выше</value>
   </data>
+  <data name="ViperMappingPerfect180" xml:space="preserve">
+    <value>Perfect 180</value>
+  </data>
   <data name="ViperMappingDpiDown" xml:space="preserve">
     <value>DPI вниз</value>
   </data>

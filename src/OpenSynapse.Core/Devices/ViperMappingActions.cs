@@ -13,6 +13,7 @@ public enum ViperMappingActionGroup
     WindowsShortcut,
     HyperShift,
     Turbo,
+    Perfect180,
 }
 
 /// <summary>
@@ -107,6 +108,7 @@ public static class ViperMappingActions
         Simple(ViperMappingActionGroup.WindowsShortcut, "ViperMappingScreenshot", ViperButtonMappingFunction.WindowsShortcut, 99),
         Simple(ViperMappingActionGroup.WindowsShortcut, "ViperMappingXboxGameBar", ViperButtonMappingFunction.WindowsShortcut, 100),
         Simple(ViperMappingActionGroup.WindowsShortcut, "ViperMappingCycleApps", ViperButtonMappingFunction.WindowsShortcut, 101),
+        new(ViperMappingActionGroup.Perfect180, "ViperMappingPerfect180", ViperButtonMappingFunction.Perfect180),
         new(ViperMappingActionGroup.HyperShift, "ViperMappingHyperShiftToggle", ViperButtonMappingFunction.HyperShift),
         new(ViperMappingActionGroup.Turbo, "ViperMappingTurboKey", ViperButtonMappingFunction.KeyboardTurbo,
             UsesKeyboard: true, UsesTurboRate: true),
@@ -157,6 +159,9 @@ public static class ViperMappingActions
                 [modifier, usage, High(interval), Low(interval)],
             ViperButtonMappingFunction.MouseTurbo =>
                 [turboButton, High(interval), Low(interval)],
+            // Synapse's Perfect180 panel defaults: turn left, 2000 reports, enabled.
+            ViperButtonMappingFunction.Perfect180 =>
+                [1, High(2000), Low(2000), 1],
             _ => null,
         };
         if (data is null)
@@ -217,6 +222,8 @@ public static class ViperMappingActions
                 assignment.FunctionData[0] is >= 1 and <= 10 &&
                 (assignment.FunctionData[1] != 0 || assignment.FunctionData[2] != 0) =>
                 Find(ViperButtonMappingFunction.MouseTurbo, _ => true),
+            ViperButtonMappingFunction.Perfect180 when assignment.FunctionData.Count == 4 =>
+                Find(ViperButtonMappingFunction.Perfect180, _ => true),
             _ => -1,
         };
 
