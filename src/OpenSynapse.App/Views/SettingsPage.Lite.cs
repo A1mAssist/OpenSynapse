@@ -14,7 +14,8 @@ public sealed partial class SettingsPage
         ModeNotificationCard.Visibility = visibility;
         PerformanceOverlayCard.Visibility = visibility;
         ChromaRestCard.Visibility = visibility;
-        TaskbarStatusCard.Visibility = visibility;
+        // The taskbar strip is a peripheral feature and Lite mode is peripherals only,
+        // so its switch stays reachable; the presenter already follows that switch.
     }
 
     private async void LiteModeToggled(object sender, RoutedEventArgs e)

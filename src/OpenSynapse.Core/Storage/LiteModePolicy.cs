@@ -12,5 +12,4 @@ public static class LiteModePolicy
     public static int PageCacheLimit(bool liteMode) => liteMode ? 1 : 2;
     public static TimeSpan DeviceReadoutInterval(bool liteMode) =>
         TimeSpan.FromSeconds(liteMode ? 3 : 1);
-    public static bool ShouldStartTaskbarStatus(bool liteMode) => !liteMode;
 }
