@@ -41,13 +41,16 @@ public sealed partial class RazerHeadsetAudioViewModel
         : Visibility.Collapsed;
 
     public Visibility ThxInstallerVisibility =>
-        _thxStatus.Availability == ThxHeadsetAvailability.Available || _thxStatus.RebootRequired
+        _thxStatus.Availability is ThxHeadsetAvailability.Available or
+            ThxHeadsetAvailability.InstalledButInactive ||
+        _thxStatus.RebootRequired
             ? Visibility.Collapsed
             : ThxVisibility;
 
     public bool CanInstallThx =>
         !IsBusy && ThxVisibility == Visibility.Visible &&
-        _thxStatus.Availability != ThxHeadsetAvailability.Available &&
+        _thxStatus.Availability is not (ThxHeadsetAvailability.Available or
+            ThxHeadsetAvailability.InstalledButInactive) &&
         !_thxStatus.RebootRequired;
 
     public string ThxStatusText => !string.IsNullOrEmpty(_thxErrorText)
@@ -67,6 +70,8 @@ public sealed partial class RazerHeadsetAudioViewModel
                     _thxStatus.ErrorCode["ThxInstallerExit".Length..]),
             _ when _thxStatus.ErrorCode?.StartsWith("ThxInstaller", StringComparison.Ordinal) == true =>
                 AppStrings.Text("RazerHeadsetThxDownloadFailed"),
+            _ when _thxStatus.Availability == ThxHeadsetAvailability.InstalledButInactive =>
+                AppStrings.Text("RazerHeadsetThxRejectedInstalled"),
             _ when _thxStatus.Availability == ThxHeadsetAvailability.Available =>
                 AppStrings.Text("RazerHeadsetThxReady"),
             _ => string.Empty,
