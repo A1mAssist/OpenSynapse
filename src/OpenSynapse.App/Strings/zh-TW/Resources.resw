@@ -1494,6 +1494,12 @@
     <value>已儲存 {0} 個對映</value>
     <comment>已保存 {0} 个映射</comment>
   </data>
+  <data name="RazerHidMappingSkippedRows" xml:space="preserve">
+    <value>{0} 個對映未儲存：{1}</value>
+  </data>
+  <data name="RazerHidMappingUnsupportedAction" xml:space="preserve">
+    <value>此動作無法寫入裝置</value>
+  </data>
   <data name="ProfileOperationFailed" xml:space="preserve">
     <value>{0}失敗：{1}</value>
     <comment>{0}失败：{1}</comment>

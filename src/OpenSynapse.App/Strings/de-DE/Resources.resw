@@ -1161,6 +1161,12 @@
   <data name="RazerHidMappingSavedCount" xml:space="preserve">
     <value>{0} Zuweisungen gespeichert</value>
   </data>
+  <data name="RazerHidMappingSkippedRows" xml:space="preserve">
+    <value>{0} Zuweisungen wurden nicht gespeichert: {1}</value>
+  </data>
+  <data name="RazerHidMappingUnsupportedAction" xml:space="preserve">
+    <value>diese Aktion kann nicht auf das Gerät geschrieben werden</value>
+  </data>
   <data name="ProfileOperationFailed" xml:space="preserve">
     <value>{0} fehlgeschlagen: {1}</value>
   </data>

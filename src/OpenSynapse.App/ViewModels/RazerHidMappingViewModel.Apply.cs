@@ -60,6 +60,12 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                                row.MacroTarget == MacroExecutionTarget.Onboard) &&
                               row.Group != RazerHidMappingGroup.WindowsShortcut)
                 .ToArray();
+            // A row the user configured but cannot write must say so; otherwise the
+            // saved count silently comes up short and looks like a partial save.
+            var skipped = Rows
+                .Where(row => row.Group != RazerHidMappingGroup.Keep && !pending.Contains(row))
+                .Select(row => $"{row.ButtonName}: {SkipReason(row)}")
+                .ToList();
 
             var duplicate = onboardRows
                 .GroupBy(row => row.SelectedMacroSlotId)
@@ -176,6 +182,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 var action = row.CreateAction();
                 if (action is null)
                 {
+                    skipped.Add($"{row.ButtonName}: " +
+                        AppStrings.Text("RazerHidMappingUnsupportedAction"));
                     continue;
                 }
 
@@ -278,6 +286,13 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             StatusText = applied == 0
                 ? AppStrings.Text("RazerHidMappingNothingChanged")
                 : AppStrings.FormatText("RazerHidMappingSavedCount", applied);
+            if (skipped.Count > 0)
+            {
+                ErrorText = AppStrings.FormatText(
+                    "RazerHidMappingSkippedRows",
+                    skipped.Count,
+                    string.Join("; ", skipped));
+            }
         }
         catch (OnboardMacroVerificationException exception)
         {
@@ -297,6 +312,15 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(CanApply));
         }
     }
+
+    private static string SkipReason(RazerHidMappingRowViewModel row) =>
+        !row.IsAssignmentReadable
+            ? AppStrings.Text("RazerHidMappingUnreadable")
+            : row.Group == RazerHidMappingGroup.Macro &&
+              row.MacroTarget == MacroExecutionTarget.Software &&
+              !row.CanUseSoftwareMacro
+                ? AppStrings.Text("RazerMappingButtonMacroUnavailable")
+                : AppStrings.Text("RazerHidMappingUnsupportedAction");
 
     private void DisableOnboardForSession()
     {

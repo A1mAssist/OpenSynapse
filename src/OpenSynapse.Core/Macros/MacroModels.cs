@@ -470,7 +470,9 @@ public sealed class MacroDefinition
         !input.IsModifierKey &&
         input.IsValid(
             allowPrimaryMouseButton: true,
-            allowWheel: false,
+            // The mapping page can bind a macro to the wheel directions; the
+            // runtime already dispatches wheel triggers.
+            allowWheel: true,
             allowNagaSideButton: true,
             allowDeviceButton: true,
             allowExtraMouseButton: true);

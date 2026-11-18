@@ -1161,6 +1161,12 @@
   <data name="RazerHidMappingSavedCount" xml:space="preserve">
     <value>할당 {0}개 저장됨</value>
   </data>
+  <data name="RazerHidMappingSkippedRows" xml:space="preserve">
+    <value>할당 {0}개가 저장되지 않았습니다: {1}</value>
+  </data>
+  <data name="RazerHidMappingUnsupportedAction" xml:space="preserve">
+    <value>이 동작은 장치에 쓸 수 없습니다</value>
+  </data>
   <data name="ProfileOperationFailed" xml:space="preserve">
     <value>{0} 실패: {1}</value>
   </data>
