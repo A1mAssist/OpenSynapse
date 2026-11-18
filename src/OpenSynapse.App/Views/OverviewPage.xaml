@@ -107,7 +107,6 @@
                   <TextBlock local:Localized.Uid="HomeProfilesCard" Text="Profiles" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
                   <Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="10"><Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock local:Localized.Uid="HomeActiveProfileSummary" Text="Active profile" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="{Binding Profiles.ActiveProfileName}" Foreground="{StaticResource AccentBrush}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center" /></Grid><TextBlock Text="{Binding Home.ApplicationSwitchingStateText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" /></StackPanel></Border>
                 </StackPanel>
-                 <Button Click="EditHomeClick" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" local:Localized.Uid="HomeCustomize" Content="Customize home" AutomationProperties.AutomationId="HomeCustomizeButton" />
                  </Grid>
               </StackPanel>
   </ScrollViewer>
