@@ -58,7 +58,7 @@ public static class RazerKeyboardExtraKeyCatalog
             [0x02A7] = [MuteOrDialClick],
             // 02CF rejects 0x9E for 0xD0/0xD1 with status 0x03; they are
             // reserved ids in its table, not readable side keys.
-            [0x02CF] = [MuteOrDialClick],
+            [0x02CF] = [MuteOrDialClick, Previous, Next, PlayPause],
             [0x02D5] = [MuteOrDialClick],
             [0x02D7] = [MuteOrDialClick],
         }.ToFrozenDictionary();
@@ -80,7 +80,9 @@ public static class RazerKeyboardExtraKeyCatalog
         return id switch
         {
             >= M1 and <= M5 => $"RazerMappingKeyM{id - M1 + 1}",
-            MuteOrDialClick => productId == 0x028D ? "RazerMappingDialClick" : "RazerMappingMute",
+            MuteOrDialClick => productId is 0x028D or 0x02CF
+                ? "RazerMappingDialClick"
+                : "RazerMappingMute",
             Previous => "RazerMappingMediaPrev",
             Next => "RazerMappingMediaNext",
             PlayPause => "RazerMappingMediaPlay",
