@@ -61,14 +61,10 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             }
             OnBasicStateChanged();
             await LoadMappingIfNeededAsync(cancellationToken);
-            await LoadOnboardProfilesAsync(cancellationToken);
-            await LoadWirelessAsync(cancellationToken);
-            await LoadKnobAsync(cancellationToken);
-            await LoadGameModeAsync(cancellationToken);
-            await LoadAnalogKeyAsync(cancellationToken);
-            await LoadAnalogJoystickAsync(cancellationToken);
-            await LoadOledAsync(cancellationToken);
-            await LoadHapticScrollAsync(cancellationToken);
+            // Each optional card reports its own failure. Letting one of them throw
+            // here would label the whole device "channel read failed" while the basic
+            // state and the key map were already read.
+            await LoadOptionalCardsAsync(cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -80,6 +76,42 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         finally
         {
             IsBasicBusy = false;
+        }
+    }
+
+    // Static so the poll that runs this every second allocates nothing.
+    private static readonly Func<RazerHidDeviceViewModel, CancellationToken, Task>[] OptionalLoads =
+    [
+        static (viewModel, token) => viewModel.LoadOnboardProfilesAsync(token),
+        static (viewModel, token) => viewModel.LoadWirelessAsync(token),
+        static (viewModel, token) => viewModel.LoadKnobAsync(token),
+        static (viewModel, token) => viewModel.LoadGameModeAsync(token),
+        static (viewModel, token) => viewModel.LoadAnalogKeyAsync(token),
+        static (viewModel, token) => viewModel.LoadAnalogJoystickAsync(token),
+        static (viewModel, token) => viewModel.LoadOledAsync(token),
+        static (viewModel, token) => viewModel.LoadHapticScrollAsync(token),
+    ];
+
+    /// <summary>
+    /// Loads the optional cards one by one. A transient failure in one of them must
+    /// not abort the remaining cards or escalate to the device-wide error banner.
+    /// </summary>
+    private async Task LoadOptionalCardsAsync(CancellationToken cancellationToken)
+    {
+        foreach (var load in OptionalLoads)
+        {
+            try
+            {
+                await load(this, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                // The card keeps its own status text; the next poll retries it.
+            }
         }
     }
 
