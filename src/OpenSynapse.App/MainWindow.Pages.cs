@@ -259,7 +259,8 @@ public sealed partial class MainWindow
         {
             var oldest = _pageUseOrder.FirstOrDefault(page =>
                 !StringComparer.Ordinal.Equals(page, _currentPage) &&
-                !StringComparer.Ordinal.Equals(page, keep));
+                !StringComparer.Ordinal.Equals(page, keep) &&
+                !IsPinned(page));
             if (oldest is null)
             {
                 break;
@@ -268,6 +269,14 @@ public sealed partial class MainWindow
             ReleasePage(oldest);
         }
     }
+
+    /// <summary>
+    /// Releasing the studio page stops its output pump and restores every device's
+    /// baseline, so evicting it while an effect is applied silently ends that effect.
+    /// </summary>
+    private bool IsPinned(string page) =>
+        StringComparer.Ordinal.Equals(page, "studio") &&
+        _lightingStudioPage?.ViewModel?.IsApplied == true;
 
     private void ReleasePage(string page)
     {
