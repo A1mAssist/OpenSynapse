@@ -355,8 +355,8 @@ internal sealed partial class MacroRuntime : IDisposable
             _playbackCancellation = null;
             hookToDispose = DetachHookLocked();
         }
-        playback?.Cancel();
-        playback?.Dispose();
+        StopAllTurbo();
+        playback?.Cancel(); playback?.Dispose();
         DisposeHook(hookToDispose);
     }
 

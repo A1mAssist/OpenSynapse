@@ -234,7 +234,12 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         Macros.TriggerChanged += (_, _) => RazerHid.InvalidateMappings();
         Macros.SetUnhandledRazerKeyHandler(
             input => _ = RazerHid.HandleUnhandledRazerKeyAsync(input));
-        Macros.MacrosChanged += () => _ = RazerHid.SyncPrivateKeyDriverModeAsync();
+        Macros.SetTurboResolver(RazerHid.ResolveTurboBinding);
+        Macros.MacrosChanged += () =>
+        {
+            Macros.StopAllTurbo();
+            _ = RazerHid.SyncPrivateKeyDriverModeAsync();
+        };
         Accessories = new UsbAccessoriesWorkspace(
             _diagnosticLog, RazerHid, Macros, () => _profile, SaveProfileAsync,
             () =>
