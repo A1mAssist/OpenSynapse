@@ -425,16 +425,35 @@ internal sealed class ViperTelemetryReader
             throw new ArgumentException("A Product 184 mapping batch must contain exactly 16 records.", nameof(assignments));
         }
 
-        var converted = assignments.Select(assignment =>
+        var converted = new List<ViperObmAssignment>(assignments.Count);
+        var skipped = new HashSet<(byte ButtonId, ViperObmMappingMode Mode)>();
+        foreach (var assignment in assignments)
         {
             ArgumentNullException.ThrowIfNull(assignment);
             ArgumentNullException.ThrowIfNull(assignment.FunctionData);
-            return ToProtocolAssignment(assignment);
-        }).ToArray();
-        if (converted.Select(AssignmentKey).Distinct().Count() != converted.Length ||
+            try
+            {
+                converted.Add(ToProtocolAssignment(assignment));
+            }
+            catch (NotSupportedException)
+            {
+                // The device owns a binding this build cannot express. Leave that row
+                // untouched instead of failing the whole batch.
+                skipped.Add((assignment.ButtonId, assignment.Layer switch
+                {
+                    ViperButtonMappingLayer.Normal => ViperObmMappingMode.Normal,
+                    ViperButtonMappingLayer.HyperShift => ViperObmMappingMode.HyperShift,
+                    _ => throw new ArgumentOutOfRangeException(
+                        nameof(assignments), "Unknown Viper mapping layer."),
+                }));
+            }
+        }
+        var keys = converted.Select(AssignmentKey).Concat(skipped).ToHashSet();
+        if (keys.Count != converted.Count + skipped.Count ||
+            keys.Count != assignments.Count ||
             ViperProduct184ButtonIds.Any(buttonId =>
-                !converted.Any(item => item.ButtonId == buttonId && item.Mode == ViperObmMappingMode.Normal) ||
-                !converted.Any(item => item.ButtonId == buttonId && item.Mode == ViperObmMappingMode.HyperShift)))
+                !keys.Contains((buttonId, ViperObmMappingMode.Normal)) ||
+                !keys.Contains((buttonId, ViperObmMappingMode.HyperShift))))
         {
             throw new ArgumentException(
                 "A Product 184 mapping batch must contain one unique normal-layer and HyperShift-layer record for each button.",
@@ -486,7 +505,7 @@ internal sealed class ViperTelemetryReader
             ViperButtonMappingFunction.RazerKey => ViperObmFunctionId.RazerKey,
             ViperButtonMappingFunction.ScrollWheelMode => ViperObmFunctionId.ScrollWheelMode,
             ViperButtonMappingFunction.WindowsShortcut => ViperObmFunctionId.WindowsShortcutsKey,
-            _ => throw new ArgumentOutOfRangeException(nameof(assignment), "Product 184 does not support this mapping function."),
+            _ => throw new NotSupportedException("Product 184 does not support this mapping function."),
         };
         var snapshot = new ViperObmAssignment(
             assignment.ProfileId,
@@ -496,7 +515,16 @@ internal sealed class ViperTelemetryReader
             assignment.FunctionData.ToArray());
 
         // Reuse the source-backed Product 184 payload validator before any HID read or write.
-        _ = ViperObmProtocol.CreateSetAssignmentRequest(snapshot);
+        try
+        {
+            _ = ViperObmProtocol.CreateSetAssignmentRequest(snapshot);
+        }
+        catch (ArgumentException exception)
+        {
+            throw new NotSupportedException(
+                "This Product 184 mapping payload is not exposed by the verified mapping engine.",
+                exception);
+        }
         // Bundle-aligned: the payloads come from the 00B8 middleware mapping engine.
         // Write/readback/restore is exercised for every assignment, but these types
         // have not been individually confirmed against hardware.
@@ -559,8 +587,9 @@ internal sealed class ViperTelemetryReader
                 ViperObmFunctionId.RazerKey => ViperButtonMappingFunction.RazerKey,
                 ViperObmFunctionId.ScrollWheelMode => ViperButtonMappingFunction.ScrollWheelMode,
                 ViperObmFunctionId.WindowsShortcutsKey => ViperButtonMappingFunction.WindowsShortcut,
-                _ => throw new InvalidOperationException(
-                    $"The device returned Product 184 mapping function {(byte)assignment.Function}, which is not enabled."),
+                // Unknown ids stay raw so the row renders as "Function NN" instead of
+                // failing every other mapping on the device.
+                _ => (ViperButtonMappingFunction)(byte)assignment.Function,
             },
             assignment.FunctionData.ToArray());
 

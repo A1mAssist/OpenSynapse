@@ -161,28 +161,12 @@ public static class ViperObmProtocol
         // Synapse likewise assigns the result by request context instead of this echo.
 
         var function = (ViperObmFunctionId)response[offset + 3];
-        if (!Enum.IsDefined(function))
-        {
-            throw new InvalidOperationException($"Viper OBM returned an unknown function ID: 0x{(byte)function:X2}.");
-        }
-
-        var dataSize = response[offset + 4];
-        if (dataSize > 5)
-        {
-            throw new InvalidOperationException($"Viper OBM returned function data size {dataSize}, exceeding the official five-byte layout.");
-        }
-
+        // Synapse keeps the raw id and never rejects a binding type it does not know;
+        // one unknown row (Perfect180 is not in our table) must not hide the rest.
+        var dataSize = response[offset + 4] > 5 ? (byte)5 : response[offset + 4];
         var functionData = response.Slice(offset + 5, dataSize).ToArray();
         // The five-byte data slot is a fixed buffer; 00B8 leaves firmware data after
         // the declared payload, so only the declared bytes belong to the assignment.
-        try
-        {
-            ValidateProduct184Function(function, functionData);
-        }
-        catch (ArgumentException exception)
-        {
-            throw new InvalidOperationException("Viper OBM returned an invalid function/payload combination.", exception);
-        }
 
         return new ViperObmAssignment(
             profileId,

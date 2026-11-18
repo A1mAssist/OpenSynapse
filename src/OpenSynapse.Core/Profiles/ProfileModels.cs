@@ -445,9 +445,11 @@ public sealed class ViperButtonAssignmentProfile
     internal void ApplySafeDefaults()
     {
         FunctionData ??= [];
-        if (!Enum.IsDefined(Layer) || !Enum.IsDefined(Function))
+        // The device can report a function this build does not model (Perfect180 22);
+        // keep it so the profile round-trips and the other rows stay usable.
+        if (!Enum.IsDefined(Layer))
         {
-            throw new InvalidDataException("Viper button assignment contains an invalid layer or function.");
+            throw new InvalidDataException("Viper button assignment contains an invalid layer.");
         }
     }
 
