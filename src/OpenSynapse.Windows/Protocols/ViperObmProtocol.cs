@@ -113,20 +113,20 @@ public static class ViperObmProtocol
         ParseByte(response, request);
 
     public static byte[] ParseProfileIds(ReadOnlySpan<byte> response) =>
-        ParseIdList(response, CreateGetProfileIdsRequest(), "Profile");
+        ParseIdList(response, CreateGetProfileIdsRequest());
 
     public static byte[] ParseProfileIds(
         ReadOnlySpan<byte> response,
         ReadOnlySpan<byte> request) =>
-        ParseIdList(response, request, "Profile");
+        ParseIdList(response, request);
 
     public static byte[] ParseButtonIds(ReadOnlySpan<byte> response) =>
-        ParseIdList(response, CreateGetButtonIdsRequest(), "Button");
+        ParseIdList(response, CreateGetButtonIdsRequest());
 
     public static byte[] ParseButtonIds(
         ReadOnlySpan<byte> response,
         ReadOnlySpan<byte> request) =>
-        ParseIdList(response, request, "Button");
+        ParseIdList(response, request);
 
     public static ViperObmAssignment ParseAssignment(
         ReadOnlySpan<byte> response,
@@ -214,36 +214,19 @@ public static class ViperObmProtocol
     private static byte ParseByte(ReadOnlySpan<byte> response, ReadOnlySpan<byte> request)
     {
         ValidateResponse(response, request, 1);
-        if (response[6] != 1)
-        {
-            throw new InvalidOperationException("Viper OBM scalar response data length is not the fixed one byte.");
-        }
-
         return response[RazerFeatureReport.ArgumentsOffset];
     }
 
     private static byte[] ParseIdList(
         ReadOnlySpan<byte> response,
-        ReadOnlySpan<byte> request,
-        string field)
+        ReadOnlySpan<byte> request)
     {
         ValidateResponse(response, request, 1);
         var offset = RazerFeatureReport.ArgumentsOffset;
-        var count = response[offset];
-        if (count == 0 || count > response[6] - 1)
-        {
-            throw new InvalidOperationException($"Viper OBM {field} ID count is zero or exceeds the response length.");
-        }
-
-        var ids = response.Slice(offset + 1, count).ToArray();
-        var trailing = response.Slice(offset + 1 + count, response[6] - 1 - count);
-        if (trailing.ContainsAnyExcept((byte)0) ||
-            ids.Contains((byte)0) || ids.Distinct().Count() != ids.Length)
-        {
-            throw new InvalidOperationException($"Viper OBM returned an invalid or duplicate {field} ID, or a nonzero trailing field.");
-        }
-
-        return ids;
+        // rzDevice25 reads the count from data[0] and slices that many ids; the
+        // remainder of the fixed-size reply is not part of the contract.
+        var count = Math.Min((int)response[offset], response[6] - 1);
+        return response.Slice(offset + 1, count).ToArray();
     }
 
     private static void ValidateId(byte value, string parameterName)
