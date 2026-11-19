@@ -69,11 +69,18 @@ public sealed partial class RazerHidMappingViewModel
         {
             await RefreshMacroContextAsync(cancellationToken).ConfigureAwait(true);
         }
-        var row = existingBinding is { } bound
+        var inputRow = Rows.FirstOrDefault(candidate =>
+            ResolveSoftwareTrigger(candidate.ButtonId) is { } candidateInput &&
+            candidateInput.Matches(input));
+        var boundRow = existingBinding is { } bound
             ? Rows.FirstOrDefault(candidate => candidate.ButtonId == bound.ButtonId)
-            : Rows.FirstOrDefault(candidate =>
-                ResolveSoftwareTrigger(candidate.ButtonId) is { } candidateInput &&
-                candidateInput.Matches(input));
+            : null;
+        // The captured key decides the row. An older binding is only reused
+        // when that same row also reports this key (for example an alias row).
+        var boundMatchesInput = boundRow is not null &&
+            ResolveSoftwareTrigger(boundRow.ButtonId) is { } boundInput &&
+            boundInput.Matches(input);
+        var row = boundMatchesInput ? boundRow : inputRow ?? boundRow;
         if (row is null)
         {
             return AppStrings.Text("RazerMappingMacroTriggerMissing");
@@ -106,7 +113,10 @@ public sealed partial class RazerHidMappingViewModel
         row.ExecutionRepeatCount = Math.Clamp(repeatCount, 1, MacroDefinition.MaxRepeatCount);
 
         RazerMappingAssignment? assignment = null;
-        var binding = existingBinding;
+        var binding = existingBinding is not null &&
+                      existingBinding.ButtonId == row.ButtonId
+            ? existingBinding
+            : null;
         try
         {
             if (binding is null)

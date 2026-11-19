@@ -131,10 +131,17 @@ public sealed partial class MacroWorkspace
         else
         {
             existing.Mode = triggerMode;
-            existing.SoftwareBinding = softwareBinding?.Clone();
-            if (ReferenceEquals(existing, row.Definition.Trigger))
+            // Two mapping rows can report the same physical key. The first
+            // binding owns the assignment; a later alias must not take it over.
+            if (softwareBinding is not null &&
+                (existing.SoftwareBinding is null ||
+                 existing.SoftwareBinding.ButtonId == softwareBinding.ButtonId))
             {
-                row.Definition.SoftwareBinding = softwareBinding?.Clone();
+                existing.SoftwareBinding = softwareBinding.Clone();
+                if (ReferenceEquals(existing, row.Definition.Trigger))
+                {
+                    row.Definition.SoftwareBinding = softwareBinding.Clone();
+                }
             }
             row.SetTrigger(row.Definition.Trigger);
         }
