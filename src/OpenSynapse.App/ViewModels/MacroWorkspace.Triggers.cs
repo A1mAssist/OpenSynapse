@@ -176,15 +176,17 @@ public sealed partial class MacroWorkspace
             return;
         }
 
-        var existing = selected.Definition.SoftwareBinding;
-        if (existing is not null &&
-            (selected.Definition.Trigger is not { } current ||
-             !current.Input.Matches(trigger.Input) ||
-             current.HyperShiftLayer != trigger.HyperShiftLayer))
-        {
-            StatusText = AppStrings.Text("MacroTriggerDeviceRebindUnbindFirst");
-            return;
-        }
+        // A different key adds another trigger. The mapping page allocates the
+        // binding for that key; reusing the first key's binding would make the
+        // new trigger restore the wrong button.
+        var matched = selected.Definition.FindTrigger(
+            trigger.Input, MacroModifierKeys.None, trigger.HyperShiftLayer);
+        var existing = matched is null
+            ? null
+            : matched.SoftwareBinding ??
+              (ReferenceEquals(matched, selected.Definition.Trigger)
+                  ? selected.Definition.SoftwareBinding
+                  : null);
 
         StatusText = AppStrings.Text("MacroTriggerDeviceBinding");
         var error = await SoftwareTriggerBinder(

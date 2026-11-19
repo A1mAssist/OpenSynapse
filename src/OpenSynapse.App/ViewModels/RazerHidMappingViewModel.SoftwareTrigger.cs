@@ -280,14 +280,18 @@ public sealed partial class RazerHidMappingViewModel
     /// and its next action is not that same macro.
     /// </summary>
     private ClearedSoftwareTrigger[] SoftwareTriggersToClear(
-        IReadOnlyList<RazerHidMappingRowViewModel> pending,
-        IReadOnlyList<RazerHidMappingRowViewModel> softwareRows)
+        IReadOnlyList<RazerHidMappingRowViewModel> pending)
     {
         // A private key can be reached from more than one mapping row. Keep the
         // trigger claimed by input, not by row, or moving the alias row clears
         // the binding the real row still needs.
         var claims = new List<RazerSoftwareMacroTriggerMatcher.Claim>();
-        foreach (var row in softwareRows)
+        // A row that is still a software macro row keeps its trigger even when
+        // it is not part of this save. Otherwise saving a different key could
+        // clear the macro that the other key still owns.
+        foreach (var row in Rows.Where(row =>
+                     row.Group == RazerHidMappingGroup.Macro &&
+                     row.MacroTarget == MacroExecutionTarget.Software))
         {
             if (ResolveSoftwareMacro(row) is { } macro &&
                 ResolveSoftwareTrigger(row.ButtonId) is { } input)

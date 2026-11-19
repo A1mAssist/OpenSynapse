@@ -126,7 +126,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 }
             }
 
-            clears = SoftwareTriggersToClear(pending, softwareRows);
+            clears = SoftwareTriggersToClear(pending);
 
             foreach (var row in shortcutRows)
             {
