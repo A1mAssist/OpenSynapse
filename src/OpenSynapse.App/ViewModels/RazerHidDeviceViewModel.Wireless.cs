@@ -90,9 +90,12 @@ public sealed partial class RazerHidDeviceViewModel
             Connection, cancellationToken);
         SelectedWirelessDevice = null;
         WirelessDevices.Clear();
-        foreach (var status in statuses)
+        foreach (var status in statuses
+            .Where(status => status.ProductId != ushort.MaxValue)
+            .Where(status => status.ProductId != Connection.Definition.ProductId))
         {
-            var name = RazerHidDeviceCatalog.BuiltIn.Find(0x1532, status.ProductId)?.DisplayName;
+            var name = RazerHidDeviceCatalog.BuiltIn.Find(0x1532, status.ProductId)?.DisplayName
+                ?? RazerDualDongleCatalog.DisplayName(status.ProductId);
             WirelessDevices.Add(new RazerHidWirelessDeviceRowViewModel(status.ProductId, status.Status, name));
         }
         OnPropertyChanged(nameof(WirelessEmptyVisibility));

@@ -199,6 +199,7 @@ public sealed class RazerPairingDialogViewModel : INotifyPropertyChanged
                     receiver.Device.Connection);
                 connected = statuses
                     .Where(status => status.ProductId != ushort.MaxValue)
+                    .Where(status => status.ProductId != hostProductId)
                     .Select(status => status.ProductId)
                     .Distinct()
                     .ToArray();
@@ -252,6 +253,7 @@ public sealed class RazerPairingDialogViewModel : INotifyPropertyChanged
                 connection, cancellationToken);
             return statuses
                 .Where(status => status.ProductId != ushort.MaxValue)
+                .Where(status => status.ProductId != connection.Definition.ProductId)
                 .Select(status => status.ProductId)
                 .ToHashSet();
         }
