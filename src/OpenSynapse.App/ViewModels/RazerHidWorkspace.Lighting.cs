@@ -14,7 +14,8 @@ public sealed partial class RazerHidWorkspace
         IReadOnlyList<RazerHidDeviceConnection> connections,
         CancellationToken cancellationToken)
     {
-        if (_restoredLightingOnDiscovery || connections.Count == 0)
+        if (_restoredLightingOnDiscovery || connections.Count == 0 ||
+            StudioLightingActive?.Invoke() == true)
         {
             return;
         }

@@ -14,13 +14,16 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
         [DeviceCategory.Mouse, DeviceCategory.Keyboard];
     private readonly Func<DeviceDescriptor, RazerHidDeviceConnection?> _resolveConnection;
     private readonly RazerHidDeviceService _service;
+    private readonly Func<bool>? _isLightingSuspended;
 
     public RazerHidProfileApplier(
         RazerHidDeviceService service,
-        Func<DeviceDescriptor, RazerHidDeviceConnection?> resolveConnection)
+        Func<DeviceDescriptor, RazerHidDeviceConnection?> resolveConnection,
+        Func<bool>? isLightingSuspended = null)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
         _resolveConnection = resolveConnection ?? throw new ArgumentNullException(nameof(resolveConnection));
+        _isLightingSuspended = isLightingSuspended;
     }
 
     public IReadOnlyCollection<DeviceCategory> Categories => SupportedCategories;

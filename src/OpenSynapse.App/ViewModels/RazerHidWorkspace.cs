@@ -15,6 +15,9 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDisposable
 {
+    /// <summary>Set while the Lighting Studio output pump owns the devices.</summary>
+    internal Func<bool>? StudioLightingActive { get; set; }
+
     private readonly RazerHidDeviceService? _deviceService;
     private readonly RazerHidChromaFrameSink? _chromaFrameSink;
     private readonly RazerHidSpecialLightingService? _specialLightingService;

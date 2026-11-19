@@ -302,6 +302,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             (power, token) => SelectedBle?.ApplyPersistedProfileAsync(power, token) ?? Task.CompletedTask,
             (power, token) => AccessoryProfileReplay.ApplyAsync(this, _diagnosticLog, power, token),
             liteMode: liteMode);
+        Refresh.StudioLightingActive = () => StudioLightingActive?.Invoke() == true;
+        Lighting.StudioLightingActive = () => StudioLightingActive?.Invoke() == true;
+        RazerHid.StudioLightingActive = () => StudioLightingActive?.Invoke() == true;
         InitializeDeviceHome(activeApplicationProvider);
         Tray = new TrayWorkspace(
             () => Devices, RazerHid, Accessories,
@@ -411,6 +414,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
 
     internal Task SuspendStudioLightingAsync() =>
         SuspendStudioLighting?.Invoke() ?? Task.CompletedTask;
+
+    /// <summary>True while the Lighting Studio effect is the active lighting surface.</summary>
+    internal Func<bool>? StudioLightingActive { get; set; }
 
     // Shared hand-back path for Chroma hosts and Lighting Studio.
     internal async Task RestoreLightingAfterExternalAsync()

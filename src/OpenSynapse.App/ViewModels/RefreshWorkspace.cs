@@ -57,6 +57,10 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
     private readonly bool _liteMode;
     private readonly VerifiedProfileApplier _profileApplier = new();
     private readonly SemaphoreSlim _deviceWatchSignal = new(0, 1);
+
+    /// <summary>Set while the Lighting Studio output pump owns the devices.</summary>
+    internal Func<bool>? StudioLightingActive { get; set; }
+
     private DeviceApplicationSwitchCoordinator _applicationSwitch;
     private Func<DeviceApplicationRuleDocument> _rulesDocument;
     private Action _rulesChanged;
@@ -163,7 +167,10 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
         if (razerHid.DeviceService is { } razerHidService)
         {
             _razerHidProfileApplier = new DeviceProfileApplyCoordinator(
-                [new RazerHidProfileApplier(razerHidService, razerHid.ResolveConnection)]);
+                [new RazerHidProfileApplier(
+                    razerHidService,
+                    razerHid.ResolveConnection,
+                    () => StudioLightingActive?.Invoke() == true)]);
         }
     }
 
@@ -409,7 +416,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
             {
                 _display.RefreshInternalDisplay(powerState, applyDisplayProfile || applyEcoDisplay);
             }
-            if (applyDisplayProfile)
+            if (applyDisplayProfile && StudioLightingActive?.Invoke() != true)
             {
                 await _razerHid.RestoreLightingAfterExternalAsync(cancellationToken);
                 if (_razerHid.SelectedDevice is { } selectedRazerHid)

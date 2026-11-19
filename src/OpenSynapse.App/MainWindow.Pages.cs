@@ -90,6 +90,7 @@ public sealed partial class MainWindow
     {
         var page = new LightingStudioPage { Host = this };
         _viewModel.SuspendStudioLighting = SuspendStudioLightingAsync;
+        _viewModel.StudioLightingActive = () => _lightingStudioPage?.ViewModel?.IsApplied == true;
         var sampler = new StudioInputSampler();
         _studioInputSampler = sampler;
         page.Initialize(
