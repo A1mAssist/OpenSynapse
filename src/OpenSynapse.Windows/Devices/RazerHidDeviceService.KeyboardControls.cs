@@ -10,6 +10,14 @@ public sealed partial class RazerHidDeviceService
     private const byte KeyboardKnobLedClass = 0x03;
     private const byte KeyboardKnobLedId = 0x24;
 
+    private Task ExecuteKeyboardWriteAsync(
+        RazerHidDeviceConnection connection,
+        RazerHidRequest request,
+        CancellationToken cancellationToken) =>
+        WithMappingModeAsync(connection,
+            () => ExecuteWithoutResultAsync(connection, request, cancellationToken),
+            cancellationToken);
+
     public async Task<RazerKnobConfiguration> GetKnobConfigurationAsync(
         RazerHidDeviceConnection connection,
         byte ledClass,
@@ -34,7 +42,7 @@ public sealed partial class RazerHidDeviceService
     {
         RequireReady(connection);
         ArgumentNullException.ThrowIfNull(stages);
-        return ExecuteWithoutResultAsync(connection,
+        return ExecuteKeyboardWriteAsync(connection,
             new RazerHidRequest("razer_knob_set_configuration",
                 RazerKnobProtocol.CreateSetConfigurationRequest(
                     MiddlewareTransactionId, ledClass, ledId, stages.ToArray())),
@@ -64,7 +72,7 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
-        return ExecuteWithoutResultAsync(connection,
+        return ExecuteKeyboardWriteAsync(connection,
             new RazerHidRequest("razer_knob_set_mode",
                 RazerKnobProtocol.CreateSetModeRequest(
                     MiddlewareTransactionId, ledClass, ledId, stage)),
@@ -95,7 +103,7 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
-        return ExecuteWithoutResultAsync(connection,
+        return ExecuteKeyboardWriteAsync(connection,
             new RazerHidRequest("razer_analog_set_actuation_points",
                 RazerAnalogKeyProtocol.CreateSetMultiAnalogKeyActuationPointRequest(
                     MiddlewareTransactionId, dataType, classId, points)),
@@ -126,7 +134,7 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
-        return ExecuteWithoutResultAsync(connection,
+        return ExecuteKeyboardWriteAsync(connection,
             new RazerHidRequest("razer_analog_set_rapid_triggers",
                 RazerAnalogKeyProtocol.CreateSetMultiAnalogKeyRapidTriggerRequest(
                     MiddlewareTransactionId, dataType, classId, settings)),
@@ -154,7 +162,7 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
-        return ExecuteWithoutResultAsync(connection,
+        return ExecuteKeyboardWriteAsync(connection,
             new RazerHidRequest("razer_analog_set_continuous_rapid_trigger",
                 RazerAnalogKeyProtocol.CreateSetAnalogKeyContinuousRapidTriggerRequest(
                     MiddlewareTransactionId, classId, enabled)),
@@ -183,7 +191,7 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
-        return ExecuteWithoutResultAsync(connection,
+        return ExecuteKeyboardWriteAsync(connection,
             new RazerHidRequest("razer_analog_set_mod_tap_assignments",
                 RazerAnalogKeyProtocol.CreateSetMultiModTapKeyAssignmentRequest(
                     MiddlewareTransactionId, classId, assignments)),
@@ -212,7 +220,7 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
-        return ExecuteWithoutResultAsync(connection,
+        return ExecuteKeyboardWriteAsync(connection,
             new RazerHidRequest("razer_analog_set_key_assignments",
                 RazerAnalogKeyProtocol.CreateSetMultiKeyAssignmentRequest(
                     MiddlewareTransactionId, classId, assignments)),
@@ -240,7 +248,7 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
-        return ExecuteWithoutResultAsync(connection,
+        return ExecuteKeyboardWriteAsync(connection,
             new RazerHidRequest("razer_analog_set_bottom_dead_zone",
                 RazerAnalogKeyProtocol.CreateSetAnalogKeyBottomDeadZoneRequest(
                     MiddlewareTransactionId, classId, bottomDeadZone)),
@@ -265,7 +273,7 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
-        return ExecuteWithoutResultAsync(connection,
+        return ExecuteKeyboardWriteAsync(connection,
             new RazerHidRequest("razer_analog_set_report_mode",
                 RazerAnalogKeyProtocol.CreateSetAnalogReportModeRequest(
                     MiddlewareTransactionId, reportMode)),
@@ -295,7 +303,7 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
-        return ExecuteWithoutResultAsync(connection,
+        return ExecuteKeyboardWriteAsync(connection,
             new RazerHidRequest("razer_keyboard_set_kill_switch",
                 RazerAnalogKeyProtocol.CreateSetKeyboardKillSwitchRequest(
                     MiddlewareTransactionId, classId, enabled, keyId1, keyId2)),
@@ -324,7 +332,7 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
-        return ExecuteWithoutResultAsync(connection,
+        return ExecuteKeyboardWriteAsync(connection,
             new RazerHidRequest("razer_keyboard_set_snap_tap",
                 RazerAnalogKeyProtocol.CreateSetAnalogSnapTapRequest(
                     MiddlewareTransactionId, profileId, enabled, pairs)),
