@@ -4,6 +4,44 @@ English · [Chinese](CHANGELOG.zh-CN.md)
 
 All notable user-visible changes to OpenSynapse are documented here.
 
+## [1.7.3] - 2026-11-19
+
+### Added
+
+- **Mapping coverage**: keyboard extra keys (macro, media and side keys) and private keys now use their real names; Huntsman V3 Pro 8KHz media keys, Viper V4 Pro artwork, keypad D-pad/thumb rows, and the Tartarus Pro and Tartarus wheel layouts are drawn from the official assets.
+- **Combined shortcuts**: mappings can send modifier combinations and Windows shortcut presets; Win+Tab uses the native shortcut, and shortcut sequences play as software input instead of leaving a modifier stuck.
+- **Lighting Studio**: class-0x10 Chroma devices (mice, stands and docks) can be driven from the canvas; every lit RazerHid device exposes brightness; added Kraken V4 Pro and Kitty V3 Pro lighting, Kraken V4 Chroma brightness, and the remaining Kraken and Hammerhead gaps.
+- **Display-off lighting**: the optional “turn off peripheral lighting while the display is off” setting covers RazerHid, Chroma and headset paths, and restores the saved lighting when the display returns.
+- **Device cards**: accessory body pages, active onboard-profile reset, serial copy, and a firmware updater check and launch entry.
+- **App profiles**: per-device application binding and a customizable overview; the home-layout entry moved into Settings.
+- **Macros**: record actions inside OpenSynapse, bind private device keys from the macro page, and let one macro own multiple device triggers.
+- **Taskbar and tray**: vertical and secondary taskbar support, a performance panel in the tray, and a continuous-macro notification toggle.
+- **THX and firmware**: THX APO and V3 preset packages resolve from the product manifest; Blade 18 2025, BlackShark V3 console headsets and per-model repair packages are admitted.
+- **Languages**: Japanese, Korean, German, French, Russian and Traditional Chinese were added.
+- **Headset**: spatial audio switches immediately instead of waiting for the page to reload.
+
+### Improvements
+
+- Inactive pages, Studio resources and card art are released or decoded at display size; the THX helper idles out, lowering background memory and CPU.
+- HID writes are serialized per device, retry busy replies, and bound feature-report calls on wedged endpoints; one optional card can no longer fail a whole device read.
+- Mapping and macro triggers survive rescans, sleep, page teardown and re-saving; turbo stops on the physical release and no longer sticks.
+- Driver installation verifies the filter INF, handles DPInst 259 and reboot-pending states, and distinguishes a dead package from a network failure.
+- The taskbar strip holds through device rescans, Explorer and display changes and fullscreen transitions; Lite mode follows its own toggle.
+- The autostart choice survives MSI upgrades, and the launch overlay no longer exposes scanning text to accessibility.
+
+### Fixed
+
+- Lighting Studio replays the last applied effect on startup and keeps it through automatic profile applies, page eviction and device takeovers; it hands the devices back when another Chroma source takes over.
+- Blade: matrix frames are paced and drained so fan replies are not consumed; 60 fps matrix output is restored; fan floors follow the model; custom power levels survive mode and fan writes; HyperBoost requires verified power and pad readiness; GPU mode appears on 028C and hasGPUmode models; the Fn marker and touchpad indicator recover; Blade 18 2025 exposes the native display switch.
+- Mapping: Basilisk V3 Pro writes through protocol-25 driver mode; Mouse Dock Pro paired mice expose their full command set; Viper side buttons, DPI stages and OBM data, Tartarus Pro key tables, Huntsman V3 Pro extra keys and 0098 anchors are read correctly; firmware rejecting device mode no longer blanks the page.
+- Headsets: Barracuda X Chroma EQ, lighting, presets and dongle direction; Barracuda V2 X battery; Hammerhead V3 Chroma protocol40 and feature collection; Kraken V3 HyperSense 62-byte channel; Kitty V3 Pro wireless direction; Leviathan effect writes retry while busy.
+- THX: no installer loop when native init fails; stopped services wake before install; newer presets are not downgraded; exit 3 means installed; reboot-pending and per-model packages are handled; the panel stays when a write is refused.
+- Onboard profiles: the active profile is followed and verified, short id replies are accepted, names are read from the device, id 0 is never cached, and the selector stays on the active slot.
+- Taskbar: the strip returns after Show Desktop, stays above the taskbar content bridge, hides only for real fullscreen, accepts a top taskbar, and draws its battery text with the real semibold face.
+- App: stopped the .NET 10 COM wrapper registry from growing, guarded device handlers during page teardown, kept a page alive while its cache entry is created, and stopped foreground changes from rescanning every device.
+- CPU and sensors: the AMD wall reads through SMU when the Razer path has no PPT; Intel temperatures fall back to the core therm status.
+- Devices: the mouse low-power threshold covers the full range; Orochi V2 battery chemistry is exposed; THX installer failures are described; the onboard profile selector follows the active profile.
+
 ## [1.7.2] - 2026-11-15
 
 ### Added
