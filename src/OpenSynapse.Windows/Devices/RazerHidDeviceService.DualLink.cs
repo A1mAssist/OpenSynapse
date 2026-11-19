@@ -9,6 +9,10 @@ public sealed partial class RazerHidDeviceService
     // 00A4's own bundle proves LINKER/00:BF. The 0088 identity has no equivalent
     // local target-selection evidence; a sibling's linker is not its admission.
     private const ushort MouseDockProProductId = 0x00A4;
+    // 00AB is the multi-device HyperSpeed dongle: dockEID.json lists it with the
+    // other multi-device receivers, and Razer's compatibility matrix pairs it with
+    // one keyboard in addition to its mouse.
+    private const ushort BasiliskV3ProDongleProductId = 0x00AB;
     // 00B3 is a single-device HyperPolling bridge. Its paired mouse answers through
     // the dongle's own control collection, so there is no separate child HID path.
     private const ushort HyperPollingDongleProductId = 0x00B3;
@@ -25,9 +29,11 @@ public sealed partial class RazerHidDeviceService
 
         // 00A4's linker answers the dock transaction; the standalone 00B3 dongle
         // uses the middleware transaction instead.
-        var transactionId = parentDefinition.ProductId == HyperPollingDongleProductId
-            ? MiddlewareTransactionId
-            : (byte)0xE0;
+        // 00A4's linker answers the dock transaction. The standalone dongles
+        // (00B3, and the 00AB multi-device receiver) use the middleware bank.
+        var transactionId = parentDefinition.ProductId == MouseDockProProductId
+            ? (byte)0xE0
+            : MiddlewareTransactionId;
         var request = RazerPairingProtocol.CreateGetMultipleDeviceWirelessConnectionStatusV2Request(
             transactionId);
         try
@@ -82,7 +88,8 @@ public sealed partial class RazerHidDeviceService
         productId == MouseDockProProductId;
 
     internal static bool IsLinkedDeviceParent(ushort productId) =>
-        IsDualLinkParent(productId) || productId == HyperPollingDongleProductId;
+        IsDualLinkParent(productId) || productId == HyperPollingDongleProductId ||
+            productId == BasiliskV3ProDongleProductId;
 
     internal async Task<RazerHidDeviceConnection?> TryCreateHyperPollingConnectionAsync(
         ushort productId,
@@ -132,20 +139,27 @@ public sealed partial class RazerHidDeviceService
 
     internal async Task<RazerHidDeviceConnection?> TryCreateLinkedConnectionAsync(
         ushort productId,
+        ushort parentProductId,
         IReadOnlyList<string> devicePaths,
         string parentDeviceKey,
         CancellationToken cancellationToken,
         bool allowDockLinker = false)
     {
         var definition = _catalog.Find(RazerHidDeviceDefinition.VendorId, productId);
-        if (definition is null || definition.Category != DeviceCategory.Mouse)
+        if (definition is null ||
+            definition.Category is not (DeviceCategory.Mouse or DeviceCategory.Keyboard))
         {
-            WriteDiagnostic(productId, "dual-link child is not a known mouse; skipped");
+            WriteDiagnostic(productId, "linked child is not a known mouse or keyboard; skipped");
             return null;
         }
-        if (!definition.Transactions.ContainsKey("razer_chroma_misc_get_battery_level"))
+        // Mice prove liveness with battery; keyboards may expose no battery bank, so
+        // they fall back to the identity read every RazerHid device answers.
+        var usesBatteryProbe =
+            definition.Transactions.ContainsKey("razer_chroma_misc_get_battery_level");
+        if (!usesBatteryProbe &&
+            !definition.Transactions.ContainsKey("razer_chroma_standard_get_firmware_version"))
         {
-            WriteDiagnostic(productId, "dual-link child has no battery command; skipped");
+            WriteDiagnostic(productId, "linked child has no battery or firmware command; skipped");
             return null;
         }
 
@@ -159,17 +173,22 @@ public sealed partial class RazerHidDeviceService
             if (!DeviceIdParser.TryParse(devicePath, out var vendorId, out var endpointProductId) ||
                 vendorId != RazerHidDeviceDefinition.VendorId)
                 continue;
-            var isDockLinker = allowDockLinker && endpointProductId == MouseDockProProductId;
+            var isDockLinker = allowDockLinker && endpointProductId == parentProductId;
             if (endpointProductId != productId && !isDockLinker)
                 continue;
             try
             {
-                var probe = RazerHidMouseProtocol.GetBattery(definition);
+                var probe = usesBatteryProbe
+                    ? RazerHidMouseProtocol.GetBattery(definition)
+                    : RazerHidStandardProtocol.GetFirmware(definition);
                 var response = await _transport.QueryPreparedForProductAsync(
                     devicePath, productId, probe.Report, definition.DeviceWait, cancellationToken).ConfigureAwait(false);
                 if (!RazerFeatureReport.IsSuccessfulResponse(probe.Report, response, 2))
-                    throw new InvalidDataException("Linked battery response did not match the child request.");
-                _ = RazerHidMouseProtocol.ParseBatteryPercent(response);
+                    throw new InvalidDataException("Linked child response did not match the request.");
+                if (usesBatteryProbe)
+                {
+                    _ = RazerHidMouseProtocol.ParseBatteryPercent(response);
+                }
                 linkedPath = devicePath;
                 viaDockLinker = isDockLinker;
                 break;
@@ -179,7 +198,7 @@ public sealed partial class RazerHidDeviceService
                 UnauthorizedAccessException)
             {
                 WriteDiagnostic(productId,
-                    $"dual-link battery probe failed path={RazerFeatureTransport.DescribeDevicePath(devicePath)}: {exception.GetType().Name}: {exception.Message}");
+                    $"linked child probe failed path={RazerFeatureTransport.DescribeDevicePath(devicePath)}: {exception.GetType().Name}: {exception.Message}");
             }
         }
         if (linkedPath is null)
@@ -239,8 +258,10 @@ public sealed partial class RazerHidDeviceService
                 ? await TryCreateHyperPollingConnectionAsync(
                     linkedProductId, resolvedPath, parentDeviceKey, cancellationToken).ConfigureAwait(false)
                 : await TryCreateLinkedConnectionAsync(
-                    linkedProductId, linkedPaths, parentDeviceKey, cancellationToken,
-                    allowDockLinker: dockDefinition.ProductId == MouseDockProProductId).ConfigureAwait(false);
+                    linkedProductId, dockDefinition.ProductId, linkedPaths, parentDeviceKey,
+                    cancellationToken,
+                    allowDockLinker: dockDefinition.ProductId is MouseDockProProductId or
+                        BasiliskV3ProDongleProductId).ConfigureAwait(false);
             if (linked is not null)
             {
                 results.Add(linked);
