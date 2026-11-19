@@ -113,7 +113,8 @@ public sealed partial class RazerHidDeviceService
         }
 
         var switched = blind || original == RazerHidStandardProtocol.NormalDeviceMode;
-        // A device left in driver mode by an earlier crash must be restored too.
+        // A device left in driver mode by an earlier crash must be restored, but a
+        // mode the private-key runtime is holding must stay in driver mode.
         var restore = switched || original == RazerHidStandardProtocol.DriverDeviceMode;
         try
         {
@@ -135,7 +136,8 @@ public sealed partial class RazerHidDeviceService
         {
             // Restore even if the write or its read-back fails: the firmware may
             // already be in driver mode and must not be left there.
-            if (restore)
+            if (restore &&
+                !RazerDeviceModeOwnership.IsDriverModeHeld(connection.Definition.ProductId))
             {
                 try
                 {
