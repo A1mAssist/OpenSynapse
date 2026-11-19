@@ -327,9 +327,14 @@ internal static partial class RazerHidMouseProtocol
             "razer_chroma_misc_set_idle_time", 0x02, 0x07, 0x03, [High(seconds), Low(seconds)]);
     }
 
+    // The rzDevice30 Basilisk V4 family reads and writes the critical level through
+    // the class-0x05 battery namespace (05:82 / 05:02), not the shared 07:81 / 07:01.
     internal static RazerHidRequest GetLowBatteryThreshold(RazerHidDeviceDefinition device) =>
-        RazerHidStandardProtocol.Create(device,
-            "razer_chroma_misc_get_low_battery_threshold", 0x01, 0x07, 0x81, []);
+        RazerHidDeviceCatalog.IsRzDevice30Family(device.ProductId)
+            ? RazerHidStandardProtocol.Create(device,
+                "razer_chroma_misc_get_low_battery_threshold", 0x00, 0x05, 0x82, [])
+            : RazerHidStandardProtocol.Create(device,
+                "razer_chroma_misc_get_low_battery_threshold", 0x01, 0x07, 0x81, []);
 
     internal static RazerHidRequest SetLowBatteryThreshold(RazerHidDeviceDefinition device, int percent)
     {
@@ -340,8 +345,11 @@ internal static partial class RazerHidMouseProtocol
         // The middleware writes `Math.ceil(percent / 100 * 255)`. Truncating puts
         // the threshold one unit below the official app for most of the range.
         var raw = checked((byte)Math.Ceiling(percent * 255d / 100d));
-        return RazerHidStandardProtocol.Create(device,
-            "razer_chroma_misc_set_low_battery_threshold", 0x01, 0x07, 0x01, [raw]);
+        return RazerHidDeviceCatalog.IsRzDevice30Family(device.ProductId)
+            ? RazerHidStandardProtocol.Create(device,
+                "razer_chroma_misc_set_low_battery_threshold", 0x01, 0x05, 0x02, [raw])
+            : RazerHidStandardProtocol.Create(device,
+                "razer_chroma_misc_set_low_battery_threshold", 0x01, 0x07, 0x01, [raw]);
     }
 
     // The bundle targets [1] or [1,n] from local data; OpenSynapse has no local n.

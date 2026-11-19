@@ -28,15 +28,23 @@ public static class RazerChromaStandardProtocol
     public const byte DeviceCommandClass = 0x00;
     public const int MaxColors = 2;
 
+    // profileId and regionId are the first two arguments on every class-0x10
+    // command. Omitting them makes firmware such as the Basilisk V4 answer
+    // 10:83/10:85 with an empty payload and reject 10:03 with status 0x05.
     public static byte[] GetEffect(byte transactionId) =>
-        Create(transactionId, 0, 0x83);
+        GetEffect(transactionId, 0, 0);
+
+    public static byte[] GetEffect(byte transactionId, byte profileId, byte regionId) =>
+        Create(transactionId, 2, 0x83, profileId, regionId);
 
     public static byte[] SetEffect(
         byte transactionId,
         RazerChromaEffect effect,
         ReadOnlySpan<byte> colors,
         byte flags = 0,
-        byte rate = 0)
+        byte rate = 0,
+        byte profileId = 0,
+        byte regionId = 0)
     {
         if (!Enum.IsDefined(effect))
         {
@@ -47,20 +55,29 @@ public static class RazerChromaStandardProtocol
             throw new ArgumentException("Chroma effects take one or two RGB colors.", nameof(colors));
         }
 
-        var arguments = new byte[4 + colors.Length];
-        arguments[0] = (byte)effect;
-        arguments[1] = flags;
-        arguments[2] = rate;
-        arguments[3] = (byte)(colors.Length / 3);
-        colors.CopyTo(arguments.AsSpan(4));
+        var arguments = new byte[6 + colors.Length];
+        arguments[0] = profileId;
+        arguments[1] = regionId;
+        arguments[2] = (byte)effect;
+        arguments[3] = flags;
+        arguments[4] = rate;
+        arguments[5] = (byte)(colors.Length / 3);
+        colors.CopyTo(arguments.AsSpan(6));
         return Create(transactionId, (byte)arguments.Length, 0x03, arguments);
     }
 
     public static byte[] GetBrightness(byte transactionId) =>
-        Create(transactionId, 0, 0x85);
+        GetBrightness(transactionId, 0, 1);
 
-    public static byte[] SetBrightness(byte transactionId, byte level) =>
-        Create(transactionId, 1, 0x05, level);
+    public static byte[] GetBrightness(byte transactionId, byte profileId, byte regionId) =>
+        Create(transactionId, 2, 0x85, profileId, regionId);
+
+    public static byte[] SetBrightness(
+        byte transactionId,
+        byte level,
+        byte profileId = 0,
+        byte regionId = 0) =>
+        Create(transactionId, 3, 0x05, profileId, regionId, level);
 
     public static (RazerChromaEffect Effect, byte Flags, byte Rate, byte[] Colors) ReadEffect(
         ReadOnlySpan<byte> response)
