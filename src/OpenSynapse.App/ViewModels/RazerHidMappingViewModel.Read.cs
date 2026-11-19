@@ -284,6 +284,17 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                         softwareTrigger,
                         LayerIndex == 1,
                         out var triggerMode);
+                    if (softwareMacroIndex >= 0 &&
+                        SoftwareBindingFor(
+                            _localMacros[softwareMacroIndex],
+                            softwareTrigger,
+                            LayerIndex == 1) is { ButtonId: > 0 } binding &&
+                        binding.ButtonId != id)
+                    {
+                        // Two mapping buttons can report the same private key.
+                        // Only the row the binding belongs to shows the macro.
+                        softwareMacroIndex = -1;
+                    }
                     if (softwareMacroIndex >= 0)
                     {
                         row.GroupIndex = (int)RazerHidMappingGroup.Macro;
