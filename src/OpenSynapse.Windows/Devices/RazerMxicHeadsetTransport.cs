@@ -34,7 +34,6 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
     private readonly int _inputReportLength;
     private readonly string _devicePath;
     private readonly RazerHidHidReportTransport _output = new();
-    private readonly bool _useSetOutputReport;
     private readonly bool _useControlStatusReport;
     private uint _readThreadId;
     private bool _disposed;
@@ -42,13 +41,11 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
     internal RazerMxicHeadsetTransport(
         string devicePath,
         int inputReportLength,
-        bool useSetOutputReport = false,
         bool useControlStatusReport = true)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
         _devicePath = devicePath;
         _inputReportLength = Math.Max(inputReportLength, RazerMxicHeadsetProtocol.ReportLength);
-        _useSetOutputReport = useSetOutputReport;
         _useControlStatusReport = useControlStatusReport;
         var handle = NativeMethods.CreateFile(
             devicePath,
@@ -217,21 +214,6 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
 
     private async Task SendReportAsync(byte[] report, CancellationToken cancellationToken)
     {
-        if (_useSetOutputReport)
-        {
-            var succeeded = await CancellableNativeCall.RunAsync(
-                () => NativeMethods.HidD_SetOutputReport(_handle, report, report.Length),
-                ResponseTimeout,
-                cancellationToken).ConfigureAwait(false);
-            if (!succeeded)
-            {
-                throw new Win32Exception(
-                    Marshal.GetLastWin32Error(),
-                    "MXIC HID output report failed.");
-            }
-            return;
-        }
-
         // Synapse's AudioMxicDevice uses hid.write for this family. HID handles are not
         // seekable, so RandomAccess cannot be used; a separate write handle reaches the
         // vendor OUT endpoint without disturbing the read loop.
@@ -387,13 +369,6 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
             uint creationDisposition,
             uint flagsAndAttributes,
             IntPtr templateFile);
-
-        [DllImport("hid.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool HidD_SetOutputReport(
-            SafeFileHandle handle,
-            byte[] reportBuffer,
-            int reportBufferLength);
 
         [DllImport("hid.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
