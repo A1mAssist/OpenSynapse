@@ -357,8 +357,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         _ when error?.StartsWith("ThxOperationRejected:", StringComparison.Ordinal) == true =>
             AppStrings.Text("RazerHeadsetThxOperationRejected"),
         "ThxRebootRequired" => AppStrings.Text("RazerHeadsetThxRebootRequired"),
-        "ThxServiceBroken" or "ThxServiceStopped" =>
-            AppStrings.Text("RazerHeadsetThxServiceMissing"),
+        "ThxServiceBroken" => AppStrings.Text("RazerHeadsetThxServiceBroken"),
+        "ThxServiceStopped" => AppStrings.Text("RazerHeadsetThxServiceMissing"),
         _ when error?.StartsWith("ThxHelperFailed", StringComparison.Ordinal) == true =>
             AppStrings.Text("RazerHeadsetThxHelperFailed"),
         _ => AppStrings.Text("RazerHeadsetThxFailed"),

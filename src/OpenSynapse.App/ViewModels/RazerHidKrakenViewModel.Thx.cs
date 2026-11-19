@@ -28,8 +28,8 @@ public sealed partial class RazerHidKrakenViewModel
         : ThxStatus.ErrorCode switch
         {
             "ThxServiceMissing" => AppStrings.Text("RazerHeadsetThxServiceMissing"),
-            "ThxServiceBroken" or "ThxServiceStopped" =>
-                AppStrings.Text("RazerHeadsetThxServiceMissing"),
+            "ThxServiceBroken" => AppStrings.Text("RazerHeadsetThxServiceBroken"),
+            "ThxServiceStopped" => AppStrings.Text("RazerHeadsetThxServiceMissing"),
             "ThxNativeMissing" => AppStrings.Text("RazerHeadsetThxNativeMissing"),
             "ThxRebootRequired" => AppStrings.Text("RazerHeadsetThxRebootRequired"),
             "ThxDownloadFailed" or "ThxDownloadVerificationFailed" =>

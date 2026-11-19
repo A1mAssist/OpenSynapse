@@ -3203,18 +3203,19 @@
   <data name="RazerArgbDriverDescription.Text" xml:space="preserve"><value>逐燈控制需要雷雲的 0F1F 控制驅動。下載並安裝後，點“重新整理”重新檢測。</value></data>
   <data name="RazerArgbDriverButton.Content" xml:space="preserve"><value>下載 ARGB 驅動</value></data>
   <data name="RazerHeadsetThxTitle.Text" xml:space="preserve"><value>THX Spatial Audio</value></data>
-  <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio 需要 THX 音訊服務和元件。點一次按鈕會自動補齊缺少的部分；只安裝官方 THX 音訊包，不會安裝雷雲，也不需要啟用碼；安裝時需要管理員權限。</value></data>
+  <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio 需要 THX 音訊服務和元件。點一次按鈕會自動補齊缺少的部分；安裝時需要管理員權限。</value></data>
   <data name="RazerHeadsetThxInstallButton.Content" xml:space="preserve"><value>下載並安裝 THX 元件</value></data>
   <data name="RazerHeadsetThxGameProfilesButton.Content" xml:space="preserve"><value>更新 THX 遊戲設定</value></data>
   <data name="RazerHeadsetThxPatcherButton.Content" xml:space="preserve"><value>更新 THX Patcher</value></data>
-  <data name="RazerHeadsetThxServiceMissing" xml:space="preserve"><value>未檢測到 THX 服務。點上面的按鈕由 OpenSynapse 安裝官方 THX 音訊元件；不會安裝雷雲。</value></data>
-  <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>THX 服務已就緒，但缺少控制元件。點上面的按鈕安裝。</value></data>
+  <data name="RazerHeadsetThxServiceMissing" xml:space="preserve"><value>未檢測到 THX 服務。點下方按鈕由 OpenSynapse 安裝官方 THX 音訊元件。</value></data>
+  <data name="RazerHeadsetThxServiceBroken" xml:space="preserve"><value>THX 服務登錄已損壞（VSSrv.exe 缺失）。點下方按鈕修復。</value></data>
+  <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>THX 服務已就緒，但缺少控制元件。點下方按鈕安裝。</value></data>
   <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>正在下載並安裝 THX 元件…</value></data>
   <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>THX 元件下載、校驗或安裝失敗，請確認允許管理員權限後重試。</value></data>
   <data name="RazerHeadsetThxInstallCancelled" xml:space="preserve"><value>已取消 THX 安裝：沒有授予管理員權限。需要安裝時請點按鈕並在 UAC 提示中選“是”。</value></data>
   <data name="RazerHeadsetThxInstallBusy" xml:space="preserve"><value>另一個安裝程式正在執行，THX 元件暫時無法安裝。等它結束後再試。</value></data>
-  <data name="RazerHeadsetThxInstallerExited" xml:space="preserve"><value>THX 安裝程式異常結束（程式碼 {0}）。如果元件已存在，重啟 Windows 後再試；否則點“手動下載 THX 安裝包”自行安裝。</value></data>
-  <data name="RazerHeadsetThxIncomplete" xml:space="preserve"><value>安裝程式已結束，但 THX 服務仍未就緒。請重啟後重試，或點“手動下載 THX 安裝包”自行安裝。</value></data>
+  <data name="RazerHeadsetThxInstallerExited" xml:space="preserve"><value>THX 安裝程式異常結束（程式碼 {0}）。如果元件已存在，重啟 Windows 後再試；否則重新點“下載並安裝 THX 元件”重試。</value></data>
+  <data name="RazerHeadsetThxIncomplete" xml:space="preserve"><value>安裝程式已結束，但 THX 服務仍未就緒。請重啟後重試；仍然失敗就重新點“下載並安裝 THX 元件”。</value></data>
   <data name="RazerHeadsetThxRebootRequired" xml:space="preserve"><value>THX 元件已安裝，需要重啟電腦後生效。</value></data>
   <data name="RazerHeadsetThxInstallerLinkButton.Content" xml:space="preserve"><value>手動下載 THX 安裝包</value></data>
   <data name="RazerHeadsetThxReady" xml:space="preserve"><value>THX 元件已安裝。</value></data>
