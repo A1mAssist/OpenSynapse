@@ -149,6 +149,12 @@ public sealed partial class RazerHidDeviceService
         connection.Definition.ProductId is 0x00AA or 0x00AB or
             0x022B or 0x0244 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF or 0x02EB;
 
+    // These devices reject the 00:84 mode read but still require driver mode for
+    // their OBM and analog-key writes. Synapse writes 00:04 without a read-back.
+    private static bool UsesBlindMappingDriverMode(RazerHidDeviceConnection connection) =>
+        connection.Definition.ProductId is 0x022B or 0x0244 or 0x02A6 or 0x02A7 or
+            0x02B0 or 0x02CF or 0x02EB;
+
     private async Task<(AssignmentTable Table, RazerHidButtonAssignment Assignment)>
         ReadKeypadAssignmentAsync(
             RazerHidDeviceConnection connection,
@@ -511,19 +517,19 @@ public sealed partial class RazerHidDeviceService
                 exception is InvalidDataException or NotSupportedException or
                     RazerCommandRejectedException or RazerDeviceTimeoutException)
             {
-                if (connection.Definition.ProductId is not (0x022B or 0x0244 or 0x02EB))
+                if (!UsesBlindMappingDriverMode(connection))
                 {
-                    // Some keyboards (02CF) reject 00:84 outright but still answer their OBM
-                    // tables in normal mode, so a mode read they do not implement must not
-                    // take the whole mapping page down.
+                    // A firmware that rejects 00:84 may still answer its OBM tables in
+                    // normal mode, so a mode read it does not implement must not take the
+                    // whole mapping page down.
                     _mappingModeUnavailable.TryAdd(connection.InstanceId, true);
                     WriteDiagnostic(connection.Definition.ProductId,
                         $"mapping device mode unavailable: {exception.Message}");
                     return await action().ConfigureAwait(false);
                 }
 
-                // Tartarus V2/Pro need driver mode for every OBM table; Synapse writes it
-                // without reading back, so do the same instead of giving up on normal mode.
+                // Tartarus V2/Pro and the Huntsman V3 Pro family need driver mode even when
+                // their firmware does not implement the 00:84 read.
                 blind = true;
                 _mappingModeBlind.TryAdd(connection.InstanceId, true);
                 WriteDiagnostic(connection.Definition.ProductId,
