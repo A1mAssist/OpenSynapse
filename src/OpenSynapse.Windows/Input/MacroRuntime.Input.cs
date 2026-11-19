@@ -92,6 +92,15 @@ internal sealed partial class MacroRuntime
             SetHyperShiftHeld(value.IsDown);
         }
 
+        // An unclaimed private-key release returns from the macro lock below;
+        // stop its turbo here so hold-to-turbo ends with the physical key.
+        if (value.Input.Kind == MacroInputKind.RazerKey &&
+            value.Input.DeviceId is > 0 and <= 0xFFFF &&
+            !value.IsDown)
+        {
+            StopTurbo(value.Input);
+        }
+
         MacroDefinition? playMacro = null;
         var playModifiers = MacroModifierKeys.None;
         var playRepeatUntilStopped = false;
@@ -458,10 +467,6 @@ internal sealed partial class MacroRuntime
                 {
                     StartTurbo(value.Input, turbo);
                 }
-            }
-            else
-            {
-                StopTurbo(value.Input);
             }
         }
 

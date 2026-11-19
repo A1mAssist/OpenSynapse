@@ -58,6 +58,7 @@ internal sealed partial class MacroRuntime
             }
         }
 
+        _log?.Invoke($"turbo stopped: {key}");
         cancellation.Cancel();
     }
 
