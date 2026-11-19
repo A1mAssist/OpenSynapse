@@ -82,10 +82,11 @@ internal static class RazerHidStandardProtocol
     internal const byte DriverDeviceMode = 0x03;
 
     // The rzDevice30 mice speak the protocol-25 mode pair: 01:82 reads
-    // [mode, param] and 01:02 writes it. 00AA/00AB reject the standard
-    // 00:84/00:04; 00BE/00BF declare it but answer only the class-01 pair.
+    // [mode, param] and 01:02 writes it. 00AA/00AB are rzDevice25 in their
+    // bundle and keep the standard 00:84/00:04 pair; 00BE/00BF answer only
+    // the class-01 pair.
     internal static bool UsesProtocol25DeviceMode(RazerHidDeviceDefinition device) =>
-        device.ProductId is 0x00AA or 0x00AB or 0x00BE or 0x00BF;
+        device.ProductId is 0x00BE or 0x00BF;
 
     internal static RazerHidRequest GetDeviceMode(RazerHidDeviceDefinition device) =>
         GetDeviceMode(device, UsesProtocol25DeviceMode(device));
