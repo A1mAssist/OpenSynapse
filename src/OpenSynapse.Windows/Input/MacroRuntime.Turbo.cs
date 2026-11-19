@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using OpenSynapse.Core.Macros;
 
 namespace OpenSynapse.Windows.Input;
@@ -5,6 +6,7 @@ namespace OpenSynapse.Windows.Input;
 internal sealed partial class MacroRuntime
 {
     private const int TurboHoldMilliseconds = 15;
+    private const int TurboTimerResolutionMilliseconds = 1;
     private readonly object _turboGate = new();
     private readonly Dictionary<string, CancellationTokenSource> _turboRepeats =
         new(StringComparer.Ordinal);
@@ -40,6 +42,12 @@ internal sealed partial class MacroRuntime
             return;
         }
 
+        binding = binding with
+        {
+            IntervalMilliseconds = Math.Max(
+                binding.IntervalMilliseconds,
+                RazerTurboBindingResolver.MinimumIntervalMilliseconds),
+        };
         _log?.Invoke(
             $"turbo started: {key} button={binding.MouseButton} interval={binding.IntervalMilliseconds}ms");
         _ = Task.Run(() => RunTurboAsync(key, binding, fresh!));
@@ -87,6 +95,11 @@ internal sealed partial class MacroRuntime
             Kind = MacroInputKind.MouseButton,
             MouseButton = binding.MouseButton,
         };
+        var hold = Math.Min(
+            TurboHoldMilliseconds,
+            Math.Max(1, binding.IntervalMilliseconds - 1));
+        var timerRaised =
+            TimeBeginPeriod(TurboTimerResolutionMilliseconds) == 0;
         var token = cancellation.Token;
         var held = false;
         try
@@ -95,11 +108,11 @@ internal sealed partial class MacroRuntime
             {
                 await SendInputAsync(target, isDown: true, token).ConfigureAwait(false);
                 held = true;
-                await Task.Delay(TurboHoldMilliseconds, token).ConfigureAwait(false);
+                await Task.Delay(hold, token).ConfigureAwait(false);
                 await SendInputAsync(target, isDown: false, token).ConfigureAwait(false);
                 held = false;
                 await Task.Delay(
-                        Math.Max(1, binding.IntervalMilliseconds - TurboHoldMilliseconds),
+                        Math.Max(1, binding.IntervalMilliseconds - hold),
                         token)
                     .ConfigureAwait(false);
             }
@@ -113,6 +126,11 @@ internal sealed partial class MacroRuntime
         }
         finally
         {
+            if (timerRaised)
+            {
+                TimeEndPeriod(TurboTimerResolutionMilliseconds);
+            }
+
             if (held)
             {
                 try
@@ -151,4 +169,10 @@ internal sealed partial class MacroRuntime
 
     private static string TurboKey(MacroInput input) =>
         $"{input.DeviceId:X4}:{input.RazerKeyCode:X2}";
+
+    [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod")]
+    private static extern uint TimeBeginPeriod(uint period);
+
+    [DllImport("winmm.dll", EntryPoint = "timeEndPeriod")]
+    private static extern uint TimeEndPeriod(uint period);
 }

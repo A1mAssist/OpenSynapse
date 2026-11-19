@@ -31,10 +31,8 @@ public interface IMacroInputSink
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Releases every key this sink still holds down.
-    ///
-    /// A sink that owns keys across a playback has to release them when the
-    /// playback ends, otherwise an interrupted macro leaves a key stuck.
+    /// Releases every key this sink still holds down. Playback normally releases
+    /// only the inputs it pressed; this is the fault-path cleanup.
     /// </summary>
     Task ReleaseAllAsync(CancellationToken cancellationToken = default) =>
         Task.CompletedTask;
