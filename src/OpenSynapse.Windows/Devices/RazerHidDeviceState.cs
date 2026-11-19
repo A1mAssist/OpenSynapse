@@ -247,6 +247,14 @@ public sealed class RazerHidDeviceConnection
     public string InstanceId { get; }
     internal string? DevicePath { get; }
 
+    /// <summary>
+    /// A rescan rebuilds the connection object even when the endpoint did not change.
+    /// Dedup state must follow the endpoint, not the object identity.
+    /// </summary>
+    internal bool IsSameEndpoint(RazerHidDeviceConnection other) =>
+        StringComparer.OrdinalIgnoreCase.Equals(InstanceId, other.InstanceId) &&
+        StringComparer.OrdinalIgnoreCase.Equals(DevicePath, other.DevicePath);
+
     public DeviceDescriptor ToDescriptor() => new(
         DevicePath ?? $"opensynapse://1532/{Definition.ProductId:X4}/{Uri.EscapeDataString(InstanceId)}",
         Definition.DisplayName,

@@ -216,7 +216,7 @@ internal sealed partial class ChromaDeviceRouter
             if (connection is null || _hid is null) return false;
             var colors = resized.Select(color => new RazerHidColor(color.Red, color.Green, color.Blue)).ToArray();
             if (!_customEffectPrepared.TryGetValue(target.InstanceId, out var prepared) ||
-                !ReferenceEquals(prepared, connection))
+                !prepared.IsSameEndpoint(connection))
             {
                 if (_hidBaselineAttempted.Add(target.InstanceId))
                 {
