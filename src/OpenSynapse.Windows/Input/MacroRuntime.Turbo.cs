@@ -14,19 +14,35 @@ internal sealed partial class MacroRuntime
     private void StartTurbo(MacroInput trigger, RazerTurboBinding binding)
     {
         var key = TurboKey(trigger);
-        CancellationTokenSource cancellation;
+        CancellationTokenSource? previous;
+        CancellationTokenSource? fresh = null;
         lock (_turboGate)
         {
-            if (_turboRepeats.ContainsKey(key))
+            if (_turboRepeats.TryGetValue(key, out previous))
             {
-                return;
+                _turboRepeats.Remove(key);
             }
-
-            cancellation = new CancellationTokenSource();
-            _turboRepeats[key] = cancellation;
+            else
+            {
+                previous = null;
+                fresh = new CancellationTokenSource();
+                _turboRepeats[key] = fresh;
+            }
         }
 
-        _ = Task.Run(() => RunTurboAsync(key, binding, cancellation));
+        if (previous is not null)
+        {
+            // A private key that reports only presses, or whose release was lost
+            // with the device, would otherwise repeat until the app restarts.
+            // The next press is the stop control.
+            previous.Cancel();
+            _log?.Invoke($"turbo stopped by a second press: {key}");
+            return;
+        }
+
+        _log?.Invoke(
+            $"turbo started: {key} button={binding.MouseButton} interval={binding.IntervalMilliseconds}ms");
+        _ = Task.Run(() => RunTurboAsync(key, binding, fresh!));
     }
 
     private void StopTurbo(MacroInput trigger) => StopTurbo(TurboKey(trigger));
