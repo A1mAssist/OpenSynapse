@@ -475,6 +475,9 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
                     continue;
                 }
 
+                // Synapse polls the same transaction before re-sending; a re-send restarts slow flash commits.
+                if (candidate[1] == 0x01 && readAttempt < MaxReadAttempts) continue;
+
                 response = candidate;
                 break;
             }

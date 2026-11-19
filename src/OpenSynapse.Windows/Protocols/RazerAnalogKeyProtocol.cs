@@ -70,7 +70,8 @@ public static partial class RazerAnalogKeyProtocol
 
     // The 02A7 firmware answers a full 15-key 0x99 read with 0x01 busy until
     // the retry window expires, while the same firmware acknowledges 5-key
-    // batches. Keep this model on the smaller batch until its limit is known.
+    // batches. Only reads use the smaller batch; writes follow the middleware's
+    // full 15-key / 13-key batches (MzU / K0r in the 02A7 bundle).
     public static int MaxActuationPointsFor(ushort productId) =>
         productId == 0x02A7 ? 5 : MaxActuationPoints;
 
