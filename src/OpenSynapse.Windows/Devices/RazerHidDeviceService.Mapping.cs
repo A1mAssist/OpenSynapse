@@ -131,8 +131,9 @@ public sealed partial class RazerHidDeviceService
         connection.Definition.ProductId is 0x0266 or 0x0282;
 
     // Huntsman V3 Pro firmware rejects 0x8D for modifiers and navigation keys.
+    // 02EB's keypad engine reads its assignment table through 0x9E as well.
     private static bool UsesMultiKeyAssignments(RazerHidDeviceConnection connection) =>
-        connection.Definition.ProductId is 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
+        connection.Definition.ProductId is 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF or 0x02EB;
 
     // The Tartarus Pro OBM engine probes the single analog/key/button tables per input;
     // only the Huntsman V3 Pro family reads everything through the multi-key table.
@@ -140,13 +141,13 @@ public sealed partial class RazerHidDeviceService
         connection.Definition.ProductId == 0x0244;
 
     // Synapse switches these keyboards to driver mode before its mapping page. In normal
-    // mode the Tartarus V2/Pro answers 0x05 and the Huntsman V3 Pro family answers 0x01
-    // busy for the OBM tables, which looks like a dead device.
+    // mode the Tartarus V2/Pro/02EB answers 0x05 and the Huntsman V3 Pro family answers
+    // 0x01 busy for the OBM tables, which looks like a dead device.
     private static bool RequiresMappingDriverMode(RazerHidDeviceConnection connection) =>
         // The Basilisk V3 Pro pair accepts an OBM write in normal mode but keeps
         // applying the old assignment until the host switches to driver mode.
         connection.Definition.ProductId is 0x00AA or 0x00AB or
-            0x022B or 0x0244 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
+            0x022B or 0x0244 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF or 0x02EB;
 
     private async Task<(AssignmentTable Table, RazerHidButtonAssignment Assignment)>
         ReadKeypadAssignmentAsync(
@@ -222,10 +223,10 @@ public sealed partial class RazerHidDeviceService
     }
 
     // Huntsman V3 Pro runs the OBM engine with analogKeyboard=false: it reads the
-    // multi-key table but writes through the normal 0x0D key command. 0x1E is
-    // acknowledged and leaves the key unchanged, which looked like a dead Apply.
+    // multi-key table but writes through the normal 0x0D key command. 02EB's keypad
+    // engine similarly reads 0x9E and writes single assignments through 0x0D.
     private static bool WritesMultiKeyThroughKeyTable(RazerHidDeviceConnection connection) =>
-        connection.Definition.ProductId is 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
+        connection.Definition.ProductId is 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF or 0x02EB;
 
     public Task SetButtonAssignmentAsync(
         RazerHidDeviceConnection connection,
@@ -247,8 +248,8 @@ public sealed partial class RazerHidDeviceService
     {
         // Synapse flips a wireless mouse back to driver mode before touching onboard
         // mappings; in normal mode the firmware accepts the frame but keeps the old
-        // assignment, which looked like "this device refuses edits". The Tartarus Pro
-        // takes the scoped mapping-mode wrapper instead, which restores normal mode.
+        // assignment, which looked like "this device refuses edits". The Tartarus Pro/02EB
+        // take the scoped mapping-mode wrapper instead, which restores normal mode.
         if (!RequiresMappingDriverMode(connection) &&
             connection.Capabilities.Contains(RazerHidBackendCapability.DeviceModeWrite))
         {
@@ -321,12 +322,13 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken)
     {
         var analog = definition.ProductId is 0x0266 or 0x0282;
-        var multi = definition.ProductId is 0x0244 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
+        var multi = definition.ProductId is 0x0244 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF or 0x02EB;
         // 022B keypads map the first art key to SPAD_NUM_1, firmware key id 64 (0x40).
         // 0244 reads the main pad and wheel/D-pad rows through the multi-key table.
         (bool Multi, byte Id)[] probes = definition.ProductId switch
         {
             0x0244 => [(true, 0x40), (true, 0x03)],
+            0x02EB => [(true, 0x40), (true, 0x03)],
             0x022B =>
             [
                 (false, 0x40),
@@ -468,7 +470,7 @@ public sealed partial class RazerHidDeviceService
     }
 
     /// <summary>
-    /// The Tartarus Pro answers status 0x05 ("command not supported in this device mode")
+    /// The Tartarus Pro/02EB answer status 0x05 ("command not supported in this device mode")
     /// to every OBM read until the firmware is switched to driver mode. Synapse switches
     /// mode before its mapping page and restores normal mode on unload; each operation here
     /// does the same so the keypad is never left in driver mode.
@@ -511,7 +513,7 @@ public sealed partial class RazerHidDeviceService
                 exception is InvalidDataException or NotSupportedException or
                     RazerCommandRejectedException)
             {
-                if (connection.Definition.ProductId is not (0x022B or 0x0244))
+                if (connection.Definition.ProductId is not (0x022B or 0x0244 or 0x02EB))
                 {
                     // Some keyboards (02CF) reject 00:84 outright but still answer their OBM
                     // tables in normal mode, so a mode read they do not implement must not

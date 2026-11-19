@@ -148,7 +148,7 @@ public sealed class RazerHidDeviceDefinition
 public sealed partial class RazerHidDeviceCatalog
 {
     internal const string SourceCommit = "477f4d6d3ab7e9deb6310d5bd3742560c5cbe80d";
-    private const int ExpectedDeviceCount = 263;
+    private const int ExpectedDeviceCount = 264;
     private static readonly ushort[] ReservedProductIds = [0x00B8, 0x02C6];
     private static readonly HashSet<ushort> MappingProductIds = [];
     private static readonly string[] ResourceSuffixes =
