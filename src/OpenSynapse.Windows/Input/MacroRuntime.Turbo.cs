@@ -104,6 +104,10 @@ internal sealed partial class MacroRuntime
         var held = false;
         try
         {
+            var interval = TimeSpan.FromMilliseconds(
+                Math.Max(1, binding.IntervalMilliseconds));
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            var next = TimeSpan.Zero;
             while (!token.IsCancellationRequested)
             {
                 await SendInputAsync(target, isDown: true, token).ConfigureAwait(false);
@@ -111,10 +115,22 @@ internal sealed partial class MacroRuntime
                 await Task.Delay(hold, token).ConfigureAwait(false);
                 await SendInputAsync(target, isDown: false, token).ConfigureAwait(false);
                 held = false;
-                await Task.Delay(
-                        Math.Max(1, binding.IntervalMilliseconds - hold),
-                        token)
-                    .ConfigureAwait(false);
+
+                // Sleep to an absolute deadline: the two SendInput calls and the hold
+                // delay cost several milliseconds each, and sleeping a fixed remainder
+                // made a 50 ms turbo run at ~62 ms whenever a macro shared the runtime.
+                next += interval;
+                var remaining = next - clock.Elapsed;
+                if (remaining > TimeSpan.Zero)
+                {
+                    await Task.Delay(remaining, token).ConfigureAwait(false);
+                }
+                else if (remaining < -interval)
+                {
+                    // More than a whole period behind (suspended or starved):
+                    // resync instead of firing a catch-up burst.
+                    next = clock.Elapsed;
+                }
             }
         }
         catch (OperationCanceledException)
