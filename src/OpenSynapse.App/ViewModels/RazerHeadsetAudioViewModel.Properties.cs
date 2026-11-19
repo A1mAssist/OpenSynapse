@@ -65,8 +65,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         : _thxStatus.ErrorCode switch
         {
             "ThxServiceMissing" => AppStrings.Text("RazerHeadsetThxServiceMissing"),
-            "ThxServiceBroken" or "ThxServiceStopped" =>
-                AppStrings.Text("RazerHeadsetThxServiceMissing"),
+            "ThxServiceBroken" => AppStrings.Text("RazerHeadsetThxServiceBroken"),
+            "ThxServiceStopped" => AppStrings.Text("RazerHeadsetThxServiceMissing"),
             "ThxNativeMissing" => AppStrings.Text("RazerHeadsetThxNativeMissing"),
             "ThxDownloadFailed" or "ThxDownloadVerificationFailed" =>
                 AppStrings.Text("RazerHeadsetThxDownloadFailed"),

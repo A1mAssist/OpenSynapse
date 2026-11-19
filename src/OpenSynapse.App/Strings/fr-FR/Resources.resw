@@ -2767,18 +2767,19 @@
   <data name="RazerArgbDriverDescription.Text" xml:space="preserve"><value>Le contrôle par LED nécessite le pilote de contrôle Razer 0F1F. Installez-le, puis actualisez.</value></data>
   <data name="RazerArgbDriverButton.Content" xml:space="preserve"><value>Télécharger le pilote ARGB</value></data>
   <data name="RazerHeadsetThxTitle.Text" xml:space="preserve"><value>THX Spatial Audio</value></data>
-  <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio nécessite le service et les composants audio THX. Un seul bouton installe tout ce qui manque ; OpenSynapse installe uniquement le paquet THX officiel, sans Synapse ni code d’activation. Des droits d’administrateur sont requis.</value></data>
+  <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio nécessite le service et les composants audio THX. Un seul bouton installe tout ce qui manque ; des droits d’administrateur sont requis.</value></data>
   <data name="RazerHeadsetThxInstallButton.Content" xml:space="preserve"><value>Télécharger et installer les composants THX</value></data>
   <data name="RazerHeadsetThxGameProfilesButton.Content" xml:space="preserve"><value>Mettre à jour les profils de jeu THX</value></data>
   <data name="RazerHeadsetThxPatcherButton.Content" xml:space="preserve"><value>Mettre à jour le patcheur THX</value></data>
-  <data name="RazerHeadsetThxServiceMissing" xml:space="preserve"><value>Le service THX n’est pas en cours d’exécution. Installez ici les composants audio THX officiels ; Synapse n’est pas inclus.</value></data>
-  <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>Le service THX est prêt, mais le composant de contrôle est manquant. Installez-le ci-dessus.</value></data>
+  <data name="RazerHeadsetThxServiceMissing" xml:space="preserve"><value>Le service THX n’est pas en cours d’exécution. Installez les composants audio THX officiels avec le bouton ci-dessous.</value></data>
+  <data name="RazerHeadsetThxServiceBroken" xml:space="preserve"><value>L’inscription du service THX est endommagée (VSSrv.exe manquant). Réparez-la avec le bouton ci-dessous.</value></data>
+  <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>Le service THX est prêt, mais le composant de contrôle est manquant. Installez-le avec le bouton ci-dessous.</value></data>
   <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>Téléchargement et installation des composants THX…</value></data>
   <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>Les composants THX n’ont pas pu être téléchargés, vérifiés ou installés. Accordez les droits d’administrateur et réessayez.</value></data>
   <data name="RazerHeadsetThxInstallCancelled" xml:space="preserve"><value>L’installation THX a été annulée car les droits d’administrateur n’ont pas été accordés. Sélectionnez « Oui » dans l’invite UAC et réessayez.</value></data>
   <data name="RazerHeadsetThxInstallBusy" xml:space="preserve"><value>Un autre programme d’installation est en cours ; les composants THX ne peuvent pas être installés pour le moment. Attendez qu’il se termine et réessayez.</value></data>
-  <data name="RazerHeadsetThxInstallerExited" xml:space="preserve"><value>Le programme d’installation THX s’est arrêté de façon inattendue (code {0}). Si les composants sont déjà présents, redémarrez Windows et réessayez ; sinon, utilisez « Télécharger le programme d’installation THX » pour l’installer vous-même.</value></data>
-  <data name="RazerHeadsetThxIncomplete" xml:space="preserve"><value>Le programme d’installation s’est terminé, mais le service THX n’est toujours pas prêt. Redémarrez et réessayez, ou utilisez « Télécharger le programme d’installation THX » pour l’installer vous-même.</value></data>
+  <data name="RazerHeadsetThxInstallerExited" xml:space="preserve"><value>Le programme d’installation THX s’est arrêté de façon inattendue (code {0}). Si les composants sont déjà présents, redémarrez Windows et réessayez. Sinon, cliquez à nouveau sur « Télécharger et installer les composants THX ».</value></data>
+  <data name="RazerHeadsetThxIncomplete" xml:space="preserve"><value>Le programme d’installation s’est terminé, mais le service THX n’est toujours pas prêt. Redémarrez et réessayez. Si cela échoue encore, cliquez à nouveau sur « Télécharger et installer les composants THX ».</value></data>
   <data name="RazerHeadsetThxRebootRequired" xml:space="preserve"><value>Les composants THX sont installés ; redémarrez Windows pour terminer.</value></data>
   <data name="RazerHeadsetThxInstallerLinkButton.Content" xml:space="preserve"><value>Télécharger le programme d’installation THX</value></data>
   <data name="RazerHeadsetThxReady" xml:space="preserve"><value>Les composants THX sont installés.</value></data>

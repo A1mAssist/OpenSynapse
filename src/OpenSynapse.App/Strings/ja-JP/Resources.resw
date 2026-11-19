@@ -2767,18 +2767,19 @@
   <data name="RazerArgbDriverDescription.Text" xml:space="preserve"><value>LED ごとの制御には Razer の 0F1F 制御ドライバーが必要です。インストールしてから更新してください。</value></data>
   <data name="RazerArgbDriverButton.Content" xml:space="preserve"><value>ARGB ドライバーをダウンロード</value></data>
   <data name="RazerHeadsetThxTitle.Text" xml:space="preserve"><value>THX Spatial Audio</value></data>
-  <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio には THX オーディオ サービスとコンポーネントが必要です。1 つのボタンで不足しているものをすべて補います。OpenSynapse は公式 THX パッケージのみをインストールし、Synapse やアクティベーション コードは使用しません。管理者権限が必要です。</value></data>
+  <data name="RazerHeadsetThxDescription.Text" xml:space="preserve"><value>THX Spatial Audio には THX オーディオ サービスとコンポーネントが必要です。1 つのボタンで不足しているものをすべて補います。管理者権限が必要です。</value></data>
   <data name="RazerHeadsetThxInstallButton.Content" xml:space="preserve"><value>THX コンポーネントをダウンロードしてインストール</value></data>
   <data name="RazerHeadsetThxGameProfilesButton.Content" xml:space="preserve"><value>THX ゲーム プロファイルを更新</value></data>
   <data name="RazerHeadsetThxPatcherButton.Content" xml:space="preserve"><value>THX パッチャーを更新</value></data>
-  <data name="RazerHeadsetThxServiceMissing" xml:space="preserve"><value>THX サービスが実行されていません。ここで公式 THX オーディオ コンポーネントをインストールしてください。Synapse は含まれません。</value></data>
-  <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>THX サービスは準備できていますが、コントロール コンポーネントがありません。上でインストールしてください。</value></data>
+  <data name="RazerHeadsetThxServiceMissing" xml:space="preserve"><value>THX サービスが実行されていません。下のボタンから公式 THX オーディオ コンポーネントをインストールしてください。</value></data>
+  <data name="RazerHeadsetThxServiceBroken" xml:space="preserve"><value>THX サービスの登録が破損しています（VSSrv.exe が見つかりません）。下のボタンから修復してください。</value></data>
+  <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>THX サービスは準備できていますが、コントロール コンポーネントがありません。下のボタンからインストールしてください。</value></data>
   <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>THX コンポーネントをダウンロードしてインストールしています...</value></data>
   <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>THX コンポーネントをダウンロード、検証、またはインストールできませんでした。管理者権限を許可して再試行してください。</value></data>
   <data name="RazerHeadsetThxInstallCancelled" xml:space="preserve"><value>管理者権限が付与されなかったため、THX のインストールはキャンセルされました。UAC プロンプトで「はい」を選択して再試行してください。</value></data>
   <data name="RazerHeadsetThxInstallBusy" xml:space="preserve"><value>別のインストーラーが実行中のため、現在 THX コンポーネントをインストールできません。完了を待って再試行してください。</value></data>
-  <data name="RazerHeadsetThxInstallerExited" xml:space="preserve"><value>THX インストーラーが予期せず終了しました（コード {0}）。コンポーネントが既に存在する場合は Windows を再起動して再試行してください。存在しない場合は、「THX インストーラーをダウンロード」を使用して手動でインストールしてください。</value></data>
-  <data name="RazerHeadsetThxIncomplete" xml:space="preserve"><value>インストーラーは完了しましたが、THX サービスはまだ準備できていません。再起動して再試行するか、「THX インストーラーをダウンロード」を使用して手動でインストールしてください。</value></data>
+  <data name="RazerHeadsetThxInstallerExited" xml:space="preserve"><value>THX インストーラーが予期せず終了しました（コード {0}）。コンポーネントが既に存在する場合は Windows を再起動して再試行してください。存在しない場合は、「THX コンポーネントをダウンロードしてインストール」をもう一度クリックしてください。</value></data>
+  <data name="RazerHeadsetThxIncomplete" xml:space="preserve"><value>インストーラーは完了しましたが、THX サービスはまだ準備できていません。再起動して再試行してください。それでも失敗する場合は、「THX コンポーネントをダウンロードしてインストール」をもう一度クリックしてください。</value></data>
   <data name="RazerHeadsetThxRebootRequired" xml:space="preserve"><value>THX コンポーネントがインストールされました。完了するには Windows を再起動してください。</value></data>
   <data name="RazerHeadsetThxInstallerLinkButton.Content" xml:space="preserve"><value>THX インストーラーをダウンロード</value></data>
   <data name="RazerHeadsetThxReady" xml:space="preserve"><value>THX コンポーネントがインストールされています。</value></data>

@@ -5187,7 +5187,7 @@
     <value>Пространственное аудио THX</value>
   </data>
   <data name="RazerHeadsetThxDescription.Text" xml:space="preserve">
-    <value>Для THX Spatial Audio требуются аудиосервисы и компоненты THX. Одна кнопка заполняет все недостающее; OpenSynapse устанавливает только официальный пакет THX, без Synapse или кода активации. Требуются права администратора.</value>
+    <value>Для THX Spatial Audio требуются аудиосервисы и компоненты THX. Одна кнопка заполняет все недостающее. Требуются права администратора.</value>
   </data>
   <data name="RazerHeadsetThxInstallButton.Content" xml:space="preserve">
     <value>Загрузите и установите компоненты THX</value>
@@ -5199,10 +5199,13 @@
     <value>Обновить патчер THX</value>
   </data>
   <data name="RazerHeadsetThxServiceMissing" xml:space="preserve">
-    <value>Служба THX не работает. Установите официальные аудиокомпоненты THX здесь; Синапс не включен.</value>
+    <value>Служба THX не работает. Установите официальные аудиокомпоненты THX с помощью кнопки ниже.</value>
+  </data>
+  <data name="RazerHeadsetThxServiceBroken" xml:space="preserve">
+    <value>Регистрация службы THX повреждена (VSSrv.exe отсутствует). Восстановите ее с помощью кнопки ниже.</value>
   </data>
   <data name="RazerHeadsetThxNativeMissing" xml:space="preserve">
-    <value>Сервис THX готов, но компонент управления отсутствует. Установите его выше.</value>
+    <value>Сервис THX готов, но компонент управления отсутствует. Установите его с помощью кнопки ниже.</value>
   </data>
   <data name="RazerHeadsetThxDownloading" xml:space="preserve">
     <value>Загрузка и установка компонентов THX...</value>
@@ -5217,10 +5220,10 @@
     <value>Запущен другой установщик, поэтому сейчас невозможно установить компоненты THX. Подождите, пока он закончится, и повторите попытку.</value>
   </data>
   <data name="RazerHeadsetThxInstallerExited" xml:space="preserve">
-    <value>Программа установки THX неожиданно завершила работу (код {0}). Если компоненты уже присутствуют, перезагрузите Windows и повторите попытку; в противном случае используйте «Загрузить установщик THX», чтобы установить его самостоятельно.</value>
+    <value>Программа установки THX неожиданно завершила работу (код {0}). Если компоненты уже присутствуют, перезагрузите Windows и повторите попытку; в противном случае снова нажмите кнопку «Загрузите и установите компоненты THX».</value>
   </data>
   <data name="RazerHeadsetThxIncomplete" xml:space="preserve">
-    <value>Установщик завершил работу, но служба THX все еще не готова. Перезапустите и повторите попытку или воспользуйтесь «Загрузить установщик THX», чтобы установить его самостоятельно.</value>
+    <value>Установщик завершил работу, но служба THX все еще не готова. Перезапустите и повторите попытку; если это не поможет, снова нажмите кнопку «Загрузите и установите компоненты THX».</value>
   </data>
   <data name="RazerHeadsetThxRebootRequired" xml:space="preserve">
     <value>установлены компоненты THX; перезагрузите Windows, чтобы завершить работу.</value>

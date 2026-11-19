@@ -23,8 +23,8 @@ public sealed partial class BlackSharkHeadsetViewModel
         : ThxStatus.ErrorCode switch
         {
             "ThxServiceMissing" => AppStrings.Text("RazerHeadsetThxServiceMissing"),
-            "ThxServiceBroken" or "ThxServiceStopped" =>
-                AppStrings.Text("RazerHeadsetThxServiceMissing"),
+            "ThxServiceBroken" => AppStrings.Text("RazerHeadsetThxServiceBroken"),
+            "ThxServiceStopped" => AppStrings.Text("RazerHeadsetThxServiceMissing"),
             "ThxNativeMissing" => AppStrings.Text("RazerHeadsetThxNativeMissing"),
             "ThxRebootRequired" => AppStrings.Text("RazerHeadsetThxRebootRequired"),
             "ThxDownloadFailed" or "ThxDownloadVerificationFailed" =>
@@ -37,18 +37,26 @@ public sealed partial class BlackSharkHeadsetViewModel
                     code["ThxInstallerExit".Length..]),
             var code when code?.StartsWith("ThxInstaller", StringComparison.Ordinal) == true =>
                 AppStrings.Text("RazerHeadsetThxDownloadFailed"),
+            _ when ThxStatus.Availability == ThxHeadsetAvailability.InstalledButInactive =>
+                AppStrings.Text("RazerHeadsetThxRejectedInstalled"),
             _ when ThxStatus.Availability == ThxHeadsetAvailability.Available =>
                 AppStrings.Text("RazerHeadsetThxReady"),
             _ => string.Empty,
         };
 
+    private bool NeedsThxInstall =>
+        ThxStatus.Availability is not (ThxHeadsetAvailability.Available or
+            ThxHeadsetAvailability.InstalledButInactive) ||
+        (ThxStatus.Availability == ThxHeadsetAvailability.InstalledButInactive &&
+            ThxStatus.ErrorCode == "ThxServiceStopped");
+
     public Visibility ThxInstallerVisibility =>
-        ThxStatus.Availability == ThxHeadsetAvailability.Available || ThxStatus.RebootRequired
-            ? Visibility.Collapsed
-            : ThxVisibility;
+        NeedsThxInstall && !ThxStatus.RebootRequired
+            ? ThxVisibility
+            : Visibility.Collapsed;
 
     public bool CanInstallThx =>
-        !_thxBusy && ThxStatus.Availability != ThxHeadsetAvailability.Available &&
+        !_thxBusy && NeedsThxInstall &&
         !ThxStatus.RebootRequired;
 
     public async Task InstallThxComponentsAsync(CancellationToken cancellationToken = default)
