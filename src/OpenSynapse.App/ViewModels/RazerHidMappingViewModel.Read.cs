@@ -118,11 +118,14 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             return;
         }
 
-        do
+        await _transport.RunInMappingModeAsync(async token =>
         {
-            _readQueued = false;
-            await ReadCoreAsync(cancellationToken).ConfigureAwait(true);
-        } while (_readQueued && !cancellationToken.IsCancellationRequested);
+            do
+            {
+                _readQueued = false;
+                await ReadCoreAsync(token).ConfigureAwait(true);
+            } while (_readQueued && !token.IsCancellationRequested);
+        }, cancellationToken).ConfigureAwait(true);
     }
 
     private async Task ReadCoreAsync(CancellationToken cancellationToken)

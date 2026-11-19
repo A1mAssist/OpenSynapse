@@ -5,6 +5,44 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed partial class RazerHidDeviceService
 {
+    private static readonly AsyncLocal<HashSet<string>?> MappingModeSessions = new();
+
+    /// <summary>
+    /// Switches to driver mode once for a whole mapping page read or write. Without this
+    /// scope every row toggles the firmware mode twice, which makes the wheel click and
+    /// turns a 13-row refresh into dozens of mode changes.
+    /// </summary>
+    public async Task RunMappingModeSessionAsync(
+        RazerHidDeviceConnection connection,
+        Func<CancellationToken, Task> action,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        if (MappingModeSessions.Value?.Contains(connection.InstanceId) == true)
+        {
+            await action(cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        await WithMappingModeAsync(connection, async () =>
+        {
+            var previous = MappingModeSessions.Value;
+            var next = previous is null
+                ? new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                : new HashSet<string>(previous, StringComparer.OrdinalIgnoreCase);
+            next.Add(connection.InstanceId);
+            MappingModeSessions.Value = next;
+            try
+            {
+                await action(cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                MappingModeSessions.Value = previous;
+            }
+        }, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// The Tartarus Pro/02EB answer status 0x05 ("command not supported in this device mode")
     /// to every OBM read until the firmware is switched to driver mode. Synapse switches
@@ -26,6 +64,11 @@ public sealed partial class RazerHidDeviceService
         Func<Task<T>> action,
         CancellationToken cancellationToken)
     {
+        if (MappingModeSessions.Value?.Contains(connection.InstanceId) == true)
+        {
+            return await action().ConfigureAwait(false);
+        }
+
         if (!RequiresMappingDriverMode(connection))
         {
             return await action().ConfigureAwait(false);
