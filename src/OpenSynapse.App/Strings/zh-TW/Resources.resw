@@ -1431,30 +1431,6 @@
   <data name="RazerHidOnboardProfileResetAction" xml:space="preserve">
     <value>重置</value>
   </data>
-  <data name="DeviceResetOnboardProfile" xml:space="preserve">
-    <value>重置目前內建設定檔</value>
-  </data>
-  <data name="DeviceResetOnboardProfileTitle" xml:space="preserve">
-    <value>重置目前內建設定檔</value>
-  </data>
-  <data name="DeviceResetOnboardProfileBody" xml:space="preserve">
-    <value>將清除該裝置目前內建設定檔中的按鍵對映、宏、DPI 和燈效設定。此操作無法撤銷。</value>
-  </data>
-  <data name="DeviceResetOnboardProfileAction" xml:space="preserve">
-    <value>重置</value>
-  </data>
-  <data name="DeviceResetOnboardProfileBusy" xml:space="preserve">
-    <value>正在重置…</value>
-  </data>
-  <data name="DeviceResetOnboardProfileDone" xml:space="preserve">
-    <value>已重置目前內建設定檔</value>
-  </data>
-  <data name="DeviceResetOnboardProfileUnsupported" xml:space="preserve">
-    <value>該裝置不支援重置內建設定檔</value>
-  </data>
-  <data name="DeviceResetOnboardProfileWirelessIdle" xml:space="preserve">
-    <value>裝置休眠或未連線，請先喚醒後重試</value>
-  </data>
   <data name="RazerHidOnboardProfileDeleteBlocked.Text" xml:space="preserve">
     <value>目前啟用的設定不能刪除，請先切換到其他設定。</value>
   </data>

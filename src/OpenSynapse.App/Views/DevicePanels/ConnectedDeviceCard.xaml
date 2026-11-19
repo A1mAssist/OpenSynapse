@@ -10,8 +10,7 @@
     <local:BatteryFillWidthConverter x:Key="BatteryFillWidthConverter" />
     <local:BatteryLevelBrushConverter x:Key="BatteryLevelBrushConverter" />
   </UserControl.Resources>
-  <StackPanel>
-    <Button Tag="{Binding Source}" Click="CardButtonClick" Style="{StaticResource QuickActionButtonStyle}" Padding="12" MinHeight="60" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="{Binding Name}" ToolTipService.ToolTip="{Binding Identity}">
+  <Button Tag="{Binding Source}" Click="CardButtonClick" Style="{StaticResource QuickActionButtonStyle}" Padding="12" MinHeight="60" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.Name="{Binding Name}" ToolTipService.ToolTip="{Binding Identity}">
       <Grid ColumnDefinitions="44,*,Auto" ColumnSpacing="12">
         <Border Width="44" Height="36" Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="4">
           <Grid>
@@ -42,10 +41,5 @@
           <TextBlock Text="{Binding Error}" FontSize="10" FontFamily="Cascadia Mono,Consolas" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap" HorizontalAlignment="Right" Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}" />
         </StackPanel>
       </Grid>
-    </Button>
-    <StackPanel Margin="12,2,12,8" Spacing="2" Visibility="{Binding HasResetOnboardProfileFooter, Converter={StaticResource BoolToVisibilityConverter}}">
-      <HyperlinkButton Content="{Binding ResetOnboardProfileActionText}" Click="ResetButtonClick" IsEnabled="{Binding CanResetOnboardProfileNow}" AutomationProperties.Name="{Binding ResetOnboardProfileActionText}" HorizontalAlignment="Left" Padding="0" MinHeight="26" Visibility="{Binding CanResetOnboardProfile, Converter={StaticResource BoolToVisibilityConverter}}" />
-      <TextBlock Text="{Binding ResetOnboardProfileStatusText}" Foreground="{Binding ResetOnboardProfileStatusBrush}" FontSize="11" TextWrapping="Wrap" Visibility="{Binding HasResetOnboardProfileStatus, Converter={StaticResource BoolToVisibilityConverter}}" />
-    </StackPanel>
-  </StackPanel>
+  </Button>
 </UserControl>

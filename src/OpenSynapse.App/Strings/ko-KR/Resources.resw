@@ -1107,30 +1107,6 @@
   <data name="RazerHidOnboardProfileResetAction" xml:space="preserve">
     <value>재설정</value>
   </data>
-  <data name="DeviceResetOnboardProfile" xml:space="preserve">
-    <value>현재 온보드 프로필 재설정</value>
-  </data>
-  <data name="DeviceResetOnboardProfileTitle" xml:space="preserve">
-    <value>현재 온보드 프로필 재설정</value>
-  </data>
-  <data name="DeviceResetOnboardProfileBody" xml:space="preserve">
-    <value>장치의 현재 온보드 프로필에 있는 키 매핑, 매크로, DPI 및 조명이 지워집니다. 이 작업은 취소할 수 없습니다.</value>
-  </data>
-  <data name="DeviceResetOnboardProfileAction" xml:space="preserve">
-    <value>재설정</value>
-  </data>
-  <data name="DeviceResetOnboardProfileBusy" xml:space="preserve">
-    <value>재설정 중…</value>
-  </data>
-  <data name="DeviceResetOnboardProfileDone" xml:space="preserve">
-    <value>현재 온보드 프로필을 재설정했습니다</value>
-  </data>
-  <data name="DeviceResetOnboardProfileUnsupported" xml:space="preserve">
-    <value>이 장치는 온보드 프로필 재설정을 지원하지 않습니다</value>
-  </data>
-  <data name="DeviceResetOnboardProfileWirelessIdle" xml:space="preserve">
-    <value>장치가 절전 상태이거나 연결이 끊어졌습니다. 깨운 후 다시 시도하세요</value>
-  </data>
   <data name="RazerHidOnboardProfileDeleteBlocked.Text" xml:space="preserve">
     <value>활성 프로필은 삭제할 수 없습니다. 먼저 다른 프로필로 전환하세요.</value>
   </data>
