@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Protocols;
 
@@ -5,7 +6,11 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed partial class RazerHidDeviceService
 {
-    private static readonly AsyncLocal<HashSet<string>?> MappingModeSessions = new();
+    // A page read/apply enters and exits on the UI thread; WinUI does not always
+    // flow AsyncLocal through its continuations, so the session has to live on
+    // the service keyed by device instead of on the execution context.
+    private readonly ConcurrentDictionary<string, int> _mappingModeSessions =
+        new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Switches to driver mode once for a whole mapping page read or write. Without this
@@ -18,29 +23,30 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(action);
-        if (MappingModeSessions.Value?.Contains(connection.InstanceId) == true)
+        var depth = _mappingModeSessions.AddOrUpdate(
+            connection.InstanceId, 1, static (_, value) => value + 1);
+        try
         {
-            await action(cancellationToken).ConfigureAwait(false);
-            return;
-        }
-
-        await WithMappingModeAsync(connection, async () =>
-        {
-            var previous = MappingModeSessions.Value;
-            var next = previous is null
-                ? new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                : new HashSet<string>(previous, StringComparer.OrdinalIgnoreCase);
-            next.Add(connection.InstanceId);
-            MappingModeSessions.Value = next;
-            try
+            if (depth == 1)
+            {
+                await WithMappingModeAsync(
+                    connection, () => action(cancellationToken), cancellationToken,
+                    bypassSession: true)
+                    .ConfigureAwait(false);
+            }
+            else
             {
                 await action(cancellationToken).ConfigureAwait(false);
             }
-            finally
+        }
+        finally
+        {
+            if (_mappingModeSessions.AddOrUpdate(
+                    connection.InstanceId, 0, static (_, value) => value - 1) <= 1)
             {
-                MappingModeSessions.Value = previous;
+                _mappingModeSessions.TryRemove(connection.InstanceId, out _);
             }
-        }, cancellationToken).ConfigureAwait(false);
+        }
     }
 
     /// <summary>
@@ -52,19 +58,21 @@ public sealed partial class RazerHidDeviceService
     private async Task WithMappingModeAsync(
         RazerHidDeviceConnection connection,
         Func<Task> action,
-        CancellationToken cancellationToken) =>
+        CancellationToken cancellationToken,
+        bool bypassSession = false) =>
         await WithMappingModeAsync(connection, async () =>
         {
             await action().ConfigureAwait(false);
             return true;
-        }, cancellationToken).ConfigureAwait(false);
+        }, cancellationToken, bypassSession).ConfigureAwait(false);
 
     private async Task<T> WithMappingModeAsync<T>(
         RazerHidDeviceConnection connection,
         Func<Task<T>> action,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool bypassSession = false)
     {
-        if (MappingModeSessions.Value?.Contains(connection.InstanceId) == true)
+        if (!bypassSession && _mappingModeSessions.ContainsKey(connection.InstanceId))
         {
             return await action().ConfigureAwait(false);
         }
