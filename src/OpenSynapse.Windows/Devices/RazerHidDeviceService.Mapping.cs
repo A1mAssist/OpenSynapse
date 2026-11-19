@@ -25,6 +25,10 @@ public sealed partial class RazerHidDeviceService
     // so remember it instead of failing (and re-logging) every mapping operation.
     private readonly ConcurrentDictionary<string, bool> _mappingModeUnavailable =
         new(StringComparer.OrdinalIgnoreCase);
+    // Tartarus firmware can answer the 00:84 mode read with a payload that cannot be
+    // parsed, but still switches modes through 00:04. Remember that so later rows skip it.
+    private readonly ConcurrentDictionary<string, bool> _mappingModeBlind =
+        new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Mapping tables are keyed by the profile the device is actually on. Profile 1 is only a
@@ -136,13 +140,13 @@ public sealed partial class RazerHidDeviceService
         connection.Definition.ProductId == 0x0244;
 
     // Synapse switches these keyboards to driver mode before its mapping page. In normal
-    // mode the Tartarus Pro answers 0x05 and the Huntsman V3 Pro family answers 0x01 busy
-    // for the OBM tables, which looks like a dead device.
+    // mode the Tartarus V2/Pro answers 0x05 and the Huntsman V3 Pro family answers 0x01
+    // busy for the OBM tables, which looks like a dead device.
     private static bool RequiresMappingDriverMode(RazerHidDeviceConnection connection) =>
         // The Basilisk V3 Pro pair accepts an OBM write in normal mode but keeps
         // applying the old assignment until the host switches to driver mode.
         connection.Definition.ProductId is 0x00AA or 0x00AB or
-            0x0244 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
+            0x022B or 0x0244 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
 
     private async Task<(AssignmentTable Table, RazerHidButtonAssignment Assignment)>
         ReadKeypadAssignmentAsync(
@@ -494,35 +498,49 @@ public sealed partial class RazerHidDeviceService
             return await action().ConfigureAwait(false);
         }
 
-        byte original;
-        try
+        var blind = _mappingModeBlind.ContainsKey(connection.InstanceId);
+        var original = RazerHidStandardProtocol.NormalDeviceMode;
+        if (!blind)
         {
-            original = await ReadMappingDeviceModeAsync(connection, cancellationToken)
-                .ConfigureAwait(false);
-        }
-        catch (Exception exception) when (
-            exception is InvalidDataException or NotSupportedException or
-                RazerCommandRejectedException)
-        {
-            // Some keyboards (02CF) reject 00:84 outright but still answer their OBM
-            // tables in normal mode, so a mode read they do not implement must not
-            // take the whole mapping page down.
-            _mappingModeUnavailable.TryAdd(connection.InstanceId, true);
-            WriteDiagnostic(connection.Definition.ProductId,
-                $"mapping device mode unavailable: {exception.Message}");
-            return await action().ConfigureAwait(false);
+            try
+            {
+                original = await ReadMappingDeviceModeAsync(connection, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception exception) when (
+                exception is InvalidDataException or NotSupportedException or
+                    RazerCommandRejectedException)
+            {
+                if (connection.Definition.ProductId is not (0x022B or 0x0244))
+                {
+                    // Some keyboards (02CF) reject 00:84 outright but still answer their OBM
+                    // tables in normal mode, so a mode read they do not implement must not
+                    // take the whole mapping page down.
+                    _mappingModeUnavailable.TryAdd(connection.InstanceId, true);
+                    WriteDiagnostic(connection.Definition.ProductId,
+                        $"mapping device mode unavailable: {exception.Message}");
+                    return await action().ConfigureAwait(false);
+                }
+
+                // Tartarus V2/Pro need driver mode for every OBM table; Synapse writes it
+                // without reading back, so do the same instead of giving up on normal mode.
+                blind = true;
+                _mappingModeBlind.TryAdd(connection.InstanceId, true);
+                WriteDiagnostic(connection.Definition.ProductId,
+                    $"mapping device mode read unavailable; switching without read-back: {exception.Message}");
+            }
         }
 
-        var switched = false;
+        var switched = blind || original == RazerHidStandardProtocol.NormalDeviceMode;
         try
         {
-            if (original == RazerHidStandardProtocol.NormalDeviceMode)
+            if (switched)
             {
                 // Restore even if the write or its read-back fails: the firmware may
                 // already be in driver mode and must not be left there.
-                switched = true;
                 if (!await SetMappingDeviceModeAsync(
-                        connection, RazerHidStandardProtocol.DriverDeviceMode, cancellationToken)
+                        connection, RazerHidStandardProtocol.DriverDeviceMode, cancellationToken,
+                        verify: !blind)
                         .ConfigureAwait(false))
                 {
                     WriteDiagnostic(connection.Definition.ProductId,
@@ -539,7 +557,8 @@ public sealed partial class RazerHidDeviceService
                 try
                 {
                     await SetMappingDeviceModeAsync(
-                        connection, RazerHidStandardProtocol.NormalDeviceMode, CancellationToken.None)
+                        connection, RazerHidStandardProtocol.NormalDeviceMode, CancellationToken.None,
+                        verify: !blind)
                         .ConfigureAwait(false);
                 }
                 catch (Exception exception) when (exception is not OperationCanceledException)
@@ -554,7 +573,8 @@ public sealed partial class RazerHidDeviceService
     private async Task<bool> SetMappingDeviceModeAsync(
         RazerHidDeviceConnection connection,
         byte mode,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool verify = true)
     {
         var request = RazerHidStandardProtocol.SetDeviceMode(connection.Definition, mode);
         try
@@ -566,6 +586,13 @@ public sealed partial class RazerHidDeviceService
             // Some firmware applies driver mode without acknowledging 00:04; Synapse
             // ignores the same timeout. The read-back decides whether it took. A firmware
             // that rejects 00:04 still gets the mapping attempt in its current mode.
+        }
+
+        if (!verify)
+        {
+            WriteDiagnostic(connection.Definition.ProductId,
+                $"mapping device mode 0x{mode:X2} requested without read-back");
+            return true;
         }
 
         var after = await ReadMappingDeviceModeAsync(connection, cancellationToken).ConfigureAwait(false);
