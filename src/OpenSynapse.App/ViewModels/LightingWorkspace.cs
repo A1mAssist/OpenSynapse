@@ -36,6 +36,9 @@ public sealed class LightingWorkspace : INotifyPropertyChanged
     private string _lightingShadowFingerprint = string.Empty;
     private string _bladeLightingDevicePath = string.Empty;
 
+    /// <summary>Set while the Lighting Studio output pump owns the devices.</summary>
+    internal Func<bool>? StudioLightingActive { get; set; }
+
     internal LightingWorkspace(
         IBladeLightingController? bladeLightingController,
         IRazerDeviceTelemetryReader deviceTelemetryReader,
@@ -228,6 +231,11 @@ public sealed class LightingWorkspace : INotifyPropertyChanged
 
             _bladeLightingDevicePath = string.Empty;
             _lightingShadowFingerprint = string.Empty;
+            return null;
+        }
+
+        if (StudioLightingActive?.Invoke() == true)
+        {
             return null;
         }
 

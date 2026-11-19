@@ -13,6 +13,9 @@ public sealed partial class RazerHidProfileApplier
         List<ProfileSettingApplyResult> results,
         CancellationToken cancellationToken)
     {
+        // The studio owns the LEDs while its effect is applied; a profile refresh
+        // must not write a static effect over the live custom frame.
+        if (_isLightingSuspended?.Invoke() == true) return;
         if (!IsLightingEnabled(context))
         {
             await DisableLightingAsync(connection, results, cancellationToken);
