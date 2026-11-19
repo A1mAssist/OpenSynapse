@@ -187,10 +187,11 @@ public sealed partial class RazerHidDeviceService
             return;
         }
 
+        var writeAcknowledged = false;
         try
         {
             _ = await ExecuteAsync(connection, request, cancellationToken).ConfigureAwait(false);
-            return;
+            writeAcknowledged = true;
         }
         catch (RazerDeviceTimeoutException exception) when (exception.IsRetryableBusy)
         {
@@ -199,16 +200,20 @@ public sealed partial class RazerHidDeviceService
         }
 
         RazerDeviceTimeoutException? lastBusy = null;
+        var sawOtherProfile = false;
         for (var attempt = 0; attempt < ProfileSwitchConfirmAttempts; attempt++)
         {
             await Task.Delay(ProfileSwitchConfirmDelay, cancellationToken).ConfigureAwait(false);
             try
             {
-                if (await GetActiveOnboardProfileIdAsync(connection, cancellationToken)
-                        .ConfigureAwait(false) == profileId)
+                var active = await GetActiveOnboardProfileIdAsync(connection, cancellationToken)
+                    .ConfigureAwait(false);
+                if (active == profileId)
                 {
                     return;
                 }
+                // Zero means "not reported", which is no evidence either way.
+                sawOtherProfile |= active != 0;
             }
             catch (RazerDeviceTimeoutException exception) when (exception.IsRetryableBusy)
             {
@@ -220,6 +225,15 @@ public sealed partial class RazerHidDeviceService
             {
                 break;
             }
+        }
+
+        if (writeAcknowledged && !sawOtherProfile)
+        {
+            // The firmware accepted the switch; a busy read-back only means the
+            // status lane is occupied, not that the write was lost.
+            WriteDiagnostic(connection.Definition.ProductId,
+                $"onboard set active acknowledged for profile {profileId}; read-back stayed busy");
+            return;
         }
 
         throw lastBusy ?? new RazerDeviceTimeoutException(

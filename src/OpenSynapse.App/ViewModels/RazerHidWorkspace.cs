@@ -248,12 +248,20 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         {
             var connections = await _specialLightingService.DiscoverAsync(cancellationToken);
             CacheArgb(connections);
+            var previousKrakenConnections = _krakenConnections;
             _krakenConnections = connections.Where(connection =>
                     connection.Kind is RazerHidSpecialLightingKind.Kraken37 or
                         RazerHidSpecialLightingKind.KrakenV4 or
                         RazerHidSpecialLightingKind.KrystalT2)
                 .OrderBy(connection => connection.DisplayName, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
+            foreach (var removed in previousKrakenConnections.Where(previous =>
+                !_krakenConnections.Any(current =>
+                    StringComparer.OrdinalIgnoreCase.Equals(current.InstanceId, previous.InstanceId))))
+            {
+                await _specialLightingService.ResetSessionAsync(
+                    removed.DevicePath, cancellationToken);
+            }
             // Headsets that already own an audio page get the lighting card there, so a
             // second lighting-only row for the same headset would be a duplicate.
             var krakenConnections = _krakenConnections
@@ -556,6 +564,12 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
 
     internal RazerHidSpecialLightingConnection? FindKrakenConnection(ushort productId) =>
         _krakenConnections.FirstOrDefault(item => item.ProductId == productId);
+
+    internal Task ResetSpecialLightingSessionAsync(
+        string? devicePath,
+        CancellationToken cancellationToken = default) =>
+        _specialLightingService?.ResetSessionAsync(devicePath, cancellationToken) ??
+        Task.CompletedTask;
 
     internal async Task<int?> ReadBatteryPercentAsync(
         RazerHidDeviceRowViewModel row,
