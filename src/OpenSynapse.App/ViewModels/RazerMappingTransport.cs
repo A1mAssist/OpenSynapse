@@ -32,7 +32,8 @@ public interface IRazerMappingTransport
     /// </summary>
     Task RunInMappingModeAsync(
         Func<CancellationToken, Task> action,
-        CancellationToken cancellationToken = default) =>
+        CancellationToken cancellationToken = default,
+        bool forWrite = false) =>
         action(cancellationToken);
 
     /// <summary>
@@ -71,8 +72,9 @@ public sealed class RazerHidMappingTransport(
 
     public Task RunInMappingModeAsync(
         Func<CancellationToken, Task> action,
-        CancellationToken cancellationToken = default) =>
-        service.RunMappingModeSessionAsync(connection, action, cancellationToken);
+        CancellationToken cancellationToken = default,
+        bool forWrite = false) =>
+        service.RunMappingModeSessionAsync(connection, action, cancellationToken, forWrite);
 
     public Task<int?> ReadEditionAsync(CancellationToken cancellationToken = default) =>
         service.GetEditionIdAsync(connection, cancellationToken);

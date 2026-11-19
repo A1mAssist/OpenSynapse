@@ -20,14 +20,19 @@ public sealed partial class RazerHidDeviceService
     public async Task RunMappingModeSessionAsync(
         RazerHidDeviceConnection connection,
         Func<CancellationToken, Task> action,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool forWrite = false)
     {
         ArgumentNullException.ThrowIfNull(action);
         var depth = _mappingModeSessions.AddOrUpdate(
             connection.InstanceId, 1, static (_, value) => value + 1);
+        // 02CF rejects the 00:84 mode read but still answers its OBM tables in
+        // normal mode. Switching it to driver mode makes the page read fail;
+        // writes keep the blind switch below.
+        var normalModeRead = !forWrite && connection.Definition.ProductId == 0x02CF;
         try
         {
-            if (depth == 1)
+            if (depth == 1 && !normalModeRead)
             {
                 await WithMappingModeAsync(
                     connection, () => action(cancellationToken), cancellationToken,
