@@ -518,7 +518,11 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
             }
 
             IsApplied = applied.Count > 0;
-            if (IsApplied) _needsExternalRestore = true;
+            if (IsApplied)
+            {
+                _needsExternalRestore = true;
+                SaveAppliedProject();
+            }
             StatusText = applied.Count == 0
                 ? AppStrings.Text("LightingStudioStatusNoDevice")
                 : AppStrings.FormatText("LightingStudioStatusApplied", string.Join(", ", applied));

@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using OpenSynapse.App.ViewModels;
+using OpenSynapse.App.Views;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Lighting;
 using OpenSynapse.Core.Storage;
@@ -16,6 +17,53 @@ public sealed partial class MainWindow
 
     internal Task SuspendStudioLightingAsync() =>
         _lightingStudioPage?.SuspendAppliedEffectAsync() ?? Task.CompletedTask;
+
+    /// <summary>
+    /// Replays the studio project that was live at the last exit. The page is
+    /// created hidden; nothing is applied when the user never pressed Apply.
+    /// </summary>
+    internal async Task RestoreAppliedStudioLightingAsync()
+    {
+        if (!LightingStudioViewModel.HasAppliedProject)
+        {
+            return;
+        }
+
+        var created = _lightingStudioPage is null;
+        try
+        {
+            var page = EnsureRestoreStudioPage();
+            if (await page.RestoreAppliedEffectAsync())
+            {
+                return;
+            }
+        }
+        catch (Exception)
+        {
+            // A bad snapshot must not stop startup; the user can still apply manually.
+        }
+
+        if (created && !IsPageCurrent("studio"))
+        {
+            ReleasePage("studio");
+        }
+    }
+
+    /// <summary>
+    /// Creates the hidden restore page without adding it to the page cache; cache
+    /// trimming here would evict the settings page and drop its update prompt.
+    /// </summary>
+    private LightingStudioPage EnsureRestoreStudioPage()
+    {
+        if (_lightingStudioPage is { } existing)
+        {
+            return existing;
+        }
+
+        var page = CreateLightingStudioPage();
+        _lightingStudioPage = page;
+        return page;
+    }
 
     private bool _studioAppliedBeforeDisplayOff;
 
