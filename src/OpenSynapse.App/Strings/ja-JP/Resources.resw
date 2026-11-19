@@ -1107,30 +1107,6 @@
   <data name="RazerHidOnboardProfileResetAction" xml:space="preserve">
     <value>リセット</value>
   </data>
-  <data name="DeviceResetOnboardProfile" xml:space="preserve">
-    <value>現在のオンボード プロファイルをリセット</value>
-  </data>
-  <data name="DeviceResetOnboardProfileTitle" xml:space="preserve">
-    <value>現在のオンボード プロファイルをリセット</value>
-  </data>
-  <data name="DeviceResetOnboardProfileBody" xml:space="preserve">
-    <value>デバイスの現在のオンボード プロファイルにあるキー マッピング、マクロ、DPI、ライティングを消去します。この操作は元に戻せません。</value>
-  </data>
-  <data name="DeviceResetOnboardProfileAction" xml:space="preserve">
-    <value>リセット</value>
-  </data>
-  <data name="DeviceResetOnboardProfileBusy" xml:space="preserve">
-    <value>リセットしています...</value>
-  </data>
-  <data name="DeviceResetOnboardProfileDone" xml:space="preserve">
-    <value>現在のオンボード プロファイルをリセットしました</value>
-  </data>
-  <data name="DeviceResetOnboardProfileUnsupported" xml:space="preserve">
-    <value>このデバイスはオンボード プロファイルのリセットに対応していません</value>
-  </data>
-  <data name="DeviceResetOnboardProfileWirelessIdle" xml:space="preserve">
-    <value>デバイスがスリープ中か切断されています。スリープ解除して再試行してください</value>
-  </data>
   <data name="RazerHidOnboardProfileDeleteBlocked.Text" xml:space="preserve">
     <value>アクティブなプロファイルは削除できません。先に別のプロファイルに切り替えてください。</value>
   </data>

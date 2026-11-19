@@ -1107,30 +1107,6 @@
   <data name="RazerHidOnboardProfileResetAction" xml:space="preserve">
     <value>Zurücksetzen</value>
   </data>
-  <data name="DeviceResetOnboardProfile" xml:space="preserve">
-    <value>Aktuelles Onboard-Profil zurücksetzen</value>
-  </data>
-  <data name="DeviceResetOnboardProfileTitle" xml:space="preserve">
-    <value>Aktuelles Onboard-Profil zurücksetzen</value>
-  </data>
-  <data name="DeviceResetOnboardProfileBody" xml:space="preserve">
-    <value>Dadurch werden Tastenzuordnungen, Makros, DPI und Beleuchtung im aktuellen Onboard-Profil des Geräts gelöscht. Dies kann nicht rückgängig gemacht werden.</value>
-  </data>
-  <data name="DeviceResetOnboardProfileAction" xml:space="preserve">
-    <value>Zurücksetzen</value>
-  </data>
-  <data name="DeviceResetOnboardProfileBusy" xml:space="preserve">
-    <value>Wird zurückgesetzt…</value>
-  </data>
-  <data name="DeviceResetOnboardProfileDone" xml:space="preserve">
-    <value>Aktuelles Onboard-Profil zurückgesetzt</value>
-  </data>
-  <data name="DeviceResetOnboardProfileUnsupported" xml:space="preserve">
-    <value>Dieses Gerät unterstützt das Zurücksetzen eines Onboard-Profils nicht.</value>
-  </data>
-  <data name="DeviceResetOnboardProfileWirelessIdle" xml:space="preserve">
-    <value>Das Gerät ist im Standby oder nicht verbunden. Wecken Sie es und versuchen Sie es erneut.</value>
-  </data>
   <data name="RazerHidOnboardProfileDeleteBlocked.Text" xml:space="preserve">
     <value>Das aktive Profil kann nicht gelöscht werden. Wechseln Sie zuerst zu einem anderen Profil.</value>
   </data>

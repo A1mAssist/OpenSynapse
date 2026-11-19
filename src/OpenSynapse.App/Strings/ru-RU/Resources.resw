@@ -1155,30 +1155,6 @@
   <data name="RazerHidOnboardProfileResetAction" xml:space="preserve">
     <value>Сбросить</value>
   </data>
-  <data name="DeviceResetOnboardProfile" xml:space="preserve">
-    <value>Сбросить текущий встроенный профиль</value>
-  </data>
-  <data name="DeviceResetOnboardProfileTitle" xml:space="preserve">
-    <value>Сбросить текущий встроенный профиль</value>
-  </data>
-  <data name="DeviceResetOnboardProfileBody" xml:space="preserve">
-    <value>При этом будут удалены сопоставления клавиш, макросы, разрешение и освещение в текущем встроенном профиле устройства. Это невозможно отменить.</value>
-  </data>
-  <data name="DeviceResetOnboardProfileAction" xml:space="preserve">
-    <value>Сбросить</value>
-  </data>
-  <data name="DeviceResetOnboardProfileBusy" xml:space="preserve">
-    <value>Сброс…</value>
-  </data>
-  <data name="DeviceResetOnboardProfileDone" xml:space="preserve">
-    <value>Сброс текущего встроенного профиля</value>
-  </data>
-  <data name="DeviceResetOnboardProfileUnsupported" xml:space="preserve">
-    <value>Это устройство не поддерживает сброс встроенного профиля.</value>
-  </data>
-  <data name="DeviceResetOnboardProfileWirelessIdle" xml:space="preserve">
-    <value>Устройство находится в спящем режиме или отключено. Разбудите его и попробуйте еще раз</value>
-  </data>
   <data name="RazerHidOnboardProfileDeleteBlocked.Text" xml:space="preserve">
     <value>Активный профиль невозможно удалить. Сначала переключитесь на другой профиль.</value>
   </data>

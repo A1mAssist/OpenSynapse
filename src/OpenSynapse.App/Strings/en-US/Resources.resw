@@ -1116,30 +1116,6 @@
   <data name="RazerHidOnboardProfileResetAction" xml:space="preserve">
     <value>Reset</value>
   </data>
-  <data name="DeviceResetOnboardProfile" xml:space="preserve">
-    <value>Reset current onboard profile</value>
-  </data>
-  <data name="DeviceResetOnboardProfileTitle" xml:space="preserve">
-    <value>Reset current onboard profile</value>
-  </data>
-  <data name="DeviceResetOnboardProfileBody" xml:space="preserve">
-    <value>This clears the key mappings, macros, DPI, and lighting in the device's current onboard profile. This cannot be undone.</value>
-  </data>
-  <data name="DeviceResetOnboardProfileAction" xml:space="preserve">
-    <value>Reset</value>
-  </data>
-  <data name="DeviceResetOnboardProfileBusy" xml:space="preserve">
-    <value>Resetting…</value>
-  </data>
-  <data name="DeviceResetOnboardProfileDone" xml:space="preserve">
-    <value>Current onboard profile reset</value>
-  </data>
-  <data name="DeviceResetOnboardProfileUnsupported" xml:space="preserve">
-    <value>This device does not support resetting an onboard profile</value>
-  </data>
-  <data name="DeviceResetOnboardProfileWirelessIdle" xml:space="preserve">
-    <value>The device is asleep or disconnected. Wake it and try again</value>
-  </data>
   <data name="RazerHidOnboardProfileDeleteBlocked.Text" xml:space="preserve">
     <value>The active profile cannot be deleted. Switch to another profile first.</value>
   </data>

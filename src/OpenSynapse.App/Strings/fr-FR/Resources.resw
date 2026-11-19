@@ -1107,30 +1107,6 @@
   <data name="RazerHidOnboardProfileResetAction" xml:space="preserve">
     <value>Réinitialiser</value>
   </data>
-  <data name="DeviceResetOnboardProfile" xml:space="preserve">
-    <value>Réinitialiser le profil embarqué actuel</value>
-  </data>
-  <data name="DeviceResetOnboardProfileTitle" xml:space="preserve">
-    <value>Réinitialiser le profil embarqué actuel</value>
-  </data>
-  <data name="DeviceResetOnboardProfileBody" xml:space="preserve">
-    <value>Cela efface les mappages de touches, les macros, le DPI et l’éclairage du profil embarqué actuel de l’appareil. Cette action est irréversible.</value>
-  </data>
-  <data name="DeviceResetOnboardProfileAction" xml:space="preserve">
-    <value>Réinitialiser</value>
-  </data>
-  <data name="DeviceResetOnboardProfileBusy" xml:space="preserve">
-    <value>Réinitialisation…</value>
-  </data>
-  <data name="DeviceResetOnboardProfileDone" xml:space="preserve">
-    <value>Profil embarqué actuel réinitialisé</value>
-  </data>
-  <data name="DeviceResetOnboardProfileUnsupported" xml:space="preserve">
-    <value>Cet appareil ne prend pas en charge la réinitialisation d’un profil embarqué</value>
-  </data>
-  <data name="DeviceResetOnboardProfileWirelessIdle" xml:space="preserve">
-    <value>L’appareil est en veille ou déconnecté. Réveillez-le et réessayez</value>
-  </data>
   <data name="RazerHidOnboardProfileDeleteBlocked.Text" xml:space="preserve">
     <value>Le profil actif ne peut pas être supprimé. Passez d’abord à un autre profil.</value>
   </data>
