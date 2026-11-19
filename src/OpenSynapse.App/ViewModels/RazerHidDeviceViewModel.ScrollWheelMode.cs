@@ -272,19 +272,24 @@ public sealed partial class RazerHidDeviceViewModel
                     SmartReelEnabled = await _service.GetSmartReelAsync(Connection, cancellationToken);
                 }
 
+                var usesScrollModeProfile = !Has(RazerHidBackendCapability.LkScrollWheelModeWrite) &&
+                    Has(RazerHidBackendCapability.ScrollModeWrite);
+                var usesFreeNotchedProfile = !Has(RazerHidBackendCapability.LkScrollWheelModeWrite) &&
+                    !usesScrollModeProfile &&
+                    Has(RazerHidBackendCapability.ScrollFreeNotchedModeWrite);
                 RefreshScrollWheelModeSelection();
                 await SaveProfileAsync(
                     settings =>
                     {
-                        if (Has(RazerHidBackendCapability.ScrollModeWrite))
+                        if (usesScrollModeProfile || isSmartReel)
                         {
-                            settings.Viper.ScrollMode = ToProfileScrollMode(ScrollMode);
+                            settings.Viper.ScrollMode =
+                                ToProfileScrollMode(ScrollModeForPreset(choice.Kind));
                         }
-                        if (Has(RazerHidBackendCapability.ScrollFreeNotchedModeWrite))
+                        if (usesScrollModeProfile || usesFreeNotchedProfile || isSmartReel)
                         {
                             settings.Viper.ScrollFreeNotched =
-                                (RazerScrollFreeNotchedMode)ScrollFreeNotchedModeIndex ==
-                                RazerScrollFreeNotchedMode.FreeSpinMode;
+                                choice.Kind == RazerHidScrollWheelModeKind.FreeSpin;
                         }
                         if (Has(RazerHidBackendCapability.SmartReelWrite))
                         {

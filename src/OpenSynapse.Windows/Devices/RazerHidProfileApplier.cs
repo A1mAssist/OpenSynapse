@@ -172,7 +172,13 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
                 (left, right) => left == right, cancellationToken);
         }
 
-        if (TryParseScrollMode(profile.ScrollMode, out var scrollMode))
+        // ScrollMode and ScrollFreeNotched are two names for the same firmware value on
+        // devices that expose both. Applying both writes the wheel twice, so a profile
+        // containing both fields visibly flips the wheel before it settles.
+        var parsedScrollMode = TryParseScrollMode(profile.ScrollMode, out var scrollMode);
+        var hasScrollModeWrite = Has(connection, RazerHidBackendCapability.ScrollModeWrite);
+        var hasFreeNotchedWrite = Has(connection, RazerHidBackendCapability.ScrollFreeNotchedModeWrite);
+        if (parsedScrollMode && hasScrollModeWrite)
         {
             await ApplySettingAsync(
                 results, "mouse.scroll-mode", connection,
@@ -182,13 +188,7 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
                 (value, token) => _service.SetScrollModeAsync(connection, value, token),
                 scrollMode, (left, right) => left == right, cancellationToken);
         }
-        else if (!string.IsNullOrWhiteSpace(profile.ScrollMode))
-        {
-            results.Add(new ProfileSettingApplyResult(
-                "mouse.scroll-mode", ProfileSettingApplyStatus.Failed, "Unknown scroll mode."));
-        }
-
-        if (profile.ScrollFreeNotched is { } freeNotched)
+        else if (hasFreeNotchedWrite && (profile.ScrollFreeNotched is not null || parsedScrollMode))
         {
             await ApplySettingAsync(
                 results, "mouse.scroll-free-notched", connection,
@@ -196,8 +196,28 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
                 RazerHidBackendCapability.ScrollFreeNotchedModeWrite,
                 token => _service.GetScrollFreeNotchedModeAsync(connection, token),
                 (value, token) => _service.SetScrollFreeNotchedModeAsync(connection, value, token),
-                freeNotched ? RazerScrollFreeNotchedMode.FreeSpinMode : RazerScrollFreeNotchedMode.NotchedMode,
+                (profile.ScrollFreeNotched ?? (scrollMode == 1))
+                    ? RazerScrollFreeNotchedMode.FreeSpinMode
+                    : RazerScrollFreeNotchedMode.NotchedMode,
                 (left, right) => left == right, cancellationToken);
+        }
+        else if (hasScrollModeWrite && profile.ScrollFreeNotched is { } freeNotchedFallback)
+        {
+            await ApplySettingAsync(
+                results, "mouse.scroll-mode", connection,
+                RazerHidBackendCapability.ScrollModeRead,
+                RazerHidBackendCapability.ScrollModeWrite,
+                token => _service.GetScrollModeAsync(connection, token),
+                (value, token) => _service.SetScrollModeAsync(connection, value, token),
+                freeNotchedFallback ? (byte)1 : (byte)0,
+                (left, right) => left == right, cancellationToken);
+        }
+        else if (!string.IsNullOrWhiteSpace(profile.ScrollMode) || profile.ScrollFreeNotched is not null)
+        {
+            results.Add(new ProfileSettingApplyResult(
+                "mouse.scroll-mode",
+                ProfileSettingApplyStatus.Failed,
+                parsedScrollMode ? "Scroll mode is not writable." : "Unknown scroll mode."));
         }
 
         if (profile.ScrollAccelerationEnabled is { } acceleration)
