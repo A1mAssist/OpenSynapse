@@ -334,8 +334,6 @@ internal sealed partial class MacroRuntime
                     // Best effort release; the original error is more actionable.
                 }
             }
-
-            await _sink.ReleaseAllAsync().ConfigureAwait(false);
         }
     }
 

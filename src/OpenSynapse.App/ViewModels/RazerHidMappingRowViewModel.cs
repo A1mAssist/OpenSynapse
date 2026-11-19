@@ -243,12 +243,16 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
         get => _turboRate;
         set
         {
-            var normalized = double.IsFinite(value) ? Math.Clamp(Math.Round(value), 1, 50) : _turboRate;
+            var normalized = double.IsFinite(value)
+                ? Math.Clamp(Math.Round(value), 1, RazerTurboBindingResolver.MaximumRate)
+                : _turboRate;
             if (_turboRate == normalized) return;
             _turboRate = normalized;
             OnPropertyChanged();
         }
     }
+
+    public double TurboRateMaximum => RazerTurboBindingResolver.MaximumRate;
 
     public double ProfileId
     {

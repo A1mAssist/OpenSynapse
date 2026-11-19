@@ -83,7 +83,7 @@
           <NumberBox local:Localized.Uid="RazerMappingTurboHeader"
 
                      Minimum="1"
-                     Maximum="50"
+                     Maximum="{Binding TurboRateMaximum}"
                      SmallChange="1"
                      SpinButtonPlacementMode="Inline"
                      Value="{Binding TurboRate, Mode=TwoWay}"
@@ -439,7 +439,7 @@
                   </StackPanel>
                   <NumberBox local:Localized.Uid="RazerMappingMacroExecutionRepeat" Minimum="1" Maximum="999" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding ExecutionRepeatCount, Mode=TwoWay}" Visibility="{Binding ExecutionRepeatVisibility}" />
                   <ComboBox local:Localized.Uid="A11yOnboardButtonBehavior" ItemsSource="{Binding MacroPlaybackOptions}" SelectedIndex="{Binding MacroPlaybackIndex, Mode=TwoWay}" Visibility="{Binding MacroPlaybackVisibility}" HorizontalAlignment="Stretch" />
-                  <NumberBox local:Localized.Uid="RazerMappingTurboHeader" Minimum="1" Maximum="50" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding TurboRate, Mode=TwoWay}" Visibility="{Binding TurboRateVisibility}" />
+                  <NumberBox local:Localized.Uid="RazerMappingTurboHeader" Minimum="1" Maximum="{Binding TurboRateMaximum}" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding TurboRate, Mode=TwoWay}" Visibility="{Binding TurboRateVisibility}" />
                   <NumberBox local:Localized.Uid="RazerMappingProfileIdHeader" Minimum="1" Maximum="5" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{Binding ProfileId, Mode=TwoWay}" Visibility="{Binding ProfileIdVisibility}" />
                   <StackPanel Orientation="Horizontal" Spacing="4" Visibility="{Binding DpiClutchVisibility}">
                     <NumberBox local:Localized.Uid="RazerMappingDpiXHeader" Header="DPI X" Minimum="100" Maximum="30000" SmallChange="50" SpinButtonPlacementMode="Inline" Value="{Binding DpiClutchX, Mode=TwoWay}" />

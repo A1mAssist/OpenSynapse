@@ -12,6 +12,10 @@ public readonly record struct RazerTurboBinding(int MouseButton, int IntervalMil
 /// </summary>
 public static class RazerTurboBindingResolver
 {
+    // Synapse exposes 20 presses per second as the maximum.
+    public const int MaximumRate = 20;
+    public const int MinimumIntervalMilliseconds = 1000 / MaximumRate;
+
     public static RazerTurboBinding? Resolve(
         IReadOnlyList<ButtonMappingProfile> mappings,
         ushort productId,
@@ -41,7 +45,11 @@ public static class RazerTurboBindingResolver
                 continue;
             }
 
-            return new RazerTurboBinding(button, interval);
+            // Older profiles can store 20 ms (50/s). Clamp the host repeat
+            // instead of rejecting the row or letting it outrun Synapse.
+            return new RazerTurboBinding(
+                button,
+                Math.Max(interval, MinimumIntervalMilliseconds));
         }
 
         return null;
