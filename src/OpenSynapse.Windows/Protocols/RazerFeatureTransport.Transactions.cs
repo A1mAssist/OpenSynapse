@@ -14,10 +14,15 @@ public sealed partial class RazerFeatureTransport
 
     internal static byte PrepareTransactionId(
         string devicePath, byte requested, byte commandClass, byte commandId, ref int sequence,
-        ushort? logicalProductId = null)
+        ushort? logicalProductId = null, bool freshDockHandle = false)
     {
         if (UsesMouseDockLinker(devicePath))
         {
+            // The linker restarts its transaction counter at E0 after every HID open.
+            // Non-session queries open one handle per command, so reusing the process-wide
+            // counter leaves the second command (E1) answered as busy.
+            if (freshDockHandle)
+                sequence = -1;
             if (logicalProductId is { } logicalProduct && logicalProduct != 0x00A4)
             {
                 // rzDevice25DualLinkMouse sends the paired mouse's commands with
@@ -97,10 +102,11 @@ public sealed partial class RazerFeatureTransport
         (byte)(unchecked((uint)Interlocked.Increment(ref sequence)) % 31);
 
     private static void PrepareStandardTransaction(
-        string devicePath, byte[] request, ushort? logicalProductId = null)
+        string devicePath, byte[] request, ushort? logicalProductId = null, bool freshDockHandle = false)
     {
         var sequence = _transactionSequences.GetOrAdd(devicePath, static _ => [-1]);
         request[2] = PrepareTransactionId(
-            devicePath, request[2], request[7], request[8], ref sequence[0], logicalProductId);
+            devicePath, request[2], request[7], request[8], ref sequence[0], logicalProductId,
+            freshDockHandle);
     }
 }
