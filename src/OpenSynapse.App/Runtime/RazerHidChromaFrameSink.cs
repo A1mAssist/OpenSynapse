@@ -101,7 +101,7 @@ internal sealed class RazerHidChromaFrameSink
                     .ToArray();
 
                 if (_lastFrames.TryGetValue(target.InstanceId, out var previous) &&
-                    ReferenceEquals(previous.Connection, target) &&
+                    previous.Connection.IsSameEndpoint(target) &&
                     previous.Frame.AsSpan().SequenceEqual(frame))
                 {
                     continue;
@@ -118,7 +118,7 @@ internal sealed class RazerHidChromaFrameSink
             foreach (var (target, frame) in writes)
             {
                 if (!_customEffectPrepared.TryGetValue(target.InstanceId, out var prepared) ||
-                    !ReferenceEquals(prepared, target))
+                    !prepared.IsSameEndpoint(target))
                 {
                     if (_baselineAttempted.Add(target.InstanceId))
                     {

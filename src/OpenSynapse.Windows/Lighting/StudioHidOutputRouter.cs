@@ -201,7 +201,8 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                 // A reconnect is a new endpoint, and a manifest reload can replace the
                 // layout object; either invalidates this device's frame source and dedup state.
                 if (output is null ||
-                    !ReferenceEquals(output.Connection, target) ||
+                    output.Connection is null ||
+                    !output.Connection.IsSameEndpoint(target) ||
                     output.Rows != dimensions.Rows ||
                     output.Columns != dimensions.Columns ||
                     !ReferenceEquals(output.Layout, layout))

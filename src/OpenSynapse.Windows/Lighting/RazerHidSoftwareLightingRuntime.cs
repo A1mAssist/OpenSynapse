@@ -207,7 +207,7 @@ internal sealed class RazerHidSoftwareLightingRuntime : IAsyncDisposable
                 var dimensions = target.Definition.MatrixDimensions!;
                 var frame = Resize(source, dimensions.Rows, dimensions.Columns);
                 if (_lastFrames.TryGetValue(target.InstanceId, out var previous) &&
-                    ReferenceEquals(previous.Connection, target) &&
+                    previous.Connection.IsSameEndpoint(target) &&
                     previous.Frame.AsSpan().SequenceEqual(frame))
                     continue;
 
