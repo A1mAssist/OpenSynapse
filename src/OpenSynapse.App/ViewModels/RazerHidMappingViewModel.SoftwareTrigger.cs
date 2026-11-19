@@ -106,11 +106,16 @@ public sealed partial class RazerHidMappingViewModel
     private HashSet<RazerHidMappingRowViewModel> SoftwareModeRows(
         IReadOnlyList<RazerHidMappingRowViewModel> softwareRows) =>
         softwareRows.Where(row =>
-            row.OptionIndex != row.LoadedOptionIndex ||
-            row.HasSoftwareModeChanges ||
-            !StringComparer.Ordinal.Equals(
-                row.SoftwareMacroId,
-                ResolveSoftwareMacro(row)?.Id)).ToHashSet();
+        {
+            var macro = ResolveSoftwareMacro(row);
+            var input = ResolveSoftwareTrigger(row.ButtonId);
+            // A row that still shows the macro but lost its trigger must be rebound.
+            return row.OptionIndex != row.LoadedOptionIndex ||
+                row.HasSoftwareModeChanges ||
+                !StringComparer.Ordinal.Equals(row.SoftwareMacroId, macro?.Id) ||
+                (macro is not null && input is not null &&
+                 macro.FindTrigger(input, LayerIndex == 1) is null);
+        }).ToHashSet();
 
     private async Task WriteSoftwareModeRowAsync(
         RazerHidMappingRowViewModel row,
@@ -278,14 +283,17 @@ public sealed partial class RazerHidMappingViewModel
         IReadOnlyList<RazerHidMappingRowViewModel> pending,
         IReadOnlyList<RazerHidMappingRowViewModel> softwareRows)
     {
-        var keptMacroIds = new Dictionary<byte, string>();
-        // Resolve by the row's bound macro id; a stale option index after the
-        // library changed must not make a kept trigger look abandoned.
+        // A private key can be reached from more than one mapping row. Keep the
+        // trigger claimed by input, not by row, or moving the alias row clears
+        // the binding the real row still needs.
+        var claims = new List<RazerSoftwareMacroTriggerMatcher.Claim>();
         foreach (var row in softwareRows)
         {
-            if (ResolveSoftwareMacro(row) is { } macro)
+            if (ResolveSoftwareMacro(row) is { } macro &&
+                ResolveSoftwareTrigger(row.ButtonId) is { } input)
             {
-                keptMacroIds[row.ButtonId] = macro.Id;
+                claims.Add(new RazerSoftwareMacroTriggerMatcher.Claim(
+                    macro.Id, input, LayerIndex == 1));
             }
         }
         foreach (var row in pending.Where(row =>
@@ -293,7 +301,13 @@ public sealed partial class RazerHidMappingViewModel
                      row.OptionIndex >= 0 &&
                      row.OptionIndex < SoftwareShortcutCatalog.Actions.Count))
         {
-            keptMacroIds[row.ButtonId] = SoftwareShortcutCatalog.Actions[row.OptionIndex].MacroId;
+            if (ResolveSoftwareTrigger(row.ButtonId) is { } input)
+            {
+                claims.Add(new RazerSoftwareMacroTriggerMatcher.Claim(
+                    SoftwareShortcutCatalog.Actions[row.OptionIndex].MacroId,
+                    input,
+                    LayerIndex == 1));
+            }
         }
 
         var clears = new List<ClearedSoftwareTrigger>();
@@ -307,12 +321,6 @@ public sealed partial class RazerHidMappingViewModel
                 continue;
             }
 
-            if (keptMacroIds.TryGetValue(row.ButtonId, out var nextId) &&
-                StringComparer.Ordinal.Equals(nextId, oldId))
-            {
-                continue;
-            }
-
             var input = ResolveSoftwareTrigger(row.ButtonId);
             var macro = FindMacroById(oldId);
             if (input is null || macro is null)
@@ -322,6 +330,11 @@ public sealed partial class RazerHidMappingViewModel
 
             var trigger = macro.FindTrigger(input, LayerIndex == 1);
             if (trigger is null)
+            {
+                continue;
+            }
+
+            if (RazerSoftwareMacroTriggerMatcher.IsClaimed(oldId, trigger, claims))
             {
                 continue;
             }
