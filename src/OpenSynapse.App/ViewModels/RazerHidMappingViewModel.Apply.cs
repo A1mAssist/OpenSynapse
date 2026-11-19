@@ -21,7 +21,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
     public async Task ApplyAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApply) return;
-        await _transport.RunInMappingModeAsync(ApplyCoreAsync, cancellationToken).ConfigureAwait(true);
+        await _transport.RunInMappingModeAsync(ApplyCoreAsync, cancellationToken, forWrite: true)
+            .ConfigureAwait(true);
     }
 
     private async Task ApplyCoreAsync(CancellationToken cancellationToken = default)
