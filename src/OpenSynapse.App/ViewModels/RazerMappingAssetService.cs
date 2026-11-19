@@ -292,6 +292,8 @@ public sealed partial class RazerMappingAssetService
 
         var image = await SelectProductImageAsync(productId, manifest.Images3x, cancellationToken)
             .ConfigureAwait(false);
+        // 02EB publishes only its prd.svg; the keypad paths trace that same art.
+        if (image is not { Length: > 0 }) image = manifest.Svg;
         if (image is not { Length: > 0 })
         {
             return null;

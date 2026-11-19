@@ -8,16 +8,16 @@ public sealed partial class RazerHidDeviceService
 {
     private enum AssignmentTable
     {
-        Button,
         Key,
         Analog,
         Multi,
     }
 
     // The Tartarus Pro engine reads each input from whichever assignment table answers;
-    // analog keys are not guaranteed to share a table with the wheel or D-pad.
+    // analog keys are not guaranteed to share a table with the wheel or D-pad. 0x8C is
+    // the mouse button table and must never be tried for a keypad.
     private static readonly AssignmentTable[] KeypadAssignmentTables =
-        [AssignmentTable.Analog, AssignmentTable.Key, AssignmentTable.Button, AssignmentTable.Multi];
+        [AssignmentTable.Analog, AssignmentTable.Key, AssignmentTable.Multi];
 
     private readonly ConcurrentDictionary<(string InstanceId, byte ButtonId), AssignmentTable>
         _assignmentTables = new();
@@ -135,8 +135,8 @@ public sealed partial class RazerHidDeviceService
     private static bool UsesMultiKeyAssignments(RazerHidDeviceConnection connection) =>
         connection.Definition.ProductId is 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF or 0x02EB;
 
-    // The Tartarus Pro OBM engine probes the single analog/key/button tables per input;
-    // only the Huntsman V3 Pro family reads everything through the multi-key table.
+    // The Tartarus Pro OBM engine reads each input from the analog, key or multi-key
+    // table, in that order; only the Huntsman V3 Pro family reads everything multi-key.
     private static bool UsesPerInputAssignmentTables(RazerHidDeviceConnection connection) =>
         connection.Definition.ProductId == 0x0244;
 
@@ -210,7 +210,6 @@ public sealed partial class RazerHidDeviceService
         {
             AssignmentTable.Analog => RazerHidMappingProtocol.GetAnalogKeyAssignment(profileId, buttonId, mode),
             AssignmentTable.Key => RazerHidMappingProtocol.GetKeyAssignment(profileId, buttonId, mode),
-            AssignmentTable.Button => RazerHidMappingProtocol.GetAssignment(profileId, buttonId, mode),
             _ => RazerHidMappingProtocol.GetMultiKeyAssignment(profileId, buttonId, mode),
         };
         var response = await ExecuteAsync(connection, request, cancellationToken).ConfigureAwait(false);
@@ -276,9 +275,8 @@ public sealed partial class RazerHidDeviceService
                         functionId, data.ToArray()),
                     AssignmentTable.Key => RazerHidMappingProtocol.SetKeyAssignment(
                         profileId, buttonId, mode, functionId, data.ToArray()),
-                    AssignmentTable.Button => RazerHidMappingProtocol.SetAssignment(
-                        profileId, buttonId, mode, functionId, data.ToArray()),
-                    _ => RazerHidMappingProtocol.SetMultiKeyAssignment(
+                    // Synapse writes a keypad key through 0x0D even when it reads 0x9E.
+                    _ => RazerHidMappingProtocol.SetKeyAssignment(
                         profileId, buttonId, mode, functionId, data.ToArray()),
                 };
             }
@@ -323,7 +321,7 @@ public sealed partial class RazerHidDeviceService
     {
         var analog = definition.ProductId is 0x0266 or 0x0282;
         var multi = definition.ProductId is 0x0244 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF or 0x02EB;
-        // 022B keypads map the first art key to SPAD_NUM_1, firmware key id 64 (0x40).
+        // 022B keypads map the first art key to firmware key id 64 (0x40).
         // 0244 reads the main pad and wheel/D-pad rows through the multi-key table.
         (bool Multi, byte Id)[] probes = definition.ProductId switch
         {
@@ -511,7 +509,7 @@ public sealed partial class RazerHidDeviceService
             }
             catch (Exception exception) when (
                 exception is InvalidDataException or NotSupportedException or
-                    RazerCommandRejectedException)
+                    RazerCommandRejectedException or RazerDeviceTimeoutException)
             {
                 if (connection.Definition.ProductId is not (0x022B or 0x0244 or 0x02EB))
                 {
@@ -534,12 +532,12 @@ public sealed partial class RazerHidDeviceService
         }
 
         var switched = blind || original == RazerHidStandardProtocol.NormalDeviceMode;
+        // A device left in driver mode by an earlier crash must be restored too.
+        var restore = switched || original == RazerHidStandardProtocol.DriverDeviceMode;
         try
         {
             if (switched)
             {
-                // Restore even if the write or its read-back fails: the firmware may
-                // already be in driver mode and must not be left there.
                 if (!await SetMappingDeviceModeAsync(
                         connection, RazerHidStandardProtocol.DriverDeviceMode, cancellationToken,
                         verify: !blind)
@@ -554,7 +552,9 @@ public sealed partial class RazerHidDeviceService
         }
         finally
         {
-            if (switched)
+            // Restore even if the write or its read-back fails: the firmware may
+            // already be in driver mode and must not be left there.
+            if (restore)
             {
                 try
                 {
