@@ -28,7 +28,7 @@ public sealed partial class RazerHeadsetAudioViewModel
     public Microsoft.UI.Xaml.Visibility LightingVisibility =>
         // 0574 carries its six-LED Chroma on the audio channel, so it is merged into this card.
         Lighting is not null &&
-        (IsFeature91 || IsKrakenBase || IsProtocol25 || _connection.ProductId == 0x0574)
+        (IsFeature91 || IsKrakenBase || IsProtocol25 || IsProtocol40 || _connection.ProductId == 0x0574)
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
 

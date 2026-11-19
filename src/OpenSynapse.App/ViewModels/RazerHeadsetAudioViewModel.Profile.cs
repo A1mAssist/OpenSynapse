@@ -32,7 +32,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         }
 
         if (Lighting is { } lighting &&
-            (IsKrakenBase || IsProtocol25 || _connection.ProductId == 0x0574))
+            (IsKrakenBase || IsProtocol25 || IsProtocol40 || _connection.ProductId == 0x0574))
         {
             // These headsets put their Chroma on the card merged into this page, not
             // the standard Chroma interface. Replay it here so a reconnect restores

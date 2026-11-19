@@ -252,7 +252,8 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
             _krakenConnections = connections.Where(connection =>
                     connection.Kind is RazerHidSpecialLightingKind.Kraken37 or
                         RazerHidSpecialLightingKind.KrakenV4 or
-                        RazerHidSpecialLightingKind.KrystalT2)
+                        RazerHidSpecialLightingKind.KrystalT2 or
+                        RazerHidSpecialLightingKind.Protocol40Chroma)
                 .OrderBy(connection => connection.DisplayName, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
             foreach (var removed in previousKrakenConnections.Where(previous =>
