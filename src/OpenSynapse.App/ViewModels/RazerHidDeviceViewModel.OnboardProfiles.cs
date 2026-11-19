@@ -352,6 +352,17 @@ public sealed partial class RazerHidDeviceViewModel
                 await _service.SetActiveOnboardProfileIdAsync(
                     Connection, requested, cancellationToken);
                 await ReadOnboardProfilesAsync(cancellationToken);
+                if (!_activeOnboardProfileKnown &&
+                    RazerHidDeviceService.ConfirmsProfileSwitch(
+                        Connection.Definition.ProductId))
+                {
+                    // The service read the switched slot back before returning. A busy
+                    // follow-up refresh must not roll the card back to the old profile.
+                    _activeOnboardProfileKnown = true;
+                    ActiveOnboardProfileId = requested;
+                    SelectedOnboardProfileIndex = IndexOfOnboardProfile(requested);
+                    OnPropertyChanged(nameof(ActiveOnboardProfileText));
+                }
                 if (_activeOnboardProfileKnown && ActiveOnboardProfileId != requested)
                 {
                     SetOnboardProfileStatus(

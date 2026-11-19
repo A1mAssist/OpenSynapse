@@ -28,6 +28,19 @@ public sealed partial class RazerHidDeviceService
         0xB008,
     };
 
+    /// <summary>
+    /// The Huntsman V3 Pro family applies a profile switch asynchronously and answers
+    /// 0x01 busy while it commits. Resending queues more switches and keeps it busy,
+    /// so send once and confirm through the active-profile read instead.
+    /// </summary>
+    private static readonly IReadOnlySet<ushort> AsyncProfileSwitchProducts =
+        new HashSet<ushort> { 0x02A6, 0x02A7, 0x02B0, 0x02CF };
+    private const int ProfileSwitchConfirmAttempts = 16;
+    private static readonly TimeSpan ProfileSwitchConfirmDelay = TimeSpan.FromMilliseconds(250);
+
+    public static bool ConfirmsProfileSwitch(ushort productId) =>
+        AsyncProfileSwitchProducts.Contains(productId);
+
     private static bool UsesAltProfileClass(RazerHidDeviceConnection connection) =>
         AltProfileClassProducts.Contains(connection.Definition.ProductId);
 
@@ -157,18 +170,61 @@ public sealed partial class RazerHidDeviceService
         return RazerOnboardProfileProtocol.ParseProfileColor(response, request);
     }
 
-    public Task SetActiveOnboardProfileIdAsync(
+    public async Task SetActiveOnboardProfileIdAsync(
         RazerHidDeviceConnection connection,
         byte profileId,
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
-        return ExecuteWithoutResultAsync(connection,
-            new RazerHidRequest("razer_onboard_set_active_profile",
-                UsesAltProfileClass(connection)
-                    ? RazerOnboardProfileProtocol.CreateAltSetActiveProfileIdRequest(MiddlewareTransactionId, profileId)
-                    : RazerOnboardProfileProtocol.CreateSetActiveProfileIdRequest(MiddlewareTransactionId, profileId)),
-            cancellationToken);
+        var request = new RazerHidRequest("razer_onboard_set_active_profile",
+            UsesAltProfileClass(connection)
+                ? RazerOnboardProfileProtocol.CreateAltSetActiveProfileIdRequest(MiddlewareTransactionId, profileId)
+                : RazerOnboardProfileProtocol.CreateSetActiveProfileIdRequest(MiddlewareTransactionId, profileId));
+        if (!AsyncProfileSwitchProducts.Contains(connection.Definition.ProductId))
+        {
+            await ExecuteWithoutResultAsync(connection, request, cancellationToken)
+                .ConfigureAwait(false);
+            return;
+        }
+
+        try
+        {
+            _ = await ExecuteAsync(connection, request, cancellationToken).ConfigureAwait(false);
+            return;
+        }
+        catch (RazerDeviceTimeoutException exception) when (exception.IsRetryableBusy)
+        {
+            WriteDiagnostic(connection.Definition.ProductId,
+                $"onboard set active busy: {exception.Message}; verifying profile {profileId}");
+        }
+
+        RazerDeviceTimeoutException? lastBusy = null;
+        for (var attempt = 0; attempt < ProfileSwitchConfirmAttempts; attempt++)
+        {
+            await Task.Delay(ProfileSwitchConfirmDelay, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                if (await GetActiveOnboardProfileIdAsync(connection, cancellationToken)
+                        .ConfigureAwait(false) == profileId)
+                {
+                    return;
+                }
+            }
+            catch (RazerDeviceTimeoutException exception) when (exception.IsRetryableBusy)
+            {
+                lastBusy = exception;
+            }
+            catch (Exception exception) when (
+                exception is NotSupportedException or RazerCommandRejectedException or
+                    RazerReportMismatchException or InvalidOperationException or IOException)
+            {
+                break;
+            }
+        }
+
+        throw lastBusy ?? new RazerDeviceTimeoutException(
+            $"The device did not confirm onboard profile {profileId}.",
+            retryableBusy: true);
     }
 
     public Task CreateOnboardProfileAsync(
