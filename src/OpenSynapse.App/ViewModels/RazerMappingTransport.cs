@@ -27,6 +27,15 @@ public interface IRazerMappingTransport
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Holds the firmware mapping mode across a whole page read or save. Transports that
+    /// do not switch modes simply run the action.
+    /// </summary>
+    Task RunInMappingModeAsync(
+        Func<CancellationToken, Task> action,
+        CancellationToken cancellationToken = default) =>
+        action(cancellationToken);
+
+    /// <summary>
     /// Synapse keys product art by edition ("165_130" is the PUBG skin). Only the HID path
     /// can ask the device; everything else reports unknown and gets the standard render.
     /// </summary>
@@ -59,6 +68,11 @@ public sealed class RazerHidMappingTransport(
         CancellationToken cancellationToken = default) =>
         service.SetButtonAssignmentAsync(
             connection, buttonId, mode, functionId, data, cancellationToken);
+
+    public Task RunInMappingModeAsync(
+        Func<CancellationToken, Task> action,
+        CancellationToken cancellationToken = default) =>
+        service.RunMappingModeSessionAsync(connection, action, cancellationToken);
 
     public Task<int?> ReadEditionAsync(CancellationToken cancellationToken = default) =>
         service.GetEditionIdAsync(connection, cancellationToken);
