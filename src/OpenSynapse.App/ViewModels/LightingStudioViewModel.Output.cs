@@ -390,6 +390,7 @@ public sealed partial class LightingStudioViewModel
             _source = null;
             _appliedBlade = null;
             IsApplied = false;
+            ClearAppliedProject();
             if (failures.Count > 0)
             {
                 StatusText = AppStrings.FormatText(

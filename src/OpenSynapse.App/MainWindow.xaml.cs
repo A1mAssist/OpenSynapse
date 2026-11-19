@@ -428,6 +428,7 @@ public sealed partial class MainWindow : Window
             LaunchStatusText.Text = AppStrings.Text("Text_470691B2");
             SetLaunchProgress(3, 95);
             SettingsPage.StartStartupUpdateCheck();
+            _ = RestoreAppliedStudioLightingAsync();
         }
         catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
         {
