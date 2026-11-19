@@ -279,12 +279,14 @@ public sealed partial class RazerHidMappingViewModel
         IReadOnlyList<RazerHidMappingRowViewModel> softwareRows)
     {
         var keptMacroIds = new Dictionary<byte, string>();
-        foreach (var row in softwareRows.Where(row =>
-                     row.Group == RazerHidMappingGroup.Macro &&
-                     row.OptionIndex >= 0 &&
-                     row.OptionIndex < _localMacros.Count))
+        // Resolve by the row's bound macro id; a stale option index after the
+        // library changed must not make a kept trigger look abandoned.
+        foreach (var row in softwareRows)
         {
-            keptMacroIds[row.ButtonId] = _localMacros[row.OptionIndex].Id;
+            if (ResolveSoftwareMacro(row) is { } macro)
+            {
+                keptMacroIds[row.ButtonId] = macro.Id;
+            }
         }
         foreach (var row in pending.Where(row =>
                      row.Group == RazerHidMappingGroup.WindowsShortcut &&
