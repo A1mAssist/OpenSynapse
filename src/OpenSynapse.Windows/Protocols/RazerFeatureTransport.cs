@@ -342,7 +342,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
                 request[2] = NextLeviathanTransactionId(ref sequence[0]);
                 responseReportId = LeviathanV2XProtocol.ReportId;
             }
-            else PrepareStandardTransaction(devicePath, request, logicalProductId);
+            else PrepareStandardTransaction(devicePath, request, logicalProductId, freshDockHandle: true);
 
             try
             {

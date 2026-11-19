@@ -13,6 +13,7 @@ public sealed partial class RazerFeatureTransport
     {
         private readonly object _transactionSync = new();
         private byte _transactionId;
+        private int _dockTransactionSequence = -1;
         private int _disposed;
 
         public byte NextTransactionId()
@@ -40,7 +41,7 @@ public sealed partial class RazerFeatureTransport
             await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                if (UsesMouseDockLinker(devicePath)) PrepareStandardTransaction(devicePath, report);
+                PrepareSessionTransaction(report);
                 var result = await Task.Run(() =>
                 {
                     var success = NativeMethods.HidD_SetFeature(handle, report, report.Length);
@@ -154,7 +155,7 @@ public sealed partial class RazerFeatureTransport
                 for (var index = 0; index < requests.Count - 1; index++)
                 {
                     var request = requests[index];
-                    if (UsesMouseDockLinker(devicePath)) PrepareStandardTransaction(devicePath, request);
+                    PrepareSessionTransaction(request);
                     var result = await SetFeatureAsync(handle, request, directIo: true, cancellationToken)
                         .ConfigureAwait(false);
                     if (!result.Success)
@@ -164,7 +165,7 @@ public sealed partial class RazerFeatureTransport
                 }
 
                 var last = requests[^1];
-                if (UsesMouseDockLinker(devicePath)) PrepareStandardTransaction(devicePath, last);
+                PrepareSessionTransaction(last);
                 await ExecuteOnHandleAsync(
                     handle,
                     last,
@@ -193,7 +194,7 @@ public sealed partial class RazerFeatureTransport
             await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                if (UsesMouseDockLinker(devicePath)) PrepareStandardTransaction(devicePath, request);
+                PrepareSessionTransaction(request);
                 return await ExecuteOnHandleAsync(
                     handle,
                     request,
@@ -209,6 +210,17 @@ public sealed partial class RazerFeatureTransport
             {
                 gate.Release();
             }
+        }
+
+        private void PrepareSessionTransaction(byte[] request)
+        {
+            if (!UsesMouseDockLinker(devicePath))
+            {
+                return;
+            }
+
+            request[2] = PrepareTransactionId(
+                devicePath, request[2], request[7], request[8], ref _dockTransactionSequence);
         }
 
         public ValueTask DisposeAsync()
