@@ -112,6 +112,10 @@ internal sealed class RazerMousePrivateKeyRuntime
                         _applied[productId] = enable;
                         _verifiedAt[productId] = DateTime.UtcNow;
                     }
+                    if (enable)
+                    {
+                        RazerDeviceModeOwnership.Acquire(productId);
+                    }
                     break;
                 case DeviceModeAction.Release:
                     lock (_gate)
@@ -141,6 +145,14 @@ internal sealed class RazerMousePrivateKeyRuntime
                             _originalModes.Remove(productId);
                             _activeStage.Remove(productId);
                         }
+                    }
+                    if (enable)
+                    {
+                        RazerDeviceModeOwnership.Acquire(productId);
+                    }
+                    else
+                    {
+                        RazerDeviceModeOwnership.Release(productId);
                     }
                     _log?.Invoke(
                         $"1532:{productId:X4} device mode 0x{mode!.Value:X2} -> 0x{target:X2}" +
@@ -210,6 +222,7 @@ internal sealed class RazerMousePrivateKeyRuntime
                     _originalModes.Remove(productId);
                     _activeStage.Remove(productId);
                 }
+                RazerDeviceModeOwnership.Release(productId);
             }
             catch (Exception exception) when (
                 exception is Win32Exception or IOException or OperationCanceledException)
