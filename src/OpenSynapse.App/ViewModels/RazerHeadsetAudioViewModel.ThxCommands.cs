@@ -175,7 +175,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             $"thx status availability={_thxStatus.Availability} error={_thxStatus.ErrorCode ?? "-"} " +
             $"service={ThxAudioAdmission.HasService(ThxHeadsetAdmission.ServiceName)} " +
             $"running={ThxAudioAdmission.HasRunningService(ThxHeadsetAdmission.ServiceName)} " +
-            $"health={ThxAudioAdmission.ReadServiceHealth(ThxHeadsetAdmission.ServiceName)}");
+            $"health={ThxServiceControl.ReadServiceHealth(ThxHeadsetAdmission.ServiceName)}");
         if (_thxStatus.Availability != ThxHeadsetAvailability.Available)
         {
             _thxState = null;

@@ -155,7 +155,7 @@ internal static partial class ThxHeadsetAdmission
         // native client is the reliable gate; a missing APO shows up when the
         // helper initializes and the card keeps the installer entry available.
         var service = profile.NativeVersion == ThxNativeVersion.V3
-            ? ThxAudioAdmission.ReadServiceHealth(ServiceName)
+            ? ThxServiceControl.ReadServiceHealth(ServiceName)
             : ThxServiceHealth.Running;
         return Evaluate(profile, service, HasVerifiedNativeClient(profile));
     }
@@ -278,7 +278,7 @@ internal static partial class ThxHeadsetAdmission
                 nativeError,
                 running,
                 ThxAudioAdmission.HasService(ServiceName),
-                ThxAudioAdmission.ReadServiceHealth(ServiceName) !=
+                ThxServiceControl.ReadServiceHealth(ServiceName) !=
                     ThxServiceHealth.ImageMissing));
         }
 
