@@ -1,3 +1,4 @@
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.Windows.Protocols;
@@ -11,6 +12,9 @@ public sealed partial class RazerFeatureTransport
     internal static bool UsesPinnedStandardTransaction(string devicePath) =>
         DeviceIdParser.TryParse(devicePath, out var vendorId, out var productId) &&
         vendorId == 0x1532 && (productId == 0x025C || productId is 0x0086 or 0x0088);
+
+    private static bool IsLinkerCommand(byte commandClass, byte commandId) =>
+        commandClass == 0x00 && commandId is 0xBF or 0xC5 or 0xC7 or 0x47;
 
     internal static byte PrepareTransactionId(
         string devicePath, byte requested, byte commandClass, byte commandId, ref int sequence,
@@ -37,6 +41,26 @@ public sealed partial class RazerFeatureTransport
                 return NextDockTransactionId(ref sequence);
             return (byte)(0xE0 | NextDockTransactionId(ref sequence));
         }
+
+        var parsed = DeviceIdParser.TryParse(devicePath, out var vendorId, out var pathProductId);
+        var isHost = parsed && vendorId == 0x1532 &&
+            RazerDualDongleCatalog.CanHost(pathProductId);
+
+        if (isHost && logicalProductId is { } linkedChildId && linkedChildId != pathProductId)
+        {
+            // rzDevice25DualLinkKeyboard rolls 0x80 | n; the paired mouse uses 0..30.
+            var category = RazerDualDongleCatalog.CategoryOf(linkedChildId);
+            if (category == DeviceCategory.Unknown)
+            {
+                category = RazerHidDeviceCatalog.BuiltIn.Find(0x1532, linkedChildId)?.Category
+                    ?? DeviceCategory.Unknown;
+            }
+
+            return category == DeviceCategory.Keyboard
+                ? (byte)(0x80 | NextDockTransactionId(ref sequence))
+                : NextDockTransactionId(ref sequence);
+        }
+
         if (DeviceIdParser.TryParse(devicePath, out _, out var productId) &&
             RazerKeyboardProtocol.UsesDualLinkTransaction(productId))
         {
@@ -46,13 +70,27 @@ public sealed partial class RazerFeatureTransport
                 return NextTransactionId(ref sequence);
             return (byte)(0x80 | NextTransactionId(ref sequence));
         }
+        if (isHost && RazerDualDongleCatalog.CategoryOf(pathProductId) == DeviceCategory.Keyboard &&
+            IsLinkerCommand(commandClass, commandId))
+        {
+            // Keyboard hosts outside UsesDualLinkTransaction still steer their linker
+            // commands through the DualLinkKeyboard bank.
+            return (byte)(0x80 | NextTransactionId(ref sequence));
+        }
+        if (isHost && IsLinkerCommand(commandClass, commandId))
+        {
+            // rzDevice25Linker* restarts its E0 counter after every HID open.
+            if (freshDockHandle)
+                sequence = -1;
+            return (byte)(0xE0 | NextDockTransactionId(ref sequence));
+        }
         if (requested == 0xFF)
         {
             // Only the devices that opt in rotate the wildcard. Everyone else keeps
             // 0xFF because their firmware uses it as "accept any echoed transaction".
-            return DeviceIdParser.TryParse(devicePath, out var vendorId, out var dynamicProductId) &&
-                vendorId == 0x1532 &&
-                RazerHidDeviceCatalog.BuiltIn.Find(vendorId, dynamicProductId)?.UsesDynamicTransactions == true
+            return DeviceIdParser.TryParse(devicePath, out var wildcardVendorId, out var dynamicProductId) &&
+                wildcardVendorId == 0x1532 &&
+                RazerHidDeviceCatalog.BuiltIn.Find(wildcardVendorId, dynamicProductId)?.UsesDynamicTransactions == true
                     ? NextTransactionId(ref sequence)
                     : requested;
         }
@@ -103,20 +141,22 @@ public sealed partial class RazerFeatureTransport
     private static void PrepareStandardTransaction(
         string devicePath, byte[] request, ushort? logicalProductId = null, bool freshDockHandle = false)
     {
-        // The dock's paired mouse keeps its own rolling counter. Sharing the dock's key
-        // would restart the child on every HID handle and consume the dock's E0 sequence.
+        // A linked child keeps its own rolling counter. Sharing the host's key would
+        // restart the child on every HID handle and consume the host's linker sequence.
         var sequenceKey = devicePath;
-        var isDockChild = false;
-        if (logicalProductId is { } childProductId && childProductId != 0x00A4 &&
-            UsesMouseDockLinker(devicePath))
+        var isLinkedChild = false;
+        if (logicalProductId is { } childProductId &&
+            DeviceIdParser.TryParse(devicePath, out _, out var parentProductId) &&
+            childProductId != parentProductId &&
+            RazerDualDongleCatalog.CanHost(parentProductId))
         {
-            isDockChild = true;
+            isLinkedChild = true;
             sequenceKey = $"{devicePath}#{childProductId:X4}";
         }
 
         var sequence = _transactionSequences.GetOrAdd(sequenceKey, static _ => [-1]);
         request[2] = PrepareTransactionId(
             devicePath, request[2], request[7], request[8], ref sequence[0], logicalProductId,
-            isDockChild ? false : freshDockHandle);
+            isLinkedChild ? false : freshDockHandle);
     }
 }
