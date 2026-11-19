@@ -122,6 +122,7 @@ internal sealed class RazerMousePrivateKeyRuntime
                     {
                         _applied.Remove(productId);
                     }
+                    RazerDeviceModeOwnership.Release(productId);
                     _log?.Invoke(
                         $"1532:{productId:X4} driver mode belongs to another owner; left alone");
                     continue;
