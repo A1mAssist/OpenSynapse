@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
+using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.Windows.Protocols;
 
@@ -214,13 +215,25 @@ public sealed partial class RazerFeatureTransport
 
         private void PrepareSessionTransaction(byte[] request)
         {
-            if (!UsesMouseDockLinker(devicePath))
+            if (!DeviceIdParser.TryParse(devicePath, out var vendorId, out var productId) ||
+                vendorId != 0x1532)
             {
                 return;
             }
 
-            request[2] = PrepareTransactionId(
-                devicePath, request[2], request[7], request[8], ref _dockTransactionSequence);
+            if (productId == 0x00A4)
+            {
+                request[2] = PrepareTransactionId(
+                    devicePath, request[2], request[7], request[8], ref _dockTransactionSequence);
+                return;
+            }
+
+            if (RazerDualDongleCatalog.CanHost(productId) &&
+                IsLinkerCommand(request[7], request[8]))
+            {
+                request[2] = PrepareTransactionId(
+                    devicePath, request[2], request[7], request[8], ref _dockTransactionSequence);
+            }
         }
 
         public ValueTask DisposeAsync()
