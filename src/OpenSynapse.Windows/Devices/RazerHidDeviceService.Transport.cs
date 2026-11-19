@@ -4,8 +4,11 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed partial class RazerHidDeviceService
 {
+    // The Huntsman V3 Pro family commits onboard writes to flash before it answers.
+    // 02CF needs about seven 190 ms retries for one mapping write, so the old
+    // 8 x 80 ms budget gave up while the firmware was still committing.
     private const int BusyWriteAttempts = 8;
-    private static readonly TimeSpan BusyWriteDelay = TimeSpan.FromMilliseconds(80);
+    private static readonly TimeSpan BusyWriteDelay = TimeSpan.FromMilliseconds(250);
 
     private Task<byte[]> ExecuteAsync(
         RazerHidDeviceConnection connection,

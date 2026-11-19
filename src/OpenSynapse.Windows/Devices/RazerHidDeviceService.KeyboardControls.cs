@@ -103,6 +103,8 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
+        WriteDiagnostic(connection.Definition.ProductId,
+            $"analog actuation write: profile=0x{classId:X2} type=0x{dataType:X2} keys={points.Count}");
         return ExecuteKeyboardWriteAsync(connection,
             new RazerHidRequest("razer_analog_set_actuation_points",
                 RazerAnalogKeyProtocol.CreateSetMultiAnalogKeyActuationPointRequest(
@@ -134,6 +136,8 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
+        WriteDiagnostic(connection.Definition.ProductId,
+            $"analog rapid-trigger write: profile=0x{classId:X2} type=0x{dataType:X2} keys={settings.Count}");
         return ExecuteKeyboardWriteAsync(connection,
             new RazerHidRequest("razer_analog_set_rapid_triggers",
                 RazerAnalogKeyProtocol.CreateSetMultiAnalogKeyRapidTriggerRequest(

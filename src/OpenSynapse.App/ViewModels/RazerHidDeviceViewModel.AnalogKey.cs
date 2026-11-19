@@ -320,8 +320,10 @@ public sealed partial class RazerHidDeviceViewModel
                     .Where(key => Math.Abs(key.ActuationMillimeters - AnalogKeyActuationPointMillimeters)
                         > AnalogKeyToleranceMillimeters)
                     .ToArray();
+                // Writes use the middleware's full batches; only the 02A7 read path
+                // is capped at five keys.
                 foreach (var batch in actuationKeys.Chunk(
-                    RazerAnalogKeyProtocol.MaxActuationPointsFor(Connection.Definition.ProductId)))
+                    RazerAnalogKeyProtocol.MaxActuationPoints))
                 {
                     await _service.SetAnalogKeyActuationPointsAsync(
                         Connection,
@@ -339,7 +341,7 @@ public sealed partial class RazerHidDeviceViewModel
                             AnalogKeyRapidTriggerSensitivityMillimeters) > AnalogKeyToleranceMillimeters)
                     .ToArray();
                 foreach (var batch in rapidTriggerKeys.Chunk(
-                    RazerAnalogKeyProtocol.MaxRapidTriggerKeysFor(Connection.Definition.ProductId)))
+                    RazerAnalogKeyProtocol.MaxRapidTriggerKeys))
                 {
                     await _service.SetAnalogKeyRapidTriggersAsync(
                         Connection,
