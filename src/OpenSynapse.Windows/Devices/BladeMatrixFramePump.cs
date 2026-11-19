@@ -285,15 +285,17 @@ public sealed class BladeMatrixFramePump : IAsyncDisposable
             return;
         }
 
-        // Bundle: setChromaFrame uses checkUSBTransferIn:false, then yields 1 ms
-        // between rows. The final 03:0A latch is also write-only.
-        for (var index = 0; index < requests.Length; index++)
+        // The bundle writes rows without reading, but the EC answers every report and
+        // the replies stay queued on this collection; a later fan/thermal query then
+        // decodes a lighting reply and fails. Consume each row's ack on the same handle.
+        foreach (var request in requests)
         {
-            await session.SendAsync(requests[index], cancellationToken).ConfigureAwait(false);
-            if (index < requests.Length - 1 && DeviceWait > TimeSpan.Zero)
-            {
-                await Task.Delay(DeviceWait, cancellationToken).ConfigureAwait(false);
-            }
+            await session.QueryPreparedFastAsync(
+                request,
+                DeviceWait,
+                request[0],
+                cancellationToken,
+                allowRemainingPacketsMismatch: true).ConfigureAwait(false);
         }
     }
 
