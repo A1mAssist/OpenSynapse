@@ -270,9 +270,21 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
             return;
         }
 
-        var previous = RazerChromaStandardProtocol.ReadBrightnessPercent(
-            await QueryAsync(RazerChromaStandardProtocol.GetBrightness, "read brightness", cancellationToken)
-                .ConfigureAwait(false));
+        // Same class-0x10 firmware that drops 10:83 can also drop 10:85; a write must
+        // not depend on the device answering the read first.
+        byte? previous = null;
+        try
+        {
+            previous = RazerChromaStandardProtocol.ReadBrightnessPercent(
+                await QueryAsync(RazerChromaStandardProtocol.GetBrightness, "read brightness", cancellationToken)
+                    .ConfigureAwait(false));
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            _diagnostic?.Invoke(
+                $"chroma brightness readback unavailable ({exception.Message}); writing without restore");
+        }
+
         if (previous == percent)
         {
             return;
@@ -285,19 +297,27 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
                     transaction, RazerChromaStandardProtocol.ToBrightnessLevel(percent)),
                 "set brightness",
                 cancellationToken).ConfigureAwait(false);
-            var actual = RazerChromaStandardProtocol.ReadBrightnessPercent(
-                await QueryAsync(RazerChromaStandardProtocol.GetBrightness, "read back brightness", cancellationToken)
-                    .ConfigureAwait(false));
-            if (Math.Abs(actual - percent) > 1)
+            if (previous is not null)
             {
-                throw new InvalidOperationException($"Brightness readback was {actual}%, expected {percent}%.");
+                var actual = RazerChromaStandardProtocol.ReadBrightnessPercent(
+                    await QueryAsync(RazerChromaStandardProtocol.GetBrightness, "read back brightness", cancellationToken)
+                        .ConfigureAwait(false));
+                if (Math.Abs(actual - percent) > 1)
+                {
+                    throw new InvalidOperationException($"Brightness readback was {actual}%, expected {percent}%.");
+                }
             }
         }
         catch (Exception updateException)
         {
+            if (previous is not { } restore)
+            {
+                throw;
+            }
+
             try
             {
-                await RestoreBrightnessAsync(previous).ConfigureAwait(false);
+                await RestoreBrightnessAsync(restore).ConfigureAwait(false);
             }
             catch (Exception restoreException)
             {
@@ -328,11 +348,30 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
             return;
         }
 
-        var previous = RazerChromaStandardProtocol.ReadEffect(
-            await QueryAsync(RazerChromaStandardProtocol.GetEffect, "read effect", cancellationToken)
-                .ConfigureAwait(false));
-        EnsureStandardEffectRestorable(previous);
-        if (EffectMatches(previous, effect, 0, 0, payload, compareColors: payload.Length > 0))
+        // Basilisk V4 and the other class-0x10 devices accept 10:03 but answer 10:83
+        // with an empty payload, so the effect can be written but never read back.
+        (RazerChromaEffect Effect, byte Flags, byte Rate, byte[] Colors)? previous = null;
+        try
+        {
+            previous = RazerChromaStandardProtocol.ReadEffect(
+                await QueryAsync(RazerChromaStandardProtocol.GetEffect, "read effect", cancellationToken)
+                    .ConfigureAwait(false));
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            _diagnostic?.Invoke(
+                $"chroma effect readback unavailable ({exception.Message}); writing without restore");
+        }
+
+        // A readable but non-restorable effect must still block the write; only an
+        // unreadable device is allowed to fall through to a write without restore.
+        if (previous is { } snapshot)
+        {
+            EnsureStandardEffectRestorable(snapshot);
+        }
+
+        if (previous is { } known &&
+            EffectMatches(known, effect, 0, 0, payload, compareColors: payload.Length > 0))
         {
             return;
         }
@@ -343,26 +382,32 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
                 transaction => RazerChromaStandardProtocol.SetEffect(transaction, effect, payload),
                 "set effect",
                 cancellationToken).ConfigureAwait(false);
-            var actual = RazerChromaStandardProtocol.ReadEffect(
-                await QueryAsync(RazerChromaStandardProtocol.GetEffect, "read back effect", cancellationToken)
-                    .ConfigureAwait(false));
-            if (!EffectMatches(actual, effect, 0, 0, payload, compareColors: payload.Length > 0))
+            if (previous is not null)
             {
-                throw new InvalidOperationException(
-                    $"Effect readback did not match {effect} and its parameters.");
+                var actual = RazerChromaStandardProtocol.ReadEffect(
+                    await QueryAsync(RazerChromaStandardProtocol.GetEffect, "read back effect", cancellationToken)
+                        .ConfigureAwait(false));
+                if (!EffectMatches(actual, effect, 0, 0, payload, compareColors: payload.Length > 0))
+                {
+                    throw new InvalidOperationException(
+                        $"Effect readback did not match {effect} and its parameters.");
+                }
             }
         }
         catch (Exception updateException)
         {
-            try
+            if (previous is { } restore)
             {
-                await RestoreStandardEffectAsync(previous).ConfigureAwait(false);
-            }
-            catch (Exception restoreException)
-            {
-                throw new InvalidOperationException(
-                    "Effect update failed and the previous effect could not be restored.",
-                    new AggregateException(updateException, restoreException));
+                try
+                {
+                    await RestoreStandardEffectAsync(restore).ConfigureAwait(false);
+                }
+                catch (Exception restoreException)
+                {
+                    throw new InvalidOperationException(
+                        "Effect update failed and the previous effect could not be restored.",
+                        new AggregateException(updateException, restoreException));
+                }
             }
 
             throw;

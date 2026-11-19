@@ -34,12 +34,22 @@ public sealed partial class RazerChromaStandardService
     private async Task SetLegacyPerLedBrightnessAsync(byte percent, CancellationToken cancellationToken)
     {
         var region = await ResolveLegacyRegionAsync(cancellationToken).ConfigureAwait(false);
-        var previous = RazerLegacyChromaProtocol.ReadPerLedBrightnessPercent(
-            await QueryAsync(
-                transaction => RazerLegacyChromaProtocol.GetPerLedBrightness(
-                    transaction, RazerLegacyChromaProtocol.ReadProfileId, region),
-                "read brightness",
-                cancellationToken).ConfigureAwait(false));
+        byte? previous = null;
+        try
+        {
+            previous = RazerLegacyChromaProtocol.ReadPerLedBrightnessPercent(
+                await QueryAsync(
+                    transaction => RazerLegacyChromaProtocol.GetPerLedBrightness(
+                        transaction, RazerLegacyChromaProtocol.ReadProfileId, region),
+                    "read brightness",
+                    cancellationToken).ConfigureAwait(false));
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            _diagnostic?.Invoke(
+                $"per-led brightness readback unavailable ({exception.Message}); writing without restore");
+        }
+
         if (previous == percent)
         {
             return;
@@ -52,24 +62,32 @@ public sealed partial class RazerChromaStandardService
                     transaction, RazerLegacyChromaProtocol.ReadProfileId, region, percent),
                 "set brightness",
                 cancellationToken).ConfigureAwait(false);
-            var actual = RazerLegacyChromaProtocol.ReadPerLedBrightnessPercent(
-                await QueryAsync(
-                    transaction => RazerLegacyChromaProtocol.GetPerLedBrightness(
-                        transaction, RazerLegacyChromaProtocol.ReadProfileId, region),
-                    "read back brightness",
-                    cancellationToken).ConfigureAwait(false));
-            if (Math.Abs(actual - percent) > 1)
+            if (previous is not null)
             {
-                throw new InvalidOperationException($"Brightness readback was {actual}%, expected {percent}%.");
+                var actual = RazerLegacyChromaProtocol.ReadPerLedBrightnessPercent(
+                    await QueryAsync(
+                        transaction => RazerLegacyChromaProtocol.GetPerLedBrightness(
+                            transaction, RazerLegacyChromaProtocol.ReadProfileId, region),
+                        "read back brightness",
+                        cancellationToken).ConfigureAwait(false));
+                if (Math.Abs(actual - percent) > 1)
+                {
+                    throw new InvalidOperationException($"Brightness readback was {actual}%, expected {percent}%.");
+                }
             }
         }
         catch (Exception updateException)
         {
+            if (previous is not { } restore)
+            {
+                throw;
+            }
+
             try
             {
                 await QueryAsync(
                     transaction => RazerLegacyChromaProtocol.SetPerLedBrightness(
-                        transaction, RazerLegacyChromaProtocol.ReadProfileId, region, previous),
+                        transaction, RazerLegacyChromaProtocol.ReadProfileId, region, restore),
                     "restore brightness",
                     cancellationToken).ConfigureAwait(false);
             }
