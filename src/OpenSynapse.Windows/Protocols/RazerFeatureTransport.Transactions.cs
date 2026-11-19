@@ -18,19 +18,18 @@ public sealed partial class RazerFeatureTransport
     {
         if (UsesMouseDockLinker(devicePath))
         {
+            if (logicalProductId is { } childProductId && childProductId != 0x00A4)
+            {
+                // The paired mouse is an ordinary protocol-25 device reached through the
+                // dock's collection: rzDevice25DualLinkMouse rolls 0..30. 0x80 belongs to
+                // rzDevice25DualLinkKeyboard, and E0 is the dock's own bank.
+                return NextDockTransactionId(ref sequence);
+            }
             // The linker restarts its transaction counter at E0 after every HID open.
             // Non-session queries open one handle per command, so reusing the process-wide
             // counter leaves the second command (E1) answered as busy.
             if (freshDockHandle)
                 sequence = -1;
-            if (logicalProductId is { } logicalProduct && logicalProduct != 0x00A4)
-            {
-                // rzDevice25DualLinkMouse sends the paired mouse's commands with
-                // 0x80 | sequence. Scan(46)/Pair(41) use the low bank.
-                if (commandClass == 0x00 && commandId is 0x46 or 0x41)
-                    return NextDockTransactionId(ref sequence);
-                return (byte)(0x80 | NextDockTransactionId(ref sequence));
-            }
             // 00A4 rzDevice25Linker uses E0 | 0..30 for every command. Scan(46)/Pair(41)
             // clear the high bits. The linker firmware leaves later commands busy when
             // the initial firmware/serial handshake uses OpenRazer's FF wildcard.
@@ -104,9 +103,20 @@ public sealed partial class RazerFeatureTransport
     private static void PrepareStandardTransaction(
         string devicePath, byte[] request, ushort? logicalProductId = null, bool freshDockHandle = false)
     {
-        var sequence = _transactionSequences.GetOrAdd(devicePath, static _ => [-1]);
+        // The dock's paired mouse keeps its own rolling counter. Sharing the dock's key
+        // would restart the child on every HID handle and consume the dock's E0 sequence.
+        var sequenceKey = devicePath;
+        var isDockChild = false;
+        if (logicalProductId is { } childProductId && childProductId != 0x00A4 &&
+            UsesMouseDockLinker(devicePath))
+        {
+            isDockChild = true;
+            sequenceKey = $"{devicePath}#{childProductId:X4}";
+        }
+
+        var sequence = _transactionSequences.GetOrAdd(sequenceKey, static _ => [-1]);
         request[2] = PrepareTransactionId(
             devicePath, request[2], request[7], request[8], ref sequence[0], logicalProductId,
-            freshDockHandle);
+            isDockChild ? false : freshDockHandle);
     }
 }
