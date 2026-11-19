@@ -26,6 +26,9 @@ public sealed record RazerMappingKeyboardLayout(
     /// <summary>Official product photo drawn under the key paths; null for a Chroma SVG.</summary>
     public Uri? BackgroundImage { get; init; }
 
+    /// <summary>Embedded Synapse 2 photo used when Razer's product CDN has no page.</summary>
+    public string? BackgroundImageData { get; init; }
+
     /// <summary>Official wheel widget art, base64 PNG; null when the product has no wheel widget.</summary>
     public string? ScrollImageData { get; init; }
 

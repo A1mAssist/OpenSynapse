@@ -29,6 +29,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Devices\\Manifests\\*.json" />
     <EmbeddedResource Include="Devices\\RazerHid\\*.json" />
+    <EmbeddedResource Include="Devices\\RazerHid\\keypad-*.png" />
     <EmbeddedResource Include="Devices\\RazerDriverPackages.json" />
     <EmbeddedResource Include="Devices\\RazerDualDongleCompatibility.json" />
   </ItemGroup>
