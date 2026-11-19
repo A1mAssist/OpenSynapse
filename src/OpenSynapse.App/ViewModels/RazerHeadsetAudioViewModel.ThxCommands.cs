@@ -82,27 +82,101 @@ public sealed partial class RazerHeadsetAudioViewModel
     {
         var previous = ThxBands.Select(band => band.Level).ToArray();
         var gains = ThxBands.Select(band => band.Level).ToArray();
+        var previousPreset = _thxState?.SelectedPresetId;
+        var previousPresetIndex = SelectedThxPresetIndex;
+        // THX keeps the manual gains in the Custom preset. Writing them while a
+        // game preset is active stores the curve but keeps playing the preset.
+        var customPresetId = ThxCustomPresetId;
+        var switchPreset = customPresetId is not null &&
+            !string.Equals(previousPreset, customPresetId, StringComparison.OrdinalIgnoreCase);
         if (!await RunThxAsync(
-                (controller, token) => controller.SetGainsAsync(
-                    ThxAudioEndpoint.Headphones, gains, token),
+                (controller, token) => switchPreset
+                    ? controller.SelectPresetAsync(
+                        ThxAudioEndpoint.Headphones, customPresetId!, gains, token)
+                    : controller.SetGainsAsync(
+                        ThxAudioEndpoint.Headphones, gains, token),
                 cancellationToken))
         {
             return;
         }
 
+        if (switchPreset)
+        {
+            var customIndex = ThxCustomPresetIndex;
+            if (customIndex >= 0)
+            {
+                SelectedThxPresetIndex = customIndex;
+            }
+        }
+
         await SaveHeadsetSettingAsync(
-            settings => settings.ThxBands = ToBandMap(ThxBands.Select(band => band.Level)),
-            settings => settings.ThxBands = ToBandMap(previous),
+            settings =>
+            {
+                settings.ThxBands = ToBandMap(gains);
+                if (switchPreset)
+                {
+                    settings.ThxPreset = customPresetId;
+                }
+            },
+            settings =>
+            {
+                settings.ThxBands = ToBandMap(previous);
+                if (switchPreset)
+                {
+                    settings.ThxPreset = previousPreset;
+                }
+            },
             () =>
             {
                 for (var index = 0; index < previous.Length && index < ThxBands.Count; index++)
                 {
                     ThxBands[index].Level = previous[index];
                 }
+                if (switchPreset)
+                {
+                    SelectedThxPresetIndex = previousPresetIndex;
+                }
             },
-            async token => await ThxController.SetGainsAsync(
-                ThxAudioEndpoint.Headphones, previous, token),
+            async token =>
+            {
+                if (switchPreset && previousPreset is not null)
+                {
+                    await ThxController.SelectPresetAsync(
+                        ThxAudioEndpoint.Headphones, previousPreset, previous, token);
+                }
+                else
+                {
+                    await ThxController.SetGainsAsync(
+                        ThxAudioEndpoint.Headphones, previous, token);
+                }
+            },
             cancellationToken);
+    }
+
+    private string? ThxCustomPresetId =>
+        _thxState?.Presets
+            .FirstOrDefault(preset =>
+                preset.Id.Equals("Custom", StringComparison.OrdinalIgnoreCase) ||
+                preset.DisplayName.Contains("Custom", StringComparison.OrdinalIgnoreCase))
+            ?.Id;
+
+    private int ThxCustomPresetIndex
+    {
+        get
+        {
+            if (_thxState is null)
+            {
+                return -1;
+            }
+            return _thxState.Presets
+                .Select((preset, index) => (preset, index))
+                .Where(item =>
+                    item.preset.Id.Equals("Custom", StringComparison.OrdinalIgnoreCase) ||
+                    item.preset.DisplayName.Contains("Custom", StringComparison.OrdinalIgnoreCase))
+                .Select(item => item.index)
+                .DefaultIfEmpty(-1)
+                .First();
+        }
     }
 
     /// <summary>
@@ -119,11 +193,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         await ApplyThxSpatialAsync(cancellationToken);
         if (!CanApplyThx || ThxSpatialEnabled) return;
 
-        var customPresetId = _thxState?.Presets
-            .FirstOrDefault(preset =>
-                preset.Id.Equals("Custom", StringComparison.OrdinalIgnoreCase) ||
-                preset.DisplayName.Contains("Custom", StringComparison.OrdinalIgnoreCase))
-            ?.Id ?? "Custom";
+        var customPresetId = ThxCustomPresetId ?? "Custom";
         await RunThxAsync(
             (controller, token) => controller.SelectPresetAsync(
                 ThxAudioEndpoint.Headphones, customPresetId, FlatThxBands, token),
