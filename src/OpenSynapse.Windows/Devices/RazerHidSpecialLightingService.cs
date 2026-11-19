@@ -402,7 +402,12 @@ public sealed partial class RazerHidSpecialLightingService
             {
                 // Re-taking Chroma control on every click makes 056B fade to the
                 // old colour, so the handshake only runs once per device path.
-                reportsToSend.Add(RazerHidKrakenV4Protocol.CreateConnect(isDongle));
+                // AudioMabelT3CDongle (0574) has no 02 00 00 connect step in its
+                // bundle; sending it makes the headset answer 0x05 and drop.
+                if (connection.ProductId != 0x0574)
+                {
+                    reportsToSend.Add(RazerHidKrakenV4Protocol.CreateConnect(isDongle));
+                }
                 reportsToSend.Add(RazerHidKrakenV4Protocol.CreateForceChroma(enabled: true, isDongle));
                 reportsToSend.Add(RazerHidKrakenV4Protocol.CreateBrightness(percent, isDongle));
             }
@@ -493,10 +498,16 @@ public sealed partial class RazerHidSpecialLightingService
             // brightness or effect frames; waiting on those only stalls the write.
             var waitForEffectResponse =
                 !devicePath.Contains("pid_0574", StringComparison.OrdinalIgnoreCase);
+            // 0574 has no connect frame, so its first report is force-chroma and
+            // must still have its reply drained.
+            var firstIsConnect = reports.Count > 0 &&
+                reports[0].Length == RazerHidKrakenV4Protocol.ReportLength &&
+                reports[0][7] == 0x00 && reports[0][8] == 0x00 &&
+                reports[0][10] == 0x02 && reports[0][11] == 0x00 && reports[0][12] == 0x00;
             for (var index = 0; index < reports.Count; index++)
             {
                 var report = reports[index];
-                if (sendHandshake && index == 0)
+                if (sendHandshake && index == 0 && firstIsConnect)
                 {
                     await transport.SendAsync(report, cancellationToken).ConfigureAwait(false);
                     await Task.Delay(TimeSpan.FromMilliseconds(50), cancellationToken).ConfigureAwait(false);
