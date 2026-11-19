@@ -28,6 +28,8 @@ public sealed partial class RazerHidKrakenViewModel
         : ThxStatus.ErrorCode switch
         {
             "ThxServiceMissing" => AppStrings.Text("RazerHeadsetThxServiceMissing"),
+            "ThxServiceBroken" or "ThxServiceStopped" =>
+                AppStrings.Text("RazerHeadsetThxServiceMissing"),
             "ThxNativeMissing" => AppStrings.Text("RazerHeadsetThxNativeMissing"),
             "ThxRebootRequired" => AppStrings.Text("RazerHeadsetThxRebootRequired"),
             "ThxDownloadFailed" or "ThxDownloadVerificationFailed" =>
@@ -42,16 +44,20 @@ public sealed partial class RazerHidKrakenViewModel
         };
 
     public Visibility ThxInstallerVisibility =>
-        ThxStatus.Availability is ThxHeadsetAvailability.Available or
-            ThxHeadsetAvailability.InstalledButInactive ||
-        ThxStatus.RebootRequired
-            ? Visibility.Collapsed
-            : ThxVisibility;
+        (ThxStatus.Availability is not (ThxHeadsetAvailability.Available or
+            ThxHeadsetAvailability.InstalledButInactive) ||
+            (ThxStatus.Availability == ThxHeadsetAvailability.InstalledButInactive &&
+                ThxStatus.ErrorCode == "ThxServiceStopped")) &&
+        !ThxStatus.RebootRequired
+            ? ThxVisibility
+            : Visibility.Collapsed;
 
     public bool CanInstallThx =>
         !_thxBusy &&
-        ThxStatus.Availability is not (ThxHeadsetAvailability.Available or
-            ThxHeadsetAvailability.InstalledButInactive) &&
+        (ThxStatus.Availability is not (ThxHeadsetAvailability.Available or
+            ThxHeadsetAvailability.InstalledButInactive) ||
+            (ThxStatus.Availability == ThxHeadsetAvailability.InstalledButInactive &&
+                ThxStatus.ErrorCode == "ThxServiceStopped")) &&
         !ThxStatus.RebootRequired;
 
     public async Task InstallThxComponentsAsync(CancellationToken cancellationToken = default)
