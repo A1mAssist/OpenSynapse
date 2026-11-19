@@ -3766,6 +3766,80 @@
       "ambiguousTransactions": []
     },
     {
+      "productId": "02EB",
+      "displayName": "Razer Tartarus V2 Pro",
+      "category": "keyboard",
+      "waveDirection": "LeftRight",
+      "capabilitySet": "keyboards-js-009",
+      "maximumDpi": null,
+      "pollRates": null,
+      "matrixDimensions": [
+        5,
+        6
+      ],
+      "waitMicroseconds": 600,
+      "transactions": {
+        "razer_chroma_standard_get_serial": "FF",
+        "razer_chroma_standard_get_firmware_version": "FF",
+        "razer_chroma_standard_get_device_mode": "FF",
+        "razer_chroma_extended_matrix_brightness": "1F",
+        "razer_chroma_extended_matrix_effect_breathing_single": "3F",
+        "razer_chroma_extended_matrix_effect_custom_frame": "1F",
+        "razer_chroma_extended_matrix_effect_none": "1F",
+        "razer_chroma_extended_matrix_effect_reactive": "1F",
+        "razer_chroma_extended_matrix_effect_spectrum": "1F",
+        "razer_chroma_extended_matrix_effect_starlight_dual": "1F",
+        "razer_chroma_extended_matrix_effect_wave": "1F",
+        "razer_chroma_extended_matrix_get_brightness": "1F",
+        "razer_chroma_extended_matrix_set_custom_frame": "1F",
+        "razer_chroma_standard_set_led_effect": "1F",
+        "razer_chroma_misc_get_indicator_led_configuration": "1F",
+        "razer_chroma_misc_set_indicator_led_configuration": "1F",
+        "razer_chroma_misc_get_time_to_dim": "1F",
+        "razer_chroma_misc_set_time_to_dim": "1F",
+        "razer_chroma_misc_get_gpu_card_detection": "1F",
+        "razer_chroma_misc_set_gpu_card_detection": "1F",
+        "razer_chroma_misc_get_auto_sleep": "1F",
+        "razer_chroma_misc_set_auto_sleep": "1F",
+        "razer_chroma_misc_get_battery_charge_limiter": "1F",
+        "razer_chroma_misc_set_battery_charge_limiter": "1F",
+        "razer_chroma_misc_get_macro_storage_info": "1F"
+      },
+      "builderArgumentPrefixes": {
+        "razer_chroma_extended_matrix_brightness": [
+          "0100"
+        ],
+        "razer_chroma_extended_matrix_effect_breathing_single": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_none": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_reactive": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_spectrum": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_starlight_dual": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_effect_wave": [
+          "0105"
+        ],
+        "razer_chroma_extended_matrix_get_brightness": [
+          "0100"
+        ],
+        "razer_chroma_standard_set_led_effect": [
+          "0007"
+        ]
+      },
+      "defaultStorage": "01",
+      "defaultLedZone": "00",
+      "commandSequences": {},
+      "ambiguousTransactions": []
+    },
+    {
       "productId": "024E",
       "displayName": "Razer BlackWidow V3",
       "category": "keyboard",
