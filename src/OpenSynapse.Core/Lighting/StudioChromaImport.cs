@@ -123,31 +123,14 @@ public static class StudioChromaImport
                 continue;
             }
 
-            var remapped =
-                !string.Equals(device.InstanceId, match.InstanceId, StringComparison.OrdinalIgnoreCase) ||
-                (device.ProductId != 0 && device.ProductId != match.ProductId);
-            var remappedLeds = remapped
-                ? RemapLeds(device, match, placement?.Placement.Category)
-                : null;
-            if (remapped)
-                issues.Add(new StudioImportIssue(
-                    StudioImportIssueKind.RemappedLeds,
-                    match.ProductId,
-                    match.InstanceId,
-                    "Remapped " + (remappedLeds?.Count ?? device.Leds.Count) +
-                    " LED reference(s) from instance '" +
-                    (device.InstanceId ?? "(none)") + "' to '" + match.InstanceId + "'."));
-
+            // Chroma Studio only rewrites LED positions when the profile device
+            // resolves to another model; a same-product match keeps the authored
+            // matrix even when its local instance id differs from the file's.
+            var instanceChanged =
+                !string.Equals(device.InstanceId, match.InstanceId, StringComparison.OrdinalIgnoreCase);
             device.InstanceId = match.InstanceId;
             device.ProductId = match.ProductId;
-            if (!remapped) continue;
-            if (remappedLeds is not null)
-            {
-                device.Leds.Clear();
-                foreach (var led in remappedLeds) device.Leds.Add(led);
-                continue;
-            }
-
+            if (!instanceChanged) continue;
             for (var index = 0; index < device.Leds.Count; index++)
             {
                 var led = device.Leds[index];
@@ -230,131 +213,6 @@ public static class StudioChromaImport
             picked.InstanceId,
             "Product id " + productId + " matches " + candidates.Count + " connected devices; using the first one."));
         return picked;
-    }
-
-    /// <summary>
-    /// Chroma remaps LEDs when a device is replaced: keyboard/system LEDs match
-    /// on inputType+inputData, other devices on regionId+regionIndex, and a
-    /// miss falls back to every LED of the target device.
-    /// </summary>
-    private static List<StudioLedRef>? RemapLeds(
-        StudioRegionDevice device,
-        StudioDeviceMatch match,
-        string? category)
-    {
-        var layout = match.LedLayout;
-        if (layout is null || (layout.Leds.Count == 0 && layout.Inputs.Count == 0)) return null;
-
-        var hasRegions = device.Leds.Any(led => led.RegionId is not null);
-        var useInput = string.Equals(category, "keyboard", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(category, "system", StringComparison.OrdinalIgnoreCase) ||
-            (!hasRegions && device.Leds.Any(led =>
-                string.Equals(led.InputType, "kbd", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(led.InputType, "system", StringComparison.OrdinalIgnoreCase)));
-
-        var remapped = new List<StudioLedRef>();
-        foreach (var led in device.Leds)
-        {
-            if (useInput)
-            {
-                if (!TryParseInput(led, out var type, out var code, out var modifier)) continue;
-                foreach (var candidate in layout.Inputs)
-                {
-                    if (!string.Equals(candidate.InputType, type, StringComparison.OrdinalIgnoreCase) ||
-                        candidate.InputCode != code ||
-                        candidate.InputModifier != modifier)
-                    {
-                        continue;
-                    }
-
-                    remapped.Add(led with
-                    {
-                        Row = candidate.MatrixRow,
-                        Col = candidate.MatrixCol,
-                        InstanceId = match.InstanceId,
-                    });
-                    break;
-                }
-
-                continue;
-            }
-
-            if (led.RegionId is not { } regionId || led.RegionIndex is not { } regionIndex) continue;
-            foreach (var candidate in layout.Leds)
-            {
-                if (candidate.RegionId != regionId || candidate.RegionIndex != regionIndex) continue;
-                remapped.Add(led with
-                {
-                    Row = candidate.MatrixRow,
-                    Col = candidate.MatrixCol,
-                    InstanceId = match.InstanceId,
-                });
-                break;
-            }
-        }
-
-        return remapped.Count > 0 ? remapped : AllTargetLeds(layout, match.InstanceId);
-    }
-
-    private static bool TryParseInput(
-        StudioLedRef led,
-        out string type,
-        out int code,
-        out int modifier)
-    {
-        type = led.InputType ?? string.Empty;
-        code = 0;
-        modifier = 0;
-        if (string.IsNullOrWhiteSpace(type) || string.IsNullOrWhiteSpace(led.InputData)) return false;
-
-        var text = led.InputData.Trim();
-        if (text.Length >= 2 && text[0] == '[' && text[^1] == ']') text = text[1..^1];
-        var parts = text.Split(',', StringSplitOptions.TrimEntries);
-        if (parts.Length == 0 || !int.TryParse(parts[0], out code)) return false;
-        if (parts.Length > 1 && !int.TryParse(parts[1], out modifier)) return false;
-        return true;
-    }
-
-    private static List<StudioLedRef> AllTargetLeds(
-        StudioLedLayout layout,
-        string instanceId)
-    {
-        var leds = new List<StudioLedRef>();
-        foreach (var led in layout.Leds)
-        {
-            StudioInputMap? input = null;
-            foreach (var candidate in layout.Inputs)
-            {
-                if (candidate.MatrixRow != led.MatrixRow || candidate.MatrixCol != led.MatrixCol) continue;
-                input = candidate;
-                break;
-            }
-
-            leds.Add(new StudioLedRef(
-                led.MatrixRow,
-                led.MatrixCol,
-                led.RegionId,
-                led.RegionIndex,
-                InputType: input?.InputType,
-                InputData: input is { } mapped
-                    ? FormattableString.Invariant($"[{mapped.InputCode},{mapped.InputModifier}]")
-                    : null,
-                InstanceId: instanceId));
-        }
-
-        if (leds.Count > 0) return leds;
-
-        foreach (var input in layout.Inputs)
-        {
-            leds.Add(new StudioLedRef(
-                input.MatrixRow,
-                input.MatrixCol,
-                InputType: input.InputType,
-                InputData: FormattableString.Invariant($"[{input.InputCode},{input.InputModifier}]"),
-                InstanceId: instanceId));
-        }
-
-        return leds;
     }
 
     private static string InstanceSuffix(string? instanceId) =>
