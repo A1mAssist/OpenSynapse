@@ -243,10 +243,14 @@ public sealed partial class RazerMappingAssetService
     {
         // 0244's own page draws these 20 paths over its 3x product photo; use that
         // art instead of the Chroma studio SVG when the photo is available.
-        if (RazerKeypadMappingLayoutCatalog.TryGet(productId, out var keypadLayout) &&
-            await LoadKeypadBackgroundAsync(productId, cancellationToken).ConfigureAwait(false) is { } background)
+        if (RazerKeypadMappingLayoutCatalog.TryGet(productId, out var keypadLayout))
         {
-            return CreateOfficialKeypadLayout(keypadLayout, background);
+            var background = await LoadKeypadBackgroundAsync(productId, cancellationToken)
+                .ConfigureAwait(false);
+            if (background is not null || keypadLayout.BackgroundImageData is not null)
+            {
+                return CreateOfficialKeypadLayout(keypadLayout, background);
+            }
         }
 
         // 0244 declares editions [0, 128]; other catalog keyboards expose 129. Probe 0 first
@@ -315,7 +319,7 @@ public sealed partial class RazerMappingAssetService
 
     private static RazerMappingKeyboardLayout CreateOfficialKeypadLayout(
         RazerKeypadMappingLayout source,
-        Uri background)
+        Uri? background)
     {
         var paths = new StudioSvgPath[source.Keys.Count];
         var visualKeys = new StudioKeyboardKey[source.Keys.Count];
@@ -337,6 +341,7 @@ public sealed partial class RazerMappingAssetService
         return new RazerMappingKeyboardLayout(visual, buttonIds)
         {
             BackgroundImage = background,
+            BackgroundImageData = source.BackgroundImageData,
             ScrollImageData = source.ScrollImage,
             DpadImageData = source.DpadImage,
         };

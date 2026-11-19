@@ -11,6 +11,7 @@ namespace OpenSynapse.Windows.Protocols;
 /// </summary>
 internal static class RazerFilterControlTransport
 {
+    internal const uint ProfileTransfer = 0x88883004;
     private const uint ShareReadWrite = 3;
     private const uint OpenExisting = 3;
 
@@ -36,6 +37,63 @@ internal static class RazerFilterControlTransport
                 Marshal.GetLastWin32Error(),
                 $"The Razer control endpoint rejected the {report.Length}-byte SET_FEATURE report.");
         }
+    }
+
+    /// <summary>
+    /// Legacy keypad P2 profile transfer. The RZCONTROL endpoint takes the
+    /// 24-byte header plus records at 0x88883004 and returns the declared
+    /// output buffer.
+    /// </summary>
+    internal static ValueTask<byte[]> TransferAsync(
+        string controlDevicePath,
+        byte[] input,
+        int outputLength,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(controlDevicePath);
+        ArgumentNullException.ThrowIfNull(input);
+        if (outputLength <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(outputLength));
+        }
+
+        return new(Task.Run(
+            () => Transfer(controlDevicePath, input, outputLength),
+            cancellationToken));
+    }
+
+    private static byte[] Transfer(string controlDevicePath, byte[] input, int outputLength)
+    {
+        using var handle = CreateFile(controlDevicePath, 0, ShareReadWrite, 0, OpenExisting, 0, 0);
+        if (handle.IsInvalid)
+        {
+            throw new Win32Exception(
+                Marshal.GetLastWin32Error(),
+                "Could not open the Razer control endpoint for a keypad profile transfer.");
+        }
+
+        var output = new byte[outputLength];
+        if (!DeviceIoControl(
+                handle,
+                ProfileTransfer,
+                input,
+                input.Length,
+                output,
+                output.Length,
+                out var returned,
+                0))
+        {
+            throw new Win32Exception(
+                Marshal.GetLastWin32Error(),
+                $"The Razer control endpoint rejected the {input.Length}-byte keypad profile transfer.");
+        }
+
+        if (returned < output.Length)
+        {
+            Array.Resize(ref output, (int)returned);
+        }
+
+        return output;
     }
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]

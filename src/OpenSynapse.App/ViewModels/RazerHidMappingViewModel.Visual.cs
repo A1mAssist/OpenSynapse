@@ -115,7 +115,13 @@ public sealed partial class RazerHidMappingViewModel
 
             if (visual.Keyboard is { } keyboard)
             {
-                if (keyboard.BackgroundImage is { } background)
+                if (keyboard.BackgroundImageData is { Length: > 0 } embedded)
+                {
+                    KeyboardBackgroundImage = await RazerMappingImageLoader
+                        .LoadEmbeddedAsync(embedded, (int)Math.Ceiling(keyboard.Visual.Width))
+                        .ConfigureAwait(true);
+                }
+                else if (keyboard.BackgroundImage is { } background)
                 {
                     KeyboardBackgroundImage = await RazerMappingImageLoader
                         .LoadAsync(background, (int)Math.Ceiling(keyboard.Visual.Width))

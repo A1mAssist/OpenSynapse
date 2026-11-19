@@ -15,6 +15,9 @@ public sealed record RazerKeypadMappingLayout(
     double Height,
     IReadOnlyList<RazerKeypadMappingKey> Keys)
 {
+    /// <summary>Embedded Synapse 2 top-view PNG for keypads with no MW asset page.</summary>
+    public string? BackgroundImageData { get; init; }
+
     /// <summary>3x PNG data URL payload for the wheel widget, without the data: prefix.</summary>
     public string? ScrollImage { get; init; }
 
@@ -58,9 +61,31 @@ public static class RazerKeypadMappingLayoutCatalog
                     .Select(key => new RazerKeypadMappingKey(key.Id, key.Label, key.Path))
                     .ToArray())
             {
+                BackgroundImageData = ReadEmbeddedImage(assembly, pair.Key),
                 ScrollImage = pair.Value.ScrollImage,
                 DpadImage = pair.Value.DpadImage,
             });
+    }
+
+    private static string? ReadEmbeddedImage(System.Reflection.Assembly assembly, string productId)
+    {
+        var suffix = $"Devices.RazerHid.keypad-{productId}.png";
+        var name = assembly.GetManifestResourceNames()
+            .SingleOrDefault(item => item.EndsWith(suffix, StringComparison.Ordinal));
+        if (name is null)
+        {
+            return null;
+        }
+
+        using var stream = assembly.GetManifestResourceStream(name);
+        if (stream is null)
+        {
+            return null;
+        }
+
+        using var memory = new MemoryStream();
+        stream.CopyTo(memory);
+        return Convert.ToBase64String(memory.ToArray());
     }
 
     private sealed record LayoutJson(
