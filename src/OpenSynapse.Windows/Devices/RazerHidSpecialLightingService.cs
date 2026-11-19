@@ -70,6 +70,29 @@ public sealed partial class RazerHidSpecialLightingService
             ? WindowsHidDiscovery.TryReadSerialNumberAsync(path, cancellationToken)
             : Task.FromResult<string?>(null);
 
+    /// <summary>
+    /// A power cycle or a re-enumerated endpoint starts a new firmware lighting
+    /// session. Drop the cached handshake/transport so the next apply re-takes
+    /// Chroma control instead of sending an effect into the old session.
+    /// </summary>
+    internal async Task ResetSessionAsync(string? devicePath, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(devicePath))
+        {
+            return;
+        }
+
+        _krakenV4Armed.TryRemove(devicePath, out _);
+        _krakenV4Brightness.TryRemove(devicePath, out _);
+        _avneraBrightness.TryRemove(devicePath, out _);
+        _protocol40Armed.TryRemove(devicePath, out _);
+        _protocol40Brightness.TryRemove(devicePath, out _);
+        if (_krakenV4Transports.TryRemove(devicePath, out var transport))
+        {
+            await transport.DisposeAsync().ConfigureAwait(false);
+        }
+    }
+
     private const ushort ArgbProductId = 0x0F1F;
     private static readonly FrozenDictionary<ushort, KrakenDefinition> KrakenDevices = BuildKrakenDevices();
 
@@ -366,7 +389,7 @@ public sealed partial class RazerHidSpecialLightingService
         // The Billie/Mabel dongle classes set isDongleCommand=false in the bundle,
         // so their lighting frames carry the 0x80 direction byte. The wired classes
         // and AudioValkyrieDongle keep it at zero.
-        var isDongle = connection.ProductId is 0x056C or 0x0574 or 0x0588;
+        var isDongle = connection.ProductId is 0x0568 or 0x056C or 0x0574 or 0x0588;
         var device = KrakenDevices[connection.ProductId];
         IReadOnlyList<byte[]> reports = settings.Effect switch
         {
@@ -438,6 +461,7 @@ public sealed partial class RazerHidSpecialLightingService
             {
                 // A failed or cancelled send leaves the takeover state unknown.
                 _krakenV4Armed.TryRemove(devicePath, out _);
+                _krakenV4Brightness.TryRemove(devicePath, out _);
                 throw;
             }
 
@@ -561,6 +585,16 @@ public sealed partial class RazerHidSpecialLightingService
             _diagnostic?.Invoke(response is null
                 ? "kraken lighting response=none"
                 : $"kraken lighting response status=0x{response[1]:X2} report=[{Convert.ToHexString(response)}]");
+            if (response is null)
+            {
+                throw new RazerDeviceTimeoutException(
+                    "The headset did not answer the lighting command.");
+            }
+            if (response[1] != 0x02)
+            {
+                throw new RazerDeviceTimeoutException(
+                    $"The headset rejected the lighting command with status 0x{response[1]:X2}.");
+            }
             return;
         }
 

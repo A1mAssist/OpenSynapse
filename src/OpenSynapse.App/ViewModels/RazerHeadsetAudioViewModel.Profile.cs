@@ -31,11 +31,12 @@ public sealed partial class RazerHeadsetAudioViewModel
             return;
         }
 
-        if (_connection.ProductId == 0x0574 && Lighting is { } lighting)
+        if (Lighting is { } lighting &&
+            (IsKrakenBase || IsProtocol25 || _connection.ProductId == 0x0574))
         {
-            // The 0574 lighting lives on the merged Kraken card, not the standard
-            // Chroma interface. Replay it here so a headset reconnect restores the
-            // saved effect instead of falling back to the firmware breathing default.
+            // These headsets put their Chroma on the card merged into this page, not
+            // the standard Chroma interface. Replay it here so a reconnect restores
+            // the saved effect instead of falling back to the firmware default.
             await lighting.ApplyPersistedProfileAsync(powerSource, cancellationToken);
         }
 

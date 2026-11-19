@@ -257,7 +257,9 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
                     RazerHidBackendCapability.OnboardProfileWrite,
                     token => _service.GetActiveOnboardProfileIdAsync(connection, token),
                     (value, token) => _service.SetActiveOnboardProfileIdAsync(connection, value, token),
-                    (byte)onboardProfile, (left, right) => left == right, cancellationToken);
+                    (byte)onboardProfile, (left, right) => left == right, cancellationToken,
+                    writeConfirms: RazerHidDeviceService.ConfirmsProfileSwitch(
+                        connection.Definition.ProductId));
             }
         }
 
@@ -422,7 +424,8 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
         T desired,
         Func<T, T, bool> equals,
         CancellationToken cancellationToken,
-        bool hasRead = true)
+        bool hasRead = true,
+        bool writeConfirms = false)
     {
         if (!Has(connection, writeCapability))
         {
@@ -454,10 +457,13 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
         try
         {
             await writeAsync(desired, cancellationToken);
-            if (!canRead)
+            if (!canRead || writeConfirms)
             {
-                results.Add(new ProfileSettingApplyResult(key,
-                    ProfileSettingApplyStatus.AppliedUnverified));
+                results.Add(new ProfileSettingApplyResult(
+                    key,
+                    writeConfirms
+                        ? ProfileSettingApplyStatus.Applied
+                        : ProfileSettingApplyStatus.AppliedUnverified));
                 return;
             }
 

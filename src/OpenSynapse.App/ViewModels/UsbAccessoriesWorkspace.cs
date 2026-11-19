@@ -281,6 +281,7 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
         if (_headsetPowerConnected != true)
         {
             _headsetPowerConnected = true;
+            await _razerHid.ResetSpecialLightingSessionAsync(connection.DevicePath, cancellationToken);
             await RefreshHeadsetAudioAsync(cancellationToken);
         }
 
