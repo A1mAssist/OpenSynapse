@@ -3262,7 +3262,7 @@
   <data name="RazerHeadsetThxHelperFailed" xml:space="preserve"><value>THX 辅助进程启动失败。重新打开应用后再试。</value></data>
   <data name="RazerHeadsetThxFailed" xml:space="preserve"><value>THX 组件没有接受这次修改。重新安装 THX 组件后刷新。</value></data>
   <data name="RazerHeadsetThxOperationRejected" xml:space="preserve"><value>THX 组件没有正确安装或尚未生效。请点安装按钮修复，装完重启电脑再试。</value></data>
-  <data name="RazerHeadsetThxRejectedInstalled" xml:space="preserve"><value>THX 组件已安装，但当前音频设备没有加载它。请先把耳机设为默认播放设备，再重启 Windows 后重试；仍然失败请用雷云修复 THX 组件。</value></data>
+  <data name="RazerHeadsetThxRejectedInstalled" xml:space="preserve"><value>THX 组件已安装，但当前音频设备没有加载它。请先把耳机设为默认播放设备，再重启 Windows 后重试；仍然失败请点上方按钮修复 THX 组件。</value></data>
   <data name="ThxHintServiceStopped" xml:space="preserve"><value>THX 服务已安装但没有运行。请重启 Windows 后重试。</value></data>
   <data name="RazerHeadsetPresetDefault" xml:space="preserve"><value>默认</value></data>
   <data name="RazerHeadsetPresetGame" xml:space="preserve"><value>游戏</value></data>

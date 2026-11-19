@@ -40,17 +40,24 @@ public sealed partial class RazerHeadsetAudioViewModel
         ? Visibility.Visible
         : Visibility.Collapsed;
 
+    /// <summary>
+    /// A registered service that will not start is repairable. A native stack
+    /// that refuses to initialize is not: reinstalling there only loops.
+    /// </summary>
+    private bool NeedsThxInstall =>
+        _thxStatus.Availability is not (ThxHeadsetAvailability.Available or
+            ThxHeadsetAvailability.InstalledButInactive) ||
+        (_thxStatus.Availability == ThxHeadsetAvailability.InstalledButInactive &&
+            _thxStatus.ErrorCode == "ThxServiceStopped");
+
     public Visibility ThxInstallerVisibility =>
-        _thxStatus.Availability is ThxHeadsetAvailability.Available or
-            ThxHeadsetAvailability.InstalledButInactive ||
-        _thxStatus.RebootRequired
-            ? Visibility.Collapsed
-            : ThxVisibility;
+        NeedsThxInstall && !_thxStatus.RebootRequired
+            ? ThxVisibility
+            : Visibility.Collapsed;
 
     public bool CanInstallThx =>
         !IsBusy && ThxVisibility == Visibility.Visible &&
-        _thxStatus.Availability is not (ThxHeadsetAvailability.Available or
-            ThxHeadsetAvailability.InstalledButInactive) &&
+        NeedsThxInstall &&
         !_thxStatus.RebootRequired;
 
     public string ThxStatusText => !string.IsNullOrEmpty(_thxErrorText)
@@ -58,6 +65,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         : _thxStatus.ErrorCode switch
         {
             "ThxServiceMissing" => AppStrings.Text("RazerHeadsetThxServiceMissing"),
+            "ThxServiceBroken" or "ThxServiceStopped" =>
+                AppStrings.Text("RazerHeadsetThxServiceMissing"),
             "ThxNativeMissing" => AppStrings.Text("RazerHeadsetThxNativeMissing"),
             "ThxDownloadFailed" or "ThxDownloadVerificationFailed" =>
                 AppStrings.Text("RazerHeadsetThxDownloadFailed"),

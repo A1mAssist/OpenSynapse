@@ -174,7 +174,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         _diagnostic?.Invoke(
             $"thx status availability={_thxStatus.Availability} error={_thxStatus.ErrorCode ?? "-"} " +
             $"service={ThxAudioAdmission.HasService(ThxHeadsetAdmission.ServiceName)} " +
-            $"running={ThxAudioAdmission.HasRunningService(ThxHeadsetAdmission.ServiceName)}");
+            $"running={ThxAudioAdmission.HasRunningService(ThxHeadsetAdmission.ServiceName)} " +
+            $"health={ThxAudioAdmission.ReadServiceHealth(ThxHeadsetAdmission.ServiceName)}");
         if (_thxStatus.Availability != ThxHeadsetAvailability.Available)
         {
             _thxState = null;
@@ -283,7 +284,8 @@ public sealed partial class RazerHeadsetAudioViewModel
             _thxStatus = new ThxHeadsetStatus(
                 status.Error switch
                 {
-                    "ThxServiceMissing" => ThxHeadsetAvailability.ServiceMissing,
+                    "ThxServiceMissing" or "ThxServiceBroken" =>
+                        ThxHeadsetAvailability.ServiceMissing,
                     "ThxServiceStopped" => ThxHeadsetAvailability.InstalledButInactive,
                     "ThxNativeMissing" => ThxHeadsetAvailability.NativeMissing,
                     // The helper got past the file checks but the native stack refused
@@ -355,7 +357,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         _ when error?.StartsWith("ThxOperationRejected:", StringComparison.Ordinal) == true =>
             AppStrings.Text("RazerHeadsetThxOperationRejected"),
         "ThxRebootRequired" => AppStrings.Text("RazerHeadsetThxRebootRequired"),
-        "ThxServiceStopped" => AppStrings.Text("RazerHeadsetThxRejectedInstalled"),
+        "ThxServiceBroken" or "ThxServiceStopped" =>
+            AppStrings.Text("RazerHeadsetThxServiceMissing"),
         _ when error?.StartsWith("ThxHelperFailed", StringComparison.Ordinal) == true =>
             AppStrings.Text("RazerHeadsetThxHelperFailed"),
         _ => AppStrings.Text("RazerHeadsetThxFailed"),

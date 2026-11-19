@@ -154,9 +154,10 @@ internal static partial class ThxHeadsetAdmission
         // V4 does not expose a stable service name in the payload we have. Its
         // native client is the reliable gate; a missing APO shows up when the
         // helper initializes and the card keeps the installer entry available.
-        var serviceRunning = profile.NativeVersion == ThxNativeVersion.V3 &&
-            ThxAudioAdmission.HasRunningService(ServiceName);
-        return Evaluate(profile, serviceRunning, HasVerifiedNativeClient(profile));
+        var service = profile.NativeVersion == ThxNativeVersion.V3
+            ? ThxAudioAdmission.ReadServiceHealth(ServiceName)
+            : ThxServiceHealth.Running;
+        return Evaluate(profile, service, HasVerifiedNativeClient(profile));
     }
 
     /// <summary>
@@ -176,11 +177,33 @@ internal static partial class ThxHeadsetAdmission
     internal static ThxHeadsetStatus Evaluate(
         ThxHeadsetProfile profile,
         bool serviceRunning,
+        bool nativePresent) =>
+        Evaluate(
+            profile,
+            serviceRunning ? ThxServiceHealth.Running : ThxServiceHealth.Stopped,
+            nativePresent);
+
+    internal static ThxHeadsetStatus Evaluate(
+        ThxHeadsetProfile profile,
+        ThxServiceHealth service,
         bool nativePresent)
     {
-        if (profile.NativeVersion == ThxNativeVersion.V3 && !serviceRunning)
+        if (profile.NativeVersion == ThxNativeVersion.V3)
         {
-            return new(ThxHeadsetAvailability.ServiceMissing, "ThxServiceMissing");
+            if (service == ThxServiceHealth.Missing)
+            {
+                return new(ThxHeadsetAvailability.ServiceMissing, "ThxServiceMissing");
+            }
+            // A leftover registration whose binary is gone cannot be started;
+            // report it as missing so the official package repairs it.
+            if (service == ThxServiceHealth.ImageMissing)
+            {
+                return new(ThxHeadsetAvailability.ServiceMissing, "ThxServiceBroken");
+            }
+            if (service != ThxServiceHealth.Running)
+            {
+                return new(ThxHeadsetAvailability.ServiceMissing, "ThxServiceMissing");
+            }
         }
         if (!nativePresent)
         {
@@ -254,7 +277,9 @@ internal static partial class ThxHeadsetAdmission
                     (installPreset && !install.AlreadyInstalled),
                 nativeError,
                 running,
-                ThxAudioAdmission.HasService(ServiceName)));
+                ThxAudioAdmission.HasService(ServiceName),
+                ThxAudioAdmission.ReadServiceHealth(ServiceName) !=
+                    ThxServiceHealth.ImageMissing));
         }
 
         return TrackInstallResult(
@@ -280,7 +305,8 @@ internal static partial class ThxHeadsetAdmission
         bool rebootRequired,
         string? nativeError,
         bool serviceRunning,
-        bool serviceRegistered)
+        bool serviceRegistered,
+        bool serviceImagePresent = true)
     {
         if (nativeError is not null)
         {
@@ -296,6 +322,10 @@ internal static partial class ThxHeadsetAdmission
         if (serviceRunning)
         {
             return new(ThxHeadsetAvailability.Available, null);
+        }
+        if (!serviceImagePresent)
+        {
+            return new(ThxHeadsetAvailability.ServiceMissing, "ThxServiceBroken");
         }
         return serviceRegistered
             ? new(
