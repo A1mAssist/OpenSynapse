@@ -92,6 +92,10 @@ public static partial class ProfileResolver
             DpiX = First(power?.DpiX, device?.DpiX, global?.DpiX),
             DpiY = First(power?.DpiY, device?.DpiY, global?.DpiY),
             PollingRateHertz = First(power?.PollingRateHertz, device?.PollingRateHertz, global?.PollingRateHertz),
+            FullscreenPollingRateHertz = First(
+                power?.FullscreenPollingRateHertz,
+                device?.FullscreenPollingRateHertz,
+                global?.FullscreenPollingRateHertz),
             IdleSeconds = First(power?.IdleSeconds, device?.IdleSeconds, global?.IdleSeconds),
             LowBatteryThresholdPercent = First(
                 power?.LowBatteryThresholdPercent,
@@ -158,6 +162,10 @@ public static partial class ProfileResolver
         KeyboardProfileSettings? power) => new()
     {
         PollingRateHertz = First(power?.PollingRateHertz, device?.PollingRateHertz, global?.PollingRateHertz),
+        FullscreenPollingRateHertz = First(
+            power?.FullscreenPollingRateHertz,
+            device?.FullscreenPollingRateHertz,
+            global?.FullscreenPollingRateHertz),
         GamingModeEnabled = First(power?.GamingModeEnabled, device?.GamingModeEnabled, global?.GamingModeEnabled),
         SwitchType = power?.SwitchType ?? device?.SwitchType ?? global?.SwitchType,
         AnalogKeyEnabled = First(power?.AnalogKeyEnabled, device?.AnalogKeyEnabled, global?.AnalogKeyEnabled),

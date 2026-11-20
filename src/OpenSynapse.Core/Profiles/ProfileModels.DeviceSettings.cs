@@ -14,6 +14,7 @@ public sealed class MouseProfileSettings
     public int? DpiX { get; set; }
     public int? DpiY { get; set; }
     public int? PollingRateHertz { get; set; }
+    public int? FullscreenPollingRateHertz { get; set; }
     public int? IdleSeconds { get; set; }
     public int? LowBatteryThresholdPercent { get; set; }
     public int? AutoSleepSeconds { get; set; }
@@ -42,6 +43,10 @@ public sealed class MouseProfileSettings
 
     internal void ApplySafeDefaults()
     {
+        if (FullscreenPollingRateHertz is <= 0)
+        {
+            throw new InvalidDataException("Mouse fullscreen polling rate must be positive.");
+        }
         ValidatePercent(LowBatteryThresholdPercent, nameof(LowBatteryThresholdPercent));
         ValidatePercent(ChargeLimitPercent, nameof(ChargeLimitPercent));
         if (AutoSleepSeconds is < 0)
@@ -191,6 +196,7 @@ public sealed class MouseProfileSettings
 public sealed class KeyboardProfileSettings
 {
     public int? PollingRateHertz { get; set; }
+    public int? FullscreenPollingRateHertz { get; set; }
     public bool? GamingModeEnabled { get; set; }
     public string? SwitchType { get; set; }
     public bool? AnalogKeyEnabled { get; set; }
@@ -208,6 +214,10 @@ public sealed class KeyboardProfileSettings
         if (PollingRateHertz is <= 0)
         {
             throw new InvalidDataException("Keyboard polling rate must be positive.");
+        }
+        if (FullscreenPollingRateHertz is <= 0)
+        {
+            throw new InvalidDataException("Keyboard fullscreen polling rate must be positive.");
         }
         if (DebounceMilliseconds is < 0 or > byte.MaxValue)
         {
