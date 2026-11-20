@@ -307,6 +307,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         Refresh.StudioLightingActive = () => StudioLightingActive?.Invoke() == true;
         Lighting.StudioLightingActive = () => StudioLightingActive?.Invoke() == true;
         RazerHid.StudioLightingActive = () => StudioLightingActive?.Invoke() == true;
+        FullscreenPolling = new FullscreenPollingRateService(
+            () => _profile, () => CurrentPowerSource, RazerHid, Accessories, Refresh, _diagnosticLog);
         InitializeDeviceHome(activeApplicationProvider);
         Tray = new TrayWorkspace(
             () => Devices, RazerHid, Accessories,
@@ -360,6 +362,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     public MacroWorkspace Macros { get; }
     public RazerDriverWorkspace RazerDrivers { get; }
     public RazerHidWorkspace RazerHid { get; }
+    internal FullscreenPollingRateService FullscreenPolling { get; }
     public TrayWorkspace Tray { get; }
     public ProfilesWorkspace Profiles { get; }
     public TelemetryWorkspace Telemetry { get; }

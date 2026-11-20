@@ -425,6 +425,7 @@ public sealed partial class MainWindow : Window
             _ = ObserveBackgroundLoopAsync(
                 () => _viewModel.Refresh.RunDeviceWatchLoopAsync(_lifetime.Token),
                 AppStrings.Text("Text_C2463C0F"));
+            _viewModel.FullscreenPolling.Start(_lifetime.Token);
             LaunchStatusText.Text = AppStrings.Text("Text_470691B2");
             SetLaunchProgress(3, 95);
             SettingsPage.StartStartupUpdateCheck();

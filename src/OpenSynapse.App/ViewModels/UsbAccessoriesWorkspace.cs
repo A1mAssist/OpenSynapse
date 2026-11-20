@@ -400,8 +400,16 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
 
     private RazerKeyboardDeviceRowViewModel? _selectedKeyboardDevice;
     private RazerKeyboardViewModel? _selectedKeyboard;
+    private RazerKeyboardConnection[] _keyboardConnections = [];
 
     public ObservableCollection<RazerKeyboardDeviceRowViewModel> KeyboardDevices { get; } = new();
+
+    /// <summary>
+    /// A background-safe snapshot for services that must not read the bound
+    /// ObservableCollection while the device page is being rebuilt.
+    /// </summary>
+    internal IReadOnlyList<RazerKeyboardConnection> KeyboardConnections =>
+        Volatile.Read(ref _keyboardConnections);
 
     public RazerKeyboardViewModel? SelectedKeyboard
     {
@@ -423,6 +431,7 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
             return;
         }
 
+        Volatile.Write(ref _keyboardConnections, connections.ToArray());
         if (connections.Count == 0)
         {
             if (KeyboardDevices.Count == 0 && SelectedKeyboard is null) return;

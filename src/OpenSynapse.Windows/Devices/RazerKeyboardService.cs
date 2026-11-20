@@ -309,6 +309,17 @@ public sealed partial class RazerKeyboardService
         }
     }
 
+    public async Task<int?> GetPollingRateAsync(CancellationToken cancellationToken = default)
+    {
+        _profileId = await TryReadActiveProfileAsync(cancellationToken).ConfigureAwait(false);
+        var profileId = _profileId;
+        return RazerKeyboardProtocol.ReadPollingRate(
+            await QueryAsync(
+                transaction => RazerKeyboardProtocol.GetPollingRate(transaction, profileId),
+                "read polling rate",
+                cancellationToken).ConfigureAwait(false));
+    }
+
     private RazerKeyboardMappingProtocol? _mappingProtocol;
     private IReadOnlyList<byte>? _mappingButtonIds;
 
