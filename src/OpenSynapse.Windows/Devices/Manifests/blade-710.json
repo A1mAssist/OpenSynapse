@@ -135,6 +135,13 @@
       "commandId": "08",
       "arguments": ""
     },
+    "gaming-mode.get": {
+      "transactionId": "00",
+      "dataSize": "04",
+      "commandClass": "00",
+      "commandId": "88",
+      "arguments": ""
+    },
     "fn-key.get": {
       "transactionId": "00",
       "dataSize": "02",
