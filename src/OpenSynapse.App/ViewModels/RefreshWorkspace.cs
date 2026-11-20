@@ -290,6 +290,30 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
         RefreshDevicesCoreAsync(null, cancellationToken);
 
     /// <summary>
+    /// Runs a device write under the same gate as profile application, without
+    /// touching the page-level busy state.
+    /// </summary>
+    internal async Task<bool> RunDeviceOperationAsync(
+        Func<CancellationToken, Task> operation,
+        CancellationToken cancellationToken)
+    {
+        if (!await TryEnterOperationAsync(cancellationToken))
+        {
+            return false;
+        }
+
+        try
+        {
+            await operation(cancellationToken);
+            return true;
+        }
+        finally
+        {
+            _deviceOperationGate.Release();
+        }
+    }
+
+    /// <summary>
     /// Reads the device telemetry again so the live readouts on the device page keep up.
     /// This is a read-only path: it never pushes a stored profile back to the hardware,
     /// so it cannot pin the fans or rewrite a setting the user did not just change.

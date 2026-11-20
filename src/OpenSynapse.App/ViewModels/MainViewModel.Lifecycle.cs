@@ -57,6 +57,7 @@ public sealed partial class MainViewModel
             return;
         }
 
+        await FullscreenPolling.StopAndRestoreAsync().ConfigureAwait(true);
         _deviceImages?.Dispose();
         // Dispose runs on the UI thread and still touches bound collections and
         // selections below; keep every continuation there.
