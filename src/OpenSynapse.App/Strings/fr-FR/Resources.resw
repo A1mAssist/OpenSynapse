@@ -1510,6 +1510,10 @@
   <data name="RazerHidModeLabel.Text" xml:space="preserve"><value>Mode de l’appareil</value></data>
   <data name="RazerHidBatteryLabel.Text" xml:space="preserve"><value>Batterie</value></data>
   <data name="RazerHidPollingTitle.Text" xml:space="preserve"><value>Taux de sondage</value></data>
+  <data name="FullscreenPollingTitle.Text" xml:space="preserve"><value>Fréquence d’interrogation en plein écran</value></data>
+  <data name="FullscreenPollingToggle.Header" xml:space="preserve"><value>Basculer automatiquement en plein écran</value></data>
+  <data name="FullscreenPollingRateLabel.Header" xml:space="preserve"><value>Fréquence en plein écran</value></data>
+  <data name="FullscreenPollingDescription.Text" xml:space="preserve"><value>Utilise cette fréquence lorsqu’une application occupe l’écran, puis rétablit la précédente.</value></data>
   <data name="RazerHidPowerTitle.Text" xml:space="preserve"><value>Gestion de l’alimentation</value></data>
   <data name="RazerHidIdleLabel.Text" xml:space="preserve"><value>Délai d’inactivité (secondes)</value></data>
   <data name="RazerHidLowBatteryLabel.Text" xml:space="preserve"><value>Seuil du mode économie d’énergie (%)</value></data>

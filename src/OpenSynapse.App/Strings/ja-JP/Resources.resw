@@ -1510,6 +1510,10 @@
   <data name="RazerHidModeLabel.Text" xml:space="preserve"><value>デバイス モード</value></data>
   <data name="RazerHidBatteryLabel.Text" xml:space="preserve"><value>バッテリー</value></data>
   <data name="RazerHidPollingTitle.Text" xml:space="preserve"><value>ポーリング レート</value></data>
+  <data name="FullscreenPollingTitle.Text" xml:space="preserve"><value>全画面ポーリングレート</value></data>
+  <data name="FullscreenPollingToggle.Header" xml:space="preserve"><value>全画面時に自動で切り替える</value></data>
+  <data name="FullscreenPollingRateLabel.Header" xml:space="preserve"><value>全画面時のレート</value></data>
+  <data name="FullscreenPollingDescription.Text" xml:space="preserve"><value>アプリが画面全体を占有している間このレートを使用し、終了後に元のレートへ戻します。</value></data>
   <data name="RazerHidPowerTitle.Text" xml:space="preserve"><value>電源管理</value></data>
   <data name="RazerHidIdleLabel.Text" xml:space="preserve"><value>アイドル タイムアウト（秒）</value></data>
   <data name="RazerHidLowBatteryLabel.Text" xml:space="preserve"><value>低電力モードのしきい値（%）</value></data>

@@ -83,6 +83,8 @@ public sealed partial class RazerKeyboardViewModel
             }
         }
 
+        LoadFullscreenPollingState(keyboard);
+
         if (keyboard.ButtonMappings is { Count: > 0 } mappings)
         {
             await ApplyPersistedMappingsAsync(mappings, cancellationToken);

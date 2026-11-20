@@ -1519,6 +1519,10 @@
   <data name="RazerHidModeLabel.Text" xml:space="preserve"><value>Device mode</value></data>
   <data name="RazerHidBatteryLabel.Text" xml:space="preserve"><value>Battery</value></data>
   <data name="RazerHidPollingTitle.Text" xml:space="preserve"><value>Polling rate</value></data>
+  <data name="FullscreenPollingTitle.Text" xml:space="preserve"><value>Fullscreen polling rate</value></data>
+  <data name="FullscreenPollingToggle.Header" xml:space="preserve"><value>Switch automatically in fullscreen</value></data>
+  <data name="FullscreenPollingRateLabel.Header" xml:space="preserve"><value>Fullscreen rate</value></data>
+  <data name="FullscreenPollingDescription.Text" xml:space="preserve"><value>Uses this rate while an app covers the screen, then restores the previous rate.</value></data>
   <data name="RazerHidPowerTitle.Text" xml:space="preserve"><value>Power management</value></data>
   <data name="RazerHidIdleLabel.Text" xml:space="preserve"><value>Idle timeout (seconds)</value></data>
   <data name="RazerHidLowBatteryLabel.Text" xml:space="preserve"><value>Low power mode threshold (%)</value></data>

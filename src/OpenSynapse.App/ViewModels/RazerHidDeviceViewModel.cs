@@ -315,7 +315,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         }
     }
     public string PollingRateText => _basicState?.PollingRate is { } value ? $"{value} Hz" : "--";
-    public bool IsPollingBusy { get => _isPollingBusy; private set => SetBusy(ref _isPollingBusy, value, nameof(CanEditPolling), nameof(CanWritePolling)); }
+    public bool IsPollingBusy { get => _isPollingBusy; private set => SetBusy(ref _isPollingBusy, value, nameof(CanEditPolling), nameof(CanWritePolling), nameof(CanEditFullscreenPolling)); }
     public bool CanWritePolling => CanUse(RazerHidBackendCapability.PollingRateWrite) &&
         PollingOptions.Count > 0 && !IsPollingBusy;
     public bool CanEditPolling => CanUse(RazerHidBackendCapability.PollingRateWrite) &&

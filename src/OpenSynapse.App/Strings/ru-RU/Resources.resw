@@ -1991,6 +1991,18 @@
   <data name="RazerHidPollingTitle.Text" xml:space="preserve">
     <value>Частота опроса</value>
   </data>
+  <data name="FullscreenPollingTitle.Text" xml:space="preserve">
+    <value>Частота опроса в полноэкранном режиме</value>
+  </data>
+  <data name="FullscreenPollingToggle.Header" xml:space="preserve">
+    <value>Переключать автоматически в полноэкранном режиме</value>
+  </data>
+  <data name="FullscreenPollingRateLabel.Header" xml:space="preserve">
+    <value>Частота для полного экрана</value>
+  </data>
+  <data name="FullscreenPollingDescription.Text" xml:space="preserve">
+    <value>Использует эту частоту, пока приложение занимает весь экран, затем восстанавливает прежнюю.</value>
+  </data>
   <data name="RazerHidPowerTitle.Text" xml:space="preserve">
     <value>Управление питанием</value>
   </data>
