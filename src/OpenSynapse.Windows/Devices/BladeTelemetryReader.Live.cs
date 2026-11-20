@@ -12,6 +12,7 @@ internal sealed partial class BladeTelemetryReader
         int? CurrentFanCpuRpm,
         int? CurrentFanGpuRpm,
         BladeGameModeTelemetry? GameMode,
+        byte? Brightness,
         IReadOnlyList<string> Errors);
 
     public async ValueTask<BladeLiveTelemetryReadResult> ReadLiveAsync(
@@ -80,6 +81,19 @@ internal sealed partial class BladeTelemetryReader
             }
         }
 
+        byte? brightness = null;
+        if (blade.Owns(CapabilityIds.KeyboardBrightnessGet))
+        {
+            try
+            {
+                brightness = await _display.ReadBrightnessAsync(blade, cancellationToken);
+            }
+            catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
+            {
+                errors.Add($"Keyboard brightness: {exception.Message}");
+            }
+        }
+
         return new BladeLiveTelemetryReadResult(
             thermal.PerformanceMode,
             thermal.FanMode,
@@ -87,6 +101,7 @@ internal sealed partial class BladeTelemetryReader
             currentFanCpuRpm,
             currentFanGpuRpm,
             gameMode,
+            brightness,
             errors);
     }
 
