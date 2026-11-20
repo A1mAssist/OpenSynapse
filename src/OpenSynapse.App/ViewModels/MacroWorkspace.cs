@@ -525,6 +525,7 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
             _macroRuntime.PlaybackStartRequested += OnMacroPlaybackStartRequested;
             _macroRuntime.PlaybackStarted += OnMacroPlaybackStarted;
             _macroRuntime.PlaybackStateChanged += OnMacroPlaybackStateChanged;
+            _macroRuntime.Activity += () => PointerActivity?.Invoke();
             _recordingStopSubscribed = true;
         }
 
@@ -544,6 +545,12 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
     /// listens so a mouse can enter or leave driver mode with its bindings.
     /// </summary>
     internal event Action? MacrosChanged;
+
+    /// <summary>
+    /// Raised when the pointer moves after a pause; the device workspace uses it
+    /// to re-arm driver mode as soon as a sleeping mouse wakes.
+    /// </summary>
+    internal event Action? PointerActivity;
 
     internal void SetMacroOwnWindowForegroundPredicate(Func<bool>? predicate) =>
         _macroRuntime.SetOwnWindowForegroundPredicate(predicate);

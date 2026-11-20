@@ -240,6 +240,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             Macros.StopAllTurbo();
             _ = RazerHid.SyncPrivateKeyDriverModeAsync();
         };
+        // The hook runs on its own thread; the sync must not hold up a mouse move.
+        Macros.PointerActivity += () => _ = Task.Run(() => RazerHid.SyncPrivateKeyDriverModeAsync());
         Accessories = new UsbAccessoriesWorkspace(
             _diagnosticLog, RazerHid, Macros, () => _profile, SaveProfileAsync,
             () =>
