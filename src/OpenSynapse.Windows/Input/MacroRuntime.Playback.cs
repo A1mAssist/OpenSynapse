@@ -33,18 +33,24 @@ internal sealed partial class MacroRuntime
     public async Task PlayAsync(
         MacroDefinition macro,
         MacroModifierKeys triggerModifiers,
-        CancellationToken cancellationToken = default, MacroPlaybackMode? playbackMode = null)
+        CancellationToken cancellationToken = default,
+        MacroTrigger? trigger = null)
     {
         ArgumentNullException.ThrowIfNull(macro);
         cancellationToken.ThrowIfCancellationRequested();
-        var repeatUntilStopped = (playbackMode ?? macro.PlaybackMode) == MacroPlaybackMode.RepeatUntilStopped;
+        var playbackMode = macro.EffectivePlaybackMode(trigger);
+        var repeatUntilStopped = playbackMode == MacroPlaybackMode.RepeatUntilStopped;
         IReadOnlyDictionary<string, MacroDefinition> macroMap;
         lock (_gate)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
             macroMap = _macroMap;
         }
-        var plan = MacroPlaybackPlan.Build(macro, macroMap);
+        var plan = MacroPlaybackPlan.Build(
+            macro,
+            macroMap,
+            playbackMode,
+            macro.EffectiveRepeatCount(trigger));
 
         if (plan.Actions.Count == 0)
         {
@@ -75,7 +81,7 @@ internal sealed partial class MacroRuntime
             EnsureHookLocked();
         }
         PlaybackStateChanged?.Invoke();
-        PlaybackStarted?.Invoke(macro);
+        PlaybackStarted?.Invoke(macro, trigger?.Mode, playbackMode);
         previous?.Cancel();
         previous?.Dispose();
         var releasedModifiers = await ReleaseTriggerModifiersAsync(triggerModifiers)
@@ -179,7 +185,7 @@ internal sealed partial class MacroRuntime
         MacroModifierKeys triggerModifiers,
         CancellationTokenSource? holdCancellation,
         MacroInput? holdInput,
-        bool repeatUntilStopped)
+        MacroTrigger? trigger)
     {
         // A filter mouse's XBUTTON state can be up; poll only when it is actually down.
         var holdMonitor = holdCancellation is { } hold && holdInput is { } input &&
@@ -192,7 +198,7 @@ internal sealed partial class MacroRuntime
                 macro,
                 triggerModifiers,
                 holdCancellation?.Token ?? CancellationToken.None,
-                repeatUntilStopped ? MacroPlaybackMode.RepeatUntilStopped : null).ConfigureAwait(false);
+                trigger).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {

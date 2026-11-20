@@ -24,6 +24,7 @@ public sealed partial class RazerHidDeviceService
         bool forWrite = false)
     {
         ArgumentNullException.ThrowIfNull(action);
+        var context = SynchronizationContext.Current;
         var depth = _mappingModeSessions.AddOrUpdate(
             connection.InstanceId, 1, static (_, value) => value + 1);
         // 02CF rejects the 00:84 mode read but still answers its OBM tables in
@@ -35,7 +36,9 @@ public sealed partial class RazerHidDeviceService
             if (depth == 1 && !normalModeRead)
             {
                 await WithMappingModeAsync(
-                    connection, () => action(cancellationToken), cancellationToken,
+                    connection,
+                    () => RunOnContextAsync(context, () => action(cancellationToken)),
+                    cancellationToken,
                     bypassSession: true)
                     .ConfigureAwait(false);
             }
@@ -52,6 +55,37 @@ public sealed partial class RazerHidDeviceService
                 _mappingModeSessions.TryRemove(connection.InstanceId, out _);
             }
         }
+    }
+
+    private static async Task RunOnContextAsync(
+        SynchronizationContext? context,
+        Func<Task> action)
+    {
+        if (context is null || SynchronizationContext.Current == context)
+        {
+            await action().ConfigureAwait(true);
+            return;
+        }
+
+        var completion = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        context.Post(async _ =>
+        {
+            try
+            {
+                await action().ConfigureAwait(true);
+                completion.TrySetResult();
+            }
+            catch (OperationCanceledException exception)
+            {
+                completion.TrySetCanceled(exception.CancellationToken);
+            }
+            catch (Exception exception)
+            {
+                completion.TrySetException(exception);
+            }
+        }, null);
+        await completion.Task.ConfigureAwait(false);
     }
 
     /// <summary>

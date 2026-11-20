@@ -339,12 +339,20 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         row.AttachDetail(selected);
         SelectedKraken = null;
         SelectedDevice = selected;
-        await selected.LoadBasicStateAsync(selectionToken);
-        await selected.LoadSlowCardsAsync(force: true, selectionToken);
-        await selected.LoadSoundbarAsync(selectionToken);
-        await selected.LoadDpiStagesAsync(selectionToken);
-        await selected.ApplyConfiguredLightingAsync(selectionToken);
-        NotifyDeviceOverview();
+        try
+        {
+            await selected.LoadBasicStateAsync(selectionToken);
+            await selected.LoadSlowCardsAsync(force: true, selectionToken);
+            await selected.LoadSoundbarAsync(selectionToken);
+            await selected.LoadDpiStagesAsync(selectionToken);
+            await selected.ApplyConfiguredLightingAsync(selectionToken);
+            NotifyDeviceOverview();
+        }
+        catch (OperationCanceledException) when (selectionToken.IsCancellationRequested)
+        {
+            // A newer device click or a page navigation superseded this selection.
+            // Its replacement owns the selected view model now.
+        }
     }
 
     public async Task SelectKrakenAsync(RazerHidKrakenDeviceRowViewModel row)

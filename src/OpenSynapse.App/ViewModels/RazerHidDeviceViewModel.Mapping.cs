@@ -4,6 +4,7 @@ using OpenSynapse.Core.Macros;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Input;
+using OpenSynapse.Windows.Macros;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
@@ -37,7 +38,9 @@ public sealed partial class RazerHidDeviceViewModel
         _mapping ??= new RazerHidMappingViewModel(
             new RazerHidMappingTransport(_service, Connection),
             Has(RazerHidBackendCapability.MappingWrite),
-            CreateService,
+            RazerOnboardMacroDevices.Products.Contains(Connection.Definition.ProductId)
+                ? CreateService
+                : null,
             _localMacros,
             productId: Connection.Definition.ProductId,
             deviceKind: Connection.Definition.Category == DeviceCategory.Keyboard
@@ -170,9 +173,17 @@ public sealed partial class RazerHidDeviceViewModel
         {
             throw;
         }
+        catch (OperationCanceledException exception)
+        {
+            // A selection can be superseded while the mapping mode session is being
+            // restored. That is not a failure of this device's button table.
+            _log?.Invoke($"mapping load canceled: {exception.Message}");
+        }
         catch (Exception exception)
         {
             // The mapping card is optional; its failure must not mark the whole device page broken.
+            _log?.Invoke(
+                $"mapping load failed ({exception.GetType().Name}): {exception.Message}");
             Mapping.SetLoadError(exception.Message);
         }
     }

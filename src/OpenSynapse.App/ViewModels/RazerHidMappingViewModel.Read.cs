@@ -101,6 +101,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
     }
 
     private bool _readQueued;
+    private int _readStarting;
     private bool _hasReadAnyLayer;
 
     public Task EnsureLoadedAsync(CancellationToken cancellationToken = default) =>
@@ -112,20 +113,30 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
     /// </summary>
     public async Task ReadAsync(CancellationToken cancellationToken = default)
     {
-        if (IsBusy)
+        // Entering the mapping-mode session is asynchronous. A second view load
+        // can arrive before IsBusy is set and otherwise starts a duplicate HID
+        // read, interleaving two mode sessions.
+        if (IsBusy || Interlocked.CompareExchange(ref _readStarting, 1, 0) != 0)
         {
             _readQueued = true;
             return;
         }
 
-        await _transport.RunInMappingModeAsync(async token =>
+        try
         {
-            do
+            await _transport.RunInMappingModeAsync(async token =>
             {
-                _readQueued = false;
-                await ReadCoreAsync(token).ConfigureAwait(true);
-            } while (_readQueued && !token.IsCancellationRequested);
-        }, cancellationToken).ConfigureAwait(true);
+                do
+                {
+                    _readQueued = false;
+                    await ReadCoreAsync(token).ConfigureAwait(true);
+                } while (_readQueued && !token.IsCancellationRequested);
+            }, cancellationToken).ConfigureAwait(true);
+        }
+        finally
+        {
+            Volatile.Write(ref _readStarting, 0);
+        }
     }
 
     private async Task ReadCoreAsync(CancellationToken cancellationToken)
@@ -152,6 +163,13 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 var visual = await _assetService.GetAsync(
                         _productId, _deviceKind, cancellationToken: cancellationToken)
                     .ConfigureAwait(true);
+                var analogIds = AnalogKeyboardLayouts.TryGet(_productId, out var analogLayout)
+                    ? analogLayout.Keys
+                        .Select(key => key.KeyId)
+                        .Distinct()
+                        .Order()
+                        .ToArray()
+                    : null;
                 var keyboardIds = visual.Keyboard is { } keyboard
                     ? keyboard.ButtonIdsByKeyName.Values
                         .Concat(RazerKeypadKeyCatalog.ExtraButtonIds(_productId))
@@ -159,7 +177,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                         .Distinct()
                         .Order()
                         .ToArray()
-                    : null;
+                    : analogIds;
                 var mouseIds = visual.Mouse?.ButtonNames?.Keys.Order().ToArray();
                 ids = _deviceKind == RazerMappingDeviceKind.Keyboard ? keyboardIds ?? mouseIds ?? [] : mouseIds ?? keyboardIds ?? [];
             }
@@ -272,7 +290,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                     row.OptionIndex = shortcutIndex;
                     row.SoftwareMacroId = shortcut.MacroId;
                     row.LoadedOptionIndex = shortcutIndex;
-                    row.CurrentActionText = shortcut.Name;
+                    row.CurrentActionText = RazerMappingActionNames.Localize(shortcut.Name);
                 }
 
                 var softwareMacroIndex = -1;
@@ -297,18 +315,24 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                     }
                     if (softwareMacroIndex >= 0)
                     {
+                        var softwareMacro = _localMacros[softwareMacroIndex];
+                        var softwareTriggerDefinition = softwareMacro.FindTrigger(
+                            softwareTrigger,
+                            LayerIndex == 1);
                         row.GroupIndex = (int)RazerHidMappingGroup.Macro;
                         row.MacroTargetIndex = (int)MacroExecutionTarget.Software;
                         row.OptionIndex = softwareMacroIndex;
                         row.SoftwareTriggerModeIndex = SoftwareTriggerModeIndex(triggerMode);
-                        row.ExecutionModeIndex = (int)_localMacros[softwareMacroIndex].PlaybackMode;
-                        row.ExecutionRepeatCount = _localMacros[softwareMacroIndex].RepeatCount;
-                        row.SoftwareMacroId = _localMacros[softwareMacroIndex].Id;
+                        row.ExecutionModeIndex =
+                            (int)softwareMacro.EffectivePlaybackMode(softwareTriggerDefinition);
+                        row.ExecutionRepeatCount =
+                            softwareMacro.EffectiveRepeatCount(softwareTriggerDefinition);
+                        row.SoftwareMacroId = softwareMacro.Id;
                         row.MarkSoftwareModeLoaded();
                         row.LoadedOptionIndex = softwareMacroIndex;
                         row.CurrentActionText = AppStrings.FormatText(
                             "RazerMappingMacroSoftwareApplied",
-                            _localMacros[softwareMacroIndex].Name);
+                            softwareMacro.Name);
                     }
                 }
 

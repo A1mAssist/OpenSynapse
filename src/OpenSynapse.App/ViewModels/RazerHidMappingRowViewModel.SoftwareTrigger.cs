@@ -33,6 +33,9 @@ public sealed partial class RazerHidMappingRowViewModel
         get => _softwareTriggerModeIndex;
         set
         {
+            // ComboBox pushes -1 while its items are replaced; clamping that
+            // to 0 would rewrite HoldRepeat as Hold.
+            if (value < 0) return;
             var clamped = Math.Clamp(value, 0, SoftwareTriggerModes.Length - 1);
             if (_softwareTriggerModeIndex == clamped) return;
             _softwareTriggerModeIndex = clamped;
@@ -73,6 +76,7 @@ public sealed partial class RazerHidMappingRowViewModel
         get => _executionModeIndex;
         set
         {
+            if (value < 0) return;
             var clamped = Math.Clamp(value, 0, 2);
             if (TriggerMode == MacroTriggerMode.HoldRepeat)
             {

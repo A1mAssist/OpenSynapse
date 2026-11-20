@@ -236,7 +236,11 @@ public static class MacroFileStore
             return false;
         }
 
-        if (macro.AllTriggers.Any(trigger => !MacroDefinition.IsValidTrigger(trigger)))
+        if (macro.AllTriggers.Any(trigger =>
+                !MacroDefinition.IsValidTrigger(trigger) ||
+                trigger.PlaybackMode is { } playback && !Enum.IsDefined(playback) ||
+                trigger.RepeatCount is { } repeat &&
+                repeat is < 1 or > MacroDefinition.MaxRepeatCount))
         {
             return false;
         }

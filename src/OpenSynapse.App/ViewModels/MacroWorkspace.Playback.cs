@@ -24,13 +24,16 @@ public sealed partial class MacroWorkspace
             _ = PlaySelectedMacroAsync(useCountdown: false, CancellationToken.None));
     }
 
-    private void OnMacroPlaybackStarted(MacroDefinition macro)
+    private void OnMacroPlaybackStarted(
+        MacroDefinition macro,
+        MacroTriggerMode? triggerMode,
+        MacroPlaybackMode playbackMode)
     {
         _diagnosticLog.TryWrite(
             "macro",
-            $"started id={macro.Id} trigger={macro.Trigger?.Mode.ToString() ?? "manual"} playback={macro.PlaybackMode} steps={MacroStepTree.Enumerate(macro.Steps).Count()}");
-        if (macro.PlaybackMode != MacroPlaybackMode.RepeatUntilStopped ||
-            macro.Trigger?.Mode is (MacroTriggerMode.Hold or MacroTriggerMode.HoldRepeat))
+            $"started id={macro.Id} trigger={triggerMode?.ToString() ?? "manual"} playback={playbackMode} steps={MacroStepTree.Enumerate(macro.Steps).Count()}");
+        if (playbackMode != MacroPlaybackMode.RepeatUntilStopped ||
+            triggerMode is (MacroTriggerMode.Hold or MacroTriggerMode.HoldRepeat))
         {
             return;
         }

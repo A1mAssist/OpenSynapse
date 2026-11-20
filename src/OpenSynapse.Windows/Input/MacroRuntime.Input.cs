@@ -103,7 +103,7 @@ internal sealed partial class MacroRuntime
 
         MacroDefinition? playMacro = null;
         var playModifiers = MacroModifierKeys.None;
-        var playRepeatUntilStopped = false;
+        MacroTrigger? playTrigger = null;
         var suppress = false;
         var stopRequested = false;
         var stopPlayback = false;
@@ -392,7 +392,7 @@ internal sealed partial class MacroRuntime
                             !StringComparer.Ordinal.Equals(_activePlaybackMacroId, macro.Id))
                         {
                             playMacro = macro;
-                            playRepeatUntilStopped = trigger.Mode == MacroTriggerMode.HoldRepeat;
+                            playTrigger = trigger;
                         }
                         break;
 
@@ -405,6 +405,7 @@ internal sealed partial class MacroRuntime
                         else
                         {
                             playMacro = macro;
+                            playTrigger = trigger;
                         }
                         break;
 
@@ -428,6 +429,7 @@ internal sealed partial class MacroRuntime
 
                     default:
                         playMacro = macro;
+                        playTrigger = trigger;
                         break;
                 }
 
@@ -485,7 +487,7 @@ internal sealed partial class MacroRuntime
             // low-level hook thread. Windows drops slow hooks and the desktop
             // would stall until the plan finishes.
             _ = Task.Run(() => ObservePlaybackAsync(
-                playMacro, playModifiers, holdCancellation, holdInput, playRepeatUntilStopped));
+                playMacro, playModifiers, holdCancellation, holdInput, playTrigger));
         }
         if (unhandledRazerKey is not null)
         {
