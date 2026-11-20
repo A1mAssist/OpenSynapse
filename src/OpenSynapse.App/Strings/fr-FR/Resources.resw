@@ -2794,6 +2794,9 @@
   <data name="RazerHeadsetThxPresetApply.Content" xml:space="preserve"><value>Appliquer le préréglage</value></data>
   <data name="RazerHeadsetThxEqualizerTitle.Text" xml:space="preserve"><value>Égaliseur THX</value></data>
   <data name="RazerHeadsetThxEqualizerApply.Content" xml:space="preserve"><value>Appliquer les bandes</value></data>
+  <data name="RazerHeadsetThxImportSynapse.Content" xml:space="preserve"><value>Importer l’EQ Synapse</value></data>
+  <data name="RazerHeadsetThxImportInvalid.Text" xml:space="preserve"><value>Ce fichier n’est pas un profil EQ Synapse valide.</value></data>
+  <data name="RazerHeadsetThxImportBandCount.Text" xml:space="preserve"><value>Cet EQ a {0} bandes ; cet appareil en demande {1}.</value></data>
   <data name="RazerHeadsetThxNormalizationToggle.Header" xml:space="preserve"><value>Égalisation du volume</value></data>
   <data name="RazerHeadsetThxNormalizationApply.Content" xml:space="preserve"><value>Appliquer l’égalisation du volume</value></data>
   <data name="RazerHeadsetThxVoiceClarityToggle.Header" xml:space="preserve"><value>Clarté de la voix</value></data>

@@ -2794,6 +2794,9 @@
   <data name="RazerHeadsetThxPresetApply.Content" xml:space="preserve"><value>プリセットを適用</value></data>
   <data name="RazerHeadsetThxEqualizerTitle.Text" xml:space="preserve"><value>THX イコライザー</value></data>
   <data name="RazerHeadsetThxEqualizerApply.Content" xml:space="preserve"><value>バンドを適用</value></data>
+  <data name="RazerHeadsetThxImportSynapse.Content" xml:space="preserve"><value>Synapse EQ をインポート</value></data>
+  <data name="RazerHeadsetThxImportInvalid.Text" xml:space="preserve"><value>有効な Synapse EQ ファイルではありません。</value></data>
+  <data name="RazerHeadsetThxImportBandCount.Text" xml:space="preserve"><value>この EQ は {0} バンドです。このデバイスには {1} バンド必要です。</value></data>
   <data name="RazerHeadsetThxNormalizationToggle.Header" xml:space="preserve"><value>音量レベリング</value></data>
   <data name="RazerHeadsetThxNormalizationApply.Content" xml:space="preserve"><value>音量レベリングを適用</value></data>
   <data name="RazerHeadsetThxVoiceClarityToggle.Header" xml:space="preserve"><value>ボイス クラリティ</value></data>

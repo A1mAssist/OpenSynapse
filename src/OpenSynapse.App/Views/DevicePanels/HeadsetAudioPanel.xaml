@@ -43,7 +43,10 @@
                               </DataTemplate>
                             </ItemsControl.ItemTemplate>
                           </ItemsControl>
-                          <Button local:Localized.Uid="RazerHeadsetThxEqualizerApply" Click="HeadsetAudioApplyThxBandsClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
+                          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                            <Button local:Localized.Uid="RazerHeadsetThxImportSynapse" Click="HeadsetAudioImportSynapseEqClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource SecondaryButtonStyle}" />
+                            <Button local:Localized.Uid="RazerHeadsetThxEqualizerApply" Click="HeadsetAudioApplyThxBandsClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" />
+                          </StackPanel>
                         </StackPanel>
                         <StackPanel Spacing="8" Visibility="{Binding ThxNormalizationVisibility}">
                           <ToggleSwitch local:Localized.Uid="RazerHeadsetThxNormalizationToggle" IsOn="{Binding ThxNormalizationEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />

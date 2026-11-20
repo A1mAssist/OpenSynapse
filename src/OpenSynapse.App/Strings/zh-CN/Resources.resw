@@ -3244,6 +3244,9 @@
   <data name="RazerHeadsetThxPresetApply.Content" xml:space="preserve"><value>应用预设</value></data>
   <data name="RazerHeadsetThxEqualizerTitle.Text" xml:space="preserve"><value>THX 均衡器</value></data>
   <data name="RazerHeadsetThxEqualizerApply.Content" xml:space="preserve"><value>应用频段</value></data>
+  <data name="RazerHeadsetThxImportSynapse.Content" xml:space="preserve"><value>导入雷云 EQ</value></data>
+  <data name="RazerHeadsetThxImportInvalid.Text" xml:space="preserve"><value>无法读取雷云 EQ 文件。</value></data>
+  <data name="RazerHeadsetThxImportBandCount.Text" xml:space="preserve"><value>该 EQ 有 {0} 个频段，当前设备需要 {1} 个。</value></data>
   <data name="RazerHeadsetThxNormalizationToggle.Header" xml:space="preserve"><value>音量标准化</value></data>
   <data name="RazerHeadsetThxNormalizationApply.Content" xml:space="preserve"><value>应用音量标准化</value></data>
   <data name="RazerHeadsetThxVoiceClarityToggle.Header" xml:space="preserve"><value>人声清晰度</value></data>

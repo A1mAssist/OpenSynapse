@@ -79,6 +79,7 @@ public sealed partial class DevicesPage : UserControl
 
         SyncTouchpadToggle();
         HeadsetAudioPanel.Attach(viewModel.Accessories, Lifetime);
+        HeadsetAudioPanel.Host = Host;
 
         if (!_bladeFanTelemetryHooked)
         {

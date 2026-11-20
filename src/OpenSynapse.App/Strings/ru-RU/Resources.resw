@@ -5267,6 +5267,15 @@
   <data name="RazerHeadsetThxEqualizerApply.Content" xml:space="preserve">
     <value>Применить полосы</value>
   </data>
+  <data name="RazerHeadsetThxImportSynapse.Content" xml:space="preserve">
+    <value>Импорт EQ Synapse</value>
+  </data>
+  <data name="RazerHeadsetThxImportInvalid.Text" xml:space="preserve">
+    <value>Это не действительный файл EQ Synapse.</value>
+  </data>
+  <data name="RazerHeadsetThxImportBandCount.Text" xml:space="preserve">
+    <value>В этом EQ {0} полос; устройству нужно {1}.</value>
+  </data>
   <data name="RazerHeadsetThxNormalizationToggle.Header" xml:space="preserve">
     <value>Выравнивание громкости</value>
   </data>

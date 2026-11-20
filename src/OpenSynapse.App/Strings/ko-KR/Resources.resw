@@ -2794,6 +2794,9 @@
   <data name="RazerHeadsetThxPresetApply.Content" xml:space="preserve"><value>프리셋 적용</value></data>
   <data name="RazerHeadsetThxEqualizerTitle.Text" xml:space="preserve"><value>THX 이퀄라이저</value></data>
   <data name="RazerHeadsetThxEqualizerApply.Content" xml:space="preserve"><value>밴드 적용</value></data>
+  <data name="RazerHeadsetThxImportSynapse.Content" xml:space="preserve"><value>Synapse EQ 가져오기</value></data>
+  <data name="RazerHeadsetThxImportInvalid.Text" xml:space="preserve"><value>유효한 Synapse EQ 파일이 아닙니다.</value></data>
+  <data name="RazerHeadsetThxImportBandCount.Text" xml:space="preserve"><value>이 EQ에는 {0}개 밴드가 있지만 이 장치에는 {1}개가 필요합니다.</value></data>
   <data name="RazerHeadsetThxNormalizationToggle.Header" xml:space="preserve"><value>볼륨 레벨링</value></data>
   <data name="RazerHeadsetThxNormalizationApply.Content" xml:space="preserve"><value>볼륨 레벨링 적용</value></data>
   <data name="RazerHeadsetThxVoiceClarityToggle.Header" xml:space="preserve"><value>음성 선명도</value></data>
