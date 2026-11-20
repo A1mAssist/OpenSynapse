@@ -197,7 +197,27 @@ public sealed partial class TaskbarStatusWindow
                 var trayCenterX = (topLeft.X + bottomRight.X) / 2;
                 if (trayCenterX > client.Width / 2)
                 {
-                    return (0, Math.Max(0, topLeft.X), false);
+                    var taskListRight = 0;
+                    var taskList = FindTaskList(taskbar);
+                    if (taskList != IntPtr.Zero &&
+                        IsWindowVisible(taskList) &&
+                        GetWindowRect(taskList, out var taskListRect))
+                    {
+                        var taskListRightPoint = new Point
+                        {
+                            X = taskListRect.Right,
+                            Y = taskListRect.Top,
+                        };
+                        if (ScreenToClient(taskbar, ref taskListRightPoint))
+                        {
+                            taskListRight = taskListRightPoint.X;
+                        }
+                    }
+                    return TaskbarStatusLayout.GetHorizontalRegion(
+                        client.Width,
+                        topLeft.X,
+                        bottomRight.X,
+                        taskListRight);
                 }
                 return (Math.Min(client.Width, bottomRight.X), client.Width, true);
             }
@@ -250,11 +270,7 @@ public sealed partial class TaskbarStatusWindow
         int freeExtent,
         List<TaskbarStatusObstacle> obstacles)
     {
-        var taskList = FindWindowExW(taskbar, IntPtr.Zero, "MSTaskSwWClass", null);
-        if (taskList == IntPtr.Zero)
-        {
-            taskList = FindWindowExW(taskbar, IntPtr.Zero, "MSTaskListWClass", null);
-        }
+        var taskList = FindTaskList(taskbar);
         if (taskList == IntPtr.Zero ||
             !IsWindowVisible(taskList) ||
             !GetWindowRect(taskList, out var rect) ||
@@ -270,6 +286,14 @@ public sealed partial class TaskbarStatusWindow
             crossExtent,
             freeExtent,
             obstacles);
+    }
+
+    private static IntPtr FindTaskList(IntPtr taskbar)
+    {
+        var taskList = FindWindowExW(taskbar, IntPtr.Zero, "MSTaskSwWClass", null);
+        return taskList != IntPtr.Zero
+            ? taskList
+            : FindWindowExW(taskbar, IntPtr.Zero, "MSTaskListWClass", null);
     }
 
     private static void AddObstacle(

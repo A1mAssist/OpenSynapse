@@ -67,6 +67,22 @@ internal static class TaskbarStatusLayout
         return true;
     }
 
+    internal static (int Start, int End, bool FromStart) GetHorizontalRegion(
+        int clientWidth,
+        int trayLeft,
+        int trayRight,
+        int taskListRight)
+    {
+        if ((trayLeft + trayRight) / 2 > clientWidth / 2)
+        {
+            // Start and the app buttons own the left run. The gap before the
+            // task list is not free space when Start is left-aligned.
+            return (Math.Max(0, taskListRight), Math.Max(0, trayLeft), false);
+        }
+
+        return (Math.Min(clientWidth, trayRight), clientWidth, true);
+    }
+
     internal static bool TryFindRightmostSlot(
         int leftBound,
         int rightBound,
