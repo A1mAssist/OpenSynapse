@@ -59,8 +59,7 @@ public sealed partial class RazerHidDeviceViewModel
             canWriteOnboardMacros:
                 Has(RazerHidBackendCapability.MacroStorageDataWrite) &&
                 Has(RazerHidBackendCapability.MacroStorageNameWrite),
-            softwareTriggerResolver:
-                SoftwareMacroTriggerResolver ?? ResolveDefaultSoftwareMacroTrigger,
+            softwareTriggerResolver: ResolveSoftwareMacroTrigger,
             softwareTriggerBinder: SoftwareMacroBinder,
             softwareTriggerClearer: SoftwareMacroClearer,
             log: _log,
@@ -86,6 +85,21 @@ public sealed partial class RazerHidDeviceViewModel
             Connection.Definition.ProductId,
             buttonId,
             IsNagaMouse);
+    }
+
+    private MacroInput? ResolveSoftwareMacroTrigger(byte buttonId)
+    {
+        var input = (SoftwareMacroTriggerResolver ?? ResolveDefaultSoftwareMacroTrigger)(buttonId);
+        if (input is { Kind: MacroInputKind.Keyboard, DeviceId: 0 })
+        {
+            // The trigger binder locates the device by id; keyboard inputs carry
+            // none, so stamp the page's device before the shortcut is bound.
+            input = input.Clone();
+            input.DeviceId = Connection.Definition.ProductId;
+            input.InstanceId = Connection.InstanceId;
+        }
+
+        return input;
     }
 
     private async Task PersistMappingProfileAsync(
