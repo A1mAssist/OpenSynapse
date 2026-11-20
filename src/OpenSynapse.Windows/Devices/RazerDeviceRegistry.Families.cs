@@ -30,6 +30,7 @@ internal sealed partial class RazerDeviceRegistry
                 [CapabilityIds.PowerModeSet] = new(0x01, 0x07, 0x0F, ""),
                 [CapabilityIds.TimeToDimGet] = new(0x05, 0x07, 0x8B, "00"),
                 [CapabilityIds.TimeToDimSet] = new(0x05, 0x07, 0x0B, ""),
+                [CapabilityIds.GamingModeGet] = new(0x04, 0x00, 0x88, "", AllowZeroTransactionId: true),
                 [CapabilityIds.GamingModeSet] = new(0x04, 0x00, 0x08, "", AllowZeroTransactionId: true),
                 [CapabilityIds.TouchpadStatusSet] = new(0x03, 0x00, 0x59, "", AllowZeroTransactionId: true),
                 [CapabilityIds.FnKeyGet] = new(0x02, 0x02, 0x86, "0000", AllowZeroTransactionId: true),
@@ -172,6 +173,7 @@ internal sealed partial class RazerDeviceRegistry
                     CapabilityIds.TimeToDimGet or CapabilityIds.TimeToDimSet or
                     CapabilityIds.IndicatorLedGet or CapabilityIds.IndicatorLedSet or
                     CapabilityIds.GpuCardDetectionGet or CapabilityIds.GpuCardDetectionSet or
+                    CapabilityIds.GamingModeGet or
                     CapabilityIds.TouchpadStatusSet or
                     CapabilityIds.FanInformationGet))
                 .ToHashSet(StringComparer.Ordinal),
@@ -183,6 +185,7 @@ internal sealed partial class RazerDeviceRegistry
                     CapabilityIds.TimeToDimGet or CapabilityIds.TimeToDimSet or
                     CapabilityIds.IndicatorLedGet or CapabilityIds.IndicatorLedSet or
                     CapabilityIds.GpuCardDetectionGet or CapabilityIds.GpuCardDetectionSet or
+                    CapabilityIds.GamingModeGet or
                     CapabilityIds.TouchpadStatusSet or
                     CapabilityIds.FnKeySwapGet or CapabilityIds.FnKeySwapSet or
                     CapabilityIds.FanInformationGet))

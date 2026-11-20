@@ -487,7 +487,7 @@ public sealed partial class DevicesPage : UserControl
 
     private async void AutoApplyPlatformToggleToggled(object sender, RoutedEventArgs e)
     {
-        if (sender is not ToggleSwitch { FocusState: not FocusState.Unfocused, Tag: string setting })
+        if (sender is not ToggleSwitch { FocusState: not FocusState.Unfocused, Tag: string setting } toggle)
         {
             return;
         }
@@ -495,7 +495,7 @@ public sealed partial class DevicesPage : UserControl
         switch (setting)
         {
             case "gamingMode":
-                await ViewModel.Blade.ApplyGamingModeAsync(Lifetime);
+                await ViewModel.Blade.ApplyGamingModeAsync(toggle.IsOn, Lifetime);
                 break;
             case "startupAnimation":
                 await ViewModel.Blade.ApplyStartupAnimationAsync(Lifetime);

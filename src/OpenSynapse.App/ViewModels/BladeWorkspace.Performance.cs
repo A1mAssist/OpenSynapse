@@ -470,9 +470,9 @@ public sealed partial class BladeWorkspace
         }, cancellationToken);
     }
 
-    public async Task ApplyGamingModeAsync(CancellationToken cancellationToken = default)
+    public async Task ApplyGamingModeAsync(bool enabled, CancellationToken cancellationToken = default)
     {
-        if (!CanApplyGamingMode)
+        if (!CanSetGamingMode)
         {
             return;
         }
@@ -480,7 +480,7 @@ public sealed partial class BladeWorkspace
         await RunDeviceOperationAsync(AppStrings.Text("Text_EED40F9C"), async () =>
         {
             var actual = await SetGameModeCoreAsync(
-                GameModeEnabled,
+                enabled,
                 cancellationToken);
             SetGameMode(actual);
             RequestDeviceRefresh();
@@ -501,6 +501,9 @@ public sealed partial class BladeWorkspace
                 ActiveDescriptors,
                 enabled,
                 cancellationToken);
+            // The next live read is this write's echo; a rejected write must not
+            // toast the old state back at the user.
+            _gameModeUserWriteAt = Environment.TickCount64;
             Profile.Global.Blade.GamingModeEnabled = actual.GameMode != 0;
             try
             {

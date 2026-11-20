@@ -20,6 +20,8 @@ public sealed partial class BladeWorkspace
 {
     private bool _startupStateSyncStarted;
     private bool _gameModeReadFromDevice;
+    private bool _touchpadStateRead;
+    private long _gameModeUserWriteAt;
 
     internal async Task InitializeAsync(CancellationToken cancellationToken)
     {
@@ -54,8 +56,13 @@ public sealed partial class BladeWorkspace
             {
                 // Synapse mirrors the Windows touchpad state onto the EC on
                 // startup so the indicator does not stay stale across restarts.
-                await _deviceTelemetryReader.SetBladeTouchpadStatusAsync(
-                    ActiveDescriptors, touchpadEnabled, cancellationToken);
+                if (!await _deviceTelemetryReader.SetBladeTouchpadStatusAsync(
+                        ActiveDescriptors, touchpadEnabled, cancellationToken))
+                {
+                    _diagnosticLog.TryWrite(
+                        "device-operation",
+                        $"touchpad indicator startup sync did not acknowledge enabled={touchpadEnabled}");
+                }
             }
             catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
             {
@@ -165,14 +172,7 @@ public sealed partial class BladeWorkspace
         OnPropertyChanged(nameof(CanSetGamingMode));
         OnPropertyChanged(nameof(CanApplyGamingMode));
         OnPropertyChanged(nameof(GamingModeVisibility));
-        if (telemetry.BladeGameMode is { } gameMode)
-        {
-            _gameModeReadFromDevice = true;
-            if (_blade._bladeGameModeState != gameMode.GameMode)
-            {
-                SetGameMode(gameMode);
-            }
-        }
+        if (telemetry.BladeGameMode is { } gameMode) ApplyObservedGameMode(gameMode);
         else if (ActiveDescriptors.FirstOrDefault(device =>
                      DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
                      device.Access == DeviceAccessState.Available) is { } blade)
@@ -290,10 +290,33 @@ public sealed partial class BladeWorkspace
         // rebuild every bound option list, closing an open combo box each time.
     }
 
+    private void ApplyObservedGameMode(BladeGameModeTelemetry gameMode)
+    {
+        var hadState = _blade._bladeGameModeState is not null;
+        var wasRead = _gameModeReadFromDevice;
+        _gameModeReadFromDevice = true;
+        if (_blade._bladeGameModeState == gameMode.GameMode)
+        {
+            return;
+        }
+
+        SetGameMode(gameMode);
+        if (wasRead && hadState &&
+            Environment.TickCount64 - _gameModeUserWriteAt > 3000)
+        {
+            // The Fn key changes the EC state directly; report it like a user
+            // toggle so the toast still appears when the key path itself fails.
+            GamingModeChangedByUser?.Invoke(gameMode.GameMode != 0);
+        }
+    }
+
     private void ApplyTouchpadState()
     {
         if (_touchpadController?.GetEnabled() is bool touchpadEnabled)
         {
+            var changed = _touchpadStateRead &&
+                _blade._confirmedBladeTouchpadEnabled != touchpadEnabled;
+            _touchpadStateRead = true;
             TouchpadEnabled = touchpadEnabled;
             _blade._confirmedBladeTouchpadEnabled = touchpadEnabled;
             TouchpadText = touchpadEnabled
@@ -301,12 +324,41 @@ public sealed partial class BladeWorkspace
                 : AppStrings.Text("Text_7E3B0F3C");
             _blade._canSetBladeTouchpad = true;
             OnPropertyChanged(nameof(CanSetTouchpad));
+            if (changed)
+            {
+                // Mirror an Fn-key change onto the EC and report it the same way
+                // as a toggle that came through our mapping runtime.
+                _ = SyncObservedTouchpadIndicatorAsync(ActiveDescriptors, touchpadEnabled);
+                TouchpadChangedByUser?.Invoke(touchpadEnabled);
+            }
         }
         else
         {
             TouchpadText = AppStrings.Text("Text_72C29287");
             _blade._canSetBladeTouchpad = false;
             OnPropertyChanged(nameof(CanSetTouchpad));
+        }
+    }
+
+    private async Task SyncObservedTouchpadIndicatorAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        bool enabled)
+    {
+        try
+        {
+            if (!await _deviceTelemetryReader.SetBladeTouchpadStatusAsync(
+                    devices, enabled, CancellationToken.None))
+            {
+                _diagnosticLog.TryWrite(
+                    "device-operation",
+                    $"touchpad indicator did not follow the device state enabled={enabled}");
+            }
+        }
+        catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
+        {
+            _diagnosticLog.TryWrite(
+                "device-operation",
+                $"touchpad indicator follow-up failed: {exception}");
         }
     }
 
@@ -347,14 +399,13 @@ public sealed partial class BladeWorkspace
         // Reading them here keeps a failed first read at boot from sticking.
         if (telemetry.BladeGameMode is { } gameMode)
         {
-            _gameModeReadFromDevice = true;
             if (_blade._bladeGameModeState != gameMode.GameMode)
             {
                 _diagnosticLog.TryWrite(
                     "blade-live",
                     $"game mode {_blade._bladeGameModeState?.ToString() ?? "?"} -> {gameMode.GameMode}");
-                SetGameMode(gameMode);
             }
+            ApplyObservedGameMode(gameMode);
         }
         if (telemetry.BladeKeyboardBrightness is byte brightness)
         {
@@ -443,6 +494,8 @@ public sealed partial class BladeWorkspace
         AdvancedFanCpuModeRawText = "--";
         AdvancedFanGpuModeRawText = "--";
         _gameModeReadFromDevice = false;
+        _gameModeUserWriteAt = 0;
+        _touchpadStateRead = false;
         SetGameMode(null);
         _blade._bladeGameModeWriteSupported = false;
         OnPropertyChanged(nameof(CanSetGamingMode));
