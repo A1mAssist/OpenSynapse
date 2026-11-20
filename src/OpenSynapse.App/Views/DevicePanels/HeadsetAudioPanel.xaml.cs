@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using OpenSynapse.App.ViewModels;
+using Windows.Storage.Pickers;
 
 namespace OpenSynapse.App.Views.DevicePanels;
 
@@ -12,6 +13,8 @@ public sealed partial class HeadsetAudioPanel : UserControl
     }
 
     internal CancellationToken Lifetime { get; private set; } = CancellationToken.None;
+
+    internal MainWindow Host { get; set; } = null!;
 
     private UsbAccessoriesWorkspace? Accessories { get; set; }
 
@@ -91,6 +94,38 @@ public sealed partial class HeadsetAudioPanel : UserControl
 
     private async void HeadsetAudioApplyThxBandsClick(object sender, RoutedEventArgs e) =>
         await (ViewModel?.ApplyThxBandsAsync(Lifetime) ?? Task.CompletedTask);
+
+    private async void HeadsetAudioImportSynapseEqClick(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel is null || Host is null)
+        {
+            return;
+        }
+
+        var picker = new FileOpenPicker
+        {
+            SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+        };
+        picker.FileTypeFilter.Add(".synapse4");
+        Host.InitializePicker(picker);
+        var file = await picker.PickSingleFileAsync();
+        if (file is null || string.IsNullOrWhiteSpace(file.Path))
+        {
+            return;
+        }
+
+        string json;
+        try
+        {
+            json = await File.ReadAllTextAsync(file.Path, Lifetime);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            json = string.Empty;
+        }
+
+        ViewModel.TryLoadSynapseEq(json);
+    }
 
     private async void HeadsetAudioApplyThxS3BaselineClick(object sender, RoutedEventArgs e) =>
         await (ViewModel?.ApplyS3BaselineAsync(Lifetime) ?? Task.CompletedTask);

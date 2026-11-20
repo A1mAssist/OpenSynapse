@@ -153,6 +153,33 @@ public sealed partial class RazerHeadsetAudioViewModel
             cancellationToken);
     }
 
+    /// <summary>
+    /// Fills the band sliders from a Synapse 4 EQ export; the user still
+    /// applies them with the existing band button.
+    /// </summary>
+    public bool TryLoadSynapseEq(string json)
+    {
+        var result = SynapseEqProfile.Read(json, ThxBands.Count);
+        if (!result.Success)
+        {
+            _thxErrorText = result.Error == "bandCount"
+                ? AppStrings.FormatText(
+                    "RazerHeadsetThxImportBandCount", result.SourceBands, ThxBands.Count)
+                : AppStrings.Text("RazerHeadsetThxImportInvalid");
+            NotifyThxStatus();
+            return false;
+        }
+
+        for (var index = 0; index < ThxBands.Count; index++)
+        {
+            ThxBands[index].Level = result.Gains[index];
+        }
+
+        _thxErrorText = string.Empty;
+        NotifyThxStatus();
+        return true;
+    }
+
     private string? ThxCustomPresetId =>
         _thxState?.Presets
             .FirstOrDefault(preset =>
