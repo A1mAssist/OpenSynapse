@@ -62,6 +62,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     private string? _bladeSerial;
     private string? _bladeControlDevicePath;
     private ushort _bladeControlProductId;
+    private int _bladeControlUnavailableCount;
     private int _bladeLightingPowerProfileIndex;
     private int _bladePerformancePowerProfileIndex;
     private int _bladeRefreshRatePowerProfileIndex;

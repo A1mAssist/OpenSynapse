@@ -182,6 +182,7 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
             bladeResult?.FanTargetRpm,
             bladeResult?.CurrentFanCpuRpm,
             bladeResult?.CurrentFanGpuRpm,
+            bladeResult?.GameMode,
             mouseResult?.BatteryPercent,
             mouseResult?.WirelessLinkDown ?? false,
             errors,

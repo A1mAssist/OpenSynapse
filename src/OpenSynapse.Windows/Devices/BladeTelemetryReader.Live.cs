@@ -11,6 +11,7 @@ internal sealed partial class BladeTelemetryReader
         int? FanTargetRpm,
         int? CurrentFanCpuRpm,
         int? CurrentFanGpuRpm,
+        BladeGameModeTelemetry? GameMode,
         IReadOnlyList<string> Errors);
 
     public async ValueTask<BladeLiveTelemetryReadResult> ReadLiveAsync(
@@ -63,12 +64,29 @@ internal sealed partial class BladeTelemetryReader
             }
         }
 
+        BladeGameModeTelemetry? gameMode = null;
+        if (blade.Owns(CapabilityIds.GamingModeGet))
+        {
+            try
+            {
+                var response = await _client.QueryAsync(
+                    blade, CapabilityIds.GamingModeGet, cancellationToken);
+                gameMode = BladeSynapsePolicyProtocol.ParseGameMode(
+                    response, BladeSynapsePolicyProtocol.CreateGetGameModeRequest());
+            }
+            catch (Exception exception) when (RazerCapabilityClient.IsExpectedHardwareException(exception))
+            {
+                errors.Add($"Gaming mode: {exception.Message}");
+            }
+        }
+
         return new BladeLiveTelemetryReadResult(
             thermal.PerformanceMode,
             thermal.FanMode,
             fanTargetRpm,
             currentFanCpuRpm,
             currentFanGpuRpm,
+            gameMode,
             errors);
     }
 

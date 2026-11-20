@@ -202,6 +202,11 @@ public sealed partial class BladeLightingController
         };
 
     private (DeviceDescriptor Device, RazerDeviceManifest Manifest) FindReadyBlade(
+        IReadOnlyList<DeviceDescriptor> devices) =>
+        FindReadyBladeOrNull(devices) ??
+        throw new InvalidOperationException("No writable Blade keyboard lighting feature collection was found.");
+
+    private (DeviceDescriptor Device, RazerDeviceManifest Manifest)? FindReadyBladeOrNull(
         IReadOnlyList<DeviceDescriptor> devices)
     {
         foreach (var device in devices)
@@ -233,7 +238,7 @@ public sealed partial class BladeLightingController
             }
         }
 
-        throw new InvalidOperationException("No writable Blade keyboard lighting feature collection was found.");
+        return null;
     }
 
     private static bool IsWritableLightingDialect(

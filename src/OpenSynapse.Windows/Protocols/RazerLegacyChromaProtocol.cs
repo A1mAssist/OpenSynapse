@@ -10,6 +10,8 @@ public static class RazerLegacyChromaProtocol
 {
     public const byte CommandClass = 0x0F;
     private const byte PerLedCommandClass = 0x03;
+    private const byte DirectBrightnessGetCommand = 0x84;
+    private const byte DirectBrightnessSetCommand = 0x04;
     public const int MaxColors = 2;
 
     // The led-matrix keyboards (rzDevice25LedMatrix) take the whole-device effect on
@@ -53,6 +55,39 @@ public static class RazerLegacyChromaProtocol
     public static byte[] GetPerLedBrightness(byte transactionId, byte profileId, byte regionId) =>
         RazerFeatureReport.CreateRequest(
             transactionId, 3, PerLedCommandClass, 0x83, [profileId, regionId]);
+
+    // The rzDevice25 path reads extended-matrix brightness with 0F:84 and
+    // writes it with 0F:04: [profileId, regionId, raw]. 00EB uses this path.
+    public static byte[] GetDirectBrightness(
+        byte transactionId,
+        byte profileId = ReadProfileId,
+        byte regionId = 0) =>
+        RazerFeatureReport.CreateRequest(
+            transactionId, 3, CommandClass, DirectBrightnessGetCommand, [profileId, regionId]);
+
+    public static byte[] SetDirectBrightness(
+        byte transactionId,
+        byte percent,
+        byte profileId = ReadProfileId,
+        byte regionId = 0) =>
+        RazerFeatureReport.CreateRequest(
+            transactionId, 3, CommandClass, DirectBrightnessSetCommand,
+            [profileId, regionId, ToDirectBrightnessLevel(percent)]);
+
+    public static byte ReadDirectBrightnessPercent(ReadOnlySpan<byte> response)
+    {
+        var data = Arguments(response);
+        if (data.Length < 3)
+        {
+            throw new InvalidDataException(
+                $"Extended brightness response has {data.Length} data bytes; 3 required.");
+        }
+
+        return (byte)Math.Ceiling(data[2] * 100d / 255d);
+    }
+
+    public static byte ToDirectBrightnessLevel(byte percent) =>
+        (byte)Math.Floor(Math.Clamp(percent, (byte)0, (byte)100) * 255d / 100d);
 
     public static byte[] SetPerLedBrightness(
         byte transactionId, byte profileId, byte regionId, byte percent) =>

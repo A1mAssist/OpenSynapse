@@ -305,13 +305,9 @@ public sealed partial class SettingsPage : UserControl
 
     private void RefreshChromaOfficialDllUi()
     {
-        if (!ChromaBrokerLauncher.IsOfficialDllInstalled)
-        {
-            return;
-        }
-
-        ChromaOfficialDllButton.Visibility = Visibility.Collapsed;
-        ShowChromaOfficialDllStatus(AppStrings.Text("ChromaOfficialDllInstalled"));
+        ChromaOfficialDllSection.Visibility = ChromaBrokerLauncher.IsOfficialDllInstalled
+            ? Visibility.Collapsed
+            : Visibility.Visible;
     }
 
     private async void ChromaOfficialDllClick(object sender, RoutedEventArgs e)
@@ -331,8 +327,7 @@ public sealed partial class SettingsPage : UserControl
             };
             if (outcome == ChromaOfficialDllInstallOutcome.Installed)
             {
-                ChromaOfficialDllButton.Visibility = Visibility.Collapsed;
-                ShowChromaOfficialDllStatus(AppStrings.Text("ChromaOfficialDllInstalledRestart"));
+                ChromaOfficialDllSection.Visibility = Visibility.Collapsed;
                 return;
             }
 

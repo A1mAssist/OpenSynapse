@@ -43,6 +43,8 @@ public enum RazerChromaChannel
     Legacy,
     /// <summary>Class-0x0F effects with class-0x03 per-region brightness (Esther/MarciT2H).</summary>
     LegacyPerLed,
+    /// <summary>Class-0x0F effects with the direct 0F:84/0F:04 brightness pair.</summary>
+    LegacyBrightness,
 }
 
 /// <summary>
@@ -167,15 +169,20 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
     {
         var errors = new List<string>();
         byte? brightness = null;
-        if (_channel is RazerChromaChannel.Standard or RazerChromaChannel.LegacyPerLed)
+        if (_channel is RazerChromaChannel.Standard or RazerChromaChannel.LegacyPerLed or
+            RazerChromaChannel.LegacyBrightness)
         {
             try
             {
-                brightness = _channel == RazerChromaChannel.Standard
-                    ? RazerChromaStandardProtocol.ReadBrightnessPercent(
+                brightness = _channel switch
+                {
+                    RazerChromaChannel.Standard => RazerChromaStandardProtocol.ReadBrightnessPercent(
                         await QueryAsync(RazerChromaStandardProtocol.GetBrightness, "read brightness", cancellationToken)
-                            .ConfigureAwait(false))
-                    : await ReadLegacyPerLedBrightnessAsync(cancellationToken).ConfigureAwait(false);
+                            .ConfigureAwait(false)),
+                    RazerChromaChannel.LegacyBrightness =>
+                        await ReadLegacyBrightnessAsync(cancellationToken).ConfigureAwait(false),
+                    _ => await ReadLegacyPerLedBrightnessAsync(cancellationToken).ConfigureAwait(false),
+                };
             }
             catch (Exception exception) when (IsExpected(exception))
             {
@@ -187,7 +194,8 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
         IReadOnlyList<byte> colors = [];
         try
         {
-            if (_channel is RazerChromaChannel.Legacy or RazerChromaChannel.LegacyPerLed)
+            if (_channel is RazerChromaChannel.Legacy or RazerChromaChannel.LegacyPerLed or
+                RazerChromaChannel.LegacyBrightness)
             {
                 var legacy = RazerLegacyChromaProtocol.ReadEffect(
                     await QueryAsync(RazerLegacyChromaProtocol.GetEffect, "read effect", cancellationToken)
@@ -270,6 +278,12 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
             return;
         }
 
+        if (_channel == RazerChromaChannel.LegacyBrightness)
+        {
+            await SetLegacyBrightnessAsync(percent, cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
         // Same class-0x10 firmware that drops 10:83 can also drop 10:85; a write must
         // not depend on the device answering the read first.
         byte? previous = null;
@@ -342,7 +356,8 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
         }
 
         var payload = colors.ToArray();
-        if (_channel is RazerChromaChannel.Legacy or RazerChromaChannel.LegacyPerLed)
+        if (_channel is RazerChromaChannel.Legacy or RazerChromaChannel.LegacyPerLed or
+            RazerChromaChannel.LegacyBrightness)
         {
             await SetLegacyEffectAsync(effect, payload, cancellationToken).ConfigureAwait(false);
             return;

@@ -6,5 +6,5 @@ public partial interface IRazerDeviceTelemetryReader
         IReadOnlyList<DeviceDescriptor> devices,
         CancellationToken cancellationToken = default) =>
         ValueTask.FromResult(new RazerDeviceLiveTelemetry(
-            null, null, null, null, null, null, false, [], DateTimeOffset.UtcNow));
+            null, null, null, null, null, null, null, false, [], DateTimeOffset.UtcNow));
 }

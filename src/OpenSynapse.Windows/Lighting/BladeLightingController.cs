@@ -59,7 +59,7 @@ public interface IBladeLightingController : IAsyncDisposable
 
     Task StopAsync();
 
-    Task SetDisplayAvailableAsync(bool available);
+    Task SetDisplayAvailableAsync(bool available, IReadOnlyList<DeviceDescriptor>? devices = null);
 
     Task ApplyExternalAsync(
         IReadOnlyList<DeviceDescriptor> devices,

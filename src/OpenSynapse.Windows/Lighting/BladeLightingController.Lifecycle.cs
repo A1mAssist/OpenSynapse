@@ -270,7 +270,9 @@ public sealed partial class BladeLightingController
         }
     }
 
-    public async Task SetDisplayAvailableAsync(bool available)
+    public async Task SetDisplayAvailableAsync(
+        bool available,
+        IReadOnlyList<DeviceDescriptor>? devices = null)
     {
         Volatile.Write(ref _displayAvailable, available ? 1 : 0);
         if (available)
@@ -287,6 +289,7 @@ public sealed partial class BladeLightingController
             {
                 var modeDevicePath = _modeLease?.DevicePath;
                 var runtime = _runtime;
+                var offSent = false;
                 _runtime = null;
                 _externalSource = null;
                 _keyboardInput = null;
@@ -309,6 +312,7 @@ public sealed partial class BladeLightingController
                                 modeDevicePath,
                                 CreateOffRequest(),
                                 CancellationToken.None).ConfigureAwait(false);
+                            offSent = true;
                         }
                     }
                     if (_nativeEffectActive && _nativeEffectDevicePath is not null)
@@ -320,12 +324,40 @@ public sealed partial class BladeLightingController
                                 _nativeEffectDevicePath,
                                 CreateOffRequest(),
                                 CancellationToken.None).ConfigureAwait(false);
+                            offSent = true;
                         }
                         finally
                         {
                             _nativeEffectActive = false;
                             _nativeEffectDevicePath = null;
                         }
+                    }
+                    // Display-off must reach the keyboard even when another app or the
+                    // firmware owns the current effect and we have no live runtime.
+                    if (!offSent &&
+                        runtime is null &&
+                        devices is not null &&
+                        FindReadyBladeOrNull(devices) is { } blade)
+                    {
+                        if (_modeLease is null &&
+                            _lightingDialect is not (BladeLightingDialect.LedMatrixBlade or BladeLightingDialect.LedMatrixBlade2))
+                        {
+                            _modeLease = await _modeCoordinator.AcquireAsync(
+                                blade.Device.Id,
+                                token => SendAsync(
+                                    blade.Device.Id,
+                                    BladeDeviceModeProtocol.CreateSetSoftwareRequest(NextTransactionId()),
+                                    token),
+                                () => SendAsync(
+                                    blade.Device.Id,
+                                    BladeDeviceModeProtocol.CreateSetNormalRequest(NextTransactionId()),
+                                    CancellationToken.None),
+                                CancellationToken.None).ConfigureAwait(false);
+                        }
+                        await SendAsync(
+                            blade.Device.Id,
+                            CreateOffRequest(),
+                            CancellationToken.None).ConfigureAwait(false);
                     }
                 }
                 finally

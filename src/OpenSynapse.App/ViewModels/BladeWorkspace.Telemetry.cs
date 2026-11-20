@@ -18,6 +18,9 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class BladeWorkspace
 {
+    private bool _startupStateSyncStarted;
+    private bool _gameModeReadFromDevice;
+
     internal async Task InitializeAsync(CancellationToken cancellationToken)
     {
         // Recorded for diagnosis only: this build does not gate any mode on the SKU.
@@ -25,7 +28,7 @@ public sealed partial class BladeWorkspace
             "blade",
             $"SystemSKU={SystemSkuReader.TryRead() ?? "<unreadable>"}");
 
-        if (_blade._bladeGameModeState is byte gameMode)
+        if (_gameModeReadFromDevice && _blade._bladeGameModeState is byte gameMode)
         {
             try
             {
@@ -164,7 +167,11 @@ public sealed partial class BladeWorkspace
         OnPropertyChanged(nameof(GamingModeVisibility));
         if (telemetry.BladeGameMode is { } gameMode)
         {
-            SetGameMode(gameMode);
+            _gameModeReadFromDevice = true;
+            if (_blade._bladeGameModeState != gameMode.GameMode)
+            {
+                SetGameMode(gameMode);
+            }
         }
         else if (ActiveDescriptors.FirstOrDefault(device =>
                      DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
@@ -270,29 +277,60 @@ public sealed partial class BladeWorkspace
         }
         if (ActiveDescriptors.Any(device => DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) && device.Access == DeviceAccessState.Available))
         {
-            if (_touchpadController?.GetEnabled() is bool touchpadEnabled)
-            {
-                TouchpadEnabled = touchpadEnabled;
-                _blade._confirmedBladeTouchpadEnabled = touchpadEnabled;
-                TouchpadText = touchpadEnabled ? AppStrings.Text("Text_F55AD712") : AppStrings.Text("Text_7E3B0F3C");
-                _blade._canSetBladeTouchpad = true;
-                OnPropertyChanged(nameof(CanSetTouchpad));
-            }
-            else
-            {
-                TouchpadText = AppStrings.Text("Text_72C29287");
-                _blade._canSetBladeTouchpad = false;
-                OnPropertyChanged(nameof(CanSetTouchpad));
-            }
+            ApplyTouchpadState();
 
             StatusText = telemetry.BladeKeyboardBrightness is not null ||
                          telemetry.BladePerformanceMode is not null ||
                          telemetry.BladeChargeLimitPercent is not null
                 ? AppStrings.Text("Text_A98448E8")
                 : AppStrings.Text("Text_874ADE24");
+            QueueStartupStateSync();
         }
         // No blanket refresh on this path: it runs on every readout tick and would
         // rebuild every bound option list, closing an open combo box each time.
+    }
+
+    private void ApplyTouchpadState()
+    {
+        if (_touchpadController?.GetEnabled() is bool touchpadEnabled)
+        {
+            TouchpadEnabled = touchpadEnabled;
+            _blade._confirmedBladeTouchpadEnabled = touchpadEnabled;
+            TouchpadText = touchpadEnabled
+                ? AppStrings.Text("Text_F55AD712")
+                : AppStrings.Text("Text_7E3B0F3C");
+            _blade._canSetBladeTouchpad = true;
+            OnPropertyChanged(nameof(CanSetTouchpad));
+        }
+        else
+        {
+            TouchpadText = AppStrings.Text("Text_72C29287");
+            _blade._canSetBladeTouchpad = false;
+            OnPropertyChanged(nameof(CanSetTouchpad));
+        }
+    }
+
+    private void QueueStartupStateSync()
+    {
+        if (_startupStateSyncStarted || IsDisposed)
+        {
+            return;
+        }
+
+        _startupStateSyncStarted = true;
+        _ = ObserveStartupStateSyncAsync();
+    }
+
+    private async Task ObserveStartupStateSyncAsync()
+    {
+        try
+        {
+            await InitializeAsync(CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            _diagnosticLog.TryWrite("blade", $"startup state sync failed: {exception}");
+        }
     }
 
     internal void ApplyLiveTelemetry(RazerDeviceLiveTelemetry telemetry)
@@ -301,6 +339,20 @@ public sealed partial class BladeWorkspace
         {
             SetPerformanceMode(performanceMode);
             CanSetPerformanceMode = true;
+        }
+        // Game mode and the touchpad toggle only change through the Fn keys, so
+        // they are not part of the fan/performance readout the device page polls.
+        // Reading them here keeps a failed first read at boot from sticking.
+        if (telemetry.BladeGameMode is { } gameMode)
+        {
+            _gameModeReadFromDevice = true;
+            SetGameMode(gameMode);
+        }
+        if (ActiveDescriptors.Any(device =>
+                DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
+                device.Access == DeviceAccessState.Available))
+        {
+            ApplyTouchpadState();
         }
         if (telemetry.BladeFanMode is BladeFanMode fanMode)
         {
@@ -367,6 +419,7 @@ public sealed partial class BladeWorkspace
         CurrentFanGpuRpm = null;
         AdvancedFanCpuModeRawText = "--";
         AdvancedFanGpuModeRawText = "--";
+        _gameModeReadFromDevice = false;
         SetGameMode(null);
         _blade._bladeGameModeWriteSupported = false;
         OnPropertyChanged(nameof(CanSetGamingMode));
