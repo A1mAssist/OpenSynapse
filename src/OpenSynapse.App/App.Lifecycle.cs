@@ -309,6 +309,7 @@ public partial class App
     {
         Interlocked.Exchange(ref _closing, 1);
         Interlocked.Increment(ref _audioMuteGeneration);
+        await StopBladeAudioMuteWatchdogAsync().ConfigureAwait(false);
         await DisposeChromaHostsAsync().ConfigureAwait(false);
         if (_audioMuteViewModel is not null)
         {

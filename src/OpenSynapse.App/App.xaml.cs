@@ -23,6 +23,8 @@ public partial class App : Application
 {
     private static readonly TimeSpan AudioMuteRetryDelay = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan ExitCleanupTimeout = TimeSpan.FromSeconds(12);
+    // Cover the ~2.1 s device-rescan handoff without leaving software mode behind.
+    private static readonly TimeSpan BladeSoftwareModeReleaseGrace = TimeSpan.FromSeconds(3);
     private MainWindow? _window;
     private SingleInstanceGuard? _singleInstanceGuard;
     private ElevatedMacroClient? _elevatedMacroClient;
@@ -59,7 +61,8 @@ public partial class App : Application
     public App()
     {
         _bladeModeCoordinator = new BladeSoftwareModeCoordinator(
-            message => _diagnosticLog.TryWrite("blade-mode", message));
+            message => _diagnosticLog.TryWrite("blade-mode", message),
+            BladeSoftwareModeReleaseGrace);
         try
         {
             AppLanguageSettings.ApplySaved();

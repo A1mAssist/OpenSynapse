@@ -140,6 +140,7 @@ public partial class App
             persistStartup: SaveStartupIntent);
         _ = EnsureMacroAgentAsync();
         _audioMuteViewModel = viewModel;
+        StartBladeAudioMuteWatchdog();
         viewModel.Blade.ControlDeviceChanged += OnBladeControlDeviceChanged;
         viewModel.Blade.PerformanceModeChangedByUser += OnBladePerformanceModeChangedByUser;
         viewModel.Blade.GamingModeChangedByUser += OnBladeGamingModeChangedByUser;

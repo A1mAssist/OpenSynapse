@@ -14,7 +14,7 @@ namespace OpenSynapse.App.ViewModels;
 /// Device lighting: the resolved profile effect as it reaches the keyboard, the Chroma
 /// hand-over, and the display-available transitions that hide and restore it.
 /// </summary>
-public sealed class LightingWorkspace : INotifyPropertyChanged
+public sealed partial class LightingWorkspace : INotifyPropertyChanged
 {
     private readonly IBladeLightingController? _bladeLightingController;
     private readonly IRazerDeviceTelemetryReader _deviceTelemetryReader;
@@ -126,98 +126,19 @@ public sealed class LightingWorkspace : INotifyPropertyChanged
         }
     }
 
-    public async Task SetDisplayAvailableAsync(bool available)
-    {
-        _setDisplayAvailable(available);
-        if (_bladeLightingController is not null)
-        {
-            try
-            {
-                await _bladeLightingController.SetDisplayAvailableAsync(available).ConfigureAwait(false);
-                if (!available)
-                {
-                    var blade = _deviceDescriptors().FirstOrDefault(device =>
-                        DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
-                        device.Access == DeviceAccessState.Available);
-                    if (blade is not null)
-                    {
-                        _bladeLightingDevicePath = blade.Id;
-                        _lightingShadowFingerprint = $"display-off\n{blade.Id}";
-                    }
-                }
-            }
-            catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
-            {
-                _diagnosticLog.TryWrite("keyboard-lighting", $"display-state lighting transition failed: {exception}");
-            }
-            finally
-            {
-                if (available)
-                {
-                    _bladeLightingDevicePath = string.Empty;
-                    _lightingShadowFingerprint = string.Empty;
-                }
-            }
-        }
-
-        await _deviceOperationGate.WaitAsync().ConfigureAwait(false);
-        try
-        {
-            try
-            {
-                if (!available &&
-                    _displaySuspendedLogoMode is null &&
-                    _blade._canSetBladeLogo &&
-                    _blade._confirmedBladeLogoIndex >= 0 &&
-                    _blade._confirmedBladeLogoIndex < BladeLogoModes.Length)
-                {
-                    _displaySuspendedLogoMode = BladeLogoModes[_blade._confirmedBladeLogoIndex];
-                    await _deviceTelemetryReader.SetBladeLogoModeAsync(
-                        _deviceDescriptors(),
-                        BladeLogoMode.Off,
-                        CancellationToken.None).ConfigureAwait(false);
-                }
-                else if (available && _displaySuspendedLogoMode is { } logoMode)
-                {
-                    await _deviceTelemetryReader.SetBladeLogoModeAsync(
-                        _deviceDescriptors(),
-                        logoMode,
-                        CancellationToken.None).ConfigureAwait(false);
-                    _displaySuspendedLogoMode = null;
-                }
-            }
-            catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
-            {
-                _diagnosticLog.TryWrite(
-                    "blade-logo",
-                    $"display-state Logo transition failed: {exception}");
-            }
-        }
-        finally
-        {
-            _deviceOperationGate.Release();
-        }
-
-        if (available)
-        {
-            await RestoreBladeLightingAfterExternalAsync().ConfigureAwait(false);
-            _requestDeviceRefresh();
-        }
-    }
-
     internal async Task<string?> ApplyLoadedProfileAsync(
         DeviceDescriptor? blade,
         PowerSourceKind powerState,
         CancellationToken cancellationToken)
     {
-        if (_bladeLightingController is null)
+        if (_bladeLightingController is null && !UsesFirmwareKeyboardLighting)
         {
             return null;
         }
 
         if (blade is null || blade.Access != DeviceAccessState.Available)
         {
-            if (_bladeLightingDevicePath.Length > 0)
+            if (_bladeLightingDevicePath.Length > 0 && _bladeLightingController is not null)
             {
                 try
                 {
@@ -263,7 +184,7 @@ public sealed class LightingWorkspace : INotifyPropertyChanged
                 }
                 else if (CanApplyLightingEffects)
                 {
-                    await _bladeLightingController.ApplyAsync(
+                    await _bladeLightingController!.ApplyAsync(
                         _deviceDescriptors(),
                         BladeLightingEffect.Off,
                         cancellationToken).ConfigureAwait(false);
@@ -337,6 +258,7 @@ public sealed class LightingWorkspace : INotifyPropertyChanged
         }
 
         if (_bladeLightingDevicePath.Length > 0 &&
+            _bladeLightingController is not null &&
             !StringComparer.OrdinalIgnoreCase.Equals(_bladeLightingDevicePath, blade.Id))
         {
             try
@@ -351,7 +273,7 @@ public sealed class LightingWorkspace : INotifyPropertyChanged
 
         try
         {
-            await _bladeLightingController.ApplyAsync(_deviceDescriptors(), effect, cancellationToken);
+            await _bladeLightingController!.ApplyAsync(_deviceDescriptors(), effect, cancellationToken);
             _bladeLightingDevicePath = blade.Id;
             _lightingShadowFingerprint = fingerprint;
             _ = ObserveRuntime(_bladeLightingController.RuntimeCompletion);
@@ -433,7 +355,7 @@ public sealed class LightingWorkspace : INotifyPropertyChanged
 
     internal async Task RestoreBladeLightingAfterExternalAsync()
     {
-        if (_bladeLightingController is null)
+        if (_bladeLightingController is null && !UsesFirmwareKeyboardLighting)
         {
             return;
         }

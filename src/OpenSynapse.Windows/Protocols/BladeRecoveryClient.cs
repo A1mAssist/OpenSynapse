@@ -5,6 +5,10 @@ namespace OpenSynapse.Windows.Protocols;
 
 public sealed class BladeRecoveryClient : IAsyncDisposable
 {
+    // The host shares the app's job object, so Windows can terminate it with
+    // DBG_TERMINATE_PROCESS after the marker has already been handled.
+    private const int DbTerminateProcess = unchecked((int)0x40010004);
+    private static readonly TimeSpan HostExitTimeout = TimeSpan.FromSeconds(5);
     private readonly Process _host;
     private readonly EventWaitHandle _shutdown;
     private readonly BladeRecoverySharedState _state;
@@ -110,8 +114,13 @@ public sealed class BladeRecoveryClient : IAsyncDisposable
                     "Recovery marker ownership changed before normal shutdown.");
             }
             _shutdown.Set();
-            await _host.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
-            if (_host.ExitCode != 0) throw new InvalidOperationException($"RecoveryHost exited with code {_host.ExitCode}.");
+            await _host.WaitForExitAsync(cancellationToken)
+                .WaitAsync(HostExitTimeout, cancellationToken)
+                .ConfigureAwait(false);
+            if (_host.ExitCode is not (0 or DbTerminateProcess))
+            {
+                throw new InvalidOperationException($"RecoveryHost exited with code {_host.ExitCode}.");
+            }
         }
         catch
         {
@@ -132,8 +141,10 @@ public sealed class BladeRecoveryClient : IAsyncDisposable
             // Keep the marker so RecoveryHost performs Normal Mode and key cleanup
             // before it exits; this is the failure path, not a normal shutdown.
             _shutdown.Set();
-            await _host.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
-            if (_host.ExitCode != 0)
+            await _host.WaitForExitAsync(cancellationToken)
+                .WaitAsync(HostExitTimeout, cancellationToken)
+                .ConfigureAwait(false);
+            if (_host.ExitCode is not (0 or DbTerminateProcess))
             {
                 throw new InvalidOperationException($"RecoveryHost exited with code {_host.ExitCode}.");
             }

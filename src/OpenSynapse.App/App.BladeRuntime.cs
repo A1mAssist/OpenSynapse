@@ -21,6 +21,12 @@ namespace OpenSynapse.App;
 
 public partial class App
 {
+    private static readonly TimeSpan BladeAudioMuteSwitchDebounce = TimeSpan.FromMilliseconds(250);
+    private static readonly TimeSpan BladeAudioMuteWatchdogInterval = TimeSpan.FromSeconds(2);
+    private readonly CancellationTokenSource _bladeAudioMuteWatchdogStop = new();
+    private Task? _bladeAudioMuteWatchdog;
+    private long _bladeAudioMuteNextRetryTicks;
+
     private async Task DisposeHardwareForExitAsync(MainViewModel viewModel)
     {
         var lightingController = _bladeLightingController;
@@ -77,11 +83,23 @@ public partial class App
         await _audioMuteRuntimeGate.WaitAsync();
         try
         {
-            await DisposeBladeAudioStackAsync();
-        }
-        catch (Exception exception)
-        {
-            _diagnosticLog.TryWrite("audio-mute-sync", $"stop failed: {exception}");
+            try
+            {
+                await DisposeBladeAudioStackAsync();
+            }
+            catch (Exception exception)
+            {
+                _diagnosticLog.TryWrite("audio-mute-sync", $"stop failed: {exception}");
+            }
+
+            try
+            {
+                await _bladeModeCoordinator.RestoreAllAsync().WaitAsync(TimeSpan.FromSeconds(2));
+            }
+            catch (Exception exception)
+            {
+                _diagnosticLog.TryWrite("blade-mode", $"exit restore failed: {exception.Message}");
+            }
         }
         finally
         {
@@ -93,13 +111,28 @@ public partial class App
     {
         _activeBladeControlDevicePath = devicePath;
         _activeBladeProductId = productId;
+        var transport = _razerTransport;
+        if (!string.IsNullOrWhiteSpace(devicePath) && transport is not null)
+        {
+            var path = devicePath;
+            _bladeModeCoordinator.SetRestoreHandler(
+                path,
+                () => BladeRecoveryDeviceRestorer.RestoreNormalModeAsync(transport, path));
+        }
+
         var generation = Interlocked.Increment(ref _audioMuteGeneration);
+        _diagnosticLog.TryWrite(
+            "blade-fn",
+            $"control device changed: path={devicePath ?? "<none>"} pid=0x{productId:X4} generation={generation}");
         _ = SwitchBladeAudioMuteRuntimeAsync(devicePath, productId, generation);
     }
 
     private void OnBladeInputProfileChanged()
     {
         var generation = Interlocked.Increment(ref _audioMuteGeneration);
+        _diagnosticLog.TryWrite(
+            "blade-fn",
+            $"input profile changed: generation={generation}");
         _ = SwitchBladeAudioMuteRuntimeAsync(
             _activeBladeControlDevicePath,
             _activeBladeProductId,
@@ -109,13 +142,32 @@ public partial class App
     private async Task SwitchBladeAudioMuteRuntimeAsync(
         string? devicePath,
         ushort productId,
-        int generation)
+        int generation,
+        bool onlyIfMissing = false)
     {
         await _audioMuteRuntimeGate.WaitAsync().ConfigureAwait(false);
         try
         {
             if (Volatile.Read(ref _closing) != 0 ||
                 generation != Volatile.Read(ref _audioMuteGeneration))
+            {
+                return;
+            }
+
+            // Device discovery and the first profile apply both request a switch
+            // within a few hundred milliseconds. Let that burst settle so the
+            // second request cannot cancel the runtime halfway through startup.
+            await Task.Delay(BladeAudioMuteSwitchDebounce).ConfigureAwait(false);
+            if (Volatile.Read(ref _closing) != 0 ||
+                generation != Volatile.Read(ref _audioMuteGeneration))
+            {
+                return;
+            }
+
+            // A watchdog tick can queue while the previous switch is still
+            // starting the runtime. Re-check under the gate so that queued tick
+            // cannot tear down the runtime it was waiting for.
+            if (onlyIfMissing && _bladeFnRuntime is not null)
             {
                 return;
             }
@@ -210,29 +262,104 @@ public partial class App
         }
         catch (Exception exception)
         {
+            var current = Volatile.Read(ref _audioMuteGeneration);
+            if (Volatile.Read(ref _closing) != 0 || generation != current)
+            {
+                // A newer device/profile request owns the next attempt. This is
+                // not a user-facing failure and must not schedule a duplicate.
+                _diagnosticLog.TryWrite(
+                    "audio-mute-sync",
+                    $"switch superseded: generation={generation} current={current}: {exception.GetType().Name}");
+                return;
+            }
+
             _diagnosticLog.TryWrite("audio-mute-sync", $"switch failed: {exception}");
             if (exception is BladeFilterEndpointMissingException or
                 BladeFilterDriverIncompleteException)
             {
-                if (generation == Volatile.Read(ref _audioMuteGeneration))
-                {
-                    SetBladeFilterDriverMissing(true);
-                }
+                SetBladeFilterDriverMissing(true);
                 return;
             }
 
             ReportBladeFnFailure(exception);
             if (exception is not FileNotFoundException &&
                 !string.IsNullOrWhiteSpace(devicePath) &&
-                Volatile.Read(ref _closing) == 0 &&
-                generation == Volatile.Read(ref _audioMuteGeneration))
+                Volatile.Read(ref _closing) == 0)
             {
+                Volatile.Write(
+                    ref _bladeAudioMuteNextRetryTicks,
+                    Environment.TickCount64 + (long)AudioMuteRetryDelay.TotalMilliseconds);
                 _ = RetryBladeAudioMuteRuntimeAsync(devicePath, productId, generation);
             }
         }
         finally
         {
             _audioMuteRuntimeGate.Release();
+        }
+    }
+
+    private void StartBladeAudioMuteWatchdog()
+    {
+        _bladeAudioMuteWatchdog ??= WatchBladeAudioMuteRuntimeAsync(
+            _bladeAudioMuteWatchdogStop.Token);
+    }
+
+    private async Task StopBladeAudioMuteWatchdogAsync()
+    {
+        _bladeAudioMuteWatchdogStop.Cancel();
+        var watchdog = _bladeAudioMuteWatchdog;
+        _bladeAudioMuteWatchdog = null;
+        if (watchdog is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await watchdog.ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async Task WatchBladeAudioMuteRuntimeAsync(CancellationToken cancellationToken)
+    {
+        using var timer = new PeriodicTimer(BladeAudioMuteWatchdogInterval);
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
+            {
+                if (Volatile.Read(ref _closing) != 0 ||
+                    _bladeFnRuntime is not null ||
+                    _audioMuteRuntimeGate.CurrentCount == 0 ||
+                    Environment.TickCount64 < Volatile.Read(ref _bladeAudioMuteNextRetryTicks))
+                {
+                    continue;
+                }
+
+                var devicePath = _activeBladeControlDevicePath;
+                var productId = _activeBladeProductId;
+                if (string.IsNullOrWhiteSpace(devicePath) ||
+                    _razerTransport is null ||
+                    !BladeFnRuntime.HasMapping(productId))
+                {
+                    continue;
+                }
+
+                // The runtime is allowed to die on a transient device event, but
+                // the Fn keys must come back without waiting for a foreground or
+                // restart. Reuse the normal switch so mode ownership stays intact.
+                var generation = Volatile.Read(ref _audioMuteGeneration);
+                _ = SwitchBladeAudioMuteRuntimeAsync(
+                    devicePath,
+                    productId,
+                    generation,
+                    onlyIfMissing: true);
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
         }
     }
 
@@ -367,6 +494,15 @@ public partial class App
         catch (Exception exception)
         {
             _diagnosticLog.TryWrite("blade-fn", $"Emergency Blade Fn cleanup failed: {exception}");
+        }
+
+        try
+        {
+            _bladeModeCoordinator.RestoreAllAsync().Wait(TimeSpan.FromSeconds(2));
+        }
+        catch (Exception exception)
+        {
+            _diagnosticLog.TryWrite("blade-mode", $"emergency restore failed: {exception.Message}");
         }
     }
 

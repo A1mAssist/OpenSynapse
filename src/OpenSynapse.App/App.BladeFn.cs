@@ -241,6 +241,12 @@ public partial class App
         int generation)
     {
         await Task.Delay(AudioMuteRetryDelay).ConfigureAwait(false);
+        Volatile.Write(ref _bladeAudioMuteNextRetryTicks, 0);
+        if (_bladeFnRuntime is not null)
+        {
+            return;
+        }
+
         if (Volatile.Read(ref _closing) == 0 &&
             generation == Volatile.Read(ref _audioMuteGeneration))
         {

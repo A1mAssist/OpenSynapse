@@ -11,10 +11,18 @@ public sealed partial class RazerChromaStandardService
     private static readonly FrozenSet<ushort> PerLedLegacyProducts =
         new ushort[] { 0x0F45, 0x0F6D }.ToFrozenSet();
 
+    // Basilisk V4 HyperSpeed (00EB wired, 00EA wireless receiver) uses
+    // rzDevice25's 0F:84/0F:04 brightness pair and rejects the shared
+    // 10:85 path with an empty payload.
+    private static readonly FrozenSet<ushort> DirectLegacyBrightnessProducts =
+        new ushort[] { 0x00EA, 0x00EB }.ToFrozenSet();
+
     internal static RazerChromaChannel ChannelFor(ushort productId) =>
         PerLedLegacyProducts.Contains(productId)
             ? RazerChromaChannel.LegacyPerLed
-            : RazerChromaChannel.Standard;
+            : DirectLegacyBrightnessProducts.Contains(productId)
+                ? RazerChromaChannel.LegacyBrightness
+                : RazerChromaChannel.Standard;
 
     internal static IReadOnlyList<RazerChromaDeviceConnection> SelectConnections(
         IEnumerable<WindowsHidDiscovery.HidInterfaceDescriptor> interfaces) =>

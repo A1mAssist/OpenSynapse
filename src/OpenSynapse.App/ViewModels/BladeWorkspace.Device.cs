@@ -186,6 +186,23 @@ public sealed partial class BladeWorkspace
             ? blade.Id
             : null;
         var productId = blade?.ProductId ?? 0;
+        if (value is not null)
+        {
+            _bladeControlUnavailableCount = 0;
+        }
+        else if (blade is not null &&
+                 _bladeControlDevicePath is { Length: > 0 } &&
+                 productId == _bladeControlProductId &&
+                 // One unverified snapshot is not a removal; two in a row is.
+                 ++_bladeControlUnavailableCount < 2)
+        {
+            return;
+        }
+        else
+        {
+            _bladeControlUnavailableCount = 0;
+        }
+
         if (StringComparer.OrdinalIgnoreCase.Equals(_bladeControlDevicePath, value) &&
             _bladeControlProductId == productId)
         {
