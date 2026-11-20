@@ -104,6 +104,7 @@ public sealed partial class RazerMappingView : UserControl
             previous?.ReleaseVisual();
         }
         RequestConnectors();
+        _ = EnsureMappingLoadedAsync();
     }
 
     private void MappingLoaded(object sender, RoutedEventArgs e)
@@ -111,6 +112,24 @@ public sealed partial class RazerMappingView : UserControl
         Mapping?.StartVisualLoad();
         BindRows();
         RequestConnectors();
+        _ = EnsureMappingLoadedAsync();
+    }
+
+    private async Task EnsureMappingLoadedAsync()
+    {
+        if (Mapping is not { } mapping) return;
+        try
+        {
+            await mapping.EnsureLoadedAsync();
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
+        {
+            // The mapping view model owns the user-facing error; a canceled
+            // selection or a device rejection must not escape the view event.
+        }
     }
 
     private void MappingUnloaded(object sender, RoutedEventArgs e)

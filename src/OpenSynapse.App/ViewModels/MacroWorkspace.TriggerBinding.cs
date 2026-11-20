@@ -114,12 +114,11 @@ public sealed partial class MacroWorkspace
         var wasDirty = _dirtyMacroIds.Contains(row.Id);
         var previousTrigger = row.Definition.Trigger?.Clone();
         var previousAdditional = CloneTriggers(row.Definition.AdditionalTriggers);
-        var previousPlayback = row.Definition.PlaybackMode;
-        var previousRepeat = row.Definition.RepeatCount;
         var previousBinding = row.Definition.SoftwareBinding?.Clone();
         var existing = row.Definition.FindTrigger(input, MacroModifierKeys.None, hyperShiftLayer);
         if (existing is null && row.Definition.Trigger is null)
         {
+            existing = trigger;
             row.SetTrigger(trigger);
             row.Definition.SoftwareBinding = softwareBinding?.Clone();
         }
@@ -127,6 +126,7 @@ public sealed partial class MacroWorkspace
         {
             trigger.SoftwareBinding = softwareBinding?.Clone();
             row.Definition.AdditionalTriggers.Add(trigger);
+            existing = trigger;
         }
         else
         {
@@ -145,16 +145,18 @@ public sealed partial class MacroWorkspace
             }
             row.SetTrigger(row.Definition.Trigger);
         }
-        row.Definition.PlaybackMode = playbackMode;
-        row.Definition.RepeatCount = Math.Clamp(repeatCount, 1, MacroDefinition.MaxRepeatCount);
+        // Playback belongs to the key that was bound. Writing it to the
+        // definition would let a second key change the first key's behavior.
+        existing.PlaybackMode = playbackMode;
+        existing.RepeatCount = playbackMode == MacroPlaybackMode.Repeat
+            ? Math.Clamp(repeatCount, 1, MacroDefinition.MaxRepeatCount)
+            : null;
         row.Refresh();
         MarkMacroDirty(row);
         if (!await TrySaveMacroProfileAsync(cancellationToken).ConfigureAwait(true))
         {
             row.SetTrigger(previousTrigger);
             row.Definition.AdditionalTriggers = previousAdditional;
-            row.Definition.PlaybackMode = previousPlayback;
-            row.Definition.RepeatCount = previousRepeat;
             row.Definition.SoftwareBinding = previousBinding;
             row.Refresh();
             RestoreMacroDirtyState(row.Id, wasDirty);

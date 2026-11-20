@@ -157,7 +157,9 @@ public static class SoftwareShortcutCatalog
         public static readonly Key LeftCtrl = new(0x11, 0x1D);
         public static readonly Key LeftShift = new(0x10, 0x2A);
         public static readonly Key LeftAlt = new(0x12, 0x38);
-        public static readonly Key LeftWin = new(0x5B, 0x5B, Extended: true);
+        // Win is a virtual-key modifier. Some shells do not clear its state when
+        // it is injected by scan code, leaving Win held after a Win+key chord.
+        public static readonly Key LeftWin = new(0x5B, 0, Extended: true);
         public static readonly Key Tab = new(0x09, 0x0F);
         public static readonly Key S = new(0x53, 0x1F);
         public static readonly Key G = new(0x47, 0x22);

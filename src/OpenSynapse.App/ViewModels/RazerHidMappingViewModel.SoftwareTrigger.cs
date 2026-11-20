@@ -42,6 +42,14 @@ public sealed partial class RazerHidMappingViewModel
 
     private MacroDefinition? ResolveSoftwareMacro(RazerHidMappingRowViewModel row)
     {
+        if (row.OptionIndex < 0)
+        {
+            return row.SoftwareMacroId is { } loadedId
+                ? _localMacros.FirstOrDefault(macro =>
+                    StringComparer.Ordinal.Equals(macro.Id, loadedId))
+                : null;
+        }
+
         if (row.OptionIndex != row.LoadedOptionIndex)
         {
             // The user picked from the dropdown after the page was read.
@@ -176,6 +184,21 @@ public sealed partial class RazerHidMappingViewModel
                         row.ButtonId, Mode, native.FunctionId, native.Data, cancellationToken)
                     .ConfigureAwait(true);
             }
+            else if (_deviceKind == RazerMappingDeviceKind.Mouse &&
+                     input.Kind == MacroInputKind.MouseButton &&
+                     backups.FirstOrDefault(item =>
+                         ReferenceEquals(item.Row, row))?.Assignment is { } mouseCurrent &&
+                     (mouseCurrent.FunctionId != RazerHidMappingFunctions.ButtonCode ||
+                      mouseCurrent.Data.Count == 0 ||
+                      mouseCurrent.Data[0] != row.ButtonId))
+            {
+                // Same for a mouse button left on a firmware action: the hook
+                // only sees the button when the device reports the button.
+                await _transport.SetAssignmentAsync(
+                        row.ButtonId, Mode, RazerHidMappingFunctions.ButtonCode,
+                        [row.ButtonId], cancellationToken)
+                    .ConfigureAwait(true);
+            }
 
             var error = await _softwareTriggerBinder!(
                     action.MacroId,
@@ -265,6 +288,9 @@ public sealed partial class RazerHidMappingViewModel
         _deviceKind == RazerMappingDeviceKind.Keyboard &&
         _catalog is not RazerViperMappingActionCatalog &&
         (assignment.FunctionId == RazerHidMappingFunctions.Off ||
+         // A raw Win+Tab chord keeps Win held on these firmwares.
+         assignment.FunctionId == RazerHidMappingFunctions.KeyCode &&
+         assignment.Data is [0x08, 0x2B] ||
          _catalog.Decode(assignment.FunctionId, assignment.Data)?.Group ==
              RazerHidMappingGroup.WindowsShortcut);
 
@@ -315,10 +341,10 @@ public sealed partial class RazerHidMappingViewModel
         }
 
         var clears = new List<ClearedSoftwareTrigger>();
-        // "Keep" never reaches the pending set, but a row that used to run a
-        // software action must still give that action up.
-        foreach (var row in pending.Concat(Rows.Where(row =>
-                     row.Group == RazerHidMappingGroup.Keep && row.SoftwareMacroId is not null)))
+        // "Keep" means leave the key alone. A page reset can put a loaded macro
+        // row back on Keep; treating that as an intentional move would delete a
+        // trigger another key still uses.
+        foreach (var row in pending)
         {
             if (row.SoftwareMacroId is not { } oldId)
             {
@@ -356,8 +382,8 @@ public sealed partial class RazerHidMappingViewModel
             clears.Add(new ClearedSoftwareTrigger(
                 oldId,
                 trigger.Clone(),
-                macro.PlaybackMode,
-                macro.RepeatCount,
+                macro.EffectivePlaybackMode(trigger),
+                macro.EffectiveRepeatCount(trigger),
                 binding?.Clone()));
         }
 
@@ -381,6 +407,9 @@ public sealed partial class RazerHidMappingViewModel
 
         foreach (var clear in clears)
         {
+            _log?.Invoke(
+                $"software trigger cleared macro={clear.MacroId} " +
+                $"code=0x{clear.Trigger.Input.RazerKeyCode:X2} button={clear.SoftwareBinding?.ButtonId}");
             var error = await _softwareTriggerClearer(
                     clear.MacroId,
                     clear.Trigger.Input,

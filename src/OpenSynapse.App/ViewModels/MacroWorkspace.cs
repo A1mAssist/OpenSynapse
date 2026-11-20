@@ -180,14 +180,13 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
                 var macros = _getActiveProfile().Macros
                     .GroupBy(macro => macro.Id, StringComparer.Ordinal)
                     .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
-                var plan = MacroPlaybackPlan.Build(selected.Definition, macros);
+                var (plan, playback) = BuildDurationPlan(selected.Definition, macros);
                 if (plan.Warnings.Count > 0)
                 {
                     return AppStrings.Text("MacroDurationUnavailable");
                 }
 
-                return selected.Definition.PlaybackMode == MacroPlaybackMode.RepeatUntilStopped ||
-                    selected.Definition.Trigger?.Mode == MacroTriggerMode.HoldRepeat
+                return playback == MacroPlaybackMode.RepeatUntilStopped
                         ? AppStrings.Text("MacroDurationContinuous")
                         : AppStrings.FormatText("MacroDurationText", plan.TotalDurationMilliseconds);
             }

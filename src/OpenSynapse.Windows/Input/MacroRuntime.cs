@@ -65,7 +65,7 @@ internal sealed partial class MacroRuntime : IDisposable
     /// </summary>
     internal Action<MacroInput>? UnhandledRazerKeyHandler { get; set; }
 
-    public event Action<MacroDefinition>? PlaybackStarted;
+    public event Action<MacroDefinition, MacroTriggerMode?, MacroPlaybackMode>? PlaybackStarted;
 
     public event Action? PlaybackStateChanged;
 

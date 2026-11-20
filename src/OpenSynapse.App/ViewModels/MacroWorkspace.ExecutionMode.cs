@@ -133,16 +133,12 @@ public sealed partial class MacroWorkspace
             }
 
             var mode = PlaybackModes[value];
-            if (selected.Definition.PlaybackMode == mode)
+            if (DisplayPlaybackMode == mode)
             {
                 return;
             }
 
-            selected.Definition.PlaybackMode = mode;
-            if (mode != MacroPlaybackMode.Repeat)
-            {
-                selected.Definition.RepeatCount = 1;
-            }
+            SetPlayback(selected.Definition, mode);
 
             MarkMacroDirty(selected);
             NotifyExecutionModeChanged();
@@ -152,7 +148,9 @@ public sealed partial class MacroWorkspace
 
     public double MacroExecutionRepeatCount
     {
-        get => SelectedMacro?.Definition.RepeatCount ?? 1;
+        get => SelectedMacro is { } selected
+            ? selected.Definition.EffectiveRepeatCount(selected.Definition.Trigger)
+            : 1;
         set
         {
             if (SelectedMacro is not { } selected || !double.IsFinite(value))
@@ -164,12 +162,19 @@ public sealed partial class MacroWorkspace
                 (int)Math.Round(value),
                 1,
                 MacroDefinition.MaxRepeatCount);
-            if (selected.Definition.RepeatCount == count)
+            var trigger = selected.Definition.Trigger;
+            if (selected.Definition.RepeatCount == count &&
+                (trigger?.PlaybackMode != MacroPlaybackMode.Repeat ||
+                 trigger.RepeatCount == count))
             {
                 return;
             }
 
             selected.Definition.RepeatCount = count;
+            if (trigger is { PlaybackMode: MacroPlaybackMode.Repeat })
+            {
+                trigger.RepeatCount = count;
+            }
             MarkMacroDirty(selected);
             RequestExecutionModeSave();
             OnPropertyChanged();
@@ -202,7 +207,8 @@ public sealed partial class MacroWorkspace
                 MacroPlaybackMode.Repeat => AppStrings.FormatText(
                     "MacroExecutionRepeatValue",
                     Math.Clamp(
-                        SelectedMacro.Definition.RepeatCount,
+                        SelectedMacro.Definition.EffectiveRepeatCount(
+                            SelectedMacro.Definition.Trigger),
                         1,
                         MacroDefinition.MaxRepeatCount)),
                 MacroPlaybackMode.RepeatUntilStopped => AppStrings.Text(
@@ -238,14 +244,48 @@ public sealed partial class MacroWorkspace
             ? MacroPlaybackMode.RepeatUntilStopped
             : MacroPlaybackChoices.Normalize(
                 MacroTriggerMode,
-                SelectedMacro?.Definition.PlaybackMode ?? MacroPlaybackMode.Once);
+                SelectedMacro?.Definition.EffectivePlaybackMode(
+                    SelectedMacro.Definition.Trigger) ?? MacroPlaybackMode.Once);
+
+    private static void SetPlayback(MacroDefinition definition, MacroPlaybackMode mode)
+    {
+        definition.PlaybackMode = mode;
+        if (mode != MacroPlaybackMode.Repeat)
+        {
+            definition.RepeatCount = 1;
+        }
+
+        // The editor edits the definition's first binding; other keys keep
+        // the playback each was bound with.
+        if (definition.Trigger is { } trigger)
+        {
+            trigger.PlaybackMode = mode;
+            trigger.RepeatCount = mode == MacroPlaybackMode.Repeat
+                ? Math.Clamp(definition.RepeatCount, 1, MacroDefinition.MaxRepeatCount)
+                : null;
+        }
+    }
+
+    private static (MacroPlaybackPlan Plan, MacroPlaybackMode Playback) BuildDurationPlan(
+        MacroDefinition definition,
+        IReadOnlyDictionary<string, MacroDefinition> macros)
+    {
+        var playback = definition.EffectivePlaybackMode(definition.Trigger);
+        return (
+            MacroPlaybackPlan.Build(
+                definition,
+                macros,
+                playback,
+                definition.EffectiveRepeatCount(definition.Trigger)),
+            playback);
+    }
 
     private static bool ApplyPlaybackChoice(
         MacroRowViewModel selected,
         MacroTriggerMode previousMode,
         MacroTriggerMode mode)
     {
-        var playback = selected.Definition.PlaybackMode;
+        var playback = selected.Definition.EffectivePlaybackMode(selected.Definition.Trigger);
         if (previousMode == MacroTriggerMode.HoldRepeat &&
             mode != MacroTriggerMode.HoldRepeat &&
             playback == MacroPlaybackMode.RepeatUntilStopped)
@@ -256,16 +296,13 @@ public sealed partial class MacroWorkspace
         playback = mode == MacroTriggerMode.HoldRepeat
             ? MacroPlaybackMode.RepeatUntilStopped
             : MacroPlaybackChoices.Normalize(mode, playback);
-        if (selected.Definition.PlaybackMode == playback)
+        if (selected.Definition.PlaybackMode == playback &&
+            selected.Definition.EffectivePlaybackMode(selected.Definition.Trigger) == playback)
         {
             return false;
         }
 
-        selected.Definition.PlaybackMode = playback;
-        if (playback != MacroPlaybackMode.Repeat)
-        {
-            selected.Definition.RepeatCount = 1;
-        }
+        SetPlayback(selected.Definition, playback);
 
         return true;
     }

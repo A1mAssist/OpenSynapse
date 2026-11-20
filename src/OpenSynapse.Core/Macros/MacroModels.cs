@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace OpenSynapse.Core.Macros;
 
 public enum MacroInputKind
@@ -196,6 +198,12 @@ public sealed class MacroTrigger
     public MacroInput Input { get; set; } = new();
     public MacroModifierKeys Modifiers { get; set; }
     public MacroTriggerMode Mode { get; set; }
+    // A key can override how the shared macro plays. Null keeps the
+    // definition's setting, so two keys can run the same macro differently.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MacroPlaybackMode? PlaybackMode { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? RepeatCount { get; set; }
     public bool HyperShiftLayer { get; set; }
     public string? DeviceId { get; set; }
     public string? ControlId { get; set; }
@@ -216,6 +224,16 @@ public sealed class MacroTrigger
             Mode = MacroTriggerMode.Press;
         }
 
+        if (PlaybackMode is { } playback)
+        {
+            PlaybackMode = Enum.IsDefined(playback)
+                ? MacroPlaybackChoices.Normalize(Mode, playback)
+                : null;
+        }
+        RepeatCount = PlaybackMode == MacroPlaybackMode.Repeat
+            ? Math.Clamp(RepeatCount ?? 1, 1, MacroDefinition.MaxRepeatCount)
+            : null;
+
         DeviceId = NormalizeOptional(DeviceId, 128);
         ControlId = NormalizeOptional(ControlId, 128);
     }
@@ -225,6 +243,8 @@ public sealed class MacroTrigger
         Input = Input.Clone(),
         Modifiers = Modifiers,
         Mode = Mode,
+        PlaybackMode = PlaybackMode,
+        RepeatCount = RepeatCount,
         HyperShiftLayer = HyperShiftLayer,
         DeviceId = DeviceId,
         ControlId = ControlId,
@@ -462,6 +482,20 @@ public sealed class MacroDefinition
 
     public MacroTrigger? FindTrigger(MacroInput input, bool hyperShiftLayer) =>
         FindTrigger(input, MacroModifierKeys.None, hyperShiftLayer);
+
+    /// <summary>Playback a specific trigger runs with; the definition is the default.</summary>
+    public MacroPlaybackMode EffectivePlaybackMode(MacroTrigger? trigger) =>
+        trigger is null
+            ? PlaybackMode
+            : trigger.PlaybackMode ??
+              (trigger.Mode == MacroTriggerMode.HoldRepeat
+                  ? MacroPlaybackMode.RepeatUntilStopped
+                  : PlaybackMode);
+
+    public int EffectiveRepeatCount(MacroTrigger? trigger) =>
+        EffectivePlaybackMode(trigger) == MacroPlaybackMode.Repeat
+            ? Math.Clamp(trigger?.RepeatCount ?? RepeatCount, 1, MaxRepeatCount)
+            : 1;
 
     internal static bool IsValidTrigger(MacroTrigger? trigger) =>
         trigger is { Input: { } input } &&

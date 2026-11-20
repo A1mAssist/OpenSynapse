@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Macros;
+using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Protocols;
 
@@ -173,8 +174,11 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
         set
         {
             if (_groupOptions.Count == 0) return;
-            var clamped = Math.Clamp(value, 0, _groupOptions.Count - 1);
-            var group = (int)_groupOptions[clamped].Group;
+            // ComboBox pushes -1 while its items are being replaced. Clamping
+            // that to 0 would rewrite a loaded macro row as "Keep" and the next
+            // save would clear the macro that the row still owns.
+            if (value < 0 || value >= _groupOptions.Count) return;
+            var group = (int)_groupOptions[value].Group;
             if (_groupIndex == group) return;
             GroupIndex = group;
         }
@@ -220,6 +224,13 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
         get => _optionIndex;
         set
         {
+            // ComboBox pushes -1 while its item list is being replaced. Do not
+            // let that wipe the macro selection the row already loaded.
+            if (value < 0 || (_optionNames.Count > 0 && value >= _optionNames.Count))
+            {
+                return;
+            }
+
             if (_optionIndex == value) return;
             _optionIndex = value;
             OnPropertyChanged();
@@ -331,6 +342,7 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
         get => _macroPlaybackIndex;
         set
         {
+            if (value < 0) return;
             var clamped = Math.Clamp(value, 0, MacroPlaybackOptions.Count - 1);
             if (_macroPlaybackIndex == clamped) return;
             _macroPlaybackIndex = clamped;
@@ -374,6 +386,7 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
         get => _selectedMacroSlotIndex;
         set
         {
+            if (value < 0) return;
             var clamped = Math.Clamp(value, 0, Math.Max(0, MacroSlots.Count - 1));
             if (_selectedMacroSlotIndex == clamped) return;
             _selectedMacroSlotIndex = clamped;
@@ -567,6 +580,20 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
                 (RazerHidMacroPlayback)_macroPlaybackIndex,
                 checked((int)MacroRepeatCount)),
         };
+
+    /// <summary>
+    /// Win+Tab as a keyboard chord writes firmware id 101, which cycles apps
+    /// rather than opening Task View; a raw chord keeps Win held instead.
+    /// </summary>
+    internal bool IsWindowsTabChord =>
+        Group == RazerHidMappingGroup.KeyboardKey &&
+        CreateAction() is { FunctionId: RazerHidMappingFunctions.Win8ShortcutsKey, Data: [101] };
+
+    internal void UseSoftwareShortcut(string actionId)
+    {
+        GroupIndex = (int)RazerHidMappingGroup.WindowsShortcut;
+        OptionIndex = SoftwareShortcutCatalog.IndexOf(actionId);
+    }
 
     private static string FormatSlotName(byte id) => AppStrings.FormatText("RazerMappingMacroSlot", id);
 

@@ -46,11 +46,20 @@ public sealed class MacroPlaybackPlan
 
     public static MacroPlaybackPlan Build(
         MacroDefinition macro,
-        IReadOnlyDictionary<string, MacroDefinition>? macros = null)
+        IReadOnlyDictionary<string, MacroDefinition>? macros = null,
+        MacroPlaybackMode? playbackMode = null,
+        int? repeatCount = null)
     {
         ArgumentNullException.ThrowIfNull(macro);
         EnsureValidSource(macro);
         var normalized = macro.Clone();
+        if (playbackMode is { } mode)
+        {
+            normalized.PlaybackMode = mode;
+            normalized.RepeatCount = mode == MacroPlaybackMode.Repeat
+                ? Math.Clamp(repeatCount ?? 1, 1, MacroDefinition.MaxRepeatCount)
+                : 1;
+        }
         var builder = new Builder(macros ?? new Dictionary<string, MacroDefinition>(StringComparer.Ordinal));
         builder.ExpandMacro(normalized, depth: 0, speed: normalized.PlaybackSpeed, stack: []);
         return builder.Build();

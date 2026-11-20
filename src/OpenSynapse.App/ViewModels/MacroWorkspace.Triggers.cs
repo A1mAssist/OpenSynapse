@@ -189,12 +189,16 @@ public sealed partial class MacroWorkspace
                   : null);
 
         StatusText = AppStrings.Text("MacroTriggerDeviceBinding");
+        var playbackSource = matched ?? trigger;
+        var playback = MacroPlaybackChoices.Normalize(
+            trigger.Mode,
+            selected.Definition.EffectivePlaybackMode(playbackSource));
         var error = await SoftwareTriggerBinder(
                 selected.Id,
                 trigger.Input,
                 trigger.Mode,
-                selected.Definition.PlaybackMode,
-                selected.Definition.RepeatCount,
+                playback,
+                selected.Definition.EffectiveRepeatCount(playbackSource),
                 trigger.HyperShiftLayer,
                 existing,
                 cancellationToken)

@@ -37,6 +37,13 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             // The macro library can change while the mapping page stays open;
             // resolve rows against the list that exists right now.
             await RefreshMacroContextAsync(cancellationToken).ConfigureAwait(true);
+            // Firmware 101 cycles apps instead of opening Task View, so a Win+Tab
+            // chord is saved as the software shortcut that actually sends Win+Tab.
+            foreach (var row in Rows.Where(row => row.IsWindowsTabChord))
+            {
+                row.UseSoftwareShortcut("cycle-apps");
+            }
+
             var invalidMacro = Rows.FirstOrDefault(row =>
                 row.Group == RazerHidMappingGroup.Macro && row.HasMacroError);
             if (invalidMacro is not null)
@@ -119,10 +126,20 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                         AppStrings.Text("RazerMappingMacroSoftwareUnavailable"));
                 }
 
-                if (ResolveSoftwareMacro(row) is null)
+                var macro = ResolveSoftwareMacro(row);
+                if (macro is null)
                 {
+                    _log?.Invoke(
+                        $"software row has no macro: button=0x{row.ButtonId:X2} " +
+                        $"option={row.OptionIndex} loaded={row.LoadedOptionIndex} " +
+                        $"bound={row.SoftwareMacroId}");
                     throw new InvalidOperationException(
                         AppStrings.Text("RazerMappingMacroDeleted"));
+                }
+
+                if (row.OptionIndex < 0)
+                {
+                    row.OptionIndex = LocalMacroIndex(macro.Id);
                 }
             }
 
@@ -190,6 +207,10 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 var action = row.CreateAction();
                 if (action is null)
                 {
+                    _log?.Invoke(
+                        $"mapping row skipped: button=0x{row.ButtonId:X2} " +
+                        $"group={row.Group} option={row.OptionIndex} " +
+                        $"readable={row.IsAssignmentReadable}");
                     skipped.Add($"{row.ButtonName}: " +
                         AppStrings.Text("RazerHidMappingUnsupportedAction"));
                     continue;
@@ -262,7 +283,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 await WriteShortcutRowAsync(row, backups, clears, cancellationToken)
                     .ConfigureAwait(true);
                 applied++;
-                row.CurrentActionText = SoftwareShortcutCatalog.Actions[row.OptionIndex].Name;
+                row.CurrentActionText = RazerMappingActionNames.Localize(
+                    SoftwareShortcutCatalog.Actions[row.OptionIndex].Name);
                 row.SoftwareMacroId = SoftwareShortcutCatalog.Actions[row.OptionIndex].MacroId;
                 row.LoadedOptionIndex = row.OptionIndex;
             }

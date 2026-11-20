@@ -340,54 +340,74 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
             return;
         }
 
-        foreach (var mapping in mappings)
+        try
         {
-            if (!RazerHuntsmanV3ProKeys.TryResolveProfileButtonId(
-                    connection.Definition.ProductId,
-                    mapping.ButtonId,
-                    mapping.Extra,
-                    out var buttonId))
-            {
-                results.Add(new ProfileSettingApplyResult(
-                    $"mapping.{mapping.Mode ?? 0}.{mapping.ButtonId}",
-                    ProfileSettingApplyStatus.Skipped,
-                    "The saved key id is not in this keyboard's firmware key table."));
-                continue;
-            }
-
-            var mode = mapping.Mode ?? 0;
-            var key = $"mapping.{mode}.{buttonId}";
-            if (mapping.FunctionId is not { } functionId)
-            {
-                results.Add(new ProfileSettingApplyResult(
-                    key, ProfileSettingApplyStatus.Skipped,
-                    "The mapping has no raw assignment to apply."));
-                continue;
-            }
-
-            try
-            {
-                var current = await _service.GetButtonAssignmentAsync(
-                    connection, buttonId, mode, cancellationToken);
-                var data = mapping.FunctionData?.ToArray() ?? [];
-                if (current.FunctionId == functionId && current.Data.SequenceEqual(data))
+            // A profile sync writes several keys; one mode transition for the
+            // whole set keeps the wheel from clicking after every assignment.
+            await _service.RunMappingModeSessionAsync(
+                connection,
+                async token =>
                 {
-                    results.Add(Applied(key));
-                    continue;
-                }
+                    foreach (var mapping in mappings)
+                    {
+                        if (!RazerHuntsmanV3ProKeys.TryResolveProfileButtonId(
+                                connection.Definition.ProductId,
+                                mapping.ButtonId,
+                                mapping.Extra,
+                                out var buttonId))
+                        {
+                            results.Add(new ProfileSettingApplyResult(
+                                $"mapping.{mapping.Mode ?? 0}.{mapping.ButtonId}",
+                                ProfileSettingApplyStatus.Skipped,
+                                "The saved key id is not in this keyboard's firmware key table."));
+                            continue;
+                        }
 
-                await _service.SetButtonAssignmentAsync(
-                    connection, buttonId, mode, functionId, data, cancellationToken);
-                results.Add(Applied(key));
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                throw;
-            }
-            catch (Exception exception)
-            {
-                results.Add(Failed(key, exception));
-            }
+                        var mode = mapping.Mode ?? 0;
+                        var key = $"mapping.{mode}.{buttonId}";
+                        if (mapping.FunctionId is not { } functionId)
+                        {
+                            results.Add(new ProfileSettingApplyResult(
+                                key, ProfileSettingApplyStatus.Skipped,
+                                "The mapping has no raw assignment to apply."));
+                            continue;
+                        }
+
+                        try
+                        {
+                            var current = await _service.GetButtonAssignmentAsync(
+                                connection, buttonId, mode, token);
+                            var data = mapping.FunctionData?.ToArray() ?? [];
+                            if (current.FunctionId == functionId && current.Data.SequenceEqual(data))
+                            {
+                                results.Add(Applied(key));
+                                continue;
+                            }
+
+                            await _service.SetButtonAssignmentAsync(
+                                connection, buttonId, mode, functionId, data, token);
+                            results.Add(Applied(key));
+                        }
+                        catch (OperationCanceledException) when (token.IsCancellationRequested)
+                        {
+                            throw;
+                        }
+                        catch (Exception exception)
+                        {
+                            results.Add(Failed(key, exception));
+                        }
+                    }
+                },
+                cancellationToken,
+                forWrite: true).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            results.Add(Failed("mapping", exception));
         }
     }
 
