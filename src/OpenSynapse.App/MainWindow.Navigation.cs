@@ -212,7 +212,7 @@ public sealed partial class MainWindow
         }
     }
 
-    private void UpdatePerformanceSamplingState()
+    internal void UpdatePerformanceSamplingState()
     {
         // Separate windows keep sampling while the main window is hidden. Without
         // a visible consumer, the two-second sensor pass is pure background cost.

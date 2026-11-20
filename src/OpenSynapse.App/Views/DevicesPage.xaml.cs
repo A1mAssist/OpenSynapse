@@ -78,6 +78,8 @@ public sealed partial class DevicesPage : UserControl
         }
 
         SyncTouchpadToggle();
+        Host.UpdatePerformanceSamplingState();
+        viewModel.Blade.RefreshTouchpadState();
         HeadsetAudioPanel.Attach(viewModel.Accessories, Lifetime);
         HeadsetAudioPanel.Host = Host;
 
@@ -88,6 +90,8 @@ public sealed partial class DevicesPage : UserControl
         }
 
         HookDeviceBatterySources(viewModel);
+        Host.UpdatePerformanceSamplingState();
+        viewModel.Blade.RefreshTouchpadState();
         ApplicationRulesPanel.Host = Host;
         ApplicationRulesPanel.DataContext = viewModel.DeviceRules;
         SyncApplicationRules(viewModel);

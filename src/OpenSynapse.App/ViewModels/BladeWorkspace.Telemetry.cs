@@ -310,6 +310,8 @@ public sealed partial class BladeWorkspace
         }
     }
 
+    internal void RefreshTouchpadState() => ApplyTouchpadState();
+
     private void QueueStartupStateSync()
     {
         if (_startupStateSyncStarted || IsDisposed)
