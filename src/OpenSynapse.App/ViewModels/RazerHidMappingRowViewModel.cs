@@ -243,7 +243,7 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
         get => _modifierIndex;
         set
         {
-            if (_modifierIndex == value) return;
+            if (value < 0 || value >= RazerHidMappingActions.ModifierNames.Count || _modifierIndex == value) return;
             _modifierIndex = value;
             OnPropertyChanged();
         }
