@@ -359,6 +359,12 @@ public sealed partial class BladeWorkspace
                     "device-operation",
                     $"touchpad indicator did not follow the device state enabled={enabled}");
             }
+            else
+            {
+                _diagnosticLog.TryWrite(
+                    "blade-touchpad",
+                    $"indicator synchronized enabled={enabled}");
+            }
         }
         catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
         {

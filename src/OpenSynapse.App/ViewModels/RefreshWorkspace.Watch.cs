@@ -59,6 +59,7 @@ public sealed partial class RefreshWorkspace
                         // This path only reads; it never writes a setting back to the device.
                         await _pollHeadsetPower(cancellationToken);
                         await RefreshDeviceReadoutsAsync(cancellationToken);
+                        RefreshBladeTouchpadState();
                         await _razerHid.KeepAliveDriverModeAsync(cancellationToken);
                     }
                 }
@@ -75,6 +76,16 @@ public sealed partial class RefreshWorkspace
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+        }
+    }
+
+    private void RefreshBladeTouchpadState()
+    {
+        if (ActiveDescriptors.Any(device =>
+                DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
+                device.Access == DeviceAccessState.Available))
+        {
+            _blade.RefreshTouchpadState();
         }
     }
 }
