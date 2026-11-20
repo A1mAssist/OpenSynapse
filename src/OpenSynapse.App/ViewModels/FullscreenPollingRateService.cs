@@ -277,8 +277,9 @@ internal sealed class FullscreenPollingRateService
             return await target.ReadRateAsync(cancellationToken).ConfigureAwait(false);
         }
         catch (Exception exception) when (
-            exception is IOException or InvalidOperationException or
-                System.ComponentModel.Win32Exception)
+            exception is IOException or InvalidDataException or InvalidOperationException or
+                TimeoutException or NotSupportedException or ArgumentOutOfRangeException or
+                UnauthorizedAccessException or System.ComponentModel.Win32Exception)
         {
             return null;
         }
@@ -327,8 +328,16 @@ internal sealed class FullscreenPollingRateService
                     fullscreen,
                     async ct => await service.GetPollingRateAsync(connection, ct)
                         .ConfigureAwait(false),
-                    async (rate, ct) => _ = await service.SetPollingRateAsync(connection, rate, ct)
-                        .ConfigureAwait(false)));
+                    async (rate, ct) =>
+                    {
+                        var actual = await service.SetPollingRateAsync(connection, rate, ct)
+                            .ConfigureAwait(false);
+                        if (actual is int value && value != rate)
+                        {
+                            throw new InvalidOperationException(
+                                $"Polling rate read back as {value} Hz, expected {rate} Hz.");
+                        }
+                    }));
             }
         }
 
