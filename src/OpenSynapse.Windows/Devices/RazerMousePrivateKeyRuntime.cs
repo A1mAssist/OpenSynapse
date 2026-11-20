@@ -31,6 +31,8 @@ internal sealed class RazerMousePrivateKeyRuntime
     private readonly RazerFeatureTransport _transport = new();
     private readonly Action<string>? _log;
     private readonly object _gate = new();
+    private readonly CancellationTokenSource _lifetime = new();
+    private readonly SemaphoreSlim _syncGate = new(1, 1);
     private readonly Dictionary<ushort, string> _paths = [];
     // The last mode this run observed, so a periodic refresh cannot turn into a
     // stream of device reads, and the mode each pid had before this run took it
@@ -42,6 +44,10 @@ internal sealed class RazerMousePrivateKeyRuntime
     // The mode pair is not uniform across mice: legacy firmware answers 00:84/00:04,
     // every rzDevice30 mouse answers 01:82/01:02. Probe once, then keep the winner.
     private readonly Dictionary<ushort, bool> _protocol25Modes = [];
+    // The last full set of pids that need driver mode, so a retry cannot drop the
+    // devices a concurrent caller already armed.
+    private HashSet<ushort> _wanted = [];
+    private bool _retrying;
 
     internal RazerMousePrivateKeyRuntime(Action<string>? log = null) => _log = log;
 
@@ -67,6 +73,21 @@ internal sealed class RazerMousePrivateKeyRuntime
     /// firmware default - is observed and left alone.
     /// </summary>
     internal async Task SyncAsync(
+        IReadOnlyCollection<ushort> wanted,
+        CancellationToken cancellationToken)
+    {
+        await _syncGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await SyncCoreAsync(wanted, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _syncGate.Release();
+        }
+    }
+
+    private async Task SyncCoreAsync(
         IReadOnlyCollection<ushort> wanted,
         CancellationToken cancellationToken)
     {
@@ -130,6 +151,15 @@ internal sealed class RazerMousePrivateKeyRuntime
                     var target = enable ? DriverDeviceMode : NormalDeviceMode;
                     if (!await WriteModeAsync(productId, target, cancellationToken).ConfigureAwait(false))
                     {
+                        // A failed arming must be retried; a failed restore keeps its
+                        // old entry so the next sync tries again too.
+                        if (enable)
+                        {
+                            lock (_gate)
+                            {
+                                _applied[productId] = false;
+                            }
+                        }
                         continue;
                     }
 
@@ -175,7 +205,74 @@ internal sealed class RazerMousePrivateKeyRuntime
                 }
             }
         }
+
+        lock (_gate)
+        {
+            _wanted = [..wanted];
+        }
+        EnsureRetry();
     }
+
+    /// <summary>
+    /// A wireless mouse stops answering feature reports while it sleeps, so the
+    /// boot-time sync fails and used to wait for the user's first key press. Keep
+    /// the switch in the background instead of making it part of that press.
+    /// </summary>
+    private void EnsureRetry()
+    {
+        lock (_gate)
+        {
+            if (_retrying || !NeedsRetry(_wanted, _applied))
+            {
+                return;
+            }
+            _retrying = true;
+        }
+        _ = RetryAsync();
+    }
+
+    private async Task RetryAsync()
+    {
+        var delay = TimeSpan.FromSeconds(2);
+        try
+        {
+            while (true)
+            {
+                await Task.Delay(delay, _lifetime.Token).ConfigureAwait(false);
+                // Slow down once an unattended dongle stays silent: the switch
+                // itself is cheap, a failed probe is not.
+                delay = TimeSpan.FromSeconds(Math.Min(delay.TotalSeconds * 2, 30));
+                HashSet<ushort> wanted;
+                lock (_gate)
+                {
+                    if (!NeedsRetry(_wanted, _applied))
+                    {
+                        return;
+                    }
+                    wanted = [.._wanted];
+                }
+                await SyncAsync(wanted, _lifetime.Token).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+        }
+        finally
+        {
+            lock (_gate)
+            {
+                _retrying = false;
+            }
+        }
+    }
+
+    internal static bool NeedsRetry(
+        IReadOnlyCollection<ushort> wanted,
+        IReadOnlyDictionary<ushort, bool> applied) =>
+        wanted.Any(productId =>
+            IsMouseProduct(productId) &&
+            !OwnsItsOwnMode(productId) &&
+            !applied.GetValueOrDefault(productId));
 
     // Decides what a sync does for one device. Equal modes never write: a driver
     // mode this run did not set belongs to whoever set it.
@@ -198,6 +295,7 @@ internal sealed class RazerMousePrivateKeyRuntime
     /// </summary>
     internal async Task ResetAsync()
     {
+        _lifetime.Cancel();
         KeyValuePair<ushort, byte>[] restore;
         lock (_gate)
         {

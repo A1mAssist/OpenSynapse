@@ -69,6 +69,12 @@ internal sealed partial class MacroRuntime : IDisposable
 
     public event Action? PlaybackStateChanged;
 
+    /// <summary>
+    /// Raised on the hook thread when the pointer moves after a pause. The app
+    /// uses it to re-arm a mouse that slept through its driver-mode sync.
+    /// </summary>
+    internal event Action? Activity;
+
     public bool IsRecording
     {
         get

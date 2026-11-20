@@ -32,6 +32,7 @@ public sealed partial class MacroInputHook : IDisposable
     private const ushort XButton2 = 0x0002;
 
     private const int MouseMoveThrottleMilliseconds = 16;
+    private const int ActivityThrottleMilliseconds = 2_000;
     private const nuint MouseMoveTimerId = 1;
     private const int HookStartTimeoutMilliseconds = 10_000;
     private const int HookStopTimeoutMilliseconds = 250;
@@ -80,6 +81,7 @@ public sealed partial class MacroInputHook : IDisposable
     private volatile bool _captureMouseMoves;
     private byte _modifierBits;
     private long _lastMouseMoveTimestamp;
+    private long _lastActivityTimestamp;
     private bool _mouseMoveTimerActive;
     private bool _hasPendingMouseMove;
     private int _pendingMouseMoveX;
@@ -101,6 +103,10 @@ public sealed partial class MacroInputHook : IDisposable
     }
 
     internal Func<bool>? IsPlaybackActive { get; set; }
+
+    // Raised before the move is filtered for recording: any movement means the
+    // device is awake again after idle sleep.
+    internal Action? Activity { get; set; }
 
     private bool PlaybackActive() => IsPlaybackActive?.Invoke() == true;
 
@@ -360,6 +366,12 @@ public sealed partial class MacroInputHook : IDisposable
             var message = unchecked((uint)wParam);
             if (message == WmMouseMove)
             {
+                var now = Environment.TickCount64;
+                if (now - _lastActivityTimestamp >= ActivityThrottleMilliseconds)
+                {
+                    _lastActivityTimestamp = now;
+                    Activity?.Invoke();
+                }
                 return HandleMouseMove(code, wParam, lParam);
             }
 

@@ -18,6 +18,7 @@ internal sealed partial class MacroRuntime
         {
             var hook = new MacroInputHook(HandleInput, _log);
             hook.IsPlaybackActive = () => _isPlaying;
+            hook.Activity = () => Activity?.Invoke();
             hook.Start();
             _hook = hook;
             return true;
