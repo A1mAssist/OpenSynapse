@@ -132,6 +132,7 @@ public sealed partial class ProfileDefinition
         DpiX = source.DpiX,
         DpiY = source.DpiY,
         PollingRateHertz = source.PollingRateHertz,
+        FullscreenPollingRateHertz = source.FullscreenPollingRateHertz,
         IdleSeconds = source.IdleSeconds,
         LowBatteryThresholdPercent = source.LowBatteryThresholdPercent,
         AutoSleepSeconds = source.AutoSleepSeconds,
@@ -162,6 +163,7 @@ public sealed partial class ProfileDefinition
     private static KeyboardProfileSettings CloneKeyboard(KeyboardProfileSettings source) => new()
     {
         PollingRateHertz = source.PollingRateHertz,
+        FullscreenPollingRateHertz = source.FullscreenPollingRateHertz,
         GamingModeEnabled = source.GamingModeEnabled,
         SwitchType = source.SwitchType,
         AnalogKeyEnabled = source.AnalogKeyEnabled,
