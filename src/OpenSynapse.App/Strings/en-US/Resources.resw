@@ -52,7 +52,7 @@
     <value>Devices</value>
   </data>
   <data name="Loc_0053B5D025.Text" xml:space="preserve">
-    <value>Discovered devices and their verified controls.</value>
+    <value>Connected devices and their controls.</value>
   </data>
   <data name="Loc_AB55074471.Content" xml:space="preserve">
     <value>Scan again</value>
@@ -3248,7 +3248,7 @@
   <data name="ViperMappingMicMute" xml:space="preserve"><value>Mic mute</value></data>
   <data name="ViperMappingScreenshot" xml:space="preserve"><value>Screenshot</value></data>
   <data name="ViperMappingXboxGameBar" xml:space="preserve"><value>Xbox Game Bar</value></data>
-  <data name="ViperMappingCycleApps" xml:space="preserve"><value>Cycle apps</value></data>
+  <data name="ViperMappingCycleApps" xml:space="preserve"><value>Task view (Win+Tab)</value></data>
   <data name="ViperMappingHyperShiftToggle" xml:space="preserve"><value>HyperShift toggle</value></data>
   <data name="ViperMappingTurboKey" xml:space="preserve"><value>Turbo key</value></data>
   <data name="ViperMappingTurboButton" xml:space="preserve"><value>Turbo button</value></data>
@@ -4141,7 +4141,7 @@
   <data name="HomeTelemetryCard" xml:space="preserve"><value>Telemetry</value></data>
   <data name="HomeCustomize.Content" xml:space="preserve"><value>Customize home</value></data>
   <data name="HomeCustomizeTitle.Text" xml:space="preserve"><value>Customize home</value></data>
-  <data name="HomeCustomizeDescription.Text" xml:space="preserve"><value>Choose visible cards and their order. Pin moves a card to the top; layout is saved separately from profiles.</value></data>
+  <data name="HomeCustomizeDescription.Text" xml:space="preserve"><value>Choose visible cards and their order.</value></data>
   <data name="HomePinCard.Content" xml:space="preserve"><value>Pin to top</value></data>
   <data name="HomeSaveLayout.Content" xml:space="preserve"><value>Save layout</value></data>
   <data name="HomeCancelLayout.Content" xml:space="preserve"><value>Cancel</value></data>

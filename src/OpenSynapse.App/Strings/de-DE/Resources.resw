@@ -52,7 +52,7 @@
     <value>Geräte</value>
   </data>
   <data name="Loc_0053B5D025.Text" xml:space="preserve">
-    <value>Erkannte Geräte und ihre verifizierten Steuerelemente.</value>
+    <value>Verbundene Geräte und ihre Steuerelemente.</value>
   </data>
   <data name="Loc_AB55074471.Content" xml:space="preserve">
     <value>Erneut suchen</value>
@@ -3238,7 +3238,7 @@
   <data name="ViperMappingMicMute" xml:space="preserve"><value>Mikrofon stummschalten</value></data>
   <data name="ViperMappingScreenshot" xml:space="preserve"><value>Screenshot</value></data>
   <data name="ViperMappingXboxGameBar" xml:space="preserve"><value>Xbox Game Bar</value></data>
-  <data name="ViperMappingCycleApps" xml:space="preserve"><value>Apps durchschalten</value></data>
+  <data name="ViperMappingCycleApps" xml:space="preserve"><value>Aufgabenansicht (Win+Tab)</value></data>
   <data name="ViperMappingHyperShiftToggle" xml:space="preserve"><value>HyperShift umschalten</value></data>
   <data name="ViperMappingTurboKey" xml:space="preserve"><value>Turbo-Taste</value></data>
   <data name="ViperMappingTurboButton" xml:space="preserve"><value>Turbo-Schaltfläche</value></data>
@@ -4125,7 +4125,7 @@ Nicht gespeicherte Makroänderungen gehen verloren.</value></data>
   <data name="HomeTelemetryCard" xml:space="preserve"><value>Telemetrie</value></data>
   <data name="HomeCustomize.Content" xml:space="preserve"><value>Startseite anpassen</value></data>
   <data name="HomeCustomizeTitle.Text" xml:space="preserve"><value>Startseite anpassen</value></data>
-  <data name="HomeCustomizeDescription.Text" xml:space="preserve"><value>Wählen Sie sichtbare Karten und ihre Reihenfolge. „Anheften“ verschiebt eine Karte nach oben; das Layout wird getrennt von den Profilen gespeichert.</value></data>
+  <data name="HomeCustomizeDescription.Text" xml:space="preserve"><value>Wählen Sie sichtbare Karten und ihre Reihenfolge.</value></data>
   <data name="HomePinCard.Content" xml:space="preserve"><value>Oben anheften</value></data>
   <data name="HomeSaveLayout.Content" xml:space="preserve"><value>Layout speichern</value></data>
   <data name="HomeCancelLayout.Content" xml:space="preserve"><value>Abbrechen</value></data>

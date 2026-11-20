@@ -52,7 +52,7 @@
     <value>장치</value>
   </data>
   <data name="Loc_0053B5D025.Text" xml:space="preserve">
-    <value>검색된 장치와 검증된 제어 기능입니다.</value>
+    <value>연결된 장치와 해당 제어 기능입니다.</value>
   </data>
   <data name="Loc_AB55074471.Content" xml:space="preserve">
     <value>다시 검색</value>
@@ -3238,7 +3238,7 @@
   <data name="ViperMappingMicMute" xml:space="preserve"><value>마이크 음소거</value></data>
   <data name="ViperMappingScreenshot" xml:space="preserve"><value>스크린샷</value></data>
   <data name="ViperMappingXboxGameBar" xml:space="preserve"><value>Xbox Game Bar</value></data>
-  <data name="ViperMappingCycleApps" xml:space="preserve"><value>앱 순환</value></data>
+  <data name="ViperMappingCycleApps" xml:space="preserve"><value>작업 보기 (Win+Tab)</value></data>
   <data name="ViperMappingHyperShiftToggle" xml:space="preserve"><value>HyperShift 전환</value></data>
   <data name="ViperMappingTurboKey" xml:space="preserve"><value>터보 키</value></data>
   <data name="ViperMappingTurboButton" xml:space="preserve"><value>터보 버튼</value></data>
@@ -4125,7 +4125,7 @@
   <data name="HomeTelemetryCard" xml:space="preserve"><value>텔레메트리</value></data>
   <data name="HomeCustomize.Content" xml:space="preserve"><value>홈 사용자 지정</value></data>
   <data name="HomeCustomizeTitle.Text" xml:space="preserve"><value>홈 사용자 지정</value></data>
-  <data name="HomeCustomizeDescription.Text" xml:space="preserve"><value>표시할 카드와 순서를 선택하세요. 고정하면 카드가 맨 위로 이동하며 레이아웃은 프로필과 별도로 저장됩니다.</value></data>
+  <data name="HomeCustomizeDescription.Text" xml:space="preserve"><value>표시할 카드와 순서를 선택하세요.</value></data>
   <data name="HomePinCard.Content" xml:space="preserve"><value>맨 위에 고정</value></data>
   <data name="HomeSaveLayout.Content" xml:space="preserve"><value>레이아웃 저장</value></data>
   <data name="HomeCancelLayout.Content" xml:space="preserve"><value>취소</value></data>
