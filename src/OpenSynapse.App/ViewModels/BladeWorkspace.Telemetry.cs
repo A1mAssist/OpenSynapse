@@ -314,7 +314,8 @@ public sealed partial class BladeWorkspace
     {
         if (_touchpadController?.GetEnabled() is bool touchpadEnabled)
         {
-            var changed = _touchpadStateRead &&
+            var firstRead = !_touchpadStateRead;
+            var changed = !firstRead &&
                 _blade._confirmedBladeTouchpadEnabled != touchpadEnabled;
             _touchpadStateRead = true;
             TouchpadEnabled = touchpadEnabled;
@@ -324,11 +325,16 @@ public sealed partial class BladeWorkspace
                 : AppStrings.Text("Text_7E3B0F3C");
             _blade._canSetBladeTouchpad = true;
             OnPropertyChanged(nameof(CanSetTouchpad));
+            if (changed || firstRead)
+            {
+                // Also write on the first read: the lighting take-over can reset
+                // the EC indicator after the one-shot startup sync.
+                _ = SyncObservedTouchpadIndicatorAsync(ActiveDescriptors, touchpadEnabled);
+            }
             if (changed)
             {
                 // Mirror an Fn-key change onto the EC and report it the same way
                 // as a toggle that came through our mapping runtime.
-                _ = SyncObservedTouchpadIndicatorAsync(ActiveDescriptors, touchpadEnabled);
                 TouchpadChangedByUser?.Invoke(touchpadEnabled);
             }
         }
