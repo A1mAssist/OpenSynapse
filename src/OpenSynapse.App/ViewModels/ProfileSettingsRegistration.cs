@@ -29,6 +29,7 @@ internal static partial class ProfileSettingsRegistration
     {
 
         ProfileSettingCatalog.Register(new("input.polling-rate", DeviceCategory.Unknown, true));
+        ProfileSettingCatalog.Register(new("input.fullscreen-polling", DeviceCategory.Unknown, true));
         ProfileSettingCatalog.Register(new("mouse.dpi", DeviceCategory.Mouse, true));
         ProfileSettingCatalog.Register(new("mouse.dpi-stages", DeviceCategory.Mouse, true));
         ProfileSettingCatalog.Register(new("mouse.idle-timeout", DeviceCategory.Mouse, true));
@@ -52,6 +53,7 @@ internal static partial class ProfileSettingsRegistration
         ProfileSettingCatalog.Register(new("keyboard.knob", DeviceCategory.Keyboard, false));
         ProfileSettingCatalog.Register(new("keyboard.wrist-rest", DeviceCategory.Keyboard, false));
         ProfileSettingCatalog.Register(new("keyboard.debounce", DeviceCategory.Keyboard, false));
+        ProfileSettingCatalog.Register(new("keyboard.fullscreen-polling", DeviceCategory.Keyboard, true));
     }
 
     static partial void RegisterBladeSettings();

@@ -43,6 +43,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                     ClearSensorRotation();
             }
             if (state.PollingRate is { } polling) SelectedPollingRate = polling;
+            LoadFullscreenPollingState();
             if (state.DpiX is { } x) DpiX = x;
             if (state.DpiY is { } y) DpiY = y;
             if (state.IdleTimeoutSeconds is { } idle) IdleTimeoutSeconds = idle;

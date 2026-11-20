@@ -1906,6 +1906,10 @@
   <data name="RazerHidModeLabel.Text" xml:space="preserve"><value>设备模式</value></data>
   <data name="RazerHidBatteryLabel.Text" xml:space="preserve"><value>电池</value></data>
   <data name="RazerHidPollingTitle.Text" xml:space="preserve"><value>轮询率</value></data>
+  <data name="FullscreenPollingTitle.Text" xml:space="preserve"><value>全屏轮询率</value></data>
+  <data name="FullscreenPollingToggle.Header" xml:space="preserve"><value>全屏时自动切换</value></data>
+  <data name="FullscreenPollingRateLabel.Header" xml:space="preserve"><value>全屏轮询率</value></data>
+  <data name="FullscreenPollingDescription.Text" xml:space="preserve"><value>应用全屏时使用此轮询率，退出后恢复原来的值。</value></data>
   <data name="RazerHidPowerTitle.Text" xml:space="preserve"><value>电源管理</value></data>
   <data name="RazerHidIdleLabel.Text" xml:space="preserve"><value>空闲休眠（秒）</value></data>
   <data name="RazerHidLowBatteryLabel.Text" xml:space="preserve"><value>低能耗模式阈值（%）</value></data>

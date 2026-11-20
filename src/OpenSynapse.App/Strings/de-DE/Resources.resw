@@ -1510,6 +1510,10 @@
   <data name="RazerHidModeLabel.Text" xml:space="preserve"><value>Gerätemodus</value></data>
   <data name="RazerHidBatteryLabel.Text" xml:space="preserve"><value>Akku</value></data>
   <data name="RazerHidPollingTitle.Text" xml:space="preserve"><value>Polling-Rate</value></data>
+  <data name="FullscreenPollingTitle.Text" xml:space="preserve"><value>Polling-Rate im Vollbild</value></data>
+  <data name="FullscreenPollingToggle.Header" xml:space="preserve"><value>Im Vollbild automatisch wechseln</value></data>
+  <data name="FullscreenPollingRateLabel.Header" xml:space="preserve"><value>Vollbild-Rate</value></data>
+  <data name="FullscreenPollingDescription.Text" xml:space="preserve"><value>Diese Rate wird verwendet, während eine App den Bildschirm ausfüllt; danach wird die vorherige Rate wiederhergestellt.</value></data>
   <data name="RazerHidPowerTitle.Text" xml:space="preserve"><value>Energieverwaltung</value></data>
   <data name="RazerHidIdleLabel.Text" xml:space="preserve"><value>Leerlaufzeit (Sekunden)</value></data>
   <data name="RazerHidLowBatteryLabel.Text" xml:space="preserve"><value>Schwellenwert für Energiesparmodus (%)</value></data>

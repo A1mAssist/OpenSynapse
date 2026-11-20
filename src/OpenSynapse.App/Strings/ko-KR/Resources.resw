@@ -1510,6 +1510,10 @@
   <data name="RazerHidModeLabel.Text" xml:space="preserve"><value>장치 모드</value></data>
   <data name="RazerHidBatteryLabel.Text" xml:space="preserve"><value>배터리</value></data>
   <data name="RazerHidPollingTitle.Text" xml:space="preserve"><value>폴링 속도</value></data>
+  <data name="FullscreenPollingTitle.Text" xml:space="preserve"><value>전체 화면 폴링 속도</value></data>
+  <data name="FullscreenPollingToggle.Header" xml:space="preserve"><value>전체 화면에서 자동 전환</value></data>
+  <data name="FullscreenPollingRateLabel.Header" xml:space="preserve"><value>전체 화면 속도</value></data>
+  <data name="FullscreenPollingDescription.Text" xml:space="preserve"><value>앱이 화면을 가득 채우는 동안 이 속도를 사용하고, 종료하면 이전 속도로 복원합니다.</value></data>
   <data name="RazerHidPowerTitle.Text" xml:space="preserve"><value>전원 관리</value></data>
   <data name="RazerHidIdleLabel.Text" xml:space="preserve"><value>유휴 시간 제한(초)</value></data>
   <data name="RazerHidLowBatteryLabel.Text" xml:space="preserve"><value>저전력 모드 임계값(%)</value></data>
