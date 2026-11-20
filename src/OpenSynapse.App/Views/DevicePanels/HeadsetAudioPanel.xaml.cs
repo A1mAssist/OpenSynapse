@@ -124,7 +124,10 @@ public sealed partial class HeadsetAudioPanel : UserControl
             json = string.Empty;
         }
 
-        ViewModel.TryLoadSynapseEq(json);
+        if (ViewModel.TryLoadSynapseEq(json))
+        {
+            await ViewModel.ApplyThxBandsAsync(Lifetime);
+        }
     }
 
     private async void HeadsetAudioApplyThxS3BaselineClick(object sender, RoutedEventArgs e) =>

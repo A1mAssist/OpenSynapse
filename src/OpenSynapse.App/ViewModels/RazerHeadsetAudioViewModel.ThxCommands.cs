@@ -154,8 +154,7 @@ public sealed partial class RazerHeadsetAudioViewModel
     }
 
     /// <summary>
-    /// Fills the band sliders from a Synapse 4 EQ export; the user still
-    /// applies them with the existing band button.
+    /// Fills the band sliders from a Synapse 4 EQ export.
     /// </summary>
     public bool TryLoadSynapseEq(string json)
     {
