@@ -7,6 +7,7 @@ public sealed record RazerDeviceLiveTelemetry(
     int? BladeCurrentFanCpuRpm,
     int? BladeCurrentFanGpuRpm,
     BladeGameModeTelemetry? BladeGameMode,
+    byte? BladeKeyboardBrightness,
     int? ViperBatteryPercent,
     bool ViperWirelessLinkDown,
     IReadOnlyList<string> Errors,

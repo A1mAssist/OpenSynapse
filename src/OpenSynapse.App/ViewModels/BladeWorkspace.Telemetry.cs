@@ -346,7 +346,28 @@ public sealed partial class BladeWorkspace
         if (telemetry.BladeGameMode is { } gameMode)
         {
             _gameModeReadFromDevice = true;
-            SetGameMode(gameMode);
+            if (_blade._bladeGameModeState != gameMode.GameMode)
+            {
+                _diagnosticLog.TryWrite(
+                    "blade-live",
+                    $"game mode {_blade._bladeGameModeState?.ToString() ?? "?"} -> {gameMode.GameMode}");
+                SetGameMode(gameMode);
+            }
+        }
+        if (telemetry.BladeKeyboardBrightness is byte brightness)
+        {
+            var percent = Math.Round(brightness * 100d / 255, MidpointRounding.AwayFromZero);
+            if (Math.Abs(_blade._confirmedBladeBrightnessPercent - percent) > 0.5)
+            {
+                _diagnosticLog.TryWrite(
+                    "blade-live",
+                    $"brightness {_blade._confirmedBladeBrightnessPercent}% -> {percent:0}%");
+            }
+            if (!_isBrightnessRestorePending())
+            {
+                SetBrightness(brightness);
+            }
+            CanSetBrightness = true;
         }
         if (ActiveDescriptors.Any(device =>
                 DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
