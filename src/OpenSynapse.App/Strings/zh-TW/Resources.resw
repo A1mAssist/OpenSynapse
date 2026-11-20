@@ -65,8 +65,8 @@
     <comment>设备</comment>
   </data>
   <data name="Loc_0053B5D025.Text" xml:space="preserve">
-    <value>已發現的裝置及其已驗證控制。</value>
-    <comment>已发现的设备及其已验证控制。</comment>
+    <value>已連接的裝置及其控制。</value>
+    <comment>已连接的设备及其控制。</comment>
   </data>
   <data name="Loc_AB55074471.Content" xml:space="preserve">
     <value>重新探測</value>
@@ -3674,7 +3674,7 @@
   <data name="ViperMappingMicMute" xml:space="preserve"><value>麥克風靜音</value></data>
   <data name="ViperMappingScreenshot" xml:space="preserve"><value>截圖</value></data>
   <data name="ViperMappingXboxGameBar" xml:space="preserve"><value>Xbox Game Bar</value></data>
-  <data name="ViperMappingCycleApps" xml:space="preserve"><value>切換應用程式</value></data>
+  <data name="ViperMappingCycleApps" xml:space="preserve"><value>工作檢視（Win+Tab）</value></data>
   <data name="ViperMappingHyperShiftToggle" xml:space="preserve"><value>HyperShift 切換</value></data>
   <data name="ViperMappingTurboKey" xml:space="preserve"><value>Turbo 鍵</value></data>
   <data name="ViperMappingTurboButton" xml:space="preserve"><value>Turbo 按鈕</value></data>
@@ -4566,7 +4566,7 @@
   <data name="HomeTelemetryCard" xml:space="preserve"><value>遙測</value></data>
   <data name="HomeCustomize.Content" xml:space="preserve"><value>自定義主頁</value></data>
   <data name="HomeCustomizeTitle.Text" xml:space="preserve"><value>自定義主頁</value></data>
-  <data name="HomeCustomizeDescription.Text" xml:space="preserve"><value>選擇卡片顯隱和順序。置頂會將卡片移到最前面；佈局獨立儲存，不隨設定切換。</value></data>
+  <data name="HomeCustomizeDescription.Text" xml:space="preserve"><value>選擇卡片顯隱和順序。</value></data>
   <data name="HomePinCard.Content" xml:space="preserve"><value>置頂</value></data>
   <data name="HomeSaveLayout.Content" xml:space="preserve"><value>儲存佈局</value></data>
   <data name="HomeCancelLayout.Content" xml:space="preserve"><value>取消</value></data>

@@ -52,7 +52,7 @@
     <value>Устройства</value>
   </data>
   <data name="Loc_0053B5D025.Text" xml:space="preserve">
-    <value>Обнаруженные устройства и проверенные элементы управления ими.</value>
+    <value>Подключенные устройства и элементы управления ими.</value>
   </data>
   <data name="Loc_AB55074471.Content" xml:space="preserve">
     <value>Сканировать еще раз</value>
@@ -6606,7 +6606,7 @@
     <value>Игровая панель Xbox</value>
   </data>
   <data name="ViperMappingCycleApps" xml:space="preserve">
-    <value>Циклические приложения</value>
+    <value>Представление задач (Win+Tab)</value>
   </data>
   <data name="ViperMappingHyperShiftToggle" xml:space="preserve">
     <value>Переключатель HyperShift</value>
@@ -9265,7 +9265,7 @@
     <value>Настроить дом</value>
   </data>
   <data name="HomeCustomizeDescription.Text" xml:space="preserve">
-    <value>Выберите видимые карты и их порядок. Пин перемещает карту наверх; макет сохраняется отдельно от профилей.</value>
+    <value>Выберите видимые карты и их порядок.</value>
   </data>
   <data name="HomePinCard.Content" xml:space="preserve">
     <value>Закрепить вверху</value>

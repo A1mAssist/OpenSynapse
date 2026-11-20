@@ -52,7 +52,7 @@
     <value>デバイス</value>
   </data>
   <data name="Loc_0053B5D025.Text" xml:space="preserve">
-    <value>検出されたデバイスと検証済みのコントロール。</value>
+    <value>接続されているデバイスとそのコントロール。</value>
   </data>
   <data name="Loc_AB55074471.Content" xml:space="preserve">
     <value>再スキャン</value>
@@ -3238,7 +3238,7 @@
   <data name="ViperMappingMicMute" xml:space="preserve"><value>マイク ミュート</value></data>
   <data name="ViperMappingScreenshot" xml:space="preserve"><value>スクリーンショット</value></data>
   <data name="ViperMappingXboxGameBar" xml:space="preserve"><value>Xbox Game Bar</value></data>
-  <data name="ViperMappingCycleApps" xml:space="preserve"><value>アプリを切り替え</value></data>
+  <data name="ViperMappingCycleApps" xml:space="preserve"><value>タスク ビュー (Win+Tab)</value></data>
   <data name="ViperMappingHyperShiftToggle" xml:space="preserve"><value>HyperShift の切り替え</value></data>
   <data name="ViperMappingTurboKey" xml:space="preserve"><value>ターボ キー</value></data>
   <data name="ViperMappingTurboButton" xml:space="preserve"><value>ターボ ボタン</value></data>
@@ -4125,7 +4125,7 @@
   <data name="HomeTelemetryCard" xml:space="preserve"><value>テレメトリ</value></data>
   <data name="HomeCustomize.Content" xml:space="preserve"><value>ホームをカスタマイズ</value></data>
   <data name="HomeCustomizeTitle.Text" xml:space="preserve"><value>ホームをカスタマイズ</value></data>
-  <data name="HomeCustomizeDescription.Text" xml:space="preserve"><value>表示するカードと順序を選択します。ピン留めするとカードが先頭に移動します。レイアウトはプロファイルとは別に保存されます。</value></data>
+  <data name="HomeCustomizeDescription.Text" xml:space="preserve"><value>表示するカードと順序を選択します。</value></data>
   <data name="HomePinCard.Content" xml:space="preserve"><value>先頭にピン留め</value></data>
   <data name="HomeSaveLayout.Content" xml:space="preserve"><value>レイアウトを保存</value></data>
   <data name="HomeCancelLayout.Content" xml:space="preserve"><value>キャンセル</value></data>

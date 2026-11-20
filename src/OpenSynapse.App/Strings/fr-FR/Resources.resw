@@ -52,7 +52,7 @@
     <value>Appareils</value>
   </data>
   <data name="Loc_0053B5D025.Text" xml:space="preserve">
-    <value>Appareils détectés et commandes vérifiées.</value>
+    <value>Appareils connectés et leurs commandes.</value>
   </data>
   <data name="Loc_AB55074471.Content" xml:space="preserve">
     <value>Relancer la détection</value>
@@ -3238,7 +3238,7 @@
   <data name="ViperMappingMicMute" xml:space="preserve"><value>Coupure du micro</value></data>
   <data name="ViperMappingScreenshot" xml:space="preserve"><value>Capture d’écran</value></data>
   <data name="ViperMappingXboxGameBar" xml:space="preserve"><value>Xbox Game Bar</value></data>
-  <data name="ViperMappingCycleApps" xml:space="preserve"><value>Parcourir les applications</value></data>
+  <data name="ViperMappingCycleApps" xml:space="preserve"><value>Affichage des tâches (Win+Tab)</value></data>
   <data name="ViperMappingHyperShiftToggle" xml:space="preserve"><value>Bascule HyperShift</value></data>
   <data name="ViperMappingTurboKey" xml:space="preserve"><value>Touche Turbo</value></data>
   <data name="ViperMappingTurboButton" xml:space="preserve"><value>Bouton Turbo</value></data>
@@ -4125,7 +4125,7 @@ Les modifications de macro non enregistrées seront perdues.</value></data>
   <data name="HomeTelemetryCard" xml:space="preserve"><value>Télémétrie</value></data>
   <data name="HomeCustomize.Content" xml:space="preserve"><value>Personnaliser l’accueil</value></data>
   <data name="HomeCustomizeTitle.Text" xml:space="preserve"><value>Personnaliser l’accueil</value></data>
-  <data name="HomeCustomizeDescription.Text" xml:space="preserve"><value>Choisissez les cartes visibles et leur ordre. Épingler déplace une carte vers le haut ; la disposition est enregistrée séparément des profils.</value></data>
+  <data name="HomeCustomizeDescription.Text" xml:space="preserve"><value>Choisissez les cartes visibles et leur ordre.</value></data>
   <data name="HomePinCard.Content" xml:space="preserve"><value>Épingler en haut</value></data>
   <data name="HomeSaveLayout.Content" xml:space="preserve"><value>Enregistrer la disposition</value></data>
   <data name="HomeCancelLayout.Content" xml:space="preserve"><value>Annuler</value></data>
