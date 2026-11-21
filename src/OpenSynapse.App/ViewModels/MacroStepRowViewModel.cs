@@ -109,10 +109,6 @@ public sealed class MacroStepRowViewModel : INotifyPropertyChanged
             }
 
             Step.IsDown = isDown;
-            if (!isDown)
-            {
-                Step.AutoRelease = true;
-            }
 
             OnPropertyChanged();
             OnPropertyChanged(nameof(DirectionText));
@@ -321,6 +317,8 @@ public sealed class MacroStepRowViewModel : INotifyPropertyChanged
 
             Step.AutoRelease = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(DirectionText));
+            OnPropertyChanged(nameof(NameText));
             OnPropertyChanged(nameof(HoldVisibility));
             Changed();
         }
