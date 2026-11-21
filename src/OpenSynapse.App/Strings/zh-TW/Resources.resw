@@ -3867,6 +3867,8 @@
   <data name="RazerGamepadMappingHelp" xml:space="preserve"><value>為手柄按鍵分配動作；讀取或修改後點「套用」寫入裝置。</value></data>
   <data name="RazerHidInformationHelp" xml:space="preserve"><value>只讀顯示裝置報告的韌體、序列號和電池等資訊。</value></data>
   <data name="RazerChromaLightingHelp" xml:space="preserve"><value>調整裝置燈效、亮度和主色/副色，套用後寫入裝置。</value></data>
+  <data name="RazerChromaWirelessConnected" xml:space="preserve"><value>無線已連線</value></data>
+  <data name="RazerChromaWirelessDisconnected" xml:space="preserve"><value>無線未連線</value></data>
   <data name="AwBleHeadsetControlsHelp" xml:space="preserve"><value>按裝置報告的能力顯示音量、側音、EQ、燈效等控制元件；每項套用後寫入耳機。</value></data>
   <data name="RazerHidPollingHelp" xml:space="preserve"><value>選擇滑鼠的輪詢率，儲存後寫入裝置。</value></data>
   <data name="BlePollingHelp" xml:space="preserve"><value>選擇無線滑鼠的輪詢率；高回報率會增加耗電。</value></data>

@@ -3431,6 +3431,8 @@
   <data name="RazerGamepadMappingHelp" xml:space="preserve"><value>Attribue des actions aux boutons de la manette ; lisez-les ou modifiez-les, puis cliquez sur Appliquer pour les écrire sur l’appareil.</value></data>
   <data name="RazerHidInformationHelp" xml:space="preserve"><value>Affiche le micrologiciel, le numéro de série, la batterie et les détails associés signalés par l’appareil ; lecture seule.</value></data>
   <data name="RazerChromaLightingHelp" xml:space="preserve"><value>Définit l’effet d’éclairage, la luminosité et les couleurs principale/secondaire de l’appareil ; le bouton « Appliquer » les applique sur l’appareil.</value></data>
+  <data name="RazerChromaWirelessConnected" xml:space="preserve"><value>Sans fil connecté</value></data>
+  <data name="RazerChromaWirelessDisconnected" xml:space="preserve"><value>Sans fil non connecté</value></data>
   <data name="AwBleHeadsetControlsHelp" xml:space="preserve"><value>Affiche le volume, le retour micro, l’EQ, l’éclairage et les autres commandes signalées par l’appareil ; chaque bouton Appliquer écrit dans le casque.</value></data>
   <data name="RazerHidPollingHelp" xml:space="preserve"><value>Sélectionne le taux de sondage de la souris ; le bouton « Enregistrer » l’enregistre sur l’appareil.</value></data>
   <data name="BlePollingHelp" xml:space="preserve"><value>Sélectionne le taux de sondage de la souris sans fil ; les taux plus élevés consomment plus d’énergie.</value></data>

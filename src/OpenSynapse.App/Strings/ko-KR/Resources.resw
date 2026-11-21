@@ -3431,6 +3431,8 @@
   <data name="RazerGamepadMappingHelp" xml:space="preserve"><value>컨트롤러 버튼에 동작을 할당합니다. 읽거나 편집한 후 적용하여 장치에 기록하세요.</value></data>
   <data name="RazerHidInformationHelp" xml:space="preserve"><value>장치가 보고한 펌웨어, 일련번호, 배터리 및 관련 세부 정보를 표시합니다. 읽기 전용입니다.</value></data>
   <data name="RazerChromaLightingHelp" xml:space="preserve"><value>장치 조명 효과, 밝기 및 기본/보조 색상을 설정합니다. ‘적용’을 누르면 장치에 기록됩니다.</value></data>
+  <data name="RazerChromaWirelessConnected" xml:space="preserve"><value>무선 연결됨</value></data>
+  <data name="RazerChromaWirelessDisconnected" xml:space="preserve"><value>무선 연결 안 됨</value></data>
   <data name="AwBleHeadsetControlsHelp" xml:space="preserve"><value>장치가 보고하는 볼륨, 사이드톤, EQ, 조명 및 기타 제어 기능을 표시합니다. 각 ‘적용’ 버튼을 누르면 헤드셋에 기록됩니다.</value></data>
   <data name="RazerHidPollingHelp" xml:space="preserve"><value>마우스 폴링 속도를 선택합니다. 저장하면 장치에 기록됩니다.</value></data>
   <data name="BlePollingHelp" xml:space="preserve"><value>무선 마우스 폴링 속도를 선택합니다. 속도가 높을수록 전력을 더 사용합니다.</value></data>

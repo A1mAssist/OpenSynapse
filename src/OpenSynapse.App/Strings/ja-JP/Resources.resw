@@ -3431,6 +3431,8 @@
   <data name="RazerGamepadMappingHelp" xml:space="preserve"><value>コントローラーのボタンにアクションを割り当てます。読み取るか編集してから「適用」でデバイスに書き込みます。</value></data>
   <data name="RazerHidInformationHelp" xml:space="preserve"><value>デバイスが報告するファームウェア、シリアル番号、バッテリー、その他の詳細を表示します。読み取り専用です。</value></data>
   <data name="RazerChromaLightingHelp" xml:space="preserve"><value>デバイスのライティング エフェクト、明るさ、メイン/サブ カラーを設定します。「適用」でデバイスに書き込まれます。</value></data>
+  <data name="RazerChromaWirelessConnected" xml:space="preserve"><value>ワイヤレス接続済み</value></data>
+  <data name="RazerChromaWirelessDisconnected" xml:space="preserve"><value>ワイヤレス未接続</value></data>
   <data name="AwBleHeadsetControlsHelp" xml:space="preserve"><value>デバイスが報告する音量、サイドトーン、EQ、ライティングなどのコントロールを表示します。各「適用」でヘッドセットに書き込まれます。</value></data>
   <data name="RazerHidPollingHelp" xml:space="preserve"><value>マウスのポーリング レートを選択します。保存するとデバイスに書き込まれます。</value></data>
   <data name="BlePollingHelp" xml:space="preserve"><value>ワイヤレス マウスのポーリング レートを選択します。高いレートほど電力を多く消費します。</value></data>

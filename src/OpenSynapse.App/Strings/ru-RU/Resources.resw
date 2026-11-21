@@ -7184,6 +7184,12 @@
   <data name="RazerChromaLightingHelp" xml:space="preserve">
     <value>Устанавливает эффект подсветки устройства, яркость и основные/вторичные цвета; Apply записывает их на устройство.</value>
   </data>
+  <data name="RazerChromaWirelessConnected" xml:space="preserve">
+    <value>Беспроводное подключение установлено</value>
+  </data>
+  <data name="RazerChromaWirelessDisconnected" xml:space="preserve">
+    <value>Беспроводное подключение отсутствует</value>
+  </data>
   <data name="AwBleHeadsetControlsHelp" xml:space="preserve">
     <value>Показывает громкость, самопрослушивание, эквалайзер, освещение и другие элементы управления отчетами устройства; каждое приложение Apply записывает на гарнитуру.</value>
   </data>

@@ -4,11 +4,19 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed partial class RazerChromaStandardService
 {
+    // rzDeviceIoT writes IoT brightness with profileId 0 and the AllRegion id (0);
+    // its legacy effect page still reads and writes effects with profile 1, region 0.
+    private byte LegacyBrightnessProfileId =>
+        _productId is { } productId && IsIotProduct(productId)
+            ? (byte)0
+            : RazerLegacyChromaProtocol.ReadProfileId;
+
     private async Task<byte> ReadLegacyBrightnessAsync(CancellationToken cancellationToken)
     {
         return RazerLegacyChromaProtocol.ReadDirectBrightnessPercent(
             await QueryAsync(
-                transaction => RazerLegacyChromaProtocol.GetDirectBrightness(transaction),
+                transaction => RazerLegacyChromaProtocol.GetDirectBrightness(
+                    transaction, LegacyBrightnessProfileId, RazerLegacyChromaProtocol.ReadRegionId),
                 "read brightness",
                 cancellationToken).ConfigureAwait(false));
     }
@@ -34,7 +42,8 @@ public sealed partial class RazerChromaStandardService
         try
         {
             await QueryAsync(
-                transaction => RazerLegacyChromaProtocol.SetDirectBrightness(transaction, percent),
+                transaction => RazerLegacyChromaProtocol.SetDirectBrightness(
+                    transaction, percent, LegacyBrightnessProfileId, RazerLegacyChromaProtocol.ReadRegionId),
                 "set brightness",
                 cancellationToken).ConfigureAwait(false);
             if (previous is not null)
@@ -57,7 +66,8 @@ public sealed partial class RazerChromaStandardService
             try
             {
                 await QueryAsync(
-                    transaction => RazerLegacyChromaProtocol.SetDirectBrightness(transaction, restore),
+                    transaction => RazerLegacyChromaProtocol.SetDirectBrightness(
+                        transaction, restore, LegacyBrightnessProfileId, RazerLegacyChromaProtocol.ReadRegionId),
                     "restore brightness",
                     cancellationToken).ConfigureAwait(false);
             }

@@ -3441,6 +3441,8 @@
   <data name="RazerGamepadMappingHelp" xml:space="preserve"><value>Assigns actions to controller buttons; read or edit them, then Apply to write to the device.</value></data>
   <data name="RazerHidInformationHelp" xml:space="preserve"><value>Shows the device's reported firmware, serial number, battery, and related details; read-only.</value></data>
   <data name="RazerChromaLightingHelp" xml:space="preserve"><value>Sets the device lighting effect, brightness, and primary/secondary colors; Apply writes them to the device.</value></data>
+  <data name="RazerChromaWirelessConnected" xml:space="preserve"><value>Wireless connected</value></data>
+  <data name="RazerChromaWirelessDisconnected" xml:space="preserve"><value>Wireless not connected</value></data>
   <data name="AwBleHeadsetControlsHelp" xml:space="preserve"><value>Shows volume, sidetone, EQ, lighting, and other controls the device reports; each Apply writes to the headset.</value></data>
   <data name="RazerHidPollingHelp" xml:space="preserve"><value>Selects the mouse polling rate; Save writes it to the device.</value></data>
   <data name="BlePollingHelp" xml:space="preserve"><value>Selects the wireless mouse polling rate; higher rates use more power.</value></data>

@@ -3431,6 +3431,8 @@
   <data name="RazerGamepadMappingHelp" xml:space="preserve"><value>Weist Controller-Schaltflächen Aktionen zu; lesen oder bearbeiten Sie sie und wählen Sie dann „Anwenden“, um sie auf das Gerät zu schreiben.</value></data>
   <data name="RazerHidInformationHelp" xml:space="preserve"><value>Zeigt die gemeldete Firmware, Seriennummer, den Akkustand und weitere Details des Geräts an; schreibgeschützt.</value></data>
   <data name="RazerChromaLightingHelp" xml:space="preserve"><value>Legt Beleuchtungseffekt, Helligkeit und Primär-/Sekundärfarben des Geräts fest; „Anwenden“ schreibt sie auf das Gerät.</value></data>
+  <data name="RazerChromaWirelessConnected" xml:space="preserve"><value>Funkverbindung hergestellt</value></data>
+  <data name="RazerChromaWirelessDisconnected" xml:space="preserve"><value>Keine Funkverbindung</value></data>
   <data name="AwBleHeadsetControlsHelp" xml:space="preserve"><value>Zeigt Lautstärke, Seitenklang, EQ, Beleuchtung und weitere vom Gerät gemeldete Steuerelemente; jede Aktion „Anwenden“ schreibt auf das Headset.</value></data>
   <data name="RazerHidPollingHelp" xml:space="preserve"><value>Wählt die Polling-Rate der Maus; „Speichern“ schreibt sie auf das Gerät.</value></data>
   <data name="BlePollingHelp" xml:space="preserve"><value>Wählt die Polling-Rate der drahtlosen Maus; höhere Raten verbrauchen mehr Energie.</value></data>

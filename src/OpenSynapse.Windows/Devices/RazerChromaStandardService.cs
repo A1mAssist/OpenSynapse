@@ -43,13 +43,16 @@ public enum RazerChromaChannel
     Legacy,
     /// <summary>Class-0x0F effects with class-0x03 per-region brightness (Esther/MarciT2H).</summary>
     LegacyPerLed,
-    /// <summary>Class-0x0F effects with the direct 0F:84/0F:04 brightness pair.</summary>
+    /// <summary>
+    /// Class-0x0F effects with the direct 0F:84/0F:04 brightness pair. Used by
+    /// the Basilisk V4 family and the 030C-0317 IoT lamps.
+    /// </summary>
     LegacyBrightness,
 }
 
 /// <summary>
-/// Brightness and effect control over the class 0x10 Chroma channel shared by mice,
-/// keyboards, lamps, ARGB controllers and docks, plus the class 0x0F/0x03 legacy paths.
+/// Brightness and effect control over the shared Chroma channels used by mice,
+/// keyboards, lamps, ARGB controllers and docks, including the class 0x0F legacy paths.
 /// </summary>
 public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingService
 {
@@ -80,7 +83,7 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
     }
 
     /// <summary>
-    /// Devices whose only shared capability is the class 0x10 Chroma channel: mice, lamps,
+    /// Devices whose only shared capability is the Chroma lighting page: mice, lamps,
     /// ARGB controllers, docks and stands. Keyboards, audio devices, the RazerHid catalogue
     /// and the 320-byte ARGB controller are excluded because they own a richer page.
     /// </summary>

@@ -17,12 +17,21 @@ public sealed partial class RazerChromaStandardService
     private static readonly FrozenSet<ushort> DirectLegacyBrightnessProducts =
         new ushort[] { 0x00EA, 0x00EB }.ToFrozenSet();
 
-    internal static RazerChromaChannel ChannelFor(ushort productId) =>
-        PerLedLegacyProducts.Contains(productId)
-            ? RazerChromaChannel.LegacyPerLed
-            : DirectLegacyBrightnessProducts.Contains(productId)
-                ? RazerChromaChannel.LegacyBrightness
-                : RazerChromaChannel.Standard;
+    // The 030C-0317 bundles share the class-0x0F effect pair [80,15,2]/[80,15,130]
+    // and the direct brightness pair [3,15,4]/[3,15,132]. Their 0x10 entries come
+    // from the shared command library, not the product's lighting command table.
+    private static readonly FrozenSet<ushort> IotProducts =
+        new ushort[] { 0x030C, 0x030D, 0x030E, 0x030F, 0x0310, 0x0316, 0x0317 }.ToFrozenSet();
+
+    internal static bool IsIotProduct(ushort productId) => IotProducts.Contains(productId);
+
+    internal static RazerChromaChannel ChannelFor(ushort productId) => productId switch
+    {
+        _ when IotProducts.Contains(productId) => RazerChromaChannel.LegacyBrightness,
+        _ when PerLedLegacyProducts.Contains(productId) => RazerChromaChannel.LegacyPerLed,
+        _ when DirectLegacyBrightnessProducts.Contains(productId) => RazerChromaChannel.LegacyBrightness,
+        _ => RazerChromaChannel.Standard,
+    };
 
     internal static IReadOnlyList<RazerChromaDeviceConnection> SelectConnections(
         IEnumerable<WindowsHidDiscovery.HidInterfaceDescriptor> interfaces) =>

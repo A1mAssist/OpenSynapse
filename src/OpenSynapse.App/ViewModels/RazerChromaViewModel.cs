@@ -96,6 +96,7 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
     private Color _primaryColor = Color.FromArgb(255, 0, 255, 0);
     private byte? _batteryPercent;
     private bool? _isCharging;
+    private bool? _wirelessOnline;
     private Version? _firmware;
     private string? _serial;
     private Color _secondaryColor = Color.FromArgb(255, 255, 0, 0);
@@ -138,7 +139,12 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
     };
     public string Identity => $"VID_1532 / PID_{_connection.ProductId:X4}";
     public string DevicePath => _connection.DevicePath;
-    public string StatusText => AppStrings.Text("BlackSharkStatusConnected");
+    public string StatusText => _wirelessOnline switch
+    {
+        true => AppStrings.Text("RazerChromaWirelessConnected"),
+        false => AppStrings.Text("RazerChromaWirelessDisconnected"),
+        _ => AppStrings.Text("BlackSharkStatusConnected"),
+    };
 
     public string BatterySummary => _batteryPercent is { } percent
         ? _isCharging == true && !RazerDeviceTraits.UsesReplaceableBattery(_connection.ProductId)
@@ -281,6 +287,12 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
             // Default playback is independent of the dock's lighting collection.
             if (Body is { HasEndpointAudio: true } endpointBody) await endpointBody.LoadAsync(cancellationToken);
             var state = await OpenService().ReadStateAsync(cancellationToken);
+            _wirelessOnline = null;
+            if (RazerChromaStandardService.IsIotProduct(_connection.ProductId))
+            {
+                _wirelessOnline = await OpenService().TryReadWirelessOnlineAsync(cancellationToken);
+            }
+            OnPropertyChanged(nameof(StatusText));
             _hasEditableState = state.BrightnessPercent is not null || state.Effect is not null;
             if (state.BrightnessPercent is byte brightness) Brightness = brightness;
             if (state.Effect is RazerChromaEffect effect)
