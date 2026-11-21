@@ -27,8 +27,19 @@ public sealed partial class DeviceApplicationRulesPanel : UserControl
 
     private async void RuleChanged(object sender, RoutedEventArgs e)
     {
-        if ((sender as FrameworkElement)?.DataContext is DeviceApplicationRuleRowViewModel row)
+        if ((sender as FrameworkElement)?.DataContext is not DeviceApplicationRuleRowViewModel row) return;
+        try
+        {
             await ViewModel.SaveAsync(row, Lifetime);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception exception)
+        {
+            Host?.ViewModel.ReportApplicationError(AppStrings.FormatText(
+                "LabeledError", AppStrings.Text("DeviceRulesHeader.Header"), exception.Message));
+        }
     }
 
     private async void BrowseApplicationClick(object sender, RoutedEventArgs e)

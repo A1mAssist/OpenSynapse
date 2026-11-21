@@ -8,7 +8,13 @@ namespace OpenSynapse.App.ViewModels;
 /// One peripheral shown in the tray battery list. Source is the row the device page
 /// uses, so clicking the entry can open that exact device.
 /// </summary>
-public sealed record PeripheralBattery(string Name, int? Percent, string Glyph, object Source, string Key);
+public sealed record PeripheralBattery(
+    string Name,
+    int? Percent,
+    string Glyph,
+    object Source,
+    string Key,
+    bool? IsCharging = null);
 
 public sealed class TrayWorkspace
 {
@@ -49,7 +55,8 @@ public sealed class TrayWorkspace
             var claimed = ClaimedDevicePaths();
             return TelemetryBatteries()
                 .Concat(BatteryDevices().Select(row =>
-                    new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row, HidKey(row))))
+                    new PeripheralBattery(
+                        row.Name, row.BatteryPercent, row.IconGlyph, row, HidKey(row), row.IsCharging)))
                 .Concat(HeadsetRows(claimed).Select(row =>
                     new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row, HeadsetKey(row))))
                 .Concat(BlackSharkRows(claimed).Select(row =>
@@ -90,7 +97,7 @@ public sealed class TrayWorkspace
                 row.Name,
                 await _razerHid.ReadBatteryPercentAsync(row, cancellationToken).ConfigureAwait(false),
                 row.IconGlyph,
-                row, HidKey(row)));
+                row, HidKey(row), row.IsCharging));
         }
         foreach (var row in headsetRows)
         {

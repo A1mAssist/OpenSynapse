@@ -29,6 +29,15 @@ public sealed partial class RazerHeadsetAudioService
 
     public Task SetMicMuteAsync(bool muted, CancellationToken cancellationToken = default)
     {
+        if (_transportKind == RazerHeadsetAudioTransport.CamyT1)
+        {
+            return SetCamyT1Async(
+                RazerCamyT1Protocol.MicMute,
+                muted ? (byte)1 : (byte)0,
+                "microphone mute",
+                cancellationToken);
+        }
+
         if (_protocol25Transport is not null)
         {
             RequireProtocol25Support(
@@ -51,6 +60,12 @@ public sealed partial class RazerHeadsetAudioService
         if (volume > 100)
         {
             throw new ArgumentOutOfRangeException(nameof(volume), "Microphone volume must be between 0 and 100.");
+        }
+
+        if (_transportKind == RazerHeadsetAudioTransport.CamyT1)
+        {
+            return SetCamyT1Async(
+                RazerCamyT1Protocol.MicVolume, volume, "microphone volume", cancellationToken);
         }
 
         if (_protocol25Transport is not null)

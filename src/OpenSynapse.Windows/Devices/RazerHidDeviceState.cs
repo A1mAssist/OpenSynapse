@@ -248,6 +248,33 @@ public sealed class RazerHidDeviceConnection
     internal string? DevicePath { get; }
 
     /// <summary>
+    /// The polling-rate command family the firmware accepted on this connection. A
+    /// dual-link dongle uses the high-speed pair only while docked, so the catalog
+    /// preference is a starting point, not a guarantee. A rescan rebuilds the connection
+    /// object and a re-dock changes the endpoint, so this cache never outlives the
+    /// physical link it was learned on.
+    /// </summary>
+    internal bool? PollingRateUsesHighRate { get; set; }
+
+    private static readonly int[] HighSpeedPollingSteps = [2_000, 4_000, 8_000];
+
+    /// <summary>
+    /// The rates this endpoint can actually take. The bundle only lists the stock
+    /// wireless ladder (max 1000); the faster steps are real only after the endpoint
+    /// answered the high-rate pair, which is what a HyperPolling dock does.
+    /// </summary>
+    public IReadOnlyList<int> EffectivePollingRates
+    {
+        get
+        {
+            var declared = Definition.PollingRates;
+            return PollingRateUsesHighRate == true && declared.Count > 0 && declared[^1] <= 1_000
+                ? [.. declared, .. HighSpeedPollingSteps]
+                : declared;
+        }
+    }
+
+    /// <summary>
     /// A rescan rebuilds the connection object even when the endpoint did not change.
     /// Dedup state must follow the endpoint, not the object identity.
     /// </summary>

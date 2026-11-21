@@ -87,15 +87,30 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
     /// one-second refresh used to re-read every profile name and card and kept the
     /// keyboard busy while the user was writing a setting.
     /// </summary>
-    internal Task LoadSlowCardsAsync(
+    internal async Task LoadSlowCardsAsync(
         bool force = false,
-        CancellationToken cancellationToken = default) =>
-        !IsReady || RequiresRescan
-            ? Task.CompletedTask
-            : _service.RunExclusiveAsync(
-                Connection,
-                token => LoadSlowCardsCoreAsync(force, token),
-                cancellationToken);
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsReady || RequiresRescan)
+        {
+            return;
+        }
+
+        var activeProfile = _activeOnboardProfileKnown ? ActiveOnboardProfileId : (byte?)null;
+        await _service.RunExclusiveAsync(
+            Connection,
+            token => LoadSlowCardsCoreAsync(force, token),
+            cancellationToken);
+
+        // The profile button changes the active slot outside the app; the mapping
+        // rows above still belong to the previous slot until they are re-read.
+        if (activeProfile is { } previous &&
+            _activeOnboardProfileKnown &&
+            ActiveOnboardProfileId != previous)
+        {
+            InvalidateMapping();
+        }
+    }
 
     private async Task LoadSlowCardsCoreAsync(
         bool force,

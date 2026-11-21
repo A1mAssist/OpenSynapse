@@ -62,6 +62,9 @@ public sealed partial class HeadsetAudioPanel : UserControl
     private async void HeadsetAudioApplyMicProcessingClick(object sender, RoutedEventArgs e) =>
         await (ViewModel?.ApplyMicProcessingAsync(Lifetime) ?? Task.CompletedTask);
 
+    private async void HeadsetAudioApplyCamyT1Click(object sender, RoutedEventArgs e) =>
+        await (ViewModel?.ApplyCamyT1Async(Lifetime) ?? Task.CompletedTask);
+
     private async void HeadsetAudioApplyHapticsClick(object sender, RoutedEventArgs e) =>
         await (ViewModel?.ApplyHapticsAsync(Lifetime) ?? Task.CompletedTask);
 

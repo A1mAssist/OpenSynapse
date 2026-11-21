@@ -299,6 +299,10 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SoftwareModeText));
         OnPropertyChanged(nameof(BatteryText));
         OnPropertyChanged(nameof(ChargingText));
+        // The first successful polling read can widen the ladder to the HyperPolling steps.
+        OnPropertyChanged(nameof(PollingOptions));
+        OnPropertyChanged(nameof(PollingOptionTexts));
+        OnPropertyChanged(nameof(SelectedPollingRateIndex));
         OnPropertyChanged(nameof(PollingRateText));
         OnPropertyChanged(nameof(DpiText));
         OnPropertyChanged(nameof(IdleTimeoutText));

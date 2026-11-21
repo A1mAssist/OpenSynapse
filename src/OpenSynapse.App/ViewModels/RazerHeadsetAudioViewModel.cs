@@ -76,6 +76,8 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     private bool _voicePrompts;
     private double _micDeEsser;
     private double _micLimiterDb;
+    private bool _micHpf;
+    private bool _micLimiterEnabled;
     private int _micReverbRoomModeIndex;
     private double _micReverbIntensity;
     private bool _hasDnd;
@@ -86,6 +88,8 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     private bool _hasVoicePrompts;
     private bool _hasMicDeEsser;
     private bool _hasMicLimiter;
+    private bool _hasMicHpf;
+    private bool _hasMicLimiterEnabled;
     private bool _hasMicReverb;
     private bool _hapticsEnabled;
     private double _hapticsStrength;
@@ -494,6 +498,20 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             OnPropertyChanged(nameof(MicLimiterVisibility));
         }
 
+        if (state.MicHpf is bool hpf)
+        {
+            MicHpf = hpf;
+            _hasMicHpf = true;
+            OnPropertyChanged(nameof(MicHpfVisibility));
+        }
+
+        if (state.MicLimiterEnabled is bool limiterEnabled)
+        {
+            MicLimiterEnabled = limiterEnabled;
+            _hasMicLimiterEnabled = true;
+            OnPropertyChanged(nameof(MicLimiterEnabledVisibility));
+        }
+
         if (state.MicReverb is { } reverb)
         {
             var index = Array.IndexOf(MicReverbModes, reverb.RoomMode);
@@ -538,6 +556,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
         OnPropertyChanged(nameof(AdvancedAudioVisibility));
         OnPropertyChanged(nameof(MicProcessingVisibility));
+        OnPropertyChanged(nameof(MicDspVisibility));
         if (state.MicVolume is byte volume)
         {
             MicVolume = volume;

@@ -11,7 +11,7 @@ public enum RazerHeadsetAudioTransport
     Protocol25Feature65,
     Mxic64,
     Valkyrie64,
-    Billie64, Mixer053E, ValkyrieT3Feature64, Jolie64, KrakenBase37, NativeDll,
+    Billie64, Mixer053E, ValkyrieT3Feature64, Jolie64, KrakenBase37, CamyT1, NativeDll,
 }
 
 public sealed record RazerHeadsetAudioConnection(
@@ -335,6 +335,8 @@ public sealed partial class RazerHeadsetAudioService
                 item.OutputReportByteLength == RazerMxicHeadsetProtocol.ReportLength &&
                 item.InputReportByteLength >= RazerMxicHeadsetProtocol.ReportLength,
             RazerHeadsetChannel.Mixer053E => item.FeatureReportByteLength == RazerMixer053EProtocol.FeatureReportLength && item.InputReportByteLength == RazerMixer053EProtocol.StatusReportLength && item.OutputReportByteLength == RazerMixer053EProtocol.OutputReportLength,
+            RazerHeadsetChannel.CamyT1 =>
+                item.OutputReportByteLength == RazerCamyT1Protocol.ReportLength,
             _ => false,
         };
 
@@ -351,6 +353,7 @@ public sealed partial class RazerHeadsetAudioService
             RazerHeadsetChannel.AvneraFeature65 => RazerHeadsetAudioTransport.AvneraFeature65,
             RazerHeadsetChannel.Protocol25Feature65 or RazerHeadsetChannel.Protocol25Feature64 =>
                 RazerHeadsetAudioTransport.Protocol25Feature65,
+            RazerHeadsetChannel.CamyT1 => RazerHeadsetAudioTransport.CamyT1,
             RazerHeadsetChannel.NativeDll => RazerHeadsetAudioTransport.NativeDll,
             RazerHeadsetChannel.Mixer053E => RazerHeadsetAudioTransport.Mixer053E,
             // Keep the dedicated BlackShark panel's historical fallback transport.
@@ -366,6 +369,11 @@ public sealed partial class RazerHeadsetAudioService
             return new RazerHeadsetAudioState(
                 null, null, null, null, null, null, null, null, null, null, null, null,
                 ["Razer audio component required."]);
+        }
+
+        if (_transportKind == RazerHeadsetAudioTransport.CamyT1)
+        {
+            return await ReadCamyT1StateAsync(cancellationToken).ConfigureAwait(false);
         }
 
         if (_protocol25Transport is not null)

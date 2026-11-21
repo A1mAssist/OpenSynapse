@@ -45,6 +45,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         VoicePrompts,
         MicDeEsser,
         MicLimiter,
+        MicHpf,
+        MicLimiterEnabled,
         MicReverb,
         Dock,
         MicEqBands,
@@ -98,6 +100,16 @@ public sealed partial class RazerHeadsetAudioViewModel
     [
         HeadsetCapability.Firmware,
         HeadsetCapability.Serial,
+    ];
+
+    // Seiren V2 Pro/X expose mic gain, mute, HPF and limiter over the eight-byte
+    // CamyT1 report; the 91-byte headset surface is not present on these PIDs.
+    private static readonly HeadsetCapability[] CamyT1Capabilities =
+    [
+        HeadsetCapability.MicMuted,
+        HeadsetCapability.MicVolume,
+        HeadsetCapability.MicHpf,
+        HeadsetCapability.MicLimiterEnabled,
     ];
 
     private static readonly HeadsetCapability[] MxicCapabilities =
@@ -222,6 +234,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         {
             RazerHeadsetAudioTransport.AvneraFeature65 => AvneraCapabilities,
             RazerHeadsetAudioTransport.KrakenBase37 => KrakenBaseCapabilities,
+            RazerHeadsetAudioTransport.CamyT1 => CamyT1Capabilities,
             RazerHeadsetAudioTransport.Protocol25Feature65 => Protocol25Capabilities,
             RazerHeadsetAudioTransport.Mxic64 => MxicProductCapabilities,
             RazerHeadsetAudioTransport.Valkyrie64 => ValkyrieProductCapabilities,
@@ -297,6 +310,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         HeadsetCapability.VoicePrompts => _hasVoicePrompts,
         HeadsetCapability.MicDeEsser => _hasMicDeEsser,
         HeadsetCapability.MicLimiter => _hasMicLimiter,
+        HeadsetCapability.MicHpf => _hasMicHpf,
+        HeadsetCapability.MicLimiterEnabled => _hasMicLimiterEnabled,
         HeadsetCapability.MicReverb => _hasMicReverb,
         HeadsetCapability.Dock => _hasDock,
         HeadsetCapability.MicEqBands => _hasMicEqBands,
@@ -332,6 +347,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         _hasVoicePrompts = false;
         _hasMicDeEsser = false;
         _hasMicLimiter = false;
+        _hasMicHpf = false;
+        _hasMicLimiterEnabled = false;
         _hasMicReverb = false;
         _hasDock = false;
         _hasMicEqBands = false;
@@ -361,6 +378,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         state.AudioSource is not null || state.NoiseSuppression is not null || state.AncState is not null ||
         state.AncLevel is not null || state.ParametricEq is not null || state.MicCompressor is not null ||
         state.MicDeEsser is not null || state.MicReverb is not null || state.MicLimiter is not null ||
+        state.MicHpf is not null || state.MicLimiterEnabled is not null ||
         state.Dnd is not null || state.VoicePrompts is not null || state.AutoPause is not null ||
         state.GestureControl is not null || state.Dolby is not null || state.NightMode is not null ||
         state.Haptics is not null || state.MicReturnSwitch is not null || state.SidetonePercent is not null ||

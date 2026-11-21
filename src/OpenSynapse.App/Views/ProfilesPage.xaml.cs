@@ -9,6 +9,7 @@ namespace OpenSynapse.App.Views;
 public sealed partial class ProfilesPage : UserControl
 {
     private bool _behaviorUiReady;
+    private bool _refreshQueued;
     private int[] _refreshRateCycleOptions = [];
 
     internal MainWindow Host { get; set; } = null!;
@@ -208,9 +209,19 @@ public sealed partial class ProfilesPage : UserControl
 
     private void ProfilesPageLoaded(object sender, RoutedEventArgs e)
     {
-        ViewModel.DeviceRules.RefreshView();
-        RefreshBindingProfilePicker();
-        BindingDevicePicker.SelectedItem ??= ViewModel.DeviceRules.BindableDevices.FirstOrDefault();
+        if (_refreshQueued) return;
+        _refreshQueued = true;
+        // A navigation can still be tearing down the previous page's repeater here.
+        // Refresh the shared rule collections once that layout pass has finished.
+        var queued = DispatcherQueue.TryEnqueue(() =>
+        {
+            _refreshQueued = false;
+            if (!IsLoaded) return;
+            ViewModel.DeviceRules.RefreshView();
+            RefreshBindingProfilePicker();
+            BindingDevicePicker.SelectedItem ??= ViewModel.DeviceRules.BindableDevices.FirstOrDefault();
+        });
+        if (!queued) _refreshQueued = false;
     }
 
     private void BindingDevicePickerDropDownOpened(object sender, object e)

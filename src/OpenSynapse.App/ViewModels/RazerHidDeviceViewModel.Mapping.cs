@@ -153,7 +153,9 @@ public sealed partial class RazerHidDeviceViewModel
     internal void InvalidateMapping()
     {
         _mappingMacroSignature = null;
-        if (_mapping is { IsLoaded: true, IsBusy: false } mapping)
+        // ReadAsync queues itself when a read is already running, so a profile switch
+        // that lands mid-refresh still re-reads the new slot instead of being dropped.
+        if (_mapping is { IsLoaded: true } mapping)
         {
             _ = mapping.ReadAsync();
         }

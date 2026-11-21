@@ -9,6 +9,7 @@ namespace OpenSynapse.App.ViewModels;
 public sealed class RazerHidDeviceRowViewModel : INotifyPropertyChanged, IDeviceBatteryRow
 {
     private int? _batteryPercent;
+    private bool? _isCharging;
     private readonly RazerHidDeviceConnection _connection;
     private RazerHidDeviceViewModel? _detail;
     private readonly Brush _statusBrush;
@@ -72,6 +73,7 @@ public sealed class RazerHidDeviceRowViewModel : INotifyPropertyChanged, IDevice
     public bool IsBatteryAvailable => _batteryPercent is not null;
     public string BatteryText => _batteryPercent is { } value ? $"{value}%" : string.Empty;
     public int? BatteryPercent => _batteryPercent;
+    public bool? IsCharging => _isCharging;
 
     /// <summary>A failed read keeps the last value so the card does not blink on a timeout.</summary>
     internal void SetBatteryPercent(int? percent)
@@ -85,6 +87,18 @@ public sealed class RazerHidDeviceRowViewModel : INotifyPropertyChanged, IDevice
         PropertyChanged?.Invoke(this, new(nameof(IsBatteryAvailable)));
         PropertyChanged?.Invoke(this, new(nameof(BatteryText)));
         PropertyChanged?.Invoke(this, new(nameof(BatteryPercent)));
+    }
+
+    /// <summary>A failed read keeps the last state so the charging bolt does not blink.</summary>
+    internal void SetCharging(bool? charging)
+    {
+        if (charging is null || charging == _isCharging)
+        {
+            return;
+        }
+
+        _isCharging = charging;
+        PropertyChanged?.Invoke(this, new(nameof(IsCharging)));
     }
 
     public void AttachDetail(RazerHidDeviceViewModel detail)

@@ -48,64 +48,11 @@ internal static partial class RazerHidMouseProtocol
     internal static RazerHidRequest GetCharging(RazerHidDeviceDefinition device) =>
         RazerHidStandardProtocol.Create(device, "razer_chroma_misc_get_charging_status", 0x02, 0x07, 0x84, []);
 
-    internal static RazerHidRequest GetPollingRate(RazerHidDeviceDefinition device, byte profileId = 0x00)
-    {
-        if (device.Transactions.ContainsKey("razer_chroma_misc_get_polling_rate2"))
-        {
-            var profile = device.GetFixedArgumentOrNull("razer_chroma_misc_get_polling_rate2", 0);
-            var arguments = profile is byte value ? new[] { value } : new[] { profileId };
-            return RazerHidStandardProtocol.Create(device,
-                "razer_chroma_misc_get_polling_rate2",
-                // The middleware declares the USB high speed polling read as two
-                // bytes in every product bundle that ships it.
-                device.GetCommandSize("razer_chroma_misc_get_polling_rate2", 0x02),
-                0x00, 0xC0, arguments);
-        }
-        return RazerHidStandardProtocol.Create(device,
-            "razer_chroma_misc_get_polling_rate", 0x01, 0x00, 0x85, []);
-    }
-
     internal static RazerHidRequest? GetActiveProfile(RazerHidDeviceDefinition device) =>
         device.Transactions.ContainsKey("razer_chroma_misc_get_active_profile")
             ? RazerHidStandardProtocol.Create(
                 device, "razer_chroma_misc_get_active_profile", 0x01, 0x05, 0x84, [])
             : null;
-
-    internal static IReadOnlyList<RazerHidRequest> SetPollingRate(
-        RazerHidDeviceDefinition device,
-        int hertz,
-        byte profileId = 0x00)
-    {
-        if (device.PollingRates.Count > 0 && !device.PollingRates.Contains(hertz))
-        {
-            throw new ArgumentOutOfRangeException(nameof(hertz), "Polling rate is not declared for this device.");
-        }
-        if (device.Transactions.ContainsKey("razer_chroma_misc_set_polling_rate2") &&
-            device.GetFixedArgumentOrNull("razer_chroma_misc_set_polling_rate2", 0) is byte profile)
-        {
-            return [RazerHidStandardProtocol.Create(device,
-                "razer_chroma_misc_set_polling_rate2",
-                device.GetCommandSize("razer_chroma_misc_set_polling_rate2", 0x02),
-                0x00, 0x40, [profile, EncodeHighPollingRate(hertz)])];
-        }
-        if (device.CommandSequences.TryGetValue("razer_chroma_misc_set_polling_rate2", out var sequence))
-        {
-            var rateCode = EncodeHighPollingRate(hertz);
-            return sequence.Select(step => new RazerHidRequest(
-                "razer_chroma_misc_set_polling_rate2",
-                RazerFeatureReport.CreateRequest(step.TransactionId, 0x02, 0x00, 0x40,
-                    [step.FixedArgument0, rateCode]))).ToArray();
-        }
-        if (device.Transactions.ContainsKey("razer_chroma_misc_set_polling_rate2"))
-        {
-            return [RazerHidStandardProtocol.Create(device,
-                "razer_chroma_misc_set_polling_rate2", 0x02, 0x00, 0x40,
-                [profileId, EncodeHighPollingRate(hertz)])];
-        }
-        return [RazerHidStandardProtocol.Create(device,
-            "razer_chroma_misc_set_polling_rate", 0x01, 0x00, 0x05,
-            [EncodePollingRate(hertz)])];
-    }
 
     internal static RazerHidRequest GetDpi(RazerHidDeviceDefinition device)
     {

@@ -141,7 +141,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         var previousMuted = MicMuted;
         var previousVolume = MicVolume;
         var writesVolume = IsFeature91 ||
-            (IsProtocol25 && RazerProtocol25FeatureProtocol.SupportsHidMicVolume(_connection.ProductId));
+            (IsProtocol25 && RazerProtocol25FeatureProtocol.SupportsHidMicVolume(_connection.ProductId)) ||
+            _connection.Transport == RazerHeadsetAudioTransport.CamyT1;
         var applied = _connection.Transport switch
         {
             RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64 or RazerHeadsetAudioTransport.Jolie64 =>

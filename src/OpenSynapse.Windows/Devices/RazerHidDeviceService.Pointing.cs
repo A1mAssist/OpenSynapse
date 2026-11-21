@@ -6,10 +6,33 @@ public sealed partial class RazerHidDeviceService
 {
     public async Task<int> GetPollingRateAsync(RazerHidDeviceConnection connection, CancellationToken cancellationToken = default)
     {
-        var highRate = connection.Definition.Transactions.ContainsKey("razer_chroma_misc_get_polling_rate2");
+        var definition = connection.Definition;
+        var highRate = connection.PollingRateUsesHighRate ??
+            RazerHidMouseProtocol.PrefersHighRate(definition);
         var profileId = await ReadActiveProfileIdAsync(connection, cancellationToken).ConfigureAwait(false) ?? 0x00;
-        return RazerHidMouseProtocol.ParsePollingRate(await ExecuteAsync(connection,
-            RazerHidMouseProtocol.GetPollingRate(connection.Definition, profileId), cancellationToken).ConfigureAwait(false), highRate);
+        try
+        {
+            var response = await ExecuteAsync(connection,
+                RazerHidMouseProtocol.GetPollingRate(definition, profileId, highRate), cancellationToken).ConfigureAwait(false);
+            connection.PollingRateUsesHighRate = highRate;
+            return RazerHidMouseProtocol.ParsePollingRate(response, highRate);
+        }
+        // RazerHidRequestExecutor maps a device rejection (0x05) to NotSupportedException
+        // and leaves a silent, non-busy timeout as RazerDeviceTimeoutException. Both mean
+        // "this family is not implemented here", so both must fall back.
+        catch (Exception exception) when (
+            (exception is NotSupportedException or RazerDeviceTimeoutException { IsRetryableBusy: false }) &&
+            definition.Transactions.ContainsKey(
+            highRate ? "razer_chroma_misc_get_polling_rate" : "razer_chroma_misc_get_polling_rate2"))
+        {
+            // A dual-link dongle answers the high-speed pair only while docked; the same
+            // device on its plain receiver answers the legacy pair.
+            highRate = !highRate;
+            var response = await ExecuteAsync(connection,
+                RazerHidMouseProtocol.GetPollingRate(definition, profileId, highRate), cancellationToken).ConfigureAwait(false);
+            connection.PollingRateUsesHighRate = highRate;
+            return RazerHidMouseProtocol.ParsePollingRate(response, highRate);
+        }
     }
 
     /// <summary>
@@ -20,11 +43,24 @@ public sealed partial class RazerHidDeviceService
     /// <returns>The reported rate, or null when the device cannot be read back.</returns>
     public async Task<int?> SetPollingRateAsync(RazerHidDeviceConnection connection, int hertz, CancellationToken cancellationToken = default)
     {
+        var definition = connection.Definition;
+        // Rates above 1000 Hz only exist in the high-speed ladder. A legacy fallback that
+        // happened during a read must not make this write throw on EncodePollingRate.
+        var highRate = hertz > 1000 ||
+            (connection.PollingRateUsesHighRate ?? RazerHidMouseProtocol.PrefersHighRate(definition));
         var profileId = await ReadActiveProfileIdAsync(connection, cancellationToken).ConfigureAwait(false) ?? 0x00;
-        foreach (var request in RazerHidMouseProtocol.SetPollingRate(connection.Definition, hertz, profileId))
+        try
         {
-            await ExecuteWithoutResultAsync(connection, request, cancellationToken).ConfigureAwait(false);
+            await WritePollingRateAsync(connection, hertz, profileId, highRate, cancellationToken).ConfigureAwait(false);
         }
+        catch (Exception exception) when (
+            (exception is NotSupportedException or RazerDeviceTimeoutException { IsRetryableBusy: false }) &&
+            CanFallBack(definition, hertz, highRate))
+        {
+            highRate = !highRate;
+            await WritePollingRateAsync(connection, hertz, profileId, highRate, cancellationToken).ConfigureAwait(false);
+        }
+        connection.PollingRateUsesHighRate = highRate;
 
         if (!connection.Capabilities.Contains(RazerHidBackendCapability.PollingRateRead))
         {
@@ -42,6 +78,27 @@ public sealed partial class RazerHidDeviceService
             return null;
         }
     }
+
+    private async Task WritePollingRateAsync(
+        RazerHidDeviceConnection connection,
+        int hertz,
+        byte profileId,
+        bool highRate,
+        CancellationToken cancellationToken)
+    {
+        foreach (var request in RazerHidMouseProtocol.SetPollingRate(
+                     connection.Definition, hertz, profileId, highRate))
+        {
+            await ExecuteWithoutResultAsync(connection, request, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private static bool CanFallBack(RazerHidDeviceDefinition device, int hertz, bool highRate) =>
+        highRate
+            // The legacy table has no code for the high-speed-only ladders.
+            ? hertz <= 1000 && device.Transactions.ContainsKey("razer_chroma_misc_set_polling_rate")
+            : device.Transactions.ContainsKey("razer_chroma_misc_set_polling_rate2") ||
+              device.CommandSequences.ContainsKey("razer_chroma_misc_set_polling_rate2");
 
     private async Task<byte?> ReadActiveProfileIdAsync(
         RazerHidDeviceConnection connection,

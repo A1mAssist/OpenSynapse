@@ -178,24 +178,24 @@ public sealed partial class BladeWorkspace
 
     internal void SetControlDevice(DeviceDescriptor? blade)
     {
-        var value = blade is
+        var available = blade is
         {
             Access: DeviceAccessState.Available,
             FeatureReportByteLength: RazerFeatureReport.Length,
-        }
-            ? blade.Id
-            : null;
+        };
+        var value = available ? blade!.Id : null;
         var productId = blade?.ProductId ?? 0;
-        if (value is not null)
+        if (available)
         {
             _bladeControlUnavailableCount = 0;
         }
-        else if (blade is not null &&
-                 _bladeControlDevicePath is { Length: > 0 } &&
-                 productId == _bladeControlProductId &&
+        else if (_bladeControlDevicePath is { Length: > 0 } &&
+                 (blade is null || productId == _bladeControlProductId) &&
                  // One unverified snapshot is not a removal; two in a row is.
                  ++_bladeControlUnavailableCount < 2)
         {
+            // A scan that omits the interface entirely (blade == null) is the same
+            // kind of unverified snapshot as a descriptor that failed its probe.
             return;
         }
         else

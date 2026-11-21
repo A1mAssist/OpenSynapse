@@ -323,7 +323,7 @@ internal sealed class FullscreenPollingRateService
                 targets.Add(new PollingRateTarget(
                     key,
                     connection.Definition.ProductId,
-                    connection.Definition.PollingRates,
+                    connection.EffectivePollingRates,
                     mouse ? resolved.Viper.PollingRateHertz : resolved.Keyboard.PollingRateHertz,
                     fullscreen,
                     async ct => await service.GetPollingRateAsync(connection, ct)

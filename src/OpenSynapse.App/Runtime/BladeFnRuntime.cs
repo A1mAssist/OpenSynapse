@@ -482,7 +482,12 @@ internal sealed class BladeFnRuntime : IAsyncDisposable
             }
             if (!cancellationToken.IsCancellationRequested)
             {
-                throw new InvalidOperationException($"Blade Fn {component} stopped unexpectedly.");
+                var exitCode = ReferenceEquals(completed, recovery.Completion) &&
+                               recovery.ExitCode is { } code
+                    ? $" (exit code {code})"
+                    : string.Empty;
+                throw new InvalidOperationException(
+                    $"Blade Fn {component} stopped unexpectedly{exitCode}.");
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

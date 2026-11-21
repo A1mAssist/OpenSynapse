@@ -114,7 +114,7 @@ internal sealed class TaskbarStatusPresenter : IDisposable
             .Select(item => new TaskbarBatteryStatus(
                 item.Key,
                 item.Percent ?? 0,
-                null,
+                item.IsCharging,
                 item.Glyph,
                 item.Name))
             .ToArray();

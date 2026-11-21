@@ -292,7 +292,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
     public Visibility PollingReadVisibility => VisibleWhen(Has(RazerHidBackendCapability.PollingRateRead));
     public Visibility PollingWriteVisibility => VisibleWhen(Has(RazerHidBackendCapability.PollingRateWrite) &&
         PollingOptions.Count > 0);
-    public IReadOnlyList<int> PollingOptions => Connection.Definition.PollingRates;
+    public IReadOnlyList<int> PollingOptions => Connection.EffectivePollingRates;
     public IReadOnlyList<string> PollingOptionTexts => PollingOptions.Select(rate => $"{rate} Hz").ToArray();
     public int SelectedPollingRateIndex
     {

@@ -21,6 +21,8 @@ public sealed record RazerHeadsetAudioState(
     public byte? MicDeEsser { get; init; }
     public (RazerMicReverbRoomMode RoomMode, byte Intensity)? MicReverb { get; init; }
     public sbyte? MicLimiter { get; init; }
+    public bool? MicHpf { get; init; }
+    public bool? MicLimiterEnabled { get; init; }
     public bool? Dnd { get; init; }
     public (byte PromptIndex, bool Enabled)? VoicePrompts { get; init; }
     public bool? AutoPause { get; init; }

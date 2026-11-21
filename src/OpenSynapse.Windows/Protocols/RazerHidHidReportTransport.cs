@@ -135,6 +135,121 @@ internal sealed class RazerHidHidReportTransport
         }
     }
 
+    /// <summary>
+    /// AudioCamyT1/T2 answer with HidD_GetInputReport instead of a streamed input
+    /// report: the request must be written first, then the same report id is read
+    /// back up to five times 30 ms apart. WriteFile/ReadFile never sees these frames.
+    /// </summary>
+    internal async Task<byte[]> QueryInputReportAsync(
+        string devicePath,
+        ReadOnlyMemory<byte> report,
+        byte expectedCommand,
+        TimeSpan timeout,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
+        if (report.IsEmpty)
+        {
+            throw new ArgumentException("The HID report cannot be empty.", nameof(report));
+        }
+
+        var gate = _gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return await CancellableNativeCall.RunAsync(() =>
+            {
+                using var handle = NativeMethods.CreateFile(
+                    devicePath,
+                    NativeMethods.GenericRead | NativeMethods.GenericWrite,
+                    NativeMethods.FileShareRead | NativeMethods.FileShareWrite,
+                    IntPtr.Zero,
+                    NativeMethods.OpenExisting,
+                    0,
+                    IntPtr.Zero);
+                if (handle.IsInvalid)
+                {
+                    throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not open the CamyT1 HID collection.");
+                }
+
+                var bytes = report.ToArray();
+                if (!NativeMethods.HidD_SetOutputReport(handle, bytes, bytes.Length))
+                {
+                    throw new Win32Exception(Marshal.GetLastWin32Error(),
+                        "CamyT1 output report write failed.");
+                }
+
+                var buffer = new byte[bytes.Length];
+                for (var attempt = 0; attempt < 5; attempt++)
+                {
+                    Thread.Sleep(30);
+                    buffer[0] = RazerCamyT1Protocol.ReportId;
+                    if (!NativeMethods.HidD_GetInputReport(handle, buffer, buffer.Length) ||
+                        buffer[2] != expectedCommand)
+                    {
+                        continue;
+                    }
+
+                    return buffer;
+                }
+
+                throw new InvalidDataException(
+                    $"CamyT1 command {expectedCommand:X2} did not answer.");
+            }, timeout, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    internal async Task SendOutputReportAsync(
+        string devicePath,
+        ReadOnlyMemory<byte> report,
+        TimeSpan timeout,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
+        if (report.IsEmpty)
+        {
+            throw new ArgumentException("The HID report cannot be empty.", nameof(report));
+        }
+
+        var gate = _gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await CancellableNativeCall.RunAsync(() =>
+            {
+                using var handle = NativeMethods.CreateFile(
+                    devicePath,
+                    NativeMethods.GenericRead | NativeMethods.GenericWrite,
+                    NativeMethods.FileShareRead | NativeMethods.FileShareWrite,
+                    IntPtr.Zero,
+                    NativeMethods.OpenExisting,
+                    0,
+                    IntPtr.Zero);
+                if (handle.IsInvalid)
+                {
+                    throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not open the CamyT1 HID collection.");
+                }
+
+                var bytes = report.ToArray();
+                if (!NativeMethods.HidD_SetOutputReport(handle, bytes, bytes.Length))
+                {
+                    throw new Win32Exception(Marshal.GetLastWin32Error(),
+                        "CamyT1 output report write failed.");
+                }
+
+                return true;
+            }, timeout, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
     private async Task SendAsync(
         string devicePath,
         ReadOnlyMemory<byte> report,
@@ -227,6 +342,20 @@ internal sealed class RazerHidHidReportTransport
         [DllImport("hid.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool HidD_SetFeature(
+            SafeFileHandle handle,
+            byte[] report,
+            int length);
+
+        [DllImport("hid.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool HidD_SetOutputReport(
+            SafeFileHandle handle,
+            byte[] report,
+            int length);
+
+        [DllImport("hid.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool HidD_GetInputReport(
             SafeFileHandle handle,
             byte[] report,
             int length);

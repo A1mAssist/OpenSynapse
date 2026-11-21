@@ -26,6 +26,9 @@ public sealed class BladeRecoveryClient : IAsyncDisposable
 
     public Task Completion => _completion;
 
+    /// <summary>Exit code of the host, or null while it is still running.</summary>
+    public int? ExitCode => _host.HasExited ? _host.ExitCode : null;
+
     public static async Task<BladeRecoveryClient> StartAsync(string recoveryHostPath, string markerPath,
         string featureDevicePath, string filterDevicePath,
         IReadOnlyList<(ushort ScanCode, ushort Flag)> hooks, TimeSpan readyTimeout,

@@ -93,6 +93,31 @@ public sealed partial class MainWindow
     private void OnRazerHidDevicesChanged(object? sender, NotifyCollectionChangedEventArgs args) =>
         RequestStudioDeviceRefresh();
 
+    /// <summary>
+    /// Battery priming must not depend on the devices page being visible: an auto-start
+    /// session stays in the tray, so the page never loads until the user opens the window.
+    /// </summary>
+    private void OnDeviceBatterySourcesChanged(object? sender, NotifyCollectionChangedEventArgs args)
+    {
+        if (!_batteryPrimingEnabled || _lifetime.IsCancellationRequested)
+        {
+            return;
+        }
+
+        if (!_dispatcherQueue.HasThreadAccess)
+        {
+            if (!_dispatcherQueue.TryEnqueue(() => OnDeviceBatterySourcesChanged(sender, args)))
+            {
+                _diagnosticLog.TryWrite(
+                    "battery",
+                    "Battery priming was skipped because the dispatcher rejected the device change.");
+            }
+            return;
+        }
+
+        PrimeDeviceBatteries();
+    }
+
     /// <summary>Coalesces device events into one Studio refresh on the dispatcher.</summary>
     private void RequestStudioDeviceRefresh()
     {
