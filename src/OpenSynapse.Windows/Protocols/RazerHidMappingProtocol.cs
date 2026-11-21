@@ -17,13 +17,15 @@ public sealed record RazerHidButtonAssignment(
 /// <summary>
 /// Onboard button assignment (class 0x02, commands 0x84 / 0x8C / 0x0C) as the Razer
 /// middleware sends it: profile id, button id, mapping mode, function id and up to five
-/// data bytes inside an 80-byte payload.
+/// data bytes inside an 80-byte report. Single assignments declare the middleware's
+/// 10-byte payload; list commands keep the full report size.
 /// </summary>
 internal static class RazerHidMappingProtocol
 {
     internal const byte TransactionId = 0x1F;
     internal const byte ProfileId = 0x01;
     internal const int ReportDataSize = 80;
+    private const byte SingleAssignmentDataSize = 10;
     internal const byte NormalMode = 0x00;
     internal const byte HypershiftMode = 0x01;
     private const byte MappingClass = 0x02;
@@ -57,14 +59,14 @@ internal static class RazerHidMappingProtocol
     internal static RazerHidRequest GetAssignment(byte profileId, byte buttonId, byte mode) => new(
         "mapping.getAssignment",
         RazerFeatureReport.CreateRequest(
-            TransactionId, ReportDataSize, MappingClass, GetAssignmentCommand,
+            TransactionId, SingleAssignmentDataSize, MappingClass, GetAssignmentCommand,
             new[] { profileId, buttonId, mode }));
 
     /// <summary>Keyboards read and write the key table (0x8D/0x0D), not the button table.</summary>
     internal static RazerHidRequest GetKeyAssignment(byte profileId, byte keyId, byte mode) => new(
         "mapping.getKeyAssignment",
         RazerFeatureReport.CreateRequest(
-            TransactionId, ReportDataSize, MappingClass, GetKeyAssignmentCommand,
+            TransactionId, SingleAssignmentDataSize, MappingClass, GetKeyAssignmentCommand,
             new[] { profileId, keyId, mode }));
 
     /// <summary>
@@ -87,7 +89,7 @@ internal static class RazerHidMappingProtocol
     internal static RazerHidRequest GetAnalogKeyAssignment(byte profileId, byte keyId, byte mode) => new(
         "mapping.getAnalogKeyAssignment",
         RazerFeatureReport.CreateRequest(
-            TransactionId, ReportDataSize, MappingClass, GetAnalogKeyAssignmentCommand,
+            TransactionId, SingleAssignmentDataSize, MappingClass, GetAnalogKeyAssignmentCommand,
             new[] { profileId, keyId, mode }));
 
     internal static RazerHidRequest SetAssignment(
@@ -160,7 +162,8 @@ internal static class RazerHidMappingProtocol
         return new RazerHidRequest(
             "mapping.setAnalogKeyAssignment",
             RazerFeatureReport.CreateRequest(
-                TransactionId, ReportDataSize, MappingClass, SetAnalogKeyAssignmentCommand, arguments));
+                TransactionId, Math.Max(SingleAssignmentDataSize, (byte)arguments.Length),
+                MappingClass, SetAnalogKeyAssignmentCommand, arguments));
     }
 
     private static RazerHidRequest CreateAssignmentRequest(
@@ -187,7 +190,7 @@ internal static class RazerHidMappingProtocol
         return new RazerHidRequest(
             builderName,
             RazerFeatureReport.CreateRequest(
-                TransactionId, ReportDataSize, MappingClass, command, arguments));
+                TransactionId, SingleAssignmentDataSize, MappingClass, command, arguments));
     }
 
     internal static IReadOnlyList<byte> ParseButtonList(ReadOnlySpan<byte> response)
