@@ -3777,6 +3777,7 @@
   <data name="RazerMappingActionCut" xml:space="preserve"><value>切り取り</value></data>
   <data name="RazerMappingActionCopy" xml:space="preserve"><value>コピー</value></data>
   <data name="RazerMappingActionPaste" xml:space="preserve"><value>貼り付け</value></data>
+  <data name="RazerMappingActionMinimizeAllWindows" xml:space="preserve"><value>すべてのウィンドウを最小化</value></data>
   <data name="RazerMappingActionToggleScrollMode" xml:space="preserve"><value>スクロール モードを切り替え</value></data>
   <data name="RazerMappingActionSuffixHold" xml:space="preserve"><value> (長押し)</value></data>
   <data name="RazerMappingActionSuffixToggle" xml:space="preserve"><value> (切り替え)</value></data>

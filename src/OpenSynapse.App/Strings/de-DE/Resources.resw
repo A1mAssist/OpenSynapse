@@ -3777,6 +3777,7 @@
   <data name="RazerMappingActionCut" xml:space="preserve"><value>Ausschneiden</value></data>
   <data name="RazerMappingActionCopy" xml:space="preserve"><value>Kopieren</value></data>
   <data name="RazerMappingActionPaste" xml:space="preserve"><value>Einfügen</value></data>
+  <data name="RazerMappingActionMinimizeAllWindows" xml:space="preserve"><value>Alle Fenster minimieren</value></data>
   <data name="RazerMappingActionToggleScrollMode" xml:space="preserve"><value>Scrollmodus umschalten</value></data>
   <data name="RazerMappingActionSuffixHold" xml:space="preserve"><value> (halten)</value></data>
   <data name="RazerMappingActionSuffixToggle" xml:space="preserve"><value> (umschalten)</value></data>
