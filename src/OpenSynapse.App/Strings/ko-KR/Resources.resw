@@ -3777,6 +3777,7 @@
   <data name="RazerMappingActionCut" xml:space="preserve"><value>잘라내기</value></data>
   <data name="RazerMappingActionCopy" xml:space="preserve"><value>복사</value></data>
   <data name="RazerMappingActionPaste" xml:space="preserve"><value>붙여넣기</value></data>
+  <data name="RazerMappingActionMinimizeAllWindows" xml:space="preserve"><value>모든 창 최소화</value></data>
   <data name="RazerMappingActionToggleScrollMode" xml:space="preserve"><value>스크롤 모드 전환</value></data>
   <data name="RazerMappingActionSuffixHold" xml:space="preserve"><value> (유지)</value></data>
   <data name="RazerMappingActionSuffixToggle" xml:space="preserve"><value> (전환)</value></data>

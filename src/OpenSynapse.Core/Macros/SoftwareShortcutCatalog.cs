@@ -71,6 +71,13 @@ public static class SoftwareShortcutCatalog
             Up(Keys.V, delayMilliseconds: 10),
             Up(Keys.LeftCtrl),
         ]),
+        new("minimize-all-windows", "Minimize all windows",
+        [
+            Down(Keys.LeftWin),
+            Down(Keys.M),
+            Up(Keys.M, delayMilliseconds: 10),
+            Up(Keys.LeftWin),
+        ]),
     ];
 
     /// <summary>
@@ -166,6 +173,7 @@ public static class SoftwareShortcutCatalog
         public static readonly Key X = new(0x58, 0x2D);
         public static readonly Key C = new(0x43, 0x2E);
         public static readonly Key V = new(0x56, 0x2F);
+        public static readonly Key M = new(0x4D, 0x32);
         public static readonly Key F4 = new(0x73, 0x3E);
     }
 }

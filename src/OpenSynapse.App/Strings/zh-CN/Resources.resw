@@ -4228,6 +4228,7 @@
   <data name="RazerMappingActionCut" xml:space="preserve"><value>剪切（Ctrl+X）</value></data>
   <data name="RazerMappingActionCopy" xml:space="preserve"><value>复制（Ctrl+C）</value></data>
   <data name="RazerMappingActionPaste" xml:space="preserve"><value>粘贴（Ctrl+V）</value></data>
+  <data name="RazerMappingActionMinimizeAllWindows" xml:space="preserve"><value>最小化所有窗口</value></data>
   <data name="RazerMappingActionToggleScrollMode" xml:space="preserve"><value>切换滚轮模式</value></data>
   <data name="RazerMappingActionSuffixHold" xml:space="preserve"><value>（按住）</value></data>
   <data name="RazerMappingActionSuffixToggle" xml:space="preserve"><value>（按一下开始/再按停止）</value></data>

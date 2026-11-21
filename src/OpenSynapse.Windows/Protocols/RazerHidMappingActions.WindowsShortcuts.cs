@@ -17,6 +17,9 @@ public static partial class RazerHidMappingActions
         ("Cut", RazerHidMappingFunctions.KeyCode, [0x01, 0x1B]),
         ("Copy", RazerHidMappingFunctions.KeyCode, [0x01, 0x06]),
         ("Paste", RazerHidMappingFunctions.KeyCode, [0x01, 0x19]),
+        // Appended so saved shortcut indices keep their meaning. Shortcut rows are
+        // played in software, so this Win+M chord is not written to the firmware.
+        ("Minimize all windows", RazerHidMappingFunctions.KeyCode, [0x08, 0x10]),
     ];
 
     private static IReadOnlyList<string> WindowsShortcutNames() =>

@@ -135,6 +135,7 @@ internal static class RazerMappingActionNames
             "Cut" => AppStrings.Text("RazerMappingActionCut"),
             "Copy" => AppStrings.Text("RazerMappingActionCopy"),
             "Paste" => AppStrings.Text("RazerMappingActionPaste"),
+            "Minimize all windows" => AppStrings.Text("RazerMappingActionMinimizeAllWindows"),
             "Play / Pause" => AppStrings.Text("MacroMediaPlayPause"),
             "Next track" => AppStrings.Text("MacroMediaNext"),
             "Previous track" => AppStrings.Text("MacroMediaPrevious"),
