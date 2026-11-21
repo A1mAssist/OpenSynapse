@@ -1627,14 +1627,15 @@
   <data name="RazerHidKnobCurrentLabel.Text" xml:space="preserve"><value>Current mode</value></data>
   <data name="RazerHidKnobStageColumn.Text" xml:space="preserve"><value>Stage</value></data>
   <data name="RazerHidKnobModeColumn.Text" xml:space="preserve"><value>Mode</value></data>
-  <data name="RazerHidKnobModeAdjustmentKeyboardBrightness" xml:space="preserve"><value>Keyboard brightness</value></data>
-  <data name="RazerHidKnobModeCycleKnobLightingEffect" xml:space="preserve"><value>Cycle knob lighting</value></data>
-  <data name="RazerHidKnobModeMicVolumeUpDown" xml:space="preserve"><value>Microphone volume</value></data>
+  <data name="RazerHidKnobModeKeyboardLightingBrightness" xml:space="preserve"><value>Keyboard brightness</value></data>
+  <data name="RazerHidKnobModeVolume" xml:space="preserve"><value>Volume</value></data>
+  <data name="RazerHidKnobModeTrackSelector" xml:space="preserve"><value>Track selection</value></data>
+  <data name="RazerHidKnobModeOledBrightness" xml:space="preserve"><value>OLED brightness</value></data>
   <data name="RazerHidKnobModeTrackJogging" xml:space="preserve"><value>Track jogging</value></data>
-  <data name="RazerHidKnobModeWindowZoomInOut" xml:space="preserve"><value>Window zoom</value></data>
-  <data name="RazerHidKnobModeWindowScrollUpDown" xml:space="preserve"><value>Vertical scroll</value></data>
-  <data name="RazerHidKnobModeWindowScrollLeftRight" xml:space="preserve"><value>Horizontal scroll</value></data>
-  <data name="RazerHidKnobModeSwitchApplication" xml:space="preserve"><value>Switch application</value></data>
+  <data name="RazerHidKnobModeWindowsZoom" xml:space="preserve"><value>Window zoom</value></data>
+  <data name="RazerHidKnobModeVerticalScroll" xml:space="preserve"><value>Vertical scroll</value></data>
+  <data name="RazerHidKnobModeHorizontalScroll" xml:space="preserve"><value>Horizontal scroll</value></data>
+  <data name="RazerHidKnobModeSwitchApps" xml:space="preserve"><value>Switch application</value></data>
   <data name="RazerHidApplyButton.Content" xml:space="preserve"><value>Apply</value></data>
   <data name="RazerHidHapticScrollTitle.Text" xml:space="preserve"><value>Haptic scroll stages</value></data>
   <data name="RazerHidHapticScrollDescription.Text" xml:space="preserve"><value>Pick the stages that take part in switching, then choose the one in effect.</value></data>
@@ -3345,6 +3346,9 @@
   <data name="RazerHeadsetMicMonitoringTitle.Text" xml:space="preserve"><value>Microphone monitoring</value></data>
   <data name="RazerHeadsetMicMonitoringToggle.Header" xml:space="preserve"><value>Enable monitoring</value></data>
   <data name="RazerHeadsetMicMuteToggle.Header" xml:space="preserve"><value>Mic mute</value></data>
+  <data name="RazerHeadsetMicHpfToggle.Header" xml:space="preserve"><value>High-pass filter</value></data>
+  <data name="RazerHeadsetMicLimiterToggle.Header" xml:space="preserve"><value>Limiter</value></data>
+  <data name="RazerHeadsetMicDspApply.Content" xml:space="preserve"><value>Apply processing</value></data>
   <data name="RazerHeadsetMicProcessingApply.Content" xml:space="preserve"><value>Apply microphone processing</value></data>
   <data name="RazerHeadsetMicProcessingTitle.Text" xml:space="preserve"><value>Microphone processing</value></data>
   <data name="RazerHeadsetMicTitle.Text" xml:space="preserve"><value>Microphone</value></data>

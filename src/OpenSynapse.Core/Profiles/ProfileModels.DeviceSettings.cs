@@ -234,9 +234,9 @@ public sealed class KeyboardProfileSettings
 
             OledLanguage = language.ToString();
         }
-        if (KnobMode is < 0 or > 7)
+        if (KnobMode is < 0 or > 8)
         {
-            throw new InvalidDataException("Keyboard knob mode must be between 0 and 7.");
+            throw new InvalidDataException("Keyboard knob mode must be between 0 and 8.");
         }
         MouseProfileSettings.ValidateButtonMappings(ButtonMappings);
     }

@@ -1,16 +1,17 @@
 namespace OpenSynapse.Windows.Protocols;
 
-/// <summary>Knob modes from the middleware's class 3 command table.</summary>
+/// <summary>Knob modes from the middleware's command-dial table (identical on every bundle).</summary>
 public enum RazerKnobMode : byte
 {
-    AdjustmentKeyboardBrightness = 0,
-    CycleKnobLightingEffect = 1,
-    MicVolumeUpDown = 2,
-    TrackJogging = 3,
-    WindowZoomInOut = 4,
-    WindowScrollUpDown = 5,
-    WindowScrollLeftRight = 6,
-    SwitchApplication = 7,
+    Volume = 0,
+    TrackSelector = 1,
+    OledBrightness = 2,
+    KeyboardLightingBrightness = 3,
+    SwitchApps = 4,
+    WindowsZoom = 5,
+    TrackJogging = 6,
+    VerticalScroll = 7,
+    HorizontalScroll = 8,
 }
 
 /// <summary>One six-byte knob configuration row: disabled, stage, mode and RGB.</summary>
@@ -23,28 +24,32 @@ public readonly record struct RazerKnobStage(
     byte Blue);
 
 public sealed record RazerKnobConfiguration(
-    byte LedClass,
-    byte LedId,
+    byte ProfileId,
+    byte KnobId,
     IReadOnlyList<RazerKnobStage> Stages);
 
 public readonly record struct RazerKnobModeState(
-    byte LedClass,
-    byte LedId,
+    byte ProfileId,
+    byte KnobId,
     RazerKnobStage Stage);
 
 /// <summary>
-/// Protocol 25 class 0x03 knob commands from the keyboard middleware. The 028D
-/// BlackWidow V4 Pro, 02B3 BlackWidow V4 Pro 75% and 02A6 Huntsman V3 Pro bundles
-/// all register:
+/// Protocol 25 class 0x03 knob commands from the keyboard middleware. Every bundle
+/// with a command dial registers:
 /// get configuration [50, 3, 146], set configuration [50, 3, 18],
 /// get mode [8, 3, 147], set mode [8, 3, 19].
-/// Configuration payloads are ledClass, ledId plus eight six-byte rows.
+/// The first two payload bytes are the onboard profile id and the knob id (0x24),
+/// followed by eight six-byte rows. They are not an LED class: the middleware calls
+/// getCurrentKnobMode(profileIdList[o], 36) once per onboard profile.
 /// </summary>
 public static class RazerKnobProtocol
 {
     public const int StageCount = 8;
     public const int StageSize = 6;
 
+    /// <summary>The default onboard profile every dial write targets.</summary>
+    public const byte DefaultProfileId = 0x01;
+    public const byte KnobId = 0x24;
     private const byte CommandClass = 0x03;
     private const byte GetConfigurationCommandId = 0x92;
     private const byte SetConfigurationCommandId = 0x12;
@@ -55,12 +60,12 @@ public static class RazerKnobProtocol
 
     public static byte[] CreateGetConfigurationRequest(
         byte transactionId,
-        byte ledClass,
-        byte ledId)
+        byte profileId,
+        byte knobId)
     {
         Span<byte> arguments = stackalloc byte[ConfigurationSize];
-        arguments[0] = ledClass;
-        arguments[1] = ledId;
+        arguments[0] = profileId;
+        arguments[1] = knobId;
         return RazerFeatureReport.CreateRequest(
             transactionId,
             ConfigurationSize,
@@ -71,8 +76,8 @@ public static class RazerKnobProtocol
 
     public static byte[] CreateSetConfigurationRequest(
         byte transactionId,
-        byte ledClass,
-        byte ledId,
+        byte profileId,
+        byte knobId,
         ReadOnlySpan<RazerKnobStage> stages)
     {
         if (stages.Length > StageCount)
@@ -84,8 +89,8 @@ public static class RazerKnobProtocol
         }
 
         Span<byte> arguments = stackalloc byte[ConfigurationSize];
-        arguments[0] = ledClass;
-        arguments[1] = ledId;
+        arguments[0] = profileId;
+        arguments[1] = knobId;
         for (var index = 0; index < stages.Length; index++)
         {
             var stage = stages[index];
@@ -108,12 +113,12 @@ public static class RazerKnobProtocol
 
     public static byte[] CreateGetModeRequest(
         byte transactionId,
-        byte ledClass,
-        byte ledId)
+        byte profileId,
+        byte knobId)
     {
         Span<byte> arguments = stackalloc byte[ModeSize];
-        arguments[0] = ledClass;
-        arguments[1] = ledId;
+        arguments[0] = profileId;
+        arguments[1] = knobId;
         return RazerFeatureReport.CreateRequest(
             transactionId,
             ModeSize,
@@ -124,8 +129,8 @@ public static class RazerKnobProtocol
 
     public static byte[] CreateSetModeRequest(
         byte transactionId,
-        byte ledClass,
-        byte ledId,
+        byte profileId,
+        byte knobId,
         RazerKnobStage stage)
     {
         if (!Enum.IsDefined(stage.Mode))
@@ -134,8 +139,8 @@ public static class RazerKnobProtocol
         }
 
         Span<byte> arguments = stackalloc byte[ModeSize];
-        arguments[0] = ledClass;
-        arguments[1] = ledId;
+        arguments[0] = profileId;
+        arguments[1] = knobId;
         arguments[2] = stage.Disabled;
         arguments[3] = stage.Stage;
         arguments[4] = (byte)stage.Mode;

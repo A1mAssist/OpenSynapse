@@ -1618,14 +1618,15 @@
   <data name="RazerHidKnobCurrentLabel.Text" xml:space="preserve"><value>현재 모드</value></data>
   <data name="RazerHidKnobStageColumn.Text" xml:space="preserve"><value>단계</value></data>
   <data name="RazerHidKnobModeColumn.Text" xml:space="preserve"><value>모드</value></data>
-  <data name="RazerHidKnobModeAdjustmentKeyboardBrightness" xml:space="preserve"><value>키보드 밝기</value></data>
-  <data name="RazerHidKnobModeCycleKnobLightingEffect" xml:space="preserve"><value>노브 조명 순환</value></data>
-  <data name="RazerHidKnobModeMicVolumeUpDown" xml:space="preserve"><value>마이크 볼륨</value></data>
+  <data name="RazerHidKnobModeKeyboardLightingBrightness" xml:space="preserve"><value>키보드 밝기</value></data>
+  <data name="RazerHidKnobModeVolume" xml:space="preserve"><value>볼륨</value></data>
+  <data name="RazerHidKnobModeTrackSelector" xml:space="preserve"><value>트랙 선택</value></data>
+  <data name="RazerHidKnobModeOledBrightness" xml:space="preserve"><value>OLED 밝기</value></data>
   <data name="RazerHidKnobModeTrackJogging" xml:space="preserve"><value>트랙 이동</value></data>
-  <data name="RazerHidKnobModeWindowZoomInOut" xml:space="preserve"><value>창 확대/축소</value></data>
-  <data name="RazerHidKnobModeWindowScrollUpDown" xml:space="preserve"><value>세로 스크롤</value></data>
-  <data name="RazerHidKnobModeWindowScrollLeftRight" xml:space="preserve"><value>가로 스크롤</value></data>
-  <data name="RazerHidKnobModeSwitchApplication" xml:space="preserve"><value>앱 전환</value></data>
+  <data name="RazerHidKnobModeWindowsZoom" xml:space="preserve"><value>창 확대/축소</value></data>
+  <data name="RazerHidKnobModeVerticalScroll" xml:space="preserve"><value>세로 스크롤</value></data>
+  <data name="RazerHidKnobModeHorizontalScroll" xml:space="preserve"><value>가로 스크롤</value></data>
+  <data name="RazerHidKnobModeSwitchApps" xml:space="preserve"><value>앱 전환</value></data>
   <data name="RazerHidApplyButton.Content" xml:space="preserve"><value>적용</value></data>
   <data name="RazerHidHapticScrollTitle.Text" xml:space="preserve"><value>햅틱 스크롤 단계</value></data>
   <data name="RazerHidHapticScrollDescription.Text" xml:space="preserve"><value>전환에 참여할 단계를 선택한 다음 적용할 단계를 선택하세요.</value></data>
@@ -3335,6 +3336,9 @@
   <data name="RazerHeadsetMicMonitoringTitle.Text" xml:space="preserve"><value>마이크 모니터링</value></data>
   <data name="RazerHeadsetMicMonitoringToggle.Header" xml:space="preserve"><value>모니터링 사용</value></data>
   <data name="RazerHeadsetMicMuteToggle.Header" xml:space="preserve"><value>마이크 음소거</value></data>
+  <data name="RazerHeadsetMicHpfToggle.Header" xml:space="preserve"><value>하이패스 필터</value></data>
+  <data name="RazerHeadsetMicLimiterToggle.Header" xml:space="preserve"><value>리미터</value></data>
+  <data name="RazerHeadsetMicDspApply.Content" xml:space="preserve"><value>처리 적용</value></data>
   <data name="RazerHeadsetMicProcessingApply.Content" xml:space="preserve"><value>마이크 처리 적용</value></data>
   <data name="RazerHeadsetMicProcessingTitle.Text" xml:space="preserve"><value>마이크 처리</value></data>
   <data name="RazerHeadsetMicTitle.Text" xml:space="preserve"><value>마이크</value></data>

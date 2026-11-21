@@ -5,10 +5,10 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed partial class RazerHidDeviceService
 {
-    // The keyboard middleware addresses the knob as LED class 3 / id 0x24; the probe
-    // needs a concrete selector while the public methods keep the device's values.
-    private const byte KeyboardKnobLedClass = 0x03;
-    private const byte KeyboardKnobLedId = 0x24;
+    // The knob is addressed by onboard profile id plus knob id 0x24. Every
+    // keyboard with a command dial shares this pair.
+    private const byte KeyboardKnobProfileId = RazerKnobProtocol.DefaultProfileId;
+    private const byte KeyboardKnobId = RazerKnobProtocol.KnobId;
 
     private Task ExecuteKeyboardWriteAsync(
         RazerHidDeviceConnection connection,
@@ -20,13 +20,13 @@ public sealed partial class RazerHidDeviceService
 
     public async Task<RazerKnobConfiguration> GetKnobConfigurationAsync(
         RazerHidDeviceConnection connection,
-        byte ledClass,
-        byte ledId,
+        byte profileId,
+        byte knobId,
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
         var request = RazerKnobProtocol.CreateGetConfigurationRequest(
-            MiddlewareTransactionId, ledClass, ledId);
+            MiddlewareTransactionId, profileId, knobId);
         var response = await ExecuteAsync(connection,
             new RazerHidRequest("razer_knob_get_configuration", request),
             cancellationToken).ConfigureAwait(false);
@@ -35,8 +35,8 @@ public sealed partial class RazerHidDeviceService
 
     public Task SetKnobConfigurationAsync(
         RazerHidDeviceConnection connection,
-        byte ledClass,
-        byte ledId,
+        byte profileId,
+        byte knobId,
         IReadOnlyList<RazerKnobStage> stages,
         CancellationToken cancellationToken = default)
     {
@@ -45,19 +45,19 @@ public sealed partial class RazerHidDeviceService
         return ExecuteKeyboardWriteAsync(connection,
             new RazerHidRequest("razer_knob_set_configuration",
                 RazerKnobProtocol.CreateSetConfigurationRequest(
-                    MiddlewareTransactionId, ledClass, ledId, stages.ToArray())),
+                    MiddlewareTransactionId, profileId, knobId, stages.ToArray())),
             cancellationToken);
     }
 
     public async Task<RazerKnobModeState> GetKnobModeAsync(
         RazerHidDeviceConnection connection,
-        byte ledClass,
-        byte ledId,
+        byte profileId,
+        byte knobId,
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
         var request = RazerKnobProtocol.CreateGetModeRequest(
-            MiddlewareTransactionId, ledClass, ledId);
+            MiddlewareTransactionId, profileId, knobId);
         var response = await ExecuteAsync(connection,
             new RazerHidRequest("razer_knob_get_mode", request),
             cancellationToken).ConfigureAwait(false);
@@ -66,8 +66,8 @@ public sealed partial class RazerHidDeviceService
 
     public Task SetKnobModeAsync(
         RazerHidDeviceConnection connection,
-        byte ledClass,
-        byte ledId,
+        byte profileId,
+        byte knobId,
         RazerKnobStage stage,
         CancellationToken cancellationToken = default)
     {
@@ -75,7 +75,7 @@ public sealed partial class RazerHidDeviceService
         return ExecuteKeyboardWriteAsync(connection,
             new RazerHidRequest("razer_knob_set_mode",
                 RazerKnobProtocol.CreateSetModeRequest(
-                    MiddlewareTransactionId, ledClass, ledId, stage)),
+                    MiddlewareTransactionId, profileId, knobId, stage)),
             cancellationToken);
     }
 
@@ -354,7 +354,7 @@ public sealed partial class RazerHidDeviceService
         }
 
         var request = RazerKnobProtocol.CreateGetModeRequest(
-            MiddlewareTransactionId, KeyboardKnobLedClass, KeyboardKnobLedId);
+            MiddlewareTransactionId, KeyboardKnobProfileId, KeyboardKnobId);
         if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
                 "keyboard.knobMode", request, response =>
                 {
