@@ -2938,12 +2938,13 @@
   <data name="MacroDurationContinuous" xml:space="preserve"><value>持續迴圈</value></data>
   <data name="MacroRecordDelays.OnContent" xml:space="preserve"><value>記錄間隔</value></data>
   <data name="MacroRecordDelays.OffContent" xml:space="preserve"><value>不記錄間隔</value></data>
-  <data name="MacroAddDelayButton.Content" xml:space="preserve"><value>新增延遲</value></data>
+  <data name="MacroAddDelayButton.Content" xml:space="preserve"><value>新增等待</value></data>
   <data name="MacroStepEditorTitle.Text" xml:space="preserve"><value>動作編輯</value></data>
   <data name="MacroStepDirectionLabel.Text" xml:space="preserve"><value>方向</value></data>
   <data name="MacroStepDirectionDown.Content" xml:space="preserve"><value>按下</value></data>
   <data name="MacroStepDirectionUp.Content" xml:space="preserve"><value>鬆開</value></data>
   <data name="MacroStepDelayLabel.Text" xml:space="preserve"><value>延遲（毫秒）</value></data>
+  <data name="MacroStepWaitSecondsLabel.Text" xml:space="preserve"><value>等待（秒）</value></data>
   <data name="MacroStepHoldLabel.Text" xml:space="preserve"><value>按住（毫秒）</value></data>
   <data name="MacroStepCapturePrompt" xml:space="preserve"><value>請按下要新增的按鍵或滑鼠鍵。</value></data>
   <data name="MacroStepCaptureCanceled" xml:space="preserve"><value>已取消動作捕獲。</value></data>
@@ -2976,7 +2977,7 @@
   <data name="MacroInsertCapture.Text" xml:space="preserve"><value>捕獲按鍵</value></data>
   <data name="MacroInsertClickAt.Text" xml:space="preserve"><value>點選座標</value></data>
   <data name="MacroDurationText" xml:space="preserve"><value>{0} 毫秒</value></data>
-  <data name="MacroDelayStepName" xml:space="preserve"><value>等待 {0} 毫秒</value></data>
+  <data name="MacroDelayStepName" xml:space="preserve"><value>等待 {0:0.###} 秒</value></data>
   <data name="MacroStepDelayText" xml:space="preserve"><value>{0} ms</value></data>
   <data name="MacroWindowTitle" xml:space="preserve"><value>宏編輯器</value></data>
   <data name="MacroSummaryTitle.Text" xml:space="preserve"><value>目前宏</value></data>
@@ -3727,7 +3728,7 @@
   <data name="KiyoApplyWhiteBalance.Content" xml:space="preserve"><value>套用白平衡</value></data>
   <data name="KiyoOpenSettings.Content" xml:space="preserve"><value>開啟雷蛇相機設定</value></data>
   <data name="Loc_0E422F6A72.Header" xml:space="preserve"><value>Usage 0–255</value></data>
-  <data name="MacroAddDelayButton.Text" xml:space="preserve"><value>新增延遲</value></data>
+  <data name="MacroAddDelayButton.Text" xml:space="preserve"><value>新增等待</value></data>
   <data name="RazerHeadsetAdvancedAudioApply.Content" xml:space="preserve"><value>套用音訊增強</value></data>
   <data name="RazerHeadsetAdvancedAudioTitle.Text" xml:space="preserve"><value>音訊增強</value></data>
   <data name="RazerHeadsetAncApply.Content" xml:space="preserve"><value>套用降噪模式</value></data>

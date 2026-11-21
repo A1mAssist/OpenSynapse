@@ -36,7 +36,7 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
     private CancellationTokenSource? _macroPlaybackCountdownCancellation;
     private bool _isMacroPlaybackCountdown;
     private MacroStepRowViewModel? _selectedMacroStep;
-    private double _newMacroDelayMilliseconds = 100;
+    private double _newMacroDelayMilliseconds = 1000;
     private MacroDelayMode _macroRecordingDelayMode = MacroDelayMode.Recorded;
     private double _macroRecordingFixedDelayMilliseconds = 100;
     private MacroMouseTrackingMode _macroRecordingMouseTrackingMode = MacroMouseTrackingMode.None;

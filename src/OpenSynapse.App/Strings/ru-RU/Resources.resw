@@ -4392,7 +4392,7 @@
     <value>Игнорировать задержки</value>
   </data>
   <data name="MacroAddDelayButton.Content" xml:space="preserve">
-    <value>Добавить задержку</value>
+    <value>Добавить ожидание</value>
   </data>
   <data name="MacroStepEditorTitle.Text" xml:space="preserve">
     <value>Редактор действий</value>
@@ -4408,6 +4408,9 @@
   </data>
   <data name="MacroStepDelayLabel.Text" xml:space="preserve">
     <value>Задержка (мс)</value>
+  </data>
+  <data name="MacroStepWaitSecondsLabel.Text" xml:space="preserve">
+    <value>Ожидание (с)</value>
   </data>
   <data name="MacroStepHoldLabel.Text" xml:space="preserve">
     <value>Удерживать (мс)</value>
@@ -4506,7 +4509,7 @@
     <value>{0} мс</value>
   </data>
   <data name="MacroDelayStepName" xml:space="preserve">
-    <value>Подождите {0} мс.</value>
+    <value>Подождите {0:0.###} с.</value>
   </data>
   <data name="MacroStepDelayText" xml:space="preserve">
     <value>{0} мс</value>
@@ -6765,7 +6768,7 @@
     <value>Использование 0–255</value>
   </data>
   <data name="MacroAddDelayButton.Text" xml:space="preserve">
-    <value>Добавить задержку</value>
+    <value>Добавить ожидание</value>
   </data>
   <data name="RazerHeadsetAdvancedAudioApply.Content" xml:space="preserve">
     <value>Применить улучшения звука</value>
