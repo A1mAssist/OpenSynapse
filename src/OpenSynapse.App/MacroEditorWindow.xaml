@@ -292,9 +292,14 @@
                   </ComboBox>
                 </StackPanel>
 
-                <StackPanel Spacing="4" Visibility="{Binding Macros.SelectedStep.DelayVisibility, FallbackValue=Collapsed}">
+                <StackPanel Spacing="4" Visibility="{Binding Macros.SelectedStep.DelayMillisecondsVisibility, FallbackValue=Collapsed}">
                   <TextBlock local:Localized.Uid="MacroStepDelayLabel" Style="{StaticResource MetricLabelStyle}" />
                   <NumberBox Value="{Binding Macros.SelectedStep.DelayMilliseconds, Mode=TwoWay}" Minimum="0" Maximum="60000" SmallChange="50" SpinButtonPlacementMode="Compact" />
+                </StackPanel>
+
+                <StackPanel Spacing="4" Visibility="{Binding Macros.SelectedStep.DelaySecondsVisibility, FallbackValue=Collapsed}">
+                  <TextBlock local:Localized.Uid="MacroStepWaitSecondsLabel" Style="{StaticResource MetricLabelStyle}" />
+                  <NumberBox Value="{Binding Macros.SelectedStep.DelaySeconds, Mode=TwoWay}" Minimum="0" Maximum="60" SmallChange="0.5" SpinButtonPlacementMode="Compact" />
                 </StackPanel>
 
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Visibility="{Binding Macros.SelectedStep.AutoReleaseVisibility, FallbackValue=Collapsed}">

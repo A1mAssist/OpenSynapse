@@ -2502,12 +2502,13 @@
   <data name="MacroDurationContinuous" xml:space="preserve"><value>Kontinuierlich</value></data>
   <data name="MacroRecordDelays.OnContent" xml:space="preserve"><value>Verzögerungen aufzeichnen</value></data>
   <data name="MacroRecordDelays.OffContent" xml:space="preserve"><value>Verzögerungen ignorieren</value></data>
-  <data name="MacroAddDelayButton.Content" xml:space="preserve"><value>Verzögerung hinzufügen</value></data>
+  <data name="MacroAddDelayButton.Content" xml:space="preserve"><value>Wartezeit hinzufügen</value></data>
   <data name="MacroStepEditorTitle.Text" xml:space="preserve"><value>Aktionseditor</value></data>
   <data name="MacroStepDirectionLabel.Text" xml:space="preserve"><value>Richtung</value></data>
   <data name="MacroStepDirectionDown.Content" xml:space="preserve"><value>Drücken</value></data>
   <data name="MacroStepDirectionUp.Content" xml:space="preserve"><value>Loslassen</value></data>
   <data name="MacroStepDelayLabel.Text" xml:space="preserve"><value>Verzögerung (ms)</value></data>
+  <data name="MacroStepWaitSecondsLabel.Text" xml:space="preserve"><value>Wartezeit (s)</value></data>
   <data name="MacroStepHoldLabel.Text" xml:space="preserve"><value>Halten (ms)</value></data>
   <data name="MacroStepCapturePrompt" xml:space="preserve"><value>Drücken Sie die Taste oder Maustaste, um sie hinzuzufügen.</value></data>
   <data name="MacroStepCaptureCanceled" xml:space="preserve"><value>Aktionserfassung abgebrochen.</value></data>
@@ -2540,7 +2541,7 @@
   <data name="MacroInsertCapture.Text" xml:space="preserve"><value>Taste erfassen</value></data>
   <data name="MacroInsertClickAt.Text" xml:space="preserve"><value>An Koordinate klicken</value></data>
   <data name="MacroDurationText" xml:space="preserve"><value>{0} ms</value></data>
-  <data name="MacroDelayStepName" xml:space="preserve"><value>{0} ms warten</value></data>
+  <data name="MacroDelayStepName" xml:space="preserve"><value>{0:0.###} s warten</value></data>
   <data name="MacroStepDelayText" xml:space="preserve"><value>{0} ms</value></data>
   <data name="MacroWindowTitle" xml:space="preserve"><value>Makro-Editor</value></data>
   <data name="MacroSummaryTitle.Text" xml:space="preserve"><value>AUSGEWÄHLTES MAKRO</value></data>
@@ -3291,7 +3292,7 @@
   <data name="KiyoApplyWhiteBalance.Content" xml:space="preserve"><value>Weißabgleich anwenden</value></data>
   <data name="KiyoOpenSettings.Content" xml:space="preserve"><value>Razer-Kameraeinstellungen öffnen</value></data>
   <data name="Loc_0E422F6A72.Header" xml:space="preserve"><value>HID-Usage 0–255</value></data>
-  <data name="MacroAddDelayButton.Text" xml:space="preserve"><value>Verzögerung hinzufügen</value></data>
+  <data name="MacroAddDelayButton.Text" xml:space="preserve"><value>Wartezeit hinzufügen</value></data>
   <data name="RazerHeadsetAdvancedAudioApply.Content" xml:space="preserve"><value>Audioverbesserungen anwenden</value></data>
   <data name="RazerHeadsetAdvancedAudioTitle.Text" xml:space="preserve"><value>Audioverbesserungen</value></data>
   <data name="RazerHeadsetAncApply.Content" xml:space="preserve"><value>Geräuschunterdrückungsmodus anwenden</value></data>

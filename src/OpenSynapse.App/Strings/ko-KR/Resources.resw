@@ -2502,12 +2502,13 @@
   <data name="MacroDurationContinuous" xml:space="preserve"><value>연속</value></data>
   <data name="MacroRecordDelays.OnContent" xml:space="preserve"><value>지연 기록</value></data>
   <data name="MacroRecordDelays.OffContent" xml:space="preserve"><value>지연 무시</value></data>
-  <data name="MacroAddDelayButton.Content" xml:space="preserve"><value>지연 추가</value></data>
+  <data name="MacroAddDelayButton.Content" xml:space="preserve"><value>대기 추가</value></data>
   <data name="MacroStepEditorTitle.Text" xml:space="preserve"><value>동작 편집기</value></data>
   <data name="MacroStepDirectionLabel.Text" xml:space="preserve"><value>방향</value></data>
   <data name="MacroStepDirectionDown.Content" xml:space="preserve"><value>누르기</value></data>
   <data name="MacroStepDirectionUp.Content" xml:space="preserve"><value>놓기</value></data>
   <data name="MacroStepDelayLabel.Text" xml:space="preserve"><value>지연(ms)</value></data>
+  <data name="MacroStepWaitSecondsLabel.Text" xml:space="preserve"><value>대기(초)</value></data>
   <data name="MacroStepHoldLabel.Text" xml:space="preserve"><value>유지(ms)</value></data>
   <data name="MacroStepCapturePrompt" xml:space="preserve"><value>추가할 키 또는 마우스 버튼을 누르세요.</value></data>
   <data name="MacroStepCaptureCanceled" xml:space="preserve"><value>동작 캡처를 취소했습니다.</value></data>
@@ -2540,7 +2541,7 @@
   <data name="MacroInsertCapture.Text" xml:space="preserve"><value>키 캡처</value></data>
   <data name="MacroInsertClickAt.Text" xml:space="preserve"><value>좌표에서 클릭</value></data>
   <data name="MacroDurationText" xml:space="preserve"><value>{0} ms</value></data>
-  <data name="MacroDelayStepName" xml:space="preserve"><value>{0} ms 대기</value></data>
+  <data name="MacroDelayStepName" xml:space="preserve"><value>{0:0.###}초 대기</value></data>
   <data name="MacroStepDelayText" xml:space="preserve"><value>{0} ms</value></data>
   <data name="MacroWindowTitle" xml:space="preserve"><value>매크로 편집기</value></data>
   <data name="MacroSummaryTitle.Text" xml:space="preserve"><value>선택한 매크로</value></data>
@@ -3291,7 +3292,7 @@
   <data name="KiyoApplyWhiteBalance.Content" xml:space="preserve"><value>화이트 밸런스 적용</value></data>
   <data name="KiyoOpenSettings.Content" xml:space="preserve"><value>Razer 카메라 설정 열기</value></data>
   <data name="Loc_0E422F6A72.Header" xml:space="preserve"><value>사용 코드 0–255</value></data>
-  <data name="MacroAddDelayButton.Text" xml:space="preserve"><value>지연 추가</value></data>
+  <data name="MacroAddDelayButton.Text" xml:space="preserve"><value>대기 추가</value></data>
   <data name="RazerHeadsetAdvancedAudioApply.Content" xml:space="preserve"><value>오디오 향상 적용</value></data>
   <data name="RazerHeadsetAdvancedAudioTitle.Text" xml:space="preserve"><value>오디오 향상</value></data>
   <data name="RazerHeadsetAncApply.Content" xml:space="preserve"><value>노이즈 캔슬링 모드 적용</value></data>

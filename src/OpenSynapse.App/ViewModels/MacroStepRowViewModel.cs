@@ -79,7 +79,11 @@ public sealed class MacroStepRowViewModel : INotifyPropertyChanged
     public Visibility AutoReleaseVisibility =>
         IsInput && Step.IsDown ? Visibility.Visible : Visibility.Collapsed;
 
-    public Visibility DelayVisibility => Visibility.Visible;
+    public Visibility DelayMillisecondsVisibility =>
+        IsDelay ? Visibility.Collapsed : Visibility.Visible;
+
+    public Visibility DelaySecondsVisibility =>
+        IsDelay ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility InputDirectionVisibility =>
         IsInput && Step.Input?.Kind != MacroInputKind.MouseWheel
@@ -156,7 +160,7 @@ public sealed class MacroStepRowViewModel : INotifyPropertyChanged
     {
         MacroStepKind.Delay => AppStrings.FormatText(
             "MacroDelayStepName",
-            Step.DelayMilliseconds),
+            Step.DelayMilliseconds / 1000d),
         MacroStepKind.Text => AppStrings.FormatText(
             "MacroTextStepName",
             Preview(Step.Text)),
@@ -380,6 +384,35 @@ public sealed class MacroStepRowViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             OnPropertyChanged(nameof(NameText));
             OnPropertyChanged(nameof(DelayText));
+            OnPropertyChanged(nameof(DelaySeconds));
+            Changed();
+        }
+    }
+
+    public double DelaySeconds
+    {
+        get => Step.DelayMilliseconds / 1000d;
+        set
+        {
+            if (!double.IsFinite(value))
+            {
+                return;
+            }
+
+            var delay = Math.Clamp(
+                (int)Math.Round(value * 1000, MidpointRounding.AwayFromZero),
+                0,
+                MacroDefinition.MaxDelayMilliseconds);
+            if (Step.DelayMilliseconds == delay)
+            {
+                return;
+            }
+
+            Step.DelayMilliseconds = delay;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(NameText));
+            OnPropertyChanged(nameof(DelayText));
+            OnPropertyChanged(nameof(DelayMilliseconds));
             Changed();
         }
     }
@@ -423,7 +456,6 @@ public sealed class MacroStepRowViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(StepGlyph));
         OnPropertyChanged(nameof(HoldVisibility));
         OnPropertyChanged(nameof(AutoReleaseVisibility));
-        OnPropertyChanged(nameof(DelayVisibility));
         OnPropertyChanged(nameof(InputDirectionVisibility));
         OnPropertyChanged(nameof(DirectionIndex));
         OnPropertyChanged(nameof(TextVisibility));
@@ -449,6 +481,7 @@ public sealed class MacroStepRowViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(HoldMilliseconds));
         OnPropertyChanged(nameof(MouseClickButtonIndex));
         OnPropertyChanged(nameof(DelayMilliseconds));
+        OnPropertyChanged(nameof(DelaySeconds));
     }
 
     private string ReferenceName()
