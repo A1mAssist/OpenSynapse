@@ -5189,6 +5189,12 @@
   <data name="RazerArgbDescription.Text" xml:space="preserve">
     <value>Выберите порт и количество светодиодов, щелкните ячейки, чтобы закрасить их основным цветом, а затем примените. Каждый порт сохраняет свои цвета.</value>
   </data>
+  <data name="RazerWirelessArgbDescription.Text" xml:space="preserve">
+    <value>Задайте сплошной цвет для каждого из трёх портов контроллера и примените: для каждого порта будет отправлен отдельный кадр.</value>
+  </data>
+  <data name="RazerWirelessArgbPortLabel" xml:space="preserve">
+    <value>Порт {0}</value>
+  </data>
   <data name="RazerArgbFill.Content" xml:space="preserve">
     <value>Заполните все</value>
   </data>

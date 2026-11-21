@@ -2768,6 +2768,8 @@
   <data name="RazerArgbApply.Content" xml:space="preserve"><value>스트립 적용</value></data>
   <data name="RazerArgbClear.Content" xml:space="preserve"><value>끄기</value></data>
   <data name="RazerArgbDescription.Text" xml:space="preserve"><value>포트와 LED 수를 선택하고 셀을 클릭하여 기본 색상으로 칠한 후 적용하세요. 각 포트는 자체 색상을 유지합니다.</value></data>
+  <data name="RazerWirelessArgbDescription.Text" xml:space="preserve"><value>컨트롤러의 세 포트에 각각 단색을 지정하고 적용하면 포트별로 프레임을 하나씩 보냅니다.</value></data>
+  <data name="RazerWirelessArgbPortLabel" xml:space="preserve"><value>포트 {0}</value></data>
   <data name="RazerArgbFill.Content" xml:space="preserve"><value>모두 채우기</value></data>
   <data name="RazerArgbLedCount.Header" xml:space="preserve"><value>LED 수</value></data>
   <data name="RazerArgbLedLabel" xml:space="preserve"><value>LED {0}</value></data>

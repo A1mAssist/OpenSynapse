@@ -249,6 +249,7 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
             if (!SetField(ref _isBusy, value)) return;
             OnPropertyChanged(nameof(CanEdit));
             OnPropertyChanged(nameof(CanRefresh));
+            OnPropertyChanged(nameof(CanApplyWirelessArgb));
         }
     }
 
@@ -309,6 +310,7 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
                 ? AppStrings.Text("RazerHeadsetReadFailed")
                 : string.Empty;
             await LoadArgbAsync(cancellationToken);
+            await LoadWirelessArgbAsync(cancellationToken);
             if (Body is { } body) await body.LoadAsync(cancellationToken);
             await ApplyPersistedProfileAsync(PowerSourceKind.Unknown, cancellationToken);
         }
@@ -495,6 +497,7 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
     {
         OnPropertyChanged(string.Empty);
         foreach (var led in ArgbLeds) led.RefreshLocalization();
+        foreach (var port in WirelessArgbPorts) port.RefreshLocalization();
     }
 
     private async Task LoadArgbAsync(CancellationToken cancellationToken)

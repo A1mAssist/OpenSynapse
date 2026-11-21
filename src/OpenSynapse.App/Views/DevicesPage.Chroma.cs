@@ -71,6 +71,9 @@ public sealed partial class DevicesPage : UserControl
     private async void ArgbApplyClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.Accessories.SelectedChroma?.ApplyArgbFrameAsync(Lifetime) ?? Task.CompletedTask);
 
+    private async void WirelessArgbApplyClick(object sender, RoutedEventArgs e) =>
+        await (ViewModel.Accessories.SelectedChroma?.ApplyWirelessArgbAsync(Lifetime) ?? Task.CompletedTask);
+
     private async void ArgbInstallDriverClick(object sender, RoutedEventArgs e)
     {
         if (ViewModel.Accessories.SelectedChroma is { ArgbDriverUri: { Length: > 0 } uri })

@@ -483,6 +483,23 @@
                       </StackPanel>
                     </StackPanel>
                   </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding WirelessArgbVisibility}">
+                    <StackPanel Spacing="10">
+                      <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="RazerArgbTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
+                      <TextBlock local:Localized.Uid="RazerWirelessArgbDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <ItemsControl ItemsSource="{Binding WirelessArgbPorts}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Grid ColumnDefinitions="96,*" ColumnSpacing="12" Padding="0,4">
+                              <TextBlock Text="{Binding Label}" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
+                              <ColorPicker Grid.Column="1" Color="{Binding Color, Mode=TwoWay}" IsAlphaEnabled="False" IsColorChannelTextInputVisible="False" IsColorSpectrumVisible="True" IsHexInputVisible="True" IsMoreButtonVisible="False" Width="280" HorizontalAlignment="Left" />
+                            </Grid>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                      <Button local:Localized.Uid="RazerArgbApply" Click="WirelessArgbApplyClick" IsEnabled="{Binding CanApplyWirelessArgb}" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Right" />
+                    </StackPanel>
+                  </Border>
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ArgbDriverVisibility}">
                     <StackPanel Spacing="10">
                       <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="RazerArgbDriverTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>

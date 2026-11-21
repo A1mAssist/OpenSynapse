@@ -2768,6 +2768,8 @@
   <data name="RazerArgbApply.Content" xml:space="preserve"><value>Streifen anwenden</value></data>
   <data name="RazerArgbClear.Content" xml:space="preserve"><value>Ausschalten</value></data>
   <data name="RazerArgbDescription.Text" xml:space="preserve"><value>Wählen Sie einen Anschluss und die LED-Anzahl, klicken Sie auf Zellen, um sie mit der Primärfarbe zu füllen, und wenden Sie dann an. Jeder Anschluss behält seine eigenen Farben.</value></data>
+  <data name="RazerWirelessArgbDescription.Text" xml:space="preserve"><value>Legen Sie für jeden der drei Anschlüsse des Controllers eine Volltonfarbe fest und wenden Sie sie an; dabei wird pro Anschluss ein Frame gesendet.</value></data>
+  <data name="RazerWirelessArgbPortLabel" xml:space="preserve"><value>Anschluss {0}</value></data>
   <data name="RazerArgbFill.Content" xml:space="preserve"><value>Alle füllen</value></data>
   <data name="RazerArgbLedCount.Header" xml:space="preserve"><value>LED-Anzahl</value></data>
   <data name="RazerArgbLedLabel" xml:space="preserve"><value>LED {0}</value></data>

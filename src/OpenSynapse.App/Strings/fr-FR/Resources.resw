@@ -2768,6 +2768,8 @@
   <data name="RazerArgbApply.Content" xml:space="preserve"><value>Appliquer la bande</value></data>
   <data name="RazerArgbClear.Content" xml:space="preserve"><value>Éteindre</value></data>
   <data name="RazerArgbDescription.Text" xml:space="preserve"><value>Choisissez un port et un nombre de LED, cliquez sur les cellules pour les peindre avec la couleur principale, puis appliquez. Chaque port conserve ses propres couleurs.</value></data>
+  <data name="RazerWirelessArgbDescription.Text" xml:space="preserve"><value>Définissez une couleur unie pour chacun des trois ports du contrôleur, puis appliquez pour envoyer une trame par port.</value></data>
+  <data name="RazerWirelessArgbPortLabel" xml:space="preserve"><value>Port {0}</value></data>
   <data name="RazerArgbFill.Content" xml:space="preserve"><value>Tout remplir</value></data>
   <data name="RazerArgbLedCount.Header" xml:space="preserve"><value>Nombre de LED</value></data>
   <data name="RazerArgbLedLabel" xml:space="preserve"><value>LED {0}</value></data>

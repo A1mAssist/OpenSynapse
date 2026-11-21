@@ -3204,6 +3204,8 @@
   <data name="RazerArgbApply.Content" xml:space="preserve"><value>套用燈帶</value></data>
   <data name="RazerArgbClear.Content" xml:space="preserve"><value>熄滅</value></data>
   <data name="RazerArgbDescription.Text" xml:space="preserve"><value>選擇埠和燈珠數量，點格子用主色塗色，然後套用。每個埠會保留自己塗的顏色。</value></data>
+  <data name="RazerWirelessArgbDescription.Text" xml:space="preserve"><value>為控制器的三個埠分別選擇純色，套用後按埠逐幀傳送。</value></data>
+  <data name="RazerWirelessArgbPortLabel" xml:space="preserve"><value>埠 {0}</value></data>
   <data name="RazerArgbFill.Content" xml:space="preserve"><value>全部填充</value></data>
   <data name="RazerArgbLedCount.Header" xml:space="preserve"><value>燈珠數量</value></data>
   <data name="RazerArgbLedLabel" xml:space="preserve"><value>第 {0} 顆燈</value></data>
