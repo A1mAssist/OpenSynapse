@@ -104,4 +104,81 @@ public sealed partial class RazerHidDeviceCatalog
         "custom_frame" => value.Contains("custom_frame", StringComparison.Ordinal) || value == "set_key_row",
         _ => false,
     };
+
+    /// <summary>
+    /// The official oD() check sends 00:C0/00:40 to a body only when
+    /// isHyperpollingDevice is set, and to a dongle when isHyperpollingWireless is set
+    /// or the dongle is a dual-link HyperPolling master. These are the dongle halves of
+    /// bundles whose feature is on but whose RazerHid rows still declare only the
+    /// legacy 00:85/00:05 pair. Bodies stay on legacy; 00DF stays legacy because its
+    /// bundle sets isHyperpollingWireless:false.
+    /// </summary>
+    private static void AddDongleHighRatePolling(IDictionary<ushort, RazerHidDeviceDefinition> devices)
+    {
+        ushort[] productIds =
+        [
+            0x00A6, // Viper V2 Pro
+            0x00AB, // Basilisk V3 Pro
+            0x00B0, // Cobra Pro
+            0x00B7, // DeathAdder V3 Pro
+            0x00C5, // DeathAdder V3 HyperSpeed
+            0x00CD, // Basilisk V3 Pro 35K
+            0x00DB, // Cobra HyperSpeed
+            0x00E8, // Naga V3 Pro
+            0xB00B, // Basilisk V3 Pro 35K Xbox 25th Anniversary Edition
+        ];
+        foreach (var productId in productIds)
+        {
+            AddHighRatePolling(devices, productId);
+        }
+    }
+
+    private static void AddHighRatePolling(
+        IDictionary<ushort, RazerHidDeviceDefinition> devices,
+        ushort productId)
+    {
+        if (!devices.TryGetValue(productId, out var device))
+        {
+            return;
+        }
+
+        var transactions = new Dictionary<string, byte>(device.Transactions, StringComparer.Ordinal)
+        {
+            ["razer_chroma_misc_get_polling_rate2"] = 0x00,
+            ["razer_chroma_misc_set_polling_rate2"] = 0x00,
+        };
+        var prefixes = new Dictionary<string, IReadOnlyList<ReadOnlyMemory<byte>>>(
+            device.BuilderArgumentPrefixes, StringComparer.Ordinal)
+        {
+            ["razer_chroma_misc_get_polling_rate2"] = [new ReadOnlyMemory<byte>([0x01])],
+            ["razer_chroma_misc_set_polling_rate2"] = [new ReadOnlyMemory<byte>([0x01])],
+        };
+        var commandSizes = new Dictionary<string, byte>(device.CommandSizes, StringComparer.Ordinal)
+        {
+            ["razer_chroma_misc_get_polling_rate2"] = 0x02,
+            ["razer_chroma_misc_set_polling_rate2"] = 0x02,
+        };
+
+        devices[productId] = new RazerHidDeviceDefinition(
+            device.ProductId,
+            device.DisplayName,
+            device.Category,
+            device.SourceCapabilities,
+            device.MaximumDpi,
+            device.PollingRates,
+            device.MatrixDimensions,
+            device.DeviceWait,
+            transactions,
+            prefixes,
+            device.DefaultStorage,
+            device.DefaultLedZone,
+            device.CommandSequences,
+            commandSizes,
+            // Rebuilding the definition must not drop evidence the bundle already gave us.
+            device.SupportsIndependentDpi,
+            device.UsesP1DpiScale,
+            device.UsesLegacyInfo,
+            device.UsesDynamicTransactions,
+            device.WaveAxis);
+    }
 }

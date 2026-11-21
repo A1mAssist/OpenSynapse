@@ -4,7 +4,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using System.Collections.Specialized;
 using OpenSynapse.App.ViewModels;
+using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Lighting;
 using OpenSynapse.Core.Storage;
@@ -28,6 +30,8 @@ public sealed partial class MainWindow : Window
     private readonly AppBehaviorSettings _behaviorSettings;
     private readonly CancellationTokenSource _lifetime = new();
     private readonly DispatcherQueue _dispatcherQueue;
+    private readonly LocalDiagnosticLog _diagnosticLog = new();
+    private volatile bool _batteryPrimingEnabled = true;
     private readonly bool _silentLaunch;
     private readonly Func<bool, Task>? _setBladeIndicatorDisplayAvailable;
     private readonly Func<bool, Task>? _setChromaRestEnabled;
@@ -126,6 +130,12 @@ public sealed partial class MainWindow : Window
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.RazerHid.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.RazerHid.Devices.CollectionChanged += OnRazerHidDevicesChanged;
+        _viewModel.RazerHid.Devices.CollectionChanged += OnDeviceBatterySourcesChanged;
+        _viewModel.BleDevices.CollectionChanged += OnDeviceBatterySourcesChanged;
+        _viewModel.AwBleHeadsetDevices.CollectionChanged += OnDeviceBatterySourcesChanged;
+        _viewModel.BlackSharkDevices.CollectionChanged += OnDeviceBatterySourcesChanged;
+        _viewModel.Accessories.HeadsetAudioDevices.CollectionChanged += OnDeviceBatterySourcesChanged;
+        _viewModel.Accessories.KeyboardDevices.CollectionChanged += OnDeviceBatterySourcesChanged;
         _viewModel.Accessories.ChromaDevices.CollectionChanged += OnRazerHidDevicesChanged;
         _viewModel.Accessories.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.Display.PropertyChanged += OnViewModelPropertyChanged;
@@ -271,6 +281,7 @@ public sealed partial class MainWindow : Window
         SaveWindowSize();
         if (!_trayLifecycleEnabled || _exitRequested)
         {
+            _batteryPrimingEnabled = false;
             return;
         }
 
@@ -421,10 +432,16 @@ public sealed partial class MainWindow : Window
             {
                 _viewModel.Refresh.RequestDeviceRefresh();
             }
+            // The devices page may stay unloaded for the whole tray session; prime the
+            // battery fields here so cards already have values when the window opens.
+            PrimeDeviceBatteries();
             _viewModel.Refresh.SetDeviceWatchActive(AppWindow.IsVisible);
             _ = ObserveBackgroundLoopAsync(
                 () => _viewModel.Refresh.RunDeviceWatchLoopAsync(_lifetime.Token),
                 AppStrings.Text("Text_C2463C0F"));
+            _ = ObserveBackgroundLoopAsync(
+                () => _viewModel.Refresh.RunBladeTouchpadWatchLoopAsync(_lifetime.Token),
+                AppStrings.Text("Text_19D052FF"));
             _viewModel.FullscreenPolling.Start(_lifetime.Token);
             LaunchStatusText.Text = AppStrings.Text("Text_470691B2");
             SetLaunchProgress(3, 95);
@@ -456,8 +473,27 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    /// <summary>Runs battery priming without letting an unexpected failure escape the UI loop.</summary>
+    private async void PrimeDeviceBatteries()
+    {
+        try
+        {
+            await _viewModel.PrimeDeviceBatteriesAsync(_lifetime.Token);
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _diagnosticLog.TryWrite(
+                "battery",
+                $"Battery priming failed: {exception.GetType().Name}: {exception.Message}");
+        }
+    }
+
     private void OnClosed(object sender, WindowEventArgs args)
     {
+        _batteryPrimingEnabled = false;
         SaveWindowSize();
         _settingsPage?.Shutdown();
         _lightingStudioPage?.Shutdown();
@@ -470,6 +506,12 @@ public sealed partial class MainWindow : Window
         _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.RazerHid.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.RazerHid.Devices.CollectionChanged -= OnRazerHidDevicesChanged;
+        _viewModel.RazerHid.Devices.CollectionChanged -= OnDeviceBatterySourcesChanged;
+        _viewModel.BleDevices.CollectionChanged -= OnDeviceBatterySourcesChanged;
+        _viewModel.AwBleHeadsetDevices.CollectionChanged -= OnDeviceBatterySourcesChanged;
+        _viewModel.BlackSharkDevices.CollectionChanged -= OnDeviceBatterySourcesChanged;
+        _viewModel.Accessories.HeadsetAudioDevices.CollectionChanged -= OnDeviceBatterySourcesChanged;
+        _viewModel.Accessories.KeyboardDevices.CollectionChanged -= OnDeviceBatterySourcesChanged;
         _viewModel.Accessories.ChromaDevices.CollectionChanged -= OnRazerHidDevicesChanged;
         _viewModel.Accessories.PropertyChanged -= OnViewModelPropertyChanged;
         _viewModel.Display.PropertyChanged -= OnViewModelPropertyChanged;

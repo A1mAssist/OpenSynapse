@@ -444,8 +444,8 @@ Leviathan V2 X（`054A`）覆盖 edition ID 0（标准版）、128（Pikachu）�
 | 设备 | USB VID:PID | 说明 |
 |---|---|---|
 | Razer Seiren Emote | `1532:0F1B` | 音频页；0F1B bundle 没有帧命令，因此不开放 8×8 点阵 |
-| Razer Seiren V2 Pro | `1532:0542` | 需要雷蛇音频组件；没有 HID 控制 |
-| Razer Seiren V2 X | `1532:0543` | 需要雷蛇音频组件；没有 HID 控制 |
+| Razer Seiren V2 Pro | `1532:0542` | 音频页；麦克风音量/静音、高通滤波、限幅器（8 字节 HID 报告） |
+| Razer Seiren V2 X | `1532:0543` | 音频页；麦克风音量/静音、高通滤波、限幅器（8 字节 HID 报告） |
 | Razer Seiren V3 Mini | `1532:056A` | 音频页（Protocol 25，65 字节 Feature Report） |
 | Razer Seiren V3 Chroma | `1532:056F` | 音频页（Protocol 25，65 字节 Feature Report） |
 | Razer Seiren V3 Pro | `1532:058E` | 音频页（Protocol 25，65 字节 Feature Report） |

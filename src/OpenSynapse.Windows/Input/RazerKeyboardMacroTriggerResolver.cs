@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Macros;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Macros;
@@ -19,6 +20,29 @@ public static class RazerKeyboardMacroTriggerResolver
 
     public static MacroInput? Resolve(byte hidUsage, ushort productId)
     {
+        // Mapping rows for the media cluster and macro column carry firmware key ids,
+        // while the private report uses the product's DKM slot. Without this hop the
+        // rows fall through to the HID table and never become software triggers.
+        // Keep this ahead of the Huntsman conversion: its table starts at 1, so a
+        // media id such as 200 would otherwise be rejected before it is translated.
+        if (RazerKeyboardExtraKeyCatalog.ExtraButtonIds(productId).Contains(hidUsage))
+        {
+            if (ExtraKeyPrivateCode(hidUsage) is { } privateCode &&
+                RazerPrivateKeyCatalog.IsPrivate(productId, privateCode))
+            {
+                return new MacroInput
+                {
+                    Kind = MacroInputKind.RazerKey,
+                    DeviceId = productId,
+                    RazerKeyCode = privateCode,
+                };
+            }
+
+            // The id is a firmware key id, not a HID usage. Falling through would
+            // bind a different physical key on products without a private code.
+            return null;
+        }
+
         // OBM keyboard mapping rows carry firmware key ids, not HID usages.
         if (RazerHuntsmanV3ProKeys.UsesFirmwareKeyIds(productId))
         {
@@ -73,6 +97,19 @@ public static class RazerKeyboardMacroTriggerResolver
             Extended = extended,
         };
     }
+
+    private static byte? ExtraKeyPrivateCode(byte id) => id switch
+    {
+        >= 160 and <= 164 => (byte)(id - 160 + 32),
+        200 => 82,
+        201 => 84,
+        202 => 83,
+        205 => 85,
+        207 => 99,
+        208 => 100,
+        209 => 101,
+        _ => null,
+    };
 
     [DllImport("user32.dll")]
     private static extern uint MapVirtualKey(uint code, uint mapType);

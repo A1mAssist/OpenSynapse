@@ -18,6 +18,7 @@ public enum RazerHeadsetChannel
     ValkyrieT3Feature64,
     Jolie64,
     KrakenBase37,
+    CamyT1,
 }
 
 /// <summary>
@@ -148,9 +149,13 @@ public static class RazerHeadsetChannelCatalog
             [0x0549] = new("AudioKrystalT2", RazerHeadsetChannel.KrakenBase37),
             [0x0537] = new("AudioKrystalT3", RazerHeadsetChannel.KrakenBase37),
             [0x056D] = new("AudioKrystalT3", RazerHeadsetChannel.KrakenBase37),
-            // Seiren V2 Pro/X use the native audio DLL, not a HID feature path.
-            [0x0542] = new("AudioCamyT1", RazerHeadsetChannel.NativeDll),
-            [0x0543] = new("AudioCamyT2", RazerHeadsetChannel.NativeDll),
+            // Seiren V2 Pro/X send eight-byte HID output reports for the mic DSP
+            // (RzNative_0542 1.0.25.0 / AudioCamyT1). Razer's UI routes gain and
+            // mute through the Windows capture endpoint, but the DLL exposes the
+            // same four values as HID commands; this app uses the HID path so the
+            // readback matches what the slider shows.
+            [0x0542] = new("AudioCamyT1", RazerHeadsetChannel.CamyT1),
+            [0x0543] = new("AudioCamyT2", RazerHeadsetChannel.CamyT1),
             [0x0F1B] = new("AudioCamyT3Device", RazerHeadsetChannel.Feature91),
             // AudioKrakenKittyV2Pro only appends a 37-byte Chroma frame to the same
             // AudioKrakenBase audio class, so its audio uses the 37-byte channel too.

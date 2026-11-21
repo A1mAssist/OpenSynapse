@@ -79,6 +79,50 @@ public sealed partial class RefreshWorkspace
         }
     }
 
+    public async Task RunBladeTouchpadWatchLoopAsync(CancellationToken cancellationToken)
+    {
+        if (_liteMode)
+        {
+            return;
+        }
+
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+            while (await timer.WaitForNextTickAsync(cancellationToken))
+            {
+                // The main device watch already refreshes this while the window is visible
+                // and the display is available. It sleeps in the tray, so this loop covers
+                // the hidden-window and display-off cases without running twice.
+                if (Volatile.Read(ref _deviceWatchActive) != 0 && IsDisplayAvailable)
+                {
+                    continue;
+                }
+
+                // The main device watch stops when the window is hidden. The
+                // touchpad state is an OS setting, so keep mirroring it onto
+                // the EC while the app is in the tray.
+                try
+                {
+                    RefreshBladeTouchpadState();
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception exception)
+                {
+                    _diagnosticLog.TryWrite(
+                        "blade-touchpad",
+                        $"touchpad state refresh failed: {exception}");
+                }
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+    }
+
     private void RefreshBladeTouchpadState()
     {
         if (ActiveDescriptors.Any(device =>

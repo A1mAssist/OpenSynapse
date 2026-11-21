@@ -51,6 +51,21 @@ public sealed partial class RazerHeadsetAudioViewModel
     public string MicLimiterText => $"{Math.Round(MicLimiterDb)} dB";
     public Visibility MicLimiterVisibility => _hasMicLimiter ? Visibility.Visible : Visibility.Collapsed;
 
+    public bool MicHpf { get => _micHpf; set => SetField(ref _micHpf, value); }
+    public Visibility MicHpfVisibility => _hasMicHpf ? Visibility.Visible : Visibility.Collapsed;
+
+    public bool MicLimiterEnabled
+    {
+        get => _micLimiterEnabled;
+        set => SetField(ref _micLimiterEnabled, value);
+    }
+
+    public Visibility MicLimiterEnabledVisibility =>
+        _hasMicLimiterEnabled ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility MicDspVisibility =>
+        _hasMicHpf || _hasMicLimiterEnabled ? Visibility.Visible : Visibility.Collapsed;
+
     public IReadOnlyList<string> MicReverbOptions =>
     [
         AppStrings.Text("RazerHeadsetReverbSmall"),

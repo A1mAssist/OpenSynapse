@@ -102,9 +102,8 @@ public sealed partial class StudioEffectInspector
             SelectedItem = config.Pattern.ToString(CultureInfo.InvariantCulture),
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
-        var blend = CreateEnumPicker<StudioGenerateBlend>();
+        var blend = CreateEnumPicker(config.Blend, value => Commit(current => current with { Blend = value }));
         blend.Header = AppStrings.Text("LightingStudioGenerateBlend");
-        blend.SelectedValue = config.Blend;
         var spread = NumberField(AppStrings.Text("LightingStudioGenerateSpread"), config.PatternSpread, 1, 50, 0.1);
         var speed = NumberField(AppStrings.Text("LightingStudioGenerateSpeed"), config.PatternSpeed, -10, 10, 0.1);
 
@@ -161,14 +160,6 @@ public sealed partial class StudioEffectInspector
                 Commit(current => current with { Pattern = value });
             }
         };
-        blend.SelectionChanged += (_, _) =>
-        {
-            if (blend.SelectedValue is StudioGenerateBlend value)
-            {
-                Commit(current => current with { Blend = value });
-            }
-        };
-
         panel.Children.Add(randomize);
         var historyHeader = new Grid { ColumnSpacing = 8 };
         historyHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });

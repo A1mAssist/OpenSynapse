@@ -109,6 +109,17 @@ public partial class App
 
     private void OnBladeControlDeviceChanged(string? devicePath, ushort productId)
     {
+        if (string.IsNullOrWhiteSpace(devicePath))
+        {
+            // A discovery pass can briefly miss the control interface during startup or a
+            // PnP storm. Tearing the Fn runtime down here left the touchpad and game-mode
+            // keys dead until something else triggered another enumeration.
+            _diagnosticLog.TryWrite(
+                "blade-fn",
+                $"control device temporarily unavailable; keeping path={_activeBladeControlDevicePath ?? "<none>"} pid=0x{_activeBladeProductId:X4}");
+            return;
+        }
+
         _activeBladeControlDevicePath = devicePath;
         _activeBladeProductId = productId;
         var transport = _razerTransport;
@@ -340,8 +351,13 @@ public partial class App
 
                 var devicePath = _activeBladeControlDevicePath;
                 var productId = _activeBladeProductId;
-                if (string.IsNullOrWhiteSpace(devicePath) ||
-                    _razerTransport is null ||
+                if (string.IsNullOrWhiteSpace(devicePath))
+                {
+                    RequestBladeControlDeviceDiscovery();
+                    continue;
+                }
+
+                if (_razerTransport is null ||
                     !BladeFnRuntime.HasMapping(productId))
                 {
                     continue;
@@ -361,6 +377,24 @@ public partial class App
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
         }
+    }
+
+    private void RequestBladeControlDeviceDiscovery()
+    {
+        var viewModel = _audioMuteViewModel;
+        if (Volatile.Read(ref _closing) != 0 ||
+            viewModel is null ||
+            viewModel.Blade.BladeProductId == 0 ||
+            Environment.TickCount64 < Volatile.Read(ref _bladeAudioMuteNextRetryTicks))
+        {
+            return;
+        }
+
+        Volatile.Write(
+            ref _bladeAudioMuteNextRetryTicks,
+            Environment.TickCount64 + (long)AudioMuteRetryDelay.TotalMilliseconds);
+        _diagnosticLog.TryWrite("blade-fn", "no control device yet; requesting another discovery.");
+        viewModel.Refresh.RequestDeviceRefresh();
     }
 
     private void PersistBladeSnapTap(bool enabled, int generation)

@@ -590,7 +590,16 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
                     }
                 }
                 _ = await _fan.StopAsync("refresh-failure");
-                _blade.SetControlDevice(null);
+                // A failed pass is not evidence that the Blade left. Nulling the control
+                // device here tore down the Fn runtime and left the touchpad and
+                // game-mode keys dead until the next enumeration. The next successful
+                // pass decides whether the interface is really gone.
+                if (hadBlade)
+                {
+                    _diagnosticLog.TryWrite(
+                        "blade-fn",
+                        $"refresh failed; keeping the last control device: {exception.Message}");
+                }
                 _lighting.ShadowFingerprint = string.Empty;
                 _lighting.LightingDevicePath = string.Empty;
                 _display.RefreshInternalDisplay(powerState, applyDisplayProfile);

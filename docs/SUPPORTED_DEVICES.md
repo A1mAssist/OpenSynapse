@@ -445,8 +445,8 @@ Microphone controls cover EQ, microphone volume and LED effects where available.
 | Device | USB VID:PID | Notes |
 |---|---|---|
 | Razer Seiren Emote | `1532:0F1B` | Audio page; the 8x8 matrix is not exposed because the 0F1B bundle has no frame command |
-| Razer Seiren V2 Pro | `1532:0542` | Needs the Razer audio component; no HID controls |
-| Razer Seiren V2 X | `1532:0543` | Needs the Razer audio component; no HID controls |
+| Razer Seiren V2 Pro | `1532:0542` | Audio page; mic volume/mute, high-pass filter and limiter over an 8-byte HID report |
+| Razer Seiren V2 X | `1532:0543` | Audio page; mic volume/mute, high-pass filter and limiter over an 8-byte HID report |
 | Razer Seiren V3 Mini | `1532:056A` | Audio page (Protocol 25, 65-byte feature reports) |
 | Razer Seiren V3 Chroma | `1532:056F` | Audio page (Protocol 25, 65-byte feature reports) |
 | Razer Seiren V3 Pro | `1532:058E` | Audio page (Protocol 25, 65-byte feature reports) |

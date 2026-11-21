@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Microsoft.UI.Dispatching;
 using OpenSynapse.App.Runtime;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
@@ -13,6 +14,7 @@ public sealed class DeviceApplicationRuleRowViewModel : INotifyPropertyChanged
     public DeviceApplicationRuleRowViewModel(DeviceApplicationRule rule)
     {
         Rule = rule;
+        Enabled = rule.Enabled;
         _profileName = rule.ProfileName;
     }
     private string _profileName;
@@ -24,7 +26,16 @@ public sealed class DeviceApplicationRuleRowViewModel : INotifyPropertyChanged
     public string DeviceName { get; internal set; } = string.Empty;
     public string StatusText { get; internal set; } = string.Empty;
     public bool Enabled { get; set; }
-    public string ProfileName { get => _profileName; set { _profileName = value; PropertyChanged?.Invoke(this, new(nameof(ProfileName))); } }
+    public string ProfileName
+    {
+        get => _profileName;
+        set
+        {
+            if (string.IsNullOrEmpty(value) || StringComparer.Ordinal.Equals(_profileName, value)) return;
+            _profileName = value;
+            PropertyChanged?.Invoke(this, new(nameof(ProfileName)));
+        }
+    }
     public event PropertyChangedEventHandler? PropertyChanged;
 }
 
@@ -37,8 +48,12 @@ public sealed partial class DeviceApplicationRulesWorkspace : INotifyPropertyCha
     private readonly Func<IReadOnlyList<RazerHidDeviceConnection>> _connections;
     private readonly Func<DeviceApplicationSwitchCoordinator> _coordinator;
     private readonly Action _changed;
+    private readonly DispatcherQueue? _dispatcher;
     private DeviceApplicationRuleDocument _document = new(1, true, []);
     private DeviceBindingKey? _selected;
+    private DeviceBindingKey? _renderedSelected;
+    private bool _renderedEnabled;
+    private string[] _renderedProfileNames = [];
     private string _bindableDevicesSignature = string.Empty;
     private string _runningApplicationsSignature = string.Empty;
     private bool _migrated;
@@ -55,6 +70,8 @@ public sealed partial class DeviceApplicationRulesWorkspace : INotifyPropertyCha
         _connections = connections;
         _coordinator = coordinator;
         _changed = changed;
+        // A null dispatcher means there is no UI thread to marshal to; refresh synchronously.
+        _dispatcher = DispatcherQueue.GetForCurrentThread();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -110,9 +127,18 @@ public sealed partial class DeviceApplicationRulesWorkspace : INotifyPropertyCha
                 executablePath, true)), token);
     }
 
-    internal async Task SaveAsync(DeviceApplicationRuleRowViewModel row, CancellationToken token) =>
+    internal async Task SaveAsync(DeviceApplicationRuleRowViewModel row, CancellationToken token)
+    {
+        var profileName = (row.ProfileName ?? string.Empty).Split(" · ")[0].Trim();
+        if (row.Enabled == row.Rule.Enabled &&
+            StringComparer.Ordinal.Equals(profileName, row.Rule.ProfileName))
+        {
+            return;
+        }
+
         await SaveAsync(DeviceApplicationRuleCatalog.AddOrUpdate(_document,
-            row.Rule with { ProfileName = row.ProfileName.Split(" · ")[0], Enabled = row.Enabled }), token);
+            row.Rule with { ProfileName = profileName, Enabled = row.Enabled }), token);
+    }
 
     internal async Task RemoveAsync(string id, CancellationToken token) =>
         await SaveAsync(DeviceApplicationRuleCatalog.Remove(_document, id), token);
@@ -132,6 +158,7 @@ public sealed partial class DeviceApplicationRulesWorkspace : INotifyPropertyCha
         var signature = string.Join('\n', ordered);
         if (StringComparer.Ordinal.Equals(signature, _runningApplicationsSignature)) return;
         _runningApplicationsSignature = signature;
+        // Clear only runs from user interaction (drop-down opened / device selected) while the page is alive.
         RunningApplications.Clear();
         foreach (var path in ordered) RunningApplications.Add(path);
     }
@@ -160,30 +187,74 @@ public sealed partial class DeviceApplicationRulesWorkspace : INotifyPropertyCha
 
     private void Refresh()
     {
-        static void Fill(ObservableCollection<DeviceApplicationRuleRowViewModel> target, IEnumerable<DeviceApplicationRule> source)
+        if (_dispatcher is { HasThreadAccess: false } dispatcher)
         {
-            target.Clear();
-            foreach (var rule in source) target.Add(new(rule));
+            dispatcher.TryEnqueue(Refresh);
+            return;
         }
-        Fill(Rules, _document.Rules.OrderBy(rule => rule.ProfileName, StringComparer.OrdinalIgnoreCase)
+
+        static bool Fill(ObservableCollection<DeviceApplicationRuleRowViewModel> target, IEnumerable<DeviceApplicationRule> source)
+        {
+            var rules = source as IReadOnlyList<DeviceApplicationRule> ?? source.ToArray();
+            // These collections are bound to controls on pages that are being unloaded.
+            // Clearing an unchanged collection makes WinUI raise CollectionChanged on the
+            // departing ItemsRepeater, which throws 0x80004005 during fast navigation.
+            if (target.Count == rules.Count &&
+                target.Select(row => row.Rule).SequenceEqual(rules))
+            {
+                return false;
+            }
+
+            target.Clear();
+            foreach (var rule in rules) target.Add(new(rule));
+            return true;
+        }
+        var changed = Fill(Rules, _document.Rules.OrderBy(rule => rule.ProfileName, StringComparer.OrdinalIgnoreCase)
             .ThenBy(rule => rule.ExecutablePath, StringComparer.OrdinalIgnoreCase)
             .ThenBy(rule => rule.Device.InstanceId, StringComparer.OrdinalIgnoreCase));
-        Fill(DeviceRules, _document.Rules.Where(rule => _selected is { } device && rule.Device.Equals(device)));
-        RefreshBindableDevices();
+        changed |= Fill(DeviceRules, _document.Rules.Where(rule => _selected is { } device && rule.Device.Equals(device)));
+        changed |= RefreshBindableDevices();
+        changed |= !Nullable.Equals(_renderedSelected, _selected);
+        changed |= _renderedEnabled != _document.Enabled;
+        // A new or renamed profile changes ProfileNames without touching any rule.
+        var profileNames = ProfileNames.ToArray();
+        changed |= !_renderedProfileNames.SequenceEqual(profileNames, StringComparer.Ordinal);
+        _renderedProfileNames = profileNames;
         var states = _coordinator().States;
         foreach (var row in Rules.Concat(DeviceRules))
         {
-            row.DeviceName = _connections().FirstOrDefault(connection =>
+            var deviceName = _connections().FirstOrDefault(connection =>
                 connection.Definition.ProductId == row.Device.ProductId &&
                 connection.InstanceId.Equals(row.Device.InstanceId, StringComparison.OrdinalIgnoreCase))?.Definition.DisplayName ?? row.Device.InstanceId;
+            if (!StringComparer.Ordinal.Equals(row.DeviceName, deviceName))
+            {
+                row.DeviceName = deviceName;
+                changed = true;
+            }
+
             if (states.TryGetValue($"{row.Device.VendorId:X4}:{row.Device.ProductId:X4}:{row.Device.InstanceId.Trim()}", out var state))
             {
-                row.StatusText = state.Status.ToString();
-                if (state.Status == DeviceApplicationSwitchStatus.ProfileMissing)
-                    row.ProfileName += " · " + AppStrings.Text("DeviceRuleProfileMissing");
+                var statusText = state.Status.ToString();
+                if (!StringComparer.Ordinal.Equals(row.StatusText, statusText))
+                {
+                    row.StatusText = statusText;
+                    changed = true;
+                }
+
+                var missingProfileName = row.Rule.ProfileName + " · " + AppStrings.Text("DeviceRuleProfileMissing");
+                var displayedProfileName = state.Status == DeviceApplicationSwitchStatus.ProfileMissing
+                    ? missingProfileName
+                    : row.Rule.ProfileName;
+                if ((StringComparer.Ordinal.Equals(row.ProfileName, row.Rule.ProfileName) ||
+                     StringComparer.Ordinal.Equals(row.ProfileName, missingProfileName)) &&
+                    !StringComparer.Ordinal.Equals(row.ProfileName, displayedProfileName))
+                {
+                    row.ProfileName = displayedProfileName;
+                    changed = true;
+                }
             }
         }
-        StatusText = _selected is { } selected && states.TryGetValue(
+        var selectedStatusText = _selected is { } selected && states.TryGetValue(
             $"{selected.VendorId:X4}:{selected.ProductId:X4}:{selected.InstanceId.Trim()}", out var selectedState)
             ? selectedState.Status switch
             {
@@ -193,10 +264,20 @@ public sealed partial class DeviceApplicationRulesWorkspace : INotifyPropertyCha
                 _ => string.Empty,
             }
             : string.Empty;
-        OnPropertyChanged(null);
+        if (!StringComparer.Ordinal.Equals(StatusText, selectedStatusText))
+        {
+            StatusText = selectedStatusText;
+            changed = true;
+        }
+        if (changed)
+        {
+            _renderedSelected = _selected;
+            _renderedEnabled = _document.Enabled;
+            OnPropertyChanged(null);
+        }
     }
 
-    private void RefreshBindableDevices()
+    private bool RefreshBindableDevices()
     {
         var connections = _connections()
             .Where(connection => connection.Definition.Category is DeviceCategory.Mouse or DeviceCategory.Keyboard)
@@ -215,11 +296,12 @@ public sealed partial class DeviceApplicationRulesWorkspace : INotifyPropertyCha
                 ? $"{connection.Definition.DisplayName} · {ShortId(connection.InstanceId)}"
                 : connection.Definition.DisplayName)).ToArray();
         var signature = string.Join('\n', options.Select(option =>
-            $"{option.Device.ProductId:X4}:{option.Device.InstanceId}"));
-        if (StringComparer.Ordinal.Equals(signature, _bindableDevicesSignature)) return;
+            $"{option.Device.ProductId:X4}:{option.Device.InstanceId}:{option.DisplayName}"));
+        if (StringComparer.Ordinal.Equals(signature, _bindableDevicesSignature)) return false;
         _bindableDevicesSignature = signature;
         BindableDevices.Clear();
         foreach (var option in options) BindableDevices.Add(option);
+        return true;
     }
 
     private static string ShortId(string instanceId) =>

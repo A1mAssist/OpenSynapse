@@ -594,6 +594,19 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
                 .GetBatteryPercentAsync(row.Connection, cancellationToken)
                 .ConfigureAwait(false);
             row.SetBatteryPercent(percent);
+            if (row.Connection.Capabilities.Contains(RazerHidBackendCapability.ChargingRead))
+            {
+                try
+                {
+                    row.SetCharging(await _deviceService
+                        .GetChargingAsync(row.Connection, cancellationToken)
+                        .ConfigureAwait(false));
+                }
+                catch (Exception) when (!cancellationToken.IsCancellationRequested)
+                {
+                    // The charging query is optional; keep the last known state.
+                }
+            }
             return percent;
         }
         catch (Exception) when (!cancellationToken.IsCancellationRequested)
