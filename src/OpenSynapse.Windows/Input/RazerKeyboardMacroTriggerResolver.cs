@@ -19,7 +19,7 @@ public static class RazerKeyboardMacroTriggerResolver
 
     public static MacroInput? Resolve(byte hidUsage, ushort productId)
     {
-        // 02A6 / 02A7 / 02B0 / 02CF mapping rows carry firmware key ids, not HID usages.
+        // OBM keyboard mapping rows carry firmware key ids, not HID usages.
         if (RazerHuntsmanV3ProKeys.UsesFirmwareKeyIds(productId))
         {
             if (!RazerHuntsmanV3ProKeys.TryGetHidUsage(hidUsage, out var hidUsageFromFirmware))
