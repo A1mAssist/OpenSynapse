@@ -93,6 +93,12 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             Rows.Add(row);
         }
 
+        // Private-key names do not depend on the product art being cached.
+        if (_deviceKind == RazerMappingDeviceKind.Mouse)
+        {
+            RazerHidMappingRowViewModel.ApplyButtonNames(rows, null, _productId);
+        }
+
         PopulateStageRows();
         SelectedRow = selectedButtonId is { } id
             ? rows.FirstOrDefault(row => row.ButtonId == id)

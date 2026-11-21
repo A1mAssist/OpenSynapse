@@ -20,6 +20,7 @@ internal static class RazerMappingButtonNames
         "User select" => AppStrings.Text("RazerMappingButtonUserSelect"),
         "Profile switch" => AppStrings.Text("RazerMappingButtonProfileSwitch"),
         "Sniper" => AppStrings.Text("RazerMappingButtonSniper"),
+        "Boss Key" => AppStrings.Text("RazerMappingButtonBossKey"),
         "DPI cycle up" => AppStrings.Text("RazerMappingButtonDpiCycleUp"),
         "DPI cycle down" => AppStrings.Text("RazerMappingButtonDpiCycleDown"),
         "Previous page" => AppStrings.Text("RazerMappingButtonPreviousPage"),

@@ -8129,6 +8129,9 @@
   <data name="RazerMappingButtonSniper" xml:space="preserve">
     <value>Снайпер</value>
   </data>
+  <data name="RazerMappingButtonBossKey" xml:space="preserve">
+    <value>Клавиша «Босс»</value>
+  </data>
   <data name="RazerMappingButtonDpiCycleUp" xml:space="preserve">
     <value>DPI циклически увеличивается</value>
   </data>
