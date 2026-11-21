@@ -1,8 +1,9 @@
 namespace OpenSynapse.Windows.Devices;
 
 /// <summary>
-/// Razer 6737 bundle: the mapping page addresses keys by firmware id, not by USB HID
-/// usage. The table is identical for 02A6 / 02A7 / 02B0 / 02CF.
+/// Razer's OBM engine addresses keyboard rows by firmware key id, not by USB HID usage.
+/// The id table is identical across the 6737 bundles; the product list below is scoped to
+/// the families whose bundles use it instead of the legacy 08:80 button table.
 /// </summary>
 public static class RazerHuntsmanV3ProKeys
 {
@@ -131,8 +132,19 @@ public static class RazerHuntsmanV3ProKeys
     private static readonly IReadOnlyDictionary<byte, byte> HidByFirmwareKeyId =
         FirmwareKeyIdsByHid.ToDictionary(pair => pair.Value, pair => pair.Key);
 
+    // Products whose bundles declare a product-specific OBM keyboard table
+    // (InputIDToMapping_Keyboard_*). The hosts are 02A5/02A6/02A7/02B0/02CF/02D7; the rest
+    // borrow their layout and lighting manifest. Generic-only keyboards may still use the
+    // legacy 08:80 button table, so they stay on HID usages.
+    private static readonly HashSet<ushort> KnownFirmwareKeyIdProducts =
+    [
+        0x02A5, 0x02A6, 0x02A7, 0x02B0, 0x02B3, 0x02B9, 0x02C4, 0x02CC,
+        0x02CF, 0x02D0, 0x02D1, 0x02D4, 0x02D5, 0x02D7,
+        0x02D8, 0x02E3, 0x02E4, 0x02E5, 0x02E6, 0x02EA, 0x02F0, 0x02F4,
+    ];
+
     public static bool UsesFirmwareKeyIds(ushort productId) =>
-        productId is 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF;
+        KnownFirmwareKeyIdProducts.Contains(productId);
 
     public static bool TryGetFirmwareKeyId(byte hid, out byte firmwareKeyId) =>
         FirmwareKeyIdsByHid.TryGetValue(hid, out firmwareKeyId);

@@ -429,6 +429,15 @@ public sealed partial class RazerHidDeviceService
         // modifier buttons that 0x8D rejects, so it cannot drive keyboard rows.
         if (connection.Definition.Category == DeviceCategory.Keyboard)
         {
+            // Razer's OBM page never asks the firmware for a key table: it builds the
+            // button ids from the product mapping (getButtonIdFromUIMappingList). On these
+            // products 0x8F answers with something that is not a key list, so sending it
+            // only burns retries and logs a false failure. The bundle layout is the list.
+            if (RazerHuntsmanV3ProKeys.UsesFirmwareKeyIds(connection.Definition.ProductId))
+            {
+                return [];
+            }
+
             try
             {
                 var profileId = await ResolveMappingProfileIdAsync(connection, cancellationToken)

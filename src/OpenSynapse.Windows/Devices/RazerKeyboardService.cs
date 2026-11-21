@@ -382,10 +382,9 @@ public sealed partial class RazerKeyboardService
                             $"keyboard mapping {protocol} returned an invalid key list: " +
                             $"count={ids.Count}, unique={ids.Distinct().Count()}, " +
                             $"zeros={ids.Count(id => id == 0)}");
-                        if (protocol == RazerKeyboardMappingProtocol.KeyTable8F)
-                        {
-                            return [];
-                        }
+                        // 0x8F is not a key list on every firmware. Fall through to the
+                        // 0x84 button table instead of leaving the page without a
+                        // protocol, which made every later read throw.
                         continue;
                     }
 
