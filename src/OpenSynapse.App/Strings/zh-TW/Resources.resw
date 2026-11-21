@@ -3490,6 +3490,17 @@
   <data name="AccessoryAudioInputNone" xml:space="preserve"><value>無</value></data>
   <data name="AccessoryAudioOutputSpeaker" xml:space="preserve"><value>音箱與低音炮</value></data>
   <data name="AccessoryAudioOutputHeadset" xml:space="preserve"><value>耳機</value></data>
+  <data name="AccessoryEgpuDescription/Text" xml:space="preserve"><value>設定 Core X V2 的 GPU 或機箱風扇曲線，或恢復自動控制。曲線會依照所選溫度來源每 2.5 秒重新計算。</value></data>
+  <data name="AccessoryEgpuTemperature/Text" xml:space="preserve"><value>溫度</value></data>
+  <data name="AccessoryEgpuSpeed/Text" xml:space="preserve"><value>目前風扇轉速</value></data>
+  <data name="AccessoryEgpuMinimum/Text" xml:space="preserve"><value>最低轉速</value></data>
+  <data name="AccessoryEgpuMaximum/Text" xml:space="preserve"><value>最高轉速</value></data>
+  <data name="AccessoryEgpuTemperatureSource/Header" xml:space="preserve"><value>溫度來源</value></data>
+  <data name="AccessoryEgpuSourceGpu" xml:space="preserve"><value>GPU</value></data>
+  <data name="AccessoryEgpuSourceChassis" xml:space="preserve"><value>機箱</value></data>
+  <data name="AccessoryEgpuCurve/Header" xml:space="preserve"><value>風扇曲線</value></data>
+  <data name="AccessoryEgpuFanAuto" xml:space="preserve"><value>自動</value></data>
+  <data name="AccessoryEgpuFanAutoHint" xml:space="preserve"><value>控制器會自動選擇風扇轉速。</value></data>
   <data name="AccessoryDockDescription/Text" xml:space="preserve"><value>底座同步與充電燈效；讀不到的命令不會顯示為可寫。</value></data>
   <data name="AccessoryDockSync/Text" xml:space="preserve"><value>底座燈光同步</value></data>
   <data name="AccessoryDockChargingEffect/Text" xml:space="preserve"><value>充電燈效</value></data>

@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.App.ViewModels;
@@ -18,7 +19,10 @@ public sealed class RazerAccessoryBodyViewModel : INotifyPropertyChanged, IAsync
     private bool _isBusy;
     private string _errorText = string.Empty;
 
-    private RazerAccessoryBodyViewModel(ushort productId, Action<string>? diagnostic)
+    private RazerAccessoryBodyViewModel(
+        ushort productId,
+        Action<string>? diagnostic,
+        IPerformanceMonitor? performanceMonitor)
     {
         _productId = productId;
         _diagnostic = diagnostic;
@@ -34,6 +38,9 @@ public sealed class RazerAccessoryBodyViewModel : INotifyPropertyChanged, IAsync
         EndpointAudio = RazerDockEndpointAudioService.SupportsProduct(productId)
             ? new RazerDockEndpointAudioViewModel(new RazerDockEndpointAudioService(productId), diagnostic)
             : null;
+        Egpu = productId is 0x0F51
+            ? new RazerEgpuAccessoryViewModel(productId, diagnostic, performanceMonitor)
+            : null;
         Dock = productId is 0x00F1
             ? new RazerDockAccessoryViewModel(productId, diagnostic)
             : null;
@@ -47,18 +54,21 @@ public sealed class RazerAccessoryBodyViewModel : INotifyPropertyChanged, IAsync
     public RazerHapticsAccessoryViewModel? Haptics { get; }
     public RazerSpeakerAccessoryViewModel? Speaker { get; }
     public RazerDockEndpointAudioViewModel? EndpointAudio { get; }
+    public RazerEgpuAccessoryViewModel? Egpu { get; }
     public RazerDockAccessoryViewModel? Dock { get; }
     public RazerControlPodAccessoryViewModel? ControlPod { get; }
     public bool HasThermal => Thermal is not null;
     public bool HasHaptics => Haptics is not null;
     public bool HasSpeaker => Speaker is not null;
     public bool HasEndpointAudio => EndpointAudio is not null;
+    public bool HasEgpu => Egpu is not null;
     public bool HasDock => Dock is not null;
     public bool HasControlPod => ControlPod is not null;
     public Visibility ThermalVisibility => HasThermal ? Visibility.Visible : Visibility.Collapsed;
     public Visibility HapticsVisibility => HasHaptics ? Visibility.Visible : Visibility.Collapsed;
     public Visibility SpeakerVisibility => HasSpeaker ? Visibility.Visible : Visibility.Collapsed;
     public Visibility EndpointAudioVisibility => HasEndpointAudio ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility EgpuVisibility => HasEgpu ? Visibility.Visible : Visibility.Collapsed;
     public Visibility DockVisibility => HasDock ? Visibility.Visible : Visibility.Collapsed;
     public Visibility ControlPodVisibility =>
         HasControlPod ? Visibility.Visible : Visibility.Collapsed;
@@ -76,11 +86,13 @@ public sealed class RazerAccessoryBodyViewModel : INotifyPropertyChanged, IAsync
 
     internal static RazerAccessoryBodyViewModel? Create(
         RazerChromaDeviceConnection connection,
-        Action<string>? diagnostic = null)
+        Action<string>? diagnostic = null,
+        IPerformanceMonitor? performanceMonitor = null)
     {
-        var body = new RazerAccessoryBodyViewModel(connection.ProductId, diagnostic);
+        var body = new RazerAccessoryBodyViewModel(connection.ProductId, diagnostic, performanceMonitor);
         return body.Thermal is null && body.Haptics is null && body.Speaker is null &&
-            body.Dock is null && body.ControlPod is null && body.EndpointAudio is null
+            body.Egpu is null && body.Dock is null && body.ControlPod is null &&
+            body.EndpointAudio is null
             ? null
             : body;
     }
@@ -106,6 +118,10 @@ public sealed class RazerAccessoryBodyViewModel : INotifyPropertyChanged, IAsync
             if (EndpointAudio is { } endpointAudio)
             {
                 await endpointAudio.RefreshAsync(cancellationToken);
+            }
+            if (Egpu is { } egpu)
+            {
+                await egpu.RefreshAsync(cancellationToken).ConfigureAwait(false);
             }
             if (Dock is { } dock)
             {
@@ -147,6 +163,10 @@ public sealed class RazerAccessoryBodyViewModel : INotifyPropertyChanged, IAsync
         {
             await endpointAudio.RefreshAsync(cancellationToken);
         }
+        if (Egpu is { } egpu)
+        {
+            await egpu.RefreshAsync(cancellationToken).ConfigureAwait(false);
+        }
         if (Dock is { } dock)
         {
             await dock.RefreshAsync(cancellationToken).ConfigureAwait(false);
@@ -170,6 +190,10 @@ public sealed class RazerAccessoryBodyViewModel : INotifyPropertyChanged, IAsync
         if (Speaker is { } speaker)
         {
             await speaker.DisposeAsync().ConfigureAwait(false);
+        }
+        if (Egpu is { } egpu)
+        {
+            await egpu.DisposeAsync().ConfigureAwait(false);
         }
         if (Dock is { } dock)
         {

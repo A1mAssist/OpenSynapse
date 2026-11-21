@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Profiles;
+using OpenSynapse.Core.Sensors;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 
@@ -18,6 +19,7 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
     private readonly Func<ProfileDocument>? _getProfile;
     private readonly Func<CancellationToken, Task<bool>>? _saveProfile;
     private readonly Action? _refreshDeviceUi;
+    private readonly IPerformanceMonitor? _performanceMonitor;
 
     internal UsbAccessoriesWorkspace(
         LocalDiagnosticLog log,
@@ -25,7 +27,8 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
         MacroWorkspace macros,
         Func<ProfileDocument>? getActiveProfile = null,
         Func<CancellationToken, Task<bool>>? saveProfileAsync = null,
-        Action? refreshDeviceUi = null)
+        Action? refreshDeviceUi = null,
+        IPerformanceMonitor? performanceMonitor = null)
     {
         _diagnosticLog = log;
         _razerHid = razerHid;
@@ -33,6 +36,7 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
         _getProfile = getActiveProfile;
         _saveProfile = saveProfileAsync;
         _refreshDeviceUi = refreshDeviceUi;
+        _performanceMonitor = performanceMonitor;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -572,7 +576,7 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
             if (ChromaDevices.Count == 0 && SelectedChroma is null) return;
             ChromaDevices.Clear();
             _selectedChromaDevice = null;
-            SelectedChroma = null;
+            await ClearSelectedChromaAsync().ConfigureAwait(true);
             return;
         }
 
@@ -596,7 +600,7 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
             StringComparer.OrdinalIgnoreCase.Equals(row.Connection.DevicePath, selectedPath));
         if (_selectedChromaDevice is null)
         {
-            SelectedChroma = null;
+            await ClearSelectedChromaAsync().ConfigureAwait(true);
         }
     }
 
@@ -612,21 +616,43 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
             return;
         }
 
+        var previous = SelectedChroma;
         _selectedChromaDevice = row;
         SelectedChroma = new RazerChromaViewModel(
             row.Connection,
             message => _diagnosticLog.TryWrite("chroma", message),
             _razerHid.SpecialLightingService,
             _getProfile,
-            _saveProfile);
+            _saveProfile,
+            _performanceMonitor);
+        if (previous is not null)
+        {
+            await previous.DisposeAsync().ConfigureAwait(true);
+        }
         await SelectedChroma.LoadAsync(cancellationToken);
     }
+    private async Task ClearSelectedChromaAsync()
+    {
+        var stale = SelectedChroma;
+        SelectedChroma = null;
+        if (stale is not null)
+        {
+            await stale.DisposeAsync().ConfigureAwait(true);
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
         _headsetsDisposed = true;
         _headsetSelectionVersion++;
         _selectedHeadsetAudioDevice = null;
         SelectedHeadsetAudio = null;
+        var chroma = SelectedChroma;
+        SelectedChroma = null;
+        if (chroma is not null)
+        {
+            await chroma.DisposeAsync();
+        }
         var sessions = _headsetSessions.Values.ToArray();
         _headsetSessions.Clear();
         Volatile.Write(ref _headsetConnections, []);

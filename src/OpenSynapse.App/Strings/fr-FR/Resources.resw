@@ -3054,6 +3054,17 @@
   <data name="AccessoryAudioInputNone" xml:space="preserve"><value>Aucun</value></data>
   <data name="AccessoryAudioOutputSpeaker" xml:space="preserve"><value>Haut-parleur + caisson de basses</value></data>
   <data name="AccessoryAudioOutputHeadset" xml:space="preserve"><value>Casque</value></data>
+  <data name="AccessoryEgpuDescription/Text" xml:space="preserve"><value>Définissez la courbe du ventilateur GPU ou châssis du Core X V2, ou revenez au contrôle automatique. Les courbes sont réévaluées toutes les 2,5 secondes selon la source de température choisie.</value></data>
+  <data name="AccessoryEgpuTemperature/Text" xml:space="preserve"><value>Température</value></data>
+  <data name="AccessoryEgpuSpeed/Text" xml:space="preserve"><value>Vitesse actuelle du ventilateur</value></data>
+  <data name="AccessoryEgpuMinimum/Text" xml:space="preserve"><value>Vitesse minimale</value></data>
+  <data name="AccessoryEgpuMaximum/Text" xml:space="preserve"><value>Vitesse maximale</value></data>
+  <data name="AccessoryEgpuTemperatureSource/Header" xml:space="preserve"><value>Source de température</value></data>
+  <data name="AccessoryEgpuSourceGpu" xml:space="preserve"><value>GPU</value></data>
+  <data name="AccessoryEgpuSourceChassis" xml:space="preserve"><value>Châssis</value></data>
+  <data name="AccessoryEgpuCurve/Header" xml:space="preserve"><value>Courbe du ventilateur</value></data>
+  <data name="AccessoryEgpuFanAuto" xml:space="preserve"><value>Automatique</value></data>
+  <data name="AccessoryEgpuFanAutoHint" xml:space="preserve"><value>Le contrôleur choisit automatiquement la vitesse du ventilateur.</value></data>
   <data name="AccessoryDockDescription/Text" xml:space="preserve"><value>Synchronisation de l’éclairage de la station et de la charge ; les commandes dont la lecture échoue restent indisponibles.</value></data>
   <data name="AccessoryDockSync/Text" xml:space="preserve"><value>Synchronisation de l’éclairage de la station de charge</value></data>
   <data name="AccessoryDockChargingEffect/Text" xml:space="preserve"><value>Effet de charge</value></data>

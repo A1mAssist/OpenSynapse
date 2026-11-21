@@ -68,7 +68,7 @@ public sealed class RazerChromaDeviceRowViewModel : INotifyPropertyChanged
     public void RefreshLocalization() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
 }
 
-public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
+public sealed partial class RazerChromaViewModel : INotifyPropertyChanged, IAsyncDisposable
 {
     private static readonly RazerChromaEffect[] Effects =
         [RazerChromaEffect.Off, RazerChromaEffect.Static, RazerChromaEffect.Breathing, RazerChromaEffect.Spectrum];
@@ -105,14 +105,15 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
         Action<string>? diagnostic = null,
         RazerHidSpecialLightingService? specialLighting = null,
         Func<ProfileDocument>? getActiveProfile = null,
-        Func<CancellationToken, Task<bool>>? saveProfileAsync = null)
+        Func<CancellationToken, Task<bool>>? saveProfileAsync = null,
+        IPerformanceMonitor? performanceMonitor = null)
     {
         _connection = connection;
         _diagnostic = diagnostic;
         _specialLighting = specialLighting;
         _getProfile = getActiveProfile;
         _saveProfile = saveProfileAsync;
-        Body = RazerAccessoryBodyViewModel.Create(connection, diagnostic);
+        Body = RazerAccessoryBodyViewModel.Create(connection, diagnostic, performanceMonitor);
         _argbLedCount = _argbLedCounts[0];
     }
 
@@ -337,6 +338,14 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (Body is { } body)
+        {
+            await body.DisposeAsync().ConfigureAwait(false);
         }
     }
 

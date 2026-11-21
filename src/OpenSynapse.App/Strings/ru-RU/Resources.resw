@@ -6053,6 +6053,39 @@
   <data name="AccessoryAudioOutputHeadset" xml:space="preserve">
     <value>Гарнитура</value>
   </data>
+  <data name="AccessoryEgpuDescription/Text" xml:space="preserve">
+    <value>Задайте кривую вентилятора Core X V2 по температуре GPU или корпуса либо верните автоматическое управление. Кривая пересчитывается каждые 2,5 секунды по выбранному источнику.</value>
+  </data>
+  <data name="AccessoryEgpuTemperature/Text" xml:space="preserve">
+    <value>Температура</value>
+  </data>
+  <data name="AccessoryEgpuSpeed/Text" xml:space="preserve">
+    <value>Текущая скорость вентилятора</value>
+  </data>
+  <data name="AccessoryEgpuMinimum/Text" xml:space="preserve">
+    <value>Минимальные обороты</value>
+  </data>
+  <data name="AccessoryEgpuMaximum/Text" xml:space="preserve">
+    <value>Максимальные обороты</value>
+  </data>
+  <data name="AccessoryEgpuTemperatureSource/Header" xml:space="preserve">
+    <value>Источник температуры</value>
+  </data>
+  <data name="AccessoryEgpuSourceGpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="AccessoryEgpuSourceChassis" xml:space="preserve">
+    <value>Корпус</value>
+  </data>
+  <data name="AccessoryEgpuCurve/Header" xml:space="preserve">
+    <value>Кривая вентилятора</value>
+  </data>
+  <data name="AccessoryEgpuFanAuto" xml:space="preserve">
+    <value>Автоматически</value>
+  </data>
+  <data name="AccessoryEgpuFanAutoHint" xml:space="preserve">
+    <value>Контроллер выбирает скорость вентилятора автоматически.</value>
+  </data>
   <data name="AccessoryDockDescription/Text" xml:space="preserve">
     <value>Подсветка синхронизации и зарядки док-станции; команды, которые не удалось прочитать, остаются недоступными.</value>
   </data>

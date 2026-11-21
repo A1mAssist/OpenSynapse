@@ -70,6 +70,22 @@ public sealed partial class AccessoryBodyPanel : UserControl
         }
     }
 
+    private async void EgpuRefreshClick(object sender, RoutedEventArgs e)
+    {
+        if (Body?.Egpu is { } egpu)
+        {
+            await egpu.RefreshAsync(CancellationToken.None);
+        }
+    }
+
+    private async void EgpuApplyClick(object sender, RoutedEventArgs e)
+    {
+        if (Body?.Egpu is { } egpu)
+        {
+            await egpu.ApplyAsync(CancellationToken.None);
+        }
+    }
+
     private async void DockRefreshClick(object sender, RoutedEventArgs e)
     {
         if (Body?.Dock is { } dock)

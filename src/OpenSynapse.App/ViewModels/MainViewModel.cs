@@ -249,7 +249,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             {
                 RefreshDeviceSelectorItems();
                 RefreshDeviceOverviewVisibility();
-            });
+            },
+            performanceMonitor);
         Accessories.PropertyChanged += (_, _) => OnPropertyChanged(nameof(Accessories));
         Diagnostics = new DiagnosticsWorkspace(
             RazerHid,

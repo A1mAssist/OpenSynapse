@@ -3064,6 +3064,17 @@
   <data name="AccessoryAudioInputNone" xml:space="preserve"><value>None</value></data>
   <data name="AccessoryAudioOutputSpeaker" xml:space="preserve"><value>Speaker + subwoofer</value></data>
   <data name="AccessoryAudioOutputHeadset" xml:space="preserve"><value>Headset</value></data>
+  <data name="AccessoryEgpuDescription/Text" xml:space="preserve"><value>Set the Core X V2 GPU or chassis fan curve, or return it to automatic control. Curves are re-evaluated every 2.5 seconds from the selected temperature source.</value></data>
+  <data name="AccessoryEgpuTemperature/Text" xml:space="preserve"><value>Temperature</value></data>
+  <data name="AccessoryEgpuSpeed/Text" xml:space="preserve"><value>Current fan speed</value></data>
+  <data name="AccessoryEgpuMinimum/Text" xml:space="preserve"><value>Minimum RPM</value></data>
+  <data name="AccessoryEgpuMaximum/Text" xml:space="preserve"><value>Maximum RPM</value></data>
+  <data name="AccessoryEgpuTemperatureSource/Header" xml:space="preserve"><value>Temperature source</value></data>
+  <data name="AccessoryEgpuSourceGpu" xml:space="preserve"><value>GPU</value></data>
+  <data name="AccessoryEgpuSourceChassis" xml:space="preserve"><value>Chassis</value></data>
+  <data name="AccessoryEgpuCurve/Header" xml:space="preserve"><value>Fan curve</value></data>
+  <data name="AccessoryEgpuFanAuto" xml:space="preserve"><value>Automatic</value></data>
+  <data name="AccessoryEgpuFanAutoHint" xml:space="preserve"><value>The controller chooses the fan speed automatically.</value></data>
   <data name="AccessoryDockDescription/Text" xml:space="preserve"><value>Dock sync and charging lighting; commands that fail to read stay unavailable.</value></data>
   <data name="AccessoryDockSync/Text" xml:space="preserve"><value>Dock lighting sync</value></data>
   <data name="AccessoryDockChargingEffect/Text" xml:space="preserve"><value>Charging effect</value></data>

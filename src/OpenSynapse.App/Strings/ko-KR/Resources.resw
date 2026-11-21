@@ -3054,6 +3054,17 @@
   <data name="AccessoryAudioInputNone" xml:space="preserve"><value>없음</value></data>
   <data name="AccessoryAudioOutputSpeaker" xml:space="preserve"><value>스피커 + 서브우퍼</value></data>
   <data name="AccessoryAudioOutputHeadset" xml:space="preserve"><value>헤드셋</value></data>
+  <data name="AccessoryEgpuDescription/Text" xml:space="preserve"><value>Core X V2의 GPU 또는 섀시 팬 곡선을 설정하거나 자동 제어로 되돌립니다. 선택한 온도 소스를 기준으로 2.5초마다 다시 계산됩니다.</value></data>
+  <data name="AccessoryEgpuTemperature/Text" xml:space="preserve"><value>온도</value></data>
+  <data name="AccessoryEgpuSpeed/Text" xml:space="preserve"><value>현재 팬 속도</value></data>
+  <data name="AccessoryEgpuMinimum/Text" xml:space="preserve"><value>최소 RPM</value></data>
+  <data name="AccessoryEgpuMaximum/Text" xml:space="preserve"><value>최대 RPM</value></data>
+  <data name="AccessoryEgpuTemperatureSource/Header" xml:space="preserve"><value>온도 소스</value></data>
+  <data name="AccessoryEgpuSourceGpu" xml:space="preserve"><value>GPU</value></data>
+  <data name="AccessoryEgpuSourceChassis" xml:space="preserve"><value>섀시</value></data>
+  <data name="AccessoryEgpuCurve/Header" xml:space="preserve"><value>팬 곡선</value></data>
+  <data name="AccessoryEgpuFanAuto" xml:space="preserve"><value>자동</value></data>
+  <data name="AccessoryEgpuFanAutoHint" xml:space="preserve"><value>컨트롤러가 팬 속도를 자동으로 선택합니다.</value></data>
   <data name="AccessoryDockDescription/Text" xml:space="preserve"><value>독 동기화 및 충전 조명입니다. 읽기에 실패한 명령은 계속 사용할 수 없습니다.</value></data>
   <data name="AccessoryDockSync/Text" xml:space="preserve"><value>독 조명 동기화</value></data>
   <data name="AccessoryDockChargingEffect/Text" xml:space="preserve"><value>충전 효과</value></data>

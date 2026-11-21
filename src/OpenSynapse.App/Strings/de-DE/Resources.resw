@@ -3054,6 +3054,17 @@
   <data name="AccessoryAudioInputNone" xml:space="preserve"><value>Keine</value></data>
   <data name="AccessoryAudioOutputSpeaker" xml:space="preserve"><value>Lautsprecher + Subwoofer</value></data>
   <data name="AccessoryAudioOutputHeadset" xml:space="preserve"><value>Headset</value></data>
+  <data name="AccessoryEgpuDescription/Text" xml:space="preserve"><value>Legen Sie die GPU- oder Gehäuselüfterkurve des Core X V2 fest oder kehren Sie zur automatischen Steuerung zurück. Die Kurven werden alle 2,5 Sekunden anhand der gewählten Temperaturquelle neu bewertet.</value></data>
+  <data name="AccessoryEgpuTemperature/Text" xml:space="preserve"><value>Temperatur</value></data>
+  <data name="AccessoryEgpuSpeed/Text" xml:space="preserve"><value>Aktuelle Lüfterdrehzahl</value></data>
+  <data name="AccessoryEgpuMinimum/Text" xml:space="preserve"><value>Minimale Drehzahl</value></data>
+  <data name="AccessoryEgpuMaximum/Text" xml:space="preserve"><value>Maximale Drehzahl</value></data>
+  <data name="AccessoryEgpuTemperatureSource/Header" xml:space="preserve"><value>Temperaturquelle</value></data>
+  <data name="AccessoryEgpuSourceGpu" xml:space="preserve"><value>GPU</value></data>
+  <data name="AccessoryEgpuSourceChassis" xml:space="preserve"><value>Gehäuse</value></data>
+  <data name="AccessoryEgpuCurve/Header" xml:space="preserve"><value>Lüfterkurve</value></data>
+  <data name="AccessoryEgpuFanAuto" xml:space="preserve"><value>Automatisch</value></data>
+  <data name="AccessoryEgpuFanAutoHint" xml:space="preserve"><value>Der Controller wählt die Lüfterdrehzahl automatisch.</value></data>
   <data name="AccessoryDockDescription/Text" xml:space="preserve"><value>Dock-Synchronisierung und Ladebeleuchtung; Befehle, deren Lesen fehlschlägt, bleiben nicht verfügbar.</value></data>
   <data name="AccessoryDockSync/Text" xml:space="preserve"><value>Dock-Beleuchtungssynchronisierung</value></data>
   <data name="AccessoryDockChargingEffect/Text" xml:space="preserve"><value>Ladeeffekt</value></data>

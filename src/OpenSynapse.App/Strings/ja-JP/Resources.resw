@@ -3054,6 +3054,17 @@
   <data name="AccessoryAudioInputNone" xml:space="preserve"><value>なし</value></data>
   <data name="AccessoryAudioOutputSpeaker" xml:space="preserve"><value>スピーカー + サブウーファー</value></data>
   <data name="AccessoryAudioOutputHeadset" xml:space="preserve"><value>ヘッドセット</value></data>
+  <data name="AccessoryEgpuDescription/Text" xml:space="preserve"><value>Core X V2 の GPU またはシャーシのファンカーブを設定するか、自動制御に戻します。選択した温度ソースに基づいて 2.5 秒ごとに再評価されます。</value></data>
+  <data name="AccessoryEgpuTemperature/Text" xml:space="preserve"><value>温度</value></data>
+  <data name="AccessoryEgpuSpeed/Text" xml:space="preserve"><value>現在のファン速度</value></data>
+  <data name="AccessoryEgpuMinimum/Text" xml:space="preserve"><value>最小回転数</value></data>
+  <data name="AccessoryEgpuMaximum/Text" xml:space="preserve"><value>最大回転数</value></data>
+  <data name="AccessoryEgpuTemperatureSource/Header" xml:space="preserve"><value>温度ソース</value></data>
+  <data name="AccessoryEgpuSourceGpu" xml:space="preserve"><value>GPU</value></data>
+  <data name="AccessoryEgpuSourceChassis" xml:space="preserve"><value>シャーシ</value></data>
+  <data name="AccessoryEgpuCurve/Header" xml:space="preserve"><value>ファンカーブ</value></data>
+  <data name="AccessoryEgpuFanAuto" xml:space="preserve"><value>自動</value></data>
+  <data name="AccessoryEgpuFanAutoHint" xml:space="preserve"><value>コントローラーがファン速度を自動で選択します。</value></data>
   <data name="AccessoryDockDescription/Text" xml:space="preserve"><value>ドック同期と充電ライティング。読み取りに失敗したコマンドは利用できないままです。</value></data>
   <data name="AccessoryDockSync/Text" xml:space="preserve"><value>ドック ライティング同期</value></data>
   <data name="AccessoryDockChargingEffect/Text" xml:space="preserve"><value>充電エフェクト</value></data>

@@ -104,6 +104,49 @@
       </StackPanel>
     </Border>
 
+    <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding EgpuVisibility}">
+      <StackPanel Spacing="12" DataContext="{Binding Egpu}">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{Binding Title}" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+            <TextBlock local:Localized.Uid="AccessoryEgpuDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+          </StackPanel>
+          <Button Grid.Column="1" local:Localized.Uid="CoolingPadRefreshButton" Click="EgpuRefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+        </Grid>
+        <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
+        <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+        <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+          <StackPanel Spacing="4">
+            <TextBlock local:Localized.Uid="AccessoryEgpuTemperature" Style="{StaticResource MetricLabelStyle}" />
+            <TextBlock Text="{Binding TemperatureText}" Style="{StaticResource MetricValueStyle}" />
+          </StackPanel>
+          <StackPanel Grid.Column="1" Spacing="4">
+            <TextBlock local:Localized.Uid="AccessoryEgpuSpeed" Style="{StaticResource MetricLabelStyle}" />
+            <TextBlock Text="{Binding CurrentSpeedText}" Style="{StaticResource MetricValueStyle}" />
+          </StackPanel>
+        </Grid>
+        <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+          <StackPanel Spacing="4">
+            <TextBlock local:Localized.Uid="AccessoryEgpuMinimum" Style="{StaticResource MetricLabelStyle}" />
+            <TextBlock Text="{Binding MinimumRpmText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+          </StackPanel>
+          <StackPanel Grid.Column="1" Spacing="4">
+            <TextBlock local:Localized.Uid="AccessoryEgpuMaximum" Style="{StaticResource MetricLabelStyle}" />
+            <TextBlock Text="{Binding MaximumRpmText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+          </StackPanel>
+        </Grid>
+        <ComboBox local:Localized.Uid="AccessoryEgpuTemperatureSource" ItemsSource="{Binding TemperatureSourceOptions}"
+                  SelectedIndex="{Binding SelectedTemperatureSourceIndex, Mode=TwoWay}" IsEnabled="{Binding CanApply}"
+                  HorizontalAlignment="Stretch" />
+        <StackPanel Spacing="4">
+          <ComboBox local:Localized.Uid="AccessoryEgpuCurve" ItemsSource="{Binding CurveOptions}" SelectedIndex="{Binding SelectedCurveIndex, Mode=TwoWay}" IsEnabled="{Binding CanApply}" HorizontalAlignment="Stretch" />
+          <TextBlock Text="{Binding CurveSummary}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+        </StackPanel>
+        <Button local:Localized.Uid="AccessoryApplyButton" Click="EgpuApplyClick" IsEnabled="{Binding CanApply}"
+                Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
+      </StackPanel>
+    </Border>
+
     <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding DockVisibility}">
       <StackPanel Spacing="12" DataContext="{Binding Dock}">
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
