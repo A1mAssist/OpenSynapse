@@ -4197,6 +4197,7 @@
   <data name="RazerMappingButtonUserSelect" xml:space="preserve"><value>用户选择</value></data>
   <data name="RazerMappingButtonProfileSwitch" xml:space="preserve"><value>配置切换</value></data>
   <data name="RazerMappingButtonSniper" xml:space="preserve"><value>狙击</value></data>
+  <data name="RazerMappingButtonBossKey" xml:space="preserve"><value>老板键</value></data>
   <data name="RazerMappingButtonDpiCycleUp" xml:space="preserve"><value>DPI 循环增加</value></data>
   <data name="RazerMappingButtonDpiCycleDown" xml:space="preserve"><value>DPI 循环降低</value></data>
   <data name="RazerMappingButtonPreviousPage" xml:space="preserve"><value>上一页</value></data>

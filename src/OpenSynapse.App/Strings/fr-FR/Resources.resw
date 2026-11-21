@@ -3746,6 +3746,7 @@
   <data name="RazerMappingButtonUserSelect" xml:space="preserve"><value>Sélection utilisateur</value></data>
   <data name="RazerMappingButtonProfileSwitch" xml:space="preserve"><value>Changement de profil</value></data>
   <data name="RazerMappingButtonSniper" xml:space="preserve"><value>Sniper</value></data>
+  <data name="RazerMappingButtonBossKey" xml:space="preserve"><value>Touche Boss</value></data>
   <data name="RazerMappingButtonDpiCycleUp" xml:space="preserve"><value>Cycle DPI vers le haut</value></data>
   <data name="RazerMappingButtonDpiCycleDown" xml:space="preserve"><value>Cycle DPI vers le bas</value></data>
   <data name="RazerMappingButtonPreviousPage" xml:space="preserve"><value>Page précédente</value></data>

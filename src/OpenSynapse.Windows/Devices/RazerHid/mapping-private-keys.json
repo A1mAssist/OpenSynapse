@@ -1085,6 +1085,10 @@
     "source": "00B9/main.de906791830e05012ec8.js",
     "catalogPid": "00B9",
     "keys": {
+      "39": {
+        "code": 89,
+        "label": "BossKey"
+      },
       "60": {
         "code": 82,
         "label": "CycleUpSensitivityStages"

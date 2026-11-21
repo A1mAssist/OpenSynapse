@@ -41,6 +41,9 @@ public static class RazerProductAliases
             // Razer Basilisk V4 HyperSpeed
             [0x00EA] = 0x00EB,
             [0x00EC] = 0x00EB,
+            // Razer Basilisk V3 X HyperSpeed: 0089 is the mouse identity, while
+            // 00B9 owns its product page and driver package.
+            [0x0089] = 0x00B9,
             // Razer Basilisk V3 Pro 35K Xbox 25th Anniversary Edition
             [0xB00B] = 0xB00A,
             [0xB00C] = 0xB00A,

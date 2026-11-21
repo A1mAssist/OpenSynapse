@@ -3746,6 +3746,7 @@
   <data name="RazerMappingButtonUserSelect" xml:space="preserve"><value>사용자 선택</value></data>
   <data name="RazerMappingButtonProfileSwitch" xml:space="preserve"><value>프로필 전환</value></data>
   <data name="RazerMappingButtonSniper" xml:space="preserve"><value>스나이퍼</value></data>
+  <data name="RazerMappingButtonBossKey" xml:space="preserve"><value>보스 키</value></data>
   <data name="RazerMappingButtonDpiCycleUp" xml:space="preserve"><value>DPI 순환 높이기</value></data>
   <data name="RazerMappingButtonDpiCycleDown" xml:space="preserve"><value>DPI 순환 낮추기</value></data>
   <data name="RazerMappingButtonPreviousPage" xml:space="preserve"><value>이전 페이지</value></data>

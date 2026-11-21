@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using System.Text.Json;
+using OpenSynapse.Core.Devices;
 
 namespace OpenSynapse.Windows.Input;
 
@@ -28,7 +29,7 @@ internal static class RazerSpecialKeyMap
 
     internal static bool TryResolve(ushort productId, byte mappingButtonId, out byte razerKeyCode)
     {
-        if (Maps.TryGetValue(productId, out var keys) &&
+        if (Maps.TryGetValue(RazerProductAliases.Canonical(productId), out var keys) &&
             keys.TryGetValue(mappingButtonId, out razerKeyCode))
         {
             return true;
@@ -40,7 +41,7 @@ internal static class RazerSpecialKeyMap
 
     internal static bool TryResolveButtonId(ushort productId, byte razerKeyCode, out byte mappingButtonId)
     {
-        if (ButtonIdsByCode.TryGetValue(productId, out var keys) &&
+        if (ButtonIdsByCode.TryGetValue(RazerProductAliases.Canonical(productId), out var keys) &&
             keys.TryGetValue(razerKeyCode, out mappingButtonId))
         {
             return true;
@@ -52,7 +53,7 @@ internal static class RazerSpecialKeyMap
 
     /// <summary>The bundle anchor this map was generated from, for staleness checks only.</summary>
     internal static bool TryGetEmbeddedSource(ushort productId, out string source) =>
-        Sources.TryGetValue(productId, out source!);
+        Sources.TryGetValue(RazerProductAliases.Canonical(productId), out source!);
 
     private static FrozenDictionary<ushort, IReadOnlyDictionary<byte, byte>> Load()
     {
