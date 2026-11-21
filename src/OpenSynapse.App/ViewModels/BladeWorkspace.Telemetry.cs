@@ -20,6 +20,7 @@ public sealed partial class BladeWorkspace
 {
     private bool _startupStateSyncStarted;
     private bool _gameModeReadFromDevice;
+    private bool _touchpadIndicatorReasserted;
     private bool _touchpadStateRead;
     private long _gameModeUserWriteAt;
 
@@ -323,8 +324,11 @@ public sealed partial class BladeWorkspace
             TouchpadText = touchpadEnabled
                 ? AppStrings.Text("Text_F55AD712")
                 : AppStrings.Text("Text_7E3B0F3C");
-            _blade._canSetBladeTouchpad = true;
-            OnPropertyChanged(nameof(CanSetTouchpad));
+            if (!_blade._canSetBladeTouchpad)
+            {
+                _blade._canSetBladeTouchpad = true;
+                OnPropertyChanged(nameof(CanSetTouchpad));
+            }
             if (changed || firstRead)
             {
                 // Also write on the first read: the lighting take-over can reset
@@ -341,8 +345,11 @@ public sealed partial class BladeWorkspace
         else
         {
             TouchpadText = AppStrings.Text("Text_72C29287");
-            _blade._canSetBladeTouchpad = false;
-            OnPropertyChanged(nameof(CanSetTouchpad));
+            if (_blade._canSetBladeTouchpad)
+            {
+                _blade._canSetBladeTouchpad = false;
+                OnPropertyChanged(nameof(CanSetTouchpad));
+            }
         }
     }
 
@@ -439,6 +446,14 @@ public sealed partial class BladeWorkspace
                 device.Access == DeviceAccessState.Available))
         {
             ApplyTouchpadState();
+            if (!_touchpadIndicatorReasserted && _touchpadStateRead)
+            {
+                // The Fn/lighting take-over runs after the first read; re-send once
+                // it has settled so the EC cannot leave the indicator latched off.
+                _touchpadIndicatorReasserted = true;
+                _ = SyncObservedTouchpadIndicatorAsync(
+                    ActiveDescriptors, _blade._confirmedBladeTouchpadEnabled);
+            }
         }
         if (telemetry.BladeFanMode is BladeFanMode fanMode)
         {

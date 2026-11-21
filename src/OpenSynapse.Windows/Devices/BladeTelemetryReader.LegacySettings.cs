@@ -114,11 +114,38 @@ internal sealed partial class BladeTelemetryReader
                 return false;
             }
 
-            // Synapse reads the applied value back from the echoed
-            // [profile, type, status] payload; an accepted report alone does not
-            // mean the EC actually changed the indicator.
-            return response[6] < 3 ||
-                   response[RazerFeatureReport.ArgumentsOffset + 2] == (enabled ? (byte)0x01 : (byte)0x00);
+            var expected = enabled ? (byte)0x01 : (byte)0x00;
+            if (response[6] >= 3)
+            {
+                // Synapse reads the applied value back from the echoed
+                // [profile, type, status] payload.
+                return response[RazerFeatureReport.ArgumentsOffset + 2] == expected;
+            }
+
+            // Some firmware answers the set with an empty payload. Ask the EC for
+            // the stored status so "synchronized" is not a guess.
+            if (!blade.Owns(CapabilityIds.TouchpadStatusGet))
+            {
+                return true;
+            }
+
+            try
+            {
+                var readback = await _client.QueryBuiltRequestAsync(
+                    blade,
+                    CapabilityIds.TouchpadStatusGet,
+                    BladeSynapsePolicyProtocol.CreateGetTouchpadStatusRequest(),
+                    cancellationToken);
+                return readback.Length == RazerFeatureReport.Length &&
+                       readback[6] >= 3 &&
+                       readback[RazerFeatureReport.ArgumentsOffset + 2] == expected;
+            }
+            catch (Exception readback) when (
+                RazerCapabilityClient.IsExpectedHardwareException(readback) ||
+                readback is OperationCanceledException)
+            {
+                return true;
+            }
         }
         catch (Exception exception) when (
             RazerCapabilityClient.IsExpectedHardwareException(exception) ||

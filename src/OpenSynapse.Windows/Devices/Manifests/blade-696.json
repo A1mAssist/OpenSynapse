@@ -24,6 +24,13 @@
       "commandId": "59",
       "arguments": ""
     },
+    "touchpad-status.get": {
+      "transactionId": "00",
+      "dataSize": "03",
+      "commandClass": "00",
+      "commandId": "D9",
+      "arguments": "000100"
+    },
     "keyboard-brightness.get": {
       "transactionId": "03",
       "dataSize": "03",

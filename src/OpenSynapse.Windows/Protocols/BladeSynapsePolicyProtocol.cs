@@ -32,6 +32,7 @@ public static class BladeSynapsePolicyProtocol
     public const byte AudioMuteCommandClass = 0x18;
     public const byte AudioMuteSetCommandId = 0x04;
     public const byte TouchpadStatusSetCommandId = 0x59;
+    public const byte TouchpadStatusGetCommandId = 0xD9;
     public const byte TouchpadFunctionType = 0x01;
 
     public static byte[] CreateSetFnKeyStateRequest(
@@ -80,6 +81,14 @@ public static class BladeSynapsePolicyProtocol
             0x00,
             TouchpadStatusSetCommandId,
             new byte[] { 0x00, TouchpadFunctionType, enabled ? (byte)0x01 : (byte)0x00 });
+
+    public static byte[] CreateGetTouchpadStatusRequest() =>
+        RazerFeatureReport.CreateRequest(
+            SynapseTransactionId,
+            0x03,
+            0x00,
+            TouchpadStatusGetCommandId,
+            new byte[] { 0x00, TouchpadFunctionType, 0x00 });
 
     public static BladeFnKeyState ParseFnKeySwap(
         ReadOnlySpan<byte> response,
