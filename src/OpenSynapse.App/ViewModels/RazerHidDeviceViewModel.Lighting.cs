@@ -250,15 +250,32 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         }
     }
 
-    public Task ApplyLightingAsync(CancellationToken cancellationToken = default)
+    public async Task ApplyLightingAsync(CancellationToken cancellationToken = default)
     {
         var zone = SelectedLightingZone;
         var effect = SelectedLightingEffect;
         if (IsSoftwareLightingEffect(effect))
         {
-            return ApplySoftwareLightingAsync(effect, cancellationToken);
+            await ApplySoftwareLightingAsync(effect, cancellationToken).ConfigureAwait(true);
+            return;
         }
-        return RunZoneWriteAsync(
+
+        // Discovery can briefly make every zone unwritable. Save the choice first so
+        // that window cannot erase it; the next discovery replays the profile.
+        try
+        {
+            await SaveLightingProfileAsync(cancellationToken).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception exception)
+        {
+            HandleFailure(exception);
+        }
+
+        await RunZoneWriteAsync(
             () => Connection.Capabilities.Contains(RazerHidBackendCapability.LightingEffectWrite) &&
                 Connection.LightingZones.TryGetValue(zone, out var capability) &&
                 capability.LightingEffects.Contains(effect) && !_unsupportedLighting.Contains((zone, effect)),
@@ -277,7 +294,6 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                         null,
                         zone, Brightness: EffectBrightness), cancellationToken);
                 }
-                await SaveLightingProfileAsync(cancellationToken);
             },
             cancellationToken,
             () =>
@@ -286,7 +302,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                 if (SelectedLightingZone == zone && SelectedLightingEffect == effect)
                     _selectedLightingEffect = LightingEffects.FirstOrDefault();
                 OnLightingSelectionChanged();
-            });
+            }).ConfigureAwait(true);
     }
 
     private async Task ApplySoftwareLightingAsync(
