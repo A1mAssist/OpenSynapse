@@ -1618,14 +1618,15 @@
   <data name="RazerHidKnobCurrentLabel.Text" xml:space="preserve"><value>現在のモード</value></data>
   <data name="RazerHidKnobStageColumn.Text" xml:space="preserve"><value>ステージ</value></data>
   <data name="RazerHidKnobModeColumn.Text" xml:space="preserve"><value>モード</value></data>
-  <data name="RazerHidKnobModeAdjustmentKeyboardBrightness" xml:space="preserve"><value>キーボードの明るさ</value></data>
-  <data name="RazerHidKnobModeCycleKnobLightingEffect" xml:space="preserve"><value>ノブ ライティングを切り替え</value></data>
-  <data name="RazerHidKnobModeMicVolumeUpDown" xml:space="preserve"><value>マイク音量</value></data>
+  <data name="RazerHidKnobModeKeyboardLightingBrightness" xml:space="preserve"><value>キーボードの明るさ</value></data>
+  <data name="RazerHidKnobModeVolume" xml:space="preserve"><value>音量</value></data>
+  <data name="RazerHidKnobModeTrackSelector" xml:space="preserve"><value>トラック選択</value></data>
+  <data name="RazerHidKnobModeOledBrightness" xml:space="preserve"><value>OLED の明るさ</value></data>
   <data name="RazerHidKnobModeTrackJogging" xml:space="preserve"><value>トラック ジョギング</value></data>
-  <data name="RazerHidKnobModeWindowZoomInOut" xml:space="preserve"><value>ウィンドウのズーム</value></data>
-  <data name="RazerHidKnobModeWindowScrollUpDown" xml:space="preserve"><value>縦スクロール</value></data>
-  <data name="RazerHidKnobModeWindowScrollLeftRight" xml:space="preserve"><value>横スクロール</value></data>
-  <data name="RazerHidKnobModeSwitchApplication" xml:space="preserve"><value>アプリを切り替え</value></data>
+  <data name="RazerHidKnobModeWindowsZoom" xml:space="preserve"><value>ウィンドウのズーム</value></data>
+  <data name="RazerHidKnobModeVerticalScroll" xml:space="preserve"><value>縦スクロール</value></data>
+  <data name="RazerHidKnobModeHorizontalScroll" xml:space="preserve"><value>横スクロール</value></data>
+  <data name="RazerHidKnobModeSwitchApps" xml:space="preserve"><value>アプリを切り替え</value></data>
   <data name="RazerHidApplyButton.Content" xml:space="preserve"><value>適用</value></data>
   <data name="RazerHidHapticScrollTitle.Text" xml:space="preserve"><value>ハプティック スクロール ステージ</value></data>
   <data name="RazerHidHapticScrollDescription.Text" xml:space="preserve"><value>切り替えに参加するステージを選択してから、有効にするステージを選択します。</value></data>
@@ -3335,6 +3336,9 @@
   <data name="RazerHeadsetMicMonitoringTitle.Text" xml:space="preserve"><value>マイク モニタリング</value></data>
   <data name="RazerHeadsetMicMonitoringToggle.Header" xml:space="preserve"><value>モニタリングを有効にする</value></data>
   <data name="RazerHeadsetMicMuteToggle.Header" xml:space="preserve"><value>マイク ミュート</value></data>
+  <data name="RazerHeadsetMicHpfToggle.Header" xml:space="preserve"><value>ハイパスフィルター</value></data>
+  <data name="RazerHeadsetMicLimiterToggle.Header" xml:space="preserve"><value>リミッター</value></data>
+  <data name="RazerHeadsetMicDspApply.Content" xml:space="preserve"><value>処理を適用</value></data>
   <data name="RazerHeadsetMicProcessingApply.Content" xml:space="preserve"><value>マイク プロセッシングを適用</value></data>
   <data name="RazerHeadsetMicProcessingTitle.Text" xml:space="preserve"><value>マイク プロセッシング</value></data>
   <data name="RazerHeadsetMicTitle.Text" xml:space="preserve"><value>マイク</value></data>

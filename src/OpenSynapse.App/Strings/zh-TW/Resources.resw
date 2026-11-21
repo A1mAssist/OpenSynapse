@@ -2000,14 +2000,15 @@
   <data name="RazerHidKnobCurrentLabel.Text" xml:space="preserve"><value>目前模式</value></data>
   <data name="RazerHidKnobStageColumn.Text" xml:space="preserve"><value>階段</value></data>
   <data name="RazerHidKnobModeColumn.Text" xml:space="preserve"><value>模式</value></data>
-  <data name="RazerHidKnobModeAdjustmentKeyboardBrightness" xml:space="preserve"><value>鍵盤亮度</value></data>
-  <data name="RazerHidKnobModeCycleKnobLightingEffect" xml:space="preserve"><value>切換旋鈕燈效</value></data>
-  <data name="RazerHidKnobModeMicVolumeUpDown" xml:space="preserve"><value>麥克風音量</value></data>
+  <data name="RazerHidKnobModeKeyboardLightingBrightness" xml:space="preserve"><value>鍵盤亮度</value></data>
+  <data name="RazerHidKnobModeVolume" xml:space="preserve"><value>音量</value></data>
+  <data name="RazerHidKnobModeTrackSelector" xml:space="preserve"><value>曲目切換</value></data>
+  <data name="RazerHidKnobModeOledBrightness" xml:space="preserve"><value>OLED 亮度</value></data>
   <data name="RazerHidKnobModeTrackJogging" xml:space="preserve"><value>曲目快進/後退</value></data>
-  <data name="RazerHidKnobModeWindowZoomInOut" xml:space="preserve"><value>視窗縮放</value></data>
-  <data name="RazerHidKnobModeWindowScrollUpDown" xml:space="preserve"><value>上下捲動</value></data>
-  <data name="RazerHidKnobModeWindowScrollLeftRight" xml:space="preserve"><value>左右捲動</value></data>
-  <data name="RazerHidKnobModeSwitchApplication" xml:space="preserve"><value>切換應用程式</value></data>
+  <data name="RazerHidKnobModeWindowsZoom" xml:space="preserve"><value>視窗縮放</value></data>
+  <data name="RazerHidKnobModeVerticalScroll" xml:space="preserve"><value>上下捲動</value></data>
+  <data name="RazerHidKnobModeHorizontalScroll" xml:space="preserve"><value>左右捲動</value></data>
+  <data name="RazerHidKnobModeSwitchApps" xml:space="preserve"><value>切換應用程式</value></data>
   <data name="RazerHidApplyButton.Content" xml:space="preserve"><value>套用</value></data>
   <data name="RazerHidHapticScrollTitle.Text" xml:space="preserve"><value>觸覺滾輪檔位</value></data>
   <data name="RazerHidHapticScrollDescription.Text" xml:space="preserve"><value>勾選參與切換的檔位，再選目前生效的那一檔。</value></data>
@@ -3771,6 +3772,9 @@
   <data name="RazerHeadsetMicMonitoringTitle.Text" xml:space="preserve"><value>麥克風監聽</value></data>
   <data name="RazerHeadsetMicMonitoringToggle.Header" xml:space="preserve"><value>啟用監聽</value></data>
   <data name="RazerHeadsetMicMuteToggle.Header" xml:space="preserve"><value>麥克風靜音</value></data>
+  <data name="RazerHeadsetMicHpfToggle.Header" xml:space="preserve"><value>高通濾波</value></data>
+  <data name="RazerHeadsetMicLimiterToggle.Header" xml:space="preserve"><value>限幅器</value></data>
+  <data name="RazerHeadsetMicDspApply.Content" xml:space="preserve"><value>套用麥克風處理</value></data>
   <data name="RazerHeadsetMicProcessingApply.Content" xml:space="preserve"><value>套用麥克風處理</value></data>
   <data name="RazerHeadsetMicProcessingTitle.Text" xml:space="preserve"><value>麥克風處理</value></data>
   <data name="RazerHeadsetMicTitle.Text" xml:space="preserve"><value>麥克風</value></data>

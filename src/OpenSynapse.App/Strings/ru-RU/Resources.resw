@@ -2315,28 +2315,31 @@
   <data name="RazerHidKnobModeColumn.Text" xml:space="preserve">
     <value>Режим</value>
   </data>
-  <data name="RazerHidKnobModeAdjustmentKeyboardBrightness" xml:space="preserve">
+  <data name="RazerHidKnobModeKeyboardLightingBrightness" xml:space="preserve">
     <value>Яркость клавиатуры</value>
   </data>
-  <data name="RazerHidKnobModeCycleKnobLightingEffect" xml:space="preserve">
-    <value>Подсветка ручки цикла</value>
+  <data name="RazerHidKnobModeVolume" xml:space="preserve">
+    <value>Громкость</value>
   </data>
-  <data name="RazerHidKnobModeMicVolumeUpDown" xml:space="preserve">
-    <value>Громкость микрофона</value>
+  <data name="RazerHidKnobModeTrackSelector" xml:space="preserve">
+    <value>Выбор трека</value>
+  </data>
+  <data name="RazerHidKnobModeOledBrightness" xml:space="preserve">
+    <value>Яркость OLED</value>
   </data>
   <data name="RazerHidKnobModeTrackJogging" xml:space="preserve">
     <value>Трек для бега</value>
   </data>
-  <data name="RazerHidKnobModeWindowZoomInOut" xml:space="preserve">
+  <data name="RazerHidKnobModeWindowsZoom" xml:space="preserve">
     <value>Увеличение окна</value>
   </data>
-  <data name="RazerHidKnobModeWindowScrollUpDown" xml:space="preserve">
+  <data name="RazerHidKnobModeVerticalScroll" xml:space="preserve">
     <value>Вертикальная прокрутка</value>
   </data>
-  <data name="RazerHidKnobModeWindowScrollLeftRight" xml:space="preserve">
+  <data name="RazerHidKnobModeHorizontalScroll" xml:space="preserve">
     <value>Горизонтальная прокрутка</value>
   </data>
-  <data name="RazerHidKnobModeSwitchApplication" xml:space="preserve">
+  <data name="RazerHidKnobModeSwitchApps" xml:space="preserve">
     <value>Переключить приложение</value>
   </data>
   <data name="RazerHidApplyButton.Content" xml:space="preserve">
@@ -6895,6 +6898,15 @@
   </data>
   <data name="RazerHeadsetMicMuteToggle.Header" xml:space="preserve">
     <value>Отключение микрофона</value>
+  </data>
+  <data name="RazerHeadsetMicHpfToggle.Header" xml:space="preserve">
+    <value>Фильтр ВЧ</value>
+  </data>
+  <data name="RazerHeadsetMicLimiterToggle.Header" xml:space="preserve">
+    <value>Лимитер</value>
+  </data>
+  <data name="RazerHeadsetMicDspApply.Content" xml:space="preserve">
+    <value>Применить обработку</value>
   </data>
   <data name="RazerHeadsetMicProcessingApply.Content" xml:space="preserve">
     <value>Применить обработку микрофона</value>
