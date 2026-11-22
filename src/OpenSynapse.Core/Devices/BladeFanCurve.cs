@@ -2,8 +2,11 @@ namespace OpenSynapse.Core.Devices;
 
 public enum BladeFanCurveTemperatureMode
 {
+    /// <summary>The CPU curve's visible speed drives both fans.</summary>
     Cpu,
+    /// <summary>The GPU curve's visible speed drives both fans.</summary>
     Gpu,
+    /// <summary>The higher of the two visible curve speeds drives both fans.</summary>
     Both,
     /// <summary>CPU temperature drives the CPU fan; GPU temperature drives the GPU fan.</summary>
     Independent,
@@ -79,19 +82,19 @@ public sealed class BladeFanCurve
         {
             BladeFanCurveTemperatureMode.Cpu =>
                 cpuTemperatureCelsius is double cpuValue
-                    ? EvaluateCurve(cpuValue, CpuPoints, MinimumCpuTemperatureCelsius)
+                    ? SameSpeed(EvaluateCurve(cpuValue, CpuPoints, MinimumCpuTemperatureCelsius).CpuRpm)
                     : throw MissingTemperature("CPU"),
             BladeFanCurveTemperatureMode.Gpu =>
                 gpuTemperatureCelsius is double gpuValue
-                    ? EvaluateCurve(gpuValue, GpuPoints, MinimumGpuTemperatureCelsius)
+                    ? SameSpeed(EvaluateCurve(gpuValue, GpuPoints, MinimumGpuTemperatureCelsius).GpuRpm)
                     : throw MissingTemperature("GPU"),
             BladeFanCurveTemperatureMode.Both =>
                 cpuTemperatureCelsius is not double cpuBoth ||
                 gpuTemperatureCelsius is not double gpuBoth
                     ? throw MissingTemperature("CPU/GPU")
-                    : SelectHigherCpuOutput(
-                        EvaluateCurve(cpuBoth, CpuPoints, MinimumCpuTemperatureCelsius),
-                        EvaluateCurve(gpuBoth, GpuPoints, MinimumGpuTemperatureCelsius)),
+                    : SameSpeed(Math.Max(
+                        EvaluateCurve(cpuBoth, CpuPoints, MinimumCpuTemperatureCelsius).CpuRpm,
+                        EvaluateCurve(gpuBoth, GpuPoints, MinimumGpuTemperatureCelsius).GpuRpm)),
             BladeFanCurveTemperatureMode.Independent =>
                 cpuTemperatureCelsius is not double cpuIndependent ||
                 gpuTemperatureCelsius is not double gpuIndependent
@@ -103,9 +106,9 @@ public sealed class BladeFanCurve
         };
     }
 
-    private static BladeFanTargets SelectHigherCpuOutput(
-        BladeFanTargets cpu,
-        BladeFanTargets gpu) => cpu.CpuRpm >= gpu.CpuRpm ? cpu : gpu;
+    // The editor owns one visible speed column per curve; the other column is only
+    // meaningful in Independent mode. Shared modes must not leak that stale column.
+    private static BladeFanTargets SameSpeed(int rpm) => new(rpm, rpm);
 
     private BladeFanTargets EvaluateCurve(
         double temperature,
