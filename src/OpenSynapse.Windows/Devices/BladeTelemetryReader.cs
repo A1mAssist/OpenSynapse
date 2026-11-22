@@ -532,6 +532,14 @@ internal sealed partial class BladeTelemetryReader
         CancellationToken cancellationToken = default) =>
         _fan.SetBladeFanTargetsAsync(devices, mode, cpuTargetRpm, gpuTargetRpm, cancellationToken);
 
+    public ValueTask<BladeFanControlSnapshot> SetBladeFanCurveTargetsAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        BladeFanMode mode,
+        int cpuTargetRpm,
+        int gpuTargetRpm,
+        CancellationToken cancellationToken = default) =>
+        _fan.SetBladeFanCurveTargetsAsync(devices, mode, cpuTargetRpm, gpuTargetRpm, cancellationToken);
+
     public ValueTask<BladeCpuBoostMode> SetBladeCpuBoostModeAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         BladeCpuBoostMode mode,

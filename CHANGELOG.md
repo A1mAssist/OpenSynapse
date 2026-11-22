@@ -10,6 +10,17 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 - **Update source**: automatic updates can use the Gitee mirror; Settings offers Automatic, Gitee and GitHub, and Automatic prefers Gitee while falling back when it is unreachable or behind.
 
+### Fixed
+
+- **Service install**: a clean MSI install now creates OpenSynapseService in the same elevation, resolving the installing user from the active console session when the MSI action runs as SYSTEM; registration is optional and no longer fails the install with 1721, and the app retries on first launch when the SID is unavailable.
+- **Blade lighting**: launch and window restore reapply the saved keyboard effect; an unrelated Blade fan or thermal error no longer suppresses the lighting write. Reactive and ripple effects also light the arrow keys correctly because right Ctrl no longer shares the left-arrow LED cell.
+- **Blade fan curve**: the first curve write re-declares manual fan mode, so a Blade that already reports Manual no longer keeps following its old curve or sticks at one RPM.
+- **Touchpad indicator**: the lamp is re-sent after the software-mode takeover and retried until the EC confirms it, covering the autostart case.
+- **02CF and 02A6 extra keys**: the single media key exposes its real Play/Pause row, the Xbox Game Bar and Cycle Apps side keys get their own names, and the 02A6 side keys are complete.
+- **Tartarus Pro**: OBM reads select the keymap the device actually reports.
+- **Mouse Dock Pro**: short profile-id replies from linked devices are accepted, so the onboard profile list loads and writes are no longer rejected.
+- **About**: the brand credit stays untranslated.
+
 ## [1.7.3] - 2026-11-22
 
 ### Added

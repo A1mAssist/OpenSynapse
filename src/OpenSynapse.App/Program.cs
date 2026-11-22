@@ -1,5 +1,6 @@
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Storage;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Input;
@@ -14,6 +15,8 @@ namespace OpenSynapse.App;
 
 public static class Program
 {
+    private static LocalDiagnosticLog? _serviceLog;
+
     [STAThread]
     public static void Main(string[] args)
     {
@@ -22,11 +25,25 @@ public static class Program
             argument => argument.Equals("--install-service", StringComparison.OrdinalIgnoreCase));
         if (installServiceIndex >= 0)
         {
+            var optional = args.Contains("--optional", StringComparer.OrdinalIgnoreCase);
             var userSid = args.Length > installServiceIndex + 1 &&
                 !args[installServiceIndex + 1].StartsWith("--", StringComparison.Ordinal)
                     ? args[installServiceIndex + 1]
                     : null;
-            var ok = OpenSynapseServiceInstaller.EnsureInstalled(Environment.ProcessPath, userSid);
+            bool ok;
+            try
+            {
+                ok = OpenSynapseServiceInstaller.EnsureInstalled(
+                    Environment.ProcessPath,
+                    userSid,
+                    LogService);
+            }
+            catch (Exception exception)
+            {
+                LogService(
+                    $"OpenSynapseService registration failed: {exception.GetType().Name}: {exception.Message}");
+                ok = false;
+            }
             Console.WriteLine(ok
                 ? "OpenSynapseService registered."
                 : !OpenSynapseServiceInstaller.IsMachineInstallPath(Environment.ProcessPath)
@@ -34,6 +51,13 @@ public static class Program
                     : string.IsNullOrWhiteSpace(userSid)
                         ? "OpenSynapseService registration failed: the installing user SID is missing."
                         : "OpenSynapseService registration failed: run the command as administrator.");
+            if (!ok && optional)
+            {
+                Console.WriteLine("Continuing because service registration is optional for this MSI action.");
+                LogService("OpenSynapseService registration failed during MSI install; continuing.");
+                Environment.Exit(0);
+            }
+
             Environment.Exit(ok ? 0 : 1);
         }
 
@@ -219,11 +243,32 @@ public static class Program
     {
         try
         {
-            _ = OpenSynapseServiceInstaller.EnsureInstalled(Environment.ProcessPath);
+            _ = OpenSynapseServiceInstaller.EnsureInstalled(
+                Environment.ProcessPath,
+                log: LogService);
         }
-        catch (Exception)
+        catch (Exception exception)
         {
-            // A missing service falls back to the existing UAC helper.
+            LogService($"OpenSynapseService registration failed: {exception.Message}");
+        }
+    }
+
+    private static void LogService(string message)
+    {
+        try
+        {
+            _serviceLog ??= new LocalDiagnosticLog(IsRunningAsSystem()
+                ? Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                    "OpenSynapse",
+                    "logs",
+                    "service-install.log")
+                : null);
+            _serviceLog.TryWrite("service", message);
+        }
+        catch
+        {
+            // Logging must never turn an optional service registration into a failed MSI.
         }
     }
 

@@ -14,6 +14,15 @@ public interface IRazerMappingTransport
 {
     Task<IReadOnlyList<byte>> GetButtonIdsAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Rows that live in a second firmware table (the 02CF volume dial's
+    /// rotation). Empty when the device or transport has no such inputs.
+    /// </summary>
+    Task<IReadOnlyList<byte>> GetAdditionalButtonIdsAsync(
+        byte mode,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<byte>>([]);
+
     Task<RazerMappingAssignment> GetAssignmentAsync(
         byte buttonId,
         byte mode,
@@ -50,6 +59,11 @@ public sealed class RazerHidMappingTransport(
 {
     public Task<IReadOnlyList<byte>> GetButtonIdsAsync(CancellationToken cancellationToken = default) =>
         service.GetMappingButtonIdsAsync(connection, cancellationToken);
+
+    public Task<IReadOnlyList<byte>> GetAdditionalButtonIdsAsync(
+        byte mode,
+        CancellationToken cancellationToken = default) =>
+        service.GetDialButtonIdsAsync(connection, mode, cancellationToken);
 
     public async Task<RazerMappingAssignment> GetAssignmentAsync(
         byte buttonId,

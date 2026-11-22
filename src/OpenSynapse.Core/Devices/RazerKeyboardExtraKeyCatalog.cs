@@ -16,7 +16,13 @@ public static class RazerKeyboardExtraKeyCatalog
     private const byte Next = 202;
     private const byte PlayPause = 205;
     private const byte Side1 = 207;
+    private const byte Side2 = 208;
     private const byte Side3 = 209;
+    // Virtual ids for the two dial-rotation inputs. 02CF stores them in the
+    // mouse/button table as 0x09/0x0A, which collide with firmware key ids
+    // 8 and 9, so the mapping page needs distinct ids.
+    private const byte DialLeft = 0xE9;
+    private const byte DialRight = 0xEA;
 
     private static readonly byte[] Media = [MuteOrDialClick, Previous, Next, PlayPause];
     private static readonly byte[] MediaWithoutMute = [Previous, Next, PlayPause];
@@ -54,14 +60,18 @@ public static class RazerKeyboardExtraKeyCatalog
             [0x02A2] = PlayPauseOnly,
             [0x02A3] = MediaWithVolumeOnly,
             [0x02A5] = [MuteOrDialClick],
-            [0x02A6] = [MuteOrDialClick, 208, Side3],
+            [0x02A6] = [MuteOrDialClick, PlayPause, Side2, Side3],
             [0x02A7] = [MuteOrDialClick],
-            // 02CF rejects 0x9E for 0xD0/0xD1 with status 0x03; they are
-            // reserved ids in its table, not readable side keys.
-            [0x02CF] = [MuteOrDialClick, Previous, Next, PlayPause],
+            // One physical media key drives 0xC9/0xCA/0xCD as single/double/triple
+            // tap; only its primary id is a mapping row. 0xD0/0xD1 are reserved
+            // ids in this firmware and reject 0x9E with status 0x03.
+            [0x02CF] = [MuteOrDialClick, PlayPause],
             [0x02D5] = [MuteOrDialClick],
             [0x02D7] = [MuteOrDialClick],
         }.ToFrozenDictionary();
+
+    /// <summary>The two virtual rows for a volume dial's rotation directions.</summary>
+    public static IReadOnlyList<byte> DialButtonIds { get; } = [DialLeft, DialRight];
 
     public static IReadOnlyList<byte> ExtraButtonIds(ushort productId) =>
         ExtraKeys.TryGetValue(productId, out var ids) ? ids : [];
@@ -72,6 +82,11 @@ public static class RazerKeyboardExtraKeyCatalog
     /// </summary>
     public static string? DescribeResourceKey(ushort productId, byte id)
     {
+        if (TryGetDialProtocolId(productId, id, out _))
+        {
+            return id == DialLeft ? "RazerMappingDialLeft" : "RazerMappingDialRight";
+        }
+
         if (!ExtraKeys.TryGetValue(productId, out var ids) || Array.IndexOf(ids, id) < 0)
         {
             return null;
@@ -87,9 +102,25 @@ public static class RazerKeyboardExtraKeyCatalog
             Next => "RazerMappingMediaNext",
             PlayPause => "RazerMappingMediaPlay",
             Side1 => "RazerMappingSideKey1",
-            208 => "RazerMappingSideKey2",
+            Side2 => "RazerMappingSideKey2",
             Side3 => "RazerMappingSideKey3",
             _ => null,
         };
+    }
+
+    /// <summary>
+    /// Maps a virtual dial-rotation row id to the button-table id the firmware
+    /// uses. Only products whose bundle wires the dial to ScrollUp/ScrollDown
+    /// (02CF) take this path.
+    /// </summary>
+    public static bool TryGetDialProtocolId(ushort productId, byte id, out byte protocolId)
+    {
+        protocolId = id switch
+        {
+            DialLeft => 0x09,
+            DialRight => 0x0A,
+            _ => 0,
+        };
+        return productId == 0x02CF && protocolId != 0;
     }
 }

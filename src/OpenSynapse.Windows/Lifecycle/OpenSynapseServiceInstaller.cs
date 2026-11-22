@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using System.ServiceProcess;
@@ -75,26 +76,28 @@ public static class OpenSynapseServiceInstaller
         return OpenSynapseServiceConfiguration.IsValidSid(sid) ? sid : null;
     }
 
-    public static bool EnsureInstalled(string? executablePath, string? userSid = null)
+    public static bool EnsureInstalled(string? executablePath, string? userSid = null,
+        Action<string>? log = null)
     {
         try
         {
             using var identity = WindowsIdentity.GetCurrent();
+            userSid = ResolveInstallingUserSid(
+                userSid,
+                identity.IsSystem,
+                identity.User?.Value,
+                () => TryReadServiceUserSid(OpenSynapseServiceConfiguration.Read()?.BinaryPath),
+                TryGetActiveConsoleUserSid);
             if (string.IsNullOrWhiteSpace(userSid))
             {
-                // A deferred MSI action runs as SYSTEM. Reuse the installed service's
-                // authorized user instead of rewriting it to SYSTEM during a silent repair.
-                var installed = OpenSynapseServiceConfiguration.Read();
-                userSid = TryReadServiceUserSid(installed?.BinaryPath);
-                if (string.IsNullOrWhiteSpace(userSid) && !identity.IsSystem)
-                {
-                    userSid = identity.User?.Value;
-                }
+                log?.Invoke("No usable installing user SID; service registration skipped.");
+                return false;
+            }
 
-                if (string.IsNullOrWhiteSpace(userSid))
-                {
-                    return false;
-                }
+            if (!IsMachineInstallPath(executablePath))
+            {
+                log?.Invoke("The executable is not under Program Files; service registration skipped.");
+                return false;
             }
 
             var mayChange = new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator) ||
@@ -105,17 +108,105 @@ public static class OpenSynapseServiceInstaller
                 _ = TryProtectInstallRoot(executablePath);
             }
 
-            return EnsureInstalled(executablePath, userSid, mayChange,
+            var installed = EnsureInstalled(executablePath, userSid, mayChange,
                 OpenSynapseServiceConfiguration.IsProtectedExecutable,
                 OpenSynapseServiceConfiguration.Read, RunSc, Stop);
+            if (!installed)
+            {
+                log?.Invoke(
+                    "Service create/config/DACL verification failed; the app will retry on first launch.");
+            }
+            return installed;
         }
         catch (Exception exception) when (
             exception is Win32Exception or InvalidOperationException or IOException or UnauthorizedAccessException or
                 System.Security.SecurityException or ArgumentException)
         {
+            log?.Invoke($"Service registration failed: {exception.GetType().Name}: {exception.Message}");
             return false;
         }
     }
+
+    /// <summary>
+    /// A deferred MSI action runs as SYSTEM. Prefer the SID the MSI passed, then the
+    /// installed service, then the current user, and finally the active console user.
+    /// </summary>
+    internal static string? ResolveInstallingUserSid(
+        string? explicitSid,
+        bool isSystem,
+        string? processUserSid,
+        Func<string?> readInstalledSid,
+        Func<string?> readConsoleUserSid)
+    {
+        if (IsUsableSid(explicitSid))
+        {
+            return explicitSid;
+        }
+
+        var installedSid = readInstalledSid();
+        if (IsUsableSid(installedSid))
+        {
+            return installedSid;
+        }
+
+        if (!isSystem && IsUsableSid(processUserSid))
+        {
+            return processUserSid;
+        }
+
+        if (isSystem)
+        {
+            var consoleSid = readConsoleUserSid();
+            if (IsUsableSid(consoleSid))
+            {
+                return consoleSid;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool IsUsableSid(string? sid) =>
+        !string.IsNullOrWhiteSpace(sid) && OpenSynapseServiceConfiguration.IsValidSid(sid);
+
+    private static string? TryGetActiveConsoleUserSid()
+    {
+        var sessionId = WTSGetActiveConsoleSessionId();
+        if (sessionId == uint.MaxValue)
+        {
+            return null;
+        }
+
+        if (!WTSQueryUserToken(sessionId, out var token))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var identity = new WindowsIdentity(token);
+            var sid = identity.User?.Value;
+            return IsUsableSid(sid) ? sid : null;
+        }
+        catch (Exception exception) when (
+            exception is ArgumentException or UnauthorizedAccessException or System.Security.SecurityException)
+        {
+            return null;
+        }
+        finally
+        {
+            _ = CloseHandle(token);
+        }
+    }
+
+    [DllImport("kernel32.dll")]
+    private static extern uint WTSGetActiveConsoleSessionId();
+
+    [DllImport("wtsapi32.dll", SetLastError = true)]
+    private static extern bool WTSQueryUserToken(uint sessionId, out IntPtr token);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool CloseHandle(IntPtr handle);
 
     internal static bool EnsureInstalled(string? executablePath, string? userSid, bool mayChange,
         Func<string, bool> isProtected, Func<OpenSynapseServiceConfiguration?> read,

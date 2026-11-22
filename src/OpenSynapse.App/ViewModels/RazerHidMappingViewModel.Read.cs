@@ -187,6 +187,15 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 var mouseIds = visual.Mouse?.ButtonNames?.Keys.Order().ToArray();
                 ids = _deviceKind == RazerMappingDeviceKind.Keyboard ? keyboardIds ?? mouseIds ?? [] : mouseIds ?? keyboardIds ?? [];
             }
+
+            var additional = await _transport.GetAdditionalButtonIdsAsync(
+                    mode, cancellationToken)
+                .ConfigureAwait(true);
+            if (additional.Count > 0)
+            {
+                ids = ids.Concat(additional).Distinct().Order().ToArray();
+            }
+
             _log?.Invoke(ids.Length == 0
                 ? $"mapping pid=0x{_productId:X4}: the device returned no button list"
                 : $"mapping pid=0x{_productId:X4} buttons: {string.Join(",", ids.Select(id => id.ToString("X2", CultureInfo.InvariantCulture)))}");
@@ -196,7 +205,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             foreach (var id in ids.Where(id => id != 0))
             {
                 var softwareTrigger = _softwareTriggerResolver?.Invoke(id);
-                if (softwareTrigger is null)
+                if (softwareTrigger is null &&
+                    !RazerKeyboardExtraKeyCatalog.TryGetDialProtocolId(_productId, id, out _))
                 {
                     _log?.Invoke($"mapping pid=0x{_productId:X4} button 0x{id:X2} has no software trigger");
                 }

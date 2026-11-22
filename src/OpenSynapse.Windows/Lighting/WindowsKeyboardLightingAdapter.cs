@@ -246,7 +246,7 @@ internal sealed class WindowsKeyboardLightingAdapter : ILightingInputAdapter
             [(0x2F, false)] = (4, 5), [(0x30, false)] = (4, 6), [(0x31, false)] = (4, 7), [(0x32, false)] = (4, 8),
             [(0x33, false)] = (4, 9), [(0x34, false)] = (4, 10), [(0x35, false)] = (4, 11), [(0x36, false)] = (4, 14),
             [(0x1D, false)] = (5, 0), [(0x5B, true)] = (5, 2), [(0x38, false)] = (5, 3), [(0x39, false)] = (5, 6),
-            [(0x38, true)] = (5, 9), [(0x5D, true)] = (5, 11), [(0x1D, true)] = (5, 12),
+            [(0x38, true)] = (5, 9), [(0x1D, true)] = (5, 11),
             [(0x5E, true)] = (0, 15),
             // Direction keys use the logical 7 x 16 canvas, not the Chroma 6 x 22 source columns.
             [(0x4B, true)] = (5, 12), [(0x48, true)] = (5, 13), [(0x4D, true)] = (5, 14), [(0x50, true)] = (6, 13),

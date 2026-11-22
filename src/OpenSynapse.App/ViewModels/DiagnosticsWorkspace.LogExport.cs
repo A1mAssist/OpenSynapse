@@ -24,6 +24,18 @@ public sealed partial class DiagnosticsWorkspace
         {
             AddArchiveFile(archive, crashReport, Path.GetFileName(crashReport));
         }
+        var serviceLogDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+            "OpenSynapse",
+            "logs");
+        AddArchiveFile(
+            archive,
+            Path.Combine(serviceLogDirectory, "service-install.log"),
+            "service-install.log");
+        AddArchiveFile(
+            archive,
+            Path.Combine(serviceLogDirectory, "service-install.log.previous"),
+            "service-install.log.previous");
         var thxLogDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Razer",

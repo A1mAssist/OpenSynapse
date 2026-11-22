@@ -4629,6 +4629,10 @@
   <data name="RazerMappingMediaPlay.Text" xml:space="preserve"><value>播放/暂停</value></data>
   <data name="RazerMappingMediaNext.Text" xml:space="preserve"><value>下一曲</value></data>
   <data name="RazerMappingDialClick.Text" xml:space="preserve"><value>旋钮按下</value></data>
+  <data name="RazerMappingDialLeft.Text" xml:space="preserve"><value>旋钮左转</value></data>
+  <data name="RazerMappingDialRight.Text" xml:space="preserve"><value>旋钮右转</value></data>
+  <data name="RazerMappingXboxGameBar.Text" xml:space="preserve"><value>Xbox Game Bar</value></data>
+  <data name="RazerMappingCycleApps.Text" xml:space="preserve"><value>切换应用</value></data>
   <data name="RazerMappingSideKey1.Text" xml:space="preserve"><value>侧键 1</value></data>
   <data name="RazerMappingSideKey2.Text" xml:space="preserve"><value>侧键 2</value></data>
   <data name="RazerMappingSideKey3.Text" xml:space="preserve"><value>侧键 3</value></data>

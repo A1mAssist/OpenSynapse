@@ -166,7 +166,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         }
         catch (Exception exception)
         {
-            HandleFailure(exception, capability);
+            HandleOptionalFailure(exception, capability);
         }
     }
 
@@ -177,7 +177,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             await read();
         }
         catch (Exception exception) when (
-            (exception is NotSupportedException || exception is InvalidOperationException) &&
+            (exception is NotSupportedException || exception is InvalidOperationException ||
+             exception is ArgumentException) &&
             exception is not RazerDeviceTimeoutException)
         {
             unsupported.Add(zone);
@@ -187,6 +188,9 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
 
     private void HandleFailure(Exception exception, RazerHidBackendCapability? capability = null)
     {
+        _log?.Invoke(
+            $"device failure ({capability?.ToString() ?? "device"}): " +
+            $"{exception.GetType().Name}: {exception.Message}");
         _operationSucceeded = false;
         _operationStatusOverride = null;
         OnPropertyChanged(nameof(OperationStatusText));
@@ -243,18 +247,23 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
     /// </summary>
     private void HandleOptionalFailure(Exception exception, RazerHidBackendCapability capability)
     {
+        _log?.Invoke(
+            $"optional {capability} failed: {exception.GetType().Name}: {exception.Message}");
         if (exception is RazerDeviceTimeoutException or RazerReportMismatchException)
         {
-            HandleFailure(exception, capability);
+            // Transient; keep the capability enabled so the next poll retries it.
             return;
         }
 
         _operationSucceeded = false;
         _operationStatusOverride = null;
         OnPropertyChanged(nameof(OperationStatusText));
-        _unsupported.Add(capability);
-        ErrorText = LocalizeProtocolError(exception, capability);
-        OnCapabilityChanged();
+        if (exception is NotSupportedException or InvalidDataException or InvalidOperationException)
+        {
+            // The card's protocol is unavailable; hide only that card, not the device.
+            _unsupported.Add(capability);
+            OnCapabilityChanged();
+        }
     }
 
     private static string LocalizeProtocolError(

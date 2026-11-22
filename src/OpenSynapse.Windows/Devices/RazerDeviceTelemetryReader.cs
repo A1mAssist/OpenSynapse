@@ -250,6 +250,15 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
         _bladeReader.SetBladeFanTargetsAsync(
             devices, mode, cpuTargetRpm, gpuTargetRpm, cancellationToken);
 
+    public ValueTask<BladeFanControlSnapshot> SetBladeFanCurveTargetsAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        BladeFanMode mode,
+        int cpuTargetRpm,
+        int gpuTargetRpm,
+        CancellationToken cancellationToken = default) =>
+        _bladeReader.SetBladeFanCurveTargetsAsync(
+            devices, mode, cpuTargetRpm, gpuTargetRpm, cancellationToken);
+
     public ValueTask<BladeCpuBoostMode> SetBladeCpuBoostModeAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         BladeCpuBoostMode mode,

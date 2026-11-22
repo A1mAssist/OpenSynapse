@@ -124,7 +124,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         }
         catch (Exception exception)
         {
-            HandleFailure(exception, RazerHidBackendCapability.DpiStagesRead);
+            HandleOptionalFailure(exception, RazerHidBackendCapability.DpiStagesRead);
         }
         finally
         {

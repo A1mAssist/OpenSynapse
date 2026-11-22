@@ -67,6 +67,7 @@ internal sealed partial class BladeFanTelemetryReader
             cpuTargetRpm ?? original.CpuTargetRpm,
             gpuTargetRpm ?? original.GpuTargetRpm,
             writeTargets: mode == BladeFanMode.Manual,
+            forceModeWrite: false,
             original,
             cancellationToken);
         return new BladeFanControlState(actual.Thermal.FanMode, actual.CpuTargetRpm);
@@ -88,45 +89,9 @@ internal sealed partial class BladeFanTelemetryReader
         BladeFanMode mode,
         int cpuTargetRpm,
         int gpuTargetRpm,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(devices);
-        if (!Enum.IsDefined(mode))
-        {
-            throw new ArgumentOutOfRangeException(nameof(mode));
-        }
-        var blade = _resolver.FindReadyBlade(devices)
-            ?? throw new InvalidOperationException("The Blade fan control channel is unavailable.");
-        if (!blade.SupportsFanCurve)
-        {
-            throw new InvalidOperationException("Fan-curve control is not admitted for this Blade model.");
-        }
-        if (mode == BladeFanMode.Manual)
-        {
-            BladeFanProtocol.ValidateCurveTargetRpm(cpuTargetRpm, blade.MaximumWritableFanTargetRpm);
-            BladeFanProtocol.ValidateCurveTargetRpm(gpuTargetRpm, blade.MaximumWritableFanTargetRpm);
-        }
-        var original = await ReadFanTransactionStateAsync(blade, cancellationToken);
-        if (mode == BladeFanMode.Manual)
-        {
-            // The EC stops answering the target report below the model floor. Clamp to
-            // the curve range so a point below it cannot silence the target readback.
-            var range = await ReadFanRangeAsync(
-                    blade, original.Thermal.PerformanceMode, cancellationToken)
-                ?? blade.GetBladeFanCurveTargetRange(original.Thermal.PerformanceMode);
-            cpuTargetRpm = Math.Clamp(cpuTargetRpm, range.MinimumRpm, range.MaximumRpm);
-            gpuTargetRpm = Math.Clamp(gpuTargetRpm, range.MinimumRpm, range.MaximumRpm);
-        }
-        var actual = await SetFanTargetsCoreAsync(
-            blade,
-            mode,
-            cpuTargetRpm,
-            gpuTargetRpm,
-            writeTargets: mode == BladeFanMode.Manual,
-            original,
-            cancellationToken);
-        return actual.ToPublic();
-    }
+        CancellationToken cancellationToken = default) =>
+        await SetBladeFanTargetsCoreAsync(
+            devices, mode, cpuTargetRpm, gpuTargetRpm, forceModeWrite: false, cancellationToken);
 
     private async Task<BladeFanTransactionState> SetFanTargetsCoreAsync(
         ResolvedRazerDevice blade,
@@ -134,6 +99,7 @@ internal sealed partial class BladeFanTelemetryReader
         int cpuTargetRpm,
         int gpuTargetRpm,
         bool writeTargets,
+        bool forceModeWrite,
         BladeFanTransactionState original,
         CancellationToken cancellationToken)
     {
@@ -148,7 +114,8 @@ internal sealed partial class BladeFanTelemetryReader
                 ? (byte)BladePerformanceMode.Custom
                 : original.Thermal.PerformanceModeByte;
             var modeChanged = original.Thermal.FanMode != mode ||
-                original.Thermal.PerformanceModeByte != performanceModeByte;
+                original.Thermal.PerformanceModeByte != performanceModeByte ||
+                forceModeWrite;
             // A thermal-zone write makes the EC re-apply the mode's own CPU/GPU
             // levels. Synapse re-sends the Custom levels right after the fan mode;
             // do the same so a curve or fixed speed cannot drop the power setting.

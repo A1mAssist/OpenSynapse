@@ -181,7 +181,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         }
         catch (Exception exception)
         {
-            HandleFailure(exception, RazerHidBackendCapability.KeyswitchOptimizationRead);
+            HandleOptionalFailure(exception, RazerHidBackendCapability.KeyswitchOptimizationRead);
         }
         finally
         {

@@ -481,10 +481,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
                 viperAvailable ? viper : null, powerState, cancellationToken);
             var lightingError = _liteMode
                 ? null
-                : profileApply?.Errors.Any(error =>
-                        error.StartsWith("Blade", StringComparison.OrdinalIgnoreCase)) == true
-                    ? null
-                    : await _lighting.ApplyLoadedProfileAsync(blade, powerState, cancellationToken);
+                : await _lighting.ApplyLoadedProfileAsync(blade, powerState, cancellationToken);
             if (profileApply is { AppliedCount: > 0 } || fanApply.Changed)
             {
                 telemetry = await _deviceTelemetryReader.ReadAsync(PeripheralDescriptors, cancellationToken);

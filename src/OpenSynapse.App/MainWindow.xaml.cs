@@ -308,6 +308,8 @@ public sealed partial class MainWindow : Window
             _settingsPage?.UpdateChromaRestStatusTimer(sender.IsVisible);
             if (sender.IsVisible)
             {
+                // Re-opening the window is the user's cue that the saved lighting should be live.
+                _viewModel.Lighting.ShadowFingerprint = string.Empty;
                 _viewModel.Refresh.RequestDeviceRefresh();
                 RequestStudioDeviceRefresh();
             }

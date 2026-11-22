@@ -700,21 +700,16 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         }
     }
     /// <summary>
-    /// The product bundle declares the axis a wave travels along, so the two options have to
-    /// name that axis; the same wire ids mean a different direction per device family.
+    /// The same wire ids mean a different direction per device family, so the protocol still
+    /// follows each bundle's wave axis. The UI uses one forward/reverse wording for every
+    /// device that can express both; only an up/down-only wave keeps its own labels.
     /// </summary>
     public IReadOnlyList<string> LightingDirectionOptions =>
         Connection.Definition.WaveAxis switch
         {
-            RazerWaveDirectionAxis.LeftRight =>
-                [AppStrings.Text("CoolingPadLightingDirectionRight"),
-                 AppStrings.Text("CoolingPadLightingDirectionLeft")],
             RazerWaveDirectionAxis.UpDown =>
                 [AppStrings.Text("CoolingPadLightingDirectionUp"),
                  AppStrings.Text("CoolingPadLightingDirectionDown")],
-            RazerWaveDirectionAxis.Clockwise =>
-                [AppStrings.Text("CoolingPadLightingDirectionClockwise"),
-                 AppStrings.Text("CoolingPadLightingDirectionCounterClockwise")],
             _ => [AppStrings.Text("RazerHidLightingDirectionForward"),
                   AppStrings.Text("RazerHidLightingDirectionReverse")],
         };

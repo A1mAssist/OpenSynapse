@@ -94,6 +94,17 @@ public sealed partial class RazerHidDeviceService
                 connection, buttonId, mode, cancellationToken).ConfigureAwait(false);
         }
 
+        if (RazerKeyboardExtraKeyCatalog.TryGetDialProtocolId(
+                connection.Definition.ProductId, buttonId, out var dialButtonId))
+        {
+            var dialProfileId = await ResolveMappingProfileIdAsync(
+                connection, cancellationToken).ConfigureAwait(false);
+            return RazerHidMappingProtocol.ParseAssignment(
+                await ExecuteAsync(connection,
+                    RazerHidMappingProtocol.GetAssignment(dialProfileId, dialButtonId, mode),
+                    cancellationToken).ConfigureAwait(false));
+        }
+
         var profileId = await ResolveMappingProfileIdAsync(connection, cancellationToken).ConfigureAwait(false);
         if (UsesPerInputAssignmentTables(connection))
         {
@@ -286,6 +297,24 @@ public sealed partial class RazerHidDeviceService
         await WithMappingModeAsync(connection, async () =>
         {
             var profileId = await ResolveMappingProfileIdAsync(connection, cancellationToken).ConfigureAwait(false);
+            if (RazerKeyboardExtraKeyCatalog.TryGetDialProtocolId(
+                    connection.Definition.ProductId, buttonId, out var dialButtonId))
+            {
+                await ExecuteWithoutResultAsync(connection,
+                    RazerHidMappingProtocol.SetAssignment(
+                        profileId, dialButtonId, mode, functionId, data.ToArray()),
+                    cancellationToken).ConfigureAwait(false);
+                var dialApplied = await GetButtonAssignmentCoreAsync(
+                    connection, buttonId, mode, cancellationToken).ConfigureAwait(false);
+                if (dialApplied.FunctionId != functionId || !dialApplied.Data.SequenceEqual(data))
+                {
+                    throw new InvalidOperationException(
+                        "The device kept a different dial assignment.");
+                }
+
+                return;
+            }
+
             RazerHidRequest request;
             if (UsesPerInputAssignmentTables(connection))
             {
@@ -425,6 +454,55 @@ public sealed partial class RazerHidDeviceService
         WithMappingModeAsync(connection,
             () => GetMappingButtonIdsCoreAsync(connection, cancellationToken),
             cancellationToken);
+
+    /// <summary>
+    /// 02CF keeps the volume dial's rotation in the mouse/button table while its
+    /// keys live in the firmware key table. Probe both rotation ids once; without
+    /// this the page either hides the dial or invents two rows the device rejects.
+    /// </summary>
+    public Task<IReadOnlyList<byte>> GetDialButtonIdsAsync(
+        RazerHidDeviceConnection connection,
+        byte mode,
+        CancellationToken cancellationToken = default) =>
+        WithMappingModeAsync(connection,
+            () => GetDialButtonIdsCoreAsync(connection, mode, cancellationToken),
+            cancellationToken);
+
+    private async Task<IReadOnlyList<byte>> GetDialButtonIdsCoreAsync(
+        RazerHidDeviceConnection connection,
+        byte mode,
+        CancellationToken cancellationToken)
+    {
+        if (connection.Definition.ProductId != 0x02CF)
+        {
+            return [];
+        }
+
+        var profileId = await ResolveMappingProfileIdAsync(connection, cancellationToken)
+            .ConfigureAwait(false);
+        foreach (var id in RazerKeyboardExtraKeyCatalog.DialButtonIds)
+        {
+            _ = RazerKeyboardExtraKeyCatalog.TryGetDialProtocolId(
+                connection.Definition.ProductId, id, out var protocolId);
+            try
+            {
+                _ = RazerHidMappingProtocol.ParseAssignment(
+                    await ExecuteAsync(connection,
+                        RazerHidMappingProtocol.GetAssignment(profileId, protocolId, mode),
+                        cancellationToken).ConfigureAwait(false));
+            }
+            catch (Exception exception) when (
+                exception is NotSupportedException or InvalidDataException or
+                    RazerCommandRejectedException or RazerDeviceTimeoutException)
+            {
+                WriteDiagnostic(connection.Definition.ProductId,
+                    $"mapping dial rotation 0x{id:X2} unavailable: {exception.Message}");
+                return [];
+            }
+        }
+
+        return RazerKeyboardExtraKeyCatalog.DialButtonIds;
+    }
 
     private async Task<IReadOnlyList<byte>> GetMappingButtonIdsCoreAsync(
         RazerHidDeviceConnection connection,

@@ -10,6 +10,7 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
     private const int MaximumConsecutiveMissingSamples = 3;
     private readonly Func<IReadOnlyList<DeviceDescriptor>, CancellationToken, ValueTask<BladeFanControlSnapshot>> _read;
     private readonly Func<IReadOnlyList<DeviceDescriptor>, BladeFanMode, int, int, CancellationToken, ValueTask<BladeFanControlSnapshot>> _set;
+    private readonly Func<IReadOnlyList<DeviceDescriptor>, BladeFanMode, int, int, CancellationToken, ValueTask<BladeFanControlSnapshot>> _setPrimed;
     private readonly Func<IReadOnlyList<DeviceDescriptor>, BladeFanMode, int?, int?, CancellationToken, ValueTask> _setFixed;
     private readonly Func<bool, bool, CancellationToken, ValueTask<(double? CpuTemperatureCelsius, double? GpuTemperatureCelsius)>> _sample;
     private readonly TimeSpan _interval;
@@ -31,12 +32,16 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
         IPerformanceMonitor monitor)
         : this(
             RequireReader(reader).ReadBladeFanControlStateAsync,
-            RequireReader(reader).SetBladeFanTargetsAsync,
+            (devices, mode, cpu, gpu, cancellationToken) =>
+                RequireReader(reader).SetBladeFanTargetsAsync(devices, mode, cpu, gpu, cancellationToken),
             async (devices, mode, cpu, gpu, cancellationToken) =>
                 await RequireReader(reader).SetBladeFanAsync(
                     devices, mode, cpu, gpu, cancellationToken),
             RequireMonitor(monitor).SampleTemperaturesAsync,
-            DefaultInterval)
+            DefaultInterval,
+            setPrimed: (devices, mode, cpu, gpu, cancellationToken) =>
+                RequireReader(reader).SetBladeFanCurveTargetsAsync(
+                    devices, mode, cpu, gpu, cancellationToken))
     {
     }
 
@@ -46,10 +51,12 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
         Func<IReadOnlyList<DeviceDescriptor>, BladeFanMode, int?, int?, CancellationToken, ValueTask> setFixed,
         Func<bool, bool, CancellationToken, ValueTask<(double? CpuTemperatureCelsius, double? GpuTemperatureCelsius)>> sample,
         TimeSpan interval,
-        TimeSpan? fixedKeepAliveInterval = null)
+        TimeSpan? fixedKeepAliveInterval = null,
+        Func<IReadOnlyList<DeviceDescriptor>, BladeFanMode, int, int, CancellationToken, ValueTask<BladeFanControlSnapshot>>? setPrimed = null)
     {
         _read = read ?? throw new ArgumentNullException(nameof(read));
         _set = set ?? throw new ArgumentNullException(nameof(set));
+        _setPrimed = setPrimed ?? set;
         _setFixed = setFixed ?? throw new ArgumentNullException(nameof(setFixed));
         _sample = sample ?? throw new ArgumentNullException(nameof(sample));
         if (interval <= TimeSpan.Zero)
@@ -195,7 +202,7 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
 
             if (_lastTargets is { } targets)
             {
-                await _set(
+                await _setPrimed(
                     _devices,
                     BladeFanMode.Manual,
                     targets.CpuRpm,
@@ -288,6 +295,7 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
         var takeoverAttempted = false;
         var missingSamples = 0;
         var lastWriteAt = DateTimeOffset.MinValue;
+        var firstWrite = true;
         try
         {
             using var timer = new PeriodicTimer(_interval);
@@ -330,7 +338,9 @@ public sealed class BladeFanCurveRuntime : IAsyncDisposable
                     {
                         _lastTargets = targets;
                         lastWriteAt = now;
-                        await _set(
+                        var write = firstWrite ? _setPrimed : _set;
+                        firstWrite = false;
+                        await write(
                             devices,
                             BladeFanMode.Manual,
                             targets.CpuRpm,

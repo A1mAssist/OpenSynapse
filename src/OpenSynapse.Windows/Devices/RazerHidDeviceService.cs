@@ -130,7 +130,7 @@ public sealed partial class RazerHidDeviceService
                 assign(await read().ConfigureAwait(false));
             }
             catch (Exception exception) when (exception is Win32Exception or IOException or COMException or
-                InvalidOperationException or NotSupportedException or InvalidDataException)
+                InvalidOperationException or NotSupportedException or InvalidDataException or ArgumentException)
             {
                 if (IsWirelessLinkDownFailure(exception))
                 {
@@ -193,7 +193,7 @@ public sealed partial class RazerHidDeviceService
                     throw;
                 }
                 catch (Exception exception) when (exception is Win32Exception or IOException or COMException or
-                    InvalidOperationException or NotSupportedException or InvalidDataException)
+                    InvalidOperationException or NotSupportedException or InvalidDataException or ArgumentException)
                 {
                     WriteDiagnostic(connection.Definition.ProductId,
                         $"optional serial read failed: {exception.GetType().Name}: {exception.Message}");

@@ -241,6 +241,10 @@ public partial class App
                 await audioRuntime.StartAsync(
                     Volatile.Read(ref _displayAvailable) != 0).ConfigureAwait(false);
 
+                // Entering software mode resets the Blade function lighting, so the
+                // touchpad lamp has to be written again after the takeover completes.
+                _audioMuteViewModel?.Blade.ReassertTouchpadIndicator();
+
                 fnRuntime = null;
                 _audioMuteRuntime = audioRuntime;
                 audioRuntime = null;

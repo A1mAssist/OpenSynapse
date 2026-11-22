@@ -4188,6 +4188,10 @@
   <data name="RazerMappingMediaPlay.Text" xml:space="preserve"><value>Play/Pause</value></data>
   <data name="RazerMappingMediaNext.Text" xml:space="preserve"><value>Next Track</value></data>
   <data name="RazerMappingDialClick.Text" xml:space="preserve"><value>Dial Click</value></data>
+  <data name="RazerMappingDialLeft.Text" xml:space="preserve"><value>Dial Left</value></data>
+  <data name="RazerMappingDialRight.Text" xml:space="preserve"><value>Dial Right</value></data>
+  <data name="RazerMappingXboxGameBar.Text" xml:space="preserve"><value>Xbox Game Bar</value></data>
+  <data name="RazerMappingCycleApps.Text" xml:space="preserve"><value>Cycle Apps</value></data>
   <data name="RazerMappingSideKey1.Text" xml:space="preserve"><value>Side Key 1</value></data>
   <data name="RazerMappingSideKey2.Text" xml:space="preserve"><value>Side Key 2</value></data>
   <data name="RazerMappingSideKey3.Text" xml:space="preserve"><value>Side Key 3</value></data>

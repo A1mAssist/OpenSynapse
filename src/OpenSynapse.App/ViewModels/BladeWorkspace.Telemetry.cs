@@ -21,6 +21,7 @@ public sealed partial class BladeWorkspace
     private bool _startupStateSyncStarted;
     private bool _gameModeReadFromDevice;
     private bool _touchpadIndicatorReasserted;
+    private bool _touchpadIndicatorConfirmed;
     private bool _touchpadStateRead;
     private long _gameModeUserWriteAt;
 
@@ -310,78 +311,6 @@ public sealed partial class BladeWorkspace
             GamingModeChangedByUser?.Invoke(gameMode.GameMode != 0);
         }
     }
-
-    private void ApplyTouchpadState()
-    {
-        if (_touchpadController?.GetEnabled() is bool touchpadEnabled)
-        {
-            var firstRead = !_touchpadStateRead;
-            var changed = !firstRead &&
-                _blade._confirmedBladeTouchpadEnabled != touchpadEnabled;
-            _touchpadStateRead = true;
-            TouchpadEnabled = touchpadEnabled;
-            _blade._confirmedBladeTouchpadEnabled = touchpadEnabled;
-            TouchpadText = touchpadEnabled
-                ? AppStrings.Text("Text_F55AD712")
-                : AppStrings.Text("Text_7E3B0F3C");
-            if (!_blade._canSetBladeTouchpad)
-            {
-                _blade._canSetBladeTouchpad = true;
-                OnPropertyChanged(nameof(CanSetTouchpad));
-            }
-            if (changed || firstRead)
-            {
-                // Also write on the first read: the lighting take-over can reset
-                // the EC indicator after the one-shot startup sync.
-                _ = SyncObservedTouchpadIndicatorAsync(ActiveDescriptors, touchpadEnabled);
-            }
-            if (changed)
-            {
-                // Mirror an Fn-key change onto the EC and report it the same way
-                // as a toggle that came through our mapping runtime.
-                TouchpadChangedByUser?.Invoke(touchpadEnabled);
-            }
-        }
-        else
-        {
-            TouchpadText = AppStrings.Text("Text_72C29287");
-            if (_blade._canSetBladeTouchpad)
-            {
-                _blade._canSetBladeTouchpad = false;
-                OnPropertyChanged(nameof(CanSetTouchpad));
-            }
-        }
-    }
-
-    private async Task SyncObservedTouchpadIndicatorAsync(
-        IReadOnlyList<DeviceDescriptor> devices,
-        bool enabled)
-    {
-        try
-        {
-            if (!await _deviceTelemetryReader.SetBladeTouchpadStatusAsync(
-                    devices, enabled, CancellationToken.None))
-            {
-                _diagnosticLog.TryWrite(
-                    "device-operation",
-                    $"touchpad indicator did not follow the device state enabled={enabled}");
-            }
-            else
-            {
-                _diagnosticLog.TryWrite(
-                    "blade-touchpad",
-                    $"indicator synchronized enabled={enabled}");
-            }
-        }
-        catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
-        {
-            _diagnosticLog.TryWrite(
-                "device-operation",
-                $"touchpad indicator follow-up failed: {exception}");
-        }
-    }
-
-    internal void RefreshTouchpadState() => ApplyTouchpadState();
 
     private void QueueStartupStateSync()
     {
