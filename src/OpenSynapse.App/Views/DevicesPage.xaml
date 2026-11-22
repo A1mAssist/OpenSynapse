@@ -720,7 +720,28 @@
                       <StackPanel Spacing="12">
                         <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Text="DPI" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
                         <TextBlock Text="{Binding DpiText}" Visibility="{Binding DpiReadVisibility}" FontFamily="Cascadia Mono,Consolas" Foreground="{StaticResource MutedBrush}" />
-                         <Grid RowDefinitions="Auto,Auto" RowSpacing="10" Visibility="{Binding DpiWriteVisibility}"><Grid ColumnDefinitions="*,*" ColumnSpacing="8"><NumberBox Header="X" Value="{Binding DpiX, Mode=TwoWay}" Minimum="100" Maximum="{Binding MaximumDpi}" SmallChange="100" SpinButtonPlacementMode="Compact" IsEnabled="{Binding CanWriteDpi}" /><NumberBox Grid.Column="1" Header="Y" Value="{Binding DpiY, Mode=TwoWay}" Minimum="100" Maximum="{Binding MaximumDpi}" SmallChange="100" SpinButtonPlacementMode="Compact" IsEnabled="{Binding CanWriteDpi}" /></Grid><Button local:Localized.Uid="RazerHidSaveButton" Grid.Row="1" Click="RazerHidApplyDpiClick" IsEnabled="{Binding CanEditDpi}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" /></Grid>
+                         <Grid RowDefinitions="Auto,Auto" RowSpacing="10" Visibility="{Binding DpiWriteVisibility}">
+                           <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                             <NumberBox Header="X"
+                                        Value="{Binding DpiX, Mode=OneWay}"
+                                        ValueChanged="RazerHidDpiXChanged"
+                                        Minimum="100"
+                                        Maximum="{Binding MaximumDpi}"
+                                        SmallChange="100"
+                                        SpinButtonPlacementMode="Inline"
+                                        IsEnabled="{Binding CanWriteDpi}" />
+                             <NumberBox Grid.Column="1"
+                                        Header="Y"
+                                        Value="{Binding DpiY, Mode=OneWay}"
+                                        ValueChanged="RazerHidDpiYChanged"
+                                        Minimum="100"
+                                        Maximum="{Binding MaximumDpi}"
+                                        SmallChange="100"
+                                        SpinButtonPlacementMode="Inline"
+                                        IsEnabled="{Binding CanWriteDpi}" />
+                           </Grid>
+                           <Button local:Localized.Uid="RazerHidSaveButton" Grid.Row="1" Click="RazerHidApplyDpiClick" IsEnabled="{Binding CanEditDpi}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
+                         </Grid>
                       </StackPanel>
                     </Border>
                   </Grid><Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding GameModeVisibility}"><StackPanel Spacing="10"><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="RazerHidGameModeTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel><TextBlock local:Localized.Uid="RazerHidGameModeDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" /><TextBlock Text="{Binding GameModeText}" FontFamily="Cascadia Mono,Consolas" Foreground="{StaticResource MutedBrush}" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Visibility="{Binding GameModeWriteVisibility}"><ToggleSwitch local:Localized.Uid="RazerHidGameModeEnabled" IsOn="{Binding GameModeEnabled, Mode=TwoWay}" IsEnabled="{Binding CanEditGameMode}" OnContent="" OffContent="" /><Button Grid.Column="1" local:Localized.Uid="RazerHidSaveButton" Click="RazerHidApplyGameModeClick" IsEnabled="{Binding CanEditGameMode}" Style="{StaticResource RazerHidSaveButtonStyle}" VerticalAlignment="Bottom" /></Grid></StackPanel></Border>

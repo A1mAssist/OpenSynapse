@@ -236,6 +236,24 @@ public sealed partial class DevicesPage : UserControl
     private async void RazerHidApplyDpiClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.ApplyDpiAsync(Lifetime) ?? Task.CompletedTask);
 
+    // TwoWay NumberBox bindings write their default value back when the device
+    // panel first attaches, which overwrote the DPI read from the device.
+    private void RazerHidDpiXChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
+    {
+        if (sender.DataContext is RazerHidDeviceViewModel device && !double.IsNaN(args.NewValue))
+        {
+            device.DpiX = (int)Math.Round(args.NewValue);
+        }
+    }
+
+    private void RazerHidDpiYChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
+    {
+        if (sender.DataContext is RazerHidDeviceViewModel device && !double.IsNaN(args.NewValue))
+        {
+            device.DpiY = (int)Math.Round(args.NewValue);
+        }
+    }
+
     private async void RazerHidApplyGameModeClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.ApplyGameModeAsync(Lifetime) ?? Task.CompletedTask);
 
