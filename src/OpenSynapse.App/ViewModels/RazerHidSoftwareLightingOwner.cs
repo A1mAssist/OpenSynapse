@@ -22,14 +22,17 @@ internal sealed class RazerHidSoftwareLightingOwner : IAsyncDisposable
     internal bool HasRunning(string instanceId) =>
         _devices.TryGetValue(instanceId, out var device) && device.HasRunningSoftwareLighting;
 
-    internal async Task RestoreAsync(
+    internal async Task<IReadOnlySet<string>> RestoreAsync(
         IReadOnlyList<RazerHidDeviceConnection> connections,
         RazerHidDeviceViewModel? selected,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IReadOnlySet<string>? instanceIds = null)
     {
+        var failed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var connection in connections)
         {
-            if (!connection.IsReady)
+            if (!connection.IsReady ||
+                (instanceIds is not null && !instanceIds.Contains(connection.InstanceId)))
             {
                 continue;
             }
@@ -53,7 +56,10 @@ internal sealed class RazerHidSoftwareLightingOwner : IAsyncDisposable
                 device = _create(connection);
             }
 
-            await device.ApplyConfiguredLightingAsync(cancellationToken).ConfigureAwait(false);
+            if (!await device.ApplyConfiguredLightingAsync(cancellationToken).ConfigureAwait(false))
+            {
+                failed.Add(connection.InstanceId);
+            }
             if (ReferenceEquals(device, selected))
             {
                 continue;
@@ -71,6 +77,7 @@ internal sealed class RazerHidSoftwareLightingOwner : IAsyncDisposable
         }
 
         await PruneAsync(connections, cancellationToken).ConfigureAwait(false);
+        return failed;
     }
 
     internal async Task PruneAsync(

@@ -100,41 +100,48 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             await LoadLightingAsync(cancellationToken);
     }
 
-    public async Task ApplyConfiguredLightingAsync(CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Returns false when the hardware write failed, so a boot-time restore can
+    /// retry a device whose firmware was still busy instead of assuming success.
+    /// </summary>
+    public async Task<bool> ApplyConfiguredLightingAsync(CancellationToken cancellationToken = default)
     {
         if (_lightingProfileResolver is null || !IsReady || RequiresRescan)
         {
-            return;
+            return true;
         }
 
         if (!LightingEnabled)
         {
             await DisableLightingAsync(cancellationToken);
-            return;
+            return true;
         }
 
         var profile = _lightingProfileResolver(SelectedLightingPowerState, SelectedLightingZone);
         if (profile is null)
         {
-            return;
+            return true;
         }
 
         ApplyLightingProfileToEditor(profile);
         if (!IsSelectedLightingPowerActive)
         {
-            return;
+            return true;
         }
 
         try
         {
             await ApplyLightingProfileToHardwareAsync(profile, cancellationToken);
+            return true;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            return false;
         }
         catch (Exception exception)
         {
             HandleFailure(exception);
+            return false;
         }
     }
 

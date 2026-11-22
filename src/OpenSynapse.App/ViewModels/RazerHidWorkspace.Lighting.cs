@@ -8,33 +8,85 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerHidWorkspace
 {
-    private bool _restoredLightingOnDiscovery;
+    private readonly HashSet<string> _restoredLightingEndpoints =
+        new(StringComparer.OrdinalIgnoreCase);
 
     private async Task RestoreInitialLightingAsync(
         IReadOnlyList<RazerHidDeviceConnection> connections,
         CancellationToken cancellationToken)
     {
-        if (_restoredLightingOnDiscovery || connections.Count == 0 ||
-            StudioLightingActive?.Invoke() == true)
+        // Boot can enumerate the dock and the wireless mouse at different times.
+        // Remember each endpoint instead of treating the first discovery as final,
+        // otherwise a device that appears one refresh later never gets its profile.
+        var liveEndpoints = connections
+            .Where(connection => connection.IsReady)
+            .Select(EndpointKey)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        _restoredLightingEndpoints.IntersectWith(liveEndpoints);
+        if (connections.Count == 0 || StudioLightingActive?.Invoke() == true)
         {
             return;
         }
 
-        _restoredLightingOnDiscovery = true;
+        var pending = connections
+            .Where(connection => connection.IsReady &&
+                !_restoredLightingEndpoints.Contains(EndpointKey(connection)))
+            .ToArray();
+        if (pending.Length == 0)
+        {
+            return;
+        }
+
+        var pendingEndpoints = pending.Select(EndpointKey).ToArray();
+        var pendingInstanceIds = pending
+            .Select(connection => connection.InstanceId)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var endpoint in pendingEndpoints)
+        {
+            _restoredLightingEndpoints.Add(endpoint);
+        }
+
+        var failedEndpoints = new List<string>();
         try
         {
             // A tray start has no selected device, so nothing used to replay the
             // saved lighting profiles until the user clicked a row.
-            await _softwareLightingOwner.RestoreAsync(
-                connections, SelectedDevice, cancellationToken).ConfigureAwait(true);
+            _diagnosticLog.TryWrite(
+                "razer-hid",
+                $"initial lighting restore for {pending.Length} new device(s): " +
+                string.Join(",", pending.Select(connection => $"{connection.Definition.ProductId:X4}")));
+            var failedInstanceIds = await _softwareLightingOwner.RestoreAsync(
+                connections, SelectedDevice, cancellationToken, pendingInstanceIds).ConfigureAwait(true);
+            if (failedInstanceIds.Count > 0)
+            {
+                failedEndpoints.AddRange(pending
+                    .Where(connection => failedInstanceIds.Contains(connection.InstanceId))
+                    .Select(EndpointKey));
+                _diagnosticLog.TryWrite(
+                    "razer-hid",
+                    $"initial lighting restore failed for {failedEndpoints.Count} device(s); will retry");
+            }
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             _diagnosticLog.TryWrite(
                 "razer-hid",
                 $"initial lighting restore failed: {exception.Message}");
+            failedEndpoints.AddRange(pendingEndpoints);
+        }
+        finally
+        {
+            // A failed or cancelled write must retry on the next refresh; a device
+            // with no saved profile counts as restored.
+            foreach (var endpoint in failedEndpoints)
+            {
+                _restoredLightingEndpoints.Remove(endpoint);
+            }
         }
     }
+
+    private static string EndpointKey(RazerHidDeviceConnection connection) =>
+        $"{connection.InstanceId}|{connection.DevicePath}";
 
     private async Task<bool> SaveLightingAsync(
         RazerHidDeviceConnection connection,
