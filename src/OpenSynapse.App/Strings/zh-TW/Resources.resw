@@ -2328,6 +2328,8 @@
   <data name="RazerHidCapabilityMappingWrite" xml:space="preserve"><value>按鍵對映寫入</value></data>
   <data name="RazerHidCapabilityScrollFreeNotchedModeRead" xml:space="preserve"><value>自由捲動模式讀取</value></data>
   <data name="RazerHidCapabilityScrollFreeNotchedModeWrite" xml:space="preserve"><value>自由捲動模式寫入</value></data>
+  <data name="RazerHidCapabilityScrollTactileModeRead" xml:space="preserve"><value>滾輪觸感模式讀取</value></data>
+  <data name="RazerHidCapabilityScrollTactileModeWrite" xml:space="preserve"><value>滾輪觸感模式寫入</value></data>
   <data name="RazerHidCapabilityScrollAccelerationLevelRead" xml:space="preserve"><value>滾輪加速等級讀取</value></data>
   <data name="RazerHidCapabilityScrollAccelerationLevelWrite" xml:space="preserve"><value>滾輪加速等級寫入</value></data>
   <data name="RazerHidCapabilityOnboardProfileRead" xml:space="preserve"><value>內建設定檔讀取</value></data>

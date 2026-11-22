@@ -149,7 +149,8 @@ public sealed class RazerNagaMappingActionCatalog : RazerHidMappingActionCatalog
     public static new RazerNagaMappingActionCatalog Instance { get; } = new();
 
     public override string DescribeButton(byte buttonId) =>
-        RazerNagaSideButtonResolver.Resolve(buttonId) is { } input
+        (RazerNagaSideButtonResolver.ResolveFirmware(buttonId) ??
+         RazerNagaSideButtonResolver.Resolve(buttonId)) is { } input
             ? AppStrings.FormatText("RazerMappingNagaSideButton", input.SideButton)
             : base.DescribeButton(buttonId);
 }

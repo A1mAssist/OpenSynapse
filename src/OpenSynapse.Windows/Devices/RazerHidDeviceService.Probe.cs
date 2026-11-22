@@ -151,6 +151,20 @@ public sealed partial class RazerHidDeviceService
                 result.Add(RazerHidBackendCapability.ScrollFreeNotchedModeWrite);
             }
 
+            // Profile 1 is the standard OBM slot; reads and writes resolve the active slot.
+            var tactileMode = RazerScrollWheelProtocol.CreateGetScrollTactileModeRequest(
+                MiddlewareTransactionId, RazerHidMappingProtocol.ProfileId);
+            if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
+                    "scroll.tactileMode", tactileMode, response =>
+                {
+                    _ = RazerScrollWheelProtocol.ParseScrollTactileMode(response, tactileMode);
+                    return true;
+                }, cancellationToken).ConfigureAwait(false))
+            {
+                result.Add(RazerHidBackendCapability.ScrollTactileModeRead);
+                result.Add(RazerHidBackendCapability.ScrollTactileModeWrite);
+            }
+
             var accelerationLevel =
                 RazerScrollWheelProtocol.CreateGetScrollVirtualAccelerationLevelRequest(MiddlewareTransactionId);
             if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,

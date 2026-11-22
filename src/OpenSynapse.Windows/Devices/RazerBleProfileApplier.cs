@@ -66,12 +66,15 @@ public sealed partial class RazerBleProfileApplier : IDeviceProfileApplier
             deviceSettings?.Viper,
             powerSettings?.Viper);
         var lighting = powerSettings?.Lighting ?? deviceSettings?.Lighting ?? context.Document.Global.Lighting;
-
         var results = new List<ProfileSettingApplyResult>();
         await ApplyDpiAsync(service, settings, results, cancellationToken);
         await ApplyPollingAsync(service, settings, results, cancellationToken);
         await ApplyPowerAsync(service, settings, results, cancellationToken);
         await ApplyOnboardProfileAsync(service, settings, results, cancellationToken);
+        if (settings.ActiveOnboardProfileId is { } mappingProfileId)
+        {
+            service.MappingProfileId = (byte)mappingProfileId;
+        }
         await ApplyScrollAsync(service, settings, results, cancellationToken);
         await ApplyPowerPlanAsync(service, settings, results, cancellationToken);
         await ApplyHapticAsync(service, settings, results, cancellationToken);

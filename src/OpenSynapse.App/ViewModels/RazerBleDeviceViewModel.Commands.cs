@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Protocols;
 using Windows.UI;
 
@@ -12,6 +13,8 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerBleDeviceViewModel
 {
+    private bool IsNaga => RazerNagaSideButtonResolver.IsNagaProduct(_device.ProductId, _device.Name);
+
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
         if (!BeginOperation()) return;
@@ -31,11 +34,11 @@ public sealed partial class RazerBleDeviceViewModel
         }
 
         await LoadLightingAsync(cancellationToken);
+        await LoadProfilesAsync(cancellationToken);
         await LoadMappingAsync(cancellationToken);
         await LoadDpiStagesAsync(cancellationToken);
         await LoadScrollAsync(cancellationToken);
         await LoadPowerAsync(cancellationToken);
-        await LoadProfilesAsync(cancellationToken);
         await LoadExtrasAsync(cancellationToken);
     }
 
@@ -130,7 +133,10 @@ public sealed partial class RazerBleDeviceViewModel
                     canWrite: true,
                     log: _diagnostic,
                     mappingProfileSaver: PersistMappingProfileAsync,
-                    productId: RazerProductAliases.Canonical(_device.ProductId));
+                    productId: RazerProductAliases.Canonical(_device.ProductId),
+                    actionCatalog: IsNaga ? RazerNagaMappingActionCatalog.Instance : null,
+                    softwareTriggerResolver: buttonId => RazerMouseMacroTriggerResolver.Resolve(
+                        RazerProductAliases.Canonical(_device.ProductId), buttonId, IsNaga));
                 OnPropertyChanged(nameof(Mapping));
             }
 
@@ -357,6 +363,7 @@ public sealed partial class RazerBleDeviceViewModel
         try
         {
             var state = await _service.ReadProfilesAsync(cancellationToken);
+            _service.MappingProfileId = state.ActiveId ?? 1;
             _profileIds = state.Ids;
             SelectedProfileIndex = state.ActiveId is { } active
                 ? Math.Max(0, state.Ids.ToList().IndexOf(active))
@@ -406,6 +413,7 @@ public sealed partial class RazerBleDeviceViewModel
         try
         {
             await _service.SetActiveProfileAsync(profileId, cancellationToken);
+            _service.MappingProfileId = profileId;
             ProfileStatusText = AppStrings.Text("BlackSharkSaved");
             if (!await PersistMouseAsync(mouse => mouse.ActiveOnboardProfileId = profileId, cancellationToken))
             {
@@ -447,6 +455,7 @@ public sealed partial class RazerBleDeviceViewModel
             try
             {
                 await _service.SetActiveProfileAsync(previousId, CancellationToken.None);
+                _service.MappingProfileId = previousId;
             }
             catch
             {

@@ -27,6 +27,16 @@
       }
     }
   },
+  "0053": {
+    "source": "0053/main.83a71d421f8a33331f74.js",
+    "catalogPid": "0053",
+    "keys": {
+      "60": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
+      }
+    }
+  },
   "0059": {
     "source": "0059/main.9e6fff5a75e370f2c96e.js",
     "catalogPid": "0059",
@@ -581,6 +591,24 @@
       }
     }
   },
+  "008D": {
+    "source": "008D/main.892f18150be421593100.js",
+    "catalogPid": "008D",
+    "keys": {
+      "0B": {
+        "code": 32,
+        "label": "SensitivityStageUp"
+      },
+      "0C": {
+        "code": 33,
+        "label": "SensitivityStageDown"
+      },
+      "0E": {
+        "code": 80,
+        "label": "CycleUpProfile"
+      }
+    }
+  },
   "008F": {
     "source": "008F/main.3894a1349bab70d9f111.js",
     "catalogPid": "008F",
@@ -684,6 +712,16 @@
   "0095": {
     "source": "0094/main.4f3ac6a54ebb40820e5c.js",
     "catalogPid": "0094",
+    "keys": {
+      "60": {
+        "code": 82,
+        "label": "CycleUpSensitivityStages"
+      }
+    }
+  },
+  "0096": {
+    "source": "0096/main.575d098d2b3c69a95201.js",
+    "catalogPid": "0096",
     "keys": {
       "60": {
         "code": 82,
@@ -814,6 +852,10 @@
       "60": {
         "code": 82,
         "label": "CycleUpSensitivityStages"
+      },
+      "6D": {
+        "code": 87,
+        "label": "CycleUpScrollStages"
       }
     }
   },
@@ -836,6 +878,10 @@
       "60": {
         "code": 82,
         "label": "CycleUpSensitivityStages"
+      },
+      "6D": {
+        "code": 87,
+        "label": "CycleUpScrollStages"
       }
     }
   },
@@ -858,6 +904,10 @@
       "60": {
         "code": 82,
         "label": "CycleUpSensitivityStages"
+      },
+      "6D": {
+        "code": 87,
+        "label": "CycleUpScrollStages"
       }
     }
   },

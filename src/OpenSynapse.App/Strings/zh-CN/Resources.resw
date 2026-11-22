@@ -2342,6 +2342,8 @@
   <data name="RazerHidCapabilityMappingWrite" xml:space="preserve"><value>按键映射写入</value></data>
   <data name="RazerHidCapabilityScrollFreeNotchedModeRead" xml:space="preserve"><value>自由滚动模式读取</value></data>
   <data name="RazerHidCapabilityScrollFreeNotchedModeWrite" xml:space="preserve"><value>自由滚动模式写入</value></data>
+  <data name="RazerHidCapabilityScrollTactileModeRead" xml:space="preserve"><value>滚轮触感模式读取</value></data>
+  <data name="RazerHidCapabilityScrollTactileModeWrite" xml:space="preserve"><value>滚轮触感模式写入</value></data>
   <data name="RazerHidCapabilityScrollAccelerationLevelRead" xml:space="preserve"><value>滚轮加速等级读取</value></data>
   <data name="RazerHidCapabilityScrollAccelerationLevelWrite" xml:space="preserve"><value>滚轮加速等级写入</value></data>
   <data name="RazerHidCapabilityOnboardProfileRead" xml:space="preserve"><value>板载配置读取</value></data>

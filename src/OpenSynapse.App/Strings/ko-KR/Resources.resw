@@ -1946,6 +1946,8 @@
   <data name="RazerHidCapabilityMappingWrite" xml:space="preserve"><value>버튼 매핑 쓰기</value></data>
   <data name="RazerHidCapabilityScrollFreeNotchedModeRead" xml:space="preserve"><value>자유 스크롤 모드 읽기</value></data>
   <data name="RazerHidCapabilityScrollFreeNotchedModeWrite" xml:space="preserve"><value>자유 스크롤 모드 쓰기</value></data>
+  <data name="RazerHidCapabilityScrollTactileModeRead" xml:space="preserve"><value>스크롤 촉각 모드 읽기</value></data>
+  <data name="RazerHidCapabilityScrollTactileModeWrite" xml:space="preserve"><value>스크롤 촉각 모드 쓰기</value></data>
   <data name="RazerHidCapabilityScrollAccelerationLevelRead" xml:space="preserve"><value>스크롤 가속 수준 읽기</value></data>
   <data name="RazerHidCapabilityScrollAccelerationLevelWrite" xml:space="preserve"><value>스크롤 가속 수준 쓰기</value></data>
   <data name="RazerHidCapabilityOnboardProfileRead" xml:space="preserve"><value>온보드 프로필 읽기</value></data>

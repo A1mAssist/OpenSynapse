@@ -17,6 +17,21 @@ public static class RazerNagaSideButtonResolver
         _ => null,
     };
 
+    /// <summary>
+    /// The mapping page reports the firmware ids the side plates declare in the
+    /// product bundle: SPAD_NUM_1..12 are 64..75 and HPAD_NUM_1..7 are 80..86.
+    /// HID usages share the same numeric range, so firmware ids get their own reader.
+    /// </summary>
+    public static MacroInput? ResolveFirmware(byte buttonId) => buttonId switch
+    {
+        >= 64 and <= 75 => Side(buttonId - 63),
+        >= 80 and <= 86 => Side(buttonId - 79),
+        _ => null,
+    };
+
+    public static bool IsNagaProduct(ushort productId, string? productName) =>
+        RazerNagaSideButtons.IsNaga(0x1532, productId, productName);
+
     private static MacroInput Side(int sideButton) => new()
     {
         Kind = MacroInputKind.NagaSideButton,

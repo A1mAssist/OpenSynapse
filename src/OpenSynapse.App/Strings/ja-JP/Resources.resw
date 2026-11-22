@@ -1946,6 +1946,8 @@
   <data name="RazerHidCapabilityMappingWrite" xml:space="preserve"><value>ボタン マッピング書き込み</value></data>
   <data name="RazerHidCapabilityScrollFreeNotchedModeRead" xml:space="preserve"><value>フリースクロール モード読み取り</value></data>
   <data name="RazerHidCapabilityScrollFreeNotchedModeWrite" xml:space="preserve"><value>フリースクロール モード書き込み</value></data>
+  <data name="RazerHidCapabilityScrollTactileModeRead" xml:space="preserve"><value>スクロール触感モード読み取り</value></data>
+  <data name="RazerHidCapabilityScrollTactileModeWrite" xml:space="preserve"><value>スクロール触感モード書き込み</value></data>
   <data name="RazerHidCapabilityScrollAccelerationLevelRead" xml:space="preserve"><value>スクロール加速レベル読み取り</value></data>
   <data name="RazerHidCapabilityScrollAccelerationLevelWrite" xml:space="preserve"><value>スクロール加速レベル書き込み</value></data>
   <data name="RazerHidCapabilityOnboardProfileRead" xml:space="preserve"><value>オンボード プロファイル読み取り</value></data>

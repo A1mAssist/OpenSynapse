@@ -17,10 +17,24 @@ public readonly record struct RazerScrollVirtualAccelerationLevelState(
     byte ClassId,
     byte Level);
 
+/// <summary>Three-way scroll wheel mode from the 00E7 Naga V3 Pro bundle: 0 tactile, 1 free spin, 2 micro tactile.</summary>
+public enum RazerScrollTactileMode : byte
+{
+    Tactile = 0,
+    FreeSpin = 1,
+    MicroTactile = 2,
+}
+
+/// <summary>Tactile response: class id at argument 0, mode at argument 1.</summary>
+public readonly record struct RazerScrollTactileModeState(
+    byte ClassId,
+    RazerScrollTactileMode Mode);
+
 /// <summary>
-/// Protocol 25 class 0x02 scroll wheel commands from the 00CC Basilisk V3 Pro 35K
-/// middleware bundle: get/set free-notched [2,2,148]/[2,2,20] and get/set virtual
-/// acceleration level [2,2,162]/[2,2,34]. Smart Reel threshold already lives in
+/// Protocol 25 class 0x02 scroll wheel commands from the middleware bundles: get/set
+/// free-notched [2,2,148]/[2,2,20], get/set virtual acceleration level [2,2,162]/[2,2,34]
+/// and the three-way tactile mode [2,2,176]/[2,2,48] the 00E7 Naga V3 Pro handler calls
+/// from get/setScrollFreeNotchedMode. Smart Reel threshold already lives in
 /// <see cref="RazerHidMouseProtocol"/> and is deliberately not duplicated here.
 /// </summary>
 public static class RazerScrollWheelProtocol
@@ -31,6 +45,8 @@ public static class RazerScrollWheelProtocol
     private const byte SetFreeNotchedModeCommandId = 0x14;
     private const byte GetVirtualAccelerationLevelCommandId = 0xA2;
     private const byte SetVirtualAccelerationLevelCommandId = 0x22;
+    private const byte GetTactileModeCommandId = 0xB0;
+    private const byte SetTactileModeCommandId = 0x30;
 
     public static byte[] CreateGetScrollFreeNotchedModeRequest(
         byte transactionId,
@@ -77,6 +93,34 @@ public static class RazerScrollWheelProtocol
         var arguments = Arguments(response, request, "Scroll virtual acceleration level");
         // The middleware only coerces the level to Number and writes one Uint8Array byte.
         return new RazerScrollVirtualAccelerationLevelState(arguments[0], arguments[1]);
+    }
+
+    public static byte[] CreateGetScrollTactileModeRequest(
+        byte transactionId,
+        byte classId = 0) =>
+        CreateRequest(transactionId, GetTactileModeCommandId, classId, 0);
+
+    public static byte[] CreateSetScrollTactileModeRequest(
+        byte transactionId,
+        RazerScrollTactileMode mode,
+        byte classId = 0) =>
+        CreateRequest(transactionId, SetTactileModeCommandId, classId, (byte)mode);
+
+    public static RazerScrollTactileModeState ParseScrollTactileMode(
+        ReadOnlySpan<byte> response,
+        ReadOnlySpan<byte> request)
+    {
+        var arguments = Arguments(response, request, "Scroll tactile mode");
+        var mode = arguments[1] switch
+        {
+            (byte)RazerScrollTactileMode.Tactile => RazerScrollTactileMode.Tactile,
+            (byte)RazerScrollTactileMode.FreeSpin => RazerScrollTactileMode.FreeSpin,
+            (byte)RazerScrollTactileMode.MicroTactile => RazerScrollTactileMode.MicroTactile,
+            _ => throw new InvalidOperationException(
+                $"Scroll wheel returned unknown tactile mode 0x{arguments[1]:X2}."),
+        };
+
+        return new RazerScrollTactileModeState(arguments[0], mode);
     }
 
     private static byte[] CreateRequest(

@@ -275,7 +275,7 @@ public sealed partial class RazerBleDeviceService
     public async Task<RazerBleScrollTactileMode> ReadScrollTactileModeAsync(CancellationToken cancellationToken = default)
     {
         var response = await _session.SendAsync(
-            transaction => RazerBleProtocol30.CreateGetScrollTactileMode(transaction),
+            transaction => RazerBleProtocol30.CreateGetScrollTactileMode(transaction, MappingProfileId),
             "get scroll tactile mode",
             cancellationToken).ConfigureAwait(false);
         EnsureSuccess(response, "get scroll tactile mode");
@@ -288,7 +288,7 @@ public sealed partial class RazerBleDeviceService
     {
         var current = await ReadScrollTactileModeAsync(cancellationToken).ConfigureAwait(false);
         var response = await _session.SendAsync(
-            transaction => RazerBleProtocol30.CreateSetScrollTactileMode(transaction, mode),
+            transaction => RazerBleProtocol30.CreateSetScrollTactileMode(transaction, mode, MappingProfileId),
             "set scroll tactile mode",
             cancellationToken).ConfigureAwait(false);
         EnsureSuccess(response, "set scroll tactile mode");
@@ -302,7 +302,8 @@ public sealed partial class RazerBleDeviceService
         await TryRestoreAsync("restore scroll tactile mode", async () =>
         {
             var restore = await _session.SendAsync(
-                transaction => RazerBleProtocol30.CreateSetScrollTactileMode(transaction, current),
+                transaction => RazerBleProtocol30.CreateSetScrollTactileMode(
+                    transaction, current, MappingProfileId),
                 "restore scroll tactile mode",
                 cancellationToken).ConfigureAwait(false);
             EnsureSuccess(restore, "restore scroll tactile mode");

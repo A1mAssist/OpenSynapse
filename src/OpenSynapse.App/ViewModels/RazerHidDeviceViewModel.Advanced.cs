@@ -33,6 +33,11 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             await ReadOptionalAsync(RazerHidBackendCapability.ScrollFreeNotchedModeRead,
                 async () => ScrollFreeNotchedModeIndex =
                     (int)await _service.GetScrollFreeNotchedModeAsync(Connection, cancellationToken));
+            await ReadOptionalAsync(RazerHidBackendCapability.ScrollTactileModeRead,
+                async () => ScrollTactileMode = (byte)await _service.GetScrollTactileModeAsync(
+                    Connection,
+                    await _service.ResolveActiveProfileIdAsync(Connection, cancellationToken),
+                    cancellationToken));
             await ReadOptionalAsync(RazerHidBackendCapability.ScrollAccelerationLevelRead,
                 async () => ScrollAccelerationLevel =
                     await _service.GetScrollVirtualAccelerationLevelAsync(Connection, cancellationToken));

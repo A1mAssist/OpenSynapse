@@ -3293,6 +3293,12 @@
   <data name="RazerHidCapabilityScrollFreeNotchedModeWrite" xml:space="preserve">
     <value>Запись в режиме свободной прокрутки</value>
   </data>
+  <data name="RazerHidCapabilityScrollTactileModeRead" xml:space="preserve">
+    <value>Чтение тактильного режима прокрутки</value>
+  </data>
+  <data name="RazerHidCapabilityScrollTactileModeWrite" xml:space="preserve">
+    <value>Запись тактильного режима прокрутки</value>
+  </data>
   <data name="RazerHidCapabilityScrollAccelerationLevelRead" xml:space="preserve">
     <value>Чтение уровня ускорения прокрутки</value>
   </data>

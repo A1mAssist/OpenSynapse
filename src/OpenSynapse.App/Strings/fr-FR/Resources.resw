@@ -1946,6 +1946,8 @@
   <data name="RazerHidCapabilityMappingWrite" xml:space="preserve"><value>Écriture de l’attribution des boutons</value></data>
   <data name="RazerHidCapabilityScrollFreeNotchedModeRead" xml:space="preserve"><value>Lecture du mode de défilement libre</value></data>
   <data name="RazerHidCapabilityScrollFreeNotchedModeWrite" xml:space="preserve"><value>Écriture du mode de défilement libre</value></data>
+  <data name="RazerHidCapabilityScrollTactileModeRead" xml:space="preserve"><value>Lecture du mode tactile de défilement</value></data>
+  <data name="RazerHidCapabilityScrollTactileModeWrite" xml:space="preserve"><value>Écriture du mode tactile de défilement</value></data>
   <data name="RazerHidCapabilityScrollAccelerationLevelRead" xml:space="preserve"><value>Lecture du niveau d’accélération du défilement</value></data>
   <data name="RazerHidCapabilityScrollAccelerationLevelWrite" xml:space="preserve"><value>Écriture du niveau d’accélération du défilement</value></data>
   <data name="RazerHidCapabilityOnboardProfileRead" xml:space="preserve"><value>Lecture du profil embarqué</value></data>

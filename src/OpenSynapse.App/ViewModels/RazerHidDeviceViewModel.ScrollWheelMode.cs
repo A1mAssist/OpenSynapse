@@ -12,6 +12,7 @@ public sealed partial class RazerHidDeviceViewModel
     private string _scrollWheelModeStatusText = string.Empty;
     private RazerHidScrollWheelModeChoice? _selectedScrollWheelMode;
     private IReadOnlyList<RazerHidScrollWheelModeChoice> _scrollWheelModeChoices = [];
+    private byte _scrollTactileMode;
 
     public IReadOnlyList<RazerHidScrollWheelModeChoice> ScrollWheelModeChoices
     {
@@ -58,8 +59,15 @@ public sealed partial class RazerHidDeviceViewModel
         !IsScrollWheelModeBusy &&
         (Has(RazerHidBackendCapability.LkScrollWheelModeWrite) ||
          Has(RazerHidBackendCapability.ScrollModeWrite) ||
+         Has(RazerHidBackendCapability.ScrollTactileModeWrite) ||
          Has(RazerHidBackendCapability.ScrollFreeNotchedModeWrite) ||
          Has(RazerHidBackendCapability.SmartReelWrite));
+
+    public byte ScrollTactileMode
+    {
+        get => _scrollTactileMode;
+        set => SetField(ref _scrollTactileMode, value);
+    }
 
     public string ScrollWheelModeStatusText
     {
@@ -95,6 +103,9 @@ public sealed partial class RazerHidDeviceViewModel
         RazerHidBackendCapability.LkScrollWheelModeRead,
         RazerHidBackendCapability.LkScrollWheelModeWrite);
 
+    private bool HasWritableLkScrollMode =>
+        Has(RazerHidBackendCapability.LkScrollWheelModeWrite);
+
     private bool HasScrollMode => HasAny(
         RazerHidBackendCapability.ScrollModeRead,
         RazerHidBackendCapability.ScrollModeWrite);
@@ -102,6 +113,10 @@ public sealed partial class RazerHidDeviceViewModel
     private bool HasFreeNotchedScrollMode => HasAny(
         RazerHidBackendCapability.ScrollFreeNotchedModeRead,
         RazerHidBackendCapability.ScrollFreeNotchedModeWrite);
+
+    private bool HasTactileScrollMode => HasAny(
+        RazerHidBackendCapability.ScrollTactileModeRead,
+        RazerHidBackendCapability.ScrollTactileModeWrite);
 
     private bool HasSmartReel => HasAny(
         RazerHidBackendCapability.SmartReelRead,
@@ -114,6 +129,12 @@ public sealed partial class RazerHidDeviceViewModel
         var hasScrollMode = HasScrollMode;
         var hasFreeNotched = HasFreeNotchedScrollMode;
         if (hasLk)
+        {
+            AddMode(choices, RazerHidScrollWheelModeKind.Tactile, "BleScrollTactile");
+            AddMode(choices, RazerHidScrollWheelModeKind.FreeSpin, "BleScrollFreeSpin");
+            AddMode(choices, RazerHidScrollWheelModeKind.MicroTactile, "BleScrollMicroTactile");
+        }
+        else if (HasTactileScrollMode)
         {
             AddMode(choices, RazerHidScrollWheelModeKind.Tactile, "BleScrollTactile");
             AddMode(choices, RazerHidScrollWheelModeKind.FreeSpin, "BleScrollFreeSpin");
@@ -156,12 +177,21 @@ public sealed partial class RazerHidDeviceViewModel
         {
             kind = RazerHidScrollWheelModeKind.SmartReel;
         }
-        else if (HasLkScrollMode)
+        else if (HasWritableLkScrollMode)
         {
             kind = LkScrollMask switch
             {
                 4 => RazerHidScrollWheelModeKind.MicroTactile,
                 2 => RazerHidScrollWheelModeKind.FreeSpin,
+                _ => RazerHidScrollWheelModeKind.Tactile,
+            };
+        }
+        else if (HasTactileScrollMode)
+        {
+            kind = ScrollTactileMode switch
+            {
+                2 => RazerHidScrollWheelModeKind.MicroTactile,
+                1 => RazerHidScrollWheelModeKind.FreeSpin,
                 _ => RazerHidScrollWheelModeKind.Tactile,
             };
         }
@@ -195,11 +225,13 @@ public sealed partial class RazerHidDeviceViewModel
 
         var capability = Has(RazerHidBackendCapability.LkScrollWheelModeWrite)
             ? RazerHidBackendCapability.LkScrollWheelModeWrite
-            : Has(RazerHidBackendCapability.ScrollModeWrite)
-                ? RazerHidBackendCapability.ScrollModeWrite
-                : Has(RazerHidBackendCapability.ScrollFreeNotchedModeWrite)
-                    ? RazerHidBackendCapability.ScrollFreeNotchedModeWrite
-                    : RazerHidBackendCapability.SmartReelWrite;
+            : Has(RazerHidBackendCapability.ScrollTactileModeWrite)
+                ? RazerHidBackendCapability.ScrollTactileModeWrite
+                : Has(RazerHidBackendCapability.ScrollModeWrite)
+                    ? RazerHidBackendCapability.ScrollModeWrite
+                    : Has(RazerHidBackendCapability.ScrollFreeNotchedModeWrite)
+                        ? RazerHidBackendCapability.ScrollFreeNotchedModeWrite
+                        : RazerHidBackendCapability.SmartReelWrite;
 
         return RunWriteAsync(
             capability,
@@ -220,6 +252,13 @@ public sealed partial class RazerHidDeviceViewModel
                         await _service.SetLkScrollWheelModeAsync(
                             Connection, 3, cancellationToken);
                     }
+                    else if (Has(RazerHidBackendCapability.ScrollTactileModeWrite))
+                    {
+                        await _service.SetScrollTactileModeAsync(
+                            Connection, RazerScrollTactileMode.Tactile,
+                            await _service.ResolveActiveProfileIdAsync(Connection, cancellationToken),
+                            cancellationToken);
+                    }
                     else if (Has(RazerHidBackendCapability.ScrollFreeNotchedModeWrite))
                     {
                         await _service.SetScrollFreeNotchedModeAsync(
@@ -236,6 +275,13 @@ public sealed partial class RazerHidDeviceViewModel
                     {
                         await _service.SetLkScrollWheelModeAsync(
                             Connection, LkScrollMaskForPreset(choice.Kind), cancellationToken);
+                    }
+                    else if (Has(RazerHidBackendCapability.ScrollTactileModeWrite))
+                    {
+                        await _service.SetScrollTactileModeAsync(
+                            Connection, (RazerScrollTactileMode)ScrollModeForPreset(choice.Kind),
+                            await _service.ResolveActiveProfileIdAsync(Connection, cancellationToken),
+                            cancellationToken);
                     }
                     else if (Has(RazerHidBackendCapability.ScrollModeWrite))
                     {
@@ -262,6 +308,13 @@ public sealed partial class RazerHidDeviceViewModel
                 {
                     ScrollMode = await _service.GetScrollModeAsync(Connection, cancellationToken);
                 }
+                if (Has(RazerHidBackendCapability.ScrollTactileModeRead))
+                {
+                    ScrollTactileMode = (byte)await _service.GetScrollTactileModeAsync(
+                        Connection,
+                        await _service.ResolveActiveProfileIdAsync(Connection, cancellationToken),
+                        cancellationToken);
+                }
                 if (Has(RazerHidBackendCapability.ScrollFreeNotchedModeRead))
                 {
                     ScrollFreeNotchedModeIndex = (int)await _service.GetScrollFreeNotchedModeAsync(
@@ -273,20 +326,29 @@ public sealed partial class RazerHidDeviceViewModel
                 }
 
                 var usesScrollModeProfile = !Has(RazerHidBackendCapability.LkScrollWheelModeWrite) &&
+                    !Has(RazerHidBackendCapability.ScrollTactileModeWrite) &&
                     Has(RazerHidBackendCapability.ScrollModeWrite);
+                var usesTactileModeProfile = !Has(RazerHidBackendCapability.LkScrollWheelModeWrite) &&
+                    Has(RazerHidBackendCapability.ScrollTactileModeWrite);
                 var usesFreeNotchedProfile = !Has(RazerHidBackendCapability.LkScrollWheelModeWrite) &&
                     !usesScrollModeProfile &&
+                    !usesTactileModeProfile &&
                     Has(RazerHidBackendCapability.ScrollFreeNotchedModeWrite);
                 RefreshScrollWheelModeSelection();
                 await SaveProfileAsync(
                     settings =>
                     {
-                        if (usesScrollModeProfile || isSmartReel)
+                        if (usesTactileModeProfile)
+                        {
+                            settings.Viper.ScrollMode = ToProfileScrollMode(ScrollTactileMode);
+                        }
+                        else if (usesScrollModeProfile || isSmartReel)
                         {
                             settings.Viper.ScrollMode =
                                 ToProfileScrollMode(ScrollModeForPreset(choice.Kind));
                         }
-                        if (usesScrollModeProfile || usesFreeNotchedProfile || isSmartReel)
+                        if (usesScrollModeProfile || usesTactileModeProfile ||
+                            usesFreeNotchedProfile || isSmartReel)
                         {
                             settings.Viper.ScrollFreeNotched =
                                 choice.Kind == RazerHidScrollWheelModeKind.FreeSpin;

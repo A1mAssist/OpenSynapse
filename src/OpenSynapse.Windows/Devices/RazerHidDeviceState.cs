@@ -143,6 +143,8 @@ public enum RazerHidBackendCapability
     HapticScrollWrite,
     AnalogJoystickRead,
     AnalogJoystickWrite,
+    ScrollTactileModeRead,
+    ScrollTactileModeWrite,
 }
 
 public sealed record RazerHidLightingZoneCapabilities(

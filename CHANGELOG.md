@@ -9,9 +9,13 @@ All notable user-visible changes to OpenSynapse are documented here.
 ### Added
 
 - **Update source**: automatic updates can use the Gitee mirror; Settings offers Automatic, Gitee and GitHub, and Automatic prefers Gitee while falling back when it is unreachable or behind.
+- **Naga side plates**: the 12-key and 7-key side plates report their buttons as firmware ids 64–75 and 80–86; mapping, macros and Turbo now resolve them, so every plate works.
+- **Naga scroll wheel**: Naga V3 Pro exposes its three-way tactile, free-spin and micro-tactile wheel mode, including profile apply and Smart Reel.
 
 ### Fixed
 
+- **Bluetooth mice**: mapping and scroll settings read and write the active onboard profile instead of the first slot, and the profile list loads before the mapping table, so switching profiles no longer leaves stale mappings.
+- **Naga identities**: Naga Pro, Naga V2 Pro and their Bluetooth identities are matched, and the missing private keys for 0053, 008D, 0096 and the cycle-scroll action are included.
 - **Service install**: a clean MSI install now creates OpenSynapseService in the same elevation, resolving the installing user from the active console session when the MSI action runs as SYSTEM; registration is optional and no longer fails the install with 1721, and the app retries on first launch when the SID is unavailable.
 - **Blade lighting**: launch and window restore reapply the saved keyboard effect; an unrelated Blade fan or thermal error no longer suppresses the lighting write. Reactive and ripple effects also light the arrow keys correctly because right Ctrl no longer shares the left-arrow LED cell.
 - **Blade fan curve**: the first curve write re-declares manual fan mode, so a Blade that already reports Manual no longer keeps following its old curve or sticks at one RPM.

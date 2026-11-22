@@ -18,8 +18,6 @@ public sealed record RazerBleDeviceState(
 public sealed partial class RazerBleDeviceService : IDisposable
 {
     private const byte BleProfileId = 0;
-    private const byte MappingClassId = 0;
-    private const byte ScrollClassId = 0;
     private const byte BatteryId = 0;
     private readonly RazerBleSession _session;
     private readonly Action<string>? _diagnostic;
@@ -36,6 +34,9 @@ public sealed partial class RazerBleDeviceService : IDisposable
     }
 
     public string Name { get; }
+
+    /// <summary>Onboard profile the mapping table is read from and written to.</summary>
+    public byte MappingProfileId { get; set; } = 1;
 
     public static async Task<RazerBleDeviceService> OpenAsync(
         RazerBleDevice device,
@@ -146,7 +147,7 @@ public sealed partial class RazerBleDeviceService : IDisposable
         try
         {
             var response = await _session.SendAsync(
-                transaction => RazerBleProtocol30.CreateGetButtonList(transaction, MappingClassId),
+                transaction => RazerBleProtocol30.CreateGetButtonList(transaction, MappingProfileId),
                 "get button list", cancellationToken).ConfigureAwait(false);
             EnsureSuccess(response, "get button list");
             return RazerBleProtocol30.ReadButtonList(response);
@@ -168,7 +169,7 @@ public sealed partial class RazerBleDeviceService : IDisposable
     {
         var response = await _session.SendAsync(
             transaction => RazerBleProtocol30.CreateGetButtonAssignment(
-                transaction, MappingClassId, buttonId),
+                transaction, MappingProfileId, buttonId),
             "get button assignment", cancellationToken).ConfigureAwait(false);
         EnsureSuccess(response, "get button assignment");
         return RazerBleProtocol30.ReadButtonAssignment(response, mode);
@@ -184,7 +185,7 @@ public sealed partial class RazerBleDeviceService : IDisposable
         var normalized = RazerHidMappingActions.NormalizeKeyData(functionId, data.ToArray(), 0);
         var response = await _session.SendAsync(
             transaction => RazerBleProtocol30.CreateSetButtonAssignment(
-                transaction, MappingClassId, buttonId, mode, functionId, normalized),
+                transaction, MappingProfileId, buttonId, mode, functionId, normalized),
             "set button assignment", cancellationToken).ConfigureAwait(false);
         EnsureSuccess(response, "set button assignment");
 
@@ -343,7 +344,7 @@ public sealed partial class RazerBleDeviceService : IDisposable
             async () =>
             {
                 var response = await _session.SendAsync(
-                    transaction => RazerBleProtocol30.CreateGetScrollFreeNotchedMode(transaction, ScrollClassId),
+                    transaction => RazerBleProtocol30.CreateGetScrollFreeNotchedMode(transaction, MappingProfileId),
                     "get scroll mode",
                     cancellationToken).ConfigureAwait(false);
                 EnsureSuccess(response, "get scroll mode");
@@ -357,7 +358,7 @@ public sealed partial class RazerBleDeviceService : IDisposable
             async () =>
             {
                 var response = await _session.SendAsync(
-                    transaction => RazerBleProtocol30.CreateGetScrollSmartReel(transaction, ScrollClassId),
+                    transaction => RazerBleProtocol30.CreateGetScrollSmartReel(transaction, MappingProfileId),
                     "get scroll smart reel",
                     cancellationToken).ConfigureAwait(false);
                 EnsureSuccess(response, "get scroll smart reel");
@@ -371,7 +372,7 @@ public sealed partial class RazerBleDeviceService : IDisposable
             async () =>
             {
                 var response = await _session.SendAsync(
-                    transaction => RazerBleProtocol30.CreateGetScrollSmartReelThreshold(transaction, ScrollClassId),
+                    transaction => RazerBleProtocol30.CreateGetScrollSmartReelThreshold(transaction, MappingProfileId),
                     "get scroll smart reel threshold",
                     cancellationToken).ConfigureAwait(false);
                 EnsureSuccess(response, "get scroll smart reel threshold");
@@ -385,7 +386,7 @@ public sealed partial class RazerBleDeviceService : IDisposable
             async () =>
             {
                 var response = await _session.SendAsync(
-                    transaction => RazerBleProtocol30.CreateGetScrollAcceleration(transaction, ScrollClassId),
+                    transaction => RazerBleProtocol30.CreateGetScrollAcceleration(transaction, MappingProfileId),
                     "get scroll acceleration",
                     cancellationToken).ConfigureAwait(false);
                 EnsureSuccess(response, "get scroll acceleration");
@@ -412,7 +413,7 @@ public sealed partial class RazerBleDeviceService : IDisposable
             {
                 var response = await _session.SendAsync(
                     transaction => RazerBleProtocol30.CreateSetScrollFreeNotchedMode(
-                        transaction, requestedMode, ScrollClassId),
+                        transaction, requestedMode, MappingProfileId),
                     "set scroll mode",
                     cancellationToken).ConfigureAwait(false);
                 EnsureSuccess(response, "set scroll mode");
@@ -421,7 +422,7 @@ public sealed partial class RazerBleDeviceService : IDisposable
             {
                 var response = await _session.SendAsync(
                     transaction => RazerBleProtocol30.CreateSetScrollSmartReel(
-                        transaction, requestedSmartReel, ScrollClassId),
+                        transaction, requestedSmartReel, MappingProfileId),
                     "set scroll smart reel",
                     cancellationToken).ConfigureAwait(false);
                 EnsureSuccess(response, "set scroll smart reel");
@@ -430,7 +431,7 @@ public sealed partial class RazerBleDeviceService : IDisposable
             {
                 var response = await _session.SendAsync(
                     transaction => RazerBleProtocol30.CreateSetScrollSmartReelThreshold(
-                        transaction, requestedThreshold, ScrollClassId),
+                        transaction, requestedThreshold, MappingProfileId),
                     "set scroll smart reel threshold",
                     cancellationToken).ConfigureAwait(false);
                 EnsureSuccess(response, "set scroll smart reel threshold");
@@ -439,7 +440,7 @@ public sealed partial class RazerBleDeviceService : IDisposable
             {
                 var response = await _session.SendAsync(
                     transaction => RazerBleProtocol30.CreateSetScrollAcceleration(
-                        transaction, requestedAcceleration, ScrollClassId),
+                        transaction, requestedAcceleration, MappingProfileId),
                     "set scroll acceleration",
                     cancellationToken).ConfigureAwait(false);
                 EnsureSuccess(response, "set scroll acceleration");
@@ -667,7 +668,7 @@ public sealed partial class RazerBleDeviceService : IDisposable
             {
                 var response = await _session.SendAsync(
                     transaction => RazerBleProtocol30.CreateSetScrollFreeNotchedMode(
-                        transaction, mode, ScrollClassId),
+                        transaction, mode, MappingProfileId),
                     "restore scroll mode",
                     cancellationToken).ConfigureAwait(false);
                 EnsureSuccess(response, "restore scroll mode");
@@ -679,7 +680,7 @@ public sealed partial class RazerBleDeviceService : IDisposable
             {
                 var response = await _session.SendAsync(
                     transaction => RazerBleProtocol30.CreateSetScrollSmartReel(
-                        transaction, smartReel, ScrollClassId),
+                        transaction, smartReel, MappingProfileId),
                     "restore scroll smart reel",
                     cancellationToken).ConfigureAwait(false);
                 EnsureSuccess(response, "restore scroll smart reel");
@@ -691,7 +692,7 @@ public sealed partial class RazerBleDeviceService : IDisposable
             {
                 var response = await _session.SendAsync(
                     transaction => RazerBleProtocol30.CreateSetScrollSmartReelThreshold(
-                        transaction, threshold, ScrollClassId),
+                        transaction, threshold, MappingProfileId),
                     "restore scroll smart reel threshold",
                     cancellationToken).ConfigureAwait(false);
                 EnsureSuccess(response, "restore scroll smart reel threshold");
@@ -703,7 +704,7 @@ public sealed partial class RazerBleDeviceService : IDisposable
             {
                 var response = await _session.SendAsync(
                     transaction => RazerBleProtocol30.CreateSetScrollAcceleration(
-                        transaction, acceleration, ScrollClassId),
+                        transaction, acceleration, MappingProfileId),
                     "restore scroll acceleration",
                     cancellationToken).ConfigureAwait(false);
                 EnsureSuccess(response, "restore scroll acceleration");

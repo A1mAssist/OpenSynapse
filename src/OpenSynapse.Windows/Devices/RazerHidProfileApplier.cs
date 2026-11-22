@@ -177,6 +177,7 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
         // containing both fields visibly flips the wheel before it settles.
         var parsedScrollMode = TryParseScrollMode(profile.ScrollMode, out var scrollMode);
         var hasScrollModeWrite = Has(connection, RazerHidBackendCapability.ScrollModeWrite);
+        var hasTactileModeWrite = Has(connection, RazerHidBackendCapability.ScrollTactileModeWrite);
         var hasFreeNotchedWrite = Has(connection, RazerHidBackendCapability.ScrollFreeNotchedModeWrite);
         if (parsedScrollMode && hasScrollModeWrite)
         {
@@ -187,6 +188,24 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
                 token => _service.GetScrollModeAsync(connection, token),
                 (value, token) => _service.SetScrollModeAsync(connection, value, token),
                 scrollMode, (left, right) => left == right, cancellationToken);
+        }
+        else if (hasTactileModeWrite && (profile.ScrollFreeNotched is not null || parsedScrollMode))
+        {
+            var profileId = profile.ActiveOnboardProfileId is { } onboard
+                ? (byte)onboard
+                : RazerHidMappingProtocol.ProfileId;
+            var tactileMode = parsedScrollMode
+                ? (RazerScrollTactileMode)scrollMode
+                : profile.ScrollFreeNotched == true
+                    ? RazerScrollTactileMode.FreeSpin
+                    : RazerScrollTactileMode.Tactile;
+            await ApplySettingAsync(
+                results, "mouse.scroll-mode", connection,
+                RazerHidBackendCapability.ScrollTactileModeRead,
+                RazerHidBackendCapability.ScrollTactileModeWrite,
+                token => _service.GetScrollTactileModeAsync(connection, profileId, token),
+                (value, token) => _service.SetScrollTactileModeAsync(connection, value, profileId, token),
+                tactileMode, (left, right) => left == right, cancellationToken);
         }
         else if (hasFreeNotchedWrite && (profile.ScrollFreeNotched is not null || parsedScrollMode))
         {

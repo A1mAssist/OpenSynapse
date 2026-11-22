@@ -1946,6 +1946,8 @@
   <data name="RazerHidCapabilityMappingWrite" xml:space="preserve"><value>Tastenzuordnung schreiben</value></data>
   <data name="RazerHidCapabilityScrollFreeNotchedModeRead" xml:space="preserve"><value>Freilaufmodus lesen</value></data>
   <data name="RazerHidCapabilityScrollFreeNotchedModeWrite" xml:space="preserve"><value>Freilaufmodus schreiben</value></data>
+  <data name="RazerHidCapabilityScrollTactileModeRead" xml:space="preserve"><value>Scroll-Tastmodus lesen</value></data>
+  <data name="RazerHidCapabilityScrollTactileModeWrite" xml:space="preserve"><value>Scroll-Tastmodus schreiben</value></data>
   <data name="RazerHidCapabilityScrollAccelerationLevelRead" xml:space="preserve"><value>Stufe der Scrollbeschleunigung lesen</value></data>
   <data name="RazerHidCapabilityScrollAccelerationLevelWrite" xml:space="preserve"><value>Stufe der Scrollbeschleunigung schreiben</value></data>
   <data name="RazerHidCapabilityOnboardProfileRead" xml:space="preserve"><value>Onboard-Profil lesen</value></data>

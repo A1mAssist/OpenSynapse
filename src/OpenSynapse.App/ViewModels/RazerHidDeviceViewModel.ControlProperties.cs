@@ -16,6 +16,8 @@ public sealed partial class RazerHidDeviceViewModel
         RazerHidBackendCapability.ScrollModeWrite,
         RazerHidBackendCapability.ScrollFreeNotchedModeRead,
         RazerHidBackendCapability.ScrollFreeNotchedModeWrite,
+        RazerHidBackendCapability.ScrollTactileModeRead,
+        RazerHidBackendCapability.ScrollTactileModeWrite,
         RazerHidBackendCapability.ScrollAccelerationLevelRead,
         RazerHidBackendCapability.ScrollAccelerationLevelWrite,
         RazerHidBackendCapability.LkScrollWheelModeRead,
