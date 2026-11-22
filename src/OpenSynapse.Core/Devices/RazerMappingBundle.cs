@@ -176,6 +176,9 @@ public static partial class RazerMappingBundleParser
             }
 
             var button = scope[drawCall.ButtonIndex];
+            // Rotation has no firmware key id (OBMSpecs.noFirmwareInputId); the dial
+            // mode lives in 03:92/03:13, not in the 0x9E key table.
+            if (IsKnobRotation(button.Key)) continue;
             if (button.ResolveButtonId(explicitButtonIds) is not { } buttonId || !seenButtonIds.Add(buttonId))
             {
                 continue;
@@ -437,6 +440,7 @@ public static partial class RazerMappingBundleParser
         var names = new Dictionary<byte, string>();
         foreach (var button in buttons)
         {
+            if (IsKnobRotation(button.Key)) continue;
             if (button.ResolveButtonId(explicitButtonIds) is not { } buttonId)
             {
                 continue;
@@ -448,6 +452,9 @@ public static partial class RazerMappingBundleParser
 
         return names;
     }
+
+    private static bool IsKnobRotation(string? buttonKey) =>
+        buttonKey is "DIAL_LEFT_ROTATION" or "DIAL_RIGHT_ROTATION";
 
     // The bundle counter is a UI sequence number, not the firmware button id.
     // Standard mouse semantics map the bundle keys onto the ids the device reports.
