@@ -234,8 +234,10 @@ public static class RazerFeatureReport
     /// <summary>
     /// The 00A4 linker answers with the same checksum for every transaction; the dock
     /// firmware does not produce the checksum this shared range expects. The official
-    /// middleware matches the transaction, payload size, class and command, and ignores
-    /// the checksum. Keep the same gate for that one HID path.
+    /// middleware matches the transaction, class and command, and ignores the checksum.
+    /// Linked firmware answers several commands with a shorter payload than the request
+    /// buffer (profile ids: 2 bytes for an 80-byte request), so only reject replies that
+    /// exceed the requested size.
     /// </summary>
     internal static bool MatchesMouseDockLinkerResponse(
         ReadOnlySpan<byte> request,
@@ -246,7 +248,7 @@ public static class RazerFeatureReport
         (response[2] == request[2] || request[2] == 0xFF) &&
         (allowRemainingPacketsMismatch ||
          (response[3] == request[3] && response[4] == request[4])) &&
-        (allowRemainingPacketsMismatch || response[6] == request[6]) &&
+        response[6] <= request[6] &&
         response[7] == request[7] &&
         response[8] == request[8];
 
