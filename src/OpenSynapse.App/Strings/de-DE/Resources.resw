@@ -4218,7 +4218,6 @@ Nicht gespeicherte Makroänderungen gehen verloren.</value></data>
   <data name="LightingStudioStudioGenerateBlendMix3ColorsLerp" xml:space="preserve"><value>Drei Farben mischen und interpolieren</value></data>
   <data name="LightingStudioStudioGenerateBlendPatternMixColorsLerp" xml:space="preserve"><value>Muster mit gemischten und interpolierten Farben</value></data>
   <data name="ShellLocalDeviceControl" xml:space="preserve"><value>LOCAL DEVICE CONTROL</value></data>
-  <data name="AboutWindowCredit" xml:space="preserve"><value>Mit ❤ in C# von A1mAssist entwickelt.</value></data>
   <data name="OverviewMemoryLabel" xml:space="preserve"><value>ARBEITSSPEICHER</value></data>
   <data name="OverviewStorageLabel" xml:space="preserve"><value>SPEICHER</value></data>
   <data name="ProfileBrowseApplication.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Wählen Sie eine .exe aus und verknüpfen Sie sie mit dem ausgewählten Gerät</value></data>

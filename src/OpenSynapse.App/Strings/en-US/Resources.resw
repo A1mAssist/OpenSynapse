@@ -4234,7 +4234,6 @@
   <data name="LightingStudioStudioGenerateBlendMix3ColorsLerp" xml:space="preserve"><value>Mix and interpolate three colors</value></data>
   <data name="LightingStudioStudioGenerateBlendPatternMixColorsLerp" xml:space="preserve"><value>Pattern with mixed and interpolated colors</value></data>
   <data name="ShellLocalDeviceControl" xml:space="preserve"><value>LOCAL DEVICE CONTROL</value></data>
-  <data name="AboutWindowCredit" xml:space="preserve"><value>Made with ❤ in C# by A1mAssist.</value></data>
   <data name="OverviewMemoryLabel" xml:space="preserve"><value>MEMORY</value></data>
   <data name="OverviewStorageLabel" xml:space="preserve"><value>STORAGE</value></data>
   <data name="ProfileBrowseApplication.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Choose an .exe and link it to the selected device</value></data>

@@ -4218,7 +4218,6 @@
   <data name="LightingStudioStudioGenerateBlendMix3ColorsLerp" xml:space="preserve"><value>3 色を混合して補間</value></data>
   <data name="LightingStudioStudioGenerateBlendPatternMixColorsLerp" xml:space="preserve"><value>色を混合して補間するパターン</value></data>
   <data name="ShellLocalDeviceControl" xml:space="preserve"><value>LOCAL DEVICE CONTROL</value></data>
-  <data name="AboutWindowCredit" xml:space="preserve"><value>A1mAssist が C# で ❤ を込めて制作しました。</value></data>
   <data name="OverviewMemoryLabel" xml:space="preserve"><value>メモリ</value></data>
   <data name="OverviewStorageLabel" xml:space="preserve"><value>ストレージ</value></data>
   <data name="ProfileBrowseApplication.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>選択したデバイスに関連付ける .exe を選択</value></data>

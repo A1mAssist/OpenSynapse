@@ -4218,7 +4218,6 @@ Les modifications de macro non enregistrées seront perdues.</value></data>
   <data name="LightingStudioStudioGenerateBlendMix3ColorsLerp" xml:space="preserve"><value>Mélanger et interpoler trois couleurs</value></data>
   <data name="LightingStudioStudioGenerateBlendPatternMixColorsLerp" xml:space="preserve"><value>Motif avec couleurs mélangées et interpolées</value></data>
   <data name="ShellLocalDeviceControl" xml:space="preserve"><value>LOCAL DEVICE CONTROL</value></data>
-  <data name="AboutWindowCredit" xml:space="preserve"><value>Réalisé avec ❤ en C# par A1mAssist.</value></data>
   <data name="OverviewMemoryLabel" xml:space="preserve"><value>MÉMOIRE</value></data>
   <data name="OverviewStorageLabel" xml:space="preserve"><value>STOCKAGE</value></data>
   <data name="ProfileBrowseApplication.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Choisir un .exe et le lier à l’appareil sélectionné</value></data>
