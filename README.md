@@ -16,7 +16,7 @@
 
 OpenSynapse reads connected devices first, then exposes only the controls resolved for that exact USB device and HID endpoint. It recognizes 389 device IDs across mice, keyboards, laptops, headsets, speakers, microphones, mouse pads, monitors, accessories, and network lighting.
 
-> Current release `v1.7.2` · Windows 11 x64 · unsigned
+> Current release `v1.7.3` · Windows 11 x64 · unsigned
 
 See [CHANGELOG.md](CHANGELOG.md) for release history, or read it in [简体中文](CHANGELOG.zh-CN.md).
 
@@ -71,7 +71,7 @@ Download one of these files from [GitHub Releases](https://github.com/A1mAssist/
 
 Advanced: `OpenSynapse-<version>-win-AutoUpdate-PerUser.exe` is the per-user package. Do not download it for a normal install; use the MSI or Portable. It installs for the current user only and does not install the machine-wide service; use it only when you specifically need a per-user install. The MSI also supports in-app updates through the service registered at install time, without a UAC prompt.
 
-`<version>` is the release version, for example `1.7.2`.
+`<version>` is the release version, for example `1.7.3`.
 
 The MSI service runs as `LocalSystem` and uses the protected executable under `Program Files`. It accepts fixed status, GPU enable/disable/restart, CPU power/Curve Optimizer and GPU clock operations, the fixed macro-agent launch request, and verified update execution. The control pipe allows the configured installation-user SID, local Administrators and SYSTEM, and denies network logons. Available controls remain subject to model, driver and protocol admission; failed registration can still require the existing UAC fallback.
 

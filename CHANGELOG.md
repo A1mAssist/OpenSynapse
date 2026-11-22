@@ -6,6 +6,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ## [Unreleased]
 
+## [1.7.3] - 2026-11-22
+
 ### Added
 
 - **Fullscreen polling**: mice and keyboards can switch to a separate polling rate while a borderless or fullscreen app runs; the write is verified and the normal rate returns when the app exits fullscreen.
@@ -13,26 +15,6 @@ All notable user-visible changes to OpenSynapse are documented here.
 - **Keypad mapping**: Tartarus V2 and V2 Pro use the official key tables, artwork and hotspots; Synapse 2 keypads map through the P2 profile.
 - **Macros and shortcuts**: macro wait steps are edited in seconds, and the mapping catalog includes a minimize-all-windows preset.
 - **Seiren V2 Pro / V2 X**: microphone volume, mute, high-pass filter and limiter over the 8-byte HID report.
-
-### Fixed
-
-- **Command dial**: reads and writes the active onboard profile instead of a fixed profile 1; rotation is no longer emitted as a mapping key, so the dial no longer claims the F/G rows.
-- **OBM keyboards**: mappings are addressed by the firmware key id, so edits land on the row the device reports.
-- **Mapping**: BlackWidow V4 75% reads all 81 keys through the 0x9E table and writes through the key table; hotspots and names follow the firmware key id; Basilisk V3 X boss key; Basilisk V3 Pro's protocol-25 mode pair; Huntsman V3 Pro reads in normal mode; Razer's 10-byte single-assignment payload; Win modifier and keyboard shortcut combinations; Win+Tab and per-key macros no longer interfere.
-- **Macros and turbo**: explicit down steps no longer re-enable auto release; turbo repeats on an absolute clock; driver mode is armed before the first key; each side key keeps its own trigger and a shared private key keeps its macro trigger.
-- **Blade**: game mode reads across middleware models; the touchpad indicator is verified against the EC and reasserted; keyboard brightness uses the live readout, and the 597/710-chroma families no longer scale the raw 0–255 value twice, which made 39% the maximum; the lighting path is held through boot; selecting the same CPU/GPU Boost level re-applies it so the EC budget changes; 029F, 0233, 023A, 0240, 0245, 0255, 02E0 and 02E1 declare their Logo power/mode/effect reports.
-- **Dual-dongle receivers**: keyboards paired to a 00AB receiver are discovered, each device gets its own transaction bank, and the receiver no longer lists itself as a paired device.
-- **Lighting**: Kraken V4 writes through the headset's hid.write path; class-0x10 devices write the selected profile and region; devices that cannot read back still receive lighting; the authored LED map survives a same-product import in Lighting Studio.
-- **Cold boot**: saved lighting is restored per endpoint, including a dock-linked mouse that enumerates later, and a failed write is retried on the next device refresh.
-- **Device refresh**: an invalid device-mode reply no longer aborts the whole Razer HID refresh, so the device list and Blade telemetry still load; the Devices and Diagnostics refresh buttons no longer crash on a failed probe.
-- **DPI**: the mouse page shows the device's current DPI on first open instead of stale defaults.
-- **THX**: manual EQ applies through the custom preset; leftover service registrations are repaired; service health is read from the image path.
-- **Taskbar**: the status strip stays clear of a left-aligned Start button.
-
-## [1.7.3] - 2026-11-19
-
-### Added
-
 - **Mapping coverage**: keyboard extra keys (macro, media and side keys) and private keys now use their real names; Huntsman V3 Pro 8KHz media keys, Viper V4 Pro artwork, keypad D-pad/thumb rows, and the Tartarus Pro and Tartarus wheel layouts are drawn from the official assets.
 - **Combined shortcuts**: mappings can send modifier combinations and Windows shortcut presets; Win+Tab uses the native shortcut, and shortcut sequences play as software input instead of leaving a modifier stuck.
 - **Lighting Studio**: class-0x10 Chroma devices (mice, stands and docks) can be driven from the canvas; every lit RazerHid device exposes brightness; added Kraken V4 Pro and Kitty V3 Pro lighting, Kraken V4 Chroma brightness, and the remaining Kraken and Hammerhead gaps.
@@ -56,6 +38,18 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
+- **Command dial**: reads and writes the active onboard profile instead of a fixed profile 1; rotation is no longer emitted as a mapping key, so the dial no longer claims the F/G rows.
+- **OBM keyboards**: mappings are addressed by the firmware key id, so edits land on the row the device reports.
+- **Mapping and shortcuts**: BlackWidow V4 75% reads all 81 keys through the 0x9E table and writes through the key table; hotspots and names follow the firmware key id; Basilisk V3 X boss key; Razer's 10-byte single-assignment payload; Win modifier and keyboard shortcut combinations; Win+Tab and per-key macros no longer interfere.
+- **Macros and turbo**: explicit down steps no longer re-enable auto release; turbo repeats on an absolute clock; driver mode is armed before the first key; each side key keeps its own trigger and a shared private key keeps its macro trigger.
+- **Blade state and brightness**: game mode reads across middleware models; the touchpad indicator is verified against the EC and reasserted; keyboard brightness uses the live readout, and the 597/710-chroma families no longer scale the raw 0–255 value twice, which made 39% the maximum; the lighting path is held through boot; selecting the same CPU/GPU Boost level re-applies it so the EC budget changes; 029F, 0233, 023A, 0240, 0245, 0255, 02E0 and 02E1 declare their Logo power/mode/effect reports.
+- **Dual-dongle receivers**: keyboards paired to a 00AB receiver are discovered, each device gets its own transaction bank, and the receiver no longer lists itself as a paired device.
+- **Lighting writes**: Kraken V4 writes through the headset's hid.write path; class-0x10 devices write the selected profile and region; devices that cannot read back still receive lighting; the authored LED map survives a same-product import in Lighting Studio.
+- **Cold boot**: saved lighting is restored per endpoint, including a dock-linked mouse that enumerates later, and a failed write is retried on the next device refresh.
+- **Device refresh**: an invalid device-mode reply no longer aborts the whole Razer HID refresh, so the device list and Blade telemetry still load; the Devices and Diagnostics refresh buttons no longer crash on a failed probe.
+- **DPI**: the mouse page shows the device's current DPI on first open instead of stale defaults.
+- **THX manual EQ**: applies through the custom preset; leftover service registrations are repaired; service health is read from the image path.
+- **Taskbar layout**: the status strip stays clear of a left-aligned Start button.
 - Lighting Studio replays the last applied effect on startup and keeps it through automatic profile applies, page eviction and device takeovers; it hands the devices back when another Chroma source takes over.
 - Blade: matrix frames are paced and drained so fan replies are not consumed; 60 fps matrix output is restored; fan floors follow the model; custom power levels survive mode and fan writes; HyperBoost requires verified power and pad readiness; GPU mode appears on 028C and hasGPUmode models; the Fn marker and touchpad indicator recover; Blade 18 2025 exposes the native display switch.
 - Mapping: Basilisk V3 Pro writes through protocol-25 driver mode; Mouse Dock Pro paired mice expose their full command set; Viper side buttons, DPI stages and OBM data, Tartarus Pro key tables, Huntsman V3 Pro extra keys and 0098 anchors are read correctly; firmware rejecting device mode no longer blanks the page.
