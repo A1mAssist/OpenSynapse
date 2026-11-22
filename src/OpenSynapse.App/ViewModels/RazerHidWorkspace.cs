@@ -201,7 +201,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
             connections = RazerHidDeviceConnectionSiblings.Collapse(connections);
             _connectionSnapshot = connections;
             await MigrateProfileInstanceKeysAsync(connections, cancellationToken).ConfigureAwait(true);
-            await RestoreDriverModeAsync(connections, cancellationToken);
+            await RestoreDeviceModesAsync(connections, cancellationToken);
             await RestoreAnalogJoystickModesAsync(connections, cancellationToken);
             await SyncPrivateKeyDriverModeAsync(cancellationToken);
             await RestoreInitialLightingAsync(connections, cancellationToken).ConfigureAwait(true);
@@ -674,7 +674,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         }
     }
 
-    private async Task RestoreDriverModeAsync(
+    private async Task RestoreDeviceModesAsync(
         IReadOnlyList<RazerHidDeviceConnection> connections,
         CancellationToken cancellationToken)
     {
@@ -688,16 +688,35 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         foreach (var connection in connections)
         {
             if (!connection.IsReady ||
-                !connection.Capabilities.Contains(RazerHidBackendCapability.DeviceModeWrite) ||
                 _driverModeChecked.ContainsKey(connection.InstanceId))
+            {
+                continue;
+            }
+
+            var category = connection.Definition.Category;
+            if (category == DeviceCategory.Mouse &&
+                !connection.Capabilities.Contains(RazerHidBackendCapability.DeviceModeWrite))
+            {
+                continue;
+            }
+
+            if (category is not (DeviceCategory.Mouse or DeviceCategory.Keyboard or DeviceCategory.Gamepad))
             {
                 continue;
             }
 
             try
             {
-                await _deviceService.EnsureDriverModeAsync(connection, cancellationToken)
-                    .ConfigureAwait(false);
+                if (category == DeviceCategory.Mouse)
+                {
+                    await _deviceService.EnsureDriverModeAsync(connection, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                else
+                {
+                    await _deviceService.EnsureNormalModeAsync(connection, cancellationToken)
+                        .ConfigureAwait(false);
+                }
                 _driverModeChecked.TryAdd(connection.InstanceId, 0);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -706,7 +725,9 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
             }
             catch (Exception exception) when (
                 exception is NotSupportedException or InvalidOperationException or
-                System.ComponentModel.Win32Exception or System.IO.IOException)
+                System.ComponentModel.Win32Exception or System.IO.IOException or
+                System.IO.InvalidDataException or
+                RazerCommandRejectedException or RazerDeviceTimeoutException)
             {
                 _diagnosticLog.TryWrite("razer-driver-mode",
                     $"1532:{connection.Definition.ProductId:X4} restore failed: {exception.Message}");

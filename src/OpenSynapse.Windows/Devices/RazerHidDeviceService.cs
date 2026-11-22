@@ -343,26 +343,105 @@ public sealed partial class RazerHidDeviceService
             return false;
         }
 
-        var before = RazerHidStandardProtocol.ParseDeviceMode(await ExecuteAsync(connection,
-            RazerHidStandardProtocol.GetDeviceMode(connection.Definition), cancellationToken).ConfigureAwait(false));
-        if (before != RazerHidStandardProtocol.NormalDeviceMode)
+        var before = await TryReadDeviceModeAsync(connection, cancellationToken).ConfigureAwait(false);
+        if (before is not { } mode)
+        {
+            return false;
+        }
+        if (mode != RazerHidStandardProtocol.NormalDeviceMode)
         {
             // 0x03 is already correct; 0x02 and anything else is not ours to overwrite.
-            return before == RazerHidStandardProtocol.DriverDeviceMode;
+            return mode == RazerHidStandardProtocol.DriverDeviceMode;
         }
 
         WriteDiagnostic(connection.Definition.ProductId,
-            $"device mode was 0x{before:X2}; writing driver mode to restore the 2.4 GHz link");
+            $"device mode was 0x{mode:X2}; writing driver mode to restore the 2.4 GHz link");
         await ExecuteWithoutResultAsync(connection,
             RazerHidStandardProtocol.SetDeviceMode(
                 connection.Definition, RazerHidStandardProtocol.DriverDeviceMode),
             cancellationToken)
             .ConfigureAwait(false);
 
-        var after = RazerHidStandardProtocol.ParseDeviceMode(await ExecuteAsync(connection,
-            RazerHidStandardProtocol.GetDeviceMode(connection.Definition), cancellationToken).ConfigureAwait(false));
-        WriteDiagnostic(connection.Definition.ProductId, $"device mode is now 0x{after:X2}");
-        return after == RazerHidStandardProtocol.DriverDeviceMode;
+        var after = await TryReadDeviceModeAsync(connection, cancellationToken).ConfigureAwait(false);
+        if (after is not { } restored)
+        {
+            return false;
+        }
+        WriteDiagnostic(connection.Definition.ProductId, $"device mode is now 0x{restored:X2}");
+        return restored == RazerHidStandardProtocol.DriverDeviceMode;
+    }
+
+    /// <summary>
+    /// A keyboard or keypad left in driver mode by an interrupted mapping session
+    /// reports its roller as a mouse wheel and stops sending media keys. Only driver
+    /// mode is repaired; an unknown mode is left alone rather than overwritten blind.
+    /// </summary>
+    public async Task<bool> EnsureNormalModeAsync(
+        RazerHidDeviceConnection connection,
+        CancellationToken cancellationToken = default)
+    {
+        RequireReady(connection);
+        var before = await TryReadDeviceModeAsync(connection, cancellationToken).ConfigureAwait(false);
+        if (before is not { } mode)
+        {
+            return false;
+        }
+        if (mode != RazerHidStandardProtocol.DriverDeviceMode)
+        {
+            return mode == RazerHidStandardProtocol.NormalDeviceMode;
+        }
+
+        WriteDiagnostic(connection.Definition.ProductId,
+            $"device mode was 0x{mode:X2}; restoring normal mode");
+        try
+        {
+            await ExecuteWithoutResultAsync(connection,
+                RazerHidStandardProtocol.SetDeviceMode(
+                    connection.Definition, RazerHidStandardProtocol.NormalDeviceMode),
+                cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception exception) when (
+            exception is RazerCommandRejectedException or RazerDeviceTimeoutException or
+                NotSupportedException)
+        {
+            WriteDiagnostic(connection.Definition.ProductId,
+                $"normal mode restore rejected: {exception.Message}");
+            return false;
+        }
+
+        var after = await TryReadDeviceModeAsync(connection, cancellationToken).ConfigureAwait(false);
+        if (after is not { } restored)
+        {
+            return false;
+        }
+        WriteDiagnostic(connection.Definition.ProductId, $"device mode is now 0x{restored:X2}");
+        return restored == RazerHidStandardProtocol.NormalDeviceMode;
+    }
+
+    /// <summary>
+    /// A device that cannot answer the mode read is left in whatever mode it is in.
+    /// Letting this parse error escape aborted the whole refresh, hiding every other
+    /// device and leaving the Blade telemetry unread.
+    /// </summary>
+    private async Task<byte?> TryReadDeviceModeAsync(
+        RazerHidDeviceConnection connection,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return RazerHidStandardProtocol.ParseDeviceMode(await ExecuteAsync(connection,
+                RazerHidStandardProtocol.GetDeviceMode(connection.Definition), cancellationToken)
+                .ConfigureAwait(false));
+        }
+        catch (Exception exception) when (
+            exception is System.IO.InvalidDataException or NotSupportedException or
+            RazerCommandRejectedException or RazerDeviceTimeoutException)
+        {
+            WriteDiagnostic(connection.Definition.ProductId,
+                $"device mode unavailable: {exception.Message}");
+            return null;
+        }
     }
 
     public async Task<bool> GetForceChromaCtrlAsync(

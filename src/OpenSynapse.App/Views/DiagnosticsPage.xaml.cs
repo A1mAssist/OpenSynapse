@@ -21,9 +21,22 @@ public sealed partial class DiagnosticsPage : UserControl
 
     private async void RefreshClick(object sender, RoutedEventArgs e)
     {
-        ViewModel.Refresh.SetDiagnosticsRebuildEnabled(true);
-        await ViewModel.Refresh.RefreshDevicesAsync(Lifetime);
-        if (ViewModel.Hue.IsConfigured) _ = ViewModel.RefreshHueAsync(Lifetime);
+        try
+        {
+            ViewModel.Refresh.SetDiagnosticsRebuildEnabled(true);
+            await ViewModel.Refresh.RefreshDevicesAsync(Lifetime);
+            if (ViewModel.Hue.IsConfigured) _ = ViewModel.RefreshHueAsync(Lifetime);
+        }
+        catch (OperationCanceledException) when (Lifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            // An async void handler must not take the window down for one failed probe.
+            ViewModel.ReportApplicationError(
+                AppStrings.FormatText("LabeledError",
+                    AppStrings.Text("Loc_B2441B64DA.Content"), exception.Message));
+        }
     }
 
     private async void CopyDiagnosticsClick(object sender, RoutedEventArgs e)

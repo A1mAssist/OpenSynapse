@@ -135,8 +135,21 @@ public sealed partial class DevicesPage : UserControl
 
     private async void RefreshClick(object sender, RoutedEventArgs e)
     {
-        await ViewModel.Refresh.RefreshDevicesAsync(Lifetime);
-        await ViewModel.RazerDrivers.RefreshAsync(Lifetime);
+        try
+        {
+            await ViewModel.Refresh.RefreshDevicesAsync(Lifetime);
+            await ViewModel.RazerDrivers.RefreshAsync(Lifetime);
+        }
+        catch (OperationCanceledException) when (Lifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            // An async void handler must not take the window down for one failed probe.
+            ViewModel.ReportApplicationError(
+                AppStrings.FormatText("LabeledError",
+                    AppStrings.Text("Loc_B2441B64DA.Content"), exception.Message));
+        }
     }
 
     private async void InstallRazerDriversClick(object sender, RoutedEventArgs e)
