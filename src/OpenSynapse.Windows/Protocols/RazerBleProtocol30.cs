@@ -81,6 +81,8 @@ public static partial class RazerBleProtocol30
 
     public const int RequestHeaderLength = 8;
     public const int ResponseHeaderLength = 20;
+    /// <summary>Razer sends protocol 30 payloads in 20-byte BLE writes.</summary>
+    public const int PayloadChunkLength = 20;
     public const byte MaximumTransactionId = 31;
     public const byte StatusSuccessful = 0x02;
     public const byte StatusBusy = 0x01;

@@ -143,11 +143,22 @@ public sealed partial class RazerBleDeviceService : IDisposable
     public async Task<IReadOnlyList<byte>> GetMappingButtonIdsAsync(
         CancellationToken cancellationToken = default)
     {
-        var response = await _session.SendAsync(
-            transaction => RazerBleProtocol30.CreateGetButtonList(transaction, MappingClassId),
-            "get button list", cancellationToken).ConfigureAwait(false);
-        EnsureSuccess(response, "get button list");
-        return RazerBleProtocol30.ReadButtonList(response);
+        try
+        {
+            var response = await _session.SendAsync(
+                transaction => RazerBleProtocol30.CreateGetButtonList(transaction, MappingClassId),
+                "get button list", cancellationToken).ConfigureAwait(false);
+            EnsureSuccess(response, "get button list");
+            return RazerBleProtocol30.ReadButtonList(response);
+        }
+        catch (InvalidOperationException exception)
+        {
+            // Razer's onboard-memory path takes the button table from the product bundle
+            // and never requires 08:80, so a silent firmware keeps the page usable.
+            _diagnostic?.Invoke(
+                $"ble get button list failed, using the product button table: {exception.Message}");
+            return [];
+        }
     }
 
     public async Task<RazerBleButtonAssignment> GetButtonAssignmentAsync(

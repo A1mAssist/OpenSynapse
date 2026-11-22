@@ -38,6 +38,9 @@ public static class RazerProductAliases
             // Razer Naga V3 Pro
             [0x00E8] = 0x00E7,
             [0x00E9] = 0x00E7,
+            // Razer Naga V2 HyperSpeed: 00B5 is the Bluetooth identity of the
+            // 00B4 product bundle.
+            [0x00B5] = 0x00B4,
             // Razer Basilisk V4 HyperSpeed
             [0x00EA] = 0x00EB,
             [0x00EC] = 0x00EB,

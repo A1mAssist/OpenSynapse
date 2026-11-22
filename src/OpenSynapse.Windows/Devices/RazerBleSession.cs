@@ -46,7 +46,18 @@ public sealed class RazerBleSession : IDisposable
                 }
 
                 var frame = createFrame(NextTransactionId());
-                var reply = await _transport.ExchangeAsync(frame, _timeout, cancellationToken).ConfigureAwait(false);
+                byte[]? reply;
+                try
+                {
+                    reply = await _transport.ExchangeAsync(frame, _timeout, cancellationToken).ConfigureAwait(false);
+                }
+                catch (IOException exception)
+                {
+                    lastError = exception.Message;
+                    _diagnostic?.Invoke($"ble {description}: {exception.Message}");
+                    continue;
+                }
+
                 if (reply is null)
                 {
                     lastError = "timeout";
@@ -66,9 +77,9 @@ public sealed class RazerBleSession : IDisposable
                     continue;
                 }
 
-                if (response.TransactionId != frame[0] || response.CommandClass != frame[4] || response.CommandId != frame[5])
+                if (response.TransactionId != frame[0])
                 {
-                    lastError = "response identity mismatch";
+                    lastError = "response transaction mismatch";
                     continue;
                 }
 

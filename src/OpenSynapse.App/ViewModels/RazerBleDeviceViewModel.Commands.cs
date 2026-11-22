@@ -129,7 +129,8 @@ public sealed partial class RazerBleDeviceViewModel
                     new RazerBleMappingTransport(_service),
                     canWrite: true,
                     log: _diagnostic,
-                    mappingProfileSaver: PersistMappingProfileAsync);
+                    mappingProfileSaver: PersistMappingProfileAsync,
+                    productId: RazerProductAliases.Canonical(_device.ProductId));
                 OnPropertyChanged(nameof(Mapping));
             }
 

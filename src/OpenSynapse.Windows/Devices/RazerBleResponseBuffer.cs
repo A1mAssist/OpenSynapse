@@ -6,8 +6,9 @@ namespace OpenSynapse.Windows.Devices;
 internal sealed class RazerBleResponseBuffer(byte[] request)
 {
     private readonly List<byte> _bytes = [];
-    private bool Matches(ReadOnlySpan<byte> bytes) => bytes.Length >= 8 &&
-        bytes[0] == request[0] && bytes[4] == request[4] && bytes[5] == request[5];
+    // Razer's BLEProtocol30 only matches the transaction id; the reply header does not
+    // repeat the class/command pair at the request offsets.
+    private bool Matches(ReadOnlySpan<byte> bytes) => bytes.Length >= 8 && bytes[0] == request[0];
 
     internal byte[]? Append(byte[] fragment)
     {
