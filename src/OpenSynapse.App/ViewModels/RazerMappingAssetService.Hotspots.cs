@@ -23,9 +23,12 @@ public sealed partial class RazerMappingAssetService
         foreach (var anchor in bundle.MouseAnchors)
         {
             hotspots.TryAdd(
-                RazerSpecialKeyMap.TryResolveButtonId(productId, anchor.ButtonId, out var mappedButtonId)
-                    ? mappedButtonId
-                    : anchor.ButtonId,
+                ResolveMappingKeyId(
+                    productId,
+                    RazerSpecialKeyMap.TryResolveButtonId(
+                        productId, anchor.ButtonId, out var mappedButtonId)
+                        ? mappedButtonId
+                        : anchor.ButtonId),
                 new RazerMappingPoint(anchor.X * scaleX, anchor.Y * scaleY, anchor.IsLeft));
         }
 

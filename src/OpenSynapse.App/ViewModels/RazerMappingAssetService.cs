@@ -185,10 +185,12 @@ public sealed partial class RazerMappingAssetService
                             foreach (var anchor in bundle.MouseAnchors)
                             {
                                 hotspots.TryAdd(
-                                    RazerSpecialKeyMap.TryResolveButtonId(
-                                        productId, anchor.ButtonId, out var mappedButtonId)
-                                        ? mappedButtonId
-                                        : anchor.ButtonId,
+                                    ResolveMappingKeyId(
+                                        productId,
+                                        RazerSpecialKeyMap.TryResolveButtonId(
+                                            productId, anchor.ButtonId, out var mappedButtonId)
+                                            ? mappedButtonId
+                                            : anchor.ButtonId),
                                     new RazerMappingPoint(anchor.X, anchor.Y, anchor.IsLeft));
                             }
 
@@ -232,10 +234,22 @@ public sealed partial class RazerMappingAssetService
         IReadOnlyDictionary<byte, string> names) =>
         names
             .Select(pair => (
-                Id: RazerSpecialKeyMap.TryResolveButtonId(productId, pair.Key, out var mapped) ? mapped : pair.Key,
+                Id: ResolveMappingKeyId(
+                    productId,
+                    RazerSpecialKeyMap.TryResolveButtonId(productId, pair.Key, out var mapped)
+                        ? mapped
+                        : pair.Key),
                 pair.Value))
             .DistinctBy(item => item.Id)
             .ToDictionary(item => item.Id, item => item.Value);
+
+    // Bundle layouts carry USB HID usages; firmware-key-id keyboards address 0x8D/0x9E
+    // with Razer's firmware key id instead.
+    private static byte ResolveMappingKeyId(ushort productId, byte id) =>
+        RazerHuntsmanV3ProKeys.UsesFirmwareKeyIds(productId) &&
+        RazerHuntsmanV3ProKeys.TryGetFirmwareKeyId(id, out var firmwareKeyId)
+            ? firmwareKeyId
+            : id;
 
     private async Task<RazerMappingKeyboardLayout?> LoadKeyboardAsync(
         ushort productId,

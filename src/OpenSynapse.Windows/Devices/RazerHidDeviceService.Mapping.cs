@@ -136,9 +136,10 @@ public sealed partial class RazerHidDeviceService
         connection.Definition.ProductId is 0x0266 or 0x0282;
 
     // Huntsman V3 Pro firmware rejects 0x8D for modifiers and navigation keys.
-    // 02EB's keypad engine reads its assignment table through 0x9E as well.
+    // 02A5's BlackWidow OBM engine also reads every key through 0x9E; only 65 of
+    // its 81 keys answer 0x8D. 02EB's keypad engine reads 0x9E as well.
     private static bool UsesMultiKeyAssignments(RazerHidDeviceConnection connection) =>
-        connection.Definition.ProductId is 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF or 0x02EB;
+        connection.Definition.ProductId is 0x02A5 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF or 0x02EB;
 
     // The Tartarus Pro OBM engine reads each input from the analog, key or multi-key
     // table, in that order; only the Huntsman V3 Pro family reads everything multi-key.
@@ -236,7 +237,7 @@ public sealed partial class RazerHidDeviceService
     // multi-key table but writes through the normal 0x0D key command. 02EB's keypad
     // engine similarly reads 0x9E and writes single assignments through 0x0D.
     private static bool WritesMultiKeyThroughKeyTable(RazerHidDeviceConnection connection) =>
-        connection.Definition.ProductId is 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF or 0x02EB;
+        connection.Definition.ProductId is 0x02A5 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF or 0x02EB;
 
     public Task SetButtonAssignmentAsync(
         RazerHidDeviceConnection connection,
@@ -268,7 +269,8 @@ public sealed partial class RazerHidDeviceService
         // mappings; in normal mode the firmware accepts the frame but keeps the old
         // assignment, which looked like "this device refuses edits". The Tartarus Pro/02EB
         // take the scoped mapping-mode wrapper instead, which restores normal mode.
-        if (!RequiresMappingDriverMode(connection) &&
+        if (connection.Definition.Category == DeviceCategory.Mouse &&
+            !RequiresMappingDriverMode(connection) &&
             connection.Capabilities.Contains(RazerHidBackendCapability.DeviceModeWrite))
         {
             await EnsureDriverModeAsync(connection, cancellationToken).ConfigureAwait(false);
@@ -346,7 +348,8 @@ public sealed partial class RazerHidDeviceService
         }
 
         var analog = definition.ProductId is 0x0266 or 0x0282;
-        var multi = definition.ProductId is 0x0244 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF or 0x02EB;
+        var multi = definition.ProductId is 0x0244 or 0x02A5 or 0x02A6 or 0x02A7 or 0x02B0 or
+            0x02CF or 0x02EB;
         // 022B keypads map the first art key to firmware key id 64 (0x40).
         // 0244 reads the main pad and wheel/D-pad rows through the multi-key table.
         (bool Multi, byte Id)[] probes = definition.ProductId switch
