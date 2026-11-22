@@ -37,7 +37,13 @@ public sealed partial class RazerHidDeviceService
             {
                 await WithMappingModeAsync(
                     connection,
-                    () => RunOnContextAsync(context, () => action(cancellationToken)),
+                    async () =>
+                    {
+                        await PrepareObmKeymapAsync(connection, cancellationToken)
+                            .ConfigureAwait(false);
+                        await RunOnContextAsync(context, () => action(cancellationToken))
+                            .ConfigureAwait(false);
+                    },
                     cancellationToken,
                     bypassSession: true)
                     .ConfigureAwait(false);
@@ -54,6 +60,55 @@ public sealed partial class RazerHidDeviceService
             {
                 _mappingModeSessions.TryRemove(connection.InstanceId, out _);
             }
+        }
+    }
+
+    /// <summary>
+    /// Synapse selects the OBM keymap before every assignment-table read. The
+    /// Tartarus Pro rejects 0x92/0x8D with status 0x05 while the target keymap
+    /// is unset, so read the current keymap, or fall back to 1, and select it.
+    /// </summary>
+    private async Task PrepareObmKeymapAsync(
+        RazerHidDeviceConnection connection,
+        CancellationToken cancellationToken)
+    {
+        if (connection.Definition.ProductId != 0x0244)
+        {
+            return;
+        }
+
+        var keymapId = RazerHidMappingProtocol.ProfileId;
+        try
+        {
+            keymapId = RazerHidMappingProtocol.ParseObmKeymap(
+                await ExecuteAsync(connection, RazerHidMappingProtocol.GetObmKeymap(), cancellationToken)
+                    .ConfigureAwait(false));
+        }
+        catch (Exception exception) when (
+            exception is InvalidDataException or NotSupportedException or
+                RazerCommandRejectedException or RazerDeviceTimeoutException)
+        {
+            WriteDiagnostic(connection.Definition.ProductId,
+                $"mapping keymap read failed: {exception.Message}");
+        }
+
+        if (keymapId == 0)
+        {
+            keymapId = RazerHidMappingProtocol.ProfileId;
+        }
+
+        try
+        {
+            await ExecuteWithoutResultAsync(connection,
+                RazerHidMappingProtocol.SetObmKeymap(keymapId), cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception exception) when (
+            exception is NotSupportedException or RazerCommandRejectedException or
+                RazerDeviceTimeoutException)
+        {
+            WriteDiagnostic(connection.Definition.ProductId,
+                $"mapping keymap set failed: {exception.Message}");
         }
     }
 
@@ -150,8 +205,9 @@ public sealed partial class RazerHidDeviceService
                     return await action().ConfigureAwait(false);
                 }
 
-                // Tartarus V2/Pro and the Huntsman V3 Pro family need driver mode even when
-                // their firmware does not implement the 00:84 read.
+                // Tartarus V2 and the Huntsman V3 Pro family need driver mode even when
+                // their firmware does not implement the 00:84 read. The Tartarus Pro
+                // (0244) is different: Synapse leaves it in normal mode when 00:84 fails.
                 blind = true;
                 _mappingModeBlind.TryAdd(connection.InstanceId, true);
                 WriteDiagnostic(connection.Definition.ProductId,

@@ -155,10 +155,12 @@ public sealed partial class RazerHidDeviceService
         connection.Definition.ProductId is 0x00AA or 0x00AB or
             0x022B or 0x0244 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF or 0x02EB;
 
-    // These devices reject the 00:84 mode read but still require driver mode for
-    // their OBM and analog-key writes. Synapse writes 00:04 without a read-back.
+    // 022B/02A6/02A7/02B0/02CF/02EB reject the 00:84 mode read but still need
+    // driver mode for their OBM and analog-key writes. 0244 is deliberately not
+    // here: Synapse leaves it in normal mode when 00:84 fails, and its OBM
+    // assignment tables are readable only in that mode.
     private static bool UsesBlindMappingDriverMode(RazerHidDeviceConnection connection) =>
-        connection.Definition.ProductId is 0x022B or 0x0244 or 0x02A6 or 0x02A7 or
+        connection.Definition.ProductId is 0x022B or 0x02A6 or 0x02A7 or
             0x02B0 or 0x02CF or 0x02EB;
 
     private async Task<(AssignmentTable Table, RazerHidButtonAssignment Assignment)>

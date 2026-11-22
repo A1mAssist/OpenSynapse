@@ -39,6 +39,8 @@ internal static class RazerHidMappingProtocol
     private const byte SetMultiKeyAssignmentCommand = 0x1E;
     private const byte GetAnalogKeyAssignmentCommand = 0x92;
     private const byte SetAnalogKeyAssignmentCommand = 0x12;
+    private const byte GetObmKeymapCommand = 0xB7;
+    private const byte SetObmKeymapCommand = 0x37;
     private const int MultiKeyAssignmentStride = 9;
 
     internal static RazerHidRequest GetButtonList() => new(
@@ -91,6 +93,20 @@ internal static class RazerHidMappingProtocol
         RazerFeatureReport.CreateRequest(
             TransactionId, SingleAssignmentDataSize, MappingClass, GetAnalogKeyAssignmentCommand,
             new[] { profileId, keyId, mode }));
+
+    /// <summary>
+    /// Synapse selects an OBM keymap before it reads any assignment table.
+    /// The keypad engine rejects reads with 0x05 while the target keymap is unset.
+    /// </summary>
+    internal static RazerHidRequest GetObmKeymap() => new(
+        "mapping.getObmKeymap",
+        RazerFeatureReport.CreateRequest(
+            TransactionId, 1, MappingClass, GetObmKeymapCommand, []));
+
+    internal static RazerHidRequest SetObmKeymap(byte keymapId) => new(
+        "mapping.setObmKeymap",
+        RazerFeatureReport.CreateRequest(
+            TransactionId, 1, MappingClass, SetObmKeymapCommand, new[] { keymapId }));
 
     internal static RazerHidRequest SetAssignment(
         byte profileId,
@@ -272,4 +288,7 @@ internal static class RazerHidMappingProtocol
             ThresholdH = arguments[4],
         };
     }
+
+    internal static byte ParseObmKeymap(ReadOnlySpan<byte> response) =>
+        RazerHidStandardProtocol.Arguments(response, 1)[0];
 }
