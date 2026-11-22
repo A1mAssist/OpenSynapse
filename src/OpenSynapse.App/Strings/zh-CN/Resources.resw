@@ -4684,4 +4684,9 @@
   <data name="AppLanguageKorean.Content" xml:space="preserve"><value>한국어</value></data>
   <data name="AppLanguageGerman.Content" xml:space="preserve"><value>Deutsch</value></data>
   <data name="AppLanguageFrench.Content" xml:space="preserve"><value>Français</value></data>
+  <data name="UpdateSourceLabel" xml:space="preserve"><value>更新源</value><comment>更新源</comment></data>
+  <data name="UpdateSourceAutomatic" xml:space="preserve"><value>自动（推荐）</value><comment>自动（推荐）</comment></data>
+  <data name="UpdateSourceGitee" xml:space="preserve"><value>Gitee（国内）</value><comment>Gitee（国内）</comment></data>
+  <data name="UpdateSourceGitHub" xml:space="preserve"><value>GitHub</value><comment>GitHub</comment></data>
+  <data name="UpdateSourceDescription" xml:space="preserve"><value>自动模式会优先使用 Gitee；如果 Gitee 不可用或版本落后，则回退 GitHub。</value><comment>自动模式会优先使用 Gitee；如果 Gitee 不可用或版本落后，则回退 GitHub。</comment></data>
 </root>

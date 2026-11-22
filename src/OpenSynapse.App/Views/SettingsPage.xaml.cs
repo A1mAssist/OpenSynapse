@@ -2,6 +2,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using OpenSynapse.App.Updates;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Storage;
 using OpenSynapse.Windows.Lifecycle;
@@ -9,15 +10,12 @@ using OpenSynapse.Windows.Lighting;
 using System.Net.Sockets;
 using System.Reflection;
 using Velopack;
-using Velopack.Sources;
 
 namespace OpenSynapse.App.Views;
 
 public sealed partial class SettingsPage : UserControl
 {
-    private const string UpdateRepositoryUrl = "https://github.com/A1mAssist/OpenSynapse";
-    private readonly UpdateManager _updateManager = new(
-        new GithubSource(UpdateRepositoryUrl, null, prerelease: false));
+    private UpdateManager _updateManager;
     private readonly DispatcherQueueTimer _chromaRestStatusTimer;
     private ChromaSourceSnapshot[]? _lastChromaSources;
     private bool _chromaSourceChangePending;
@@ -49,6 +47,8 @@ public sealed partial class SettingsPage : UserControl
     public SettingsPage()
     {
         InitializeComponent();
+        _updateManager = new UpdateManager(
+            UpdateSourceFactory.Create(AppUpdateSettings.UpdateSource));
         _chromaRestStatusTimer = DispatcherQueue.CreateTimer();
         _chromaRestStatusTimer.Interval = TimeSpan.FromSeconds(1);
         _chromaRestStatusTimer.Tick += OnChromaRestStatusTick;
@@ -88,6 +88,7 @@ public sealed partial class SettingsPage : UserControl
     internal void InitializeUpdateUi()
     {
         AutomaticUpdatesToggle.IsOn = AppUpdateSettings.AutomaticUpdatesEnabled;
+        UpdateSourceComboBox.SelectedIndex = (int)AppUpdateSettings.UpdateSource;
         _downloadedUpdate = _updateManager.UpdatePendingRestart;
         _updateUiReady = true;
         RefreshUpdateUiText();
@@ -100,11 +101,13 @@ public sealed partial class SettingsPage : UserControl
             UpdateStatusText.Text = AppStrings.Text("UpdateInstallerRequired");
             CheckUpdateButton.IsEnabled = false;
             AutomaticUpdatesToggle.IsEnabled = false;
+            UpdateSourceComboBox.IsEnabled = false;
             UpdateActionButton.Visibility = Visibility.Collapsed;
             return;
         }
 
         CheckUpdateButton.IsEnabled = !_updateBusy;
+        UpdateSourceComboBox.IsEnabled = !_updateBusy && _downloadedUpdate is null;
         if (_downloadedUpdate is not null)
         {
             UpdateStatusText.Text = IsMachineWideInstall
@@ -597,6 +600,46 @@ public sealed partial class SettingsPage : UserControl
         }
     }
 
+    private async void UpdateSourceChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_updateUiReady ||
+            sender is not ComboBox { SelectedIndex: >= 0 } combo)
+        {
+            return;
+        }
+
+        var preference = (UpdateSourcePreference)combo.SelectedIndex;
+        if (preference == AppUpdateSettings.UpdateSource)
+        {
+            return;
+        }
+
+        try
+        {
+            AppUpdateSettings.UpdateSource = preference;
+            _updateManager = new UpdateManager(
+                UpdateSourceFactory.Create(preference));
+            _availableUpdate = null;
+            _downloadedUpdate = _updateManager.UpdatePendingRestart;
+            RefreshUpdateUiText();
+            if (AutomaticUpdatesEnabled && _updateManager.IsInstalled)
+            {
+                await CheckForUpdatesAsync(downloadAutomatically: false);
+            }
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+            System.Security.SecurityException)
+        {
+            _updateUiReady = false;
+            combo.SelectedIndex = (int)AppUpdateSettings.UpdateSource;
+            _updateUiReady = true;
+            UpdateStatusText.Text = AppStrings.FormatText(
+                "UpdateSettingError",
+                exception.Message);
+        }
+    }
+
     private async void CheckForUpdatesClick(object sender, RoutedEventArgs e) =>
         await CheckForUpdatesAsync(AutomaticUpdatesToggle.IsOn);
 
@@ -640,6 +683,7 @@ public sealed partial class SettingsPage : UserControl
         CheckUpdateButton.IsEnabled = !busy && _updateManager.IsInstalled;
         UpdateActionButton.IsEnabled = !busy;
         AutomaticUpdatesToggle.IsEnabled = !busy;
+        UpdateSourceComboBox.IsEnabled = !busy && _downloadedUpdate is null;
         if (status is not null)
         {
             UpdateStatusText.Text = status;

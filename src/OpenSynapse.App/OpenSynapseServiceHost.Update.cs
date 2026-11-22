@@ -14,8 +14,11 @@ internal static partial class OpenSynapseServiceHost
         Timeout = TimeSpan.FromSeconds(30),
     };
 
-    private const string UpdateManifestUrl =
-        "https://github.com/A1mAssist/OpenSynapse/releases/download/v{0}/releases.win.json";
+    private static readonly string[] UpdateManifestUrls =
+    [
+        "https://gitee.com/A1mAssist/OpenSynapse/releases/download/v{0}/releases.win.json",
+        "https://github.com/A1mAssist/OpenSynapse/releases/download/v{0}/releases.win.json",
+    ];
 
     private static async Task<OpenSynapseServiceResponse> ApplyUpdateAsync(
         OpenSynapseServiceRequest request,
@@ -111,13 +114,53 @@ internal static partial class OpenSynapseServiceHost
         string packagePath,
         CancellationToken cancellationToken)
     {
-        var url = string.Format(
-            CultureInfo.InvariantCulture,
-            UpdateManifestUrl,
-            Uri.EscapeDataString(version));
-        using var document = JsonDocument.Parse(
-            await UpdateHttpClient.GetStringAsync(url, cancellationToken).ConfigureAwait(false));
-        if (!TryGetProperty(document.RootElement, "Assets", out var assets) ||
+        foreach (var template in UpdateManifestUrls)
+        {
+            var url = string.Format(
+                CultureInfo.InvariantCulture,
+                template,
+                Uri.EscapeDataString(version));
+            try
+            {
+                using var document = JsonDocument.Parse(
+                    await UpdateHttpClient.GetStringAsync(url, cancellationToken).ConfigureAwait(false));
+                if (TryFindAsset(
+                        document.RootElement,
+                        packageFileName,
+                        out var expectedHash,
+                        out var expectedSize) &&
+                    await VerifyFileAsync(
+                        packagePath,
+                        expectedHash,
+                        expectedSize,
+                        cancellationToken).ConfigureAwait(false))
+                {
+                    return true;
+                }
+            }
+            catch (Exception exception) when (
+                exception is HttpRequestException or JsonException or
+                TaskCanceledException or OperationCanceledException)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryFindAsset(
+        JsonElement root,
+        string packageFileName,
+        out string expectedHash,
+        out long expectedSize)
+    {
+        expectedHash = string.Empty;
+        expectedSize = 0;
+        if (!TryGetProperty(root, "Assets", out var assets) ||
             assets.ValueKind != JsonValueKind.Array)
         {
             return false;
@@ -133,21 +176,30 @@ internal static partial class OpenSynapseServiceHost
                 continue;
             }
 
-            var expectedHash = hash.GetString();
-            var expectedSize = size.GetInt64();
-            var actualSize = new FileInfo(packagePath).Length;
-            if (string.IsNullOrWhiteSpace(expectedHash) || actualSize != expectedSize)
-            {
-                return false;
-            }
-
-            await using var stream = File.OpenRead(packagePath);
-            var actualHash = Convert.ToHexString(
-                await SHA256.HashDataAsync(stream, cancellationToken).ConfigureAwait(false));
-            return StringComparer.OrdinalIgnoreCase.Equals(actualHash, expectedHash);
+            expectedHash = hash.GetString() ?? string.Empty;
+            expectedSize = size.GetInt64();
+            return !string.IsNullOrWhiteSpace(expectedHash);
         }
 
         return false;
+    }
+
+    private static async Task<bool> VerifyFileAsync(
+        string packagePath,
+        string expectedHash,
+        long expectedSize,
+        CancellationToken cancellationToken)
+    {
+        var actualSize = new FileInfo(packagePath).Length;
+        if (actualSize != expectedSize)
+        {
+            return false;
+        }
+
+        await using var stream = File.OpenRead(packagePath);
+        var actualHash = Convert.ToHexString(
+            await SHA256.HashDataAsync(stream, cancellationToken).ConfigureAwait(false));
+        return StringComparer.OrdinalIgnoreCase.Equals(actualHash, expectedHash);
     }
 
     private static bool TryGetProperty(JsonElement element, string name, out JsonElement value) =>

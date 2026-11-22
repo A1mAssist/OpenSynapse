@@ -9570,4 +9570,9 @@
   <data name="ProfileBrowseApplication.Content" xml:space="preserve">
     <value>exe…</value>
   </data>
+  <data name="UpdateSourceLabel" xml:space="preserve"><value>Источник обновлений</value></data>
+  <data name="UpdateSourceAutomatic" xml:space="preserve"><value>Автоматически (рекомендуется)</value></data>
+  <data name="UpdateSourceGitee" xml:space="preserve"><value>Gitee (Китай)</value></data>
+  <data name="UpdateSourceGitHub" xml:space="preserve"><value>GitHub</value></data>
+  <data name="UpdateSourceDescription" xml:space="preserve"><value>Автоматический режим предпочитает Gitee и переключается на GitHub, если Gitee недоступен или отстаёт.</value></data>
 </root>

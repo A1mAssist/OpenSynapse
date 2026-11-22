@@ -4227,4 +4227,9 @@ Les modifications de macro non enregistrées seront perdues.</value></data>
   <data name="AppLanguageKorean.Content" xml:space="preserve"><value>한국어</value></data>
   <data name="AppLanguageGerman.Content" xml:space="preserve"><value>Deutsch</value></data>
   <data name="AppLanguageFrench.Content" xml:space="preserve"><value>Français</value></data>
+  <data name="UpdateSourceLabel" xml:space="preserve"><value>Source de mise à jour</value></data>
+  <data name="UpdateSourceAutomatic" xml:space="preserve"><value>Automatique (recommandé)</value></data>
+  <data name="UpdateSourceGitee" xml:space="preserve"><value>Gitee (Chine)</value></data>
+  <data name="UpdateSourceGitHub" xml:space="preserve"><value>GitHub</value></data>
+  <data name="UpdateSourceDescription" xml:space="preserve"><value>Le mode automatique privilégie Gitee et revient à GitHub si Gitee est indisponible ou en retard.</value></data>
 </root>

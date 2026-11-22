@@ -4227,4 +4227,9 @@ Nicht gespeicherte Makroänderungen gehen verloren.</value></data>
   <data name="AppLanguageKorean.Content" xml:space="preserve"><value>한국어</value></data>
   <data name="AppLanguageGerman.Content" xml:space="preserve"><value>Deutsch</value></data>
   <data name="AppLanguageFrench.Content" xml:space="preserve"><value>Français</value></data>
+  <data name="UpdateSourceLabel" xml:space="preserve"><value>Update-Quelle</value></data>
+  <data name="UpdateSourceAutomatic" xml:space="preserve"><value>Automatisch (empfohlen)</value></data>
+  <data name="UpdateSourceGitee" xml:space="preserve"><value>Gitee (China)</value></data>
+  <data name="UpdateSourceGitHub" xml:space="preserve"><value>GitHub</value></data>
+  <data name="UpdateSourceDescription" xml:space="preserve"><value>Automatisch bevorzugt Gitee und fällt auf GitHub zurück, wenn Gitee nicht erreichbar oder nicht aktuell ist.</value></data>
 </root>

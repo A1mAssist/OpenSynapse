@@ -4243,4 +4243,9 @@
   <data name="AppLanguageKorean.Content" xml:space="preserve"><value>한국어</value></data>
   <data name="AppLanguageGerman.Content" xml:space="preserve"><value>Deutsch</value></data>
   <data name="AppLanguageFrench.Content" xml:space="preserve"><value>Français</value></data>
+  <data name="UpdateSourceLabel" xml:space="preserve"><value>Update source</value></data>
+  <data name="UpdateSourceAutomatic" xml:space="preserve"><value>Automatic (recommended)</value></data>
+  <data name="UpdateSourceGitee" xml:space="preserve"><value>Gitee (China)</value></data>
+  <data name="UpdateSourceGitHub" xml:space="preserve"><value>GitHub</value></data>
+  <data name="UpdateSourceDescription" xml:space="preserve"><value>Automatic uses Gitee first and falls back to GitHub if Gitee is unavailable or behind.</value></data>
 </root>

@@ -238,6 +238,14 @@
                       </StackPanel>
                       <ToggleSwitch local:Localized.Uid="AutomaticUpdatesToggle" x:Name="AutomaticUpdatesToggle" Grid.Column="1" Toggled="AutomaticUpdatesToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
                     </Grid>
+                    <StackPanel Spacing="6">
+                      <ComboBox x:Name="UpdateSourceComboBox" local:Localized.Uid="UpdateSourceLabel" SelectionChanged="UpdateSourceChanged">
+                        <ComboBoxItem local:Localized.Uid="UpdateSourceAutomatic" />
+                        <ComboBoxItem local:Localized.Uid="UpdateSourceGitee" />
+                        <ComboBoxItem local:Localized.Uid="UpdateSourceGitHub" />
+                      </ComboBox>
+                      <TextBlock local:Localized.Uid="UpdateSourceDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
                     <Border Height="1" Background="{StaticResource LineBrush}" />
                     <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                       <StackPanel Spacing="5" VerticalAlignment="Center">

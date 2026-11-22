@@ -6,6 +6,10 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **Update source**: automatic updates can use the Gitee mirror; Settings offers Automatic, Gitee and GitHub, and Automatic prefers Gitee while falling back when it is unreachable or behind.
+
 ## [1.7.3] - 2026-11-22
 
 ### Added
