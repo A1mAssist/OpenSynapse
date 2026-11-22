@@ -10,8 +10,6 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerHidDeviceViewModel
 {
-    // The keyboard middleware addresses the knob as onboard profile 1 / id 0x24.
-    private const byte KnobProfileId = RazerKnobProtocol.DefaultProfileId;
     private const byte KnobId = RazerKnobProtocol.KnobId;
     private bool _isKnobBusy;
     private RazerKnobStage? _knobCurrentStage;
@@ -82,16 +80,19 @@ public sealed partial class RazerHidDeviceViewModel
                 var previousProfile = ReadProfile(settings => settings.Keyboard.KnobMode);
                 var target = SelectedKnobStage;
                 var stages = KnobStages.Select(row => row.ToStage()).ToArray();
+                // Resolve once: the rollback must write back to the same slot even if
+                // the device switched profiles while this apply was in flight.
+                var profileId = await _service.ResolveActiveProfileIdAsync(Connection, cancellationToken);
                 await _service.SetKnobConfigurationAsync(
-                    Connection, KnobProfileId, KnobId, stages, cancellationToken);
+                    Connection, profileId, KnobId, stages, cancellationToken);
                 if (target is { IsEnabled: true } selected)
                 {
                     await _service.SetKnobModeAsync(
-                        Connection, KnobProfileId, KnobId, selected.ToStage(), cancellationToken);
+                        Connection, profileId, KnobId, selected.ToStage(), cancellationToken);
                 }
                 if (Has(RazerHidBackendCapability.KnobRead))
                 {
-                    await RefreshKnobAsync(cancellationToken);
+                    await RefreshKnobAsync(cancellationToken, profileId);
                 }
                 if (target is { } applied)
                 {
@@ -102,21 +103,22 @@ public sealed partial class RazerHidDeviceViewModel
                         async token =>
                         {
                             await _service.SetKnobConfigurationAsync(
-                                Connection, KnobProfileId, KnobId, previousStages, token);
+                                Connection, profileId, KnobId, previousStages, token);
                             if (previousStage is { } previous)
                             {
                                 await _service.SetKnobModeAsync(
-                                    Connection, KnobProfileId, KnobId, previous, token);
+                                    Connection, profileId, KnobId, previous, token);
                             }
                         },
                         cancellationToken);
                 }
             }, cancellationToken);
 
-    private async Task RefreshKnobAsync(CancellationToken cancellationToken)
+    private async Task RefreshKnobAsync(CancellationToken cancellationToken, byte? profileId = null)
     {
+        profileId ??= await _service.ResolveActiveProfileIdAsync(Connection, cancellationToken);
         var configuration = await _service.GetKnobConfigurationAsync(
-            Connection, KnobProfileId, KnobId, cancellationToken);
+            Connection, profileId.Value, KnobId, cancellationToken);
         KnobStages.Clear();
         foreach (var stage in configuration.Stages)
         {
@@ -124,7 +126,7 @@ public sealed partial class RazerHidDeviceViewModel
         }
         OnPropertyChanged(nameof(CanApplyKnob));
 
-        var mode = await _service.GetKnobModeAsync(Connection, KnobProfileId, KnobId, cancellationToken);
+        var mode = await _service.GetKnobModeAsync(Connection, profileId.Value, KnobId, cancellationToken);
         _knobCurrentStage = mode.Stage;
         SelectedKnobStage = KnobStages.FirstOrDefault(row => row.Stage == mode.Stage.Stage)
             ?? KnobStages.FirstOrDefault();

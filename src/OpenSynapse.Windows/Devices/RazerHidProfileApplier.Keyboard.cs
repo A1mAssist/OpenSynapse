@@ -6,7 +6,6 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed partial class RazerHidProfileApplier
 {
-    private const byte KnobProfileId = RazerKnobProtocol.DefaultProfileId;
     private const byte KnobId = RazerKnobProtocol.KnobId;
 
     private async Task ApplyKeyboardAsync(
@@ -247,8 +246,9 @@ public sealed partial class RazerHidProfileApplier
 
         try
         {
+            var profileId = await _service.ResolveActiveProfileIdAsync(connection, cancellationToken);
             var current = await _service.GetKnobModeAsync(
-                connection, KnobProfileId, KnobId, cancellationToken);
+                connection, profileId, KnobId, cancellationToken);
             if ((byte)current.Stage.Mode == mode)
             {
                 results.Add(Applied(key));
@@ -257,9 +257,9 @@ public sealed partial class RazerHidProfileApplier
 
             var stage = current.Stage with { Mode = (RazerKnobMode)mode };
             await _service.SetKnobModeAsync(
-                connection, KnobProfileId, KnobId, stage, cancellationToken);
+                connection, profileId, KnobId, stage, cancellationToken);
             var applied = await _service.GetKnobModeAsync(
-                connection, KnobProfileId, KnobId, cancellationToken);
+                connection, profileId, KnobId, cancellationToken);
             results.Add((byte)applied.Stage.Mode == mode
                 ? Applied(key)
                 : Mismatch(key, $"expected {mode}, got {(byte)applied.Stage.Mode}"));
