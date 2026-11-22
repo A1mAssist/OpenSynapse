@@ -159,7 +159,7 @@ internal sealed class BladeDisplayTelemetryReader
                 throw new InvalidOperationException("Blade returned an incorrect Chroma brightness object.");
             }
 
-            return checked((byte)Math.Ceiling(arguments[2] * 100d / 255d));
+            return arguments[2];
         }
         // The 671 family answers the selector-shaped brightness report (store, region,
         // raw 0..255). Reading arguments[1] returns the constant keyboard region (5)
@@ -181,13 +181,11 @@ internal sealed class BladeDisplayTelemetryReader
         if (device.Descriptor.ProtocolFamily is "blade-597" or "blade-710-chroma")
         {
             // These families use the Chroma brightness object: profile 1, BacklightLED
-            // region 5, and an 8-bit raw value. Floor keeps a 50% write reading back as
-            // 50% after the read path's ceil conversion.
-            var raw = (byte)Math.Clamp(brightness * 255 / 100, 0, 255);
+            // region 5, and the same 8-bit raw value the profile and UI store.
             return _client.QueryAsync(
                 device,
                 CapabilityIds.KeyboardBrightnessSet,
-                new byte[] { 0x01, 0x05, raw },
+                new byte[] { 0x01, 0x05, brightness },
                 cancellationToken);
         }
 
