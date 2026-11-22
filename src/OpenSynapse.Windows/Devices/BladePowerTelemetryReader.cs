@@ -480,15 +480,17 @@ internal sealed partial class BladePowerTelemetryReader
         }
 
         var original = await ReadBoostStateAsync(blade, cancellationToken);
-        if ((cluster == BladeBoostProtocol.CpuCluster && (byte)original.Cpu == value) ||
-            (cluster == BladeBoostProtocol.GpuCluster && (byte)original.Gpu == value))
-        {
-            return original;
-        }
-
         try
         {
-            await WriteBoostModeAsync(blade, cluster, value, cancellationToken);
+            if ((cluster == BladeBoostProtocol.CpuCluster && (byte)original.Cpu == value) ||
+                (cluster == BladeBoostProtocol.GpuCluster && (byte)original.Gpu == value))
+            {
+                await ReapplyBoostModeAsync(blade, cluster, value, cancellationToken);
+            }
+            else
+            {
+                await WriteBoostModeAsync(blade, cluster, value, cancellationToken);
+            }
             var actual = await ReadBoostStateAsync(blade, cancellationToken);
             var matches = cluster == BladeBoostProtocol.CpuCluster
                 ? (byte)actual.Cpu == value && actual.Gpu == original.Gpu
@@ -516,6 +518,37 @@ internal sealed partial class BladePowerTelemetryReader
             }
             throw new InvalidOperationException(message, exception);
         }
+    }
+
+    /// <summary>
+    /// The EC can report a level while still running the previous mode's budget.
+    /// Razer forces a transition through another valid level before writing the target,
+    /// so a same-value selection takes effect instead of being a no-op.
+    /// </summary>
+    private async Task ReapplyBoostModeAsync(
+        ResolvedRazerDevice blade,
+        byte cluster,
+        byte value,
+        CancellationToken cancellationToken)
+    {
+        var intermediate = value == (byte)BladeCpuBoostMode.Low
+            ? (byte)BladeCpuBoostMode.Medium
+            : (byte)BladeCpuBoostMode.Low;
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            await WriteBoostModeAsync(blade, cluster, intermediate, cancellationToken);
+            await Task.Delay(100 << attempt, cancellationToken);
+            var read = await ReadBoostStateAsync(blade, cancellationToken);
+            var current = cluster == BladeBoostProtocol.CpuCluster
+                ? (byte)read.Cpu
+                : (byte)read.Gpu;
+            if (current != value)
+            {
+                break;
+            }
+        }
+
+        await WriteBoostModeAsync(blade, cluster, value, cancellationToken);
     }
 
     private Task WriteBoostModeAsync(

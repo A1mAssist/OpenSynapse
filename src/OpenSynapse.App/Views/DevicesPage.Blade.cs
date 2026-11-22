@@ -224,6 +224,7 @@ public sealed partial class DevicesPage : UserControl
                 await ViewModel.Blade.ApplyChargeLimitAsync(Lifetime);
                 break;
             case "cpuBoost":
+                ViewModel.Blade.CpuBoostIndex = combo.SelectedIndex;
                 await ViewModel.Blade.ApplyCpuBoostAsync(Lifetime);
                 break;
             case "cpuPowerLimit":
@@ -234,6 +235,7 @@ public sealed partial class DevicesPage : UserControl
                 await ViewModel.CpuPower.ApplyCpuPowerLimitAsync(Lifetime);
                 break;
             case "gpuBoost":
+                ViewModel.Blade.GpuBoostIndex = combo.SelectedIndex;
                 await ViewModel.Blade.ApplyGpuBoostAsync(Lifetime);
                 break;
             case "lighting":

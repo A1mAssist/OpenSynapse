@@ -136,6 +136,12 @@ internal sealed partial class RazerDeviceRegistry
                 [CapabilityIds.GpuCardDetectionSet] = new(0x03, 0x03, 0x20, ""),
                 [CapabilityIds.KeyboardBrightnessGet] = new(0x03, 0x0F, 0x84, "0105", true),
                 [CapabilityIds.KeyboardBrightnessSet] = new(0x03, 0x0F, 0x04, ""),
+                [CapabilityIds.LogoPowerGet] = new(0x03, 0x03, 0x80, "000400"),
+                [CapabilityIds.LogoPowerSet] = new(0x03, 0x03, 0x00, ""),
+                [CapabilityIds.LogoModeGet] = new(0x03, 0x03, 0x82, "000400"),
+                [CapabilityIds.LogoModeSet] = new(0x03, 0x03, 0x02, ""),
+                [CapabilityIds.LogoEffectSet] = new(0x03, 0x03, 0x02, ""),
+                [CapabilityIds.LogoStateSet] = new(0x03, 0x03, 0x00, ""),
                 [CapabilityIds.ChargeLimitGet] = new(0x01, 0x07, 0x92, "00", true),
                 [CapabilityIds.ChargeLimitSet] = new(0x01, 0x07, 0x12, ""),
             },
@@ -221,7 +227,10 @@ internal sealed partial class RazerDeviceRegistry
                     CapabilityIds.AutoSleepGet or CapabilityIds.AutoSleepSet or
                     CapabilityIds.TimeToDimGet or CapabilityIds.TimeToDimSet or
                     CapabilityIds.IndicatorLedGet or CapabilityIds.IndicatorLedSet or
-                    CapabilityIds.GpuCardDetectionGet or CapabilityIds.GpuCardDetectionSet))
+                    CapabilityIds.GpuCardDetectionGet or CapabilityIds.GpuCardDetectionSet or
+                    CapabilityIds.LogoPowerGet or CapabilityIds.LogoPowerSet or
+                    CapabilityIds.LogoModeGet or CapabilityIds.LogoModeSet or
+                    CapabilityIds.LogoEffectSet or CapabilityIds.LogoStateSet))
                 .ToHashSet(StringComparer.Ordinal),
             ["viper-184"] = FamilyCapabilities["viper-184"].Keys.ToHashSet(StringComparer.Ordinal),
             ["razer-hid-standard"] = new HashSet<string>(StringComparer.Ordinal),
