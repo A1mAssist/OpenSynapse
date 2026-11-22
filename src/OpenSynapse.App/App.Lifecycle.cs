@@ -256,6 +256,10 @@ public partial class App
             throw new InvalidOperationException("OpenSynapse is not ready to restart for an update.");
         }
 
+        _diagnosticLog.TryWrite(
+            "application",
+            $"Update requested: {release.Version} ({release.FileName}).");
+
         if (OpenSynapseServiceInstaller.IsMachineInstallPath(Environment.ProcessPath))
         {
             var locator = VelopackLocator.Current;
@@ -273,7 +277,10 @@ public partial class App
                 .ConfigureAwait(false);
             if (attempt.Started)
             {
-                await GetShutdownTask(_audioMuteViewModel);
+                await ShutdownForUpdateAsync(_audioMuteViewModel).ConfigureAwait(false);
+                _diagnosticLog.TryWrite(
+                    "application",
+                    $"Exiting to apply update {release.Version} through the OpenSynapse service.");
                 Environment.Exit(0);
             }
 
@@ -289,12 +296,58 @@ public partial class App
                 root,
                 packages,
                 Environment.ProcessId);
-            await GetShutdownTask(_audioMuteViewModel);
+            await ShutdownForUpdateAsync(_audioMuteViewModel).ConfigureAwait(false);
+            _diagnosticLog.TryWrite(
+                "application",
+                $"Exiting to apply update {release.Version} through the elevated updater.");
             Environment.Exit(0);
         }
 
-        await GetShutdownTask(_audioMuteViewModel);
+        await ShutdownForUpdateAsync(_audioMuteViewModel).ConfigureAwait(false);
+        _diagnosticLog.TryWrite(
+            "application",
+            $"Applying update {release.Version} and restarting.");
         updateManager.ApplyUpdatesAndRestart(release);
+    }
+
+    /// <summary>
+    /// Stops the processes that can keep the old application files open, then
+    /// waits for a bounded graceful shutdown. Update must never be blocked by a
+    /// failed UI teardown: Update.exe is already waiting for this process to exit.
+    /// </summary>
+    private async Task ShutdownForUpdateAsync(MainViewModel viewModel)
+    {
+        if (_elevatedMacroClient is { } macroClient)
+        {
+            using var stopTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+            try
+            {
+                _ = await macroClient.StopAsync(stopTimeout.Token).ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                _diagnosticLog.TryWrite(
+                    "application",
+                    $"Macro agent shutdown before update failed: {exception.Message}");
+            }
+            finally
+            {
+                macroClient.Dispose();
+            }
+        }
+
+        try
+        {
+            await GetShutdownTask(viewModel)
+                .WaitAsync(ExitCleanupTimeout + TimeSpan.FromSeconds(3))
+                .ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            _diagnosticLog.TryWrite(
+                "application",
+                $"Update shutdown did not complete cleanly; forcing exit: {exception}");
+        }
     }
 
     private Task GetShutdownTask(MainViewModel viewModel)
@@ -345,7 +398,18 @@ public partial class App
         _taskbarStatusPresenter = null;
         _trayIcon?.Dispose();
         _trayIcon = null;
-        _trayMenuWindow?.CloseMenuHost();
+        try
+        {
+            _trayMenuWindow?.CloseMenuHost();
+        }
+        catch (Exception exception)
+        {
+            // WinUI can throw RPC_E_WRONG_THREAD while the dispatcher is shutting
+            // down. A stale tray window must not prevent the process from exiting.
+            _diagnosticLog.TryWrite(
+                "application",
+                $"Tray menu close failed during shutdown: {exception.Message}");
+        }
         _trayMenuWindow = null;
         _performanceMonitor?.Dispose();
         _performanceMonitor = null;

@@ -152,7 +152,9 @@ internal static class OpenSynapseUpdateTaskInstaller
         string updateExePath,
         string applyArguments,
         string schTasksPath) =>
-        $"/d /s /c \"\"{updateExePath}\" {applyArguments} && \"{schTasksPath}\" /run /tn {RestartTaskName}\"";
+        // Always restart, even when Update.exe returns a failure: a failed apply
+        // must not leave the user with no running application.
+        $"/d /s /c \"\"{updateExePath}\" {applyArguments} & \"{schTasksPath}\" /run /tn {RestartTaskName}\"";
 
     internal static string BuildRestartTaskXml(
         string appPath,
