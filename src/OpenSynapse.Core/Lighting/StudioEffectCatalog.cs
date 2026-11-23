@@ -27,6 +27,9 @@ public enum StudioParameterField
     Decay,
     Screen,
     ScreenRect,
+    ScreenMode,
+    AudioStyle,
+    ReactiveStyle,
     Blur,
     MediaSrc,
     GenerateConfig,
@@ -124,6 +127,9 @@ public static class StudioEffectCatalog
         parameters.DeviceWithCenterPointJson = defaults.DeviceWithCenterPointJson;
         parameters.Screen = defaults.Screen;
         parameters.ScreenRect = defaults.ScreenRect;
+        parameters.ScreenMode = defaults.ScreenMode;
+        parameters.AudioStyle = defaults.AudioStyle;
+        parameters.ReactiveStyle = defaults.ReactiveStyle;
         parameters.ColorStopsCustom = defaults.ColorStopsCustom;
 
         parameters.ColorStops.Clear();
@@ -283,7 +289,7 @@ public static class StudioEffectCatalog
                 (Cycles, new StudioParameterRange(-1, 100, 1, -1)))),
 
         Describe(StudioEffectKind.Reactive,
-            Fields(Color, RandomColor, Duration, PlaybackStart, PlaybackEnd, Cycles),
+            Fields(Color, RandomColor, ReactiveStyle, Duration, PlaybackStart, PlaybackEnd, Cycles),
             Ranges(
                 (Color, ColorRange(Green)),
                 (RandomColor, Toggle()),
@@ -325,13 +331,13 @@ public static class StudioEffectCatalog
                     StudioEffectParams.FireDefaultRate)))),
 
         Describe(StudioEffectKind.Ambient,
-            Fields(Screen, ScreenRect, Blur),
+            Fields(ScreenMode, Screen, ScreenRect, Blur),
             Ranges(
                 (Screen, new StudioParameterRange(0, ScreenMaximum, 1, 0)),
                 (Blur, new StudioParameterRange(1, 9, 1, 5)))),
 
         Describe(StudioEffectKind.Audio,
-            Fields(ColorStops, Boost, AutoBoost, Decay),
+            Fields(ColorStops, AudioStyle, Boost, AutoBoost, Decay),
             Ranges(
                 (Boost, new StudioParameterRange(0.25, 4, 0.25, 1)),
                 (AutoBoost, Toggle()),

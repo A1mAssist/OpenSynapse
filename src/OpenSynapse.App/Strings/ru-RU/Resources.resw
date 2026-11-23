@@ -7760,6 +7760,114 @@
   <data name="LightingStudioParamBlur" xml:space="preserve">
     <value>Размытие</value>
   </data>
+  <data name="LightingStudioParamScreenMode" xml:space="preserve">
+    <value>Считывание экрана</value>
+  </data>
+  <data name="LightingStudioScreenModeFollow" xml:space="preserve">
+    <value>Следовать за экраном</value>
+  </data>
+  <data name="LightingStudioScreenModeBand" xml:space="preserve">
+    <value>Цветовая полоса</value>
+  </data>
+  <data name="LightingStudioScreenModeDominant" xml:space="preserve">
+    <value>Доминирующий цвет</value>
+  </data>
+  <data name="LightingStudioScreenModeMonet" xml:space="preserve">
+    <value>Палитра Моне</value>
+  </data>
+  <data name="LightingStudioParamAudioStyle" xml:space="preserve">
+    <value>Стиль музыки</value>
+  </data>
+  <data name="LightingStudioAudioStyleLevel" xml:space="preserve">
+    <value>Уровень</value>
+  </data>
+  <data name="LightingStudioAudioStyleBars" xml:space="preserve">
+    <value>Спектральные полосы</value>
+  </data>
+  <data name="LightingStudioAudioStyleBeatFlash" xml:space="preserve">
+    <value>Вспышка бита</value>
+  </data>
+  <data name="LightingStudioAudioStyleEqualizer" xml:space="preserve">
+    <value>Эквалайзер</value>
+  </data>
+  <data name="LightingStudioAudioStyleMirror" xml:space="preserve">
+    <value>Зеркало</value>
+  </data>
+  <data name="LightingStudioAudioStyleWaterfall" xml:space="preserve">
+    <value>Водопад</value>
+  </data>
+  <data name="LightingStudioAudioStyleRing" xml:space="preserve">
+    <value>Спектральное кольцо</value>
+  </data>
+  <data name="LightingStudioAudioStyleCore" xml:space="preserve">
+    <value>Басовое ядро</value>
+  </data>
+  <data name="LightingStudioAudioStyleWave" xml:space="preserve">
+    <value>Звуковая волна</value>
+  </data>
+  <data name="LightingStudioAudioStyleFire" xml:space="preserve">
+    <value>Ритмичный огонь</value>
+  </data>
+  <data name="LightingStudioAudioStyleStardust" xml:space="preserve">
+    <value>Звёздная пыль</value>
+  </data>
+  <data name="LightingStudioAudioStyleVolume" xml:space="preserve">
+    <value>Свечение громкости</value>
+  </data>
+  <data name="LightingStudioAudioStyleBeatRipple" xml:space="preserve">
+    <value>Волна бита</value>
+  </data>
+  <data name="LightingStudioParamReactiveStyle" xml:space="preserve">
+    <value>Стиль клавиш</value>
+  </data>
+  <data name="LightingStudioReactiveStyleRipple" xml:space="preserve">
+    <value>Волна</value>
+  </data>
+  <data name="LightingStudioReactiveStyleDiamond" xml:space="preserve">
+    <value>Ромб</value>
+  </data>
+  <data name="LightingStudioReactiveStyleDoubleRing" xml:space="preserve">
+    <value>Двойное кольцо</value>
+  </data>
+  <data name="LightingStudioReactiveStyleSonar" xml:space="preserve">
+    <value>Сонар</value>
+  </data>
+  <data name="LightingStudioReactiveStyleBurst" xml:space="preserve">
+    <value>Всплеск</value>
+  </data>
+  <data name="LightingStudioReactiveStyleFireworks" xml:space="preserve">
+    <value>Фейерверк</value>
+  </data>
+  <data name="LightingStudioReactiveStyleTrail" xml:space="preserve">
+    <value>След</value>
+  </data>
+  <data name="LightingStudioReactiveStyleSpotlight" xml:space="preserve">
+    <value>Прожектор</value>
+  </data>
+  <data name="LightingStudioReactiveStyleInk" xml:space="preserve">
+    <value>Чернила</value>
+  </data>
+  <data name="LightingStudioReactiveStyleHeatmap" xml:space="preserve">
+    <value>Тепловая карта</value>
+  </data>
+  <data name="LightingStudioReactiveStyleConstellation" xml:space="preserve">
+    <value>Созвездие</value>
+  </data>
+  <data name="LightingStudioReactiveStyleComet" xml:space="preserve">
+    <value>Комета</value>
+  </data>
+  <data name="LightingStudioReactiveStyleCross" xml:space="preserve">
+    <value>Крест</value>
+  </data>
+  <data name="LightingStudioReactiveStyleRay" xml:space="preserve">
+    <value>Луч</value>
+  </data>
+  <data name="LightingStudioReactiveStyleWeb" xml:space="preserve">
+    <value>Сеть</value>
+  </data>
+  <data name="LightingStudioReactiveStyleVortex" xml:space="preserve">
+    <value>Вихрь</value>
+  </data>
   <data name="LightingStudioParamMediaSrc" xml:space="preserve">
     <value>Источник медиа</value>
   </data>

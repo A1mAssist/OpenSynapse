@@ -3623,6 +3623,42 @@
   <data name="LightingStudioParamCaptureRegionHint" xml:space="preserve"><value>선택 영역을 끌거나 0–100% 값을 입력하세요. 모든 주변 레이어에 적용됩니다.</value></data>
   <data name="LightingStudioParamCaptureRegionReset" xml:space="preserve"><value>전체 화면으로 재설정</value></data>
   <data name="LightingStudioParamBlur" xml:space="preserve"><value>흐리게</value></data>
+  <data name="LightingStudioParamScreenMode" xml:space="preserve"><value>화면 색상 추출</value></data>
+  <data name="LightingStudioScreenModeFollow" xml:space="preserve"><value>화면 따라가기</value></data>
+  <data name="LightingStudioScreenModeBand" xml:space="preserve"><value>화면 색상 띠</value></data>
+  <data name="LightingStudioScreenModeDominant" xml:space="preserve"><value>영역 주 색상</value></data>
+  <data name="LightingStudioScreenModeMonet" xml:space="preserve"><value>모네 배색</value></data>
+  <data name="LightingStudioParamAudioStyle" xml:space="preserve"><value>음악 스타일</value></data>
+  <data name="LightingStudioAudioStyleLevel" xml:space="preserve"><value>레벨</value></data>
+  <data name="LightingStudioAudioStyleBars" xml:space="preserve"><value>스펙트럼 바</value></data>
+  <data name="LightingStudioAudioStyleBeatFlash" xml:space="preserve"><value>비트 플래시</value></data>
+  <data name="LightingStudioAudioStyleEqualizer" xml:space="preserve"><value>이퀄라이저</value></data>
+  <data name="LightingStudioAudioStyleMirror" xml:space="preserve"><value>미러</value></data>
+  <data name="LightingStudioAudioStyleWaterfall" xml:space="preserve"><value>워터폴</value></data>
+  <data name="LightingStudioAudioStyleRing" xml:space="preserve"><value>스펙트럼 링</value></data>
+  <data name="LightingStudioAudioStyleCore" xml:space="preserve"><value>베이스 코어</value></data>
+  <data name="LightingStudioAudioStyleWave" xml:space="preserve"><value>사운드 웨이브</value></data>
+  <data name="LightingStudioAudioStyleFire" xml:space="preserve"><value>리듬 파이어</value></data>
+  <data name="LightingStudioAudioStyleStardust" xml:space="preserve"><value>스타더스트</value></data>
+  <data name="LightingStudioAudioStyleVolume" xml:space="preserve"><value>볼륨 글로우</value></data>
+  <data name="LightingStudioAudioStyleBeatRipple" xml:space="preserve"><value>비트 리플</value></data>
+  <data name="LightingStudioParamReactiveStyle" xml:space="preserve"><value>키 효과 스타일</value></data>
+  <data name="LightingStudioReactiveStyleRipple" xml:space="preserve"><value>물결</value></data>
+  <data name="LightingStudioReactiveStyleDiamond" xml:space="preserve"><value>다이아몬드</value></data>
+  <data name="LightingStudioReactiveStyleDoubleRing" xml:space="preserve"><value>이중 링</value></data>
+  <data name="LightingStudioReactiveStyleSonar" xml:space="preserve"><value>소나</value></data>
+  <data name="LightingStudioReactiveStyleBurst" xml:space="preserve"><value>버스트</value></data>
+  <data name="LightingStudioReactiveStyleFireworks" xml:space="preserve"><value>불꽃</value></data>
+  <data name="LightingStudioReactiveStyleTrail" xml:space="preserve"><value>잔상</value></data>
+  <data name="LightingStudioReactiveStyleSpotlight" xml:space="preserve"><value>스포트라이트</value></data>
+  <data name="LightingStudioReactiveStyleInk" xml:space="preserve"><value>잉크</value></data>
+  <data name="LightingStudioReactiveStyleHeatmap" xml:space="preserve"><value>히트맵</value></data>
+  <data name="LightingStudioReactiveStyleConstellation" xml:space="preserve"><value>별자리</value></data>
+  <data name="LightingStudioReactiveStyleComet" xml:space="preserve"><value>혜성</value></data>
+  <data name="LightingStudioReactiveStyleCross" xml:space="preserve"><value>십자</value></data>
+  <data name="LightingStudioReactiveStyleRay" xml:space="preserve"><value>광선</value></data>
+  <data name="LightingStudioReactiveStyleWeb" xml:space="preserve"><value>연결</value></data>
+  <data name="LightingStudioReactiveStyleVortex" xml:space="preserve"><value>소용돌이</value></data>
   <data name="LightingStudioParamMediaSrc" xml:space="preserve"><value>미디어 소스</value></data>
   <data name="LightingStudioParamGenerateConfig" xml:space="preserve"><value>구성 생성(JSON)</value></data>
   <data name="LightingStudioBrowse" xml:space="preserve"><value>찾아보기…</value></data>

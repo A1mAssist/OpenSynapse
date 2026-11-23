@@ -228,6 +228,12 @@ public static partial class StudioProjectCodec
         parameters.Decay = ReadDouble(element, "decay", 50);
         parameters.AutoBoost = ReadBool(element, "autoBoost");
         parameters.Screen = GetString(element, "screen");
+        if (Enum.TryParse<StudioScreenMode>(GetString(element, "screenMode"), ignoreCase: true, out var screenMode))
+            parameters.ScreenMode = screenMode;
+        if (Enum.TryParse<StudioAudioStyle>(GetString(element, "audioStyle"), ignoreCase: true, out var audioStyle))
+            parameters.AudioStyle = audioStyle;
+        if (Enum.TryParse<StudioReactiveStyle>(GetString(element, "reactiveStyle"), ignoreCase: true, out var reactiveStyle))
+            parameters.ReactiveStyle = reactiveStyle;
         parameters.Blur = ReadInt(element, "blur");
         parameters.MediaSrc = GetString(element, "mediaSrc");
         if (TryGet(element, "currentConfig", out var config) && config.ValueKind is not (JsonValueKind.Null or JsonValueKind.Undefined))

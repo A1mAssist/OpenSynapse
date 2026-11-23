@@ -3633,6 +3633,42 @@
   <data name="LightingStudioParamCaptureRegionHint" xml:space="preserve"><value>Drag the selection or enter 0–100% values. Applies to all Ambient layers.</value></data>
   <data name="LightingStudioParamCaptureRegionReset" xml:space="preserve"><value>Reset to full screen</value></data>
   <data name="LightingStudioParamBlur" xml:space="preserve"><value>Blur</value></data>
+  <data name="LightingStudioParamScreenMode" xml:space="preserve"><value>Screen sampling</value></data>
+  <data name="LightingStudioScreenModeFollow" xml:space="preserve"><value>Follow screen</value></data>
+  <data name="LightingStudioScreenModeBand" xml:space="preserve"><value>Color band</value></data>
+  <data name="LightingStudioScreenModeDominant" xml:space="preserve"><value>Dominant color</value></data>
+  <data name="LightingStudioScreenModeMonet" xml:space="preserve"><value>Monet palette</value></data>
+  <data name="LightingStudioParamAudioStyle" xml:space="preserve"><value>Music style</value></data>
+  <data name="LightingStudioAudioStyleLevel" xml:space="preserve"><value>Level meter</value></data>
+  <data name="LightingStudioAudioStyleBars" xml:space="preserve"><value>Spectrum bars</value></data>
+  <data name="LightingStudioAudioStyleBeatFlash" xml:space="preserve"><value>Beat flash</value></data>
+  <data name="LightingStudioAudioStyleEqualizer" xml:space="preserve"><value>Equalizer</value></data>
+  <data name="LightingStudioAudioStyleMirror" xml:space="preserve"><value>Mirror</value></data>
+  <data name="LightingStudioAudioStyleWaterfall" xml:space="preserve"><value>Waterfall</value></data>
+  <data name="LightingStudioAudioStyleRing" xml:space="preserve"><value>Spectrum ring</value></data>
+  <data name="LightingStudioAudioStyleCore" xml:space="preserve"><value>Bass core</value></data>
+  <data name="LightingStudioAudioStyleWave" xml:space="preserve"><value>Sound wave</value></data>
+  <data name="LightingStudioAudioStyleFire" xml:space="preserve"><value>Rhythm fire</value></data>
+  <data name="LightingStudioAudioStyleStardust" xml:space="preserve"><value>Stardust</value></data>
+  <data name="LightingStudioAudioStyleVolume" xml:space="preserve"><value>Volume glow</value></data>
+  <data name="LightingStudioAudioStyleBeatRipple" xml:space="preserve"><value>Beat ripple</value></data>
+  <data name="LightingStudioParamReactiveStyle" xml:space="preserve"><value>Key effect style</value></data>
+  <data name="LightingStudioReactiveStyleRipple" xml:space="preserve"><value>Ripple</value></data>
+  <data name="LightingStudioReactiveStyleDiamond" xml:space="preserve"><value>Diamond</value></data>
+  <data name="LightingStudioReactiveStyleDoubleRing" xml:space="preserve"><value>Double ring</value></data>
+  <data name="LightingStudioReactiveStyleSonar" xml:space="preserve"><value>Sonar</value></data>
+  <data name="LightingStudioReactiveStyleBurst" xml:space="preserve"><value>Burst</value></data>
+  <data name="LightingStudioReactiveStyleFireworks" xml:space="preserve"><value>Fireworks</value></data>
+  <data name="LightingStudioReactiveStyleTrail" xml:space="preserve"><value>Trail</value></data>
+  <data name="LightingStudioReactiveStyleSpotlight" xml:space="preserve"><value>Spotlight</value></data>
+  <data name="LightingStudioReactiveStyleInk" xml:space="preserve"><value>Ink</value></data>
+  <data name="LightingStudioReactiveStyleHeatmap" xml:space="preserve"><value>Heat map</value></data>
+  <data name="LightingStudioReactiveStyleConstellation" xml:space="preserve"><value>Constellation</value></data>
+  <data name="LightingStudioReactiveStyleComet" xml:space="preserve"><value>Comet</value></data>
+  <data name="LightingStudioReactiveStyleCross" xml:space="preserve"><value>Cross</value></data>
+  <data name="LightingStudioReactiveStyleRay" xml:space="preserve"><value>Ray</value></data>
+  <data name="LightingStudioReactiveStyleWeb" xml:space="preserve"><value>Web</value></data>
+  <data name="LightingStudioReactiveStyleVortex" xml:space="preserve"><value>Vortex</value></data>
   <data name="LightingStudioParamMediaSrc" xml:space="preserve"><value>Media source</value></data>
   <data name="LightingStudioParamGenerateConfig" xml:space="preserve"><value>Generate config (JSON)</value></data>
   <data name="LightingStudioBrowse" xml:space="preserve"><value>Browse…</value></data>

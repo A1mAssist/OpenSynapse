@@ -239,6 +239,12 @@ public static partial class StudioProjectCodec
         if (!string.IsNullOrWhiteSpace(p.Screen)) dto.Screen = p.Screen;
         if (p.ScreenRect is { } rect)
             dto.ScreenRect = new ScreenRectDto { Left = FromUnit(rect.X), Top = FromUnit(rect.Y), Right = FromUnit(rect.Width), Bottom = FromUnit(rect.Height) };
+        if (p.ScreenMode != StudioScreenMode.Follow)
+            dto.ScreenMode = p.ScreenMode.ToString().ToLowerInvariant();
+        if (p.AudioStyle != StudioAudioStyle.Level)
+            dto.AudioStyle = p.AudioStyle.ToString().ToLowerInvariant();
+        if (p.ReactiveStyle != StudioReactiveStyle.Ripple)
+            dto.ReactiveStyle = p.ReactiveStyle.ToString().ToLowerInvariant();
         if (p.Blur != 0) dto.Blur = p.Blur;
         if (!string.IsNullOrWhiteSpace(p.MediaSrc)) dto.MediaSrc = p.MediaSrc;
         if (!string.IsNullOrWhiteSpace(p.CurrentConfigJson)) dto.CurrentConfig = RawJson(p.CurrentConfigJson);
@@ -378,6 +384,9 @@ public static partial class StudioProjectCodec
         public bool? AutoBoost { get; set; }
         public string? Screen { get; set; }
         public ScreenRectDto? ScreenRect { get; set; }
+        public string? ScreenMode { get; set; }
+        public string? AudioStyle { get; set; }
+        public string? ReactiveStyle { get; set; }
         public int? Blur { get; set; }
         public string? MediaSrc { get; set; }
         public JsonElement? CurrentConfig { get; set; }

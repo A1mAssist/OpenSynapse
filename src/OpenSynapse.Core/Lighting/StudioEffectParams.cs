@@ -20,6 +20,117 @@ public enum StudioPlaybackEnd
 
 
 
+/// <summary>How the Ambient effect maps the captured screen onto the matrix.</summary>
+public enum StudioScreenMode
+{
+    /// <summary>Each cell averages the screen around its own position.</summary>
+    Follow,
+
+    /// <summary>One color per column, weighted toward the bottom of the region.</summary>
+    Band,
+
+    /// <summary>One dominant color for the whole region.</summary>
+    Dominant,
+
+    /// <summary>Dominant color shifted into a muted painterly palette.</summary>
+    Monet,
+}
+
+/// <summary>Native visual styles for the Audio effect; all read the live spectrum.</summary>
+public enum StudioAudioStyle
+{
+    /// <summary>Legacy meter: lit columns, no vertical bars.</summary>
+    Level,
+
+    /// <summary>Per-column spectrum bars with peak-hold dots.</summary>
+    Bars,
+
+    /// <summary>Beat pulse expanding from the centre.</summary>
+    BeatFlash,
+
+    /// <summary>Bottom-up equalizer coloured by height.</summary>
+    Equalizer,
+
+    /// <summary>Spectrum mirrored from the centre line.</summary>
+    Mirror,
+
+    /// <summary>Rolling band history in a heat palette.</summary>
+    Waterfall,
+
+    /// <summary>Radial spectrum around the centre.</summary>
+    Ring,
+
+    /// <summary>Bass-driven core with a halo.</summary>
+    Core,
+
+    /// <summary>Two phase-shifted sine ridges on the spectrum.</summary>
+    Wave,
+
+    /// <summary>Fire palette driven by band height.</summary>
+    Fire,
+
+    /// <summary>Hash sparkle gated by treble and beats.</summary>
+    Stardust,
+
+    /// <summary>Palette wash scaled by level.</summary>
+    Volume,
+
+    /// <summary>Rings emitted by the last few beats.</summary>
+    BeatRipple,
+}
+
+/// <summary>Native key-reactive visuals; all read the live press history.</summary>
+public enum StudioReactiveStyle
+{
+    /// <summary>Legacy ring around the last pressed key.</summary>
+    Ripple,
+
+    /// <summary>Diamond-shaped ring.</summary>
+    Diamond,
+
+    /// <summary>Two concentric rings.</summary>
+    DoubleRing,
+
+    /// <summary>Ring plus a rotating sweep gate.</summary>
+    Sonar,
+
+    /// <summary>Soft glow that fades from the key.</summary>
+    Burst,
+
+    /// <summary>Particles thrown out by each press.</summary>
+    Fireworks,
+
+    /// <summary>Fading heat trail under the fingers.</summary>
+    Trail,
+
+    /// <summary>Bright pool around the most recent press.</summary>
+    Spotlight,
+
+    /// <summary>Ink blob with a noisy edge.</summary>
+    Ink,
+
+    /// <summary>Heat map coloured by typing intensity.</summary>
+    Heatmap,
+
+    /// <summary>Twinkling field with bright pressed keys.</summary>
+    Constellation,
+
+    /// <summary>Comet streaking across the row of the press.</summary>
+    Comet,
+
+    /// <summary>Cross arms through the press.</summary>
+    Cross,
+
+    /// <summary>Horizontal beam from the press.</summary>
+    Ray,
+
+    /// <summary>Lines connecting recent presses.</summary>
+    Web,
+
+    /// <summary>Spiral vortex around the press.</summary>
+    Vortex,
+}
+
 public readonly record struct StudioColorStop(int Stop, StudioRgb Color);
 
 /// <summary>
@@ -120,6 +231,12 @@ public sealed class StudioEffectParams
 
     public StudioScreenRect? ScreenRect { get; set; }
 
+    public StudioScreenMode ScreenMode { get; set; } = StudioScreenMode.Follow;
+
+    public StudioAudioStyle AudioStyle { get; set; } = StudioAudioStyle.Level;
+
+    public StudioReactiveStyle ReactiveStyle { get; set; } = StudioReactiveStyle.Ripple;
+
     /// <summary>Local path used by the Chroma Generate effect.</summary>
     public string? MediaSrc { get; set; }
 
@@ -197,6 +314,9 @@ public sealed class StudioEffectParams
         Boost = Math.Clamp(Boost, 0.25, 4);
         Decay = Math.Clamp(Decay, 0.1, 2);
         Blur = Math.Clamp(Blur, 0, 9);
+        if (!Enum.IsDefined(ScreenMode)) ScreenMode = StudioScreenMode.Follow;
+        if (!Enum.IsDefined(AudioStyle)) AudioStyle = StudioAudioStyle.Level;
+        if (!Enum.IsDefined(ReactiveStyle)) ReactiveStyle = StudioReactiveStyle.Ripple;
         CenterPointX = Math.Clamp(CenterPointX, 0, 10_000);
         CenterPointY = Math.Clamp(CenterPointY, 0, 10_000);
         if (CenterRow < 0 || CenterCol < 0)
@@ -244,6 +364,9 @@ public sealed class StudioEffectParams
             DeviceWithCenterPointJson = DeviceWithCenterPointJson,
             Screen = Screen,
             ScreenRect = ScreenRect,
+            ScreenMode = ScreenMode,
+            AudioStyle = AudioStyle,
+            ReactiveStyle = ReactiveStyle,
             MediaSrc = MediaSrc,
             CurrentConfigJson = CurrentConfigJson,
             EffectConfigListJson = EffectConfigListJson,

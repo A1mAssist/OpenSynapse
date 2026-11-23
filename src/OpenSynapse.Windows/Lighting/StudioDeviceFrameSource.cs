@@ -87,6 +87,10 @@ public sealed class StudioDeviceFrameSource : ISoftwareLightingFrameSource
         {
             _keys.Press(input.Row, input.Column);
         }
+        else
+        {
+            _keys.Release(input.Row, input.Column);
+        }
 
         return _trigger.Handle(input, nowSeconds);
     }

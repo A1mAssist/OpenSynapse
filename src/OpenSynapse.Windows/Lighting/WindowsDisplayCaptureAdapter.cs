@@ -32,7 +32,19 @@ internal sealed class AmbientCaptureException(
 internal sealed record AmbientCaptureFrame(
     IReadOnlyList<RazerRgb> Pixels,
     int Width,
-    int Height);
+    int Height)
+{
+    /// <summary>
+    /// Downscaled copy of the whole captured crop. <see cref="Pixels"/> samples only
+    /// the screen edge band for the Blade matrix; screen-sampling effects need the
+    /// full picture to read an arbitrary region.
+    /// </summary>
+    public IReadOnlyList<RazerRgb> ScreenPixels { get; init; } = Pixels;
+
+    public int ScreenWidth { get; init; } = Width;
+
+    public int ScreenHeight { get; init; } = Height;
+}
 
 internal sealed record RawDisplayFrame(
     byte[] Bgra,
@@ -48,6 +60,9 @@ internal interface IDisplayCaptureSession : IAsyncDisposable
 internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapter
 {
     private const double DefaultEdgeBandFraction = 0.08;
+    /// <summary>Coarse full-screen grid; screen effects average within this image.</summary>
+    internal const int ScreenSampleColumns = 32;
+    internal const int ScreenSampleRows = 18;
     private readonly Func<CancellationToken, ValueTask<IDisplayCaptureSession>> _openSession;
     private readonly double _edgeBandFraction;
     private Channel<AmbientCaptureFrame> _frames = CreateFrameChannel();
@@ -208,7 +223,7 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
                     (int)Math.Ceiling(Math.Min(bounds.Width, bounds.Height) * _edgeBandFraction),
                     1,
                     Math.Min(bounds.Width, bounds.Height));
-                writer.TryWrite(ReduceEdgeBand(
+                var frame = ReduceEdgeBand(
                     raw.Bgra,
                     raw.Width,
                     raw.Height,
@@ -217,7 +232,23 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
                     bounds.Y,
                     bounds.Width,
                     bounds.Height,
-                    edgeBand));
+                    edgeBand);
+                writer.TryWrite(frame with
+                {
+                    ScreenPixels = Array.AsReadOnly(ReduceScreen(
+                        raw.Bgra,
+                        raw.Width,
+                        raw.Height,
+                        raw.Stride,
+                        bounds.X,
+                        bounds.Y,
+                        bounds.Width,
+                        bounds.Height,
+                        ScreenSampleColumns,
+                        ScreenSampleRows)),
+                    ScreenWidth = ScreenSampleColumns,
+                    ScreenHeight = ScreenSampleRows,
+                });
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

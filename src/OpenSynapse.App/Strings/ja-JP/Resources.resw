@@ -3623,6 +3623,42 @@
   <data name="LightingStudioParamCaptureRegionHint" xml:space="preserve"><value>選択範囲をドラッグするか、0～100% の値を入力します。すべてのアンビエント レイヤーに適用されます。</value></data>
   <data name="LightingStudioParamCaptureRegionReset" xml:space="preserve"><value>全画面にリセット</value></data>
   <data name="LightingStudioParamBlur" xml:space="preserve"><value>ぼかし</value></data>
+  <data name="LightingStudioParamScreenMode" xml:space="preserve"><value>画面の取り込み</value></data>
+  <data name="LightingStudioScreenModeFollow" xml:space="preserve"><value>画面に追従</value></data>
+  <data name="LightingStudioScreenModeBand" xml:space="preserve"><value>カラーバンド</value></data>
+  <data name="LightingStudioScreenModeDominant" xml:space="preserve"><value>領域の主要色</value></data>
+  <data name="LightingStudioScreenModeMonet" xml:space="preserve"><value>モネ配色</value></data>
+  <data name="LightingStudioParamAudioStyle" xml:space="preserve"><value>音楽スタイル</value></data>
+  <data name="LightingStudioAudioStyleLevel" xml:space="preserve"><value>レベル</value></data>
+  <data name="LightingStudioAudioStyleBars" xml:space="preserve"><value>スペクトラムバー</value></data>
+  <data name="LightingStudioAudioStyleBeatFlash" xml:space="preserve"><value>ビートフラッシュ</value></data>
+  <data name="LightingStudioAudioStyleEqualizer" xml:space="preserve"><value>イコライザー</value></data>
+  <data name="LightingStudioAudioStyleMirror" xml:space="preserve"><value>ミラー</value></data>
+  <data name="LightingStudioAudioStyleWaterfall" xml:space="preserve"><value>ウォーターフォール</value></data>
+  <data name="LightingStudioAudioStyleRing" xml:space="preserve"><value>スペクトラムリング</value></data>
+  <data name="LightingStudioAudioStyleCore" xml:space="preserve"><value>ベースコア</value></data>
+  <data name="LightingStudioAudioStyleWave" xml:space="preserve"><value>サウンドウェーブ</value></data>
+  <data name="LightingStudioAudioStyleFire" xml:space="preserve"><value>リズムファイア</value></data>
+  <data name="LightingStudioAudioStyleStardust" xml:space="preserve"><value>スターダスト</value></data>
+  <data name="LightingStudioAudioStyleVolume" xml:space="preserve"><value>音量グロー</value></data>
+  <data name="LightingStudioAudioStyleBeatRipple" xml:space="preserve"><value>ビートリップル</value></data>
+  <data name="LightingStudioParamReactiveStyle" xml:space="preserve"><value>キーエフェクト</value></data>
+  <data name="LightingStudioReactiveStyleRipple" xml:space="preserve"><value>リップル</value></data>
+  <data name="LightingStudioReactiveStyleDiamond" xml:space="preserve"><value>ダイヤ</value></data>
+  <data name="LightingStudioReactiveStyleDoubleRing" xml:space="preserve"><value>ダブルリング</value></data>
+  <data name="LightingStudioReactiveStyleSonar" xml:space="preserve"><value>ソナー</value></data>
+  <data name="LightingStudioReactiveStyleBurst" xml:space="preserve"><value>バースト</value></data>
+  <data name="LightingStudioReactiveStyleFireworks" xml:space="preserve"><value>花火</value></data>
+  <data name="LightingStudioReactiveStyleTrail" xml:space="preserve"><value>トレイル</value></data>
+  <data name="LightingStudioReactiveStyleSpotlight" xml:space="preserve"><value>スポットライト</value></data>
+  <data name="LightingStudioReactiveStyleInk" xml:space="preserve"><value>インク</value></data>
+  <data name="LightingStudioReactiveStyleHeatmap" xml:space="preserve"><value>ヒートマップ</value></data>
+  <data name="LightingStudioReactiveStyleConstellation" xml:space="preserve"><value>星座</value></data>
+  <data name="LightingStudioReactiveStyleComet" xml:space="preserve"><value>コメット</value></data>
+  <data name="LightingStudioReactiveStyleCross" xml:space="preserve"><value>クロス</value></data>
+  <data name="LightingStudioReactiveStyleRay" xml:space="preserve"><value>レイ</value></data>
+  <data name="LightingStudioReactiveStyleWeb" xml:space="preserve"><value>ウェブ</value></data>
+  <data name="LightingStudioReactiveStyleVortex" xml:space="preserve"><value>ボルテックス</value></data>
   <data name="LightingStudioParamMediaSrc" xml:space="preserve"><value>メディア ソース</value></data>
   <data name="LightingStudioParamGenerateConfig" xml:space="preserve"><value>構成を生成（JSON）</value></data>
   <data name="LightingStudioBrowse" xml:space="preserve"><value>参照…</value></data>

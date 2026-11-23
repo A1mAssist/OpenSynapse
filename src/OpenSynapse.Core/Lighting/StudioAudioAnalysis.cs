@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Linq;
 
 namespace OpenSynapse.Core.Lighting;
 
@@ -11,9 +12,23 @@ public sealed class StudioAudioFrame
 {
     public const int BandCount = 18;
     public const int WaveformCount = 24;
+    public const int HistoryDepth = 8;
+    public const int ColumnCount = 24;
 
     public static StudioAudioFrame Silence { get; } = new(
-        0, 0, new float[BandCount], new float[WaveformCount], 0, 0, 0, false, 120);
+        0,
+        0,
+        new float[BandCount],
+        new float[WaveformCount],
+        0,
+        0,
+        0,
+        false,
+        120,
+        new float[BandCount],
+        new float[ColumnCount],
+        new float[ColumnCount],
+        Enumerable.Range(0, HistoryDepth).Select(_ => new float[BandCount]).ToArray());
 
     internal StudioAudioFrame(
         double rms,
@@ -24,7 +39,18 @@ public sealed class StudioAudioFrame
         double mid,
         double high,
         bool beat,
-        double bpm)
+        double bpm,
+        float[]? peaks = null,
+        float[]? columns = null,
+        float[]? columnPeaks = null,
+        float[][]? history = null,
+        double beatAge = 9,
+        double beatHit = 0,
+        int beatCount = 0,
+        IReadOnlyList<StudioBeat>? beats = null,
+        double kickAge = 9,
+        double kickHit = 0,
+        int kickCount = 0)
     {
         Rms = rms;
         Peak = peak;
@@ -35,6 +61,17 @@ public sealed class StudioAudioFrame
         High = high;
         Beat = beat;
         Bpm = bpm;
+        Peaks = peaks ?? new float[BandCount];
+        Columns = columns ?? new float[ColumnCount];
+        ColumnPeaks = columnPeaks ?? new float[ColumnCount];
+        History = history ?? Enumerable.Range(0, HistoryDepth).Select(_ => new float[BandCount]).ToArray();
+        BeatAge = beatAge;
+        BeatHit = beatHit;
+        BeatCount = beatCount;
+        Beats = beats ?? Array.Empty<StudioBeat>();
+        KickAge = kickAge;
+        KickHit = kickHit;
+        KickCount = kickCount;
     }
 
     /// <summary>Normalized 0..1 RMS of the packet that produced this frame.</summary>
@@ -58,7 +95,72 @@ public sealed class StudioAudioFrame
     public bool Beat { get; }
 
     public double Bpm { get; }
+
+    /// <summary>Falling peak-hold per band, normalized 0..1.</summary>
+    public float[] Peaks { get; }
+
+    /// <summary>24 columns interpolated from the 18 bands.</summary>
+    public float[] Columns { get; }
+
+    public float[] ColumnPeaks { get; }
+
+    /// <summary>Band snapshots, newest first; one entry per 90 ms.</summary>
+    public float[][] History { get; }
+
+    public double BeatAge { get; }
+
+    public double BeatHit { get; }
+
+    public int BeatCount { get; }
+
+    /// <summary>Recent beats, newest first, with their age at this frame.</summary>
+    public IReadOnlyList<StudioBeat> Beats { get; }
+
+    public double KickAge { get; }
+
+    public double KickHit { get; }
+
+    public int KickCount { get; }
+
+    public double Bass => Low;
+
+    public double Treble => High;
+
+    /// <summary>Decaying envelope of the last beat, Chroma's beat pulse.</summary>
+    public double Pulse(double decay = 5) =>
+        Math.Exp(-Math.Max(0, BeatAge) * decay) * (0.55 + 0.45 * BeatHit);
+
+    public double KickPulse(double decay = 5) =>
+        Math.Exp(-Math.Max(0, KickAge) * decay) * (0.55 + 0.45 * KickHit);
+
+    /// <summary>Interpolated band at 0..1 across the 18 log bands.</summary>
+    public double Band(double u)
+    {
+        var position = Math.Clamp(u, 0, 1) * (BandCount - 1);
+        var lower = (int)position;
+        if (lower >= BandCount - 1) return Bands[BandCount - 1];
+        var weight = position - lower;
+        return Bands[lower] * (1 - weight) + Bands[lower + 1] * weight;
+    }
+
+    public double Column(double u)
+    {
+        var position = Math.Clamp(u, 0, 1) * (ColumnCount - 1);
+        var lower = (int)position;
+        if (lower >= ColumnCount - 1) return Columns[ColumnCount - 1];
+        var weight = position - lower;
+        return Columns[lower] * (1 - weight) + Columns[lower + 1] * weight;
+    }
+
+    public double ColumnPeak(double u)
+    {
+        var index = (int)Math.Round(Math.Clamp(u, 0, 1) * (ColumnCount - 1));
+        return ColumnPeaks[Math.Clamp(index, 0, ColumnCount - 1)];
+    }
 }
+
+/// <summary>One detected beat and its age at the frame it belongs to.</summary>
+public readonly record struct StudioBeat(double Age, int Index, double Hit);
 
 /// <summary>
 /// 1024-point FFT over a mono mix of the loopback stream. One instance per
@@ -84,11 +186,26 @@ public sealed class StudioAudioAnalyzer
     private readonly double[] _magnitude = new double[FftSize / 2];
     private readonly float[] _ring = new float[FftSize];
     private readonly float[] _bands = new float[BandCount];
+    private readonly float[] _peaks = new float[BandCount];
+    private readonly float[] _columns = new float[StudioAudioFrame.ColumnCount];
+    private readonly float[] _columnPeaks = new float[StudioAudioFrame.ColumnCount];
+    private readonly float[][] _history = Enumerable
+        .Range(0, StudioAudioFrame.HistoryDepth)
+        .Select(_ => new float[BandCount])
+        .ToArray();
+    private readonly List<(double Time, int Index, double Hit)> _beats = new();
     private readonly double[] _edges = new double[BandCount + 1];
     private int _ringIndex;
     private double _lastSeconds;
     private double _beatAverage;
     private double _lastBeatSeconds = double.NegativeInfinity;
+    private double _beatHit;
+    private double _kickAverage;
+    private double _lastKickSeconds = double.NegativeInfinity;
+    private double _kickHit;
+    private double _historySeconds;
+    private int _beatCount;
+    private int _kickCount;
     private double _bpm = 120;
 
     public StudioAudioAnalyzer(int sampleRate)
@@ -200,6 +317,29 @@ public sealed class StudioAudioAnalyzer
             }
         }
 
+        for (var band = 0; band < BandCount; band++)
+        {
+            _peaks[band] = Math.Max(_bands[band], _peaks[band] - (float)(delta * 0.9));
+        }
+
+        for (var column = 0; column < StudioAudioFrame.ColumnCount; column++)
+        {
+            var position = column / (double)(StudioAudioFrame.ColumnCount - 1);
+            _columns[column] = (float)BandAt(_bands, position);
+            _columnPeaks[column] = (float)BandAt(_peaks, position);
+        }
+
+        if (nowSeconds - _historySeconds >= 0.09)
+        {
+            for (var row = StudioAudioFrame.HistoryDepth - 1; row > 0; row--)
+            {
+                Array.Copy(_history[row - 1], _history[row], BandCount);
+            }
+
+            Array.Copy(_bands, _history[0], BandCount);
+            _historySeconds = nowSeconds;
+        }
+
         var beat = false;
         if (low > 0.35)
         {
@@ -229,6 +369,28 @@ public sealed class StudioAudioAnalyzer
             _beatAverage *= 0.9;
         }
 
+        if (beat)
+        {
+            _beatHit = low;
+            _beats.Insert(0, (nowSeconds, _beatCount, low));
+            _beatCount++;
+            if (_beats.Count > 8) _beats.RemoveRange(8, _beats.Count - 8);
+        }
+
+        if (_beats.Count > 0) _beats.RemoveAll(entry => nowSeconds - entry.Time > 3);
+
+        var kick = low > 0.5 &&
+            low > _kickAverage * 1.25 + 0.05 &&
+            nowSeconds - _lastKickSeconds >= 0.25;
+        if (kick)
+        {
+            _lastKickSeconds = nowSeconds;
+            _kickHit = low;
+            _kickCount++;
+        }
+
+        _kickAverage = _kickAverage <= 0 ? low : _kickAverage * 0.9 + low * 0.1;
+
         var waveform = new float[WaveformCount];
         for (var index = 0; index < WaveformCount; index++)
         {
@@ -253,7 +415,27 @@ public sealed class StudioAudioAnalyzer
             mid,
             high,
             beat,
-            _bpm);
+            _bpm,
+            (float[])_peaks.Clone(),
+            (float[])_columns.Clone(),
+            (float[])_columnPeaks.Clone(),
+            _history.Select(row => (float[])row.Clone()).ToArray(),
+            double.IsFinite(_lastBeatSeconds) ? nowSeconds - _lastBeatSeconds : 9,
+            _beatHit,
+            _beatCount,
+            _beats.Select(entry => new StudioBeat(nowSeconds - entry.Time, entry.Index, entry.Hit)).ToArray(),
+            double.IsFinite(_lastKickSeconds) ? nowSeconds - _lastKickSeconds : 9,
+            _kickHit,
+            _kickCount);
+    }
+
+    private static double BandAt(float[] source, double u)
+    {
+        var position = Math.Clamp(u, 0, 1) * (BandCount - 1);
+        var lower = (int)position;
+        if (lower >= BandCount - 1) return source[BandCount - 1];
+        var weight = position - lower;
+        return source[lower] * (1 - weight) + source[lower + 1] * weight;
     }
 
     private void FillFft()

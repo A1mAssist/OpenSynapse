@@ -4074,6 +4074,42 @@
   <data name="LightingStudioParamCaptureRegionHint" xml:space="preserve"><value>拖动选区，或输入 0–100% 数值；作用于所有环境光图层。</value></data>
   <data name="LightingStudioParamCaptureRegionReset" xml:space="preserve"><value>重置为全屏</value></data>
   <data name="LightingStudioParamBlur" xml:space="preserve"><value>模糊</value></data>
+  <data name="LightingStudioParamScreenMode" xml:space="preserve"><value>取色方式</value></data>
+  <data name="LightingStudioScreenModeFollow" xml:space="preserve"><value>跟随屏幕</value></data>
+  <data name="LightingStudioScreenModeBand" xml:space="preserve"><value>屏幕色带</value></data>
+  <data name="LightingStudioScreenModeDominant" xml:space="preserve"><value>区域主色</value></data>
+  <data name="LightingStudioScreenModeMonet" xml:space="preserve"><value>莫奈配色</value></data>
+  <data name="LightingStudioParamAudioStyle" xml:space="preserve"><value>音乐效果风格</value></data>
+  <data name="LightingStudioAudioStyleLevel" xml:space="preserve"><value>电平条</value></data>
+  <data name="LightingStudioAudioStyleBars" xml:space="preserve"><value>频谱柱</value></data>
+  <data name="LightingStudioAudioStyleBeatFlash" xml:space="preserve"><value>节拍闪光</value></data>
+  <data name="LightingStudioAudioStyleEqualizer" xml:space="preserve"><value>经典均衡器</value></data>
+  <data name="LightingStudioAudioStyleMirror" xml:space="preserve"><value>镜像频谱</value></data>
+  <data name="LightingStudioAudioStyleWaterfall" xml:space="preserve"><value>频谱瀑布</value></data>
+  <data name="LightingStudioAudioStyleRing" xml:space="preserve"><value>频谱圆环</value></data>
+  <data name="LightingStudioAudioStyleCore" xml:space="preserve"><value>能量核心</value></data>
+  <data name="LightingStudioAudioStyleWave" xml:space="preserve"><value>声浪</value></data>
+  <data name="LightingStudioAudioStyleFire" xml:space="preserve"><value>律动火焰</value></data>
+  <data name="LightingStudioAudioStyleStardust" xml:space="preserve"><value>律动星空</value></data>
+  <data name="LightingStudioAudioStyleVolume" xml:space="preserve"><value>音量呼吸</value></data>
+  <data name="LightingStudioAudioStyleBeatRipple" xml:space="preserve"><value>节拍涟漪</value></data>
+  <data name="LightingStudioParamReactiveStyle" xml:space="preserve"><value>按键效果风格</value></data>
+  <data name="LightingStudioReactiveStyleRipple" xml:space="preserve"><value>涟漪</value></data>
+  <data name="LightingStudioReactiveStyleDiamond" xml:space="preserve"><value>菱形扩散</value></data>
+  <data name="LightingStudioReactiveStyleDoubleRing" xml:space="preserve"><value>双环</value></data>
+  <data name="LightingStudioReactiveStyleSonar" xml:space="preserve"><value>声纳</value></data>
+  <data name="LightingStudioReactiveStyleBurst" xml:space="preserve"><value>扩散</value></data>
+  <data name="LightingStudioReactiveStyleFireworks" xml:space="preserve"><value>烟花</value></data>
+  <data name="LightingStudioReactiveStyleTrail" xml:space="preserve"><value>余辉拖尾</value></data>
+  <data name="LightingStudioReactiveStyleSpotlight" xml:space="preserve"><value>聚光灯</value></data>
+  <data name="LightingStudioReactiveStyleInk" xml:space="preserve"><value>墨滴</value></data>
+  <data name="LightingStudioReactiveStyleHeatmap" xml:space="preserve"><value>打字热力图</value></data>
+  <data name="LightingStudioReactiveStyleConstellation" xml:space="preserve"><value>星座</value></data>
+  <data name="LightingStudioReactiveStyleComet" xml:space="preserve"><value>彗星</value></data>
+  <data name="LightingStudioReactiveStyleCross" xml:space="preserve"><value>十字</value></data>
+  <data name="LightingStudioReactiveStyleRay" xml:space="preserve"><value>射线</value></data>
+  <data name="LightingStudioReactiveStyleWeb" xml:space="preserve"><value>连线</value></data>
+  <data name="LightingStudioReactiveStyleVortex" xml:space="preserve"><value>漩涡</value></data>
   <data name="LightingStudioParamMediaSrc" xml:space="preserve"><value>媒体来源</value></data>
   <data name="LightingStudioParamGenerateConfig" xml:space="preserve"><value>生成配置 (JSON)</value></data>
   <data name="LightingStudioBrowse" xml:space="preserve"><value>浏览…</value></data>

@@ -199,7 +199,7 @@ internal sealed class StudioInputSampler : ILightingInputAdapter
         ValidateTarget(rows, columns);
         return frame is null
             ? new StudioRgb[rows * columns]
-            : ResizeFrame(frame.Pixels, frame.Width, frame.Height, rows, columns);
+            : ResizeFrame(frame.ScreenPixels, frame.ScreenWidth, frame.ScreenHeight, rows, columns);
     }
 
     internal static StudioRgb[] ResizeFrame(

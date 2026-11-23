@@ -141,6 +141,86 @@ internal sealed partial class WindowsDisplayCaptureAdapter
         return new AmbientCaptureFrame(Array.AsReadOnly(pixels), outputWidth, outputHeight);
     }
 
+    /// <summary>
+    /// Averages the captured crop into a coarse full image. Screen effects read this
+    /// instead of the edge band so an arbitrary region maps to the real picture.
+    /// </summary>
+    internal static RazerRgb[] ReduceScreen(
+        ReadOnlySpan<byte> bgra,
+        int width,
+        int height,
+        int stride,
+        int cropX,
+        int cropY,
+        int cropWidth,
+        int cropHeight,
+        int outputWidth,
+        int outputHeight)
+    {
+        if (width <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(width));
+        }
+        if (height <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(height));
+        }
+        if (stride < checked(width * 4) || bgra.Length < checked(stride * height))
+        {
+            throw new ArgumentOutOfRangeException(nameof(stride));
+        }
+        if (cropX < 0 || cropY < 0 || cropWidth <= 0 || cropHeight <= 0 ||
+            (long)cropX + cropWidth > width || (long)cropY + cropHeight > height)
+        {
+            throw new ArgumentOutOfRangeException(nameof(cropWidth));
+        }
+        if (outputWidth <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(outputWidth));
+        }
+        if (outputHeight <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(outputHeight));
+        }
+
+        var pixels = new RazerRgb[checked(outputWidth * outputHeight)];
+        for (var row = 0; row < outputHeight; row++)
+        {
+            var (y0, y1) = Segment(row, outputHeight, cropHeight);
+            y0 += cropY;
+            y1 += cropY;
+            for (var column = 0; column < outputWidth; column++)
+            {
+                var (x0, x1) = Segment(column, outputWidth, cropWidth);
+                x0 += cropX;
+                x1 += cropX;
+                // Lighting needs an average, not every pixel; cap the samples per cell
+                // so a high refresh rate does not turn this into a full-frame scan.
+                var step = Math.Max(1, Math.Min(x1 - x0, y1 - y0) / 16);
+                long red = 0, green = 0, blue = 0;
+                var count = 0;
+                for (var y = y0; y < y1; y += step)
+                {
+                    for (var x = x0; x < x1; x += step)
+                    {
+                        var offset = y * stride + x * 4;
+                        blue += bgra[offset];
+                        green += bgra[offset + 1];
+                        red += bgra[offset + 2];
+                        count++;
+                    }
+                }
+
+                pixels[row * outputWidth + column] = new RazerRgb(
+                    RoundedAverage(red, count),
+                    RoundedAverage(green, count),
+                    RoundedAverage(blue, count));
+            }
+        }
+
+        return pixels;
+    }
+
     private static (int Start, int End) Segment(int index, int segments, int length)
     {
         var start = (int)((long)index * length / segments);

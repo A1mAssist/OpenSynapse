@@ -77,7 +77,7 @@ public static partial class StudioEffectRenderer
             StudioEffectKind.Ripple => RenderRipple(parameters, rows, columns, time),
             StudioEffectKind.Starlight => RenderStarlight(parameters, rows, columns, time, input.StarlightSeed),
             StudioEffectKind.Ambient => RenderAmbient(parameters, rows, columns, input),
-            StudioEffectKind.Audio => RenderAudio(parameters, rows, columns, input),
+            StudioEffectKind.Audio => RenderAudio(parameters, rows, columns, time, input),
             StudioEffectKind.Wheel => RenderWheel(parameters, rows, columns, time),
             StudioEffectKind.ChromaGenerate => RenderChromaGenerate(parameters, rows, columns, time),
             StudioEffectKind.Tidal => RenderTidal(parameters, rows, columns, time),
@@ -296,6 +296,13 @@ public static partial class StudioEffectRenderer
         double time,
         StudioEffectInput input)
     {
+        if (input.Keys is { } history &&
+            history.Presses.Count > 0 &&
+            parameters.ReactiveStyle != StudioReactiveStyle.Ripple)
+        {
+            return RenderKeyStyle(parameters, rows, columns, time, history);
+        }
+
         if (input.Keys is { HasPress: true } keys)
         {
             return RenderKeyRipple(parameters, rows, columns, keys);
@@ -356,39 +363,6 @@ public static partial class StudioEffectRenderer
         return frame;
     }
 
-    private static StudioRgb[] RenderAmbient(StudioEffectParams parameters, int rows, int columns, StudioEffectInput input)
-    {
-        var frame = new StudioRgb[rows * columns];
-        if (input.ScreenSamplerUv is { } uv)
-        {
-            var rect = StudioScreenRect.Resolve(parameters.Screen, parameters.ScreenRect);
-            var capture = input.ScreenCaptureRect?.Clamp();
-            if (capture is { } cropped)
-            {
-                rect = StudioScreenRect.MapIntoCapture(rect, cropped);
-            }
-            for (var index = 0; index < frame.Length; index++)
-            {
-                var u = rect.X + (index % columns + 0.5) / columns * rect.Width;
-                var v = rect.Y + (index / columns + 0.5) / rows * rect.Height;
-                if (capture is { } source)
-                {
-                    u = source.X + u * source.Width;
-                    v = source.Y + v * source.Height;
-                }
-                frame[index] = uv(u, v);
-            }
-        }
-        else if (input.ScreenSampler is { } grid)
-        {
-            // The integer sampler already maps the full screen to the matrix.
-            for (var index = 0; index < frame.Length; index++)
-                frame[index] = grid(index % columns, index / columns);
-        }
-        else return frame;
-        return Blur(frame, rows, columns, Math.Clamp(parameters.Blur, 0, 20));
-    }
-
     private static StudioRgb[] Blur(StudioRgb[] frame, int rows, int columns, int radius)
     {
         if (radius <= 0) return frame;
@@ -424,11 +398,14 @@ public static partial class StudioEffectRenderer
         StudioEffectParams parameters,
         int rows,
         int columns,
+        double time,
         StudioEffectInput input)
     {
         if (input.Audio is { } audio)
         {
-            return RenderAudioBands(parameters, rows, columns, audio);
+            return parameters.AudioStyle == StudioAudioStyle.Level
+                ? RenderAudioBands(parameters, rows, columns, audio)
+                : RenderMusicStyle(parameters, rows, columns, time, audio);
         }
 
         var frame = new StudioRgb[rows * columns];
