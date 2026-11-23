@@ -22,14 +22,15 @@ public sealed partial class RazerMappingAssetService
         var hotspots = new Dictionary<byte, RazerMappingPoint>(bundle.MouseAnchors.Count);
         foreach (var anchor in bundle.MouseAnchors)
         {
+            var art = RazerMappingBundleParser.ToArtSpace(productId, anchor, svgArt: true);
             hotspots.TryAdd(
                 ResolveMappingKeyId(
                     productId,
                     RazerSpecialKeyMap.TryResolveButtonId(
-                        productId, anchor.ButtonId, out var mappedButtonId)
+                        productId, art.ButtonId, out var mappedButtonId)
                         ? mappedButtonId
-                        : anchor.ButtonId),
-                new RazerMappingPoint(anchor.X * scaleX, anchor.Y * scaleY, anchor.IsLeft));
+                        : art.ButtonId),
+                new RazerMappingPoint(art.X * scaleX, art.Y * scaleY, art.IsLeft));
         }
 
         return hotspots.Count == 0

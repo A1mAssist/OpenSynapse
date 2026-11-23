@@ -84,6 +84,13 @@ public static partial class RazerMappingBundleParser
     private static List<DrawCall> ParseDrawCalls(string text, IReadOnlySet<string> buttonListAliases)
     {
         var calls = new List<DrawCall>();
+        var cycle = CycleStateRegex.Match(text);
+        var cycleX = cycle.Success
+            ? double.Parse(cycle.Groups["x"].Value, CultureInfo.InvariantCulture)
+            : (double?)null;
+        var cycleY = cycle.Success
+            ? double.Parse(cycle.Groups["y"].Value, CultureInfo.InvariantCulture)
+            : (double?)null;
         var blocks = new List<(int Start, int End)>();
         foreach (Match match in DrawBlockRegex.Matches(text))
         {
@@ -101,12 +108,12 @@ public static partial class RazerMappingBundleParser
             var blockText = text[start..(end + 1)];
             foreach (Match match in DrawLineRegex.Matches(blockText))
             {
-                AddCall(match, start, blockId, false, buttonListAliases, calls);
+                AddCall(match, start, blockId, false, buttonListAliases, calls, cycleX, cycleY);
             }
 
             foreach (Match match in DrawSideLineRegex.Matches(blockText))
             {
-                AddCall(match, start, blockId, true, buttonListAliases, calls);
+                AddCall(match, start, blockId, true, buttonListAliases, calls, cycleX, cycleY);
             }
         }
 
@@ -114,7 +121,7 @@ public static partial class RazerMappingBundleParser
         {
             if (!Inside(match.Index, blocks))
             {
-                AddCall(match, 0, -1, false, buttonListAliases, calls);
+                AddCall(match, 0, -1, false, buttonListAliases, calls, cycleX, cycleY);
             }
         }
 
@@ -122,7 +129,7 @@ public static partial class RazerMappingBundleParser
         {
             if (!Inside(match.Index, blocks))
             {
-                AddCall(match, 0, -1, true, buttonListAliases, calls);
+                AddCall(match, 0, -1, true, buttonListAliases, calls, cycleX, cycleY);
             }
         }
 
@@ -138,7 +145,9 @@ public static partial class RazerMappingBundleParser
         int blockId,
         bool sideLine,
         IReadOnlySet<string> buttonListAliases,
-        List<DrawCall> calls)
+        List<DrawCall> calls,
+        double? cycleX,
+        double? cycleY)
     {
         var buttonGroup = match.Groups["button"];
         if (!buttonGroup.Success)
@@ -155,10 +164,8 @@ public static partial class RazerMappingBundleParser
                 out var index) ||
             !int.TryParse(buttonGroup.Value, NumberStyles.None, CultureInfo.InvariantCulture,
                 out var buttonIndex) ||
-            !double.TryParse(match.Groups["x"].Value, NumberStyles.Float, CultureInfo.InvariantCulture,
-                out var x) ||
-            !double.TryParse(match.Groups["y"].Value, NumberStyles.Float, CultureInfo.InvariantCulture,
-                out var y))
+            !TryCoordinate(match.Groups["x"], cycleX, out var x) ||
+            !TryCoordinate(match.Groups["y"], cycleY, out var y))
         {
             return;
         }
@@ -167,6 +174,19 @@ public static partial class RazerMappingBundleParser
             ? match.Groups["dir"].Value.Equals("Left", StringComparison.OrdinalIgnoreCase)
             : !match.Groups["left"].Success || match.Groups["left"].Value == "0";
         calls.Add(new DrawCall(index, offset + match.Index, buttonIndex, x, y, isLeft, blockId));
+    }
+
+    // drawLine(12, …, this.state.Xcycle, this.state.Ycycle) uses the constructor's
+    // defaults; Razer only moves that dot when the row is hovered or activated.
+    private static bool TryCoordinate(Group group, double? stateValue, out double value)
+    {
+        if (double.TryParse(group.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+        {
+            return true;
+        }
+
+        value = stateValue ?? 0;
+        return stateValue is not null;
     }
 
     private static int FindMatchingDelimiter(string text, int open, char openChar, char closeChar)

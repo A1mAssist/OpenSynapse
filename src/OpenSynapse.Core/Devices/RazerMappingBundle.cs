@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace OpenSynapse.Core.Devices;
 
+/// <summary>A hotspot in Razer's 310 x 340 mapping canvas; art placement is applied later.</summary>
 public sealed record RazerMappingBundleAnchor(byte ButtonId, double X, double Y, bool IsLeft);
 
 public sealed record RazerMappingBundle(
@@ -26,7 +27,6 @@ public sealed record RazerMappingBundle(
 
 public static partial class RazerMappingBundleParser
 {
-    private const double DefaultCanvasWidth = 310;
     private const double DefaultImageWidth = 300;
     private const double DefaultImageHeight = 340;
     private const double DefaultDotRadius = 2.5;
@@ -34,24 +34,16 @@ public static partial class RazerMappingBundleParser
     private static readonly IReadOnlyDictionary<string, byte> EmptyKeyIds =
         new Dictionary<string, byte>(StringComparer.Ordinal);
 
-    private static readonly Regex CanvasConfigRegex = new(
-        """\{[^{}]*cvsW:[^{}]*\}""",
-        RegexOptions.CultureInvariant);
-
-    private static readonly Regex CanvasWidthRegex = new(
-        """cvsW:\s*(?<value>-?\d+(?:\.\d+)?)""",
-        RegexOptions.CultureInvariant);
-
-    private static readonly Regex CanvasHeightRegex = new(
-        """cvsH:\s*(?<value>-?\d+(?:\.\d+)?)""",
-        RegexOptions.CultureInvariant);
-
     private static readonly Regex DotRadiusRegex = new(
         """dotRadius:\s*(?<value>-?\d+(?:\.\d+)?)""",
         RegexOptions.CultureInvariant);
 
     private static readonly Regex DrawLineRegex = new(
-        """drawLines?\(\s*(?<index>\d+)\s*,\s*(?:[A-Za-z_$][\w$]*\.props\.buttonList\[(?<button>\d+)\]|(?<buttonArray>[A-Za-z_$][\w$]*)\[(?<arrayButton>\d+)\])(?:\s*\|\|\s*[A-Za-z_$][\w$]*)?\s*,\s*(?<x>-?\d+(?:\.\d+)?)\s*,\s*(?<y>-?\d+(?:\.\d+)?)(?:\s*,\s*!(?<left>[01]))?\s*\)""",
+        """drawLines?\(\s*(?<index>\d+)\s*,\s*(?:[A-Za-z_$][\w$]*\.props\.buttonList\[(?<button>\d+)\]|(?<buttonArray>[A-Za-z_$][\w$]*)\[(?<arrayButton>\d+)\])(?:\s*\|\|\s*[A-Za-z_$][\w$]*)?\s*,\s*(?<x>-?\d+(?:\.\d+)?|this\.state\.Xcycle)\s*,\s*(?<y>-?\d+(?:\.\d+)?|this\.state\.Ycycle)(?:\s*,\s*!(?<left>[01]))?\s*\)""",
+        RegexOptions.CultureInvariant);
+
+    private static readonly Regex CycleStateRegex = new(
+        """this\.state=\{[^{}]*Xcycle:\s*(?<x>-?\d+(?:\.\d+)?)[^{}]*Ycycle:\s*(?<y>-?\d+(?:\.\d+)?)""",
         RegexOptions.CultureInvariant);
 
     private static readonly Regex DrawSideLineRegex = new(
@@ -131,14 +123,7 @@ public static partial class RazerMappingBundleParser
                 EmptyKeyIds);
         }
 
-        var canvasMatch = CanvasConfigRegex.Match(mainJs);
-        var canvasText = canvasMatch.Success ? canvasMatch.Value : mainJs;
-        var canvasWidth = ReadPositive(CanvasWidthRegex, canvasText) ??
-            ReadPositive(CanvasWidthRegex, mainJs) ?? DefaultCanvasWidth;
-        var canvasHeight = ReadPositive(CanvasHeightRegex, canvasText) ??
-            ReadPositive(CanvasHeightRegex, mainJs) ?? DefaultImageHeight;
-        var dotRadius = ReadPositive(DotRadiusRegex, canvasText) ??
-            ReadPositive(DotRadiusRegex, mainJs) ?? DefaultDotRadius;
+        var dotRadius = ReadPositive(DotRadiusRegex, mainJs) ?? DefaultDotRadius;
         var scopes = ParseButtonScopes(mainJs);
         var primaryButtons = scopes.FirstOrDefault() ?? [];
         var explicitButtonIds = ParseExplicitButtonIds(mainJs);
@@ -149,9 +134,6 @@ public static partial class RazerMappingBundleParser
         var editionImages = ParseEditionImages(mainJs);
         var anchors = new List<RazerMappingBundleAnchor>();
         var seenButtonIds = new HashSet<byte>();
-        var imageOffsetX = (canvasWidth - DefaultImageWidth) / 2;
-        var imageOffsetY = (canvasHeight - DefaultImageHeight) / 2;
-
         var buttonListAliases = new HashSet<string>(
             ButtonListAliasRegex.Matches(mainJs).Select(match => match.Groups["name"].Value),
             StringComparer.Ordinal);
@@ -191,11 +173,11 @@ public static partial class RazerMappingBundleParser
                 _ => drawCall.IsLeft,
             };
 
-            // drawLine draws the dot at (x + 3r, y + r), not at the raw pair.
+            // drawLine draws the dot at (x + 3r, y + r), not at the raw pair, in canvas space.
             anchors.Add(new RazerMappingBundleAnchor(
                 buttonId,
-                drawCall.X + (3 * dotRadius) - imageOffsetX,
-                drawCall.Y + dotRadius - imageOffsetY,
+                drawCall.X + (3 * dotRadius),
+                drawCall.Y + dotRadius,
                 isLeft));
         }
 
