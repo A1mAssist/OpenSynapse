@@ -222,6 +222,9 @@ public sealed partial class MainWindow : Window
         UpdatePerformanceSamplingState();
         _viewModel.Refresh.SetDeviceWatchActive(true);
         _viewModel.Refresh.RequestDeviceRefresh();
+        // Opening the window is the user's cue that the strip should show the
+        // same fresh reading as the tray, not wait for the next battery tick.
+        _refreshTaskbarStatus?.Invoke();
         TryPromptForStartupUpdate();
     }
 

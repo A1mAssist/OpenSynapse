@@ -22,6 +22,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
+- **THX preset sync**: while a headset's THX card is visible, poll the native state every two seconds and refresh the preset and curve when the headset's own controls change them, without writing back to the device.
+- **Taskbar battery freshness**: redraw the strip from the live device rows every second while keeping the ten-second HID read interval; opening the window also forces an immediate refresh so the strip matches the tray instead of lagging behind.
 - **Mouse DPI stages**: saving the stage table now also applies the active stage's DPI, so the pointer speed changes immediately and the DPI card refreshes.
 - **Scroll settings**: the mode and acceleration save buttons now share the same height and align.
 - **Mouse mapping hotspots**: place hotspots with the product page's actual image offsets, fixing the 10px-left/5px-down shift on SVG art such as the Basilisk V3 Pro Phantom Green; the profile-switch callout now draws as well.

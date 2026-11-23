@@ -10,6 +10,7 @@ namespace OpenSynapse.App;
 
 internal sealed class TaskbarStatusPresenter : IDisposable
 {
+    private static readonly TimeSpan UiRefreshInterval = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan BatteryReadInterval = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan EmptyGrace = TimeSpan.FromSeconds(30);
     private readonly MainViewModel _viewModel;
@@ -51,7 +52,7 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         _timer = _dispatcherQueue?.CreateTimer();
         if (_timer is not null)
         {
-            _timer.Interval = BatteryReadInterval;
+            _timer.Interval = UiRefreshInterval;
             _timer.Tick += (_, _) => Refresh();
         }
         SetEnabled(settings.TaskbarStatusEnabled);
@@ -150,18 +151,25 @@ internal sealed class TaskbarStatusPresenter : IDisposable
 
         _emptySince = null;
         var summary = string.Join(
-            ", ", selected.Select(item => $"{item.Name} {item.Percent}%"));
-        if (!StringComparer.Ordinal.Equals(_lastBatterySummary, summary))
+            ", ", selected.Select(item =>
+                $"{item.Name} {item.Percent}%{(item.IsCharging == true ? " charging" : string.Empty)}"));
+        var summaryChanged = !StringComparer.Ordinal.Equals(_lastBatterySummary, summary);
+        if (summaryChanged)
         {
             _lastBatterySummary = summary;
             _diagnosticLog.TryWrite("taskbar-status", $"strip shows {summary}");
         }
 
-        SetTimerInterval(BatteryReadInterval);
+        SetTimerInterval(UiRefreshInterval);
+        if (!summaryChanged && _statusWindow is not null && _lastSnapshot is not null)
+        {
+            return;
+        }
 
         var snapshot = new TaskbarStatusSnapshot(selected);
         if (!TaskbarStatusPolicy.ShouldShow(snapshot, enabled: true))
         {
+            _lastSnapshot = null;
             _statusWindow?.Clear();
             return;
         }

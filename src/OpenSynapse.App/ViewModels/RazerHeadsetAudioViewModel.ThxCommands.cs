@@ -234,6 +234,46 @@ public sealed partial class RazerHeadsetAudioViewModel
             _connection.ProductId,
             _connection.ContainerId);
 
+    /// <summary>
+    /// Reads the live preset while the THX card is visible. The headset's own
+    /// controls change the preset outside this app, so a single page-load read
+    /// leaves the combo showing the old value.
+    /// </summary>
+    internal async Task PollThxAsync(CancellationToken cancellationToken)
+    {
+        if (!CanApplyThx || _thxState is not { } current)
+        {
+            return;
+        }
+
+        try
+        {
+            var status = await ThxController.ReadAsync(
+                ThxAudioEndpoint.Headphones,
+                cancellationToken).ConfigureAwait(true);
+            if (status.State is not { } state ||
+                StringComparer.Ordinal.Equals(state.SelectedPresetId, current.SelectedPresetId))
+            {
+                return;
+            }
+
+            _diagnostic?.Invoke(
+                $"thx preset changed externally: {current.SelectedPresetId ?? "-"} -> " +
+                $"{state.SelectedPresetId ?? "-"}");
+            ApplyThxStatus(status);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            // Polling must not replace the last good card with a transient error.
+            _diagnostic?.Invoke(
+                $"thx preset poll failed: {exception.GetType().Name}: {exception.Message}");
+        }
+    }
+
     private async Task RefreshThxAsync(CancellationToken cancellationToken)
     {
         if (!ThxHeadsetAdmission.IsSupported(_connection.ProductId))

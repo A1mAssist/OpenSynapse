@@ -1,3 +1,4 @@
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using OpenSynapse.App.ViewModels;
@@ -7,9 +8,23 @@ namespace OpenSynapse.App.Views.DevicePanels;
 
 public sealed partial class HeadsetAudioPanel : UserControl
 {
+    private readonly DispatcherQueueTimer? _thxPollTimer;
+    private bool _thxPolling;
+
     public HeadsetAudioPanel()
     {
         InitializeComponent();
+        var dispatcher = DispatcherQueue.GetForCurrentThread();
+        if (dispatcher is null)
+        {
+            return;
+        }
+
+        _thxPollTimer = dispatcher.CreateTimer();
+        _thxPollTimer.Interval = TimeSpan.FromSeconds(2);
+        _thxPollTimer.Tick += ThxPollTick;
+        Loaded += (_, _) => _thxPollTimer.Start();
+        Unloaded += (_, _) => _thxPollTimer.Stop();
     }
 
     internal CancellationToken Lifetime { get; private set; } = CancellationToken.None;
@@ -19,6 +34,33 @@ public sealed partial class HeadsetAudioPanel : UserControl
     private UsbAccessoriesWorkspace? Accessories { get; set; }
 
     private RazerHeadsetAudioViewModel? ViewModel => DataContext as RazerHeadsetAudioViewModel;
+
+    private async void ThxPollTick(DispatcherQueueTimer sender, object args)
+    {
+        if (_thxPolling ||
+            Visibility != Visibility.Visible ||
+            Host is null ||
+            !Host.AppWindow.IsVisible ||
+            ViewModel is not { } viewModel ||
+            Accessories is null)
+        {
+            return;
+        }
+
+        _thxPolling = true;
+        try
+        {
+            await Accessories.RunHeadsetOperationAsync(
+                viewModel, (vm, token) => vm.PollThxAsync(token), Lifetime);
+        }
+        catch (OperationCanceledException) when (Lifetime.IsCancellationRequested)
+        {
+        }
+        finally
+        {
+            _thxPolling = false;
+        }
+    }
 
     private async Task RunAsync(Func<RazerHeadsetAudioViewModel, CancellationToken, Task> action)
     {
