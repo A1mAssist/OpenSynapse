@@ -50,13 +50,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         }
         var previousIndex = SelectedThxPresetIndex;
         var previousPreset = _thxState.Presets.ElementAtOrDefault(previousIndex);
-        var previousGains = ThxBands.Select(band => band.Level).ToArray();
-        var gains = preset.Id == "default"
-            ? Enumerable.Repeat(0d, ThxBands.Count).ToArray()
-            : ThxBands.Select(band => band.Level).ToArray();
         if (!await RunThxAsync(
-                (controller, token) => controller.SelectPresetAsync(
-                    ThxAudioEndpoint.Headphones, preset.Id, gains, token),
+                (controller, token) => SelectThxPresetAsync(controller, preset.Id, token),
                 cancellationToken))
         {
             return;
@@ -70,8 +65,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             {
                 if (previousPreset is not null)
                 {
-                    await ThxController.SelectPresetAsync(
-                        ThxAudioEndpoint.Headphones, previousPreset.Id, previousGains, token);
+                    await SelectThxPresetAsync(ThxController, previousPreset.Id, token);
                 }
             },
             cancellationToken);
@@ -82,48 +76,44 @@ public sealed partial class RazerHeadsetAudioViewModel
     {
         var previous = ThxBands.Select(band => band.Level).ToArray();
         var gains = ThxBands.Select(band => band.Level).ToArray();
-        var previousPreset = _thxState?.SelectedPresetId;
-        var previousPresetIndex = SelectedThxPresetIndex;
-        // THX keeps the manual gains in the Custom preset. Writing them while a
-        // game preset is active stores the curve but keeps playing the preset.
-        var customPresetId = ThxCustomPresetId;
-        var switchPreset = customPresetId is not null &&
-            !string.Equals(previousPreset, customPresetId, StringComparison.OrdinalIgnoreCase);
+        if (_thxState?.SelectedPresetId is not { Length: > 0 } presetId)
+        {
+            return;
+        }
+
+        // THX keeps one live gain set; selecting a named preset reloads its factory
+        // curve. Save this preset's edit in the profile and replay it on switch.
         if (!await RunThxAsync(
-                (controller, token) => switchPreset
-                    ? controller.SelectPresetAsync(
-                        ThxAudioEndpoint.Headphones, customPresetId!, gains, token)
-                    : controller.SetGainsAsync(
-                        ThxAudioEndpoint.Headphones, gains, token),
+                (controller, token) => controller.SetGainsAsync(
+                    ThxAudioEndpoint.Headphones, gains, token),
                 cancellationToken))
         {
             return;
         }
 
-        if (switchPreset)
-        {
-            var customIndex = ThxCustomPresetIndex;
-            if (customIndex >= 0)
-            {
-                SelectedThxPresetIndex = customIndex;
-            }
-        }
-
+        var previousStored = ReadStoredThxBands(presetId);
+        var previousSavedPreset = ResolveHeadsetProfileSettings()?.ThxPreset;
         await SaveHeadsetSettingAsync(
             settings =>
             {
+                settings.ThxPreset = presetId;
                 settings.ThxBands = ToBandMap(gains);
-                if (switchPreset)
-                {
-                    settings.ThxPreset = customPresetId;
-                }
+                var map = settings.ThxBandsByPreset ??=
+                    new Dictionary<string, Dictionary<string, int>>(
+                        StringComparer.OrdinalIgnoreCase);
+                map[presetId] = ToBandMap(gains);
             },
             settings =>
             {
                 settings.ThxBands = ToBandMap(previous);
-                if (switchPreset)
+                settings.ThxPreset = previousSavedPreset;
+                if (previousStored is null)
                 {
-                    settings.ThxPreset = previousPreset;
+                    settings.ThxBandsByPreset?.Remove(presetId);
+                }
+                else if (settings.ThxBandsByPreset is { } map)
+                {
+                    map[presetId] = ToBandMap(previousStored);
                 }
             },
             () =>
@@ -132,24 +122,9 @@ public sealed partial class RazerHeadsetAudioViewModel
                 {
                     ThxBands[index].Level = previous[index];
                 }
-                if (switchPreset)
-                {
-                    SelectedThxPresetIndex = previousPresetIndex;
-                }
             },
-            async token =>
-            {
-                if (switchPreset && previousPreset is not null)
-                {
-                    await ThxController.SelectPresetAsync(
-                        ThxAudioEndpoint.Headphones, previousPreset, previous, token);
-                }
-                else
-                {
-                    await ThxController.SetGainsAsync(
-                        ThxAudioEndpoint.Headphones, previous, token);
-                }
-            },
+            async token => await ThxController.SetGainsAsync(
+                ThxAudioEndpoint.Headphones, previous, token),
             cancellationToken);
     }
 
@@ -186,23 +161,35 @@ public sealed partial class RazerHeadsetAudioViewModel
                 preset.DisplayName.Contains("Custom", StringComparison.OrdinalIgnoreCase))
             ?.Id;
 
-    private int ThxCustomPresetIndex
+    private Task<ThxAudioStatus> SelectThxPresetAsync(
+        WindowsThxHeadsetController controller,
+        string presetId,
+        CancellationToken cancellationToken) =>
+        ReadStoredThxBands(presetId) is { } gains
+            ? controller.SelectPresetAsync(
+                ThxAudioEndpoint.Headphones, presetId, gains, cancellationToken)
+            : controller.SelectPresetOnlyAsync(
+                ThxAudioEndpoint.Headphones, presetId, cancellationToken);
+
+    private double[]? ReadStoredThxBands(string presetId)
     {
-        get
+        if (ResolveHeadsetProfileSettings()?.ThxBandsByPreset is not { } map ||
+            !map.TryGetValue(presetId, out var bands) ||
+            bands.Count == 0)
         {
-            if (_thxState is null)
-            {
-                return -1;
-            }
-            return _thxState.Presets
-                .Select((preset, index) => (preset, index))
-                .Where(item =>
-                    item.preset.Id.Equals("Custom", StringComparison.OrdinalIgnoreCase) ||
-                    item.preset.DisplayName.Contains("Custom", StringComparison.OrdinalIgnoreCase))
-                .Select(item => item.index)
-                .DefaultIfEmpty(-1)
-                .First();
+            return null;
         }
+
+        var gains = new double[bands.Count];
+        for (var index = 0; index < gains.Length; index++)
+        {
+            if (!bands.TryGetValue(index.ToString(), out var value))
+            {
+                return null;
+            }
+            gains[index] = value;
+        }
+        return gains;
     }
 
     /// <summary>
@@ -257,6 +244,35 @@ public sealed partial class RazerHeadsetAudioViewModel
         if (ThxHeadsetAdmission.Check(_connection.ProductId) is
             { RebootRequired: true } rebootStatus)
         {
+            // The marker exists to hide controls until the native stack answers.
+            // Probe once here: a working APO clears the marker, a still-inactive
+            // one keeps the reboot message.
+            if (ThxHeadsetAdmission.CanProbe(_connection.ProductId, _connection.ContainerId) &&
+                ThxAudioAdmission.HasRunningService(ThxHeadsetAdmission.ServiceName))
+            {
+                try
+                {
+                    var probe = await ThxController.ProbeAsync(
+                        ThxAudioEndpoint.Headphones,
+                        cancellationToken).ConfigureAwait(true);
+                    _diagnostic?.Invoke(
+                        $"thx probe availability={probe.Availability} error={probe.Error ?? "-"}");
+                    if (probe.State is not null)
+                    {
+                        ApplyThxStatus(probe);
+                        return;
+                    }
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception exception) when (IsExpectedException(exception))
+                {
+                    _diagnostic?.Invoke($"thx probe failed error={exception.Message}");
+                }
+            }
+
             _thxStatus = rebootStatus;
             _thxState = null;
             _thxErrorText = ThxMessage(rebootStatus.ErrorCode);
@@ -367,7 +383,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         {
             ApplyThxState(state);
             _thxStatus = new ThxHeadsetStatus(ThxHeadsetAvailability.Available, null);
-            ThxHeadsetAdmission.ClearRebootMarker();
+            ThxHeadsetAdmission.ClearRebootMarker(_connection.ProductId);
             // A missing enhancement is a failed read, not a missing capability.
             // Keep the controls visible with defaults and say so.
             _thxErrorText = state.SoundNormalization is null || state.VoiceClarity is null

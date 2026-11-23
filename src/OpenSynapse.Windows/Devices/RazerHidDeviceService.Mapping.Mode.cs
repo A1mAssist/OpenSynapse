@@ -166,6 +166,17 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken,
         bool bypassSession = false)
     {
+        if (connection.Definition.ProductId == 0x0244)
+        {
+            if (!bypassSession && _mappingModeSessions.ContainsKey(connection.InstanceId))
+            {
+                return await action().ConfigureAwait(false);
+            }
+
+            return await WithTartarusProMappingModeAsync(
+                connection, action, cancellationToken).ConfigureAwait(false);
+        }
+
         if (!bypassSession && _mappingModeSessions.ContainsKey(connection.InstanceId))
         {
             return await action().ConfigureAwait(false);
@@ -262,9 +273,10 @@ public sealed partial class RazerHidDeviceService
         RazerHidDeviceConnection connection,
         byte mode,
         CancellationToken cancellationToken,
-        bool verify = true)
+        bool verify = true,
+        byte parameter = RazerHidStandardProtocol.NoStore)
     {
-        var request = RazerHidStandardProtocol.SetDeviceMode(connection.Definition, mode);
+        var request = RazerHidStandardProtocol.SetDeviceMode(connection.Definition, mode, parameter);
         try
         {
             await ExecuteWithoutResultAsync(connection, request, cancellationToken).ConfigureAwait(false);
@@ -287,6 +299,95 @@ public sealed partial class RazerHidDeviceService
         WriteDiagnostic(connection.Definition.ProductId,
             $"mapping device mode 0x{mode:X2} requested, now 0x{after:X2}");
         return after == mode;
+    }
+
+    /// <summary>
+    /// The Tartarus Pro (0244) answers 0x05 to every class-0x02 OBM command on the
+    /// firmware seen in the field. Try the mode/param pairs used by Synapse and
+    /// OpenRazer and keep the first one that makes 02:84 answer; restore normal
+    /// mode afterwards so the keypad keeps sending its normal HID reports.
+    /// </summary>
+    private async Task<T> WithTartarusProMappingModeAsync<T>(
+        RazerHidDeviceConnection connection,
+        Func<Task<T>> action,
+        CancellationToken cancellationToken)
+    {
+        if (_tartarusMappingUnavailable.ContainsKey(connection.InstanceId))
+        {
+            return await action().ConfigureAwait(false);
+        }
+
+        if (_tartarusMappingModes.TryGetValue(connection.InstanceId, out var known))
+        {
+            try
+            {
+                await SetMappingDeviceModeAsync(
+                    connection, known.Mode, cancellationToken, verify: false, known.Parameter)
+                    .ConfigureAwait(false);
+                return await action().ConfigureAwait(false);
+            }
+            finally
+            {
+                await RestoreTartarusProModeAsync(connection).ConfigureAwait(false);
+            }
+        }
+
+        try
+        {
+            foreach (var candidate in TartarusProMappingModes)
+            {
+                try
+                {
+                    await SetMappingDeviceModeAsync(
+                        connection, candidate.Mode, cancellationToken, verify: false, candidate.Parameter)
+                        .ConfigureAwait(false);
+                    var buttons = RazerHidMappingProtocol.ParseButtonList(
+                        await ExecuteAsync(connection, RazerHidMappingProtocol.GetButtonList(), cancellationToken)
+                            .ConfigureAwait(false));
+                    if (buttons.Count == 0)
+                    {
+                        throw new InvalidDataException("02:84 returned an empty button list.");
+                    }
+                    _tartarusMappingModes[connection.InstanceId] = candidate;
+                    WriteDiagnostic(connection.Definition.ProductId,
+                        $"mapping OBM unlocked in mode 0x{candidate.Mode:X2}/0x{candidate.Parameter:X2}");
+                    return await action().ConfigureAwait(false);
+                }
+                catch (Exception exception) when (
+                    exception is InvalidDataException or NotSupportedException or
+                        RazerCommandRejectedException or RazerDeviceTimeoutException)
+                {
+                    WriteDiagnostic(connection.Definition.ProductId,
+                        $"mapping OBM rejected in mode 0x{candidate.Mode:X2}/0x{candidate.Parameter:X2}: " +
+                        exception.Message);
+                }
+            }
+
+            WriteDiagnostic(connection.Definition.ProductId,
+                "mapping OBM rejected 02:84 in normal, driver and driver+store modes; " +
+                "the firmware does not expose the onboard table");
+            _tartarusMappingUnavailable.TryAdd(connection.InstanceId, true);
+            return await action().ConfigureAwait(false);
+        }
+        finally
+        {
+            await RestoreTartarusProModeAsync(connection).ConfigureAwait(false);
+        }
+    }
+
+    private async Task RestoreTartarusProModeAsync(RazerHidDeviceConnection connection)
+    {
+        try
+        {
+            await SetMappingDeviceModeAsync(
+                connection, RazerHidStandardProtocol.NormalDeviceMode,
+                CancellationToken.None, verify: false).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            WriteDiagnostic(connection.Definition.ProductId,
+                $"mapping device mode restore failed: {exception.Message}");
+        }
     }
 
     private async Task<byte> ReadMappingDeviceModeAsync(

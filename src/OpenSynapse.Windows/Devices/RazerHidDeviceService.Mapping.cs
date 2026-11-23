@@ -29,6 +29,13 @@ public sealed partial class RazerHidDeviceService
     // parsed, but still switches modes through 00:04. Remember that so later rows skip it.
     private readonly ConcurrentDictionary<string, bool> _mappingModeBlind =
         new(StringComparer.OrdinalIgnoreCase);
+    // The Tartarus Pro rejects 02:84 in normal mode on this firmware. Probe the
+    // three mode/param pairs Synapse and OpenRazer use, then keep the one that
+    // actually unlocks the OBM table.
+    private readonly ConcurrentDictionary<string, (byte Mode, byte Parameter)> _tartarusMappingModes =
+        new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, bool> _tartarusMappingUnavailable =
+        new(StringComparer.OrdinalIgnoreCase);
     /// <summary>
     /// Mapping tables are keyed by the profile the device is actually on. Profile 1 is only a
     /// fallback: a user can delete it and keep working on a later profile.
@@ -173,6 +180,9 @@ public sealed partial class RazerHidDeviceService
     private static bool UsesBlindMappingDriverMode(RazerHidDeviceConnection connection) =>
         connection.Definition.ProductId is 0x022B or 0x02A6 or 0x02A7 or
             0x02B0 or 0x02CF or 0x02EB;
+
+    private static readonly (byte Mode, byte Parameter)[] TartarusProMappingModes =
+        [(0x00, 0x00), (0x03, 0x00), (0x03, 0x01)];
 
     private async Task<(AssignmentTable Table, RazerHidButtonAssignment Assignment)>
         ReadKeypadAssignmentAsync(

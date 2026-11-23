@@ -34,6 +34,7 @@ public sealed partial class LightingStudioViewModel
         if (_chromaRouter is not null) _ = _chromaRouter.DisposeAsync().AsTask();
         _layerCache.Clear();
         _loadedMedia.Clear();
+        _loadedChroma.Clear();
         _source = null;
         _appliedBlade = null;
     }

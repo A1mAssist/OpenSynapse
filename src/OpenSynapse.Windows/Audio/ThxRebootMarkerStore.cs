@@ -33,13 +33,40 @@ internal sealed class ThxRebootMarkerStore
             return false;
         }
 
-        return marker.ProductId == productId;
+        return marker.EffectiveProductIds.Contains(productId);
     }
 
     internal bool MarkPending(ushort productId)
     {
-        return _readBootId() is { } bootId &&
-            TrySave(new Marker(productId, bootId));
+        if (_readBootId() is not { } bootId)
+        {
+            return false;
+        }
+
+        var productIds = TryRead() is { } existing && existing.BootId == bootId
+            ? existing.EffectiveProductIds
+            : [];
+        return TrySave(new Marker(bootId, productIds.Append(productId).Distinct().ToArray()));
+    }
+
+    internal void Clear(ushort productId)
+    {
+        if (TryRead() is not { } marker)
+        {
+            return;
+        }
+
+        var remaining = marker.EffectiveProductIds.Where(id => id != productId).ToArray();
+        if (remaining.Length == marker.EffectiveProductIds.Length)
+        {
+            return;
+        }
+        if (remaining.Length == 0)
+        {
+            Clear();
+            return;
+        }
+        TrySave(marker with { ProductIds = remaining, ProductId = 0 });
     }
 
     internal void Clear()
@@ -118,5 +145,11 @@ internal sealed class ThxRebootMarkerStore
         }
     }
 
-    private sealed record Marker(ushort ProductId, uint BootId);
+    private sealed record Marker(uint BootId, ushort[]? ProductIds = null, ushort ProductId = 0)
+    {
+        // Older builds wrote a single ProductId. Keep reading their file so a
+        // pending install is not silently forgotten after an upgrade.
+        internal ushort[] EffectiveProductIds =>
+            (ProductIds ?? []).Append(ProductId).Where(id => id != 0).Distinct().ToArray();
+    }
 }

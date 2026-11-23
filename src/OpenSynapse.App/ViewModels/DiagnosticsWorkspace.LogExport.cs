@@ -36,6 +36,13 @@ public sealed partial class DiagnosticsWorkspace
             archive,
             Path.Combine(serviceLogDirectory, "service-install.log.previous"),
             "service-install.log.previous");
+        AddArchiveFile(
+            archive,
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                "OpenSynapse",
+                "ChromaBroker.log"),
+            "ChromaBroker.log");
         var thxLogDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Razer",

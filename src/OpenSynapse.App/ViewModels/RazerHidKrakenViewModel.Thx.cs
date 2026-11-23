@@ -94,6 +94,17 @@ public sealed partial class RazerHidKrakenViewModel
     public async Task RefreshThxAsync(CancellationToken cancellationToken = default)
     {
         _thxErrorText = string.Empty;
+        if (ThxHeadsetAdmission.Check(Connection.ProductId) is { RebootRequired: true } rebootStatus)
+        {
+            _thxStatus = await ThxHeadsetAdmission.TryClearPendingRebootAsync(
+                Connection.ProductId,
+                Connection.ContainerId,
+                diagnostic: null,
+                cancellationToken).ConfigureAwait(true) ?? rebootStatus;
+            NotifyStateChanged();
+            return;
+        }
+
         _thxStatus = await ThxHeadsetAdmission
             .CheckAsync(Connection.ProductId, cancellationToken)
             .ConfigureAwait(true);

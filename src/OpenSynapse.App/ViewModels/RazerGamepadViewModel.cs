@@ -397,7 +397,20 @@ public sealed partial class RazerGamepadViewModel : INotifyPropertyChanged
     public bool CanEdit => !IsBusy;
     public string ErrorText { get => _errorText; private set => SetField(ref _errorText, value); }
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);
-    public string OperationStatusText { get => _operationStatusText; private set => SetField(ref _operationStatusText, value); }
+    public string OperationStatusText
+    {
+        get => _operationStatusText;
+        private set
+        {
+            if (SetField(ref _operationStatusText, value))
+            {
+                OnPropertyChanged(nameof(OperationStatusVisibility));
+            }
+        }
+    }
+
+    public Visibility OperationStatusVisibility =>
+        string.IsNullOrWhiteSpace(OperationStatusText) ? Visibility.Collapsed : Visibility.Visible;
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {

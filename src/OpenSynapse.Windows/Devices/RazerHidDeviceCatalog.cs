@@ -106,6 +106,12 @@ public sealed class RazerHidDeviceDefinition
             DefaultLedZone, CommandSequences, CommandSizes, SupportsIndependentDpi, UsesP1DpiScale,
             UsesLegacyInfo, UsesDynamicTransactions, WaveAxis);
 
+    internal RazerHidDeviceDefinition WithPollingRates(IReadOnlyList<int> pollingRates) =>
+        new(ProductId, DisplayName, Category, SourceCapabilities, MaximumDpi, pollingRates,
+            MatrixDimensions, DeviceWait, Transactions, BuilderArgumentPrefixes, DefaultStorage,
+            DefaultLedZone, CommandSequences, CommandSizes, SupportsIndependentDpi, UsesP1DpiScale,
+            UsesLegacyInfo, UsesDynamicTransactions, WaveAxis);
+
     internal RazerHidDeviceDefinition WithCapabilitiesAndTransactions(
         IReadOnlySet<string> capabilities,
         IReadOnlyDictionary<string, byte> transactions) =>

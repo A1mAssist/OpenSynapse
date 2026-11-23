@@ -86,6 +86,7 @@ internal static class ChromaObjectCatalog
 {
     public const string ControlSection = "96264859-7FDE-4DA1-A433-BB5109D17DB2";
     public const string AppRegistry = "D4E1A960-872F-4BF8-B09A-9E54F646D7CE";
+    public const string ClientRegistration = "D41D8537-2D95-4AD2-8A77-51DC00946366";
     public const string SessionInfo = "821AA2A2-8215-4A16-BE9D-7CD8CEBDC398";
     public const string SessionWorkerEvent = "B8B918C0-9790-47F2-AC7A-F36B8414140C";
     public const string ServerOnlineEvent = "A84AF9C8-EFE0-430D-871C-10DA760C2CCD";
@@ -130,7 +131,7 @@ internal static class ChromaObjectCatalog
         new("0FFE5A62-387E-4360-95A3-5D8D4075780D", ChromaObjectKind.Section, ChromaObjectOrigin.ServerCreated, 11848),
         new("CDB274E2-C50A-4425-8076-1E71550CBE8A", ChromaObjectKind.Section, ChromaObjectOrigin.ServerCreated, 11048),
         new("D42A3EF5-1B8D-4055-B42F-C5D34A9CA4E4", ChromaObjectKind.Section, ChromaObjectOrigin.ServerCreated, 10568),
-        new("D41D8537-2D95-4AD2-8A77-51DC00946366", ChromaObjectKind.Section, ChromaObjectOrigin.ServerCreated, 168),
+        new(ClientRegistration, ChromaObjectKind.Section, ChromaObjectOrigin.ServerCreated, 168),
         new(SessionInfo, ChromaObjectKind.Section, ChromaObjectOrigin.ServerCreated, 84),
         new("0F9297E6-E80C-47E4-9A8B-1237E50484B7", ChromaObjectKind.Event, ChromaObjectOrigin.ClientCreated),
         new("89811F96-91C2-4C19-8E0A-54469F491550", ChromaObjectKind.Event, ChromaObjectOrigin.ClientCreated),

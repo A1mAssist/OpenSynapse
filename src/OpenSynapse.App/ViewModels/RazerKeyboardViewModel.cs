@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
@@ -250,8 +251,17 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
     public string OperationStatusText
     {
         get => _operationStatusText;
-        private set => SetField(ref _operationStatusText, value);
+        private set
+        {
+            if (SetField(ref _operationStatusText, value))
+            {
+                OnPropertyChanged(nameof(OperationStatusVisibility));
+            }
+        }
     }
+
+    public Visibility OperationStatusVisibility =>
+        string.IsNullOrWhiteSpace(OperationStatusText) ? Visibility.Collapsed : Visibility.Visible;
 
     public Microsoft.UI.Xaml.Visibility GameModeVisibility =>
         _hasGameMode ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;

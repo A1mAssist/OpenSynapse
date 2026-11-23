@@ -8916,14 +8916,7 @@
       "category": "accessory",
       "capabilitySet": "dongle-js-001",
       "maximumDpi": null,
-      "pollRates": [
-        125,
-        500,
-        1000,
-        2000,
-        4000,
-        8000
-      ],
+      "pollRates": [],
       "matrixDimensions": null,
       "waitMicroseconds": 59900,
       "transactions": {
@@ -8941,7 +8934,6 @@
         "razer_chroma_misc_get_dpi_stages": "1F",
         "razer_chroma_misc_get_dpi_xy": "1F",
         "razer_chroma_misc_get_idle_time": "1F",
-        "razer_chroma_misc_get_polling_rate2": "1F",
         "razer_chroma_misc_set_dpi_stages": "1F",
         "razer_chroma_misc_set_dpi_xy": "1F",
         "razer_chroma_misc_set_idle_time": "1F",
@@ -8963,18 +8955,7 @@
       },
       "defaultStorage": null,
       "defaultLedZone": null,
-      "commandSequences": {
-        "razer_chroma_misc_set_polling_rate2": [
-          {
-            "transactionId": "1F",
-            "fixedArgument0": "00"
-          },
-          {
-            "transactionId": "FF",
-            "fixedArgument0": "01"
-          }
-        ]
-      },
+      "commandSequences": {},
       "ambiguousTransactions": []
     },
     {

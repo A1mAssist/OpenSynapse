@@ -3,9 +3,9 @@ using System.Text;
 namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
-/// AudioAvnera's 65-byte feature-report channel (report id 255). The JS bundle
-/// writes a 64-byte frame with the FF 0A transport header and reads a 65-byte
-/// feature response with the same header. This is not the protocol-25 91-byte
+/// AudioAvnera's report channel (report id 255). The JS bundle writes a 64-byte
+/// output report with the FF 0A transport header and reads a 65-byte feature
+/// response with the same header. This is not the protocol-25 91-byte
 /// class/command envelope.
 /// </summary>
 internal static class RazerAvnera65Protocol
@@ -14,6 +14,7 @@ internal static class RazerAvnera65Protocol
     internal const int ReadLength = 65;
     internal const byte ReportId = 0xFF;
     internal const byte Sync = 0x0A;
+    internal const byte ResponseSync = 0x0F;
 
     internal static readonly byte[] FirmwareHeader = [0xFE, 0x07, 0x04, 0x1F, 0x14];
     internal static readonly byte[] SerialHeader = [0xFE, 0x00, 0x04, 0x1F, 0x14, 0x81, 0xA0, 0xB0];
@@ -135,9 +136,9 @@ internal static class RazerAvnera65Protocol
         Frame([0xFF, 0x04, 0x12, 0xF1, 0x05, 0x72], [red, green, blue]);
 
     internal static bool Matches(ReadOnlySpan<byte> response, ReadOnlySpan<byte> header) =>
-        response.Length == ReadLength &&
+        response.Length >= 3 + header.Length &&
         response[0] == ReportId &&
-        response[1] == Sync &&
+        response[1] is Sync or ResponseSync &&
         response.Slice(3, header.Length).SequenceEqual(header);
 
     internal static Version ReadFirmware(ReadOnlySpan<byte> response) =>
@@ -224,8 +225,14 @@ internal static class RazerAvnera65Protocol
             throw new InvalidDataException("AudioAvnera returned a short battery response.");
         }
 
-        // Module 77337: data[0] == 5 means charging; data[5] is the level.
-        return (data[5], data[0] == 5);
+        if (data[5] > 100)
+        {
+            throw new InvalidDataException("AudioAvnera returned an invalid battery level.");
+        }
+
+        // Module 77337 keeps the charging flag in data[0]; the 2020 receiver
+        // reports the power state in data[2] and sets bit 3 while charging.
+        return (data[5], data[0] == 5 || (data[2] & 0x08) != 0);
     }
 
     internal static byte ReadSidetone(ReadOnlySpan<byte> response)

@@ -152,8 +152,17 @@ public sealed partial class BlackSharkHeadsetViewModel : INotifyPropertyChanged
     public string OperationStatusText
     {
         get => _operationStatusText;
-        private set => SetField(ref _operationStatusText, value);
+        private set
+        {
+            if (SetField(ref _operationStatusText, value))
+            {
+                OnPropertyChanged(nameof(OperationStatusVisibility));
+            }
+        }
     }
+
+    public Visibility OperationStatusVisibility =>
+        string.IsNullOrWhiteSpace(OperationStatusText) ? Visibility.Collapsed : Visibility.Visible;
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
@@ -178,7 +187,7 @@ public sealed partial class BlackSharkHeadsetViewModel : INotifyPropertyChanged
                 _connection.DevicePath, cancellationToken);
             await ApplyPersistedProfileAsync(service, PowerSourceKind.Unknown, cancellationToken);
             OnPropertyChanged(nameof(SerialVisibility));
-            RefreshThx();
+            await RefreshThxAsync(cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

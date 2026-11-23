@@ -247,6 +247,8 @@ public static partial class ProfileResolver
             global?.ThxEqualizerEnabled),
         ThxPreset = power?.ThxPreset ?? device?.ThxPreset ?? global?.ThxPreset,
         ThxBands = CloneMap(power?.ThxBands ?? device?.ThxBands ?? global?.ThxBands),
+        ThxBandsByPreset = ProfileDefinition.CloneBandsByPreset(
+            power?.ThxBandsByPreset ?? device?.ThxBandsByPreset ?? global?.ThxBandsByPreset),
         ThxNormalizationEnabled = First(
             power?.ThxNormalizationEnabled,
             device?.ThxNormalizationEnabled,

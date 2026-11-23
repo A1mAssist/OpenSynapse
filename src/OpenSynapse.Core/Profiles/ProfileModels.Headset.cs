@@ -14,6 +14,7 @@ public sealed class HeadsetProfileSettings
     public bool? ThxEqualizerEnabled { get; set; }
     public string? ThxPreset { get; set; }
     public Dictionary<string, int>? ThxBands { get; set; }
+    public Dictionary<string, Dictionary<string, int>>? ThxBandsByPreset { get; set; }
     public bool? ThxNormalizationEnabled { get; set; }
     public int? ThxNormalizationLevel { get; set; }
     public bool? ThxVoiceClarityEnabled { get; set; }
@@ -114,6 +115,7 @@ public sealed class HeadsetProfileSettings
         MouseProfileSettings.ValidatePercent(ChromaBrightness, nameof(ChromaBrightness));
         EqBands = NormalizeBands(EqBands, nameof(EqBands));
         ThxBands = NormalizeBands(ThxBands, nameof(ThxBands));
+        ThxBandsByPreset = NormalizeBandsByPreset(ThxBandsByPreset);
         MicEqBands = NormalizeBands(MicEqBands, nameof(MicEqBands));
         ChromaParameters = ChromaParameters is null
             ? null
@@ -141,6 +143,28 @@ public sealed class HeadsetProfileSettings
                 throw new InvalidDataException($"{name} values must be between -24 and 100.");
             }
             result[key] = value;
+        }
+        return result;
+    }
+
+    private static Dictionary<string, Dictionary<string, int>>? NormalizeBandsByPreset(
+        IReadOnlyDictionary<string, Dictionary<string, int>>? source)
+    {
+        if (source is null)
+        {
+            return null;
+        }
+
+        var result = new Dictionary<string, Dictionary<string, int>>(
+            StringComparer.OrdinalIgnoreCase);
+        foreach (var (preset, bands) in source)
+        {
+            if (string.IsNullOrWhiteSpace(preset) ||
+                NormalizeBands(bands, nameof(ThxBandsByPreset)) is not { } normalized)
+            {
+                continue;
+            }
+            result[preset] = normalized;
         }
         return result;
     }

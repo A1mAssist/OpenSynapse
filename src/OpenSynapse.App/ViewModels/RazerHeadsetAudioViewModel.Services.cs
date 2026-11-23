@@ -16,7 +16,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         new(_connection.ProductId, _connection.DevicePath, _diagnostic);
 
     private RazerAvneraHeadsetService OpenAvneraService() =>
-        new(_connection.DevicePath, _diagnostic);
+        new(_connection.DevicePath, _diagnostic, _connection.FeatureReportByteLength);
 
     private async Task<RazerHeadsetAudioState> ReadAvneraStateAsync(CancellationToken cancellationToken)
     {

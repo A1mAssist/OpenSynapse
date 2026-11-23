@@ -9,7 +9,8 @@ public sealed record BlackSharkHeadsetConnection(
     ushort ProductId,
     string Name,
     bool Wireless,
-    int InputReportLength);
+    int InputReportLength,
+    string? ContainerId = null);
 
 public sealed record BlackSharkHeadsetState(
     byte? BatteryPercent,
@@ -92,7 +93,8 @@ public sealed class BlackSharkHeadsetService : IAsyncDisposable
             chosen.ProductId,
             BlackSharkV3ProProtocol.DescribeProduct(chosen.ProductId),
             wireless,
-            chosen.InputReportByteLength);
+            chosen.InputReportByteLength,
+            chosen.ContainerId);
     }
 
     public static async Task<BlackSharkHeadsetService> OpenAsync(

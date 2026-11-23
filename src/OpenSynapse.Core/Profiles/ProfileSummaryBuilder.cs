@@ -364,7 +364,11 @@ public static class ProfileSummaryBuilder
             "ProfileSummary_Item_Anc", scope);
         AddIf(group, settings.ThxEnabled ?? settings.ThxSpatialEnabled ?? settings.ThxEqualizerEnabled,
             "ProfileSummary_Item_Thx", scope);
-        AddIf(group, FirstPresent(settings.ThxPreset, settings.ThxBands), "ProfileSummary_Item_ThxPreset", scope);
+        AddIf(
+            group,
+            FirstPresent(settings.ThxPreset, settings.ThxBands, settings.ThxBandsByPreset),
+            "ProfileSummary_Item_ThxPreset",
+            scope);
         AddIf(
             group,
             settings.ThxNormalizationEnabled ?? settings.ThxVoiceClarityEnabled ??

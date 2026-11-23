@@ -28,7 +28,8 @@ public sealed class RazerHidSpecialLightingConnection
         IReadOnlySet<RazerHidLightingEffect> effects,
         bool supportsStaticColor,
         bool isMergedIntoAudioPage,
-        string? error)
+        string? error,
+        string? containerId = null)
     {
         ProductId = productId;
         DisplayName = displayName;
@@ -41,6 +42,7 @@ public sealed class RazerHidSpecialLightingConnection
         SupportsStaticColor = supportsStaticColor;
         IsMergedIntoAudioPage = isMergedIntoAudioPage;
         Error = error;
+        ContainerId = containerId;
     }
 
     public ushort ProductId { get; }
@@ -60,6 +62,7 @@ public sealed class RazerHidSpecialLightingConnection
     internal string? DevicePath { get; }
     internal string? ControlDevicePath { get; }
     internal string? FeatureDevicePath { get; }
+    internal string? ContainerId { get; }
 }
 
 public sealed partial class RazerHidSpecialLightingService
@@ -277,7 +280,9 @@ public sealed partial class RazerHidSpecialLightingService
                     ? item.UsagePage == 0xFF14 && item.Usage == 0x0001 &&
                       item.OutputReportByteLength == RazerHidKrakenV4Protocol.ReportLength
                     : avnera
-                        ? item.FeatureReportByteLength == RazerAvnera65Protocol.ReadLength
+                        ? item.UsagePage == 0xFF00 && item.Usage == 0x0001 &&
+                          item.FeatureReportByteLength is
+                              RazerAvnera65Protocol.WriteLength or RazerAvnera65Protocol.ReadLength
                     : protocol40
                         ? item.FeatureReportByteLength == RazerProtocol40HeadsetProtocol.ReportLength
                     : !argb &&
@@ -304,7 +309,7 @@ public sealed partial class RazerHidSpecialLightingService
                     ? krakenV4
                         ? "No available FF14:0001 64-byte Output Report collection was found."
                         : avnera
-                            ? "No available 65-byte Avnera feature collection was found."
+                            ? "No available FF00:0001 Avnera feature collection was found."
                         : protocol40
                             ? "No available 64-byte rzDevice40 feature collection was found."
                             : $"No available MI_03 {(definition!.Kind == RazerHidSpecialLightingKind.KrystalT2 ? 62 : 37)}-byte Output Report collection was found."
@@ -326,7 +331,8 @@ public sealed partial class RazerHidSpecialLightingService
                 argb ? Effects(RazerHidLightingEffect.Custom) : definition!.Effects,
                 !argb && definition!.WritesColor,
                 mergedIntoAudioPage,
-                error));
+                error,
+                group.Select(item => item.ContainerId).FirstOrDefault(id => id is not null)));
         }
         return results;
     }

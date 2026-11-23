@@ -319,7 +319,9 @@ public sealed partial class RazerHeadsetAudioService
         channel switch
         {
             RazerHeadsetChannel.Feature91 => item.FeatureReportByteLength == RazerFeatureReport.Length,
-            RazerHeadsetChannel.AvneraFeature65 => item.FeatureReportByteLength == RazerAvnera65Protocol.ReadLength,
+            // The bundle sends 64-byte output reports and reads a 65-byte feature
+            // response; the output collection is the one that carries the channel.
+            RazerHeadsetChannel.AvneraFeature65 => item.OutputReportByteLength == RazerAvnera65Protocol.WriteLength,
             RazerHeadsetChannel.Protocol25Feature65 => item.FeatureReportByteLength == 65,
             RazerHeadsetChannel.Protocol25Feature64 => item.FeatureReportByteLength == 64,
             RazerHeadsetChannel.KrakenBase37 =>

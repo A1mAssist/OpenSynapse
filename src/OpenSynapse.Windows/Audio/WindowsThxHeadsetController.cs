@@ -25,6 +25,15 @@ public sealed class WindowsThxHeadsetController : IThxAudioController, IAsyncDis
         CancellationToken cancellationToken = default) =>
         SendAsync("read", endpoint, cancellationToken);
 
+    /// <summary>
+    /// Proves a pending-reboot install without clearing the marker first. The
+    /// caller clears it only when this returns a native state.
+    /// </summary>
+    internal Task<ThxAudioStatus> ProbeAsync(
+        ThxAudioEndpoint endpoint,
+        CancellationToken cancellationToken = default) =>
+        SendAsync("read", endpoint, cancellationToken, requireAdmission: false);
+
     public Task<ThxAudioStatus> SetSpatialAsync(
         ThxAudioEndpoint endpoint,
         bool enabled,
@@ -48,6 +57,16 @@ public sealed class WindowsThxHeadsetController : IThxAudioController, IAsyncDis
             cancellationToken,
             presetId: presetId,
             gainsDb: gainsDb.ToArray());
+
+    /// <summary>
+    /// Selects a factory preset without replacing its curve with the gains that
+    /// were on screen for the previous preset.
+    /// </summary>
+    public Task<ThxAudioStatus> SelectPresetOnlyAsync(
+        ThxAudioEndpoint endpoint,
+        string presetId,
+        CancellationToken cancellationToken = default) =>
+        SendAsync("selectPreset", endpoint, cancellationToken, presetId: presetId);
 
     public Task<ThxAudioStatus> SetGainsAsync(
         ThxAudioEndpoint endpoint,
@@ -141,17 +160,21 @@ public sealed class WindowsThxHeadsetController : IThxAudioController, IAsyncDis
         string? presetId = null,
         double[]? gainsDb = null,
         string? enhancement = null,
-        int? levelPercent = null)
+        int? levelPercent = null,
+        bool requireAdmission = true)
     {
-        var admission = await ThxHeadsetAdmission
-            .CheckAsync(_productId, cancellationToken)
-            .ConfigureAwait(false);
-        if (admission.Availability != ThxHeadsetAvailability.Available)
+        if (requireAdmission)
         {
-            return new ThxAudioStatus(
-                ThxAudioAvailability.ComponentsUnavailable,
-                admission.ErrorCode,
-                null);
+            var admission = await ThxHeadsetAdmission
+                .CheckAsync(_productId, cancellationToken)
+                .ConfigureAwait(false);
+            if (admission.Availability != ThxHeadsetAvailability.Available)
+            {
+                return new ThxAudioStatus(
+                    ThxAudioAvailability.ComponentsUnavailable,
+                    admission.ErrorCode,
+                    null);
+            }
         }
 
         var profile = ThxHeadsetAdmission.GetProfile(_productId)

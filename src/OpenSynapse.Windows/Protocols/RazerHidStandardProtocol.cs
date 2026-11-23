@@ -117,10 +117,23 @@ internal static class RazerHidStandardProtocol
     internal static RazerHidRequest SetDeviceMode(
         RazerHidDeviceDefinition device,
         byte mode,
+        byte parameter) =>
+        SetDeviceMode(device, mode, UsesProtocol25DeviceMode(device), parameter);
+
+    internal static RazerHidRequest SetDeviceMode(
+        RazerHidDeviceDefinition device,
+        byte mode,
         bool protocol25) =>
+        SetDeviceMode(device, mode, protocol25, NoStore);
+
+    internal static RazerHidRequest SetDeviceMode(
+        RazerHidDeviceDefinition device,
+        byte mode,
+        bool protocol25,
+        byte parameter) =>
         protocol25
-            ? Create(device, DeviceModeBuilder(device), 0x02, 0x01, 0x02, [mode, NoStore])
-            : Create(device, DeviceModeBuilder(device), 0x02, 0x00, 0x04, [mode, NoStore]);
+            ? Create(device, DeviceModeBuilder(device), 0x02, 0x01, 0x02, [mode, parameter])
+            : Create(device, DeviceModeBuilder(device), 0x02, 0x00, 0x04, [mode, parameter]);
 
     internal static RazerHidRequest SetDeviceMode(
         byte transactionId,

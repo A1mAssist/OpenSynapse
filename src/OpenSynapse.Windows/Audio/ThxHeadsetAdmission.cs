@@ -164,7 +164,62 @@ internal static partial class ThxHeadsetAdmission
     /// The native stack only proves the install once it returns a state. Until
     /// then a pending reboot marker must survive the service/native file checks.
     /// </summary>
-    internal static void ClearRebootMarker() => RebootMarker.Clear();
+    internal static void ClearRebootMarker(ushort productId) => RebootMarker.Clear(productId);
+
+    internal static bool CanProbe(ushort productId, string? containerId) =>
+        GetProfile(productId) is { } profile &&
+        (profile.NativeVersion == ThxNativeVersion.V4 ||
+            !string.IsNullOrWhiteSpace(containerId));
+
+    /// <summary>
+    /// A reboot marker can outlive a fast-startup "shutdown" because the BootId does
+    /// not change. Probe the native stack before keeping the reboot prompt; success
+    /// proves the install is live and clears only this device's marker.
+    /// </summary>
+    internal static async Task<ThxHeadsetStatus?> TryClearPendingRebootAsync(
+        ushort productId,
+        string? containerId,
+        Action<string>? diagnostic,
+        CancellationToken cancellationToken = default)
+    {
+        if (Check(productId) is not { RebootRequired: true })
+        {
+            return null;
+        }
+        if (!CanProbe(productId, containerId) ||
+            !ThxAudioAdmission.HasRunningService(ServiceName))
+        {
+            return null;
+        }
+
+        try
+        {
+            await using var controller = new WindowsThxHeadsetController(productId, containerId);
+            var probe = await controller.ProbeAsync(
+                ThxAudioEndpoint.Headphones,
+                cancellationToken).ConfigureAwait(false);
+            diagnostic?.Invoke(
+                $"thx probe availability={probe.Availability} error={probe.Error ?? "-"}");
+            if (probe.State is null)
+            {
+                return null;
+            }
+
+            RebootMarker.Clear(productId);
+            return new ThxHeadsetStatus(ThxHeadsetAvailability.Available, null);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (
+            exception is InvalidOperationException or IOException or TimeoutException or
+                System.ComponentModel.Win32Exception or UnauthorizedAccessException)
+        {
+            diagnostic?.Invoke($"thx probe failed error={exception.Message}");
+            return null;
+        }
+    }
 
     internal static ThxHeadsetStatus Evaluate(ushort productId, bool serviceRunning, bool nativePresent)
     {
@@ -295,7 +350,7 @@ internal static partial class ThxHeadsetAdmission
         }
         else if (status.Availability == ThxHeadsetAvailability.Available)
         {
-            RebootMarker.Clear();
+            RebootMarker.Clear(productId);
         }
 
         return status;

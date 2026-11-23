@@ -90,10 +90,23 @@ public sealed partial class BlackSharkHeadsetViewModel
         }
     }
 
-    public void RefreshThx()
+    public async Task RefreshThxAsync(CancellationToken cancellationToken = default)
     {
         _thxErrorText = string.Empty;
-        _thxStatus = ThxHeadsetAdmission.Check(_connection.ProductId);
+        if (ThxHeadsetAdmission.Check(_connection.ProductId) is { RebootRequired: true } rebootStatus)
+        {
+            _thxStatus = await ThxHeadsetAdmission.TryClearPendingRebootAsync(
+                _connection.ProductId,
+                _connection.ContainerId,
+                _diagnostic,
+                cancellationToken).ConfigureAwait(true) ?? rebootStatus;
+            NotifyThxStatus();
+            return;
+        }
+
+        _thxStatus = await ThxHeadsetAdmission
+            .CheckAsync(_connection.ProductId, cancellationToken)
+            .ConfigureAwait(true);
         NotifyThxStatus();
     }
 

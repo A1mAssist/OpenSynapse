@@ -333,7 +333,8 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
         switch (connection.Transport)
         {
             case RazerHeadsetAudioTransport.AvneraFeature65:
-                await using (var avnera = new RazerAvneraHeadsetService(connection.DevicePath, Diagnostic))
+                await using (var avnera = new RazerAvneraHeadsetService(
+                    connection.DevicePath, Diagnostic, connection.FeatureReportByteLength))
                 {
                     return await avnera.TryReadLinkStatusAsync(cancellationToken).ConfigureAwait(false);
                 }
@@ -373,25 +374,31 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
             await previous.DisposeAsync();
         }
 
-        SelectedHeadsetAudio = new RazerHeadsetAudioViewModel(
+        var selected = new RazerHeadsetAudioViewModel(
             row.Connection,
             message => _diagnosticLog.TryWrite("headset-audio", message),
             lighting,
             _getProfile,
             _saveProfile);
-        await SelectedHeadsetAudio.LoadAsync(cancellationToken);
-        row.SetProbeResult(
-            SelectedHeadsetAudio.ProbeState,
-            SelectedHeadsetAudio.CapabilityText,
-            SelectedHeadsetAudio.ErrorText,
-            SelectedHeadsetAudio.BatteryPercent);
+        SelectedHeadsetAudio = selected;
+        await selected.LoadAsync(cancellationToken);
+        // A device refresh can clear the selection while LoadAsync runs.
+        if (ReferenceEquals(SelectedHeadsetAudio, selected))
+        {
+            row.SetProbeResult(
+                selected.ProbeState,
+                selected.CapabilityText,
+                selected.ErrorText,
+                selected.BatteryPercent);
+        }
     }
 
     internal async Task RefreshSelectedHeadsetAudioAsync(CancellationToken cancellationToken = default)
     {
         if (SelectedHeadsetAudio is not { } selected) return;
         await selected.LoadAsync(cancellationToken);
-        if (_selectedHeadsetAudioDevice is { } row)
+        if (ReferenceEquals(SelectedHeadsetAudio, selected) &&
+            _selectedHeadsetAudioDevice is { } row)
         {
             row.SetProbeResult(
                 selected.ProbeState, selected.CapabilityText, selected.ErrorText, selected.BatteryPercent);

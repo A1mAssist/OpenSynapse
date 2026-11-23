@@ -1,6 +1,7 @@
 // Chroma shared-memory object creation, activation and decoding reference:
 // worflor/neuron crates/neuron-host/src/adapters/chroma_shm.rs (GPL-3.0-or-later).
 // This C# port is part of OpenSynapse and distributed under AGPL-3.0.
+using System.Buffers.Binary;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using OpenSynapse.ChromaSdk.Protocol;
@@ -32,6 +33,7 @@ internal sealed class ChromaSharedMemoryServer : IDisposable
     private readonly Dictionary<ChromaBrokerDeviceClass, uint> _lastHeads = [];
     private readonly Dictionary<ChromaBrokerDeviceClass, ChromaDeviceFrame> _frames = [];
     private MappedSection? _appRegistry;
+    private MappedSection? _clientRegistration;
     private MappedSection? _sessionInfo;
     private uint? _clientPid;
     private uint _pendingClientPid;
@@ -129,7 +131,9 @@ internal sealed class ChromaSharedMemoryServer : IDisposable
         {
             return lost;
         }
-        _nextClientLookup = now + 2_000;
+        // The legacy ring is a single 168-byte read; poll it fast enough that a
+        // game's Init() handshake lands before its first effect frame.
+        _nextClientLookup = now + 100;
 
         var pid = FindClientPid();
         if (pid == 0)
@@ -380,6 +384,8 @@ internal sealed class ChromaSharedMemoryServer : IDisposable
     {
         _appRegistry = FindSection(ChromaObjectCatalog.AppRegistry) ??
             throw new InvalidOperationException("The app-registry section is missing.");
+        _clientRegistration = FindSection(ChromaObjectCatalog.ClientRegistration) ??
+            throw new InvalidOperationException("The client-registration section is missing.");
         _sessionInfo = FindSection(ChromaObjectCatalog.SessionInfo) ??
             throw new InvalidOperationException("The SessionInfo section is missing.");
 
@@ -401,7 +407,14 @@ internal sealed class ChromaSharedMemoryServer : IDisposable
         }
 
         // The official SDK writes its PID into the app registry; do not sweep processes.
-        var registered = ReadRegisteredPid();
+        var registered = ReadLegacyRegisteredPid();
+        if (registered != 0)
+        {
+            BrokerLog.Info($"found legacy Chroma client PID {registered}.");
+            return registered;
+        }
+
+        registered = ReadRegisteredPid();
         if (registered == 0)
         {
             _loggedStalePid = 0;
@@ -418,6 +431,67 @@ internal sealed class ChromaSharedMemoryServer : IDisposable
             BrokerLog.Info($"registered Chroma client PID {registered} is stale; waiting for a new registration.");
         }
         return 0;
+    }
+
+    private uint ReadLegacyRegisteredPid()
+    {
+        if (_clientRegistration is null)
+        {
+            return 0;
+        }
+        return TryReadLegacyRegistration(
+            Snapshot(_clientRegistration),
+            pid => pid != (uint)Environment.ProcessId && IsProcessAlive(pid),
+            out var registered)
+                ? registered
+                : 0;
+    }
+
+    /// <summary>
+    /// Chroma SDK 3.x/4.x Init() does not use the app pipe. It appends
+    /// (pid, enabled, tick) entries to a 10-slot ring and pulses an event.
+    /// The newest live enabled PID is the active game.
+    /// </summary>
+    internal static bool TryReadLegacyRegistration(
+        byte[] section,
+        Func<uint, bool> isAlive,
+        out uint pid)
+    {
+        const int SlotCount = 10;
+        const int SlotSize = 16;
+        const int FirstSlot = 8;
+        pid = 0;
+        if (section.Length < FirstSlot + SlotCount * SlotSize)
+        {
+            return false;
+        }
+
+        var latest = new Dictionary<uint, (long Tick, int State)>();
+        for (var index = 0; index < SlotCount; index++)
+        {
+            var offset = FirstSlot + index * SlotSize;
+            var candidate = BinaryPrimitives.ReadUInt32LittleEndian(section.AsSpan(offset));
+            var enabled = BinaryPrimitives.ReadInt32LittleEndian(section.AsSpan(offset + 4));
+            var tick = BinaryPrimitives.ReadInt64LittleEndian(section.AsSpan(offset + 8));
+            if (candidate == 0 ||
+                (latest.TryGetValue(candidate, out var existing) && tick < existing.Tick))
+            {
+                continue;
+            }
+            latest[candidate] = (tick, enabled);
+        }
+
+        long newest = long.MinValue;
+        foreach (var (candidate, state) in latest)
+        {
+            if (state.State != 1 || state.Tick < newest || !isAlive(candidate))
+            {
+                continue;
+            }
+            newest = state.Tick;
+            pid = candidate;
+        }
+        return pid != 0;
     }
 
     private uint ReadRegisteredPid()

@@ -10,9 +10,11 @@ public sealed partial class RazerHidDeviceService
     // 00A4's own bundle proves LINKER/00:BF. The 0088 identity has no equivalent
     // local target-selection evidence; a sibling's linker is not its admission.
     private const ushort MouseDockProProductId = 0x00A4;
-    // 00B3 is a single-device HyperPolling bridge. Its paired mouse answers through
-    // the dongle's own control collection, so there is no separate child HID path.
+    // 00B3 is a single-device HyperPolling bridge. The paired mouse owns the polling
+    // setting; the dongle only forwards it. Reading the link status first yields the
+    // mouse's product id, whose definition carries the high-rate pair.
     private const ushort HyperPollingDongleProductId = 0x00B3;
+    private static readonly int[] HyperPollingDongleRates = [125, 500, 1_000, 2_000, 4_000, 8_000];
 
     // A host that rejects 0xBF stays rejected until its HID path changes; rescanning
     // all 42 hosts every 10 s must not cost one timeout each.
@@ -147,8 +149,20 @@ public sealed partial class RazerHidDeviceService
 
         WriteDiagnostic(productId,
             $"hyperpolling child resolved path={RazerFeatureTransport.DescribeDevicePath(parentPath)}");
+        // Synapse exposes the HyperPolling ladder on the paired mouse, not on the
+        // dongle. A stock wireless identity lists only 125/500/1000 even though the
+        // mouse answers the high-rate pair through this dongle.
+        var linkedDefinition = definition;
+        if (definition.PollingRates.Count > 0 &&
+            definition.PollingRates[^1] <= 1_000 &&
+            definition.Transactions.ContainsKey("razer_chroma_misc_set_polling_rate2"))
+        {
+            linkedDefinition = definition.WithPollingRates(HyperPollingDongleRates);
+            WriteDiagnostic(productId,
+                $"hyperpolling child polling ladder={string.Join(",", linkedDefinition.PollingRates)}");
+        }
         return CreateConnection(
-            definition,
+            linkedDefinition,
             parentPath,
             $"{parentDeviceKey}#linked-{productId:X4}",
             RazerHidEndpointState.Resolved,

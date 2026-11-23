@@ -210,7 +210,8 @@ public sealed partial class WindowsHidDiscovery : IDeviceDiscovery
                     probe.UsagePage,
                     probe.Usage,
                     probe.Access,
-                    probe.Product);
+                    probe.Product,
+                    ToContainerId(containerId));
                 observeInterface?.Invoke(descriptor);
                 if (featureReportLength is null || probe.FeatureReportByteLength == featureReportLength)
                 {
@@ -587,7 +588,8 @@ public sealed partial class WindowsHidDiscovery : IDeviceDiscovery
         ushort UsagePage,
         ushort Usage,
         DeviceAccessState Access,
-        string ProductName);
+        string ProductName,
+        string? ContainerId = null);
 
     private static Guid? TryGetContainerId(
         IntPtr deviceInfoSet,
@@ -610,6 +612,13 @@ public sealed partial class WindowsHidDiscovery : IDeviceDiscovery
             return null;
         }
         return new Guid(buffer);
+    }
+
+    private static string? ToContainerId(Guid? containerId)
+    {
+        return containerId is { } value && value != Guid.Empty && value != SystemContainerId
+            ? $"{{{value:D}}}"
+            : null;
     }
 
     private static partial class NativeMethods

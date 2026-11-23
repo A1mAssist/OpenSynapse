@@ -5,12 +5,17 @@
     xmlns:local="using:OpenSynapse.App"
     xmlns:views="using:OpenSynapse.App.Views">
   <StackPanel Spacing="16">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                    <StackPanel Spacing="4"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><TextBlock Text="{Binding CategoryText}" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel>
+                  <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="4" ColumnSpacing="12">
+                    <TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" />
                     <TextBlock Grid.Column="1" Text="{Binding StatusText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12">
+                      <TextBlock Text="{Binding CategoryText}" Foreground="{StaticResource MutedBrush}" />
+                      <TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                    </StackPanel>
+                    <Button Grid.Row="1" Grid.Column="1" local:Localized.Uid="RazerHeadsetRefreshButton" Click="HeadsetAudioRefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
                   </Grid>
                   <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="{Binding OperationStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" /><Button Grid.Column="1" local:Localized.Uid="RazerHeadsetRefreshButton" Click="HeadsetAudioRefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" /></Grid>
+                  <TextBlock Text="{Binding OperationStatusText}" Visibility="{Binding OperationStatusVisibility}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding Mixer053EVisibility}"><StackPanel Spacing="8" DataContext="{Binding Mixer053E}"><InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" /><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="RazerMixer053ETitle" Text="Audio Mixer" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel><TextBlock Text="{Binding InfoSummary}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" /><TextBlock Text="{Binding FadersSummary}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" /><TextBlock Text="{Binding StatusSummary}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" /><StackPanel Orientation="Horizontal" Spacing="6" Visibility="{Binding ControlsVisibility}"><Button Content="{Binding Mute1Label}" Click="Mixer053EMute1Click" IsEnabled="{Binding CanEdit}" Style="{StaticResource SecondaryButtonStyle}" /><Button Content="{Binding Mute2Label}" Click="Mixer053EMute2Click" IsEnabled="{Binding CanEdit}" Style="{StaticResource SecondaryButtonStyle}" /><Button Content="{Binding Mute3Label}" Click="Mixer053EMute3Click" IsEnabled="{Binding CanEdit}" Style="{StaticResource SecondaryButtonStyle}" /><Button Content="{Binding Mute4Label}" Click="Mixer053EMute4Click" IsEnabled="{Binding CanEdit}" Style="{StaticResource SecondaryButtonStyle}" /><Button Content="{Binding MicMuteLabel}" Click="Mixer053EMicMuteClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource SecondaryButtonStyle}" /></StackPanel><Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Visibility="{Binding BrightnessVisibility}"><StackPanel Spacing="4"><TextBlock local:Localized.Uid="RazerMixer053EBrightnessLabel" Text="Brightness" Style="{StaticResource MetricLabelStyle}" /><Slider Value="{Binding Brightness, Mode=TwoWay}" Minimum="0" Maximum="100" StepFrequency="1" IsEnabled="{Binding CanEdit}" /><TextBlock Text="{Binding BrightnessText}" FontFamily="Cascadia Mono,Consolas" Foreground="{StaticResource MutedBrush}" /></StackPanel><Button Grid.Column="1" local:Localized.Uid="RazerMixer053EApplyBrightness" Content="Apply brightness" Click="Mixer053EApplyBrightnessClick" IsEnabled="{Binding CanApplyBrightness}" Style="{StaticResource RazerHidSaveButtonStyle}" VerticalAlignment="Bottom" /></Grid><TextBlock Text="{Binding OperationStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" /></StackPanel></Border>
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ThxVisibility}">
                     <StackPanel Spacing="12">
@@ -68,6 +73,31 @@
                           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding ThxSidetoneLevel, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" /><TextBlock Grid.Column="1" Text="{Binding ThxSidetoneText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></Grid>
                           <Button local:Localized.Uid="RazerHeadsetThxSidetoneApply" Click="HeadsetAudioApplyThxSidetoneClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
                         </StackPanel>
+                      </StackPanel>
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ThxCaptureVisibility}">
+                    <StackPanel Spacing="12">
+                      <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="RazerHeadsetThxCaptureTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
+                      <StackPanel Spacing="4" Visibility="{Binding ThxCaptureNormalizationVisibility}">
+                        <ToggleSwitch local:Localized.Uid="RazerHeadsetThxCaptureNormalizationToggle" IsOn="{Binding ThxCaptureNormalizationEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding ThxCaptureNormalizationLevel, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" /><TextBlock Grid.Column="1" Text="{Binding ThxCaptureNormalizationText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></Grid>
+                        <Button local:Localized.Uid="RazerHeadsetThxCaptureNormalizationApply" Click="HeadsetAudioApplyThxCaptureNormalizationClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
+                      </StackPanel>
+                      <StackPanel Spacing="4" Visibility="{Binding ThxCaptureVocalClarityVisibility}">
+                        <ToggleSwitch local:Localized.Uid="RazerHeadsetThxCaptureVocalClarityToggle" IsOn="{Binding ThxCaptureVocalClarityEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding ThxCaptureVocalClarityLevel, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" /><TextBlock Grid.Column="1" Text="{Binding ThxCaptureVocalClarityText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></Grid>
+                        <Button local:Localized.Uid="RazerHeadsetThxCaptureVocalClarityApply" Click="HeadsetAudioApplyThxCaptureVocalClarityClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
+                      </StackPanel>
+                      <StackPanel Spacing="4" Visibility="{Binding ThxCaptureNoiseReductionVisibility}">
+                        <ToggleSwitch local:Localized.Uid="RazerHeadsetThxCaptureNoiseReductionToggle" IsOn="{Binding ThxCaptureNoiseReductionEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding ThxCaptureNoiseReductionLevel, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" /><TextBlock Grid.Column="1" Text="{Binding ThxCaptureNoiseReductionText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></Grid>
+                        <Button local:Localized.Uid="RazerHeadsetThxCaptureNoiseReductionApply" Click="HeadsetAudioApplyThxCaptureNoiseReductionClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
+                      </StackPanel>
+                      <StackPanel Spacing="4" Visibility="{Binding ThxCaptureVoiceGateVisibility}">
+                        <ToggleSwitch local:Localized.Uid="RazerHeadsetThxCaptureVoiceGateToggle" IsOn="{Binding ThxCaptureVoiceGateEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding ThxCaptureVoiceGateLevel, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" /><TextBlock Grid.Column="1" Text="{Binding ThxCaptureVoiceGateText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></Grid>
+                        <Button local:Localized.Uid="RazerHeadsetThxCaptureVoiceGateApply" Click="HeadsetAudioApplyThxCaptureVoiceGateClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
                       </StackPanel>
                     </StackPanel>
                   </Border>
@@ -130,31 +160,6 @@
                       <StackPanel Spacing="4" Visibility="{Binding Lighting.PrimaryVisibility}"><TextBlock local:Localized.Uid="RazerLightingPrimaryColor" Style="{StaticResource MetricLabelStyle}" /><ColorPicker Color="{Binding Lighting.Primary, Mode=TwoWay}" IsAlphaEnabled="False" IsColorChannelTextInputVisible="False" IsColorSpectrumVisible="True" IsHexInputVisible="True" IsMoreButtonVisible="False" Width="280" HorizontalAlignment="Left" /></StackPanel>
                       <StackPanel Spacing="4" Visibility="{Binding Lighting.SecondaryVisibility}"><TextBlock local:Localized.Uid="RazerLightingSecondaryColor" Style="{StaticResource MetricLabelStyle}" /><ColorPicker Color="{Binding Lighting.Secondary, Mode=TwoWay}" IsAlphaEnabled="False" IsColorChannelTextInputVisible="False" IsColorSpectrumVisible="True" IsHexInputVisible="True" IsMoreButtonVisible="False" Width="280" HorizontalAlignment="Left" /></StackPanel>
                       <Button local:Localized.Uid="RazerHidKrakenApplyButton" Click="HeadsetAudioApplyLightingClick" IsEnabled="{Binding CanApplyLighting}" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Right" />
-                    </StackPanel>
-                  </Border>
-                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ThxCaptureVisibility}">
-                    <StackPanel Spacing="12">
-                      <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="RazerHeadsetThxCaptureTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
-                      <StackPanel Spacing="4" Visibility="{Binding ThxCaptureNormalizationVisibility}">
-                        <ToggleSwitch local:Localized.Uid="RazerHeadsetThxCaptureNormalizationToggle" IsOn="{Binding ThxCaptureNormalizationEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding ThxCaptureNormalizationLevel, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" /><TextBlock Grid.Column="1" Text="{Binding ThxCaptureNormalizationText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></Grid>
-                        <Button local:Localized.Uid="RazerHeadsetThxCaptureNormalizationApply" Click="HeadsetAudioApplyThxCaptureNormalizationClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
-                      </StackPanel>
-                      <StackPanel Spacing="4" Visibility="{Binding ThxCaptureVocalClarityVisibility}">
-                        <ToggleSwitch local:Localized.Uid="RazerHeadsetThxCaptureVocalClarityToggle" IsOn="{Binding ThxCaptureVocalClarityEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding ThxCaptureVocalClarityLevel, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" /><TextBlock Grid.Column="1" Text="{Binding ThxCaptureVocalClarityText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></Grid>
-                        <Button local:Localized.Uid="RazerHeadsetThxCaptureVocalClarityApply" Click="HeadsetAudioApplyThxCaptureVocalClarityClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
-                      </StackPanel>
-                      <StackPanel Spacing="4" Visibility="{Binding ThxCaptureNoiseReductionVisibility}">
-                        <ToggleSwitch local:Localized.Uid="RazerHeadsetThxCaptureNoiseReductionToggle" IsOn="{Binding ThxCaptureNoiseReductionEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding ThxCaptureNoiseReductionLevel, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" /><TextBlock Grid.Column="1" Text="{Binding ThxCaptureNoiseReductionText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></Grid>
-                        <Button local:Localized.Uid="RazerHeadsetThxCaptureNoiseReductionApply" Click="HeadsetAudioApplyThxCaptureNoiseReductionClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
-                      </StackPanel>
-                      <StackPanel Spacing="4" Visibility="{Binding ThxCaptureVoiceGateVisibility}">
-                        <ToggleSwitch local:Localized.Uid="RazerHeadsetThxCaptureVoiceGateToggle" IsOn="{Binding ThxCaptureVoiceGateEnabled, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" />
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding ThxCaptureVoiceGateLevel, Mode=TwoWay}" IsEnabled="{Binding CanApplyThx}" /><TextBlock Grid.Column="1" Text="{Binding ThxCaptureVoiceGateText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" /></Grid>
-                        <Button local:Localized.Uid="RazerHeadsetThxCaptureVoiceGateApply" Click="HeadsetAudioApplyThxCaptureVoiceGateClick" IsEnabled="{Binding CanApplyThx}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" />
-                      </StackPanel>
                     </StackPanel>
                   </Border>
   </StackPanel>

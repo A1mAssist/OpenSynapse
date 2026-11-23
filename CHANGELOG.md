@@ -9,6 +9,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 ### Added
 
 - **Update source**: automatic updates can use the Gitee mirror; Settings offers Automatic, Gitee and GitHub, and Automatic prefers Gitee while falling back when it is unreachable or behind.
+- **Keyboard animations**: RazerHid keyboards can import a `.chroma` animation on the device page and play it through the software frame runtime; the file stays with the lighting profile.
 - **Naga side plates**: the 12-key and 7-key side plates report their buttons as firmware ids 64–75 and 80–86; mapping, macros and Turbo now resolve them, so every plate works.
 - **Naga scroll wheel**: Naga V3 Pro exposes its three-way tactile, free-spin and micro-tactile wheel mode, including profile apply and Smart Reel.
 

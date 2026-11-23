@@ -86,31 +86,40 @@ public sealed partial class HeadsetAudioProfileApplier
             results.Add(Skipped("headset.thx.equalizer"));
         }
 
-        var bands = ReadThxBands(profile.ThxBands) ??
-            state.EqualizerBands.Select(band => band.GainDb).ToArray();
+        var desiredBands = ResolveThxBands(profile);
+        var bandsWithPreset = false;
         if (profile.ThxPreset is { Length: > 0 } preset &&
             !StringComparer.Ordinal.Equals(preset, state.SelectedPresetId))
         {
+            var bands = desiredBands;
             await ApplyAsync(
                 "headset.thx.preset",
                 async token =>
                 {
-                    var status = await controller.SelectPresetAsync(
-                        ThxAudioEndpoint.Headphones, preset, bands, token);
+                    var status = bands is null
+                        ? await controller.SelectPresetOnlyAsync(
+                            ThxAudioEndpoint.Headphones, preset, token)
+                        : await controller.SelectPresetAsync(
+                            ThxAudioEndpoint.Headphones, preset, bands, token);
                     EnsureThxApplied(status);
                 },
                 results,
                 cancellationToken);
+            bandsWithPreset = bands is not null;
         }
         else if (profile.ThxPreset is not null)
         {
             results.Add(Skipped("headset.thx.preset"));
         }
 
-        var desiredBands = ReadThxBands(profile.ThxBands);
         if (desiredBands is not null)
         {
-            if (!desiredBands.SequenceEqual(state.EqualizerBands.Select(band => band.GainDb)))
+            if (bandsWithPreset)
+            {
+                // The preset write above already carried this preset's saved curve.
+                results.Add(Skipped("headset.thx.bands"));
+            }
+            else if (!desiredBands.SequenceEqual(state.EqualizerBands.Select(band => band.GainDb)))
             {
                 await ApplyAsync(
                     "headset.thx.bands",
@@ -222,6 +231,26 @@ public sealed partial class HeadsetAudioProfileApplier
         {
             throw new InvalidOperationException(status.Error ?? "THX rejected the setting.");
         }
+    }
+
+    private static double[]? ResolveThxBands(HeadsetProfileSettings profile)
+    {
+        if (profile.ThxPreset is { Length: > 0 } preset)
+        {
+            if (profile.ThxBandsByPreset is { } map &&
+                map.TryGetValue(preset, out var bands) &&
+                ReadThxBands(bands) is { } stored)
+            {
+                return stored;
+            }
+
+            // Named presets keep their factory curve unless we saved an edit for them.
+            return preset.Equals("Custom", StringComparison.OrdinalIgnoreCase)
+                ? ReadThxBands(profile.ThxBands)
+                : null;
+        }
+
+        return ReadThxBands(profile.ThxBands);
     }
 
 }

@@ -12,18 +12,26 @@ public sealed class RazerAvneraHeadsetService : IAsyncDisposable
 {
     private readonly IRazerAvnera65Transport _transport;
     private readonly Action<string>? _diagnostic;
+    private readonly bool _linkStatusOptional;
 
-    public RazerAvneraHeadsetService(string devicePath, Action<string>? diagnostic = null)
-        : this(new RazerAvnera65Transport(devicePath), diagnostic)
+    public RazerAvneraHeadsetService(
+        string devicePath,
+        Action<string>? diagnostic = null,
+        int readLength = RazerAvnera65Protocol.ReadLength)
+        : this(new RazerAvnera65Transport(devicePath, readLength), diagnostic, readLength)
     {
     }
 
     internal RazerAvneraHeadsetService(
         IRazerAvnera65Transport transport,
-        Action<string>? diagnostic = null)
+        Action<string>? diagnostic = null,
+        int readLength = RazerAvnera65Protocol.ReadLength)
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _diagnostic = diagnostic;
+        // The 2020 receiver answers 64-byte feature reports and does not implement
+        // link status; requiring it would leave the card stuck on "partially available".
+        _linkStatusOptional = readLength == RazerAvnera65Protocol.WriteLength;
     }
 
     public async Task<RazerHeadsetAudioState> ReadStateAsync(
@@ -57,7 +65,8 @@ public sealed class RazerAvneraHeadsetService : IAsyncDisposable
             RazerAvnera65Protocol.LinkStatusHeader,
             RazerAvnera65Protocol.ReadLinkStatus,
             errors,
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken,
+            optional: _linkStatusOptional).ConfigureAwait(false);
         var battery = await ProbeAsync(
             "battery",
             RazerAvnera65Protocol.CreateBatteryRequest(),

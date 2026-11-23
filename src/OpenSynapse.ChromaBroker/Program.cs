@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Runtime.Versioning;
 using System.Security.Principal;
 using System.Text;
+using Microsoft.Win32;
 using OpenSynapse.ChromaSdk.Protocol;
 
 namespace OpenSynapse.ChromaBroker;
@@ -29,6 +30,7 @@ internal static class Program
             return RunSelfTest() ? 0 : 1;
         }
 
+        EnsureChromaAppsEnabled();
         BrokerLog.Info(
             $"starting: pipe={options.PipeName}, parent={options.ParentPid?.ToString(CultureInfo.InvariantCulture) ?? "none"}, " +
             $"user={options.User?.Value ?? "current"}");
@@ -103,6 +105,41 @@ internal static class Program
         }
 
         return 0;
+    }
+
+    /// <summary>
+    /// The official DLL sends no frames unless HKLM\Software\WOW6432Node\Razer Chroma SDK\Apps\Enable
+    /// is 1. Razer Synapse writes that value; now that OpenSynapse owns the broker, it has to as well.
+    /// Per-app keys are left alone: the DLL defaults them to 1, so writing would clear user blocks.
+    /// </summary>
+    private static void EnsureChromaAppsEnabled()
+    {
+        try
+        {
+            using var apps = RegistryKey
+                .OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32)
+                .CreateSubKey(@"Software\Razer Chroma SDK\Apps", writable: true);
+            if (apps is null)
+            {
+                BrokerLog.Error(@"could not open HKLM\Software\Razer Chroma SDK\Apps.");
+                return;
+            }
+
+            var current = apps.GetValue("Enable") is int value ? value : (int?)null;
+            if (current == 1)
+            {
+                return;
+            }
+
+            apps.SetValue("Enable", 1, RegistryValueKind.DWord);
+            BrokerLog.Info(
+                $"Chroma Apps Enable was {current?.ToString(CultureInfo.InvariantCulture) ?? "missing"}; set to 1.");
+        }
+        catch (Exception exception) when (
+            exception is UnauthorizedAccessException or System.Security.SecurityException or IOException)
+        {
+            BrokerLog.Error($"could not enable Chroma Apps: {exception.Message}");
+        }
     }
 
     private static bool TryParse(string[] args, out Options options, out string error)
@@ -268,6 +305,37 @@ internal static class Program
                 }
             }
             Report("PASS torn-read");
+
+            var registration = new byte[168];
+            void Slot(int index, uint pid, int enabled, long tick)
+            {
+                var offset = 8 + index * 16;
+                BinaryPrimitives.WriteUInt32LittleEndian(registration.AsSpan(offset), pid);
+                BinaryPrimitives.WriteInt32LittleEndian(registration.AsSpan(offset + 4), enabled);
+                BinaryPrimitives.WriteInt64LittleEndian(registration.AsSpan(offset + 8), tick);
+            }
+            Slot(0, 111, 1, 100);
+            Slot(1, 222, 1, 200);
+            Slot(2, 333, 0, 300);
+            var alive = new HashSet<uint> { 111, 222 };
+            Assert(
+                ChromaSharedMemoryServer.TryReadLegacyRegistration(
+                    registration, alive.Contains, out var legacyPid) &&
+                legacyPid == 222,
+                "legacy registration picks the newest live enabled pid");
+            Slot(3, 222, 0, 400);
+            Assert(
+                ChromaSharedMemoryServer.TryReadLegacyRegistration(
+                    registration, alive.Contains, out legacyPid) &&
+                legacyPid == 111,
+                "legacy registration honours a newer disable entry");
+            alive.Remove(222);
+            alive.Remove(111);
+            Assert(
+                !ChromaSharedMemoryServer.TryReadLegacyRegistration(
+                    registration, alive.Contains, out _),
+                "legacy registration skips dead pids");
+            Report("PASS legacy-registration");
 
             Report("PASS Chroma broker decoder self-test");
             return true;

@@ -16,9 +16,10 @@ internal interface IRazerAvnera65Transport : IAsyncDisposable
 }
 
 /// <summary>
-/// AudioAvnera feature-report transport. The bundle writes a 64-byte frame
-/// (report id 255) and reads a 65-byte feature report. Keep this separate from
-/// RazerFeatureTransport, whose prepared-request contract is fixed at 91 bytes.
+/// AudioAvnera report transport. The bundle writes a 64-byte output report
+/// (report id 255) with hid.write and reads a 65-byte feature report. Keep this
+/// separate from RazerFeatureTransport, whose prepared-request contract is fixed
+/// at 91 bytes.
 /// </summary>
 internal sealed class RazerAvnera65Transport : IRazerAvnera65Transport
 {
@@ -29,8 +30,10 @@ internal sealed class RazerAvnera65Transport : IRazerAvnera65Transport
     private Exception? _ioFailure;
     private bool _disposed;
 
-    internal RazerAvnera65Transport(string devicePath)
-        : this(new NativeFeatureIo(devicePath))
+    internal RazerAvnera65Transport(
+        string devicePath,
+        int readLength = RazerAvnera65Protocol.ReadLength)
+        : this(new NativeFeatureIo(devicePath, readLength))
     {
     }
 
@@ -162,10 +165,15 @@ internal sealed class RazerAvnera65Transport : IRazerAvnera65Transport
     private sealed class NativeFeatureIo : IRazerAvnera65Io
     {
         private readonly SafeFileHandle _handle;
+        private readonly int _readLength;
+        private bool _useOutputReport = true;
 
-        internal NativeFeatureIo(string devicePath)
+        internal NativeFeatureIo(string devicePath, int readLength)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
+            _readLength = readLength > 0
+                ? readLength
+                : throw new ArgumentOutOfRangeException(nameof(readLength));
             _handle = CreateFile(
                 devicePath,
                 0xC0000000,
@@ -178,25 +186,55 @@ internal sealed class RazerAvnera65Transport : IRazerAvnera65Transport
             {
                 throw new Win32Exception(
                     Marshal.GetLastWin32Error(),
-                    "Could not open the AudioAvnera feature channel.");
+                    "Could not open the AudioAvnera report channel.");
             }
         }
 
         public void Send(byte[] report)
         {
+            if (_useOutputReport)
+            {
+                if (WriteFile(_handle, report, report.Length, out var written, IntPtr.Zero))
+                {
+                    if (written != report.Length)
+                    {
+                        throw new IOException(
+                            $"AudioAvnera output report write was short ({written}/{report.Length}).");
+                    }
+
+                    return;
+                }
+
+                var error = Marshal.GetLastWin32Error();
+                // The 2020 BlackShark receiver rejects the output report with
+                // ERROR_INVALID_PARAMETER; its firmware still takes SET_FEATURE.
+                // Switch once and stay on the feature path for this handle.
+                if (error != 87)
+                {
+                    throw new Win32Exception(
+                        error, $"AudioAvnera output report write failed (Win32 {error}).");
+                }
+
+                _useOutputReport = false;
+            }
+
             if (!HidD_SetFeature(_handle, report, report.Length))
             {
-                throw new Win32Exception(Marshal.GetLastWin32Error(), "AudioAvnera feature write failed.");
+                var error = Marshal.GetLastWin32Error();
+                throw new Win32Exception(
+                    error, $"AudioAvnera feature write failed (Win32 {error}).");
             }
         }
 
         public byte[] Read()
         {
-            var report = new byte[RazerAvnera65Protocol.ReadLength];
+            var report = new byte[_readLength];
             report[0] = RazerAvnera65Protocol.ReportId;
             if (!HidD_GetFeature(_handle, report, report.Length))
             {
-                throw new Win32Exception(Marshal.GetLastWin32Error(), "AudioAvnera feature read failed.");
+                var error = Marshal.GetLastWin32Error();
+                throw new Win32Exception(
+                    error, $"AudioAvnera feature read failed (Win32 {error}).");
             }
 
             return report;
@@ -213,6 +251,15 @@ internal sealed class RazerAvnera65Transport : IRazerAvnera65Transport
             uint creation,
             uint flags,
             IntPtr template);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool WriteFile(
+            SafeFileHandle handle,
+            byte[] buffer,
+            int bytesToWrite,
+            out int bytesWritten,
+            IntPtr overlapped);
 
         [DllImport("hid.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
