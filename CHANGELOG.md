@@ -21,6 +21,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
+- **Mouse mapping layout**: align both button lists at the top so unequal button counts no longer stagger the two columns.
 - **Macro execution**: persist trigger and playback choices even before a trigger key is assigned, so restarting or switching macros keeps the selection; changing only the trigger mode also saves automatically.
 - **Audio discovery**: keep separate audio devices visible together and track each wireless receiver independently; a USB sound card no longer hides a second headset.
 - **Kitty Bluetooth audio**: preserve the six supported models' product identities, accept both documented response types and empty acknowledgements, and release failed GATT connections before retrying.

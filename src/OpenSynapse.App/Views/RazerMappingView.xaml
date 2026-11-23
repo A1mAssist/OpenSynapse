@@ -234,7 +234,7 @@
                     Grid.Column="0"
                     ItemsSource="{Binding LeftRows}"
                     ItemTemplate="{StaticResource LeftCalloutTemplate}"
-                    VerticalAlignment="Center">
+                    VerticalAlignment="Top">
         <ItemsControl.ItemsPanel>
           <ItemsPanelTemplate>
             <StackPanel Spacing="10" />
@@ -263,7 +263,7 @@
                     Grid.Column="2"
                     ItemsSource="{Binding RightRows}"
                     ItemTemplate="{StaticResource RightCalloutTemplate}"
-                    VerticalAlignment="Center">
+                    VerticalAlignment="Top">
         <ItemsControl.ItemsPanel>
           <ItemsPanelTemplate>
             <StackPanel Spacing="10" />
