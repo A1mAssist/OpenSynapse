@@ -54,6 +54,7 @@ public sealed partial class SettingsPage
         if (Host?.BehaviorSettings is null) return;
         var settings = Host.BehaviorSettings;
         var available = ViewModel.Tray.ConnectedBatteries
+            .Where(item => item.Percent is not null)
             .GroupBy(item => item.Key, StringComparer.OrdinalIgnoreCase)
             .Select(group => group.First())
             .ToDictionary(item => item.Key, StringComparer.OrdinalIgnoreCase);

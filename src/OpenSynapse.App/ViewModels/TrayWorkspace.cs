@@ -108,6 +108,10 @@ public sealed class TrayWorkspace
                         row.Connection, null, token),
                     cancellationToken,
                     TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+            if (percent is { } value)
+            {
+                row.SetBatteryPercent(value);
+            }
             results.Add(new PeripheralBattery(
                 row.Name,
                 percent ?? row.BatteryPercent,
@@ -118,6 +122,10 @@ public sealed class TrayWorkspace
             var percent = await ReadWithTimeoutAsync(
                 token => ReadBlackSharkBatteryAsync(row.Connection, token),
                 cancellationToken).ConfigureAwait(false);
+            if (percent is { } value)
+            {
+                row.SetCapabilityText(row.CapabilityText, value);
+            }
             results.Add(new PeripheralBattery(
                 row.Name,
                 percent ?? row.BatteryPercent,
@@ -129,6 +137,10 @@ public sealed class TrayWorkspace
                 token => RazerKeyboardService.TryReadBatteryPercentAsync(
                     row.Connection, null, token),
                 cancellationToken).ConfigureAwait(false);
+            if (percent is { } value)
+            {
+                row.SetBatteryPercent(value);
+            }
             results.Add(new PeripheralBattery(
                 row.Name,
                 percent ?? row.BatteryPercent,

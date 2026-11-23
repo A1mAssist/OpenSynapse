@@ -43,6 +43,19 @@ public sealed class RazerHeadsetAudioDeviceRowViewModel : INotifyPropertyChanged
     public int? BatteryPercent => _batteryPercent;
     internal RazerHeadsetProbeState ProbeState { get; private set; }
 
+    internal void SetBatteryPercent(int percent)
+    {
+        if (_batteryPercent == percent)
+        {
+            return;
+        }
+
+        _batteryPercent = percent;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsBatteryAvailable)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(BatteryText)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(BatteryPercent)));
+    }
+
     internal void SetProbeResult(
         RazerHeadsetProbeState state,
         string capabilityText,
