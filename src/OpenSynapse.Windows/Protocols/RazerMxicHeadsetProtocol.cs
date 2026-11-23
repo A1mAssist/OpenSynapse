@@ -56,6 +56,10 @@ public static class RazerMxicHeadsetProtocol
     public static readonly byte[] SidetoneHeader = [0x18, 0x01, 0x01];
     public static readonly byte[] SetSidetoneCommand = [0x98, 0x00, 0x01];
     public static readonly byte[] SetSidetoneHeader = [0x98, 0x01, 0x01];
+    public static readonly byte[] GetSidetoneVolume = [0x19, 0x00, 0x00];
+    public static readonly byte[] SidetoneVolumeHeader = [0x19, 0x01, 0x01];
+    public static readonly byte[] SetSidetoneVolumeCommand = [0x99, 0x00, 0x01];
+    public static readonly byte[] SetSidetoneVolumeHeader = [0x99, 0x01, 0x01];
 
     // getANCStatusAndLevel and setANCStatusAndLevel use a two-byte state/level payload.
     public static readonly byte[] GetAnc = [0x12, 0x00, 0x00];
@@ -296,6 +300,28 @@ public static class RazerMxicHeadsetProtocol
                 [state],
                 UsesMabelT1(productId) ? MabelT1ReportId : ReportId);
     }
+
+    public static byte[] CreateGetSidetoneVolume(ushort productId) =>
+        CreateRequest(
+            GetSidetoneVolume,
+            reportId: UsesMabelT1(productId) ? MabelT1ReportId : ReportId);
+
+    public static byte[] CreateSetSidetoneVolume(ushort productId, byte percent) =>
+        CreateRequest(
+            SetSidetoneVolumeCommand,
+            [SidetonePercentToRaw(percent)],
+            UsesMabelT1(productId) ? MabelT1ReportId : ReportId);
+
+    // AudioMxicDevice rounds up on read and down on write, so 70% is raw 10 and
+    // reads back as 67%.
+    public static byte ReadSidetonePercent(ReadOnlySpan<byte> value) =>
+        value.Length >= 1 && value[0] <= 15
+            ? (byte)Math.Ceiling(value[0] * 100d / 15d)
+            : throw new InvalidDataException(
+                "MXIC sidetone volume response is missing a level in 0..15.");
+
+    public static byte SidetonePercentToRaw(byte percent) =>
+        (byte)(Math.Clamp(percent, (byte)0, (byte)100) / 100d * 15d);
 
     // rzDevice25ValkyrieT3: S=[2,24,128] A=[4,24,0] U=[2,24,129] E=[12,24,1]. The second
     // payload byte is the preset group (0/1, validated by setPresetEQIndex), not a source.

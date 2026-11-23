@@ -83,20 +83,61 @@ public sealed partial class RazerMxicHeadsetService
         ? []
         : RazerMxicHeadsetProtocol.SetSidetoneHeader;
 
-    public Task SetSidetoneAsync(bool enabled, CancellationToken cancellationToken = default) =>
-        CanUseSidetone
-            ? WriteAsync(
-                RazerMxicHeadsetProtocol.CreateGetSidetone(_productId),
-                SidetoneReadHeader,
-                ReadSidetone,
-                enabled,
-                value => RazerMxicHeadsetProtocol.CreateSetSidetone(_productId, value),
-                SidetoneWriteHeader,
-                value => value == enabled,
-                "sidetone",
-                cancellationToken)
-            : Task.FromException(new NotSupportedException(
-                $"Device {_productId:X4} does not expose the MXIC sidetone command."));
+    public async Task SetSidetoneAsync(
+        bool enabled,
+        CancellationToken cancellationToken = default)
+    {
+        if (!CanUseSidetone)
+        {
+            throw new NotSupportedException(
+                $"Device {_productId:X4} does not expose the MXIC sidetone command.");
+        }
+
+        await WriteAsync(
+            RazerMxicHeadsetProtocol.CreateGetSidetone(_productId),
+            SidetoneReadHeader,
+            ReadSidetone,
+            enabled,
+            value => RazerMxicHeadsetProtocol.CreateSetSidetone(_productId, value),
+            SidetoneWriteHeader,
+            value => value == enabled,
+            "sidetone",
+            cancellationToken).ConfigureAwait(false);
+
+        if (enabled && _dialect != MxicDialect.ValkyrieT3)
+        {
+            await EnsureSidetoneVolumeAsync(cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    // AudioMxicDevice writes the state and then the volume. With volume at 0 the
+    // state bit alone stays silent, and Synapse's default micSideTone value is 70%.
+    private async Task EnsureSidetoneVolumeAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var percent = RazerMxicHeadsetProtocol.ReadSidetonePercent(await QueryReportAsync(
+                RazerMxicHeadsetProtocol.CreateGetSidetoneVolume(_productId),
+                RazerMxicHeadsetProtocol.SidetoneVolumeHeader,
+                "read sidetone volume",
+                cancellationToken).ConfigureAwait(false));
+            if (percent > 0)
+            {
+                return;
+            }
+
+            await WriteReportAsync(
+                RazerMxicHeadsetProtocol.CreateSetSidetoneVolume(_productId, 70),
+                RazerMxicHeadsetProtocol.SetSidetoneVolumeHeader,
+                "set sidetone volume",
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            // Devices without the volume command still keep the state write.
+            _diagnostic?.Invoke($"mxic sidetone volume failed: {exception.Message}");
+        }
+    }
 
     public Task SetAncAsync(
         RazerAncState state,
