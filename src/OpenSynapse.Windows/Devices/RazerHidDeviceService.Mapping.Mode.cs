@@ -367,6 +367,7 @@ public sealed partial class RazerHidDeviceService
                 "mapping OBM rejected 02:84 in normal, driver and driver+store modes; " +
                 "the firmware does not expose the onboard table");
             _tartarusMappingUnavailable.TryAdd(connection.InstanceId, true);
+            await RestoreTartarusProModeAsync(connection).ConfigureAwait(false);
             return await action().ConfigureAwait(false);
         }
         finally
