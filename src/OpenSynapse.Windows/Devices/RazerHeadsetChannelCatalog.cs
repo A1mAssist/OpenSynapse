@@ -130,9 +130,10 @@ public static class RazerHeadsetChannelCatalog
             [0x101B] = new("AudioValkyrie", RazerHeadsetChannel.DedicatedBlackShark),
             [0x101C] = new("AudioValkyrie", RazerHeadsetChannel.DedicatedBlackShark),
 
-            // AudioAvnera uses a 64-byte output frame with report id 255 and a
-            // 65-byte feature response. 0528 inherits AudioAvneraDevice; its
-            // OdessaT1 subclass only adds the extended firmware command.
+            // AudioAvnera uses a 64-byte feature frame with report id 255. The
+            // 2020 BlackShark receiver answers with 64 bytes; other identities
+            // use 65. 0528's OdessaT1 subclass only adds the extended firmware
+            // command.
             [0x051A] = new("AudioAvneraDevice", RazerHeadsetChannel.AvneraFeature65),
             [0x051C] = new("AudioAvneraDevice", RazerHeadsetChannel.AvneraFeature65),
             [0x051E] = new("AudioAvneraDevice", RazerHeadsetChannel.AvneraFeature65),

@@ -301,7 +301,13 @@ public sealed partial class RazerHeadsetAudioService
                 item.ProductId, item.FeatureReportByteLength, item.UsagePage, item.Usage, item.FeatureReportIds),
             // The bundle sends 64-byte output reports and reads a 65-byte feature
             // response; the output collection is the one that carries the channel.
-            RazerHeadsetChannel.AvneraFeature65 => item.OutputReportByteLength == RazerAvnera65Protocol.WriteLength,
+            // The 2020 BlackShark receiver exposes it only as a 64-byte FF00:0001
+            // feature collection, so accept that collection as well.
+            RazerHeadsetChannel.AvneraFeature65 =>
+                item.OutputReportByteLength == RazerAvnera65Protocol.WriteLength ||
+                (item.UsagePage == 0xFF00 &&
+                 item.Usage == 0x0001 &&
+                 item.FeatureReportByteLength == RazerAvnera65Protocol.WriteLength),
             RazerHeadsetChannel.Protocol25Feature65 => item.FeatureReportByteLength == 65,
             RazerHeadsetChannel.Protocol25Feature64 => item.FeatureReportByteLength == 64,
             RazerHeadsetChannel.KrakenBase37 =>
