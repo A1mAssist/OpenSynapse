@@ -98,6 +98,13 @@
                       </StackPanel>
                       <ToggleSwitch local:Localized.Uid="TaskbarStatusToggle" x:Name="TaskbarStatusToggle" Grid.Column="1" Toggled="TaskbarStatusToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
                     </Grid>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                      <StackPanel Spacing="4">
+                        <TextBlock local:Localized.Uid="TaskbarStatusClickTitle" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                        <TextBlock local:Localized.Uid="TaskbarStatusClickDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      </StackPanel>
+                      <ToggleSwitch local:Localized.Uid="TaskbarStatusClickToggle" x:Name="TaskbarStatusClickToggle" Grid.Column="1" Toggled="TaskbarStatusClickToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
+                    </Grid>
                     <StackPanel x:Name="TaskbarBatterySelectionPanel" Spacing="8" Visibility="Collapsed">
                       <TextBlock local:Localized.Uid="TaskbarBatterySelectionTitle" Style="{StaticResource MetricLabelStyle}" />
                       <TextBlock local:Localized.Uid="TaskbarBatterySelectionDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />

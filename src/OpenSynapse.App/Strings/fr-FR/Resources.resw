@@ -4297,4 +4297,7 @@ Les modifications de macro non enregistrées seront perdues.</value></data>
   <data name="LaylaInputSourceDoubleClick" xml:space="preserve"><value>Source · double clic</value></data>
   <data name="LaylaInputClockwise" xml:space="preserve"><value>Tourner dans le sens horaire</value></data>
   <data name="LaylaInputAnticlockwise" xml:space="preserve"><value>Tourner dans le sens antihoraire</value></data>
+  <data name="TaskbarStatusClickTitle.Text" xml:space="preserve"><value>Ouvrir l’application d’un clic</value></data>
+  <data name="TaskbarStatusClickDescription.Text" xml:space="preserve"><value>Cliquez sur la bande d’état de la barre des tâches pour afficher la fenêtre OpenSynapse.</value></data>
+  <data name="TaskbarStatusClickToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Ouvrir l’application d’un clic</value></data>
 </root>

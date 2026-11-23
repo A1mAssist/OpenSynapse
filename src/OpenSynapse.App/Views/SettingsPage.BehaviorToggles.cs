@@ -116,6 +116,30 @@ public sealed partial class SettingsPage
             ViewModel.ReportApplicationError(AppStrings.FormatText("BehaviorSettingError", exception.Message));
         }
         RefreshTaskbarBatteryChoices();
+        TaskbarStatusClickToggle.IsEnabled = settings.TaskbarStatusEnabled;
+    }
+
+    private void TaskbarStatusClickToggled(object sender, RoutedEventArgs e)
+    {
+        if (!_behaviorUiReady || sender is not ToggleSwitch toggle) return;
+        var settings = Host.BehaviorSettings;
+        var previous = settings.TaskbarStatusClickOpensApp;
+        try
+        {
+            settings.TaskbarStatusClickOpensApp = toggle.IsOn;
+            settings.Save();
+            Host.RefreshTaskbarStatus();
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+            InvalidOperationException or System.Security.SecurityException)
+        {
+            settings.TaskbarStatusClickOpensApp = previous;
+            _behaviorUiReady = false;
+            toggle.IsOn = previous;
+            _behaviorUiReady = true;
+            ViewModel.ReportApplicationError(AppStrings.FormatText("BehaviorSettingError", exception.Message));
+        }
     }
 
     private void ShutdownLightingToggled(object sender, RoutedEventArgs e)

@@ -8,6 +8,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Added
 
+- **Taskbar status strip**: an optional “Click to open the app” setting opens the existing main window with a single click; changes apply immediately and persist across restarts. It is off by default.
 - **Kraken V3 Pro**: connect the 052C receiver and 052D wired identity through the bundle-declared NXP serial channel, with battery, sidetone, silence detection and haptics controls and profile restore.
 - **Ripsaw HD audio**: add the capture card's speaker, PC, HDMI and microphone monitoring volume/mute controls, with saved settings restored on connection.
 - **Clio audio**: add Clio and Clio X controls through their dedicated Carol protocol, including product-specific EQ and power settings.

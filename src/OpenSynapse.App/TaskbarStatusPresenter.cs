@@ -15,6 +15,7 @@ internal sealed class TaskbarStatusPresenter : IDisposable
     private readonly MainViewModel _viewModel;
     private readonly AppBehaviorSettings _settings;
     private readonly LocalDiagnosticLog _diagnosticLog;
+    private readonly Action _showMainWindow;
     private readonly DispatcherQueue? _dispatcherQueue;
     private readonly DispatcherQueueTimer? _timer;
     private readonly Dictionary<string, int?> _batteryReadings = new(StringComparer.OrdinalIgnoreCase);
@@ -32,11 +33,13 @@ internal sealed class TaskbarStatusPresenter : IDisposable
     public TaskbarStatusPresenter(
         MainViewModel viewModel,
         AppBehaviorSettings settings,
-        LocalDiagnosticLog diagnosticLog)
+        LocalDiagnosticLog diagnosticLog,
+        Action showMainWindow)
     {
         _viewModel = viewModel;
         _settings = settings;
         _diagnosticLog = diagnosticLog;
+        _showMainWindow = showMainWindow;
         _viewModel.Devices.CollectionChanged += OnDevicesChanged;
         _viewModel.RazerHid.Devices.CollectionChanged += OnDevicesChanged;
         _viewModel.Accessories.HeadsetAudioDevices.CollectionChanged += OnDevicesChanged;
@@ -109,6 +112,7 @@ internal sealed class TaskbarStatusPresenter : IDisposable
     private void Refresh()
     {
         if (!_enabled || _disposed) return;
+        _statusWindow?.SetClickEnabled(_settings.TaskbarStatusClickOpensApp);
         var available = CurrentBatteries()
             .Where(item => item.Percent is not null)
             .Select(item => new TaskbarBatteryStatus(
@@ -168,7 +172,8 @@ internal sealed class TaskbarStatusPresenter : IDisposable
             if (_statusWindow is null)
             {
                 _statusWindow = new TaskbarStatusWindow(
-                    message => _diagnosticLog.TryWrite("taskbar-status", message));
+                    message => _diagnosticLog.TryWrite("taskbar-status", message), _showMainWindow);
+                _statusWindow.SetClickEnabled(_settings.TaskbarStatusClickOpensApp);
             }
             _statusWindow.Update(snapshot, automationText);
             _lastSnapshot = snapshot;

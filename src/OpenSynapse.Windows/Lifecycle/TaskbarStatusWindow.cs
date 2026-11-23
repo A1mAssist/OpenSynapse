@@ -49,6 +49,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     }
 
     private readonly Action<string>? _log;
+    private readonly Action? _showRequested;
     private readonly WndProc _hostProcedure;
     private readonly WndProc _statusProcedure;
     private readonly string _hostClassName;
@@ -61,11 +62,14 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     private string _automationText = string.Empty;
     private bool _themeDark = true;
     private bool _contentAvailable;
+    private bool _clickEnabled;
+    private IntPtr _pressedWindow;
     private bool _disposed;
 
-    public TaskbarStatusWindow(Action<string>? log = null)
+    public TaskbarStatusWindow(Action<string>? log = null, Action? showRequested = null)
     {
         _log = log;
+        _showRequested = showRequested;
         _hostProcedure = HostWindowProcedure;
         _statusProcedure = StatusWindowProcedure;
         _taskbarCreatedMessage = RegisterWindowMessageW("TaskbarCreated");
@@ -135,6 +139,23 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         }
         EnsureAttached();
         if (contentChanged) InvalidateAll();
+    }
+
+    public void SetClickEnabled(bool enabled)
+    {
+        enabled &= _showRequested is not null;
+        if (_disposed || _clickEnabled == enabled) return;
+        _clickEnabled = enabled;
+        if (_pressedWindow != IntPtr.Zero) ReleaseCapture();
+        _pressedWindow = IntPtr.Zero;
+        foreach (var surface in _surfaces)
+        {
+            if (surface.Window == IntPtr.Zero) continue;
+            var style = GetWindowLongW(surface.Window, GwlExStyle);
+            SetWindowLongW(surface.Window, GwlExStyle,
+                enabled ? style & ~WsExTransparent : style | WsExTransparent);
+        }
+        InvalidateAll();
     }
 
     public void Hide()
@@ -252,8 +273,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         {
             var instance = GetModuleHandleW(null);
             var status = CreateWindowExW(
-                // Click-through: the strip is display only, so taskbar clicks must reach the taskbar.
-                WsExToolWindow | WsExNoActivate | WsExLayered | WsExTransparent,
+                WsExToolWindow | WsExNoActivate | WsExLayered | (_clickEnabled ? 0 : WsExTransparent),
                 _statusClassName,
                 string.Empty,
                 WsPopup,

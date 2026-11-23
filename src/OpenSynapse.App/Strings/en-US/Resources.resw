@@ -4317,4 +4317,7 @@
   <data name="LaylaInputSourceDoubleClick" xml:space="preserve"><value>Source · double click</value></data>
   <data name="LaylaInputClockwise" xml:space="preserve"><value>Rotate clockwise</value></data>
   <data name="LaylaInputAnticlockwise" xml:space="preserve"><value>Rotate counter-clockwise</value></data>
+  <data name="TaskbarStatusClickTitle.Text" xml:space="preserve"><value>Click to open the app</value></data>
+  <data name="TaskbarStatusClickDescription.Text" xml:space="preserve"><value>Click the taskbar status strip to show the OpenSynapse window.</value></data>
+  <data name="TaskbarStatusClickToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Click to open the app</value></data>
 </root>

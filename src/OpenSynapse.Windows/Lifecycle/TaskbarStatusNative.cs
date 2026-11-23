@@ -6,6 +6,7 @@ namespace OpenSynapse.Windows.Lifecycle;
 internal static class TaskbarStatusNative
 {
     public const int GwlStyle = -16;
+    public const int GwlExStyle = -20;
 
     public const int WsChild = 0x40000000;
     public const int WsPopup = unchecked((int)0x80000000);
@@ -19,6 +20,12 @@ internal static class TaskbarStatusNative
     public const uint WmDestroy = 0x0002;
     public const uint WmPaint = 0x000F;
     public const uint WmEraseBkgnd = 0x0014;
+    public const uint WmSetCursor = 0x0020;
+    public const uint WmMouseActivate = 0x0021;
+    public const uint WmLButtonDown = 0x0201;
+    public const uint WmLButtonUp = 0x0202;
+    public const uint WmCaptureChanged = 0x0215;
+    public const int MaNoActivate = 3;
     public const uint WmSettingChange = 0x001A;
     public const uint WmTimer = 0x0113;
     internal const uint WmPrintClient = 0x0318;
@@ -64,6 +71,17 @@ internal static class TaskbarStatusNative
 
 
     public const int IdiArrow = 32512;
+    public const int IdcHand = 32649;
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr SetCapture(IntPtr window);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool ReleaseCapture();
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr SetCursor(IntPtr cursor);
 
     [StructLayout(LayoutKind.Sequential)]
     public struct Rect

@@ -4297,4 +4297,7 @@
   <data name="LaylaInputSourceDoubleClick" xml:space="preserve"><value>소스 · 두 번 클릭</value></data>
   <data name="LaylaInputClockwise" xml:space="preserve"><value>시계 방향 회전</value></data>
   <data name="LaylaInputAnticlockwise" xml:space="preserve"><value>반시계 방향 회전</value></data>
+  <data name="TaskbarStatusClickTitle.Text" xml:space="preserve"><value>클릭하여 앱 열기</value></data>
+  <data name="TaskbarStatusClickDescription.Text" xml:space="preserve"><value>작업 표시줄 상태 스트립을 클릭하면 OpenSynapse 창이 표시됩니다.</value></data>
+  <data name="TaskbarStatusClickToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>클릭하여 앱 열기</value></data>
 </root>

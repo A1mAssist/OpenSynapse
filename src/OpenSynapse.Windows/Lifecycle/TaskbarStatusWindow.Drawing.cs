@@ -197,10 +197,10 @@ public sealed partial class TaskbarStatusWindow
     private void Draw(IntPtr dc, Rect client, StatusSurface surface)
     {
         var scale = surface.Dpi / 96.0;
-        // The window is layered with black as its color key, so only the badge and
-        // text survive; the taskbar background shows through the padding.
+        // Color-keyed gaps pass clicks through too; fill them when the strip is clickable.
         var primary = _themeDark ? Rgb(255, 255, 255) : Rgb(1, 1, 1);
-        var backgroundBrush = CreateSolidBrush(0);
+        var backgroundBrush = CreateSolidBrush(_clickEnabled
+            ? (_themeDark ? Rgb(32, 32, 32) : Rgb(243, 243, 243)) : 0);
         FillRect(dc, ref client, backgroundBrush);
         DeleteObject(backgroundBrush);
         SetBkMode(dc, Transparent);
@@ -442,6 +442,29 @@ public sealed partial class TaskbarStatusWindow
 
         switch (message)
         {
+            case WmMouseActivate:
+                return new IntPtr(MaNoActivate);
+            case WmSetCursor when _clickEnabled:
+                SetCursor(LoadCursorW(IntPtr.Zero, (IntPtr)IdcHand));
+                return new IntPtr(1);
+            case WmLButtonDown when _clickEnabled:
+                _pressedWindow = window;
+                SetCapture(window);
+                return IntPtr.Zero;
+            case WmLButtonUp:
+                var pressed = _pressedWindow == window;
+                _pressedWindow = IntPtr.Zero;
+                if (pressed) ReleaseCapture();
+                var x = unchecked((short)(lParam.ToInt64() & 0xFFFF));
+                var y = unchecked((short)((lParam.ToInt64() >> 16) & 0xFFFF));
+                if (pressed && _clickEnabled && _contentAvailable && !_disposed &&
+                    GetClientRect(window, out var client) &&
+                    x >= 0 && y >= 0 && x < client.Right && y < client.Bottom)
+                    _showRequested?.Invoke();
+                return IntPtr.Zero;
+            case WmCaptureChanged:
+                _pressedWindow = IntPtr.Zero;
+                return IntPtr.Zero;
             case WmEraseBkgnd:
                 return new IntPtr(1);
             case WmPaint:

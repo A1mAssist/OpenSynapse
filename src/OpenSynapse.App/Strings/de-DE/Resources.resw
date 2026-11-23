@@ -4297,4 +4297,7 @@ Nicht gespeicherte Makroänderungen gehen verloren.</value></data>
   <data name="LaylaInputSourceDoubleClick" xml:space="preserve"><value>Quelle · Doppelklick</value></data>
   <data name="LaylaInputClockwise" xml:space="preserve"><value>Im Uhrzeigersinn drehen</value></data>
   <data name="LaylaInputAnticlockwise" xml:space="preserve"><value>Gegen den Uhrzeigersinn drehen</value></data>
+  <data name="TaskbarStatusClickTitle.Text" xml:space="preserve"><value>App per Klick öffnen</value></data>
+  <data name="TaskbarStatusClickDescription.Text" xml:space="preserve"><value>Klicken Sie auf die Statusleiste in der Taskleiste, um das OpenSynapse-Fenster anzuzeigen.</value></data>
+  <data name="TaskbarStatusClickToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>App per Klick öffnen</value></data>
 </root>

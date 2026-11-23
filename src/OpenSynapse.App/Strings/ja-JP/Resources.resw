@@ -4297,4 +4297,7 @@
   <data name="LaylaInputSourceDoubleClick" xml:space="preserve"><value>ソース · ダブルクリック</value></data>
   <data name="LaylaInputClockwise" xml:space="preserve"><value>時計回りに回転</value></data>
   <data name="LaylaInputAnticlockwise" xml:space="preserve"><value>反時計回りに回転</value></data>
+  <data name="TaskbarStatusClickTitle.Text" xml:space="preserve"><value>クリックでアプリを開く</value></data>
+  <data name="TaskbarStatusClickDescription.Text" xml:space="preserve"><value>タスクバーのステータス ストリップをクリックすると、OpenSynapse のメインウィンドウを表示します。</value></data>
+  <data name="TaskbarStatusClickToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>クリックでアプリを開く</value></data>
 </root>

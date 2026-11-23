@@ -31,6 +31,7 @@ public sealed class AppBehaviorSettings
     public bool LowBatteryNotificationsEnabled { get; set; } = true;
     public bool TrayBatteryLevelsEnabled { get; set; } = true;
     public bool TaskbarStatusEnabled { get; set; }
+    public bool TaskbarStatusClickOpensApp { get; set; }
     /// <summary>
     /// Null until the user first toggles startup (or an existing Run entry is
     /// adopted); a plain bool would make a fresh install look "disabled".

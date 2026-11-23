@@ -172,7 +172,7 @@ public partial class App
         StartChromaHosts(viewModel);
         InitializeTray(window, viewModel);
         _taskbarStatusPresenter = new TaskbarStatusPresenter(
-            viewModel, _behaviorSettings, _diagnosticLog);
+            viewModel, _behaviorSettings, _diagnosticLog, window.RequestActivation);
         if (silentLaunch)
         {
             window.AppWindow.IsShownInSwitchers = false;

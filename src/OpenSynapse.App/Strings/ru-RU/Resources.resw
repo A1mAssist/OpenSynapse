@@ -9720,4 +9720,7 @@
   <data name="LaylaInputSourceDoubleClick" xml:space="preserve"><value>Источник · двойной щелчок</value></data>
   <data name="LaylaInputClockwise" xml:space="preserve"><value>Поворот по часовой стрелке</value></data>
   <data name="LaylaInputAnticlockwise" xml:space="preserve"><value>Поворот против часовой стрелки</value></data>
+  <data name="TaskbarStatusClickTitle.Text" xml:space="preserve"><value>Открывать приложение по щелчку</value></data>
+  <data name="TaskbarStatusClickDescription.Text" xml:space="preserve"><value>Щёлкните строку состояния на панели задач, чтобы открыть окно OpenSynapse.</value></data>
+  <data name="TaskbarStatusClickToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Открывать приложение по щелчку</value></data>
 </root>
