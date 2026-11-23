@@ -141,11 +141,23 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                 var previousState = new RazerHidDpiStages(ActiveDpiStage,
                     DpiStages.Select(stage => new RazerHidDpiStage(stage.Number, stage.X, stage.Y, stage.Z)).ToArray());
                 var previousProfile = ReadProfile(settings => settings.Viper.DpiStages);
+                var previousDpiProfile = ReadProfile(settings => (settings.Viper.DpiX, settings.Viper.DpiY));
+                var previousDpi = (X: _basicState?.DpiX ?? DpiX, Y: _basicState?.DpiY ?? DpiY);
                 var state = new RazerHidDpiStages(ActiveDpiStage,
                     DpiStages.Select(stage => new RazerHidDpiStage(stage.Number, stage.X, stage.Y, stage.Z)).ToArray());
                 await _service.SetDpiStagesAsync(Connection, state, cancellationToken);
                 if (Has(RazerHidBackendCapability.DpiStagesRead))
                     ReplaceDpiStages(await _service.GetDpiStagesAsync(Connection, cancellationToken));
+
+                // The stage table alone does not move the pointer; Razer applies the
+                // active stage's DPI, so save the table and the live DPI together.
+                var active = state.Stages[state.ActiveStage - 1];
+                if (await _service.SetDpiAsync(Connection, active.X, active.Y, cancellationToken) is { } dpi)
+                {
+                    (DpiX, DpiY) = (dpi.X, dpi.Y);
+                    UpdateBasic(basic => basic with { DpiX = dpi.X, DpiY = dpi.Y });
+                }
+
                 var applied = new ViperDpiStagesProfile
                 {
                     ActiveStage = ActiveDpiStage,
@@ -157,10 +169,29 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                     }).ToList(),
                 };
                 await SaveProfileAsync(
-                    settings => settings.Viper.DpiStages = applied,
-                    settings => settings.Viper.DpiStages = previousProfile,
-                    () => ReplaceDpiStages(previousState),
-                    token => _service.SetDpiStagesAsync(Connection, previousState, token),
+                    settings =>
+                    {
+                        settings.Viper.DpiStages = applied;
+                        settings.Viper.DpiX = DpiX;
+                        settings.Viper.DpiY = DpiY;
+                    },
+                    settings =>
+                    {
+                        settings.Viper.DpiStages = previousProfile;
+                        settings.Viper.DpiX = previousDpiProfile.DpiX;
+                        settings.Viper.DpiY = previousDpiProfile.DpiY;
+                    },
+                    () =>
+                    {
+                        ReplaceDpiStages(previousState);
+                        (DpiX, DpiY) = previousDpi;
+                        UpdateBasic(basic => basic with { DpiX = previousDpi.X, DpiY = previousDpi.Y });
+                    },
+                    async token =>
+                    {
+                        await _service.SetDpiStagesAsync(Connection, previousState, token);
+                        _ = await _service.SetDpiAsync(Connection, previousDpi.X, previousDpi.Y, token);
+                    },
                     cancellationToken);
             }, cancellationToken);
 
