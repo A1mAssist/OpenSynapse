@@ -142,11 +142,14 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
     private readonly Dictionary<Guid, StudioPlaybackClock> _clocks = new();
     private readonly Func<int, int, StudioEffectInput>? _inputProvider;
     private readonly StudioPlaybackTrigger _trigger;
+    private readonly StudioKeyHeat _keys;
+    private readonly StudioEffectStateCache _states = new();
     private readonly StudioBladeFrameMode _mode;
     private readonly int _rows;
     private readonly int _columns;
     private readonly StudioLedLayout? _layout;
     private StudioLayerRender[] _layers = [];
+    private double _lastKeySeconds;
 
     public StudioBladeFrameSourceV2()
         : this(
@@ -206,6 +209,7 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
         _layout = layout;
         _inputProvider = inputProvider;
         _trigger = new StudioPlaybackTrigger(GetClock);
+        _keys = new StudioKeyHeat(rows, columns);
     }
 
     public void Update(IEnumerable<StudioLayerRender> layers)
@@ -220,8 +224,15 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
     /// Applies one key transition in matrix coordinates. The trigger shares this
     /// source's clocks, so rendered frames see the same playback state.
     /// </summary>
-    public int HandleInput(StudioTriggerInput input, double nowSeconds) =>
-        _trigger.Handle(input, nowSeconds);
+    public int HandleInput(StudioTriggerInput input, double nowSeconds)
+    {
+        if (input.IsDown)
+        {
+            _keys.Press(input.Row, input.Column);
+        }
+
+        return _trigger.Handle(input, nowSeconds);
+    }
 
     public ValueTask<IReadOnlyList<RazerRgb>> RenderAsync(
         TimeSpan elapsed,
@@ -230,17 +241,29 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
         cancellationToken.ThrowIfCancellationRequested();
         var layers = Volatile.Read(ref _layers);
         var now = Math.Max(0, elapsed.TotalSeconds);
+        if (now > _lastKeySeconds)
+        {
+            _keys.Decay(now - _lastKeySeconds);
+            _lastKeySeconds = now;
+        }
+
         var timed = new (StudioLayerRender Layer, double Seconds)[layers.Length];
         for (var index = 0; index < layers.Length; index++)
         {
             var layer = layers[index];
+            var render = layer.Id == Guid.Empty
+                ? layer
+                : layer with { State = _states.For(layer.Id) };
             var clock = GetClock(layer.Id);
             var state = clock.Sample(now, layer.Params, _rows, _columns);
             // Speed is an effect parameter interpreted by the renderer; time stays absolute.
-            timed[index] = (layer with { Opacity = state.Running ? layer.Opacity : 0 }, state.LocalSeconds);
+            timed[index] = (
+                render with { Opacity = state.Running ? layer.Opacity : 0 },
+                state.LocalSeconds);
         }
 
         var input = _inputProvider?.Invoke(_rows, _columns) ?? default;
+        input = input with { Keys = _keys.Snapshot() };
         var logical = StudioCompositor.RenderTimedLayers(timed, _rows, _columns, input);
         var colors = new RazerRgb[logical.Length];
         for (var index = 0; index < logical.Length; index++)

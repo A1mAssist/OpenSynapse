@@ -1980,6 +1980,7 @@
   <data name="BladeStarlightSingle" xml:space="preserve"><value>单色</value></data>
   <data name="BladeStarlightDual" xml:space="preserve"><value>双色</value></data>
   <data name="RazerHidSaveButton.Content" xml:space="preserve"><value>保存</value></data>
+  <data name="RazerHidImportChromaButton.Content" xml:space="preserve"><value>导入动画...</value></data>
   <data name="RazerHidApplyLightingButton.Content" xml:space="preserve"><value>应用灯效</value></data>
   <data name="RazerHidScrollExpander.Header" xml:space="preserve"><value>滚轮设置</value></data>
   <data name="RazerHidOnboardProfileTitle.Text" xml:space="preserve"><value>板载配置</value></data>
@@ -2151,6 +2152,7 @@
   <data name="RazerHidEffectSoftwareRipple" xml:space="preserve"><value>涟漪</value></data>
   <data name="RazerHidEffectSoftwareTidal" xml:space="preserve"><value>潮汐</value></data>
   <data name="RazerHidEffectSoftwareRadiate" xml:space="preserve"><value>辐射</value></data>
+  <data name="RazerHidEffectSoftwareChromaFile" xml:space="preserve"><value>动画（.chroma）</value></data>
   <data name="RazerHidLedStateLabel.Text" xml:space="preserve"><value>区域灯光</value></data>
   <data name="RazerHidReactiveTriggerButton.Content" xml:space="preserve"><value>触发响应灯效</value></data>
   <data name="RazerHidMatrixExpander.Header" xml:space="preserve"><value>矩阵自定义灯光</value></data>
@@ -4695,4 +4697,6 @@
   <data name="UpdateSourceGitee" xml:space="preserve"><value>Gitee（国内）</value><comment>Gitee（国内）</comment></data>
   <data name="UpdateSourceGitHub" xml:space="preserve"><value>GitHub</value><comment>GitHub</comment></data>
   <data name="UpdateSourceDescription" xml:space="preserve"><value>自动模式会优先使用 Gitee；如果 Gitee 不可用或版本落后，则回退 GitHub。</value><comment>自动模式会优先使用 Gitee；如果 Gitee 不可用或版本落后，则回退 GitHub。</comment></data>
+  <data name="LightingStudioEffectChromaFile" xml:space="preserve"><value>动画文件</value><comment>动画文件</comment></data>
+  <data name="LightingStudioStatusChromaUnavailable" xml:space="preserve"><value>动画 {0} 无法加载：{1}</value><comment>动画 {0} 无法加载：{1}</comment></data>
 </root>

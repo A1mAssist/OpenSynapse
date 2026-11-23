@@ -5,6 +5,7 @@ using OpenSynapse.App.ViewModels;
 using OpenSynapse.App.Views.DevicePanels;
 using OpenSynapse.Core.Devices;
 using Windows.System;
+using Windows.Storage.Pickers;
 
 namespace OpenSynapse.App.Views;
 
@@ -356,6 +357,37 @@ public sealed partial class DevicesPage : UserControl
         if (device.HasWristRestLighting)
         {
             await device.ApplyWristRestAsync(Lifetime);
+        }
+    }
+
+    private async void RazerHidImportChromaClick(object sender, RoutedEventArgs e)
+    {
+        if (SelectedRazerHidDevice is not { } device)
+        {
+            return;
+        }
+
+        var picker = new FileOpenPicker
+        {
+            SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+        };
+        picker.FileTypeFilter.Add(".chroma");
+        Host.InitializePicker(picker);
+        var file = await picker.PickSingleFileAsync();
+        if (file is null || string.IsNullOrWhiteSpace(file.Path))
+        {
+            return;
+        }
+
+        try
+        {
+            await SuspendStudioLightingAsync();
+            await device.ImportChromaAnimationAsync(file.Path, Lifetime);
+        }
+        catch (OperationCanceledException) when (Lifetime.IsCancellationRequested) { }
+        catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
+        {
+            ViewModel.ReportApplicationError(exception.Message);
         }
     }
 

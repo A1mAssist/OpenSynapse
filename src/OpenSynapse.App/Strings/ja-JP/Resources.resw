@@ -1584,6 +1584,7 @@
   <data name="BladeStarlightSingle" xml:space="preserve"><value>単色</value></data>
   <data name="BladeStarlightDual" xml:space="preserve"><value>2 色</value></data>
   <data name="RazerHidSaveButton.Content" xml:space="preserve"><value>保存</value></data>
+  <data name="RazerHidImportChromaButton.Content" xml:space="preserve"><value>アニメーションをインポート...</value></data>
   <data name="RazerHidApplyLightingButton.Content" xml:space="preserve"><value>エフェクトを適用</value></data>
   <data name="RazerHidScrollExpander.Header" xml:space="preserve"><value>スクロール ホイール</value></data>
   <data name="RazerHidOnboardProfileTitle.Text" xml:space="preserve"><value>オンボード プロファイル</value></data>
@@ -1755,6 +1756,7 @@
   <data name="RazerHidEffectSoftwareRipple" xml:space="preserve"><value>リップル</value></data>
   <data name="RazerHidEffectSoftwareTidal" xml:space="preserve"><value>タイダル</value></data>
   <data name="RazerHidEffectSoftwareRadiate" xml:space="preserve"><value>放射</value></data>
+  <data name="RazerHidEffectSoftwareChromaFile" xml:space="preserve"><value>アニメーション (.chroma)</value></data>
   <data name="RazerHidLedStateLabel.Text" xml:space="preserve"><value>ゾーン ライティング</value></data>
   <data name="RazerHidReactiveTriggerButton.Content" xml:space="preserve"><value>リアクティブ エフェクトをトリガー</value></data>
   <data name="RazerHidMatrixExpander.Header" xml:space="preserve"><value>カスタム マトリックス ライティング</value></data>
@@ -4234,4 +4236,6 @@
   <data name="UpdateSourceGitee" xml:space="preserve"><value>Gitee（中国）</value></data>
   <data name="UpdateSourceGitHub" xml:space="preserve"><value>GitHub</value></data>
   <data name="UpdateSourceDescription" xml:space="preserve"><value>自動モードは Gitee を優先し、Gitee が利用できないか遅れている場合は GitHub にフォールバックします。</value></data>
+  <data name="LightingStudioEffectChromaFile" xml:space="preserve"><value>アニメーションファイル</value></data>
+  <data name="LightingStudioStatusChromaUnavailable" xml:space="preserve"><value>アニメーション {0} を読み込めませんでした: {1}</value></data>
 </root>

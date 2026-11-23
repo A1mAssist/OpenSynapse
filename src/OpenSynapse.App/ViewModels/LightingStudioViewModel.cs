@@ -107,6 +107,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
             new(StudioEffectKind.Audio, AppStrings.Text("LightingStudioEffectAudio")),
             new(StudioEffectKind.Wheel, AppStrings.Text("LightingStudioEffectWheel")),
             new(StudioEffectKind.ChromaGenerate, AppStrings.Text("LightingStudioEffectGenerate")),
+            new(StudioEffectKind.ChromaFile, AppStrings.Text("LightingStudioEffectChromaFile")),
             new(StudioEffectKind.Tidal, AppStrings.Text("LightingStudioEffectTidal")),
             new(StudioEffectKind.Radiate, AppStrings.Text("LightingStudioEffectRadiate")),
         ];

@@ -19,7 +19,10 @@ public sealed class StudioDeviceFrameSource : ISoftwareLightingFrameSource
     private readonly StudioLedLayout? _layout;
     private readonly Func<int, int, StudioEffectInput>? _inputProvider;
     private readonly StudioPlaybackTrigger _trigger;
+    private readonly StudioKeyHeat _keys;
+    private readonly StudioEffectStateCache _states = new();
     private StudioLayerRender[] _layers = [];
+    private double _lastKeySeconds;
 
     public StudioDeviceFrameSource(
         int rows, int columns, Func<int, int, StudioEffectInput>? inputProvider = null)
@@ -63,6 +66,7 @@ public sealed class StudioDeviceFrameSource : ISoftwareLightingFrameSource
         _layout = layout;
         _inputProvider = inputProvider;
         _trigger = new StudioPlaybackTrigger(GetClock);
+        _keys = new StudioKeyHeat(matrixRows, matrixColumns);
     }
 
     public void Update(IEnumerable<StudioLayerRender> layers)
@@ -77,8 +81,15 @@ public sealed class StudioDeviceFrameSource : ISoftwareLightingFrameSource
     /// Applies one key transition in matrix coordinates. The trigger shares this
     /// source's clocks, so rendered frames see the same playback state.
     /// </summary>
-    public int HandleInput(StudioTriggerInput input, double nowSeconds) =>
-        _trigger.Handle(input, nowSeconds);
+    public int HandleInput(StudioTriggerInput input, double nowSeconds)
+    {
+        if (input.IsDown)
+        {
+            _keys.Press(input.Row, input.Column);
+        }
+
+        return _trigger.Handle(input, nowSeconds);
+    }
 
     public ValueTask<IReadOnlyList<RazerRgb>> RenderAsync(
         TimeSpan elapsed,
@@ -87,15 +98,27 @@ public sealed class StudioDeviceFrameSource : ISoftwareLightingFrameSource
         cancellationToken.ThrowIfCancellationRequested();
         var layers = Volatile.Read(ref _layers);
         var now = Math.Max(0, elapsed.TotalSeconds);
+        if (now > _lastKeySeconds)
+        {
+            _keys.Decay(now - _lastKeySeconds);
+            _lastKeySeconds = now;
+        }
+
         var timed = new (StudioLayerRender Layer, double Seconds)[layers.Length];
         for (var index = 0; index < layers.Length; index++)
         {
             var layer = layers[index];
+            var render = layer.Id == Guid.Empty
+                ? layer
+                : layer with { State = _states.For(layer.Id) };
             var state = GetClock(layer.Id).Sample(now, layer.Params, _matrixRows, _matrixColumns);
-            timed[index] = (layer with { Opacity = state.Running ? layer.Opacity : 0 }, state.LocalSeconds);
+            timed[index] = (
+                render with { Opacity = state.Running ? layer.Opacity : 0 },
+                state.LocalSeconds);
         }
 
         var input = _inputProvider?.Invoke(_matrixRows, _matrixColumns) ?? default;
+        input = input with { Keys = _keys.Snapshot() };
         var logical = StudioCompositor.RenderTimedLayers(timed, _matrixRows, _matrixColumns, input);
         var colors = new RazerRgb[_deviceRows * _deviceColumns];
         if (_layout is null)

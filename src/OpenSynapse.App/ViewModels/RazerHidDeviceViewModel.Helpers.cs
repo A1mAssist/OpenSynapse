@@ -342,6 +342,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(LightingZoneSelectorVisibility));
         OnPropertyChanged(nameof(LightingPowerProfileVisibility));
         OnPropertyChanged(nameof(LightingEffectVisibility));
+        OnPropertyChanged(nameof(ChromaAnimationVisibility));
         OnPropertyChanged(nameof(LightingZoneOptions));
         OnPropertyChanged(nameof(SelectedLightingZoneIndex));
         OnPropertyChanged(nameof(LightingEffects));
@@ -387,7 +388,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         RazerHidLightingEffect.SoftwareGradient or
         RazerHidLightingEffect.SoftwareRipple or
         RazerHidLightingEffect.SoftwareTidal or
-        RazerHidLightingEffect.SoftwareRadiate;
+        RazerHidLightingEffect.SoftwareRadiate or
+        RazerHidLightingEffect.SoftwareChromaFile;
 
     private static RazerHidLightingEffect? SoftwareCounterpart(RazerHidLightingEffect effect) => effect switch
     {

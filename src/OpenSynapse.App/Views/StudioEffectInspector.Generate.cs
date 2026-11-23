@@ -38,7 +38,14 @@ public sealed partial class StudioEffectInspector
             {
                 SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
             };
-            picker.FileTypeFilter.Add("*");
+            if (parameters.Effect == StudioEffectKind.ChromaFile)
+            {
+                picker.FileTypeFilter.Add(".chroma");
+            }
+            else
+            {
+                picker.FileTypeFilter.Add("*");
+            }
             WinRT.Interop.InitializeWithWindow.Initialize(
                 picker,
                 Microsoft.UI.Win32Interop.GetWindowFromWindowId(environment.AppWindowId));

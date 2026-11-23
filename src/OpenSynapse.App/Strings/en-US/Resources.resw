@@ -1593,6 +1593,7 @@
   <data name="BladeStarlightSingle" xml:space="preserve"><value>Single color</value></data>
   <data name="BladeStarlightDual" xml:space="preserve"><value>Dual color</value></data>
   <data name="RazerHidSaveButton.Content" xml:space="preserve"><value>Save</value></data>
+  <data name="RazerHidImportChromaButton.Content" xml:space="preserve"><value>Import animation...</value></data>
   <data name="RazerHidApplyLightingButton.Content" xml:space="preserve"><value>Apply effect</value></data>
   <data name="RazerHidScrollExpander.Header" xml:space="preserve"><value>Scroll wheel</value></data>
   <data name="RazerHidOnboardProfileTitle.Text" xml:space="preserve"><value>Onboard profiles</value></data>
@@ -1764,6 +1765,7 @@
   <data name="RazerHidEffectSoftwareRipple" xml:space="preserve"><value>Ripple</value></data>
   <data name="RazerHidEffectSoftwareTidal" xml:space="preserve"><value>Tidal</value></data>
   <data name="RazerHidEffectSoftwareRadiate" xml:space="preserve"><value>Radiate</value></data>
+  <data name="RazerHidEffectSoftwareChromaFile" xml:space="preserve"><value>Animation (.chroma)</value></data>
   <data name="RazerHidLedStateLabel.Text" xml:space="preserve"><value>Zone lighting</value></data>
   <data name="RazerHidReactiveTriggerButton.Content" xml:space="preserve"><value>Trigger reactive effect</value></data>
   <data name="RazerHidMatrixExpander.Header" xml:space="preserve"><value>Custom matrix lighting</value></data>
@@ -4254,4 +4256,6 @@
   <data name="UpdateSourceGitee" xml:space="preserve"><value>Gitee (China)</value></data>
   <data name="UpdateSourceGitHub" xml:space="preserve"><value>GitHub</value></data>
   <data name="UpdateSourceDescription" xml:space="preserve"><value>Automatic uses Gitee first and falls back to GitHub if Gitee is unavailable or behind.</value></data>
+  <data name="LightingStudioEffectChromaFile" xml:space="preserve"><value>Animation file</value></data>
+  <data name="LightingStudioStatusChromaUnavailable" xml:space="preserve"><value>Animation {0} could not be loaded: {1}</value></data>
 </root>

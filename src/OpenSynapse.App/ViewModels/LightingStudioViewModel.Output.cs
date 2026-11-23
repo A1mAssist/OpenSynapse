@@ -50,6 +50,9 @@ public sealed partial class LightingStudioViewModel
         foreach (var layer in profile.EnumerateLayers())
         {
             if (layer.IsGroup) continue;
+            // .chroma is a keyboard matrix animation; a 1-row target has no
+            // meaningful frame to show, so mice and single-LED devices stay dark.
+            if (layer.Params.Effect == StudioEffectKind.ChromaFile && rows <= 1) continue;
             if (layer.Regions.Count == 0)
             {
                 layers.Add(new StudioLayerRender(
@@ -63,6 +66,7 @@ public sealed partial class LightingStudioViewModel
                 // connected. It has no target; painting it full-canvas would wash
                 // the other devices with that region's color.
                 if (region.Devices.Count == 0) continue;
+                if (region.Params.Effect == StudioEffectKind.ChromaFile && rows <= 1) continue;
 
                 var targetsDevice = false;
                 foreach (var target in region.Devices)

@@ -1,6 +1,8 @@
 using System.Buffers;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading.Channels;
+using OpenSynapse.Core.Lighting;
 
 namespace OpenSynapse.Windows.Lighting;
 
@@ -20,12 +22,13 @@ internal readonly record struct AudioSampleFormat(
     ushort Channels,
     ushort BitsPerSample,
     ushort ValidBitsPerSample,
-    ushort BlockAlign);
+    ushort BlockAlign,
+    int SampleRate = 48000);
 
 internal interface IAudioLoopbackSession : IDisposable
 {
     string EndpointId { get; }
-    bool TryReadSample(out AudioMeterSample sample);
+    bool TryReadSample(out StudioAudioFrame frame);
 }
 
 internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
@@ -37,7 +40,7 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
     private readonly Func<DateTimeOffset> _clock;
     private readonly TimeSpan _endpointPollInterval;
     private readonly TimeSpan _retryInterval;
-    private readonly Channel<AudioMeterSample> _samples = Channel.CreateBounded<AudioMeterSample>(
+    private readonly Channel<StudioAudioFrame> _samples = Channel.CreateBounded<StudioAudioFrame>(
         new BoundedChannelOptions(1)
         {
             FullMode = BoundedChannelFullMode.DropOldest,
@@ -47,7 +50,7 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
     private readonly object _lifecycleGate = new();
     private CancellationTokenSource? _stop;
     private Task? _worker;
-    private AudioMeterSample _latest;
+    private StudioAudioFrame _latest = StudioAudioFrame.Silence;
     private int _disposed;
 
     internal WasapiAudioMeterAdapter()
@@ -94,7 +97,7 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
                 throw new InvalidOperationException("Audio Meter is already running.");
             }
 
-            _latest = AudioMeterSample.Silence;
+            _latest = StudioAudioFrame.Silence;
             while (_samples.Reader.TryRead(out _))
             {
             }
@@ -119,7 +122,7 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
         }
     }
 
-    internal AudioMeterSample ReadSample()
+    internal StudioAudioFrame ReadSample()
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         lock (_lifecycleGate)
@@ -144,7 +147,8 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
     internal static AudioMeterSample ComputeSample(
         ReadOnlySpan<byte> data,
         AudioSampleFormat format,
-        int frameCount)
+        int frameCount,
+        Span<float> mono = default)
     {
         if (format.Channels == 0 || format.BlockAlign == 0)
         {
@@ -187,9 +191,11 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
         double sumOfSquares = 0;
         double peak = 0;
         var sampleCount = checked(frameCount * format.Channels);
+        var monoCount = Math.Min(mono.Length, frameCount);
         for (var frame = 0; frame < frameCount; frame++)
         {
             var frameOffset = frame * format.BlockAlign;
+            double channelSum = 0;
             for (var channel = 0; channel < format.Channels; channel++)
             {
                 var offset = frameOffset + channel * bytesPerSample;
@@ -201,6 +207,12 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
                 var magnitude = Math.Abs(value);
                 peak = Math.Max(peak, magnitude);
                 sumOfSquares += value * value;
+                channelSum += value;
+            }
+
+            if (frame < monoCount)
+            {
+                mono[frame] = (float)(channelSum / format.Channels);
             }
         }
 
@@ -276,7 +288,7 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
                         nextEndpointPoll = _clock() + _endpointPollInterval;
                         if (!StringComparer.Ordinal.Equals(endpointId, session.EndpointId))
                         {
-                            Publish(AudioMeterSample.Silence);
+                            Publish(StudioAudioFrame.Silence);
                             session.Dispose();
                             session = null;
                             continue;
@@ -296,7 +308,7 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
                 }
                 catch (COMException)
                 {
-                    Publish(AudioMeterSample.Silence);
+                    Publish(StudioAudioFrame.Silence);
                     session?.Dispose();
                     session = null;
                     if (cancellationToken.IsCancellationRequested ||
@@ -317,10 +329,7 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
         }
     }
 
-    private void Publish(AudioMeterSample sample) =>
-        _samples.Writer.TryWrite(new AudioMeterSample(
-            NormalizeLevel(sample.Rms),
-            NormalizeLevel(sample.Peak)));
+    private void Publish(StudioAudioFrame frame) => _samples.Writer.TryWrite(frame);
 
     private static double ReadNormalizedSample(ReadOnlySpan<byte> data, AudioSampleFormat format)
     {
@@ -390,6 +399,9 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
         private IAudioClient? _audioClient;
         private IAudioCaptureClient? _captureClient;
         private readonly AudioSampleFormat _format;
+        private readonly StudioAudioAnalyzer _analyzer;
+        private readonly long _startTimestamp = Stopwatch.GetTimestamp();
+        private StudioAudioFrame _lastFrame = StudioAudioFrame.Silence;
 
         private CoreAudioLoopbackSession(
             string endpointId,
@@ -403,6 +415,7 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
             _audioClient = audioClient;
             _captureClient = captureClient;
             _format = format;
+            _analyzer = new StudioAudioAnalyzer(format.SampleRate);
         }
 
         public string EndpointId { get; }
@@ -478,13 +491,13 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
             }
         }
 
-        public bool TryReadSample(out AudioMeterSample sample)
+        public bool TryReadSample(out StudioAudioFrame frame)
         {
             var captureClient = _captureClient ?? throw new ObjectDisposedException(nameof(CoreAudioLoopbackSession));
             ThrowIfFailed(captureClient.GetNextPacketSize(out var packetFrames));
             if (packetFrames == 0)
             {
-                sample = default;
+                frame = _lastFrame;
                 return false;
             }
 
@@ -496,22 +509,40 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
                 out _));
             try
             {
-                if ((flags & AudclntBufferflagsSilent) != 0 || frameCount == 0)
+                if (frameCount == 0)
                 {
-                    sample = AudioMeterSample.Silence;
+                    frame = _lastFrame;
+                    return true;
+                }
+
+                if ((flags & AudclntBufferflagsSilent) != 0)
+                {
+                    _analyzer.PushSilence(checked((int)frameCount));
+                    frame = _analyzer.Analyze(NowSeconds(), 0, 0);
+                    _lastFrame = frame;
                     return true;
                 }
 
                 var byteCount = checked((int)frameCount * _format.BlockAlign);
                 var buffer = ArrayPool<byte>.Shared.Rent(byteCount);
+                var mono = ArrayPool<float>.Shared.Rent(checked((int)frameCount));
                 try
                 {
                     Marshal.Copy(data, buffer, 0, byteCount);
-                    sample = ComputeSample(buffer.AsSpan(0, byteCount), _format, checked((int)frameCount));
+                    var samples = mono.AsSpan(0, checked((int)frameCount));
+                    var meter = ComputeSample(
+                        buffer.AsSpan(0, byteCount),
+                        _format,
+                        checked((int)frameCount),
+                        samples);
+                    _analyzer.Push(samples);
+                    frame = _analyzer.Analyze(NowSeconds(), meter.Rms, meter.Peak);
+                    _lastFrame = frame;
                     return true;
                 }
                 finally
                 {
+                    ArrayPool<float>.Shared.Return(mono);
                     ArrayPool<byte>.Shared.Return(buffer);
                 }
             }
@@ -520,6 +551,9 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
                 ThrowIfFailed(captureClient.ReleaseBuffer(frameCount));
             }
         }
+
+        private double NowSeconds() =>
+            Stopwatch.GetElapsedTime(_startTimestamp).TotalSeconds;
 
         public void Dispose()
         {
@@ -543,8 +577,13 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
         {
             var tag = unchecked((ushort)Marshal.ReadInt16(format, 0));
             var channels = unchecked((ushort)Marshal.ReadInt16(format, 2));
+            var sampleRate = unchecked((int)Marshal.ReadInt32(format, 4));
             var blockAlign = unchecked((ushort)Marshal.ReadInt16(format, 12));
             var bits = unchecked((ushort)Marshal.ReadInt16(format, 14));
+            if (sampleRate < 8000)
+            {
+                throw new NotSupportedException("The WASAPI sample rate is invalid.");
+            }
             var validBits = bits;
             AudioSampleEncoding encoding;
             if (tag == 1)
@@ -575,7 +614,13 @@ internal sealed class WasapiAudioMeterAdapter : ILightingInputAdapter
                 throw new NotSupportedException($"Unsupported WASAPI format tag: 0x{tag:X4}.");
             }
 
-            var result = new AudioSampleFormat(encoding, channels, bits, validBits, blockAlign);
+            var result = new AudioSampleFormat(
+                encoding,
+                channels,
+                bits,
+                validBits,
+                blockAlign,
+                sampleRate);
             _ = ComputeSample([], result, 0);
             return result;
         }

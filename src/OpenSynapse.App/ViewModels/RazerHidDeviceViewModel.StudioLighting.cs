@@ -17,6 +17,7 @@ public sealed partial class RazerHidDeviceViewModel
         RazerHidLightingEffect.SoftwareRipple,
         RazerHidLightingEffect.SoftwareTidal,
         RazerHidLightingEffect.SoftwareRadiate,
+        RazerHidLightingEffect.SoftwareChromaFile,
     ];
 
     private IReadOnlyList<RazerRgb> RenderStudioSoftwareFrame(

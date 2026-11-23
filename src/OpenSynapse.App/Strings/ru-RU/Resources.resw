@@ -2213,6 +2213,9 @@
   <data name="RazerHidSaveButton.Content" xml:space="preserve">
     <value>Сохранить</value>
   </data>
+  <data name="RazerHidImportChromaButton.Content" xml:space="preserve">
+    <value>Импорт анимации...</value>
+  </data>
   <data name="RazerHidApplyLightingButton.Content" xml:space="preserve">
     <value>Применить эффект</value>
   </data>
@@ -2725,6 +2728,9 @@
   </data>
   <data name="RazerHidEffectSoftwareRadiate" xml:space="preserve">
     <value>излучать</value>
+  </data>
+  <data name="RazerHidEffectSoftwareChromaFile" xml:space="preserve">
+    <value>Анимация (.chroma)</value>
   </data>
   <data name="RazerHidLedStateLabel.Text" xml:space="preserve">
     <value>Зональное освещение</value>
@@ -9581,4 +9587,6 @@
   <data name="UpdateSourceGitee" xml:space="preserve"><value>Gitee (Китай)</value></data>
   <data name="UpdateSourceGitHub" xml:space="preserve"><value>GitHub</value></data>
   <data name="UpdateSourceDescription" xml:space="preserve"><value>Автоматический режим предпочитает Gitee и переключается на GitHub, если Gitee недоступен или отстаёт.</value></data>
+  <data name="LightingStudioEffectChromaFile" xml:space="preserve"><value>Файл анимации</value></data>
+  <data name="LightingStudioStatusChromaUnavailable" xml:space="preserve"><value>Не удалось загрузить анимацию {0}: {1}</value></data>
 </root>

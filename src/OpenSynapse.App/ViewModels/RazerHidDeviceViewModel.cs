@@ -101,6 +101,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
     private readonly RazerHidSoftwareLightingRuntime? _softwareLightingRuntime;
     private WasapiAudioMeterAdapter? _softwareAudioInput;
     private TimeSpan _softwareLightingElapsed;
+    private ChromaFileAnimation? _chromaAnimation;
+    private string? _chromaFileName;
     private TimeSpan _softwareLightingDelta = TimeSpan.FromMilliseconds(1000d / 60d);
     private double _softwareAudioLevel;
     private int _lightingPowerProfileIndex;

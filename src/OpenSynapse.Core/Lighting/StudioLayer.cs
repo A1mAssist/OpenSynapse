@@ -21,6 +21,8 @@ public enum StudioEffectKind
     Tidal,
     /// <summary>Engine-only Radiate (effect 17); appended to keep old numeric values stable.</summary>
     Radiate,
+    /// <summary>OpenSynapse extension: plays an imported .chroma keyboard animation.</summary>
+    ChromaFile,
 }
 
 public enum StudioBlendMode

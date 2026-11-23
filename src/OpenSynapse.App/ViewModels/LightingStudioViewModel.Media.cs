@@ -9,6 +9,8 @@ public sealed partial class LightingStudioViewModel
     private const int MediaLoadCacheLimit = 128;
     private readonly Dictionary<StudioEffectParams, MediaLoad> _mediaLoads =
         new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<StudioEffectParams, (string? Source, long Ticks)> _loadedChroma =
+        new(ReferenceEqualityComparer.Instance);
 
     private sealed class MediaLoad(string? source, CancellationTokenSource cancellation)
     {
@@ -24,6 +26,7 @@ public sealed partial class LightingStudioViewModel
     private Task EnsureMediaSamplerAsync()
     {
         if (_disposed != 0) return Task.CompletedTask;
+        EnsureChromaSamplers();
 
         var current = StudioMediaPreload
             .EnumerateGenerateParams(_project.SelectedProfile)
@@ -179,6 +182,76 @@ public sealed partial class LightingStudioViewModel
     {
         foreach (var pair in _mediaLoads.ToArray()) CancelMediaLoad(pair.Key, pair.Value);
         _loadedMedia.Clear();
+        _loadedChroma.Clear();
+    }
+
+    /// <summary>
+    /// Parses each .chroma layer once per source. Parsing is bounded to 5 MiB and
+    /// a flat frame loop, so it runs on the UI thread and marks the document dirty
+    /// for the preview once the sampler is attached.
+    /// </summary>
+    private void EnsureChromaSamplers()
+    {
+        if (_disposed != 0) return;
+        var current = StudioMediaPreload
+            .EnumerateChromaFileParams(_project.SelectedProfile)
+            .ToArray();
+        var live = new HashSet<StudioEffectParams>(current, ReferenceEqualityComparer.Instance);
+        foreach (var parameters in _loadedChroma.Keys.Where(key => !live.Contains(key)).ToArray())
+        {
+            _loadedChroma.Remove(parameters);
+        }
+
+        var changed = false;
+        foreach (var parameters in current)
+        {
+            var stamp = ChromaStamp(parameters.MediaSrc);
+            if (_loadedChroma.TryGetValue(parameters, out var loaded) &&
+                loaded == stamp)
+            {
+                continue;
+            }
+
+            _loadedChroma[parameters] = stamp;
+            parameters.ChromaSampler = TryLoadChromaSampler(parameters.MediaSrc, out var error);
+            changed = true;
+            if (error is not null) ReportChromaFallback(parameters.MediaSrc, error);
+        }
+
+        if (changed) DocumentChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private static (string? Source, long Ticks) ChromaStamp(string? path) =>
+        (path, string.IsNullOrWhiteSpace(path) || !File.Exists(path)
+            ? 0
+            : File.GetLastWriteTimeUtc(path).Ticks);
+
+    private static IStudioChromaSampler? TryLoadChromaSampler(string? path, out string? error)
+    {
+        error = null;
+        if (string.IsNullOrWhiteSpace(path)) return null;
+        try
+        {
+            return new StudioChromaFileSampler(ChromaFileAnimationParser.ParseFile(path));
+        }
+        catch (Exception exception) when (exception is IOException or InvalidDataException or
+            UnauthorizedAccessException or NotSupportedException)
+        {
+            error = exception.Message;
+            return null;
+        }
+    }
+
+    private void ReportChromaFallback(string? source, string detail)
+    {
+        if (string.IsNullOrWhiteSpace(source)) return;
+        var message = AppStrings.FormatText(
+            "LightingStudioStatusChromaUnavailable",
+            Path.GetFileName(source),
+            detail.Trim());
+        void Report() => StatusText = message;
+        if (_dispatcher is { } dispatcher) dispatcher.TryEnqueue(Report);
+        else Report();
     }
 
     private async Task EnsureInputAsync()

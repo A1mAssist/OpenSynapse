@@ -360,6 +360,7 @@ public enum RazerHidLightingEffect
     SoftwareRadiate,
     Fire,
     AudioMeter,
+    SoftwareChromaFile,
 }
 
 internal static class RazerHidLightingEffects
@@ -373,7 +374,8 @@ internal static class RazerHidLightingEffects
         RazerHidLightingEffect.SoftwareGradient or
         RazerHidLightingEffect.SoftwareRipple or
         RazerHidLightingEffect.SoftwareTidal or
-        RazerHidLightingEffect.SoftwareRadiate;
+        RazerHidLightingEffect.SoftwareRadiate or
+        RazerHidLightingEffect.SoftwareChromaFile;
 }
 
 public sealed record RazerHidLightingSettings(

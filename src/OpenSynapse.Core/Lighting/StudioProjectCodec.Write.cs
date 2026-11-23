@@ -145,11 +145,14 @@ public static partial class StudioProjectCodec
         }
         else
         {
-            // Engine-only radiate has no Studio name; export the official spectrum
-            // shape and restore radiate from the openSynapse extension.
-            var exportedEffect = item.Params.Effect == StudioEffectKind.Radiate
-                ? StudioEffectKind.Spectrum
-                : item.Params.Effect;
+            // Engine-only effects have no Studio name; export a safe official
+            // shape and restore the real one from the openSynapse extension.
+            var exportedEffect = item.Params.Effect switch
+            {
+                StudioEffectKind.Radiate => StudioEffectKind.Spectrum,
+                StudioEffectKind.ChromaFile => StudioEffectKind.Solid,
+                _ => item.Params.Effect,
+            };
             dto.Name = StudioEffectMap.ToName(exportedEffect);
             dto.Value = StudioEffectMap.ToUiValue(exportedEffect);
             dto.Params = ToParamsDto(item.Params, export: export);
@@ -161,9 +164,15 @@ public static partial class StudioProjectCodec
         var hasExtras = false;
         if (item.Opacity != 100) { extras.Opacity = item.Opacity; hasExtras = true; }
         if (item.Blend != StudioBlendMode.Normal) { extras.Blend = item.Blend.ToString(); hasExtras = true; }
-        if (item.Params.Effect is StudioEffectKind.Gradient or StudioEffectKind.Radiate)
+        if (item.Params.Effect is StudioEffectKind.Gradient or StudioEffectKind.Radiate or
+            StudioEffectKind.ChromaFile)
         {
-            extras.Effect = item.Params.Effect == StudioEffectKind.Gradient ? "gradient" : "radiate";
+            extras.Effect = item.Params.Effect switch
+            {
+                StudioEffectKind.Gradient => "gradient",
+                StudioEffectKind.Radiate => "radiate",
+                _ => "chroma-file",
+            };
             hasExtras = true;
         }
         if (hasExtras) dto.OpenSynapse = extras;

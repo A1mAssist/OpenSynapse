@@ -1966,6 +1966,7 @@
   <data name="BladeStarlightSingle" xml:space="preserve"><value>單色</value></data>
   <data name="BladeStarlightDual" xml:space="preserve"><value>雙色</value></data>
   <data name="RazerHidSaveButton.Content" xml:space="preserve"><value>儲存</value></data>
+  <data name="RazerHidImportChromaButton.Content" xml:space="preserve"><value>匯入動畫...</value></data>
   <data name="RazerHidApplyLightingButton.Content" xml:space="preserve"><value>套用燈效</value></data>
   <data name="RazerHidScrollExpander.Header" xml:space="preserve"><value>滾輪設定</value></data>
   <data name="RazerHidOnboardProfileTitle.Text" xml:space="preserve"><value>內建設定檔</value></data>
@@ -2137,6 +2138,7 @@
   <data name="RazerHidEffectSoftwareRipple" xml:space="preserve"><value>漣漪</value></data>
   <data name="RazerHidEffectSoftwareTidal" xml:space="preserve"><value>潮汐</value></data>
   <data name="RazerHidEffectSoftwareRadiate" xml:space="preserve"><value>輻射</value></data>
+  <data name="RazerHidEffectSoftwareChromaFile" xml:space="preserve"><value>動畫（.chroma）</value></data>
   <data name="RazerHidLedStateLabel.Text" xml:space="preserve"><value>區域燈光</value></data>
   <data name="RazerHidReactiveTriggerButton.Content" xml:space="preserve"><value>觸發響應燈效</value></data>
   <data name="RazerHidMatrixExpander.Header" xml:space="preserve"><value>矩陣自定義燈光</value></data>
@@ -4675,4 +4677,6 @@
   <data name="UpdateSourceGitee" xml:space="preserve"><value>Gitee（國內）</value><comment>Gitee（國內）</comment></data>
   <data name="UpdateSourceGitHub" xml:space="preserve"><value>GitHub</value><comment>GitHub</comment></data>
   <data name="UpdateSourceDescription" xml:space="preserve"><value>自動模式會優先使用 Gitee；若 Gitee 無法使用或版本落後，則回退 GitHub。</value><comment>自動模式會優先使用 Gitee；若 Gitee 無法使用或版本落後，則回退 GitHub。</comment></data>
+  <data name="LightingStudioEffectChromaFile" xml:space="preserve"><value>動畫檔案</value></data>
+  <data name="LightingStudioStatusChromaUnavailable" xml:space="preserve"><value>動畫 {0} 無法載入：{1}</value></data>
 </root>

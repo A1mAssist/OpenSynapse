@@ -104,6 +104,24 @@ public static class ChromaKeyboardFrameMapper
         return BladeLightingLayout.MapToDeviceFrame(ToExtendedLogicalFrame(matrix, ToRgb));
     }
 
+    /// <summary>Row-major colors for a keyboard that writes its own matrix.</summary>
+    internal static RazerRgb[] ToSourceFrame(uint[] pixels, int rows, int columns)
+    {
+        ArgumentNullException.ThrowIfNull(pixels);
+        if (rows < 1 || columns < 1 || pixels.Length != rows * columns)
+        {
+            throw new ArgumentException("The source frame size does not match its dimensions.");
+        }
+
+        var frame = new RazerRgb[pixels.Length];
+        for (var index = 0; index < pixels.Length; index++)
+        {
+            frame[index] = ToRgb(pixels[index]);
+        }
+
+        return frame;
+    }
+
     public static RazerRgb[] Custom2Key(
         IReadOnlyList<IReadOnlyList<uint>> colors,
         IReadOnlyList<IReadOnlyList<uint>> keys)

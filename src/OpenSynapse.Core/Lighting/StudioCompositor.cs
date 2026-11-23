@@ -7,7 +7,8 @@ public readonly record struct StudioLayerRender(
     double Opacity,
     StudioBlendMode Blend,
     bool Enabled = true,
-    Guid Id = default);
+    Guid Id = default,
+    StudioEffectState? State = null);
 
 /// <summary>
 /// Deterministic layer compositor. It has no device, clock, capture, or UI
@@ -69,7 +70,13 @@ public static class StudioCompositor
             }
 
             var time = double.IsFinite(seconds) ? Math.Max(0, seconds) : 0;
-            var effect = StudioEffectRenderer.Render(layer.Params, rows, columns, time, input);
+            var effect = StudioEffectRenderer.Render(
+                layer.Params,
+                rows,
+                columns,
+                time,
+                input,
+                layer.State);
             var alpha = Math.Clamp(layer.Opacity / 100, 0, 1);
             for (var pixel = 0; pixel < frame.Length; pixel++)
             {

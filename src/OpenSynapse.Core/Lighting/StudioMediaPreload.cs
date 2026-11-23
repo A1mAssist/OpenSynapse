@@ -20,4 +20,19 @@ public static class StudioMediaPreload
             }
         }
     }
+
+    public static IEnumerable<StudioEffectParams> EnumerateChromaFileParams(StudioProfile? profile)
+    {
+        if (profile is null) yield break;
+
+        foreach (var layer in profile.EnumerateLayers())
+        {
+            if (layer.IsGroup) continue;
+            if (layer.Params.Effect == StudioEffectKind.ChromaFile) yield return layer.Params;
+            foreach (var region in layer.Regions)
+            {
+                if (region.Params.Effect == StudioEffectKind.ChromaFile) yield return region.Params;
+            }
+        }
+    }
 }

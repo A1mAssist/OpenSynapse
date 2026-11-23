@@ -12,12 +12,41 @@ public sealed class ChromaFileAnimation
         string fileName,
         DateTime lastWriteTimeUtc,
         IReadOnlyList<ChromaFileFrame> frames,
+        IReadOnlyList<ChromaFileFrame> sourceFrames,
+        int sourceRows,
+        int sourceColumns,
         bool isUniform,
         RazerRgb uniformColor)
     {
+        if (sourceFrames.Count != frames.Count)
+        {
+            throw new ArgumentException(
+                "The source frame count must match the Blade frame count.",
+                nameof(sourceFrames));
+        }
+        if (sourceRows < 1 || sourceColumns < 1 ||
+            sourceFrames.Any(frame => frame.Colors.Count != sourceRows * sourceColumns))
+        {
+            throw new ArgumentException(
+                "The source frames do not match their keyboard dimensions.",
+                nameof(sourceFrames));
+        }
+        for (var index = 0; index < frames.Count; index++)
+        {
+            if (frames[index].Duration != sourceFrames[index].Duration)
+            {
+                throw new ArgumentException(
+                    "The source frame durations must match the Blade frame durations.",
+                    nameof(sourceFrames));
+            }
+        }
+
         FileName = fileName;
         LastWriteTimeUtc = lastWriteTimeUtc;
         Frames = frames;
+        SourceFrames = sourceFrames;
+        SourceRows = sourceRows;
+        SourceColumns = sourceColumns;
         IsUniform = isUniform;
         UniformColor = uniformColor;
         Duration = frames.Aggregate(TimeSpan.Zero, (total, frame) => total + frame.Duration);
@@ -25,7 +54,12 @@ public sealed class ChromaFileAnimation
 
     public string FileName { get; }
     public DateTime LastWriteTimeUtc { get; }
+    /// <summary>Frames in the Blade device layout, for the existing Blade playback path.</summary>
     public IReadOnlyList<ChromaFileFrame> Frames { get; }
+    /// <summary>Raw keyboard rows from the file, for keyboards that write their own matrix.</summary>
+    public IReadOnlyList<ChromaFileFrame> SourceFrames { get; }
+    public int SourceRows { get; }
+    public int SourceColumns { get; }
     public TimeSpan Duration { get; }
     public bool IsUniform { get; }
     public RazerRgb UniformColor { get; }
@@ -122,6 +156,7 @@ public static class ChromaFileAnimationParser
         }
 
         var frames = new List<ChromaFileFrame>((int)frameCount);
+        var sourceFrames = new List<ChromaFileFrame>((int)frameCount);
         var uniform = true;
         uint firstColor = 0;
         var hasColor = false;
@@ -175,16 +210,21 @@ public static class ChromaFileAnimationParser
             var mapped = device == KeyboardDevice
                 ? ChromaKeyboardFrameMapper.Custom(matrix)
                 : ChromaKeyboardFrameMapper.Custom2(matrix);
-            AddOrCoalesce(frames, roundedDuration, mapped);
+            var source = ChromaKeyboardFrameMapper.ToSourceFrame(pixels, rows, columns);
+            AddOrCoalesce(frames, sourceFrames, roundedDuration, mapped, source);
         }
 
         if (uniform)
         {
             var color = ChromaKeyboardFrameMapper.ToRgb(firstColor);
+            var source = Enumerable.Repeat(color, rows * columns).ToArray();
             return new ChromaFileAnimation(
                 fileName,
                 lastWriteTimeUtc,
                 [new ChromaFileFrame(TimeSpan.FromSeconds(1), ChromaKeyboardFrameMapper.Static(color))],
+                [new ChromaFileFrame(TimeSpan.FromSeconds(1), source)],
+                rows,
+                columns,
                 isUniform: true,
                 color);
         }
@@ -193,17 +233,23 @@ public static class ChromaFileAnimationParser
             fileName,
             lastWriteTimeUtc,
             frames,
+            sourceFrames,
+            rows,
+            columns,
             isUniform: false,
             default);
     }
 
     private static void AddOrCoalesce(
         List<ChromaFileFrame> frames,
+        List<ChromaFileFrame> sourceFrames,
         int durationMilliseconds,
-        RazerRgb[] mapped)
+        RazerRgb[] mapped,
+        RazerRgb[] source)
     {
         if (frames.Count > 0 &&
             frames[^1].Colors.SequenceEqual(mapped) &&
+            sourceFrames[^1].Colors.SequenceEqual(source) &&
             frames[^1].Duration.TotalMilliseconds + durationMilliseconds <=
                 MaximumFrameDurationMilliseconds)
         {
@@ -212,12 +258,20 @@ public static class ChromaFileAnimationParser
                 Duration = TimeSpan.FromMilliseconds(
                     frames[^1].Duration.TotalMilliseconds + durationMilliseconds),
             };
+            sourceFrames[^1] = sourceFrames[^1] with
+            {
+                Duration = TimeSpan.FromMilliseconds(
+                    sourceFrames[^1].Duration.TotalMilliseconds + durationMilliseconds),
+            };
             return;
         }
 
         frames.Add(new ChromaFileFrame(
             TimeSpan.FromMilliseconds(durationMilliseconds),
             mapped));
+        sourceFrames.Add(new ChromaFileFrame(
+            TimeSpan.FromMilliseconds(durationMilliseconds),
+            source));
     }
 
     private static InvalidDataException InvalidDocument() =>

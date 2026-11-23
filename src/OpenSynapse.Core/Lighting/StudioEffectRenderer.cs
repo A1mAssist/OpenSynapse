@@ -11,6 +11,9 @@ namespace OpenSynapse.Core.Lighting;
 /// Normalized screen region already cropped by the capture source; effect regions
 /// are mapped into it so a shared capture does not double-crop.
 /// </param>
+/// <param name="Audio">Latest spectrum/waveform/beat frame, null when the source has no audio.</param>
+/// <param name="Keys">Latest key heat snapshot for reactive effects.</param>
+/// <param name="System">Time and optional system load/foreground data.</param>
 public readonly record struct StudioEffectInput(
     double AudioLevel = 0,
     Func<int, int, StudioRgb>? ScreenSampler = null,
@@ -18,7 +21,10 @@ public readonly record struct StudioEffectInput(
     StudioScreenRect? ScreenCaptureRect = null,
     uint? StarlightSeed = null,
     int? FireSeed = null,
-    int? FireRate = null);
+    int? FireRate = null,
+    StudioAudioFrame? Audio = null,
+    StudioKeyState? Keys = null,
+    StudioSystemInput? System = null);
 
 /// <summary>
 /// Renders one studio effect into an arbitrary LED matrix. Every effect is a pure
@@ -39,7 +45,8 @@ public static partial class StudioEffectRenderer
         int rows,
         int columns,
         double seconds,
-        StudioEffectInput input = default)
+        StudioEffectInput input = default,
+        StudioEffectState? state = null)
     {
         ArgumentNullException.ThrowIfNull(parameters);
         if (rows <= 0) throw new ArgumentOutOfRangeException(nameof(rows));
@@ -50,6 +57,8 @@ public static partial class StudioEffectRenderer
         }
 
         var time = double.IsFinite(seconds) ? Math.Max(0, seconds) : 0;
+        // Stateful effects read this bag; existing ones are pure.
+        _ = state;
         return parameters.Effect switch
         {
             StudioEffectKind.Solid => RenderSolid(parameters, rows, columns),
@@ -64,7 +73,7 @@ public static partial class StudioEffectRenderer
                 time,
                 input.FireSeed ?? parameters.FireSeed,
                 input.FireRate ?? parameters.FireRate),
-            StudioEffectKind.Reactive => RenderReactive(parameters, rows, columns, time),
+            StudioEffectKind.Reactive => RenderReactive(parameters, rows, columns, time, input),
             StudioEffectKind.Ripple => RenderRipple(parameters, rows, columns, time),
             StudioEffectKind.Starlight => RenderStarlight(parameters, rows, columns, time, input.StarlightSeed),
             StudioEffectKind.Ambient => RenderAmbient(parameters, rows, columns, input),
@@ -73,12 +82,27 @@ public static partial class StudioEffectRenderer
             StudioEffectKind.ChromaGenerate => RenderChromaGenerate(parameters, rows, columns, time),
             StudioEffectKind.Tidal => RenderTidal(parameters, rows, columns, time),
             StudioEffectKind.Radiate => RenderRadiate(parameters, rows, columns),
+            StudioEffectKind.ChromaFile => RenderChromaFile(parameters, rows, columns, time),
             _ => RenderSolid(parameters, rows, columns),
         };
     }
 
     private static StudioRgb[] RenderSolid(StudioEffectParams parameters, int rows, int columns) =>
         Fill(rows, columns, parameters.Primary);
+
+    private static StudioRgb[] RenderChromaFile(
+        StudioEffectParams parameters,
+        int rows,
+        int columns,
+        double time)
+    {
+        if (parameters.ChromaSampler is not { } sampler)
+        {
+            return Fill(rows, columns, StudioRgb.Black);
+        }
+
+        return sampler.Sample(rows, columns, time * Math.Clamp(parameters.Speed, 0.1, 5));
+    }
 
     private static StudioRgb[] RenderBreathing(
         StudioEffectParams parameters,
@@ -234,6 +258,8 @@ public static partial class StudioEffectRenderer
             StudioEffectKind.Tidal when rows > 0 && columns > 0 =>
                 (3 * MeasureTidal(parameters, rows, columns).Width + 1) /
                 (double)NativeFramesPerSecond,
+            StudioEffectKind.ChromaFile when parameters.ChromaSampler is { } sampler =>
+                sampler.DurationSeconds / Math.Clamp(parameters.Speed, 0.1, 5),
             _ => Math.Max(1, parameters.DurationMs > 0
                 ? parameters.DurationMs
                 : StudioEffectDefaults.DurationMs(parameters.Effect)) / 1000d,
@@ -267,8 +293,14 @@ public static partial class StudioEffectRenderer
         StudioEffectParams parameters,
         int rows,
         int columns,
-        double time)
+        double time,
+        StudioEffectInput input)
     {
+        if (input.Keys is { HasPress: true } keys)
+        {
+            return RenderKeyRipple(parameters, rows, columns, keys);
+        }
+
         var period = parameters.DurationMs > 0 ? parameters.DurationMs / 1000d : DefaultReactiveSeconds;
         var frames = PaletteFrames(parameters, 1_500);
         if (parameters.RandomColor)
@@ -284,6 +316,44 @@ public static partial class StudioEffectRenderer
             ? GradientTable(parameters, frames)
             : GradientTable([], parameters.Primary, StudioRgb.Black, frames);
         return Fill(rows, columns, palette[PaletteCursor(time, frames)]);
+    }
+
+    private static StudioRgb[] RenderKeyRipple(
+        StudioEffectParams parameters,
+        int rows,
+        int columns,
+        StudioKeyState keys)
+    {
+        var frame = new StudioRgb[rows * columns];
+        var duration = parameters.DurationMs > 0 ? parameters.DurationMs / 1000d : DefaultReactiveSeconds;
+        var progress = Math.Clamp(keys.SecondsSincePress / duration, 0, 1);
+        if (progress >= 1)
+        {
+            return frame;
+        }
+
+        var radius = progress * Math.Max(rows, columns) * 1.1;
+        var thickness = Math.Max(0.75, parameters.Width / 100d);
+        var color = parameters.Resolve(progress);
+        for (var row = 0; row < rows; row++)
+        {
+            for (var column = 0; column < columns; column++)
+            {
+                var deltaRow = row - keys.LastRow;
+                var deltaColumn = column - keys.LastColumn;
+                var distance = Math.Sqrt(deltaRow * deltaRow + deltaColumn * deltaColumn);
+                var intensity = (1 - progress) *
+                    Math.Clamp(1 - Math.Abs(distance - radius) / thickness, 0, 1);
+                if (distance < 1)
+                {
+                    intensity = Math.Max(intensity, 1 - progress);
+                }
+
+                frame[row * columns + column] = Scale(color, intensity);
+            }
+        }
+
+        return frame;
     }
 
     private static StudioRgb[] RenderAmbient(StudioEffectParams parameters, int rows, int columns, StudioEffectInput input)
@@ -356,6 +426,11 @@ public static partial class StudioEffectRenderer
         int columns,
         StudioEffectInput input)
     {
+        if (input.Audio is { } audio)
+        {
+            return RenderAudioBands(parameters, rows, columns, audio);
+        }
+
         var frame = new StudioRgb[rows * columns];
         var level = double.IsFinite(input.AudioLevel) ? Math.Clamp(input.AudioLevel, 0, 1) : 0;
         var boost = Math.Clamp(parameters.Boost, 0.25, 4);
@@ -373,6 +448,43 @@ public static partial class StudioEffectRenderer
                 var brightness = 0.1 + 0.9 * Math.Pow(1 - edge, exponent);
                 var position = columns == 1 ? 0 : column / (double)(columns - 1);
                 frame[row * columns + column] = Scale(parameters.Resolve(position), brightness);
+            }
+        }
+
+        return frame;
+    }
+
+    private static StudioRgb[] RenderAudioBands(
+        StudioEffectParams parameters,
+        int rows,
+        int columns,
+        StudioAudioFrame audio)
+    {
+        var frame = new StudioRgb[rows * columns];
+        var boost = Math.Clamp(parameters.Boost, 0.25, 4);
+        if (parameters.AutoBoost)
+        {
+            boost = Math.Max(boost, 1 + audio.Rms * 3);
+        }
+
+        for (var column = 0; column < columns; column++)
+        {
+            var position = columns == 1 ? 0 : column / (double)(columns - 1);
+            var band = position * (StudioAudioFrame.BandCount - 1);
+            var lower = (int)Math.Floor(band);
+            var upper = Math.Min(StudioAudioFrame.BandCount - 1, lower + 1);
+            var weight = band - lower;
+            var value = audio.Bands[lower] * (1 - weight) + audio.Bands[upper] * weight;
+            var level = Math.Clamp(value * boost, 0, 1);
+            if (audio.Beat)
+            {
+                level = Math.Min(1, level + 0.2);
+            }
+
+            var color = parameters.Resolve(position);
+            for (var row = 0; row < rows; row++)
+            {
+                frame[row * columns + column] = Scale(color, level);
             }
         }
 

@@ -378,6 +378,14 @@ public static class StudioEffectCatalog
         Describe(StudioEffectKind.Radiate,
             Fields(ColorStops),
             Ranges()),
+
+        Describe(StudioEffectKind.ChromaFile,
+            Fields(MediaSrc, Speed, PlaybackStart, PlaybackEnd, Cycles),
+            Ranges(
+                (Speed, new StudioParameterRange(0.1, 5, 0.1, 1)),
+                (PlaybackStart, Choice(0)),
+                (PlaybackEnd, Choice(0)),
+                (Cycles, new StudioParameterRange(-1, 100, 1, -1)))),
     ];
 
     private static StudioEffectDescriptor Describe(

@@ -1584,6 +1584,7 @@
   <data name="BladeStarlightSingle" xml:space="preserve"><value>Couleur unique</value></data>
   <data name="BladeStarlightDual" xml:space="preserve"><value>Deux couleurs</value></data>
   <data name="RazerHidSaveButton.Content" xml:space="preserve"><value>Enregistrer</value></data>
+  <data name="RazerHidImportChromaButton.Content" xml:space="preserve"><value>Importer une animation...</value></data>
   <data name="RazerHidApplyLightingButton.Content" xml:space="preserve"><value>Appliquer l’effet</value></data>
   <data name="RazerHidScrollExpander.Header" xml:space="preserve"><value>Molette</value></data>
   <data name="RazerHidOnboardProfileTitle.Text" xml:space="preserve"><value>Profils embarqués</value></data>
@@ -1755,6 +1756,7 @@
   <data name="RazerHidEffectSoftwareRipple" xml:space="preserve"><value>Ondulation</value></data>
   <data name="RazerHidEffectSoftwareTidal" xml:space="preserve"><value>Marée</value></data>
   <data name="RazerHidEffectSoftwareRadiate" xml:space="preserve"><value>Rayonner</value></data>
+  <data name="RazerHidEffectSoftwareChromaFile" xml:space="preserve"><value>Animation (.chroma)</value></data>
   <data name="RazerHidLedStateLabel.Text" xml:space="preserve"><value>Éclairage de zone</value></data>
   <data name="RazerHidReactiveTriggerButton.Content" xml:space="preserve"><value>Déclencher l’effet réactif</value></data>
   <data name="RazerHidMatrixExpander.Header" xml:space="preserve"><value>Éclairage matriciel personnalisé</value></data>
@@ -4234,4 +4236,6 @@ Les modifications de macro non enregistrées seront perdues.</value></data>
   <data name="UpdateSourceGitee" xml:space="preserve"><value>Gitee (Chine)</value></data>
   <data name="UpdateSourceGitHub" xml:space="preserve"><value>GitHub</value></data>
   <data name="UpdateSourceDescription" xml:space="preserve"><value>Le mode automatique privilégie Gitee et revient à GitHub si Gitee est indisponible ou en retard.</value></data>
+  <data name="LightingStudioEffectChromaFile" xml:space="preserve"><value>Fichier d’animation</value></data>
+  <data name="LightingStudioStatusChromaUnavailable" xml:space="preserve"><value>Impossible de charger l’animation {0} : {1}</value></data>
 </root>

@@ -23,6 +23,7 @@ public sealed class StudioEffectLabelConverter : IValueConverter
         StudioEffectKind.Audio => AppStrings.Text("LightingStudioEffectAudio"),
         StudioEffectKind.Wheel => AppStrings.Text("LightingStudioEffectWheel"),
         StudioEffectKind.ChromaGenerate => AppStrings.Text("LightingStudioEffectGenerate"),
+        StudioEffectKind.ChromaFile => AppStrings.Text("LightingStudioEffectChromaFile"),
         StudioEffectKind.Tidal => AppStrings.Text("LightingStudioEffectTidal"),
         StudioEffectKind.Radiate => AppStrings.Text("LightingStudioEffectRadiate"),
         _ => value?.ToString() ?? string.Empty,

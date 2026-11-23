@@ -346,6 +346,17 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                 await _softwareAudioInput.StartAsync(cancellationToken);
             }
 
+            ChromaFileFrameSource? chromaSource = null;
+            if (effect == RazerHidLightingEffect.SoftwareChromaFile)
+            {
+                if (!TryLoadChromaAnimation())
+                {
+                    throw new InvalidOperationException(
+                        "Import a .chroma animation before applying this effect.");
+                }
+                chromaSource = new ChromaFileFrameSource(_chromaAnimation!, useSourceFrames: true);
+            }
+
             _softwareLightingElapsed = TimeSpan.Zero;
             _softwareLightingDelta = SoftwareLightingFrameInterval;
             _softwareAudioLevel = 0;
@@ -359,6 +370,10 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                     _softwareLightingDelta = Stopwatch.GetElapsedTime(previousTimestamp, timestamp);
                     previousTimestamp = timestamp;
                     _softwareLightingElapsed += _softwareLightingDelta;
+                    if (chromaSource is not null)
+                    {
+                        return chromaSource.RenderAsync(_softwareLightingElapsed, token);
+                    }
                     var frame = effect switch
                     {
                         RazerHidLightingEffect.SoftwareSpectrum =>
@@ -390,8 +405,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                     };
                     return ValueTask.FromResult<IReadOnlyList<RazerRgb>>(frame);
                 },
-                matrix.Rows,
-                matrix.Columns,
+                chromaSource?.Rows ?? matrix.Rows,
+                chromaSource?.Columns ?? matrix.Columns,
                 SoftwareLightingFrameInterval,
                 cancellationToken);
 
@@ -494,6 +509,12 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         if (TryGetColor(profile, "color", out var primary)) PrimaryColor = ToColor(primary);
         if (TryGetColor(profile, "color2", out var secondary)) SecondaryColor = ToColor(secondary);
         if (TryGetColor(profile, "color3", out var tertiary)) TertiaryColor = ToColor(tertiary);
+        if (profile.Parameters.TryGetValue("chromaAnimation", out var chromaFileName))
+        {
+            _chromaFileName = string.IsNullOrWhiteSpace(chromaFileName) ? null : chromaFileName;
+            _chromaAnimation = null;
+            TryLoadChromaAnimation();
+        }
         if (profile.Parameters.TryGetValue("enabled", out var rawEnabled) &&
             bool.TryParse(rawEnabled, out var enabled)) LedEnabled = enabled;
     }
@@ -601,6 +622,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             ["color2"] = FormatColor(ToRazerHidColor(SecondaryColor)),
             ["color3"] = FormatColor(ToRazerHidColor(TertiaryColor)),
             ["enabled"] = LedEnabled.ToString(CultureInfo.InvariantCulture),
+            ["chromaAnimation"] = _chromaFileName ?? string.Empty,
         };
         return new LightingProfile { Effect = SelectedLightingEffect.ToString(), Parameters = parameters };
     }

@@ -13,6 +13,7 @@ internal sealed class StudioInputSampler : ILightingInputAdapter
     private const int FramePollMilliseconds = 16;
     private readonly WindowsDisplayCaptureAdapter _display;
     private readonly WasapiAudioMeterAdapter _audio;
+    private readonly Func<StudioSystemInput> _system;
     private readonly SemaphoreSlim _lifecycle = new(1, 1);
     private readonly object _audioGate = new();
     private CancellationTokenSource? _stop;
@@ -30,10 +31,12 @@ internal sealed class StudioInputSampler : ILightingInputAdapter
 
     internal StudioInputSampler(
         WindowsDisplayCaptureAdapter display,
-        WasapiAudioMeterAdapter audio)
+        WasapiAudioMeterAdapter audio,
+        Func<StudioSystemInput>? system = null)
     {
         _display = display ?? throw new ArgumentNullException(nameof(display));
         _audio = audio ?? throw new ArgumentNullException(nameof(audio));
+        _system = system ?? (static () => new StudioSystemInput(DateTimeOffset.Now));
     }
 
     /// <summary>The last level produced by <see cref="Sample"/>; silent input is zero.</summary>
@@ -128,12 +131,14 @@ internal sealed class StudioInputSampler : ILightingInputAdapter
     public StudioEffectInput Sample(int rows, int columns)
     {
         var pixels = CreateSnapshot(Volatile.Read(ref _latestFrame), rows, columns);
-        var level = ReadAudioLevel();
+        var (level, audio) = ReadAudio();
         return new StudioEffectInput(
             level,
             (column, row) => pixels[row * columns + column],
             (u, v) => SampleUv(pixels, rows, columns, u, v),
-            _display.CaptureRegion);
+            _display.CaptureRegion,
+            Audio: audio,
+            System: _system());
     }
 
     internal void SetCaptureRegion(StudioScreenRect region) => _display.SetCaptureRegion(region);
@@ -275,23 +280,23 @@ internal sealed class StudioInputSampler : ILightingInputAdapter
         }
     }
 
-    private double ReadAudioLevel()
+    private (double Level, StudioAudioFrame Frame) ReadAudio()
     {
         lock (_audioGate)
         {
             if (!Volatile.Read(ref _started))
             {
-                return 0;
+                return (0, StudioAudioFrame.Silence);
             }
 
-            double current;
+            StudioAudioFrame frame;
             try
             {
-                current = _audio.ReadLevel();
+                frame = _audio.ReadSample();
             }
             catch (InvalidOperationException)
             {
-                return 0;
+                return (0, StudioAudioFrame.Silence);
             }
 
             var now = Stopwatch.GetTimestamp();
@@ -299,9 +304,9 @@ internal sealed class StudioInputSampler : ILightingInputAdapter
                 ? TimeSpan.Zero
                 : Stopwatch.GetElapsedTime(_lastAudioTimestamp, now);
             _lastAudioTimestamp = now;
-            var level = SmoothLevel(_audioLevel, current, elapsed);
+            var level = SmoothLevel(_audioLevel, frame.Peak, elapsed);
             Volatile.Write(ref _audioLevel, level);
-            return level;
+            return (level, frame);
         }
     }
 

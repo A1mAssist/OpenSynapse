@@ -139,6 +139,12 @@ public sealed class StudioEffectParams
     /// </summary>
     public IStudioMediaSampler? MediaSampler { get; set; }
 
+    /// <summary>
+    /// Runtime-only .chroma animation for the file effect. It lives on the
+    /// parameters like <see cref="MediaSampler"/> so the codec never sees it.
+    /// </summary>
+    public IStudioChromaSampler? ChromaSampler { get; set; }
+
     /// <summary>Generate fields parsed from <see cref="CurrentConfigJson"/>.</summary>
     public StudioGenerateConfig GenerateConfig => StudioGenerateConfig.Parse(CurrentConfigJson);
 
@@ -243,6 +249,7 @@ public sealed class StudioEffectParams
             EffectConfigListJson = EffectConfigListJson,
             CurrentConfigId = CurrentConfigId,
             MediaSampler = MediaSampler,
+            ChromaSampler = ChromaSampler,
         };
         clone.ColorStops.AddRange(ColorStops);
         return clone;
