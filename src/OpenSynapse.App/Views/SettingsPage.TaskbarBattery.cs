@@ -53,12 +53,14 @@ public sealed partial class SettingsPage
     {
         if (Host?.BehaviorSettings is null) return;
         var settings = Host.BehaviorSettings;
-        var available = ViewModel.Tray.ConnectedBatteries
-            .Where(item => item.Percent is not null)
+        var connected = ViewModel.Tray.ConnectedBatteries
             .GroupBy(item => item.Key, StringComparer.OrdinalIgnoreCase)
             .Select(group => group.First())
             .ToDictionary(item => item.Key, StringComparer.OrdinalIgnoreCase);
-        ObserveTaskbarBatteryRows(available.Values);
+        ObserveTaskbarBatteryRows(connected.Values);
+        var available = connected.Values
+            .Where(item => item.Percent is not null)
+            .ToDictionary(item => item.Key, StringComparer.OrdinalIgnoreCase);
         var saved = settings.TaskbarBatteryDisplay;
         var savedKeys = saved.Select(item => item.Key)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
