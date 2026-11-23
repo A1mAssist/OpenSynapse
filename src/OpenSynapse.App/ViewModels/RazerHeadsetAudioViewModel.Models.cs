@@ -2,7 +2,7 @@ using System.ComponentModel;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed class RazerHeadsetEqBandViewModel : INotifyPropertyChanged
+public sealed class RazerHeadsetEqBandViewModel : IEqualizerBand
 {
     private double _level;
 
@@ -46,7 +46,7 @@ public sealed class RazerHeadsetEqBandViewModel : INotifyPropertyChanged
     }
 }
 
-public sealed class RazerHeadsetThxBandViewModel : INotifyPropertyChanged
+public sealed class RazerHeadsetThxBandViewModel : IEqualizerBand
 {
     private double _level;
 
@@ -58,6 +58,10 @@ public sealed class RazerHeadsetThxBandViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
     public string Label { get; }
     public string LevelText => $"{Level:+0.0;-0.0;0.0} dB";
+    public double Minimum => -12;
+    public double Maximum => 12;
+    public double Step => 0.5;
+    public bool Decibels => true;
 
     public double Level
     {

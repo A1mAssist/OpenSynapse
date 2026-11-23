@@ -10,7 +10,7 @@ public sealed record ThxEndpointOption(ThxAudioEndpoint Endpoint, string Label);
 
 public sealed record ThxPresetOption(string Id, string Label);
 
-public sealed class ThxBandViewModel : INotifyPropertyChanged
+public sealed class ThxBandViewModel : IEqualizerBand
 {
     private double _gainDb;
 
@@ -40,6 +40,13 @@ public sealed class ThxBandViewModel : INotifyPropertyChanged
         }
     }
     public string GainText => $"{_gainDb:+0.0;-0.0;0.0} dB";
+    string IEqualizerBand.Label => FrequencyText;
+    string IEqualizerBand.LevelText => GainText;
+    double IEqualizerBand.Level { get => GainDb; set => GainDb = value; }
+    double IEqualizerBand.Minimum => -12;
+    double IEqualizerBand.Maximum => 12;
+    double IEqualizerBand.Step => 0.5;
+    bool IEqualizerBand.Decibels => true;
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

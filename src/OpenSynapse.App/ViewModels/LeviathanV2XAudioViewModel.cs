@@ -9,7 +9,7 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
 
-public sealed class LeviathanV2XEqBandViewModel : INotifyPropertyChanged
+public sealed class LeviathanV2XEqBandViewModel : IEqualizerBand
 {
     private double _level;
 
@@ -21,6 +21,10 @@ public sealed class LeviathanV2XEqBandViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
     public string Label { get; }
     public string LevelText => $"{Math.Round(Level)}";
+    public double Minimum => 0;
+    public double Maximum => 100;
+    public double Step => 1;
+    public bool Decibels => false;
 
     public double Level
     {
