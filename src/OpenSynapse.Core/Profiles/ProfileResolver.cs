@@ -315,6 +315,7 @@ public static partial class ProfileResolver
             global?.ThxCaptureVoiceGateLevel),
         EqPreset = power?.EqPreset ?? device?.EqPreset ?? global?.EqPreset,
         EqBands = CloneMap(power?.EqBands ?? device?.EqBands ?? global?.EqBands),
+        EqBandsTenths = CloneMap(FirstEqBandSource(power, device, global)?.EqBandsTenths),
         MicEqPreset = power?.MicEqPreset ?? device?.MicEqPreset ?? global?.MicEqPreset,
         MicEqBands = CloneMap(power?.MicEqBands ?? device?.MicEqBands ?? global?.MicEqBands),
         Bass = First(power?.Bass, device?.Bass, global?.Bass),
@@ -390,6 +391,7 @@ public static partial class ProfileResolver
             device?.ParametricEqFilterType,
             global?.ParametricEqFilterType),
         HapticsStrength = First(power?.HapticsStrength, device?.HapticsStrength, global?.HapticsStrength),
+        HapticsEnabled = First(power?.HapticsEnabled, device?.HapticsEnabled, global?.HapticsEnabled),
         AutoPause = First(power?.AutoPause, device?.AutoPause, global?.AutoPause),
         AutoShutdownMinutes = First(
             power?.AutoShutdownMinutes,
@@ -405,6 +407,11 @@ public static partial class ProfileResolver
         ChromaEffect = power?.ChromaEffect ?? device?.ChromaEffect ?? global?.ChromaEffect,
         ChromaParameters = CloneMap(power?.ChromaParameters ?? device?.ChromaParameters ?? global?.ChromaParameters),
     };
+
+    private static HeadsetProfileSettings? FirstEqBandSource(
+        HeadsetProfileSettings? power, HeadsetProfileSettings? device, HeadsetProfileSettings? global) =>
+        power?.EqBandsTenths is not null || power?.EqBands is not null ? power :
+        device?.EqBandsTenths is not null || device?.EqBands is not null ? device : global;
 
     private static CoolingPadProfileSettings ResolveCoolingPad(
         CoolingPadProfileSettings? global,

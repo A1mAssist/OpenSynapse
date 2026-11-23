@@ -50,6 +50,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         MicReverb,
         Dock,
         MicEqBands,
+        AutoSleep,
+        ExternalPower,
     }
 
     private static readonly HeadsetCapability[] Feature91Capabilities =
@@ -100,6 +102,14 @@ public sealed partial class RazerHeadsetAudioViewModel
     [
         HeadsetCapability.Firmware,
         HeadsetCapability.Serial,
+    ];
+
+    private static readonly HeadsetCapability[] NxpCapabilities =
+    [
+        HeadsetCapability.Firmware, HeadsetCapability.Serial, HeadsetCapability.Edition,
+        HeadsetCapability.Link, HeadsetCapability.Battery, HeadsetCapability.Charging,
+        HeadsetCapability.MicMonitoring, HeadsetCapability.AutoPause, HeadsetCapability.Haptics,
+        HeadsetCapability.Dock,
     ];
 
     // Seiren V2 Pro/X expose mic gain, mute, HPF and limiter over the eight-byte
@@ -204,6 +214,17 @@ public sealed partial class RazerHeadsetAudioViewModel
             {
                 capabilities.Add(HeadsetCapability.NoiseSuppression);
             }
+            if (IsCarol)
+            {
+                capabilities.Add(HeadsetCapability.Link);
+                capabilities.Add(HeadsetCapability.AutoSleep);
+                if (_connection.ProductId == 0x05A2) capabilities.Add(HeadsetCapability.ExternalPower);
+                if (RazerCarolAudioProtocol.HasBattery(_connection.ProductId))
+                {
+                    capabilities.Add(HeadsetCapability.Battery);
+                    capabilities.Add(HeadsetCapability.Charging);
+                }
+            }
 
             return capabilities.ToArray();
         }
@@ -214,8 +235,10 @@ public sealed partial class RazerHeadsetAudioViewModel
 
     public RazerHeadsetProbeState ProbeState => _probeState;
     public bool HasCapabilityProbe => _probeState is RazerHeadsetProbeState.Ready or RazerHeadsetProbeState.Partial;
-    public int ProtocolTotalCount => SupportedCapabilities.Length;
-    public int ProtocolAvailableCount => SupportedCapabilities.Count(IsCapabilityAvailable);
+    public int ProtocolTotalCount => IsRipsaw ? 8 : SupportedCapabilities.Length;
+    public int ProtocolAvailableCount => IsRipsaw
+        ? Ripsaw?.HasState == true ? 8 : 0
+        : SupportedCapabilities.Count(IsCapabilityAvailable);
 
     public string CapabilityText => _probeState switch
     {
@@ -233,6 +256,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         IsProtocol40 ? Protocol40ProductCapabilities : _connection.Transport switch
         {
             RazerHeadsetAudioTransport.AvneraFeature65 => AvneraCapabilities,
+            RazerHeadsetAudioTransport.NxpSerial => NxpCapabilities,
             RazerHeadsetAudioTransport.KrakenBase37 => KrakenBaseCapabilities,
             RazerHeadsetAudioTransport.CamyT1 => CamyT1Capabilities,
             RazerHeadsetAudioTransport.Protocol25Feature65 => Protocol25Capabilities,
@@ -240,7 +264,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             RazerHeadsetAudioTransport.Valkyrie64 => ValkyrieProductCapabilities,
             RazerHeadsetAudioTransport.Billie64 => ValkyrieCapabilities,
             RazerHeadsetAudioTransport.ValkyrieT3Feature64 => ValkyrieT3ProductCapabilities,
-            RazerHeadsetAudioTransport.Feature91 => Feature91Capabilities,
+            RazerHeadsetAudioTransport.Feature91 => Feature91ProductCapabilities,
             _ => [],
         };
 
@@ -315,6 +339,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         HeadsetCapability.MicReverb => _hasMicReverb,
         HeadsetCapability.Dock => _hasDock,
         HeadsetCapability.MicEqBands => _hasMicEqBands,
+        HeadsetCapability.AutoSleep => _hasCarolPower,
+        HeadsetCapability.ExternalPower => _carolExternalPowerStatus is not null,
         _ => false,
     };
 
@@ -352,6 +378,9 @@ public sealed partial class RazerHeadsetAudioViewModel
         _hasMicReverb = false;
         _hasDock = false;
         _hasMicEqBands = false;
+        _hasCarolPower = false;
+        ApplyCarolExternalPower(null);
+        OnPropertyChanged(nameof(MakoXPowerVisibility));
     }
 
     private void SetProbeState(RazerHeadsetProbeState state)

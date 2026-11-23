@@ -16,7 +16,7 @@ public static class RazerAwBleDiscovery
         var selector = GattDeviceService.GetDeviceSelectorFromUuid(RazerAwBleProtocol.ServiceUuid);
         var found = await DeviceInformation.FindAllAsync(selector).AsTask(cancellationToken).ConfigureAwait(false);
         return found
-            .Select(item => new RazerBleDevice(item.Id, item.Name))
+            .Select(item => new RazerBleDevice(item.Id, item.Name, RazerBleDevice.ParseProductId(item.Id)))
             .ToArray();
     }
 }
@@ -52,20 +52,28 @@ public sealed class WindowsRazerAwBleTransport : IRazerBleTransport
         var service = await GattDeviceService.FromIdAsync(deviceId).AsTask(cancellationToken).ConfigureAwait(false)
             ?? throw new InvalidOperationException("The Razer audio BLE service could not be opened.");
 
-        var write = await FindCharacteristicAsync(
-            service, RazerAwBleProtocol.WriteCharacteristicUuid, cancellationToken).ConfigureAwait(false);
-        var notify = await FindCharacteristicAsync(
-            service, RazerAwBleProtocol.NotifyCharacteristicUuid, cancellationToken).ConfigureAwait(false);
-
-        var status = await notify.WriteClientCharacteristicConfigurationDescriptorAsync(
-            GattClientCharacteristicConfigurationDescriptorValue.Notify).AsTask(cancellationToken).ConfigureAwait(false);
-        if (status != GattCommunicationStatus.Success)
+        try
         {
-            throw new InvalidOperationException(
-                $"Subscribing to the Razer audio BLE notify characteristic failed: {status}.");
-        }
+            var write = await FindCharacteristicAsync(
+                service, RazerAwBleProtocol.WriteCharacteristicUuid, cancellationToken).ConfigureAwait(false);
+            var notify = await FindCharacteristicAsync(
+                service, RazerAwBleProtocol.NotifyCharacteristicUuid, cancellationToken).ConfigureAwait(false);
 
-        return new WindowsRazerAwBleTransport(service, write, notify);
+            var status = await notify.WriteClientCharacteristicConfigurationDescriptorAsync(
+                GattClientCharacteristicConfigurationDescriptorValue.Notify).AsTask(cancellationToken).ConfigureAwait(false);
+            if (status != GattCommunicationStatus.Success)
+            {
+                throw new InvalidOperationException(
+                    $"Subscribing to the Razer audio BLE notify characteristic failed: {status}.");
+            }
+
+            return new WindowsRazerAwBleTransport(service, write, notify);
+        }
+        catch
+        {
+            service.Dispose();
+            throw;
+        }
     }
 
     public async Task<byte[]?> ExchangeAsync(
@@ -132,16 +140,16 @@ public sealed class WindowsRazerAwBleTransport : IRazerBleTransport
         _exchange.Dispose();
     }
 
-    private static bool TryTakeFrame(List<byte> buffer, out byte[] reply)
+    internal static bool TryTakeFrame(List<byte> buffer, out byte[] reply)
     {
         reply = [];
-        if (buffer.Count < RazerAwBleProtocol.ResponseHeaderLength + 1)
+        if (buffer.Count < RazerAwBleProtocol.ResponseHeaderLength)
         {
             return false;
         }
 
         // A garbage byte before a valid header would stall the loop; drop it.
-        if (buffer[1] != RazerAwBleProtocol.ResponseTransferType)
+        if (buffer[1] != 0 && !RazerAwBleProtocol.IsResponseTransferType(buffer[1]))
         {
             buffer.RemoveAt(0);
             return true;
@@ -153,7 +161,11 @@ public sealed class WindowsRazerAwBleTransport : IRazerBleTransport
             return false;
         }
 
-        reply = buffer.Take(length).ToArray();
+        // Skip a whole request echo; its payload length can look like a response type.
+        if (RazerAwBleProtocol.IsResponseTransferType(buffer[1]))
+        {
+            reply = buffer.Take(length).ToArray();
+        }
         buffer.RemoveRange(0, length);
         return true;
     }

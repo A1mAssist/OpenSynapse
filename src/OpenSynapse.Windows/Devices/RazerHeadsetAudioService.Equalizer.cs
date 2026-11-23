@@ -18,6 +18,11 @@ public sealed partial class RazerHeadsetAudioService
         if (preset == 0xFF) throw new ArgumentOutOfRangeException(nameof(preset));
         var requested = bands.ToArray();
         if (requested.Length is not (8 or 10)) throw new ArgumentException("Invalid EQ band count.", nameof(bands));
+        if (HasFeature91ProductCapabilities)
+        {
+            RazerAudioFeatureProtocol.ValidatePreset(_productId, preset);
+            RazerAudioFeatureProtocol.ValidateEqBands(_productId, requested.Length);
+        }
         return ExecuteEqAsync(async token =>
         {
             if (_protocol25Transport is not null)
@@ -51,9 +56,11 @@ public sealed partial class RazerHeadsetAudioService
 
     private async Task ExecuteEqAsync(Func<CancellationToken, Task> operation, CancellationToken cancellationToken)
     {
-        await _eqGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        var gate = _protocol25Transport is not null && RazerCarolAudioProtocol.IsSupported(_productId)
+            ? CarolWriteGate : _eqGate;
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try { await operation(cancellationToken).ConfigureAwait(false); }
-        finally { _eqGate.Release(); }
+        finally { gate.Release(); }
     }
 
     private async Task<string?> RestoreEqFieldAsync(Func<Task> restore, string field)
@@ -68,6 +75,7 @@ public sealed partial class RazerHeadsetAudioService
 
     private Task SetEqPresetCoreAsync(byte preset, CancellationToken cancellationToken = default)
     {
+        if (HasFeature91ProductCapabilities) RazerAudioFeatureProtocol.ValidatePreset(_productId, preset);
         if (preset == 0xFF)
         {
             throw new ArgumentOutOfRangeException(nameof(preset));
@@ -95,6 +103,7 @@ public sealed partial class RazerHeadsetAudioService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(bands);
+        if (HasFeature91ProductCapabilities) RazerAudioFeatureProtocol.ValidateEqBands(_productId, bands.Count);
         var tenBand = bands.Count == RazerHeadsetAudioProtocol.TenBandCount;
         if (!tenBand && bands.Count != RazerHeadsetAudioProtocol.EightBandCount)
         {

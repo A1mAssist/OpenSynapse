@@ -128,7 +128,7 @@ public sealed partial class MainWindow
         }
 
         if (headset.Transport == RazerHeadsetAudioTransport.KrakenBase37 &&
-            _viewModel.RazerHid.FindKrakenConnection(headset.ProductId) is { IsReady: true })
+            _viewModel.RazerHid.FindKrakenConnection(headset) is { IsReady: true })
         {
             options.Add(new StudioDeviceOption(
                 headset.Name,
@@ -145,10 +145,9 @@ public sealed partial class MainWindow
         new(
             () => _viewModel.Accessories.SelectedHeadsetAudioConnection,
             (rows, columns) => sampler.Sample(rows, columns),
-            () => _viewModel.Accessories.SelectedHeadsetAudio?.StopSoftwareEffectForExternalAsync() ??
-                Task.CompletedTask,
             krakenLighting: _viewModel.RazerHid.SpecialLightingService,
-            krakenConnection: _viewModel.RazerHid.FindKrakenConnection);
+            krakenConnection: _viewModel.RazerHid.FindKrakenConnection,
+            beforeConnectionTakeOver: _viewModel.Accessories.StopHeadsetSoftwareEffectAsync);
 
     private ProfilesPage CreateProfilesPage()
     {

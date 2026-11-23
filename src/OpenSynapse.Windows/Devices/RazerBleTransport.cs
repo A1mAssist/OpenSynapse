@@ -10,6 +10,7 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed record RazerBleDevice(string Id, string Name, ushort ProductId = 0)
 {
+    public string? ContainerId { get; init; }
     /// <summary>The device path carries the wired/BLE product id as <c>_PID&amp;00B5_REV&amp;</c>.</summary>
     public static ushort ParseProductId(string id)
     {
@@ -46,9 +47,17 @@ public static class RazerBleDiscovery
     {
         var selector = GattDeviceService.GetDeviceSelectorFromUuid(RazerBleProtocol30.ServiceUuid);
         var found = await DeviceInformation.FindAllAsync(selector).AsTask(cancellationToken).ConfigureAwait(false);
-        return found
+        var mice = found
             .Select(item => new RazerBleDevice(item.Id, item.Name, RazerBleDevice.ParseProductId(item.Id)))
             .ToArray();
+        var pods = await DeviceInformation.FindAllAsync(
+            GattDeviceService.GetDeviceSelectorFromUuid(RazerLaylaProtocol.ServiceUuid),
+            new[] { "System.Devices.ContainerId" }).AsTask(cancellationToken).ConfigureAwait(false);
+        return mice.Concat(pods.Where(item => RazerBleDevice.ParseProductId(item.Id) == RazerLaylaProtocol.ProductId)
+            .Select(item => new RazerBleDevice(item.Id, item.Name, RazerLaylaProtocol.ProductId)
+            {
+                ContainerId = item.Properties.TryGetValue("System.Devices.ContainerId", out var id) ? id?.ToString() : null,
+            })).ToArray();
     }
 }
 
@@ -61,17 +70,20 @@ public sealed class WindowsRazerBleTransport : IRazerBleTransport
     private readonly GattCharacteristic _write;
     private readonly GattCharacteristic _notify;
     private readonly GattWriteOption _writeOption;
+    private readonly bool _layla;
     private readonly SemaphoreSlim _exchange = new(1, 1);
     private readonly Channel<byte[]> _incoming = Channel.CreateUnbounded<byte[]>();
 
     private WindowsRazerBleTransport(
         GattDeviceService service,
         GattCharacteristic write,
-        GattCharacteristic notify)
+        GattCharacteristic notify,
+        bool layla)
     {
         _service = service;
         _write = write;
         _notify = notify;
+        _layla = layla;
         // Razer's BLEProtocol30 uses writeWithoutResponse whenever the characteristic
         // supports it, and a write request otherwise.
         _writeOption = (write.CharacteristicProperties & GattCharacteristicProperties.WriteWithoutResponse) != 0
@@ -82,27 +94,34 @@ public sealed class WindowsRazerBleTransport : IRazerBleTransport
 
     public static async Task<WindowsRazerBleTransport> ConnectAsync(
         string deviceId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool layla = false)
     {
         var service = await GattDeviceService.FromIdAsync(deviceId).AsTask(cancellationToken).ConfigureAwait(false)
             ?? throw new InvalidOperationException("The Razer BLE service could not be opened.");
-        // The middleware keeps the peripheral connected for the whole session; without
-        // this Windows drops idle BLE mice between the page reads.
-        service.Session.MaintainConnection = true;
-
-        var write = await FindCharacteristicAsync(
-            service, RazerBleProtocol30.WriteCharacteristicUuid, cancellationToken).ConfigureAwait(false);
-        var notify = await FindCharacteristicAsync(
-            service, RazerBleProtocol30.NotifyCharacteristicUuid, cancellationToken).ConfigureAwait(false);
-
-        var status = await notify.WriteClientCharacteristicConfigurationDescriptorAsync(
-            GattClientCharacteristicConfigurationDescriptorValue.Notify).AsTask(cancellationToken).ConfigureAwait(false);
-        if (status != GattCommunicationStatus.Success)
+        try
         {
-            throw new InvalidOperationException($"Subscribing to the Razer BLE notify characteristic failed: {status}.");
-        }
+            // Keep the peripheral connected for the whole session.
+            service.Session.MaintainConnection = true;
 
-        return new WindowsRazerBleTransport(service, write, notify);
+            var write = await FindCharacteristicAsync(
+                service, layla ? RazerLaylaProtocol.WriteUuid : RazerBleProtocol30.WriteCharacteristicUuid, cancellationToken).ConfigureAwait(false);
+            var notify = await FindCharacteristicAsync(
+                service, layla ? RazerLaylaProtocol.NotifyUuid : RazerBleProtocol30.NotifyCharacteristicUuid, cancellationToken).ConfigureAwait(false);
+
+            var status = await notify.WriteClientCharacteristicConfigurationDescriptorAsync(
+                GattClientCharacteristicConfigurationDescriptorValue.Notify).AsTask(cancellationToken).ConfigureAwait(false);
+            if (status != GattCommunicationStatus.Success)
+                throw new InvalidOperationException($"Subscribing to the Razer BLE notify characteristic failed: {status}.");
+
+            cancellationToken.ThrowIfCancellationRequested();
+            return new WindowsRazerBleTransport(service, write, notify, layla);
+        }
+        catch
+        {
+            service.Dispose();
+            throw;
+        }
     }
 
     public async Task<byte[]?> ExchangeAsync(
@@ -122,18 +141,24 @@ public sealed class WindowsRazerBleTransport : IRazerBleTransport
 
             using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeoutSource.CancelAfter(timeout);
-            var response = new RazerBleResponseBuffer(frame.ToArray());
+            var response = _layla ? null : new RazerBleResponseBuffer(frame.ToArray());
             try
             {
                 while (true)
                 {
                     var fragment = await _incoming.Reader.ReadAsync(timeoutSource.Token).ConfigureAwait(false);
-                    if (response.Append(fragment) is { } complete) return complete;
+                    if (_layla)
+                    {
+                        // Layla notifications are complete frames; ignore other transactions.
+                        if (fragment.Length == 0 || fragment[0] != frame.Span[0]) continue;
+                        return fragment;
+                    }
+                    if (response!.Append(fragment) is { } complete) return complete;
                 }
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
-                return response.Finish();
+                return response?.Finish();
             }
         }
         finally
@@ -158,6 +183,11 @@ public sealed class WindowsRazerBleTransport : IRazerBleTransport
 
     private async Task WriteFrameAsync(ReadOnlyMemory<byte> frame, CancellationToken cancellationToken)
     {
+        if (_layla)
+        {
+            await WriteAsync(frame, cancellationToken).ConfigureAwait(false);
+            return;
+        }
         // Razer writes the 8-byte header as its own GATT write and sends the payload
         // in 20-byte chunks; one long write exceeds the default BLE MTU.
         var headerLength = Math.Min(RazerBleProtocol30.RequestHeaderLength, frame.Length);

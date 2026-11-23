@@ -57,7 +57,10 @@ public sealed partial class MainViewModel
             return;
         }
 
+        BeginStopLayla();
+        Macros.MacrosChanged -= OnLaylaMacrosChanged;
         await FullscreenPolling.StopAndRestoreAsync().ConfigureAwait(true);
+        await DisposeLaylaAsync().ConfigureAwait(true);
         _deviceImages?.Dispose();
         // Dispose runs on the UI thread and still touches bound collections and
         // selections below; keep every continuation there.

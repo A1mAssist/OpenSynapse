@@ -4274,4 +4274,27 @@ Nicht gespeicherte Makroänderungen gehen verloren.</value></data>
   <data name="UpdateSourceDescription" xml:space="preserve"><value>Automatisch bevorzugt Gitee und fällt auf GitHub zurück, wenn Gitee nicht erreichbar oder nicht aktuell ist.</value></data>
   <data name="LightingStudioEffectChromaFile" xml:space="preserve"><value>Animationsdatei</value></data>
   <data name="LightingStudioStatusChromaUnavailable" xml:space="preserve"><value>Animation {0} konnte nicht geladen werden: {1}</value></data>
+  <data name="DockEndpointAudioTitle" xml:space="preserve"><value>Windows-Standardwiedergabegerät</value></data>
+  <data name="DockEndpointAudioDescription" xml:space="preserve"><value>Steuert das aktuelle Windows-Wiedergabegerät. Änderungen werden mit „Anwenden“ übernommen und nicht durch Geräteprofile wiederhergestellt.</value></data>
+  <data name="DockEndpointAudioApplied" xml:space="preserve"><value>Auf die Windows-Wiedergabe angewendet.</value></data>
+  <data name="DockEndpointAudioDeviceChanged" xml:space="preserve"><value>Das Standardwiedergabegerät hat sich geändert. Vor dem Anwenden aktualisieren.</value></data>
+  <data name="DockEndpointAudioUnavailable" xml:space="preserve"><value>Windows-Wiedergabeeinstellungen konnten nicht gelesen oder angewendet werden. Aktualisieren und erneut versuchen.</value></data>
+  <data name="DockEndpointAudioMute.Header" xml:space="preserve"><value>Stumm</value></data>
+  <data name="DockEndpointAudioVolume.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Wiedergabelautstärke</value></data>
+  <data name="LaylaTitle.Text" xml:space="preserve"><value>Control-Pod-Belegung</value></data>
+  <data name="LaylaHelp.Text" xml:space="preserve"><value>Die Belegung bleibt aktiv, solange OpenSynapse läuft. Für Tastatur, Maus, Text oder Befehle ein Makro aus der Bibliothek wählen; jede Geste spielt es einmal ab.</value></data>
+  <data name="LaylaActive" xml:space="preserve"><value>Belegung aktiv</value></data>
+  <data name="LaylaStopped" xml:space="preserve"><value>Belegung angehalten · zum Verbinden aktualisieren</value></data>
+  <data name="LaylaDisabled" xml:space="preserve"><value>Deaktiviert</value></data>
+  <data name="LaylaCyclePlayback" xml:space="preserve"><value>Nächstes Wiedergabegerät</value></data>
+  <data name="LaylaSelectAction" xml:space="preserve"><value>Für jede Geste eine Aktion wählen.</value></data>
+  <data name="LaylaSaveFailed" xml:space="preserve"><value>Speichern fehlgeschlagen. Die bisherige Belegung bleibt aktiv.</value></data>
+  <data name="LaylaInputClick" xml:space="preserve"><value>Oben · Klick</value></data>
+  <data name="LaylaInputDoubleClick" xml:space="preserve"><value>Oben · Doppelklick</value></data>
+  <data name="LaylaInputTripleClick" xml:space="preserve"><value>Oben · Dreifachklick</value></data>
+  <data name="LaylaInputHold" xml:space="preserve"><value>Oben · gedrückt halten</value></data>
+  <data name="LaylaInputSourceClick" xml:space="preserve"><value>Quelle · Klick</value></data>
+  <data name="LaylaInputSourceDoubleClick" xml:space="preserve"><value>Quelle · Doppelklick</value></data>
+  <data name="LaylaInputClockwise" xml:space="preserve"><value>Im Uhrzeigersinn drehen</value></data>
+  <data name="LaylaInputAnticlockwise" xml:space="preserve"><value>Gegen den Uhrzeigersinn drehen</value></data>
 </root>

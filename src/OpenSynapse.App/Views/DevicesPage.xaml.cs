@@ -106,6 +106,7 @@ public sealed partial class DevicesPage : UserControl
 
     private void DevicesPageVisibilityChanged(DependencyObject sender, DependencyProperty dp)
     {
+        if (Visibility != Visibility.Visible) _restoreHeadsetPanel = false;
         if (Visibility != Visibility.Visible || Host is null ||
             DataContext is not MainViewModel viewModel)
         {
@@ -157,8 +158,13 @@ public sealed partial class DevicesPage : UserControl
         await ViewModel.RazerDrivers.InstallAsync(Lifetime);
     }
 
+    private int _deviceSelectionRevision;
+    private bool _restoreHeadsetPanel;
+
     internal void SelectDevice(string device)
     {
+        _deviceSelectionRevision++;
+        _restoreHeadsetPanel = false;
         if (_liteMode && device == "blade")
         {
             device = "none";
@@ -369,11 +375,24 @@ public sealed partial class DevicesPage : UserControl
             DispatcherQueue.TryEnqueue(() => UpdateDeviceSelector("razer-hid"));
             SyncApplicationRules(ViewModel);
         }
-        if (propertyName == nameof(UsbAccessoriesWorkspace.SelectedHeadsetAudio) &&
-            ViewModel.Accessories.SelectedHeadsetAudio is null &&
-            HeadsetAudioPanel.Visibility == Visibility.Visible)
+        if (propertyName == nameof(UsbAccessoriesWorkspace.SelectedHeadsetAudio))
         {
-            DispatcherQueue.TryEnqueue(() => SelectDevice("none"));
+            var revision = _deviceSelectionRevision;
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (revision != _deviceSelectionRevision) return;
+                if (ViewModel.Accessories.SelectedHeadsetAudio is null &&
+                    HeadsetAudioPanel.Visibility == Visibility.Visible)
+                {
+                    SelectDevice("none");
+                    _restoreHeadsetPanel = Visibility == Visibility.Visible;
+                }
+                else if (ViewModel.Accessories.SelectedHeadsetAudio is not null)
+                {
+                    if (_restoreHeadsetPanel && Visibility == Visibility.Visible) SelectDevice("headsetaudio");
+                    RefreshSelectorHighlight();
+                }
+            });
         }
         if (propertyName == nameof(UsbAccessoriesWorkspace.SelectedKeyboard) &&
             ViewModel.Accessories.SelectedKeyboard is null &&

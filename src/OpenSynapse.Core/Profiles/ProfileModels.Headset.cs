@@ -33,6 +33,7 @@ public sealed class HeadsetProfileSettings
     public int? ThxCaptureVoiceGateLevel { get; set; }
     public string? EqPreset { get; set; }
     public Dictionary<string, int>? EqBands { get; set; }
+    public Dictionary<string, int>? EqBandsTenths { get; set; }
     public string? MicEqPreset { get; set; }
     public Dictionary<string, int>? MicEqBands { get; set; }
     public int? Bass { get; set; }
@@ -63,6 +64,7 @@ public sealed class HeadsetProfileSettings
     public int? ParametricEqDirection { get; set; }
     public int? ParametricEqFilterType { get; set; }
     public int? HapticsStrength { get; set; }
+    public bool? HapticsEnabled { get; set; }
     public bool? AutoPause { get; set; }
     public int? AutoShutdownMinutes { get; set; }
     public bool? AutoSleepEnabled { get; set; }
@@ -114,6 +116,12 @@ public sealed class HeadsetProfileSettings
         MouseProfileSettings.ValidateNonNegative(AutoShutdownMinutes, nameof(AutoShutdownMinutes));
         MouseProfileSettings.ValidatePercent(ChromaBrightness, nameof(ChromaBrightness));
         EqBands = NormalizeBands(EqBands, nameof(EqBands));
+        if (EqBandsTenths is not null)
+        {
+            foreach (var value in EqBandsTenths.Values)
+                MouseProfileSettings.ValidateRange(value, -128, 127, nameof(EqBandsTenths));
+            EqBandsTenths = new Dictionary<string, int>(EqBandsTenths, StringComparer.OrdinalIgnoreCase);
+        }
         ThxBands = NormalizeBands(ThxBands, nameof(ThxBands));
         ThxBandsByPreset = NormalizeBandsByPreset(ThxBandsByPreset);
         MicEqBands = NormalizeBands(MicEqBands, nameof(MicEqBands));

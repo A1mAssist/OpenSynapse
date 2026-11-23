@@ -2,14 +2,14 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
 
-internal sealed class RazerSpeakerAccessoryService : IAsyncDisposable
+internal sealed partial class RazerSpeakerAccessoryService : IAsyncDisposable
 {
-    private readonly RazerAccessoryCommandClient _client;
+    private readonly RazerAccessoryCommandClient? _client;
 
     internal RazerSpeakerAccessoryService(RazerAccessoryCommandClient client) => _client = client;
 
-    internal ushort ProductId => _client.ProductId;
-    internal int ReportLength => _client.ReportLength;
+    internal ushort ProductId => _nommoProductId ?? _client!.ProductId;
+    internal int ReportLength => _nommoProductId is not null ? 91 : _client!.ReportLength;
 
     internal static async Task<RazerSpeakerAccessoryService?> ConnectAsync(
         ushort productId,
@@ -39,6 +39,7 @@ internal sealed class RazerSpeakerAccessoryService : IAsyncDisposable
 
     internal async Task<RazerSpeakerState> ReadStateAsync(CancellationToken cancellationToken = default)
     {
+        if (_nommoProductId is not null) return await ReadNommoStateAsync(cancellationToken).ConfigureAwait(false);
         var errors = new List<string>();
         var volume = await TryReadAsync(
             "volume", RazerSpeakerAccessoryProtocol.GetVolume, RazerSpeakerAccessoryProtocol.ReadScalar,
@@ -78,7 +79,7 @@ internal sealed class RazerSpeakerAccessoryService : IAsyncDisposable
     }
 
     internal Task SetVolumeAsync(int value, CancellationToken cancellationToken = default) =>
-        WriteScalarAsync(
+        _nommoProductId is not null ? SetEndpointAsync(value, null, cancellationToken) : WriteScalarAsync(
             RazerSpeakerAccessoryProtocol.SetVolume,
             RazerSpeakerAccessoryProtocol.GetVolume,
             value,
@@ -121,6 +122,11 @@ internal sealed class RazerSpeakerAccessoryService : IAsyncDisposable
 
     internal async Task SetMuteAsync(bool value, CancellationToken cancellationToken = default)
     {
+        if (_nommoProductId is not null)
+        {
+            await SetEndpointAsync(null, value, cancellationToken).ConfigureAwait(false);
+            return;
+        }
         await SendAsync(
             RazerSpeakerAccessoryProtocol.CreateSetBool(
                 RazerSpeakerAccessoryProtocol.SetMute, value, ReportLength),
@@ -155,6 +161,15 @@ internal sealed class RazerSpeakerAccessoryService : IAsyncDisposable
         IReadOnlyList<int> bands,
         CancellationToken cancellationToken = default)
     {
+        if (_nommoProductId is not null)
+        {
+            if (ProductId != 0x0518 || bands.Count != 8 || bands.Any(value => value is < 0 or > 100))
+                throw new ArgumentOutOfRangeException(nameof(bands));
+            await SendAsync(RazerSpeakerAccessoryProtocol.CreateSetEqSetting(91, bands), cancellationToken).ConfigureAwait(false);
+            var actual = await ReadNommoBandsAsync(cancellationToken).ConfigureAwait(false);
+            if (!actual.SequenceEqual(bands)) throw new InvalidOperationException("Speaker EQ readback did not match.");
+            return;
+        }
         await SendAsync(
             RazerSpeakerAccessoryProtocol.CreateSetEqSetting(ReportLength, bands),
             cancellationToken).ConfigureAwait(false);
@@ -169,11 +184,9 @@ internal sealed class RazerSpeakerAccessoryService : IAsyncDisposable
         await SendAsync(
             RazerSpeakerAccessoryProtocol.CreateSet(setCommand, value, ReportLength),
             cancellationToken).ConfigureAwait(false);
-        var actual = await ReadAsync(
-            getCommand,
-            RazerSpeakerAccessoryProtocol.ReadScalar,
-            cancellationToken).ConfigureAwait(false);
-        if (Math.Abs(actual - value) > 1)
+        Func<byte[], int> parse = _nommoProductId is not null ? ReadNommoScalar : RazerSpeakerAccessoryProtocol.ReadScalar;
+        var actual = await ReadAsync(getCommand, parse, cancellationToken).ConfigureAwait(false);
+        if (_nommoProductId is not null ? actual != value : Math.Abs(actual - value) > 1)
         {
             throw new InvalidOperationException(
                 $"Speaker readback was {actual}, expected {value}.");
@@ -181,7 +194,7 @@ internal sealed class RazerSpeakerAccessoryService : IAsyncDisposable
     }
 
     private Task SendAsync(byte[] request, CancellationToken cancellationToken) =>
-        _client.QueryAsync(
+        _nommoProductId is not null ? QueryNommoAsync(request, cancellationToken) : _client!.QueryAsync(
             request[6],
             request[7],
             request[8],
@@ -202,7 +215,9 @@ internal sealed class RazerSpeakerAccessoryService : IAsyncDisposable
         bool allowMissing)
     {
         var request = RazerSpeakerAccessoryProtocol.CreateGet(commandId, ReportLength);
-        var response = await _client.QueryAsync(
+        var response = _nommoProductId is not null
+            ? await QueryNommoAsync(request, cancellationToken).ConfigureAwait(false)
+            : await _client!.QueryAsync(
             request[6],
             request[7],
             request[8],
@@ -248,10 +263,10 @@ internal sealed class RazerSpeakerAccessoryService : IAsyncDisposable
         }
     }
 
-    public ValueTask DisposeAsync() => _client.DisposeAsync();
+    public ValueTask DisposeAsync() => _client?.DisposeAsync() ?? ValueTask.CompletedTask;
 
     private static bool IsExpected(Exception exception) =>
         exception is IOException or InvalidDataException or InvalidOperationException or
             NotSupportedException or TimeoutException or UnauthorizedAccessException or
-            System.ComponentModel.Win32Exception or ArgumentException;
+            System.ComponentModel.Win32Exception or System.Runtime.InteropServices.COMException or ArgumentException;
 }

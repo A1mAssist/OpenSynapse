@@ -21,10 +21,10 @@ public sealed class RazerBleDeviceRowViewModel(RazerBleDevice device)
     public RazerBleDevice Device { get; } = device;
     public string Name => string.IsNullOrWhiteSpace(Device.Name) ? "Razer BLE" : Device.Name;
     public string Identity => "BLE";
-    public string IconGlyph => "\uE962";
+    public string IconGlyph => Device.ProductId == RazerLaylaProtocol.ProductId ? "\uE7F5" : "\uE962";
     public string Status => AppStrings.Text("BlackSharkStatusConnected");
-    // shortcut: protocol 30 is the middleware's mouse class; revisit when a BLE keyboard appears.
-    public OpenSynapse.Core.Devices.DeviceCategory HardwareCategory => OpenSynapse.Core.Devices.DeviceCategory.Mouse;
+    public OpenSynapse.Core.Devices.DeviceCategory HardwareCategory => Device.ProductId == RazerLaylaProtocol.ProductId
+        ? DeviceCategory.Accessory : DeviceCategory.Mouse;
     public Microsoft.UI.Xaml.Media.Brush StatusBrush { get; } =
         new Microsoft.UI.Xaml.Media.SolidColorBrush(global::Windows.UI.Color.FromArgb(255, 68, 214, 44));
 
@@ -174,7 +174,7 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
     public string Identity => AppStrings.Text("BleIdentity");
     public string DeviceId => _device.Id;
     public string ProfileDeviceKey => $"ble:{_device.Id}";
-    public bool CanEdit => !IsBusy && _service is not null;
+    public bool CanEdit => !IsBusy && (IsLayla || _service is not null);
 
     public string FirmwareText => _firmware ?? "—";
     public string SerialText => string.IsNullOrWhiteSpace(_serial) ? "—" : _serial;
@@ -518,6 +518,8 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
 
     public async ValueTask DisposeAsync()
     {
+        if (IsLayla) StopLaylaOperations();
+        if (Layla is not null) { await Layla.DisposeAsync(); Layla = null; }
         if (_service is null) return;
         await Task.Run(_service.Dispose).ConfigureAwait(false);
         _service = null;

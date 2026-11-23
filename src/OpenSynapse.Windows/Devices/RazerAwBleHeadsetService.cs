@@ -33,6 +33,10 @@ public sealed partial class RazerAwBleHeadsetService : IDisposable
 
     public string DeviceId { get; }
 
+    // AudioAWKittyBLE.connectDevice's UUID override list, including both Kitty V2 editions.
+    public static bool IsSupported(ushort productId) =>
+        productId is 0x0309 or 0x0530 or 0x0534 or 0x0562 or 0x057E or 0x057F;
+
     public static async Task<RazerAwBleHeadsetService> ConnectAsync(
         string deviceId,
         Action<string>? diagnostic = null,

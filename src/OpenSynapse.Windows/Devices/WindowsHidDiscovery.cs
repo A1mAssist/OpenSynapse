@@ -199,9 +199,10 @@ public sealed partial class WindowsHidDiscovery : IDeviceDiscovery
                 }
 
                 var probe = metadata ?? ProbeInterfaceMetadata(path);
+                var usbParentDeviceId = TryGetUsbParentDeviceId(devInst);
                 var descriptor = new HidInterfaceDescriptor(
                     path,
-                    GetPhysicalDeviceKey(path, containerId, TryGetUsbParentDeviceId(devInst)),
+                    GetPhysicalDeviceKey(path, containerId, usbParentDeviceId),
                     candidateVendorId,
                     candidateProductId,
                     probe.InputReportByteLength,
@@ -211,7 +212,7 @@ public sealed partial class WindowsHidDiscovery : IDeviceDiscovery
                     probe.Usage,
                     probe.Access,
                     probe.Product,
-                    ToContainerId(containerId));
+                    ToContainerId(containerId), usbParentDeviceId, probe.FeatureReportIds);
                 observeInterface?.Invoke(descriptor);
                 if (featureReportLength is null || probe.FeatureReportByteLength == featureReportLength)
                 {
@@ -485,6 +486,7 @@ public sealed partial class WindowsHidDiscovery : IDeviceDiscovery
         ushort usage = 0;
         ushort vendorId = 0;
         ushort productId = 0;
+        IReadOnlySet<byte>? featureReportIds = null;
         var manufacturer = string.Empty;
         var product = string.Empty;
         try
@@ -513,6 +515,10 @@ public sealed partial class WindowsHidDiscovery : IDeviceDiscovery
                         outputReportByteLength = caps.OutputReportByteLength;
                         usagePage = caps.UsagePage;
                         usage = caps.Usage;
+                        featureReportIds = ReadFeatureReportIds(
+                            preparsedData, caps.NumberFeatureValueCaps, caps.NumberFeatureButtonCaps,
+                            NativeMethods.HidP_GetValueCaps, NativeMethods.HidP_GetButtonCaps,
+                            caps.FeatureReportByteLength, NativeMethods.HidP_InitializeReportForID);
                     }
                 }
                 finally
@@ -531,13 +537,65 @@ public sealed partial class WindowsHidDiscovery : IDeviceDiscovery
         {
             return new InterfaceProbe(false, inputReportByteLength, outputReportByteLength,
                 featureReportByteLength, usagePage, usage, DeviceAccessState.BusyOrUnavailable,
-                vendorId, productId, manufacturer, product);
+                vendorId, productId, manufacturer, product, featureReportIds);
         }
 
         NativeMethods.CloseHandle(controlHandle);
         return new InterfaceProbe(false, inputReportByteLength, outputReportByteLength,
             featureReportByteLength, usagePage, usage, DeviceAccessState.Available,
-            vendorId, productId, manufacturer, product);
+            vendorId, productId, manufacturer, product, featureReportIds);
+    }
+
+    // hidpi.h: HIDP_VALUE_CAPS and HIDP_BUTTON_CAPS are both 72 bytes with ReportID at offset 2.
+    [StructLayout(LayoutKind.Explicit, Size = 72)]
+    internal struct HidpReportCaps
+    {
+        [FieldOffset(2)] public byte ReportId;
+    }
+
+    internal delegate int FeatureCapsReader(
+        int reportType, HidpReportCaps[] capabilities, ref ushort count, IntPtr preparsedData);
+
+    internal delegate int FeatureReportInitializer(
+        int reportType, byte reportId, IntPtr preparsedData, byte[] report, uint reportLength);
+
+    internal static IReadOnlySet<byte>? ReadFeatureReportIds(
+        IntPtr preparsedData, ushort valueCapsCount, ushort buttonCapsCount,
+        FeatureCapsReader readValueCaps, FeatureCapsReader readButtonCaps,
+        ushort featureReportLength, FeatureReportInitializer initializeReport)
+    {
+        var ids = new HashSet<byte>();
+        if (featureReportLength == 0) return ids;
+        // A partial result cannot prove that a report ID is absent from this collection.
+        if (!Read(valueCapsCount, readValueCaps) || !Read(buttonCapsCount, readButtonCaps)) return null;
+
+        // Caps omit constant fields. Probe every ID, including when data-bearing caps already exist.
+        // This HID parser API initializes memory only; it never sends a report to the device.
+        var report = new byte[featureReportLength];
+        const int hidpSuccess = 0x00110000;
+        const int hidpReportDoesNotExist = unchecked((int)0xC0110010);
+        for (var reportId = 0; reportId <= byte.MaxValue; reportId++)
+        {
+            var status = initializeReport(2, (byte)reportId, preparsedData, report, (uint)report.Length);
+            if (status == hidpSuccess) ids.Add((byte)reportId);
+            else if (status != hidpReportDoesNotExist) return null;
+        }
+
+        // Some real collections advertise Feature length but neither parser API exposes their IDs.
+        // Keep that opaque result unknown; only a zero Feature length establishes an empty set.
+        return ids.Count == 0 ? null : ids;
+
+        bool Read(ushort capacity, FeatureCapsReader reader)
+        {
+            if (capacity == 0) return true;
+            var capabilities = new HidpReportCaps[capacity];
+            var count = capacity;
+            const int hidpFeature = 2;
+            if (reader(hidpFeature, capabilities, ref count, preparsedData) < 0 || count > capacity)
+                return false;
+            for (var index = 0; index < count; index++) ids.Add(capabilities[index].ReportId);
+            return true;
+        }
     }
 
     private static string ReadHidString(
@@ -575,7 +633,8 @@ public sealed partial class WindowsHidDiscovery : IDeviceDiscovery
         ushort VendorId,
         ushort ProductId,
         string Manufacturer,
-        string Product);
+        string Product,
+        IReadOnlySet<byte>? FeatureReportIds = null);
 
     internal sealed record HidInterfaceDescriptor(
         string DevicePath,
@@ -589,7 +648,10 @@ public sealed partial class WindowsHidDiscovery : IDeviceDiscovery
         ushort Usage,
         DeviceAccessState Access,
         string ProductName,
-        string? ContainerId = null);
+        string? ContainerId = null,
+        string? UsbParentDeviceId = null,
+        // Positive parser evidence; null is unknown, and only zero Feature length establishes an empty set.
+        IReadOnlySet<byte>? FeatureReportIds = null);
 
     private static Guid? TryGetContainerId(
         IntPtr deviceInfoSet,
@@ -728,6 +790,18 @@ public sealed partial class WindowsHidDiscovery : IDeviceDiscovery
 
         [DllImport("hid.dll")]
         internal static extern int HidP_GetCaps(IntPtr preparsedData, out HidpCaps capabilities);
+
+        [DllImport("hid.dll")]
+        internal static extern int HidP_GetValueCaps(
+            int reportType, [Out] HidpReportCaps[] capabilities, ref ushort count, IntPtr preparsedData);
+
+        [DllImport("hid.dll")]
+        internal static extern int HidP_GetButtonCaps(
+            int reportType, [Out] HidpReportCaps[] capabilities, ref ushort count, IntPtr preparsedData);
+
+        [DllImport("hid.dll")]
+        internal static extern int HidP_InitializeReportForID(
+            int reportType, byte reportId, IntPtr preparsedData, [Out] byte[] report, uint reportLength);
 
         [DllImport("setupapi.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         internal static extern IntPtr SetupDiGetClassDevs(ref Guid classGuid, IntPtr enumerator, IntPtr hwndParent, int flags);

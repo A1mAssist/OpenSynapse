@@ -237,12 +237,25 @@ public sealed class AccessoryProfileApplier : IDeviceProfileApplier
         Action<string>? diagnostic,
         CancellationToken cancellationToken)
     {
-        var connection = await RazerHeadsetAudioService.FindAsync(diagnostic, cancellationToken);
+        var connections = await RazerHeadsetAudioService.FindAllAsync(diagnostic, cancellationToken);
+        var connection = SelectMixerConnection(connections, device.ProductId, device.Id);
         return connection is null || !connection.HasControlInterface ||
             connection.ProductId != device.ProductId ||
             connection.ProductId != RazerMixer053EProtocol.ProductId
             ? null
             : new RazerMixer053EService(connection.DevicePath, diagnostic);
+    }
+
+    internal static RazerHeadsetAudioConnection? SelectMixerConnection(
+        IReadOnlyList<RazerHeadsetAudioConnection> connections, ushort productId, string deviceId)
+    {
+        var candidates = connections.Where(item => item.ProductId == productId).ToArray();
+        return candidates.FirstOrDefault(item =>
+                   StringComparer.OrdinalIgnoreCase.Equals(item.DevicePath, deviceId))
+               // Legacy profile descriptors identify the model, so only an unambiguous device is safe.
+               ?? (productId == RazerMixer053EProtocol.ProductId &&
+                   StringComparer.OrdinalIgnoreCase.Equals(deviceId, "1532:053E") && candidates.Length == 1
+                       ? candidates[0] : null);
     }
 
     private static async Task<IKiyoProfileDevice?> ConnectKiyoAsync(

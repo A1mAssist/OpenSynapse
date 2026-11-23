@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using OpenSynapse.Core.Sensors;
+using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
 
@@ -16,8 +17,9 @@ public sealed partial class UsbAccessoriesWorkspace
     private readonly ConcurrentDictionary<string, ChromaDisplaySnapshot> _chromaDisplaySnapshots =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly SemaphoreSlim _displayLightingGate = new(1, 1);
-    private bool _headsetDisplayLightingOff;
+    private readonly HashSet<string> _headsetDisplayLightingOff = new(StringComparer.OrdinalIgnoreCase);
 
+    [NotProfileScoped]
     internal async Task SetDisplayLightingAvailableAsync(bool available)
     {
         await _displayLightingGate.WaitAsync().ConfigureAwait(true);
@@ -79,26 +81,24 @@ public sealed partial class UsbAccessoriesWorkspace
             }
         })).ConfigureAwait(true);
 
-        try
+        _headsetDisplayLightingOff.Clear();
+        foreach (var connection in HeadsetAudioConnections)
         {
-            using var headsetTimeout =
-                new CancellationTokenSource(TimeSpan.FromMilliseconds(1500));
-            _headsetDisplayLightingOff = await WithSelectedHeadsetAsync(
-                    headset => headset.TurnOffLightingForShutdownAsync(headsetTimeout.Token))
-                .ConfigureAwait(false);
-        }
-        catch (Exception exception)
-        {
-            _headsetDisplayLightingOff = false;
-            _diagnosticLog.TryWrite(
-                "lighting-display-chroma",
-                $"headset off failed: {exception.Message}");
-        }
-        if (_headsetDisplayLightingOff)
-        {
-            _diagnosticLog.TryWrite(
-                "lighting-display-chroma",
-                "headset off request sent.");
+            try
+            {
+                using var headsetTimeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(1500));
+                if (await WithHeadsetAsync(connection,
+                        (headset, token) => headset.TurnOffLightingForShutdownAsync(token), headsetTimeout.Token)
+                    .ConfigureAwait(true))
+                {
+                    _headsetDisplayLightingOff.Add(connection.DevicePath);
+                }
+            }
+            catch (Exception exception)
+            {
+                _diagnosticLog.TryWrite("lighting-display-chroma",
+                    $"headset {connection.ProductId:X4} off failed: {exception.Message}");
+            }
         }
 
         _diagnosticLog.TryWrite(
@@ -151,35 +151,29 @@ public sealed partial class UsbAccessoriesWorkspace
         })).ConfigureAwait(true);
         _chromaDisplaySnapshots.Clear();
 
-        if (_headsetDisplayLightingOff)
+        foreach (var connection in HeadsetAudioConnections.Where(
+                     item => _headsetDisplayLightingOff.Contains(item.DevicePath)))
         {
-            _headsetDisplayLightingOff = false;
-            var applied = false;
             try
             {
                 using var headsetTimeout =
                     new CancellationTokenSource(TimeSpan.FromMilliseconds(1500));
-                applied = await WithSelectedHeadsetAsync(async headset =>
+                await WithHeadsetAsync(connection, async (headset, token) =>
                 {
                     await headset.ApplyPersistedProfileAsync(
-                            PowerSourceKind.Unknown, headsetTimeout.Token)
-                        .ConfigureAwait(false);
+                            PowerSourceKind.Unknown, token)
+                        .ConfigureAwait(true);
                     return true;
-                }).ConfigureAwait(false);
+                }, headsetTimeout.Token).ConfigureAwait(true);
             }
             catch (Exception exception)
             {
                 _diagnosticLog.TryWrite(
                     "lighting-display-chroma",
-                    $"headset restore failed: {exception.Message}");
-            }
-            if (!applied)
-            {
-                _diagnosticLog.TryWrite(
-                    "lighting-display-chroma",
-                    "headset lighting restore skipped: no selected or connected headset");
+                    $"headset {connection.ProductId:X4} restore failed: {exception.Message}");
             }
         }
+        _headsetDisplayLightingOff.Clear();
 
         _diagnosticLog.TryWrite(
             "lighting-display-chroma",
@@ -196,36 +190,36 @@ public sealed partial class UsbAccessoriesWorkspace
             connection.Channel,
             connection.ProductId);
 
-    private async Task<bool> WithSelectedHeadsetAsync(
-        Func<RazerHeadsetAudioViewModel, Task<bool>> action)
+    private async Task<bool> WithHeadsetAsync(
+        RazerHeadsetAudioConnection connection,
+        Func<RazerHeadsetAudioViewModel, CancellationToken, Task<bool>> action,
+        CancellationToken cancellationToken = default)
     {
-        var selected = SelectedHeadsetAudio;
-        if (selected is not null)
-        {
-            return await action(selected).ConfigureAwait(false);
-        }
-
-        var row = _selectedHeadsetAudioDevice ?? HeadsetAudioDevices.FirstOrDefault();
-        if (row is null)
-        {
-            return false;
-        }
-
-        var temporary = new RazerHeadsetAudioViewModel(
-            row.Connection,
-            message => _diagnosticLog.TryWrite("headset-audio", message),
-            null,
-            _getProfile,
-            _saveProfile);
-        try
-        {
-            return await action(temporary).ConfigureAwait(false);
-        }
-        finally
-        {
-            await temporary.DisposeAsync().ConfigureAwait(false);
-        }
+        if (!connection.HasControlInterface ||
+            !_headsetSessions.TryGetValue(connection.DevicePath, out var session)) return false;
+        var result = false;
+        var completed = await session.RunAsync(async (vm, token) => result = await action(vm, token), cancellationToken);
+        return completed && result;
     }
+
+    [NotProfileScoped]
+    internal Task ApplyHeadsetProfileAsync(
+        RazerHeadsetAudioConnection connection,
+        PowerSourceKind powerSource,
+        CancellationToken cancellationToken) =>
+        WithHeadsetAsync(connection, async (headset, token) =>
+        {
+            await headset.ApplyPersistedProfileAsync(powerSource, token);
+            return true;
+        }, cancellationToken);
+
+    internal Task StopHeadsetSoftwareEffectAsync(RazerHeadsetAudioConnection connection) =>
+        WithHeadsetAsync(connection, async (headset, token) =>
+        {
+            token.ThrowIfCancellationRequested();
+            await headset.StopSoftwareEffectForExternalAsync();
+            return true;
+        });
 
     private static string SnapshotKey(RazerChromaDeviceConnection connection) =>
         string.IsNullOrWhiteSpace(connection.DevicePath)

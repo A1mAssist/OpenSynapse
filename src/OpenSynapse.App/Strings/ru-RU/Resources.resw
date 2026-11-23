@@ -9697,4 +9697,27 @@
   <data name="UpdateSourceDescription" xml:space="preserve"><value>Автоматический режим предпочитает Gitee и переключается на GitHub, если Gitee недоступен или отстаёт.</value></data>
   <data name="LightingStudioEffectChromaFile" xml:space="preserve"><value>Файл анимации</value></data>
   <data name="LightingStudioStatusChromaUnavailable" xml:space="preserve"><value>Не удалось загрузить анимацию {0}: {1}</value></data>
+  <data name="DockEndpointAudioTitle" xml:space="preserve"><value>Устройство воспроизведения Windows по умолчанию</value></data>
+  <data name="DockEndpointAudioDescription" xml:space="preserve"><value>Управление текущим устройством воспроизведения Windows. Изменения действуют после нажатия «Применить» и не восстанавливаются профилями устройств.</value></data>
+  <data name="DockEndpointAudioApplied" xml:space="preserve"><value>Применено к воспроизведению Windows.</value></data>
+  <data name="DockEndpointAudioDeviceChanged" xml:space="preserve"><value>Устройство воспроизведения по умолчанию изменилось. Обновите данные перед применением.</value></data>
+  <data name="DockEndpointAudioUnavailable" xml:space="preserve"><value>Не удалось прочитать или применить настройки воспроизведения Windows. Обновите данные и повторите попытку.</value></data>
+  <data name="DockEndpointAudioMute.Header" xml:space="preserve"><value>Без звука</value></data>
+  <data name="DockEndpointAudioVolume.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Громкость воспроизведения</value></data>
+  <data name="LaylaTitle.Text" xml:space="preserve"><value>Назначения Control Pod</value></data>
+  <data name="LaylaHelp.Text" xml:space="preserve"><value>Назначения действуют, пока работает OpenSynapse. Для клавиатуры, мыши, текста или команд выберите макрос из библиотеки; каждый жест запускает его один раз.</value></data>
+  <data name="LaylaActive" xml:space="preserve"><value>Назначения активны</value></data>
+  <data name="LaylaStopped" xml:space="preserve"><value>Назначения остановлены · обновите для подключения</value></data>
+  <data name="LaylaDisabled" xml:space="preserve"><value>Отключено</value></data>
+  <data name="LaylaCyclePlayback" xml:space="preserve"><value>Следующее устройство воспроизведения</value></data>
+  <data name="LaylaSelectAction" xml:space="preserve"><value>Выберите действие для каждого жеста.</value></data>
+  <data name="LaylaSaveFailed" xml:space="preserve"><value>Не удалось сохранить. Прежние назначения остаются активными.</value></data>
+  <data name="LaylaInputClick" xml:space="preserve"><value>Верхняя кнопка · щелчок</value></data>
+  <data name="LaylaInputDoubleClick" xml:space="preserve"><value>Верхняя кнопка · двойной щелчок</value></data>
+  <data name="LaylaInputTripleClick" xml:space="preserve"><value>Верхняя кнопка · тройной щелчок</value></data>
+  <data name="LaylaInputHold" xml:space="preserve"><value>Верхняя кнопка · удержание</value></data>
+  <data name="LaylaInputSourceClick" xml:space="preserve"><value>Источник · щелчок</value></data>
+  <data name="LaylaInputSourceDoubleClick" xml:space="preserve"><value>Источник · двойной щелчок</value></data>
+  <data name="LaylaInputClockwise" xml:space="preserve"><value>Поворот по часовой стрелке</value></data>
+  <data name="LaylaInputAnticlockwise" xml:space="preserve"><value>Поворот против часовой стрелки</value></data>
 </root>

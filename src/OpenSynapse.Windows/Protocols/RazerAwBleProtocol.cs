@@ -64,9 +64,9 @@ public readonly record struct RazerAwFirmwareVersion(
 
 /// <summary>
 /// Razer audio BLE protocol used by the AudioAWKittyBLE family (0309 / 0530 / 0534 /
-/// 0562). Frames are tiny: a 3-byte header [command, 0x00 or 0x02, payloadLength]
-/// followed by the payload. Battery is command 0x21; the reply is [0x21, 0x02, len,
-/// payload...] on the notify characteristic. Control getters use [command, 0x00, 0x00]
+/// 0562 / 057E / 057F). Frames have a 3-byte header [command, transferType, payloadLength]
+/// followed by the payload. Replies use transfer type 0x01 or 0x02 on the notify
+/// characteristic. Battery is command 0x21. Control getters use [command, 0x00, 0x00]
 /// and setters use [command, 0x00, 0x01, value].
 /// </summary>
 public static class RazerAwBleProtocol
@@ -118,7 +118,12 @@ public static class RazerAwBleProtocol
     public const byte CustomEqPreset = 255;
 
     public const byte ResponseTransferType = 0x02;
+    public const byte CommandResponseTransferType = 0x01;
     public const int ResponseHeaderLength = 3;
+
+    // protocolAudiowise.write accepts command responses (1) and notifications (2).
+    public static bool IsResponseTransferType(byte value) =>
+        value is CommandResponseTransferType or ResponseTransferType;
 
     public static byte[] CreateBatteryRequest() => [BatteryCommand, 0x00, 0x00];
 
@@ -247,7 +252,7 @@ public static class RazerAwBleProtocol
     public static bool IsReplyForCommand(ReadOnlySpan<byte> notification, byte command) =>
         notification.Length >= ResponseHeaderLength &&
         notification[0] == command &&
-        notification[1] == ResponseTransferType &&
+        IsResponseTransferType(notification[1]) &&
         notification.Length >= ResponseHeaderLength + notification[2];
 
     public static bool TryParseFirmware(
@@ -497,20 +502,12 @@ public static class RazerAwBleProtocol
         out ReadOnlySpan<byte> payload)
     {
         payload = default;
-        if (notification.Length < ResponseHeaderLength ||
-            notification[0] != command ||
-            notification[1] != ResponseTransferType)
+        if (!IsReplyForCommand(notification, command))
         {
             return false;
         }
 
-        var length = notification[2];
-        if (notification.Length < ResponseHeaderLength + length)
-        {
-            return false;
-        }
-
-        payload = notification.Slice(ResponseHeaderLength, length);
+        payload = notification.Slice(ResponseHeaderLength, notification[2]);
         return true;
     }
 }

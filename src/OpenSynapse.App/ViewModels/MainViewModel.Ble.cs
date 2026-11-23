@@ -16,7 +16,7 @@ public sealed partial class MainViewModel
         private set => SetField(ref _selectedBle, value);
     }
 
-    /// <summary>Enumeration only: connecting waits until the user opens the row.</summary>
+    /// <summary>Mice connect on selection; Pod mappings need a persistent input session.</summary>
     private async Task RefreshBleAsync(CancellationToken cancellationToken)
     {
         IReadOnlyList<RazerBleDevice> devices;
@@ -30,6 +30,8 @@ public sealed partial class MainViewModel
             return;
         }
 
+        if (!await SyncLaylaAsync(devices, cancellationToken) || Volatile.Read(ref _disposed) != 0) return;
+
         if (BleDevices.Count == devices.Count &&
             BleDevices.Zip(devices).All(pair =>
                 StringComparer.OrdinalIgnoreCase.Equals(pair.First.Device.Id, pair.Second.Id)))
@@ -41,7 +43,9 @@ public sealed partial class MainViewModel
         BleDevices.Clear();
         foreach (var device in devices)
         {
-            BleDevices.Add(new RazerBleDeviceRowViewModel(device));
+            var row = new RazerBleDeviceRowViewModel(device);
+            if (_laylaDevices.TryGetValue(device.Id, out var pod)) row.SetBatteryPercent(pod.BatteryPercent);
+            BleDevices.Add(row);
         }
 
         _selectedBleDevice = BleDevices.FirstOrDefault(row =>
@@ -57,6 +61,21 @@ public sealed partial class MainViewModel
         RazerBleDeviceRowViewModel row,
         CancellationToken cancellationToken = default)
     {
+        if (Volatile.Read(ref _disposed) != 0) return;
+        if (row.Device.ProductId == OpenSynapse.Windows.Protocols.RazerLaylaProtocol.ProductId)
+        {
+            await _laylaLifetime.RunAsync(async lifetime =>
+            {
+                if (Volatile.Read(ref _disposed) != 0 || !_laylaDevices.TryGetValue(row.Device.Id, out var cachedPod)) return;
+                if (SelectedBle is { IsLayla: false } previousMouse) await previousMouse.DisposeAsync();
+                lifetime.ThrowIfCancellationRequested();
+                _selectedBleDevice = row;
+                SelectedBle = cachedPod;
+                await cachedPod.LoadAsync(lifetime);
+                row.SetBatteryPercent(cachedPod.BatteryPercent);
+            }, cancellationToken);
+            return;
+        }
         if (_selectedBleDevice is not null &&
             SelectedBle is not null &&
             StringComparer.OrdinalIgnoreCase.Equals(_selectedBleDevice.Device.Id, row.Device.Id))
@@ -66,7 +85,7 @@ public sealed partial class MainViewModel
             return;
         }
 
-        if (SelectedBle is { } previous)
+        if (SelectedBle is { IsLayla: false } previous)
         {
             await previous.DisposeAsync();
         }

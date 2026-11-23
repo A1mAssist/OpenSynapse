@@ -105,6 +105,8 @@ public sealed partial class RazerHeadsetAudioViewModel
 
     public bool HapticsEnabled { get => _hapticsEnabled; set => SetField(ref _hapticsEnabled, value); }
 
+    public double HapticsStrengthMaximum => IsNxp ? byte.MaxValue : ushort.MaxValue;
+
     public double HapticsStrength
     {
         get => _hapticsStrength;

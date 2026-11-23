@@ -1,9 +1,11 @@
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
 
@@ -36,12 +38,22 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
     public event PropertyChangedEventHandler? PropertyChanged;
     private RazerHeadsetAudioDeviceRowViewModel? _selectedHeadsetAudioDevice;
     private RazerHeadsetAudioViewModel? _selectedHeadsetAudio;
-    private RazerHeadsetAudioConnection? _headsetPowerConnection;
-    private bool? _headsetPowerConnected;
+    private int _headsetSelectionVersion;
+    private bool _headsetsDisposed;
+    private RazerHeadsetAudioConnection? _preferredHeadsetConnection;
+    private readonly ConcurrentDictionary<string, HeadsetAudioSession> _headsetSessions =
+        new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, (RazerHeadsetAudioConnection Connection, bool? Connected)>
+        _headsetPowerConnections = new(StringComparer.OrdinalIgnoreCase);
+    private readonly SemaphoreSlim _headsetRefreshGate = new(1, 1);
+    private RazerHeadsetAudioConnection[] _headsetConnections = [];
     private long _lastHeadsetPowerCheck;
+    private readonly Dictionary<string, long> _carolMaintenanceAt = new(StringComparer.OrdinalIgnoreCase);
     internal Action<string>? ForgetAccessoryDiagnostic { get; set; }
 
     public ObservableCollection<RazerHeadsetAudioDeviceRowViewModel> HeadsetAudioDevices { get; } = new();
+    internal IReadOnlyList<RazerHeadsetAudioConnection> HeadsetAudioConnections =>
+        Volatile.Read(ref _headsetConnections);
 
     public RazerHeadsetAudioViewModel? SelectedHeadsetAudio
     {
@@ -50,18 +62,39 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
     }
 
     /// <summary>
-    /// The connected headset even before its page is opened; Mako X uses this
-    /// path for Chroma frames and the studio ambient output.
+    /// The selected studio-capable endpoint, or the first one before a page opens.
     /// </summary>
     internal RazerHeadsetAudioConnection? SelectedHeadsetAudioConnection =>
-        _selectedHeadsetAudioDevice?.Connection ?? HeadsetAudioDevices.FirstOrDefault()?.Connection;
+        _selectedHeadsetAudioDevice?.Connection is { } selected && SupportsStudio(selected)
+            ? selected : HeadsetAudioConnections.FirstOrDefault(SupportsStudio);
+
+    private bool SupportsStudio(RazerHeadsetAudioConnection connection) =>
+        connection.HasControlInterface &&
+        (connection.Transport == RazerHeadsetAudioTransport.Jolie64 ||
+         connection.Transport == RazerHeadsetAudioTransport.KrakenBase37 &&
+         _razerHid.FindKrakenConnection(connection) is { IsReady: true });
 
     internal async Task RefreshHeadsetAudioAsync(CancellationToken cancellationToken)
     {
-        RazerHeadsetAudioConnection? connection;
+        if (_headsetsDisposed) return;
+        await _headsetRefreshGate.WaitAsync(cancellationToken);
         try
         {
-            connection = await RazerHeadsetAudioService.FindAsync(
+            if (_headsetsDisposed) return;
+            await RefreshHeadsetAudioCoreAsync(cancellationToken);
+        }
+        finally
+        {
+            _headsetRefreshGate.Release();
+        }
+    }
+
+    private async Task RefreshHeadsetAudioCoreAsync(CancellationToken cancellationToken)
+    {
+        IReadOnlyList<RazerHeadsetAudioConnection> connections;
+        try
+        {
+            connections = await RazerHeadsetAudioService.FindAllAsync(
                 message => _diagnosticLog.TryWrite("headset-audio", message), cancellationToken);
         }
         catch (Exception exception) when (IsExpectedRuntimeException(exception))
@@ -70,124 +103,105 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
             return;
         }
 
-        if (connection is null)
+        if (_headsetsDisposed) return;
+
+        var present = connections.Select(item => item.DevicePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var path in _headsetPowerConnections.Keys.Where(path => !present.Contains(path)).ToArray())
         {
-            _headsetPowerConnection = null;
-            _headsetPowerConnected = null;
-            if (HeadsetAudioDevices.Count == 0 && SelectedHeadsetAudio is null) return;
-            HeadsetAudioDevices.Clear();
-            _selectedHeadsetAudioDevice = null;
-            var stale = SelectedHeadsetAudio;
-            SelectedHeadsetAudio = null;
-            if (stale is not null) await stale.DisposeAsync();
-            return;
+            _headsetPowerConnections.Remove(path);
+        }
+        foreach (var row in HeadsetAudioDevices.Where(row => !present.Contains(row.Connection.DevicePath)).ToArray())
+        {
+            await RemoveHeadsetAsync(row.Connection);
         }
 
-        // These headsets keep their HID endpoint enumerated after the device is powered
-        // off, so the radio link is the only reliable power signal. A failed read falls
-        // back to the old behaviour instead of hiding a live device.
-        if (connection.SupportsWirelessPowerSignal)
+        foreach (var connection in connections)
         {
-            var connected = await TryReadHeadsetPowerAsync(connection, cancellationToken);
-            _headsetPowerConnection = connection;
-            _headsetPowerConnected = connected;
-            if (connected == false)
+            try
             {
-                await HideHeadsetAsync(connection);
-                return;
+                // A powered-off radio keeps its USB receiver enumerated.
+                if (connection.HasControlInterface && connection.SupportsWirelessPowerSignal)
+                {
+                    var connected = await TryReadHeadsetPowerAsync(connection, cancellationToken);
+                    _headsetPowerConnections[connection.DevicePath] = (connection, connected);
+                    if (connected == false)
+                    {
+                        await RemoveHeadsetAsync(connection);
+                        continue;
+                    }
+                }
+                else
+                {
+                    _headsetPowerConnections.Remove(connection.DevicePath);
+                }
+                await UpsertHeadsetAsync(connection, cancellationToken);
             }
-            if (connected is null)
+            catch (Exception exception) when (IsExpectedRuntimeException(exception))
             {
                 _diagnosticLog.TryWrite("headset-audio",
-                    "wireless connection state unavailable; keeping the headset card visible");
+                    $"probe pid={connection.ProductId:X4} failed: {exception}");
             }
         }
-        else
-        {
-            _headsetPowerConnection = null;
-            _headsetPowerConnected = null;
-        }
+    }
 
-        if (HeadsetAudioDevices.Count == 1 &&
-            StringComparer.OrdinalIgnoreCase.Equals(
-                HeadsetAudioDevices[0].Connection.DevicePath, connection.DevicePath) &&
-            HeadsetAudioDevices[0].Connection.ProductId == connection.ProductId &&
-            HeadsetAudioDevices[0].ProbeState is RazerHeadsetProbeState.Ready or RazerHeadsetProbeState.Partial)
+    private async Task UpsertHeadsetAsync(RazerHeadsetAudioConnection connection, CancellationToken cancellationToken)
+    {
+        if (_headsetsDisposed) return;
+        var row = HeadsetAudioDevices.FirstOrDefault(item =>
+            StringComparer.OrdinalIgnoreCase.Equals(item.Connection.DevicePath, connection.DevicePath));
+        if (row is not null && row.Connection != connection)
+        {
+            await RemoveHeadsetAsync(row.Connection);
+            row = null;
+        }
+        if (_headsetsDisposed) return;
+        if (row is null)
+        {
+            _headsetSessions[connection.DevicePath] = new HeadsetAudioSession(new RazerHeadsetAudioViewModel(
+                connection, message => _diagnosticLog.TryWrite("headset-audio", message),
+                _razerHid.CreateKrakenLighting(connection), _getProfile, _saveProfile));
+            row = new RazerHeadsetAudioDeviceRowViewModel(connection);
+            HeadsetAudioDevices.Add(row);
+            Volatile.Write(ref _headsetConnections, HeadsetAudioDevices.Select(item => item.Connection).ToArray());
+            _refreshDeviceUi?.Invoke();
+        }
+        else if (row.ProbeState is RazerHeadsetProbeState.Ready or RazerHeadsetProbeState.Partial)
         {
             return;
         }
-
-        if (HeadsetAudioDevices.Count == 1 &&
-            StringComparer.OrdinalIgnoreCase.Equals(
-                HeadsetAudioDevices[0].Connection.DevicePath, connection.DevicePath) &&
-            HeadsetAudioDevices[0].Connection.ProductId == connection.ProductId)
+        await ProbeHeadsetRowAsync(row, connection, cancellationToken);
+        if (SelectedHeadsetAudio is null && _preferredHeadsetConnection is { } preferred &&
+            SameHeadset(preferred, connection) && HeadsetAudioDevices.Contains(row))
         {
-            await ProbeHeadsetRowAsync(HeadsetAudioDevices[0], connection, cancellationToken);
+            await SelectHeadsetAudioAsync(row, cancellationToken);
         }
-        else
-        {
-            HeadsetAudioDevices.Clear();
-            var row = new RazerHeadsetAudioDeviceRowViewModel(connection);
-            HeadsetAudioDevices.Add(row);
-            await ProbeHeadsetRowAsync(row, connection, cancellationToken);
-            _refreshDeviceUi?.Invoke();
-        }
-
-        if (_selectedHeadsetAudioDevice is null ||
-            !StringComparer.OrdinalIgnoreCase.Equals(
-                _selectedHeadsetAudioDevice.Connection.DevicePath, connection.DevicePath))
-        {
-            _selectedHeadsetAudioDevice = null;
-            var stale = SelectedHeadsetAudio;
-            SelectedHeadsetAudio = null;
-            if (stale is not null) await stale.DisposeAsync();
-        }
-
     }
 
     internal void TurnOffHeadsetLightingForShutdown(TimeSpan timeout)
     {
-        var selected = SelectedHeadsetAudio;
-        var row = _selectedHeadsetAudioDevice ?? HeadsetAudioDevices.FirstOrDefault();
-        if (selected is null && row is null)
+        var sessions = _headsetSessions.Values.ToArray();
+        foreach (var session in sessions) session.CancelOperations();
+        var task = Task.Run(() => Task.WhenAll(sessions.Select(async session =>
         {
-            return;
-        }
-
-        var connection = row?.Connection;
-        var productId = selected?.ProductId ?? connection?.ProductId;
-        var task = Task.Run(async () =>
-        {
-            RazerHeadsetAudioViewModel? temporary = null;
+            var connection = session.ViewModel.Connection;
             try
             {
-                var headset = selected ?? (temporary = new RazerHeadsetAudioViewModel(
-                    row!.Connection,
-                    message => _diagnosticLog.TryWrite("headset-audio", message),
-                    null,
-                    _getProfile,
-                    _saveProfile));
-                if (await headset.TurnOffLightingForShutdownAsync(CancellationToken.None))
+                using var deadline = new CancellationTokenSource(timeout);
+                // WM_ENDSESSION blocks the UI thread; never wait for a UI-owned session operation here.
+                if (await session.ViewModel.TurnOffLightingForShutdownAsync(deadline.Token, fadeOut: false))
                 {
                     _diagnosticLog.TryWrite(
                         "lighting-shutdown",
-                        $"headset {productId:X4} off request sent.");
+                        $"headset {connection.ProductId:X4} off request sent.");
                 }
             }
             catch (Exception exception)
             {
                 _diagnosticLog.TryWrite(
                     "lighting-shutdown",
-                    $"headset {productId:X4} off failed: {exception.Message}");
+                    $"headset {connection.ProductId:X4} off failed: {exception.Message}");
             }
-            finally
-            {
-                if (temporary is not null)
-                {
-                    await temporary.DisposeAsync().ConfigureAwait(false);
-                }
-            }
-        });
+        })));
         try
         {
             if (!task.Wait(timeout))
@@ -210,82 +224,77 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
         RazerHeadsetAudioConnection connection,
         CancellationToken cancellationToken)
     {
-        var probe = new RazerHeadsetAudioViewModel(
-            connection,
-            message => _diagnosticLog.TryWrite("headset-audio", message),
-            _razerHid.CreateKrakenLighting(connection.ProductId),
-            _getProfile,
-            _saveProfile);
-        var keepAlive = false;
-        try
+        if (_headsetSessions.TryGetValue(connection.DevicePath, out var session) &&
+            await session.RunAsync((vm, token) => vm.LoadAsync(token), cancellationToken) &&
+            HeadsetAudioDevices.Contains(row))
         {
-            await probe.LoadAsync(cancellationToken);
+            var probe = session.ViewModel;
             row.SetProbeResult(
                 probe.ProbeState, probe.CapabilityText, probe.ErrorText, probe.BatteryPercent);
-            // Mako X renders frame effects inside this view model. Before the device
-            // page is opened the probe is the only instance, so keep it instead of
-            // disposing the pump after its first frame.
-            if (connection.Transport == RazerHeadsetAudioTransport.Jolie64 &&
-                probe.ProbeState is RazerHeadsetProbeState.Ready or RazerHeadsetProbeState.Partial &&
-                SelectedHeadsetAudio is null)
-            {
-                _selectedHeadsetAudioDevice = row;
-                SelectedHeadsetAudio = probe;
-                keepAlive = true;
-            }
-        }
-        finally
-        {
-            if (!keepAlive) await probe.DisposeAsync();
         }
     }
 
-    private async Task HideHeadsetAsync(RazerHeadsetAudioConnection connection)
+    private async Task RemoveHeadsetAsync(RazerHeadsetAudioConnection connection)
     {
-        _headsetPowerConnection = connection;
-        _headsetPowerConnected = false;
-        _lastHeadsetPowerCheck = Environment.TickCount64;
-
-        if (HeadsetAudioDevices.Count == 0 && SelectedHeadsetAudio is null)
+        _carolMaintenanceAt.Remove(connection.DevicePath);
+        var row = HeadsetAudioDevices.FirstOrDefault(item =>
+            StringComparer.OrdinalIgnoreCase.Equals(item.Connection.DevicePath, connection.DevicePath));
+        if (row is not null)
         {
-            ForgetAccessoryDiagnostic?.Invoke("headset-audio:" + connection.DevicePath);
-            return;
+            HeadsetAudioDevices.Remove(row);
+            Volatile.Write(ref _headsetConnections, HeadsetAudioDevices.Select(item => item.Connection).ToArray());
         }
-
-        HeadsetAudioDevices.Clear();
-        _selectedHeadsetAudioDevice = null;
-        var stale = SelectedHeadsetAudio;
-        SelectedHeadsetAudio = null;
-        if (stale is not null) await stale.DisposeAsync();
-
+        if (StringComparer.OrdinalIgnoreCase.Equals(
+            _selectedHeadsetAudioDevice?.Connection.DevicePath, connection.DevicePath))
+        {
+            _headsetSelectionVersion++;
+            _selectedHeadsetAudioDevice = null;
+            SelectedHeadsetAudio = null;
+        }
+        if (_headsetSessions.TryRemove(connection.DevicePath, out var session)) await session.StopAsync();
         ForgetAccessoryDiagnostic?.Invoke("headset-audio:" + connection.DevicePath);
-        _refreshDeviceUi?.Invoke();
+        if (row is not null) _refreshDeviceUi?.Invoke();
     }
 
     internal async Task PollHeadsetPowerAsync(CancellationToken cancellationToken)
     {
-        if (_headsetPowerConnection is not { } connection) return;
+        if (_headsetsDisposed) return;
         if (Environment.TickCount64 - _lastHeadsetPowerCheck < 5000) return;
         if (SelectedHeadsetAudio is { IsBusy: true }) return;
-
-        _lastHeadsetPowerCheck = Environment.TickCount64;
-        var connected = await TryReadHeadsetPowerAsync(connection, cancellationToken);
-        if (connected is null) return;
-
-        if (connected == false)
+        if (!await _headsetRefreshGate.WaitAsync(0, cancellationToken)) return;
+        try
         {
-            await HideHeadsetAsync(connection);
-            return;
+            _lastHeadsetPowerCheck = Environment.TickCount64;
+            foreach (var (connection, previous) in _headsetPowerConnections.Values.ToArray())
+            {
+                try
+                {
+                    var connected = await TryReadHeadsetPowerAsync(connection, cancellationToken);
+                    if (connected is null) continue;
+                    if (connected == false)
+                    {
+                        await RemoveHeadsetAsync(connection);
+                    }
+                    else if (previous != true)
+                    {
+                        await _razerHid.ResetSpecialLightingSessionAsync(connection.DevicePath, cancellationToken);
+                        await UpsertHeadsetAsync(connection, cancellationToken);
+                    }
+                    _headsetPowerConnections[connection.DevicePath] = (connection, connected);
+                    if (connected == true) await MaintainCarolPowerAsync(connection, cancellationToken);
+                }
+                catch (Exception exception) when (IsExpectedRuntimeException(exception))
+                {
+                    _diagnosticLog.TryWrite("headset-audio",
+                        $"power refresh pid={connection.ProductId:X4} failed: {exception.Message}");
+                }
+            }
+            await RefreshSelectedHeadsetBatteryAsync(cancellationToken);
         }
-
-        if (_headsetPowerConnected != true)
+        finally
         {
-            _headsetPowerConnected = true;
-            await _razerHid.ResetSpecialLightingSessionAsync(connection.DevicePath, cancellationToken);
-            await RefreshHeadsetAudioAsync(cancellationToken);
+            _headsetRefreshGate.Release();
         }
-
-        await RefreshSelectedHeadsetBatteryAsync(cancellationToken);
     }
 
     internal async Task RefreshSelectedHeadsetBatteryAsync(CancellationToken cancellationToken = default)
@@ -296,7 +305,10 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
             return;
         }
 
-        await selected.RefreshBatteryStateAsync(cancellationToken);
+        if (!_headsetSessions.TryGetValue(selected.Connection.DevicePath, out var session)) return;
+        await session.RunAsync((vm, token) => vm.RefreshBatteryStateAsync(token), cancellationToken);
+        if (!ReferenceEquals(SelectedHeadsetAudio, selected) ||
+            !ReferenceEquals(_selectedHeadsetAudioDevice, row)) return;
         row.SetProbeResult(row.ProbeState, row.CapabilityText, row.Error, selected.BatteryPercent);
     }
 
@@ -332,6 +344,13 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
 
         switch (connection.Transport)
         {
+            case RazerHeadsetAudioTransport.Protocol25Feature65 when RazerCarolAudioProtocol.IsSupported(connection.ProductId):
+                return await OpenCarolService(connection).TryReadCarolLinkStatusAsync(cancellationToken).ConfigureAwait(false);
+            case RazerHeadsetAudioTransport.NxpSerial:
+                await using (var nxp = new RazerNxpHeadsetService(connection.DevicePath, Diagnostic))
+                {
+                    return await nxp.TryReadLinkStatusAsync(cancellationToken).ConfigureAwait(false);
+                }
             case RazerHeadsetAudioTransport.AvneraFeature65:
                 await using (var avnera = new RazerAvneraHeadsetService(
                     connection.DevicePath, Diagnostic, connection.FeatureReportByteLength))
@@ -354,10 +373,34 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
         }
     }
 
+    private RazerHeadsetAudioService OpenCarolService(RazerHeadsetAudioConnection connection) =>
+        new(new RazerFeatureTransport(), connection.DevicePath, TimeSpan.FromMilliseconds(20),
+            message => _diagnosticLog.TryWrite("headset-audio", message), connection.Transport, connection.ProductId);
+
+    private async Task MaintainCarolPowerAsync(RazerHeadsetAudioConnection connection, CancellationToken cancellationToken)
+    {
+        if (!RazerCarolAudioProtocol.IsSupported(connection.ProductId) ||
+            !_headsetSessions.TryGetValue(connection.DevicePath, out var session) ||
+            _carolMaintenanceAt.TryGetValue(connection.DevicePath, out var last) && Environment.TickCount64 - last < 10_000)
+            return;
+        _carolMaintenanceAt[connection.DevicePath] = Environment.TickCount64;
+        try
+        {
+            await session.RunAsync((_, token) => OpenCarolService(connection).MaintainCarolPowerAsync(token), cancellationToken);
+        }
+        catch (Exception exception) when (IsExpectedRuntimeException(exception))
+        {
+            _diagnosticLog.TryWrite("headset-audio", $"Carol power maintenance failed: {exception.Message}");
+        }
+    }
+
     public async Task SelectHeadsetAudioAsync(
         RazerHeadsetAudioDeviceRowViewModel row,
         CancellationToken cancellationToken = default)
     {
+        if (_headsetsDisposed || !HeadsetAudioDevices.Contains(row) ||
+            !_headsetSessions.TryGetValue(row.Connection.DevicePath, out var session)) return;
+        _preferredHeadsetConnection = row.Connection;
         if (_selectedHeadsetAudioDevice is not null &&
             SelectedHeadsetAudio is not null &&
             StringComparer.OrdinalIgnoreCase.Equals(
@@ -366,24 +409,14 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
             return;
         }
 
+        var selectionVersion = ++_headsetSelectionVersion;
         _selectedHeadsetAudioDevice = row;
-        var lighting = _razerHid.CreateKrakenLighting(row.Connection.ProductId);
-
-        if (SelectedHeadsetAudio is { } previous)
-        {
-            await previous.DisposeAsync();
-        }
-
-        var selected = new RazerHeadsetAudioViewModel(
-            row.Connection,
-            message => _diagnosticLog.TryWrite("headset-audio", message),
-            lighting,
-            _getProfile,
-            _saveProfile);
+        var selected = session.ViewModel;
         SelectedHeadsetAudio = selected;
-        await selected.LoadAsync(cancellationToken);
+        if (row.ProbeState is not (RazerHeadsetProbeState.Ready or RazerHeadsetProbeState.Partial))
+            await session.RunAsync((vm, token) => vm.LoadAsync(token), cancellationToken);
         // A device refresh can clear the selection while LoadAsync runs.
-        if (ReferenceEquals(SelectedHeadsetAudio, selected))
+        if (selectionVersion == _headsetSelectionVersion && ReferenceEquals(SelectedHeadsetAudio, selected))
         {
             row.SetProbeResult(
                 selected.ProbeState,
@@ -396,7 +429,8 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
     internal async Task RefreshSelectedHeadsetAudioAsync(CancellationToken cancellationToken = default)
     {
         if (SelectedHeadsetAudio is not { } selected) return;
-        await selected.LoadAsync(cancellationToken);
+        if (!_headsetSessions.TryGetValue(selected.Connection.DevicePath, out var session)) return;
+        await session.RunAsync((vm, token) => vm.LoadAsync(token), cancellationToken);
         if (ReferenceEquals(SelectedHeadsetAudio, selected) &&
             _selectedHeadsetAudioDevice is { } row)
         {
@@ -404,6 +438,12 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
                 selected.ProbeState, selected.CapabilityText, selected.ErrorText, selected.BatteryPercent);
         }
     }
+
+    internal Task RunHeadsetOperationAsync(RazerHeadsetAudioViewModel target,
+        Func<RazerHeadsetAudioViewModel, CancellationToken, Task> action, CancellationToken cancellationToken) =>
+        _headsetSessions.TryGetValue(target.Connection.DevicePath, out var session) &&
+        ReferenceEquals(session.ViewModel, target)
+            ? session.RunAsync(action, cancellationToken) : Task.CompletedTask;
 
     private RazerKeyboardDeviceRowViewModel? _selectedKeyboardDevice;
     private RazerKeyboardViewModel? _selectedKeyboard;
@@ -581,19 +621,25 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
             _saveProfile);
         await SelectedChroma.LoadAsync(cancellationToken);
     }
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
-        if (SelectedHeadsetAudio is { } headset)
-        {
-            // Clear the selection before the await so its PropertyChanged fires on the
-            // caller's thread; clearing it afterwards raised it on the thread pool and
-            // WinUI rejected the binding update with RPC_E_WRONG_THREAD during exit.
-            SelectedHeadsetAudio = null;
-            return headset.DisposeAsync();
-        }
-
-        return ValueTask.CompletedTask;
+        _headsetsDisposed = true;
+        _headsetSelectionVersion++;
+        _selectedHeadsetAudioDevice = null;
+        SelectedHeadsetAudio = null;
+        var sessions = _headsetSessions.Values.ToArray();
+        _headsetSessions.Clear();
+        Volatile.Write(ref _headsetConnections, []);
+        await Task.WhenAll(sessions.Select(session => session.StopAsync()));
     }
+
+    private static bool SameHeadset(RazerHeadsetAudioConnection left, RazerHeadsetAudioConnection right) =>
+        left.ProductId == right.ProductId &&
+        (Guid.TryParse(left.ContainerId, out var leftId) && Guid.TryParse(right.ContainerId, out var rightId)
+            ? leftId == rightId
+            : !string.IsNullOrWhiteSpace(left.PhysicalDeviceKey) && !string.IsNullOrWhiteSpace(right.PhysicalDeviceKey)
+                ? StringComparer.OrdinalIgnoreCase.Equals(left.PhysicalDeviceKey, right.PhysicalDeviceKey)
+                : StringComparer.OrdinalIgnoreCase.Equals(left.DevicePath, right.DevicePath));
 
     private static bool IsExpectedRuntimeException(Exception exception) =>
         RuntimeErrors.IsExpected(exception) || exception is System.Runtime.InteropServices.COMException;

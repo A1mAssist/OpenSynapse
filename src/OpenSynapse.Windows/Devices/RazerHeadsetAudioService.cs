@@ -11,7 +11,8 @@ public enum RazerHeadsetAudioTransport
     Protocol25Feature65,
     Mxic64,
     Valkyrie64,
-    Billie64, Mixer053E, ValkyrieT3Feature64, Jolie64, KrakenBase37, CamyT1, NativeDll,
+    Billie64, Mixer053E, ValkyrieT3Feature64, Jolie64, KrakenBase37, CamyT1, NativeDll, NxpSerial,
+    RipsawFeature17,
 }
 
 public sealed record RazerHeadsetAudioConnection(
@@ -22,7 +23,9 @@ public sealed record RazerHeadsetAudioConnection(
     string? ContainerId = null,
     RazerHeadsetAudioTransport Transport = RazerHeadsetAudioTransport.Feature91,
     bool HasControlInterface = true,
-    ushort OutputReportByteLength = 0)
+    ushort OutputReportByteLength = 0,
+    string? PhysicalDeviceKey = null,
+    string? UsbParentDeviceId = null)
 {
     /// <summary>
     /// True when the identity keeps its HID endpoint enumerated while the headset is
@@ -35,6 +38,8 @@ public sealed record RazerHeadsetAudioConnection(
         RazerHeadsetAudioTransport.Mxic64 =>
             RazerMxicHeadsetProtocol.SupportsWirelessConnectionStatus(ProductId),
         RazerHeadsetAudioTransport.AvneraFeature65 => true,
+        RazerHeadsetAudioTransport.Protocol25Feature65 => RazerCarolAudioProtocol.IsSupported(ProductId),
+        RazerHeadsetAudioTransport.NxpSerial => ProductId == 0x052C,
         RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
             RazerValkyrieHeadsetService.SupportsWirelessConnectionStatus(ProductId),
         _ => false,
@@ -70,6 +75,7 @@ public sealed partial class RazerHeadsetAudioService
             [0x0527] = "Razer Kraken Ultimate",
             [0x0528] = "Razer BlackShark V2 Pro",
             [0x0529] = "Razer USB Sound Card",
+            [0x052C] = "Razer Kraken V3 Pro",
             [0x052D] = "Razer Kraken V3 Pro",
             [0x0533] = "Razer Kraken V3 HyperSense",
             [0x0539] = "Razer Barracuda Pro",
@@ -77,6 +83,7 @@ public sealed partial class RazerHeadsetAudioService
             [0x053B] = "Razer Barracuda 2.4",
             [0x053C] = "Razer Barracuda",
             [0x053E] = "Razer Audio Mixer",
+            [0x0D03] = "Razer Ripsaw HD",
             [0x0549] = "Razer Kraken V3",
             [0x0554] = "Razer Kraken Kitty V2 Pro",
             [0x0555] = "Razer BlackShark V2 Pro",
@@ -137,6 +144,8 @@ public sealed partial class RazerHeadsetAudioService
             [0x0543] = "Razer Seiren V2 X",
             [0x056A] = "Razer Seiren V3 Mini",
             [0x0548] = "Razer Leviathan V2 Pro",
+            [0x0570] = "Razer Clio",
+            [0x05A2] = "Razer Clio X",
             [0x056F] = "Razer Seiren V3 Chroma",
             [0x058E] = "Razer Seiren V3 Pro",
             [0x05A3] = "Razer Leviathan V2 ECR",
@@ -145,7 +154,7 @@ public sealed partial class RazerHeadsetAudioService
             [0x0574] = "Razer Barracuda X Chroma",
             [0x0582] = "Razer Kraken V3 X",
             [0x056D] = "Razer Kraken V4 X",
-            [0x0F66] = "Razer Marci",
+            [0x0F66] = "Razer Soma Pro",
             [0x05AB] = "Razer Mako",
             [0x05AD] = "Razer Mako X",
             [0x05B6] = "Razer Kraken Kitty V3",
@@ -156,7 +165,7 @@ public sealed partial class RazerHeadsetAudioService
         };
 
     private static readonly IReadOnlySet<ushort> SpeakerProductIds =
-        new HashSet<ushort> { 0x0532, 0x055A, 0x055C, 0x055E, 0x0548, 0x05A3, 0x05AB, 0x05AD };
+        new HashSet<ushort> { 0x0532, 0x055A, 0x055C, 0x055E, 0x0548, 0x05A3, 0x05AB, 0x05AD, 0x0570, 0x05A2, 0x0F66 };
 
     private static readonly IReadOnlySet<ushort> MicrophoneProductIds =
         new HashSet<ushort> { 0x0542, 0x0543, 0x056A, 0x0F1B, 0x056F, 0x058E, 0x05A6 };
@@ -203,7 +212,7 @@ public sealed partial class RazerHeadsetAudioService
 
     public static bool IsSupported(ushort productId) =>
         IsKnown(productId) && RazerHeadsetChannelCatalog.Resolve(productId) is not
-            (RazerHeadsetChannel.Unsupported or RazerHeadsetChannel.NativeDll);
+            (RazerHeadsetChannel.Unsupported or RazerHeadsetChannel.NativeDll or RazerHeadsetChannel.AudiowiseBle);
 
     private static string? ToContainerId(string physicalDeviceKey)
     {
@@ -215,7 +224,8 @@ public sealed partial class RazerHeadsetAudioService
     }
 
     public static DeviceCategory GetCategory(ushort productId) =>
-        MicrophoneProductIds.Contains(productId) ? DeviceCategory.Microphone
+        productId == RazerRipsawProtocol.ProductId ? DeviceCategory.Accessory
+        : MicrophoneProductIds.Contains(productId) ? DeviceCategory.Microphone
         : SpeakerProductIds.Contains(productId) ? DeviceCategory.Speaker
         : DeviceCategory.Headset;
 
@@ -225,6 +235,11 @@ public sealed partial class RazerHeadsetAudioService
         RazerHeadsetChannelCatalog.Resolve(productId) == RazerHeadsetChannel.Feature91;
 
     public static async Task<RazerHeadsetAudioConnection?> FindAsync(
+        Action<string>? diagnostic = null,
+        CancellationToken cancellationToken = default) =>
+        (await FindAllAsync(diagnostic, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
+
+    public static async Task<IReadOnlyList<RazerHeadsetAudioConnection>> FindAllAsync(
         Action<string>? diagnostic = null,
         CancellationToken cancellationToken = default)
     {
@@ -238,79 +253,30 @@ public sealed partial class RazerHeadsetAudioService
                 $"access={item.Access}"))
             .ConfigureAwait(false);
 
-        var candidates = interfaces
-            .Select(item => (Interface: item, Channel: RazerHeadsetChannelCatalog.Resolve(item.ProductId)))
-            .Where(candidate => MatchesChannel(candidate.Channel, candidate.Interface))
-            .OrderByDescending(candidate => candidate.Interface.Access == DeviceAccessState.Available)
-            .ThenByDescending(candidate => candidate.Interface.UsagePage == 0xFF14)
-            .ThenBy(candidate => candidate.Interface.ProductId)
-            .ToArray();
-        if (candidates.Length == 0)
+        var usbDevices = await WindowsUsbDiscovery
+            .FindPresentAsync(0x1532, cancellationToken).ConfigureAwait(false);
+        var connections = await SelectConnectionsAsync(interfaces, usbDevices, diagnostic, cancellationToken)
+            .ConfigureAwait(false);
+        IReadOnlyList<RazerNxpSerialDevice> serialDevices = [];
+        try
         {
-            // Access-denied and audio-only collections can lose the feature-report
-            // metadata that normally identifies a usable channel. Keep the device
-            // visible so its card can explain why controls are unavailable.
-            var fallback = interfaces
-                .Where(item => Products.ContainsKey(item.ProductId) &&
-                    RazerHeadsetChannelCatalog.Resolve(item.ProductId) != RazerHeadsetChannel.Unsupported)
-                .OrderByDescending(item => item.Access == DeviceAccessState.Available)
-                .ThenByDescending(item => item.UsagePage == 0xFF14)
-                .ThenBy(item => item.ProductId)
-                .FirstOrDefault();
-            if (fallback is not null)
-            {
-                var fallbackChannel = RazerHeadsetChannelCatalog.Resolve(fallback.ProductId);
-                diagnostic?.Invoke(
-                    $"headset-audio selected unresolved {fallbackChannel} pid={fallback.ProductId:X4} " +
-                    $"product='{fallback.ProductName}' feature={fallback.FeatureReportByteLength} " +
-                    $"access={fallback.Access}");
-                return new RazerHeadsetAudioConnection(
-                    fallback.DevicePath,
-                    fallback.ProductId,
-                    Products[fallback.ProductId],
-                    fallback.FeatureReportByteLength,
-                    ToContainerId(fallback.PhysicalDeviceKey),
-                    ToTransport(fallbackChannel),
-                    OutputReportByteLength: fallback.OutputReportByteLength);
-            }
-
-            var usbDevices = await WindowsUsbDiscovery
-                .FindPresentAsync(0x1532, cancellationToken)
+            serialDevices = await RazerNxpSerialDiscovery.FindAllAsync(cancellationToken)
                 .ConfigureAwait(false);
-            var usbDevice = usbDevices
-                .Where(item => Products.ContainsKey(item.ProductId) && NeedsHidControlInterface(item.ProductId))
-                .OrderBy(item => item.ProductId)
-                .FirstOrDefault();
-            if (usbDevice.ProductId != 0)
-            {
-                diagnostic?.Invoke(
-                    $"headset-audio selected usb-only pid={usbDevice.ProductId:X4} " +
-                    $"path={usbDevice.InstanceId}");
-                return CreateUsbFallback(usbDevice);
-            }
-
+        }
+        catch (Exception exception) when (IsExpected(exception) ||
+            exception is System.Runtime.InteropServices.COMException)
+        {
+            diagnostic?.Invoke($"headset-audio serial discovery failed: {exception.Message}");
+        }
+        connections = MergeSerialConnections(connections, serialDevices, diagnostic);
+        if (connections.Count == 0)
+        {
             diagnostic?.Invoke(
                 "headset-audio found no interface for a supported channel; " +
                 $"hid={string.Join(",", interfaces.Select(item => $"{item.ProductId:X4}:0x{item.UsagePage:X4}:{item.FeatureReportByteLength}/{item.OutputReportByteLength}"))}; " +
                 $"usb={string.Join(",", usbDevices.Select(item => $"{item.ProductId:X4}"))}");
-            return null;
         }
-
-        var (chosen, channel) = candidates[0];
-        diagnostic?.Invoke(
-            $"headset-audio selected {channel} pid={chosen.ProductId:X4} product='{chosen.ProductName}' " +
-            $"path={RazerFeatureTransport.DescribeDevicePath(chosen.DevicePath)} " +
-            $"usage=0x{chosen.UsagePage:X4}:0x{chosen.Usage:X4} " +
-            $"in={chosen.InputReportByteLength} out={chosen.OutputReportByteLength} " +
-            $"feature={chosen.FeatureReportByteLength} access={chosen.Access}");
-        return new RazerHeadsetAudioConnection(
-            chosen.DevicePath,
-            chosen.ProductId,
-            Products[chosen.ProductId],
-            chosen.FeatureReportByteLength,
-            ToContainerId(chosen.PhysicalDeviceKey),
-            ToTransport(channel),
-            OutputReportByteLength: chosen.OutputReportByteLength);
+        return connections;
     }
 
     internal static bool MatchesChannel(
@@ -318,7 +284,8 @@ public sealed partial class RazerHeadsetAudioService
         WindowsHidDiscovery.HidInterfaceDescriptor item) =>
         channel switch
         {
-            RazerHeadsetChannel.Feature91 => item.FeatureReportByteLength == RazerFeatureReport.Length,
+            RazerHeadsetChannel.Feature91 => RazerAudioFeatureProtocol.MatchesInterface(
+                item.ProductId, item.FeatureReportByteLength, item.UsagePage, item.Usage, item.FeatureReportIds),
             // The bundle sends 64-byte output reports and reads a 65-byte feature
             // response; the output collection is the one that carries the channel.
             RazerHeadsetChannel.AvneraFeature65 => item.OutputReportByteLength == RazerAvnera65Protocol.WriteLength,
@@ -339,6 +306,8 @@ public sealed partial class RazerHeadsetAudioService
             RazerHeadsetChannel.Mixer053E => item.FeatureReportByteLength == RazerMixer053EProtocol.FeatureReportLength && item.InputReportByteLength == RazerMixer053EProtocol.StatusReportLength && item.OutputReportByteLength == RazerMixer053EProtocol.OutputReportLength,
             RazerHeadsetChannel.CamyT1 =>
                 item.OutputReportByteLength == RazerCamyT1Protocol.ReportLength,
+            RazerHeadsetChannel.RipsawFeature17 =>
+                item.FeatureReportByteLength == RazerRipsawProtocol.ReportLength,
             _ => false,
         };
 
@@ -356,6 +325,8 @@ public sealed partial class RazerHeadsetAudioService
             RazerHeadsetChannel.Protocol25Feature65 or RazerHeadsetChannel.Protocol25Feature64 =>
                 RazerHeadsetAudioTransport.Protocol25Feature65,
             RazerHeadsetChannel.CamyT1 => RazerHeadsetAudioTransport.CamyT1,
+            RazerHeadsetChannel.NxpSerial => RazerHeadsetAudioTransport.NxpSerial,
+            RazerHeadsetChannel.RipsawFeature17 => RazerHeadsetAudioTransport.RipsawFeature17,
             RazerHeadsetChannel.NativeDll => RazerHeadsetAudioTransport.NativeDll,
             RazerHeadsetChannel.Mixer053E => RazerHeadsetAudioTransport.Mixer053E,
             // Keep the dedicated BlackShark panel's historical fallback transport.
@@ -366,6 +337,12 @@ public sealed partial class RazerHeadsetAudioService
 
     public async Task<RazerHeadsetAudioState> ReadStateAsync(CancellationToken cancellationToken = default)
     {
+        if (_transportKind == RazerHeadsetAudioTransport.NxpSerial)
+        {
+            await using var nxp = new RazerNxpHeadsetService(_devicePath, _diagnostic);
+            return await nxp.ReadStateAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         if (_transportKind == RazerHeadsetAudioTransport.NativeDll)
         {
             return new RazerHeadsetAudioState(
@@ -387,6 +364,9 @@ public sealed partial class RazerHeadsetAudioService
         {
             return await ReadKrakenBaseStateAsync(cancellationToken).ConfigureAwait(false);
         }
+
+        if (HasFeature91ProductCapabilities)
+            return await ReadFeature91ProductStateAsync(cancellationToken).ConfigureAwait(false);
 
         var errors = new List<string>();
         var firmware = await ProbeAsync(
@@ -937,8 +917,7 @@ public sealed partial class RazerHeadsetAudioService
         var report = request(NextTransactionId());
         _diagnostic?.Invoke(
             $"headset {label}: size={report[6]}, class=0x{report[7]:X2}, command=0x{report[8]:X2}");
-        return await _transport.QueryPreparedAsync(
-            _devicePath, report, _deviceWait, cancellationToken).ConfigureAwait(false);
+        return await QueryFeatureAudioAsync(report, cancellationToken).ConfigureAwait(false);
     }
 
     private byte NextTransactionId()

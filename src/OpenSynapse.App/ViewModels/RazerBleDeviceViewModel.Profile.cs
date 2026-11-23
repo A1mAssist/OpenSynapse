@@ -27,6 +27,15 @@ public sealed partial class RazerBleDeviceViewModel
         PowerSourceKind powerSource,
         CancellationToken cancellationToken = default)
     {
+        if (IsLayla)
+        {
+            if (Layla is not null)
+            {
+                await Layla.ApplyProfileAsync(cancellationToken);
+                if (!Layla.HasError && !Layla.IsRunning) await LoadLaylaAsync(cancellationToken);
+            }
+            return;
+        }
         if (_service is null || _getProfile?.Invoke() is not { } document)
         {
             return;

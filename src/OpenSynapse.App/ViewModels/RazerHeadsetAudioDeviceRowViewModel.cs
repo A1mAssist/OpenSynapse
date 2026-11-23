@@ -30,6 +30,7 @@ public sealed class RazerHeadsetAudioDeviceRowViewModel : INotifyPropertyChanged
     {
         DeviceCategory.Speaker => "RazerSpeakerCategory",
         DeviceCategory.Microphone => "RazerMicrophoneCategory",
+        DeviceCategory.Accessory => "Text_71E692AA",
         _ => "BlackSharkHeadsetCategory",
     });
     public string Identity => $"VID_1532 / PID_{Connection.ProductId:X4}";

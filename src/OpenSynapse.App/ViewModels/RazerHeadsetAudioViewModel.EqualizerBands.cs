@@ -8,6 +8,7 @@ public sealed partial class RazerHeadsetAudioViewModel
 {
     private void ApplyEqBands(IReadOnlyList<byte> bands)
     {
+        if (IsCarol) _carolBands = bands.ToArray();
         var frequencies = bands.Count == 10
             ? RazerHeadsetAudioProtocol.TenBandFrequencies
             : RazerHeadsetAudioProtocol.EightBandFrequencies;
@@ -15,13 +16,14 @@ public sealed partial class RazerHeadsetAudioViewModel
             ? (-12d, 12d, 1d)
             : _connection.Transport switch
         {
+            RazerHeadsetAudioTransport.Feature91 when IsMarciAudio => (-12.8d, 12.7d, 0.1d),
             RazerHeadsetAudioTransport.ValkyrieT3Feature64 or RazerHeadsetAudioTransport.Jolie64 =>
                 (-6d, 6d, 1d),
             RazerHeadsetAudioTransport.Mxic64 =>
                 (RazerHeadsetEqScale.MinimumDb, RazerHeadsetEqScale.MaximumDb, RazerHeadsetEqScale.StepDb),
             RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
                 (-12d, 12d, 1d),
-            RazerHeadsetAudioTransport.Protocol25Feature65 => (-12d, 12d, 1d),
+            RazerHeadsetAudioTransport.Protocol25Feature65 => IsCarol ? (-12.8d, 12.7d, 0.1d) : (-12d, 12d, 1d),
             _ => (0d, 100d, 1d),
         };
         EqBands.Clear();
@@ -32,7 +34,7 @@ public sealed partial class RazerHeadsetAudioViewModel
                 minimum,
                 maximum,
                 step,
-                decibels: _connection.Transport != RazerHeadsetAudioTransport.Feature91)
+                decibels: IsMarciAudio || _connection.Transport != RazerHeadsetAudioTransport.Feature91)
             {
                 Level = FromFirmwareBand(bands[index]),
             });

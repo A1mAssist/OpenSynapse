@@ -8,13 +8,20 @@ public sealed partial class RazerFeatureTransport
         byte responseReportId,
         bool usesLeviathanReportId,
         bool allowRemainingPacketsMismatch,
-        bool usesMouseDockLinker = false)
+        bool usesMouseDockLinker = false,
+        bool usesMarciAudio = false)
     {
+        if (request.Length != RazerFeatureReport.Length || candidate.Length != RazerFeatureReport.Length)
+        {
+            return RazerResponseMatch.Mismatched;
+        }
         var matches = usesLeviathanReportId
             ? RazerFeatureReport.MatchesLeviathanResponse(request, candidate, allowRemainingPacketsMismatch)
             : usesMouseDockLinker
                 ? RazerFeatureReport.MatchesMouseDockLinkerResponse(request, candidate, allowRemainingPacketsMismatch)
-                : RazerFeatureReport.Matches(request, candidate, allowRemainingPacketsMismatch);
+                : usesMarciAudio
+                    ? RazerAudioFeatureProtocol.MatchesMarciResponse(request, candidate)
+                    : RazerFeatureReport.Matches(request, candidate, allowRemainingPacketsMismatch);
         // The 1354 middleware never checks the reply's report id; the feature collection
         // only has one feature report and the transaction plus command identify it.
         if (!usesLeviathanReportId && !RazerFeatureReport.MatchesReportId(candidate, responseReportId))

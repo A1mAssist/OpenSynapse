@@ -53,7 +53,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
             ProfileDeviceKey,
             Name,
             0x1532,
-            0,
+            _device.ProductId,
             DeviceAccessState.Available,
             DeviceCapabilityState.PendingValidation,
             0,

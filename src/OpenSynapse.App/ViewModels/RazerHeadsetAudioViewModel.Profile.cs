@@ -31,6 +31,12 @@ public sealed partial class RazerHeadsetAudioViewModel
             return;
         }
 
+        if (Ripsaw is { } ripsaw)
+        {
+            await ripsaw.ApplyPersistedProfileAsync(powerSource, cancellationToken);
+            return;
+        }
+
         if (Lighting is { } lighting &&
             (IsKrakenBase || IsProtocol25 || IsProtocol40 || _connection.ProductId == 0x0574))
         {
@@ -61,14 +67,24 @@ public sealed partial class RazerHeadsetAudioViewModel
             await thxApplier.ApplyAsync(
                 new DeviceProfileApplyContext(document, descriptor, powerSource, resolved),
                 cancellationToken);
+            if (IsCarol)
+            {
+                ApplyState(await OpenService().ReadStateAsync(cancellationToken));
+                return;
+            }
             await ApplyPersistedTransportProfileAsync(resolved.Headset, cancellationToken);
             return;
         }
 
         var applier = new HeadsetAudioProfileApplier(_ => _connection);
-        await applier.ApplyAsync(
+        var result = await applier.ApplyAsync(
             new DeviceProfileApplyContext(document, descriptor, powerSource, resolved),
             cancellationToken);
+        if (IsProductFeature91Audio && result.Items.Any(item =>
+                item.Status is ProfileSettingApplyStatus.Applied or ProfileSettingApplyStatus.AppliedUnverified))
+        {
+            ApplyState(await OpenService().ReadStateAsync(cancellationToken));
+        }
     }
 
     // The Feature91 applier cannot talk to the 64-byte Mxic/Valkyrie/KrakenBase
@@ -79,6 +95,9 @@ public sealed partial class RazerHeadsetAudioViewModel
         HeadsetProfileSettings profile,
         CancellationToken cancellationToken)
     {
+        // NXP replay is owned by HeadsetAudioProfileApplier; never send generic HID EQ/mute here.
+        if (IsNxp || IsCarol) return;
+
         async Task AttemptAsync(string key, Func<CancellationToken, Task> write)
         {
             try

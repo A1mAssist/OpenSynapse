@@ -12,6 +12,7 @@ public sealed class RazerBleSession : IDisposable
     private readonly TimeSpan _timeout;
     private readonly TimeSpan _retryDelay;
     private readonly Action<string>? _diagnostic;
+    private readonly bool _layla;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private byte _transactionId;
 
@@ -19,12 +20,14 @@ public sealed class RazerBleSession : IDisposable
         IRazerBleTransport transport,
         TimeSpan? timeout = null,
         TimeSpan? retryDelay = null,
-        Action<string>? diagnostic = null)
+        Action<string>? diagnostic = null,
+        bool layla = false)
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _timeout = timeout ?? TimeSpan.FromMilliseconds(500);
         _retryDelay = retryDelay ?? TimeSpan.FromMilliseconds(30);
         _diagnostic = diagnostic;
+        _layla = layla;
     }
 
     public async Task<RazerBleResponse> SendAsync(
@@ -68,7 +71,7 @@ public sealed class RazerBleSession : IDisposable
                 RazerBleResponse response;
                 try
                 {
-                    response = RazerBleProtocol30.ParseResponse(reply);
+                    response = _layla ? RazerLaylaProtocol.ParseResponse(reply) : RazerBleProtocol30.ParseResponse(reply);
                 }
                 catch (InvalidOperationException exception)
                 {

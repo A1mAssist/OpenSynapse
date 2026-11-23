@@ -19,6 +19,8 @@ public sealed partial class RazerHeadsetAudioViewModel
     public RazerHidKrakenViewModel? Lighting { get; }
 
     public RazerMixer053EViewModel? Mixer053E { get; }
+    public RazerRipsawViewModel? Ripsaw { get; }
+    public Visibility RipsawVisibility => Ripsaw is null ? Visibility.Collapsed : Visibility.Visible;
 
     public Visibility Mixer053EVisibility => Mixer053E is null ? Visibility.Collapsed : Visibility.Visible;
 
@@ -187,6 +189,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         {
             OpenSynapse.Core.Devices.DeviceCategory.Speaker => "RazerSpeakerCategory",
             OpenSynapse.Core.Devices.DeviceCategory.Microphone => "RazerMicrophoneCategory",
+            OpenSynapse.Core.Devices.DeviceCategory.Accessory => "Text_71E692AA",
             _ => "BlackSharkHeadsetCategory",
         });
     public string Identity => $"VID_1532 / PID_{_connection.ProductId:X4}";

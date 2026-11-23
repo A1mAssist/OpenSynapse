@@ -562,10 +562,10 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
             $"{connections.Count(connection => connection.IsReady)} ready device(s).");
     }
 
-    internal RazerHidKrakenViewModel? CreateKrakenLighting(ushort productId)
+    internal RazerHidKrakenViewModel? CreateKrakenLighting(RazerHeadsetAudioConnection connection)
     {
         if (_specialLightingService is null) return null;
-        return _krakenConnections.FirstOrDefault(item => item.ProductId == productId) is { } kraken
+        return FindKrakenConnection(connection) is { } kraken
             ? new RazerHidKrakenViewModel(
                 _specialLightingService,
                 kraken,
@@ -574,8 +574,8 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
             : null;
     }
 
-    internal RazerHidSpecialLightingConnection? FindKrakenConnection(ushort productId) =>
-        _krakenConnections.FirstOrDefault(item => item.ProductId == productId);
+    internal RazerHidSpecialLightingConnection? FindKrakenConnection(RazerHeadsetAudioConnection connection) =>
+        _krakenConnections.FirstOrDefault(item => item.MatchesAudioConnection(connection));
 
     internal Task ResetSpecialLightingSessionAsync(
         string? devicePath,

@@ -17,6 +17,16 @@ public sealed partial class AccessoryBodyPanel : UserControl
     private void UpdateVisibility() =>
         Visibility = Body is null ? Visibility.Collapsed : Visibility.Visible;
 
+    private async void EndpointAudioRefreshClick(object sender, RoutedEventArgs e)
+    {
+        if (Body?.EndpointAudio is { } audio) await audio.RefreshAsync();
+    }
+
+    private async void EndpointAudioApplyClick(object sender, RoutedEventArgs e)
+    {
+        if (Body?.EndpointAudio is { } audio) await audio.ApplyAsync();
+    }
+
     private async void ThermalRefreshClick(object sender, RoutedEventArgs e)
     {
         if (Body?.Thermal is { } thermal)

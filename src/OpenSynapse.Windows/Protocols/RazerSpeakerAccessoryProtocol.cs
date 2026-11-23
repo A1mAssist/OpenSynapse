@@ -9,7 +9,11 @@ internal sealed record RazerSpeakerState(
     int? OutputSource,
     int? MicVolume,
     bool? MicMuted,
-    string? Error);
+    string? Error)
+{
+    internal IReadOnlyList<int>? EqBands { get; init; }
+    internal bool? Dolby { get; init; }
+}
 
 /// <summary>
 /// Class 0x08 audio controls shared by Soma Chroma (0F64) and the Nommo Chroma/Pro
@@ -74,7 +78,7 @@ internal static class RazerSpeakerAccessoryProtocol
         var data = RazerAccessoryProtocol.Arguments(response);
         return data.Length switch
         {
-            0 => 0,
+            0 => throw new InvalidDataException("Speaker scalar response is empty."),
             1 => data[0],
             _ => data[1],
         };

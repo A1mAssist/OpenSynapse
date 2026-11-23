@@ -8,6 +8,12 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Added
 
+- **Kraken V3 Pro**: connect the 052C receiver and 052D wired identity through the bundle-declared NXP serial channel, with battery, sidetone, silence detection and haptics controls and profile restore.
+- **Ripsaw HD audio**: add the capture card's speaker, PC, HDMI and microphone monitoring volume/mute controls, with saved settings restored on connection.
+- **Clio audio**: add Clio and Clio X controls through their dedicated Carol protocol, including product-specific EQ and power settings.
+- **Nommo audio**: expose volume, mute and EQ presets on the native Nommo Chroma and Nommo Pro device pages; Pro also supports eight-band EQ, bass, Dolby, input selection and profile restore.
+- **Dock volume**: Thunderbolt 5 Dock, Monitor Stand, Laptop Monitor Stand and Handheld Dock can adjust the current Windows default playback device's volume and mute state.
+- **Wireless Control Pod**: connect through its dedicated Bluetooth protocol, map eight button/rotation gestures to media actions or saved macros, and restore device mode when the session ends.
 - **Update source**: automatic updates can use the Gitee mirror; Settings offers Automatic, Gitee and GitHub, and Automatic prefers Gitee while falling back when it is unreachable or behind.
 - **Keyboard animations**: RazerHid keyboards can import a `.chroma` animation on the device page and play it through the software frame runtime; the file stays with the lighting profile.
 - **Naga side plates**: the 12-key and 7-key side plates report their buttons as firmware ids 64–75 and 80–86; mapping, macros and Turbo now resolve them, so every plate works.
@@ -15,6 +21,9 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
+- **Audio discovery**: keep separate audio devices visible together and track each wireless receiver independently; a USB sound card no longer hides a second headset.
+- **Kitty Bluetooth audio**: preserve the six supported models' product identities, accept both documented response types and empty acknowledgements, and release failed GATT connections before retrying.
+- **Nommo V2 and Soma Pro audio**: use their own report IDs and supported commands; restore Nommo's seven bass levels and preserve Soma's 0.1 dB EQ values without sending unrelated headset or lighting commands.
 - **Bluetooth mice**: mapping and scroll settings read and write the active onboard profile instead of the first slot, and the profile list loads before the mapping table, so switching profiles no longer leaves stale mappings.
 - **Naga identities**: Naga Pro, Naga V2 Pro and their Bluetooth identities are matched, and the missing private keys for 0053, 008D, 0096 and the cycle-scroll action are included.
 - **Service install**: a clean MSI install now creates OpenSynapseService in the same elevation, resolving the installing user from the active console session when the MSI action runs as SYSTEM; registration is optional and no longer fails the install with 1721, and the app retries on first launch when the SID is unavailable.

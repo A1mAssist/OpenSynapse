@@ -20,6 +20,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         foreach (var row in KnobStages) row.RefreshLocalization();
         foreach (var row in WirelessDevices) row.RefreshLocalization();
         Soundbar?.RefreshLocalization();
+        Speaker?.RefreshLocalization();
         OnPropertyChanged(string.Empty);
     }
 

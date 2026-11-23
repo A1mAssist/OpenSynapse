@@ -4274,4 +4274,27 @@
   <data name="UpdateSourceDescription" xml:space="preserve"><value>自動モードは Gitee を優先し、Gitee が利用できないか遅れている場合は GitHub にフォールバックします。</value></data>
   <data name="LightingStudioEffectChromaFile" xml:space="preserve"><value>アニメーションファイル</value></data>
   <data name="LightingStudioStatusChromaUnavailable" xml:space="preserve"><value>アニメーション {0} を読み込めませんでした: {1}</value></data>
+  <data name="DockEndpointAudioTitle" xml:space="preserve"><value>Windows の既定の再生デバイス</value></data>
+  <data name="DockEndpointAudioDescription" xml:space="preserve"><value>現在の Windows 再生デバイスを調整します。「適用」で反映され、デバイスプロファイルによる自動復元は行いません。</value></data>
+  <data name="DockEndpointAudioApplied" xml:space="preserve"><value>Windows の再生デバイスに適用しました。</value></data>
+  <data name="DockEndpointAudioDeviceChanged" xml:space="preserve"><value>既定の再生デバイスが変更されました。更新してから適用してください。</value></data>
+  <data name="DockEndpointAudioUnavailable" xml:space="preserve"><value>Windows の再生設定を読み取り、または適用できませんでした。更新して再試行してください。</value></data>
+  <data name="DockEndpointAudioMute.Header" xml:space="preserve"><value>ミュート</value></data>
+  <data name="DockEndpointAudioVolume.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>再生音量</value></data>
+  <data name="LaylaTitle.Text" xml:space="preserve"><value>Control Pod の割り当て</value></data>
+  <data name="LaylaHelp.Text" xml:space="preserve"><value>OpenSynapse の実行中は割り当てが有効です。キーボード、マウス、テキスト、コマンドにはライブラリのマクロを選択します。各操作で1回再生します。</value></data>
+  <data name="LaylaActive" xml:space="preserve"><value>割り当ては有効です</value></data>
+  <data name="LaylaStopped" xml:space="preserve"><value>割り当て停止中 · 更新して再接続</value></data>
+  <data name="LaylaDisabled" xml:space="preserve"><value>無効</value></data>
+  <data name="LaylaCyclePlayback" xml:space="preserve"><value>次の再生デバイス</value></data>
+  <data name="LaylaSelectAction" xml:space="preserve"><value>各操作のアクションを選択してください。</value></data>
+  <data name="LaylaSaveFailed" xml:space="preserve"><value>保存できませんでした。以前の割り当てが引き続き有効です。</value></data>
+  <data name="LaylaInputClick" xml:space="preserve"><value>上部 · クリック</value></data>
+  <data name="LaylaInputDoubleClick" xml:space="preserve"><value>上部 · ダブルクリック</value></data>
+  <data name="LaylaInputTripleClick" xml:space="preserve"><value>上部 · トリプルクリック</value></data>
+  <data name="LaylaInputHold" xml:space="preserve"><value>上部 · 長押し</value></data>
+  <data name="LaylaInputSourceClick" xml:space="preserve"><value>ソース · クリック</value></data>
+  <data name="LaylaInputSourceDoubleClick" xml:space="preserve"><value>ソース · ダブルクリック</value></data>
+  <data name="LaylaInputClockwise" xml:space="preserve"><value>時計回りに回転</value></data>
+  <data name="LaylaInputAnticlockwise" xml:space="preserve"><value>反時計回りに回転</value></data>
 </root>

@@ -240,6 +240,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             Macros.StopAllTurbo();
             _ = RazerHid.SyncPrivateKeyDriverModeAsync();
         };
+        Macros.MacrosChanged += OnLaylaMacrosChanged;
         // The hook runs on its own thread; the sync must not hold up a mouse move.
         Macros.PointerActivity += () => _ = Task.Run(() => RazerHid.SyncPrivateKeyDriverModeAsync());
         Accessories = new UsbAccessoriesWorkspace(
@@ -301,7 +302,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
                 SelectedBlackShark = null;
             },
             OnPropertyChanged,
-            (power, token) => SelectedBle?.ApplyPersistedProfileAsync(power, token) ?? Task.CompletedTask,
+            ApplyAllBleProfilesAsync,
             (power, token) => AccessoryProfileReplay.ApplyAsync(this, _diagnosticLog, power, token),
             liteMode: liteMode);
         Refresh.StudioLightingActive = () => StudioLightingActive?.Invoke() == true;

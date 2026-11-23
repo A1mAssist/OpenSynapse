@@ -44,6 +44,24 @@ public sealed partial class WindowsHidDiscovery
         return instance >= 0 ? devicePath.Remove(collection, instance - collection) : devicePath;
     }
 
+    internal static (string? ContainerId, string? UsbParentDeviceId) GetDeviceIdentity(string instanceId)
+    {
+        if (NativeMethods.CM_Locate_DevNodeW(out var devInst, instanceId, 0) != 0)
+            return (null, null);
+
+        var propertyKey = NativeMethods.DevpkeyDeviceContainerId;
+        var buffer = new byte[16];
+        var size = (uint)buffer.Length;
+        var container = NativeMethods.CM_Get_DevNode_PropertyW(devInst, ref propertyKey,
+            out var propertyType, buffer, ref size, 0) == 0 &&
+            propertyType == NativeMethods.DevpropTypeGuid && size == buffer.Length
+                ? ToContainerId(new Guid(buffer)) : null;
+        var usbParent = instanceId.StartsWith(@"USB\VID_", StringComparison.OrdinalIgnoreCase) &&
+            !instanceId.Contains("&MI_", StringComparison.OrdinalIgnoreCase)
+                ? instanceId : TryGetUsbParentDeviceId(devInst);
+        return (container, usbParent);
+    }
+
     private static string? TryGetUsbParentDeviceId(uint devInst)
     {
         if (devInst == 0 ||
@@ -85,6 +103,13 @@ public sealed partial class WindowsHidDiscovery
 
     private static partial class NativeMethods
     {
+        [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode)]
+        internal static extern uint CM_Locate_DevNodeW(out uint devInst, string instanceId, uint flags);
+
+        [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode)]
+        internal static extern uint CM_Get_DevNode_PropertyW(uint devInst, ref Devpropkey propertyKey,
+            out uint propertyType, [Out] byte[] buffer, ref uint bufferSize, uint flags);
+
         [DllImport("cfgmgr32.dll")]
         internal static extern uint CM_Get_Parent(out uint parentDevInst, uint devInst, uint flags);
 

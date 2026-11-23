@@ -67,24 +67,36 @@ internal sealed partial class ChromaDeviceRouter
         }
     }
 
-    private async Task RestoreJolieAsync(CancellationToken cancellationToken)
+    private Task RestoreJolieAsync(CancellationToken cancellationToken) =>
+        RestoreJolieAsync(_jolieBaselines, _headsetConnections(),
+            async (connection, token) => await EnsureMakoServiceAsync(connection, token).ConfigureAwait(false),
+            _diagnostic, cancellationToken);
+
+    internal static async Task RestoreJolieAsync(
+        IReadOnlyDictionary<string, RazerChromaStandardState> baselines,
+        IReadOnlyList<RazerHeadsetAudioConnection> connections,
+        Func<RazerHeadsetAudioConnection, CancellationToken, Task<IRazerHeadsetLightingService>> openService,
+        Action<string>? diagnostic,
+        CancellationToken cancellationToken)
     {
-        foreach (var (instanceId, state) in _jolieBaselines.ToArray())
+        foreach (var (instanceId, state) in baselines.ToArray())
         {
-            if (state.Effect is not { } effect || _makoService is null ||
-                !StringComparer.OrdinalIgnoreCase.Equals(_makoPath, instanceId))
-            {
-                continue;
-            }
+            cancellationToken.ThrowIfCancellationRequested();
+            if (state.Effect is not { } effect) continue;
+            var connection = connections.FirstOrDefault(candidate =>
+                candidate.Transport == RazerHeadsetAudioTransport.Jolie64 && candidate.HasControlInterface &&
+                StringComparer.OrdinalIgnoreCase.Equals(candidate.DevicePath, instanceId));
+            if (connection is null) continue;
 
             try
             {
-                await _makoService.SetEffectAsync(effect, state.Colors, cancellationToken)
+                var service = await openService(connection, cancellationToken).ConfigureAwait(false);
+                await service.SetEffectAsync(effect, state.Colors, cancellationToken)
                     .ConfigureAwait(false);
             }
-            catch (Exception exception) when (IsDeviceFailure(exception))
+            catch (Exception exception) when (IsDeviceFailure(exception) || exception is System.ComponentModel.Win32Exception)
             {
-                _diagnostic?.Invoke($"Chroma restore for {instanceId} failed: {exception.Message}");
+                diagnostic?.Invoke($"Chroma restore for {instanceId} failed: {exception.Message}");
             }
         }
     }

@@ -19,6 +19,9 @@ public enum RazerHeadsetChannel
     Jolie64,
     KrakenBase37,
     CamyT1,
+    NxpSerial,
+    AudiowiseBle,
+    RipsawFeature17,
 }
 
 /// <summary>
@@ -82,6 +85,7 @@ public static class RazerHeadsetChannelCatalog
             [0x101D] = new("AudioValkyrieBle", RazerHeadsetChannel.Unsupported),
             [0x101E] = new("AudioValkyrie", RazerHeadsetChannel.Valkyrie64),
             [0x101F] = new("AudioValkyrie", RazerHeadsetChannel.Valkyrie64),
+            [0x1020] = new("AudioValkyrieBle", RazerHeadsetChannel.Unsupported),
 
             // AudioBillieT1/T2: the 64-byte Billie channel.
             [0x0567] = new("AudioBillieT1", RazerHeadsetChannel.Billie64),
@@ -105,12 +109,10 @@ public static class RazerHeadsetChannelCatalog
             [0x05B9] = new("rzDevice40", RazerHeadsetChannel.Mxic64),
 
             // BlackShark V3 Pro keeps its own THX panel instead of the generic headset page.
-            // 0576 and 101C declare AudioValkyrie, but that channel belongs to the dedicated
-            // panel here. 0577/101B have no bundle in the CDN snapshot; their device type is
-            // therefore unverified.
+            // 0576 declares dongleId 1399 (0577); 101C declares 4123 (101B).
             [0x0576] = new("AudioValkyrie", RazerHeadsetChannel.DedicatedBlackShark),
-            [0x0577] = new("unknown", RazerHeadsetChannel.DedicatedBlackShark),
-            [0x101B] = new("unknown", RazerHeadsetChannel.DedicatedBlackShark),
+            [0x0577] = new("AudioValkyrie", RazerHeadsetChannel.DedicatedBlackShark),
+            [0x101B] = new("AudioValkyrie", RazerHeadsetChannel.DedicatedBlackShark),
             [0x101C] = new("AudioValkyrie", RazerHeadsetChannel.DedicatedBlackShark),
 
             // AudioAvnera uses a 64-byte output frame with report id 255 and a
@@ -127,6 +129,8 @@ public static class RazerHeadsetChannelCatalog
             // otherwise keep the same class/command table as the legacy page.
             [0x0532] = new("rzDevice25Noa", RazerHeadsetChannel.Protocol25Feature65),
             [0x0548] = new("rzDevice25Noa", RazerHeadsetChannel.Protocol25Feature65),
+            [0x0570] = new("rzDevice25Carol", RazerHeadsetChannel.Protocol25Feature65),
+            [0x05A2] = new("rzDevice25Carol", RazerHeadsetChannel.Protocol25Feature65),
             [0x05A3] = new("rzDevice25NoaT2ECR", RazerHeadsetChannel.Protocol25Feature64),
             [0x056A] = new("rzDevice25AudioCamyT3V2", RazerHeadsetChannel.Protocol25Feature65),
             [0x056F] = new("rzDevice25AudioCamy", RazerHeadsetChannel.Protocol25Feature65),
@@ -175,13 +179,25 @@ public static class RazerHeadsetChannelCatalog
             // AudioMixer uses the dedicated 64-byte feature / 16-byte report-9
             // collection; it must not fall back to the 91-byte feature channel.
             [0x053E] = new("AudioMixer", RazerHeadsetChannel.Mixer053E),
+            [0x0D03] = new("rzDeviceKateT2", RazerHeadsetChannel.RipsawFeature17),
 
-            // Bundles that declare a channel this app does not build.
-            [0x0309] = new("AudioAWKittyBLE", RazerHeadsetChannel.Unsupported),
-            [0x0530] = new("AudioAWKittyBLE", RazerHeadsetChannel.Unsupported),
-            [0x0534] = new("AudioAWKittyBLE", RazerHeadsetChannel.Unsupported),
-            [0x0562] = new("AudioAWKittyBLE", RazerHeadsetChannel.Unsupported),
-            [0x052D] = new("AudioNXPDevice", RazerHeadsetChannel.Unsupported),
+            // Independent GATT discovery and controls in RazerAwBleHeadsetService.
+            [0x0309] = new("AudioAWKittyBLE", RazerHeadsetChannel.AudiowiseBle),
+            [0x0530] = new("AudioAWKittyBLE", RazerHeadsetChannel.AudiowiseBle),
+            [0x0534] = new("AudioAWKittyBLE", RazerHeadsetChannel.AudiowiseBle),
+            [0x0562] = new("AudioAWKittyBLE", RazerHeadsetChannel.AudiowiseBle),
+            [0x057E] = new("AudioAWKittyBLE", RazerHeadsetChannel.AudiowiseBle),
+            [0x057F] = new("AudioAWKittyBLE", RazerHeadsetChannel.AudiowiseBle),
+            // Main bundles declare these BLE aliases but omit their GATT protocol.
+            [0x0558] = new("Leviathan V2 Pro BLE alias (GATT unspecified)", RazerHeadsetChannel.Unsupported),
+            [0x0559] = new("Leviathan V2 X BLE alias (GATT unspecified)", RazerHeadsetChannel.Unsupported),
+            [0x0A62] = new("Hammerhead BLE alias (GATT unspecified)", RazerHeadsetChannel.Unsupported),
+            [0x0A65] = new("Hammerhead BLE alias (GATT unspecified)", RazerHeadsetChannel.Unsupported),
+            [0x0A6D] = new("Hammerhead BLE alias (GATT unspecified)", RazerHeadsetChannel.Unsupported),
+            [0x0A82] = new("Hammerhead BLE alias (GATT unspecified)", RazerHeadsetChannel.Unsupported),
+            // 052D declares dongleId 1324 (052C). Both use the NXP serial interface.
+            [0x052C] = new("AudioNXPDevice", RazerHeadsetChannel.NxpSerial),
+            [0x052D] = new("AudioNXPDevice", RazerHeadsetChannel.NxpSerial),
             // 053C is the Barracuda 2.4 dongle of the 053B bundle (dongleId 1340) and
             // uses the same AudioMxicDevice / Mabel T1 transport as 053B.
             [0x053C] = new("AudioMxicDevice", RazerHeadsetChannel.Mxic64),

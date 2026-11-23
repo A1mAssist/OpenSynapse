@@ -7,10 +7,9 @@ using OpenSynapse.Windows.Devices;
 namespace OpenSynapse.App.ViewModels;
 
 /// <summary>
-/// Audio body page for Nommo speakers and the Wireless Control Pod. Both use the
-/// bundle's class 0x08 scalar controls; unsupported fields stay disabled.
+/// Audio controls for Nommo speakers; unsupported fields stay disabled.
 /// </summary>
-public sealed class RazerSpeakerAccessoryViewModel : INotifyPropertyChanged, IAsyncDisposable
+public sealed partial class RazerSpeakerAccessoryViewModel : INotifyPropertyChanged, IAsyncDisposable
 {
     private readonly ushort _productId;
     private readonly Action<string>? _diagnostic;
@@ -58,6 +57,7 @@ public sealed class RazerSpeakerAccessoryViewModel : INotifyPropertyChanged, IAs
         {
             if (!SetField(ref _isBusy, value)) return;
             OnPropertyChanged(nameof(CanEdit));
+            OnPropertyChanged(nameof(CanRefresh));
             OnPropertyChanged(nameof(CanEditVolume));
             OnPropertyChanged(nameof(CanEditMute));
             OnPropertyChanged(nameof(CanEditBass));
@@ -66,6 +66,8 @@ public sealed class RazerSpeakerAccessoryViewModel : INotifyPropertyChanged, IAs
             OnPropertyChanged(nameof(CanEditOutput));
             OnPropertyChanged(nameof(CanEditMicVolume));
             OnPropertyChanged(nameof(CanEditMicMute));
+            OnPropertyChanged(nameof(CanEditDolby));
+            OnPropertyChanged(nameof(CanEditBands));
         }
     }
     public string StatusText { get => _statusText; private set => SetField(ref _statusText, value); }
@@ -80,6 +82,7 @@ public sealed class RazerSpeakerAccessoryViewModel : INotifyPropertyChanged, IAs
     }
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);
     public bool CanEdit => IsConnected && !IsBusy;
+    public bool CanRefresh => !IsBusy;
     public bool CanEditVolume => CanEdit && _hasVolume;
     public bool CanEditMute => CanEdit && _hasMute;
     public bool CanEditBass => CanEdit && _hasBass;
@@ -118,7 +121,14 @@ public sealed class RazerSpeakerAccessoryViewModel : INotifyPropertyChanged, IAs
     public int EqPresetIndex
     {
         get => _eqPresetIndex;
-        set => SetField(ref _eqPresetIndex, Math.Clamp(value, 0, EqPresetOptions.Count - 1));
+        set
+        {
+            if (SetField(ref _eqPresetIndex, Math.Clamp(value, 0, EqPresetOptions.Count - 1)))
+            {
+                if (_nommoDescriptor is not null && _eqPresetIndex == 4) Dolby = false;
+                OnPropertyChanged(nameof(CanEditBands));
+            }
+        }
     }
 
     public int InputSourceIndex
@@ -176,7 +186,7 @@ public sealed class RazerSpeakerAccessoryViewModel : INotifyPropertyChanged, IAs
         try
         {
             _service ??= await RazerSpeakerAccessoryService.ConnectAsync(
-                _productId, _diagnostic, cancellationToken).ConfigureAwait(false);
+                _productId, _diagnostic, cancellationToken);
             if (_service is null)
             {
                 IsConnected = false;
@@ -185,11 +195,12 @@ public sealed class RazerSpeakerAccessoryViewModel : INotifyPropertyChanged, IAs
                 return;
             }
 
-            var state = await _service.ReadStateAsync(cancellationToken).ConfigureAwait(false);
+            var state = await _service.ReadStateAsync(cancellationToken);
             _hasVolume = state.Volume is >= 0 and <= 100;
             _hasMute = state.Muted is not null;
             _hasBass = state.Bass is >= 0 and <= 100;
-            _hasEq = state.EqPreset is >= 0 and < 5;
+            _hasEq = _nommoDescriptor is null ? state.EqPreset is >= 0 and < 5 :
+                state.EqPreset is >= 0 and < 4 || _productId == 0x0518 && state.EqPreset == 16;
             _hasInput = state.InputSource is >= 0 and < 5;
             _hasOutput = state.OutputSource is >= 0 and < 2;
             _hasMicVolume = state.MicVolume is >= 0 and <= 100;
@@ -197,7 +208,8 @@ public sealed class RazerSpeakerAccessoryViewModel : INotifyPropertyChanged, IAs
             _volume = state.Volume ?? _volume;
             _isMuted = state.Muted ?? _isMuted;
             _bass = state.Bass ?? _bass;
-            if (_hasEq) _eqPresetIndex = state.EqPreset!.Value;
+            if (_hasEq) _eqPresetIndex = state.EqPreset == 16 ? 4 : state.EqPreset!.Value;
+            ApplyNommoState(state);
             if (_hasInput) _inputSourceIndex = state.InputSource!.Value;
             if (_hasOutput) _outputSourceIndex = state.OutputSource!.Value;
             _micVolume = state.MicVolume ?? _micVolume;
@@ -207,6 +219,7 @@ public sealed class RazerSpeakerAccessoryViewModel : INotifyPropertyChanged, IAs
             StatusText = AppStrings.Text("CoolingPadStatusConnected");
             OnPropertyChanged(string.Empty);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
         catch (Exception exception) when (IsExpected(exception))
         {
             IsConnected = false;
@@ -226,6 +239,11 @@ public sealed class RazerSpeakerAccessoryViewModel : INotifyPropertyChanged, IAs
         IsBusy = true;
         try
         {
+            if (_nommoDescriptor is not null)
+            {
+                await ApplyNommoAndSaveAsync(cancellationToken);
+                return;
+            }
             if (_hasVolume)
             {
                 await _service.SetVolumeAsync((int)Math.Round(Volume), cancellationToken).ConfigureAwait(false);
@@ -263,6 +281,7 @@ public sealed class RazerSpeakerAccessoryViewModel : INotifyPropertyChanged, IAs
             StatusText = AppStrings.Text("BlackSharkSaved");
             ErrorText = string.Empty;
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
         catch (Exception exception) when (IsExpected(exception))
         {
             ErrorText = exception.Message;
@@ -281,7 +300,7 @@ public sealed class RazerSpeakerAccessoryViewModel : INotifyPropertyChanged, IAs
     private static bool IsExpected(Exception exception) =>
         exception is IOException or InvalidDataException or InvalidOperationException or
             NotSupportedException or TimeoutException or UnauthorizedAccessException or
-            System.ComponentModel.Win32Exception or ArgumentException;
+            System.ComponentModel.Win32Exception or System.Runtime.InteropServices.COMException or ArgumentException;
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new(propertyName));

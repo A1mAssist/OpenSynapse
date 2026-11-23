@@ -377,7 +377,7 @@ public static class ProfileSummaryBuilder
             settings.ThxCaptureNoiseReductionEnabled ?? settings.ThxCaptureVoiceGateEnabled,
             "ProfileSummary_Item_ThxEnhancements",
             scope);
-        AddIf(group, FirstPresent(settings.EqPreset, settings.EqBands), "ProfileSummary_Item_EqPreset", scope);
+        AddIf(group, FirstPresent(settings.EqPreset, settings.EqBands, settings.EqBandsTenths), "ProfileSummary_Item_EqPreset", scope);
         AddIf(group, FirstPresent(settings.MicEqPreset, settings.MicEqBands), "ProfileSummary_Item_MicEq", scope);
         AddIf(group, settings.Bass, "ProfileSummary_Item_Bass", scope);
         AddIf(group, FirstPresent(settings.MicrophoneVolumePercent, settings.MicrophoneMute),
@@ -393,9 +393,9 @@ public static class ProfileSummaryBuilder
         AddIf(group, FirstPresent(settings.ParametricEqEnabled, settings.ParametricEqBandIndex,
             settings.ParametricEqFrequency, settings.ParametricEqGain, settings.ParametricEqQ),
             "ProfileSummary_Item_ParametricEq", scope);
-        AddIf(group, settings.HapticsStrength, "ProfileSummary_Item_Haptics", scope);
+        AddIf(group, FirstPresent(settings.HapticsEnabled, settings.HapticsStrength), "ProfileSummary_Item_Haptics", scope);
         AddIf(group, settings.AutoPause, "ProfileSummary_Item_AutoPause", scope);
-        AddIf(group, settings.AutoShutdownMinutes, "ProfileSummary_Item_AutoShutdown", scope);
+        AddIf(group, FirstPresent(settings.AutoShutdownMinutes, settings.AutoSleepEnabled), "ProfileSummary_Item_AutoShutdown", scope);
         AddIf(group, settings.Dnd, "ProfileSummary_Item_Dnd", scope);
         AddIf(group, settings.GestureControl, "ProfileSummary_Item_Gesture", scope);
         AddIf(group, FirstPresent(settings.ChromaBrightness, settings.ChromaEffect, settings.ChromaParameters),

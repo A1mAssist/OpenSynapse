@@ -11,7 +11,7 @@ public sealed partial class RazerFeatureTransport
         bool allowRemainingPacketsMismatch = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
-        RazerFeatureReport.ValidatePreparedRequest(request.Span);
+        RazerAudioFeatureProtocol.ValidatePreparedRequest(logicalProductId, request.Span);
         return ExecuteAsync(
             devicePath,
             request.ToArray(),

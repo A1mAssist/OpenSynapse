@@ -169,6 +169,7 @@ public sealed partial class RazerHeadsetAudioViewModel
     [ProfileSetting("headset.auto-sleep", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyAutoSleepAsync(CancellationToken cancellationToken = default)
     {
+        if (IsCarol) { await SaveCarolPowerAsync(cancellationToken); return; }
         if (!IsJolie || !BeginOperation()) return;
 
         var previousEnabled = AutoSleepEnabled;
@@ -255,7 +256,7 @@ public sealed partial class RazerHeadsetAudioViewModel
     }
 
     internal async Task<bool> TurnOffLightingForShutdownAsync(
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, bool fadeOut = true)
     {
         // Mako X keeps the 0x0F Chroma channel on the audio HID collection, not
         // the RazerHid catalogue, so the RazerHid shutdown sweep never sees it.
@@ -264,7 +265,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             return false;
         }
 
-        await StopSoftwareEffectCoreAsync(fadeOut: true);
+        await StopSoftwareEffectCoreAsync(fadeOut);
         await OpenChromaService()
             .SetEffectAsync(RazerChromaEffect.Off, [], cancellationToken)
             .ConfigureAwait(false);

@@ -67,9 +67,8 @@ public partial class App
                 .Select(row => row.Connection)
                 .ToArray(),
             () => viewModel.RazerHid.KrakenConnections,
-            () => viewModel.Accessories.SelectedHeadsetAudioConnection is { } headset
-                ? [headset]
-                : [],
+            () => viewModel.Accessories.HeadsetAudioConnections
+                .Where(connection => connection.HasControlInterface).ToArray(),
             message => _diagnosticLog.TryWrite("chroma", message));
 
     private async Task RestoreChromaAsync(MainViewModel viewModel)

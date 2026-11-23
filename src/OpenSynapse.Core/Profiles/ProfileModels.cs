@@ -249,6 +249,7 @@ public sealed class ProfileShortcutSettings
 
 public sealed class ProfileSettings
 {
+    public RazerRipsawProfileSettings Ripsaw { get; set; } = new();
     public BladeProfileSettings Blade { get; set; } = new();
     [JsonPropertyName("viper")]
     public MouseProfileSettings Viper { get; set; } = new();
@@ -266,6 +267,8 @@ public sealed class ProfileSettings
 
     internal void ApplySafeDefaults()
     {
+        Ripsaw ??= new RazerRipsawProfileSettings();
+        Ripsaw.ApplySafeDefaults();
         Blade ??= new BladeProfileSettings();
         Viper ??= new MouseProfileSettings();
         Keyboard ??= new KeyboardProfileSettings();
@@ -298,6 +301,7 @@ public sealed class ProfileSettings
 
 public sealed class DeviceProfileSettings
 {
+    public RazerRipsawProfileSettings Ripsaw { get; set; } = new();
     public BladeProfileSettings Blade { get; set; } = new();
     [JsonPropertyName("viper")]
     public MouseProfileSettings Viper { get; set; } = new();
@@ -321,6 +325,8 @@ public sealed class DeviceProfileSettings
 
     internal void ApplySafeDefaults()
     {
+        Ripsaw ??= new RazerRipsawProfileSettings();
+        Ripsaw.ApplySafeDefaults();
         Blade ??= new BladeProfileSettings();
         Viper ??= new MouseProfileSettings();
         Keyboard ??= new KeyboardProfileSettings();
@@ -358,6 +364,7 @@ public sealed class DeviceProfileSettings
 
 public sealed class PowerProfileOverrides
 {
+    public RazerRipsawProfileSettings Ripsaw { get; set; } = new();
     public BladeProfileSettings Blade { get; set; } = new();
     [JsonPropertyName("viper")]
     public MouseProfileSettings Viper { get; set; } = new();
@@ -384,6 +391,8 @@ public sealed class PowerProfileOverrides
 
     internal void ApplySafeDefaults()
     {
+        Ripsaw ??= new RazerRipsawProfileSettings();
+        Ripsaw.ApplySafeDefaults();
         Blade ??= new BladeProfileSettings();
         Viper ??= new MouseProfileSettings();
         Keyboard ??= new KeyboardProfileSettings();

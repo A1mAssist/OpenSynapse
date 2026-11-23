@@ -19,7 +19,7 @@ internal interface IWindowsAudioMuteSnapshotReader : IDisposable
 /// <summary>
 /// Observes default Core Audio endpoints on one COM-initialized thread.
 /// </summary>
-public sealed class WindowsCoreAudioMuteEventSource : IDisposable
+public sealed partial class WindowsCoreAudioMuteEventSource : IDisposable
 {
     private static readonly TimeSpan DefaultRetryInterval = TimeSpan.FromSeconds(5);
     // Endpoint callbacks can stop arriving after a device re-enumeration. Re-read on a
@@ -271,7 +271,7 @@ public sealed class WindowsCoreAudioMuteEventSource : IDisposable
         }
     }
 
-    private sealed class CoreAudioMuteSnapshotReader : IWindowsAudioMuteSnapshotReader
+    private sealed partial class CoreAudioMuteSnapshotReader : IWindowsAudioMuteSnapshotReader
     {
         private const int ERender = 0;
         private const int ECapture = 1;

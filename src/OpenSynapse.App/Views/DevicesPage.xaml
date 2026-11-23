@@ -529,7 +529,8 @@
                       </StackPanel>
                     </StackPanel>
                   </Border>
-                  <Border Style="{StaticResource CardStyle}" Padding="16">
+                  <DevicePanels:RazerLaylaPanel DataContext="{Binding Layla}" Visibility="{Binding DataContext.LaylaVisibility, ElementName=BlePanel}" />
+                  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding MouseVisibility}">
                     <StackPanel Spacing="14">
                       <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="RazerHidPollingTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
                       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
@@ -696,6 +697,7 @@
                       <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8" Visibility="{Binding FirmwareVisibility}"><Button local:Localized.Uid="FirmwareCheckButton" Click="RazerHidCheckFirmwareClick" IsEnabled="{Binding CanCheckFirmwareUpdate}" Style="{StaticResource SecondaryButtonStyle}" /><Button Grid.Column="1" local:Localized.Uid="FirmwareDownloadAndRunButton" Click="RazerHidInstallFirmwareClick" Visibility="{Binding FirmwareUpdateDownloadVisibility}" Style="{StaticResource SecondaryButtonStyle}" /><TextBlock Grid.Column="2" Text="{Binding FirmwareUpdateStatusText}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" /></Grid>
                     </StackPanel>
                   </Border>
+                  <Grid Visibility="{Binding SpeakerVisibility}"><DevicePanels:NommoAudioPanel DataContext="{Binding Speaker}" /></Grid>
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding SoundbarVisibility}">
                     <StackPanel Spacing="14" DataContext="{Binding Soundbar}">
                       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">

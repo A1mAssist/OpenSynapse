@@ -13,6 +13,11 @@ public sealed partial class MainViewModel
 
         foreach (var row in BleDevices.Where(row => row.BatteryPercent is null).ToArray())
         {
+            if (row.Device.ProductId == OpenSynapse.Windows.Protocols.RazerLaylaProtocol.ProductId)
+            {
+                if (_laylaDevices.TryGetValue(row.Device.Id, out var pod)) row.SetBatteryPercent(pod.BatteryPercent);
+                continue;
+            }
             if (SelectedBle is { } selected &&
                 StringComparer.OrdinalIgnoreCase.Equals(row.Device.Id, selected.DeviceId))
             {

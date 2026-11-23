@@ -4294,4 +4294,27 @@
   <data name="UpdateSourceDescription" xml:space="preserve"><value>Automatic uses Gitee first and falls back to GitHub if Gitee is unavailable or behind.</value></data>
   <data name="LightingStudioEffectChromaFile" xml:space="preserve"><value>Animation file</value></data>
   <data name="LightingStudioStatusChromaUnavailable" xml:space="preserve"><value>Animation {0} could not be loaded: {1}</value></data>
+  <data name="DockEndpointAudioTitle" xml:space="preserve"><value>Windows default playback device</value></data>
+  <data name="DockEndpointAudioDescription" xml:space="preserve"><value>Adjust the current Windows playback device. Changes apply when you choose Apply and are not restored by device profiles.</value></data>
+  <data name="DockEndpointAudioApplied" xml:space="preserve"><value>Applied to Windows playback.</value></data>
+  <data name="DockEndpointAudioDeviceChanged" xml:space="preserve"><value>The default playback device changed. Refresh before applying.</value></data>
+  <data name="DockEndpointAudioUnavailable" xml:space="preserve"><value>Could not read or apply Windows playback settings. Refresh and try again.</value></data>
+  <data name="DockEndpointAudioMute.Header" xml:space="preserve"><value>Mute</value></data>
+  <data name="DockEndpointAudioVolume.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Playback volume</value></data>
+  <data name="LaylaTitle.Text" xml:space="preserve"><value>Control Pod mappings</value></data>
+  <data name="LaylaHelp.Text" xml:space="preserve"><value>Mappings stay active while OpenSynapse runs. Choose a macro from your library for keyboard, mouse, text or commands; each gesture runs it once.</value></data>
+  <data name="LaylaActive" xml:space="preserve"><value>Mappings active</value></data>
+  <data name="LaylaStopped" xml:space="preserve"><value>Mappings stopped · refresh to reconnect</value></data>
+  <data name="LaylaDisabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="LaylaCyclePlayback" xml:space="preserve"><value>Next playback device</value></data>
+  <data name="LaylaSelectAction" xml:space="preserve"><value>Choose an action for each gesture.</value></data>
+  <data name="LaylaSaveFailed" xml:space="preserve"><value>Could not save mappings. The previous mappings remain active.</value></data>
+  <data name="LaylaInputClick" xml:space="preserve"><value>Top · click</value></data>
+  <data name="LaylaInputDoubleClick" xml:space="preserve"><value>Top · double click</value></data>
+  <data name="LaylaInputTripleClick" xml:space="preserve"><value>Top · triple click</value></data>
+  <data name="LaylaInputHold" xml:space="preserve"><value>Top · hold</value></data>
+  <data name="LaylaInputSourceClick" xml:space="preserve"><value>Source · click</value></data>
+  <data name="LaylaInputSourceDoubleClick" xml:space="preserve"><value>Source · double click</value></data>
+  <data name="LaylaInputClockwise" xml:space="preserve"><value>Rotate clockwise</value></data>
+  <data name="LaylaInputAnticlockwise" xml:space="preserve"><value>Rotate counter-clockwise</value></data>
 </root>

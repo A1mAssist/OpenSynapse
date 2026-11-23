@@ -6,6 +6,7 @@ public sealed partial class RazerHeadsetAudioService
 {
     public Task SetBassAsync(byte level, CancellationToken cancellationToken = default)
     {
+        if (HasFeature91ProductCapabilities) RazerAudioFeatureProtocol.ValidateBass(_productId, level);
         if (level > 100)
         {
             throw new ArgumentOutOfRangeException(nameof(level), "Bass level must be between 0 and 100.");

@@ -10,9 +10,14 @@ public sealed partial class RazerHeadsetAudioService
     /// </summary>
     public async Task<int?> TryReadBatteryPercentAsync(CancellationToken cancellationToken = default)
     {
+        if (HasFeature91ProductCapabilities) return null;
+        if (RazerCarolAudioProtocol.IsSupported(_productId))
+            return _protocol25Transport is null ? null :
+                await TryReadCarolBatteryPercentAsync(cancellationToken).ConfigureAwait(false);
         if (_protocol25Transport is not null ||
             _transportKind is RazerHeadsetAudioTransport.KrakenBase37 or
                 RazerHeadsetAudioTransport.Mixer053E or
+                RazerHeadsetAudioTransport.NxpSerial or
                 RazerHeadsetAudioTransport.NativeDll)
         {
             return null;
@@ -33,10 +38,25 @@ public sealed partial class RazerHeadsetAudioService
         Action<string>? diagnostic,
         CancellationToken cancellationToken = default)
     {
+        if (!connection.HasControlInterface) return null;
+
         try
         {
             switch (connection.Transport)
             {
+                case RazerHeadsetAudioTransport.Protocol25Feature65 when
+                    RazerCarolAudioProtocol.IsSupported(connection.ProductId):
+                {
+                    var service = new RazerHeadsetAudioService(new RazerFeatureTransport(),
+                        connection.DevicePath, TimeSpan.FromMilliseconds(20), diagnostic,
+                        connection.Transport, connection.ProductId);
+                    return await service.TryReadCarolBatteryPercentAsync(cancellationToken).ConfigureAwait(false);
+                }
+                case RazerHeadsetAudioTransport.NxpSerial:
+                {
+                    await using var service = new RazerNxpHeadsetService(connection.DevicePath, diagnostic);
+                    return await service.TryReadBatteryPercentAsync(cancellationToken).ConfigureAwait(false);
+                }
                 case RazerHeadsetAudioTransport.Feature91:
                 {
                     var service = new RazerHeadsetAudioService(

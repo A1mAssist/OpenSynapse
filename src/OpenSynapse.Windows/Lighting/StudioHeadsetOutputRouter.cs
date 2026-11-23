@@ -13,9 +13,10 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
     private readonly Func<RazerHeadsetAudioConnection?> _connection;
     private readonly Func<int, int, StudioEffectInput>? _inputProvider;
     private readonly Func<Task>? _beforeTakeOver;
+    private readonly Func<RazerHeadsetAudioConnection, Task>? _beforeConnectionTakeOver;
     private readonly Action<string>? _diagnostic;
     private readonly RazerHidSpecialLightingService? _krakenLighting;
-    private readonly Func<ushort, RazerHidSpecialLightingConnection?>? _krakenConnection;
+    private readonly Func<RazerHeadsetAudioConnection, RazerHidSpecialLightingConnection?>? _krakenConnection;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly object _updateGate = new();
     private Func<IReadOnlyList<StudioLayerRender>>? _layersForDevice;
@@ -36,11 +37,13 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
         Func<Task>? beforeTakeOver = null,
         Action<string>? diagnostic = null,
         RazerHidSpecialLightingService? krakenLighting = null,
-        Func<ushort, RazerHidSpecialLightingConnection?>? krakenConnection = null)
+        Func<RazerHeadsetAudioConnection, RazerHidSpecialLightingConnection?>? krakenConnection = null,
+        Func<RazerHeadsetAudioConnection, Task>? beforeConnectionTakeOver = null)
     {
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));
         _inputProvider = inputProvider;
         _beforeTakeOver = beforeTakeOver;
+        _beforeConnectionTakeOver = beforeConnectionTakeOver;
         _diagnostic = diagnostic;
         _krakenLighting = krakenLighting;
         _krakenConnection = krakenConnection;
@@ -71,7 +74,7 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
             if (connection is { Transport: RazerHeadsetAudioTransport.KrakenBase37 })
             {
                 if (_krakenLighting is null ||
-                    _krakenConnection?.Invoke(connection.ProductId) is not { IsReady: true } kraken)
+                    _krakenConnection?.Invoke(connection) is not { IsReady: true } kraken)
                 {
                     await ReleaseServiceAsync().ConfigureAwait(false);
                     return false;
@@ -118,6 +121,10 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
             {
                 try
                 {
+                    if (_beforeConnectionTakeOver is not null)
+                    {
+                        await _beforeConnectionTakeOver(connection).ConfigureAwait(false);
+                    }
                     if (_beforeTakeOver is not null)
                     {
                         await _beforeTakeOver().ConfigureAwait(false);

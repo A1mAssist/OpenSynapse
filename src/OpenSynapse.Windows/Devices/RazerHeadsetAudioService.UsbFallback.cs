@@ -4,7 +4,8 @@ public sealed partial class RazerHeadsetAudioService
 {
     private static bool NeedsHidControlInterface(ushort productId) =>
         RazerHeadsetChannelCatalog.Resolve(productId) is not
-            (RazerHeadsetChannel.Unsupported or RazerHeadsetChannel.NativeDll);
+            (RazerHeadsetChannel.Unsupported or RazerHeadsetChannel.NativeDll or
+                RazerHeadsetChannel.DedicatedBlackShark or RazerHeadsetChannel.AudiowiseBle);
 
     internal static RazerHeadsetAudioConnection? CreateUsbFallback(WindowsUsbDevice device)
     {
@@ -19,8 +20,11 @@ public sealed partial class RazerHeadsetAudioService
             device.ProductId,
             Products[device.ProductId],
             0,
-            ContainerId: null,
+            ContainerId: device.ContainerId,
             ToTransport(channel),
-            HasControlInterface: false);
+            HasControlInterface: false,
+            PhysicalDeviceKey: WindowsHidDiscovery.GetPhysicalDeviceKey(device.InstanceId,
+                Guid.TryParse(device.ContainerId, out var container) ? container : null, device.UsbParentDeviceId),
+            UsbParentDeviceId: device.UsbParentDeviceId);
     }
 }

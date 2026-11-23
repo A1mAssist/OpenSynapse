@@ -308,6 +308,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             };
             var initial = crossfadeFrom ?? first;
             await service.SetFrameAsync(initial, cancellationToken).ConfigureAwait(true);
+            cancellationToken.ThrowIfCancellationRequested();
             _softwareLastFrame = initial;
         }
         catch

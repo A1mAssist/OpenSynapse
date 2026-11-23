@@ -81,7 +81,7 @@ public sealed partial class RazerHeadsetAudioService
                 cancellationToken).ConfigureAwait(false)
             : (Ok: false, Value: default(bool));
 
-        return new RazerHeadsetAudioState(
+        var state = new RazerHeadsetAudioState(
             Firmware: firmware.Ok ? firmware.Value : null,
             BatteryPercent: null,
             Charging: null,
@@ -99,6 +99,9 @@ public sealed partial class RazerHeadsetAudioService
             SerialNumber = serial.Ok ? serial.Value : null,
             Edition = edition.Ok ? edition.Value : null,
         };
+        return RazerCarolAudioProtocol.IsSupported(_productId)
+            ? await ReadCarolStateAsync(state, errors, cancellationToken).ConfigureAwait(false)
+            : state;
     }
 
     private async Task<(bool Ok, T Value)> ProbeProtocol25Async<T>(
@@ -125,14 +128,23 @@ public sealed partial class RazerHeadsetAudioService
         }
     }
 
-    private Task<byte[]> QueryProtocol25Async(
+    private async Task<byte[]> QueryProtocol25Async(
         Func<byte, byte[]> request,
-        CancellationToken cancellationToken) =>
-        _protocol25Transport!.QueryAsync(
-            RazerProtocol25FeatureProtocol.CreateRequest(
-                _productId,
-                request(NextProtocol25TransactionId())),
-            cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        var report = RazerProtocol25FeatureProtocol.CreateRequest(_productId, request(NextProtocol25TransactionId()));
+        try
+        {
+            var response = await _protocol25Transport!.QueryAsync(report, cancellationToken).ConfigureAwait(false);
+            if (RazerCarolAudioProtocol.IsSupported(_productId)) RazerCarolAudioProtocol.ValidateResponse(report, response);
+            return response;
+        }
+        catch (TimeoutException exception) when (RazerCarolAudioProtocol.IsSupported(_productId))
+        {
+            // Carol probes, rollback and UI/profile callers handle device I/O failures uniformly.
+            throw new IOException(exception.Message, exception);
+        }
+    }
 
     private byte NextProtocol25TransactionId()
     {
@@ -180,8 +192,11 @@ public sealed partial class RazerHeadsetAudioService
         return data[1];
     }
 
-    private Task SetProtocol25EqPresetAsync(byte preset, CancellationToken cancellationToken) =>
-        WriteProtocol25Async(
+    private Task SetProtocol25EqPresetAsync(byte preset, CancellationToken cancellationToken)
+    {
+        if (RazerCarolAudioProtocol.IsSupported(_productId) && !RazerCarolAudioProtocol.IsPreset(preset))
+            throw new ArgumentOutOfRangeException(nameof(preset));
+        return WriteProtocol25Async(
             txn => RazerHeadsetAudioProtocol.GetEqPreset(txn),
             RazerHeadsetAudioProtocol.ReadEqPreset,
             preset,
@@ -189,6 +204,7 @@ public sealed partial class RazerHeadsetAudioService
             value => value == preset,
             "EQ preset",
             cancellationToken);
+    }
 
     private async Task SetProtocol25EqBandsAsync(
         IReadOnlyList<byte> bands,
@@ -196,6 +212,8 @@ public sealed partial class RazerHeadsetAudioService
     {
         ArgumentNullException.ThrowIfNull(bands);
         var tenBand = bands.Count == RazerHeadsetAudioProtocol.TenBandCount;
+        if (RazerCarolAudioProtocol.IsSupported(_productId) && !tenBand)
+            throw new ArgumentException("Carol EQ requires ten bands.", nameof(bands));
         if (!tenBand && bands.Count != RazerHeadsetAudioProtocol.EightBandCount)
         {
             throw new ArgumentException("Equalizer data must contain 10 or 8 bands.", nameof(bands));
@@ -249,6 +267,9 @@ public sealed partial class RazerHeadsetAudioService
         IReadOnlyList<byte> bands,
         CancellationToken cancellationToken)
     {
+        if (RazerCarolAudioProtocol.IsSupported(_productId) &&
+            (!RazerCarolAudioProtocol.IsPreset(preset) || bands.Count != 10))
+            throw new ArgumentException("Carol requires a supported preset and ten EQ bands.");
         var tenBand = bands.Count == RazerHeadsetAudioProtocol.TenBandCount;
         var previousPreset = RazerHeadsetAudioProtocol.ReadEqPreset(
             await QueryProtocol25Async(

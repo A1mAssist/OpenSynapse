@@ -16,7 +16,7 @@ namespace OpenSynapse.Windows.Devices;
 /// </summary>
 public sealed partial class HeadsetAudioProfileApplier : IDeviceProfileApplier
 {
-    private static readonly DeviceCategory[] SupportedCategories = [DeviceCategory.Headset];
+    private static readonly DeviceCategory[] SupportedCategories = [DeviceCategory.Headset, DeviceCategory.Speaker];
     private static readonly RazerAudioSource[] Sources =
         [RazerAudioSource.None, RazerAudioSource.Spdif, RazerAudioSource.Aux, RazerAudioSource.Bluetooth, RazerAudioSource.Usb];
     private static readonly RazerAncState[] AncStates =
@@ -45,10 +45,14 @@ public sealed partial class HeadsetAudioProfileApplier : IDeviceProfileApplier
     public IReadOnlyCollection<DeviceCategory> Categories => SupportedCategories;
 
     public bool Accepts(DeviceDescriptor device) =>
-        device.Category == DeviceCategory.Headset &&
+        (device.Category == DeviceCategory.Headset ||
+            device.Category == DeviceCategory.Speaker &&
+            (RazerCarolAudioProtocol.IsSupported(device.ProductId) ||
+             RazerAudioFeatureProtocol.HasProductCapabilities(device.ProductId))) &&
         !device.Id.StartsWith("ble:", StringComparison.OrdinalIgnoreCase) &&
         !device.Name.Contains("BlackShark", StringComparison.OrdinalIgnoreCase) &&
-        RazerHeadsetAudioService.UsesFeatureReportTransport(device.ProductId);
+        (RazerHeadsetAudioService.UsesFeatureReportTransport(device.ProductId) ||
+            RazerNxpHeadsetProtocol.IsSupported(device.ProductId) || RazerCarolAudioProtocol.IsSupported(device.ProductId));
 
     public async Task<ProfileDeviceApplyResult> ApplyAsync(
         DeviceProfileApplyContext context,
@@ -83,15 +87,28 @@ public sealed partial class HeadsetAudioProfileApplier : IDeviceProfileApplier
 
         if (connection.Transport != RazerHeadsetAudioTransport.Feature91)
         {
+            if (connection.Transport == RazerHeadsetAudioTransport.Protocol25Feature65 &&
+                RazerCarolAudioProtocol.IsSupported(connection.ProductId))
+            {
+                var carol = new RazerHeadsetAudioService(_transport, connection.DevicePath, _deviceWait,
+                    transportKind: connection.Transport, productId: connection.ProductId);
+                await ApplyCarolAsync(carol, profile, results, cancellationToken);
+                return CreateResult(context.Device.Id, results);
+            }
             // THX is a Windows-side component keyed by PID/container, so it still
             // replays for headsets whose audio settings use a 37/64-byte transport.
             await ApplyThxAsync(connection, profile, results, cancellationToken);
             await ApplyMxicDndAsync(connection, profile, results, cancellationToken);
+            if (connection.Transport == RazerHeadsetAudioTransport.NxpSerial)
+            {
+                await using var nxp = new RazerNxpHeadsetService(connection.DevicePath);
+                await ApplyNxpAsync(nxp, profile, results, cancellationToken);
+            }
             return CreateResult(context.Device.Id, results);
         }
 
         var service = new RazerHeadsetAudioService(
-            _transport, connection.DevicePath, _deviceWait);
+            _transport, connection.DevicePath, _deviceWait, productId: connection.ProductId);
         var state = await TryReadStateAsync(service, cancellationToken);
 
         await ApplyThxAsync(connection, profile, results, cancellationToken);
@@ -144,6 +161,8 @@ public sealed partial class HeadsetAudioProfileApplier : IDeviceProfileApplier
         List<ProfileSettingApplyResult> results,
         CancellationToken cancellationToken)
     {
+        // Nommo/Marci lighting has a separate collection; this connection is audio only.
+        if (RazerAudioFeatureProtocol.HasProductCapabilities(connection.ProductId)) return;
         if (profile.ChromaBrightness is null && profile.ChromaEffect is null)
         {
             return;
@@ -218,6 +237,7 @@ public sealed partial class HeadsetAudioProfileApplier : IDeviceProfileApplier
         List<ProfileSettingApplyResult> results,
         CancellationToken cancellationToken)
     {
+        if (service.HasFeature91ProductCapabilities) return;
         if (TryBuildAnc(profile, out var ancState, out var ancLevel))
         {
             if (state?.AncState == ancState && state.AncLevel == ancLevel)

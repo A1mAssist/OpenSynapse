@@ -20,6 +20,14 @@ public sealed partial class HeadsetAudioPanel : UserControl
 
     private RazerHeadsetAudioViewModel? ViewModel => DataContext as RazerHeadsetAudioViewModel;
 
+    private async Task RunAsync(Func<RazerHeadsetAudioViewModel, CancellationToken, Task> action)
+    {
+        var target = ViewModel;
+        if (target is null || Accessories is null) return;
+        try { await Accessories.RunHeadsetOperationAsync(target, action, Lifetime); }
+        catch (OperationCanceledException) when (Lifetime.IsCancellationRequested) { }
+    }
+
     internal void Attach(UsbAccessoriesWorkspace accessories, CancellationToken lifetime)
     {
         Accessories = accessories;
@@ -81,16 +89,16 @@ public sealed partial class HeadsetAudioPanel : UserControl
         await (ViewModel?.ApplyParametricEqAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void HeadsetAudioApplyMatrixBrightnessClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyMatrixBrightnessAsync(Lifetime) ?? Task.CompletedTask);
+        await RunAsync((vm, token) => vm.ApplyMatrixBrightnessAsync(token));
 
     private async void HeadsetAudioApplyMatrixLightingClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyMatrixLightingAsync(Lifetime) ?? Task.CompletedTask);
+        await RunAsync((vm, token) => vm.ApplyMatrixLightingAsync(token));
 
     private async void HeadsetAudioApplyAutoSleepClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyAutoSleepAsync(Lifetime) ?? Task.CompletedTask);
+        await RunAsync((vm, token) => vm.ApplyAutoSleepAsync(token));
 
     private async void HeadsetAudioApplyLightingClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.Lighting?.ApplyAsync(Lifetime) ?? Task.CompletedTask);
+        await RunAsync((vm, token) => vm.Lighting?.ApplyAsync(token) ?? Task.CompletedTask);
 
     private async void HeadsetAudioApplyThxPresetClick(object sender, RoutedEventArgs e) =>
         await (ViewModel?.ApplyThxPresetAsync(Lifetime) ?? Task.CompletedTask);

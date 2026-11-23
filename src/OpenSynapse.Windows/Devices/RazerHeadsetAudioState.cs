@@ -37,6 +37,8 @@ public sealed record RazerHeadsetAudioState(
     public string? SerialNumber { get; init; }
     public byte? Edition { get; init; }
     public byte? LinkStatus { get; init; }
+    public RazerCarolPowerState? CarolPower { get; init; }
+    public byte? ExternalPowerStatus { get; init; }
     public Version? DockFirmware { get; init; }
     public string? DockSerialNumber { get; init; }
     public byte? DockEdition { get; init; }

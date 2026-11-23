@@ -12,6 +12,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             : (byte)Math.Round(level))
         : _connection.Transport switch
     {
+        RazerHeadsetAudioTransport.Feature91 when IsMarciAudio => RazerAudioFeatureProtocol.EncodeMarciEqBand(level),
         RazerHeadsetAudioTransport.Mxic64 => RazerHeadsetEqScale.ToStep(level),
         RazerHeadsetAudioTransport.ValkyrieT3Feature64 => RazerValkyrieHeadsetProtocol.EncodeEqBandLevel((sbyte)Math.Round(level)),
         RazerHeadsetAudioTransport.Jolie64 => (byte)(level < 0
@@ -19,7 +20,8 @@ public sealed partial class RazerHeadsetAudioViewModel
             : (byte)Math.Round(level)),
         RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
             RazerValkyrieHeadsetProtocol.EncodeEqBandLevel((sbyte)Math.Round(level)),
-        RazerHeadsetAudioTransport.Protocol25Feature65 => unchecked((byte)(sbyte)Math.Round(level)),
+        RazerHeadsetAudioTransport.Protocol25Feature65 => IsCarol
+            ? RazerCarolAudioProtocol.EncodeBand(level) : unchecked((byte)(sbyte)Math.Round(level)),
         _ => (byte)Math.Round(level),
     };
 
@@ -27,12 +29,14 @@ public sealed partial class RazerHeadsetAudioViewModel
         ? RazerProtocol40HeadsetProtocol.DecodeEqBandLevel(level)
         : _connection.Transport switch
     {
+        RazerHeadsetAudioTransport.Feature91 when IsMarciAudio => RazerAudioFeatureProtocol.DecodeMarciEqBand(level),
         RazerHeadsetAudioTransport.Mxic64 => RazerHeadsetEqScale.ToDecibels(level),
         RazerHeadsetAudioTransport.ValkyrieT3Feature64 => RazerValkyrieHeadsetProtocol.DecodeEqBandLevel(level),
         RazerHeadsetAudioTransport.Jolie64 => (level & 0x80) != 0 ? -(level & 0x7F) : level,
         RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
             RazerValkyrieHeadsetProtocol.DecodeEqBandLevel(level),
-        RazerHeadsetAudioTransport.Protocol25Feature65 => unchecked((sbyte)level),
+        RazerHeadsetAudioTransport.Protocol25Feature65 => IsCarol
+            ? RazerCarolAudioProtocol.DecodeBand(level) : unchecked((sbyte)level),
         _ => level,
     };
 }

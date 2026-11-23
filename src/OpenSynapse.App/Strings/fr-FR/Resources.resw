@@ -4274,4 +4274,27 @@ Les modifications de macro non enregistrées seront perdues.</value></data>
   <data name="UpdateSourceDescription" xml:space="preserve"><value>Le mode automatique privilégie Gitee et revient à GitHub si Gitee est indisponible ou en retard.</value></data>
   <data name="LightingStudioEffectChromaFile" xml:space="preserve"><value>Fichier d’animation</value></data>
   <data name="LightingStudioStatusChromaUnavailable" xml:space="preserve"><value>Impossible de charger l’animation {0} : {1}</value></data>
+  <data name="DockEndpointAudioTitle" xml:space="preserve"><value>Périphérique de lecture Windows par défaut</value></data>
+  <data name="DockEndpointAudioDescription" xml:space="preserve"><value>Réglez le périphérique de lecture Windows actuel. Les changements prennent effet avec Appliquer et ne sont pas restaurés par les profils de périphérique.</value></data>
+  <data name="DockEndpointAudioApplied" xml:space="preserve"><value>Appliqué à la lecture Windows.</value></data>
+  <data name="DockEndpointAudioDeviceChanged" xml:space="preserve"><value>Le périphérique de lecture par défaut a changé. Actualisez avant d’appliquer.</value></data>
+  <data name="DockEndpointAudioUnavailable" xml:space="preserve"><value>Impossible de lire ou d’appliquer les paramètres de lecture Windows. Actualisez et réessayez.</value></data>
+  <data name="DockEndpointAudioMute.Header" xml:space="preserve"><value>Couper le son</value></data>
+  <data name="DockEndpointAudioVolume.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Volume de lecture</value></data>
+  <data name="LaylaTitle.Text" xml:space="preserve"><value>Affectations du Control Pod</value></data>
+  <data name="LaylaHelp.Text" xml:space="preserve"><value>Les affectations restent actives tant qu’OpenSynapse fonctionne. Choisissez une macro pour le clavier, la souris, le texte ou les commandes ; chaque geste l’exécute une fois.</value></data>
+  <data name="LaylaActive" xml:space="preserve"><value>Affectations actives</value></data>
+  <data name="LaylaStopped" xml:space="preserve"><value>Affectations arrêtées · actualisez pour reconnecter</value></data>
+  <data name="LaylaDisabled" xml:space="preserve"><value>Désactivé</value></data>
+  <data name="LaylaCyclePlayback" xml:space="preserve"><value>Périphérique de lecture suivant</value></data>
+  <data name="LaylaSelectAction" xml:space="preserve"><value>Choisissez une action pour chaque geste.</value></data>
+  <data name="LaylaSaveFailed" xml:space="preserve"><value>Échec de l’enregistrement. Les affectations précédentes restent actives.</value></data>
+  <data name="LaylaInputClick" xml:space="preserve"><value>Dessus · clic</value></data>
+  <data name="LaylaInputDoubleClick" xml:space="preserve"><value>Dessus · double clic</value></data>
+  <data name="LaylaInputTripleClick" xml:space="preserve"><value>Dessus · triple clic</value></data>
+  <data name="LaylaInputHold" xml:space="preserve"><value>Dessus · appui long</value></data>
+  <data name="LaylaInputSourceClick" xml:space="preserve"><value>Source · clic</value></data>
+  <data name="LaylaInputSourceDoubleClick" xml:space="preserve"><value>Source · double clic</value></data>
+  <data name="LaylaInputClockwise" xml:space="preserve"><value>Tourner dans le sens horaire</value></data>
+  <data name="LaylaInputAnticlockwise" xml:space="preserve"><value>Tourner dans le sens antihoraire</value></data>
 </root>

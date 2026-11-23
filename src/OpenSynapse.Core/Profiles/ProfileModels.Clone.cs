@@ -28,6 +28,7 @@ public sealed partial class ProfileDefinition
 
     private static ProfileSettings CloneSettings(ProfileSettings source) => new()
     {
+        Ripsaw = source.Ripsaw.Clone(),
         Blade = CloneBlade(source.Blade),
         Viper = CloneMouse(source.Viper),
         Keyboard = CloneKeyboard(source.Keyboard),
@@ -44,6 +45,7 @@ public sealed partial class ProfileDefinition
 
     private static DeviceProfileSettings CloneDevice(DeviceProfileSettings source) => new()
     {
+        Ripsaw = source.Ripsaw.Clone(),
         Blade = CloneBlade(source.Blade),
         Viper = CloneMouse(source.Viper),
         Keyboard = CloneKeyboard(source.Keyboard),
@@ -66,6 +68,7 @@ public sealed partial class ProfileDefinition
 
     private static PowerProfileOverrides ClonePower(PowerProfileOverrides source) => new()
     {
+        Ripsaw = source.Ripsaw.Clone(),
         Blade = CloneBlade(source.Blade),
         Viper = CloneMouse(source.Viper),
         Keyboard = CloneKeyboard(source.Keyboard),
@@ -210,6 +213,7 @@ public sealed partial class ProfileDefinition
         ThxCaptureVoiceGateLevel = source.ThxCaptureVoiceGateLevel,
         EqPreset = source.EqPreset,
         EqBands = CloneIntMap(source.EqBands),
+        EqBandsTenths = CloneIntMap(source.EqBandsTenths),
         MicEqPreset = source.MicEqPreset,
         MicEqBands = CloneIntMap(source.MicEqBands),
         Bass = source.Bass,
@@ -240,6 +244,7 @@ public sealed partial class ProfileDefinition
         ParametricEqDirection = source.ParametricEqDirection,
         ParametricEqFilterType = source.ParametricEqFilterType,
         HapticsStrength = source.HapticsStrength,
+        HapticsEnabled = source.HapticsEnabled,
         AutoPause = source.AutoPause,
         AutoShutdownMinutes = source.AutoShutdownMinutes,
         AutoSleepEnabled = source.AutoSleepEnabled,

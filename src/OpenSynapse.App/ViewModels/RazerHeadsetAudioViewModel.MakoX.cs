@@ -77,7 +77,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             ? Visibility.Visible
             : Visibility.Collapsed;
 
-    public Visibility MakoXPowerVisibility => IsJolie ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility MakoXPowerVisibility => IsJolie || IsCarol && _hasCarolPower ? Visibility.Visible : Visibility.Collapsed;
 
     public bool AutoSleepEnabled
     {

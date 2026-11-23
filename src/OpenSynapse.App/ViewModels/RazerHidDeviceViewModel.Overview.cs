@@ -4,8 +4,11 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerHidDeviceViewModel
 {
-    public Task LoadSoundbarAsync(CancellationToken cancellationToken = default) =>
-        Soundbar?.LoadAsync(cancellationToken) ?? Task.CompletedTask;
+    public async Task LoadSoundbarAsync(CancellationToken cancellationToken = default)
+    {
+        if (Soundbar is not null) await Soundbar.LoadAsync(cancellationToken);
+        if (Speaker is not null) await Speaker.LoadNommoAsync(cancellationToken);
+    }
 
     internal static IReadOnlyList<DeviceProtocolDetailViewModel> BuildProtocolDetails(
         RazerHidDeviceConnection connection,

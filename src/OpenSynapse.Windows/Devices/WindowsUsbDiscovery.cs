@@ -3,7 +3,8 @@ using System.Runtime.InteropServices;
 namespace OpenSynapse.Windows.Devices;
 
 /// <summary>A present USB device instance, used when Windows exposes no HID collection.</summary>
-internal readonly record struct WindowsUsbDevice(string InstanceId, ushort ProductId);
+internal readonly record struct WindowsUsbDevice(string InstanceId, ushort ProductId,
+    string? ContainerId = null, string? UsbParentDeviceId = null);
 
 /// <summary>
 /// Present-only USB device enumeration. The HID path can disappear while the
@@ -47,7 +48,8 @@ internal static class WindowsUsbDiscovery
                 continue;
             }
 
-            devices.Add(new WindowsUsbDevice(instanceId, productId));
+            var identity = WindowsHidDiscovery.GetDeviceIdentity(instanceId);
+            devices.Add(new WindowsUsbDevice(instanceId, productId, identity.ContainerId, identity.UsbParentDeviceId));
         }
 
         return devices;

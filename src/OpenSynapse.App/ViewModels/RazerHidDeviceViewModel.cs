@@ -137,6 +137,9 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         Soundbar = service.CreateLeviathanV2XAudio(connection) is { } audio
             ? new LeviathanV2XAudioViewModel(audio, getProfileDocument, saveProfileAsync)
             : null;
+        Speaker = connection.IsReady && connection.Definition.ProductId is 0x0517 or 0x0518
+            ? new RazerSpeakerAccessoryViewModel(connection, getProfileDocument, saveProfileAsync)
+            : null;
         if (connection.Definition.MatrixDimensions is not null &&
             connection.Capabilities.Contains(RazerHidBackendCapability.MatrixFrameWrite))
         {
@@ -191,6 +194,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         }
         finally
         {
+            if (Speaker is not null) await Speaker.DisposeAsync().ConfigureAwait(false);
             if (_softwareLightingRuntime is not null)
             {
                 await _softwareLightingRuntime.DisposeAsync().ConfigureAwait(false);
@@ -200,6 +204,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
 
     public RazerHidDeviceConnection Connection { get; }
     public LeviathanV2XAudioViewModel? Soundbar { get; }
+    public RazerSpeakerAccessoryViewModel? Speaker { get; }
+    public Visibility SpeakerVisibility => Speaker is null ? Visibility.Collapsed : Visibility.Visible;
     public Visibility SoundbarVisibility => Soundbar is null ? Visibility.Collapsed : Visibility.Visible;
     public string InstanceId => Connection.InstanceId;
     internal bool HasRunningSoftwareLighting => _softwareLightingRuntime?.IsRunning == true;

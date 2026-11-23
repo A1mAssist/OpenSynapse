@@ -357,7 +357,8 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
                     usesLeviathanReportId,
                     usesMouseDockLinker,
                     directIo: false,
-                    message => WriteDiagnostic(devicePath, request, message)).ConfigureAwait(false);
+                    message => WriteDiagnostic(devicePath, request, message),
+                    usesMarciAudio: logicalProductId == 0x0F66).ConfigureAwait(false);
             }
             catch (Exception exception) when (exception is Win32Exception or IOException or InvalidOperationException or NotSupportedException)
             {
@@ -406,7 +407,8 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
         bool usesLeviathanReportId,
         bool usesMouseDockLinker,
         bool directIo = false,
-        Action<string>? diagnostic = null)
+        Action<string>? diagnostic = null,
+        bool usesMarciAudio = false)
     {
         string? lastError = null;
         string? lastValidationError = null;
@@ -454,7 +456,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
                 }
 
                 var classification = ClassifyResponse(request, candidate, responseReportId,
-                    usesLeviathanReportId, allowRemainingPacketsMismatch, usesMouseDockLinker);
+                    usesLeviathanReportId, allowRemainingPacketsMismatch, usesMouseDockLinker, usesMarciAudio);
                 if (classification == RazerResponseMatch.BusyReceipt)
                 {
                     // A busy receipt left by an earlier command must not be reported as a
@@ -476,7 +478,8 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
                 }
 
                 // Synapse polls the same transaction before re-sending; a re-send restarts slow flash commits.
-                if (candidate[1] == 0x01 && readAttempt < MaxReadAttempts) continue;
+                if ((candidate[1] == 0x01 || (usesMarciAudio && candidate[1] == 0x04)) &&
+                    readAttempt < MaxReadAttempts) continue;
 
                 response = candidate;
                 break;

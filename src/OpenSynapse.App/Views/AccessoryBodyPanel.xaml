@@ -6,6 +6,33 @@
   <StackPanel x:Name="Root" Spacing="16">
     <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
 
+    <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding EndpointAudioVisibility}">
+      <StackPanel Spacing="12" DataContext="{Binding EndpointAudio}">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+          <TextBlock local:Localized.Uid="DockEndpointAudioTitle" FontSize="18"
+                     FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <Button Grid.Column="1" local:Localized.Uid="CoolingPadRefreshButton" Click="EndpointAudioRefreshClick"
+                  IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+        </Grid>
+        <TextBlock local:Localized.Uid="DockEndpointAudioDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+        <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+          <TextBlock local:Localized.Uid="AccessoryAudioVolume" Style="{StaticResource MetricLabelStyle}" />
+          <TextBlock Grid.Column="1" Text="{Binding VolumeText}" FontFamily="Cascadia Mono,Consolas" />
+        </Grid>
+        <Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding Volume, Mode=TwoWay}"
+                IsEnabled="{Binding CanEdit}" local:Localized.Uid="DockEndpointAudioVolume" />
+        <ToggleSwitch local:Localized.Uid="DockEndpointAudioMute" IsOn="{Binding Muted, Mode=TwoWay}"
+                      IsEnabled="{Binding CanEdit}" OnContent="" OffContent="" />
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+          <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource AccentBrush}"
+                     TextWrapping="Wrap" VerticalAlignment="Center" />
+          <Button Grid.Column="1" local:Localized.Uid="AccessoryApplyButton" Click="EndpointAudioApplyClick"
+                  IsEnabled="{Binding CanApply}" Style="{StaticResource RazerHidSaveButtonStyle}" />
+        </Grid>
+      </StackPanel>
+    </Border>
+
     <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding SpeakerVisibility}">
       <StackPanel Spacing="12" DataContext="{Binding Speaker}">
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">

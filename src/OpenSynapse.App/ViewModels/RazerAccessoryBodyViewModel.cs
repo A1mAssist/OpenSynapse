@@ -28,15 +28,17 @@ public sealed class RazerAccessoryBodyViewModel : INotifyPropertyChanged, IAsync
         Haptics = productId is 0x0F45 or 0x0F6D
             ? new RazerHapticsAccessoryViewModel(productId, diagnostic)
             : null;
-        Speaker = productId is 0x0517 or 0x0518 or 0x0566
+        Speaker = productId is 0x0517 or 0x0518
             ? new RazerSpeakerAccessoryViewModel(productId, diagnostic)
+            : null;
+        EndpointAudio = RazerDockEndpointAudioService.SupportsProduct(productId)
+            ? new RazerDockEndpointAudioViewModel(new RazerDockEndpointAudioService(productId), diagnostic)
             : null;
         Dock = productId is 0x00F1
             ? new RazerDockAccessoryViewModel(productId, diagnostic)
             : null;
-        ControlPod = productId is 0x0566
-            ? new RazerControlPodAccessoryViewModel(productId, diagnostic)
-            : null;
+        // 0566 uses the Layla BLE session and host input mappings, not class 17 OLED.
+        ControlPod = null;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -44,16 +46,19 @@ public sealed class RazerAccessoryBodyViewModel : INotifyPropertyChanged, IAsync
     public RazerThermalAccessoryViewModel? Thermal { get; }
     public RazerHapticsAccessoryViewModel? Haptics { get; }
     public RazerSpeakerAccessoryViewModel? Speaker { get; }
+    public RazerDockEndpointAudioViewModel? EndpointAudio { get; }
     public RazerDockAccessoryViewModel? Dock { get; }
     public RazerControlPodAccessoryViewModel? ControlPod { get; }
     public bool HasThermal => Thermal is not null;
     public bool HasHaptics => Haptics is not null;
     public bool HasSpeaker => Speaker is not null;
+    public bool HasEndpointAudio => EndpointAudio is not null;
     public bool HasDock => Dock is not null;
     public bool HasControlPod => ControlPod is not null;
     public Visibility ThermalVisibility => HasThermal ? Visibility.Visible : Visibility.Collapsed;
     public Visibility HapticsVisibility => HasHaptics ? Visibility.Visible : Visibility.Collapsed;
     public Visibility SpeakerVisibility => HasSpeaker ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility EndpointAudioVisibility => HasEndpointAudio ? Visibility.Visible : Visibility.Collapsed;
     public Visibility DockVisibility => HasDock ? Visibility.Visible : Visibility.Collapsed;
     public Visibility ControlPodVisibility =>
         HasControlPod ? Visibility.Visible : Visibility.Collapsed;
@@ -75,7 +80,7 @@ public sealed class RazerAccessoryBodyViewModel : INotifyPropertyChanged, IAsync
     {
         var body = new RazerAccessoryBodyViewModel(connection.ProductId, diagnostic);
         return body.Thermal is null && body.Haptics is null && body.Speaker is null &&
-            body.Dock is null && body.ControlPod is null
+            body.Dock is null && body.ControlPod is null && body.EndpointAudio is null
             ? null
             : body;
     }
@@ -97,6 +102,10 @@ public sealed class RazerAccessoryBodyViewModel : INotifyPropertyChanged, IAsync
             if (Speaker is { } speaker)
             {
                 await speaker.RefreshAsync(cancellationToken).ConfigureAwait(false);
+            }
+            if (EndpointAudio is { } endpointAudio)
+            {
+                await endpointAudio.RefreshAsync(cancellationToken);
             }
             if (Dock is { } dock)
             {
@@ -133,6 +142,10 @@ public sealed class RazerAccessoryBodyViewModel : INotifyPropertyChanged, IAsync
         if (Speaker is { } speaker)
         {
             await speaker.RefreshAsync(cancellationToken).ConfigureAwait(false);
+        }
+        if (EndpointAudio is { } endpointAudio)
+        {
+            await endpointAudio.RefreshAsync(cancellationToken);
         }
         if (Dock is { } dock)
         {

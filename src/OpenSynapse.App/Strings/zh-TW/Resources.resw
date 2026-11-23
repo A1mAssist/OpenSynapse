@@ -4715,4 +4715,27 @@
   <data name="UpdateSourceDescription" xml:space="preserve"><value>自動模式會優先使用 Gitee；若 Gitee 無法使用或版本落後，則回退 GitHub。</value><comment>自動模式會優先使用 Gitee；若 Gitee 無法使用或版本落後，則回退 GitHub。</comment></data>
   <data name="LightingStudioEffectChromaFile" xml:space="preserve"><value>動畫檔案</value></data>
   <data name="LightingStudioStatusChromaUnavailable" xml:space="preserve"><value>動畫 {0} 無法載入：{1}</value></data>
+  <data name="DockEndpointAudioTitle" xml:space="preserve"><value>Windows 預設播放裝置</value></data>
+  <data name="DockEndpointAudioDescription" xml:space="preserve"><value>調整 Windows 目前的預設播放裝置。按「套用」後生效，裝置設定檔不會自動還原這些設定。</value></data>
+  <data name="DockEndpointAudioApplied" xml:space="preserve"><value>已套用至 Windows 播放裝置。</value></data>
+  <data name="DockEndpointAudioDeviceChanged" xml:space="preserve"><value>預設播放裝置已變更，請重新整理後再套用。</value></data>
+  <data name="DockEndpointAudioUnavailable" xml:space="preserve"><value>無法讀取或套用 Windows 播放設定，請重新整理後再試。</value></data>
+  <data name="DockEndpointAudioMute.Header" xml:space="preserve"><value>靜音</value></data>
+  <data name="DockEndpointAudioVolume.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>播放音量</value></data>
+  <data name="LaylaTitle.Text" xml:space="preserve"><value>Control Pod 對應</value></data>
+  <data name="LaylaHelp.Text" xml:space="preserve"><value>OpenSynapse 執行期間持續套用對應。鍵盤、滑鼠、文字或命令可選擇巨集庫中的巨集；每個手勢播放一次。</value></data>
+  <data name="LaylaActive" xml:space="preserve"><value>對應已啟用</value></data>
+  <data name="LaylaStopped" xml:space="preserve"><value>對應已停止 · 重新整理以連線</value></data>
+  <data name="LaylaDisabled" xml:space="preserve"><value>停用</value></data>
+  <data name="LaylaCyclePlayback" xml:space="preserve"><value>下一個播放裝置</value></data>
+  <data name="LaylaSelectAction" xml:space="preserve"><value>請為每個手勢選擇動作。</value></data>
+  <data name="LaylaSaveFailed" xml:space="preserve"><value>對應儲存失敗，原對應繼續生效。</value></data>
+  <data name="LaylaInputClick" xml:space="preserve"><value>頂部 · 按一下</value></data>
+  <data name="LaylaInputDoubleClick" xml:space="preserve"><value>頂部 · 按兩下</value></data>
+  <data name="LaylaInputTripleClick" xml:space="preserve"><value>頂部 · 按三下</value></data>
+  <data name="LaylaInputHold" xml:space="preserve"><value>頂部 · 長按</value></data>
+  <data name="LaylaInputSourceClick" xml:space="preserve"><value>音源鍵 · 按一下</value></data>
+  <data name="LaylaInputSourceDoubleClick" xml:space="preserve"><value>音源鍵 · 按兩下</value></data>
+  <data name="LaylaInputClockwise" xml:space="preserve"><value>順時針旋轉</value></data>
+  <data name="LaylaInputAnticlockwise" xml:space="preserve"><value>逆時針旋轉</value></data>
 </root>

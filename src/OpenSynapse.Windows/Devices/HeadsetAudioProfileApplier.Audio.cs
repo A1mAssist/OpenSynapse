@@ -14,6 +14,11 @@ public sealed partial class HeadsetAudioProfileApplier
         List<ProfileSettingApplyResult> results,
         CancellationToken cancellationToken)
     {
+        if (service.HasFeature91ProductCapabilities)
+        {
+            await ApplyFeature91ProductAsync(service, state, profile, results, cancellationToken);
+            return;
+        }
         var preset = TryParseByte(profile.EqPreset);
         var bands = ReadBands(
             profile.EqBands,
@@ -68,6 +73,7 @@ public sealed partial class HeadsetAudioProfileApplier
         List<ProfileSettingApplyResult> results,
         CancellationToken cancellationToken)
     {
+        if (service.HasFeature91ProductCapabilities) return;
         if (profile.MicrophoneMute is { } muted && state?.MicMuted != muted)
         {
             await ApplyAsync(

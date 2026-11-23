@@ -55,6 +55,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         [RazerAncState.Off, RazerAncState.On, RazerAncState.Ambient];
 
     private readonly RazerHeadsetAudioConnection _connection;
+    internal RazerHeadsetAudioConnection Connection => _connection;
     private readonly Action<string>? _diagnostic;
     private bool _isBusy;
     private string _errorText = string.Empty;
@@ -145,6 +146,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     private bool IsKrakenBase => _connection.Transport == RazerHeadsetAudioTransport.KrakenBase37;
     private bool IsAvnera65 => _connection.Transport == RazerHeadsetAudioTransport.AvneraFeature65;
     private bool IsProtocol25 => _connection.Transport == RazerHeadsetAudioTransport.Protocol25Feature65;
+    private bool IsCarol => IsProtocol25 && RazerCarolAudioProtocol.IsSupported(_connection.ProductId);
     private bool IsNoaBass => IsProtocol25 &&
         _connection.ProductId is 0x0532 or 0x0548 or 0x05A3;
     private bool IsT3 => _connection.Transport == RazerHeadsetAudioTransport.ValkyrieT3Feature64;
@@ -156,6 +158,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     private bool IsMxicAnc => IsMxic &&
         RazerMxicHeadsetProtocol.SupportsAnc(_connection.ProductId);
     private bool IsMixer053E => _connection.Transport == RazerHeadsetAudioTransport.Mixer053E;
+    private bool IsRipsaw => _connection.Transport == RazerHeadsetAudioTransport.RipsawFeature17;
     private bool IsProtocol40 => RazerProtocol40HeadsetProtocol.IsSupported(_connection.ProductId);
     private bool IsMxicDnd => !IsProtocol40 && _connection.Transport is
         RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64;
@@ -165,11 +168,13 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         RazerValkyrieHeadsetProtocol.SupportsSidetone.Contains(_connection.ProductId);
     private bool IsValkyrieAnc => IsValkyrie &&
         RazerValkyrieHeadsetProtocol.SupportsAnc.Contains(_connection.ProductId);
-    private bool IsFeature91 => !IsMxic && !IsValkyrie && !IsMixer053E && !IsKrakenBase &&
+    private bool IsNxp => _connection.Transport == RazerHeadsetAudioTransport.NxpSerial;
+    private bool IsFeature91 => !IsRipsaw && !IsNxp && !IsMxic && !IsValkyrie && !IsMixer053E && !IsKrakenBase &&
         !IsAvnera65 && !IsProtocol25;
     // AudioMabelT3C (0574) uses the Mxic bundle indices 0/7/8/9/255, not the Billie 0..4 list.
     private (byte Value, string Key)[] ActivePresets =>
-        IsJolie ? JolietPresets : IsT3 ? Presets[..4] : IsFeature91 || IsProtocol25 ? Presets : MxicPresets;
+        IsNommoV2Audio ? NommoV2Presets : IsMarciAudio ? MarciPresets :
+        IsCarol ? CarolPresets : IsJolie ? JolietPresets : IsT3 ? Presets[..4] : IsFeature91 || IsProtocol25 ? Presets : MxicPresets;
 
     private static bool SupportsS3Baseline(ushort productId) =>
         productId is 0x0521 or 0x0549;
@@ -184,12 +189,12 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
 
     private static readonly double[] FlatThxBands = new double[10];
 
-    // Noa firmware stores bass as 1..7; the shared slider stays 0..100.
-    private byte ToFirmwareBass(double percent) => IsNoaBass
+    // Noa and Nommo V2 store bass as 1..7; the shared slider stays 0..100.
+    private byte ToFirmwareBass(double percent) => IsNoaBass || IsNommoV2Audio
         ? (byte)Math.Clamp(1 + (int)Math.Round(percent * 6 / 100), 1, 7)
         : (byte)Math.Round(percent);
 
-    private double FromFirmwareBass(byte value) => IsNoaBass
+    private double FromFirmwareBass(byte value) => IsNoaBass || IsNommoV2Audio
         ? Math.Clamp((value - 1) * 100d / 6, 0, 100)
         : value;
 
@@ -205,6 +210,11 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         Lighting = lighting;
         _getActiveProfile = getActiveProfile;
         _saveProfileAsync = saveProfileAsync;
+        if (IsRipsaw && connection.HasControlInterface)
+        {
+            Ripsaw = new RazerRipsawViewModel(new RazerRipsawService(connection.DevicePath),
+                HeadsetProfileKey, getActiveProfile, saveProfileAsync);
+        }
         if (IsMixer053E && connection.HasControlInterface)
         {
             Mixer053E = new RazerMixer053EViewModel(
@@ -253,6 +263,22 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             return;
         }
 
+        if (Ripsaw is { } ripsaw)
+        {
+            if (!BeginOperation()) return;
+            SetProbeState(RazerHeadsetProbeState.Probing);
+            try
+            {
+                await ripsaw.LoadAsync(cancellationToken);
+                ErrorText = ripsaw.HasState ? string.Empty : ripsaw.ErrorText;
+                SetProbeState(ripsaw.HasState
+                    ? ripsaw.HasError ? RazerHeadsetProbeState.Partial : RazerHeadsetProbeState.Ready
+                    : cancellationToken.IsCancellationRequested ? RazerHeadsetProbeState.NotProbed : RazerHeadsetProbeState.Failed);
+            }
+            finally { IsBusy = false; }
+            return;
+        }
+
         if (_connection.Transport == RazerHeadsetAudioTransport.NativeDll)
         {
             ErrorText = AppStrings.Text("BlackSharkComponentRequired");
@@ -267,6 +293,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         {
             Task<RazerHeadsetAudioState> ReadStateOnceAsync() => _connection.Transport switch
             {
+                RazerHeadsetAudioTransport.NxpSerial => ReadNxpStateAsync(cancellationToken),
                 RazerHeadsetAudioTransport.AvneraFeature65 =>
                     ReadAvneraStateAsync(cancellationToken),
                 RazerHeadsetAudioTransport.Mxic64 or
@@ -308,7 +335,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             // headsets can answer audio while the lighting channel is busy.
             try
             {
-                if ((IsFeature91 || IsJolie) && !IsSeirenEmote)
+                if ((IsFeature91 || IsJolie) && !IsSeirenEmote && !IsProductFeature91Audio)
                 {
                     ApplyMatrixLighting(await OpenChromaService().ReadStateAsync(cancellationToken));
                 }
@@ -393,6 +420,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     {
         OnPropertyChanged(string.Empty);
         Mixer053E?.RefreshLocalization();
+        Ripsaw?.RefreshLocalization();
     }
 
     internal void ApplyBatteryPercent(int? percent)
@@ -412,14 +440,29 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             _hasFirmware = true;
         }
         ApplyBatteryPercent(state.BatteryPercent);
+        if (IsCarol && state.CarolPower is { } carolPower) ApplyCarolPowerState(carolPower);
+        if (IsCarol) ApplyCarolExternalPower(state.ExternalPowerStatus);
         if (state.Charging is bool charging)
         {
             ChargingText = AppStrings.Text(charging ? "BlackSharkCharging" : "BlackSharkNotCharging");
             _hasCharging = true;
         }
-        ApplyAvneraInfo(state);
+        ApplyAvneraInfo(IsNxp || IsCarol ? state with { LinkStatus = null } : state);
+        if (IsCarol && state.LinkStatus is byte carolLink)
+        {
+            LinkStatusText = carolLink == 0 ? "Disconnected" : "Connected";
+            _hasLink = true;
+            OnPropertyChanged(nameof(AvneraInfoVisibility));
+        }
+        if (IsNxp && state.LinkStatus is byte nxpLink)
+        {
+            LinkStatusText = nxpLink switch { 0 => "Disconnected", 1 => "Connected", 2 => "Streaming", _ => "--" };
+            _hasLink = true;
+            OnPropertyChanged(nameof(AvneraInfoVisibility));
+        }
         if (state.EqPreset is byte preset)
         {
+            if (IsCarol) _carolPreset = preset;
             var index = Array.FindIndex(ActivePresets, item => item.Value == preset);
             if (index >= 0)
             {
@@ -525,7 +568,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         {
             HapticsEnabled = haptics.Enabled;
             HapticsStrength = haptics.Strength;
-            _hasHaptics = IsAvnera65;
+            _hasHaptics = IsAvnera65 || IsNxp;
             OnPropertyChanged(nameof(HapticsVisibility));
         }
 

@@ -17,6 +17,7 @@ public sealed partial class RazerBleDeviceViewModel
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
+        if (IsLayla) { await LoadLaylaAsync(cancellationToken); return; }
         if (!BeginOperation()) return;
         try
         {

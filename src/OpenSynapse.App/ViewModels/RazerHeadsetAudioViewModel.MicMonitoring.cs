@@ -8,6 +8,12 @@ public sealed partial class RazerHeadsetAudioViewModel
     [ProfileSetting("headset.mic-monitoring", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyMicMonitoringAsync(CancellationToken cancellationToken = default)
     {
+        if (IsNxp)
+        {
+            await SaveNxpMicMonitoringAsync(cancellationToken);
+            return;
+        }
+
         if (IsMxicSidetone)
         {
             var previousEnabled = MicMonitoringEnabled;

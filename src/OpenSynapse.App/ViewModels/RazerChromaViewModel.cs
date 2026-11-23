@@ -277,6 +277,8 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged
         if (!BeginOperation()) return;
         try
         {
+            // Default playback is independent of the dock's lighting collection.
+            if (Body is { HasEndpointAudio: true } endpointBody) await endpointBody.LoadAsync(cancellationToken);
             var state = await OpenService().ReadStateAsync(cancellationToken);
             _hasEditableState = state.BrightnessPercent is not null || state.Effect is not null;
             if (state.BrightnessPercent is byte brightness) Brightness = brightness;

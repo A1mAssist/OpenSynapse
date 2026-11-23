@@ -12,6 +12,8 @@ public sealed partial class RazerHeadsetAudioViewModel
     [ProfileSetting("headset.eq.preset", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyEqPresetAsync(CancellationToken cancellationToken = default)
     {
+        if (IsMarciAudio) { await SaveMarciEqAsync(false, cancellationToken); return; }
+        if (IsCarol) { await SaveCarolEqAsync(false, cancellationToken); return; }
         if (IsKrakenBase) return;
         var previousIndex = SelectedEqPresetIndex;
         var previous = ActivePresets[previousIndex].Value;
@@ -29,13 +31,27 @@ public sealed partial class RazerHeadsetAudioViewModel
                 await RunMxicWriteAsync((service, token) => service.SetEqPresetAsync(preset, token), cancellationToken),
             RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
                 await RunValkyrieWriteAsync((service, token) => service.SetEqPresetAsync(preset, token), cancellationToken),
-            _ => await RunWriteAsync((service, token) => service.SetEqPresetAsync(preset, token), cancellationToken),
+            _ => await RunWriteAsync(async (service, token) =>
+            {
+                if (IsNommoV2Audio)
+                {
+                    previous = (await service.ReadStateAsync(token)).EqPreset
+                        ?? throw new IOException("Nommo EQ preset could not be read.");
+                    previousIndex = Array.FindIndex(ActivePresets, item => item.Value == previous);
+                }
+                await service.SetEqPresetAsync(preset, token);
+            }, cancellationToken),
         };
-        if (!applied) return;
+        if (!applied)
+        {
+            if (IsNommoV2Audio) SelectedEqPresetIndex = previousIndex;
+            return;
+        }
 
+        var persistedPreset = IsNommoV2Audio ? ResolveHeadsetProfileSettings()?.EqPreset : null;
         var saved = await SaveHeadsetSettingAsync(
             settings => settings.EqPreset = preset.ToString("X2"),
-            settings => settings.EqPreset = previous.ToString("X2"),
+            settings => settings.EqPreset = IsNommoV2Audio ? persistedPreset : previous.ToString("X2"),
             () =>
             {
                 SelectedEqPresetIndex = previousIndex;
@@ -65,6 +81,9 @@ public sealed partial class RazerHeadsetAudioViewModel
     [ProfileSetting("headset.eq.bands", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyEqBandsAsync(CancellationToken cancellationToken = default)
     {
+        if (IsNommoV2Audio) return;
+        if (IsMarciAudio) { await SaveMarciEqAsync(true, cancellationToken); return; }
+        if (IsCarol) { await SaveCarolEqAsync(true, cancellationToken); return; }
         var previousPresetIndex = SelectedEqPresetIndex;
         var previousPreset = ActivePresets[previousPresetIndex].Value;
         var previousBands = EqBands.Select(band => (int)Math.Round(band.Level)).ToArray();
@@ -287,9 +306,11 @@ public sealed partial class RazerHeadsetAudioViewModel
             cancellationToken);
     }
 
-    [NotProfileScoped]
+    [ProfileSetting("headset.haptics", DeviceCategory.Headset, powerScoped: true)]
     public Task ApplyHapticsAsync(CancellationToken cancellationToken = default) =>
-        IsAvnera65
+        IsNxp
+            ? SaveNxpHapticsAsync(cancellationToken)
+            : IsAvnera65
             ? RunAvneraWriteAsync(
                 (service, token) => service.SetHapticsAsync(
                     HapticsEnabled, (ushort)Math.Round(HapticsStrength), token),
@@ -304,6 +325,12 @@ public sealed partial class RazerHeadsetAudioViewModel
     [ProfileSetting("headset.advanced", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyAdvancedAsync(CancellationToken cancellationToken = default)
     {
+        if (IsNxp)
+        {
+            await SaveNxpAutoPauseAsync(cancellationToken);
+            return;
+        }
+
         if (IsAvnera65)
         {
             await SaveAvneraAutoPauseAsync(cancellationToken);
@@ -407,6 +434,12 @@ public sealed partial class RazerHeadsetAudioViewModel
     [ProfileSetting("headset.auto-pause", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyAutoPauseAsync(CancellationToken cancellationToken = default)
     {
+        if (IsNxp)
+        {
+            await SaveNxpAutoPauseAsync(cancellationToken);
+            return;
+        }
+
         if (IsAvnera65)
         {
             await SaveAvneraAutoPauseAsync(cancellationToken);

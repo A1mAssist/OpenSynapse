@@ -22,7 +22,7 @@ public sealed class RazerAwBleHeadsetRowViewModel(RazerBleDevice device)
 
     public RazerBleDevice Device { get; } = device;
     public string Name => string.IsNullOrWhiteSpace(Device.Name) ? "Razer Audio BLE" : Device.Name;
-    public string Identity => "BLE";
+    public string Identity => Device.ProductId == 0 ? "BLE" : $"BLE · 1532:{Device.ProductId:X4}";
     public string IconGlyph => "\uE7F6";
     public DeviceCategory HardwareCategory => DeviceCategory.Headset;
     public string Status => AppStrings.Text("BlackSharkStatusConnected");

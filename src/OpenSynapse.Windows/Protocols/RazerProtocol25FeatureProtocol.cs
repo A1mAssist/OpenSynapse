@@ -20,10 +20,11 @@ internal static class RazerProtocol25FeatureProtocol
         productId == 0x05A3 ? ShortReportLength : FullReportLength;
 
     internal static bool UsesTenBandEqualizer(ushort productId) =>
-        productId is 0x0532 or 0x0548 or 0x05A3;
+        productId is 0x0532 or 0x0548 or 0x05A3 || RazerCarolAudioProtocol.IsSupported(productId);
 
     internal static bool SupportsHidEqualizer(ushort productId) =>
-        productId is 0x0532 or 0x0548 or 0x05A3 or 0x058E or 0x05A6 or 0x058C;
+        productId is 0x0532 or 0x0548 or 0x05A3 or 0x058E or 0x05A6 or 0x058C ||
+        RazerCarolAudioProtocol.IsSupported(productId);
 
     internal static bool SupportsHidBass(ushort productId) =>
         productId is 0x0532 or 0x0548 or 0x05A3 or 0x058E or 0x05A6;

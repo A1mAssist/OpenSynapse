@@ -7,10 +7,27 @@ namespace OpenSynapse.App.ViewModels;
 public sealed partial class RazerHeadsetAudioViewModel
 {
     private RazerHeadsetAudioService OpenService() =>
+        IsNxp ? throw new InvalidOperationException("NXP audio requires its serial service.") :
         new(new RazerFeatureTransport(), _connection.DevicePath,
             IsKrakenBase ? TimeSpan.FromMilliseconds(1000) : TimeSpan.FromMilliseconds(20),
             _diagnostic, _connection.Transport, _connection.ProductId,
             outputReportByteLength: _connection.OutputReportByteLength);
+
+    private RazerNxpHeadsetService OpenNxpService() => new(_connection.DevicePath, _diagnostic);
+
+    private async Task<RazerHeadsetAudioState> ReadNxpStateAsync(CancellationToken cancellationToken)
+    {
+        await using var service = OpenNxpService();
+        return await service.ReadStateAsync(cancellationToken);
+    }
+
+    private Task<bool> RunNxpWriteAsync(
+        Func<RazerNxpHeadsetService, CancellationToken, Task> write,
+        CancellationToken cancellationToken) => RunWriteCoreAsync(async token =>
+        {
+            await using var service = OpenNxpService();
+            await write(service, token);
+        }, cancellationToken);
 
     private RazerMxicHeadsetService OpenMxicService() =>
         new(_connection.ProductId, _connection.DevicePath, _diagnostic);
@@ -66,6 +83,8 @@ public sealed partial class RazerHeadsetAudioViewModel
     }
 
     private IRazerHeadsetLightingService OpenChromaService() =>
+        IsProductFeature91Audio
+            ? throw new NotSupportedException("This audio collection does not expose Chroma.") :
         IsJolie
             ? new RazerMakoXChromaService(_connection.DevicePath, _diagnostic)
             : new RazerChromaStandardService(

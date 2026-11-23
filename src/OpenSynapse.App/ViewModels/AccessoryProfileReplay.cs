@@ -18,8 +18,11 @@ internal static class AccessoryProfileReplay
             viewModel.CoolingPad.ApplyPersistedProfileAsync(powerSource, cancellationToken));
         Add(viewModel.Kiyo.IsConnected, () =>
             viewModel.Kiyo.ApplyPersistedProfileAsync(powerSource, cancellationToken));
-        Add(viewModel.Accessories.SelectedHeadsetAudio is not null, () =>
-            viewModel.Accessories.SelectedHeadsetAudio!.ApplyPersistedProfileAsync(powerSource, cancellationToken));
+        foreach (var connection in viewModel.Accessories.HeadsetAudioConnections)
+        {
+            Add(connection.HasControlInterface, () =>
+                viewModel.Accessories.ApplyHeadsetProfileAsync(connection, powerSource, cancellationToken));
+        }
         Add(viewModel.SelectedAwBleHeadset is not null, () =>
             viewModel.SelectedAwBleHeadset!.ApplyPersistedProfileAsync(powerSource, cancellationToken));
         Add(viewModel.SelectedBlackShark is not null, () =>
@@ -34,6 +37,7 @@ internal static class AccessoryProfileReplay
             viewModel.RazerHid.ApplyKrakenProfilesAsync(powerSource, cancellationToken));
         Add(viewModel.RazerHid.SelectedDevice?.Soundbar is not null, () =>
             viewModel.RazerHid.SelectedDevice!.Soundbar!.ApplyPersistedProfileAsync(powerSource, cancellationToken));
+        Add(true, () => viewModel.RazerHid.ApplyNommoProfilesAsync(powerSource, cancellationToken));
 
         await Task.WhenAll(tasks);
 

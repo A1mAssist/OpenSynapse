@@ -63,6 +63,19 @@ public sealed class RazerHidSpecialLightingConnection
     internal string? ControlDevicePath { get; }
     internal string? FeatureDevicePath { get; }
     internal string? ContainerId { get; }
+
+    public bool MatchesAudioConnection(RazerHeadsetAudioConnection audio)
+    {
+        if (ProductId != audio.ProductId) return false;
+        if (Guid.TryParse(ContainerId, out var ownContainer) &&
+            Guid.TryParse(audio.ContainerId, out var audioContainer))
+            return ownContainer == audioContainer;
+        if (!string.IsNullOrWhiteSpace(audio.PhysicalDeviceKey))
+            return StringComparer.OrdinalIgnoreCase.Equals(InstanceId, audio.PhysicalDeviceKey);
+        return StringComparer.OrdinalIgnoreCase.Equals(DevicePath, audio.DevicePath) ||
+            StringComparer.OrdinalIgnoreCase.Equals(ControlDevicePath, audio.DevicePath) ||
+            StringComparer.OrdinalIgnoreCase.Equals(FeatureDevicePath, audio.DevicePath);
+    }
 }
 
 public sealed partial class RazerHidSpecialLightingService
