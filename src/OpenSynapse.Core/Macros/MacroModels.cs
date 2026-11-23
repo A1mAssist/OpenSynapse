@@ -316,6 +316,7 @@ public sealed class MacroDefinition
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string Name { get; set; } = string.Empty;
     public bool Enabled { get; set; } = true;
+    public MacroTriggerMode DefaultTriggerMode { get; set; }
     public MacroTrigger? Trigger { get; set; }
     public List<MacroTrigger> AdditionalTriggers { get; set; } = [];
     public MacroSoftwareBinding? SoftwareBinding { get; set; }
@@ -336,6 +337,11 @@ public sealed class MacroDefinition
         if (Name.Length > MaxNameLength)
         {
             Name = Name[..MaxNameLength];
+        }
+
+        if (!Enum.IsDefined(DefaultTriggerMode))
+        {
+            DefaultTriggerMode = MacroTriggerMode.Press;
         }
 
         if (!IsValidTrigger(Trigger))
@@ -423,6 +429,7 @@ public sealed class MacroDefinition
             Id = Id,
             Name = Name,
             Enabled = Enabled,
+            DefaultTriggerMode = DefaultTriggerMode,
             Trigger = Trigger?.Clone(),
             AdditionalTriggers = (AdditionalTriggers ?? [])
                 .Where(trigger => trigger is not null)

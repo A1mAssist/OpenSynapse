@@ -31,8 +31,6 @@ public sealed partial class MacroWorkspace
         MacroPlaybackMode.RepeatUntilStopped,
     ];
 
-    private string? _pendingTriggerMacroId;
-    private MacroTriggerMode _pendingTriggerMode = MacroTriggerMode.Press;
     private CancellationTokenSource? _executionModeSaveCancellation;
 
     public IReadOnlyList<string> MacroTriggerModeOptions => AppStrings.Texts(
@@ -41,21 +39,9 @@ public sealed partial class MacroWorkspace
         "RazerMappingMacroPlaybackToggle",
         "RazerMappingMacroPlaybackHoldRepeat");
 
-    public MacroTriggerMode MacroTriggerMode
-    {
-        get
-        {
-            if (SelectedMacro?.Definition.Trigger is { } trigger)
-            {
-                return trigger.Mode;
-            }
-
-            return SelectedMacro is { } selected &&
-                StringComparer.Ordinal.Equals(selected.Id, _pendingTriggerMacroId)
-                    ? _pendingTriggerMode
-                    : MacroTriggerMode.Press;
-        }
-    }
+    public MacroTriggerMode MacroTriggerMode =>
+        SelectedMacro?.Definition.Trigger?.Mode ??
+        SelectedMacro?.Definition.DefaultTriggerMode ?? MacroTriggerMode.Press;
 
     public int MacroTriggerModeIndex
     {
@@ -66,7 +52,8 @@ public sealed partial class MacroWorkspace
         }
         set
         {
-            if (value < 0 || value >= EditableTriggerModes.Length)
+            if (SelectedMacro is not { } selected ||
+                value < 0 || value >= EditableTriggerModes.Length)
             {
                 return;
             }
@@ -78,24 +65,15 @@ public sealed partial class MacroWorkspace
             }
 
             var previousMode = MacroTriggerMode;
-            _pendingTriggerMacroId = SelectedMacro?.Id;
-            _pendingTriggerMode = mode;
-            var changed = false;
-            if (SelectedMacro is { } selected)
+            selected.Definition.DefaultTriggerMode = mode;
+            if (selected.Definition.Trigger is { } trigger)
             {
-                if (selected.Definition.Trigger is { } trigger)
-                {
-                    trigger.Mode = mode;
-                    changed = true;
-                }
-
-                changed |= ApplyPlaybackChoice(selected, previousMode, mode);
-                if (changed)
-                {
-                    MarkMacroDirty(selected);
-                    RequestExecutionModeSave();
-                }
+                trigger.Mode = mode;
             }
+
+            ApplyPlaybackChoice(selected, previousMode, mode);
+            MarkMacroDirty(selected);
+            RequestExecutionModeSave();
 
             OnPropertyChanged(nameof(MacroTriggerMode));
             OnPropertyChanged(nameof(MacroTriggerModeIndex));
@@ -223,8 +201,8 @@ public sealed partial class MacroWorkspace
     {
         if (SelectedMacro is { } selected && selected.Definition.Trigger is { } trigger)
         {
-            _pendingTriggerMacroId = selected.Id;
-            _pendingTriggerMode = trigger.Mode;
+            // Keep the current choice if the user subsequently clears the trigger.
+            selected.Definition.DefaultTriggerMode = trigger.Mode;
         }
 
         OnPropertyChanged(nameof(MacroTriggerMode));
@@ -280,7 +258,7 @@ public sealed partial class MacroWorkspace
             playback);
     }
 
-    private static bool ApplyPlaybackChoice(
+    private static void ApplyPlaybackChoice(
         MacroRowViewModel selected,
         MacroTriggerMode previousMode,
         MacroTriggerMode mode)
@@ -299,12 +277,10 @@ public sealed partial class MacroWorkspace
         if (selected.Definition.PlaybackMode == playback &&
             selected.Definition.EffectivePlaybackMode(selected.Definition.Trigger) == playback)
         {
-            return false;
+            return;
         }
 
         SetPlayback(selected.Definition, playback);
-
-        return true;
     }
 
     private void NotifyExecutionModeChanged()

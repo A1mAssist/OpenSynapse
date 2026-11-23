@@ -231,6 +231,7 @@ public static class MacroFileStore
     {
         if (string.IsNullOrWhiteSpace(macro.Id) ||
             macro.Id.Length > 64 ||
+            !Enum.IsDefined(macro.DefaultTriggerMode) ||
             !Enum.IsDefined(macro.PlaybackMode))
         {
             return false;

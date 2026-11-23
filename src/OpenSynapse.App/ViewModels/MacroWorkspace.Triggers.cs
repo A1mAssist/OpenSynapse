@@ -126,9 +126,8 @@ public sealed partial class MacroWorkspace
         MacroTrigger trigger,
         CancellationToken cancellationToken)
     {
-        trigger.Mode = ReferenceEquals(selected, SelectedMacro)
-            ? MacroTriggerMode
-            : selected.Definition.Trigger?.Mode ?? MacroTriggerMode.Press;
+        trigger.Mode = selected.Definition.Trigger?.Mode ??
+            selected.Definition.DefaultTriggerMode;
         if (FindTriggerConflict(selected.Definition, trigger, selected) is { } conflict)
         {
             StatusText = AppStrings.FormatText("MacroTriggerConflict", conflict.Name);
