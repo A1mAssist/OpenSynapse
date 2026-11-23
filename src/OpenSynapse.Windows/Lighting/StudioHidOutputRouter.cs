@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using OpenSynapse.Core.Lighting;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
@@ -29,6 +30,8 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
     private readonly object _updateGate = new();
     private Func<RazerHidDeviceConnection, IReadOnlyList<StudioLayerRender>>? _layersForDevice;
     private long _layersVersion;
+    private double _inputSeconds;
+    private long _inputTimestamp;
     private int _stopped;
     private int _disposed;
 
@@ -37,6 +40,17 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
     /// Rewriting an unchanged frame keeps the custom effect armed.
     /// </summary>
     internal int KeepAliveIntervalMilliseconds { get; set; } = 2000;
+
+    // Keep input on the frame timeline, including time spent waiting for HID writes.
+    internal double InputSeconds
+    {
+        get
+        {
+            lock (_updateGate)
+                return _inputTimestamp == 0 ? 0 :
+                    _inputSeconds + Stopwatch.GetElapsedTime(_inputTimestamp).TotalSeconds;
+        }
+    }
 
     public StudioHidOutputRouter(
         RazerHidDeviceService service,
@@ -158,6 +172,8 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
             long layersVersion;
             lock (_updateGate)
             {
+                _inputSeconds = Math.Max(0, elapsed.TotalSeconds);
+                _inputTimestamp = Stopwatch.GetTimestamp();
                 layersForDevice = _layersForDevice;
                 layersVersion = _layersVersion;
             }

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using OpenSynapse.Core.Lighting;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Input;
@@ -20,16 +19,21 @@ internal sealed class StudioHidInputBridge : IDisposable
 
     private readonly StudioHidOutputRouter _router;
     private readonly Func<double> _nowSeconds;
+    private readonly Func<string, string> _resolvePhysicalKey;
+    private readonly Dictionary<string, string> _physicalKeys = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<(string DevicePath, ushort ScanCode, ushort Flags)> _pressed = [];
     private readonly object _gate = new();
     private IDisposable? _subscription;
     private int _disposed;
 
-    internal StudioHidInputBridge(StudioHidOutputRouter router, Func<double>? nowSeconds = null)
+    internal StudioHidInputBridge(
+        StudioHidOutputRouter router,
+        Func<double>? nowSeconds = null,
+        Func<string, string>? resolvePhysicalKey = null)
     {
         _router = router ?? throw new ArgumentNullException(nameof(router));
-        var clock = Stopwatch.StartNew();
-        _nowSeconds = nowSeconds ?? (() => clock.Elapsed.TotalSeconds);
+        _nowSeconds = nowSeconds ?? (() => router.InputSeconds);
+        _resolvePhysicalKey = resolvePhysicalKey ?? ResolvePhysicalKey;
     }
 
     /// <summary>Attaches to the process-wide Raw Input router; repeated calls are idempotent.</summary>
@@ -95,13 +99,13 @@ internal sealed class StudioHidInputBridge : IDisposable
 
     private RazerHidDeviceConnection? FindConnection(string devicePath)
     {
-        var physicalKey = WindowsHidDiscovery.GetPhysicalDeviceKey(devicePath);
+        var physicalKey = GetPhysicalKey(devicePath);
         foreach (var connection in _router.GetTargets())
         {
             if (connection.DevicePath is not { } targetPath ||
                 string.IsNullOrWhiteSpace(targetPath) ||
                 !string.Equals(
-                    WindowsHidDiscovery.GetPhysicalDeviceKey(targetPath),
+                    GetPhysicalKey(targetPath),
                     physicalKey,
                     StringComparison.OrdinalIgnoreCase))
             {
@@ -112,6 +116,28 @@ internal sealed class StudioHidInputBridge : IDisposable
         }
 
         return null;
+    }
+
+    private string GetPhysicalKey(string devicePath)
+    {
+        if (_physicalKeys.TryGetValue(devicePath, out var cached)) return cached;
+        var key = _resolvePhysicalKey(devicePath);
+        // An unavailable PnP node can become readable after startup; do not cache that miss.
+        if (key.StartsWith("container:", StringComparison.OrdinalIgnoreCase) ||
+            key.StartsWith("usb-parent:", StringComparison.OrdinalIgnoreCase))
+            _physicalKeys[devicePath] = key;
+        return key;
+    }
+
+    private static string ResolvePhysicalKey(string devicePath)
+    {
+        // Keyboard input and lighting control usually use different MI interfaces.
+        var identity = RazerFilterInfBinder.TryGetHidRegistryInstanceId(devicePath) is { } instanceId
+            ? WindowsHidDiscovery.GetDeviceIdentity(instanceId)
+            : default;
+        return WindowsHidDiscovery.GetPhysicalDeviceKey(devicePath,
+            Guid.TryParse(identity.ContainerId, out var container) ? container : null,
+            identity.UsbParentDeviceId);
     }
 
     private static (int Row, int Column)? FindInput(

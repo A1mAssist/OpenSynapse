@@ -23,6 +23,7 @@ public sealed class StudioDeviceFrameSource : ISoftwareLightingFrameSource
     private readonly StudioEffectStateCache _states = new();
     private StudioLayerRender[] _layers = [];
     private double _lastKeySeconds;
+    private double _lastRenderSeconds;
 
     public StudioDeviceFrameSource(
         int rows, int columns, Func<int, int, StudioEffectInput>? inputProvider = null)
@@ -83,16 +84,20 @@ public sealed class StudioDeviceFrameSource : ISoftwareLightingFrameSource
     /// </summary>
     public int HandleInput(StudioTriggerInput input, double nowSeconds)
     {
-        if (input.IsDown)
+        lock (_gate)
         {
-            _keys.Press(input.Row, input.Column);
-        }
-        else
-        {
-            _keys.Release(input.Row, input.Column);
-        }
+            AdvanceKeyTime(nowSeconds);
+            if (input.IsDown)
+            {
+                _keys.Press(input.Row, input.Column);
+            }
+            else
+            {
+                _keys.Release(input.Row, input.Column);
+            }
 
-        return _trigger.Handle(input, nowSeconds);
+            return _trigger.Handle(input, nowSeconds);
+        }
     }
 
     public ValueTask<IReadOnlyList<RazerRgb>> RenderAsync(
@@ -102,27 +107,30 @@ public sealed class StudioDeviceFrameSource : ISoftwareLightingFrameSource
         cancellationToken.ThrowIfCancellationRequested();
         var layers = Volatile.Read(ref _layers);
         var now = Math.Max(0, elapsed.TotalSeconds);
-        if (now > _lastKeySeconds)
-        {
-            _keys.Decay(now - _lastKeySeconds);
-            _lastKeySeconds = now;
-        }
-
         var timed = new (StudioLayerRender Layer, double Seconds)[layers.Length];
-        for (var index = 0; index < layers.Length; index++)
+        StudioKeyState keys;
+        lock (_gate)
         {
-            var layer = layers[index];
-            var render = layer.Id == Guid.Empty
-                ? layer
-                : layer with { State = _states.For(layer.Id) };
-            var state = GetClock(layer.Id).Sample(now, layer.Params, _matrixRows, _matrixColumns);
-            timed[index] = (
-                render with { Opacity = state.Running ? layer.Opacity : 0 },
-                state.LocalSeconds);
+            // A render-clock reset rebases elapsed time; stale input must not do so.
+            if (now < _lastRenderSeconds) _lastKeySeconds = now;
+            _lastRenderSeconds = now;
+            AdvanceKeyTime(now);
+            keys = _keys.Snapshot();
+            for (var index = 0; index < layers.Length; index++)
+            {
+                var layer = layers[index];
+                var render = layer.Id == Guid.Empty
+                    ? layer
+                    : layer with { State = _states.For(layer.Id) };
+                var state = GetClock(layer.Id).Sample(now, layer.Params, _matrixRows, _matrixColumns);
+                timed[index] = (
+                    render with { Opacity = state.Running ? layer.Opacity : 0 },
+                    state.LocalSeconds);
+            }
         }
 
         var input = _inputProvider?.Invoke(_matrixRows, _matrixColumns) ?? default;
-        input = input with { Keys = _keys.Snapshot() };
+        input = input with { Keys = keys };
         var logical = StudioCompositor.RenderTimedLayers(timed, _matrixRows, _matrixColumns, input);
         var colors = new RazerRgb[_deviceRows * _deviceColumns];
         if (_layout is null)
@@ -151,6 +159,14 @@ public sealed class StudioDeviceFrameSource : ISoftwareLightingFrameSource
         }
 
         return ValueTask.FromResult<IReadOnlyList<RazerRgb>>(colors);
+    }
+
+    // Caller holds _gate so elapsed time is applied before a new press is recorded.
+    private void AdvanceKeyTime(double now)
+    {
+        if (!double.IsFinite(now) || now <= _lastKeySeconds) return;
+        _keys.Decay(now - _lastKeySeconds);
+        _lastKeySeconds = now;
     }
 
     private StudioPlaybackClock GetClock(Guid id)

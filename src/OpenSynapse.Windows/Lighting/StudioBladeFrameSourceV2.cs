@@ -150,6 +150,7 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
     private readonly StudioLedLayout? _layout;
     private StudioLayerRender[] _layers = [];
     private double _lastKeySeconds;
+    private double _lastRenderSeconds;
 
     public StudioBladeFrameSourceV2()
         : this(
@@ -226,12 +227,20 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
     /// </summary>
     public int HandleInput(StudioTriggerInput input, double nowSeconds)
     {
-        if (input.IsDown)
+        lock (_gate)
         {
-            _keys.Press(input.Row, input.Column);
-        }
+            AdvanceKeyTime(nowSeconds);
+            if (input.IsDown)
+            {
+                _keys.Press(input.Row, input.Column);
+            }
+            else
+            {
+                _keys.Release(input.Row, input.Column);
+            }
 
-        return _trigger.Handle(input, nowSeconds);
+            return _trigger.Handle(input, nowSeconds);
+        }
     }
 
     public ValueTask<IReadOnlyList<RazerRgb>> RenderAsync(
@@ -241,29 +250,32 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
         cancellationToken.ThrowIfCancellationRequested();
         var layers = Volatile.Read(ref _layers);
         var now = Math.Max(0, elapsed.TotalSeconds);
-        if (now > _lastKeySeconds)
-        {
-            _keys.Decay(now - _lastKeySeconds);
-            _lastKeySeconds = now;
-        }
-
         var timed = new (StudioLayerRender Layer, double Seconds)[layers.Length];
-        for (var index = 0; index < layers.Length; index++)
+        StudioKeyState keys;
+        lock (_gate)
         {
-            var layer = layers[index];
-            var render = layer.Id == Guid.Empty
-                ? layer
-                : layer with { State = _states.For(layer.Id) };
-            var clock = GetClock(layer.Id);
-            var state = clock.Sample(now, layer.Params, _rows, _columns);
-            // Speed is an effect parameter interpreted by the renderer; time stays absolute.
-            timed[index] = (
-                render with { Opacity = state.Running ? layer.Opacity : 0 },
-                state.LocalSeconds);
+            // A render-clock reset rebases elapsed time; stale input must not do so.
+            if (now < _lastRenderSeconds) _lastKeySeconds = now;
+            _lastRenderSeconds = now;
+            AdvanceKeyTime(now);
+            keys = _keys.Snapshot();
+            for (var index = 0; index < layers.Length; index++)
+            {
+                var layer = layers[index];
+                var render = layer.Id == Guid.Empty
+                    ? layer
+                    : layer with { State = _states.For(layer.Id) };
+                var clock = GetClock(layer.Id);
+                var state = clock.Sample(now, layer.Params, _rows, _columns);
+                // Speed is an effect parameter interpreted by the renderer; time stays absolute.
+                timed[index] = (
+                    render with { Opacity = state.Running ? layer.Opacity : 0 },
+                    state.LocalSeconds);
+            }
         }
 
         var input = _inputProvider?.Invoke(_rows, _columns) ?? default;
-        input = input with { Keys = _keys.Snapshot() };
+        input = input with { Keys = keys };
         var logical = StudioCompositor.RenderTimedLayers(timed, _rows, _columns, input);
         var colors = new RazerRgb[logical.Length];
         for (var index = 0; index < logical.Length; index++)
@@ -297,6 +309,14 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
             StudioBladeFrameMode.Sparse16 => BladeLightingLayout16.MapToDeviceFrame(colors),
             _ => colors,
         });
+    }
+
+    // Caller holds _gate so elapsed time is applied before a new press is recorded.
+    private void AdvanceKeyTime(double now)
+    {
+        if (!double.IsFinite(now) || now <= _lastKeySeconds) return;
+        _keys.Decay(now - _lastKeySeconds);
+        _lastKeySeconds = now;
     }
 
     private StudioPlaybackClock GetClock(Guid id)

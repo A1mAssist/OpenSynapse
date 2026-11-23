@@ -21,6 +21,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
+- **Studio key-triggered lighting**: match keyboard input and lighting-control HID interfaces by physical device identity, restoring reactive, ripple and key-started wave effects for newly created and imported layers. Keyboard and Blade reactive effects also retain fresh key presses after a long gap or before the first rendered frame.
 - **Blade performance**: accept the GPU Extreme readback (`0x03`) reported by Blade 18 (2026), preserving both CPU/GPU readings and access to the supported Custom levels; Extreme is displayed as the current state without adding an unverified write option.
 - **Display refresh**: run display-driver queries and refresh-rate changes off the UI thread so device refreshes do not stall page scrolling; UI updates and device-operation ordering are preserved.
 - **Blade diagnostics**: show localized names for auto sleep, time to dim, indicator LED and GPU detection instead of raw resource keys.
