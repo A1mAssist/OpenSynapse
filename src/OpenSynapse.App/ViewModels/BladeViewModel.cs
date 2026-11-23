@@ -237,6 +237,7 @@ internal sealed class BladeViewModel
             BladeGpuBoostMode.Low => AppStrings.Text("Text_CB5F70D1"),
             BladeGpuBoostMode.Medium => AppStrings.Text("Text_28619638"),
             BladeGpuBoostMode.High => AppStrings.Text("Text_5C1F32A7"),
+            BladeGpuBoostMode.Extreme => "Extreme",
             _ => "--",
         };
         _bladeGpuBoostIndex = Array.IndexOf(BladeGpuBoostModes, mode);

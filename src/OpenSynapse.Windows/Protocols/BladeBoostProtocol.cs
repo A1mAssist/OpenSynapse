@@ -34,6 +34,8 @@ public static class BladeBoostProtocol
             0x00 => BladeGpuBoostMode.Low,
             0x01 => BladeGpuBoostMode.Medium,
             0x02 => BladeGpuBoostMode.High,
+            // THERMAL_FAN_ADVANCE_MODE_WATTAGE.Extreme in the Synapse middleware.
+            0x03 => BladeGpuBoostMode.Extreme,
             var value => throw new InvalidOperationException($"Blade returned an unknown GPU Boost value: 0x{value:X2}."),
         };
 

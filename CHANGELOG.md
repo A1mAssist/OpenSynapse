@@ -21,6 +21,9 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
+- **Blade performance**: accept the GPU Extreme readback (`0x03`) reported by Blade 18 (2026), preserving both CPU/GPU readings and access to the supported Custom levels; Extreme is displayed as the current state without adding an unverified write option.
+- **Display refresh**: run display-driver queries and refresh-rate changes off the UI thread so device refreshes do not stall page scrolling; UI updates and device-operation ordering are preserved.
+- **Blade diagnostics**: show localized names for auto sleep, time to dim, indicator LED and GPU detection instead of raw resource keys.
 - **Mouse mapping layout**: align both button lists at the top so unequal button counts no longer stagger the two columns.
 - **Macro execution**: persist trigger and playback choices even before a trigger key is assigned, so restarting or switching macros keeps the selection; changing only the trigger mode also saves automatically.
 - **Audio discovery**: keep separate audio devices visible together and track each wireless receiver independently; a USB sound card no longer hides a second headset.

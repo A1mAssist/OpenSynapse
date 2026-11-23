@@ -157,7 +157,9 @@ public sealed partial class DisplayWorkspace : INotifyPropertyChanged
 
         await _runDeviceOperation(AppStrings.Text("Text_8423206D"), async () =>
         {
-            var snapshot = _internalDisplayController.SetRefreshRate(InternalDisplayRefreshRateHertz);
+            var requested = InternalDisplayRefreshRateHertz;
+            var snapshot = await Task.Run(
+                () => _internalDisplayController.SetRefreshRate(requested), cancellationToken);
             _ecoDisplayPolicy.ClearRestore();
             ApplyInternalDisplaySnapshot(snapshot);
             var profile = _editableRefreshRateBladeProfile();
@@ -210,7 +212,10 @@ public sealed partial class DisplayWorkspace : INotifyPropertyChanged
         return Task.CompletedTask;
     }
 
-    internal void RefreshInternalDisplay(PowerSourceKind powerState, bool applyProfile)
+    internal async Task RefreshInternalDisplayAsync(
+        PowerSourceKind powerState,
+        bool applyProfile,
+        CancellationToken cancellationToken)
     {
         if (_internalDisplayController is null)
         {
@@ -219,7 +224,8 @@ public sealed partial class DisplayWorkspace : INotifyPropertyChanged
 
         try
         {
-            var snapshot = _internalDisplayController.Read();
+            // Display-driver enumeration and WMI brightness queries can block for seconds.
+            var snapshot = await Task.Run(_internalDisplayController.Read, cancellationToken);
             if (applyProfile)
             {
                 var blade = _deviceDescriptors().FirstOrDefault(
@@ -246,7 +252,8 @@ public sealed partial class DisplayWorkspace : INotifyPropertyChanged
                             snapshot.Height));
                     }
 
-                    snapshot = _internalDisplayController.SetRefreshRate(hertz);
+                    snapshot = await Task.Run(
+                        () => _internalDisplayController.SetRefreshRate(hertz), cancellationToken);
                 }
                 _ecoDisplayPolicy.ConfirmApplied(snapshot.RefreshRateHertz, requested);
             }

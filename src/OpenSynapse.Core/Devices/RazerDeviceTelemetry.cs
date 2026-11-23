@@ -89,6 +89,7 @@ public enum BladeGpuBoostMode : byte
     Low = 0x00,
     Medium = 0x01,
     High = 0x02,
+    Extreme = 0x03,
 }
 
 public enum BladeMaxFanMode : byte

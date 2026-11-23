@@ -394,8 +394,9 @@ public sealed partial class BladeWorkspace
                 display.ConfirmedRefreshRateHertz,
                 display.InternalDisplayRefreshRates,
                 includedRates);
-            var snapshot = display.Controller.SetRefreshRate(
-                display.InternalDisplayRefreshRateHertz);
+            var requested = display.InternalDisplayRefreshRateHertz;
+            var snapshot = await Task.Run(
+                () => display.Controller.SetRefreshRate(requested), cancellationToken);
             display.ApplyInternalDisplaySnapshot(snapshot);
             await BladePerformanceProfileEdit.SaveRefreshRateAsync(target, snapshot.RefreshRateHertz,
                 SaveProfileAsync, cancellationToken,

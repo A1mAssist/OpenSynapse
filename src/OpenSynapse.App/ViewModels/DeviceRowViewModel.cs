@@ -211,14 +211,14 @@ public sealed class DeviceRowViewModel : INotifyPropertyChanged, IDeviceBatteryR
                     : CapabilityIds.FnKeySwapGet);
             Add("FirmwareMcuLabel", telemetry.BladeMcuVersion,
                 capability: CapabilityIds.McuVersionGet);
-            Add("BladeAutoSleepTitle.Text", telemetry.BladeAutoSleepEnabled,
+            Add("BladeAutoSleepTitle/Text", telemetry.BladeAutoSleepEnabled,
                 capability: CapabilityIds.AutoSleepGet);
-            Add("BladeTimeToDimTitle.Text", telemetry.BladeTimeToDim,
+            Add("BladeTimeToDimTitle/Text", telemetry.BladeTimeToDim,
                 telemetry.BladeTimeToDim is { } dim ? $"{dim.Seconds}s · {dim.Percentage}%" : null,
                 CapabilityIds.TimeToDimGet);
-            Add("BladeIndicatorLedTitle.Text", telemetry.BladeIndicatorLedEnabled,
+            Add("BladeIndicatorLedTitle/Text", telemetry.BladeIndicatorLedEnabled,
                 capability: CapabilityIds.IndicatorLedGet);
-            Add("BladeGpuCardDetectionTitle.Text", telemetry.BladeGpuCardDetection,
+            Add("BladeGpuCardDetectionTitle/Text", telemetry.BladeGpuCardDetection,
                 telemetry.BladeGpuCardDetection is { } gpuCard
                     ? $"{(gpuCard.Enabled ? AppStrings.Text("DiagnosticProtocolEnabled") : AppStrings.Text("DiagnosticProtocolDisabled"))} · 0x{gpuCard.LedClassId:X2}"
                     : null,

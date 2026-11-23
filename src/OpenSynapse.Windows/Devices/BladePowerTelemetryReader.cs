@@ -432,7 +432,8 @@ internal sealed partial class BladePowerTelemetryReader
         BladeGpuBoostMode mode,
         CancellationToken cancellationToken = default)
     {
-        if (!Enum.IsDefined(mode))
+        // Extreme is readable; only Low/Medium/High are admitted user writes.
+        if (mode > BladeGpuBoostMode.High)
         {
             throw new ArgumentOutOfRangeException(nameof(mode));
         }

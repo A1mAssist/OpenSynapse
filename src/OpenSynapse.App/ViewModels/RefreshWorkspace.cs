@@ -438,7 +438,8 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
             _notifyPropertyChanged(nameof(MainViewModel.ActivePowerSourceText));
             if (!_liteMode)
             {
-                _display.RefreshInternalDisplay(powerState, applyDisplayProfile || applyEcoDisplay);
+                await _display.RefreshInternalDisplayAsync(
+                    powerState, applyDisplayProfile || applyEcoDisplay, cancellationToken);
             }
             if (applyDisplayProfile && StudioLightingActive?.Invoke() != true)
             {
@@ -599,7 +600,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
                 }
                 _lighting.ShadowFingerprint = string.Empty;
                 _lighting.LightingDevicePath = string.Empty;
-                _display.RefreshInternalDisplay(powerState, applyDisplayProfile);
+                await _display.RefreshInternalDisplayAsync(powerState, applyDisplayProfile, cancellationToken);
                 _blade.SetStatus(hadBlade ? AppStrings.Text("Text_A70924BE") : AppStrings.Text("Text_DB0974DC"));
             }
             _lastPowerState = powerState;

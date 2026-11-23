@@ -172,7 +172,7 @@ public sealed class VerifiedProfileApplier
 
                 if (bladeErrors.Count == 0 && profile.Blade.GpuBoostMode is byte rawGpuBoost)
                 {
-                    if (!Enum.IsDefined(typeof(BladeGpuBoostMode), rawGpuBoost))
+                    if (rawGpuBoost > (byte)BladeGpuBoostMode.High)
                     {
                         bladeErrors.Add($"Blade GPU Boost value is invalid: {rawGpuBoost}.");
                     }
