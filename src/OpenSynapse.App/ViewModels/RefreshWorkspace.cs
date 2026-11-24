@@ -284,6 +284,12 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
         {
             _blade.OnDisplayAvailabilityChanged(false);
         }
+        if (available)
+        {
+            // A resume request can arrive before the display wakes; that pass is
+            // dropped while IsDisplayAvailable is false, so run it now.
+            SignalDeviceWatch();
+        }
     }
 
     public Task RefreshDevicesAsync(CancellationToken cancellationToken = default) =>

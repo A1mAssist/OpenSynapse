@@ -233,7 +233,10 @@ internal sealed class DisplayPowerNotification
                 {
                     app.ResetChromaDeviceCache();
                 }
-                _viewModel.Refresh.RequestDeviceRefresh();
+                // BLE and accessory profiles are only replayed by a profile apply, and
+                // the mouse reloads its stored DPI on wake. A plain rescan would leave
+                // those settings at the firmware defaults.
+                _viewModel.Refresh.RequestProfileApply();
             });
             // A private-key read can stay pending across the suspend and never
             // deliver another report, so the mouse keeps its firmware keys and the
