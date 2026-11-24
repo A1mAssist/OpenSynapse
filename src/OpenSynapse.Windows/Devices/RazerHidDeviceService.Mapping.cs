@@ -29,12 +29,9 @@ public sealed partial class RazerHidDeviceService
     // parsed, but still switches modes through 00:04. Remember that so later rows skip it.
     private readonly ConcurrentDictionary<string, bool> _mappingModeBlind =
         new(StringComparer.OrdinalIgnoreCase);
-    // The Tartarus Pro rejects 02:84 in normal mode on this firmware. Probe the
-    // three mode/param pairs Synapse and OpenRazer use, then keep the one that
-    // actually unlocks the OBM table.
+    // The Tartarus Pro reads its OBM table only in driver mode. Probe the
+    // mode/param pairs Synapse uses, then keep the one where a real key read answers.
     private readonly ConcurrentDictionary<string, (byte Mode, byte Parameter)> _tartarusMappingModes =
-        new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, bool> _tartarusMappingUnavailable =
         new(StringComparer.OrdinalIgnoreCase);
     /// <summary>
     /// Mapping tables are keyed by the profile the device is actually on. Profile 1 is only a
@@ -179,15 +176,14 @@ public sealed partial class RazerHidDeviceService
             0x022B or 0x0244 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF or 0x02EB;
 
     // 022B/02A6/02A7/02B0/02CF/02EB reject the 00:84 mode read but still need
-    // driver mode for their OBM and analog-key writes. 0244 is deliberately not
-    // here: Synapse leaves it in normal mode when 00:84 fails, and its OBM
-    // assignment tables are readable only in that mode.
+    // driver mode for their OBM and analog-key writes. 0244 has its own
+    // functional probe in Mapping.Mode.cs.
     private static bool UsesBlindMappingDriverMode(RazerHidDeviceConnection connection) =>
         connection.Definition.ProductId is 0x022B or 0x02A6 or 0x02A7 or
             0x02B0 or 0x02CF or 0x02EB;
 
     private static readonly (byte Mode, byte Parameter)[] TartarusProMappingModes =
-        [(0x00, 0x00), (0x03, 0x00), (0x03, 0x01)];
+        [(0x03, 0x00), (0x03, 0x01), (0x00, 0x00)];
 
     private async Task<(AssignmentTable Table, RazerHidButtonAssignment Assignment)>
         ReadKeypadAssignmentAsync(
@@ -246,10 +242,17 @@ public sealed partial class RazerHidDeviceService
         AssignmentTable table,
         CancellationToken cancellationToken)
     {
+        // 0244 declares the full 80-byte report on 0x8D/0x92; its firmware rejects the
+        // shorter payload Synapse uses for newer devices.
+        byte dataSize = connection.Definition.ProductId == 0x0244
+            ? (byte)RazerHidMappingProtocol.ReportDataSize
+            : RazerHidMappingProtocol.SingleAssignmentDataSize;
         var request = table switch
         {
-            AssignmentTable.Analog => RazerHidMappingProtocol.GetAnalogKeyAssignment(profileId, buttonId, mode),
-            AssignmentTable.Key => RazerHidMappingProtocol.GetKeyAssignment(profileId, buttonId, mode),
+            AssignmentTable.Analog => RazerHidMappingProtocol.GetAnalogKeyAssignment(
+                profileId, buttonId, mode, dataSize),
+            AssignmentTable.Key => RazerHidMappingProtocol.GetKeyAssignment(
+                profileId, buttonId, mode, dataSize),
             _ => RazerHidMappingProtocol.GetMultiKeyAssignment(profileId, buttonId, mode),
         };
         var response = await ExecuteAsync(connection, request, cancellationToken).ConfigureAwait(false);
@@ -348,19 +351,11 @@ public sealed partial class RazerHidDeviceService
             RazerHidRequest request;
             if (UsesPerInputAssignmentTables(connection))
             {
-                var (table, current) = await ReadKeypadAssignmentAsync(
-                    connection, profileId, buttonId, mode, cancellationToken).ConfigureAwait(false);
-                request = table switch
-                {
-                    AssignmentTable.Analog => RazerHidMappingProtocol.SetAnalogKeyAssignment(
-                        profileId, buttonId, mode, current.ThresholdL, current.ThresholdH,
-                        functionId, data.ToArray()),
-                    AssignmentTable.Key => RazerHidMappingProtocol.SetKeyAssignment(
-                        profileId, buttonId, mode, functionId, data.ToArray()),
-                    // Synapse writes a keypad key through 0x0D even when it reads 0x9E.
-                    _ => RazerHidMappingProtocol.SetKeyAssignment(
-                        profileId, buttonId, mode, functionId, data.ToArray()),
-                };
+                // The keypad engine writes every key through 0x0D even when the row is
+                // read from the analog table; 0x12 is only for the keyboard engine.
+                request = RazerHidMappingProtocol.SetKeyAssignment(
+                    profileId, buttonId, mode, functionId, data.ToArray(),
+                    (byte)RazerHidMappingProtocol.ReportDataSize);
             }
             else if (UsesMultiKeyAssignments(connection))
             {
@@ -404,6 +399,13 @@ public sealed partial class RazerHidDeviceService
         // The five Synapse 2 keypads keep their mapping in a P2 profile blob.
         // Their HID tables reject 0x8D/0x9E, so the usual probe cannot see it.
         if (UsesLegacyKeypadProfile(definition.ProductId))
+        {
+            return true;
+        }
+
+        // 0244 answers 0x05 to every table while it is in normal mode, and discovery
+        // must not switch modes. Its mapping capabilities are declared statically.
+        if (definition.ProductId == 0x0244)
         {
             return true;
         }

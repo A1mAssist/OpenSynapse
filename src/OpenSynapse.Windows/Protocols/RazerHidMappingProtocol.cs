@@ -25,7 +25,7 @@ internal static class RazerHidMappingProtocol
     internal const byte TransactionId = 0x1F;
     internal const byte ProfileId = 0x01;
     internal const int ReportDataSize = 80;
-    private const byte SingleAssignmentDataSize = 10;
+    internal const byte SingleAssignmentDataSize = 10;
     internal const byte NormalMode = 0x00;
     internal const byte HypershiftMode = 0x01;
     private const byte MappingClass = 0x02;
@@ -39,6 +39,7 @@ internal static class RazerHidMappingProtocol
     private const byte SetMultiKeyAssignmentCommand = 0x1E;
     private const byte GetAnalogKeyAssignmentCommand = 0x92;
     private const byte SetAnalogKeyAssignmentCommand = 0x12;
+    private const byte GetActiveKeymapCommand = 0xB6;
     private const byte GetObmKeymapCommand = 0xB7;
     private const byte SetObmKeymapCommand = 0x37;
     private const int MultiKeyAssignmentStride = 9;
@@ -65,10 +66,14 @@ internal static class RazerHidMappingProtocol
             new[] { profileId, buttonId, mode }));
 
     /// <summary>Keyboards read and write the key table (0x8D/0x0D), not the button table.</summary>
-    internal static RazerHidRequest GetKeyAssignment(byte profileId, byte keyId, byte mode) => new(
+    internal static RazerHidRequest GetKeyAssignment(
+        byte profileId,
+        byte keyId,
+        byte mode,
+        byte dataSize = SingleAssignmentDataSize) => new(
         "mapping.getKeyAssignment",
         RazerFeatureReport.CreateRequest(
-            TransactionId, SingleAssignmentDataSize, MappingClass, GetKeyAssignmentCommand,
+            TransactionId, dataSize, MappingClass, GetKeyAssignmentCommand,
             new[] { profileId, keyId, mode }));
 
     /// <summary>
@@ -88,11 +93,21 @@ internal static class RazerHidMappingProtocol
                 GetMultiKeyAssignmentCommand, arguments));
     }
 
-    internal static RazerHidRequest GetAnalogKeyAssignment(byte profileId, byte keyId, byte mode) => new(
+    internal static RazerHidRequest GetAnalogKeyAssignment(
+        byte profileId,
+        byte keyId,
+        byte mode,
+        byte dataSize = SingleAssignmentDataSize) => new(
         "mapping.getAnalogKeyAssignment",
         RazerFeatureReport.CreateRequest(
-            TransactionId, SingleAssignmentDataSize, MappingClass, GetAnalogKeyAssignmentCommand,
+            TransactionId, dataSize, MappingClass, GetAnalogKeyAssignmentCommand,
             new[] { profileId, keyId, mode }));
+
+    /// <summary>0244 picks the keymap before every assignment-table read (02:B6 → 02:37).</summary>
+    internal static RazerHidRequest GetActiveKeymap(byte profileId) => new(
+        "mapping.getActiveKeymap",
+        RazerFeatureReport.CreateRequest(
+            TransactionId, 2, MappingClass, GetActiveKeymapCommand, new[] { profileId, (byte)0 }));
 
     /// <summary>
     /// Synapse selects an OBM keymap before it reads any assignment table.
@@ -122,9 +137,11 @@ internal static class RazerHidMappingProtocol
         byte keyId,
         byte mode,
         byte functionId,
-        ReadOnlySpan<byte> data) =>
+        ReadOnlySpan<byte> data,
+        byte dataSize = SingleAssignmentDataSize) =>
         CreateAssignmentRequest(
-            "mapping.setKeyAssignment", SetKeyAssignmentCommand, profileId, keyId, mode, functionId, data);
+            "mapping.setKeyAssignment", SetKeyAssignmentCommand, profileId, keyId, mode, functionId,
+            data, dataSize);
 
     internal static RazerHidRequest SetMultiKeyAssignment(
         byte profileId,
@@ -159,7 +176,8 @@ internal static class RazerHidMappingProtocol
         byte thresholdL,
         byte thresholdH,
         byte functionId,
-        ReadOnlySpan<byte> data)
+        ReadOnlySpan<byte> data,
+        byte dataSize = SingleAssignmentDataSize)
     {
         if (data.Length > 5)
         {
@@ -178,7 +196,7 @@ internal static class RazerHidMappingProtocol
         return new RazerHidRequest(
             "mapping.setAnalogKeyAssignment",
             RazerFeatureReport.CreateRequest(
-                TransactionId, Math.Max(SingleAssignmentDataSize, (byte)arguments.Length),
+                TransactionId, Math.Max(dataSize, (byte)arguments.Length),
                 MappingClass, SetAnalogKeyAssignmentCommand, arguments));
     }
 
@@ -189,7 +207,8 @@ internal static class RazerHidMappingProtocol
         byte id,
         byte mode,
         byte functionId,
-        ReadOnlySpan<byte> data)
+        ReadOnlySpan<byte> data,
+        byte dataSize = SingleAssignmentDataSize)
     {
         if (data.Length > 5)
         {
@@ -206,7 +225,7 @@ internal static class RazerHidMappingProtocol
         return new RazerHidRequest(
             builderName,
             RazerFeatureReport.CreateRequest(
-                TransactionId, SingleAssignmentDataSize, MappingClass, command, arguments));
+                TransactionId, dataSize, MappingClass, command, arguments));
     }
 
     internal static IReadOnlyList<byte> ParseButtonList(ReadOnlySpan<byte> response)
@@ -291,4 +310,8 @@ internal static class RazerHidMappingProtocol
 
     internal static byte ParseObmKeymap(ReadOnlySpan<byte> response) =>
         RazerHidStandardProtocol.Arguments(response, 1)[0];
+
+    internal static byte ParseActiveKeymap(ReadOnlySpan<byte> response) =>
+        RazerHidStandardProtocol.Arguments(response, 2)[1];
+
 }

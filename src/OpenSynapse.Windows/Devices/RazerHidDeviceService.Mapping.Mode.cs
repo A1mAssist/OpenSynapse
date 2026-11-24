@@ -37,13 +37,8 @@ public sealed partial class RazerHidDeviceService
             {
                 await WithMappingModeAsync(
                     connection,
-                    async () =>
-                    {
-                        await PrepareObmKeymapAsync(connection, cancellationToken)
-                            .ConfigureAwait(false);
-                        await RunOnContextAsync(context, () => action(cancellationToken))
-                            .ConfigureAwait(false);
-                    },
+                    async () => await RunOnContextAsync(context, () => action(cancellationToken))
+                        .ConfigureAwait(false),
                     cancellationToken,
                     bypassSession: true)
                     .ConfigureAwait(false);
@@ -66,7 +61,7 @@ public sealed partial class RazerHidDeviceService
     /// <summary>
     /// Synapse selects the OBM keymap before every assignment-table read. The
     /// Tartarus Pro rejects 0x92/0x8D with status 0x05 while the target keymap
-    /// is unset, so read the current keymap, or fall back to 1, and select it.
+    /// is unset, so read the active keymap, or fall back to 1, and select it.
     /// </summary>
     private async Task PrepareObmKeymapAsync(
         RazerHidDeviceConnection connection,
@@ -77,19 +72,33 @@ public sealed partial class RazerHidDeviceService
             return;
         }
 
-        var keymapId = RazerHidMappingProtocol.ProfileId;
+        var keymapId = (byte)0;
         try
         {
-            keymapId = RazerHidMappingProtocol.ParseObmKeymap(
-                await ExecuteAsync(connection, RazerHidMappingProtocol.GetObmKeymap(), cancellationToken)
-                    .ConfigureAwait(false));
+            keymapId = RazerHidMappingProtocol.ParseActiveKeymap(
+                await ExecuteAsync(connection,
+                    RazerHidMappingProtocol.GetActiveKeymap(RazerHidMappingProtocol.ProfileId),
+                    cancellationToken).ConfigureAwait(false));
         }
         catch (Exception exception) when (
             exception is InvalidDataException or NotSupportedException or
                 RazerCommandRejectedException or RazerDeviceTimeoutException)
         {
             WriteDiagnostic(connection.Definition.ProductId,
-                $"mapping keymap read failed: {exception.Message}");
+                $"mapping active keymap read failed: {exception.Message}");
+            try
+            {
+                keymapId = RazerHidMappingProtocol.ParseObmKeymap(
+                    await ExecuteAsync(connection, RazerHidMappingProtocol.GetObmKeymap(),
+                        cancellationToken).ConfigureAwait(false));
+            }
+            catch (Exception targetException) when (
+                targetException is InvalidDataException or NotSupportedException or
+                    RazerCommandRejectedException or RazerDeviceTimeoutException)
+            {
+                WriteDiagnostic(connection.Definition.ProductId,
+                    $"mapping keymap read failed: {targetException.Message}");
+            }
         }
 
         if (keymapId == 0)
@@ -218,7 +227,7 @@ public sealed partial class RazerHidDeviceService
 
                 // Tartarus V2 and the Huntsman V3 Pro family need driver mode even when
                 // their firmware does not implement the 00:84 read. The Tartarus Pro
-                // (0244) is different: Synapse leaves it in normal mode when 00:84 fails.
+                // (0244) takes the dedicated path above.
                 blind = true;
                 _mappingModeBlind.TryAdd(connection.InstanceId, true);
                 WriteDiagnostic(connection.Definition.ProductId,
@@ -302,21 +311,16 @@ public sealed partial class RazerHidDeviceService
     }
 
     /// <summary>
-    /// The Tartarus Pro (0244) answers 0x05 to every class-0x02 OBM command on the
-    /// firmware seen in the field. Try the mode/param pairs used by Synapse and
-    /// OpenRazer and keep the first one that makes 02:84 answer; restore normal
-    /// mode afterwards so the keypad keeps sending its normal HID reports.
+    /// The Tartarus Pro (0244) answers 0x05 to every class-0x02 OBM command outside
+    /// driver mode. Synapse uses 00:04 = 3/0 and never sends 02:84 on this keypad;
+    /// keep the first mode where a real assignment read answers, then restore normal
+    /// mode so the keypad keeps sending its normal HID reports.
     /// </summary>
     private async Task<T> WithTartarusProMappingModeAsync<T>(
         RazerHidDeviceConnection connection,
         Func<Task<T>> action,
         CancellationToken cancellationToken)
     {
-        if (_tartarusMappingUnavailable.ContainsKey(connection.InstanceId))
-        {
-            return await action().ConfigureAwait(false);
-        }
-
         if (_tartarusMappingModes.TryGetValue(connection.InstanceId, out var known))
         {
             try
@@ -324,6 +328,7 @@ public sealed partial class RazerHidDeviceService
                 await SetMappingDeviceModeAsync(
                     connection, known.Mode, cancellationToken, verify: false, known.Parameter)
                     .ConfigureAwait(false);
+                await PrepareObmKeymapAsync(connection, cancellationToken).ConfigureAwait(false);
                 return await action().ConfigureAwait(false);
             }
             finally
@@ -341,16 +346,11 @@ public sealed partial class RazerHidDeviceService
                     await SetMappingDeviceModeAsync(
                         connection, candidate.Mode, cancellationToken, verify: false, candidate.Parameter)
                         .ConfigureAwait(false);
-                    var buttons = RazerHidMappingProtocol.ParseButtonList(
-                        await ExecuteAsync(connection, RazerHidMappingProtocol.GetButtonList(), cancellationToken)
-                            .ConfigureAwait(false));
-                    if (buttons.Count == 0)
-                    {
-                        throw new InvalidDataException("02:84 returned an empty button list.");
-                    }
+                    await PrepareObmKeymapAsync(connection, cancellationToken).ConfigureAwait(false);
+                    await ProbeKeypadTableAsync(connection, cancellationToken).ConfigureAwait(false);
                     _tartarusMappingModes[connection.InstanceId] = candidate;
                     WriteDiagnostic(connection.Definition.ProductId,
-                        $"mapping OBM unlocked in mode 0x{candidate.Mode:X2}/0x{candidate.Parameter:X2}");
+                        $"mapping OBM read unlocked in mode 0x{candidate.Mode:X2}/0x{candidate.Parameter:X2}");
                     return await action().ConfigureAwait(false);
                 }
                 catch (Exception exception) when (
@@ -364,9 +364,8 @@ public sealed partial class RazerHidDeviceService
             }
 
             WriteDiagnostic(connection.Definition.ProductId,
-                "mapping OBM rejected 02:84 in normal, driver and driver+store modes; " +
+                "mapping OBM rejected in driver, driver+store and normal modes; " +
                 "the firmware does not expose the onboard table");
-            _tartarusMappingUnavailable.TryAdd(connection.InstanceId, true);
             await RestoreTartarusProModeAsync(connection).ConfigureAwait(false);
             return await action().ConfigureAwait(false);
         }
@@ -374,6 +373,51 @@ public sealed partial class RazerHidDeviceService
         {
             await RestoreTartarusProModeAsync(connection).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// 0244 has no 02:84 key table; asking for it only produces a false negative.
+    /// Probe the two tables the keypad engine actually reads.
+    /// </summary>
+    private async Task ProbeKeypadTableAsync(
+        RazerHidDeviceConnection connection,
+        CancellationToken cancellationToken)
+    {
+        Exception? lastError = null;
+        foreach (var table in new[] { AssignmentTable.Analog, AssignmentTable.Key })
+        {
+            try
+            {
+                var request = table == AssignmentTable.Analog
+                    ? RazerHidMappingProtocol.GetAnalogKeyAssignment(
+                        RazerHidMappingProtocol.ProfileId, 0x40, RazerHidMappingProtocol.NormalMode,
+                        (byte)RazerHidMappingProtocol.ReportDataSize)
+                    : RazerHidMappingProtocol.GetKeyAssignment(
+                        RazerHidMappingProtocol.ProfileId, 0x40, RazerHidMappingProtocol.NormalMode,
+                        (byte)RazerHidMappingProtocol.ReportDataSize);
+                var response = await ExecuteAsync(connection, request, cancellationToken)
+                    .ConfigureAwait(false);
+                if (table == AssignmentTable.Analog)
+                {
+                    _ = RazerHidMappingProtocol.ParseAnalogAssignment(response);
+                }
+                else
+                {
+                    _ = RazerHidMappingProtocol.ParseAssignment(response);
+                }
+
+                return;
+            }
+            catch (Exception exception) when (
+                exception is InvalidDataException or NotSupportedException or
+                    RazerCommandRejectedException or RazerDeviceTimeoutException)
+            {
+                lastError = exception;
+            }
+        }
+
+        throw new InvalidDataException(
+            $"The keypad assignment tables did not answer: {lastError?.Message}");
     }
 
     private async Task RestoreTartarusProModeAsync(RazerHidDeviceConnection connection)
