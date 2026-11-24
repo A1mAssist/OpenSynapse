@@ -42,6 +42,12 @@ public partial class App
         await DisposeChromaHostsAsync().ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// A wake or a device power-cycle invalidates every "last frame" the router
+    /// remembers; forcing the next frame through repaints LEDs the device forgot.
+    /// </summary>
+    internal void ResetChromaDeviceCache() => _chromaDeviceRouter?.ResetCache();
+
     private void StartChromaHosts(MainViewModel viewModel)
     {
         if (!OpenSynapse.Core.Storage.LiteModePolicy.ShouldStartChromaRest(
@@ -232,7 +238,7 @@ public partial class App
                 return;
             }
             catch (SocketException exception) when (
-                exception.SocketErrorCode == SocketError.AddressAlreadyInUse &&
+                exception.SocketErrorCode is SocketError.AddressAlreadyInUse or SocketError.AccessDenied &&
                 attempt < 10 &&
                 ReferenceEquals(_chromaRestHost, host))
             {
@@ -250,7 +256,7 @@ public partial class App
         }
     }
 
-    private async Task DisposeChromaHostsAsync()
+    private async Task DisposeChromaHostsAsync(bool stopBroker = true)
     {
         var host = Interlocked.Exchange(ref _chromaRestHost, null);
         if (host is not null)
@@ -284,7 +290,7 @@ public partial class App
             await startTask.ConfigureAwait(false);
         }
 
-        if (!_chromaBrokerLaunched)
+        if (!_chromaBrokerLaunched || !stopBroker)
         {
             return;
         }

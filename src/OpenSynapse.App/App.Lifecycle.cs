@@ -363,7 +363,9 @@ public partial class App
         Interlocked.Exchange(ref _closing, 1);
         Interlocked.Increment(ref _audioMuteGeneration);
         await StopBladeAudioMuteWatchdogAsync().ConfigureAwait(false);
-        await DisposeChromaHostsAsync().ConfigureAwait(false);
+        // A UI exit must not kill the official-DLL broker: the game's SDK session
+        // lives in that process and cannot re-init without restarting the game.
+        await DisposeChromaHostsAsync(stopBroker: false).ConfigureAwait(false);
         if (_audioMuteViewModel is not null)
         {
             _audioMuteViewModel.Blade.ControlDeviceChanged -= OnBladeControlDeviceChanged;

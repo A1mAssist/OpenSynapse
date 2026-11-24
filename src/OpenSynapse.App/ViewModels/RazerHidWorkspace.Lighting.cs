@@ -11,6 +11,9 @@ public sealed partial class RazerHidWorkspace
     private readonly HashSet<string> _restoredLightingEndpoints =
         new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>A wake can keep the endpoint path while the firmware forgot its frame.</summary>
+    internal void InvalidateInitialLightingRestore() => _restoredLightingEndpoints.Clear();
+
     private async Task RestoreInitialLightingAsync(
         IReadOnlyList<RazerHidDeviceConnection> connections,
         CancellationToken cancellationToken)

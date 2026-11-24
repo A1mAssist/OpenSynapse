@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.IO.Pipes;
 using System.Security.AccessControl;
 using System.Security.Principal;
@@ -19,6 +20,8 @@ internal sealed class ChromaBrokerHost : IAsyncDisposable
     private readonly CancellationTokenSource _stop = new();
     private Task? _acceptLoop;
     private NamedPipeServerStream? _listener;
+    private readonly ConcurrentDictionary<ChromaSdkDeviceType, ChromaSdkEffect> _latest = new();
+    private int _sessionApplied;
     private int _connected;
     private int _disposed;
 
@@ -119,8 +122,11 @@ internal sealed class ChromaBrokerHost : IAsyncDisposable
             {
                 await listener.WaitForConnectionAsync(_stop.Token).ConfigureAwait(false);
                 Volatile.Write(ref _connected, 1);
+                Interlocked.Exchange(ref _sessionApplied, 0);
+                _latest.Clear();
                 _log?.Invoke("broker connected");
-                var applied = false;
+                using var applyStop = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token);
+                var applyLoop = ApplyLoopAsync(applyStop.Token);
                 try
                 {
                     while (true)
@@ -128,7 +134,7 @@ internal sealed class ChromaBrokerHost : IAsyncDisposable
                         var message = ChromaSdkPipe.Read(listener, _stop.Token);
                         if (message is ChromaSdkSetEffectMessage set)
                         {
-                            applied = await _applyEffect(set.Value, _stop.Token).ConfigureAwait(false) || applied;
+                            _latest[set.Value.DeviceType] = set.Value;
                         }
                         else if (message is ChromaSdkByeMessage)
                         {
@@ -142,9 +148,18 @@ internal sealed class ChromaBrokerHost : IAsyncDisposable
                 }
                 finally
                 {
+                    applyStop.Cancel();
+                    try
+                    {
+                        await applyLoop.ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                    }
+                    _latest.Clear();
                     Volatile.Write(ref _connected, 0);
                     _log?.Invoke("broker disconnected");
-                    if (applied && _restoreEnabled())
+                    if (Volatile.Read(ref _sessionApplied) != 0 && _restoreEnabled())
                     {
                         await _restoreLighting().ConfigureAwait(false);
                     }
@@ -162,6 +177,39 @@ internal sealed class ChromaBrokerHost : IAsyncDisposable
 
             if (_stop.IsCancellationRequested) return;
             listener = CreateListener();
+        }
+    }
+
+    private async Task ApplyLoopAsync(CancellationToken cancellationToken)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(40));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
+            {
+                foreach (var type in _latest.Keys.ToArray())
+                {
+                    if (!_latest.TryRemove(type, out var effect)) continue;
+                    try
+                    {
+                        if (await _applyEffect(effect, cancellationToken).ConfigureAwait(false))
+                        {
+                            Interlocked.Exchange(ref _sessionApplied, 1);
+                        }
+                    }
+                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                    {
+                        return;
+                    }
+                    catch (Exception exception)
+                    {
+                        _log?.Invoke($"frame apply failed: {exception.Message}");
+                    }
+                }
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
         }
     }
 }

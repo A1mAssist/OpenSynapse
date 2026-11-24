@@ -451,7 +451,9 @@ internal static partial class OpenSynapseServiceHost
                 return Invalid("The Chroma broker request is missing its parent process.");
             }
 
-            var error = ChromaBrokerServiceChild.Start(parentProcessId.Value, authorizedUser);
+            // The broker must outlive a UI restart: keep it under the service, not
+            // under the short-lived app process that requested it.
+            var error = ChromaBrokerServiceChild.Start(Environment.ProcessId, authorizedUser);
             return error is null
                 ? new OpenSynapseServiceResponse(
                     OpenSynapseServiceProtocol.Version,

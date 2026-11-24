@@ -32,6 +32,9 @@ internal sealed record ChromaTarget(
 /// </summary>
 internal sealed partial class ChromaDeviceRouter
 {
+    private const int TargetTimeoutMilliseconds = 250;
+    private const int DuplicateFrameWindowMilliseconds = 1_000;
+
     private readonly RazerHidDeviceService? _hid;
     private readonly RazerHidSpecialLightingService? _special;
     private readonly Func<IReadOnlyList<RazerHidDeviceConnection>> _hidConnections;
@@ -45,6 +48,8 @@ internal sealed partial class ChromaDeviceRouter
     private readonly HashSet<string> _baselineAttempted = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, RazerRgb[]> _lastFrames = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, RazerRgb> _lastColors = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, long> _lastFrameAt = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, long> _lastColorAt = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, RazerHidDeviceConnection> _customEffectPrepared =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, RazerHidLightingBaseline?> _hidBaselines =
@@ -56,6 +61,7 @@ internal sealed partial class ChromaDeviceRouter
     private RazerMakoXChromaService? _makoService;
     private string? _makoPath;
     private readonly SemaphoreSlim _gate = new(1, 1);
+    private volatile bool _resetCache;
 
     internal ChromaDeviceRouter(
         RazerHidDeviceService? hid,
@@ -81,6 +87,9 @@ internal sealed partial class ChromaDeviceRouter
         .Select(target => target.Kind)
         .ToHashSet();
 
+    /// <summary>Sleep or a device power-cycle clears the firmware's last frame.</summary>
+    internal void ResetCache() => _resetCache = true;
+
     internal async Task<bool> ApplyAsync(
         ChromaDeviceKind kind,
         IReadOnlyList<RazerRgb> frame,
@@ -100,15 +109,33 @@ internal sealed partial class ChromaDeviceRouter
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            if (_resetCache)
+            {
+                _resetCache = false;
+                _lastFrames.Clear();
+                _lastFrameAt.Clear();
+                _lastColors.Clear();
+                _lastColorAt.Clear();
+                _customEffectPrepared.Clear();
+                _joliePrepared.Clear();
+            }
             var liveIds = targets.Select(target => target.InstanceId)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
             foreach (var staleId in _lastFrames.Keys.Where(id => !liveIds.Contains(id)).ToArray())
             {
                 _lastFrames.Remove(staleId);
             }
+            foreach (var staleId in _lastFrameAt.Keys.Where(id => !liveIds.Contains(id)).ToArray())
+            {
+                _lastFrameAt.Remove(staleId);
+            }
             foreach (var staleId in _lastColors.Keys.Where(id => !liveIds.Contains(id)).ToArray())
             {
                 _lastColors.Remove(staleId);
+            }
+            foreach (var staleId in _lastColorAt.Keys.Where(id => !liveIds.Contains(id)).ToArray())
+            {
+                _lastColorAt.Remove(staleId);
             }
             foreach (var staleId in _customEffectPrepared.Keys.Where(id => !liveIds.Contains(id)).ToArray())
             {
@@ -133,13 +160,23 @@ internal sealed partial class ChromaDeviceRouter
             var applied = false;
             foreach (var target in targets)
             {
+                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                timeout.CancelAfter(TargetTimeoutMilliseconds);
                 try
                 {
-                    applied |= await ApplyTargetAsync(target, frame, rows, columns, cancellationToken)
-                        .ConfigureAwait(false);
+                    var targetApplied = await ApplyTargetAsync(
+                        target, frame, rows, columns, timeout.Token).ConfigureAwait(false);
+                    if (!targetApplied) Forget(target.InstanceId);
+                    applied |= targetApplied;
+                }
+                catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                {
+                    Forget(target.InstanceId);
+                    _diagnostic?.Invoke($"Chroma target {target.Name} timed out; skipped.");
                 }
                 catch (Exception exception) when (IsDeviceFailure(exception))
                 {
+                    Forget(target.InstanceId);
                     _diagnostic?.Invoke($"Chroma target {target.Name} failed: {exception.Message}");
                 }
             }
@@ -162,8 +199,10 @@ internal sealed partial class ChromaDeviceRouter
         {
             var resized = Resize(
                 frame, rows, columns, 1, RazerMakoXChromaService.LedCount);
+            var now = Environment.TickCount64;
             if (_lastFrames.TryGetValue(target.InstanceId, out var previous) &&
-                previous.AsSpan().SequenceEqual(resized))
+                previous.AsSpan().SequenceEqual(resized) &&
+                now - _lastFrameAt.GetValueOrDefault(target.InstanceId) < DuplicateFrameWindowMilliseconds)
             {
                 return true;
             }
@@ -200,14 +239,17 @@ internal sealed partial class ChromaDeviceRouter
             }
             await service.SetFrameAsync(colors, cancellationToken).ConfigureAwait(false);
             _lastFrames[target.InstanceId] = resized;
+            _lastFrameAt[target.InstanceId] = now;
             return true;
         }
 
         if (target.Transport == ChromaTargetTransport.HidMatrix)
         {
             var resized = Resize(frame, rows, columns, target.Rows, target.Columns);
+            var now = Environment.TickCount64;
             if (_lastFrames.TryGetValue(target.InstanceId, out var previous) &&
-                previous.AsSpan().SequenceEqual(resized))
+                previous.AsSpan().SequenceEqual(resized) &&
+                now - _lastFrameAt.GetValueOrDefault(target.InstanceId) < DuplicateFrameWindowMilliseconds)
             {
                 return true;
             }
@@ -228,12 +270,15 @@ internal sealed partial class ChromaDeviceRouter
             }
             await _hid.SetCustomFrameAsync(connection, colors, cancellationToken).ConfigureAwait(false);
             _lastFrames[target.InstanceId] = resized;
+            _lastFrameAt[target.InstanceId] = now;
             return true;
         }
 
         var representative = Average(frame);
+        var colorNow = Environment.TickCount64;
         if (_lastColors.TryGetValue(target.InstanceId, out var last) &&
-            last == representative)
+            last == representative &&
+            colorNow - _lastColorAt.GetValueOrDefault(target.InstanceId) < DuplicateFrameWindowMilliseconds)
         {
             return true;
         }
@@ -314,7 +359,24 @@ internal sealed partial class ChromaDeviceRouter
         }
 
         _lastColors[target.InstanceId] = representative;
+        _lastColorAt[target.InstanceId] = colorNow;
         return true;
+    }
+
+    private void Forget(string instanceId)
+    {
+        _lastFrames.Remove(instanceId);
+        _lastFrameAt.Remove(instanceId);
+        _lastColors.Remove(instanceId);
+        _lastColorAt.Remove(instanceId);
+        _customEffectPrepared.Remove(instanceId);
+        _hidBaselines.Remove(instanceId);
+        _hidBaselineAttempted.Remove(instanceId);
+        _joliePrepared.Remove(instanceId);
+        _jolieBaselines.Remove(instanceId);
+        _jolieBaselineAttempted.Remove(instanceId);
+        _baselineAttempted.Remove(instanceId);
+        _standardBaselines.Remove(instanceId);
     }
 
     private async Task CaptureBaselineAsync(
@@ -339,6 +401,7 @@ internal sealed partial class ChromaDeviceRouter
 
     private RazerHidDeviceConnection? FindHid(string instanceId) =>
         _hidConnections().FirstOrDefault(connection =>
+            connection.IsReady &&
             StringComparer.OrdinalIgnoreCase.Equals(connection.InstanceId, instanceId)) ??
         _keyboardDevices()
             .Where(keyboard => StringComparer.OrdinalIgnoreCase.Equals(keyboard.DevicePath, instanceId))
@@ -350,6 +413,7 @@ internal sealed partial class ChromaDeviceRouter
         var targets = new List<ChromaTarget>();
         foreach (var connection in _hidConnections())
         {
+            if (!connection.IsReady) continue;
             if (connection.Definition.Category == DeviceCategory.Laptop) continue;
             var kind = ChromaDeviceCatalog.Resolve(connection.Definition.ProductId) ??
                 MapCategory(connection.Definition.Category);
@@ -419,6 +483,7 @@ internal sealed partial class ChromaDeviceRouter
 
         foreach (var connection in _krakenConnections())
         {
+            if (!connection.IsReady) continue;
             var kind = ChromaDeviceCatalog.Resolve(connection.ProductId) ??
                 ChromaDeviceKind.Headset;
             targets.Add(new ChromaTarget(

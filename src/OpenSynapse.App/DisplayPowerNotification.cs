@@ -223,7 +223,18 @@ internal sealed class DisplayPowerNotification
             }
             _systemSuspended = false;
             WindowsHidDiscovery.InvalidateInterfaceCache();
-            _viewModel.Refresh.RequestDeviceRefresh();
+            // Devices come back with a fresh firmware state; forget what we wrote so
+            // the next profile restore and the next Chroma frame repaint every LED.
+            // Both collections belong to the UI-thread refresh path.
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                _viewModel.RazerHid.InvalidateInitialLightingRestore();
+                if (Application.Current is App app)
+                {
+                    app.ResetChromaDeviceCache();
+                }
+                _viewModel.Refresh.RequestDeviceRefresh();
+            });
             // A private-key read can stay pending across the suspend and never
             // deliver another report, so the mouse keeps its firmware keys and the
             // macros look dead until the app restarts. Rebuild the hook off the
