@@ -265,6 +265,8 @@ public sealed partial class PresetEditorWindow : Window
     {
         ResetPreviewState();
         BindEditor();
+        BuildKindPicker();
+        BuildBlendPicker();
         RefreshPreviewDefinition(rebuildWorld: true);
     }
 
@@ -429,13 +431,7 @@ public sealed partial class PresetEditorWindow : Window
 
     private void SaveAsClick(object sender, RoutedEventArgs e) => _ = SaveAsAsync();
 
-    private void ValidateClick(object sender, RoutedEventArgs e)
-    {
-        _editor.Validate(renderSmoke: true);
-        SetStatus(_editor.HasIssues
-            ? _editor.IssueSummaryText
-            : PresetEditorText.Get("PresetEditorValidationOk", "Validation passed"));
-    }
+    private void ValidateClick(object sender, RoutedEventArgs e) => _editor.Validate(renderSmoke: true);
 
     private void UndoClick(object sender, RoutedEventArgs e) => _editor.Undo();
 
