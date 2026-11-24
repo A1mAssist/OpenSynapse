@@ -22,6 +22,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
+- **Tartarus Pro mapping**: read the keypad's onboard table in driver mode, select the active keymap with `02:B6`/`02:37`, and use the 80-byte `02:92`/`02:8D` payloads, so all 28 mapping rows load instead of `0/28`.
 - **THX preset sync**: while a headset's THX card is visible, poll the native state every two seconds and refresh the preset and curve when the headset's own controls change them, without writing back to the device.
 - **Taskbar battery freshness**: redraw the strip from the live device rows every second while keeping the ten-second HID read interval; opening the window also forces an immediate refresh so the strip matches the tray instead of lagging behind.
 - **Mouse DPI stages**: saving the stage table now also applies the active stage's DPI, so the pointer speed changes immediately and the DPI card refreshes.
