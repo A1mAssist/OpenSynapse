@@ -66,7 +66,8 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
     {
         null => "--",
         { Availability: CpuPowerLimitAvailability.Available } report =>
-            AppStrings.FormatText("CpuPowerLimitValue", report.Pl1Watts, report.Pl2Watts),
+            AppStrings.FormatText("CpuPowerLimitValue", report.Pl1Watts, report.Pl2Watts) +
+            VoltageOffsetSuffix(report.VoltageOffsetMillivolts),
         { Availability: CpuPowerLimitAvailability.PawnIoMissing } =>
             AppStrings.Text("CpuPowerLimitPawnIoMissing"),
         { Availability: CpuPowerLimitAvailability.ModuleMissing } =>
@@ -77,6 +78,13 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
             AppStrings.Text("CpuPowerLimitAmdDriverMissing"),
         _ => AppStrings.Text("CpuPowerLimitUnavailable"),
     };
+
+    // Numeric plus unit reads the same in every locale we ship, so it stays out of the
+    // nine resource files until a write path exists and the wording matters.
+    private static string VoltageOffsetSuffix(int? millivolts) =>
+        millivolts is { } value
+            ? $" · {(value >= 0 ? "+" : "-")}{Math.Abs(value)} mV"
+            : string.Empty;
 
     public string CpuPowerLimitDetailText => _cpuPowerLimitReport switch
     {

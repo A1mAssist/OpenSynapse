@@ -149,7 +149,8 @@ public sealed record CpuPowerLimitReport(
     double FirmwarePl2Watts,
     double MaximumWatts,
     bool IsLocked,
-    bool UsesDirectSmu = false)
+    bool UsesDirectSmu = false,
+    int? VoltageOffsetMillivolts = null)
 {
     public static CpuPowerLimitReport Unavailable(
         CpuPowerLimitAvailability availability,
