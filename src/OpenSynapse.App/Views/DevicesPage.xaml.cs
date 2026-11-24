@@ -210,6 +210,7 @@ public sealed partial class DevicesPage : UserControl
         ChromaHeaderGrid.Visibility = device == "chroma" ? Visibility.Visible : Visibility.Collapsed;
         BlePanel.Visibility = device == "ble" ? Visibility.Visible : Visibility.Collapsed;
         AwBleHeadsetPanel.Visibility = device == "awbleheadset" ? Visibility.Visible : Visibility.Collapsed;
+        ApBleHeadsetPanel.Visibility = device == "apbleheadset" ? Visibility.Visible : Visibility.Collapsed;
         KiyoPanel.Visibility = device == "kiyo" ? Visibility.Visible : Visibility.Collapsed;
         HuePanel.Visibility = device == "hue" ? Visibility.Visible : Visibility.Collapsed;
         UpdateDeviceSelector(device);
@@ -265,6 +266,10 @@ public sealed partial class DevicesPage : UserControl
                     item.Source is RazerAwBleHeadsetRowViewModel awRow &&
                     StringComparer.OrdinalIgnoreCase.Equals(
                         awRow.Device.Id, ViewModel.SelectedAwBleHeadset?.Device.Id),
+                DeviceSelectorItemKind.ApBleHeadset => device == "apbleheadset" &&
+                    item.Source is RazerApBleHeadsetRowViewModel apRow &&
+                    StringComparer.OrdinalIgnoreCase.Equals(
+                        apRow.Device.Id, ViewModel.SelectedApBleHeadset?.Device.Id),
                 DeviceSelectorItemKind.Chroma => device == "chroma" &&
                     item.Source is RazerChromaDeviceRowViewModel chromaRow &&
                     StringComparer.OrdinalIgnoreCase.Equals(
@@ -289,6 +294,7 @@ public sealed partial class DevicesPage : UserControl
         ChromaPanel.Visibility == Visibility.Visible ? "chroma" :
         BlePanel.Visibility == Visibility.Visible ? "ble" :
         AwBleHeadsetPanel.Visibility == Visibility.Visible ? "awbleheadset" :
+        ApBleHeadsetPanel.Visibility == Visibility.Visible ? "apbleheadset" :
         HuePanel.Visibility == Visibility.Visible ? "hue" :
         ViperDevicePanel.Visibility == Visibility.Visible ? "viper" :
         BladeDevicePanel.Visibility == Visibility.Visible ? "blade" :
@@ -421,6 +427,12 @@ public sealed partial class DevicesPage : UserControl
         if (propertyName == nameof(MainViewModel.SelectedAwBleHeadset) &&
             ViewModel.SelectedAwBleHeadset is null &&
             AwBleHeadsetPanel.Visibility == Visibility.Visible)
+        {
+            DispatcherQueue.TryEnqueue(() => SelectDevice("none"));
+        }
+        if (propertyName == nameof(MainViewModel.SelectedApBleHeadset) &&
+            ViewModel.SelectedApBleHeadset is null &&
+            ApBleHeadsetPanel.Visibility == Visibility.Visible)
         {
             DispatcherQueue.TryEnqueue(() => SelectDevice("none"));
         }

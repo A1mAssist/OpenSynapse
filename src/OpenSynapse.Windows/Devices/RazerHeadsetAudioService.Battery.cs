@@ -89,6 +89,13 @@ public sealed partial class RazerHeadsetAudioService
                         connection.ProductId, connection.DevicePath, diagnostic);
                     return await service.TryReadBatteryPercentAsync(cancellationToken).ConfigureAwait(false);
                 }
+                case RazerHeadsetAudioTransport.Gip60:
+                {
+                    await using var service = new RazerGipHeadsetService(
+                        connection.ProductId, connection.DevicePath,
+                        connection.OutputReportByteLength, diagnostic);
+                    return await service.TryReadBatteryPercentAsync(cancellationToken).ConfigureAwait(false);
+                }
                 default:
                     return null;
             }

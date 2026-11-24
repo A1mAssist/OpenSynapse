@@ -18,6 +18,7 @@ public enum DeviceSelectorItemKind
     Chroma,
     Ble,
     AwBleHeadset,
+    ApBleHeadset,
     Kiyo,
 }
 

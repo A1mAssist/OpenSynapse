@@ -313,7 +313,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         InitializeDeviceHome(activeApplicationProvider);
         Tray = new TrayWorkspace(
             () => Devices, RazerHid, Accessories,
-            () => BlackSharkDevices, () => BleDevices, () => AwBleHeadsetDevices);
+            () => BlackSharkDevices, () => BleDevices, () => AwBleHeadsetDevices,
+            () => ApBleHeadsetDevices);
         CpuCurve = new CpuCurveWorkspace(
             (label, operation, token) => RunDeviceOperationAsync(label, operation, token),
             () => Blade.EditablePlatformProfile,

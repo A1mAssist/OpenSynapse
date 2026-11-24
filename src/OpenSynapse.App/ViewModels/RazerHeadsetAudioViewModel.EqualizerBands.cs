@@ -21,6 +21,7 @@ public sealed partial class RazerHeadsetAudioViewModel
                 (-6d, 6d, 1d),
             RazerHeadsetAudioTransport.Mxic64 =>
                 (RazerHeadsetEqScale.MinimumDb, RazerHeadsetEqScale.MaximumDb, RazerHeadsetEqScale.StepDb),
+            RazerHeadsetAudioTransport.Gip60 => (-12d, 12d, 1d),
             RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
                 (-12d, 12d, 1d),
             RazerHeadsetAudioTransport.Protocol25Feature65 => IsCarol ? (-12.8d, 12.7d, 0.1d) : (-12d, 12d, 1d),
@@ -52,7 +53,8 @@ public sealed partial class RazerHeadsetAudioViewModel
             {
                 RazerHeadsetAudioTransport.Mxic64 or
                     RazerHeadsetAudioTransport.ValkyrieT3Feature64 or
-                    RazerHeadsetAudioTransport.Jolie64 => await ReadMxicStateAsync(cancellationToken),
+                    RazerHeadsetAudioTransport.Jolie64 or
+                    RazerHeadsetAudioTransport.Gip60 => await ReadMxicStateAsync(cancellationToken),
                 RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
                     await ReadValkyrieStateAsync(cancellationToken),
                 _ => await OpenService().ReadStateAsync(cancellationToken),

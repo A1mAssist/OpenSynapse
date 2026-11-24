@@ -48,6 +48,7 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         _viewModel.BlackSharkDevices.CollectionChanged += OnDevicesChanged;
         _viewModel.BleDevices.CollectionChanged += OnDevicesChanged;
         _viewModel.AwBleHeadsetDevices.CollectionChanged += OnDevicesChanged;
+        _viewModel.ApBleHeadsetDevices.CollectionChanged += OnDevicesChanged;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
         _timer = _dispatcherQueue?.CreateTimer();
         if (_timer is not null)
@@ -101,6 +102,7 @@ internal sealed class TaskbarStatusPresenter : IDisposable
         _viewModel.BlackSharkDevices.CollectionChanged -= OnDevicesChanged;
         _viewModel.BleDevices.CollectionChanged -= OnDevicesChanged;
         _viewModel.AwBleHeadsetDevices.CollectionChanged -= OnDevicesChanged;
+        _viewModel.ApBleHeadsetDevices.CollectionChanged -= OnDevicesChanged;
         GC.SuppressFinalize(this);
     }
 

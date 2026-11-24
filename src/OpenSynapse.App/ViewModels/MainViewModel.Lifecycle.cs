@@ -83,6 +83,11 @@ public sealed partial class MainViewModel
             await awBleHeadset.DisposeAsync().ConfigureAwait(true);
             SelectedAwBleHeadset = null;
         }
+        if (SelectedApBleHeadset is { } apBleHeadset)
+        {
+            await apBleHeadset.DisposeAsync().ConfigureAwait(true);
+            SelectedApBleHeadset = null;
+        }
         _selectedBlackSharkDevice = null;
         BlackSharkDevices.Clear();
 

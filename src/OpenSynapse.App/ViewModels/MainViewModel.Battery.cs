@@ -85,6 +85,44 @@ public sealed partial class MainViewModel
         }
     }
 
+    private async Task PrimeApBleBatteriesAsync(CancellationToken cancellationToken)
+    {
+        if (SelectedApBleHeadset?.IsBusy == true)
+        {
+            return;
+        }
+
+        foreach (var row in ApBleHeadsetDevices.Where(row => row.BatteryPercent is null).ToArray())
+        {
+            if (SelectedApBleHeadset is { } selected &&
+                StringComparer.OrdinalIgnoreCase.Equals(row.Device.Id, selected.Device.Id))
+            {
+                continue;
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(TimeSpan.FromSeconds(5));
+            try
+            {
+                using var service = await RazerApBleHeadsetService.ConnectAsync(
+                    row.Device.Id, null, timeout.Token);
+                row.SetBatteryPercent((await service.ReadBatteryAsync(timeout.Token)).Percent);
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+            }
+            catch (Exception exception) when (IsExpectedRuntimeException(exception) || exception is TimeoutException)
+            {
+                _diagnosticLog.TryWrite("ap-ble", $"battery prime failed for {row.Device.Id}: {exception.Message}");
+            }
+        }
+    }
+
     private async Task PrimeAccessoryBatteriesAsync(CancellationToken cancellationToken)
     {
         if (Accessories.SelectedHeadsetAudio?.IsBusy != true)

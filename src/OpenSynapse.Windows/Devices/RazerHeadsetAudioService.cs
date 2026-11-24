@@ -12,7 +12,7 @@ public enum RazerHeadsetAudioTransport
     Mxic64,
     Valkyrie64,
     Billie64, Mixer053E, ValkyrieT3Feature64, Jolie64, KrakenBase37, CamyT1, NativeDll, NxpSerial,
-    RipsawFeature17,
+    RipsawFeature17, Gip60,
 }
 
 public sealed record RazerHeadsetAudioConnection(
@@ -109,6 +109,18 @@ public sealed partial class RazerHeadsetAudioService
             [0x0A56] = "Razer BlackShark V3 X for Xbox",
             [0x0A58] = "Razer BlackShark V3 for Xbox",
             [0x0A5B] = "Razer BlackShark V3 X for Xbox",
+            // Native GIP identities from the Xbox UWP bundle; that bundle controls
+            // them through Windows.Gaming.Input custom controllers. The HID
+            // variants of the same products have their own channels below.
+            [0x0A25] = "Razer Kaira Pro for Xbox",
+            [0x0A27] = "Razer Kaira for Xbox",
+            [0x0A30] = "Razer Kaira HyperSpeed",
+            [0x0A32] = "Razer Hammerhead HyperSpeed",
+            [0x0A41] = "Razer BlackShark V2 Pro",
+            [0x0A4D] = "Razer BlackShark V3 Pro for Xbox",
+            [0x0A50] = "Razer BlackShark V3 for Xbox",
+            [0x0A53] = "Razer BlackShark V3 X for Xbox",
+            [0x0A69] = "Razer Hammerhead V3 X HyperSpeed",
             [0x0A61] = "Razer Hammerhead V3 HyperSpeed",
             [0x0A64] = "Razer Hammerhead V3 X HyperSpeed",
             [0x0A68] = "Razer Hammerhead V3 X HyperSpeed for Xbox",
@@ -212,7 +224,8 @@ public sealed partial class RazerHeadsetAudioService
 
     public static bool IsSupported(ushort productId) =>
         IsKnown(productId) && RazerHeadsetChannelCatalog.Resolve(productId) is not
-            (RazerHeadsetChannel.Unsupported or RazerHeadsetChannel.NativeDll or RazerHeadsetChannel.AudiowiseBle);
+            (RazerHeadsetChannel.Unsupported or RazerHeadsetChannel.NativeDll or
+                RazerHeadsetChannel.AudiowiseBle or RazerHeadsetChannel.ApBle);
 
     private static string? ToContainerId(string physicalDeviceKey)
     {
@@ -308,6 +321,12 @@ public sealed partial class RazerHeadsetAudioService
                 item.OutputReportByteLength == RazerCamyT1Protocol.ReportLength,
             RazerHeadsetChannel.RipsawFeature17 =>
                 item.FeatureReportByteLength == RazerRipsawProtocol.ReportLength,
+            // Native Xbox GIP: 60-byte payload plus the 0x0F report id.
+            RazerHeadsetChannel.Gip60 =>
+                item.OutputReportByteLength is
+                    RazerGipHeadsetProtocol.FrameLength or RazerGipHeadsetProtocol.FrameLength + 1 &&
+                item.InputReportByteLength is
+                    RazerGipHeadsetProtocol.FrameLength or RazerGipHeadsetProtocol.FrameLength + 1,
             _ => false,
         };
 
@@ -327,6 +346,7 @@ public sealed partial class RazerHeadsetAudioService
             RazerHeadsetChannel.CamyT1 => RazerHeadsetAudioTransport.CamyT1,
             RazerHeadsetChannel.NxpSerial => RazerHeadsetAudioTransport.NxpSerial,
             RazerHeadsetChannel.RipsawFeature17 => RazerHeadsetAudioTransport.RipsawFeature17,
+            RazerHeadsetChannel.Gip60 => RazerHeadsetAudioTransport.Gip60,
             RazerHeadsetChannel.NativeDll => RazerHeadsetAudioTransport.NativeDll,
             RazerHeadsetChannel.Mixer053E => RazerHeadsetAudioTransport.Mixer053E,
             // Keep the dedicated BlackShark panel's historical fallback transport.

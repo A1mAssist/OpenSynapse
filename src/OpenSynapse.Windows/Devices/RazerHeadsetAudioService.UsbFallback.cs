@@ -5,7 +5,8 @@ public sealed partial class RazerHeadsetAudioService
     private static bool NeedsHidControlInterface(ushort productId) =>
         RazerHeadsetChannelCatalog.Resolve(productId) is not
             (RazerHeadsetChannel.Unsupported or RazerHeadsetChannel.NativeDll or
-                RazerHeadsetChannel.DedicatedBlackShark or RazerHeadsetChannel.AudiowiseBle);
+                RazerHeadsetChannel.DedicatedBlackShark or RazerHeadsetChannel.AudiowiseBle or
+                RazerHeadsetChannel.ApBle);
 
     internal static RazerHeadsetAudioConnection? CreateUsbFallback(WindowsUsbDevice device)
     {

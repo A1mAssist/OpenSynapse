@@ -14,6 +14,8 @@ public sealed partial class RazerHeadsetAudioViewModel
     {
         RazerHeadsetAudioTransport.Feature91 when IsMarciAudio => RazerAudioFeatureProtocol.EncodeMarciEqBand(level),
         RazerHeadsetAudioTransport.Mxic64 => RazerHeadsetEqScale.ToStep(level),
+        RazerHeadsetAudioTransport.Gip60 =>
+            RazerGipHeadsetProtocol.EncodeEqBand(_connection.ProductId, level),
         RazerHeadsetAudioTransport.ValkyrieT3Feature64 => RazerValkyrieHeadsetProtocol.EncodeEqBandLevel((sbyte)Math.Round(level)),
         RazerHeadsetAudioTransport.Jolie64 => (byte)(level < 0
             ? 0x80 | (byte)Math.Abs(Math.Round(level))
@@ -31,6 +33,8 @@ public sealed partial class RazerHeadsetAudioViewModel
     {
         RazerHeadsetAudioTransport.Feature91 when IsMarciAudio => RazerAudioFeatureProtocol.DecodeMarciEqBand(level),
         RazerHeadsetAudioTransport.Mxic64 => RazerHeadsetEqScale.ToDecibels(level),
+        RazerHeadsetAudioTransport.Gip60 =>
+            RazerGipHeadsetProtocol.DecodeEqBand(_connection.ProductId, level),
         RazerHeadsetAudioTransport.ValkyrieT3Feature64 => RazerValkyrieHeadsetProtocol.DecodeEqBandLevel(level),
         RazerHeadsetAudioTransport.Jolie64 => (level & 0x80) != 0 ? -(level & 0x7F) : level,
         RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>

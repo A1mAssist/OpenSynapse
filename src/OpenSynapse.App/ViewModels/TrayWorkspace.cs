@@ -26,6 +26,7 @@ public sealed class TrayWorkspace
     private readonly Func<IReadOnlyList<BlackSharkDeviceRowViewModel>> _blackSharkDevices;
     private readonly Func<IReadOnlyList<RazerBleDeviceRowViewModel>> _bleDevices;
     private readonly Func<IReadOnlyList<RazerAwBleHeadsetRowViewModel>> _awBleDevices;
+    private readonly Func<IReadOnlyList<RazerApBleHeadsetRowViewModel>> _apBleDevices;
 
     internal TrayWorkspace(
         Func<IReadOnlyList<DeviceRowViewModel>> devices,
@@ -33,7 +34,8 @@ public sealed class TrayWorkspace
         UsbAccessoriesWorkspace accessories,
         Func<IReadOnlyList<BlackSharkDeviceRowViewModel>> blackSharkDevices,
         Func<IReadOnlyList<RazerBleDeviceRowViewModel>> bleDevices,
-        Func<IReadOnlyList<RazerAwBleHeadsetRowViewModel>> awBleDevices)
+        Func<IReadOnlyList<RazerAwBleHeadsetRowViewModel>> awBleDevices,
+        Func<IReadOnlyList<RazerApBleHeadsetRowViewModel>> apBleDevices)
     {
         _devices = devices;
         _razerHid = razerHid;
@@ -41,6 +43,7 @@ public sealed class TrayWorkspace
         _blackSharkDevices = blackSharkDevices;
         _bleDevices = bleDevices;
         _awBleDevices = awBleDevices;
+        _apBleDevices = apBleDevices;
     }
 
     /// <summary>
@@ -67,6 +70,8 @@ public sealed class TrayWorkspace
                     new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row, $"ble:{row.Device.Id}")))
                 .Concat(_awBleDevices().Select(row =>
                     new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row, $"awble:{row.Device.Id}")))
+                .Concat(_apBleDevices().Select(row =>
+                    new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row, $"apble:{row.Device.Id}")))
                 .ToArray();
         }
     }
@@ -88,6 +93,7 @@ public sealed class TrayWorkspace
         var keyboardRows = KeyboardRows(claimed).ToArray();
         var bleRows = _bleDevices().ToArray();
         var awBleRows = _awBleDevices().ToArray();
+        var apBleRows = _apBleDevices().ToArray();
         var headsetBusy = _accessories.SelectedHeadsetAudio?.IsBusy == true;
 
         var results = new List<PeripheralBattery>(telemetry);
@@ -151,6 +157,8 @@ public sealed class TrayWorkspace
             new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row, $"ble:{row.Device.Id}")));
         results.AddRange(awBleRows.Select(row =>
             new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row, $"awble:{row.Device.Id}")));
+        results.AddRange(apBleRows.Select(row =>
+            new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row, $"apble:{row.Device.Id}")));
         return results;
     }
 

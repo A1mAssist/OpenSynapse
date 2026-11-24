@@ -3283,6 +3283,9 @@
   <data name="RazerHeadsetPresetMusic" xml:space="preserve"><value>音乐</value></data>
   <data name="RazerHeadsetPresetMovie" xml:space="preserve"><value>电影</value></data>
   <data name="RazerHeadsetPresetTreble" xml:space="preserve"><value>高音增强</value></data>
+  <data name="RazerHeadsetPresetBass" xml:space="preserve"><value>低音增强</value></data>
+  <data name="RazerHeadsetPresetFps" xml:space="preserve"><value>FPS</value></data>
+  <data name="RazerHeadsetPresetAmplified" xml:space="preserve"><value>增强</value></data>
   <data name="RazerHeadsetPresetMicBoost" xml:space="preserve"><value>麦克风增强</value></data>
   <data name="RazerHeadsetPresetPodcast" xml:space="preserve"><value>播客</value></data>
   <data name="RazerHeadsetPresetCustom" xml:space="preserve"><value>自定义</value></data>

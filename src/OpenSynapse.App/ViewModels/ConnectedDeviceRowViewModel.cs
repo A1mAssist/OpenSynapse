@@ -100,6 +100,18 @@ public sealed class ConnectedDeviceRowViewModel : INotifyPropertyChanged
         IsVisible = true;
     }
 
+    public ConnectedDeviceRowViewModel(RazerApBleHeadsetRowViewModel source)
+    {
+        Source = source;
+        Name = source.Name;
+        Identity = source.Identity;
+        Access = AppStrings.Text("Text_5965520A");
+        IconGlyph = source.IconGlyph;
+        Category = source.HardwareCategory;
+        IsReady = true;
+        IsVisible = true;
+    }
+
     public ConnectedDeviceRowViewModel(RazerKeyboardDeviceRowViewModel source)
     {
         Source = source;
@@ -244,6 +256,7 @@ public sealed class ConnectedDeviceRowViewModel : INotifyPropertyChanged
         RazerHidDeviceRowViewModel row => row.StatusBrush,
         RazerHidKrakenDeviceRowViewModel row => row.StatusBrush,
         RazerBleDeviceRowViewModel row => row.StatusBrush,
+        RazerApBleHeadsetRowViewModel => ConnectedBrush,
         RazerAwBleHeadsetRowViewModel => ConnectedBrush,
         BlackSharkDeviceRowViewModel row => row.StatusBrush,
         RazerKeyboardDeviceRowViewModel row => row.StatusBrush,

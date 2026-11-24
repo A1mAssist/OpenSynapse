@@ -48,6 +48,7 @@ public sealed partial class MainViewModel
                 .Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(BleDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat(AwBleHeadsetDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
+            .Concat(ApBleHeadsetDevices.Select(device => new ConnectedDeviceRowViewModel(device)))
             .Concat([new ConnectedDeviceRowViewModel(Hue)])
             .Where(device => device.IsVisible)
             // The laptop owns the Blade page and must stay in the first cards even
@@ -96,6 +97,7 @@ public sealed partial class MainViewModel
         RazerChromaDeviceRowViewModel row => row.Connection.DevicePath,
         RazerBleDeviceRowViewModel row => row.Device.Id,
         RazerAwBleHeadsetRowViewModel row => row.Device.Id,
+        RazerApBleHeadsetRowViewModel row => row.Device.Id,
         _ => item.Name,
     };
 
@@ -133,6 +135,7 @@ public sealed partial class MainViewModel
                 await PrimeRazerHidBatteriesAsync(cancellationToken);
                 await PrimeBleBatteriesAsync(cancellationToken);
                 await PrimeAwBleBatteriesAsync(cancellationToken);
+                await PrimeApBleBatteriesAsync(cancellationToken);
                 await PrimeAccessoryBatteriesAsync(cancellationToken);
             }
             while (_batteryPrimeRequested && !cancellationToken.IsCancellationRequested);
@@ -292,6 +295,7 @@ public sealed partial class MainViewModel
         await RefreshAccessoryAsync("chroma", Accessories.RefreshChromaAsync, cancellationToken);
         await RefreshAccessoryAsync("ble", RefreshBleAsync, cancellationToken);
         await RefreshAccessoryAsync("aw-ble", RefreshAwBleAsync, cancellationToken);
+        await RefreshAccessoryAsync("ap-ble", RefreshApBleAsync, cancellationToken);
     }
 
     private async Task RefreshAccessoryAsync(
@@ -351,6 +355,10 @@ public sealed partial class MainViewModel
             yield return new("aw-ble:" + row.Device.Id, row.Name,
                 AppStrings.Text("RazerHidHeadsetCategory"), row.Identity + " | " + row.Device.Id, row.Status,
                 Error(row.Device.Id, SelectedAwBleHeadset?.Device.Id, SelectedAwBleHeadset?.ErrorText));
+        foreach (var row in ApBleHeadsetDevices)
+            yield return new("ap-ble:" + row.Device.Id, row.Name,
+                AppStrings.Text("RazerHidHeadsetCategory"), row.Identity + " | " + row.Device.Id, row.Status,
+                Error(row.Device.Id, SelectedApBleHeadset?.Device.Id, SelectedApBleHeadset?.ErrorText));
         if (CoolingPad.IsConnected || CoolingPad.HasError)
             yield return new("cooling-pad", CoolingPad.Name,
                 AppStrings.Text("CoolingPadCategory"), CoolingPad.Identity, CoolingPad.StatusText, CoolingPad.ErrorText);

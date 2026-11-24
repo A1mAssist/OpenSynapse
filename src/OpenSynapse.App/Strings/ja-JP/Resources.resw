@@ -2832,6 +2832,9 @@
   <data name="RazerHeadsetPresetMusic" xml:space="preserve"><value>音楽</value></data>
   <data name="RazerHeadsetPresetMovie" xml:space="preserve"><value>映画</value></data>
   <data name="RazerHeadsetPresetTreble" xml:space="preserve"><value>高音ブースト</value></data>
+  <data name="RazerHeadsetPresetBass" xml:space="preserve"><value>低音ブースト</value></data>
+  <data name="RazerHeadsetPresetFps" xml:space="preserve"><value>FPS</value></data>
+  <data name="RazerHeadsetPresetAmplified" xml:space="preserve"><value>強化</value></data>
   <data name="RazerHeadsetPresetMicBoost" xml:space="preserve"><value>マイク ブースト</value></data>
   <data name="RazerHeadsetPresetPodcast" xml:space="preserve"><value>ポッドキャスト</value></data>
   <data name="RazerHeadsetPresetCustom" xml:space="preserve"><value>カスタム</value></data>

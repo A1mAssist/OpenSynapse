@@ -512,6 +512,86 @@
                       <StackPanel Spacing="4" Visibility="{Binding MicCustomEqVisibility}"><TextBlock local:Localized.Uid="AwBleHeadsetMicCustomEqTitle" Style="{StaticResource MetricLabelStyle}" /><Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock local:Localized.Uid="AwBleHeadsetMicCustomEqEnable" VerticalAlignment="Center" /><ToggleSwitch Grid.Column="1" IsOn="{Binding MicCustomEqEnabled, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" OnContent="" OffContent="" MinWidth="44" /></Grid><controls:EqualizerCurveEditor Bands="{Binding MicCustomEqBands}" IsEnabled="{Binding CanEdit}" /><TextBlock local:Localized.Uid="AwBleHeadsetMicCustomEqHint" FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" /><Button local:Localized.Uid="RazerHidApplyButton" Click="AwBleHeadsetApplyMicCustomEqClick" IsEnabled="{Binding CanApply}" Style="{StaticResource RazerHidSaveButtonStyle}" HorizontalAlignment="Right" /></StackPanel>
                     </StackPanel></Border>
                 </StackPanel>
+                <StackPanel x:Name="ApBleHeadsetPanel" DataContext="{Binding SelectedApBleHeadset}" Visibility="Collapsed" Spacing="16">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" />
+                      <TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                    </StackPanel>
+                    <Button Grid.Column="1" local:Localized.Uid="RazerKeyboardRefreshButton" Click="ApBleHeadsetRefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+                  </Grid>
+                  <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
+                  <TextBlock Text="{Binding OperationStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
+                  <Border Style="{StaticResource CardStyle}" Padding="16">
+                    <StackPanel Spacing="10">
+                      <TextBlock Text="设备信息" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock Text="{Binding BatteryText}" Style="{StaticResource MetricValueStyle}" />
+                      <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="6">
+                        <StackPanel><TextBlock Text="固件" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding FirmwareText}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /></StackPanel>
+                        <StackPanel Grid.Column="1"><TextBlock Text="序列号" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding SerialText}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /></StackPanel>
+                        <StackPanel Grid.Row="1"><TextBlock Text="连接" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding ConnectionText}" TextWrapping="Wrap" /></StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="1"><TextBlock Text="充电" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding ChargingText}" TextWrapping="Wrap" /></StackPanel>
+                      </Grid>
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource CardStyle}" Padding="16">
+                    <StackPanel Spacing="12">
+                      <TextBlock Text="音频控制" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Visibility="{Binding AncVisibility}">
+                        <ComboBox Header="ANC 模式" ItemsSource="{Binding AncOptions}" SelectedIndex="{Binding AncModeIndex, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
+                        <Button Grid.Column="1" local:Localized.Uid="RazerHidApplyButton" Click="ApBleHeadsetApplyAncClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource RazerHidSaveButtonStyle}" VerticalAlignment="Bottom" />
+                      </Grid>
+                      <StackPanel Spacing="4" Visibility="{Binding AncVisibility}">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="ANC 等级" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="{Binding AncLevelText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /></Grid>
+                        <Slider Minimum="1" Maximum="10" StepFrequency="1" Value="{Binding AncLevel, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" />
+                      </StackPanel>
+                      <StackPanel Spacing="4" Visibility="{Binding VolumeVisibility}">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="音量" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="{Binding VolumeText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /></Grid>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding Volume, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" /><Button Grid.Column="1" local:Localized.Uid="RazerHidApplyButton" Click="ApBleHeadsetApplyVolumeClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource RazerHidSaveButtonStyle}" VerticalAlignment="Center" /></Grid>
+                      </StackPanel>
+                      <StackPanel Spacing="4" Visibility="{Binding SidetoneVisibility}">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="麦克风监听" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="{Binding SidetoneText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /></Grid>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding Sidetone, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" /><Button Grid.Column="1" local:Localized.Uid="RazerHidApplyButton" Click="ApBleHeadsetApplySidetoneClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource RazerHidSaveButtonStyle}" VerticalAlignment="Center" /></Grid>
+                      </StackPanel>
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Visibility="{Binding EqVisibility}">
+                        <ComboBox Header="EQ 预设" ItemsSource="{Binding EqPresetOptions}" SelectedIndex="{Binding SelectedEqPresetIndex, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
+                        <Button Grid.Column="1" local:Localized.Uid="RazerHidApplyButton" Click="ApBleHeadsetApplyEqClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource RazerHidSaveButtonStyle}" VerticalAlignment="Bottom" />
+                      </Grid>
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Visibility="{Binding GameModeVisibility}">
+                        <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center"><TextBlock Text="游戏模式" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" /><ToggleSwitch IsOn="{Binding GameMode, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" OnContent="" OffContent="" MinWidth="44" /></StackPanel>
+                        <Button Grid.Column="1" local:Localized.Uid="RazerHidApplyButton" Click="ApBleHeadsetApplyGameModeClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource RazerHidSaveButtonStyle}" />
+                      </Grid>
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Visibility="{Binding ThxVisibility}">
+                        <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center"><TextBlock Text="THX 空间音频" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" /><ToggleSwitch IsOn="{Binding ThxSpatial, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" OnContent="" OffContent="" MinWidth="44" /></StackPanel>
+                        <Button Grid.Column="1" local:Localized.Uid="RazerHidApplyButton" Click="ApBleHeadsetApplyThxClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource RazerHidSaveButtonStyle}" />
+                      </Grid>
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Visibility="{Binding MultipointVisibility}">
+                        <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center"><TextBlock Text="多点连接" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" /><ToggleSwitch IsOn="{Binding Multipoint, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" OnContent="" OffContent="" MinWidth="44" /></StackPanel>
+                        <Button Grid.Column="1" local:Localized.Uid="RazerHidApplyButton" Click="ApBleHeadsetApplyMultipointClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource RazerHidSaveButtonStyle}" />
+                      </Grid>
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Visibility="{Binding DndVisibility}">
+                        <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center"><TextBlock Text="勿扰模式" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" /><ToggleSwitch IsOn="{Binding Dnd, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" OnContent="" OffContent="" MinWidth="44" /></StackPanel>
+                        <Button Grid.Column="1" local:Localized.Uid="RazerHidApplyButton" Click="ApBleHeadsetApplyDndClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource RazerHidSaveButtonStyle}" />
+                      </Grid>
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Visibility="{Binding AutoPowerOffVisibility}">
+                        <ComboBox Header="自动关机" ItemsSource="{Binding AutoPowerOffOptions}" SelectedIndex="{Binding SelectedAutoPowerOffIndex, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
+                        <Button Grid.Column="1" local:Localized.Uid="RazerHidApplyButton" Click="ApBleHeadsetApplyAutoPowerOffClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource RazerHidSaveButtonStyle}" VerticalAlignment="Bottom" />
+                      </Grid>
+                      <StackPanel Spacing="4" Visibility="{Binding ChromaVisibility}">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="Chroma 亮度" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" /><TextBlock Grid.Column="1" Text="{Binding ChromaBrightnessText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /></Grid>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding ChromaBrightness, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" /><Button Grid.Column="1" local:Localized.Uid="RazerHidApplyButton" Click="ApBleHeadsetApplyChromaBrightnessClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource RazerHidSaveButtonStyle}" VerticalAlignment="Center" /></Grid>
+                      </StackPanel>
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Visibility="{Binding ChromaVisibility}">
+                        <ComboBox Header="Chroma 灯效" ItemsSource="{Binding ChromaEffectOptions}" SelectedIndex="{Binding SelectedChromaEffectIndex, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Stretch" />
+                        <Button Grid.Column="1" local:Localized.Uid="RazerHidApplyButton" Click="ApBleHeadsetApplyChromaEffectClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource RazerHidSaveButtonStyle}" VerticalAlignment="Bottom" />
+                      </Grid>
+                      <StackPanel Spacing="4" Visibility="{Binding ChromaVisibility}">
+                        <TextBlock Text="Chroma 颜色" Style="{StaticResource MetricLabelStyle}" />
+                        <ColorPicker Color="{Binding ChromaPrimaryColor, Mode=TwoWay}" IsAlphaEnabled="False" IsColorSpectrumVisible="True" IsColorChannelTextInputVisible="False" IsHexInputVisible="True" IsMoreButtonVisible="False" Width="240" HorizontalAlignment="Left" />
+                      </StackPanel>
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
                 <StackPanel x:Name="BlePanel" DataContext="{Binding SelectedBle}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                     <StackPanel Spacing="4"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel>

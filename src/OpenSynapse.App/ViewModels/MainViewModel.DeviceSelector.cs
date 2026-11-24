@@ -125,6 +125,15 @@ public sealed partial class MainViewModel
                 row));
         }
 
+        foreach (var row in ApBleHeadsetDevices)
+        {
+            DeviceSelectorItems.Add(new DeviceSelectorItemViewModel(
+                DeviceSelectorItemKind.ApBleHeadset,
+                row.Name,
+                row.IconGlyph,
+                row));
+        }
+
         OnPropertyChanged(nameof(DeviceSelectorItems));
     }
 }

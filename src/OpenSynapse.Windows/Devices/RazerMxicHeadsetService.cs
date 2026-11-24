@@ -9,7 +9,7 @@ namespace OpenSynapse.Windows.Devices;
 /// 91-byte protocol 25 feature reports. Airoha 0592/0593 expose battery and
 /// charging; rzDevice40 adds class 0x18 EQ, microphone, sidetone and DND reads.
 /// </summary>
-public sealed partial class RazerMxicHeadsetService : IAsyncDisposable
+public sealed partial class RazerMxicHeadsetService : IRazerHeadsetControlService
 {
     private enum MxicDialect
     {

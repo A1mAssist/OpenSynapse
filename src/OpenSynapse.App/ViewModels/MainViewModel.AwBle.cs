@@ -22,7 +22,9 @@ public sealed partial class MainViewModel
         IReadOnlyList<RazerBleDevice> devices;
         try
         {
-            devices = await RazerAwBleDiscovery.FindAsync(cancellationToken);
+            devices = (await RazerAwBleDiscovery.FindAsync(cancellationToken))
+                .Where(device => RazerAwBleHeadsetService.IsSupported(device.ProductId))
+                .ToArray();
         }
         catch (Exception exception) when (IsExpectedRuntimeException(exception))
         {

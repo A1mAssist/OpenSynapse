@@ -151,17 +151,23 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         _connection.ProductId is 0x0532 or 0x0548 or 0x05A3;
     private bool IsT3 => _connection.Transport == RazerHeadsetAudioTransport.ValkyrieT3Feature64;
     private bool IsJolie => _connection.Transport == RazerHeadsetAudioTransport.Jolie64;
+    private bool IsGip => _connection.Transport == RazerHeadsetAudioTransport.Gip60;
     private bool IsMxic => _connection.Transport is RazerHeadsetAudioTransport.Mxic64 or
-        RazerHeadsetAudioTransport.ValkyrieT3Feature64 or RazerHeadsetAudioTransport.Jolie64;
-    private bool IsMxicSidetone => IsMxic &&
-        RazerMxicHeadsetProtocol.SupportsSidetone(_connection.ProductId);
-    private bool IsMxicAnc => IsMxic &&
-        RazerMxicHeadsetProtocol.SupportsAnc(_connection.ProductId);
+        RazerHeadsetAudioTransport.ValkyrieT3Feature64 or RazerHeadsetAudioTransport.Jolie64 or
+        RazerHeadsetAudioTransport.Gip60;
+    private bool IsMxicSidetone => IsGip
+        ? RazerGipHeadsetProtocol.SupportsSidetone(_connection.ProductId)
+        : IsMxic && RazerMxicHeadsetProtocol.SupportsSidetone(_connection.ProductId);
+    private bool IsMxicAnc => IsGip
+        ? RazerGipHeadsetProtocol.SupportsAnc(_connection.ProductId)
+        : IsMxic && RazerMxicHeadsetProtocol.SupportsAnc(_connection.ProductId);
     private bool IsMixer053E => _connection.Transport == RazerHeadsetAudioTransport.Mixer053E;
     private bool IsRipsaw => _connection.Transport == RazerHeadsetAudioTransport.RipsawFeature17;
     private bool IsProtocol40 => RazerProtocol40HeadsetProtocol.IsSupported(_connection.ProductId);
-    private bool IsMxicDnd => !IsProtocol40 && _connection.Transport is
-        RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64;
+    private bool IsMxicDnd => IsGip
+        ? RazerGipHeadsetProtocol.SupportsDnd(_connection.ProductId)
+        : !IsProtocol40 && _connection.Transport is
+            RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64;
     private bool IsValkyrie => _connection.Transport is
         RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64;
     private bool IsValkyrieSidetone => IsValkyrie &&
@@ -173,6 +179,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         !IsAvnera65 && !IsProtocol25;
     // AudioMabelT3C (0574) uses the Mxic bundle indices 0/7/8/9/255, not the Billie 0..4 list.
     private (byte Value, string Key)[] ActivePresets =>
+        IsGip ? GipPresets :
         IsNommoV2Audio ? NommoV2Presets : IsMarciAudio ? MarciPresets :
         IsCarol ? CarolPresets : IsJolie ? JolietPresets : IsT3 ? Presets[..4] : IsFeature91 || IsProtocol25 ? Presets : MxicPresets;
 
@@ -298,7 +305,8 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
                     ReadAvneraStateAsync(cancellationToken),
                 RazerHeadsetAudioTransport.Mxic64 or
                     RazerHeadsetAudioTransport.ValkyrieT3Feature64 or
-                    RazerHeadsetAudioTransport.Jolie64 =>
+                    RazerHeadsetAudioTransport.Jolie64 or
+                    RazerHeadsetAudioTransport.Gip60 =>
                     ReadMxicStateAsync(cancellationToken),
                 RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
                     ReadValkyrieStateAsync(cancellationToken),

@@ -15,6 +15,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         if (IsMarciAudio) { await SaveMarciEqAsync(false, cancellationToken); return; }
         if (IsCarol) { await SaveCarolEqAsync(false, cancellationToken); return; }
         if (IsKrakenBase) return;
+        if (IsGip && !RazerGipHeadsetProtocol.SupportsEqPreset(_connection.ProductId)) return;
         var previousIndex = SelectedEqPresetIndex;
         var previous = ActivePresets[previousIndex].Value;
         var preset = ActivePresets[SelectedEqPresetIndex].Value;
@@ -28,6 +29,8 @@ public sealed partial class RazerHeadsetAudioViewModel
                         token),
                     cancellationToken),
             RazerHeadsetAudioTransport.Mxic64 or RazerHeadsetAudioTransport.ValkyrieT3Feature64 =>
+                await RunMxicWriteAsync((service, token) => service.SetEqPresetAsync(preset, token), cancellationToken),
+            RazerHeadsetAudioTransport.Gip60 =>
                 await RunMxicWriteAsync((service, token) => service.SetEqPresetAsync(preset, token), cancellationToken),
             RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
                 await RunValkyrieWriteAsync((service, token) => service.SetEqPresetAsync(preset, token), cancellationToken),
@@ -168,6 +171,9 @@ public sealed partial class RazerHeadsetAudioViewModel
                 await RunMxicWriteAsync((service, token) => service.SetMicMuteAsync(MicMuted, token), cancellationToken),
             RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
                 await RunValkyrieWriteAsync((service, token) => service.SetMicMuteAsync(MicMuted, token), cancellationToken),
+            // Native GIP: the eight identities either have no mute command or expose
+            // it only through a devIndex/type tuple this card does not model.
+            RazerHeadsetAudioTransport.Gip60 => false,
             RazerHeadsetAudioTransport.Protocol25Feature65 =>
                 await RunWriteAsync(async (service, token) =>
                 {
@@ -232,10 +238,14 @@ public sealed partial class RazerHeadsetAudioViewModel
                         await service.SetMicVolumeAsync((byte)Math.Round(previousVolume), token);
                     }
                 }
-                else if (IsMxic)
+                else if (IsMxic && !IsGip)
                 {
                     await using var service = OpenMxicService();
                     await service.SetMicMuteAsync(previousMuted, token);
+                }
+                else if (IsGip)
+                {
+                    // The card exposes no microphone mute for native GIP headsets.
                 }
                 else
                 {

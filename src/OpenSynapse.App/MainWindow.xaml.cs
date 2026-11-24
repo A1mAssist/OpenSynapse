@@ -133,6 +133,7 @@ public sealed partial class MainWindow : Window
         _viewModel.RazerHid.Devices.CollectionChanged += OnDeviceBatterySourcesChanged;
         _viewModel.BleDevices.CollectionChanged += OnDeviceBatterySourcesChanged;
         _viewModel.AwBleHeadsetDevices.CollectionChanged += OnDeviceBatterySourcesChanged;
+        _viewModel.ApBleHeadsetDevices.CollectionChanged += OnDeviceBatterySourcesChanged;
         _viewModel.BlackSharkDevices.CollectionChanged += OnDeviceBatterySourcesChanged;
         _viewModel.Accessories.HeadsetAudioDevices.CollectionChanged += OnDeviceBatterySourcesChanged;
         _viewModel.Accessories.KeyboardDevices.CollectionChanged += OnDeviceBatterySourcesChanged;
@@ -514,6 +515,7 @@ public sealed partial class MainWindow : Window
         _viewModel.RazerHid.Devices.CollectionChanged -= OnDeviceBatterySourcesChanged;
         _viewModel.BleDevices.CollectionChanged -= OnDeviceBatterySourcesChanged;
         _viewModel.AwBleHeadsetDevices.CollectionChanged -= OnDeviceBatterySourcesChanged;
+        _viewModel.ApBleHeadsetDevices.CollectionChanged -= OnDeviceBatterySourcesChanged;
         _viewModel.BlackSharkDevices.CollectionChanged -= OnDeviceBatterySourcesChanged;
         _viewModel.Accessories.HeadsetAudioDevices.CollectionChanged -= OnDeviceBatterySourcesChanged;
         _viewModel.Accessories.KeyboardDevices.CollectionChanged -= OnDeviceBatterySourcesChanged;

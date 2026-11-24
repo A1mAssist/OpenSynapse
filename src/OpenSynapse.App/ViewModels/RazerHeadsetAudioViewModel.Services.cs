@@ -29,8 +29,13 @@ public sealed partial class RazerHeadsetAudioViewModel
             await write(service, token);
         }, cancellationToken);
 
-    private RazerMxicHeadsetService OpenMxicService() =>
-        new(_connection.ProductId, _connection.DevicePath, _diagnostic);
+    private IRazerHeadsetControlService OpenMxicService() =>
+        IsGip
+            ? new RazerGipHeadsetService(
+                _connection.ProductId, _connection.DevicePath,
+                _connection.OutputReportByteLength, _diagnostic)
+            : new RazerMxicHeadsetService(
+                _connection.ProductId, _connection.DevicePath, _diagnostic);
 
     private RazerAvneraHeadsetService OpenAvneraService() =>
         new(_connection.DevicePath, _diagnostic, _connection.FeatureReportByteLength);
@@ -147,7 +152,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         RunWriteCoreAsync(token => write(OpenService(), token), cancellationToken);
 
     private Task<bool> RunMxicWriteAsync(
-        Func<RazerMxicHeadsetService, CancellationToken, Task> write,
+        Func<IRazerHeadsetControlService, CancellationToken, Task> write,
         CancellationToken cancellationToken) =>
         RunWriteCoreAsync(async token =>
         {

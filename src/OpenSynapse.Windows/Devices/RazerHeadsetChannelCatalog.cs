@@ -21,7 +21,9 @@ public enum RazerHeadsetChannel
     CamyT1,
     NxpSerial,
     AudiowiseBle,
+    ApBle,
     RipsawFeature17,
+    Gip60,
 }
 
 /// <summary>
@@ -68,24 +70,37 @@ public static class RazerHeadsetChannelCatalog
             [0x0A6C] = new("rzDevice40", RazerHeadsetChannel.Mxic64),
             [0x0A81] = new("rzDevice40", RazerHeadsetChannel.Mxic64),
 
-            // AudioValkyrie: the 64-byte Valkyrie channel. The BLE identities use
-            // a different transport that this app does not implement; keeping them
-            // known prevents the generic Chroma page from claiming them.
-            [0x0575] = new("AudioValkyrieBle", RazerHeadsetChannel.Unsupported),
-            [0x0578] = new("AudioValkyrieBle", RazerHeadsetChannel.Unsupported),
+            // AudioValkyrie: the 64-byte Valkyrie channel for USB, AP-BLE for the
+            // BLE identities.
+            [0x0575] = new("AudioValkyrieBle", RazerHeadsetChannel.ApBle),
+            [0x0578] = new("AudioValkyrieBle", RazerHeadsetChannel.ApBle),
             [0x0579] = new("AudioValkyrie", RazerHeadsetChannel.Valkyrie64),
             [0x057A] = new("AudioValkyrie", RazerHeadsetChannel.Valkyrie64),
             [0x0A4E] = new("AudioValkyrie", RazerHeadsetChannel.Valkyrie64),
-            [0x0A4F] = new("AudioValkyrieBle", RazerHeadsetChannel.Unsupported),
+            [0x0A4F] = new("AudioValkyrieBle", RazerHeadsetChannel.ApBle),
             [0x0A51] = new("AudioValkyrie", RazerHeadsetChannel.Valkyrie64),
-            [0x0A52] = new("AudioValkyrieBle", RazerHeadsetChannel.Unsupported),
+            [0x0A52] = new("AudioValkyrieBle", RazerHeadsetChannel.ApBle),
             [0x0A55] = new("AudioValkyrie", RazerHeadsetChannel.Valkyrie64),
-            [0x0A56] = new("rzDevice25ValkyrieT3Ble", RazerHeadsetChannel.Unsupported),
+            [0x0A56] = new("rzDevice25ValkyrieT3Ble", RazerHeadsetChannel.ApBle),
             [0x0A58] = new("AudioValkyrie", RazerHeadsetChannel.Valkyrie64),
-            [0x101D] = new("AudioValkyrieBle", RazerHeadsetChannel.Unsupported),
+            [0x101D] = new("AudioValkyrieBle", RazerHeadsetChannel.ApBle),
             [0x101E] = new("AudioValkyrie", RazerHeadsetChannel.Valkyrie64),
             [0x101F] = new("AudioValkyrie", RazerHeadsetChannel.Valkyrie64),
-            [0x1020] = new("AudioValkyrieBle", RazerHeadsetChannel.Unsupported),
+            [0x1020] = new("AudioValkyrieBle", RazerHeadsetChannel.ApBle),
+
+            // Native GIP identities from the Xbox UWP bundle. That bundle controls
+            // them through Windows.Gaming.Input custom controllers; OpenSynapse's
+            // Native GIP identities: 60-byte report-0x0F frames from the Xbox UWP
+            // bundle, decoded by RazerGipHeadsetProtocol's six dialects.
+            [0x0A25] = new("AudioSimone", RazerHeadsetChannel.Gip60),
+            [0x0A27] = new("AudioSimone", RazerHeadsetChannel.Gip60),
+            [0x0A30] = new("AudioSimoneX", RazerHeadsetChannel.Gip60),
+            [0x0A32] = new("AudioSimoneX", RazerHeadsetChannel.Gip60),
+            [0x0A41] = new("AudioOdessaT1R", RazerHeadsetChannel.Gip60),
+            [0x0A4D] = new("AudioValkyrieT1", RazerHeadsetChannel.Gip60),
+            [0x0A50] = new("AudioValkyrieT2", RazerHeadsetChannel.Gip60),
+            [0x0A53] = new("AudioValkyrieT3", RazerHeadsetChannel.Gip60),
+            [0x0A69] = new("rzDevice40Gip", RazerHeadsetChannel.Gip60),
 
             // AudioBillieT1/T2: the 64-byte Billie channel.
             [0x0567] = new("AudioBillieT1", RazerHeadsetChannel.Billie64),
@@ -97,7 +112,7 @@ public static class RazerHeadsetChannelCatalog
             // table as AudioBillieT2.
             [0x0587] = new("AudioBastetT1", RazerHeadsetChannel.Billie64),
             [0x0588] = new("AudioBastetT1Dongle", RazerHeadsetChannel.Billie64),
-            [0x0589] = new("AudioBastetT1Ble", RazerHeadsetChannel.Unsupported),
+            [0x0589] = new("AudioBastetT1Ble", RazerHeadsetChannel.ApBle),
 
             // rzDevice40HeadsetAiroha: 64-byte report-id-2 frame with the protocol40
             // header (class/id/size at 5..8), selected as the Mxic64 HID channel and
@@ -188,13 +203,14 @@ public static class RazerHeadsetChannelCatalog
             [0x0562] = new("AudioAWKittyBLE", RazerHeadsetChannel.AudiowiseBle),
             [0x057E] = new("AudioAWKittyBLE", RazerHeadsetChannel.AudiowiseBle),
             [0x057F] = new("AudioAWKittyBLE", RazerHeadsetChannel.AudiowiseBle),
-            // Main bundles declare these BLE aliases but omit their GATT protocol.
-            [0x0558] = new("Leviathan V2 Pro BLE alias (GATT unspecified)", RazerHeadsetChannel.Unsupported),
-            [0x0559] = new("Leviathan V2 X BLE alias (GATT unspecified)", RazerHeadsetChannel.Unsupported),
-            [0x0A62] = new("Hammerhead BLE alias (GATT unspecified)", RazerHeadsetChannel.Unsupported),
-            [0x0A65] = new("Hammerhead BLE alias (GATT unspecified)", RazerHeadsetChannel.Unsupported),
-            [0x0A6D] = new("Hammerhead BLE alias (GATT unspecified)", RazerHeadsetChannel.Unsupported),
-            [0x0A82] = new("Hammerhead BLE alias (GATT unspecified)", RazerHeadsetChannel.Unsupported),
+            // Speaker/earbud BLE aliases; RazerApBleHeadsetService claims them only
+            // when the device exposes a known AP-BLE characteristic pair.
+            [0x0558] = new("Leviathan V2 Pro BLE alias", RazerHeadsetChannel.ApBle),
+            [0x0559] = new("Leviathan V2 X BLE alias", RazerHeadsetChannel.ApBle),
+            [0x0A62] = new("Hammerhead BLE alias", RazerHeadsetChannel.ApBle),
+            [0x0A65] = new("Hammerhead BLE alias", RazerHeadsetChannel.ApBle),
+            [0x0A6D] = new("Hammerhead BLE alias", RazerHeadsetChannel.ApBle),
+            [0x0A82] = new("Hammerhead BLE alias", RazerHeadsetChannel.ApBle),
             // 052D declares dongleId 1324 (052C). Both use the NXP serial interface.
             [0x052C] = new("AudioNXPDevice", RazerHeadsetChannel.NxpSerial),
             [0x052D] = new("AudioNXPDevice", RazerHeadsetChannel.NxpSerial),

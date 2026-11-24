@@ -49,6 +49,11 @@ public static class RazerBleDiscovery
         var found = await DeviceInformation.FindAllAsync(selector).AsTask(cancellationToken).ConfigureAwait(false);
         var mice = found
             .Select(item => new RazerBleDevice(item.Id, item.Name, RazerBleDevice.ParseProductId(item.Id)))
+            // AP-BLE audio shares the 52401523 service but speaks a different frame;
+            // leaving it here would open a protocol-30 session against a headset.
+            .Where(device => RazerHeadsetChannelCatalog.Resolve(device.ProductId)
+                is not (RazerHeadsetChannel.ApBle or RazerHeadsetChannel.AudiowiseBle))
+            .Where(device => !RazerApBleDiscovery.LooksLikeRazerAudio(device.Name))
             .ToArray();
         var pods = await DeviceInformation.FindAllAsync(
             GattDeviceService.GetDeviceSelectorFromUuid(RazerLaylaProtocol.ServiceUuid),

@@ -183,6 +183,85 @@ public sealed partial class RazerHeadsetAudioViewModel
             ],
         };
 
+    private HeadsetCapability[] GipProductCapabilities
+    {
+        get
+        {
+            var productId = _connection.ProductId;
+            var commands = RazerGipHeadsetProtocol.Commands(productId);
+            var capabilities = new List<HeadsetCapability>
+            {
+                HeadsetCapability.Firmware,
+                HeadsetCapability.Battery,
+            };
+            if (commands.Charging != 0) capabilities.Add(HeadsetCapability.Charging);
+            if (commands.Link != 0) capabilities.Add(HeadsetCapability.Link);
+            if (RazerGipHeadsetProtocol.SupportsEqPreset(productId))
+            {
+                capabilities.Add(HeadsetCapability.EqPreset);
+            }
+            if (RazerGipHeadsetProtocol.SupportsEqBands(productId))
+            {
+                capabilities.Add(HeadsetCapability.EqBands);
+            }
+            if (RazerGipHeadsetProtocol.SupportsSidetone(productId))
+            {
+                capabilities.Add(HeadsetCapability.MicMonitoring);
+            }
+            if (RazerGipHeadsetProtocol.SupportsAnc(productId))
+            {
+                capabilities.Add(HeadsetCapability.Anc);
+            }
+            if (RazerGipHeadsetProtocol.SupportsDnd(productId))
+            {
+                capabilities.Add(HeadsetCapability.Dnd);
+            }
+            return capabilities.ToArray();
+        }
+    }
+
+    // Each GIP bundle carries its own preset ids; the MXIC 0/7/8/9/255 list does not apply.
+    private (byte Value, string Key)[] GipPresets => _connection.ProductId switch
+    {
+        0x0A25 or 0x0A27 =>
+        [
+            (0x00, "RazerHeadsetPresetDefault"),
+            (0x05, "RazerHeadsetPresetBass"),
+            (0x06, "RazerHeadsetPresetFps"),
+            (0x10, "RazerHeadsetPresetCustom"),
+        ],
+        0x0A30 or 0x0A32 =>
+        [
+            (0x00, "RazerHeadsetPresetDefault"),
+            (0x01, "RazerHeadsetPresetAmplified"),
+            (0x03, "RazerHeadsetPresetBass"),
+            (0x06, "RazerHeadsetPresetFps"),
+            (0xFF, "RazerHeadsetPresetCustom"),
+        ],
+        0x0A41 =>
+        [
+            (0x07, "RazerHeadsetPresetGame"),
+            (0x08, "RazerHeadsetPresetMusic"),
+            (0x09, "RazerHeadsetPresetMovie"),
+            (0xFF, "RazerHeadsetPresetCustom"),
+        ],
+        0x0A53 =>
+        [
+            (0x00, "RazerHeadsetPresetDefault"),
+            (0x01, "RazerHeadsetPresetGame"),
+            (0x02, "RazerHeadsetPresetMusic"),
+            (0x03, "RazerHeadsetPresetMovie"),
+        ],
+        0x0A69 =>
+        [
+            (0x01, "RazerHeadsetPresetGame"),
+            (0x02, "RazerHeadsetPresetMusic"),
+            (0x03, "RazerHeadsetPresetMovie"),
+            (0x1F, "RazerHeadsetPresetCustom"),
+        ],
+        _ => MxicPresets,
+    };
+
     private HeadsetCapability[] Protocol25Capabilities
     {
         get
@@ -265,6 +344,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             RazerHeadsetAudioTransport.Billie64 => ValkyrieCapabilities,
             RazerHeadsetAudioTransport.ValkyrieT3Feature64 => ValkyrieT3ProductCapabilities,
             RazerHeadsetAudioTransport.Feature91 => Feature91ProductCapabilities,
+            RazerHeadsetAudioTransport.Gip60 => GipProductCapabilities,
             _ => [],
         };
 

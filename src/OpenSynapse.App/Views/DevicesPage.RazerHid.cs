@@ -164,6 +164,10 @@ public sealed partial class DevicesPage : UserControl
                 SelectDevice("awbleheadset");
                 await ViewModel.SelectAwBleHeadsetAsync(row, Lifetime);
                 break;
+            case RazerApBleHeadsetRowViewModel row:
+                SelectDevice("apbleheadset");
+                await ViewModel.SelectApBleHeadsetAsync(row, Lifetime);
+                break;
             case RazerCoolingPadViewModel pad:
                 SelectDevice("coolingpad");
                 await pad.RefreshAsync(Lifetime);
