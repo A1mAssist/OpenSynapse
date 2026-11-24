@@ -23,6 +23,10 @@ public sealed partial class BladeWorkspace
                 OnPropertyChanged(nameof(CanSetTouchpad));
             }
             var now = Environment.TickCount64;
+            if (changed || firstRead)
+            {
+                _touchpadIndicatorRetryUntil = now + 60_000;
+            }
             var retry = now < _touchpadIndicatorRetryUntil;
             var settle = retry && now - _touchpadIndicatorSyncedAt >= 5_000;
             if (changed || firstRead || (retry && (!_touchpadIndicatorConfirmed || settle)))

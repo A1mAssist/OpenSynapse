@@ -23,10 +23,10 @@ public sealed partial class BladeWorkspace
     private bool _touchpadIndicatorReasserted;
     private bool _touchpadIndicatorConfirmed;
     private bool _touchpadStateRead;
-    // A cold boot can reject the first write or apply the EC's own lamp state
-    // after it; retry for a minute so a slow start cannot leave it wrong.
-    // shortcut: retries stop after that minute; extend the window if a slower EC appears.
-    private readonly long _touchpadIndicatorRetryUntil = Environment.TickCount64 + 60_000;
+    // A failed write is retried for a minute after the first read or a state
+    // change; a cold boot can reject it or reset the lamp after it.
+    // shortcut: the window is 60 s; extend it if a slower EC appears.
+    private long _touchpadIndicatorRetryUntil;
     private long _touchpadIndicatorSyncedAt;
     private long _gameModeUserWriteAt;
 
