@@ -101,6 +101,261 @@ internal static class SvgPathData
         return TryTransform(data, matrix, out var result) ? result : data;
     }
 
+    /// <summary>
+    /// Conservative bounds for placement sampling. Curve control points and
+    /// arc radii are included, so the box can be larger than the drawn shape
+    /// but never clips a lit LED.
+    /// </summary>
+    public static bool TryGetBounds(
+        string? data,
+        out double minX,
+        out double minY,
+        out double maxX,
+        out double maxY)
+    {
+        minX = 0;
+        minY = 0;
+        maxX = 0;
+        maxY = 0;
+        if (string.IsNullOrWhiteSpace(data)) return false;
+
+        var boundsMinX = double.PositiveInfinity;
+        var boundsMinY = double.PositiveInfinity;
+        var boundsMaxX = double.NegativeInfinity;
+        var boundsMaxY = double.NegativeInfinity;
+        var reader = new Reader(data);
+        var command = '\0';
+        var previous = '\0';
+        double x = 0, y = 0, startX = 0, startY = 0;
+        double? cubicX = null, cubicY = null, quadX = null, quadY = null;
+        var any = false;
+
+        void Add(double px, double py)
+        {
+            if (!double.IsFinite(px) || !double.IsFinite(py)) return;
+            boundsMinX = Math.Min(boundsMinX, px);
+            boundsMinY = Math.Min(boundsMinY, py);
+            boundsMaxX = Math.Max(boundsMaxX, px);
+            boundsMaxY = Math.Max(boundsMaxY, py);
+            any = true;
+        }
+
+        while (!reader.End)
+        {
+            if (reader.TryReadCommand(out var next)) command = next;
+            else if (command == '\0') return false;
+
+            switch (char.ToUpperInvariant(command))
+            {
+                case 'M':
+                    if (!ReadPoint(reader, command, x, y, out var moveX, out var moveY)) return false;
+                    x = moveX;
+                    y = moveY;
+                    startX = x;
+                    startY = y;
+                    Add(x, y);
+                    while (reader.PeekNumber())
+                    {
+                        if (!ReadPoint(reader, char.IsLower(command) ? 'l' : 'L', x, y,
+                                out var lineX, out var lineY))
+                        {
+                            return false;
+                        }
+
+                        x = lineX;
+                        y = lineY;
+                        Add(x, y);
+                    }
+
+                    previous = 'M';
+                    command = '\0';
+                    ClearControls(ref cubicX, ref cubicY, ref quadX, ref quadY);
+                    break;
+
+                case 'L':
+                    if (!ReadPoint(reader, command, x, y, out var lineEndX, out var lineEndY)) return false;
+                    x = lineEndX;
+                    y = lineEndY;
+                    Add(x, y);
+                    previous = 'L';
+                    ClearControls(ref cubicX, ref cubicY, ref quadX, ref quadY);
+                    break;
+
+                case 'H':
+                    if (!reader.TryReadNumber(out var horizontal)) return false;
+                    x = char.IsLower(command) ? x + horizontal : horizontal;
+                    Add(x, y);
+                    previous = 'H';
+                    ClearControls(ref cubicX, ref cubicY, ref quadX, ref quadY);
+                    break;
+
+                case 'V':
+                    if (!reader.TryReadNumber(out var vertical)) return false;
+                    y = char.IsLower(command) ? y + vertical : vertical;
+                    Add(x, y);
+                    previous = 'V';
+                    ClearControls(ref cubicX, ref cubicY, ref quadX, ref quadY);
+                    break;
+
+                case 'C':
+                    if (!reader.TryReadNumber(out var c1x) || !reader.TryReadNumber(out var c1y) ||
+                        !reader.TryReadNumber(out var c2x) || !reader.TryReadNumber(out var c2y) ||
+                        !reader.TryReadNumber(out var cubicEndX) || !reader.TryReadNumber(out var cubicEndY))
+                    {
+                        return false;
+                    }
+
+                    if (char.IsLower(command))
+                    {
+                        c1x += x;
+                        c1y += y;
+                        c2x += x;
+                        c2y += y;
+                        cubicEndX += x;
+                        cubicEndY += y;
+                    }
+
+                    Add(c1x, c1y);
+                    Add(c2x, c2y);
+                    Add(cubicEndX, cubicEndY);
+                    x = cubicEndX;
+                    y = cubicEndY;
+                    cubicX = c2x;
+                    cubicY = c2y;
+                    quadX = null;
+                    quadY = null;
+                    previous = 'C';
+                    break;
+
+                case 'S':
+                    if (!reader.TryReadNumber(out var s2x) || !reader.TryReadNumber(out var s2y) ||
+                        !reader.TryReadNumber(out var smoothEndX) || !reader.TryReadNumber(out var smoothEndY))
+                    {
+                        return false;
+                    }
+
+                    if (char.IsLower(command))
+                    {
+                        s2x += x;
+                        s2y += y;
+                        smoothEndX += x;
+                        smoothEndY += y;
+                    }
+
+                    var sc1x = previous is 'C' or 'S' && cubicX is { } lastCubicX ? 2 * x - lastCubicX : x;
+                    var sc1y = previous is 'C' or 'S' && cubicY is { } lastCubicY ? 2 * y - lastCubicY : y;
+                    Add(sc1x, sc1y);
+                    Add(s2x, s2y);
+                    Add(smoothEndX, smoothEndY);
+                    x = smoothEndX;
+                    y = smoothEndY;
+                    cubicX = s2x;
+                    cubicY = s2y;
+                    quadX = null;
+                    quadY = null;
+                    previous = 'S';
+                    break;
+
+                case 'Q':
+                    if (!reader.TryReadNumber(out var q1x) || !reader.TryReadNumber(out var q1y) ||
+                        !reader.TryReadNumber(out var quadEndX) || !reader.TryReadNumber(out var quadEndY))
+                    {
+                        return false;
+                    }
+
+                    if (char.IsLower(command))
+                    {
+                        q1x += x;
+                        q1y += y;
+                        quadEndX += x;
+                        quadEndY += y;
+                    }
+
+                    Add(q1x, q1y);
+                    Add(quadEndX, quadEndY);
+                    x = quadEndX;
+                    y = quadEndY;
+                    quadX = q1x;
+                    quadY = q1y;
+                    cubicX = null;
+                    cubicY = null;
+                    previous = 'Q';
+                    break;
+
+                case 'T':
+                    if (!reader.TryReadNumber(out var tEndX) || !reader.TryReadNumber(out var tEndY)) return false;
+                    if (char.IsLower(command))
+                    {
+                        tEndX += x;
+                        tEndY += y;
+                    }
+
+                    var tq1x = previous is 'Q' or 'T' && quadX is { } lastQuadX ? 2 * x - lastQuadX : x;
+                    var tq1y = previous is 'Q' or 'T' && quadY is { } lastQuadY ? 2 * y - lastQuadY : y;
+                    Add(tq1x, tq1y);
+                    Add(tEndX, tEndY);
+                    x = tEndX;
+                    y = tEndY;
+                    quadX = tq1x;
+                    quadY = tq1y;
+                    cubicX = null;
+                    cubicY = null;
+                    previous = 'T';
+                    break;
+
+                case 'A':
+                    if (!reader.TryReadNumber(out var rx) || !reader.TryReadNumber(out var ry) ||
+                        !reader.TryReadNumber(out _) ||
+                        !reader.TryReadFlag(out _) || !reader.TryReadFlag(out _) ||
+                        !reader.TryReadNumber(out var arcEndX) || !reader.TryReadNumber(out var arcEndY))
+                    {
+                        return false;
+                    }
+
+                    if (char.IsLower(command))
+                    {
+                        arcEndX += x;
+                        arcEndY += y;
+                    }
+
+                    var reach = Math.Abs(rx) + Math.Abs(ry);
+                    Add(x, y);
+                    Add(arcEndX, arcEndY);
+                    Add(x - reach, y - reach);
+                    Add(x + reach, y + reach);
+                    Add(arcEndX - reach, arcEndY - reach);
+                    Add(arcEndX + reach, arcEndY + reach);
+                    x = arcEndX;
+                    y = arcEndY;
+                    previous = 'A';
+                    ClearControls(ref cubicX, ref cubicY, ref quadX, ref quadY);
+                    break;
+
+                case 'Z':
+                    Add(startX, startY);
+                    x = startX;
+                    y = startY;
+                    previous = 'Z';
+                    command = '\0';
+                    ClearControls(ref cubicX, ref cubicY, ref quadX, ref quadY);
+                    break;
+
+                default:
+                    return false;
+            }
+        }
+
+        if (any)
+        {
+            minX = boundsMinX;
+            minY = boundsMinY;
+            maxX = boundsMaxX;
+            maxY = boundsMaxY;
+        }
+
+        return any;
+    }
+
     private static bool TryTransform(string data, SvgMatrix matrix, out string result)
     {
         result = string.Empty;

@@ -11,4 +11,8 @@
     <InternalsVisibleTo Include="OpenSynapse.Core.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Lighting\Presets\*.oschroma" />
+  </ItemGroup>
+
 </Project>

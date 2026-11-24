@@ -4348,6 +4348,95 @@ Les modifications de macro non enregistrées seront perdues.</value></data>
   <data name="LightingStudioPresetSaveAs" xml:space="preserve"><value>Enregistrer sous…</value></data>
   <data name="LightingStudioPresetShape" xml:space="preserve"><value>Forme de l’onde</value></data>
   <data name="LightingStudioPresetSpacing" xml:space="preserve"><value>Espacement des anneaux (cases)</value></data>
+  <data name="PresetEditorTitle" xml:space="preserve"><value>Éditeur de préréglages</value></data>
+  <data name="PresetEditorNew" xml:space="preserve"><value>Nouveau</value></data>
+  <data name="PresetEditorOpen" xml:space="preserve"><value>Ouvrir</value></data>
+  <data name="PresetEditorSave" xml:space="preserve"><value>Enregistrer</value></data>
+  <data name="PresetEditorValidate" xml:space="preserve"><value>Valider</value></data>
+  <data name="PresetEditorUndo" xml:space="preserve"><value>Annuler</value></data>
+  <data name="PresetEditorRedo" xml:space="preserve"><value>Rétablir</value></data>
+  <data name="PresetEditorPlay" xml:space="preserve"><value>Lire</value></data>
+  <data name="PresetEditorPause" xml:space="preserve"><value>Pause</value></data>
+  <data name="PresetEditorInfo" xml:space="preserve"><value>Préréglage</value></data>
+  <data name="PresetEditorName" xml:space="preserve"><value>Nom</value></data>
+  <data name="PresetEditorId" xml:space="preserve"><value>ID</value></data>
+  <data name="PresetEditorKind" xml:space="preserve"><value>Type</value></data>
+  <data name="PresetEditorCategory" xml:space="preserve"><value>Catégorie</value></data>
+  <data name="PresetEditorNote" xml:space="preserve"><value>Remarque</value></data>
+  <data name="PresetEditorAddLayer" xml:space="preserve"><value>Ajouter un calque</value></data>
+  <data name="PresetEditorRemoveLayer" xml:space="preserve"><value>Supprimer le calque</value></data>
+  <data name="PresetEditorDuplicateLayer" xml:space="preserve"><value>Dupliquer le calque</value></data>
+  <data name="PresetEditorMoveUp" xml:space="preserve"><value>Monter</value></data>
+  <data name="PresetEditorMoveDown" xml:space="preserve"><value>Descendre</value></data>
+  <data name="PresetEditorLayerLimit" xml:space="preserve"><value>Un préréglage peut contenir au maximum 4 calques.</value></data>
+  <data name="PresetEditorPreview" xml:space="preserve"><value>Aperçu</value></data>
+  <data name="PresetEditorPreviewDevice" xml:space="preserve"><value>Appareil</value></data>
+  <data name="PresetEditorPreviewWorld" xml:space="preserve"><value>Canevas partagé</value></data>
+  <data name="PresetEditorDevice" xml:space="preserve"><value>Appareil d’aperçu</value></data>
+  <data name="PresetEditorFps" xml:space="preserve"><value>FPS</value></data>
+  <data name="PresetEditorTimeline" xml:space="preserve"><value>Chronologie</value></data>
+  <data name="PresetEditorLoop" xml:space="preserve"><value>Boucle</value></data>
+  <data name="PresetEditorWorldHint" xml:space="preserve"><value>Le canevas partagé nécessite au moins deux appareils. Une composition synthétique 96×96 est affichée.</value></data>
+  <data name="PresetEditorSimulation" xml:space="preserve"><value>Entrée simulée</value></data>
+  <data name="PresetEditorSimKeys" xml:space="preserve"><value>Simuler les appuis de touches</value></data>
+  <data name="PresetEditorSimScreen" xml:space="preserve"><value>Simuler l’écran</value></data>
+  <data name="PresetEditorSimScreenPick" xml:space="preserve"><value>Choisir une image…</value></data>
+  <data name="PresetEditorSimScreenNone" xml:space="preserve"><value>Écran procédural</value></data>
+  <data name="PresetEditorSimHint" xml:space="preserve"><value>Cliquez sur l’aperçu pour appuyer sur une touche. Les entrées musicales et d’écran sont simulées.</value></data>
+  <data name="PresetEditorModule" xml:space="preserve"><value>Module</value></data>
+  <data name="PresetEditorModuleSearch" xml:space="preserve"><value>Rechercher des modules</value></data>
+  <data name="PresetEditorModuleAdvanced" xml:space="preserve"><value>Afficher tous les modules</value></data>
+  <data name="PresetEditorModuleAdvancedHint" xml:space="preserve"><value>Affichage des modules de toutes les familles d’entrée, et pas seulement du type sélectionné.</value></data>
+  <data name="PresetEditorParameters" xml:space="preserve"><value>Paramètres</value></data>
+  <data name="PresetEditorPalette" xml:space="preserve"><value>Palette</value></data>
+  <data name="PresetEditorPaletteReset" xml:space="preserve"><value>Réinitialiser la palette</value></data>
+  <data name="PresetEditorNoModule" xml:space="preserve"><value>Sélectionnez un module pour modifier ses paramètres.</value></data>
+  <data name="PresetEditorStatus" xml:space="preserve"><value>Prêt</value></data>
+  <data name="PresetEditorValidationOk" xml:space="preserve"><value>Aucun problème de validation.</value></data>
+  <data name="PresetEditorValidationIssues" xml:space="preserve"><value>Problèmes : {0}</value></data>
+  <data name="PresetEditorUnsaved" xml:space="preserve"><value>Modifications non enregistrées</value></data>
+  <data name="PresetEditorSaved" xml:space="preserve"><value>Enregistré : {0}</value></data>
+  <data name="PresetEditorSaveFailed" xml:space="preserve"><value>Enregistrement impossible : {0}</value></data>
+  <data name="PresetEditorOpenFailed" xml:space="preserve"><value>Ouverture impossible : {0}</value></data>
+  <data name="PresetEditorNewName" xml:space="preserve"><value>Nouveau préréglage</value></data>
+  <data name="PresetEditorConfirmDiscardTitle" xml:space="preserve"><value>Ignorer les modifications ?</value></data>
+  <data name="PresetEditorConfirmDiscardMessage" xml:space="preserve"><value>Le préréglage actuel contient des modifications non enregistrées.</value></data>
+  <data name="PresetEditorConfirmDiscard" xml:space="preserve"><value>Ignorer</value></data>
+  <data name="PresetEditorModuleResetTitle" xml:space="preserve"><value>Changer de module ?</value></data>
+  <data name="PresetEditorModuleResetMessage" xml:space="preserve"><value>Changer de module réinitialise ses paramètres.</value></data>
+  <data name="PresetEditorModuleResetConfirm" xml:space="preserve"><value>Changer de module</value></data>
+  <data name="PresetEditorRecoverTitle" xml:space="preserve"><value>Récupérer le brouillon ?</value></data>
+  <data name="PresetEditorRecoverMessage" xml:space="preserve"><value>Un brouillon non enregistré de {0} a été trouvé.</value></data>
+  <data name="PresetEditorRecover" xml:space="preserve"><value>Récupérer</value></data>
+  <data name="PresetEditorDiscard" xml:space="preserve"><value>Ignorer</value></data>
+  <data name="PresetEditorNoIssues" xml:space="preserve"><value>Aucun problème</value></data>
+  <data name="PresetEditorBuiltInReadOnly" xml:space="preserve"><value>Les préréglages intégrés sont en lecture seule. Utilisez « Enregistrer sous » pour créer une copie utilisateur.</value></data>
+  <data name="PresetEditorInvalidSave" xml:space="preserve"><value>Corrigez les problèmes de validation avant d’enregistrer.</value></data>
+  <data name="PresetEditorKindScreen" xml:space="preserve"><value>Écran</value></data>
+  <data name="PresetEditorKindSystem" xml:space="preserve"><value>Système</value></data>
+  <data name="PresetEditorKindAmbient" xml:space="preserve"><value>Ambiance</value></data>
+  <data name="PresetEditorSimMusic" xml:space="preserve"><value>Battement simulé</value></data>
+  <data name="PresetEditorTime" xml:space="preserve"><value>{0:0.0} s</value></data>
+  <data name="PresetEditorLayerSummary" xml:space="preserve"><value>{0}</value></data>
+  <data name="PresetEditorIssueLine" xml:space="preserve"><value>{0}</value></data>
+  <data name="PresetEditorPath" xml:space="preserve"><value>Chemin : {0}</value></data>
+  <data name="PresetEditorIdHint" xml:space="preserve"><value>Lettres minuscules, chiffres et traits d’union uniquement.</value></data>
+  <data name="PresetEditorPresetLibrary" xml:space="preserve"><value>Bibliothèque de préréglages</value></data>
+  <data name="PresetEditorSaveAsTitle" xml:space="preserve"><value>Enregistrer le préréglage</value></data>
+  <data name="PresetEditorOpenFileTitle" xml:space="preserve"><value>Ouvrir le préréglage</value></data>
+  <data name="PresetEditorSelectScreenImage" xml:space="preserve"><value>Choisir une image d’écran</value></data>
+  <data name="PresetEditorNoPreview" xml:space="preserve"><value>Aucun aperçu n’est disponible pour cette configuration.</value></data>
+  <data name="PresetEditorStatusNew" xml:space="preserve"><value>Nouveau préréglage</value></data>
+  <data name="PresetEditorStatusOpened" xml:space="preserve"><value>Ouvert : {0}</value></data>
+  <data name="PresetEditorStatusRecovered" xml:space="preserve"><value>Brouillon non enregistré récupéré</value></data>
+  <data name="PresetEditorSimScreenImage" xml:space="preserve"><value>Image : {0}</value></data>
+  <data name="PresetEditorLayerEnabled" xml:space="preserve"><value>Activé</value></data>
+  <data name="PresetEditorUnsavedCloseTitle" xml:space="preserve"><value>Enregistrer les modifications ?</value></data>
+  <data name="PresetEditorUnsavedCloseMessage" xml:space="preserve"><value>Enregistrer les modifications du préréglage actuel avant de fermer ?</value></data>
+  <data name="PresetEditorSaveAndClose" xml:space="preserve"><value>Enregistrer et fermer</value></data>
+  <data name="PresetEditorCloseWithoutSaving" xml:space="preserve"><value>Fermer sans enregistrer</value></data>
+  <data name="PresetEditorCancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="PresetEditorSaveAsBuiltIn" xml:space="preserve"><value>Les préréglages intégrés ne peuvent pas être écrasés. Enregistrez plutôt une copie.</value></data>
   <data name="LightingStudioModuleParam_amplitude" xml:space="preserve"><value>Amplitude</value></data>
   <data name="LightingStudioModuleParam_aperture" xml:space="preserve"><value>Ouverture</value></data>
   <data name="LightingStudioModuleParam_aspect" xml:space="preserve"><value>Rapport largeur/hauteur</value></data>
@@ -4510,4 +4599,167 @@ Les modifications de macro non enregistrées seront perdues.</value></data>
   <data name="LightingStudioModuleValue_white" xml:space="preserve"><value>Blanc</value></data>
   <data name="LightingStudioModuleValue_alternate" xml:space="preserve"><value>Alterner à chaque battement</value></data>
   <data name="LightingStudioModuleValue_waves" xml:space="preserve"><value>Ondes sonores continues</value></data>
+  <data name="PresetEditorValidateAll" xml:space="preserve"><value>Tout valider</value></data>
+  <data name="PresetEditorValidateAllTitle" xml:space="preserve"><value>Validation de la bibliothèque</value></data>
+  <data name="PresetEditorValidateAllSummary" xml:space="preserve"><value>{0} préréglages vérifiés, {1} avec des problèmes.</value></data>
+  <data name="PresetEditorOpenSelected" xml:space="preserve"><value>Ouvrir la sélection</value></data>
+  <data name="PresetEditorNoLibraryIssues" xml:space="preserve"><value>Tous les préréglages intégrés et utilisateur ont réussi la validation.</value></data>
+  <data name="LightingStudioModule_ambient.automaton" xml:space="preserve"><value>Automate cellulaire</value></data>
+  <data name="LightingStudioModule_ambient.field" xml:space="preserve"><value>Champ ambiant</value></data>
+  <data name="LightingStudioModule_ambient.flow" xml:space="preserve"><value>Mirage fluide</value></data>
+  <data name="LightingStudioModule_ambient.geometry" xml:space="preserve"><value>Prisme géométrique</value></data>
+  <data name="LightingStudioModule_ambient.liquid" xml:space="preserve"><value>Surface liquide</value></data>
+  <data name="LightingStudioModule_ambient.mask" xml:space="preserve"><value>Masque ambiant</value></data>
+  <data name="LightingStudioModule_ambient.particles" xml:space="preserve"><value>Particules ambiantes</value></data>
+  <data name="LightingStudioModule_ambient.signal" xml:space="preserve"><value>Signal numérique</value></data>
+  <data name="LightingStudioModule_ambient.transition" xml:space="preserve"><value>Transition ambiante</value></data>
+  <data name="LightingStudioModule_key.activity" xml:space="preserve"><value>Mesure de frappe &amp; combos</value></data>
+  <data name="LightingStudioModule_key.beam" xml:space="preserve"><value>Faisceau lignes/colonnes</value></data>
+  <data name="LightingStudioModule_key.charge" xml:space="preserve"><value>Charge maintenue</value></data>
+  <data name="LightingStudioModule_key.glow" xml:space="preserve"><value>Rémanence des touches</value></data>
+  <data name="LightingStudioModule_key.glyph" xml:space="preserve"><value>Glyphe &amp; battement</value></data>
+  <data name="LightingStudioModule_key.links" xml:space="preserve"><value>Liens de touches</value></data>
+  <data name="LightingStudioModule_key.particles" xml:space="preserve"><value>Particules de touches</value></data>
+  <data name="LightingStudioModule_key.sweep" xml:space="preserve"><value>Traînée directionnelle</value></data>
+  <data name="LightingStudioModule_key.vortex" xml:space="preserve"><value>Tourbillon de touches</value></data>
+  <data name="LightingStudioModule_key.wave" xml:space="preserve"><value>Ondulation radiale</value></data>
+  <data name="LightingStudioModule_music.arrows" xml:space="preserve"><value>Flèches de scan rythmique</value></data>
+  <data name="LightingStudioModule_music.contour" xml:space="preserve"><value>Anneau oculaire &amp; pupille</value></data>
+  <data name="LightingStudioModule_music.field" xml:space="preserve"><value>Champ volume &amp; historique</value></data>
+  <data name="LightingStudioModule_music.heart" xml:space="preserve"><value>Cœur rythmique</value></data>
+  <data name="LightingStudioModule_music.lattice" xml:space="preserve"><value>Damier rythmique</value></data>
+  <data name="LightingStudioModule_music.lightning" xml:space="preserve"><value>Éclair plasma spectral</value></data>
+  <data name="LightingStudioModule_music.particles" xml:space="preserve"><value>Étincelles &amp; étoiles aiguës</value></data>
+  <data name="LightingStudioModule_music.radial" xml:space="preserve"><value>Spectre radial</value></data>
+  <data name="LightingStudioModule_music.spectrum" xml:space="preserve"><value>Barres spectrales</value></data>
+  <data name="LightingStudioModule_music.trace" xml:space="preserve"><value>Trace d'onde</value></data>
+  <data name="LightingStudioModuleParam_angle" xml:space="preserve"><value>Angle</value></data>
+  <data name="LightingStudioModuleParam_blocks" xml:space="preserve"><value>Blocs</value></data>
+  <data name="LightingStudioModuleParam_contrast" xml:space="preserve"><value>Contraste</value></data>
+  <data name="LightingStudioModuleParam_drops" xml:space="preserve"><value>Gouttes</value></data>
+  <data name="LightingStudioModuleParam_floor" xml:space="preserve"><value>Luminosité de base</value></data>
+  <data name="LightingStudioModuleParam_flow" xml:space="preserve"><value>Flux</value></data>
+  <data name="LightingStudioModuleParam_frequency" xml:space="preserve"><value>Fréquence</value></data>
+  <data name="LightingStudioModuleParam_period" xml:space="preserve"><value>Période</value></data>
+  <data name="LightingStudioModuleParam_pulse" xml:space="preserve"><value>Intensité d'impulsion</value></data>
+  <data name="LightingStudioModuleParam_ratio" xml:space="preserve"><value>Ratio</value></data>
+  <data name="LightingStudioModuleParam_scale" xml:space="preserve"><value>Échelle</value></data>
+  <data name="LightingStudioModuleParam_scroll" xml:space="preserve"><value>Défilement</value></data>
+  <data name="LightingStudioModuleParam_scrollSpeed" xml:space="preserve"><value>Vitesse de défilement</value></data>
+  <data name="LightingStudioModuleParam_seed" xml:space="preserve"><value>Graine</value></data>
+  <data name="LightingStudioModuleParam_shift" xml:space="preserve"><value>Décalage</value></data>
+  <data name="LightingStudioModuleParam_sides" xml:space="preserve"><value>Côtés</value></data>
+  <data name="LightingStudioModuleParam_speed" xml:space="preserve"><value>Vitesse</value></data>
+  <data name="LightingStudioModuleParam_spread" xml:space="preserve"><value>Diffusion</value></data>
+  <data name="LightingStudioModuleParam_stagger" xml:space="preserve"><value>Décalage</value></data>
+  <data name="LightingStudioModuleParam_stretch" xml:space="preserve"><value>Étirement</value></data>
+  <data name="LightingStudioModuleParam_text" xml:space="preserve"><value>Texte</value></data>
+  <data name="LightingStudioModuleParam_twinkle" xml:space="preserve"><value>Scintillement</value></data>
+  <data name="LightingStudioModuleParam_viscosity" xml:space="preserve"><value>Viscosité</value></data>
+  <data name="LightingStudioModuleParam_warp" xml:space="preserve"><value>Déformation</value></data>
+  <data name="LightingStudioModuleParam_wind" xml:space="preserve"><value>Vent</value></data>
+  <data name="LightingStudioModuleValue_aurora" xml:space="preserve"><value>Aurore</value></data>
+  <data name="LightingStudioModuleValue_bars" xml:space="preserve"><value>Barres</value></data>
+  <data name="LightingStudioModuleValue_binary" xml:space="preserve"><value>Binaire</value></data>
+  <data name="LightingStudioModuleValue_blinds" xml:space="preserve"><value>Stores</value></data>
+  <data name="LightingStudioModuleValue_border" xml:space="preserve"><value>Bordure</value></data>
+  <data name="LightingStudioModuleValue_bounce" xml:space="preserve"><value>Rebond</value></data>
+  <data name="LightingStudioModuleValue_caustic" xml:space="preserve"><value>Caustique</value></data>
+  <data name="LightingStudioModuleValue_checker" xml:space="preserve"><value>Damier</value></data>
+  <data name="LightingStudioModuleValue_code" xml:space="preserve"><value>Code</value></data>
+  <data name="LightingStudioModuleValue_confetti" xml:space="preserve"><value>Confettis</value></data>
+  <data name="LightingStudioModuleValue_current" xml:space="preserve"><value>Courant</value></data>
+  <data name="LightingStudioModuleValue_data" xml:space="preserve"><value>Données</value></data>
+  <data name="LightingStudioModuleValue_diagonal" xml:space="preserve"><value>Diagonale</value></data>
+  <data name="LightingStudioModuleValue_diamond" xml:space="preserve"><value>Losange</value></data>
+  <data name="LightingStudioModuleValue_disk" xml:space="preserve"><value>Disque</value></data>
+  <data name="LightingStudioModuleValue_dissolve" xml:space="preserve"><value>Dissolution</value></data>
+  <data name="LightingStudioModuleValue_dots" xml:space="preserve"><value>Points</value></data>
+  <data name="LightingStudioModuleValue_droplets" xml:space="preserve"><value>Gouttes</value></data>
+  <data name="LightingStudioModuleValue_dunes" xml:space="preserve"><value>Dunes</value></data>
+  <data name="LightingStudioModuleValue_ecg" xml:space="preserve"><value>ECG</value></data>
+  <data name="LightingStudioModuleValue_embers" xml:space="preserve"><value>Braises</value></data>
+  <data name="LightingStudioModuleValue_eye" xml:space="preserve"><value>Œil</value></data>
+  <data name="LightingStudioModuleValue_fill" xml:space="preserve"><value>Remplissage</value></data>
+  <data name="LightingStudioModuleValue_fireflies" xml:space="preserve"><value>Lucioles</value></data>
+  <data name="LightingStudioModuleValue_fireworks" xml:space="preserve"><value>Feux d'artifice</value></data>
+  <data name="LightingStudioModuleValue_foam" xml:space="preserve"><value>Mousse</value></data>
+  <data name="LightingStudioModuleValue_frame" xml:space="preserve"><value>Cadre</value></data>
+  <data name="LightingStudioModuleValue_glitch" xml:space="preserve"><value>Glitch</value></data>
+  <data name="LightingStudioModuleValue_gradient" xml:space="preserve"><value>Dégradé</value></data>
+  <data name="LightingStudioModuleValue_grid" xml:space="preserve"><value>Grille</value></data>
+  <data name="LightingStudioModuleValue_hex" xml:space="preserve"><value>Hexagone</value></data>
+  <data name="LightingStudioModuleValue_interference" xml:space="preserve"><value>Interférence</value></data>
+  <data name="LightingStudioModuleValue_iris" xml:space="preserve"><value>Iris</value></data>
+  <data name="LightingStudioModuleValue_kaleido" xml:space="preserve"><value>Kaléidoscope</value></data>
+  <data name="LightingStudioModuleValue_lattice" xml:space="preserve"><value>Treillis</value></data>
+  <data name="LightingStudioModuleValue_matrix" xml:space="preserve"><value>Matrice</value></data>
+  <data name="LightingStudioModuleValue_melt" xml:space="preserve"><value>Fusion</value></data>
+  <data name="LightingStudioModuleValue_mercury" xml:space="preserve"><value>Mercure</value></data>
+  <data name="LightingStudioModuleValue_meteors" xml:space="preserve"><value>Météores</value></data>
+  <data name="LightingStudioModuleValue_moire" xml:space="preserve"><value>Moiré</value></data>
+  <data name="LightingStudioModuleValue_mono" xml:space="preserve"><value>Mono</value></data>
+  <data name="LightingStudioModuleValue_moon" xml:space="preserve"><value>Lune</value></data>
+  <data name="LightingStudioModuleValue_mosaic" xml:space="preserve"><value>Mosaïque</value></data>
+  <data name="LightingStudioModuleValue_nebula" xml:space="preserve"><value>Nébuleuse</value></data>
+  <data name="LightingStudioModuleValue_noise" xml:space="preserve"><value>Bruit</value></data>
+  <data name="LightingStudioModuleValue_oil" xml:space="preserve"><value>Huile</value></data>
+  <data name="LightingStudioModuleValue_orbit" xml:space="preserve"><value>Orbite</value></data>
+  <data name="LightingStudioModuleValue_palette" xml:space="preserve"><value>Palette</value></data>
+  <data name="LightingStudioModuleValue_pixels" xml:space="preserve"><value>Pixels</value></data>
+  <data name="LightingStudioModuleValue_plasma" xml:space="preserve"><value>Plasma</value></data>
+  <data name="LightingStudioModuleValue_polygon" xml:space="preserve"><value>Polygone</value></data>
+  <data name="LightingStudioModuleValue_pulse" xml:space="preserve"><value>Impulsion</value></data>
+  <data name="LightingStudioModuleValue_radar" xml:space="preserve"><value>Radar</value></data>
+  <data name="LightingStudioModuleValue_rain" xml:space="preserve"><value>Pluie</value></data>
+  <data name="LightingStudioModuleValue_random" xml:space="preserve"><value>Aléatoire</value></data>
+  <data name="LightingStudioModuleValue_rings" xml:space="preserve"><value>Anneaux</value></data>
+  <data name="LightingStudioModuleValue_ripple" xml:space="preserve"><value>Ondulation</value></data>
+  <data name="LightingStudioModuleValue_rows" xml:space="preserve"><value>Lignes</value></data>
+  <data name="LightingStudioModuleValue_scan" xml:space="preserve"><value>Balayage</value></data>
+  <data name="LightingStudioModuleValue_smoke" xml:space="preserve"><value>Fumée</value></data>
+  <data name="LightingStudioModuleValue_sparks" xml:space="preserve"><value>Étincelles</value></data>
+  <data name="LightingStudioModuleValue_spiral" xml:space="preserve"><value>Spirale</value></data>
+  <data name="LightingStudioModuleValue_split" xml:space="preserve"><value>Fractionnement</value></data>
+  <data name="LightingStudioModuleValue_stack" xml:space="preserve"><value>Empilement</value></data>
+  <data name="LightingStudioModuleValue_star" xml:space="preserve"><value>Étoile</value></data>
+  <data name="LightingStudioModuleValue_stars" xml:space="preserve"><value>Étoiles</value></data>
+  <data name="LightingStudioModuleValue_stripes" xml:space="preserve"><value>Rayures</value></data>
+  <data name="LightingStudioModuleValue_surface" xml:space="preserve"><value>Surface</value></data>
+  <data name="LightingStudioModuleValue_sync" xml:space="preserve"><value>Synchro</value></data>
+  <data name="LightingStudioModuleValue_text" xml:space="preserve"><value>Texte</value></data>
+  <data name="LightingStudioModuleValue_triangle" xml:space="preserve"><value>Triangle</value></data>
+  <data name="LightingStudioModuleValue_tunnel" xml:space="preserve"><value>Tunnel</value></data>
+  <data name="LightingStudioModuleValue_twinkle" xml:space="preserve"><value>Scintillement</value></data>
+  <data name="LightingStudioModuleValue_viscous" xml:space="preserve"><value>Visqueux</value></data>
+  <data name="LightingStudioModuleValue_voronoi" xml:space="preserve"><value>Voronoï</value></data>
+  <data name="LightingStudioModuleValue_wave" xml:space="preserve"><value>Vague</value></data>
+  <data name="LightingStudioModuleValue_wind" xml:space="preserve"><value>Vent</value></data>
+  <data name="LightingStudioModuleValue_wipe" xml:space="preserve"><value>Balayage</value></data>
+  <data name="PresetEditorGroupAmbient" xml:space="preserve"><value>Ambiance</value></data>
+  <data name="PresetEditorGroupMusic" xml:space="preserve"><value>Musique</value></data>
+  <data name="PresetEditorGroupKey" xml:space="preserve"><value>Touches</value></data>
+  <data name="PresetEditorGroupSystem" xml:space="preserve"><value>Système</value></data>
+  <data name="PresetEditorField_preset" xml:space="preserve"><value>Préréglage</value></data>
+  <data name="PresetEditorField_id" xml:space="preserve"><value>ID</value></data>
+  <data name="PresetEditorField_name" xml:space="preserve"><value>Nom</value></data>
+  <data name="PresetEditorField_layers" xml:space="preserve"><value>Calques</value></data>
+  <data name="PresetEditorField_module" xml:space="preserve"><value>Module</value></data>
+  <data name="PresetEditorField_params" xml:space="preserve"><value>Paramètres</value></data>
+  <data name="PresetEditorField_palette" xml:space="preserve"><value>Palette</value></data>
+  <data name="PresetEditorField_opacity" xml:space="preserve"><value>Opacité</value></data>
+  <data name="PresetEditorField_speed" xml:space="preserve"><value>Vitesse</value></data>
+  <data name="PresetEditorField_blend" xml:space="preserve"><value>Fusion</value></data>
+  <data name="PresetEditorField_render" xml:space="preserve"><value>Rendu</value></data>
+  <data name="PresetEditorIssueRequired" xml:space="preserve"><value>est requis</value></data>
+  <data name="PresetEditorIssueEmpty" xml:space="preserve"><value>ne peut pas être vide</value></data>
+  <data name="PresetEditorIssueIdInvalid" xml:space="preserve"><value>lettres minuscules, chiffres et tirets uniquement</value></data>
+  <data name="PresetEditorIssueLayersCount" xml:space="preserve"><value>doit contenir 1 à 4 calques</value></data>
+  <data name="PresetEditorIssueUnknownModule" xml:space="preserve"><value>« {0} » n’est pas un module de rendu</value></data>
+  <data name="PresetEditorIssuePaletteCount" xml:space="preserve"><value>doit contenir 1 à 10 arrêts de couleur</value></data>
+  <data name="PresetEditorIssuePaletteRange" xml:space="preserve"><value>les positions doivent être comprises entre 0 et 100</value></data>
+  <data name="PresetEditorIssueBetween01" xml:space="preserve"><value>doit être compris entre 0 et 1</value></data>
+  <data name="PresetEditorIssueBetweenSpeed" xml:space="preserve"><value>doit être compris entre 0,1 et 5</value></data>
+  <data name="PresetEditorIssueBlend" xml:space="preserve"><value>n’est pas un mode de fusion pris en charge</value></data>
+  <data name="PresetEditorIssueLayer" xml:space="preserve"><value>Calque {0} · {1}</value></data>
 </root>

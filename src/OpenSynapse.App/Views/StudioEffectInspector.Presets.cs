@@ -5,12 +5,19 @@ using OpenSynapse.Core.Lighting;
 
 namespace OpenSynapse.App.Views;
 
+public sealed record StudioPresetEditRequest(StudioEffectParams Parameters, StudioPresetConfig Preset);
+
 public sealed partial class StudioEffectInspector
 {
     private FrameworkElement BuildPresetRow()
     {
         var parameters = _parameters!;
         var current = parameters.PresetDefinition ?? StudioPresetCatalog.Default.Find(parameters.Preset);
+        var options = StudioPresetCatalog.Default.All
+            .OrderBy(preset => preset.Kind)
+            .ThenBy(preset => preset.Name, StringComparer.CurrentCulture)
+            .ToList();
+        if (current is not null && !options.Contains(current)) options.Insert(0, current);
         var summary = new TextBlock
         {
             Text = current is null
@@ -20,6 +27,53 @@ public sealed partial class StudioEffectInspector
             IsTextSelectionEnabled = true,
         };
         AutomationProperties.SetAutomationId(summary, "StudioPresetSummary");
-        return Rowed("LightingStudioParamPreset", summary);
+        var search = new TextBox
+        {
+            PlaceholderText = AppStrings.Text("LightingStudioPresetSearch"),
+        };
+        AutomationProperties.SetAutomationId(search, "StudioPresetSearch");
+        var combo = new ComboBox
+        {
+            ItemsSource = options,
+            DisplayMemberPath = nameof(StudioPresetConfig.Name),
+            SelectedItem = current,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        AutomationProperties.SetAutomationId(combo, "StudioPresetPicker");
+        search.TextChanged += (_, _) =>
+        {
+            var query = search.Text.Trim();
+            combo.ItemsSource = options.Where(option => query.Length == 0 ||
+                option.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase) ||
+                option.Category.Contains(query, StringComparison.CurrentCultureIgnoreCase)).ToList();
+            if (query.Length == 0) combo.SelectedItem = current;
+        };
+        combo.SelectionChanged += (_, _) =>
+        {
+            if (combo.SelectedItem is not StudioPresetConfig preset) return;
+            parameters.Preset = preset.Id;
+            parameters.PresetDefinition = preset;
+            RaiseChanged();
+            Refresh();
+        };
+        var edit = new Button
+        {
+            Content = AppStrings.Text("LightingStudioPresetEdit"),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            IsEnabled = current is not null,
+            Style = (Style)Application.Current.Resources["SecondaryButtonStyle"],
+        };
+        AutomationProperties.SetAutomationId(edit, "StudioPresetOpenEditor");
+        AutomationProperties.SetName(edit, AppStrings.Text("LightingStudioPresetEdit"));
+        edit.Click += (_, _) => DispatcherQueue.TryEnqueue(() =>
+        {
+            if (current is not null) EditPresetRequested?.Invoke(this, new(parameters, current));
+        });
+        var content = new StackPanel { Spacing = 8 };
+        content.Children.Add(summary);
+        content.Children.Add(search);
+        content.Children.Add(combo);
+        content.Children.Add(edit);
+        return Rowed("LightingStudioParamPreset", content);
     }
 }

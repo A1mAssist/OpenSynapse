@@ -54,6 +54,8 @@ public sealed partial class LightingStudioPage : UserControl
         LayerList.AddHandler(DragOverEvent, new DragEventHandler(LayerDragOver), true);
         LayerList.AddHandler(DropEvent, new DragEventHandler(LayerDrop), true);
         Inspector.CaptureRegionChanged += OnCaptureRegionChanged;
+        Inspector.EditPresetRequested += (_, request) =>
+            Host?.OpenPresetEditorWindow(request.Parameters, request.Preset);
         _timer.Tick += (_, _) => RenderPreview();
         _historyTimer.Tick += (_, _) =>
         {
@@ -71,6 +73,8 @@ public sealed partial class LightingStudioPage : UserControl
     }
 
     internal LightingStudioViewModel? ViewModel => _viewModel;
+
+    internal void RefreshPresetInspector() => Inspector.Refresh();
 
     internal void RefreshLocalization()
     {
@@ -304,6 +308,21 @@ public sealed partial class LightingStudioPage : UserControl
 
     private void InspectorValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e) =>
         _viewModel?.NotifyEdited();
+
+    private void PresetEditorClick(object sender, RoutedEventArgs e) =>
+        DispatcherQueue.TryEnqueue(OpenPresetEditorForSelection);
+
+    private void OpenPresetEditorForSelection()
+    {
+        if (_viewModel?.SelectedParams is { Effect: StudioEffectKind.Preset } parameters &&
+            (parameters.PresetDefinition ?? StudioPresetCatalog.Default.Find(parameters.Preset)) is { } preset)
+        {
+            Host?.OpenPresetEditorWindow(parameters, preset);
+            return;
+        }
+
+        Host?.OpenPresetEditorWindow();
+    }
 
     private void AddLayerClick(object sender, RoutedEventArgs e) => _viewModel?.AddLayer();
 

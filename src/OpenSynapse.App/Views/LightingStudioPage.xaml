@@ -45,6 +45,14 @@
                    FontSize="13" Foreground="{StaticResource MutedBrush}" />
       </StackPanel>
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <Button x:Name="PresetEditorButton" Click="PresetEditorClick" MinWidth="112"
+                Style="{StaticResource SecondaryButtonStyle}"
+                AutomationProperties.AutomationId="StudioPresetEditorButton">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <FontIcon Glyph="&#xE70F;" FontFamily="{StaticResource IconFontFamily}" FontSize="14" />
+            <TextBlock local:Localized.Uid="LightingStudioPresetEdit" />
+          </StackPanel>
+        </Button>
         <Button x:Name="PlayButton" Click="TogglePlayClick" MinWidth="104"
                 Style="{StaticResource SecondaryButtonStyle}"
                 AutomationProperties.AutomationId="StudioPlayButton">

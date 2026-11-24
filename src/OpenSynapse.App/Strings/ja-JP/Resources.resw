@@ -4348,6 +4348,95 @@
   <data name="LightingStudioPresetSaveAs" xml:space="preserve"><value>名前を付けて保存…</value></data>
   <data name="LightingStudioPresetShape" xml:space="preserve"><value>波紋の形状</value></data>
   <data name="LightingStudioPresetSpacing" xml:space="preserve"><value>リングの間隔（マス）</value></data>
+  <data name="PresetEditorTitle" xml:space="preserve"><value>プリセット エディター</value></data>
+  <data name="PresetEditorNew" xml:space="preserve"><value>新規</value></data>
+  <data name="PresetEditorOpen" xml:space="preserve"><value>開く</value></data>
+  <data name="PresetEditorSave" xml:space="preserve"><value>保存</value></data>
+  <data name="PresetEditorValidate" xml:space="preserve"><value>検証</value></data>
+  <data name="PresetEditorUndo" xml:space="preserve"><value>元に戻す</value></data>
+  <data name="PresetEditorRedo" xml:space="preserve"><value>やり直し</value></data>
+  <data name="PresetEditorPlay" xml:space="preserve"><value>再生</value></data>
+  <data name="PresetEditorPause" xml:space="preserve"><value>一時停止</value></data>
+  <data name="PresetEditorInfo" xml:space="preserve"><value>プリセット</value></data>
+  <data name="PresetEditorName" xml:space="preserve"><value>名前</value></data>
+  <data name="PresetEditorId" xml:space="preserve"><value>ID</value></data>
+  <data name="PresetEditorKind" xml:space="preserve"><value>種類</value></data>
+  <data name="PresetEditorCategory" xml:space="preserve"><value>カテゴリ</value></data>
+  <data name="PresetEditorNote" xml:space="preserve"><value>メモ</value></data>
+  <data name="PresetEditorAddLayer" xml:space="preserve"><value>レイヤーを追加</value></data>
+  <data name="PresetEditorRemoveLayer" xml:space="preserve"><value>レイヤーを削除</value></data>
+  <data name="PresetEditorDuplicateLayer" xml:space="preserve"><value>レイヤーを複製</value></data>
+  <data name="PresetEditorMoveUp" xml:space="preserve"><value>上へ移動</value></data>
+  <data name="PresetEditorMoveDown" xml:space="preserve"><value>下へ移動</value></data>
+  <data name="PresetEditorLayerLimit" xml:space="preserve"><value>プリセットに含められるレイヤーは最大 4 つです。</value></data>
+  <data name="PresetEditorPreview" xml:space="preserve"><value>プレビュー</value></data>
+  <data name="PresetEditorPreviewDevice" xml:space="preserve"><value>デバイス</value></data>
+  <data name="PresetEditorPreviewWorld" xml:space="preserve"><value>共有キャンバス</value></data>
+  <data name="PresetEditorDevice" xml:space="preserve"><value>プレビュー デバイス</value></data>
+  <data name="PresetEditorFps" xml:space="preserve"><value>FPS</value></data>
+  <data name="PresetEditorTimeline" xml:space="preserve"><value>タイムライン</value></data>
+  <data name="PresetEditorLoop" xml:space="preserve"><value>ループ</value></data>
+  <data name="PresetEditorWorldHint" xml:space="preserve"><value>共有キャンバスには 2 台以上のデバイスが必要です。合成された 96×96 の画像を表示しています。</value></data>
+  <data name="PresetEditorSimulation" xml:space="preserve"><value>シミュレーション入力</value></data>
+  <data name="PresetEditorSimKeys" xml:space="preserve"><value>キー入力をシミュレート</value></data>
+  <data name="PresetEditorSimScreen" xml:space="preserve"><value>画面をシミュレート</value></data>
+  <data name="PresetEditorSimScreenPick" xml:space="preserve"><value>画像を選択…</value></data>
+  <data name="PresetEditorSimScreenNone" xml:space="preserve"><value>プロシージャル画面</value></data>
+  <data name="PresetEditorSimHint" xml:space="preserve"><value>プレビューをクリックするとキーを押せます。音楽と画面の入力はシミュレートされます。</value></data>
+  <data name="PresetEditorModule" xml:space="preserve"><value>モジュール</value></data>
+  <data name="PresetEditorModuleSearch" xml:space="preserve"><value>モジュールを検索</value></data>
+  <data name="PresetEditorModuleAdvanced" xml:space="preserve"><value>すべてのモジュールを表示</value></data>
+  <data name="PresetEditorModuleAdvancedHint" xml:space="preserve"><value>選択した種類だけでなく、すべての入力系統のモジュールを表示しています。</value></data>
+  <data name="PresetEditorParameters" xml:space="preserve"><value>パラメーター</value></data>
+  <data name="PresetEditorPalette" xml:space="preserve"><value>パレット</value></data>
+  <data name="PresetEditorPaletteReset" xml:space="preserve"><value>パレットをリセット</value></data>
+  <data name="PresetEditorNoModule" xml:space="preserve"><value>モジュールを選択してパラメーターを編集してください。</value></data>
+  <data name="PresetEditorStatus" xml:space="preserve"><value>準備完了</value></data>
+  <data name="PresetEditorValidationOk" xml:space="preserve"><value>検証の問題はありません。</value></data>
+  <data name="PresetEditorValidationIssues" xml:space="preserve"><value>{0} 件の問題</value></data>
+  <data name="PresetEditorUnsaved" xml:space="preserve"><value>保存されていない変更</value></data>
+  <data name="PresetEditorSaved" xml:space="preserve"><value>{0} に保存しました</value></data>
+  <data name="PresetEditorSaveFailed" xml:space="preserve"><value>保存できませんでした: {0}</value></data>
+  <data name="PresetEditorOpenFailed" xml:space="preserve"><value>開けませんでした: {0}</value></data>
+  <data name="PresetEditorNewName" xml:space="preserve"><value>新しいプリセット</value></data>
+  <data name="PresetEditorConfirmDiscardTitle" xml:space="preserve"><value>変更を破棄しますか？</value></data>
+  <data name="PresetEditorConfirmDiscardMessage" xml:space="preserve"><value>現在のプリセットに保存されていない変更があります。</value></data>
+  <data name="PresetEditorConfirmDiscard" xml:space="preserve"><value>破棄</value></data>
+  <data name="PresetEditorModuleResetTitle" xml:space="preserve"><value>モジュールを変更しますか？</value></data>
+  <data name="PresetEditorModuleResetMessage" xml:space="preserve"><value>モジュールを変更すると、パラメーターがリセットされます。</value></data>
+  <data name="PresetEditorModuleResetConfirm" xml:space="preserve"><value>モジュールを変更</value></data>
+  <data name="PresetEditorRecoverTitle" xml:space="preserve"><value>下書きを復元しますか？</value></data>
+  <data name="PresetEditorRecoverMessage" xml:space="preserve"><value>{0} の未保存の下書きが見つかりました。</value></data>
+  <data name="PresetEditorRecover" xml:space="preserve"><value>復元</value></data>
+  <data name="PresetEditorDiscard" xml:space="preserve"><value>破棄</value></data>
+  <data name="PresetEditorNoIssues" xml:space="preserve"><value>問題なし</value></data>
+  <data name="PresetEditorBuiltInReadOnly" xml:space="preserve"><value>組み込みプリセットは読み取り専用です。「名前を付けて保存」でユーザー コピーを作成してください。</value></data>
+  <data name="PresetEditorInvalidSave" xml:space="preserve"><value>保存する前に検証の問題を修正してください。</value></data>
+  <data name="PresetEditorKindScreen" xml:space="preserve"><value>画面</value></data>
+  <data name="PresetEditorKindSystem" xml:space="preserve"><value>システム</value></data>
+  <data name="PresetEditorKindAmbient" xml:space="preserve"><value>アンビエント</value></data>
+  <data name="PresetEditorSimMusic" xml:space="preserve"><value>シミュレートされたビート</value></data>
+  <data name="PresetEditorTime" xml:space="preserve"><value>{0:0.0} 秒</value></data>
+  <data name="PresetEditorLayerSummary" xml:space="preserve"><value>{0}</value></data>
+  <data name="PresetEditorIssueLine" xml:space="preserve"><value>{0}</value></data>
+  <data name="PresetEditorPath" xml:space="preserve"><value>パス: {0}</value></data>
+  <data name="PresetEditorIdHint" xml:space="preserve"><value>小文字、数字、ハイフンのみ使用できます。</value></data>
+  <data name="PresetEditorPresetLibrary" xml:space="preserve"><value>プリセット ライブラリ</value></data>
+  <data name="PresetEditorSaveAsTitle" xml:space="preserve"><value>プリセットを保存</value></data>
+  <data name="PresetEditorOpenFileTitle" xml:space="preserve"><value>プリセットを開く</value></data>
+  <data name="PresetEditorSelectScreenImage" xml:space="preserve"><value>画面画像を選択</value></data>
+  <data name="PresetEditorNoPreview" xml:space="preserve"><value>この構成ではプレビューを利用できません。</value></data>
+  <data name="PresetEditorStatusNew" xml:space="preserve"><value>新しいプリセット</value></data>
+  <data name="PresetEditorStatusOpened" xml:space="preserve"><value>{0} を開きました</value></data>
+  <data name="PresetEditorStatusRecovered" xml:space="preserve"><value>未保存の下書きを復元しました</value></data>
+  <data name="PresetEditorSimScreenImage" xml:space="preserve"><value>画像: {0}</value></data>
+  <data name="PresetEditorLayerEnabled" xml:space="preserve"><value>有効</value></data>
+  <data name="PresetEditorUnsavedCloseTitle" xml:space="preserve"><value>変更を保存しますか？</value></data>
+  <data name="PresetEditorUnsavedCloseMessage" xml:space="preserve"><value>閉じる前に現在のプリセットの変更を保存しますか？</value></data>
+  <data name="PresetEditorSaveAndClose" xml:space="preserve"><value>保存して閉じる</value></data>
+  <data name="PresetEditorCloseWithoutSaving" xml:space="preserve"><value>保存せずに閉じる</value></data>
+  <data name="PresetEditorCancel" xml:space="preserve"><value>キャンセル</value></data>
+  <data name="PresetEditorSaveAsBuiltIn" xml:space="preserve"><value>組み込みプリセットは上書きできません。代わりにコピーを保存してください。</value></data>
   <data name="LightingStudioModuleParam_amplitude" xml:space="preserve"><value>振幅</value></data>
   <data name="LightingStudioModuleParam_aperture" xml:space="preserve"><value>開口サイズ</value></data>
   <data name="LightingStudioModuleParam_aspect" xml:space="preserve"><value>縦横比</value></data>
@@ -4510,4 +4599,167 @@
   <data name="LightingStudioModuleValue_white" xml:space="preserve"><value>白</value></data>
   <data name="LightingStudioModuleValue_alternate" xml:space="preserve"><value>拍ごとに交互</value></data>
   <data name="LightingStudioModuleValue_waves" xml:space="preserve"><value>連続する音波</value></data>
+  <data name="PresetEditorValidateAll" xml:space="preserve"><value>すべて検証</value></data>
+  <data name="PresetEditorValidateAllTitle" xml:space="preserve"><value>プリセットライブラリの検証</value></data>
+  <data name="PresetEditorValidateAllSummary" xml:space="preserve"><value>{0} 件のプリセットを確認、{1} 件に問題があります。</value></data>
+  <data name="PresetEditorOpenSelected" xml:space="preserve"><value>選択項目を開く</value></data>
+  <data name="PresetEditorNoLibraryIssues" xml:space="preserve"><value>すべての内蔵・ユーザープリセットが検証に合格しました。</value></data>
+  <data name="LightingStudioModule_ambient.automaton" xml:space="preserve"><value>セルオートマトン</value></data>
+  <data name="LightingStudioModule_ambient.field" xml:space="preserve"><value>アンビエント フィールド</value></data>
+  <data name="LightingStudioModule_ambient.flow" xml:space="preserve"><value>フロー ミラージュ</value></data>
+  <data name="LightingStudioModule_ambient.geometry" xml:space="preserve"><value>ジオメトリック プリズム</value></data>
+  <data name="LightingStudioModule_ambient.liquid" xml:space="preserve"><value>リキッド サーフェス</value></data>
+  <data name="LightingStudioModule_ambient.mask" xml:space="preserve"><value>アンビエント マスク</value></data>
+  <data name="LightingStudioModule_ambient.particles" xml:space="preserve"><value>アンビエント パーティクル</value></data>
+  <data name="LightingStudioModule_ambient.signal" xml:space="preserve"><value>デジタル シグナル</value></data>
+  <data name="LightingStudioModule_ambient.transition" xml:space="preserve"><value>アンビエント トランジション</value></data>
+  <data name="LightingStudioModule_key.activity" xml:space="preserve"><value>タイピング計測とコンボ</value></data>
+  <data name="LightingStudioModule_key.beam" xml:space="preserve"><value>行・列ビーム</value></data>
+  <data name="LightingStudioModule_key.charge" xml:space="preserve"><value>長押しチャージ爆発</value></data>
+  <data name="LightingStudioModule_key.glow" xml:space="preserve"><value>キー残光とソフトグロー</value></data>
+  <data name="LightingStudioModule_key.glyph" xml:space="preserve"><value>キー グリフとハートビート</value></data>
+  <data name="LightingStudioModule_key.links" xml:space="preserve"><value>キーリンクと分岐</value></data>
+  <data name="LightingStudioModule_key.particles" xml:space="preserve"><value>キー パーティクル</value></data>
+  <data name="LightingStudioModule_key.sweep" xml:space="preserve"><value>キー方向トレイル</value></data>
+  <data name="LightingStudioModule_key.vortex" xml:space="preserve"><value>キー ボルテックス</value></data>
+  <data name="LightingStudioModule_key.wave" xml:space="preserve"><value>放射リップル</value></data>
+  <data name="LightingStudioModule_music.arrows" xml:space="preserve"><value>ビートスキャン矢印</value></data>
+  <data name="LightingStudioModule_music.contour" xml:space="preserve"><value>アイリングと瞳孔</value></data>
+  <data name="LightingStudioModule_music.field" xml:space="preserve"><value>音量と履歴フィールド</value></data>
+  <data name="LightingStudioModule_music.heart" xml:space="preserve"><value>ビート ハート輪郭</value></data>
+  <data name="LightingStudioModule_music.lattice" xml:space="preserve"><value>ビート交互チェッカー</value></data>
+  <data name="LightingStudioModule_music.lightning" xml:space="preserve"><value>スペクトラム プラズマ雷光</value></data>
+  <data name="LightingStudioModule_music.particles" xml:space="preserve"><value>ビート スパークと高音の星</value></data>
+  <data name="LightingStudioModule_music.radial" xml:space="preserve"><value>放射スペクトラムとリング</value></data>
+  <data name="LightingStudioModule_music.spectrum" xml:space="preserve"><value>スペクトラム バーとエネルギー輪郭</value></data>
+  <data name="LightingStudioModule_music.trace" xml:space="preserve"><value>波形トレース</value></data>
+  <data name="LightingStudioModuleParam_angle" xml:space="preserve"><value>角度</value></data>
+  <data name="LightingStudioModuleParam_blocks" xml:space="preserve"><value>ブロック数</value></data>
+  <data name="LightingStudioModuleParam_contrast" xml:space="preserve"><value>コントラスト</value></data>
+  <data name="LightingStudioModuleParam_drops" xml:space="preserve"><value>雫の数</value></data>
+  <data name="LightingStudioModuleParam_floor" xml:space="preserve"><value>下限</value></data>
+  <data name="LightingStudioModuleParam_flow" xml:space="preserve"><value>流れ</value></data>
+  <data name="LightingStudioModuleParam_frequency" xml:space="preserve"><value>周波数</value></data>
+  <data name="LightingStudioModuleParam_period" xml:space="preserve"><value>周期</value></data>
+  <data name="LightingStudioModuleParam_pulse" xml:space="preserve"><value>パルス</value></data>
+  <data name="LightingStudioModuleParam_ratio" xml:space="preserve"><value>比率</value></data>
+  <data name="LightingStudioModuleParam_scale" xml:space="preserve"><value>スケール</value></data>
+  <data name="LightingStudioModuleParam_scroll" xml:space="preserve"><value>スクロール</value></data>
+  <data name="LightingStudioModuleParam_scrollSpeed" xml:space="preserve"><value>スクロール速度</value></data>
+  <data name="LightingStudioModuleParam_seed" xml:space="preserve"><value>シード</value></data>
+  <data name="LightingStudioModuleParam_shift" xml:space="preserve"><value>シフト</value></data>
+  <data name="LightingStudioModuleParam_sides" xml:space="preserve"><value>辺の数</value></data>
+  <data name="LightingStudioModuleParam_speed" xml:space="preserve"><value>速度</value></data>
+  <data name="LightingStudioModuleParam_spread" xml:space="preserve"><value>広がり</value></data>
+  <data name="LightingStudioModuleParam_stagger" xml:space="preserve"><value>ずらし</value></data>
+  <data name="LightingStudioModuleParam_stretch" xml:space="preserve"><value>伸縮</value></data>
+  <data name="LightingStudioModuleParam_text" xml:space="preserve"><value>テキスト</value></data>
+  <data name="LightingStudioModuleParam_twinkle" xml:space="preserve"><value>きらめき</value></data>
+  <data name="LightingStudioModuleParam_viscosity" xml:space="preserve"><value>粘性</value></data>
+  <data name="LightingStudioModuleParam_warp" xml:space="preserve"><value>ワープ</value></data>
+  <data name="LightingStudioModuleParam_wind" xml:space="preserve"><value>風</value></data>
+  <data name="LightingStudioModuleValue_aurora" xml:space="preserve"><value>オーロラ</value></data>
+  <data name="LightingStudioModuleValue_bars" xml:space="preserve"><value>バー</value></data>
+  <data name="LightingStudioModuleValue_binary" xml:space="preserve"><value>バイナリ</value></data>
+  <data name="LightingStudioModuleValue_blinds" xml:space="preserve"><value>ブラインド</value></data>
+  <data name="LightingStudioModuleValue_border" xml:space="preserve"><value>ボーダー</value></data>
+  <data name="LightingStudioModuleValue_bounce" xml:space="preserve"><value>バウンス</value></data>
+  <data name="LightingStudioModuleValue_caustic" xml:space="preserve"><value>コースティック</value></data>
+  <data name="LightingStudioModuleValue_checker" xml:space="preserve"><value>チェッカー</value></data>
+  <data name="LightingStudioModuleValue_code" xml:space="preserve"><value>コード</value></data>
+  <data name="LightingStudioModuleValue_confetti" xml:space="preserve"><value>紙吹雪</value></data>
+  <data name="LightingStudioModuleValue_current" xml:space="preserve"><value>水流</value></data>
+  <data name="LightingStudioModuleValue_data" xml:space="preserve"><value>データ</value></data>
+  <data name="LightingStudioModuleValue_diagonal" xml:space="preserve"><value>斜め</value></data>
+  <data name="LightingStudioModuleValue_diamond" xml:space="preserve"><value>ダイヤ</value></data>
+  <data name="LightingStudioModuleValue_disk" xml:space="preserve"><value>ディスク</value></data>
+  <data name="LightingStudioModuleValue_dissolve" xml:space="preserve"><value>ディゾルブ</value></data>
+  <data name="LightingStudioModuleValue_dots" xml:space="preserve"><value>ドット</value></data>
+  <data name="LightingStudioModuleValue_droplets" xml:space="preserve"><value>雫</value></data>
+  <data name="LightingStudioModuleValue_dunes" xml:space="preserve"><value>砂丘</value></data>
+  <data name="LightingStudioModuleValue_ecg" xml:space="preserve"><value>心電図</value></data>
+  <data name="LightingStudioModuleValue_embers" xml:space="preserve"><value>残り火</value></data>
+  <data name="LightingStudioModuleValue_eye" xml:space="preserve"><value>アイ</value></data>
+  <data name="LightingStudioModuleValue_fill" xml:space="preserve"><value>塗りつぶし</value></data>
+  <data name="LightingStudioModuleValue_fireflies" xml:space="preserve"><value>ホタル</value></data>
+  <data name="LightingStudioModuleValue_fireworks" xml:space="preserve"><value>花火</value></data>
+  <data name="LightingStudioModuleValue_foam" xml:space="preserve"><value>泡</value></data>
+  <data name="LightingStudioModuleValue_frame" xml:space="preserve"><value>フレーム</value></data>
+  <data name="LightingStudioModuleValue_glitch" xml:space="preserve"><value>グリッチ</value></data>
+  <data name="LightingStudioModuleValue_gradient" xml:space="preserve"><value>グラデーション</value></data>
+  <data name="LightingStudioModuleValue_grid" xml:space="preserve"><value>グリッド</value></data>
+  <data name="LightingStudioModuleValue_hex" xml:space="preserve"><value>六角形</value></data>
+  <data name="LightingStudioModuleValue_interference" xml:space="preserve"><value>干渉</value></data>
+  <data name="LightingStudioModuleValue_iris" xml:space="preserve"><value>アイリス</value></data>
+  <data name="LightingStudioModuleValue_kaleido" xml:space="preserve"><value>万華鏡</value></data>
+  <data name="LightingStudioModuleValue_lattice" xml:space="preserve"><value>格子</value></data>
+  <data name="LightingStudioModuleValue_matrix" xml:space="preserve"><value>マトリックス</value></data>
+  <data name="LightingStudioModuleValue_melt" xml:space="preserve"><value>メルト</value></data>
+  <data name="LightingStudioModuleValue_mercury" xml:space="preserve"><value>水銀</value></data>
+  <data name="LightingStudioModuleValue_meteors" xml:space="preserve"><value>流星</value></data>
+  <data name="LightingStudioModuleValue_moire" xml:space="preserve"><value>モアレ</value></data>
+  <data name="LightingStudioModuleValue_mono" xml:space="preserve"><value>モノ</value></data>
+  <data name="LightingStudioModuleValue_moon" xml:space="preserve"><value>月</value></data>
+  <data name="LightingStudioModuleValue_mosaic" xml:space="preserve"><value>モザイク</value></data>
+  <data name="LightingStudioModuleValue_nebula" xml:space="preserve"><value>星雲</value></data>
+  <data name="LightingStudioModuleValue_noise" xml:space="preserve"><value>ノイズ</value></data>
+  <data name="LightingStudioModuleValue_oil" xml:space="preserve"><value>オイル</value></data>
+  <data name="LightingStudioModuleValue_orbit" xml:space="preserve"><value>軌道</value></data>
+  <data name="LightingStudioModuleValue_palette" xml:space="preserve"><value>パレット</value></data>
+  <data name="LightingStudioModuleValue_pixels" xml:space="preserve"><value>ピクセル</value></data>
+  <data name="LightingStudioModuleValue_plasma" xml:space="preserve"><value>プラズマ</value></data>
+  <data name="LightingStudioModuleValue_polygon" xml:space="preserve"><value>多角形</value></data>
+  <data name="LightingStudioModuleValue_pulse" xml:space="preserve"><value>パルス</value></data>
+  <data name="LightingStudioModuleValue_radar" xml:space="preserve"><value>レーダー</value></data>
+  <data name="LightingStudioModuleValue_rain" xml:space="preserve"><value>雨</value></data>
+  <data name="LightingStudioModuleValue_random" xml:space="preserve"><value>ランダム</value></data>
+  <data name="LightingStudioModuleValue_rings" xml:space="preserve"><value>リング</value></data>
+  <data name="LightingStudioModuleValue_ripple" xml:space="preserve"><value>波紋</value></data>
+  <data name="LightingStudioModuleValue_rows" xml:space="preserve"><value>行</value></data>
+  <data name="LightingStudioModuleValue_scan" xml:space="preserve"><value>スキャン</value></data>
+  <data name="LightingStudioModuleValue_smoke" xml:space="preserve"><value>煙</value></data>
+  <data name="LightingStudioModuleValue_sparks" xml:space="preserve"><value>火花</value></data>
+  <data name="LightingStudioModuleValue_spiral" xml:space="preserve"><value>渦巻き</value></data>
+  <data name="LightingStudioModuleValue_split" xml:space="preserve"><value>スプリット</value></data>
+  <data name="LightingStudioModuleValue_stack" xml:space="preserve"><value>スタック</value></data>
+  <data name="LightingStudioModuleValue_star" xml:space="preserve"><value>星</value></data>
+  <data name="LightingStudioModuleValue_stars" xml:space="preserve"><value>星屑</value></data>
+  <data name="LightingStudioModuleValue_stripes" xml:space="preserve"><value>ストライプ</value></data>
+  <data name="LightingStudioModuleValue_surface" xml:space="preserve"><value>水面</value></data>
+  <data name="LightingStudioModuleValue_sync" xml:space="preserve"><value>シンク</value></data>
+  <data name="LightingStudioModuleValue_text" xml:space="preserve"><value>テキスト</value></data>
+  <data name="LightingStudioModuleValue_triangle" xml:space="preserve"><value>三角形</value></data>
+  <data name="LightingStudioModuleValue_tunnel" xml:space="preserve"><value>トンネル</value></data>
+  <data name="LightingStudioModuleValue_twinkle" xml:space="preserve"><value>きらめき</value></data>
+  <data name="LightingStudioModuleValue_viscous" xml:space="preserve"><value>粘性</value></data>
+  <data name="LightingStudioModuleValue_voronoi" xml:space="preserve"><value>ボロノイ</value></data>
+  <data name="LightingStudioModuleValue_wave" xml:space="preserve"><value>波</value></data>
+  <data name="LightingStudioModuleValue_wind" xml:space="preserve"><value>風</value></data>
+  <data name="LightingStudioModuleValue_wipe" xml:space="preserve"><value>ワイプ</value></data>
+  <data name="PresetEditorGroupAmbient" xml:space="preserve"><value>アンビエント</value></data>
+  <data name="PresetEditorGroupMusic" xml:space="preserve"><value>ミュージック</value></data>
+  <data name="PresetEditorGroupKey" xml:space="preserve"><value>キー</value></data>
+  <data name="PresetEditorGroupSystem" xml:space="preserve"><value>システム</value></data>
+  <data name="PresetEditorField_preset" xml:space="preserve"><value>プリセット</value></data>
+  <data name="PresetEditorField_id" xml:space="preserve"><value>ID</value></data>
+  <data name="PresetEditorField_name" xml:space="preserve"><value>名前</value></data>
+  <data name="PresetEditorField_layers" xml:space="preserve"><value>レイヤー</value></data>
+  <data name="PresetEditorField_module" xml:space="preserve"><value>モジュール</value></data>
+  <data name="PresetEditorField_params" xml:space="preserve"><value>パラメーター</value></data>
+  <data name="PresetEditorField_palette" xml:space="preserve"><value>パレット</value></data>
+  <data name="PresetEditorField_opacity" xml:space="preserve"><value>不透明度</value></data>
+  <data name="PresetEditorField_speed" xml:space="preserve"><value>速度</value></data>
+  <data name="PresetEditorField_blend" xml:space="preserve"><value>合成</value></data>
+  <data name="PresetEditorField_render" xml:space="preserve"><value>レンダリング</value></data>
+  <data name="PresetEditorIssueRequired" xml:space="preserve"><value>必須です</value></data>
+  <data name="PresetEditorIssueEmpty" xml:space="preserve"><value>空にできません</value></data>
+  <data name="PresetEditorIssueIdInvalid" xml:space="preserve"><value>小文字、数字、ハイフンのみ使用できます</value></data>
+  <data name="PresetEditorIssueLayersCount" xml:space="preserve"><value>1～4 レイヤーが必要です</value></data>
+  <data name="PresetEditorIssueUnknownModule" xml:space="preserve"><value>「{0}」はレンダー モジュールではありません</value></data>
+  <data name="PresetEditorIssuePaletteCount" xml:space="preserve"><value>1～10 個の色停止点が必要です</value></data>
+  <data name="PresetEditorIssuePaletteRange" xml:space="preserve"><value>色停止点の位置は 0～100 です</value></data>
+  <data name="PresetEditorIssueBetween01" xml:space="preserve"><value>0～1 の範囲です</value></data>
+  <data name="PresetEditorIssueBetweenSpeed" xml:space="preserve"><value>0.1～5 の範囲です</value></data>
+  <data name="PresetEditorIssueBlend" xml:space="preserve"><value>サポートされていない合成モードです</value></data>
+  <data name="PresetEditorIssueLayer" xml:space="preserve"><value>レイヤー {0} · {1}</value></data>
 </root>

@@ -18,7 +18,13 @@ public sealed record StudioVisualLed(
     int MatrixCol,
     string? PathId,
     string? KeyName,
-    string? SelectionGroup = null);
+    string? SelectionGroup = null)
+{
+    /// <summary>Shape centre in the device's SVG coordinate space.</summary>
+    public double CenterX { get; init; } = double.NaN;
+
+    public double CenterY { get; init; } = double.NaN;
+}
 
 /// <summary>Flat render data for one device: drawable paths plus the physical LED table.</summary>
 public sealed record StudioDeviceVisual(
@@ -63,7 +69,7 @@ public static class StudioDeviceVisualBuilder
                 svg.Width,
                 svg.Height,
                 svg.Paths.Select(ToVisualPath).ToArray(),
-                BuildLedTable(leds, svg.Paths),
+                BuildLedTable(leds, svg.Paths, svg.Width, svg.Height),
                 UsesSvg: true,
                 Layout: leds);
         }
@@ -76,7 +82,9 @@ public static class StudioDeviceVisualBuilder
 
     private static IReadOnlyList<StudioVisualLed> BuildLedTable(
         StudioLedLayout? layout,
-        IReadOnlyList<StudioSvgPath> paths)
+        IReadOnlyList<StudioSvgPath> paths,
+        double width,
+        double height)
     {
         if (layout is null) return Array.Empty<StudioVisualLed>();
 
@@ -92,8 +100,26 @@ public static class StudioDeviceVisualBuilder
         {
             var led = layout.Leds[index];
             byCell.TryGetValue((led.MatrixRow, led.MatrixCol), out var path);
+            var centerX = 0d;
+            var centerY = 0d;
+            if (path is not null &&
+                SvgPathData.TryGetBounds(path.Data, out var minX, out var minY, out var maxX, out var maxY))
+            {
+                centerX = (minX + maxX) / 2;
+                centerY = (minY + maxY) / 2;
+            }
+            else
+            {
+                centerX = (led.MatrixCol + 0.5) / Math.Max(1, layout.MatrixColumns) * width;
+                centerY = (led.MatrixRow + 0.5) / Math.Max(1, layout.MatrixRows) * height;
+            }
+
             leds[index] = new StudioVisualLed(
-                led.MatrixRow, led.MatrixCol, path?.Id, path?.KeyName, path?.SelectionGroup);
+                led.MatrixRow, led.MatrixCol, path?.Id, path?.KeyName, path?.SelectionGroup)
+            {
+                CenterX = centerX,
+                CenterY = centerY,
+            };
         }
 
         return leds;
@@ -149,7 +175,11 @@ public static class StudioDeviceVisualBuilder
                 null,
                 1d,
                 StudioSvgRole.Led);
-            leds[index] = new StudioVisualLed(led.MatrixRow, led.MatrixCol, id, null);
+            leds[index] = new StudioVisualLed(led.MatrixRow, led.MatrixCol, id, null)
+            {
+                CenterX = x + CellSize / 2,
+                CenterY = y + CellSize / 2,
+            };
         }
 
         return new StudioDeviceVisual(
