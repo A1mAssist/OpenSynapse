@@ -620,9 +620,6 @@ public sealed partial class DevicesPage : UserControl
     private async void RazerHidApplyScrollAccelerationClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.ApplyScrollAccelerationAsync(Lifetime) ?? Task.CompletedTask);
 
-    private async void RazerHidApplySmartReelClick(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidDevice?.ApplySmartReelAsync(Lifetime) ?? Task.CompletedTask);
-
     private async void RazerHidApplySmartReelThresholdClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.ApplySmartReelThresholdAsync(Lifetime) ?? Task.CompletedTask);
 

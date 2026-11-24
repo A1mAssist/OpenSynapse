@@ -347,6 +347,7 @@ public sealed partial class RazerHidDeviceViewModel
                         SmartReelEnabled = await _service.GetSmartReelAsync(Connection, cancellationToken);
                     });
                 }
+                _log?.Invoke($"scroll preset apply: preset={choice.Kind}, verified={verified}");
 
                 var usesScrollModeProfile = !Has(RazerHidBackendCapability.LkScrollWheelModeWrite) &&
                     !Has(RazerHidBackendCapability.ScrollTactileModeWrite) &&
