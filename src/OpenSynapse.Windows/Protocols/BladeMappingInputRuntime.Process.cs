@@ -119,6 +119,10 @@ public sealed partial class BladeMappingInputRuntime
         {
             if (_activeRules.ContainsKey(inputKey))
             {
+                // Windows repeats a held key with more KeyDowns and no KeyUp. A mapped
+                // key must fire once, but a pass-through key is only reaching the OS
+                // through the filter driver, so its repeat has to stay on that path.
+                passThrough = _passThroughInputs.Contains(inputKey);
                 return [];
             }
 
