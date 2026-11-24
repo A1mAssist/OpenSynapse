@@ -60,6 +60,11 @@ internal static class RazerPrivateKeyCatalog
 
     internal static string Describe(ushort productId, int keyCode)
     {
+        if (productId == 0x02CF && keyCode is 100 or 101)
+        {
+            return keyCode == 100 ? "Macro Key 1" : "Macro Key 2";
+        }
+
         if (TryGetMapping(productId, out var mapping) &&
             mapping.TryGetValue(keyCode, out var label))
         {

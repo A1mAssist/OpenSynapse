@@ -219,7 +219,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                     (_canWrite ||
                      !RazerSoftwareMacroAssignmentPolicy.NeedsDeviceAssignment(softwareTrigger)) &&
                     (LayerIndex == 0 || _canObserveHyperShiftLayer),
-                    _catalog);
+                    _catalog,
+                    RazerKeyboardExtraKeyCatalog.IsHostOnlyRow(_productId, id));
                 row.PropertyChanged += OnRowPropertyChanged;
                 byte? assignedSlot = null;
                 bool? assignmentIsOff = null;

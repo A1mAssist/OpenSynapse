@@ -4238,6 +4238,8 @@
   <data name="RazerMappingSideKey1.Text" xml:space="preserve"><value>Side Key 1</value></data>
   <data name="RazerMappingSideKey2.Text" xml:space="preserve"><value>Side Key 2</value></data>
   <data name="RazerMappingSideKey3.Text" xml:space="preserve"><value>Side Key 3</value></data>
+  <data name="RazerMappingMacroKey1.Text" xml:space="preserve"><value>Macro 1</value></data>
+  <data name="RazerMappingMacroKey2.Text" xml:space="preserve"><value>Macro 2</value></data>
   <data name="RazerMappingCommandDial.Text" xml:space="preserve"><value>Command Dial</value></data>
   <data name="RazerMappingVolumeDown.Text" xml:space="preserve"><value>Volume -</value></data>
   <data name="RazerMappingVolumeUp.Text" xml:space="preserve"><value>Volume +</value></data>

@@ -29,6 +29,8 @@ internal static class RazerMappingButtonNames
         "Volume down" => AppStrings.Text("RazerMappingButtonVolumeDown"),
         "Mute" => AppStrings.Text("RazerMappingButtonMute"),
         "Scroll mode switch" => AppStrings.Text("RazerMappingButtonScrollModeSwitch"),
+        "Macro Key 1" => AppStrings.Text("RazerMappingMacroKey1"),
+        "Macro Key 2" => AppStrings.Text("RazerMappingMacroKey2"),
         _ when name.StartsWith("Button ", StringComparison.Ordinal) &&
             int.TryParse(name.AsSpan(7), NumberStyles.None, CultureInfo.InvariantCulture, out var number) =>
             AppStrings.FormatText("RazerMappingButtonNumber", number),

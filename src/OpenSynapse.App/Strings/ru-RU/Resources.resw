@@ -9543,6 +9543,12 @@
   <data name="RazerMappingSideKey3.Text" xml:space="preserve">
     <value>Боковой ключ 3</value>
   </data>
+  <data name="RazerMappingMacroKey1.Text" xml:space="preserve">
+    <value>Макроклавиша 1</value>
+  </data>
+  <data name="RazerMappingMacroKey2.Text" xml:space="preserve">
+    <value>Макроклавиша 2</value>
+  </data>
   <data name="RazerMappingCommandDial.Text" xml:space="preserve">
     <value>Диск управления</value>
   </data>

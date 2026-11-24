@@ -35,11 +35,20 @@ internal static class RazerMappingText
         "RazerMappingGroupProfileSpecific",
     ];
 
-    public static IReadOnlyList<RazerMappingGroupOption> GroupOptions(bool includeMacro) =>
+    public static IReadOnlyList<RazerMappingGroupOption> GroupOptions(
+        bool includeMacro,
+        bool hostOnly = false) =>
         GroupKeys
             .Select((key, index) => new RazerMappingGroupOption(
                 (RazerHidMappingGroup)index, AppStrings.Text(key)))
             .Where(option => includeMacro || option.Group != RazerHidMappingGroup.Macro)
+            // These keys have no firmware assignment; only host-side actions
+            // (none, off, software shortcut or software macro) can be saved.
+            .Where(option => !hostOnly ||
+                option.Group is RazerHidMappingGroup.Keep or
+                    RazerHidMappingGroup.Off or
+                    RazerHidMappingGroup.WindowsShortcut or
+                    RazerHidMappingGroup.Macro)
             .ToArray();
 }
 
@@ -77,17 +86,20 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
         IReadOnlyList<RazerHidMacroOption> localMacros,
         bool canUseOnboardMacro,
         bool canUseSoftwareMacro,
-        IRazerMappingActionCatalog catalog)
+        IRazerMappingActionCatalog catalog,
+        bool hostOnly = false)
     {
         _localMacros = localMacros;
-        _canUseOnboardMacro = canUseOnboardMacro && localMacros.Count > 0;
+        IsHostOnly = hostOnly;
+        _canUseOnboardMacro = canUseOnboardMacro && localMacros.Count > 0 && !hostOnly;
         _macroUnsupported = !canUseSoftwareMacro && !canUseOnboardMacro;
         // Software macros come from the local library, so the group must stay visible
         // before the first macro exists; CanApply still needs a real macro.
         _canUseSoftwareMacro = canUseSoftwareMacro;
         _macroTargetIndex = _canUseOnboardMacro ? (int)MacroExecutionTarget.Onboard : (int)MacroExecutionTarget.Software;
         _catalog = catalog;
-        _groupOptions = RazerMappingText.GroupOptions(_canUseOnboardMacro || _canUseSoftwareMacro);
+        _groupOptions = RazerMappingText.GroupOptions(
+            _canUseOnboardMacro || _canUseSoftwareMacro, hostOnly);
         ButtonId = buttonId;
         var buttonName = catalog.DescribeButton(buttonId);
         ButtonNameIsFallback = buttonName.StartsWith("Button ", StringComparison.Ordinal);
@@ -97,6 +109,7 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public byte ButtonId { get; }
+    public bool IsHostOnly { get; }
     public string ButtonName
     {
         get => _buttonName;
@@ -122,7 +135,11 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
     {
         foreach (var row in rows)
         {
-            if (productId != 0 && RazerPrivateKeyCatalog.IsPrivate(productId, row.ButtonId))
+            // Firmware-key-id keyboards reuse low ids such as 100 for real keys
+            // (numpad *), so the private report codes must not rename those rows.
+            if (productId != 0 &&
+                !RazerHuntsmanV3ProKeys.UsesFirmwareKeyIds(productId) &&
+                RazerPrivateKeyCatalog.IsPrivate(productId, row.ButtonId))
             {
                 row.SetButtonName(RazerPrivateKeyCatalog.Describe(productId, row.ButtonId));
                 continue;

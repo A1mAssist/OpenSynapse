@@ -4218,6 +4218,8 @@ Les modifications de macro non enregistrées seront perdues.</value></data>
   <data name="RazerMappingSideKey1.Text" xml:space="preserve"><value>Touche latérale 1</value></data>
   <data name="RazerMappingSideKey2.Text" xml:space="preserve"><value>Touche latérale 2</value></data>
   <data name="RazerMappingSideKey3.Text" xml:space="preserve"><value>Touche latérale 3</value></data>
+  <data name="RazerMappingMacroKey1.Text" xml:space="preserve"><value>Touche macro 1</value></data>
+  <data name="RazerMappingMacroKey2.Text" xml:space="preserve"><value>Touche macro 2</value></data>
   <data name="RazerMappingCommandDial.Text" xml:space="preserve"><value>Bouton rotatif de commande</value></data>
   <data name="RazerMappingVolumeDown.Text" xml:space="preserve"><value>Volume -</value></data>
   <data name="RazerMappingVolumeUp.Text" xml:space="preserve"><value>Volume +</value></data>

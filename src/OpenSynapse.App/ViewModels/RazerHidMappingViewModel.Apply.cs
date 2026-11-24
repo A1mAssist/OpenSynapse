@@ -70,9 +70,13 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 .Where(row => row.Group == RazerHidMappingGroup.WindowsShortcut)
                 .ToArray();
             var assignmentRows = pending
-                .Where(row => (row.Group != RazerHidMappingGroup.Macro ||
+                .Where(row => !row.IsHostOnly &&
+                              (row.Group != RazerHidMappingGroup.Macro ||
                                row.MacroTarget == MacroExecutionTarget.Onboard) &&
                               row.Group != RazerHidMappingGroup.WindowsShortcut)
+                .ToArray();
+            var hostOnlyOffRows = pending
+                .Where(row => row.IsHostOnly && row.Group == RazerHidMappingGroup.Off)
                 .ToArray();
             // A row the user configured but cannot write must say so; otherwise the
             // saved count silently comes up short and looks like a partial save.
@@ -163,14 +167,17 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             }
 
             var softwareAssignmentRows = softwareRows
-                .Where(row => _softwareTriggerResolver?.Invoke(row.ButtonId) is { } input &&
+                .Where(row => !row.IsHostOnly &&
+                    _softwareTriggerResolver?.Invoke(row.ButtonId) is { } input &&
                     (RazerSoftwareMacroAssignmentPolicy.NeedsDeviceAssignment(input) ||
                      softwareModeRows.Contains(row) &&
                      NativeKeyboardAssignment(row.ButtonId) is not null))
                 .ToArray();
             // A shortcut row may still carry the firmware action a previous build
             // wrote; its current assignment is what tells us to take the key back.
-            var shortcutAssignmentRows = shortcutRows;
+            var shortcutAssignmentRows = shortcutRows
+                .Where(row => !row.IsHostOnly)
+                .ToArray();
 
             var backups = new List<AssignmentBackup>(
                 assignmentRows.Length + softwareAssignmentRows.Length + shortcutAssignmentRows.Length);
@@ -287,6 +294,13 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                     SoftwareShortcutCatalog.Actions[row.OptionIndex].Name);
                 row.SoftwareMacroId = SoftwareShortcutCatalog.Actions[row.OptionIndex].MacroId;
                 row.LoadedOptionIndex = row.OptionIndex;
+            }
+
+            foreach (var row in hostOnlyOffRows)
+            {
+                row.CurrentActionText = DescribeAssignment(RazerHidMappingFunctions.Off, []);
+                row.SoftwareMacroId = null;
+                applied++;
             }
 
             foreach (var row in softwareRows)

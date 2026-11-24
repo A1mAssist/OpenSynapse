@@ -4659,6 +4659,8 @@
   <data name="RazerMappingSideKey1.Text" xml:space="preserve"><value>側鍵 1</value></data>
   <data name="RazerMappingSideKey2.Text" xml:space="preserve"><value>側鍵 2</value></data>
   <data name="RazerMappingSideKey3.Text" xml:space="preserve"><value>側鍵 3</value></data>
+  <data name="RazerMappingMacroKey1.Text" xml:space="preserve"><value>巨集鍵 1</value></data>
+  <data name="RazerMappingMacroKey2.Text" xml:space="preserve"><value>巨集鍵 2</value></data>
   <data name="RazerMappingCommandDial.Text" xml:space="preserve"><value>命令撥盤</value></data>
   <data name="RazerMappingVolumeDown.Text" xml:space="preserve"><value>音量 -</value></data>
   <data name="RazerMappingVolumeUp.Text" xml:space="preserve"><value>音量 +</value></data>

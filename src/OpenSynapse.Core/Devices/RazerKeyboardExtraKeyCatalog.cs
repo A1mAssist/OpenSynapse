@@ -63,9 +63,10 @@ public static class RazerKeyboardExtraKeyCatalog
             [0x02A6] = [MuteOrDialClick, PlayPause, Side2, Side3],
             [0x02A7] = [MuteOrDialClick],
             // One physical media key drives 0xC9/0xCA/0xCD as single/double/triple
-            // tap; only its primary id is a mapping row. 0xD0/0xD1 are reserved
-            // ids in this firmware and reject 0x9E with status 0x03.
-            [0x02CF] = [MuteOrDialClick, PlayPause],
+            // tap; only its primary id is a mapping row. 0xD0/0xD1 are the two
+            // macro keys; this firmware has no OBM row for them, so they are
+            // host-side triggers and must not be read through 0x9E.
+            [0x02CF] = [MuteOrDialClick, PlayPause, Side2, Side3],
             [0x02D5] = [MuteOrDialClick],
             [0x02D7] = [MuteOrDialClick],
         }.ToFrozenDictionary();
@@ -102,11 +103,23 @@ public static class RazerKeyboardExtraKeyCatalog
             Next => "RazerMappingMediaNext",
             PlayPause => "RazerMappingMediaPlay",
             Side1 => "RazerMappingSideKey1",
+            Side2 when productId == 0x02CF => "RazerMappingMacroKey1",
+            Side3 when productId == 0x02CF => "RazerMappingMacroKey2",
             Side2 => "RazerMappingSideKey2",
             Side3 => "RazerMappingSideKey3",
             _ => null,
         };
     }
+
+    /// <summary>
+    /// 02CF's two macro keys report private codes 100/101 and have no row in the
+    /// firmware assignment table; their action lives in the host mapping engine.
+    /// </summary>
+    public static bool IsHostOnlyRow(ushort productId, byte id) =>
+        productId == 0x02CF && id is Side2 or Side3;
+
+    public static bool IsHostOnlyPrivateKey(int productId, int keyCode) =>
+        productId == 0x02CF && keyCode is 100 or 101;
 
     /// <summary>
     /// Maps a virtual dial-rotation row id to the button-table id the firmware

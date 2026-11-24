@@ -74,6 +74,11 @@ public sealed partial class RazerHidMappingViewModel
         IReadOnlyList<AssignmentBackup> backups,
         IReadOnlyList<ClearedSoftwareTrigger> clears)
     {
+        if (row.IsHostOnly)
+        {
+            return null;
+        }
+
         var backup = backups.FirstOrDefault(item => ReferenceEquals(item.Row, row));
         var previous = clears
             .Select(item => item.SoftwareBinding)

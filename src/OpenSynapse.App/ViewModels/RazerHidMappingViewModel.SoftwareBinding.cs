@@ -1,3 +1,4 @@
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Macros;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Input;
@@ -117,9 +118,10 @@ public sealed partial class RazerHidMappingViewModel
                       existingBinding.ButtonId == row.ButtonId
             ? existingBinding
             : null;
+        var hostOnly = row.IsHostOnly;
         try
         {
-            if (binding is null)
+            if (binding is null && !hostOnly)
             {
                 assignment = await _transport.GetAssignmentAsync(
                         row.ButtonId, Mode, cancellationToken)
@@ -154,7 +156,8 @@ public sealed partial class RazerHidMappingViewModel
                 };
             }
 
-            if (RazerSoftwareMacroAssignmentPolicy.NeedsDeviceAssignment(input))
+            if (!hostOnly &&
+                RazerSoftwareMacroAssignmentPolicy.NeedsDeviceAssignment(input))
             {
                 assignment ??= await _transport.GetAssignmentAsync(
                         row.ButtonId, Mode, cancellationToken)
@@ -168,7 +171,8 @@ public sealed partial class RazerHidMappingViewModel
                         .ConfigureAwait(true);
                 }
             }
-            else if (NativeKeyboardAssignment(row.ButtonId) is { } native)
+            else if (!hostOnly &&
+                     NativeKeyboardAssignment(row.ButtonId) is { } native)
             {
                 assignment ??= await _transport.GetAssignmentAsync(
                         row.ButtonId, Mode, cancellationToken)
@@ -249,7 +253,8 @@ public sealed partial class RazerHidMappingViewModel
         RazerMappingAssignment? assignment,
         CancellationToken cancellationToken)
     {
-        if (assignment is null)
+        if (assignment is null ||
+            RazerKeyboardExtraKeyCatalog.IsHostOnlyRow(_productId, buttonId))
         {
             return;
         }
