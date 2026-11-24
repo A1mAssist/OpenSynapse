@@ -92,6 +92,9 @@ public sealed partial class BladeWorkspace
                     if (!await _deviceTelemetryReader.SetBladeTouchpadStatusAsync(
                             ActiveDescriptors, actual, cancellationToken))
                     {
+                        // Keep the watch loop retrying instead of leaving the lamp stale.
+                        _touchpadIndicatorConfirmed = false;
+                        _touchpadIndicatorRetryUntil = Environment.TickCount64 + 60_000;
                         _diagnosticLog.TryWrite(
                             "device-operation",
                             $"touchpad indicator did not acknowledge enabled={actual}");
