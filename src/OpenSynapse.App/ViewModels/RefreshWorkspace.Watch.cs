@@ -59,7 +59,6 @@ public sealed partial class RefreshWorkspace
                         // This path only reads; it never writes a setting back to the device.
                         await _pollHeadsetPower(cancellationToken);
                         await RefreshDeviceReadoutsAsync(cancellationToken);
-                        RefreshBladeTouchpadState();
                         await _razerHid.KeepAliveDriverModeAsync(cancellationToken);
                     }
                 }
@@ -91,17 +90,9 @@ public sealed partial class RefreshWorkspace
             using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
             while (await timer.WaitForNextTickAsync(cancellationToken))
             {
-                // The main device watch already refreshes this while the window is visible
-                // and the display is available. It sleeps in the tray, so this loop covers
-                // the hidden-window and display-off cases without running twice.
-                if (Volatile.Read(ref _deviceWatchActive) != 0 && IsDisplayAvailable)
-                {
-                    continue;
-                }
-
-                // The main device watch stops when the window is hidden. The
-                // touchpad state is an OS setting, so keep mirroring it onto
-                // the EC while the app is in the tray.
+                // Mirror the OS touchpad state onto the EC here every second. The write
+                // itself is gated in ApplyTouchpadState, so this is one registry read
+                // unless a boot-time write still needs retrying.
                 try
                 {
                     RefreshBladeTouchpadState();

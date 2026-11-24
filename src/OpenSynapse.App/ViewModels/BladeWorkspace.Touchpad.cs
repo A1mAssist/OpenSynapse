@@ -22,8 +22,12 @@ public sealed partial class BladeWorkspace
                 _blade._canSetBladeTouchpad = true;
                 OnPropertyChanged(nameof(CanSetTouchpad));
             }
-            if (changed || firstRead || !_touchpadIndicatorConfirmed)
+            var now = Environment.TickCount64;
+            var retry = now < _touchpadIndicatorRetryUntil;
+            var settle = retry && now - _touchpadIndicatorSyncedAt >= 5_000;
+            if (changed || firstRead || (retry && (!_touchpadIndicatorConfirmed || settle)))
             {
+                _touchpadIndicatorSyncedAt = now;
                 // Also write on the first read: the lighting take-over can reset
                 // the EC indicator after the startup sync. A rejected write stays
                 // pending so the next refresh retries it instead of giving up.
