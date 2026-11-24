@@ -279,6 +279,16 @@ public sealed class PresetEditorStateTests
         }
     }
 
+    [Fact]
+    public void LibraryFindFallsBackToEmbeddedPreset()
+    {
+        var preset = StudioPresetLibrary.Find("ambient-breathe-cdf2f4");
+        Assert.NotNull(preset);
+        Assert.Equal("ambient-breathe-cdf2f4", preset!.Id);
+        Assert.Null(StudioPresetLibrary.Find(" "));
+        Assert.Null(StudioPresetLibrary.Find($"missing-{Guid.NewGuid():N}"));
+    }
+
     private static StudioPresetDraft MinimalDraft() =>
         StudioPresetDraft.FromConfig(StudioPresetCodec.Parse("""
             {"format":"opensynapse-chroma","version":1,"id":"minimal","name":"Minimal","kind":"ambient","category":"test",

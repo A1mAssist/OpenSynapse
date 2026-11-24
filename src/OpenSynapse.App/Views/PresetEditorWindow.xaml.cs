@@ -19,7 +19,7 @@ public sealed partial class PresetEditorWindow : Window
 {
     private const int ShowWindowRestore = 9;
     private readonly LightingStudioViewModel? _studio;
-    private readonly Action<StudioPresetConfig>? _onSaved;
+    private Action<StudioPresetConfig>? _onSaved;
     private readonly PresetEditorViewModel _editor;
     private readonly DispatcherTimer _previewTimer = new() { Interval = TimeSpan.FromMilliseconds(33) };
     private readonly DispatcherTimer _autosaveTimer = new() { Interval = TimeSpan.FromSeconds(5) };
@@ -342,9 +342,11 @@ public sealed partial class PresetEditorWindow : Window
 
     private void UpdateStatusText()
     {
-        var pathLabel = _editor.Path is null
-            ? PresetEditorText.Get("PresetEditorStatusNew", "New preset")
-            : PresetEditorText.Format("PresetEditorPath", "Path: {0}", _editor.Path);
+        var pathLabel = _editor.Path is { } path
+            ? PresetEditorText.Format("PresetEditorPath", "Path: {0}", path)
+            : _editor.IsBuiltIn
+                ? PresetEditorText.Get("PresetEditorStatusBuiltIn", "Built-in preset")
+                : PresetEditorText.Get("PresetEditorStatusNew", "New preset");
         var saved = _editor.Path is null
             ? string.Empty
             : _editor.IsDirty

@@ -13,15 +13,33 @@ public sealed partial class MainWindow
         StudioEffectParams? parameters = null,
         StudioPresetConfig? preset = null)
     {
-        if (_presetEditorWindow is not null)
-        {
-            _presetEditorWindow.BringToFront();
-            return;
-        }
-
         var path = preset is not null && !StudioPresetLibrary.IsBuiltInId(preset.Id)
             ? StudioPresetLibrary.PathForId(preset.Id)
             : null;
+
+        void OnSaved(StudioPresetConfig saved)
+        {
+            if (parameters is not null)
+            {
+                parameters.Preset = saved.Id;
+                parameters.PresetDefinition = saved;
+                _lightingStudioPage?.ViewModel?.NotifyEdited();
+                _lightingStudioPage?.RefreshPresetInspector();
+                return;
+            }
+
+            _lightingStudioPage?.ViewModel?.AddPresetLayer(saved);
+        }
+
+        if (_presetEditorWindow is { } open)
+        {
+            // A concrete preset request must actually switch the open editor;
+            // a bare "open editor" click just brings the current document back.
+            if (preset is not null) _ = open.TryLoadDocumentAsync(preset, path, OnSaved);
+            open.BringToFront();
+            return;
+        }
+
         PresetEditorWindow window;
         try
         {
@@ -31,19 +49,7 @@ public sealed partial class MainWindow
                 _lightingStudioPage?.ViewModel,
                 preset,
                 path,
-                saved =>
-                {
-                    if (parameters is not null)
-                    {
-                        parameters.Preset = saved.Id;
-                        parameters.PresetDefinition = saved;
-                        _lightingStudioPage?.ViewModel?.NotifyEdited();
-                        _lightingStudioPage?.RefreshPresetInspector();
-                        return;
-                    }
-
-                    _lightingStudioPage?.ViewModel?.AddPresetLayer(saved);
-                });
+                OnSaved);
         }
         catch (Exception exception)
         {

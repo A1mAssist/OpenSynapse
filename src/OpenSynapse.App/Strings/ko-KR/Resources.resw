@@ -4349,6 +4349,7 @@
   <data name="LightingStudioPresetConfirm" xml:space="preserve"><value>확인</value></data>
   <data name="LightingStudioPresetDiamond" xml:space="preserve"><value>마름모</value></data>
   <data name="LightingStudioPresetEdit" xml:space="preserve"><value>프리셋 편집</value></data>
+  <data name="LightingStudioPresetEditCurrent" xml:space="preserve"><value>이 프리셋 편집</value></data>
   <data name="LightingStudioPresetExpansion" xml:space="preserve"><value>확산 속도 (칸/초)</value></data>
   <data name="LightingStudioPresetGlow" xml:space="preserve"><value>빛 번짐</value></data>
   <data name="LightingStudioPresetHold" xml:space="preserve"><value>누르는 동안 빛 번짐 유지</value></data>
@@ -4410,7 +4411,7 @@
   <data name="PresetEditorValidationOk" xml:space="preserve"><value>검사 문제가 없습니다.</value></data>
   <data name="PresetEditorValidationIssues" xml:space="preserve"><value>문제 {0}개</value></data>
   <data name="PresetEditorUnsaved" xml:space="preserve"><value>저장되지 않은 변경 사항</value></data>
-  <data name="PresetEditorSaved" xml:space="preserve"><value>{0}에 저장됨</value></data>
+  <data name="PresetEditorSaved" xml:space="preserve"><value>저장됨</value></data>
   <data name="PresetEditorSaveFailed" xml:space="preserve"><value>저장할 수 없습니다: {0}</value></data>
   <data name="PresetEditorOpenFailed" xml:space="preserve"><value>열 수 없습니다: {0}</value></data>
   <data name="PresetEditorNewName" xml:space="preserve"><value>새 프리셋</value></data>
@@ -4442,14 +4443,18 @@
   <data name="PresetEditorSelectScreenImage" xml:space="preserve"><value>화면 이미지 선택</value></data>
   <data name="PresetEditorNoPreview" xml:space="preserve"><value>이 구성에서는 미리 보기를 사용할 수 없습니다.</value></data>
   <data name="PresetEditorStatusNew" xml:space="preserve"><value>새 프리셋</value></data>
+  <data name="PresetEditorStatusBuiltIn" xml:space="preserve"><value>기본 제공 프리셋</value></data>
   <data name="PresetEditorStatusOpened" xml:space="preserve"><value>{0} 열림</value></data>
   <data name="PresetEditorStatusRecovered" xml:space="preserve"><value>저장되지 않은 초안 복구됨</value></data>
   <data name="PresetEditorSimScreenImage" xml:space="preserve"><value>이미지: {0}</value></data>
   <data name="PresetEditorLayerEnabled" xml:space="preserve"><value>사용</value></data>
   <data name="PresetEditorUnsavedCloseTitle" xml:space="preserve"><value>변경 사항을 저장할까요?</value></data>
   <data name="PresetEditorUnsavedCloseMessage" xml:space="preserve"><value>닫기 전에 현재 프리셋의 변경 사항을 저장할까요?</value></data>
+  <data name="PresetEditorUnsavedSwitchMessage" xml:space="preserve"><value>전환하기 전에 현재 프리셋의 변경 사항을 저장할까요?</value></data>
   <data name="PresetEditorSaveAndClose" xml:space="preserve"><value>저장하고 닫기</value></data>
+  <data name="PresetEditorSaveAndSwitch" xml:space="preserve"><value>저장하고 전환</value></data>
   <data name="PresetEditorCloseWithoutSaving" xml:space="preserve"><value>저장하지 않고 닫기</value></data>
+  <data name="PresetEditorSwitchWithoutSaving" xml:space="preserve"><value>저장하지 않고 전환</value></data>
   <data name="PresetEditorCancel" xml:space="preserve"><value>취소</value></data>
   <data name="PresetEditorSaveAsBuiltIn" xml:space="preserve"><value>기본 제공 프리셋은 덮어쓸 수 없습니다. 대신 사본을 저장하세요.</value></data>
   <data name="LightingStudioModuleParam_amplitude" xml:space="preserve"><value>진폭</value></data>

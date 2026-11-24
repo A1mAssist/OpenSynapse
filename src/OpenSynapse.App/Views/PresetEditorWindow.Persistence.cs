@@ -15,7 +15,7 @@ public sealed partial class PresetEditorWindow
         if (!await ConfirmDiscardAsync()) return;
         _editor.ReplaceDocument(PresetEditorViewModel.CreateNewDraft(), null, clean: true);
         StudioPresetAutosave.Clear();
-        SetStatus(PresetEditorText.Get("PresetEditorStatusNew", "New preset"));
+        SetStatus(string.Empty);
     }
 
     private async Task OpenDocumentAsync()
@@ -34,7 +34,7 @@ public sealed partial class PresetEditorWindow
             var draft = StudioPresetLibrary.LoadDraft(file.Path);
             _editor.ReplaceDocument(draft, file.Path, clean: true);
             StudioPresetAutosave.Clear();
-            SetStatus(PresetEditorText.Format("PresetEditorStatusOpened", "Opened {0}", file.Path));
+            SetStatus(string.Empty);
         }
         catch (Exception exception) when (exception is IOException or InvalidDataException or
             FormatException or InvalidOperationException or UnauthorizedAccessException or ArgumentException)
@@ -109,7 +109,7 @@ public sealed partial class PresetEditorWindow
             var compiled = StudioPresetLibrary.Save(_editor.Draft, path);
             _editor.MarkSaved(path);
             _onSaved?.Invoke(compiled);
-            SetStatus(PresetEditorText.Format("PresetEditorSaved", "Saved {0}", path));
+            SetStatus(string.Empty);
             UpdateUiState();
             return true;
         }
@@ -143,6 +143,71 @@ public sealed partial class PresetEditorWindow
         if (await dialog.ShowAsync() != ContentDialogResult.Primary) return false;
         StudioPresetAutosave.Clear();
         return true;
+    }
+
+    /// <summary>
+    /// Reuses the open window for another preset request. Unsaved work is never
+    /// discarded without an explicit choice.
+    /// </summary>
+    internal async Task<bool> TryLoadDocumentAsync(
+        StudioPresetConfig preset,
+        string? path,
+        Action<StudioPresetConfig>? onSaved)
+    {
+        try
+        {
+            if (IsCurrentDocument(preset, path)) return true;
+            if (!await ConfirmSaveBeforeSwitchAsync()) return false;
+            _onSaved = onSaved;
+            _editor.ReplaceDocument(StudioPresetDraft.FromConfig(preset), path, clean: true);
+            StudioPresetAutosave.Clear();
+            SetStatus(string.Empty);
+            return true;
+        }
+        catch (Exception exception) when (exception is IOException or InvalidDataException or
+            FormatException or InvalidOperationException or UnauthorizedAccessException or
+            ArgumentException or COMException)
+        {
+            SetStatus(PresetEditorText.Format("PresetEditorOpenFailed", "Could not open preset: {0}",
+                exception.Message));
+            return false;
+        }
+    }
+
+    private bool IsCurrentDocument(StudioPresetConfig preset, string? path) =>
+        _editor.Path is { } currentPath
+            ? path is not null && string.Equals(currentPath, path, StringComparison.OrdinalIgnoreCase)
+            : path is null &&
+              string.Equals(_editor.Draft.Id, preset.Id, StringComparison.OrdinalIgnoreCase);
+
+    private async Task<bool> ConfirmSaveBeforeSwitchAsync()
+    {
+        if (!_editor.IsDirty) return true;
+        var dialog = new ContentDialog
+        {
+            Title = PresetEditorText.Get("PresetEditorUnsavedCloseTitle", "Save changes?"),
+            Content = new TextBlock
+            {
+                Text = PresetEditorText.Get("PresetEditorUnsavedSwitchMessage",
+                    "Save changes to the current preset before switching?"),
+                TextWrapping = TextWrapping.Wrap,
+            },
+            PrimaryButtonText = PresetEditorText.Get("PresetEditorSaveAndSwitch", "Save and switch"),
+            SecondaryButtonText = PresetEditorText.Get("PresetEditorSwitchWithoutSaving",
+                "Switch without saving"),
+            CloseButtonText = PresetEditorText.Get("PresetEditorCancel", "Cancel"),
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = RootLayout.XamlRoot,
+        };
+        var result = await dialog.ShowAsync();
+        if (result == ContentDialogResult.Primary) return await SaveAsync();
+        if (result == ContentDialogResult.Secondary)
+        {
+            StudioPresetAutosave.Clear();
+            return true;
+        }
+
+        return false;
     }
 
     private void AutosaveIfDirty()

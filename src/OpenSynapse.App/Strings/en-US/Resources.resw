@@ -4369,6 +4369,7 @@
   <data name="LightingStudioPresetConfirm" xml:space="preserve"><value>OK</value></data>
   <data name="LightingStudioPresetDiamond" xml:space="preserve"><value>Diamond</value></data>
   <data name="LightingStudioPresetEdit" xml:space="preserve"><value>Edit preset</value></data>
+  <data name="LightingStudioPresetEditCurrent" xml:space="preserve"><value>Edit this preset</value></data>
   <data name="LightingStudioPresetExpansion" xml:space="preserve"><value>Expansion speed (cells/s)</value></data>
   <data name="LightingStudioPresetGlow" xml:space="preserve"><value>Glow</value></data>
   <data name="LightingStudioPresetHold" xml:space="preserve"><value>Keep glow while held</value></data>
@@ -4430,7 +4431,7 @@
   <data name="PresetEditorValidationOk" xml:space="preserve"><value>No validation issues.</value></data>
   <data name="PresetEditorValidationIssues" xml:space="preserve"><value>{0} issue(s)</value></data>
   <data name="PresetEditorUnsaved" xml:space="preserve"><value>Unsaved changes</value></data>
-  <data name="PresetEditorSaved" xml:space="preserve"><value>Saved {0}</value></data>
+  <data name="PresetEditorSaved" xml:space="preserve"><value>Saved</value></data>
   <data name="PresetEditorSaveFailed" xml:space="preserve"><value>Could not save: {0}</value></data>
   <data name="PresetEditorOpenFailed" xml:space="preserve"><value>Could not open: {0}</value></data>
   <data name="PresetEditorNewName" xml:space="preserve"><value>New preset</value></data>
@@ -4462,14 +4463,18 @@
   <data name="PresetEditorSelectScreenImage" xml:space="preserve"><value>Choose a screen image</value></data>
   <data name="PresetEditorNoPreview" xml:space="preserve"><value>No preview is available for this configuration.</value></data>
   <data name="PresetEditorStatusNew" xml:space="preserve"><value>New preset</value></data>
+  <data name="PresetEditorStatusBuiltIn" xml:space="preserve"><value>Built-in preset</value></data>
   <data name="PresetEditorStatusOpened" xml:space="preserve"><value>Opened {0}</value></data>
   <data name="PresetEditorStatusRecovered" xml:space="preserve"><value>Recovered unsaved draft</value></data>
   <data name="PresetEditorSimScreenImage" xml:space="preserve"><value>Image: {0}</value></data>
   <data name="PresetEditorLayerEnabled" xml:space="preserve"><value>Enabled</value></data>
   <data name="PresetEditorUnsavedCloseTitle" xml:space="preserve"><value>Save changes?</value></data>
   <data name="PresetEditorUnsavedCloseMessage" xml:space="preserve"><value>Save changes to the current preset before closing?</value></data>
+  <data name="PresetEditorUnsavedSwitchMessage" xml:space="preserve"><value>Save changes to the current preset before switching?</value></data>
   <data name="PresetEditorSaveAndClose" xml:space="preserve"><value>Save and close</value></data>
+  <data name="PresetEditorSaveAndSwitch" xml:space="preserve"><value>Save and switch</value></data>
   <data name="PresetEditorCloseWithoutSaving" xml:space="preserve"><value>Close without saving</value></data>
+  <data name="PresetEditorSwitchWithoutSaving" xml:space="preserve"><value>Switch without saving</value></data>
   <data name="PresetEditorCancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="PresetEditorSaveAsBuiltIn" xml:space="preserve"><value>Built-in presets cannot be overwritten. Save a copy instead.</value></data>
   <data name="LightingStudioModuleParam_amplitude" xml:space="preserve"><value>Amplitude</value></data>

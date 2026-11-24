@@ -4790,6 +4790,7 @@
   <data name="LightingStudioPresetConfirm" xml:space="preserve"><value>確定</value></data>
   <data name="LightingStudioPresetDiamond" xml:space="preserve"><value>菱形</value></data>
   <data name="LightingStudioPresetEdit" xml:space="preserve"><value>編輯預設</value></data>
+  <data name="LightingStudioPresetEditCurrent" xml:space="preserve"><value>編輯此預設</value></data>
   <data name="LightingStudioPresetExpansion" xml:space="preserve"><value>擴散速度（格/秒）</value></data>
   <data name="LightingStudioPresetGlow" xml:space="preserve"><value>輝光</value></data>
   <data name="LightingStudioPresetHold" xml:space="preserve"><value>按住時保持輝光</value></data>
@@ -4851,7 +4852,7 @@
   <data name="PresetEditorValidationOk" xml:space="preserve"><value>沒有驗證問題。</value></data>
   <data name="PresetEditorValidationIssues" xml:space="preserve"><value>{0} 個問題</value></data>
   <data name="PresetEditorUnsaved" xml:space="preserve"><value>未儲存的變更</value></data>
-  <data name="PresetEditorSaved" xml:space="preserve"><value>已儲存 {0}</value></data>
+  <data name="PresetEditorSaved" xml:space="preserve"><value>已儲存</value></data>
   <data name="PresetEditorSaveFailed" xml:space="preserve"><value>無法儲存：{0}</value></data>
   <data name="PresetEditorOpenFailed" xml:space="preserve"><value>無法開啟：{0}</value></data>
   <data name="PresetEditorNewName" xml:space="preserve"><value>新預設</value></data>
@@ -4883,14 +4884,18 @@
   <data name="PresetEditorSelectScreenImage" xml:space="preserve"><value>選擇螢幕圖片</value></data>
   <data name="PresetEditorNoPreview" xml:space="preserve"><value>此設定沒有可用的預覽。</value></data>
   <data name="PresetEditorStatusNew" xml:space="preserve"><value>新預設</value></data>
+  <data name="PresetEditorStatusBuiltIn" xml:space="preserve"><value>內建預設</value></data>
   <data name="PresetEditorStatusOpened" xml:space="preserve"><value>已開啟 {0}</value></data>
   <data name="PresetEditorStatusRecovered" xml:space="preserve"><value>已還原未儲存的草稿</value></data>
   <data name="PresetEditorSimScreenImage" xml:space="preserve"><value>圖片：{0}</value></data>
   <data name="PresetEditorLayerEnabled" xml:space="preserve"><value>已啟用</value></data>
   <data name="PresetEditorUnsavedCloseTitle" xml:space="preserve"><value>儲存變更？</value></data>
   <data name="PresetEditorUnsavedCloseMessage" xml:space="preserve"><value>關閉前要儲存目前預設的變更嗎？</value></data>
+  <data name="PresetEditorUnsavedSwitchMessage" xml:space="preserve"><value>切換預設前要儲存目前預設的變更嗎？</value></data>
   <data name="PresetEditorSaveAndClose" xml:space="preserve"><value>儲存並關閉</value></data>
+  <data name="PresetEditorSaveAndSwitch" xml:space="preserve"><value>儲存並切換</value></data>
   <data name="PresetEditorCloseWithoutSaving" xml:space="preserve"><value>不儲存直接關閉</value></data>
+  <data name="PresetEditorSwitchWithoutSaving" xml:space="preserve"><value>不儲存直接切換</value></data>
   <data name="PresetEditorCancel" xml:space="preserve"><value>取消</value></data>
   <data name="PresetEditorSaveAsBuiltIn" xml:space="preserve"><value>無法覆寫內建預設。請改為儲存副本。</value></data>
   <data name="LightingStudioModuleParam_amplitude" xml:space="preserve"><value>振幅</value></data>

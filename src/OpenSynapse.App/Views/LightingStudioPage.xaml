@@ -58,7 +58,7 @@
                 AutomationProperties.AutomationId="StudioPresetEditorButton">
           <StackPanel Orientation="Horizontal" Spacing="8">
             <FontIcon Glyph="&#xE70F;" FontFamily="{StaticResource IconFontFamily}" FontSize="14" />
-            <TextBlock local:Localized.Uid="LightingStudioPresetEdit" />
+            <TextBlock local:Localized.Uid="PresetEditorTitle" />
           </StackPanel>
         </Button>
         <Button x:Name="PlayButton" Click="TogglePlayClick" MinWidth="104"

@@ -4349,6 +4349,7 @@ Nicht gespeicherte Makroänderungen gehen verloren.</value></data>
   <data name="LightingStudioPresetConfirm" xml:space="preserve"><value>OK</value></data>
   <data name="LightingStudioPresetDiamond" xml:space="preserve"><value>Raute</value></data>
   <data name="LightingStudioPresetEdit" xml:space="preserve"><value>Voreinstellung bearbeiten</value></data>
+  <data name="LightingStudioPresetEditCurrent" xml:space="preserve"><value>Diese Voreinstellung bearbeiten</value></data>
   <data name="LightingStudioPresetExpansion" xml:space="preserve"><value>Ausbreitung (Zellen/s)</value></data>
   <data name="LightingStudioPresetGlow" xml:space="preserve"><value>Leuchten</value></data>
   <data name="LightingStudioPresetHold" xml:space="preserve"><value>Leuchten beim Halten beibehalten</value></data>
@@ -4410,7 +4411,7 @@ Nicht gespeicherte Makroänderungen gehen verloren.</value></data>
   <data name="PresetEditorValidationOk" xml:space="preserve"><value>Keine Prüfprobleme.</value></data>
   <data name="PresetEditorValidationIssues" xml:space="preserve"><value>Probleme: {0}</value></data>
   <data name="PresetEditorUnsaved" xml:space="preserve"><value>Nicht gespeicherte Änderungen</value></data>
-  <data name="PresetEditorSaved" xml:space="preserve"><value>Gespeichert: {0}</value></data>
+  <data name="PresetEditorSaved" xml:space="preserve"><value>Gespeichert</value></data>
   <data name="PresetEditorSaveFailed" xml:space="preserve"><value>Speichern nicht möglich: {0}</value></data>
   <data name="PresetEditorOpenFailed" xml:space="preserve"><value>Öffnen nicht möglich: {0}</value></data>
   <data name="PresetEditorNewName" xml:space="preserve"><value>Neue Voreinstellung</value></data>
@@ -4442,14 +4443,18 @@ Nicht gespeicherte Makroänderungen gehen verloren.</value></data>
   <data name="PresetEditorSelectScreenImage" xml:space="preserve"><value>Bildschirmbild auswählen</value></data>
   <data name="PresetEditorNoPreview" xml:space="preserve"><value>Für diese Konfiguration ist keine Vorschau verfügbar.</value></data>
   <data name="PresetEditorStatusNew" xml:space="preserve"><value>Neue Voreinstellung</value></data>
+  <data name="PresetEditorStatusBuiltIn" xml:space="preserve"><value>Integrierte Voreinstellung</value></data>
   <data name="PresetEditorStatusOpened" xml:space="preserve"><value>Geöffnet: {0}</value></data>
   <data name="PresetEditorStatusRecovered" xml:space="preserve"><value>Nicht gespeicherter Entwurf wiederhergestellt</value></data>
   <data name="PresetEditorSimScreenImage" xml:space="preserve"><value>Bild: {0}</value></data>
   <data name="PresetEditorLayerEnabled" xml:space="preserve"><value>Aktiviert</value></data>
   <data name="PresetEditorUnsavedCloseTitle" xml:space="preserve"><value>Änderungen speichern?</value></data>
   <data name="PresetEditorUnsavedCloseMessage" xml:space="preserve"><value>Änderungen an der aktuellen Voreinstellung vor dem Schließen speichern?</value></data>
+  <data name="PresetEditorUnsavedSwitchMessage" xml:space="preserve"><value>Änderungen an der aktuellen Voreinstellung vor dem Wechsel speichern?</value></data>
   <data name="PresetEditorSaveAndClose" xml:space="preserve"><value>Speichern und schließen</value></data>
+  <data name="PresetEditorSaveAndSwitch" xml:space="preserve"><value>Speichern und wechseln</value></data>
   <data name="PresetEditorCloseWithoutSaving" xml:space="preserve"><value>Schließen ohne Speichern</value></data>
+  <data name="PresetEditorSwitchWithoutSaving" xml:space="preserve"><value>Ohne Speichern wechseln</value></data>
   <data name="PresetEditorCancel" xml:space="preserve"><value>Abbrechen</value></data>
   <data name="PresetEditorSaveAsBuiltIn" xml:space="preserve"><value>Integrierte Voreinstellungen können nicht überschrieben werden. Speichern Sie stattdessen eine Kopie.</value></data>
   <data name="LightingStudioModuleParam_amplitude" xml:space="preserve"><value>Amplitude</value></data>

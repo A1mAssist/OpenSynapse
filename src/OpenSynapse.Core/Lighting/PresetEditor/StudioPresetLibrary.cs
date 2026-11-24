@@ -72,6 +72,29 @@ public static class StudioPresetLibrary
         return System.IO.Path.Combine(UserDirectory, id + StudioPresetCodec.Extension);
     }
 
+    /// <summary>User copy first (it shadows a built-in with the same id), then embedded.</summary>
+    public static StudioPresetConfig? Find(string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return null;
+        var trimmed = id.Trim();
+        var path = PathForId(trimmed);
+        if (File.Exists(path))
+        {
+            try
+            {
+                return StudioPresetCodec.Load(path);
+            }
+            catch (Exception exception) when (exception is IOException or InvalidDataException or
+                FormatException or InvalidOperationException or UnauthorizedAccessException or
+                ArgumentException)
+            {
+                // A broken user copy must not hide the embedded preset of the same id.
+            }
+        }
+
+        return StudioPresetCatalog.Default.Find(trimmed);
+    }
+
     public static bool IsBuiltInId(string? id) =>
         !string.IsNullOrWhiteSpace(id) && StudioPresetCatalog.Default.Find(id) is not null &&
         !File.Exists(PathForId(id.Trim()));

@@ -320,7 +320,7 @@ public sealed partial class LightingStudioPage : UserControl
     private void OpenPresetEditorForSelection()
     {
         if (_viewModel?.SelectedParams is { Effect: StudioEffectKind.Preset } parameters &&
-            (parameters.PresetDefinition ?? StudioPresetCatalog.Default.Find(parameters.Preset)) is { } preset)
+            (parameters.PresetDefinition ?? StudioPresetLibrary.Find(parameters.Preset)) is { } preset)
         {
             Host?.OpenPresetEditorWindow(parameters, preset);
             return;

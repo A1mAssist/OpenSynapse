@@ -12,12 +12,13 @@ public sealed partial class StudioEffectInspector
     private FrameworkElement BuildPresetRow()
     {
         var parameters = _parameters!;
-        var current = parameters.PresetDefinition ?? StudioPresetCatalog.Default.Find(parameters.Preset);
-        var options = StudioPresetCatalog.Default.All
-            .OrderBy(preset => preset.Kind)
-            .ThenBy(preset => preset.Name, StringComparer.CurrentCulture)
-            .ToList();
-        if (current is not null && !options.Contains(current)) options.Insert(0, current);
+        var current = parameters.PresetDefinition ?? StudioPresetLibrary.Find(parameters.Preset);
+        var options = StudioPresetLibrary.Enumerate().Select(entry => entry.Preset).ToList();
+        if (current is not null &&
+            !options.Any(preset => string.Equals(preset.Id, current.Id, StringComparison.OrdinalIgnoreCase)))
+        {
+            options.Insert(0, current);
+        }
         var summary = new TextBlock
         {
             Text = current is null
@@ -58,13 +59,13 @@ public sealed partial class StudioEffectInspector
         };
         var edit = new Button
         {
-            Content = AppStrings.Text("LightingStudioPresetEdit"),
+            Content = AppStrings.Text("LightingStudioPresetEditCurrent"),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             IsEnabled = current is not null,
             Style = (Style)Application.Current.Resources["SecondaryButtonStyle"],
         };
         AutomationProperties.SetAutomationId(edit, "StudioPresetOpenEditor");
-        AutomationProperties.SetName(edit, AppStrings.Text("LightingStudioPresetEdit"));
+        AutomationProperties.SetName(edit, AppStrings.Text("LightingStudioPresetEditCurrent"));
         edit.Click += (_, _) => DispatcherQueue.TryEnqueue(() =>
         {
             if (current is not null) EditPresetRequested?.Invoke(this, new(parameters, current));

@@ -4349,6 +4349,7 @@ Les modifications de macro non enregistrées seront perdues.</value></data>
   <data name="LightingStudioPresetConfirm" xml:space="preserve"><value>OK</value></data>
   <data name="LightingStudioPresetDiamond" xml:space="preserve"><value>Losange</value></data>
   <data name="LightingStudioPresetEdit" xml:space="preserve"><value>Modifier le préréglage</value></data>
+  <data name="LightingStudioPresetEditCurrent" xml:space="preserve"><value>Modifier ce préréglage</value></data>
   <data name="LightingStudioPresetExpansion" xml:space="preserve"><value>Vitesse de propagation (cases/s)</value></data>
   <data name="LightingStudioPresetGlow" xml:space="preserve"><value>Lueur</value></data>
   <data name="LightingStudioPresetHold" xml:space="preserve"><value>Maintenir la lueur à l’appui</value></data>
@@ -4410,7 +4411,7 @@ Les modifications de macro non enregistrées seront perdues.</value></data>
   <data name="PresetEditorValidationOk" xml:space="preserve"><value>Aucun problème de validation.</value></data>
   <data name="PresetEditorValidationIssues" xml:space="preserve"><value>Problèmes : {0}</value></data>
   <data name="PresetEditorUnsaved" xml:space="preserve"><value>Modifications non enregistrées</value></data>
-  <data name="PresetEditorSaved" xml:space="preserve"><value>Enregistré : {0}</value></data>
+  <data name="PresetEditorSaved" xml:space="preserve"><value>Enregistré</value></data>
   <data name="PresetEditorSaveFailed" xml:space="preserve"><value>Enregistrement impossible : {0}</value></data>
   <data name="PresetEditorOpenFailed" xml:space="preserve"><value>Ouverture impossible : {0}</value></data>
   <data name="PresetEditorNewName" xml:space="preserve"><value>Nouveau préréglage</value></data>
@@ -4442,14 +4443,18 @@ Les modifications de macro non enregistrées seront perdues.</value></data>
   <data name="PresetEditorSelectScreenImage" xml:space="preserve"><value>Choisir une image d’écran</value></data>
   <data name="PresetEditorNoPreview" xml:space="preserve"><value>Aucun aperçu n’est disponible pour cette configuration.</value></data>
   <data name="PresetEditorStatusNew" xml:space="preserve"><value>Nouveau préréglage</value></data>
+  <data name="PresetEditorStatusBuiltIn" xml:space="preserve"><value>Préréglage intégré</value></data>
   <data name="PresetEditorStatusOpened" xml:space="preserve"><value>Ouvert : {0}</value></data>
   <data name="PresetEditorStatusRecovered" xml:space="preserve"><value>Brouillon non enregistré récupéré</value></data>
   <data name="PresetEditorSimScreenImage" xml:space="preserve"><value>Image : {0}</value></data>
   <data name="PresetEditorLayerEnabled" xml:space="preserve"><value>Activé</value></data>
   <data name="PresetEditorUnsavedCloseTitle" xml:space="preserve"><value>Enregistrer les modifications ?</value></data>
   <data name="PresetEditorUnsavedCloseMessage" xml:space="preserve"><value>Enregistrer les modifications du préréglage actuel avant de fermer ?</value></data>
+  <data name="PresetEditorUnsavedSwitchMessage" xml:space="preserve"><value>Enregistrer les modifications du préréglage actuel avant de changer ?</value></data>
   <data name="PresetEditorSaveAndClose" xml:space="preserve"><value>Enregistrer et fermer</value></data>
+  <data name="PresetEditorSaveAndSwitch" xml:space="preserve"><value>Enregistrer et changer</value></data>
   <data name="PresetEditorCloseWithoutSaving" xml:space="preserve"><value>Fermer sans enregistrer</value></data>
+  <data name="PresetEditorSwitchWithoutSaving" xml:space="preserve"><value>Changer sans enregistrer</value></data>
   <data name="PresetEditorCancel" xml:space="preserve"><value>Annuler</value></data>
   <data name="PresetEditorSaveAsBuiltIn" xml:space="preserve"><value>Les préréglages intégrés ne peuvent pas être écrasés. Enregistrez plutôt une copie.</value></data>
   <data name="LightingStudioModuleParam_amplitude" xml:space="preserve"><value>Amplitude</value></data>

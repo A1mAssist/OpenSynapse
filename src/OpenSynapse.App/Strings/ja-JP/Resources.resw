@@ -4349,6 +4349,7 @@
   <data name="LightingStudioPresetConfirm" xml:space="preserve"><value>OK</value></data>
   <data name="LightingStudioPresetDiamond" xml:space="preserve"><value>ひし形</value></data>
   <data name="LightingStudioPresetEdit" xml:space="preserve"><value>プリセットを編集</value></data>
+  <data name="LightingStudioPresetEditCurrent" xml:space="preserve"><value>このプリセットを編集</value></data>
   <data name="LightingStudioPresetExpansion" xml:space="preserve"><value>拡散速度（マス/秒）</value></data>
   <data name="LightingStudioPresetGlow" xml:space="preserve"><value>発光</value></data>
   <data name="LightingStudioPresetHold" xml:space="preserve"><value>押している間は発光を維持</value></data>
@@ -4410,7 +4411,7 @@
   <data name="PresetEditorValidationOk" xml:space="preserve"><value>検証の問題はありません。</value></data>
   <data name="PresetEditorValidationIssues" xml:space="preserve"><value>{0} 件の問題</value></data>
   <data name="PresetEditorUnsaved" xml:space="preserve"><value>保存されていない変更</value></data>
-  <data name="PresetEditorSaved" xml:space="preserve"><value>{0} に保存しました</value></data>
+  <data name="PresetEditorSaved" xml:space="preserve"><value>保存しました</value></data>
   <data name="PresetEditorSaveFailed" xml:space="preserve"><value>保存できませんでした: {0}</value></data>
   <data name="PresetEditorOpenFailed" xml:space="preserve"><value>開けませんでした: {0}</value></data>
   <data name="PresetEditorNewName" xml:space="preserve"><value>新しいプリセット</value></data>
@@ -4442,14 +4443,18 @@
   <data name="PresetEditorSelectScreenImage" xml:space="preserve"><value>画面画像を選択</value></data>
   <data name="PresetEditorNoPreview" xml:space="preserve"><value>この構成ではプレビューを利用できません。</value></data>
   <data name="PresetEditorStatusNew" xml:space="preserve"><value>新しいプリセット</value></data>
+  <data name="PresetEditorStatusBuiltIn" xml:space="preserve"><value>組み込みプリセット</value></data>
   <data name="PresetEditorStatusOpened" xml:space="preserve"><value>{0} を開きました</value></data>
   <data name="PresetEditorStatusRecovered" xml:space="preserve"><value>未保存の下書きを復元しました</value></data>
   <data name="PresetEditorSimScreenImage" xml:space="preserve"><value>画像: {0}</value></data>
   <data name="PresetEditorLayerEnabled" xml:space="preserve"><value>有効</value></data>
   <data name="PresetEditorUnsavedCloseTitle" xml:space="preserve"><value>変更を保存しますか？</value></data>
   <data name="PresetEditorUnsavedCloseMessage" xml:space="preserve"><value>閉じる前に現在のプリセットの変更を保存しますか？</value></data>
+  <data name="PresetEditorUnsavedSwitchMessage" xml:space="preserve"><value>切り替える前に現在のプリセットの変更を保存しますか？</value></data>
   <data name="PresetEditorSaveAndClose" xml:space="preserve"><value>保存して閉じる</value></data>
+  <data name="PresetEditorSaveAndSwitch" xml:space="preserve"><value>保存して切り替え</value></data>
   <data name="PresetEditorCloseWithoutSaving" xml:space="preserve"><value>保存せずに閉じる</value></data>
+  <data name="PresetEditorSwitchWithoutSaving" xml:space="preserve"><value>保存せずに切り替え</value></data>
   <data name="PresetEditorCancel" xml:space="preserve"><value>キャンセル</value></data>
   <data name="PresetEditorSaveAsBuiltIn" xml:space="preserve"><value>組み込みプリセットは上書きできません。代わりにコピーを保存してください。</value></data>
   <data name="LightingStudioModuleParam_amplitude" xml:space="preserve"><value>振幅</value></data>
