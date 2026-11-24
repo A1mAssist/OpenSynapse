@@ -45,6 +45,14 @@
                    FontSize="13" Foreground="{StaticResource MutedBrush}" />
       </StackPanel>
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <Button x:Name="EditButton" Click="ToggleEditClick" MinWidth="92"
+                Style="{StaticResource SecondaryButtonStyle}"
+                AutomationProperties.AutomationId="StudioEditButton">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <FontIcon Glyph="&#xE70F;" FontFamily="{StaticResource IconFontFamily}" FontSize="14" />
+            <TextBlock x:Name="EditButtonLabel" Text="{Binding EditButtonText}" />
+          </StackPanel>
+        </Button>
         <Button x:Name="PlayButton" Click="TogglePlayClick" MinWidth="104"
                 Style="{StaticResource SecondaryButtonStyle}"
                 AutomationProperties.AutomationId="StudioPlayButton">
@@ -160,7 +168,7 @@
           </Border>
         </StackPanel>
 
-        <Grid Grid.Row="1" RowSpacing="6">
+        <Grid x:Name="LayerPanel" Grid.Row="1" RowSpacing="6" Visibility="Collapsed">
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -271,7 +279,69 @@
           </Grid>
         </Grid>
 
-        <Grid Grid.Row="2" ColumnSpacing="6">
+        <Border x:Name="ScenePanel" Grid.Row="1" Background="{StaticResource SurfaceBrush}"
+                CornerRadius="12" Padding="12,10"
+                AutomationProperties.AutomationId="StudioScenePanel">
+          <Grid RowSpacing="8">
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <StackPanel Spacing="2">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <FontIcon Glyph="&#xE790;" FontFamily="{StaticResource IconFontFamily}"
+                          FontSize="15" Foreground="{StaticResource AccentBrush}" />
+                <TextBlock local:Localized.Uid="LightingStudioScenes"
+                           FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource DataBrush}" />
+              </StackPanel>
+              <TextBlock Text="{Binding DeviceSummary}" FontSize="11"
+                         Foreground="{StaticResource MutedBrush}"
+                         AutomationProperties.AutomationId="StudioDeviceSummary" />
+            </StackPanel>
+            <ListView x:Name="SceneList" Grid.Row="1" ItemsSource="{Binding SceneCards}"
+                      SelectionMode="None" BorderThickness="0" Background="Transparent"
+                      AutomationProperties.AutomationId="StudioSceneList">
+              <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                  <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                  <Setter Property="Padding" Value="0" />
+                  <Setter Property="MinHeight" Value="0" />
+                </Style>
+              </ListView.ItemContainerStyle>
+              <ListView.ItemTemplate>
+                <DataTemplate>
+                  <Button Click="SceneCardClick" Margin="0,0,0,6" Padding="0"
+                          HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                          Background="Transparent" BorderThickness="0"
+                          AutomationProperties.AutomationId="{Binding AutomationId}">
+                    <Border Background="{Binding BackgroundBrush}" BorderBrush="{Binding SelectionBrush}"
+                            BorderThickness="1" CornerRadius="9" Padding="10,8">
+                      <Grid ColumnSpacing="9">
+                        <Grid.ColumnDefinitions>
+                          <ColumnDefinition Width="Auto" />
+                          <ColumnDefinition Width="*" />
+                          <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Border Width="4" CornerRadius="2" Background="{Binding SwatchBrush}" />
+                        <StackPanel Grid.Column="1" Spacing="1">
+                          <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold"
+                                     Foreground="{StaticResource DataBrush}" TextTrimming="CharacterEllipsis" />
+                          <TextBlock Text="{Binding Detail}" FontSize="11"
+                                     Foreground="{StaticResource MutedBrush}" />
+                        </StackPanel>
+                        <FontIcon Grid.Column="2" Glyph="&#xE73E;" FontSize="12"
+                                  Foreground="{StaticResource AccentBrush}"
+                                  Visibility="{Binding CheckVisibility}" />
+                      </Grid>
+                    </Border>
+                  </Button>
+                </DataTemplate>
+              </ListView.ItemTemplate>
+            </ListView>
+          </Grid>
+        </Border>
+
+        <Grid x:Name="DocumentPanel" Grid.Row="2" ColumnSpacing="6">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
@@ -329,7 +399,10 @@
                   <ColumnDefinition Width="Auto" />
                   <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <ComboBox x:Name="ToolPicker" SelectedIndex="0" Width="124"
+                <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                  <TextBlock local:Localized.Uid="LightingStudioSharedCanvas"
+                             FontSize="13" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                  <ComboBox x:Name="ToolPicker" SelectedIndex="0" Width="124"
                           VerticalAlignment="Center"
                           AutomationProperties.AutomationId="StudioToolPicker"
                           SelectionChanged="ToolChanged">
@@ -357,7 +430,8 @@
                       <TextBlock local:Localized.Uid="LightingStudioToolMove" />
                     </StackPanel>
                   </ComboBoxItem>
-                </ComboBox>
+                  </ComboBox>
+                </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4"
                             HorizontalAlignment="Right" VerticalAlignment="Center">
                   <Button x:Name="ZoomOutButton" Click="ZoomOutClick"
@@ -385,14 +459,14 @@
                           AutomationProperties.AutomationId="StudioZoomIn">
                     <FontIcon Glyph="&#xE12E;" FontFamily="{StaticResource IconFontFamily}" FontSize="14" />
                   </Button>
-                  <Border Width="1" Height="22" Margin="8,0" Background="{StaticResource LineBrush}" />
+                  <Border x:Name="RotateSeparator" Width="1" Height="22" Margin="8,0" Background="{StaticResource LineBrush}" />
                   <Button x:Name="RotateDeviceButton" Click="RotateDeviceClick"
                           Width="32" Height="32" MinWidth="32" MinHeight="32" Padding="0"
                           Style="{StaticResource IconButtonStyle}"
                           AutomationProperties.AutomationId="RotateDeviceButton">
                     <FontIcon Glyph="&#xE14A;" FontFamily="{StaticResource IconFontFamily}" FontSize="14" />
                   </Button>
-                  <Border Width="1" Height="22" Margin="8,0" Background="{StaticResource LineBrush}" />
+                  <Border x:Name="InspectorSeparator" Width="1" Height="22" Margin="8,0" Background="{StaticResource LineBrush}" />
                   <Button x:Name="InspectorToggleButton" Click="ToggleInspectorClick"
                           MinHeight="32" Padding="10,0"
                           Style="{StaticResource SecondaryButtonStyle}"
@@ -429,7 +503,7 @@
                 <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap"
                            FontSize="12" Foreground="{StaticResource MutedBrush}" />
               </StackPanel>
-              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6"
+              <StackPanel x:Name="SelectionActions" Grid.Column="1" Orientation="Horizontal" Spacing="6"
                           VerticalAlignment="Center">
                 <Button x:Name="SelectAllButton" Click="SelectAllClick"
                         AutomationProperties.AutomationId="StudioSelectAll">
@@ -458,7 +532,8 @@
         </Border>
 
         <Border x:Name="InspectorPanel" Grid.Row="1" Background="{StaticResource SurfaceBrush}"
-                CornerRadius="12" Padding="14,12" AutomationProperties.AutomationId="StudioInspectorPanel">
+                CornerRadius="12" Padding="14,12" Visibility="Collapsed"
+                AutomationProperties.AutomationId="StudioInspectorPanel">
           <Grid RowSpacing="8">
             <Grid.RowDefinitions>
               <RowDefinition Height="Auto" />
@@ -539,6 +614,7 @@
             </Grid>
           </Grid>
         </Border>
+
       </Grid>
     </Grid>
   </Grid>

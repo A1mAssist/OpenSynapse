@@ -1628,6 +1628,7 @@
   <data name="RazerHidKnobModeVerticalScroll" xml:space="preserve"><value>縦スクロール</value></data>
   <data name="RazerHidKnobModeHorizontalScroll" xml:space="preserve"><value>横スクロール</value></data>
   <data name="RazerHidKnobModeSwitchApps" xml:space="preserve"><value>アプリを切り替え</value></data>
+  <data name="RazerHidKnobModeSwitchBrowserTabs" xml:space="preserve"><value>ブラウザーのタブを切り替え</value></data>
   <data name="RazerHidApplyButton.Content" xml:space="preserve"><value>適用</value></data>
   <data name="RazerHidHapticScrollTitle.Text" xml:space="preserve"><value>ハプティック スクロール ステージ</value></data>
   <data name="RazerHidHapticScrollDescription.Text" xml:space="preserve"><value>切り替えに参加するステージを選択してから、有効にするステージを選択します。</value></data>
@@ -3561,6 +3562,20 @@
   <data name="LightingStudioColorOrange" xml:space="preserve"><value>オレンジ</value></data>
   <data name="LightingStudioColorYellow" xml:space="preserve"><value>黄</value></data>
   <data name="LightingStudioColorWhite" xml:space="preserve"><value>白</value></data>
+  <data name="LightingStudioEdit" xml:space="preserve"><value>編集</value></data>
+  <data name="LightingStudioDone" xml:space="preserve"><value>完了</value></data>
+  <data name="LightingStudioScenes" xml:space="preserve"><value>シーン</value></data>
+  <data name="LightingStudioSharedCanvas" xml:space="preserve"><value>共有キャンバス</value></data>
+  <data name="LightingStudioSceneAurora" xml:space="preserve"><value>オーロラブレス</value></data>
+  <data name="LightingStudioSceneHeartbeat" xml:space="preserve"><value>ハートビート</value></data>
+  <data name="LightingStudioSceneNeonChase" xml:space="preserve"><value>ネオンチェイス</value></data>
+  <data name="LightingStudioSceneDeepEcho" xml:space="preserve"><value>ディープエコー</value></data>
+  <data name="LightingStudioSceneLavaPulse" xml:space="preserve"><value>ラバパルス</value></data>
+  <data name="LightingStudioScenePrismSweep" xml:space="preserve"><value>プリズムスイープ</value></data>
+  <data name="LightingStudioDeviceSummary" xml:space="preserve"><value>全デバイス: {0} · 単色: {1}</value></data>
+  <data name="LightingStudioStatusSceneSelected" xml:space="preserve"><value>シーン {0} をプレビュー中。適用するとデバイスに送信します。</value></data>
+  <data name="LightingStudioStatusSceneEditing" xml:space="preserve"><value>{0} を未保存のプロファイルとして開きました。</value></data>
+  <data name="LightingStudioStatusSceneResync" xml:space="preserve"><value>{0} を新しいデバイスと再同期しました。</value></data>
   <data name="LightingStudioStatusHint" xml:space="preserve"><value>レイヤーを選択してパラメーターを調整します。プレビューはリアルタイムで更新されます。</value></data>
   <data name="LightingStudioStatusLoadingLayout" xml:space="preserve"><value>デバイス レイアウトを読み込んでいます...</value></data>
   <data name="LightingStudioStatusInputLayoutMissing" xml:space="preserve"><value>キーボード入力は無視されました: {0} レイアウトがまだ読み込まれていません。</value></data>

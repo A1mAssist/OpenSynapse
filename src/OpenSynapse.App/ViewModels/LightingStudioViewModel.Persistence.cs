@@ -33,11 +33,23 @@ public sealed partial class LightingStudioViewModel
     {
         try
         {
-            StudioProjectCodec.Save(AppliedProjectPath(), _project);
+            StudioProjectCodec.Save(AppliedProjectPath(), AppliedProjectSnapshot());
         }
         catch (Exception exception) when (IsExpected(exception))
         {
         }
+    }
+
+    /// <summary>A scene is applied without touching the user's project file.</summary>
+    private StudioProject AppliedProjectSnapshot()
+    {
+        if (_activeScene is not { } scene) return _project;
+        var project = new StudioProject { Name = AppStrings.Text(scene.NameKey) };
+        var profile = StudioSceneRenderer.BuildProfile(
+            scene, _project.SelectedProfile, AppStrings.Text(scene.NameKey));
+        project.Profiles.Add(profile);
+        project.SelectedProfileId = profile.Id;
+        return project;
     }
 
     private static void ClearAppliedProject()

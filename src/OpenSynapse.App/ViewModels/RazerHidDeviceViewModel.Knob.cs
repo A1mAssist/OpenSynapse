@@ -15,8 +15,11 @@ public sealed partial class RazerHidDeviceViewModel
     private RazerKnobStage? _knobCurrentStage;
     private RazerHidKnobStageRowViewModel? _selectedKnobStage;
 
+    private RazerKnobModeTable? KnobModeTable =>
+        RazerKnobProtocol.GetModeTable(Connection.Definition.ProductId);
+
     public ObservableCollection<RazerHidKnobStageRowViewModel> KnobStages { get; } = new();
-    public Visibility KnobVisibility => VisibleWhen(HasAny(
+    public Visibility KnobVisibility => VisibleWhen(KnobModeTable is not null && HasAny(
         RazerHidBackendCapability.KnobRead, RazerHidBackendCapability.KnobWrite));
     public Visibility KnobWriteVisibility => VisibleWhen(Has(RazerHidBackendCapability.KnobWrite));
     public RazerHidKnobStageRowViewModel? SelectedKnobStage
@@ -80,11 +83,20 @@ public sealed partial class RazerHidDeviceViewModel
                 var previousProfile = ReadProfile(settings => settings.Keyboard.KnobMode);
                 var target = SelectedKnobStage;
                 var stages = KnobStages.Select(row => row.ToStage()).ToArray();
+                var table = KnobModeTable;
+                if (table is null)
+                {
+                    return;
+                }
                 // Resolve once: the rollback must write back to the same slot even if
                 // the device switched profiles while this apply was in flight.
                 var profileId = await _service.ResolveActiveProfileIdAsync(Connection, cancellationToken);
                 await _service.SetKnobConfigurationAsync(
                     Connection, profileId, KnobId, stages, cancellationToken);
+                await ApplyKnobStateAsync(
+                    profileId, table, stages,
+                    target is { IsEnabled: true } ? target.ModeId : null,
+                    cancellationToken);
                 if (target is { IsEnabled: true } selected)
                 {
                     await _service.SetKnobModeAsync(
@@ -97,13 +109,17 @@ public sealed partial class RazerHidDeviceViewModel
                 if (target is { } applied)
                 {
                     await SaveProfileAsync(
-                        settings => settings.Keyboard.KnobMode = (int)applied.Mode,
+                        settings => settings.Keyboard.KnobMode = applied.ModeId,
                         settings => settings.Keyboard.KnobMode = previousProfile,
                         null,
                         async token =>
                         {
                             await _service.SetKnobConfigurationAsync(
                                 Connection, profileId, KnobId, previousStages, token);
+                            await ApplyKnobStateAsync(
+                                profileId, table, previousStages,
+                                previousStage?.ModeId,
+                                token);
                             if (previousStage is { } previous)
                             {
                                 await _service.SetKnobModeAsync(
@@ -116,38 +132,93 @@ public sealed partial class RazerHidDeviceViewModel
 
     private async Task RefreshKnobAsync(CancellationToken cancellationToken, byte? profileId = null)
     {
+        var table = KnobModeTable;
+        if (table is null)
+        {
+            return;
+        }
+
         profileId ??= await _service.ResolveActiveProfileIdAsync(Connection, cancellationToken);
         var configuration = await _service.GetKnobConfigurationAsync(
             Connection, profileId.Value, KnobId, cancellationToken);
         KnobStages.Clear();
         foreach (var stage in configuration.Stages)
         {
-            KnobStages.Add(new RazerHidKnobStageRowViewModel(stage));
+            KnobStages.Add(new RazerHidKnobStageRowViewModel(stage, table));
         }
         OnPropertyChanged(nameof(CanApplyKnob));
 
-        var mode = await _service.GetKnobModeAsync(Connection, profileId.Value, KnobId, cancellationToken);
+        if (Has(RazerHidBackendCapability.OledRead))
+        {
+            var modeState = await _service.GetKnobModeStateAsync(
+                Connection, profileId.Value, cancellationToken);
+            foreach (var row in KnobStages)
+            {
+                row.IsEnabled = row.StateFlagIndex < modeState.Flags.Count &&
+                    modeState.Flags[row.StateFlagIndex] == 1;
+            }
+
+            var active = await _service.GetKnobActiveModeAsync(
+                Connection, profileId.Value, cancellationToken);
+            SelectedKnobStage = KnobStages.FirstOrDefault(row =>
+                row.ModeId == active.ModeId && row.IsEnabled)
+                ?? KnobStages.FirstOrDefault(row => row.ModeId == active.ModeId)
+                ?? KnobStages.FirstOrDefault(row => row.IsEnabled)
+                ?? KnobStages.FirstOrDefault();
+            _knobCurrentStage = SelectedKnobStage?.ToStage();
+            return;
+        }
+
+        var mode = await _service.GetKnobModeAsync(
+            Connection, profileId.Value, KnobId, cancellationToken);
         _knobCurrentStage = mode.Stage;
         SelectedKnobStage = KnobStages.FirstOrDefault(row => row.Stage == mode.Stage.Stage)
             ?? KnobStages.FirstOrDefault();
+    }
+
+    private async Task ApplyKnobStateAsync(
+        byte profileId,
+        RazerKnobModeTable table,
+        IReadOnlyList<RazerKnobStage> stages,
+        byte? activeModeId,
+        CancellationToken cancellationToken)
+    {
+        if (!Has(RazerHidBackendCapability.OledWrite))
+        {
+            return;
+        }
+
+        var flags = RazerKnobProtocol.CreateModeStateFlags(table, stages);
+        await _service.SetKnobModeStateAsync(
+            Connection, profileId, flags, cancellationToken);
+        if (activeModeId is not { } modeId ||
+            RazerKnobProtocol.FindActiveMode(table, stages, modeId) is not { } active)
+        {
+            return;
+        }
+
+        await _service.SetKnobActiveModeAsync(
+            Connection, profileId, active, cancellationToken);
     }
 
 }
 
 public sealed class RazerHidKnobStageRowViewModel : INotifyPropertyChanged
 {
-    private static readonly RazerKnobMode[] Modes = Enum.GetValues<RazerKnobMode>();
-    private string[] _modeOptions = BuildModeOptions();
-    private RazerKnobMode _mode;
+    private readonly RazerKnobModeTable _table;
+    private string[] _modeOptions;
+    private byte _modeId;
 
-    public RazerHidKnobStageRowViewModel(RazerKnobStage stage)
+    public RazerHidKnobStageRowViewModel(RazerKnobStage stage, RazerKnobModeTable table)
     {
+        _table = table;
         Disabled = stage.Disabled;
         Stage = stage.Stage;
-        _mode = stage.Mode;
+        _modeId = stage.ModeId;
         Red = stage.Red;
         Green = stage.Green;
         Blue = stage.Blue;
+        _modeOptions = BuildModeOptions();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -164,18 +235,32 @@ public sealed class RazerHidKnobStageRowViewModel : INotifyPropertyChanged
         }
     }
     public byte Stage { get; }
-    public RazerKnobMode Mode => _mode;
-    public string ModeName => AppStrings.Text($"RazerHidKnobMode{_mode}");
+    public byte ModeId => _modeId;
+    public byte StateFlagIndex => _table.Find(_modeId)?.StateFlagIndex ?? byte.MaxValue;
+    public string ModeName => _table.Find(_modeId) is { } mode
+        ? AppStrings.Text(mode.ResourceKey)
+        : _modeId.ToString();
     public string DisplayName => $"{Stage} · {ModeName}";
     public IReadOnlyList<string> ModeOptions => _modeOptions;
     public int ModeIndex
     {
-        get => Array.IndexOf(Modes, _mode);
+        get
+        {
+            for (var index = 0; index < _table.Modes.Count; index++)
+            {
+                if (_table.Modes[index].ModeId == _modeId)
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
         set
         {
-            if (value >= 0 && value < Modes.Length)
+            if (value >= 0 && value < _table.Modes.Count)
             {
-                _mode = Modes[value];
+                _modeId = _table.Modes[value].ModeId;
                 PropertyChanged?.Invoke(this, new(nameof(ModeName)));
                 PropertyChanged?.Invoke(this, new(nameof(DisplayName)));
             }
@@ -191,9 +276,9 @@ public sealed class RazerHidKnobStageRowViewModel : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new(string.Empty));
     }
 
-    public RazerKnobStage ToStage() => new(Disabled, Stage, _mode, Red, Green, Blue);
+    public RazerKnobStage ToStage() => new(Disabled, Stage, _modeId, Red, Green, Blue);
 
-    private static string[] BuildModeOptions() => Modes
-        .Select(mode => AppStrings.Text($"RazerHidKnobMode{mode}"))
+    private string[] BuildModeOptions() => _table.Modes
+        .Select(mode => AppStrings.Text(mode.ResourceKey))
         .ToArray();
 }

@@ -67,7 +67,8 @@ public sealed partial class RazerHidDeviceService
                     }
                 }
 
-                await action(cancellationToken).ConfigureAwait(false);
+                await RunOnContextAsync(context, () => action(cancellationToken))
+                    .ConfigureAwait(false);
             }
         }
         finally
@@ -143,24 +144,36 @@ public sealed partial class RazerHidDeviceService
         }
     }
 
-    private static async Task RunOnContextAsync(
+    private static Task RunOnContextAsync(
         SynchronizationContext? context,
-        Func<Task> action)
+        Func<Task> action) =>
+        RunOnContextAsync(context, async () =>
+        {
+            await action().ConfigureAwait(true);
+            return true;
+        });
+
+    private static async Task<T> RunOnContextAsync<T>(
+        SynchronizationContext? context,
+        Func<Task<T>> action)
     {
         if (context is null || SynchronizationContext.Current == context)
         {
-            await action().ConfigureAwait(true);
-            return;
+            return await action().ConfigureAwait(true);
         }
 
-        var completion = new TaskCompletionSource(
+        var completion = new TaskCompletionSource<T>(
             TaskCreationOptions.RunContinuationsAsynchronously);
+        // Some WinUI continuations drop AsyncLocal; keep the held transaction state.
+        var executionContext = ExecutionContext.Capture();
         context.Post(async _ =>
         {
             try
             {
-                await action().ConfigureAwait(true);
-                completion.TrySetResult();
+                var work = executionContext is null
+                    ? action()
+                    : RunInExecutionContext(executionContext, action);
+                completion.TrySetResult(await work.ConfigureAwait(false));
             }
             catch (OperationCanceledException exception)
             {
@@ -171,7 +184,16 @@ public sealed partial class RazerHidDeviceService
                 completion.TrySetException(exception);
             }
         }, null);
-        await completion.Task.ConfigureAwait(false);
+        return await completion.Task.ConfigureAwait(false);
+    }
+
+    private static Task<T> RunInExecutionContext<T>(
+        ExecutionContext executionContext,
+        Func<Task<T>> action)
+    {
+        Task<T>? task = null;
+        ExecutionContext.Run(executionContext, _ => task = action(), null);
+        return task!;
     }
 
     /// <summary>

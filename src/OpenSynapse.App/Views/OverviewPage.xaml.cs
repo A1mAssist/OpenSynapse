@@ -20,7 +20,8 @@ public sealed partial class OverviewPage : UserControl
 
     internal FrameworkElement TelemetrySection => SystemTelemetrySection;
 
-    internal void ScrollToTop() => PageScrollViewer.ChangeView(null, 0, null, disableAnimation: true);
+    internal void ScrollToTop() => PageScrollViewer.ScrollTo(
+        0, 0, new ScrollingScrollOptions(ScrollingAnimationMode.Disabled));
 
     internal void RefreshLayout()
     {

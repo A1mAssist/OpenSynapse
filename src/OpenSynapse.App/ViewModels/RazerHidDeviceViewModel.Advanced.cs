@@ -56,16 +56,15 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             async () =>
             {
                 var previous = ScrollFreeNotchedModeIndex;
+                var target = (RazerScrollFreeNotchedMode)previous;
                 var previousProfile = ReadProfile(settings => settings.Viper.ScrollFreeNotched);
-                await _service.SetScrollFreeNotchedModeAsync(Connection,
-                    (RazerScrollFreeNotchedMode)ScrollFreeNotchedModeIndex, cancellationToken);
+                await _service.SetScrollFreeNotchedModeAsync(Connection, target, cancellationToken);
                 if (Has(RazerHidBackendCapability.ScrollFreeNotchedModeRead))
-                    ScrollFreeNotchedModeIndex =
-                        (int)await _service.GetScrollFreeNotchedModeAsync(Connection, cancellationToken);
+                    await TryReadbackAsync(async () => ScrollFreeNotchedModeIndex =
+                        (int)await _service.GetScrollFreeNotchedModeAsync(Connection, cancellationToken));
                 await SaveProfileAsync(
                     settings => settings.Viper.ScrollFreeNotched =
-                        (RazerScrollFreeNotchedMode)ScrollFreeNotchedModeIndex ==
-                        RazerScrollFreeNotchedMode.FreeSpinMode,
+                        target == RazerScrollFreeNotchedMode.FreeSpinMode,
                     settings => settings.Viper.ScrollFreeNotched = previousProfile,
                     () => ScrollFreeNotchedModeIndex = previous,
                     token => _service.SetScrollFreeNotchedModeAsync(
@@ -82,12 +81,12 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                 var previous = ScrollAccelerationLevel;
                 var previousProfile = ReadProfile(settings => settings.Viper.ScrollAccelerationLevel);
                 await _service.SetScrollVirtualAccelerationLevelAsync(
-                    Connection, ScrollAccelerationLevel, cancellationToken);
+                    Connection, previous, cancellationToken);
                 if (Has(RazerHidBackendCapability.ScrollAccelerationLevelRead))
-                    ScrollAccelerationLevel =
-                        await _service.GetScrollVirtualAccelerationLevelAsync(Connection, cancellationToken);
+                    await TryReadbackAsync(async () => ScrollAccelerationLevel =
+                        await _service.GetScrollVirtualAccelerationLevelAsync(Connection, cancellationToken));
                 await SaveProfileAsync(
-                    settings => settings.Viper.ScrollAccelerationLevel = ScrollAccelerationLevel,
+                    settings => settings.Viper.ScrollAccelerationLevel = previous,
                     settings => settings.Viper.ScrollAccelerationLevel = previousProfile,
                     () => ScrollAccelerationLevel = previous,
                     token => _service.SetScrollVirtualAccelerationLevelAsync(Connection, previous, token),
@@ -102,11 +101,12 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             {
                 var previous = ScrollMode;
                 var previousProfile = ReadProfile(settings => settings.Viper.ScrollMode);
-                await _service.SetScrollModeAsync(Connection, ScrollMode, cancellationToken);
+                await _service.SetScrollModeAsync(Connection, previous, cancellationToken);
                 if (Has(RazerHidBackendCapability.ScrollModeRead))
-                    ScrollMode = await _service.GetScrollModeAsync(Connection, cancellationToken);
+                    await TryReadbackAsync(async () =>
+                        ScrollMode = await _service.GetScrollModeAsync(Connection, cancellationToken));
                 await SaveProfileAsync(
-                    settings => settings.Viper.ScrollMode = ToProfileScrollMode(ScrollMode),
+                    settings => settings.Viper.ScrollMode = ToProfileScrollMode(previous),
                     settings => settings.Viper.ScrollMode = previousProfile,
                     () => ScrollMode = previous,
                     token => _service.SetScrollModeAsync(Connection, previous, token),
@@ -121,11 +121,12 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             {
                 var previous = ScrollAccelerationEnabled;
                 var previousProfile = ReadProfile(settings => settings.Viper.ScrollAccelerationEnabled);
-                await _service.SetScrollAccelerationAsync(Connection, ScrollAccelerationEnabled, cancellationToken);
+                await _service.SetScrollAccelerationAsync(Connection, previous, cancellationToken);
                 if (Has(RazerHidBackendCapability.ScrollAccelerationRead))
-                    ScrollAccelerationEnabled = await _service.GetScrollAccelerationAsync(Connection, cancellationToken);
+                    await TryReadbackAsync(async () => ScrollAccelerationEnabled =
+                        await _service.GetScrollAccelerationAsync(Connection, cancellationToken));
                 await SaveProfileAsync(
-                    settings => settings.Viper.ScrollAccelerationEnabled = ScrollAccelerationEnabled,
+                    settings => settings.Viper.ScrollAccelerationEnabled = previous,
                     settings => settings.Viper.ScrollAccelerationEnabled = previousProfile,
                     () => ScrollAccelerationEnabled = previous,
                     token => _service.SetScrollAccelerationAsync(Connection, previous, token),
@@ -140,11 +141,12 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             {
                 var previous = SmartReelEnabled;
                 var previousProfile = ReadProfile(settings => settings.Viper.SmartReelEnabled);
-                await _service.SetSmartReelAsync(Connection, SmartReelEnabled, cancellationToken);
+                await _service.SetSmartReelAsync(Connection, previous, cancellationToken);
                 if (Has(RazerHidBackendCapability.SmartReelRead))
-                    SmartReelEnabled = await _service.GetSmartReelAsync(Connection, cancellationToken);
+                    await TryReadbackAsync(async () =>
+                        SmartReelEnabled = await _service.GetSmartReelAsync(Connection, cancellationToken));
                 await SaveProfileAsync(
-                    settings => settings.Viper.SmartReelEnabled = SmartReelEnabled,
+                    settings => settings.Viper.SmartReelEnabled = previous,
                     settings => settings.Viper.SmartReelEnabled = previousProfile,
                     () => SmartReelEnabled = previous,
                     token => _service.SetSmartReelAsync(Connection, previous, token),
@@ -159,11 +161,12 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             {
                 var previous = SmartReelThreshold;
                 var previousProfile = ReadProfile(settings => settings.Viper.SmartReelThreshold);
-                await _service.SetSmartReelThresholdAsync(Connection, SmartReelThreshold, cancellationToken);
+                await _service.SetSmartReelThresholdAsync(Connection, previous, cancellationToken);
                 if (Has(RazerHidBackendCapability.SmartReelThresholdRead))
-                    SmartReelThreshold = await _service.GetSmartReelThresholdAsync(Connection, cancellationToken);
+                    await TryReadbackAsync(async () => SmartReelThreshold =
+                        await _service.GetSmartReelThresholdAsync(Connection, cancellationToken));
                 await SaveProfileAsync(
-                    settings => settings.Viper.SmartReelThreshold = SmartReelThreshold,
+                    settings => settings.Viper.SmartReelThreshold = previous,
                     settings => settings.Viper.SmartReelThreshold = previousProfile,
                     () => SmartReelThreshold = previous,
                     token => _service.SetSmartReelThresholdAsync(Connection, previous, token),

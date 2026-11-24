@@ -56,6 +56,9 @@ internal sealed class RazerHidSoftwareLightingOwner : IAsyncDisposable
                 device = _create(connection);
             }
 
+            // A failed Chroma write may have raised this flag; the connection is
+            // still current, so give the saved profile one chance to land.
+            device.ClearRequiresRescan();
             if (!await device.ApplyConfiguredLightingAsync(cancellationToken).ConfigureAwait(false))
             {
                 failed.Add(connection.InstanceId);

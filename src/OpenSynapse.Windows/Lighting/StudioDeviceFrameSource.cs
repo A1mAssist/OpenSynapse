@@ -8,7 +8,7 @@ namespace OpenSynapse.Windows.Lighting;
 /// into the device's HID row/column frame. Every layer keeps its own playback
 /// clock; without a layout the legacy direct device-matrix path is preserved.
 /// </summary>
-public sealed class StudioDeviceFrameSource : ISoftwareLightingFrameSource
+public class StudioDeviceFrameSource : ISoftwareLightingFrameSource
 {
     private readonly object _gate = new();
     private readonly Dictionary<Guid, StudioPlaybackClock> _clocks = new();
@@ -70,7 +70,7 @@ public sealed class StudioDeviceFrameSource : ISoftwareLightingFrameSource
         _keys = new StudioKeyHeat(matrixRows, matrixColumns);
     }
 
-    public void Update(IEnumerable<StudioLayerRender> layers)
+    public virtual void Update(IEnumerable<StudioLayerRender> layers)
     {
         ArgumentNullException.ThrowIfNull(layers);
         var snapshot = layers.ToArray();
@@ -82,7 +82,7 @@ public sealed class StudioDeviceFrameSource : ISoftwareLightingFrameSource
     /// Applies one key transition in matrix coordinates. The trigger shares this
     /// source's clocks, so rendered frames see the same playback state.
     /// </summary>
-    public int HandleInput(StudioTriggerInput input, double nowSeconds)
+    public virtual int HandleInput(StudioTriggerInput input, double nowSeconds)
     {
         lock (_gate)
         {
@@ -101,15 +101,15 @@ public sealed class StudioDeviceFrameSource : ISoftwareLightingFrameSource
     }
 
     /// <summary>Starts playback without fabricating a held key.</summary>
-    public int TriggerPlayback(StudioTriggerInput input, double nowSeconds) =>
+    public virtual int TriggerPlayback(StudioTriggerInput input, double nowSeconds) =>
         _trigger.Handle(input, nowSeconds);
 
-    internal void RestoreHeldKeys(IEnumerable<(int Row, int Column)> keys)
+    internal virtual void RestoreHeldKeys(IEnumerable<(int Row, int Column)> keys)
     {
         foreach (var key in keys) _keys.Press(key.Row, key.Column);
     }
 
-    public ValueTask<IReadOnlyList<RazerRgb>> RenderAsync(
+    public virtual ValueTask<IReadOnlyList<RazerRgb>> RenderAsync(
         TimeSpan elapsed,
         CancellationToken cancellationToken)
     {

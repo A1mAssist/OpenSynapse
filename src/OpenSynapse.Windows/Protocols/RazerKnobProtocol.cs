@@ -1,24 +1,57 @@
+using OpenSynapse.Core.Devices;
+
 namespace OpenSynapse.Windows.Protocols;
 
-/// <summary>Knob modes from the middleware's command-dial table (identical on every bundle).</summary>
-public enum RazerKnobMode : byte
+/// <summary>Semantic mode names used by the product-specific command-dial tables.</summary>
+public enum RazerKnobModeKind
 {
-    Volume = 0,
-    TrackSelector = 1,
-    OledBrightness = 2,
-    KeyboardLightingBrightness = 3,
-    SwitchApps = 4,
-    WindowsZoom = 5,
-    TrackJogging = 6,
-    VerticalScroll = 7,
-    HorizontalScroll = 8,
+    KeyboardLightingBrightness,
+    WindowsZoom,
+    SwitchApps,
+    TrackJogging,
+    TrackSelector,
+    VerticalScroll,
+    HorizontalScroll,
+    SwitchBrowserTabs,
+    Volume,
+    OledBrightness,
 }
+
+/// <summary>One mode in a product's firmware command-dial table.</summary>
+public readonly record struct RazerKnobModeDefinition(
+    byte ModeId,
+    RazerKnobModeKind Kind,
+    byte StateFlagIndex)
+{
+    public string ResourceKey => $"RazerHidKnobMode{Kind}";
+}
+
+public sealed record RazerKnobModeTable(IReadOnlyList<RazerKnobModeDefinition> Modes)
+{
+    public RazerKnobModeDefinition? Find(byte modeId)
+    {
+        foreach (var mode in Modes)
+        {
+            if (mode.ModeId == modeId)
+            {
+                return mode;
+            }
+        }
+
+        return null;
+    }
+}
+
+public readonly record struct RazerKnobActiveMode(
+    byte ModeId,
+    byte DisplayOrder,
+    byte TotalEnabledFunctions);
 
 /// <summary>One six-byte knob configuration row: disabled, stage, mode and RGB.</summary>
 public readonly record struct RazerKnobStage(
     byte Disabled,
     byte Stage,
-    RazerKnobMode Mode,
+    byte ModeId,
     byte Red,
     byte Green,
     byte Blue);
@@ -46,6 +79,7 @@ public static class RazerKnobProtocol
 {
     public const int StageCount = 8;
     public const int StageSize = 6;
+    public const int ModeStateFlagCount = 10;
 
     /// <summary>The default onboard profile every dial write targets.</summary>
     public const byte DefaultProfileId = 0x01;
@@ -57,6 +91,88 @@ public static class RazerKnobProtocol
     private const byte SetModeCommandId = 0x13;
     private const byte ConfigurationSize = 50;
     private const byte ModeSize = 8;
+
+    private static readonly RazerKnobModeTable EightStageModes = new(
+    [
+        new(0, RazerKnobModeKind.KeyboardLightingBrightness, 3),
+        new(1, RazerKnobModeKind.WindowsZoom, 5),
+        new(2, RazerKnobModeKind.SwitchApps, 4),
+        new(3, RazerKnobModeKind.TrackJogging, 6),
+        new(4, RazerKnobModeKind.TrackSelector, 1),
+        new(5, RazerKnobModeKind.VerticalScroll, 7),
+        new(6, RazerKnobModeKind.HorizontalScroll, 8),
+        new(7, RazerKnobModeKind.SwitchBrowserTabs, 9),
+    ]);
+
+    private static readonly RazerKnobModeTable NineStageModes = new(
+    [
+        new(0, RazerKnobModeKind.Volume, 0),
+        new(1, RazerKnobModeKind.TrackSelector, 1),
+        new(2, RazerKnobModeKind.OledBrightness, 2),
+        new(3, RazerKnobModeKind.KeyboardLightingBrightness, 3),
+        new(4, RazerKnobModeKind.SwitchApps, 4),
+        new(5, RazerKnobModeKind.WindowsZoom, 5),
+        new(6, RazerKnobModeKind.TrackJogging, 6),
+        new(7, RazerKnobModeKind.VerticalScroll, 7),
+        new(8, RazerKnobModeKind.HorizontalScroll, 8),
+    ]);
+
+    /// <summary>
+    /// The middleware uses different dial tables even between the two BlackWidow V4 Pro
+    /// sizes; never infer a mode byte from a shared enum.
+    /// </summary>
+    public static RazerKnobModeTable? GetModeTable(ushort productId) =>
+        RazerProductAliases.Canonical(productId) switch
+        {
+            0x028D or 0x02C4 => EightStageModes,
+            0x02B3 => NineStageModes,
+            _ => null,
+        };
+
+    public static byte[] CreateModeStateFlags(
+        RazerKnobModeTable table,
+        IReadOnlyList<RazerKnobStage> stages)
+    {
+        ArgumentNullException.ThrowIfNull(table);
+        ArgumentNullException.ThrowIfNull(stages);
+        var flags = new byte[ModeStateFlagCount];
+        foreach (var stage in stages)
+        {
+            if (stage.Disabled != 0 || table.Find(stage.ModeId) is not { } mode)
+            {
+                continue;
+            }
+
+            flags[mode.StateFlagIndex] = 1;
+        }
+
+        return flags;
+    }
+
+    public static RazerKnobActiveMode? FindActiveMode(
+        RazerKnobModeTable table,
+        IReadOnlyList<RazerKnobStage> stages,
+        byte modeId)
+    {
+        ArgumentNullException.ThrowIfNull(table);
+        ArgumentNullException.ThrowIfNull(stages);
+        var enabled = stages
+            .Where(stage => stage.Disabled == 0 && table.Find(stage.ModeId) is not null)
+            .OrderBy(stage => stage.Stage)
+            .ToArray();
+        for (var index = 0; index < enabled.Length; index++)
+        {
+            if (enabled[index].ModeId == modeId)
+            {
+                return new RazerKnobActiveMode(
+                    modeId,
+                    (byte)(index + 1),
+                    (byte)enabled.Length);
+            }
+        }
+
+        return null;
+    }
 
     public static byte[] CreateGetConfigurationRequest(
         byte transactionId,
@@ -97,7 +213,7 @@ public static class RazerKnobProtocol
             var offset = 2 + (index * StageSize);
             arguments[offset] = stage.Disabled;
             arguments[offset + 1] = stage.Stage;
-            arguments[offset + 2] = (byte)stage.Mode;
+            arguments[offset + 2] = stage.ModeId;
             arguments[offset + 3] = stage.Red;
             arguments[offset + 4] = stage.Green;
             arguments[offset + 5] = stage.Blue;
@@ -133,17 +249,12 @@ public static class RazerKnobProtocol
         byte knobId,
         RazerKnobStage stage)
     {
-        if (!Enum.IsDefined(stage.Mode))
-        {
-            throw new ArgumentOutOfRangeException(nameof(stage), stage.Mode, "Unknown knob mode.");
-        }
-
         Span<byte> arguments = stackalloc byte[ModeSize];
         arguments[0] = profileId;
         arguments[1] = knobId;
         arguments[2] = stage.Disabled;
         arguments[3] = stage.Stage;
-        arguments[4] = (byte)stage.Mode;
+        arguments[4] = stage.ModeId;
         arguments[5] = stage.Red;
         arguments[6] = stage.Green;
         arguments[7] = stage.Blue;
@@ -173,7 +284,7 @@ public static class RazerKnobProtocol
             stages[index] = new RazerKnobStage(
                 arguments[offset],
                 arguments[offset + 1],
-                (RazerKnobMode)arguments[offset + 2],
+                arguments[offset + 2],
                 arguments[offset + 3],
                 arguments[offset + 4],
                 arguments[offset + 5]);
@@ -197,7 +308,7 @@ public static class RazerKnobProtocol
             new RazerKnobStage(
                 arguments[2],
                 arguments[3],
-                (RazerKnobMode)arguments[4],
+                arguments[4],
                 arguments[5],
                 arguments[6],
                 arguments[7]));

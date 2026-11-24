@@ -2345,6 +2345,9 @@
   <data name="RazerHidKnobModeSwitchApps" xml:space="preserve">
     <value>Переключить приложение</value>
   </data>
+  <data name="RazerHidKnobModeSwitchBrowserTabs" xml:space="preserve">
+    <value>Переключение вкладок браузера</value>
+  </data>
   <data name="RazerHidApplyButton.Content" xml:space="preserve">
     <value>Применить</value>
   </data>
@@ -7573,6 +7576,48 @@
   </data>
   <data name="LightingStudioColorWhite" xml:space="preserve">
     <value>Белый</value>
+  </data>
+  <data name="LightingStudioEdit" xml:space="preserve">
+    <value>Изменить</value>
+  </data>
+  <data name="LightingStudioDone" xml:space="preserve">
+    <value>Готово</value>
+  </data>
+  <data name="LightingStudioScenes" xml:space="preserve">
+    <value>Сцены</value>
+  </data>
+  <data name="LightingStudioSharedCanvas" xml:space="preserve">
+    <value>Общий холст</value>
+  </data>
+  <data name="LightingStudioSceneAurora" xml:space="preserve">
+    <value>Дыхание авроры</value>
+  </data>
+  <data name="LightingStudioSceneHeartbeat" xml:space="preserve">
+    <value>Пульс сердца</value>
+  </data>
+  <data name="LightingStudioSceneNeonChase" xml:space="preserve">
+    <value>Неоновая погоня</value>
+  </data>
+  <data name="LightingStudioSceneDeepEcho" xml:space="preserve">
+    <value>Глубокое эхо</value>
+  </data>
+  <data name="LightingStudioSceneLavaPulse" xml:space="preserve">
+    <value>Лавовый пульс</value>
+  </data>
+  <data name="LightingStudioScenePrismSweep" xml:space="preserve">
+    <value>Призматический взмах</value>
+  </data>
+  <data name="LightingStudioDeviceSummary" xml:space="preserve">
+    <value>Все устройства: {0} · одна зона: {1}</value>
+  </data>
+  <data name="LightingStudioStatusSceneSelected" xml:space="preserve">
+    <value>Предпросмотр сцены {0}; нажмите «Применить», чтобы отправить её на устройства.</value>
+  </data>
+  <data name="LightingStudioStatusSceneEditing" xml:space="preserve">
+    <value>{0} открыта как несохранённый профиль.</value>
+  </data>
+  <data name="LightingStudioStatusSceneResync" xml:space="preserve">
+    <value>{0} повторно синхронизирована с новым устройством.</value>
   </data>
   <data name="LightingStudioStatusHint" xml:space="preserve">
     <value>Выберите слой и измените его параметры. Предпросмотр обновится сразу.</value>

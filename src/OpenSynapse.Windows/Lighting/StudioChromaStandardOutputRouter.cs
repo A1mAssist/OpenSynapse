@@ -24,6 +24,7 @@ public sealed class StudioChromaStandardOutputRouter : IAsyncDisposable
     private readonly SemaphoreSlim _applyGate = new(1, 1);
     private readonly object _updateGate = new();
     private Func<RazerChromaDeviceConnection, IReadOnlyList<StudioLayerRender>>? _layersForDevice;
+    private StudioWorldRenderer? _world;
     private long _layersVersion;
     private int _stopped;
     private int _disposed;
@@ -44,6 +45,10 @@ public sealed class StudioChromaStandardOutputRouter : IAsyncDisposable
 
     /// <summary>Devices the next apply would write to.</summary>
     public IReadOnlyList<RazerChromaDeviceConnection> GetTargets() => _connections();
+
+    /// <summary>Attaches the shared world canvas; null keeps the per-device renderer.</summary>
+    public void AttachWorld(StudioWorldRenderer world) =>
+        _world = world ?? throw new ArgumentNullException(nameof(world));
 
     /// <summary>
     /// Replaces the per-device layer builder and re-arms a stopped router. The
@@ -94,11 +99,25 @@ public sealed class StudioChromaStandardOutputRouter : IAsyncDisposable
             }
 
             var now = Environment.TickCount64;
+            var worldGeneration = _world?.Generation ?? 0;
             foreach (var target in targets)
             {
-                if (!_outputs.TryGetValue(target.DevicePath, out var output))
+                if (!_outputs.TryGetValue(target.DevicePath, out var output) ||
+                    output.WorldGeneration != worldGeneration)
                 {
-                    output = new DeviceOutput(new StudioDeviceFrameSource(1, 1, _inputProvider));
+                    var previous = output;
+                    var source = _world?.CreateSource(target.DevicePath, 1, 1, 1, 1, null)
+                        ?? new StudioDeviceFrameSource(1, 1, _inputProvider);
+                    output = new DeviceOutput(source)
+                    {
+                        WorldGeneration = worldGeneration,
+                    };
+                    if (previous is not null)
+                    {
+                        output.Baseline = previous.Baseline;
+                        output.BaselineAttempted = previous.BaselineAttempted;
+                        output.Touched = previous.Touched;
+                    }
                     _outputs[target.DevicePath] = output;
                 }
 
@@ -259,6 +278,7 @@ public sealed class StudioChromaStandardOutputRouter : IAsyncDisposable
         internal long LastAttemptTimestamp { get; set; }
         internal bool Attempted { get; set; }
         internal long LayersVersion { get; set; } = -1;
+        internal long WorldGeneration { get; set; } = -1;
         internal Baseline? Baseline { get; set; }
         internal bool BaselineAttempted { get; set; }
         internal bool Touched { get; set; }

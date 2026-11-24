@@ -148,6 +148,8 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
     private readonly int _rows;
     private readonly int _columns;
     private readonly StudioLedLayout? _layout;
+    private StudioWorldRenderer? _world;
+    private string? _worldInstanceId;
     private StudioLayerRender[] _layers = [];
     private double _lastKeySeconds;
     private double _lastRenderSeconds;
@@ -216,6 +218,7 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
     public void Update(IEnumerable<StudioLayerRender> layers)
     {
         ArgumentNullException.ThrowIfNull(layers);
+        if (UsesWorld) return;
         var snapshot = layers.ToArray();
         _trigger.Update(snapshot, _rows, _columns);
         Volatile.Write(ref _layers, snapshot);
@@ -227,6 +230,9 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
     /// </summary>
     public int HandleInput(StudioTriggerInput input, double nowSeconds)
     {
+        if (UsesWorld)
+            return _world!.HandleOutputInput(_worldInstanceId, input, nowSeconds, rowOffset: 0);
+
         lock (_gate)
         {
             AdvanceKeyTime(nowSeconds);
@@ -245,11 +251,31 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
 
     /// <summary>Starts playback without fabricating a held key.</summary>
     public int TriggerPlayback(StudioTriggerInput input, double nowSeconds) =>
-        _trigger.Handle(input, nowSeconds);
+        UsesWorld
+            ? _world!.TriggerOutputPlayback(_worldInstanceId, input, nowSeconds, rowOffset: 0)
+            : _trigger.Handle(input, nowSeconds);
 
     internal void RestoreHeldKeys(IEnumerable<(int Row, int Column)> keys)
     {
+        if (UsesWorld)
+        {
+            _world!.RestoreOutputHeldKeys(_worldInstanceId, keys, rowOffset: 0);
+            return;
+        }
+
         foreach (var key in keys) _keys.Press(key.Row, key.Column);
+    }
+
+    /// <summary>
+    /// Samples the shared world canvas into this Blade's logical matrix. The
+    /// existing sparse/direct mapping still turns that matrix into the device frame.
+    /// </summary>
+    public void AttachWorld(StudioWorldRenderer world, string instanceId)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
+        _world = world;
+        _worldInstanceId = instanceId;
     }
 
     public ValueTask<IReadOnlyList<RazerRgb>> RenderAsync(
@@ -257,6 +283,20 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        if (UsesWorld &&
+            _world!.TryGetSampleMap(_worldInstanceId, _rows, _columns, rowOffset: 0, out var sampleMap))
+        {
+            var world = _world.RenderOutputFrame(elapsed);
+            var sampled = new RazerRgb[_rows * _columns];
+            for (var index = 0; index < sampled.Length; index++)
+            {
+                var worldIndex = sampleMap.WorldIndices[index];
+                if ((uint)worldIndex < (uint)world.Length) sampled[index] = world[worldIndex];
+            }
+
+            return ValueTask.FromResult(MapToDevice(sampled));
+        }
+
         var layers = Volatile.Read(ref _layers);
         var now = Math.Max(0, elapsed.TotalSeconds);
         var timed = new (StudioLayerRender Layer, double Seconds)[layers.Length];
@@ -292,6 +332,14 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
             colors[index] = new RazerRgb(logical[index].R, logical[index].G, logical[index].B);
         }
 
+        return ValueTask.FromResult(MapToDevice(colors));
+    }
+
+    private bool UsesWorld =>
+        _world?.Active == true && _world.Canvas?.HasDevice(_worldInstanceId) == true;
+
+    private IReadOnlyList<RazerRgb> MapToDevice(RazerRgb[] colors)
+    {
         if (_layout is not null)
         {
             var device = new RazerRgb[_layout.DeviceRows * _layout.DeviceColumns];
@@ -309,15 +357,15 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
                     colors[led.MatrixRow * _columns + led.MatrixCol];
             }
 
-            return ValueTask.FromResult<IReadOnlyList<RazerRgb>>(device);
+            return device;
         }
 
-        return ValueTask.FromResult<IReadOnlyList<RazerRgb>>(_mode switch
+        return _mode switch
         {
             StudioBladeFrameMode.Sparse710 => BladeLightingLayout.MapToDeviceFrame(colors),
             StudioBladeFrameMode.Sparse16 => BladeLightingLayout16.MapToDeviceFrame(colors),
             _ => colors,
-        });
+        };
     }
 
     // Caller holds _gate so elapsed time is applied before a new press is recorded.

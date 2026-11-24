@@ -150,10 +150,10 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         if (IsBusy) return;
         var mode = Mode;
         var selectedButtonId = _selectedRow?.ButtonId;
-        IsBusy = true;
-        ErrorText = string.Empty;
         try
         {
+            IsBusy = true;
+            ErrorText = string.Empty;
             await RefreshMacroContextAsync(cancellationToken).ConfigureAwait(true);
             var ids = (await _transport.GetButtonIdsAsync(cancellationToken).ConfigureAwait(true)).ToArray();
             if (ids.Length > 0 && ids.Distinct().Count() != ids.Length)
@@ -220,7 +220,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                      !RazerSoftwareMacroAssignmentPolicy.NeedsDeviceAssignment(softwareTrigger)) &&
                     (LayerIndex == 0 || _canObserveHyperShiftLayer),
                     _catalog,
-                    RazerKeyboardExtraKeyCatalog.IsHostOnlyRow(_productId, id));
+                    hostOnly: false);
                 row.PropertyChanged += OnRowPropertyChanged;
                 byte? assignedSlot = null;
                 bool? assignmentIsOff = null;

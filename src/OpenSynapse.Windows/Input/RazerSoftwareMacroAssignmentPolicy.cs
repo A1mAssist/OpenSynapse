@@ -1,4 +1,3 @@
-using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Macros;
 
 namespace OpenSynapse.Windows.Input;
@@ -11,8 +10,6 @@ namespace OpenSynapse.Windows.Input;
 public static class RazerSoftwareMacroAssignmentPolicy
 {
     public static bool NeedsOff(MacroInput input) =>
-        !RazerKeyboardExtraKeyCatalog.IsHostOnlyPrivateKey(
-            input.DeviceId, input.RazerKeyCode) &&
         input.Kind is MacroInputKind.RazerKey or
             MacroInputKind.NagaSideButton or
             MacroInputKind.DeviceButton;

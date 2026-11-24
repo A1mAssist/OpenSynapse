@@ -190,12 +190,12 @@ internal sealed class ChromaBrokerHost : IAsyncDisposable
                 foreach (var type in _latest.Keys.ToArray())
                 {
                     if (!_latest.TryRemove(type, out var effect)) continue;
+                    // Receiving a frame is enough to require a restore on Bye: a
+                    // timed-out write may still have reached part of the device.
+                    Interlocked.Exchange(ref _sessionApplied, 1);
                     try
                     {
-                        if (await _applyEffect(effect, cancellationToken).ConfigureAwait(false))
-                        {
-                            Interlocked.Exchange(ref _sessionApplied, 1);
-                        }
+                        await _applyEffect(effect, cancellationToken).ConfigureAwait(false);
                     }
                     catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                     {

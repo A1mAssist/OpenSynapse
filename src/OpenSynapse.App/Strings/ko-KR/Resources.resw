@@ -1628,6 +1628,7 @@
   <data name="RazerHidKnobModeVerticalScroll" xml:space="preserve"><value>세로 스크롤</value></data>
   <data name="RazerHidKnobModeHorizontalScroll" xml:space="preserve"><value>가로 스크롤</value></data>
   <data name="RazerHidKnobModeSwitchApps" xml:space="preserve"><value>앱 전환</value></data>
+  <data name="RazerHidKnobModeSwitchBrowserTabs" xml:space="preserve"><value>브라우저 탭 전환</value></data>
   <data name="RazerHidApplyButton.Content" xml:space="preserve"><value>적용</value></data>
   <data name="RazerHidHapticScrollTitle.Text" xml:space="preserve"><value>햅틱 스크롤 단계</value></data>
   <data name="RazerHidHapticScrollDescription.Text" xml:space="preserve"><value>전환에 참여할 단계를 선택한 다음 적용할 단계를 선택하세요.</value></data>
@@ -3561,6 +3562,20 @@
   <data name="LightingStudioColorOrange" xml:space="preserve"><value>주황</value></data>
   <data name="LightingStudioColorYellow" xml:space="preserve"><value>노랑</value></data>
   <data name="LightingStudioColorWhite" xml:space="preserve"><value>흰색</value></data>
+  <data name="LightingStudioEdit" xml:space="preserve"><value>편집</value></data>
+  <data name="LightingStudioDone" xml:space="preserve"><value>완료</value></data>
+  <data name="LightingStudioScenes" xml:space="preserve"><value>장면</value></data>
+  <data name="LightingStudioSharedCanvas" xml:space="preserve"><value>공유 캔버스</value></data>
+  <data name="LightingStudioSceneAurora" xml:space="preserve"><value>오로라 호흡</value></data>
+  <data name="LightingStudioSceneHeartbeat" xml:space="preserve"><value>심장 박동</value></data>
+  <data name="LightingStudioSceneNeonChase" xml:space="preserve"><value>네온 체이스</value></data>
+  <data name="LightingStudioSceneDeepEcho" xml:space="preserve"><value>딥 에코</value></data>
+  <data name="LightingStudioSceneLavaPulse" xml:space="preserve"><value>라바 펄스</value></data>
+  <data name="LightingStudioScenePrismSweep" xml:space="preserve"><value>프리즘 스윕</value></data>
+  <data name="LightingStudioDeviceSummary" xml:space="preserve"><value>전체 장치: {0} · 단일 영역: {1}</value></data>
+  <data name="LightingStudioStatusSceneSelected" xml:space="preserve"><value>장면 {0} 미리 보기 중. 적용하면 장치로 전송됩니다.</value></data>
+  <data name="LightingStudioStatusSceneEditing" xml:space="preserve"><value>{0}을(를) 저장되지 않은 프로필로 열었습니다.</value></data>
+  <data name="LightingStudioStatusSceneResync" xml:space="preserve"><value>{0}이(가) 새 장치와 다시 동기화되었습니다.</value></data>
   <data name="LightingStudioStatusHint" xml:space="preserve"><value>레이어를 선택하고 매개변수를 조정하세요. 미리 보기가 실시간으로 업데이트됩니다.</value></data>
   <data name="LightingStudioStatusLoadingLayout" xml:space="preserve"><value>장치 레이아웃 불러오는 중...</value></data>
   <data name="LightingStudioStatusInputLayoutMissing" xml:space="preserve"><value>키보드 입력이 무시되었습니다. {0} 레이아웃이 아직 로드되지 않았습니다.</value></data>

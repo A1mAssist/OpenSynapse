@@ -4,6 +4,16 @@ public readonly record struct RazerOledScreensaverOption(byte Mode, byte Item);
 
 public readonly record struct RazerChromaBrightnessStatus(byte ProfileId, byte RegionId, byte Status);
 
+public readonly record struct RazerCommandDialActiveMode(
+    byte ProfileId,
+    byte ModeId,
+    byte DisplayOrder,
+    byte TotalEnabledFunctions);
+
+public sealed record RazerCommandDialModeState(
+    byte ProfileId,
+    IReadOnlyList<byte> Flags);
+
 /// <summary>
 /// Protocol 25 class 0x17 OLED commands from the 028D, 02A6 and 02B3 keyboard
 /// middleware bundles. Each tuple below is [dataSize, 0x17, commandId]; the
@@ -28,6 +38,10 @@ public static class RazerOledProtocol
     private const byte SetUpdateVolumeCommandId = 0x0B;
     private const byte GetChromaBrightnessStatusCommandId = 0x98;
     private const byte SetChromaBrightnessStatusCommandId = 0x18;
+    private const byte GetCommandDialActiveModeCommandId = 0x80;
+    private const byte SetCommandDialActiveModeCommandId = 0x00;
+    private const byte GetCommandDialModeStateCommandId = 0x81;
+    private const byte SetCommandDialModeStateCommandId = 0x01;
 
     public static byte[] CreateGetBrightnessRequest(byte transactionId) =>
         Create(transactionId, 1, GetBrightnessCommandId);
@@ -108,6 +122,50 @@ public static class RazerOledProtocol
             regionId,
             status);
 
+    public static byte[] CreateGetCommandDialActiveModeRequest(
+        byte transactionId,
+        byte profileId) =>
+        Create(transactionId, 4, GetCommandDialActiveModeCommandId, profileId);
+
+    public static byte[] CreateSetCommandDialActiveModeRequest(
+        byte transactionId,
+        byte profileId,
+        byte modeId,
+        byte displayOrder,
+        byte totalEnabledFunctions) =>
+        Create(
+            transactionId,
+            4,
+            SetCommandDialActiveModeCommandId,
+            profileId,
+            modeId,
+            displayOrder,
+            totalEnabledFunctions);
+
+    public static byte[] CreateGetCommandDialModeStateRequest(
+        byte transactionId,
+        byte profileId) =>
+        Create(transactionId, 11, GetCommandDialModeStateCommandId, profileId);
+
+    public static byte[] CreateSetCommandDialModeStateRequest(
+        byte transactionId,
+        byte profileId,
+        ReadOnlySpan<byte> flags)
+    {
+        if (flags.Length != RazerKnobProtocol.ModeStateFlagCount)
+        {
+            throw new ArgumentException(
+                $"Command dial state requires {RazerKnobProtocol.ModeStateFlagCount} flags.",
+                nameof(flags));
+        }
+
+        return Create(
+            transactionId,
+            11,
+            SetCommandDialModeStateCommandId,
+            [profileId, .. flags]);
+    }
+
     public static byte ReadBrightness(ReadOnlySpan<byte> response) =>
         Data(response, 1)[0];
 
@@ -144,6 +202,20 @@ public static class RazerOledProtocol
     {
         var data = Data(response, 3);
         return new RazerChromaBrightnessStatus(data[0], data[1], data[2]);
+    }
+
+    public static RazerCommandDialActiveMode ReadCommandDialActiveMode(
+        ReadOnlySpan<byte> response)
+    {
+        var data = Data(response, 4);
+        return new RazerCommandDialActiveMode(data[0], data[1], data[2], data[3]);
+    }
+
+    public static RazerCommandDialModeState ReadCommandDialModeState(
+        ReadOnlySpan<byte> response)
+    {
+        var data = Data(response, 11);
+        return new RazerCommandDialModeState(data[0], data[1..].ToArray());
     }
 
     private static byte[] Create(

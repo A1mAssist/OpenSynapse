@@ -1,4 +1,5 @@
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.Runtime;
 
@@ -10,6 +11,7 @@ internal sealed partial class ChromaDeviceRouter
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            _diagnostic?.Invoke($"Chroma restore starting: touched={_touchedTargets.Count}.");
             await RestoreStandardAsync(cancellationToken).ConfigureAwait(false);
             await RestoreJolieAsync(cancellationToken).ConfigureAwait(false);
             await RestoreHidAsync(cancellationToken).ConfigureAwait(false);
@@ -25,7 +27,9 @@ internal sealed partial class ChromaDeviceRouter
                 _lastFrames.Remove(instanceId);
             }
             _standardBaselines.Clear();
-            _baselineAttempted.Clear();
+            _baselineFailures.Clear();
+            _touchedTargets.Clear();
+            _targetFailures.Clear();
             _hidBaselines.Clear();
             _hidBaselineAttempted.Clear();
             _customEffectPrepared.Clear();
@@ -59,6 +63,30 @@ internal sealed partial class ChromaDeviceRouter
                 {
                     await service.SetBrightnessAsync(brightness, cancellationToken).ConfigureAwait(false);
                 }
+            }
+            catch (Exception exception) when (IsDeviceFailure(exception))
+            {
+                _diagnostic?.Invoke($"Chroma restore for {instanceId} failed: {exception.Message}");
+            }
+        }
+
+        // A wireless target can miss every baseline read and still receive frames.
+        // Put it back on the firmware's own Spectrum effect instead of leaving the
+        // last game frame (often black) on the LEDs.
+        foreach (var instanceId in _touchedTargets)
+        {
+            if (_standardBaselines.ContainsKey(instanceId) ||
+                !_standardServices.TryGetValue(instanceId, out var service))
+            {
+                continue;
+            }
+
+            try
+            {
+                await service.SetEffectAsync(
+                    RazerChromaEffect.Spectrum, [], cancellationToken).ConfigureAwait(false);
+                _diagnostic?.Invoke(
+                    $"Chroma restore for {instanceId} used the Spectrum fallback.");
             }
             catch (Exception exception) when (IsDeviceFailure(exception))
             {

@@ -79,6 +79,68 @@ public sealed partial class RazerHidDeviceService
             cancellationToken);
     }
 
+    public async Task<RazerCommandDialActiveMode> GetKnobActiveModeAsync(
+        RazerHidDeviceConnection connection,
+        byte profileId,
+        CancellationToken cancellationToken = default)
+    {
+        RequireReady(connection);
+        var request = RazerOledProtocol.CreateGetCommandDialActiveModeRequest(
+            MiddlewareTransactionId, profileId);
+        var response = await ExecuteAsync(connection,
+            new RazerHidRequest("razer_knob_get_active_mode", request),
+            cancellationToken).ConfigureAwait(false);
+        return RazerOledProtocol.ReadCommandDialActiveMode(response);
+    }
+
+    public Task SetKnobActiveModeAsync(
+        RazerHidDeviceConnection connection,
+        byte profileId,
+        RazerKnobActiveMode mode,
+        CancellationToken cancellationToken = default)
+    {
+        RequireReady(connection);
+        return ExecuteWithoutResultAsync(connection,
+            new RazerHidRequest("razer_knob_set_active_mode",
+                RazerOledProtocol.CreateSetCommandDialActiveModeRequest(
+                    MiddlewareTransactionId,
+                    profileId,
+                    mode.ModeId,
+                    mode.DisplayOrder,
+                    mode.TotalEnabledFunctions)),
+            cancellationToken);
+    }
+
+    public async Task<RazerCommandDialModeState> GetKnobModeStateAsync(
+        RazerHidDeviceConnection connection,
+        byte profileId,
+        CancellationToken cancellationToken = default)
+    {
+        RequireReady(connection);
+        var request = RazerOledProtocol.CreateGetCommandDialModeStateRequest(
+            MiddlewareTransactionId, profileId);
+        var response = await ExecuteAsync(connection,
+            new RazerHidRequest("razer_knob_get_mode_state", request),
+            cancellationToken).ConfigureAwait(false);
+        return RazerOledProtocol.ReadCommandDialModeState(response);
+    }
+
+    public Task SetKnobModeStateAsync(
+        RazerHidDeviceConnection connection,
+        byte profileId,
+        ReadOnlyMemory<byte> flags,
+        CancellationToken cancellationToken = default)
+    {
+        RequireReady(connection);
+        return ExecuteWithoutResultAsync(connection,
+            new RazerHidRequest("razer_knob_set_mode_state",
+                RazerOledProtocol.CreateSetCommandDialModeStateRequest(
+                    MiddlewareTransactionId,
+                    profileId,
+                    flags.Span)),
+            cancellationToken);
+    }
+
     public async Task<RazerAnalogKeyActuationTable> GetAnalogKeyActuationPointsAsync(
         RazerHidDeviceConnection connection,
         byte dataType,
@@ -349,6 +411,10 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken)
     {
         if (definition.Category is not DeviceCategory.Keyboard)
+        {
+            return;
+        }
+        if (RazerKnobProtocol.GetModeTable(definition.ProductId) is null)
         {
             return;
         }

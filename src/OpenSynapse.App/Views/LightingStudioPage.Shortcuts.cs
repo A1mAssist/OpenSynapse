@@ -9,7 +9,7 @@ public sealed partial class LightingStudioPage
 {
     private void UndoAcceleratorInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
-        if (IsTextInputFocused()) return;
+        if (_viewModel?.IsEditing != true || IsTextInputFocused()) return;
         _historyTimer.Stop();
         _viewModel?.CommitHistory();
         _viewModel?.Undo();
@@ -18,7 +18,7 @@ public sealed partial class LightingStudioPage
 
     private void RedoAcceleratorInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
-        if (IsTextInputFocused()) return;
+        if (_viewModel?.IsEditing != true || IsTextInputFocused()) return;
         _historyTimer.Stop();
         _viewModel?.CommitHistory();
         _viewModel?.Redo();
@@ -27,7 +27,7 @@ public sealed partial class LightingStudioPage
 
     private void RenameAcceleratorInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
-        if (IsTextInputFocused()) return;
+        if (_viewModel?.IsEditing != true || IsTextInputFocused()) return;
         LayerNameBox.Focus(FocusState.Programmatic);
         LayerNameBox.SelectAll();
         args.Handled = true;
@@ -35,28 +35,28 @@ public sealed partial class LightingStudioPage
 
     private void DuplicateAcceleratorInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
-        if (IsTextInputFocused()) return;
+        if (_viewModel?.IsEditing != true || IsTextInputFocused()) return;
         _viewModel?.DuplicateLayer();
         args.Handled = true;
     }
 
     private void DeleteAcceleratorInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
-        if (IsTextInputFocused()) return;
+        if (_viewModel?.IsEditing != true || IsTextInputFocused()) return;
         _viewModel?.RemoveLayer();
         args.Handled = true;
     }
 
     private void PenAcceleratorInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
-        if (IsTextInputFocused()) return;
+        if (_viewModel?.IsEditing != true || IsTextInputFocused()) return;
         ToolPicker.SelectedIndex = 1;
         args.Handled = true;
     }
 
     private void BucketAcceleratorInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
-        if (IsTextInputFocused()) return;
+        if (_viewModel?.IsEditing != true || IsTextInputFocused()) return;
         ToolPicker.SelectedIndex = 2;
         args.Handled = true;
     }

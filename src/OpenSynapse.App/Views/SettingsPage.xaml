@@ -7,7 +7,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
-  <ScrollViewer x:Name="PageScrollViewer" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
+  <ScrollView x:Name="PageScrollViewer" ContentOrientation="Vertical"
+              HorizontalScrollBarVisibility="Hidden">
               <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
                 <StackPanel Spacing="5">
                   <TextBlock local:Localized.Uid="SettingsPageTitle" Style="{StaticResource PageTitleStyle}" />
@@ -281,5 +282,5 @@
                   </Grid>
                 </Button>
               </StackPanel>
-  </ScrollViewer>
+  </ScrollView>
 </UserControl>

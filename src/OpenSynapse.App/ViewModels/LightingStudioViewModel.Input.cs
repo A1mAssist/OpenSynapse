@@ -90,6 +90,12 @@ public sealed partial class LightingStudioViewModel
 
     private int HandlePreviewInput(StudioDeviceOption device, StudioTriggerInput input, double seconds)
     {
+        EnsureWorld();
+        if (UsesWorld(device.EffectiveInstanceId))
+        {
+            return _world.HandlePreviewInput(device.EffectiveInstanceId, input, seconds);
+        }
+
         var (rows, columns) = FrameSize(device);
         if ((uint)input.Row >= (uint)rows || (uint)input.Column >= (uint)columns) return 0;
         var keys = PreviewKeysFor(device, rows, columns);

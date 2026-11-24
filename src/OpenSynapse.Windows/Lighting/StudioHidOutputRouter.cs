@@ -22,6 +22,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
     private readonly Func<RazerHidDeviceConnection, bool> _isOverrideEnabled;
     private readonly Func<int, int, StudioEffectInput>? _inputProvider;
     private readonly StudioHidInputBridge _inputBridge;
+    private StudioWorldRenderer? _world;
     private readonly SemaphoreSlim _applyGate = new(1, 1);
     private readonly ConcurrentDictionary<string, DeviceOutput> _outputs =
         new(StringComparer.OrdinalIgnoreCase);
@@ -86,6 +87,10 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
     /// <summary>Connections the next apply would write to.</summary>
     public IReadOnlyList<RazerHidDeviceConnection> GetTargets() =>
         _connections().Where(IsTarget).ToArray();
+
+    /// <summary>Attaches the shared world canvas; null keeps the per-device renderer.</summary>
+    public void AttachWorld(StudioWorldRenderer world) =>
+        _world = world ?? throw new ArgumentNullException(nameof(world));
 
     /// <summary>
     /// The zone a single-color studio frame should drive: the default zone when
@@ -191,6 +196,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
 
             Func<RazerHidDeviceConnection, IReadOnlyList<StudioLayerRender>>? layersForDevice;
             long layersVersion;
+            var worldGeneration = _world?.Generation ?? 0;
             lock (_updateGate)
             {
                 _inputSeconds = Math.Max(0, elapsed.TotalSeconds);
@@ -242,21 +248,31 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                     !output.Connection.IsSameEndpoint(target) ||
                     output.Rows != dimensions.Rows ||
                     output.Columns != dimensions.Columns ||
-                    !ReferenceEquals(output.Layout, layout))
+                    !ReferenceEquals(output.Layout, layout) ||
+                    output.WorldGeneration != worldGeneration)
                 {
-                    output = new DeviceOutput(
-                        new StudioDeviceFrameSource(
+                    var source = _world?.CreateSource(
+                            target.InstanceId,
+                            matrixRows,
+                            matrixColumns,
+                            dimensions.Rows,
+                            dimensions.Columns,
+                            layout)
+                        ?? new StudioDeviceFrameSource(
                             matrixRows,
                             matrixColumns,
                             dimensions.Rows,
                             dimensions.Columns,
                             layout,
-                            _inputProvider),
+                            _inputProvider);
+                    output = new DeviceOutput(
+                        source,
                         dimensions.Rows,
                         dimensions.Columns,
                         layout)
                     {
                         Connection = target,
+                        WorldGeneration = worldGeneration,
                     };
                     if (previousOutput is not null)
                     {
@@ -527,6 +543,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
         internal long LastWriteTimestamp { get; set; }
         internal long OfflineSince { get; set; }
         internal long LayersVersion { get; set; } = -1;
+        internal long WorldGeneration { get; set; } = -1;
         internal RazerHidLightingBaseline? Baseline { get; set; }
         internal bool BaselineAttempted { get; set; }
         internal bool CustomEffectAttempted { get; set; }
