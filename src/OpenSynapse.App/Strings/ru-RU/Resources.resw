@@ -9845,6 +9845,7 @@
   <data name="LightingStudioPresetConfirm" xml:space="preserve"><value>ОК</value></data>
   <data name="LightingStudioPresetDiamond" xml:space="preserve"><value>Ромб</value></data>
   <data name="LightingStudioPresetEdit" xml:space="preserve"><value>Изменить предустановку</value></data>
+  <data name="LightingStudioPresetEditCurrent" xml:space="preserve"><value>Изменить этот пресет</value></data>
   <data name="LightingStudioPresetExpansion" xml:space="preserve"><value>Скорость расширения (ячеек/с)</value></data>
   <data name="LightingStudioPresetGlow" xml:space="preserve"><value>Свечение</value></data>
   <data name="LightingStudioPresetHold" xml:space="preserve"><value>Сохранять свечение при удержании</value></data>
@@ -9859,6 +9860,99 @@
   <data name="LightingStudioPresetSaveAs" xml:space="preserve"><value>Сохранить как…</value></data>
   <data name="LightingStudioPresetShape" xml:space="preserve"><value>Форма волны</value></data>
   <data name="LightingStudioPresetSpacing" xml:space="preserve"><value>Интервал между кольцами (ячейки)</value></data>
+  <data name="PresetEditorTitle" xml:space="preserve"><value>Редактор пресетов</value></data>
+  <data name="PresetEditorNew" xml:space="preserve"><value>Создать</value></data>
+  <data name="PresetEditorOpen" xml:space="preserve"><value>Открыть</value></data>
+  <data name="PresetEditorSave" xml:space="preserve"><value>Сохранить</value></data>
+  <data name="PresetEditorValidate" xml:space="preserve"><value>Проверить</value></data>
+  <data name="PresetEditorUndo" xml:space="preserve"><value>Отменить</value></data>
+  <data name="PresetEditorRedo" xml:space="preserve"><value>Повторить</value></data>
+  <data name="PresetEditorPlay" xml:space="preserve"><value>Воспроизвести</value></data>
+  <data name="PresetEditorPause" xml:space="preserve"><value>Пауза</value></data>
+  <data name="PresetEditorInfo" xml:space="preserve"><value>Пресет</value></data>
+  <data name="PresetEditorName" xml:space="preserve"><value>Название</value></data>
+  <data name="PresetEditorId" xml:space="preserve"><value>ID</value></data>
+  <data name="PresetEditorKind" xml:space="preserve"><value>Тип</value></data>
+  <data name="PresetEditorCategory" xml:space="preserve"><value>Категория</value></data>
+  <data name="PresetEditorNote" xml:space="preserve"><value>Примечание</value></data>
+  <data name="PresetEditorAddLayer" xml:space="preserve"><value>Добавить слой</value></data>
+  <data name="PresetEditorRemoveLayer" xml:space="preserve"><value>Удалить слой</value></data>
+  <data name="PresetEditorDuplicateLayer" xml:space="preserve"><value>Дублировать слой</value></data>
+  <data name="PresetEditorMoveUp" xml:space="preserve"><value>Переместить вверх</value></data>
+  <data name="PresetEditorMoveDown" xml:space="preserve"><value>Переместить вниз</value></data>
+  <data name="PresetEditorLayerLimit" xml:space="preserve"><value>В пресете может быть не более 4 слоёв.</value></data>
+  <data name="PresetEditorPreview" xml:space="preserve"><value>Предпросмотр</value></data>
+  <data name="PresetEditorPreviewDevice" xml:space="preserve"><value>Устройство</value></data>
+  <data name="PresetEditorPreviewWorld" xml:space="preserve"><value>Общий холст</value></data>
+  <data name="PresetEditorDevice" xml:space="preserve"><value>Устройство предпросмотра</value></data>
+  <data name="PresetEditorFps" xml:space="preserve"><value>FPS</value></data>
+  <data name="PresetEditorTimeline" xml:space="preserve"><value>Временная шкала</value></data>
+  <data name="PresetEditorLoop" xml:space="preserve"><value>Цикл</value></data>
+  <data name="PresetEditorWorldHint" xml:space="preserve"><value>Для общего холста нужно как минимум два устройства. Показана синтетическая композиция 96×96.</value></data>
+  <data name="PresetEditorSimulation" xml:space="preserve"><value>Имитация ввода</value></data>
+  <data name="PresetEditorSimKeys" xml:space="preserve"><value>Имитировать нажатия клавиш</value></data>
+  <data name="PresetEditorSimScreen" xml:space="preserve"><value>Имитировать экран</value></data>
+  <data name="PresetEditorSimScreenPick" xml:space="preserve"><value>Выбрать изображение…</value></data>
+  <data name="PresetEditorSimScreenNone" xml:space="preserve"><value>Процедурный экран</value></data>
+  <data name="PresetEditorSimHint" xml:space="preserve"><value>Щёлкните предпросмотр, чтобы нажать клавишу. Ввод музыки и экрана имитируется.</value></data>
+  <data name="PresetEditorModule" xml:space="preserve"><value>Модуль</value></data>
+  <data name="PresetEditorModuleSearch" xml:space="preserve"><value>Поиск модулей</value></data>
+  <data name="PresetEditorModuleAdvanced" xml:space="preserve"><value>Показать все модули</value></data>
+  <data name="PresetEditorModuleAdvancedHint" xml:space="preserve"><value>Показаны модули всех семейств ввода, а не только выбранного типа.</value></data>
+  <data name="PresetEditorParameters" xml:space="preserve"><value>Параметры</value></data>
+  <data name="PresetEditorPalette" xml:space="preserve"><value>Палитра</value></data>
+  <data name="PresetEditorPaletteReset" xml:space="preserve"><value>Сбросить палитру</value></data>
+  <data name="PresetEditorNoModule" xml:space="preserve"><value>Выберите модуль, чтобы изменить его параметры.</value></data>
+  <data name="PresetEditorStatus" xml:space="preserve"><value>Готово</value></data>
+  <data name="PresetEditorValidationOk" xml:space="preserve"><value>Проблем проверки нет.</value></data>
+  <data name="PresetEditorValidationIssues" xml:space="preserve"><value>Проблем: {0}</value></data>
+  <data name="PresetEditorUnsaved" xml:space="preserve"><value>Несохранённые изменения</value></data>
+  <data name="PresetEditorSaved" xml:space="preserve"><value>Сохранено</value></data>
+  <data name="PresetEditorSaveFailed" xml:space="preserve"><value>Не удалось сохранить: {0}</value></data>
+  <data name="PresetEditorOpenFailed" xml:space="preserve"><value>Не удалось открыть: {0}</value></data>
+  <data name="PresetEditorNewName" xml:space="preserve"><value>Новый пресет</value></data>
+  <data name="PresetEditorConfirmDiscardTitle" xml:space="preserve"><value>Отбросить изменения?</value></data>
+  <data name="PresetEditorConfirmDiscardMessage" xml:space="preserve"><value>Текущий пресет содержит несохранённые изменения.</value></data>
+  <data name="PresetEditorConfirmDiscard" xml:space="preserve"><value>Отбросить</value></data>
+  <data name="PresetEditorModuleResetTitle" xml:space="preserve"><value>Сменить модуль?</value></data>
+  <data name="PresetEditorModuleResetMessage" xml:space="preserve"><value>При смене модуля его параметры сбрасываются.</value></data>
+  <data name="PresetEditorModuleResetConfirm" xml:space="preserve"><value>Сменить модуль</value></data>
+  <data name="PresetEditorRecoverTitle" xml:space="preserve"><value>Восстановить черновик?</value></data>
+  <data name="PresetEditorRecoverMessage" xml:space="preserve"><value>Найден несохранённый черновик от {0}.</value></data>
+  <data name="PresetEditorRecover" xml:space="preserve"><value>Восстановить</value></data>
+  <data name="PresetEditorDiscard" xml:space="preserve"><value>Отбросить</value></data>
+  <data name="PresetEditorNoIssues" xml:space="preserve"><value>Проблем нет</value></data>
+  <data name="PresetEditorBuiltInReadOnly" xml:space="preserve"><value>Встроенные пресеты доступны только для чтения. Используйте «Сохранить как», чтобы создать пользовательскую копию.</value></data>
+  <data name="PresetEditorInvalidSave" xml:space="preserve"><value>Исправьте проблемы проверки перед сохранением.</value></data>
+  <data name="PresetEditorKindScreen" xml:space="preserve"><value>Экран</value></data>
+  <data name="PresetEditorKindSystem" xml:space="preserve"><value>Система</value></data>
+  <data name="PresetEditorKindAmbient" xml:space="preserve"><value>Амбиент</value></data>
+  <data name="PresetEditorSimMusic" xml:space="preserve"><value>Имитированный ритм</value></data>
+  <data name="PresetEditorTime" xml:space="preserve"><value>{0:0.0} с</value></data>
+  <data name="PresetEditorLayerSummary" xml:space="preserve"><value>{0}</value></data>
+  <data name="PresetEditorIssueLine" xml:space="preserve"><value>{0}</value></data>
+  <data name="PresetEditorPath" xml:space="preserve"><value>Путь: {0}</value></data>
+  <data name="PresetEditorIdHint" xml:space="preserve"><value>Только строчные буквы, цифры и дефисы.</value></data>
+  <data name="PresetEditorPresetLibrary" xml:space="preserve"><value>Библиотека пресетов</value></data>
+  <data name="PresetEditorSaveAsTitle" xml:space="preserve"><value>Сохранить пресет</value></data>
+  <data name="PresetEditorOpenFileTitle" xml:space="preserve"><value>Открыть пресет</value></data>
+  <data name="PresetEditorSelectScreenImage" xml:space="preserve"><value>Выбрать изображение экрана</value></data>
+  <data name="PresetEditorNoPreview" xml:space="preserve"><value>Для этой конфигурации предпросмотр недоступен.</value></data>
+  <data name="PresetEditorStatusNew" xml:space="preserve"><value>Новый пресет</value></data>
+  <data name="PresetEditorStatusBuiltIn" xml:space="preserve"><value>Встроенный пресет</value></data>
+  <data name="PresetEditorStatusOpened" xml:space="preserve"><value>Открыто: {0}</value></data>
+  <data name="PresetEditorStatusRecovered" xml:space="preserve"><value>Несохранённый черновик восстановлен</value></data>
+  <data name="PresetEditorSimScreenImage" xml:space="preserve"><value>Изображение: {0}</value></data>
+  <data name="PresetEditorLayerEnabled" xml:space="preserve"><value>Включено</value></data>
+  <data name="PresetEditorUnsavedCloseTitle" xml:space="preserve"><value>Сохранить изменения?</value></data>
+  <data name="PresetEditorUnsavedCloseMessage" xml:space="preserve"><value>Сохранить изменения текущего пресета перед закрытием?</value></data>
+  <data name="PresetEditorUnsavedSwitchMessage" xml:space="preserve"><value>Сохранить изменения текущего пресета перед переключением?</value></data>
+  <data name="PresetEditorSaveAndClose" xml:space="preserve"><value>Сохранить и закрыть</value></data>
+  <data name="PresetEditorSaveAndSwitch" xml:space="preserve"><value>Сохранить и переключить</value></data>
+  <data name="PresetEditorCloseWithoutSaving" xml:space="preserve"><value>Закрыть без сохранения</value></data>
+  <data name="PresetEditorSwitchWithoutSaving" xml:space="preserve"><value>Переключить без сохранения</value></data>
+  <data name="PresetEditorCancel" xml:space="preserve"><value>Отмена</value></data>
+  <data name="PresetEditorSaveAsBuiltIn" xml:space="preserve"><value>Встроенные пресеты нельзя перезаписать. Сохраните копию.</value></data>
   <data name="LightingStudioModuleParam_amplitude" xml:space="preserve"><value>Амплитуда</value></data>
   <data name="LightingStudioModuleParam_aperture" xml:space="preserve"><value>Размер отверстия</value></data>
   <data name="LightingStudioModuleParam_aspect" xml:space="preserve"><value>Соотношение сторон</value></data>
@@ -10021,4 +10115,167 @@
   <data name="LightingStudioModuleValue_white" xml:space="preserve"><value>Белый</value></data>
   <data name="LightingStudioModuleValue_alternate" xml:space="preserve"><value>Чередовать по удару</value></data>
   <data name="LightingStudioModuleValue_waves" xml:space="preserve"><value>Непрерывные звуковые волны</value></data>
+  <data name="PresetEditorValidateAll" xml:space="preserve"><value>Проверить все</value></data>
+  <data name="PresetEditorValidateAllTitle" xml:space="preserve"><value>Проверка библиотеки</value></data>
+  <data name="PresetEditorValidateAllSummary" xml:space="preserve"><value>Проверено пресетов: {0}, с ошибками: {1}.</value></data>
+  <data name="PresetEditorOpenSelected" xml:space="preserve"><value>Открыть выбранное</value></data>
+  <data name="PresetEditorNoLibraryIssues" xml:space="preserve"><value>Все встроенные и пользовательские пресеты прошли проверку.</value></data>
+  <data name="LightingStudioModule_ambient.automaton" xml:space="preserve"><value>Клеточный автомат</value></data>
+  <data name="LightingStudioModule_ambient.field" xml:space="preserve"><value>Окружающее поле</value></data>
+  <data name="LightingStudioModule_ambient.flow" xml:space="preserve"><value>Потоковый мираж</value></data>
+  <data name="LightingStudioModule_ambient.geometry" xml:space="preserve"><value>Геометрическая призма</value></data>
+  <data name="LightingStudioModule_ambient.liquid" xml:space="preserve"><value>Жидкая поверхность</value></data>
+  <data name="LightingStudioModule_ambient.mask" xml:space="preserve"><value>Окружающая маска</value></data>
+  <data name="LightingStudioModule_ambient.particles" xml:space="preserve"><value>Окружающие частицы</value></data>
+  <data name="LightingStudioModule_ambient.signal" xml:space="preserve"><value>Цифровой сигнал</value></data>
+  <data name="LightingStudioModule_ambient.transition" xml:space="preserve"><value>Окружающий переход</value></data>
+  <data name="LightingStudioModule_key.activity" xml:space="preserve"><value>Счётчик печати и комбо</value></data>
+  <data name="LightingStudioModule_key.beam" xml:space="preserve"><value>Луч строк/столбцов</value></data>
+  <data name="LightingStudioModule_key.charge" xml:space="preserve"><value>Удержание и взрыв</value></data>
+  <data name="LightingStudioModule_key.glow" xml:space="preserve"><value>Послесвечение клавиш</value></data>
+  <data name="LightingStudioModule_key.glyph" xml:space="preserve"><value>Глиф и пульс клавиши</value></data>
+  <data name="LightingStudioModule_key.links" xml:space="preserve"><value>Связи клавиш</value></data>
+  <data name="LightingStudioModule_key.particles" xml:space="preserve"><value>Частицы клавиш</value></data>
+  <data name="LightingStudioModule_key.sweep" xml:space="preserve"><value>Направленный след</value></data>
+  <data name="LightingStudioModule_key.vortex" xml:space="preserve"><value>Вихрь клавиш</value></data>
+  <data name="LightingStudioModule_key.wave" xml:space="preserve"><value>Радиальная рябь</value></data>
+  <data name="LightingStudioModule_music.arrows" xml:space="preserve"><value>Стрелки бит-сканирования</value></data>
+  <data name="LightingStudioModule_music.contour" xml:space="preserve"><value>Глазное кольцо и зрачок</value></data>
+  <data name="LightingStudioModule_music.field" xml:space="preserve"><value>Поле громкости и истории</value></data>
+  <data name="LightingStudioModule_music.heart" xml:space="preserve"><value>Сердце бита</value></data>
+  <data name="LightingStudioModule_music.lattice" xml:space="preserve"><value>Шахматный ритм</value></data>
+  <data name="LightingStudioModule_music.lightning" xml:space="preserve"><value>Плазменная молния спектра</value></data>
+  <data name="LightingStudioModule_music.particles" xml:space="preserve"><value>Искры бита и звёзды высоких</value></data>
+  <data name="LightingStudioModule_music.radial" xml:space="preserve"><value>Радиальный спектр</value></data>
+  <data name="LightingStudioModule_music.spectrum" xml:space="preserve"><value>Полосы спектра</value></data>
+  <data name="LightingStudioModule_music.trace" xml:space="preserve"><value>След волны</value></data>
+  <data name="LightingStudioModuleParam_angle" xml:space="preserve"><value>Угол</value></data>
+  <data name="LightingStudioModuleParam_blocks" xml:space="preserve"><value>Блоки</value></data>
+  <data name="LightingStudioModuleParam_contrast" xml:space="preserve"><value>Контраст</value></data>
+  <data name="LightingStudioModuleParam_drops" xml:space="preserve"><value>Капли</value></data>
+  <data name="LightingStudioModuleParam_floor" xml:space="preserve"><value>Базовая яркость</value></data>
+  <data name="LightingStudioModuleParam_flow" xml:space="preserve"><value>Поток</value></data>
+  <data name="LightingStudioModuleParam_frequency" xml:space="preserve"><value>Частота</value></data>
+  <data name="LightingStudioModuleParam_period" xml:space="preserve"><value>Период</value></data>
+  <data name="LightingStudioModuleParam_pulse" xml:space="preserve"><value>Сила импульса</value></data>
+  <data name="LightingStudioModuleParam_ratio" xml:space="preserve"><value>Пропорция</value></data>
+  <data name="LightingStudioModuleParam_scale" xml:space="preserve"><value>Масштаб</value></data>
+  <data name="LightingStudioModuleParam_scroll" xml:space="preserve"><value>Прокрутка</value></data>
+  <data name="LightingStudioModuleParam_scrollSpeed" xml:space="preserve"><value>Скорость прокрутки</value></data>
+  <data name="LightingStudioModuleParam_seed" xml:space="preserve"><value>Зерно</value></data>
+  <data name="LightingStudioModuleParam_shift" xml:space="preserve"><value>Сдвиг</value></data>
+  <data name="LightingStudioModuleParam_sides" xml:space="preserve"><value>Стороны</value></data>
+  <data name="LightingStudioModuleParam_speed" xml:space="preserve"><value>Скорость</value></data>
+  <data name="LightingStudioModuleParam_spread" xml:space="preserve"><value>Разброс</value></data>
+  <data name="LightingStudioModuleParam_stagger" xml:space="preserve"><value>Смещение</value></data>
+  <data name="LightingStudioModuleParam_stretch" xml:space="preserve"><value>Растяжение</value></data>
+  <data name="LightingStudioModuleParam_text" xml:space="preserve"><value>Текст</value></data>
+  <data name="LightingStudioModuleParam_twinkle" xml:space="preserve"><value>Мерцание</value></data>
+  <data name="LightingStudioModuleParam_viscosity" xml:space="preserve"><value>Вязкость</value></data>
+  <data name="LightingStudioModuleParam_warp" xml:space="preserve"><value>Искажение</value></data>
+  <data name="LightingStudioModuleParam_wind" xml:space="preserve"><value>Ветер</value></data>
+  <data name="LightingStudioModuleValue_aurora" xml:space="preserve"><value>Полярное сияние</value></data>
+  <data name="LightingStudioModuleValue_bars" xml:space="preserve"><value>Полосы</value></data>
+  <data name="LightingStudioModuleValue_binary" xml:space="preserve"><value>Двоичный</value></data>
+  <data name="LightingStudioModuleValue_blinds" xml:space="preserve"><value>Жалюзи</value></data>
+  <data name="LightingStudioModuleValue_border" xml:space="preserve"><value>Рамка</value></data>
+  <data name="LightingStudioModuleValue_bounce" xml:space="preserve"><value>Отскок</value></data>
+  <data name="LightingStudioModuleValue_caustic" xml:space="preserve"><value>Каустика</value></data>
+  <data name="LightingStudioModuleValue_checker" xml:space="preserve"><value>Шахматы</value></data>
+  <data name="LightingStudioModuleValue_code" xml:space="preserve"><value>Код</value></data>
+  <data name="LightingStudioModuleValue_confetti" xml:space="preserve"><value>Конфетти</value></data>
+  <data name="LightingStudioModuleValue_current" xml:space="preserve"><value>Поток</value></data>
+  <data name="LightingStudioModuleValue_data" xml:space="preserve"><value>Данные</value></data>
+  <data name="LightingStudioModuleValue_diagonal" xml:space="preserve"><value>Диагональ</value></data>
+  <data name="LightingStudioModuleValue_diamond" xml:space="preserve"><value>Ромб</value></data>
+  <data name="LightingStudioModuleValue_disk" xml:space="preserve"><value>Диск</value></data>
+  <data name="LightingStudioModuleValue_dissolve" xml:space="preserve"><value>Растворение</value></data>
+  <data name="LightingStudioModuleValue_dots" xml:space="preserve"><value>Точки</value></data>
+  <data name="LightingStudioModuleValue_droplets" xml:space="preserve"><value>Капли</value></data>
+  <data name="LightingStudioModuleValue_dunes" xml:space="preserve"><value>Дюны</value></data>
+  <data name="LightingStudioModuleValue_ecg" xml:space="preserve"><value>ЭКГ</value></data>
+  <data name="LightingStudioModuleValue_embers" xml:space="preserve"><value>Угли</value></data>
+  <data name="LightingStudioModuleValue_eye" xml:space="preserve"><value>Глаз</value></data>
+  <data name="LightingStudioModuleValue_fill" xml:space="preserve"><value>Заливка</value></data>
+  <data name="LightingStudioModuleValue_fireflies" xml:space="preserve"><value>Светлячки</value></data>
+  <data name="LightingStudioModuleValue_fireworks" xml:space="preserve"><value>Фейерверк</value></data>
+  <data name="LightingStudioModuleValue_foam" xml:space="preserve"><value>Пена</value></data>
+  <data name="LightingStudioModuleValue_frame" xml:space="preserve"><value>Рамка</value></data>
+  <data name="LightingStudioModuleValue_glitch" xml:space="preserve"><value>Глитч</value></data>
+  <data name="LightingStudioModuleValue_gradient" xml:space="preserve"><value>Градиент</value></data>
+  <data name="LightingStudioModuleValue_grid" xml:space="preserve"><value>Сетка</value></data>
+  <data name="LightingStudioModuleValue_hex" xml:space="preserve"><value>Шестиугольник</value></data>
+  <data name="LightingStudioModuleValue_interference" xml:space="preserve"><value>Интерференция</value></data>
+  <data name="LightingStudioModuleValue_iris" xml:space="preserve"><value>Радужка</value></data>
+  <data name="LightingStudioModuleValue_kaleido" xml:space="preserve"><value>Калейдоскоп</value></data>
+  <data name="LightingStudioModuleValue_lattice" xml:space="preserve"><value>Решётка</value></data>
+  <data name="LightingStudioModuleValue_matrix" xml:space="preserve"><value>Матрица</value></data>
+  <data name="LightingStudioModuleValue_melt" xml:space="preserve"><value>Таяние</value></data>
+  <data name="LightingStudioModuleValue_mercury" xml:space="preserve"><value>Ртуть</value></data>
+  <data name="LightingStudioModuleValue_meteors" xml:space="preserve"><value>Метеоры</value></data>
+  <data name="LightingStudioModuleValue_moire" xml:space="preserve"><value>Муар</value></data>
+  <data name="LightingStudioModuleValue_mono" xml:space="preserve"><value>Моно</value></data>
+  <data name="LightingStudioModuleValue_moon" xml:space="preserve"><value>Луна</value></data>
+  <data name="LightingStudioModuleValue_mosaic" xml:space="preserve"><value>Мозаика</value></data>
+  <data name="LightingStudioModuleValue_nebula" xml:space="preserve"><value>Туманность</value></data>
+  <data name="LightingStudioModuleValue_noise" xml:space="preserve"><value>Шум</value></data>
+  <data name="LightingStudioModuleValue_oil" xml:space="preserve"><value>Масло</value></data>
+  <data name="LightingStudioModuleValue_orbit" xml:space="preserve"><value>Орбита</value></data>
+  <data name="LightingStudioModuleValue_palette" xml:space="preserve"><value>Палитра</value></data>
+  <data name="LightingStudioModuleValue_pixels" xml:space="preserve"><value>Пиксели</value></data>
+  <data name="LightingStudioModuleValue_plasma" xml:space="preserve"><value>Плазма</value></data>
+  <data name="LightingStudioModuleValue_polygon" xml:space="preserve"><value>Многоугольник</value></data>
+  <data name="LightingStudioModuleValue_pulse" xml:space="preserve"><value>Импульс</value></data>
+  <data name="LightingStudioModuleValue_radar" xml:space="preserve"><value>Радар</value></data>
+  <data name="LightingStudioModuleValue_rain" xml:space="preserve"><value>Дождь</value></data>
+  <data name="LightingStudioModuleValue_random" xml:space="preserve"><value>Случайно</value></data>
+  <data name="LightingStudioModuleValue_rings" xml:space="preserve"><value>Кольца</value></data>
+  <data name="LightingStudioModuleValue_ripple" xml:space="preserve"><value>Рябь</value></data>
+  <data name="LightingStudioModuleValue_rows" xml:space="preserve"><value>Ряды</value></data>
+  <data name="LightingStudioModuleValue_scan" xml:space="preserve"><value>Сканирование</value></data>
+  <data name="LightingStudioModuleValue_smoke" xml:space="preserve"><value>Дым</value></data>
+  <data name="LightingStudioModuleValue_sparks" xml:space="preserve"><value>Искры</value></data>
+  <data name="LightingStudioModuleValue_spiral" xml:space="preserve"><value>Спираль</value></data>
+  <data name="LightingStudioModuleValue_split" xml:space="preserve"><value>Разделение</value></data>
+  <data name="LightingStudioModuleValue_stack" xml:space="preserve"><value>Стопка</value></data>
+  <data name="LightingStudioModuleValue_star" xml:space="preserve"><value>Звезда</value></data>
+  <data name="LightingStudioModuleValue_stars" xml:space="preserve"><value>Звёзды</value></data>
+  <data name="LightingStudioModuleValue_stripes" xml:space="preserve"><value>Полосы</value></data>
+  <data name="LightingStudioModuleValue_surface" xml:space="preserve"><value>Поверхность</value></data>
+  <data name="LightingStudioModuleValue_sync" xml:space="preserve"><value>Синхро</value></data>
+  <data name="LightingStudioModuleValue_text" xml:space="preserve"><value>Текст</value></data>
+  <data name="LightingStudioModuleValue_triangle" xml:space="preserve"><value>Треугольник</value></data>
+  <data name="LightingStudioModuleValue_tunnel" xml:space="preserve"><value>Туннель</value></data>
+  <data name="LightingStudioModuleValue_twinkle" xml:space="preserve"><value>Мерцание</value></data>
+  <data name="LightingStudioModuleValue_viscous" xml:space="preserve"><value>Вязкий</value></data>
+  <data name="LightingStudioModuleValue_voronoi" xml:space="preserve"><value>Вороной</value></data>
+  <data name="LightingStudioModuleValue_wave" xml:space="preserve"><value>Волна</value></data>
+  <data name="LightingStudioModuleValue_wind" xml:space="preserve"><value>Ветер</value></data>
+  <data name="LightingStudioModuleValue_wipe" xml:space="preserve"><value>Стирание</value></data>
+  <data name="PresetEditorGroupAmbient" xml:space="preserve"><value>Окружение</value></data>
+  <data name="PresetEditorGroupMusic" xml:space="preserve"><value>Музыка</value></data>
+  <data name="PresetEditorGroupKey" xml:space="preserve"><value>Клавиши</value></data>
+  <data name="PresetEditorGroupSystem" xml:space="preserve"><value>Система</value></data>
+  <data name="PresetEditorField_preset" xml:space="preserve"><value>Пресет</value></data>
+  <data name="PresetEditorField_id" xml:space="preserve"><value>ID</value></data>
+  <data name="PresetEditorField_name" xml:space="preserve"><value>Название</value></data>
+  <data name="PresetEditorField_layers" xml:space="preserve"><value>Слои</value></data>
+  <data name="PresetEditorField_module" xml:space="preserve"><value>Модуль</value></data>
+  <data name="PresetEditorField_params" xml:space="preserve"><value>Параметры</value></data>
+  <data name="PresetEditorField_palette" xml:space="preserve"><value>Палитра</value></data>
+  <data name="PresetEditorField_opacity" xml:space="preserve"><value>Непрозрачность</value></data>
+  <data name="PresetEditorField_speed" xml:space="preserve"><value>Скорость</value></data>
+  <data name="PresetEditorField_blend" xml:space="preserve"><value>Смешивание</value></data>
+  <data name="PresetEditorField_render" xml:space="preserve"><value>Рендеринг</value></data>
+  <data name="PresetEditorIssueRequired" xml:space="preserve"><value>обязательно</value></data>
+  <data name="PresetEditorIssueEmpty" xml:space="preserve"><value>не может быть пустым</value></data>
+  <data name="PresetEditorIssueIdInvalid" xml:space="preserve"><value>только строчные буквы, цифры и дефис</value></data>
+  <data name="PresetEditorIssueLayersCount" xml:space="preserve"><value>должно быть от 1 до 4 слоёв</value></data>
+  <data name="PresetEditorIssueUnknownModule" xml:space="preserve"><value>«{0}» не является модулем рендеринга</value></data>
+  <data name="PresetEditorIssuePaletteCount" xml:space="preserve"><value>должно быть от 1 до 10 цветовых остановок</value></data>
+  <data name="PresetEditorIssuePaletteRange" xml:space="preserve"><value>позиции остановок должны быть от 0 до 100</value></data>
+  <data name="PresetEditorIssueBetween01" xml:space="preserve"><value>должно быть от 0 до 1</value></data>
+  <data name="PresetEditorIssueBetweenSpeed" xml:space="preserve"><value>должно быть от 0,1 до 5</value></data>
+  <data name="PresetEditorIssueBlend" xml:space="preserve"><value>не является поддерживаемым режимом смешивания</value></data>
+  <data name="PresetEditorIssueLayer" xml:space="preserve"><value>Слой {0} · {1}</value></data>
 </root>

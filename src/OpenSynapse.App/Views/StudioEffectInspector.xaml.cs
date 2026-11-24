@@ -43,6 +43,8 @@ public sealed partial class StudioEffectInspector : UserControl
 
     public event EventHandler? Changed;
 
+    public event EventHandler<StudioPresetEditRequest>? EditPresetRequested;
+
     public void Refresh()
     {
         if (Rows is null) return;

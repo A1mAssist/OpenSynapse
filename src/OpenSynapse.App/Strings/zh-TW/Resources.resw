@@ -4791,6 +4791,7 @@
   <data name="LightingStudioPresetConfirm" xml:space="preserve"><value>確定</value></data>
   <data name="LightingStudioPresetDiamond" xml:space="preserve"><value>菱形</value></data>
   <data name="LightingStudioPresetEdit" xml:space="preserve"><value>編輯預設</value></data>
+  <data name="LightingStudioPresetEditCurrent" xml:space="preserve"><value>編輯此預設</value></data>
   <data name="LightingStudioPresetExpansion" xml:space="preserve"><value>擴散速度（格/秒）</value></data>
   <data name="LightingStudioPresetGlow" xml:space="preserve"><value>輝光</value></data>
   <data name="LightingStudioPresetHold" xml:space="preserve"><value>按住時保持輝光</value></data>
@@ -4805,6 +4806,99 @@
   <data name="LightingStudioPresetSaveAs" xml:space="preserve"><value>另存新檔…</value></data>
   <data name="LightingStudioPresetShape" xml:space="preserve"><value>漣漪形狀</value></data>
   <data name="LightingStudioPresetSpacing" xml:space="preserve"><value>環間距（格）</value></data>
+  <data name="PresetEditorTitle" xml:space="preserve"><value>預設編輯器</value></data>
+  <data name="PresetEditorNew" xml:space="preserve"><value>新建</value></data>
+  <data name="PresetEditorOpen" xml:space="preserve"><value>開啟</value></data>
+  <data name="PresetEditorSave" xml:space="preserve"><value>儲存</value></data>
+  <data name="PresetEditorValidate" xml:space="preserve"><value>驗證</value></data>
+  <data name="PresetEditorUndo" xml:space="preserve"><value>復原</value></data>
+  <data name="PresetEditorRedo" xml:space="preserve"><value>重做</value></data>
+  <data name="PresetEditorPlay" xml:space="preserve"><value>播放</value></data>
+  <data name="PresetEditorPause" xml:space="preserve"><value>暫停</value></data>
+  <data name="PresetEditorInfo" xml:space="preserve"><value>預設</value></data>
+  <data name="PresetEditorName" xml:space="preserve"><value>名稱</value></data>
+  <data name="PresetEditorId" xml:space="preserve"><value>ID</value></data>
+  <data name="PresetEditorKind" xml:space="preserve"><value>類型</value></data>
+  <data name="PresetEditorCategory" xml:space="preserve"><value>分類</value></data>
+  <data name="PresetEditorNote" xml:space="preserve"><value>備註</value></data>
+  <data name="PresetEditorAddLayer" xml:space="preserve"><value>新增圖層</value></data>
+  <data name="PresetEditorRemoveLayer" xml:space="preserve"><value>移除圖層</value></data>
+  <data name="PresetEditorDuplicateLayer" xml:space="preserve"><value>複製圖層</value></data>
+  <data name="PresetEditorMoveUp" xml:space="preserve"><value>上移</value></data>
+  <data name="PresetEditorMoveDown" xml:space="preserve"><value>下移</value></data>
+  <data name="PresetEditorLayerLimit" xml:space="preserve"><value>一個預設最多可包含 4 個圖層。</value></data>
+  <data name="PresetEditorPreview" xml:space="preserve"><value>預覽</value></data>
+  <data name="PresetEditorPreviewDevice" xml:space="preserve"><value>裝置</value></data>
+  <data name="PresetEditorPreviewWorld" xml:space="preserve"><value>共享畫布</value></data>
+  <data name="PresetEditorDevice" xml:space="preserve"><value>預覽裝置</value></data>
+  <data name="PresetEditorFps" xml:space="preserve"><value>FPS</value></data>
+  <data name="PresetEditorTimeline" xml:space="preserve"><value>時間軸</value></data>
+  <data name="PresetEditorLoop" xml:space="preserve"><value>循環</value></data>
+  <data name="PresetEditorWorldHint" xml:space="preserve"><value>共享畫布至少需要兩個裝置，目前顯示 96×96 合成畫面。</value></data>
+  <data name="PresetEditorSimulation" xml:space="preserve"><value>模擬輸入</value></data>
+  <data name="PresetEditorSimKeys" xml:space="preserve"><value>模擬按鍵</value></data>
+  <data name="PresetEditorSimScreen" xml:space="preserve"><value>模擬螢幕</value></data>
+  <data name="PresetEditorSimScreenPick" xml:space="preserve"><value>選擇圖片…</value></data>
+  <data name="PresetEditorSimScreenNone" xml:space="preserve"><value>程序化螢幕</value></data>
+  <data name="PresetEditorSimHint" xml:space="preserve"><value>點擊預覽即可按下按鍵。音樂與螢幕輸入皆為模擬。</value></data>
+  <data name="PresetEditorModule" xml:space="preserve"><value>模組</value></data>
+  <data name="PresetEditorModuleSearch" xml:space="preserve"><value>搜尋模組</value></data>
+  <data name="PresetEditorModuleAdvanced" xml:space="preserve"><value>顯示所有模組</value></data>
+  <data name="PresetEditorModuleAdvancedHint" xml:space="preserve"><value>顯示所有輸入類型的模組，而不只是所選類型。</value></data>
+  <data name="PresetEditorParameters" xml:space="preserve"><value>參數</value></data>
+  <data name="PresetEditorPalette" xml:space="preserve"><value>調色盤</value></data>
+  <data name="PresetEditorPaletteReset" xml:space="preserve"><value>重設調色盤</value></data>
+  <data name="PresetEditorNoModule" xml:space="preserve"><value>選擇一個模組以編輯其參數。</value></data>
+  <data name="PresetEditorStatus" xml:space="preserve"><value>就緒</value></data>
+  <data name="PresetEditorValidationOk" xml:space="preserve"><value>沒有驗證問題。</value></data>
+  <data name="PresetEditorValidationIssues" xml:space="preserve"><value>{0} 個問題</value></data>
+  <data name="PresetEditorUnsaved" xml:space="preserve"><value>未儲存的變更</value></data>
+  <data name="PresetEditorSaved" xml:space="preserve"><value>已儲存</value></data>
+  <data name="PresetEditorSaveFailed" xml:space="preserve"><value>無法儲存：{0}</value></data>
+  <data name="PresetEditorOpenFailed" xml:space="preserve"><value>無法開啟：{0}</value></data>
+  <data name="PresetEditorNewName" xml:space="preserve"><value>新預設</value></data>
+  <data name="PresetEditorConfirmDiscardTitle" xml:space="preserve"><value>捨棄變更？</value></data>
+  <data name="PresetEditorConfirmDiscardMessage" xml:space="preserve"><value>目前的預設有未儲存的變更。</value></data>
+  <data name="PresetEditorConfirmDiscard" xml:space="preserve"><value>捨棄</value></data>
+  <data name="PresetEditorModuleResetTitle" xml:space="preserve"><value>變更模組？</value></data>
+  <data name="PresetEditorModuleResetMessage" xml:space="preserve"><value>變更模組會重設其參數。</value></data>
+  <data name="PresetEditorModuleResetConfirm" xml:space="preserve"><value>變更模組</value></data>
+  <data name="PresetEditorRecoverTitle" xml:space="preserve"><value>還原草稿？</value></data>
+  <data name="PresetEditorRecoverMessage" xml:space="preserve"><value>找到來自 {0} 的未儲存草稿。</value></data>
+  <data name="PresetEditorRecover" xml:space="preserve"><value>還原</value></data>
+  <data name="PresetEditorDiscard" xml:space="preserve"><value>捨棄</value></data>
+  <data name="PresetEditorNoIssues" xml:space="preserve"><value>沒有問題</value></data>
+  <data name="PresetEditorBuiltInReadOnly" xml:space="preserve"><value>內建預設為唯讀。請使用「另存新檔」建立使用者副本。</value></data>
+  <data name="PresetEditorInvalidSave" xml:space="preserve"><value>儲存前請先修正驗證問題。</value></data>
+  <data name="PresetEditorKindScreen" xml:space="preserve"><value>螢幕</value></data>
+  <data name="PresetEditorKindSystem" xml:space="preserve"><value>系統</value></data>
+  <data name="PresetEditorKindAmbient" xml:space="preserve"><value>氛圍</value></data>
+  <data name="PresetEditorSimMusic" xml:space="preserve"><value>模擬節拍</value></data>
+  <data name="PresetEditorTime" xml:space="preserve"><value>{0:0.0} 秒</value></data>
+  <data name="PresetEditorLayerSummary" xml:space="preserve"><value>{0}</value></data>
+  <data name="PresetEditorIssueLine" xml:space="preserve"><value>{0}</value></data>
+  <data name="PresetEditorPath" xml:space="preserve"><value>路徑：{0}</value></data>
+  <data name="PresetEditorIdHint" xml:space="preserve"><value>僅限小寫字母、數字與連字號。</value></data>
+  <data name="PresetEditorPresetLibrary" xml:space="preserve"><value>預設庫</value></data>
+  <data name="PresetEditorSaveAsTitle" xml:space="preserve"><value>儲存預設</value></data>
+  <data name="PresetEditorOpenFileTitle" xml:space="preserve"><value>開啟預設</value></data>
+  <data name="PresetEditorSelectScreenImage" xml:space="preserve"><value>選擇螢幕圖片</value></data>
+  <data name="PresetEditorNoPreview" xml:space="preserve"><value>此設定沒有可用的預覽。</value></data>
+  <data name="PresetEditorStatusNew" xml:space="preserve"><value>新預設</value></data>
+  <data name="PresetEditorStatusBuiltIn" xml:space="preserve"><value>內建預設</value></data>
+  <data name="PresetEditorStatusOpened" xml:space="preserve"><value>已開啟 {0}</value></data>
+  <data name="PresetEditorStatusRecovered" xml:space="preserve"><value>已還原未儲存的草稿</value></data>
+  <data name="PresetEditorSimScreenImage" xml:space="preserve"><value>圖片：{0}</value></data>
+  <data name="PresetEditorLayerEnabled" xml:space="preserve"><value>已啟用</value></data>
+  <data name="PresetEditorUnsavedCloseTitle" xml:space="preserve"><value>儲存變更？</value></data>
+  <data name="PresetEditorUnsavedCloseMessage" xml:space="preserve"><value>關閉前要儲存目前預設的變更嗎？</value></data>
+  <data name="PresetEditorUnsavedSwitchMessage" xml:space="preserve"><value>切換預設前要儲存目前預設的變更嗎？</value></data>
+  <data name="PresetEditorSaveAndClose" xml:space="preserve"><value>儲存並關閉</value></data>
+  <data name="PresetEditorSaveAndSwitch" xml:space="preserve"><value>儲存並切換</value></data>
+  <data name="PresetEditorCloseWithoutSaving" xml:space="preserve"><value>不儲存直接關閉</value></data>
+  <data name="PresetEditorSwitchWithoutSaving" xml:space="preserve"><value>不儲存直接切換</value></data>
+  <data name="PresetEditorCancel" xml:space="preserve"><value>取消</value></data>
+  <data name="PresetEditorSaveAsBuiltIn" xml:space="preserve"><value>無法覆寫內建預設。請改為儲存副本。</value></data>
   <data name="LightingStudioModuleParam_amplitude" xml:space="preserve"><value>振幅</value></data>
   <data name="LightingStudioModuleParam_aperture" xml:space="preserve"><value>開口大小</value></data>
   <data name="LightingStudioModuleParam_aspect" xml:space="preserve"><value>寬高比</value></data>
@@ -4967,4 +5061,167 @@
   <data name="LightingStudioModuleValue_white" xml:space="preserve"><value>白色</value></data>
   <data name="LightingStudioModuleValue_alternate" xml:space="preserve"><value>逐拍交替</value></data>
   <data name="LightingStudioModuleValue_waves" xml:space="preserve"><value>持續聲浪</value></data>
+  <data name="PresetEditorValidateAll" xml:space="preserve"><value>全部校驗</value></data>
+  <data name="PresetEditorValidateAllTitle" xml:space="preserve"><value>預設庫校驗</value></data>
+  <data name="PresetEditorValidateAllSummary" xml:space="preserve"><value>已檢查 {0} 個預設，{1} 個有問題。</value></data>
+  <data name="PresetEditorOpenSelected" xml:space="preserve"><value>開啟所選</value></data>
+  <data name="PresetEditorNoLibraryIssues" xml:space="preserve"><value>所有內建與使用者預設均通過校驗。</value></data>
+  <data name="LightingStudioModule_ambient.automaton" xml:space="preserve"><value>元胞自動機</value></data>
+  <data name="LightingStudioModule_ambient.field" xml:space="preserve"><value>環境色場</value></data>
+  <data name="LightingStudioModule_ambient.flow" xml:space="preserve"><value>流場幻境</value></data>
+  <data name="LightingStudioModule_ambient.geometry" xml:space="preserve"><value>幾何稜鏡</value></data>
+  <data name="LightingStudioModule_ambient.liquid" xml:space="preserve"><value>液體表面</value></data>
+  <data name="LightingStudioModule_ambient.mask" xml:space="preserve"><value>環境遮罩</value></data>
+  <data name="LightingStudioModule_ambient.particles" xml:space="preserve"><value>環境粒子</value></data>
+  <data name="LightingStudioModule_ambient.signal" xml:space="preserve"><value>數位訊號</value></data>
+  <data name="LightingStudioModule_ambient.transition" xml:space="preserve"><value>環境轉場</value></data>
+  <data name="LightingStudioModule_key.activity" xml:space="preserve"><value>打字計量與連擊</value></data>
+  <data name="LightingStudioModule_key.beam" xml:space="preserve"><value>行列光幕</value></data>
+  <data name="LightingStudioModule_key.charge" xml:space="preserve"><value>按住蓄力鬆手爆發</value></data>
+  <data name="LightingStudioModule_key.glow" xml:space="preserve"><value>按鍵餘輝與柔光</value></data>
+  <data name="LightingStudioModule_key.glyph" xml:space="preserve"><value>按鍵圖形與心跳</value></data>
+  <data name="LightingStudioModule_key.links" xml:space="preserve"><value>按鍵連線與分叉</value></data>
+  <data name="LightingStudioModule_key.particles" xml:space="preserve"><value>按鍵粒子運動</value></data>
+  <data name="LightingStudioModule_key.sweep" xml:space="preserve"><value>按鍵定向光跡</value></data>
+  <data name="LightingStudioModule_key.vortex" xml:space="preserve"><value>按鍵漩渦吸入</value></data>
+  <data name="LightingStudioModule_key.wave" xml:space="preserve"><value>徑向擴散與介質波</value></data>
+  <data name="LightingStudioModule_music.arrows" xml:space="preserve"><value>節拍掃線與箭形</value></data>
+  <data name="LightingStudioModule_music.contour" xml:space="preserve"><value>眼形光圈與瞳孔</value></data>
+  <data name="LightingStudioModule_music.field" xml:space="preserve"><value>音量與歷史色場</value></data>
+  <data name="LightingStudioModule_music.heart" xml:space="preserve"><value>節拍愛心輪廓</value></data>
+  <data name="LightingStudioModule_music.lattice" xml:space="preserve"><value>節拍交替棋盤</value></data>
+  <data name="LightingStudioModule_music.lightning" xml:space="preserve"><value>頻譜電漿放射閃電</value></data>
+  <data name="LightingStudioModule_music.particles" xml:space="preserve"><value>節拍星火與高音星點</value></data>
+  <data name="LightingStudioModule_music.radial" xml:space="preserve"><value>徑向頻譜與環波</value></data>
+  <data name="LightingStudioModule_music.spectrum" xml:space="preserve"><value>頻譜條與能量輪廓</value></data>
+  <data name="LightingStudioModule_music.trace" xml:space="preserve"><value>波形曲線與折線軌跡</value></data>
+  <data name="LightingStudioModuleParam_angle" xml:space="preserve"><value>角度</value></data>
+  <data name="LightingStudioModuleParam_blocks" xml:space="preserve"><value>區塊數</value></data>
+  <data name="LightingStudioModuleParam_contrast" xml:space="preserve"><value>對比度</value></data>
+  <data name="LightingStudioModuleParam_drops" xml:space="preserve"><value>水滴數量</value></data>
+  <data name="LightingStudioModuleParam_floor" xml:space="preserve"><value>底色亮度</value></data>
+  <data name="LightingStudioModuleParam_flow" xml:space="preserve"><value>流動</value></data>
+  <data name="LightingStudioModuleParam_frequency" xml:space="preserve"><value>頻率</value></data>
+  <data name="LightingStudioModuleParam_period" xml:space="preserve"><value>週期</value></data>
+  <data name="LightingStudioModuleParam_pulse" xml:space="preserve"><value>脈衝強度</value></data>
+  <data name="LightingStudioModuleParam_ratio" xml:space="preserve"><value>比例</value></data>
+  <data name="LightingStudioModuleParam_scale" xml:space="preserve"><value>縮放</value></data>
+  <data name="LightingStudioModuleParam_scroll" xml:space="preserve"><value>捲動</value></data>
+  <data name="LightingStudioModuleParam_scrollSpeed" xml:space="preserve"><value>捲動速度</value></data>
+  <data name="LightingStudioModuleParam_seed" xml:space="preserve"><value>隨機種子</value></data>
+  <data name="LightingStudioModuleParam_shift" xml:space="preserve"><value>位移</value></data>
+  <data name="LightingStudioModuleParam_sides" xml:space="preserve"><value>邊數</value></data>
+  <data name="LightingStudioModuleParam_speed" xml:space="preserve"><value>速度</value></data>
+  <data name="LightingStudioModuleParam_spread" xml:space="preserve"><value>擴散範圍</value></data>
+  <data name="LightingStudioModuleParam_stagger" xml:space="preserve"><value>交錯</value></data>
+  <data name="LightingStudioModuleParam_stretch" xml:space="preserve"><value>拉伸</value></data>
+  <data name="LightingStudioModuleParam_text" xml:space="preserve"><value>文字</value></data>
+  <data name="LightingStudioModuleParam_twinkle" xml:space="preserve"><value>閃爍強度</value></data>
+  <data name="LightingStudioModuleParam_viscosity" xml:space="preserve"><value>黏稠度</value></data>
+  <data name="LightingStudioModuleParam_warp" xml:space="preserve"><value>扭曲</value></data>
+  <data name="LightingStudioModuleParam_wind" xml:space="preserve"><value>風力</value></data>
+  <data name="LightingStudioModuleValue_aurora" xml:space="preserve"><value>極光</value></data>
+  <data name="LightingStudioModuleValue_bars" xml:space="preserve"><value>條柱</value></data>
+  <data name="LightingStudioModuleValue_binary" xml:space="preserve"><value>二進位</value></data>
+  <data name="LightingStudioModuleValue_blinds" xml:space="preserve"><value>百葉窗</value></data>
+  <data name="LightingStudioModuleValue_border" xml:space="preserve"><value>邊框</value></data>
+  <data name="LightingStudioModuleValue_bounce" xml:space="preserve"><value>彈跳</value></data>
+  <data name="LightingStudioModuleValue_caustic" xml:space="preserve"><value>焦散</value></data>
+  <data name="LightingStudioModuleValue_checker" xml:space="preserve"><value>棋盤</value></data>
+  <data name="LightingStudioModuleValue_code" xml:space="preserve"><value>程式碼</value></data>
+  <data name="LightingStudioModuleValue_confetti" xml:space="preserve"><value>彩紙</value></data>
+  <data name="LightingStudioModuleValue_current" xml:space="preserve"><value>水流</value></data>
+  <data name="LightingStudioModuleValue_data" xml:space="preserve"><value>資料</value></data>
+  <data name="LightingStudioModuleValue_diagonal" xml:space="preserve"><value>對角線</value></data>
+  <data name="LightingStudioModuleValue_diamond" xml:space="preserve"><value>菱形</value></data>
+  <data name="LightingStudioModuleValue_disk" xml:space="preserve"><value>圓盤</value></data>
+  <data name="LightingStudioModuleValue_dissolve" xml:space="preserve"><value>溶解</value></data>
+  <data name="LightingStudioModuleValue_dots" xml:space="preserve"><value>圓點</value></data>
+  <data name="LightingStudioModuleValue_droplets" xml:space="preserve"><value>水滴</value></data>
+  <data name="LightingStudioModuleValue_dunes" xml:space="preserve"><value>沙丘</value></data>
+  <data name="LightingStudioModuleValue_ecg" xml:space="preserve"><value>心電</value></data>
+  <data name="LightingStudioModuleValue_embers" xml:space="preserve"><value>餘燼</value></data>
+  <data name="LightingStudioModuleValue_eye" xml:space="preserve"><value>眼睛</value></data>
+  <data name="LightingStudioModuleValue_fill" xml:space="preserve"><value>填充</value></data>
+  <data name="LightingStudioModuleValue_fireflies" xml:space="preserve"><value>螢火蟲</value></data>
+  <data name="LightingStudioModuleValue_fireworks" xml:space="preserve"><value>煙花</value></data>
+  <data name="LightingStudioModuleValue_foam" xml:space="preserve"><value>泡沫</value></data>
+  <data name="LightingStudioModuleValue_frame" xml:space="preserve"><value>畫框</value></data>
+  <data name="LightingStudioModuleValue_glitch" xml:space="preserve"><value>故障</value></data>
+  <data name="LightingStudioModuleValue_gradient" xml:space="preserve"><value>漸層</value></data>
+  <data name="LightingStudioModuleValue_grid" xml:space="preserve"><value>網格</value></data>
+  <data name="LightingStudioModuleValue_hex" xml:space="preserve"><value>六邊形</value></data>
+  <data name="LightingStudioModuleValue_interference" xml:space="preserve"><value>干涉</value></data>
+  <data name="LightingStudioModuleValue_iris" xml:space="preserve"><value>虹膜</value></data>
+  <data name="LightingStudioModuleValue_kaleido" xml:space="preserve"><value>萬花筒</value></data>
+  <data name="LightingStudioModuleValue_lattice" xml:space="preserve"><value>晶格</value></data>
+  <data name="LightingStudioModuleValue_matrix" xml:space="preserve"><value>矩陣</value></data>
+  <data name="LightingStudioModuleValue_melt" xml:space="preserve"><value>融化</value></data>
+  <data name="LightingStudioModuleValue_mercury" xml:space="preserve"><value>水銀</value></data>
+  <data name="LightingStudioModuleValue_meteors" xml:space="preserve"><value>流星</value></data>
+  <data name="LightingStudioModuleValue_moire" xml:space="preserve"><value>摩爾紋</value></data>
+  <data name="LightingStudioModuleValue_mono" xml:space="preserve"><value>單色</value></data>
+  <data name="LightingStudioModuleValue_moon" xml:space="preserve"><value>月亮</value></data>
+  <data name="LightingStudioModuleValue_mosaic" xml:space="preserve"><value>馬賽克</value></data>
+  <data name="LightingStudioModuleValue_nebula" xml:space="preserve"><value>星雲</value></data>
+  <data name="LightingStudioModuleValue_noise" xml:space="preserve"><value>雜訊</value></data>
+  <data name="LightingStudioModuleValue_oil" xml:space="preserve"><value>油彩</value></data>
+  <data name="LightingStudioModuleValue_orbit" xml:space="preserve"><value>軌道</value></data>
+  <data name="LightingStudioModuleValue_palette" xml:space="preserve"><value>調色盤</value></data>
+  <data name="LightingStudioModuleValue_pixels" xml:space="preserve"><value>像素</value></data>
+  <data name="LightingStudioModuleValue_plasma" xml:space="preserve"><value>電漿</value></data>
+  <data name="LightingStudioModuleValue_polygon" xml:space="preserve"><value>多邊形</value></data>
+  <data name="LightingStudioModuleValue_pulse" xml:space="preserve"><value>脈衝</value></data>
+  <data name="LightingStudioModuleValue_radar" xml:space="preserve"><value>雷達</value></data>
+  <data name="LightingStudioModuleValue_rain" xml:space="preserve"><value>雨</value></data>
+  <data name="LightingStudioModuleValue_random" xml:space="preserve"><value>隨機</value></data>
+  <data name="LightingStudioModuleValue_rings" xml:space="preserve"><value>圓環</value></data>
+  <data name="LightingStudioModuleValue_ripple" xml:space="preserve"><value>漣漪</value></data>
+  <data name="LightingStudioModuleValue_rows" xml:space="preserve"><value>橫排</value></data>
+  <data name="LightingStudioModuleValue_scan" xml:space="preserve"><value>掃描</value></data>
+  <data name="LightingStudioModuleValue_smoke" xml:space="preserve"><value>煙霧</value></data>
+  <data name="LightingStudioModuleValue_sparks" xml:space="preserve"><value>火花</value></data>
+  <data name="LightingStudioModuleValue_spiral" xml:space="preserve"><value>螺旋</value></data>
+  <data name="LightingStudioModuleValue_split" xml:space="preserve"><value>分裂</value></data>
+  <data name="LightingStudioModuleValue_stack" xml:space="preserve"><value>堆疊</value></data>
+  <data name="LightingStudioModuleValue_star" xml:space="preserve"><value>星形</value></data>
+  <data name="LightingStudioModuleValue_stars" xml:space="preserve"><value>星空</value></data>
+  <data name="LightingStudioModuleValue_stripes" xml:space="preserve"><value>條紋</value></data>
+  <data name="LightingStudioModuleValue_surface" xml:space="preserve"><value>水面</value></data>
+  <data name="LightingStudioModuleValue_sync" xml:space="preserve"><value>同步</value></data>
+  <data name="LightingStudioModuleValue_text" xml:space="preserve"><value>文字</value></data>
+  <data name="LightingStudioModuleValue_triangle" xml:space="preserve"><value>三角形</value></data>
+  <data name="LightingStudioModuleValue_tunnel" xml:space="preserve"><value>隧道</value></data>
+  <data name="LightingStudioModuleValue_twinkle" xml:space="preserve"><value>閃爍</value></data>
+  <data name="LightingStudioModuleValue_viscous" xml:space="preserve"><value>黏稠</value></data>
+  <data name="LightingStudioModuleValue_voronoi" xml:space="preserve"><value>泰森多邊形</value></data>
+  <data name="LightingStudioModuleValue_wave" xml:space="preserve"><value>波浪</value></data>
+  <data name="LightingStudioModuleValue_wind" xml:space="preserve"><value>風</value></data>
+  <data name="LightingStudioModuleValue_wipe" xml:space="preserve"><value>擦除</value></data>
+  <data name="PresetEditorGroupAmbient" xml:space="preserve"><value>氛圍</value></data>
+  <data name="PresetEditorGroupMusic" xml:space="preserve"><value>音樂</value></data>
+  <data name="PresetEditorGroupKey" xml:space="preserve"><value>按鍵</value></data>
+  <data name="PresetEditorGroupSystem" xml:space="preserve"><value>系統</value></data>
+  <data name="PresetEditorField_preset" xml:space="preserve"><value>預設</value></data>
+  <data name="PresetEditorField_id" xml:space="preserve"><value>ID</value></data>
+  <data name="PresetEditorField_name" xml:space="preserve"><value>名稱</value></data>
+  <data name="PresetEditorField_layers" xml:space="preserve"><value>圖層</value></data>
+  <data name="PresetEditorField_module" xml:space="preserve"><value>模組</value></data>
+  <data name="PresetEditorField_params" xml:space="preserve"><value>參數</value></data>
+  <data name="PresetEditorField_palette" xml:space="preserve"><value>調色盤</value></data>
+  <data name="PresetEditorField_opacity" xml:space="preserve"><value>不透明度</value></data>
+  <data name="PresetEditorField_speed" xml:space="preserve"><value>速度</value></data>
+  <data name="PresetEditorField_blend" xml:space="preserve"><value>混合</value></data>
+  <data name="PresetEditorField_render" xml:space="preserve"><value>渲染</value></data>
+  <data name="PresetEditorIssueRequired" xml:space="preserve"><value>必填</value></data>
+  <data name="PresetEditorIssueEmpty" xml:space="preserve"><value>不能為空</value></data>
+  <data name="PresetEditorIssueIdInvalid" xml:space="preserve"><value>僅限小寫字母、數字和連字號</value></data>
+  <data name="PresetEditorIssueLayersCount" xml:space="preserve"><value>必須包含 1 到 4 層</value></data>
+  <data name="PresetEditorIssueUnknownModule" xml:space="preserve"><value>「{0}」不是渲染模組</value></data>
+  <data name="PresetEditorIssuePaletteCount" xml:space="preserve"><value>必須包含 1 到 10 個色標</value></data>
+  <data name="PresetEditorIssuePaletteRange" xml:space="preserve"><value>色標位置必須在 0 到 100 之間</value></data>
+  <data name="PresetEditorIssueBetween01" xml:space="preserve"><value>必須在 0 到 1 之間</value></data>
+  <data name="PresetEditorIssueBetweenSpeed" xml:space="preserve"><value>必須在 0.1 到 5 之間</value></data>
+  <data name="PresetEditorIssueBlend" xml:space="preserve"><value>不是支援的混合模式</value></data>
+  <data name="PresetEditorIssueLayer" xml:space="preserve"><value>第 {0} 層 · {1}</value></data>
 </root>

@@ -173,6 +173,7 @@ public sealed partial class MainWindow : Window
         }
         _aboutWindow?.RefreshLocalization();
         _macroEditorWindow?.RefreshLocalization();
+        _presetEditorWindow?.RefreshLocalization();
         ((App)Application.Current).RefreshTrayLocalization();
         RefreshIntroductionLocalization();
         _performanceOverlayWindow?.RefreshLocalization();

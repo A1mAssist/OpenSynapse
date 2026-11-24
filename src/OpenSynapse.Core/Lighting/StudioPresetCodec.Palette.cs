@@ -4,7 +4,7 @@ namespace OpenSynapse.Core.Lighting;
 
 public static partial class StudioPresetCodec
 {
-    private static StudioPalette ReadPalette(JsonElement element, string context)
+    internal static StudioPalette ReadPalette(JsonElement element, string context)
     {
         if (element.ValueKind == JsonValueKind.String)
         {

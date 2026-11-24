@@ -4350,6 +4350,7 @@
   <data name="LightingStudioPresetConfirm" xml:space="preserve"><value>확인</value></data>
   <data name="LightingStudioPresetDiamond" xml:space="preserve"><value>마름모</value></data>
   <data name="LightingStudioPresetEdit" xml:space="preserve"><value>프리셋 편집</value></data>
+  <data name="LightingStudioPresetEditCurrent" xml:space="preserve"><value>이 프리셋 편집</value></data>
   <data name="LightingStudioPresetExpansion" xml:space="preserve"><value>확산 속도 (칸/초)</value></data>
   <data name="LightingStudioPresetGlow" xml:space="preserve"><value>빛 번짐</value></data>
   <data name="LightingStudioPresetHold" xml:space="preserve"><value>누르는 동안 빛 번짐 유지</value></data>
@@ -4364,6 +4365,99 @@
   <data name="LightingStudioPresetSaveAs" xml:space="preserve"><value>다른 이름으로 저장…</value></data>
   <data name="LightingStudioPresetShape" xml:space="preserve"><value>파동 모양</value></data>
   <data name="LightingStudioPresetSpacing" xml:space="preserve"><value>고리 간격 (칸)</value></data>
+  <data name="PresetEditorTitle" xml:space="preserve"><value>프리셋 편집기</value></data>
+  <data name="PresetEditorNew" xml:space="preserve"><value>새로 만들기</value></data>
+  <data name="PresetEditorOpen" xml:space="preserve"><value>열기</value></data>
+  <data name="PresetEditorSave" xml:space="preserve"><value>저장</value></data>
+  <data name="PresetEditorValidate" xml:space="preserve"><value>검사</value></data>
+  <data name="PresetEditorUndo" xml:space="preserve"><value>실행 취소</value></data>
+  <data name="PresetEditorRedo" xml:space="preserve"><value>다시 실행</value></data>
+  <data name="PresetEditorPlay" xml:space="preserve"><value>재생</value></data>
+  <data name="PresetEditorPause" xml:space="preserve"><value>일시 정지</value></data>
+  <data name="PresetEditorInfo" xml:space="preserve"><value>프리셋</value></data>
+  <data name="PresetEditorName" xml:space="preserve"><value>이름</value></data>
+  <data name="PresetEditorId" xml:space="preserve"><value>ID</value></data>
+  <data name="PresetEditorKind" xml:space="preserve"><value>종류</value></data>
+  <data name="PresetEditorCategory" xml:space="preserve"><value>카테고리</value></data>
+  <data name="PresetEditorNote" xml:space="preserve"><value>메모</value></data>
+  <data name="PresetEditorAddLayer" xml:space="preserve"><value>레이어 추가</value></data>
+  <data name="PresetEditorRemoveLayer" xml:space="preserve"><value>레이어 삭제</value></data>
+  <data name="PresetEditorDuplicateLayer" xml:space="preserve"><value>레이어 복제</value></data>
+  <data name="PresetEditorMoveUp" xml:space="preserve"><value>위로 이동</value></data>
+  <data name="PresetEditorMoveDown" xml:space="preserve"><value>아래로 이동</value></data>
+  <data name="PresetEditorLayerLimit" xml:space="preserve"><value>프리셋에는 최대 4개의 레이어를 포함할 수 있습니다.</value></data>
+  <data name="PresetEditorPreview" xml:space="preserve"><value>미리 보기</value></data>
+  <data name="PresetEditorPreviewDevice" xml:space="preserve"><value>장치</value></data>
+  <data name="PresetEditorPreviewWorld" xml:space="preserve"><value>공유 캔버스</value></data>
+  <data name="PresetEditorDevice" xml:space="preserve"><value>미리 보기 장치</value></data>
+  <data name="PresetEditorFps" xml:space="preserve"><value>FPS</value></data>
+  <data name="PresetEditorTimeline" xml:space="preserve"><value>타임라인</value></data>
+  <data name="PresetEditorLoop" xml:space="preserve"><value>반복</value></data>
+  <data name="PresetEditorWorldHint" xml:space="preserve"><value>공유 캔버스에는 장치가 두 개 이상 필요합니다. 96×96 합성 구성을 표시합니다.</value></data>
+  <data name="PresetEditorSimulation" xml:space="preserve"><value>시뮬레이션 입력</value></data>
+  <data name="PresetEditorSimKeys" xml:space="preserve"><value>키 입력 시뮬레이션</value></data>
+  <data name="PresetEditorSimScreen" xml:space="preserve"><value>화면 시뮬레이션</value></data>
+  <data name="PresetEditorSimScreenPick" xml:space="preserve"><value>이미지 선택…</value></data>
+  <data name="PresetEditorSimScreenNone" xml:space="preserve"><value>절차적 화면</value></data>
+  <data name="PresetEditorSimHint" xml:space="preserve"><value>미리 보기를 클릭하면 키를 누를 수 있습니다. 음악과 화면 입력은 시뮬레이션됩니다.</value></data>
+  <data name="PresetEditorModule" xml:space="preserve"><value>모듈</value></data>
+  <data name="PresetEditorModuleSearch" xml:space="preserve"><value>모듈 검색</value></data>
+  <data name="PresetEditorModuleAdvanced" xml:space="preserve"><value>모든 모듈 표시</value></data>
+  <data name="PresetEditorModuleAdvancedHint" xml:space="preserve"><value>선택한 종류뿐 아니라 모든 입력 계열의 모듈을 표시합니다.</value></data>
+  <data name="PresetEditorParameters" xml:space="preserve"><value>매개변수</value></data>
+  <data name="PresetEditorPalette" xml:space="preserve"><value>팔레트</value></data>
+  <data name="PresetEditorPaletteReset" xml:space="preserve"><value>팔레트 초기화</value></data>
+  <data name="PresetEditorNoModule" xml:space="preserve"><value>모듈을 선택하여 매개변수를 편집하세요.</value></data>
+  <data name="PresetEditorStatus" xml:space="preserve"><value>준비됨</value></data>
+  <data name="PresetEditorValidationOk" xml:space="preserve"><value>검사 문제가 없습니다.</value></data>
+  <data name="PresetEditorValidationIssues" xml:space="preserve"><value>문제 {0}개</value></data>
+  <data name="PresetEditorUnsaved" xml:space="preserve"><value>저장되지 않은 변경 사항</value></data>
+  <data name="PresetEditorSaved" xml:space="preserve"><value>저장됨</value></data>
+  <data name="PresetEditorSaveFailed" xml:space="preserve"><value>저장할 수 없습니다: {0}</value></data>
+  <data name="PresetEditorOpenFailed" xml:space="preserve"><value>열 수 없습니다: {0}</value></data>
+  <data name="PresetEditorNewName" xml:space="preserve"><value>새 프리셋</value></data>
+  <data name="PresetEditorConfirmDiscardTitle" xml:space="preserve"><value>변경 사항을 버릴까요?</value></data>
+  <data name="PresetEditorConfirmDiscardMessage" xml:space="preserve"><value>현재 프리셋에 저장되지 않은 변경 사항이 있습니다.</value></data>
+  <data name="PresetEditorConfirmDiscard" xml:space="preserve"><value>버리기</value></data>
+  <data name="PresetEditorModuleResetTitle" xml:space="preserve"><value>모듈을 변경할까요?</value></data>
+  <data name="PresetEditorModuleResetMessage" xml:space="preserve"><value>모듈을 변경하면 매개변수가 초기화됩니다.</value></data>
+  <data name="PresetEditorModuleResetConfirm" xml:space="preserve"><value>모듈 변경</value></data>
+  <data name="PresetEditorRecoverTitle" xml:space="preserve"><value>초안을 복구할까요?</value></data>
+  <data name="PresetEditorRecoverMessage" xml:space="preserve"><value>{0}의 저장되지 않은 초안을 찾았습니다.</value></data>
+  <data name="PresetEditorRecover" xml:space="preserve"><value>복구</value></data>
+  <data name="PresetEditorDiscard" xml:space="preserve"><value>버리기</value></data>
+  <data name="PresetEditorNoIssues" xml:space="preserve"><value>문제 없음</value></data>
+  <data name="PresetEditorBuiltInReadOnly" xml:space="preserve"><value>기본 제공 프리셋은 읽기 전용입니다. 사용자 사본을 만들려면 ‘다른 이름으로 저장’을 사용하세요.</value></data>
+  <data name="PresetEditorInvalidSave" xml:space="preserve"><value>저장하기 전에 검사 문제를 해결하세요.</value></data>
+  <data name="PresetEditorKindScreen" xml:space="preserve"><value>화면</value></data>
+  <data name="PresetEditorKindSystem" xml:space="preserve"><value>시스템</value></data>
+  <data name="PresetEditorKindAmbient" xml:space="preserve"><value>주변</value></data>
+  <data name="PresetEditorSimMusic" xml:space="preserve"><value>시뮬레이션된 비트</value></data>
+  <data name="PresetEditorTime" xml:space="preserve"><value>{0:0.0}초</value></data>
+  <data name="PresetEditorLayerSummary" xml:space="preserve"><value>{0}</value></data>
+  <data name="PresetEditorIssueLine" xml:space="preserve"><value>{0}</value></data>
+  <data name="PresetEditorPath" xml:space="preserve"><value>경로: {0}</value></data>
+  <data name="PresetEditorIdHint" xml:space="preserve"><value>소문자, 숫자, 하이픈만 사용할 수 있습니다.</value></data>
+  <data name="PresetEditorPresetLibrary" xml:space="preserve"><value>프리셋 라이브러리</value></data>
+  <data name="PresetEditorSaveAsTitle" xml:space="preserve"><value>프리셋 저장</value></data>
+  <data name="PresetEditorOpenFileTitle" xml:space="preserve"><value>프리셋 열기</value></data>
+  <data name="PresetEditorSelectScreenImage" xml:space="preserve"><value>화면 이미지 선택</value></data>
+  <data name="PresetEditorNoPreview" xml:space="preserve"><value>이 구성에서는 미리 보기를 사용할 수 없습니다.</value></data>
+  <data name="PresetEditorStatusNew" xml:space="preserve"><value>새 프리셋</value></data>
+  <data name="PresetEditorStatusBuiltIn" xml:space="preserve"><value>기본 제공 프리셋</value></data>
+  <data name="PresetEditorStatusOpened" xml:space="preserve"><value>{0} 열림</value></data>
+  <data name="PresetEditorStatusRecovered" xml:space="preserve"><value>저장되지 않은 초안 복구됨</value></data>
+  <data name="PresetEditorSimScreenImage" xml:space="preserve"><value>이미지: {0}</value></data>
+  <data name="PresetEditorLayerEnabled" xml:space="preserve"><value>사용</value></data>
+  <data name="PresetEditorUnsavedCloseTitle" xml:space="preserve"><value>변경 사항을 저장할까요?</value></data>
+  <data name="PresetEditorUnsavedCloseMessage" xml:space="preserve"><value>닫기 전에 현재 프리셋의 변경 사항을 저장할까요?</value></data>
+  <data name="PresetEditorUnsavedSwitchMessage" xml:space="preserve"><value>전환하기 전에 현재 프리셋의 변경 사항을 저장할까요?</value></data>
+  <data name="PresetEditorSaveAndClose" xml:space="preserve"><value>저장하고 닫기</value></data>
+  <data name="PresetEditorSaveAndSwitch" xml:space="preserve"><value>저장하고 전환</value></data>
+  <data name="PresetEditorCloseWithoutSaving" xml:space="preserve"><value>저장하지 않고 닫기</value></data>
+  <data name="PresetEditorSwitchWithoutSaving" xml:space="preserve"><value>저장하지 않고 전환</value></data>
+  <data name="PresetEditorCancel" xml:space="preserve"><value>취소</value></data>
+  <data name="PresetEditorSaveAsBuiltIn" xml:space="preserve"><value>기본 제공 프리셋은 덮어쓸 수 없습니다. 대신 사본을 저장하세요.</value></data>
   <data name="LightingStudioModuleParam_amplitude" xml:space="preserve"><value>진폭</value></data>
   <data name="LightingStudioModuleParam_aperture" xml:space="preserve"><value>개구 크기</value></data>
   <data name="LightingStudioModuleParam_aspect" xml:space="preserve"><value>가로세로 비율</value></data>
@@ -4526,4 +4620,167 @@
   <data name="LightingStudioModuleValue_white" xml:space="preserve"><value>흰색</value></data>
   <data name="LightingStudioModuleValue_alternate" xml:space="preserve"><value>박자마다 교대</value></data>
   <data name="LightingStudioModuleValue_waves" xml:space="preserve"><value>연속 음파</value></data>
+  <data name="PresetEditorValidateAll" xml:space="preserve"><value>모두 검사</value></data>
+  <data name="PresetEditorValidateAllTitle" xml:space="preserve"><value>프리셋 라이브러리 검사</value></data>
+  <data name="PresetEditorValidateAllSummary" xml:space="preserve"><value>프리셋 {0}개를 확인했으며 {1}개에 문제가 있습니다.</value></data>
+  <data name="PresetEditorOpenSelected" xml:space="preserve"><value>선택 항목 열기</value></data>
+  <data name="PresetEditorNoLibraryIssues" xml:space="preserve"><value>모든 기본 및 사용자 프리셋이 검사를 통과했습니다.</value></data>
+  <data name="LightingStudioModule_ambient.automaton" xml:space="preserve"><value>셀룰러 오토마타</value></data>
+  <data name="LightingStudioModule_ambient.field" xml:space="preserve"><value>앰비언트 필드</value></data>
+  <data name="LightingStudioModule_ambient.flow" xml:space="preserve"><value>플로우 미라지</value></data>
+  <data name="LightingStudioModule_ambient.geometry" xml:space="preserve"><value>지오메트릭 프리즘</value></data>
+  <data name="LightingStudioModule_ambient.liquid" xml:space="preserve"><value>리퀴드 서피스</value></data>
+  <data name="LightingStudioModule_ambient.mask" xml:space="preserve"><value>앰비언트 마스크</value></data>
+  <data name="LightingStudioModule_ambient.particles" xml:space="preserve"><value>앰비언트 파티클</value></data>
+  <data name="LightingStudioModule_ambient.signal" xml:space="preserve"><value>디지털 시그널</value></data>
+  <data name="LightingStudioModule_ambient.transition" xml:space="preserve"><value>앰비언트 트랜지션</value></data>
+  <data name="LightingStudioModule_key.activity" xml:space="preserve"><value>타이핑 측정과 콤보</value></data>
+  <data name="LightingStudioModule_key.beam" xml:space="preserve"><value>행/열 빔</value></data>
+  <data name="LightingStudioModule_key.charge" xml:space="preserve"><value>길게 눌러 충전 폭발</value></data>
+  <data name="LightingStudioModule_key.glow" xml:space="preserve"><value>키 잔광과 소프트 글로우</value></data>
+  <data name="LightingStudioModule_key.glyph" xml:space="preserve"><value>키 글리프와 하트비트</value></data>
+  <data name="LightingStudioModule_key.links" xml:space="preserve"><value>키 링크와 분기</value></data>
+  <data name="LightingStudioModule_key.particles" xml:space="preserve"><value>키 파티클 모션</value></data>
+  <data name="LightingStudioModule_key.sweep" xml:space="preserve"><value>키 방향 트레일</value></data>
+  <data name="LightingStudioModule_key.vortex" xml:space="preserve"><value>키 보텍스</value></data>
+  <data name="LightingStudioModule_key.wave" xml:space="preserve"><value>방사형 리플</value></data>
+  <data name="LightingStudioModule_music.arrows" xml:space="preserve"><value>비트 스캔 화살표</value></data>
+  <data name="LightingStudioModule_music.contour" xml:space="preserve"><value>아이 링과 동공</value></data>
+  <data name="LightingStudioModule_music.field" xml:space="preserve"><value>볼륨과 히스토리 필드</value></data>
+  <data name="LightingStudioModule_music.heart" xml:space="preserve"><value>비트 하트 윤곽</value></data>
+  <data name="LightingStudioModule_music.lattice" xml:space="preserve"><value>비트 교차 체커</value></data>
+  <data name="LightingStudioModule_music.lightning" xml:space="preserve"><value>스펙트럼 플라즈마 번개</value></data>
+  <data name="LightingStudioModule_music.particles" xml:space="preserve"><value>비트 스파크와 고음 별</value></data>
+  <data name="LightingStudioModule_music.radial" xml:space="preserve"><value>방사형 스펙트럼과 링</value></data>
+  <data name="LightingStudioModule_music.spectrum" xml:space="preserve"><value>스펙트럼 바와 에너지 윤곽</value></data>
+  <data name="LightingStudioModule_music.trace" xml:space="preserve"><value>파형 트레이스</value></data>
+  <data name="LightingStudioModuleParam_angle" xml:space="preserve"><value>각도</value></data>
+  <data name="LightingStudioModuleParam_blocks" xml:space="preserve"><value>블록 수</value></data>
+  <data name="LightingStudioModuleParam_contrast" xml:space="preserve"><value>대비</value></data>
+  <data name="LightingStudioModuleParam_drops" xml:space="preserve"><value>물방울 수</value></data>
+  <data name="LightingStudioModuleParam_floor" xml:space="preserve"><value>바닥 밝기</value></data>
+  <data name="LightingStudioModuleParam_flow" xml:space="preserve"><value>흐름</value></data>
+  <data name="LightingStudioModuleParam_frequency" xml:space="preserve"><value>주파수</value></data>
+  <data name="LightingStudioModuleParam_period" xml:space="preserve"><value>주기</value></data>
+  <data name="LightingStudioModuleParam_pulse" xml:space="preserve"><value>펄스 세기</value></data>
+  <data name="LightingStudioModuleParam_ratio" xml:space="preserve"><value>비율</value></data>
+  <data name="LightingStudioModuleParam_scale" xml:space="preserve"><value>크기</value></data>
+  <data name="LightingStudioModuleParam_scroll" xml:space="preserve"><value>스크롤</value></data>
+  <data name="LightingStudioModuleParam_scrollSpeed" xml:space="preserve"><value>스크롤 속도</value></data>
+  <data name="LightingStudioModuleParam_seed" xml:space="preserve"><value>시드</value></data>
+  <data name="LightingStudioModuleParam_shift" xml:space="preserve"><value>이동</value></data>
+  <data name="LightingStudioModuleParam_sides" xml:space="preserve"><value>변 수</value></data>
+  <data name="LightingStudioModuleParam_speed" xml:space="preserve"><value>속도</value></data>
+  <data name="LightingStudioModuleParam_spread" xml:space="preserve"><value>확산 범위</value></data>
+  <data name="LightingStudioModuleParam_stagger" xml:space="preserve"><value>엇갈림</value></data>
+  <data name="LightingStudioModuleParam_stretch" xml:space="preserve"><value>늘림</value></data>
+  <data name="LightingStudioModuleParam_text" xml:space="preserve"><value>텍스트</value></data>
+  <data name="LightingStudioModuleParam_twinkle" xml:space="preserve"><value>반짝임</value></data>
+  <data name="LightingStudioModuleParam_viscosity" xml:space="preserve"><value>점성</value></data>
+  <data name="LightingStudioModuleParam_warp" xml:space="preserve"><value>왜곡</value></data>
+  <data name="LightingStudioModuleParam_wind" xml:space="preserve"><value>바람</value></data>
+  <data name="LightingStudioModuleValue_aurora" xml:space="preserve"><value>오로라</value></data>
+  <data name="LightingStudioModuleValue_bars" xml:space="preserve"><value>막대</value></data>
+  <data name="LightingStudioModuleValue_binary" xml:space="preserve"><value>바이너리</value></data>
+  <data name="LightingStudioModuleValue_blinds" xml:space="preserve"><value>블라인드</value></data>
+  <data name="LightingStudioModuleValue_border" xml:space="preserve"><value>테두리</value></data>
+  <data name="LightingStudioModuleValue_bounce" xml:space="preserve"><value>바운스</value></data>
+  <data name="LightingStudioModuleValue_caustic" xml:space="preserve"><value>코스틱</value></data>
+  <data name="LightingStudioModuleValue_checker" xml:space="preserve"><value>체커</value></data>
+  <data name="LightingStudioModuleValue_code" xml:space="preserve"><value>코드</value></data>
+  <data name="LightingStudioModuleValue_confetti" xml:space="preserve"><value>색종이</value></data>
+  <data name="LightingStudioModuleValue_current" xml:space="preserve"><value>흐름</value></data>
+  <data name="LightingStudioModuleValue_data" xml:space="preserve"><value>데이터</value></data>
+  <data name="LightingStudioModuleValue_diagonal" xml:space="preserve"><value>대각선</value></data>
+  <data name="LightingStudioModuleValue_diamond" xml:space="preserve"><value>다이아몬드</value></data>
+  <data name="LightingStudioModuleValue_disk" xml:space="preserve"><value>원반</value></data>
+  <data name="LightingStudioModuleValue_dissolve" xml:space="preserve"><value>디졸브</value></data>
+  <data name="LightingStudioModuleValue_dots" xml:space="preserve"><value>점</value></data>
+  <data name="LightingStudioModuleValue_droplets" xml:space="preserve"><value>물방울</value></data>
+  <data name="LightingStudioModuleValue_dunes" xml:space="preserve"><value>모래 언덕</value></data>
+  <data name="LightingStudioModuleValue_ecg" xml:space="preserve"><value>심전도</value></data>
+  <data name="LightingStudioModuleValue_embers" xml:space="preserve"><value>불씨</value></data>
+  <data name="LightingStudioModuleValue_eye" xml:space="preserve"><value>눈</value></data>
+  <data name="LightingStudioModuleValue_fill" xml:space="preserve"><value>채우기</value></data>
+  <data name="LightingStudioModuleValue_fireflies" xml:space="preserve"><value>반딧불</value></data>
+  <data name="LightingStudioModuleValue_fireworks" xml:space="preserve"><value>불꽃놀이</value></data>
+  <data name="LightingStudioModuleValue_foam" xml:space="preserve"><value>거품</value></data>
+  <data name="LightingStudioModuleValue_frame" xml:space="preserve"><value>프레임</value></data>
+  <data name="LightingStudioModuleValue_glitch" xml:space="preserve"><value>글리치</value></data>
+  <data name="LightingStudioModuleValue_gradient" xml:space="preserve"><value>그라데이션</value></data>
+  <data name="LightingStudioModuleValue_grid" xml:space="preserve"><value>그리드</value></data>
+  <data name="LightingStudioModuleValue_hex" xml:space="preserve"><value>육각형</value></data>
+  <data name="LightingStudioModuleValue_interference" xml:space="preserve"><value>간섭</value></data>
+  <data name="LightingStudioModuleValue_iris" xml:space="preserve"><value>홍채</value></data>
+  <data name="LightingStudioModuleValue_kaleido" xml:space="preserve"><value>만화경</value></data>
+  <data name="LightingStudioModuleValue_lattice" xml:space="preserve"><value>격자</value></data>
+  <data name="LightingStudioModuleValue_matrix" xml:space="preserve"><value>매트릭스</value></data>
+  <data name="LightingStudioModuleValue_melt" xml:space="preserve"><value>녹음</value></data>
+  <data name="LightingStudioModuleValue_mercury" xml:space="preserve"><value>수은</value></data>
+  <data name="LightingStudioModuleValue_meteors" xml:space="preserve"><value>유성</value></data>
+  <data name="LightingStudioModuleValue_moire" xml:space="preserve"><value>모아레</value></data>
+  <data name="LightingStudioModuleValue_mono" xml:space="preserve"><value>모노</value></data>
+  <data name="LightingStudioModuleValue_moon" xml:space="preserve"><value>달</value></data>
+  <data name="LightingStudioModuleValue_mosaic" xml:space="preserve"><value>모자이크</value></data>
+  <data name="LightingStudioModuleValue_nebula" xml:space="preserve"><value>성운</value></data>
+  <data name="LightingStudioModuleValue_noise" xml:space="preserve"><value>노이즈</value></data>
+  <data name="LightingStudioModuleValue_oil" xml:space="preserve"><value>오일</value></data>
+  <data name="LightingStudioModuleValue_orbit" xml:space="preserve"><value>궤도</value></data>
+  <data name="LightingStudioModuleValue_palette" xml:space="preserve"><value>팔레트</value></data>
+  <data name="LightingStudioModuleValue_pixels" xml:space="preserve"><value>픽셀</value></data>
+  <data name="LightingStudioModuleValue_plasma" xml:space="preserve"><value>플라즈마</value></data>
+  <data name="LightingStudioModuleValue_polygon" xml:space="preserve"><value>다각형</value></data>
+  <data name="LightingStudioModuleValue_pulse" xml:space="preserve"><value>펄스</value></data>
+  <data name="LightingStudioModuleValue_radar" xml:space="preserve"><value>레이더</value></data>
+  <data name="LightingStudioModuleValue_rain" xml:space="preserve"><value>비</value></data>
+  <data name="LightingStudioModuleValue_random" xml:space="preserve"><value>무작위</value></data>
+  <data name="LightingStudioModuleValue_rings" xml:space="preserve"><value>고리</value></data>
+  <data name="LightingStudioModuleValue_ripple" xml:space="preserve"><value>물결</value></data>
+  <data name="LightingStudioModuleValue_rows" xml:space="preserve"><value>행</value></data>
+  <data name="LightingStudioModuleValue_scan" xml:space="preserve"><value>스캔</value></data>
+  <data name="LightingStudioModuleValue_smoke" xml:space="preserve"><value>연기</value></data>
+  <data name="LightingStudioModuleValue_sparks" xml:space="preserve"><value>불꽃</value></data>
+  <data name="LightingStudioModuleValue_spiral" xml:space="preserve"><value>나선</value></data>
+  <data name="LightingStudioModuleValue_split" xml:space="preserve"><value>분할</value></data>
+  <data name="LightingStudioModuleValue_stack" xml:space="preserve"><value>스택</value></data>
+  <data name="LightingStudioModuleValue_star" xml:space="preserve"><value>별</value></data>
+  <data name="LightingStudioModuleValue_stars" xml:space="preserve"><value>별빛</value></data>
+  <data name="LightingStudioModuleValue_stripes" xml:space="preserve"><value>줄무늬</value></data>
+  <data name="LightingStudioModuleValue_surface" xml:space="preserve"><value>수면</value></data>
+  <data name="LightingStudioModuleValue_sync" xml:space="preserve"><value>동기화</value></data>
+  <data name="LightingStudioModuleValue_text" xml:space="preserve"><value>텍스트</value></data>
+  <data name="LightingStudioModuleValue_triangle" xml:space="preserve"><value>삼각형</value></data>
+  <data name="LightingStudioModuleValue_tunnel" xml:space="preserve"><value>터널</value></data>
+  <data name="LightingStudioModuleValue_twinkle" xml:space="preserve"><value>반짝임</value></data>
+  <data name="LightingStudioModuleValue_viscous" xml:space="preserve"><value>점성</value></data>
+  <data name="LightingStudioModuleValue_voronoi" xml:space="preserve"><value>보로노이</value></data>
+  <data name="LightingStudioModuleValue_wave" xml:space="preserve"><value>파도</value></data>
+  <data name="LightingStudioModuleValue_wind" xml:space="preserve"><value>바람</value></data>
+  <data name="LightingStudioModuleValue_wipe" xml:space="preserve"><value>와이프</value></data>
+  <data name="PresetEditorGroupAmbient" xml:space="preserve"><value>앰비언트</value></data>
+  <data name="PresetEditorGroupMusic" xml:space="preserve"><value>뮤직</value></data>
+  <data name="PresetEditorGroupKey" xml:space="preserve"><value>키</value></data>
+  <data name="PresetEditorGroupSystem" xml:space="preserve"><value>시스템</value></data>
+  <data name="PresetEditorField_preset" xml:space="preserve"><value>프리셋</value></data>
+  <data name="PresetEditorField_id" xml:space="preserve"><value>ID</value></data>
+  <data name="PresetEditorField_name" xml:space="preserve"><value>이름</value></data>
+  <data name="PresetEditorField_layers" xml:space="preserve"><value>레이어</value></data>
+  <data name="PresetEditorField_module" xml:space="preserve"><value>모듈</value></data>
+  <data name="PresetEditorField_params" xml:space="preserve"><value>매개변수</value></data>
+  <data name="PresetEditorField_palette" xml:space="preserve"><value>팔레트</value></data>
+  <data name="PresetEditorField_opacity" xml:space="preserve"><value>불투명도</value></data>
+  <data name="PresetEditorField_speed" xml:space="preserve"><value>속도</value></data>
+  <data name="PresetEditorField_blend" xml:space="preserve"><value>혼합</value></data>
+  <data name="PresetEditorField_render" xml:space="preserve"><value>렌더링</value></data>
+  <data name="PresetEditorIssueRequired" xml:space="preserve"><value>필수입니다</value></data>
+  <data name="PresetEditorIssueEmpty" xml:space="preserve"><value>비워 둘 수 없습니다</value></data>
+  <data name="PresetEditorIssueIdInvalid" xml:space="preserve"><value>소문자, 숫자, 하이픈만 사용할 수 있습니다</value></data>
+  <data name="PresetEditorIssueLayersCount" xml:space="preserve"><value>1~4개 레이어가 필요합니다</value></data>
+  <data name="PresetEditorIssueUnknownModule" xml:space="preserve"><value>"{0}"은(는) 렌더 모듈이 아닙니다</value></data>
+  <data name="PresetEditorIssuePaletteCount" xml:space="preserve"><value>1~10개 색상 정지점이 필요합니다</value></data>
+  <data name="PresetEditorIssuePaletteRange" xml:space="preserve"><value>색상 정지점 위치는 0~100이어야 합니다</value></data>
+  <data name="PresetEditorIssueBetween01" xml:space="preserve"><value>0~1 범위여야 합니다</value></data>
+  <data name="PresetEditorIssueBetweenSpeed" xml:space="preserve"><value>0.1~5 범위여야 합니다</value></data>
+  <data name="PresetEditorIssueBlend" xml:space="preserve"><value>지원되지 않는 혼합 모드입니다</value></data>
+  <data name="PresetEditorIssueLayer" xml:space="preserve"><value>레이어 {0} · {1}</value></data>
 </root>
