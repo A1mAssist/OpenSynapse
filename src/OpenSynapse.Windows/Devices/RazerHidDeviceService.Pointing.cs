@@ -166,15 +166,29 @@ public sealed partial class RazerHidDeviceService
         }
     }
 
-    public Task SetDpiStagesAsync(RazerHidDeviceConnection connection, RazerHidDpiStages state, CancellationToken cancellationToken = default) =>
-        ExecuteWithoutResultAsync(connection,
-            RazerHidMouseProtocol.SetDpiStages(connection.Definition, state), cancellationToken);
+    public async Task SetDpiStagesAsync(
+        RazerHidDeviceConnection connection,
+        RazerHidDpiStages state,
+        CancellationToken cancellationToken = default)
+    {
+        var storage = await ResolveDpiStageStorageAsync(
+            connection, "razer_chroma_misc_set_dpi_stages", cancellationToken).ConfigureAwait(false);
+        WriteDiagnostic(connection.Definition.ProductId,
+            $"dpi.stages write storage=0x{storage:X2}");
+        await ExecuteWithoutResultAsync(connection,
+            RazerHidMouseProtocol.SetDpiStages(connection.Definition, state, storage),
+            cancellationToken).ConfigureAwait(false);
+    }
 
     public async Task<RazerHidDpiStages> GetDpiStagesAsync(
         RazerHidDeviceConnection connection,
         CancellationToken cancellationToken = default)
     {
-        var request = RazerHidMouseProtocol.GetDpiStages(connection.Definition);
+        var storage = await ResolveDpiStageStorageAsync(
+            connection, "razer_chroma_misc_get_dpi_stages", cancellationToken).ConfigureAwait(false);
+        WriteDiagnostic(connection.Definition.ProductId,
+            $"dpi.stages read storage=0x{storage:X2}");
+        var request = RazerHidMouseProtocol.GetDpiStages(connection.Definition, storage);
         var response = await ExecuteAsync(connection, request, cancellationToken).ConfigureAwait(false);
         try
         {
@@ -186,5 +200,21 @@ public sealed partial class RazerHidDeviceService
                 $"DPI stages response rejected: {exception.Message}; report={Convert.ToHexString(response)}");
             throw;
         }
+    }
+
+    /// <summary>
+    /// The DPI stage table is stored once per onboard profile. A fixed storage in the
+    /// device manifest wins; otherwise the table belongs to the profile the mouse is on.
+    /// </summary>
+    private async Task<byte> ResolveDpiStageStorageAsync(
+        RazerHidDeviceConnection connection,
+        string builderName,
+        CancellationToken cancellationToken)
+    {
+        if (connection.Definition.GetFixedArgumentOrNull(builderName, 0) is byte fixedStorage)
+        {
+            return fixedStorage;
+        }
+        return await ResolveActiveProfileIdAsync(connection, cancellationToken).ConfigureAwait(false);
     }
 }

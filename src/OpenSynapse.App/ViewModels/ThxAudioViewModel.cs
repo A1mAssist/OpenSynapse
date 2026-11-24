@@ -547,7 +547,8 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
         "ThxDownloadWriteFailed" => AppStrings.Text("ThxStatusDownloadWriteFailed"),
         "ThxInstallerUnavailable" or "ThxInstallerDownloadFailed" or
             "ThxInstallerVerificationFailed" or "ThxInstallerWriteFailed" or
-            "ThxInstallerStartFailed" or "ThxInstallerCancelled" or "ThxInstallerFailed" =>
+            "ThxInstallerStartFailed" or "ThxInstallerCancelled" or "ThxInstallerTimeout" or
+            "ThxInstallerFailed" =>
             AppStrings.Text("ThxStatusInstallFailed"),
         null when status.Availability == ThxAudioAvailability.Disabled => AppStrings.Text("ThxStatusDisabled"),
         null => AppStrings.Text("ThxStatusUnavailable"),

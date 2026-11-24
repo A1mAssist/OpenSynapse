@@ -287,7 +287,9 @@ internal static partial class ThxHeadsetAdmission
 
     internal static async Task<ThxHeadsetStatus> InstallComponentsAsync(
         ushort productId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        IProgress<double>? progress = null,
+        Action<string>? diagnostic = null)
     {
         var profile = GetProfile(productId);
         if (profile is null)
@@ -300,12 +302,18 @@ internal static partial class ThxHeadsetAdmission
             if (await ResolveInstallerAsync(profile, cancellationToken)
                 .ConfigureAwait(false) is not { } installer)
             {
+                diagnostic?.Invoke("thx installer unavailable");
                 return new(ThxHeadsetAvailability.ServiceMissing, "ThxInstallerUnavailable");
             }
+            diagnostic?.Invoke(
+                $"thx installer resolved bytes={installer.Length} " +
+                $"version={installer.Version?.ToString() ?? "-"} uri={installer.Uri}");
             var preset = await ResolvePresetInstallerAsync(profile, cancellationToken)
                 .ConfigureAwait(false);
             var installPreset = preset is not null &&
                 ShouldInstallPreset(ReadInstalledPresetVersion(), preset.Version);
+            diagnostic?.Invoke(
+                $"thx preset present={preset is not null} install={installPreset}");
             // A live VSSrv does not prove this model's APO is bound: another THX
             // headset can own the service. Always run the pinned per-model package;
             // a leftover service is repaired instead of treated as complete.
@@ -314,7 +322,9 @@ internal static partial class ThxHeadsetAdmission
                 cancellationToken,
                 repair: ThxAudioAdmission.HasService(ServiceName),
                 startService: ServiceName,
-                extra: installPreset ? preset : null).ConfigureAwait(false);
+                extra: installPreset ? preset : null,
+                progress: progress,
+                diagnostic: diagnostic).ConfigureAwait(false);
             if (install.Error is not null)
             {
                 return new(ThxHeadsetAvailability.ServiceMissing, install.Error);

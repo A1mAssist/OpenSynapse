@@ -26,15 +26,22 @@ internal static class ThxComponentInstaller
 {
     private static readonly HttpClient Client = new()
     {
-        Timeout = TimeSpan.FromMinutes(5),
+        // The THX package is about 40 MB on Razer's CDN. The linked token below
+        // is the single budget for download + install; a shorter client timeout
+        // turns a slow but healthy download into an unhandled TaskCanceledException.
+        Timeout = Timeout.InfiniteTimeSpan,
     };
+
+    private static readonly TimeSpan InstallBudget = TimeSpan.FromMinutes(15);
 
     internal static async Task<ThxComponentInstallResult> InstallAsync(
         ThxInstallerPackage package,
         CancellationToken cancellationToken,
         bool repair = false,
         string? startService = null,
-        ThxInstallerPackage? extra = null)
+        ThxInstallerPackage? extra = null,
+        IProgress<double>? progress = null,
+        Action<string>? diagnostic = null)
     {
         if (package.Length <= 0 || package.Sha256.Length != 64)
         {
@@ -50,10 +57,21 @@ internal static class ThxComponentInstaller
         var extraTemporary = extra is null
             ? null
             : Path.Combine(directory, $"thx-{Guid.NewGuid():N}.exe");
+        using var budget = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        budget.CancelAfter(InstallBudget);
+        var token = budget.Token;
         try
         {
             Directory.CreateDirectory(directory);
-            var downloadError = await DownloadAsync(package, temporary, cancellationToken)
+            var totalLength = package.Length + (extra?.Length ?? 0);
+            diagnostic?.Invoke(
+                $"thx installer download start main={package.Length} extra={extra?.Length ?? 0}");
+            var downloadError = await DownloadAsync(
+                package,
+                temporary,
+                token,
+                new Progress<double>(fraction =>
+                    progress?.Report(fraction * package.Length / totalLength)))
                 .ConfigureAwait(false);
             if (downloadError is not null)
             {
@@ -61,37 +79,60 @@ internal static class ThxComponentInstaller
             }
             if (extra is not null)
             {
-                downloadError = await DownloadAsync(extra, extraTemporary!, cancellationToken)
+                downloadError = await DownloadAsync(
+                    extra,
+                    extraTemporary!,
+                    token,
+                    new Progress<double>(fraction => progress?.Report(
+                        (package.Length + fraction * extra.Length) / totalLength)))
                     .ConfigureAwait(false);
                 if (downloadError is not null)
                 {
                     return new(downloadError);
                 }
             }
+            progress?.Report(1d);
+            diagnostic?.Invoke("thx installer download done");
 
-            cancellationToken.ThrowIfCancellationRequested();
+            token.ThrowIfCancellationRequested();
+            var arguments = repair ? $"/repair {package.Arguments}" : package.Arguments;
+            diagnostic?.Invoke($"thx installer start args={arguments} repair={repair}");
             var result = await RunAsync(
                 temporary,
-                repair ? $"/repair {package.Arguments}" : package.Arguments,
+                arguments,
                 startService,
                 extraTemporary,
-                extra?.Arguments).ConfigureAwait(false);
+                extra?.Arguments,
+                token).ConfigureAwait(false);
+            diagnostic?.Invoke(
+                $"thx installer exit error={result.Error ?? "-"} " +
+                $"reboot={result.RebootRequired} already={result.AlreadyInstalled}");
             if (repair && result.Error is not null)
             {
                 // A leftover service with no registered bundle cannot be repaired:
                 // retry the cached installer as a plain install.
+                diagnostic?.Invoke("thx installer repair failed; retrying plain install");
                 result = await RunAsync(
                     temporary,
                     package.Arguments,
                     startService,
                     extraTemporary,
-                    extra?.Arguments).ConfigureAwait(false);
+                    extra?.Arguments,
+                    token).ConfigureAwait(false);
+                diagnostic?.Invoke(
+                    $"thx installer exit error={result.Error ?? "-"} " +
+                    $"reboot={result.RebootRequired} already={result.AlreadyInstalled}");
             }
             return result;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             throw;
+        }
+        catch (OperationCanceledException)
+        {
+            diagnostic?.Invoke("thx installer timed out");
+            return new("ThxInstallerTimeout");
         }
         catch (HttpRequestException)
         {
@@ -137,7 +178,8 @@ internal static class ThxComponentInstaller
     private static async Task<string?> DownloadAsync(
         ThxInstallerPackage package,
         string path,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IProgress<double>? progress = null)
     {
         using var response = await Client.GetAsync(
             package.Uri,
@@ -150,6 +192,9 @@ internal static class ThxComponentInstaller
             return "ThxInstallerVerificationFailed";
         }
 
+        var buffer = new byte[81920];
+        long received = 0;
+        var reportedPercent = -1;
         await using (var source = await response.Content
             .ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
         await using (var target = new FileStream(
@@ -160,8 +205,24 @@ internal static class ThxComponentInstaller
             bufferSize: 81920,
             FileOptions.Asynchronous | FileOptions.SequentialScan))
         {
-            await source.CopyToAsync(target, cancellationToken).ConfigureAwait(false);
+            int read;
+            while ((read = await source
+                .ReadAsync(buffer.AsMemory(), cancellationToken)
+                .ConfigureAwait(false)) > 0)
+            {
+                await target
+                    .WriteAsync(buffer.AsMemory(0, read), cancellationToken)
+                    .ConfigureAwait(false);
+                received += read;
+                var percent = (int)Math.Min(100L, received * 100L / package.Length);
+                if (percent != reportedPercent)
+                {
+                    reportedPercent = percent;
+                    progress?.Report(percent / 100d);
+                }
+            }
         }
+        progress?.Report(1d);
 
         if (new FileInfo(path).Length != package.Length)
         {
@@ -182,9 +243,11 @@ internal static class ThxComponentInstaller
         string arguments,
         string? startService,
         string? extraPath = null,
-        string? extraArguments = null)
+        string? extraArguments = null,
+        CancellationToken cancellationToken = default)
     {
         string? commandFile = null;
+        Process? process = null;
         try
         {
             var fileName = path;
@@ -241,18 +304,20 @@ internal static class ThxComponentInstaller
                 Verb = "runas",
                 WindowStyle = ProcessWindowStyle.Hidden,
             };
-            using var process = Process.Start(startInfo);
+            process = Process.Start(startInfo);
             if (process is null)
             {
                 return new("ThxInstallerStartFailed");
             }
 
-            await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
+            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
             return ClassifyExitCode(process.ExitCode);
         }
         finally
         {
-            if (commandFile is not null)
+            // On timeout the elevated cmd.exe is still using the batch file.
+            // Leave it alone; deleting it would abort the remaining install steps.
+            if (commandFile is not null && (process is null || process.HasExited))
             {
                 try
                 {

@@ -3228,6 +3228,7 @@
   <data name="RazerHeadsetThxInstallCancelled" xml:space="preserve"><value>已取消 THX 安裝：沒有授予管理員權限。需要安裝時請點按鈕並在 UAC 提示中選“是”。</value></data>
   <data name="RazerHeadsetThxInstallBusy" xml:space="preserve"><value>另一個安裝程式正在執行，THX 元件暫時無法安裝。等它結束後再試。</value></data>
   <data name="RazerHeadsetThxInstallerExited" xml:space="preserve"><value>THX 安裝程式異常結束（程式碼 {0}）。如果元件已存在，重啟 Windows 後再試；否則重新點“下載並安裝 THX 元件”重試。</value></data>
+  <data name="RazerHeadsetThxInstallTimeout" xml:space="preserve"><value>THX 元件安裝逾時。請檢查網路後重試；如果安裝程式仍在執行，請等它結束後再試。</value></data>
   <data name="RazerHeadsetThxIncomplete" xml:space="preserve"><value>安裝程式已結束，但 THX 服務仍未就緒。請重啟後重試；仍然失敗就重新點“下載並安裝 THX 元件”。</value></data>
   <data name="RazerHeadsetThxRebootRequired" xml:space="preserve"><value>THX 元件已安裝，需要重啟電腦後生效。</value></data>
   <data name="RazerHeadsetThxInstallerLinkButton.Content" xml:space="preserve"><value>手動下載 THX 安裝包</value></data>

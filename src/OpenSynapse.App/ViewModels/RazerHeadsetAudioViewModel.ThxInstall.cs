@@ -7,9 +7,38 @@ public sealed partial class RazerHeadsetAudioViewModel
     public async Task InstallThxComponentsAsync(CancellationToken cancellationToken = default)
     {
         if (!CanInstallThx || !BeginOperation()) return;
-        await InstallThxAsync(
-            () => ThxHeadsetAdmission.InstallComponentsAsync(_connection.ProductId, cancellationToken),
-            cancellationToken);
+        _diagnostic?.Invoke($"thx install requested pid={_connection.ProductId:X4}");
+
+        // Progress<T> posts to the UI context. Stop accepting updates once the
+        // command has finished so a queued 100% callback cannot overwrite the
+        // final state with the "downloading" text.
+        var finished = false;
+        var lastPercent = -1;
+        var progress = new Progress<double>(fraction =>
+        {
+            // IsBusy turns false before the post-install refresh, so a queued
+            // progress callback cannot put the card back into "downloading".
+            if (finished || !IsBusy) return;
+            var percent = (int)Math.Round(Math.Clamp(fraction, 0d, 1d) * 100d);
+            if (percent == lastPercent) return;
+            lastPercent = percent;
+            OperationStatusText =
+                $"{AppStrings.Text("RazerHeadsetThxDownloading")} {percent}%";
+        });
+        try
+        {
+            await InstallThxAsync(
+                () => ThxHeadsetAdmission.InstallComponentsAsync(
+                    _connection.ProductId,
+                    cancellationToken,
+                    progress,
+                    _diagnostic),
+                cancellationToken);
+        }
+        finally
+        {
+            finished = true;
+        }
     }
 
     private async Task InstallThxAsync(
@@ -31,6 +60,8 @@ public sealed partial class RazerHeadsetAudioViewModel
                         AppStrings.Text("RazerHeadsetThxInstallCancelled"),
                     "ThxInstallerBusy" =>
                         AppStrings.Text("RazerHeadsetThxInstallBusy"),
+                    "ThxInstallerTimeout" =>
+                        AppStrings.Text("RazerHeadsetThxInstallTimeout"),
                     "ThxDownloadFailed" or "ThxDownloadVerificationFailed" =>
                         AppStrings.Text("RazerHeadsetThxDownloadFailed"),
                     var code when code?.StartsWith(
@@ -60,9 +91,11 @@ public sealed partial class RazerHeadsetAudioViewModel
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
         }
-        catch (Exception exception) when (IsExpectedException(exception))
+        catch (Exception exception)
         {
-            ErrorText = exception.Message;
+            _diagnostic?.Invoke(
+                $"thx install failed: {exception.GetType().Name}: {exception.Message}");
+            ErrorText = AppStrings.Text("RazerHeadsetThxDownloadFailed");
             OperationStatusText = string.Empty;
         }
         finally
@@ -70,7 +103,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             IsBusy = false;
         }
 
-        if (!cancellationToken.IsCancellationRequested && !_thxStatus.RebootRequired)
+        if (!cancellationToken.IsCancellationRequested && _thxStatus?.RebootRequired != true)
         {
             await RefreshThxAsync(cancellationToken);
         }

@@ -273,7 +273,7 @@ public sealed partial class RazerHeadsetAudioService
         IReadOnlyList<RazerNxpSerialDevice> serialDevices = [];
         try
         {
-            serialDevices = await RazerNxpSerialDiscovery.FindAllAsync(cancellationToken)
+            serialDevices = await RazerNxpSerialDiscovery.FindAllAsync(cancellationToken, diagnostic)
                 .ConfigureAwait(false);
         }
         catch (Exception exception) when (IsExpected(exception) ||
@@ -282,6 +282,15 @@ public sealed partial class RazerHeadsetAudioService
             diagnostic?.Invoke($"headset-audio serial discovery failed: {exception.Message}");
         }
         connections = MergeSerialConnections(connections, serialDevices, diagnostic);
+        if (serialDevices.Count == 0 &&
+            usbDevices.FirstOrDefault(item => item.ProductId is 0x052C or 0x052D) is { } present)
+        {
+            // The NXP headsets answer only over their USB serial interface, which the
+            // Razer driver provides. Without it the device enumerates and is silent.
+            diagnostic?.Invoke(
+                $"headset-audio pid={present.ProductId:X4} is present but exposes no serial interface " +
+                "(Razer USB serial driver missing)");
+        }
         if (connections.Count == 0)
         {
             diagnostic?.Invoke(

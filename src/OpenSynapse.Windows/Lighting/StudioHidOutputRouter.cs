@@ -187,6 +187,10 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
 
         var targets = _connections().Where(IsTarget).ToArray();
         if (targets.Length == 0) return false;
+        // A dock and the mouse it links report the same HID path, and that path holds a
+        // single custom-frame slot: two writers overwrite each other, so the loser goes
+        // dark and the keep-alive re-arm shows up as a periodic blink.
+        var writers = CollapseSharedEndpoints(targets);
 
         await _applyGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -223,7 +227,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                 }
             }
 
-            foreach (var target in targets)
+            foreach (var target in writers)
             {
                 var isMatrix = target.Definition.MatrixDimensions is not null &&
                     target.Capabilities.Contains(RazerHidBackendCapability.MatrixFrameWrite);
@@ -367,6 +371,42 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
             _applyGate.Release();
         }
     }
+
+    /// <summary>
+    /// One HID endpoint holds one custom frame, so a dock and the mouse it links cannot
+    /// both be driven: the last write wins and the other device stays dark. Keep the
+    /// widest matrix per endpoint and let the rest follow the firmware's own effect.
+    /// </summary>
+    private static IReadOnlyList<RazerHidDeviceConnection> CollapseSharedEndpoints(
+        IReadOnlyList<RazerHidDeviceConnection> targets)
+    {
+        if (targets.Count < 2) return targets;
+        var writers = new List<RazerHidDeviceConnection>(targets.Count);
+        foreach (var group in targets.GroupBy(
+                     target => target.DevicePath ?? target.InstanceId,
+                     StringComparer.OrdinalIgnoreCase))
+        {
+            if (group.Count() == 1)
+            {
+                writers.Add(group.First());
+                continue;
+            }
+
+            var winner = group
+                .OrderByDescending(target => MatrixArea(target.Definition.MatrixDimensions))
+                .First();
+            System.Diagnostics.Debug.WriteLine(
+                $"studio: shared endpoint {group.Key} holds " +
+                string.Join(" + ", group.Select(item => $"{item.Definition.ProductId:X4}")) +
+                $"; writing {winner.Definition.ProductId:X4} only");
+            writers.Add(winner);
+        }
+
+        return writers;
+    }
+
+    private static int MatrixArea(RazerHidMatrixDimensions? dimensions) =>
+        dimensions is { Rows: > 0, Columns: > 0 } ? dimensions.Rows * dimensions.Columns : 0;
 
     /// <summary>
     /// Stops accepting frames and waits for the in-flight write to finish.

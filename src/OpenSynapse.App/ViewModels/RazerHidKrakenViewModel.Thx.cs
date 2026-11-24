@@ -34,6 +34,7 @@ public sealed partial class RazerHidKrakenViewModel
             "ThxRebootRequired" => AppStrings.Text("RazerHeadsetThxRebootRequired"),
             "ThxDownloadFailed" or "ThxDownloadVerificationFailed" =>
                 AppStrings.Text("RazerHeadsetThxDownloadFailed"),
+            "ThxInstallerTimeout" => AppStrings.Text("RazerHeadsetThxInstallTimeout"),
             _ when ThxStatus.ErrorCode?.StartsWith("ThxInstaller", StringComparison.Ordinal) == true =>
                 AppStrings.Text("RazerHeadsetThxDownloadFailed"),
             _ when ThxStatus.Availability == ThxHeadsetAvailability.InstalledButInactive =>

@@ -388,6 +388,9 @@ public sealed partial class RazerHidDeviceViewModel
                 {
                     await LoadBasicStateAsync(cancellationToken);
                     await LoadMappingAsync(cancellationToken);
+                    // DPI stages live in the active onboard profile, not in a
+                    // single global slot; the old table must not survive the switch.
+                    await LoadDpiStagesAsync(cancellationToken);
                 }
                 catch (Exception exception) when (IsExpectedOnboardProfileReadFailure(exception))
                 {
@@ -509,6 +512,10 @@ public sealed partial class RazerHidDeviceViewModel
                 }
 
                 var readback = await ReadOnboardProfilesAsync(cancellationToken);
+                if (IsOnboardProfileActiveSelected)
+                {
+                    await LoadDpiStagesAsync(cancellationToken);
+                }
                 SetOnboardProfileStatus(
                     AppStrings.Text(readback
                         ? "RazerHidOperationApplied"

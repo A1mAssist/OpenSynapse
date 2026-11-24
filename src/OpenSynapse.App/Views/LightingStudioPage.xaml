@@ -7,7 +7,8 @@
     xmlns:local="using:OpenSynapse.App"
     xmlns:views="using:OpenSynapse.App.Views"
     mc:Ignorable="d"
-    x:Name="Root">
+    x:Name="Root"
+    KeyboardAcceleratorPlacementMode="Hidden">
 
   <UserControl.KeyboardAccelerators>
     <KeyboardAccelerator Key="Z" Modifiers="Control" Invoked="UndoAcceleratorInvoked" />

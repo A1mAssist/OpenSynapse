@@ -75,6 +75,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             "ThxRebootRequired" => AppStrings.Text("RazerHeadsetThxRebootRequired"),
             "ThxInstallerCancelled" => AppStrings.Text("RazerHeadsetThxInstallCancelled"),
             "ThxInstallerBusy" => AppStrings.Text("RazerHeadsetThxInstallBusy"),
+            "ThxInstallerTimeout" => AppStrings.Text("RazerHeadsetThxInstallTimeout"),
             _ when _thxStatus.ErrorCode?.StartsWith("ThxInstallerExit", StringComparison.Ordinal) == true =>
                 AppStrings.FormatText(
                     "RazerHeadsetThxInstallerExited",

@@ -329,6 +329,20 @@ public sealed partial class LightingStudioViewModel
             // matrix HID endpoints cannot sustain the old 60 fps pump.
             using var timer = new PeriodicTimer(
                 TimeSpan.FromSeconds(1d / StudioEffectRenderer.NativeFramesPerSecond));
+            // A fullscreen game can hold a HID endpoint long enough to fail a write. One
+            // failed route must skip that frame only: ending the pump leaves every device
+            // dark until the user re-applies.
+            (string Name, Func<TimeSpan, CancellationToken, Task>? Apply)[] routes =
+            [
+                ("hid", _hidRouter is null ? null : (elapsed, ct) => _hidRouter.ApplyAsync(elapsed, ct)),
+                ("argb", _argbRouter is null ? null : (elapsed, ct) => _argbRouter.ApplyAsync(elapsed, ct)),
+                ("headset", _headsetRouter is null
+                    ? null
+                    : (elapsed, ct) => _headsetRouter.ApplyAsync(elapsed, ct)),
+                ("chroma", _chromaRouter is null
+                    ? null
+                    : (elapsed, ct) => _chromaRouter.ApplyAsync(elapsed, ct)),
+            ];
             static void LogFrame(long frameStart, long[] routeTicks)
             {
                 var total = System.Diagnostics.Stopwatch.GetElapsedTime(frameStart).TotalMilliseconds;
@@ -345,37 +359,22 @@ public sealed partial class LightingStudioViewModel
             {
                 // Every route starts at the same logical instant; otherwise each
                 // clock's first _startedAt differs by the time the earlier writes took.
-                if (_hidRouter is not null) await _hidRouter.ApplyAsync(TimeSpan.Zero, token).ConfigureAwait(false);
-                if (_argbRouter is not null) await _argbRouter.ApplyAsync(TimeSpan.Zero, token).ConfigureAwait(false);
-                if (_headsetRouter is not null)
-                    await _headsetRouter.ApplyAsync(TimeSpan.Zero, token).ConfigureAwait(false);
-                if (_chromaRouter is not null)
-                    await _chromaRouter.ApplyAsync(TimeSpan.Zero, token).ConfigureAwait(false);
+                foreach (var route in routes)
+                {
+                    await ApplyRouteAsync(route, TimeSpan.Zero, token).ConfigureAwait(false);
+                }
 
                 while (await timer.WaitForNextTickAsync(token).ConfigureAwait(false))
                 {
                     var elapsed = _outputClock.Elapsed;
                     var frameStart = System.Diagnostics.Stopwatch.GetTimestamp();
-                    var routeTicks = new long[4];
-                    if (_hidRouter is not null)
+                    var routeTicks = new long[routes.Length];
+                    for (var index = 0; index < routes.Length; index++)
                     {
-                        await _hidRouter.ApplyAsync(elapsed, token).ConfigureAwait(false);
-                        routeTicks[0] = System.Diagnostics.Stopwatch.GetTimestamp();
-                    }
-                    if (_argbRouter is not null)
-                    {
-                        await _argbRouter.ApplyAsync(elapsed, token).ConfigureAwait(false);
-                        routeTicks[1] = System.Diagnostics.Stopwatch.GetTimestamp();
-                    }
-                    if (_headsetRouter is not null)
-                    {
-                        await _headsetRouter.ApplyAsync(elapsed, token).ConfigureAwait(false);
-                        routeTicks[2] = System.Diagnostics.Stopwatch.GetTimestamp();
-                    }
-                    if (_chromaRouter is not null)
-                    {
-                        await _chromaRouter.ApplyAsync(elapsed, token).ConfigureAwait(false);
-                        routeTicks[3] = System.Diagnostics.Stopwatch.GetTimestamp();
+                        if (await ApplyRouteAsync(routes[index], elapsed, token).ConfigureAwait(false))
+                        {
+                            routeTicks[index] = System.Diagnostics.Stopwatch.GetTimestamp();
+                        }
                     }
                     LogFrame(frameStart, routeTicks.Where(tick => tick != 0).ToArray());
                 }
@@ -383,11 +382,30 @@ public sealed partial class LightingStudioViewModel
             catch (OperationCanceledException)
             {
             }
-            catch (Exception exception) when (IsExpected(exception))
-            {
-                // The next Apply reports a fresh failure; a background pump must not crash the app.
-            }
         }, token);
+    }
+
+    private static async Task<bool> ApplyRouteAsync(
+        (string Name, Func<TimeSpan, CancellationToken, Task>? Apply) route,
+        TimeSpan elapsed,
+        CancellationToken cancellationToken)
+    {
+        if (route.Apply is null) return false;
+        try
+        {
+            await route.Apply(elapsed, cancellationToken).ConfigureAwait(false);
+            return true;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"studio {route.Name} route failed: {exception.GetType().Name}: {exception.Message}");
+            return false;
+        }
     }
 
     private async Task StopOutputPumpAsync()
