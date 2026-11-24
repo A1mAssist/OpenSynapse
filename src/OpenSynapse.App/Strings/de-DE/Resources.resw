@@ -1628,6 +1628,7 @@
   <data name="RazerHidKnobModeVerticalScroll" xml:space="preserve"><value>Vertikales Scrollen</value></data>
   <data name="RazerHidKnobModeHorizontalScroll" xml:space="preserve"><value>Horizontales Scrollen</value></data>
   <data name="RazerHidKnobModeSwitchApps" xml:space="preserve"><value>Anwendung wechseln</value></data>
+  <data name="RazerHidKnobModeSwitchBrowserTabs" xml:space="preserve"><value>Browser-Tabs wechseln</value></data>
   <data name="RazerHidApplyButton.Content" xml:space="preserve"><value>Anwenden</value></data>
   <data name="RazerHidHapticScrollTitle.Text" xml:space="preserve"><value>Haptische Scrollstufen</value></data>
   <data name="RazerHidHapticScrollDescription.Text" xml:space="preserve"><value>Wählen Sie die Stufen aus, die am Umschalten teilnehmen, und wählen Sie dann die aktive Stufe.</value></data>
@@ -3561,6 +3562,20 @@
   <data name="LightingStudioColorOrange" xml:space="preserve"><value>Orange</value></data>
   <data name="LightingStudioColorYellow" xml:space="preserve"><value>Gelb</value></data>
   <data name="LightingStudioColorWhite" xml:space="preserve"><value>Weiß</value></data>
+  <data name="LightingStudioEdit" xml:space="preserve"><value>Bearbeiten</value></data>
+  <data name="LightingStudioDone" xml:space="preserve"><value>Fertig</value></data>
+  <data name="LightingStudioScenes" xml:space="preserve"><value>Szenen</value></data>
+  <data name="LightingStudioSharedCanvas" xml:space="preserve"><value>Gemeinsame Leinwand</value></data>
+  <data name="LightingStudioSceneAurora" xml:space="preserve"><value>Polarlicht-Atmen</value></data>
+  <data name="LightingStudioSceneHeartbeat" xml:space="preserve"><value>Herzschlag</value></data>
+  <data name="LightingStudioSceneNeonChase" xml:space="preserve"><value>Neon-Jagd</value></data>
+  <data name="LightingStudioSceneDeepEcho" xml:space="preserve"><value>Tiefes Echo</value></data>
+  <data name="LightingStudioSceneLavaPulse" xml:space="preserve"><value>Lava-Puls</value></data>
+  <data name="LightingStudioScenePrismSweep" xml:space="preserve"><value>Prismen-Sweep</value></data>
+  <data name="LightingStudioDeviceSummary" xml:space="preserve"><value>Alle Geräte: {0} · Einzonen: {1}</value></data>
+  <data name="LightingStudioStatusSceneSelected" xml:space="preserve"><value>Vorschau der Szene {0}; mit Anwenden auf die Geräte übertragen.</value></data>
+  <data name="LightingStudioStatusSceneEditing" xml:space="preserve"><value>{0} als ungespeichertes Profil geöffnet.</value></data>
+  <data name="LightingStudioStatusSceneResync" xml:space="preserve"><value>{0} wurde mit dem neuen Gerät neu synchronisiert.</value></data>
   <data name="LightingStudioStatusHint" xml:space="preserve"><value>Wählen Sie eine Ebene aus und passen Sie ihre Parameter an; die Vorschau wird live aktualisiert.</value></data>
   <data name="LightingStudioStatusLoadingLayout" xml:space="preserve"><value>Gerätelayout wird geladen…</value></data>
   <data name="LightingStudioStatusInputLayoutMissing" xml:space="preserve"><value>Tastatureingabe ignoriert: Das Layout {0} ist noch nicht geladen.</value></data>

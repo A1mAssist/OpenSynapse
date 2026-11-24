@@ -177,6 +177,7 @@ public sealed partial class RazerHidDeviceService
                 result.Add(RazerHidBackendCapability.ScrollAccelerationLevelRead);
                 result.Add(RazerHidBackendCapability.ScrollAccelerationLevelWrite);
             }
+
         }
 
         await ProbeOnboardProfileAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
@@ -186,6 +187,8 @@ public sealed partial class RazerHidDeviceService
         await ProbeAnalogJoystickAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
         await ProbeOledAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
         await ProbeHapticScrollAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
+        await ProbeScrollSmartReelAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
+        await ProbeDpiStagesAsync(definition, devicePath, result, cancellationToken).ConfigureAwait(false);
 
         if (RazerHidDeviceCatalog.IsMiddlewareMouseReadOnly(definition.ProductId))
             result.RemoveWhere(capability => capability.ToString().EndsWith("Write", StringComparison.Ordinal));
@@ -238,6 +241,79 @@ public sealed partial class RazerHidDeviceService
         }
         WriteDiagnostic(productId, $"{probe} probe: {supported}");
         return supported;
+    }
+
+    /// <summary>
+    /// The OpenRazer tables list Smart Reel and DPI stages for products whose firmware
+    /// never answers them (00D7 already returns 0x05 for the 0xB0 tactile trio), so both
+    /// cards are gated on the device instead of on the catalog.
+    /// </summary>
+    internal async Task ProbeScrollSmartReelAsync(
+        RazerHidDeviceDefinition definition,
+        string devicePath,
+        ISet<RazerHidBackendCapability> result,
+        CancellationToken cancellationToken)
+    {
+        if (definition.Category != DeviceCategory.Mouse ||
+            !definition.Transactions.ContainsKey("razer_chroma_misc_get_scroll_smart_reel"))
+        {
+            return;
+        }
+
+        var request = RazerHidMouseProtocol.GetSmartReel(definition);
+        var answered = await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
+            "scroll.smartReel", request.Report, response =>
+            {
+                _ = RazerHidMouseProtocol.ParseBooleanSecondArgument(response);
+                return true;
+            }, cancellationToken).ConfigureAwait(false);
+
+        if (!answered)
+        {
+            result.Remove(RazerHidBackendCapability.SmartReelRead);
+            result.Remove(RazerHidBackendCapability.SmartReelWrite);
+            return;
+        }
+
+        result.Add(RazerHidBackendCapability.SmartReelRead);
+        if (definition.Transactions.ContainsKey("razer_chroma_misc_set_scroll_smart_reel"))
+        {
+            result.Add(RazerHidBackendCapability.SmartReelWrite);
+        }
+    }
+
+    internal async Task ProbeDpiStagesAsync(
+        RazerHidDeviceDefinition definition,
+        string devicePath,
+        ISet<RazerHidBackendCapability> result,
+        CancellationToken cancellationToken)
+    {
+        if (definition.Category != DeviceCategory.Mouse ||
+            !definition.Transactions.ContainsKey("razer_chroma_misc_get_dpi_stages"))
+        {
+            return;
+        }
+
+        var request = RazerHidMouseProtocol.GetDpiStages(definition);
+        var answered = await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
+            "dpi.stages", request.Report, response =>
+            {
+                _ = RazerHidMouseProtocol.ParseDpiStages(definition, response);
+                return true;
+            }, cancellationToken).ConfigureAwait(false);
+
+        if (!answered)
+        {
+            result.Remove(RazerHidBackendCapability.DpiStagesRead);
+            result.Remove(RazerHidBackendCapability.DpiStagesWrite);
+            return;
+        }
+
+        result.Add(RazerHidBackendCapability.DpiStagesRead);
+        if (definition.Transactions.ContainsKey("razer_chroma_misc_set_dpi_stages"))
+        {
+            result.Add(RazerHidBackendCapability.DpiStagesWrite);
+        }
     }
 
     private void InvalidateMiddlewareProbeCache(string devicePath)

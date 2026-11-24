@@ -443,8 +443,13 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
             return;
         }
 
-        await _softwareLightingOwner.RestoreAsync(
+        var failed = await _softwareLightingOwner.RestoreAsync(
             CurrentConnections, SelectedDevice, cancellationToken).ConfigureAwait(false);
+        foreach (var instanceId in failed)
+        {
+            _diagnosticLog.TryWrite(
+                "chroma", $"lighting restore after external source failed for {instanceId}.");
+        }
     }
 
     /// <summary>A Chroma session ended; hand back the keyboards it left on custom frames.</summary>

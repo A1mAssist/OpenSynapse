@@ -79,12 +79,38 @@ public partial class App
 
     private async Task RestoreChromaAsync(MainViewModel viewModel)
     {
-        await viewModel.RazerHid.RestoreChromaFrameSinkAsync().ConfigureAwait(false);
-        if (_chromaDeviceRouter is not null)
+        try
         {
-            await _chromaDeviceRouter.RestoreAsync().ConfigureAwait(false);
+            await viewModel.RazerHid.RestoreChromaFrameSinkAsync().ConfigureAwait(false);
         }
-        await viewModel.RestoreLightingAfterExternalAsync().ConfigureAwait(false);
+        catch (Exception exception)
+        {
+            _diagnosticLog.TryWrite(
+                "chroma", $"frame-sink restore failed: {exception.Message}");
+        }
+
+        try
+        {
+            if (_chromaDeviceRouter is not null)
+            {
+                await _chromaDeviceRouter.RestoreAsync().ConfigureAwait(false);
+            }
+        }
+        catch (Exception exception)
+        {
+            _diagnosticLog.TryWrite(
+                "chroma", $"device-router restore failed: {exception.Message}");
+        }
+
+        try
+        {
+            await viewModel.RestoreLightingAfterExternalAsync().ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            _diagnosticLog.TryWrite(
+                "chroma", $"configured-lighting restore failed: {exception.Message}");
+        }
     }
 
     private void StartChromaRestHost(MainViewModel viewModel)

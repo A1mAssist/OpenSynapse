@@ -253,8 +253,7 @@ public sealed partial class RazerHidMappingViewModel
         RazerMappingAssignment? assignment,
         CancellationToken cancellationToken)
     {
-        if (assignment is null ||
-            RazerKeyboardExtraKeyCatalog.IsHostOnlyRow(_productId, buttonId))
+        if (assignment is null)
         {
             return;
         }

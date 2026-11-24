@@ -33,6 +33,7 @@ public sealed class StudioArgbOutputRouter : IAsyncDisposable
     private readonly Dictionary<byte, PortOutput> _outputs = [];
     private readonly object _updateGate = new();
     private Func<StudioArgbPort, IReadOnlyList<StudioLayerRender>>? _layersForPort;
+    private StudioWorldRenderer? _world;
     private long _layersVersion;
     private StudioArgbPort[] _ports = [];
     private RazerHidSpecialLightingConnection? _connection;
@@ -75,6 +76,10 @@ public sealed class StudioArgbOutputRouter : IAsyncDisposable
 
     /// <summary>Ports the next apply would write to.</summary>
     public IReadOnlyList<StudioArgbPort> GetTargets() => Volatile.Read(ref _ports);
+
+    /// <summary>Attaches the shared world canvas; null keeps the per-port renderer.</summary>
+    public void AttachWorld(StudioWorldRenderer world) =>
+        _world = world ?? throw new ArgumentNullException(nameof(world));
 
     /// <summary>
     /// Discovers the controller and enters its custom-frame mode once per
@@ -198,6 +203,7 @@ public sealed class StudioArgbOutputRouter : IAsyncDisposable
 
             Func<StudioArgbPort, IReadOnlyList<StudioLayerRender>>? layersForPort;
             long layersVersion;
+            var worldGeneration = _world?.Generation ?? 0;
             lock (_updateGate)
             {
                 layersForPort = _layersForPort;
@@ -207,11 +213,30 @@ public sealed class StudioArgbOutputRouter : IAsyncDisposable
             foreach (var port in _ports)
             {
                 if (!_outputs.TryGetValue(port.Channel, out var output) ||
-                    output.LedCount != port.LedCount)
+                    output.LedCount != port.LedCount ||
+                    output.WorldGeneration != worldGeneration)
                 {
+                    var oldOutput = output;
+                    var source = _world?.CreateSource(
+                            port.InstanceId,
+                            1,
+                            port.LedCount,
+                            1,
+                            port.LedCount,
+                            null,
+                            port.Channel)
+                        ?? new StudioDeviceFrameSource(1, port.LedCount, _inputProvider);
                     output = new PortOutput(
                         port.LedCount,
-                        new StudioDeviceFrameSource(1, port.LedCount, _inputProvider));
+                        source)
+                    {
+                        WorldGeneration = worldGeneration,
+                    };
+                    if (oldOutput is not null)
+                    {
+                        output.Frame = oldOutput.Frame;
+                        output.Touched = oldOutput.Touched;
+                    }
                     _outputs[port.Channel] = output;
                 }
 
@@ -399,5 +424,6 @@ public sealed class StudioArgbOutputRouter : IAsyncDisposable
         internal RazerHidColor[]? Frame { get; set; }
         internal bool Touched { get; set; }
         internal long LayersVersion { get; set; } = -1;
+        internal long WorldGeneration { get; set; } = -1;
     }
 }

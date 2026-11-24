@@ -20,13 +20,15 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         RequireReady(connection);
+        var context = SynchronizationContext.Current;
         var key = string.IsNullOrWhiteSpace(connection.DevicePath)
             ? connection.InstanceId
             : connection.DevicePath!;
         var held = HeldTransactions.Value;
         if (held?.Contains(key) == true)
         {
-            return await action(cancellationToken).ConfigureAwait(false);
+            return await RunOnContextAsync(context, () => action(cancellationToken))
+                .ConfigureAwait(false);
         }
 
         var gate = TransactionGates.GetOrAdd(key, static _ => new SemaphoreSlim(1, 1));
@@ -44,7 +46,8 @@ public sealed partial class RazerHidDeviceService
         HeldTransactions.Value = next;
         try
         {
-            return await action(cancellationToken).ConfigureAwait(false);
+            return await RunOnContextAsync(context, () => action(cancellationToken))
+                .ConfigureAwait(false);
         }
         finally
         {

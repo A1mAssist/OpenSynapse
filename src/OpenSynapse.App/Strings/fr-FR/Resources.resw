@@ -1628,6 +1628,7 @@
   <data name="RazerHidKnobModeVerticalScroll" xml:space="preserve"><value>Défilement vertical</value></data>
   <data name="RazerHidKnobModeHorizontalScroll" xml:space="preserve"><value>Défilement horizontal</value></data>
   <data name="RazerHidKnobModeSwitchApps" xml:space="preserve"><value>Changer d’application</value></data>
+  <data name="RazerHidKnobModeSwitchBrowserTabs" xml:space="preserve"><value>Changer d’onglet de navigateur</value></data>
   <data name="RazerHidApplyButton.Content" xml:space="preserve"><value>Appliquer</value></data>
   <data name="RazerHidHapticScrollTitle.Text" xml:space="preserve"><value>Paliers de défilement haptique</value></data>
   <data name="RazerHidHapticScrollDescription.Text" xml:space="preserve"><value>Choisissez les paliers qui participent au changement, puis sélectionnez celui en vigueur.</value></data>
@@ -3561,6 +3562,20 @@
   <data name="LightingStudioColorOrange" xml:space="preserve"><value>Orange</value></data>
   <data name="LightingStudioColorYellow" xml:space="preserve"><value>Jaune</value></data>
   <data name="LightingStudioColorWhite" xml:space="preserve"><value>Blanc</value></data>
+  <data name="LightingStudioEdit" xml:space="preserve"><value>Modifier</value></data>
+  <data name="LightingStudioDone" xml:space="preserve"><value>Terminé</value></data>
+  <data name="LightingStudioScenes" xml:space="preserve"><value>Scènes</value></data>
+  <data name="LightingStudioSharedCanvas" xml:space="preserve"><value>Canevas partagé</value></data>
+  <data name="LightingStudioSceneAurora" xml:space="preserve"><value>Respiration aurore</value></data>
+  <data name="LightingStudioSceneHeartbeat" xml:space="preserve"><value>Battement de cœur</value></data>
+  <data name="LightingStudioSceneNeonChase" xml:space="preserve"><value>Poursuite néon</value></data>
+  <data name="LightingStudioSceneDeepEcho" xml:space="preserve"><value>Écho profond</value></data>
+  <data name="LightingStudioSceneLavaPulse" xml:space="preserve"><value>Pulsation de lave</value></data>
+  <data name="LightingStudioScenePrismSweep" xml:space="preserve"><value>Balayage prisme</value></data>
+  <data name="LightingStudioDeviceSummary" xml:space="preserve"><value>Appareils : {0} · zone unique : {1}</value></data>
+  <data name="LightingStudioStatusSceneSelected" xml:space="preserve"><value>Aperçu de la scène {0} ; appliquez pour l’envoyer aux appareils.</value></data>
+  <data name="LightingStudioStatusSceneEditing" xml:space="preserve"><value>{0} ouvert comme profil non enregistré.</value></data>
+  <data name="LightingStudioStatusSceneResync" xml:space="preserve"><value>{0} resynchronisé avec le nouvel appareil.</value></data>
   <data name="LightingStudioStatusHint" xml:space="preserve"><value>Sélectionnez un calque et ajustez ses paramètres ; l’aperçu se met à jour en direct.</value></data>
   <data name="LightingStudioStatusLoadingLayout" xml:space="preserve"><value>Chargement de la disposition de l’appareil…</value></data>
   <data name="LightingStudioStatusInputLayoutMissing" xml:space="preserve"><value>Entrée clavier ignorée : la disposition {0} n’est pas encore chargée.</value></data>

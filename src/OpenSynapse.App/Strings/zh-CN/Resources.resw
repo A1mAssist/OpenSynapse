@@ -2024,6 +2024,7 @@
   <data name="RazerHidKnobModeVerticalScroll" xml:space="preserve"><value>上下滚动</value></data>
   <data name="RazerHidKnobModeHorizontalScroll" xml:space="preserve"><value>左右滚动</value></data>
   <data name="RazerHidKnobModeSwitchApps" xml:space="preserve"><value>切换应用</value></data>
+  <data name="RazerHidKnobModeSwitchBrowserTabs" xml:space="preserve"><value>切换浏览器标签页</value></data>
   <data name="RazerHidApplyButton.Content" xml:space="preserve"><value>应用</value></data>
   <data name="RazerHidHapticScrollTitle.Text" xml:space="preserve"><value>触觉滚轮档位</value></data>
   <data name="RazerHidHapticScrollDescription.Text" xml:space="preserve"><value>勾选参与切换的档位，再选当前生效的那一档。</value></data>
@@ -4012,6 +4013,20 @@
   <data name="LightingStudioColorOrange" xml:space="preserve"><value>橙</value></data>
   <data name="LightingStudioColorYellow" xml:space="preserve"><value>黄</value></data>
   <data name="LightingStudioColorWhite" xml:space="preserve"><value>白</value></data>
+  <data name="LightingStudioEdit" xml:space="preserve"><value>编辑</value></data>
+  <data name="LightingStudioDone" xml:space="preserve"><value>完成</value></data>
+  <data name="LightingStudioScenes" xml:space="preserve"><value>场景</value></data>
+  <data name="LightingStudioSharedCanvas" xml:space="preserve"><value>共享画布</value></data>
+  <data name="LightingStudioSceneAurora" xml:space="preserve"><value>极光呼吸</value></data>
+  <data name="LightingStudioSceneHeartbeat" xml:space="preserve"><value>心跳节拍</value></data>
+  <data name="LightingStudioSceneNeonChase" xml:space="preserve"><value>霓虹追逐</value></data>
+  <data name="LightingStudioSceneDeepEcho" xml:space="preserve"><value>深海回声</value></data>
+  <data name="LightingStudioSceneLavaPulse" xml:space="preserve"><value>熔岩脉冲</value></data>
+  <data name="LightingStudioScenePrismSweep" xml:space="preserve"><value>棱镜扫光</value></data>
+  <data name="LightingStudioDeviceSummary" xml:space="preserve"><value>全部设备 {0} 台 · 单色 {1} 台</value></data>
+  <data name="LightingStudioStatusSceneSelected" xml:space="preserve"><value>正在预览场景「{0}」，点“应用到设备”下发。</value></data>
+  <data name="LightingStudioStatusSceneEditing" xml:space="preserve"><value>「{0}」已作为未保存的配置打开。</value></data>
+  <data name="LightingStudioStatusSceneResync" xml:space="preserve"><value>「{0}」已与新设备重新同步。</value></data>
   <data name="LightingStudioStatusHint" xml:space="preserve"><value>选择图层后调整参数，预览会实时更新。</value></data>
   <data name="LightingStudioStatusLoadingLayout" xml:space="preserve"><value>正在获取设备布局...</value></data>
   <data name="LightingStudioStatusInputLayoutMissing" xml:space="preserve"><value>未加载 {0} 的布局，键盘输入已忽略。</value></data>

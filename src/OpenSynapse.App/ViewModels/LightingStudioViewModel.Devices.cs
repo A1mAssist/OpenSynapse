@@ -16,6 +16,7 @@ public sealed partial class LightingStudioViewModel
         _selectedDevice?.HasNoPixelOutput == true ? Visibility.Visible : Visibility.Collapsed;
     public void RefreshDevices()
     {
+        InvalidateWorld();
         var previous = _selectedDevice?.EffectiveInstanceId;
         Devices.Clear();
         var matrixDevices = _matrixDevices?.Invoke();
@@ -73,8 +74,22 @@ public sealed partial class LightingStudioViewModel
         OnPropertyChanged(nameof(PreviewRows));
         OnPropertyChanged(nameof(PreviewColumns));
         OnPropertyChanged(nameof(DeviceVisuals));
+        OnPropertyChanged(nameof(DeviceSummary));
         _ = LoadAllVisualsAsync();
         _ = LoadDeviceImagesAsync();
+        RefreshBladeWorldSource();
+        if (IsApplied)
+        {
+            RefreshHidSnapshots();
+            if (_argbRouter is not null) RefreshArgbSnapshots(_argbRouter.GetTargets());
+            if (_headsetRouter is not null) _headsetRouter.Update(BuildHeadsetLayers);
+            if (_chromaRouter is not null) RefreshChromaSnapshots(_chromaRouter.GetTargets());
+            if (_activeScene is not null)
+            {
+                StatusText = AppStrings.FormatText(
+                    "LightingStudioStatusSceneResync", AppStrings.Text(_activeScene.NameKey));
+            }
+        }
     }
 
     private async Task LoadAllVisualsAsync()
@@ -141,8 +156,11 @@ public sealed partial class LightingStudioViewModel
             string.Equals(item.InstanceId, visual.InstanceId, StringComparison.OrdinalIgnoreCase));
         if (existing is not null) DeviceVisuals.Remove(existing);
         DeviceVisuals.Add(visual);
+        InvalidateWorld();
+        EnsureWorld();
         _hidRouter?.SetLayout(visual.InstanceId, visual.Layout);
         if (IsApplied && _hidRouter is not null) RefreshHidSnapshots();
+        RefreshBladeWorldSource();
         if (string.Equals(visual.InstanceId, _selectedDevice?.EffectiveInstanceId,
                 StringComparison.OrdinalIgnoreCase))
         {

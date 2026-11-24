@@ -28,12 +28,12 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
     private async Task ApplyCoreAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApply) return;
-        IsBusy = true;
-        ErrorText = string.Empty;
         var applied = 0;
         ClearedSoftwareTrigger[] clears = [];
         try
         {
+            IsBusy = true;
+            ErrorText = string.Empty;
             // The macro library can change while the mapping page stays open;
             // resolve rows against the list that exists right now.
             await RefreshMacroContextAsync(cancellationToken).ConfigureAwait(true);

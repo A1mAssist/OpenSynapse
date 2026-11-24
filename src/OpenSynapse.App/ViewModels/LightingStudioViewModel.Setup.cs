@@ -26,18 +26,30 @@ public sealed partial class LightingStudioViewModel
         _headsetRouter = headsetRouter;
         _chromaRouter = chromaRouter;
         _inputSampler = inputSampler;
+        _world = new StudioWorldRenderer(
+            (rows, columns) => _inputSampler?.Sample(rows, columns) ?? default);
         _restoreAfterExternal = restoreAfterExternal;
         _dispatcher = DispatcherQueue.GetForCurrentThread();
         if (_hidRouter is not null)
         {
+            _hidRouter.AttachWorld(_world);
             _hidRouter.WriteFailed += OnOutputWriteFailed;
             _hidRouter.RestoreFailed += OnHidRestoreFailed;
             _hidRouter.InputObserved += OnHidInputObserved;
         }
-        if (_argbRouter is not null) _argbRouter.WriteFailed += OnOutputWriteFailed;
-        if (_headsetRouter is not null) _headsetRouter.WriteFailed += OnOutputWriteFailed;
+        if (_argbRouter is not null)
+        {
+            _argbRouter.AttachWorld(_world);
+            _argbRouter.WriteFailed += OnOutputWriteFailed;
+        }
+        if (_headsetRouter is not null)
+        {
+            _headsetRouter.AttachWorld(_world);
+            _headsetRouter.WriteFailed += OnOutputWriteFailed;
+        }
         if (_chromaRouter is not null)
         {
+            _chromaRouter.AttachWorld(_world);
             _chromaRouter.WriteFailed += OnOutputWriteFailed;
             _chromaRouter.RestoreFailed += OnHidRestoreFailed;
         }
@@ -48,6 +60,7 @@ public sealed partial class LightingStudioViewModel
         _history = new StudioHistory(_project);
         Layers.CollectionChanged += OnLayersChanged;
         LoadLocalizedChoices();
+        LoadSceneCards();
 
         AttachProfile(_project.SelectedProfile);
         SyncLayersFromProfile();

@@ -139,6 +139,7 @@ public sealed partial class LightingStudioPage : UserControl
             }
             else if (args.PropertyName == nameof(LightingStudioViewModel.PreviewRows) ||
                      args.PropertyName == nameof(LightingStudioViewModel.PreviewColumns)) BuildPreview();
+            else if (args.PropertyName == nameof(LightingStudioViewModel.IsEditing)) ApplyEditingState();
         };
         Inspector.Changed += (_, _) =>
         {
@@ -167,6 +168,7 @@ public sealed partial class LightingStudioPage : UserControl
             _inputSampler.SetCaptureRegion(Host.BehaviorSettings.AmbientCaptureRegion);
         }
         BindInspector();
+        ApplyEditingState();
         RefreshCanvas();
         RenderPreview();
     }
@@ -174,6 +176,9 @@ public sealed partial class LightingStudioPage : UserControl
     internal void OnNavigatedTo()
     {
         StudioTimingMark("navigate-enter");
+        // Entering the page always starts in browse mode; the editor is one click away.
+        if (_viewModel?.IsEditing == true) _viewModel.ToggleEditing();
+        ApplyEditingState();
         if (!_savedProjectLoaded)
         {
             _savedProjectLoaded = true;

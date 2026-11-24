@@ -32,8 +32,10 @@ internal sealed record ChromaTarget(
 /// </summary>
 internal sealed partial class ChromaDeviceRouter
 {
-    private const int TargetTimeoutMilliseconds = 250;
+    private const int TargetTimeoutMilliseconds = 150;
     private const int DuplicateFrameWindowMilliseconds = 1_000;
+    private const int TargetFailureThreshold = 2;
+    private const int TargetCooldownMilliseconds = 2_000;
 
     private readonly RazerHidDeviceService? _hid;
     private readonly RazerHidSpecialLightingService? _special;
@@ -45,11 +47,14 @@ internal sealed partial class ChromaDeviceRouter
     private readonly Action<string>? _diagnostic;
     private readonly ConcurrentDictionary<string, RazerChromaStandardService> _standardServices = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, RazerChromaStandardState> _standardBaselines = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _baselineAttempted = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, RazerRgb[]> _lastFrames = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, RazerRgb> _lastColors = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, long> _lastFrameAt = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, long> _lastColorAt = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, (int Failures, long CooldownUntil)> _targetFailures =
+        new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _touchedTargets = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, int> _baselineFailures = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, RazerHidDeviceConnection> _customEffectPrepared =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, RazerHidLightingBaseline?> _hidBaselines =
@@ -160,24 +165,39 @@ internal sealed partial class ChromaDeviceRouter
             var applied = false;
             foreach (var target in targets)
             {
+                var now = Environment.TickCount64;
+                if (_targetFailures.TryGetValue(target.InstanceId, out var failure) &&
+                    failure.CooldownUntil > now)
+                {
+                    continue;
+                }
+
+                _touchedTargets.Add(target.InstanceId);
                 using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 timeout.CancelAfter(TargetTimeoutMilliseconds);
                 try
                 {
                     var targetApplied = await ApplyTargetAsync(
                         target, frame, rows, columns, timeout.Token).ConfigureAwait(false);
-                    if (!targetApplied) Forget(target.InstanceId);
+                    if (targetApplied)
+                    {
+                        _targetFailures.Remove(target.InstanceId);
+                    }
+                    else
+                    {
+                        ForgetFrameState(target.InstanceId);
+                    }
                     applied |= targetApplied;
                 }
                 catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                 {
-                    Forget(target.InstanceId);
-                    _diagnostic?.Invoke($"Chroma target {target.Name} timed out; skipped.");
+                    ForgetFrameState(target.InstanceId);
+                    RecordTargetFailure(target, "timed out");
                 }
                 catch (Exception exception) when (IsDeviceFailure(exception))
                 {
-                    Forget(target.InstanceId);
-                    _diagnostic?.Invoke($"Chroma target {target.Name} failed: {exception.Message}");
+                    ForgetFrameState(target.InstanceId);
+                    RecordTargetFailure(target, exception.Message);
                 }
             }
             return applied;
@@ -260,11 +280,7 @@ internal sealed partial class ChromaDeviceRouter
             if (!_customEffectPrepared.TryGetValue(target.InstanceId, out var prepared) ||
                 !prepared.IsSameEndpoint(connection))
             {
-                if (_hidBaselineAttempted.Add(target.InstanceId))
-                {
-                    _hidBaselines[target.InstanceId] = await RazerHidLightingBaseline
-                        .CaptureAsync(_hid, connection, cancellationToken).ConfigureAwait(false);
-                }
+                await CaptureHidBaselineAsync(target, connection, cancellationToken).ConfigureAwait(false);
                 await _hid.SetCustomFrameEffectAsync(connection, cancellationToken).ConfigureAwait(false);
                 _customEffectPrepared[target.InstanceId] = connection;
             }
@@ -291,6 +307,7 @@ internal sealed partial class ChromaDeviceRouter
                 if (connection is null || _hid is null) return false;
                 var zone = StudioHidOutputRouter.FindStaticZone(connection);
                 if (zone is null) return false;
+                await CaptureHidBaselineAsync(target, connection, cancellationToken).ConfigureAwait(false);
                 await _hid.SetLightingAsync(
                     connection,
                     new RazerHidLightingSettings(
@@ -363,20 +380,32 @@ internal sealed partial class ChromaDeviceRouter
         return true;
     }
 
-    private void Forget(string instanceId)
+    private void ForgetFrameState(string instanceId)
     {
         _lastFrames.Remove(instanceId);
         _lastFrameAt.Remove(instanceId);
         _lastColors.Remove(instanceId);
         _lastColorAt.Remove(instanceId);
         _customEffectPrepared.Remove(instanceId);
-        _hidBaselines.Remove(instanceId);
-        _hidBaselineAttempted.Remove(instanceId);
         _joliePrepared.Remove(instanceId);
-        _jolieBaselines.Remove(instanceId);
-        _jolieBaselineAttempted.Remove(instanceId);
-        _baselineAttempted.Remove(instanceId);
-        _standardBaselines.Remove(instanceId);
+    }
+
+    private void RecordTargetFailure(ChromaTarget target, string message)
+    {
+        var failures = _targetFailures.TryGetValue(target.InstanceId, out var state)
+            ? state.Failures + 1
+            : 1;
+        if (failures >= TargetFailureThreshold)
+        {
+            _targetFailures[target.InstanceId] = (
+                0, Environment.TickCount64 + TargetCooldownMilliseconds);
+            _diagnostic?.Invoke(
+                $"Chroma target {target.Name} paused for {TargetCooldownMilliseconds / 1000}s: {message}");
+            return;
+        }
+
+        _targetFailures[target.InstanceId] = (failures, 0);
+        _diagnostic?.Invoke($"Chroma target {target.Name} failed: {message}");
     }
 
     private async Task CaptureBaselineAsync(
@@ -384,18 +413,44 @@ internal sealed partial class ChromaDeviceRouter
         RazerChromaStandardService service,
         CancellationToken cancellationToken)
     {
-        if (!_baselineAttempted.Add(instanceId)) return;
+        if (_standardBaselines.ContainsKey(instanceId) ||
+            _baselineFailures.GetValueOrDefault(instanceId) >= 3) return;
         try
         {
             var state = await service.ReadStateAsync(cancellationToken).ConfigureAwait(false);
             if (state.Effect is not null)
             {
                 _standardBaselines[instanceId] = state;
+                _baselineFailures.Remove(instanceId);
             }
         }
         catch (Exception exception) when (IsDeviceFailure(exception))
         {
+            _baselineFailures[instanceId] = _baselineFailures.GetValueOrDefault(instanceId) + 1;
             _diagnostic?.Invoke($"Chroma baseline for {instanceId} unavailable: {exception.Message}");
+        }
+    }
+
+    private async Task CaptureHidBaselineAsync(
+        ChromaTarget target,
+        RazerHidDeviceConnection connection,
+        CancellationToken cancellationToken)
+    {
+        if (_hid is null || !_hidBaselineAttempted.Add(target.InstanceId)) return;
+        try
+        {
+            _hidBaselines[target.InstanceId] = await RazerHidLightingBaseline
+                .CaptureAsync(_hid, connection, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (
+            IsDeviceFailure(exception) || exception is OperationCanceledException)
+        {
+            // Keep the target in the restore set; a missing baseline falls back
+            // to the firmware's Spectrum exit effect.
+            _hidBaselines[target.InstanceId] = null;
+            _diagnostic?.Invoke(
+                $"Chroma baseline for {target.Name} unavailable: {exception.Message}");
+            if (exception is OperationCanceledException) throw;
         }
     }
 

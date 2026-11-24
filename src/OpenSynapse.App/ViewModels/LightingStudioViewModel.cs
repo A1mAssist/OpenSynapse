@@ -47,6 +47,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
     private readonly StudioArgbOutputRouter? _argbRouter;
     private readonly StudioHeadsetOutputRouter? _headsetRouter;
     private readonly StudioInputSampler? _inputSampler;
+    private readonly StudioWorldRenderer _world;
     private readonly Func<Task>? _restoreAfterExternal;
     private readonly DispatcherQueue? _dispatcher;
     private readonly Dictionary<StudioEffectParams, string?> _loadedMedia =
@@ -70,11 +71,15 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
     private bool _isApplied;
     private bool _needsExternalRestore;
     private bool _isPlaying;
+    private bool _worldDirty = true;
+    private bool _worldInitialized;
     private int _disposed;
 
     internal void RefreshLocalization()
     {
         LoadLocalizedChoices();
+        foreach (var card in SceneCards) card.RefreshLocalization();
+        OnPropertyChanged(nameof(EditButtonText));
         OnPropertyChanged(nameof(EffectChoices));
         OnPropertyChanged(nameof(BlendChoices));
         OnPropertyChanged(nameof(ColorChoices));
@@ -300,13 +305,21 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
 
     public StudioRgb[] RenderPreview(TimeSpan elapsed)
     {
+        EnsureWorld();
+        var now = Math.Max(0, elapsed.TotalSeconds);
+        _previewSeconds = now;
+        if (SelectedDevice is { } selected && UsesWorld(selected.EffectiveInstanceId) &&
+            _world.RenderDeviceFrames(elapsed).TryGetValue(
+                selected.EffectiveInstanceId ?? string.Empty, out var worldFrame))
+        {
+            return worldFrame.Frame;
+        }
+
         var layers = BuildLayers();
         var rows = PreviewRows;
         var columns = PreviewColumns;
         if (layers.Length == 0) return new StudioRgb[rows * columns];
 
-        var now = Math.Max(0, elapsed.TotalSeconds);
-        _previewSeconds = now;
         var timed = new (StudioLayerRender Layer, double Seconds)[layers.Length];
         for (var index = 0; index < layers.Length; index++)
         {
@@ -452,6 +465,8 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
                 device.IsBlade || (device.Descriptor is not null &&
                     DeviceProtocolFamilies.UsesBladeMatrix(device.Descriptor.ProtocolFamily)));
             await EnsureInputAsync();
+            EnsureWorld();
+            _world.RestartOutputClock();
 
             if (_lighting is not null && blade is not null)
             {
@@ -473,6 +488,10 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
                     (inputRows, inputColumns) =>
                         _inputSampler?.Sample(inputRows, inputColumns) ?? default,
                     layout);
+                if (blade.EffectiveInstanceId is { } bladeInstanceId)
+                {
+                    _source.AttachWorld(_world, bladeInstanceId);
+                }
                 _appliedBlade = blade;
                 _inputClock.Restart();
                 _source.Update(BuildLayersFor(blade));
@@ -726,11 +745,14 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
 
     private void NotifyDocumentChanged()
     {
+        InvalidateWorld();
+        EnsureWorld();
         _layerCache.Clear();
         if (_source is not null && _appliedBlade is not null) _source.Update(BuildLayersFor(_appliedBlade));
         if (IsApplied && _hidRouter is not null) RefreshHidSnapshots();
         if (IsApplied && _argbRouter is not null) RefreshArgbSnapshots(_argbRouter.GetTargets());
         if (IsApplied && _headsetRouter is not null) _headsetRouter.Update(BuildHeadsetLayers);
+        if (IsApplied && _chromaRouter is not null) RefreshChromaSnapshots(_chromaRouter.GetTargets());
         _ = EnsureInputAsync();
         DocumentChanged?.Invoke(this, EventArgs.Empty);
     }

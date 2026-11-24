@@ -153,9 +153,17 @@ public sealed partial class RazerHidDeviceViewModel
 
         var previousKind = SelectedScrollWheelMode?.Kind;
         ScrollWheelModeChoices = choices;
-        SelectedScrollWheelMode = choices.FirstOrDefault(choice => choice.Kind == previousKind)
-            ?? choices.FirstOrDefault();
-        RefreshScrollWheelModeSelection();
+
+        // Device rescans rebuild the capability set several times a second; the list must
+        // not throw away the mode the user just picked in the meantime.
+        var kept = previousKind is { } kind
+            ? choices.FirstOrDefault(choice => choice.Kind == kind)
+            : null;
+        SelectedScrollWheelMode = kept ?? choices.FirstOrDefault();
+        if (kept is null)
+        {
+            RefreshScrollWheelModeSelection();
+        }
     }
 
     private static void AddMode(
@@ -299,31 +307,47 @@ public sealed partial class RazerHidDeviceViewModel
                     }
                 }
 
+                // Verification reads are advisory. The docked 35K answers the setters but
+                // not every getter, and a getter that stays silent must not undo the write.
+                var verified = false;
                 if (Has(RazerHidBackendCapability.LkScrollWheelModeRead))
                 {
-                    SetLkScrollMask((await _service.GetLkScrollWheelModeAsync(
-                        Connection, cancellationToken)).ModeMask);
+                    verified |= await TryReadbackAsync(async () => SetLkScrollMask(
+                        (await _service.GetLkScrollWheelModeAsync(Connection, cancellationToken)).ModeMask));
                 }
                 if (Has(RazerHidBackendCapability.ScrollModeRead))
                 {
-                    ScrollMode = await _service.GetScrollModeAsync(Connection, cancellationToken);
+                    verified |= await TryReadbackAsync(async () =>
+                    {
+                        ScrollMode = await _service.GetScrollModeAsync(Connection, cancellationToken);
+                    });
                 }
                 if (Has(RazerHidBackendCapability.ScrollTactileModeRead))
                 {
-                    ScrollTactileMode = (byte)await _service.GetScrollTactileModeAsync(
-                        Connection,
-                        await _service.ResolveActiveProfileIdAsync(Connection, cancellationToken),
-                        cancellationToken);
+                    verified |= await TryReadbackAsync(async () =>
+                    {
+                        ScrollTactileMode = (byte)await _service.GetScrollTactileModeAsync(
+                            Connection,
+                            await _service.ResolveActiveProfileIdAsync(Connection, cancellationToken),
+                            cancellationToken);
+                    });
                 }
                 if (Has(RazerHidBackendCapability.ScrollFreeNotchedModeRead))
                 {
-                    ScrollFreeNotchedModeIndex = (int)await _service.GetScrollFreeNotchedModeAsync(
-                        Connection, cancellationToken);
+                    verified |= await TryReadbackAsync(async () =>
+                    {
+                        ScrollFreeNotchedModeIndex =
+                            (int)await _service.GetScrollFreeNotchedModeAsync(Connection, cancellationToken);
+                    });
                 }
                 if (Has(RazerHidBackendCapability.SmartReelRead))
                 {
-                    SmartReelEnabled = await _service.GetSmartReelAsync(Connection, cancellationToken);
+                    verified |= await TryReadbackAsync(async () =>
+                    {
+                        SmartReelEnabled = await _service.GetSmartReelAsync(Connection, cancellationToken);
+                    });
                 }
+                _log?.Invoke($"scroll preset apply: preset={choice.Kind}, verified={verified}");
 
                 var usesScrollModeProfile = !Has(RazerHidBackendCapability.LkScrollWheelModeWrite) &&
                     !Has(RazerHidBackendCapability.ScrollTactileModeWrite) &&
@@ -334,7 +358,10 @@ public sealed partial class RazerHidDeviceViewModel
                     !usesScrollModeProfile &&
                     !usesTactileModeProfile &&
                     Has(RazerHidBackendCapability.ScrollFreeNotchedModeWrite);
-                RefreshScrollWheelModeSelection();
+                if (verified)
+                {
+                    RefreshScrollWheelModeSelection();
+                }
                 await SaveProfileAsync(
                     settings =>
                     {
@@ -355,7 +382,7 @@ public sealed partial class RazerHidDeviceViewModel
                         }
                         if (Has(RazerHidBackendCapability.SmartReelWrite))
                         {
-                            settings.Viper.SmartReelEnabled = SmartReelEnabled;
+                            settings.Viper.SmartReelEnabled = isSmartReel;
                         }
                     },
                     settings =>
@@ -370,5 +397,26 @@ public sealed partial class RazerHidDeviceViewModel
                 ScrollWheelModeStatusText = AppStrings.Text("RazerHidScrollModeApplied");
             },
             cancellationToken);
+    }
+
+    /// <summary>
+    /// A post-write read only refreshes the UI. Failing it is not a failed write, so it
+    /// must not reach the caller's rollback path.
+    /// </summary>
+    private static async Task<bool> TryReadbackAsync(Func<Task> read)
+    {
+        try
+        {
+            await read();
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 }

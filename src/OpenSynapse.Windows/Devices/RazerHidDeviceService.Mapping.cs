@@ -98,11 +98,6 @@ public sealed partial class RazerHidDeviceService
                 connection, buttonId, mode, cancellationToken).ConfigureAwait(false);
         }
 
-        if (TryGetHostOnlyAssignment(connection, buttonId, mode, out var hostOnly))
-        {
-            return hostOnly;
-        }
-
         if (RazerKeyboardExtraKeyCatalog.TryGetDialProtocolId(
                 connection.Definition.ProductId, buttonId, out var dialButtonId))
         {
@@ -294,21 +289,6 @@ public sealed partial class RazerHidDeviceService
                 connection, buttonId, mode, functionId, data, cancellationToken)
                 .ConfigureAwait(false);
             return;
-        }
-
-        if (RazerKeyboardExtraKeyCatalog.IsHostOnlyRow(
-                connection.Definition.ProductId, buttonId))
-        {
-            // These keys only exist in the host mapping engine. Their old default
-            // is not a firmware assignment, so Off has nothing to clear.
-            if (functionId == RazerHidMappingFunctions.Off)
-            {
-                return;
-            }
-
-            throw new NotSupportedException(
-                $"Button 0x{buttonId:X2} on 1532:{connection.Definition.ProductId:X4} " +
-                "is host-side and has no firmware assignment.");
         }
 
         // Synapse flips a wireless mouse back to driver mode before touching onboard
@@ -615,29 +595,6 @@ public sealed partial class RazerHidDeviceService
         return extra.Count == 0 || ids.Count == 0
             ? ids
             : ids.Concat(extra).Distinct().Order().ToArray();
-    }
-
-    /// <summary>
-    /// 02CF reports its two macro keys as private codes 100/101 instead of storing
-    /// them in the OBM table. Their Synapse defaults are host-side shortcuts.
-    /// </summary>
-    private static bool TryGetHostOnlyAssignment(
-        RazerHidDeviceConnection connection,
-        byte buttonId,
-        byte mode,
-        out RazerHidButtonAssignment assignment)
-    {
-        if (RazerKeyboardExtraKeyCatalog.IsHostOnlyRow(
-                connection.Definition.ProductId, buttonId))
-        {
-            IReadOnlyList<byte> data = buttonId == 208 ? [100] : [101];
-            assignment = new RazerHidButtonAssignment(
-                buttonId, mode, RazerHidMappingFunctions.Win8ShortcutsKey, data);
-            return true;
-        }
-
-        assignment = null!;
-        return false;
     }
 
 }

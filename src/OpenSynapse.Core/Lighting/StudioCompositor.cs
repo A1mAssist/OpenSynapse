@@ -17,8 +17,8 @@ public readonly record struct StudioLayerRender(
 /// </summary>
 public static class StudioCompositor
 {
-    // The per-device matrices are small; the shared 96 x 96 world canvas needs
-    // the same guard to accept a single preview frame.
+    // The per-device matrices are small; the shared world canvas is a square
+    // sampling grid and needs to pass the same guard.
     public const int MaxPixels = 32768;
     private const double BreathingPeriodSeconds = 7;
     private const double SpectrumPeriodSeconds = 20;

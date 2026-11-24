@@ -1,5 +1,4 @@
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media.Animation;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.App.Views;
 using OpenSynapse.Windows.Devices;
@@ -233,18 +232,9 @@ public sealed partial class MainWindow
             return;
         }
 
-        view.Opacity = 0;
-        var animation = new DoubleAnimation
-        {
-            To = 1,
-            Duration = new Duration(TimeSpan.FromMilliseconds(160)),
-            EnableDependentAnimation = true,
-        };
-        Storyboard.SetTarget(animation, view);
-        Storyboard.SetTargetProperty(animation, nameof(UIElement.Opacity));
-        var storyboard = new Storyboard();
-        storyboard.Children.Add(animation);
-        storyboard.Begin();
+        // A dependent opacity animation re-composites the whole page on the UI
+        // thread; switching pages is faster without it.
+        view.Opacity = 1;
     }
 
     private void InitializePageHost() => ShowPage(_viewModel.IsLiteMode ? "devices" : "overview");

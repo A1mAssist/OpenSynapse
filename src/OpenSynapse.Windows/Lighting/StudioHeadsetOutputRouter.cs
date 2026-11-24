@@ -17,6 +17,7 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
     private readonly Action<string>? _diagnostic;
     private readonly RazerHidSpecialLightingService? _krakenLighting;
     private readonly Func<RazerHeadsetAudioConnection, RazerHidSpecialLightingConnection?>? _krakenConnection;
+    private StudioWorldRenderer? _world;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly object _updateGate = new();
     private Func<IReadOnlyList<StudioLayerRender>>? _layersForDevice;
@@ -59,6 +60,10 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
     public ushort ProductId => _kraken?.ProductId ?? 0x05AD;
 
     public int LedCount => _kraken is null ? RazerMakoXChromaService.LedCount : 1;
+
+    /// <summary>Attaches the shared world canvas; null keeps the per-device renderer.</summary>
+    public void AttachWorld(StudioWorldRenderer world) =>
+        _world = world ?? throw new ArgumentNullException(nameof(world));
 
     /// <summary>Discovers Mako X and enters its custom-frame effect once per endpoint.</summary>
     public async Task<bool> RefreshAsync(CancellationToken cancellationToken = default)
@@ -185,9 +190,21 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
                 layersVersion = _layersVersion;
             }
 
-            _source ??= _kraken is null
-                ? new StudioDeviceFrameSource(1, RazerMakoXChromaService.LedCount, _inputProvider)
-                : new StudioDeviceFrameSource(1, 1, _inputProvider);
+            var worldGeneration = _world?.Generation ?? 0;
+            if (_source is null || _sourceWorldGeneration != worldGeneration)
+            {
+                var ledCount = _kraken is null ? RazerMakoXChromaService.LedCount : 1;
+                _source = _world?.CreateSource(
+                        _path,
+                        1,
+                        ledCount,
+                        1,
+                        ledCount,
+                        null)
+                    ?? new StudioDeviceFrameSource(1, ledCount, _inputProvider);
+                _sourceWorldGeneration = worldGeneration;
+                _sourceLayersVersion = -1;
+            }
             if (_sourceLayersVersion != layersVersion)
             {
                 _source.Update(layersForDevice?.Invoke() ?? []);
@@ -302,6 +319,7 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
             await ReleaseServiceAsync().ConfigureAwait(false);
             _source = null;
             _sourceLayersVersion = -1;
+            _sourceWorldGeneration = -1;
             _lastFrame = null;
             _prepared = false;
         }
@@ -328,6 +346,7 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
     }
 
     private long _sourceLayersVersion = -1;
+    private long _sourceWorldGeneration = -1;
 
     private async Task ReleaseServiceAsync()
     {
@@ -338,6 +357,7 @@ public sealed class StudioHeadsetOutputRouter : IAsyncDisposable
         _displayName = null;
         _prepared = false;
         _lastFrame = null;
+        _sourceWorldGeneration = -1;
         if (service is not null) await service.DisposeAsync().ConfigureAwait(false);
     }
 

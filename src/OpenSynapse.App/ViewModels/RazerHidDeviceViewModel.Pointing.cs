@@ -147,7 +147,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                     DpiStages.Select(stage => new RazerHidDpiStage(stage.Number, stage.X, stage.Y, stage.Z)).ToArray());
                 await _service.SetDpiStagesAsync(Connection, state, cancellationToken);
                 if (Has(RazerHidBackendCapability.DpiStagesRead))
-                    ReplaceDpiStages(await _service.GetDpiStagesAsync(Connection, cancellationToken));
+                    await TryReadbackAsync(async () =>
+                        ReplaceDpiStages(await _service.GetDpiStagesAsync(Connection, cancellationToken)));
 
                 // The stage table alone does not move the pointer; Razer applies the
                 // active stage's DPI, so save the table and the live DPI together.
@@ -160,8 +161,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
 
                 var applied = new ViperDpiStagesProfile
                 {
-                    ActiveStage = ActiveDpiStage,
-                    Stages = DpiStages.Select(stage => new ViperDpiStageProfile
+                    ActiveStage = state.ActiveStage,
+                    Stages = state.Stages.Select(stage => new ViperDpiStageProfile
                     {
                         Number = stage.Number,
                         X = stage.X,

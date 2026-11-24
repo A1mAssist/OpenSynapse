@@ -13,7 +13,8 @@ public sealed record StudioOutputFailure(string DeviceName, string Error, bool R
 /// <summary>Per-device layer snapshots and the HID frame pump.</summary>
 public sealed partial class LightingStudioViewModel
 {
-    private readonly Dictionary<(ushort ProductId, string InstanceId, int Rows, int Columns), StudioLayerRender[]>
+    private readonly Dictionary<(ushort ProductId, string InstanceId, int Rows, int Columns, StudioSceneRole Role),
+        StudioLayerRender[]>
         _layerCache = new();
     private readonly StudioChromaStandardOutputRouter? _chromaRouter;
 
@@ -34,13 +35,27 @@ public sealed partial class LightingStudioViewModel
     private StudioLayerRender[] BuildLayersFor(StudioDeviceOption device)
     {
         var (rows, columns) = FrameSize(device);
-        return BuildLayersFor(device.EffectiveProductId, device.EffectiveInstanceId, rows, columns);
+        return BuildLayersFor(
+            device.EffectiveProductId, device.EffectiveInstanceId, rows, columns, RoleFor(device));
+    }
+
+    private static StudioSceneRole RoleFor(StudioDeviceOption device)
+    {
+        if (device.IsBlade) return StudioSceneRole.Keyboard;
+        if (device.IsArgb) return StudioSceneRole.Argb;
+        if (device.IsSingleZone || (device.Rows == 1 && device.Columns == 1)) return StudioSceneRole.SingleZone;
+        if (device.Rows > 1) return StudioSceneRole.Keyboard;
+        return device.Columns >= 20 ? StudioSceneRole.Mousepad : StudioSceneRole.Mouse;
     }
 
     private StudioLayerRender[] BuildLayersFor(
-        ushort productId, string? instanceId, int rows, int columns)
+        ushort productId, string? instanceId, int rows, int columns, StudioSceneRole role)
     {
-        var key = (productId, instanceId ?? string.Empty, rows, columns);
+        if (UsesWorld(instanceId)) return _world.Canvas?.Layers ?? [];
+
+        if (_activeScene is { } scene) return StudioSceneRenderer.Render(scene, role);
+
+        var key = (productId, instanceId ?? string.Empty, rows, columns, role);
         if (_layerCache.TryGetValue(key, out var cached)) return cached;
 
         var profile = _project.SelectedProfile;
@@ -138,12 +153,18 @@ public sealed partial class LightingStudioViewModel
     /// <summary>Renders one frame per matrix device for the canvas preview.</summary>
     public IReadOnlyDictionary<string, StudioDeviceFrame> RenderDeviceFrames(TimeSpan elapsed)
     {
+        EnsureWorld();
         var frames = new Dictionary<string, StudioDeviceFrame>(StringComparer.OrdinalIgnoreCase);
+        if (_world.Active)
+        {
+            foreach (var pair in _world.RenderDeviceFrames(elapsed)) frames[pair.Key] = pair.Value;
+        }
         var now = Math.Max(0, elapsed.TotalSeconds);
         _previewSeconds = now;
         foreach (var device in Devices)
         {
             if (!device.HasMatrix) continue;
+            if (frames.ContainsKey(device.EffectiveInstanceId ?? string.Empty)) continue;
             var (rows, columns) = FrameSize(device);
             var layers = BuildLayersFor(device);
             if (layers.Length == 0)
@@ -176,6 +197,7 @@ public sealed partial class LightingStudioViewModel
     private void RefreshHidSnapshots(IReadOnlyList<RazerHidDeviceConnection>? targets = null)
     {
         if (_hidRouter is null) return;
+        EnsureWorld();
         var live = targets ?? _hidRouter.GetTargets();
         var snapshots = new Dictionary<string, StudioLayerRender[]>(StringComparer.OrdinalIgnoreCase);
         foreach (var target in live)
@@ -184,8 +206,13 @@ public sealed partial class LightingStudioViewModel
                 target.Capabilities.Contains(RazerHidBackendCapability.MatrixFrameWrite)
                 ? MatrixSize(FindLayout(target.InstanceId), dimensions.Rows, dimensions.Columns)
                 : (1, 1);
+            var device = Devices.FirstOrDefault(item =>
+                StudioLedSelection.SameInstance(item.EffectiveInstanceId, target.InstanceId));
+            var role = device is not null
+                ? RoleFor(device)
+                : rows > 1 ? StudioSceneRole.Keyboard : StudioSceneRole.Mouse;
             snapshots[target.InstanceId] = BuildLayersFor(
-                target.Definition.ProductId, target.InstanceId, rows, columns);
+                target.Definition.ProductId, target.InstanceId, rows, columns, role);
         }
 
         _hidRouter.Update(connection => snapshots.TryGetValue(connection.InstanceId, out var layers) ? layers : []);
@@ -194,13 +221,21 @@ public sealed partial class LightingStudioViewModel
     private void RefreshArgbSnapshots(IReadOnlyList<StudioArgbPort> ports)
     {
         if (_argbRouter is null) return;
+        EnsureWorld();
         var snapshots = new Dictionary<byte, StudioLayerRender[]>();
         foreach (var port in ports)
         {
+            if (UsesWorld(port.InstanceId))
+            {
+                snapshots[port.Channel] = _world.Canvas?.Layers ?? [];
+                continue;
+            }
+
             var device = Devices.FirstOrDefault(item => item.IsArgb &&
                 StudioLedSelection.SameInstance(item.EffectiveInstanceId, port.InstanceId));
             var (rows, columns) = device is null ? (1, port.LedCount) : MatrixSize(device);
-            var layers = BuildLayersFor(port.ProductId, port.InstanceId, rows, columns);
+            var layers = BuildLayersFor(
+                port.ProductId, port.InstanceId, rows, columns, StudioSceneRole.Argb);
             snapshots[port.Channel] = rows > 1
                 ? StudioArgbDevice.SliceChannel(layers, rows, columns, port.Channel, port.LedCount)
                 : layers;
@@ -239,10 +274,12 @@ public sealed partial class LightingStudioViewModel
     private void RefreshChromaSnapshots(IReadOnlyList<RazerChromaDeviceConnection> targets)
     {
         if (_chromaRouter is null) return;
+        EnsureWorld();
         var snapshots = new Dictionary<string, StudioLayerRender[]>(StringComparer.OrdinalIgnoreCase);
         foreach (var target in targets)
         {
-            snapshots[target.DevicePath] = BuildLayersFor(target.ProductId, target.DevicePath, 1, 1);
+            snapshots[target.DevicePath] = BuildLayersFor(
+                target.ProductId, target.DevicePath, 1, 1, StudioSceneRole.ChromaLink);
         }
 
         _chromaRouter.Update(connection =>
@@ -271,7 +308,8 @@ public sealed partial class LightingStudioViewModel
                 _headsetRouter!.ProductId,
                 _headsetRouter.InstanceId,
                 1,
-                _headsetRouter.LedCount)
+                _headsetRouter.LedCount,
+                StudioSceneRole.Headset)
             : BuildLayersFor(device);
     }
 
@@ -291,18 +329,55 @@ public sealed partial class LightingStudioViewModel
             // matrix HID endpoints cannot sustain the old 60 fps pump.
             using var timer = new PeriodicTimer(
                 TimeSpan.FromSeconds(1d / StudioEffectRenderer.NativeFramesPerSecond));
+            static void LogFrame(long frameStart, long[] routeTicks)
+            {
+                var total = System.Diagnostics.Stopwatch.GetElapsedTime(frameStart).TotalMilliseconds;
+                if (total <= 80) return;
+                var spread = routeTicks.Length == 0
+                    ? 0
+                    : (routeTicks.Max() - routeTicks.Min()) * 1000d /
+                        System.Diagnostics.Stopwatch.Frequency;
+                System.Diagnostics.Debug.WriteLine(
+                    $"studio output frame {total:F0} ms, route spread {spread:F0} ms");
+            }
+
             try
             {
+                // Every route starts at the same logical instant; otherwise each
+                // clock's first _startedAt differs by the time the earlier writes took.
+                if (_hidRouter is not null) await _hidRouter.ApplyAsync(TimeSpan.Zero, token).ConfigureAwait(false);
+                if (_argbRouter is not null) await _argbRouter.ApplyAsync(TimeSpan.Zero, token).ConfigureAwait(false);
+                if (_headsetRouter is not null)
+                    await _headsetRouter.ApplyAsync(TimeSpan.Zero, token).ConfigureAwait(false);
+                if (_chromaRouter is not null)
+                    await _chromaRouter.ApplyAsync(TimeSpan.Zero, token).ConfigureAwait(false);
+
                 while (await timer.WaitForNextTickAsync(token).ConfigureAwait(false))
                 {
+                    var elapsed = _outputClock.Elapsed;
+                    var frameStart = System.Diagnostics.Stopwatch.GetTimestamp();
+                    var routeTicks = new long[4];
                     if (_hidRouter is not null)
-                        await _hidRouter.ApplyAsync(_outputClock.Elapsed, token).ConfigureAwait(false);
+                    {
+                        await _hidRouter.ApplyAsync(elapsed, token).ConfigureAwait(false);
+                        routeTicks[0] = System.Diagnostics.Stopwatch.GetTimestamp();
+                    }
                     if (_argbRouter is not null)
-                        await _argbRouter.ApplyAsync(_outputClock.Elapsed, token).ConfigureAwait(false);
+                    {
+                        await _argbRouter.ApplyAsync(elapsed, token).ConfigureAwait(false);
+                        routeTicks[1] = System.Diagnostics.Stopwatch.GetTimestamp();
+                    }
                     if (_headsetRouter is not null)
-                        await _headsetRouter.ApplyAsync(_outputClock.Elapsed, token).ConfigureAwait(false);
+                    {
+                        await _headsetRouter.ApplyAsync(elapsed, token).ConfigureAwait(false);
+                        routeTicks[2] = System.Diagnostics.Stopwatch.GetTimestamp();
+                    }
                     if (_chromaRouter is not null)
-                        await _chromaRouter.ApplyAsync(_outputClock.Elapsed, token).ConfigureAwait(false);
+                    {
+                        await _chromaRouter.ApplyAsync(elapsed, token).ConfigureAwait(false);
+                        routeTicks[3] = System.Diagnostics.Stopwatch.GetTimestamp();
+                    }
+                    LogFrame(frameStart, routeTicks.Where(tick => tick != 0).ToArray());
                 }
             }
             catch (OperationCanceledException)
@@ -397,6 +472,10 @@ public sealed partial class LightingStudioViewModel
             _source = null;
             _appliedBlade = null;
             IsApplied = false;
+            _activeScene = null;
+            UpdateSceneSelection();
+            _sceneProfile = null;
+            OnPropertyChanged(nameof(SelectedSceneCard));
             ClearAppliedProject();
             if (failures.Count > 0)
             {

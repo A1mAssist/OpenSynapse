@@ -243,26 +243,45 @@ public sealed partial class RazerHidProfileApplier
                 "Reading the current knob stage is required before changing its mode."));
             return;
         }
+        if (RazerKnobProtocol.GetModeTable(connection.Definition.ProductId) is not { } table)
+        {
+            results.Add(new ProfileSettingApplyResult(key, ProfileSettingApplyStatus.Skipped,
+                "This keyboard has no product-specific command-dial table."));
+            return;
+        }
 
         try
         {
             var profileId = await _service.ResolveActiveProfileIdAsync(connection, cancellationToken);
+            var configuration = await _service.GetKnobConfigurationAsync(
+                connection, profileId, KnobId, cancellationToken);
             var current = await _service.GetKnobModeAsync(
                 connection, profileId, KnobId, cancellationToken);
-            if ((byte)current.Stage.Mode == mode)
+            if (table.Find(mode) is null)
             {
-                results.Add(Applied(key));
+                results.Add(Mismatch(key, $"mode {mode} is not in this keyboard's dial table"));
                 return;
             }
 
-            var stage = current.Stage with { Mode = (RazerKnobMode)mode };
+            var stage = current.Stage with { ModeId = mode };
             await _service.SetKnobModeAsync(
                 connection, profileId, KnobId, stage, cancellationToken);
+            if (Has(connection, RazerHidBackendCapability.OledWrite))
+            {
+                var flags = RazerKnobProtocol.CreateModeStateFlags(table, configuration.Stages);
+                await _service.SetKnobModeStateAsync(
+                    connection, profileId, flags, cancellationToken);
+                if (RazerKnobProtocol.FindActiveMode(table, configuration.Stages, mode) is { } active)
+                {
+                    await _service.SetKnobActiveModeAsync(
+                        connection, profileId, active, cancellationToken);
+                }
+            }
             var applied = await _service.GetKnobModeAsync(
                 connection, profileId, KnobId, cancellationToken);
-            results.Add((byte)applied.Stage.Mode == mode
+            results.Add(applied.Stage.ModeId == mode
                 ? Applied(key)
-                : Mismatch(key, $"expected {mode}, got {(byte)applied.Stage.Mode}"));
+                : Mismatch(key, $"expected {mode}, got {applied.Stage.ModeId}"));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

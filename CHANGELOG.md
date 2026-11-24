@@ -8,6 +8,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Added
 
+- **Lighting Studio scenes**: the studio now opens in a browse view with six whole-set scenes (Aurora Breathing, Heartbeat, Neon Chase, Deep Echo, Lava Pulse, Prism Sweep); scenes render on a shared 96×96 canvas and apply to keyboards, mice, mousepads, headsets and single-zone devices, while Edit expands one into a normal profile for fine-tuning.
 - **Taskbar status strip**: an optional “Click to open the app” setting opens the existing main window with a single click; changes apply immediately and persist across restarts. It is off by default.
 - **Kraken V3 Pro**: connect the 052C receiver and 052D wired identity through the bundle-declared NXP serial channel, with battery, sidetone, silence detection and haptics controls and profile restore.
 - **Ripsaw HD audio**: add the capture card's speaker, PC, HDMI and microphone monitoring volume/mute controls, with saved settings restored on connection.
@@ -22,6 +23,9 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
+- **Huntsman V3 Pro 8KHz extra keys**: the mapping page lists the four multimedia keys and the two side keys the product bundle assigns, and stops presenting the side keys as macro keys, so the rows match Razer Synapse.
+- **Game lighting restore**: ending a Chroma game session now restores every device that received frames. One slow or failed target no longer blocks the rest, and a session is no longer skipped when all writes time out. This fixes peripherals going dark after a game and a mouse stuck on the last frame, while unresponsive wireless targets no longer stall the whole lighting update.
+- **Page scrolling**: move the main pages to the compositor-based `ScrollView` and drop the whole-page opacity animation on navigation, so scrolling and page switches stay responsive on high-refresh displays.
 - **Huntsman V3 Pro 8KHz mapping read**: put the keyboard back into normal mode before a mapping-page read, so a device left in driver mode by an interrupted save no longer rejects the whole keymap and shows “Unable to read key mappings”.
 - **Tartarus Pro mapping**: read the keypad's onboard table in driver mode, select the active keymap with `02:B6`/`02:37`, and use the 80-byte `02:92`/`02:8D` payloads, so all 28 mapping rows load instead of `0/28`.
 - **THX preset sync**: while a headset's THX card is visible, poll the native state every two seconds and refresh the preset and curve when the headset's own controls change them, without writing back to the device.

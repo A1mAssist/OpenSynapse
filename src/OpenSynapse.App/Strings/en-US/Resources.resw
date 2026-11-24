@@ -1637,6 +1637,7 @@
   <data name="RazerHidKnobModeVerticalScroll" xml:space="preserve"><value>Vertical scroll</value></data>
   <data name="RazerHidKnobModeHorizontalScroll" xml:space="preserve"><value>Horizontal scroll</value></data>
   <data name="RazerHidKnobModeSwitchApps" xml:space="preserve"><value>Switch application</value></data>
+  <data name="RazerHidKnobModeSwitchBrowserTabs" xml:space="preserve"><value>Switch browser tabs</value></data>
   <data name="RazerHidApplyButton.Content" xml:space="preserve"><value>Apply</value></data>
   <data name="RazerHidHapticScrollTitle.Text" xml:space="preserve"><value>Haptic scroll stages</value></data>
   <data name="RazerHidHapticScrollDescription.Text" xml:space="preserve"><value>Pick the stages that take part in switching, then choose the one in effect.</value></data>
@@ -3571,6 +3572,20 @@
   <data name="LightingStudioColorOrange" xml:space="preserve"><value>Orange</value></data>
   <data name="LightingStudioColorYellow" xml:space="preserve"><value>Yellow</value></data>
   <data name="LightingStudioColorWhite" xml:space="preserve"><value>White</value></data>
+  <data name="LightingStudioEdit" xml:space="preserve"><value>Edit</value></data>
+  <data name="LightingStudioDone" xml:space="preserve"><value>Done</value></data>
+  <data name="LightingStudioScenes" xml:space="preserve"><value>Scenes</value></data>
+  <data name="LightingStudioSharedCanvas" xml:space="preserve"><value>Shared canvas</value></data>
+  <data name="LightingStudioSceneAurora" xml:space="preserve"><value>Aurora Breathing</value></data>
+  <data name="LightingStudioSceneHeartbeat" xml:space="preserve"><value>Heartbeat</value></data>
+  <data name="LightingStudioSceneNeonChase" xml:space="preserve"><value>Neon Chase</value></data>
+  <data name="LightingStudioSceneDeepEcho" xml:space="preserve"><value>Deep Echo</value></data>
+  <data name="LightingStudioSceneLavaPulse" xml:space="preserve"><value>Lava Pulse</value></data>
+  <data name="LightingStudioScenePrismSweep" xml:space="preserve"><value>Prism Sweep</value></data>
+  <data name="LightingStudioDeviceSummary" xml:space="preserve"><value>All devices: {0} · single-zone: {1}</value></data>
+  <data name="LightingStudioStatusSceneSelected" xml:space="preserve"><value>Previewing {0}; apply to send it to the devices.</value></data>
+  <data name="LightingStudioStatusSceneEditing" xml:space="preserve"><value>{0} opened as an unsaved profile.</value></data>
+  <data name="LightingStudioStatusSceneResync" xml:space="preserve"><value>{0} re-synced to the new device.</value></data>
   <data name="LightingStudioStatusHint" xml:space="preserve"><value>Select a layer and adjust its parameters; the preview updates live.</value></data>
   <data name="LightingStudioStatusLoadingLayout" xml:space="preserve"><value>Loading device layout...</value></data>
   <data name="LightingStudioStatusInputLayoutMissing" xml:space="preserve"><value>Keyboard input ignored: the {0} layout is not loaded yet.</value></data>

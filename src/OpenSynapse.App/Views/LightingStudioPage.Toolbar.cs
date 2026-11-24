@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using OpenSynapse.App.ViewModels;
 
 namespace OpenSynapse.App.Views;
 
@@ -51,6 +52,49 @@ public sealed partial class LightingStudioPage
     }
 
     private void ZoomOutClick(object sender, RoutedEventArgs e) => DeviceCanvas.ZoomStepDown();
+
+    private void ToggleEditClick(object sender, RoutedEventArgs e)
+    {
+        _viewModel?.ToggleEditing();
+        ApplyEditingState();
+        RenderPreview();
+    }
+
+    private void SceneCardClick(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel is null || sender is not FrameworkElement { DataContext: StudioSceneCard card }) return;
+        _viewModel.SelectScene(card.Scene);
+        if (_viewModel.IsPlaying != true)
+        {
+            _viewModel.TogglePlayback();
+            UpdatePlayButton();
+        }
+
+        _clock.Restart();
+        _timer.Start();
+        RenderPreview();
+    }
+
+    /// <summary>Browse shows devices, canvas, and scenes; editing restores the full editor.</summary>
+    internal void ApplyEditingState()
+    {
+        var editing = _viewModel?.IsEditing == true;
+        var visibility = editing ? Visibility.Visible : Visibility.Collapsed;
+        ProjectExpander.Visibility = visibility;
+        LayerPanel.Visibility = visibility;
+        DocumentPanel.Visibility = visibility;
+        ToolPicker.Visibility = visibility;
+        RotateDeviceButton.Visibility = visibility;
+        RotateSeparator.Visibility = visibility;
+        InspectorToggleButton.Visibility = visibility;
+        InspectorSeparator.Visibility = visibility;
+        SelectionActions.Visibility = visibility;
+        InspectorPanel.Visibility = visibility;
+        ScenePanel.Visibility = editing ? Visibility.Collapsed : Visibility.Visible;
+        AutomationProperties.SetName(
+            EditButton,
+            _viewModel?.EditButtonText ?? AppStrings.Text("LightingStudioEdit"));
+    }
 
     private void TogglePlayClick(object sender, RoutedEventArgs e)
     {
