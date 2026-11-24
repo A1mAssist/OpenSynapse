@@ -53,7 +53,11 @@ public readonly record struct StudioKeyPress(
     int Column,
     double Age,
     bool Held,
-    double Hue);
+    double Hue)
+{
+    /// <summary>Seconds since key-up; infinity when held or supplied as a one-shot press.</summary>
+    public double ReleaseAge { get; init; } = double.PositiveInfinity;
+}
 
 /// <summary>
 /// Per-device key heat. Press sets a cell to 1; Decay fades every cell with a
@@ -63,6 +67,7 @@ public sealed class StudioKeyHeat
 {
     private const double HalfLifeSeconds = 0.45;
     private const int MaxPresses = 32;
+    private const double ReleaseHistorySeconds = 30 / 0.1; // Maximum key-module life at the minimum preset speed.
     private readonly object _gate = new();
     private readonly float[] _cells;
     private readonly List<Entry> _presses = new();
@@ -98,6 +103,9 @@ public sealed class StudioKeyHeat
             _lastRow = row;
             _lastColumn = column;
             _secondsSincePress = 0;
+            if (_presses.Any(entry => entry.Row == row && entry.Column == column && double.IsNaN(entry.Release)))
+                return;
+
             _presses.Insert(0, new Entry
             {
                 Row = row,
@@ -105,7 +113,12 @@ public sealed class StudioKeyHeat
                 Time = _clock,
                 Hue = (_pressCount++ * 0.6180339887498949) % 1.0,
             });
-            if (_presses.Count > MaxPresses) _presses.RemoveRange(MaxPresses, _presses.Count - MaxPresses);
+            while (_presses.Count > MaxPresses)
+            {
+                var oldestReleased = _presses.FindLastIndex(entry => !double.IsNaN(entry.Release));
+                if (oldestReleased < 0) break;
+                _presses.RemoveAt(oldestReleased);
+            }
         }
     }
 
@@ -142,7 +155,7 @@ public sealed class StudioKeyHeat
             }
 
             _secondsSincePress = Math.Min(_secondsSincePress + seconds, 60);
-            _presses.RemoveAll(entry => !double.IsNaN(entry.Release) && _clock - entry.Time > 4);
+            _presses.RemoveAll(entry => !double.IsNaN(entry.Release) && _clock - entry.Release > ReleaseHistorySeconds);
         }
     }
 
@@ -172,7 +185,10 @@ public sealed class StudioKeyHeat
                     entry.Column,
                     _clock - entry.Time,
                     double.IsNaN(entry.Release),
-                    entry.Hue);
+                    entry.Hue)
+                {
+                    ReleaseAge = double.IsNaN(entry.Release) ? double.PositiveInfinity : _clock - entry.Release,
+                };
             }
 
             return new StudioKeyState(

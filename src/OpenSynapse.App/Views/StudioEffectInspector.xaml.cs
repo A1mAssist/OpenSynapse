@@ -89,6 +89,7 @@ public sealed partial class StudioEffectInspector : UserControl
         StudioParameterField.ScreenMode => BuildScreenModeRow(),
         StudioParameterField.AudioStyle => BuildAudioStyleRow(),
         StudioParameterField.ReactiveStyle => BuildReactiveStyleRow(),
+        StudioParameterField.Preset => BuildPresetRow(),
         StudioParameterField.Blur => BuildRangeSlider("LightingStudioParamBlur", nameof(StudioEffectParams.Blur), descriptor.Ranges[StudioParameterField.Blur], new RoundedIntConverter()),
         StudioParameterField.MediaSrc => BuildMediaSourceRow(),
         StudioParameterField.GenerateConfig => BuildGenerateConfigRow(),

@@ -28,6 +28,9 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
     private readonly ConcurrentDictionary<string, StudioLedLayout> _layouts =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly object _updateGate = new();
+    private readonly object _inputGate = new();
+    private readonly Dictionary<string, HashSet<(int Row, int Column)>> _heldKeys =
+        new(StringComparer.OrdinalIgnoreCase);
     private Func<RazerHidDeviceConnection, IReadOnlyList<StudioLayerRender>>? _layersForDevice;
     private long _layersVersion;
     private double _inputSeconds;
@@ -73,6 +76,12 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
 
     /// <summary>Raised off the UI thread when a stop cannot restore a device's own effect.</summary>
     public event Action<string, Exception>? RestoreFailed;
+
+    /// <summary>Mapped physical input, also available to the preview before Apply.</summary>
+    internal event Action<string, StudioTriggerInput>? InputObserved;
+
+    internal void ObserveInput(string instanceId, StudioTriggerInput input) =>
+        InputObserved?.Invoke(instanceId, input);
 
     /// <summary>Connections the next apply would write to.</summary>
     public IReadOnlyList<RazerHidDeviceConnection> GetTargets() =>
@@ -139,16 +148,28 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
     /// </summary>
     public int HandleInput(string instanceId, StudioTriggerInput input, double nowSeconds)
     {
-        if (Volatile.Read(ref _disposed) != 0 || Volatile.Read(ref _stopped) != 0 ||
-            string.IsNullOrWhiteSpace(instanceId))
+        if (Volatile.Read(ref _disposed) != 0 || string.IsNullOrWhiteSpace(instanceId))
         {
             return 0;
         }
 
-        return _outputs.TryGetValue(instanceId, out var output)
-            ? output.Source.HandleInput(input, nowSeconds)
-            : 0;
+        lock (_inputGate)
+        {
+            if (!_heldKeys.TryGetValue(instanceId, out var held))
+                _heldKeys[instanceId] = held = [];
+            if (input.IsDown) held.Add((input.Row, input.Column));
+            else held.Remove((input.Row, input.Column));
+            return Volatile.Read(ref _stopped) == 0 && _outputs.TryGetValue(instanceId, out var output)
+                ? output.Source.HandleInput(input, nowSeconds)
+                : 0;
+        }
     }
+
+    public int TriggerPlayback(string instanceId, StudioTriggerInput input, double nowSeconds) =>
+        Volatile.Read(ref _disposed) == 0 && Volatile.Read(ref _stopped) == 0 &&
+        _outputs.TryGetValue(instanceId, out var output)
+            ? output.Source.TriggerPlayback(input, nowSeconds)
+            : 0;
 
     /// <summary>
     /// Renders and writes one frame to every ready target. Returns false when no
@@ -245,7 +266,12 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                         output.BaselineAttempted = previousOutput.BaselineAttempted;
                         output.Touched = previousOutput.Touched;
                     }
-                    _outputs[target.InstanceId] = output;
+                    lock (_inputGate)
+                    {
+                        if (_heldKeys.TryGetValue(target.InstanceId, out var held))
+                            output.Source.RestoreHeldKeys(held);
+                        _outputs[target.InstanceId] = output;
+                    }
                 }
 
                 if (output.Connection is null)

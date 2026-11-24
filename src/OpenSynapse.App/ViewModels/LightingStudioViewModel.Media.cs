@@ -257,9 +257,10 @@ public sealed partial class LightingStudioViewModel
     private async Task EnsureInputAsync()
     {
         if (_inputSampler is null) return;
-        if (NeedsLiveInput())
+        var sources = RequiredInputSources();
+        if (sources != StudioInputSources.None)
         {
-            await _inputSampler.StartAsync(CancellationToken.None);
+            await _inputSampler.StartAsync(sources, CancellationToken.None);
         }
         else
         {
@@ -267,10 +268,4 @@ public sealed partial class LightingStudioViewModel
         }
     }
 
-    private bool NeedsLiveInput() =>
-        _project.SelectedProfile?.EnumerateLayers().Any(layer =>
-            !layer.IsGroup &&
-            (layer.Params.Effect is StudioEffectKind.Ambient or StudioEffectKind.Audio ||
-             layer.Regions.Any(region =>
-                 region.Params.Effect is StudioEffectKind.Ambient or StudioEffectKind.Audio))) == true;
 }

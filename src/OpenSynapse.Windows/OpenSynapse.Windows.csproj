@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="OpenSynapse.App" />
+    <InternalsVisibleTo Include="OpenSynapse.ChromaBrowser" />
     <InternalsVisibleTo Include="OpenSynapse.Core.Tests" />
     <InternalsVisibleTo Include="OpenSynapse.HardwareValidation" />
     <InternalsVisibleTo Include="OpenSynapse.ThxHelper" />

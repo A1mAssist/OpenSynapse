@@ -32,6 +32,7 @@ public sealed partial class LightingStudioViewModel
         {
             _hidRouter.WriteFailed += OnOutputWriteFailed;
             _hidRouter.RestoreFailed += OnHidRestoreFailed;
+            _hidRouter.InputObserved += OnHidInputObserved;
         }
         if (_argbRouter is not null) _argbRouter.WriteFailed += OnOutputWriteFailed;
         if (_headsetRouter is not null) _headsetRouter.WriteFailed += OnOutputWriteFailed;

@@ -9738,4 +9738,194 @@
   <data name="TaskbarStatusClickTitle.Text" xml:space="preserve"><value>Открывать приложение по щелчку</value></data>
   <data name="TaskbarStatusClickDescription.Text" xml:space="preserve"><value>Щёлкните строку состояния на панели задач, чтобы открыть окно OpenSynapse.</value></data>
   <data name="TaskbarStatusClickToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Открывать приложение по щелчку</value></data>
+  <data name="LightingStudioEffectPreset" xml:space="preserve"><value>Модульный пресет</value></data>
+  <data name="LightingStudioParamPreset" xml:space="preserve"><value>Пресет</value></data>
+  <data name="LightingStudioPresetCategoryMusic" xml:space="preserve"><value>Музыка</value></data>
+  <data name="LightingStudioPresetCategoryReactive" xml:space="preserve"><value>Реактивный</value></data>
+  <data name="LightingStudioPresetSearch" xml:space="preserve"><value>Поиск пресетов</value></data>
+  <data name="LightingStudioBlendMax" xml:space="preserve"><value>Максимум</value></data>
+  <data name="LightingStudioPresetAddColor" xml:space="preserve"><value>Добавить цвет</value></data>
+  <data name="LightingStudioPresetBars" xml:space="preserve"><value>Полосы спектра</value></data>
+  <data name="LightingStudioPresetCancel" xml:space="preserve"><value>Отмена</value></data>
+  <data name="LightingStudioPresetCircle" xml:space="preserve"><value>Круг</value></data>
+  <data name="LightingStudioPresetColorPosition" xml:space="preserve"><value>Позиция цветовой точки (%)</value></data>
+  <data name="LightingStudioPresetConfirm" xml:space="preserve"><value>ОК</value></data>
+  <data name="LightingStudioPresetDiamond" xml:space="preserve"><value>Ромб</value></data>
+  <data name="LightingStudioPresetEdit" xml:space="preserve"><value>Изменить предустановку</value></data>
+  <data name="LightingStudioPresetExpansion" xml:space="preserve"><value>Скорость расширения (ячеек/с)</value></data>
+  <data name="LightingStudioPresetGlow" xml:space="preserve"><value>Свечение</value></data>
+  <data name="LightingStudioPresetHold" xml:space="preserve"><value>Сохранять свечение при удержании</value></data>
+  <data name="LightingStudioPresetLayers" xml:space="preserve"><value>Слои</value></data>
+  <data name="LightingStudioPresetLifetime" xml:space="preserve"><value>Длительность (с)</value></data>
+  <data name="LightingStudioPresetEmpty" xml:space="preserve"><value>Пресет ещё не импортирован. Нажмите «Импорт» и выберите файл .oschroma.</value></data>
+  <data name="LightingStudioPresetMissing" xml:space="preserve"><value>Предустановка «{0}» не найдена.</value></data>
+  <data name="LightingStudioPresetPattern" xml:space="preserve"><value>Тип эффекта</value></data>
+  <data name="LightingStudioPresetPeaks" xml:space="preserve"><value>Показывать пики</value></data>
+  <data name="LightingStudioPresetRings" xml:space="preserve"><value>Число колец</value></data>
+  <data name="LightingStudioPresetRipple" xml:space="preserve"><value>Волна от клавиши</value></data>
+  <data name="LightingStudioPresetSaveAs" xml:space="preserve"><value>Сохранить как…</value></data>
+  <data name="LightingStudioPresetShape" xml:space="preserve"><value>Форма волны</value></data>
+  <data name="LightingStudioPresetSpacing" xml:space="preserve"><value>Интервал между кольцами (ячейки)</value></data>
+  <data name="LightingStudioModuleParam_amplitude" xml:space="preserve"><value>Амплитуда</value></data>
+  <data name="LightingStudioModuleParam_aperture" xml:space="preserve"><value>Размер отверстия</value></data>
+  <data name="LightingStudioModuleParam_aspect" xml:space="preserve"><value>Соотношение сторон</value></data>
+  <data name="LightingStudioModuleParam_axis" xml:space="preserve"><value>Ось</value></data>
+  <data name="LightingStudioModuleParam_background" xml:space="preserve"><value>Яркость фона</value></data>
+  <data name="LightingStudioModuleParam_blur" xml:space="preserve"><value>Радиус размытия</value></data>
+  <data name="LightingStudioModuleParam_cellsX" xml:space="preserve"><value>Число столбцов</value></data>
+  <data name="LightingStudioModuleParam_cellsY" xml:space="preserve"><value>Число строк</value></data>
+  <data name="LightingStudioModuleParam_centered" xml:space="preserve"><value>По центру</value></data>
+  <data name="LightingStudioModuleParam_centers" xml:space="preserve"><value>Число центров</value></data>
+  <data name="LightingStudioModuleParam_centerX" xml:space="preserve"><value>Центр X</value></data>
+  <data name="LightingStudioModuleParam_centerY" xml:space="preserve"><value>Центр Y</value></data>
+  <data name="LightingStudioModuleParam_colorFlow" xml:space="preserve"><value>Скорость смены цветов</value></data>
+  <data name="LightingStudioModuleParam_colorMode" xml:space="preserve"><value>Режим цвета</value></data>
+  <data name="LightingStudioModuleParam_count" xml:space="preserve"><value>Число частиц</value></data>
+  <data name="LightingStudioModuleParam_cycles" xml:space="preserve"><value>Число периодов волны</value></data>
+  <data name="LightingStudioModuleParam_decay" xml:space="preserve"><value>Скорость затухания</value></data>
+  <data name="LightingStudioModuleParam_delay" xml:space="preserve"><value>Задержка (с)</value></data>
+  <data name="LightingStudioModuleParam_density" xml:space="preserve"><value>Плотность</value></data>
+  <data name="LightingStudioModuleParam_direction" xml:space="preserve"><value>Направление</value></data>
+  <data name="LightingStudioModuleParam_expansion" xml:space="preserve"><value>Скорость расширения</value></data>
+  <data name="LightingStudioModuleParam_extent" xml:space="preserve"><value>Область отображения</value></data>
+  <data name="LightingStudioModuleParam_fill" xml:space="preserve"><value>Интенсивность заполнения</value></data>
+  <data name="LightingStudioModuleParam_flare" xml:space="preserve"><value>Интенсивность сияния</value></data>
+  <data name="LightingStudioModuleParam_focus" xml:space="preserve"><value>Фокусировка</value></data>
+  <data name="LightingStudioModuleParam_gain" xml:space="preserve"><value>Усиление</value></data>
+  <data name="LightingStudioModuleParam_gamma" xml:space="preserve"><value>Кривая яркости</value></data>
+  <data name="LightingStudioModuleParam_gaze" xml:space="preserve"><value>Амплитуда движения взгляда</value></data>
+  <data name="LightingStudioModuleParam_glow" xml:space="preserve"><value>Интенсивность свечения</value></data>
+  <data name="LightingStudioModuleParam_gravity" xml:space="preserve"><value>Гравитация</value></data>
+  <data name="LightingStudioModuleParam_halo" xml:space="preserve"><value>Интенсивность ореола</value></data>
+  <data name="LightingStudioModuleParam_heartbeat" xml:space="preserve"><value>Пульсация сердца</value></data>
+  <data name="LightingStudioModuleParam_height" xml:space="preserve"><value>Высота</value></data>
+  <data name="LightingStudioModuleParam_heightColor" xml:space="preserve"><value>Цвет по высоте</value></data>
+  <data name="LightingStudioModuleParam_hold" xml:space="preserve"><value>Сохранять при удержании</value></data>
+  <data name="LightingStudioModuleParam_inverse" xml:space="preserve"><value>Инвертировать яркость</value></data>
+  <data name="LightingStudioModuleParam_jitter" xml:space="preserve"><value>Амплитуда дрожания</value></data>
+  <data name="LightingStudioModuleParam_life" xml:space="preserve"><value>Длительность (с)</value></data>
+  <data name="LightingStudioModuleParam_mapping" xml:space="preserve"><value>Распределение цвета</value></data>
+  <data name="LightingStudioModuleParam_maxHold" xml:space="preserve"><value>Время зарядки (с)</value></data>
+  <data name="LightingStudioModuleParam_memory" xml:space="preserve"><value>Сохранение следа</value></data>
+  <data name="LightingStudioModuleParam_metric" xml:space="preserve"><value>Форма контура</value></data>
+  <data name="LightingStudioModuleParam_mirror" xml:space="preserve"><value>Зеркальное отражение</value></data>
+  <data name="LightingStudioModuleParam_mode" xml:space="preserve"><value>Режим</value></data>
+  <data name="LightingStudioModuleParam_motion" xml:space="preserve"><value>Движение</value></data>
+  <data name="LightingStudioModuleParam_onBeat" xml:space="preserve"><value>Запуск по ритму</value></data>
+  <data name="LightingStudioModuleParam_origin" xml:space="preserve"><value>Начальная точка</value></data>
+  <data name="LightingStudioModuleParam_path" xml:space="preserve"><value>Траектория</value></data>
+  <data name="LightingStudioModuleParam_peaks" xml:space="preserve"><value>Показывать пики</value></data>
+  <data name="LightingStudioModuleParam_profile" xml:space="preserve"><value>Тип контура</value></data>
+  <data name="LightingStudioModuleParam_pupil" xml:space="preserve"><value>Размер зрачка</value></data>
+  <data name="LightingStudioModuleParam_radius" xml:space="preserve"><value>Радиус</value></data>
+  <data name="LightingStudioModuleParam_rainbow" xml:space="preserve"><value>Радужные цвета</value></data>
+  <data name="LightingStudioModuleParam_randomCenters" xml:space="preserve"><value>Случайные центры</value></data>
+  <data name="LightingStudioModuleParam_rays" xml:space="preserve"><value>Число лучей</value></data>
+  <data name="LightingStudioModuleParam_reverse" xml:space="preserve"><value>Обратить</value></data>
+  <data name="LightingStudioModuleParam_rim" xml:space="preserve"><value>Ширина края</value></data>
+  <data name="LightingStudioModuleParam_rings" xml:space="preserve"><value>Число колец</value></data>
+  <data name="LightingStudioModuleParam_rotation" xml:space="preserve"><value>Скорость вращения</value></data>
+  <data name="LightingStudioModuleParam_shape" xml:space="preserve"><value>Форма</value></data>
+  <data name="LightingStudioModuleParam_size" xml:space="preserve"><value>Размер</value></data>
+  <data name="LightingStudioModuleParam_smoothing" xml:space="preserve"><value>Сглаживание</value></data>
+  <data name="LightingStudioModuleParam_softness" xml:space="preserve"><value>Мягкость краёв</value></data>
+  <data name="LightingStudioModuleParam_source" xml:space="preserve"><value>Источник сигнала</value></data>
+  <data name="LightingStudioModuleParam_spacing" xml:space="preserve"><value>Интервал</value></data>
+  <data name="LightingStudioModuleParam_spin" xml:space="preserve"><value>Темп вращения</value></data>
+  <data name="LightingStudioModuleParam_spokes" xml:space="preserve"><value>Число спиц</value></data>
+  <data name="LightingStudioModuleParam_stars" xml:space="preserve"><value>Интенсивность звёзд</value></data>
+  <data name="LightingStudioModuleParam_tail" xml:space="preserve"><value>Длина хвоста</value></data>
+  <data name="LightingStudioModuleParam_taper" xml:space="preserve"><value>Сужение</value></data>
+  <data name="LightingStudioModuleParam_thickness" xml:space="preserve"><value>Толщина</value></data>
+  <data name="LightingStudioModuleParam_tilt" xml:space="preserve"><value>Наклон</value></data>
+  <data name="LightingStudioModuleParam_topology" xml:space="preserve"><value>Схема соединений</value></data>
+  <data name="LightingStudioModuleParam_travel" xml:space="preserve"><value>Скорость движения</value></data>
+  <data name="LightingStudioModuleParam_twist" xml:space="preserve"><value>Закручивание</value></data>
+  <data name="LightingStudioModuleParam_velocity" xml:space="preserve"><value>Скорость</value></data>
+  <data name="LightingStudioModuleParam_width" xml:space="preserve"><value>Ширина</value></data>
+  <data name="LightingStudioModuleParam_window" xml:space="preserve"><value>Период учёта (с)</value></data>
+  <data name="LightingStudioModuleParam_x" xml:space="preserve"><value>Положение по горизонтали</value></data>
+  <data name="LightingStudioModuleParam_y" xml:space="preserve"><value>Положение по вертикали</value></data>
+  <data name="LightingStudioModuleValue_age" xml:space="preserve"><value>По времени</value></data>
+  <data name="LightingStudioModuleValue_angle" xml:space="preserve"><value>Угол</value></data>
+  <data name="LightingStudioModuleValue_arc" xml:space="preserve"><value>Дуга</value></data>
+  <data name="LightingStudioModuleValue_bass" xml:space="preserve"><value>Низкие частоты</value></data>
+  <data name="LightingStudioModuleValue_bass-history" xml:space="preserve"><value>История низких частот</value></data>
+  <data name="LightingStudioModuleValue_beat" xml:space="preserve"><value>Ритм</value></data>
+  <data name="LightingStudioModuleValue_box" xml:space="preserve"><value>Прямоугольник</value></data>
+  <data name="LightingStudioModuleValue_bubbles" xml:space="preserve"><value>Пузырьки</value></data>
+  <data name="LightingStudioModuleValue_burn" xml:space="preserve"><value>Горение</value></data>
+  <data name="LightingStudioModuleValue_burst" xml:space="preserve"><value>Вспышка</value></data>
+  <data name="LightingStudioModuleValue_cascade" xml:space="preserve"><value>Каскад</value></data>
+  <data name="LightingStudioModuleValue_center" xml:space="preserve"><value>Центр</value></data>
+  <data name="LightingStudioModuleValue_chain" xml:space="preserve"><value>Цепь</value></data>
+  <data name="LightingStudioModuleValue_chevron" xml:space="preserve"><value>Шеврон</value></data>
+  <data name="LightingStudioModuleValue_circle" xml:space="preserve"><value>Круг</value></data>
+  <data name="LightingStudioModuleValue_circuit" xml:space="preserve"><value>Схема</value></data>
+  <data name="LightingStudioModuleValue_column" xml:space="preserve"><value>Столбец</value></data>
+  <data name="LightingStudioModuleValue_combo" xml:space="preserve"><value>Комбо</value></data>
+  <data name="LightingStudioModuleValue_comet" xml:space="preserve"><value>Комета</value></data>
+  <data name="LightingStudioModuleValue_constellation" xml:space="preserve"><value>Созвездие</value></data>
+  <data name="LightingStudioModuleValue_cracks" xml:space="preserve"><value>Трещины</value></data>
+  <data name="LightingStudioModuleValue_cross" xml:space="preserve"><value>Крест</value></data>
+  <data name="LightingStudioModuleValue_curtain" xml:space="preserve"><value>Световая завеса</value></data>
+  <data name="LightingStudioModuleValue_curve" xml:space="preserve"><value>Кривая</value></data>
+  <data name="LightingStudioModuleValue_diffuse" xml:space="preserve"><value>Рассеивание</value></data>
+  <data name="LightingStudioModuleValue_domino" xml:space="preserve"><value>Домино</value></data>
+  <data name="LightingStudioModuleValue_drop" xml:space="preserve"><value>Падение</value></data>
+  <data name="LightingStudioModuleValue_dye" xml:space="preserve"><value>Окрашивание</value></data>
+  <data name="LightingStudioModuleValue_edge" xml:space="preserve"><value>Край</value></data>
+  <data name="LightingStudioModuleValue_energy" xml:space="preserve"><value>Энергия</value></data>
+  <data name="LightingStudioModuleValue_envelope" xml:space="preserve"><value>Огибающая</value></data>
+  <data name="LightingStudioModuleValue_flame" xml:space="preserve"><value>Пламя</value></data>
+  <data name="LightingStudioModuleValue_flat" xml:space="preserve"><value>Плоский</value></data>
+  <data name="LightingStudioModuleValue_flower" xml:space="preserve"><value>Цветок</value></data>
+  <data name="LightingStudioModuleValue_full" xml:space="preserve"><value>Полностью</value></data>
+  <data name="LightingStudioModuleValue_grow" xml:space="preserve"><value>Рост</value></data>
+  <data name="LightingStudioModuleValue_halo" xml:space="preserve"><value>Ореол</value></data>
+  <data name="LightingStudioModuleValue_heart" xml:space="preserve"><value>Сердце</value></data>
+  <data name="LightingStudioModuleValue_heat" xml:space="preserve"><value>Нагрев</value></data>
+  <data name="LightingStudioModuleValue_history" xml:space="preserve"><value>История</value></data>
+  <data name="LightingStudioModuleValue_horizontal" xml:space="preserve"><value>Горизонтально</value></data>
+  <data name="LightingStudioModuleValue_ink" xml:space="preserve"><value>Чернила</value></data>
+  <data name="LightingStudioModuleValue_inward" xml:space="preserve"><value>Внутрь</value></data>
+  <data name="LightingStudioModuleValue_jelly" xml:space="preserve"><value>Медуза</value></data>
+  <data name="LightingStudioModuleValue_left" xml:space="preserve"><value>Слева</value></data>
+  <data name="LightingStudioModuleValue_lightning" xml:space="preserve"><value>Молния</value></data>
+  <data name="LightingStudioModuleValue_magnet" xml:space="preserve"><value>Магнит</value></data>
+  <data name="LightingStudioModuleValue_outside" xml:space="preserve"><value>Снаружи</value></data>
+  <data name="LightingStudioModuleValue_outward" xml:space="preserve"><value>Наружу</value></data>
+  <data name="LightingStudioModuleValue_perimeter" xml:space="preserve"><value>Периметр</value></data>
+  <data name="LightingStudioModuleValue_point" xml:space="preserve"><value>Точка</value></data>
+  <data name="LightingStudioModuleValue_polyline" xml:space="preserve"><value>Ломаная линия</value></data>
+  <data name="LightingStudioModuleValue_position" xml:space="preserve"><value>По положению</value></data>
+  <data name="LightingStudioModuleValue_press" xml:space="preserve"><value>По нажатию</value></data>
+  <data name="LightingStudioModuleValue_prism" xml:space="preserve"><value>Призма</value></data>
+  <data name="LightingStudioModuleValue_radial" xml:space="preserve"><value>Радиально</value></data>
+  <data name="LightingStudioModuleValue_radius" xml:space="preserve"><value>Радиус</value></data>
+  <data name="LightingStudioModuleValue_rays" xml:space="preserve"><value>Лучи</value></data>
+  <data name="LightingStudioModuleValue_right" xml:space="preserve"><value>Справа</value></data>
+  <data name="LightingStudioModuleValue_ring" xml:space="preserve"><value>Кольцо</value></data>
+  <data name="LightingStudioModuleValue_row" xml:space="preserve"><value>Строка</value></data>
+  <data name="LightingStudioModuleValue_scatter" xml:space="preserve"><value>Рассеянные цвета</value></data>
+  <data name="LightingStudioModuleValue_shaft" xml:space="preserve"><value>Стержень</value></data>
+  <data name="LightingStudioModuleValue_shock" xml:space="preserve"><value>Удар</value></data>
+  <data name="LightingStudioModuleValue_sine" xml:space="preserve"><value>Синусоида</value></data>
+  <data name="LightingStudioModuleValue_snow" xml:space="preserve"><value>Снег</value></data>
+  <data name="LightingStudioModuleValue_sonar" xml:space="preserve"><value>Сонар</value></data>
+  <data name="LightingStudioModuleValue_spectrum" xml:space="preserve"><value>Спектр</value></data>
+  <data name="LightingStudioModuleValue_speed" xml:space="preserve"><value>Скорость печати</value></data>
+  <data name="LightingStudioModuleValue_splash" xml:space="preserve"><value>Всплеск</value></data>
+  <data name="LightingStudioModuleValue_spot" xml:space="preserve"><value>Прожектор</value></data>
+  <data name="LightingStudioModuleValue_static" xml:space="preserve"><value>Неподвижно</value></data>
+  <data name="LightingStudioModuleValue_stripe" xml:space="preserve"><value>Полоса</value></data>
+  <data name="LightingStudioModuleValue_vertical" xml:space="preserve"><value>Вертикально</value></data>
+  <data name="LightingStudioModuleValue_volcano" xml:space="preserve"><value>Вулкан</value></data>
+  <data name="LightingStudioModuleValue_volume" xml:space="preserve"><value>Громкость</value></data>
+  <data name="LightingStudioModuleValue_wake" xml:space="preserve"><value>След волны</value></data>
+  <data name="LightingStudioModuleValue_warp" xml:space="preserve"><value>Искажение</value></data>
+  <data name="LightingStudioModuleValue_waveform" xml:space="preserve"><value>Форма волны</value></data>
+  <data name="LightingStudioModuleValue_white" xml:space="preserve"><value>Белый</value></data>
+  <data name="LightingStudioModuleValue_alternate" xml:space="preserve"><value>Чередовать по удару</value></data>
+  <data name="LightingStudioModuleValue_waves" xml:space="preserve"><value>Непрерывные звуковые волны</value></data>
 </root>

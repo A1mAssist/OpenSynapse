@@ -119,13 +119,19 @@ public static partial class StudioProjectCodec
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentNullException.ThrowIfNull(project);
+        WriteAtomically(path, Serialize(project, profileIds, export));
+    }
+
+    internal static void WriteAtomically(string path, string json)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
         var fullPath = Path.GetFullPath(path);
         var directory = Path.GetDirectoryName(fullPath);
         if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
         var tempPath = fullPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
         {
-            File.WriteAllText(tempPath, Serialize(project, profileIds, export));
+            File.WriteAllText(tempPath, json, new System.Text.UTF8Encoding(false, true));
             File.Move(tempPath, fullPath, true);
         }
         finally

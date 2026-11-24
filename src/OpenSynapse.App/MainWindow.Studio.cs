@@ -256,7 +256,6 @@ public sealed partial class MainWindow
 
     internal void ForwardBladeMappingInput(BladeMappingInputEvent input)
     {
-        if (!input.IsDown) return;
         _dispatcherQueue.TryEnqueue(() => _lightingStudioPage?.HandleMappingInput(input));
     }
 }

@@ -182,7 +182,7 @@ public static class StudioCompositor
         }
     }
 
-    private static StudioRgb Blend(StudioRgb destination, StudioRgb source, double alpha, StudioBlendMode mode)
+    internal static StudioRgb Blend(StudioRgb destination, StudioRgb source, double alpha, StudioBlendMode mode)
     {
         var d = destination;
         return new StudioRgb(
@@ -200,6 +200,7 @@ public static class StudioCompositor
             StudioBlendMode.Add => d + s * alpha,
             StudioBlendMode.Multiply => d * (1 - alpha + alpha * s),
             StudioBlendMode.Screen => 1 - (1 - d) * (1 - alpha * s),
+            StudioBlendMode.Max => Math.Max(d, s * alpha),
             _ => s * alpha + d * (1 - alpha),
         };
         return (byte)Math.Clamp(Math.Round(result * 255), 0, 255);

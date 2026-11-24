@@ -81,10 +81,9 @@ internal sealed class StudioHidInputBridge : IDisposable
         var position = FindInput(layout, frame.MakeCode, flags);
         if (position is null) return 0;
 
-        return _router.HandleInput(
-            connection.InstanceId,
-            new StudioTriggerInput(position.Value.Row, position.Value.Column, isDown),
-            _nowSeconds());
+        var input = new StudioTriggerInput(position.Value.Row, position.Value.Column, isDown);
+        _router.ObserveInput(connection.InstanceId, input);
+        return _router.HandleInput(connection.InstanceId, input, _nowSeconds());
     }
 
     public void Dispose()

@@ -24,6 +24,7 @@ public static class StudioEffectMap
         StudioEffectKind.Tidal => 19,
         StudioEffectKind.Radiate => 17,
         StudioEffectKind.ChromaFile => 20,
+        StudioEffectKind.Preset => 21,
         _ => 6,
     };
 
@@ -48,6 +49,7 @@ public static class StudioEffectMap
             17 => StudioEffectKind.Radiate,
             18 => StudioEffectKind.ChromaGenerate,
             19 => StudioEffectKind.Tidal,
+            21 => StudioEffectKind.Preset,
             _ => (StudioEffectKind)(-1),
         };
         return effect != (StudioEffectKind)(-1);
@@ -71,6 +73,7 @@ public static class StudioEffectMap
         StudioEffectKind.Tidal => "tidal",
         StudioEffectKind.Radiate => "radiate",
         StudioEffectKind.ChromaFile => "chroma-file",
+        StudioEffectKind.Preset => "preset",
         _ => "static",
     };
 
@@ -92,6 +95,7 @@ public static class StudioEffectMap
         "radiate" => StudioEffectKind.Radiate,
         "gradient" => StudioEffectKind.Gradient,
         "chroma-file" or "chromafile" => StudioEffectKind.ChromaFile,
+        "preset" => StudioEffectKind.Preset,
         _ => StudioEffectKind.Solid,
     };
 }

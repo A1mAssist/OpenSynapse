@@ -100,6 +100,15 @@ public sealed class StudioDeviceFrameSource : ISoftwareLightingFrameSource
         }
     }
 
+    /// <summary>Starts playback without fabricating a held key.</summary>
+    public int TriggerPlayback(StudioTriggerInput input, double nowSeconds) =>
+        _trigger.Handle(input, nowSeconds);
+
+    internal void RestoreHeldKeys(IEnumerable<(int Row, int Column)> keys)
+    {
+        foreach (var key in keys) _keys.Press(key.Row, key.Column);
+    }
+
     public ValueTask<IReadOnlyList<RazerRgb>> RenderAsync(
         TimeSpan elapsed,
         CancellationToken cancellationToken)

@@ -237,6 +237,41 @@ public sealed class StudioEffectParams
 
     public StudioReactiveStyle ReactiveStyle { get; set; } = StudioReactiveStyle.Ripple;
 
+    /// <summary>Preset id used by <see cref="StudioEffectKind.Preset"/>.</summary>
+    public string Preset
+    {
+        get => _presetDefinition?.Id ?? _preset;
+        set
+        {
+            _preset = value;
+            if (_presetDefinition is not null &&
+                !string.Equals(_presetDefinition.Id, value.Trim(), StringComparison.OrdinalIgnoreCase))
+                _presetDefinition = null;
+        }
+    }
+
+    private string _preset = string.Empty;
+    private StudioPresetConfig? _presetDefinition;
+
+    /// <summary>Compiled content takes precedence over the catalog id; clones share this immutable definition.</summary>
+    public StudioPresetConfig? PresetDefinition
+    {
+        get => _presetDefinition;
+        set
+        {
+            _presetDefinition = value;
+            if (value is not null) _preset = value.Id;
+        }
+    }
+
+    /// <summary>Capture follows the rendered modules, including mixed imported presets.</summary>
+    public bool NeedsLiveInput => Effect is StudioEffectKind.Ambient or StudioEffectKind.Audio ||
+        (Effect == StudioEffectKind.Preset &&
+         (PresetDefinition ?? StudioPresetCatalog.Default.Find(Preset))?.Layers
+             .Any(layer => layer.ModuleId.StartsWith("music.", StringComparison.Ordinal) ||
+                           layer.ModuleId.StartsWith("screen.", StringComparison.Ordinal) ||
+                           layer.ModuleId.StartsWith("system.", StringComparison.Ordinal)) == true);
+
     /// <summary>Local path used by the Chroma Generate effect.</summary>
     public string? MediaSrc { get; set; }
 
@@ -317,6 +352,7 @@ public sealed class StudioEffectParams
         if (!Enum.IsDefined(ScreenMode)) ScreenMode = StudioScreenMode.Follow;
         if (!Enum.IsDefined(AudioStyle)) AudioStyle = StudioAudioStyle.Level;
         if (!Enum.IsDefined(ReactiveStyle)) ReactiveStyle = StudioReactiveStyle.Ripple;
+        Preset = Preset.Trim();
         CenterPointX = Math.Clamp(CenterPointX, 0, 10_000);
         CenterPointY = Math.Clamp(CenterPointY, 0, 10_000);
         if (CenterRow < 0 || CenterCol < 0)
@@ -367,6 +403,8 @@ public sealed class StudioEffectParams
             ScreenMode = ScreenMode,
             AudioStyle = AudioStyle,
             ReactiveStyle = ReactiveStyle,
+            Preset = Preset,
+            PresetDefinition = PresetDefinition,
             MediaSrc = MediaSrc,
             CurrentConfigJson = CurrentConfigJson,
             EffectConfigListJson = EffectConfigListJson,

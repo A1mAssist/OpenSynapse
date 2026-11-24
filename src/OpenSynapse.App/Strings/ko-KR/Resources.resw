@@ -4305,4 +4305,194 @@
   <data name="TaskbarStatusClickTitle.Text" xml:space="preserve"><value>클릭하여 앱 열기</value></data>
   <data name="TaskbarStatusClickDescription.Text" xml:space="preserve"><value>작업 표시줄 상태 스트립을 클릭하면 OpenSynapse 창이 표시됩니다.</value></data>
   <data name="TaskbarStatusClickToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>클릭하여 앱 열기</value></data>
+  <data name="LightingStudioEffectPreset" xml:space="preserve"><value>모듈 프리셋</value></data>
+  <data name="LightingStudioParamPreset" xml:space="preserve"><value>프리셋</value></data>
+  <data name="LightingStudioPresetCategoryMusic" xml:space="preserve"><value>음악</value></data>
+  <data name="LightingStudioPresetCategoryReactive" xml:space="preserve"><value>반응형</value></data>
+  <data name="LightingStudioPresetSearch" xml:space="preserve"><value>프리셋 검색</value></data>
+  <data name="LightingStudioBlendMax" xml:space="preserve"><value>최댓값</value></data>
+  <data name="LightingStudioPresetAddColor" xml:space="preserve"><value>색상 추가</value></data>
+  <data name="LightingStudioPresetBars" xml:space="preserve"><value>스펙트럼 막대</value></data>
+  <data name="LightingStudioPresetCancel" xml:space="preserve"><value>취소</value></data>
+  <data name="LightingStudioPresetCircle" xml:space="preserve"><value>원형</value></data>
+  <data name="LightingStudioPresetColorPosition" xml:space="preserve"><value>색상 정지점 위치 (%)</value></data>
+  <data name="LightingStudioPresetConfirm" xml:space="preserve"><value>확인</value></data>
+  <data name="LightingStudioPresetDiamond" xml:space="preserve"><value>마름모</value></data>
+  <data name="LightingStudioPresetEdit" xml:space="preserve"><value>프리셋 편집</value></data>
+  <data name="LightingStudioPresetExpansion" xml:space="preserve"><value>확산 속도 (칸/초)</value></data>
+  <data name="LightingStudioPresetGlow" xml:space="preserve"><value>빛 번짐</value></data>
+  <data name="LightingStudioPresetHold" xml:space="preserve"><value>누르는 동안 빛 번짐 유지</value></data>
+  <data name="LightingStudioPresetLayers" xml:space="preserve"><value>레이어</value></data>
+  <data name="LightingStudioPresetLifetime" xml:space="preserve"><value>지속 시간 (초)</value></data>
+  <data name="LightingStudioPresetEmpty" xml:space="preserve"><value>아직 가져온 프리셋이 없습니다. "가져오기"에서 .oschroma 파일을 선택하세요.</value></data>
+  <data name="LightingStudioPresetMissing" xml:space="preserve"><value>프리셋 “{0}”을(를) 찾을 수 없습니다.</value></data>
+  <data name="LightingStudioPresetPattern" xml:space="preserve"><value>효과 유형</value></data>
+  <data name="LightingStudioPresetPeaks" xml:space="preserve"><value>최댓값 표시</value></data>
+  <data name="LightingStudioPresetRings" xml:space="preserve"><value>고리 수</value></data>
+  <data name="LightingStudioPresetRipple" xml:space="preserve"><value>키 파동</value></data>
+  <data name="LightingStudioPresetSaveAs" xml:space="preserve"><value>다른 이름으로 저장…</value></data>
+  <data name="LightingStudioPresetShape" xml:space="preserve"><value>파동 모양</value></data>
+  <data name="LightingStudioPresetSpacing" xml:space="preserve"><value>고리 간격 (칸)</value></data>
+  <data name="LightingStudioModuleParam_amplitude" xml:space="preserve"><value>진폭</value></data>
+  <data name="LightingStudioModuleParam_aperture" xml:space="preserve"><value>개구 크기</value></data>
+  <data name="LightingStudioModuleParam_aspect" xml:space="preserve"><value>가로세로 비율</value></data>
+  <data name="LightingStudioModuleParam_axis" xml:space="preserve"><value>축</value></data>
+  <data name="LightingStudioModuleParam_background" xml:space="preserve"><value>배경 밝기</value></data>
+  <data name="LightingStudioModuleParam_blur" xml:space="preserve"><value>흐림 반경</value></data>
+  <data name="LightingStudioModuleParam_cellsX" xml:space="preserve"><value>열 수</value></data>
+  <data name="LightingStudioModuleParam_cellsY" xml:space="preserve"><value>행 수</value></data>
+  <data name="LightingStudioModuleParam_centered" xml:space="preserve"><value>가운데 정렬</value></data>
+  <data name="LightingStudioModuleParam_centers" xml:space="preserve"><value>중심 수</value></data>
+  <data name="LightingStudioModuleParam_centerX" xml:space="preserve"><value>중심 X</value></data>
+  <data name="LightingStudioModuleParam_centerY" xml:space="preserve"><value>중심 Y</value></data>
+  <data name="LightingStudioModuleParam_colorFlow" xml:space="preserve"><value>색 흐름 속도</value></data>
+  <data name="LightingStudioModuleParam_colorMode" xml:space="preserve"><value>색상 모드</value></data>
+  <data name="LightingStudioModuleParam_count" xml:space="preserve"><value>입자 수</value></data>
+  <data name="LightingStudioModuleParam_cycles" xml:space="preserve"><value>파형 주기 수</value></data>
+  <data name="LightingStudioModuleParam_decay" xml:space="preserve"><value>감쇠 속도</value></data>
+  <data name="LightingStudioModuleParam_delay" xml:space="preserve"><value>지연(초)</value></data>
+  <data name="LightingStudioModuleParam_density" xml:space="preserve"><value>밀도</value></data>
+  <data name="LightingStudioModuleParam_direction" xml:space="preserve"><value>이동 방향</value></data>
+  <data name="LightingStudioModuleParam_expansion" xml:space="preserve"><value>확산 속도</value></data>
+  <data name="LightingStudioModuleParam_extent" xml:space="preserve"><value>표시 범위</value></data>
+  <data name="LightingStudioModuleParam_fill" xml:space="preserve"><value>채우기 강도</value></data>
+  <data name="LightingStudioModuleParam_flare" xml:space="preserve"><value>광채 강도</value></data>
+  <data name="LightingStudioModuleParam_focus" xml:space="preserve"><value>집중도</value></data>
+  <data name="LightingStudioModuleParam_gain" xml:space="preserve"><value>증폭</value></data>
+  <data name="LightingStudioModuleParam_gamma" xml:space="preserve"><value>밝기 곡선</value></data>
+  <data name="LightingStudioModuleParam_gaze" xml:space="preserve"><value>시선 이동 폭</value></data>
+  <data name="LightingStudioModuleParam_glow" xml:space="preserve"><value>발광 강도</value></data>
+  <data name="LightingStudioModuleParam_gravity" xml:space="preserve"><value>중력</value></data>
+  <data name="LightingStudioModuleParam_halo" xml:space="preserve"><value>후광 강도</value></data>
+  <data name="LightingStudioModuleParam_heartbeat" xml:space="preserve"><value>심장 박동</value></data>
+  <data name="LightingStudioModuleParam_height" xml:space="preserve"><value>높이</value></data>
+  <data name="LightingStudioModuleParam_heightColor" xml:space="preserve"><value>높이별 색상</value></data>
+  <data name="LightingStudioModuleParam_hold" xml:space="preserve"><value>누르는 동안 유지</value></data>
+  <data name="LightingStudioModuleParam_inverse" xml:space="preserve"><value>밝기 반전</value></data>
+  <data name="LightingStudioModuleParam_jitter" xml:space="preserve"><value>흔들림 크기</value></data>
+  <data name="LightingStudioModuleParam_life" xml:space="preserve"><value>지속 시간(초)</value></data>
+  <data name="LightingStudioModuleParam_mapping" xml:space="preserve"><value>색상 매핑</value></data>
+  <data name="LightingStudioModuleParam_maxHold" xml:space="preserve"><value>충전 시간(초)</value></data>
+  <data name="LightingStudioModuleParam_memory" xml:space="preserve"><value>잔상 유지</value></data>
+  <data name="LightingStudioModuleParam_metric" xml:space="preserve"><value>윤곽 모양</value></data>
+  <data name="LightingStudioModuleParam_mirror" xml:space="preserve"><value>미러링</value></data>
+  <data name="LightingStudioModuleParam_mode" xml:space="preserve"><value>모드</value></data>
+  <data name="LightingStudioModuleParam_motion" xml:space="preserve"><value>움직임</value></data>
+  <data name="LightingStudioModuleParam_onBeat" xml:space="preserve"><value>박자에 맞춰 실행</value></data>
+  <data name="LightingStudioModuleParam_origin" xml:space="preserve"><value>시작점</value></data>
+  <data name="LightingStudioModuleParam_path" xml:space="preserve"><value>경로</value></data>
+  <data name="LightingStudioModuleParam_peaks" xml:space="preserve"><value>최고점 표시</value></data>
+  <data name="LightingStudioModuleParam_profile" xml:space="preserve"><value>윤곽 스타일</value></data>
+  <data name="LightingStudioModuleParam_pupil" xml:space="preserve"><value>동공 크기</value></data>
+  <data name="LightingStudioModuleParam_radius" xml:space="preserve"><value>반경</value></data>
+  <data name="LightingStudioModuleParam_rainbow" xml:space="preserve"><value>무지개 색상</value></data>
+  <data name="LightingStudioModuleParam_randomCenters" xml:space="preserve"><value>무작위 중심</value></data>
+  <data name="LightingStudioModuleParam_rays" xml:space="preserve"><value>광선 수</value></data>
+  <data name="LightingStudioModuleParam_reverse" xml:space="preserve"><value>반전</value></data>
+  <data name="LightingStudioModuleParam_rim" xml:space="preserve"><value>테두리 너비</value></data>
+  <data name="LightingStudioModuleParam_rings" xml:space="preserve"><value>고리 수</value></data>
+  <data name="LightingStudioModuleParam_rotation" xml:space="preserve"><value>회전 속도</value></data>
+  <data name="LightingStudioModuleParam_shape" xml:space="preserve"><value>모양</value></data>
+  <data name="LightingStudioModuleParam_size" xml:space="preserve"><value>크기</value></data>
+  <data name="LightingStudioModuleParam_smoothing" xml:space="preserve"><value>부드러움</value></data>
+  <data name="LightingStudioModuleParam_softness" xml:space="preserve"><value>가장자리 부드러움</value></data>
+  <data name="LightingStudioModuleParam_source" xml:space="preserve"><value>입력 소스</value></data>
+  <data name="LightingStudioModuleParam_spacing" xml:space="preserve"><value>간격</value></data>
+  <data name="LightingStudioModuleParam_spin" xml:space="preserve"><value>회전 속도</value></data>
+  <data name="LightingStudioModuleParam_spokes" xml:space="preserve"><value>방사선 수</value></data>
+  <data name="LightingStudioModuleParam_stars" xml:space="preserve"><value>별빛 강도</value></data>
+  <data name="LightingStudioModuleParam_tail" xml:space="preserve"><value>꼬리 길이</value></data>
+  <data name="LightingStudioModuleParam_taper" xml:space="preserve"><value>가늘어짐</value></data>
+  <data name="LightingStudioModuleParam_thickness" xml:space="preserve"><value>두께</value></data>
+  <data name="LightingStudioModuleParam_tilt" xml:space="preserve"><value>기울기</value></data>
+  <data name="LightingStudioModuleParam_topology" xml:space="preserve"><value>연결 방식</value></data>
+  <data name="LightingStudioModuleParam_travel" xml:space="preserve"><value>이동 속도</value></data>
+  <data name="LightingStudioModuleParam_twist" xml:space="preserve"><value>뒤틀림</value></data>
+  <data name="LightingStudioModuleParam_velocity" xml:space="preserve"><value>속도</value></data>
+  <data name="LightingStudioModuleParam_width" xml:space="preserve"><value>너비</value></data>
+  <data name="LightingStudioModuleParam_window" xml:space="preserve"><value>집계 기간(초)</value></data>
+  <data name="LightingStudioModuleParam_x" xml:space="preserve"><value>가로 위치</value></data>
+  <data name="LightingStudioModuleParam_y" xml:space="preserve"><value>세로 위치</value></data>
+  <data name="LightingStudioModuleValue_age" xml:space="preserve"><value>경과 시간별</value></data>
+  <data name="LightingStudioModuleValue_angle" xml:space="preserve"><value>각도</value></data>
+  <data name="LightingStudioModuleValue_arc" xml:space="preserve"><value>호</value></data>
+  <data name="LightingStudioModuleValue_bass" xml:space="preserve"><value>저음</value></data>
+  <data name="LightingStudioModuleValue_bass-history" xml:space="preserve"><value>저음 기록</value></data>
+  <data name="LightingStudioModuleValue_beat" xml:space="preserve"><value>박자</value></data>
+  <data name="LightingStudioModuleValue_box" xml:space="preserve"><value>사각형</value></data>
+  <data name="LightingStudioModuleValue_bubbles" xml:space="preserve"><value>거품</value></data>
+  <data name="LightingStudioModuleValue_burn" xml:space="preserve"><value>연소</value></data>
+  <data name="LightingStudioModuleValue_burst" xml:space="preserve"><value>폭발</value></data>
+  <data name="LightingStudioModuleValue_cascade" xml:space="preserve"><value>연쇄</value></data>
+  <data name="LightingStudioModuleValue_center" xml:space="preserve"><value>중앙</value></data>
+  <data name="LightingStudioModuleValue_chain" xml:space="preserve"><value>사슬</value></data>
+  <data name="LightingStudioModuleValue_chevron" xml:space="preserve"><value>갈매기 모양</value></data>
+  <data name="LightingStudioModuleValue_circle" xml:space="preserve"><value>원</value></data>
+  <data name="LightingStudioModuleValue_circuit" xml:space="preserve"><value>회로</value></data>
+  <data name="LightingStudioModuleValue_column" xml:space="preserve"><value>열</value></data>
+  <data name="LightingStudioModuleValue_combo" xml:space="preserve"><value>콤보</value></data>
+  <data name="LightingStudioModuleValue_comet" xml:space="preserve"><value>혜성</value></data>
+  <data name="LightingStudioModuleValue_constellation" xml:space="preserve"><value>별자리</value></data>
+  <data name="LightingStudioModuleValue_cracks" xml:space="preserve"><value>균열</value></data>
+  <data name="LightingStudioModuleValue_cross" xml:space="preserve"><value>십자</value></data>
+  <data name="LightingStudioModuleValue_curtain" xml:space="preserve"><value>빛의 장막</value></data>
+  <data name="LightingStudioModuleValue_curve" xml:space="preserve"><value>곡선</value></data>
+  <data name="LightingStudioModuleValue_diffuse" xml:space="preserve"><value>확산</value></data>
+  <data name="LightingStudioModuleValue_domino" xml:space="preserve"><value>도미노</value></data>
+  <data name="LightingStudioModuleValue_drop" xml:space="preserve"><value>낙하</value></data>
+  <data name="LightingStudioModuleValue_dye" xml:space="preserve"><value>물들이기</value></data>
+  <data name="LightingStudioModuleValue_edge" xml:space="preserve"><value>가장자리</value></data>
+  <data name="LightingStudioModuleValue_energy" xml:space="preserve"><value>에너지</value></data>
+  <data name="LightingStudioModuleValue_envelope" xml:space="preserve"><value>엔벌로프</value></data>
+  <data name="LightingStudioModuleValue_flame" xml:space="preserve"><value>불꽃</value></data>
+  <data name="LightingStudioModuleValue_flat" xml:space="preserve"><value>평탄</value></data>
+  <data name="LightingStudioModuleValue_flower" xml:space="preserve"><value>꽃</value></data>
+  <data name="LightingStudioModuleValue_full" xml:space="preserve"><value>전체</value></data>
+  <data name="LightingStudioModuleValue_grow" xml:space="preserve"><value>성장</value></data>
+  <data name="LightingStudioModuleValue_halo" xml:space="preserve"><value>후광</value></data>
+  <data name="LightingStudioModuleValue_heart" xml:space="preserve"><value>하트</value></data>
+  <data name="LightingStudioModuleValue_heat" xml:space="preserve"><value>열기</value></data>
+  <data name="LightingStudioModuleValue_history" xml:space="preserve"><value>기록</value></data>
+  <data name="LightingStudioModuleValue_horizontal" xml:space="preserve"><value>가로</value></data>
+  <data name="LightingStudioModuleValue_ink" xml:space="preserve"><value>잉크</value></data>
+  <data name="LightingStudioModuleValue_inward" xml:space="preserve"><value>안쪽으로</value></data>
+  <data name="LightingStudioModuleValue_jelly" xml:space="preserve"><value>해파리</value></data>
+  <data name="LightingStudioModuleValue_left" xml:space="preserve"><value>왼쪽</value></data>
+  <data name="LightingStudioModuleValue_lightning" xml:space="preserve"><value>번개</value></data>
+  <data name="LightingStudioModuleValue_magnet" xml:space="preserve"><value>자석</value></data>
+  <data name="LightingStudioModuleValue_outside" xml:space="preserve"><value>바깥쪽</value></data>
+  <data name="LightingStudioModuleValue_outward" xml:space="preserve"><value>바깥쪽으로</value></data>
+  <data name="LightingStudioModuleValue_perimeter" xml:space="preserve"><value>둘레</value></data>
+  <data name="LightingStudioModuleValue_point" xml:space="preserve"><value>점</value></data>
+  <data name="LightingStudioModuleValue_polyline" xml:space="preserve"><value>꺾은선</value></data>
+  <data name="LightingStudioModuleValue_position" xml:space="preserve"><value>위치별</value></data>
+  <data name="LightingStudioModuleValue_press" xml:space="preserve"><value>키 입력별</value></data>
+  <data name="LightingStudioModuleValue_prism" xml:space="preserve"><value>프리즘</value></data>
+  <data name="LightingStudioModuleValue_radial" xml:space="preserve"><value>방사형</value></data>
+  <data name="LightingStudioModuleValue_radius" xml:space="preserve"><value>반경</value></data>
+  <data name="LightingStudioModuleValue_rays" xml:space="preserve"><value>광선</value></data>
+  <data name="LightingStudioModuleValue_right" xml:space="preserve"><value>오른쪽</value></data>
+  <data name="LightingStudioModuleValue_ring" xml:space="preserve"><value>고리</value></data>
+  <data name="LightingStudioModuleValue_row" xml:space="preserve"><value>행</value></data>
+  <data name="LightingStudioModuleValue_scatter" xml:space="preserve"><value>흩어진 색상</value></data>
+  <data name="LightingStudioModuleValue_shaft" xml:space="preserve"><value>화살대</value></data>
+  <data name="LightingStudioModuleValue_shock" xml:space="preserve"><value>충격</value></data>
+  <data name="LightingStudioModuleValue_sine" xml:space="preserve"><value>사인파</value></data>
+  <data name="LightingStudioModuleValue_snow" xml:space="preserve"><value>눈</value></data>
+  <data name="LightingStudioModuleValue_sonar" xml:space="preserve"><value>소나</value></data>
+  <data name="LightingStudioModuleValue_spectrum" xml:space="preserve"><value>스펙트럼</value></data>
+  <data name="LightingStudioModuleValue_speed" xml:space="preserve"><value>타자 속도</value></data>
+  <data name="LightingStudioModuleValue_splash" xml:space="preserve"><value>물보라</value></data>
+  <data name="LightingStudioModuleValue_spot" xml:space="preserve"><value>집중 조명</value></data>
+  <data name="LightingStudioModuleValue_static" xml:space="preserve"><value>고정</value></data>
+  <data name="LightingStudioModuleValue_stripe" xml:space="preserve"><value>줄무늬</value></data>
+  <data name="LightingStudioModuleValue_vertical" xml:space="preserve"><value>세로</value></data>
+  <data name="LightingStudioModuleValue_volcano" xml:space="preserve"><value>화산</value></data>
+  <data name="LightingStudioModuleValue_volume" xml:space="preserve"><value>음량</value></data>
+  <data name="LightingStudioModuleValue_wake" xml:space="preserve"><value>항적</value></data>
+  <data name="LightingStudioModuleValue_warp" xml:space="preserve"><value>왜곡</value></data>
+  <data name="LightingStudioModuleValue_waveform" xml:space="preserve"><value>파형</value></data>
+  <data name="LightingStudioModuleValue_white" xml:space="preserve"><value>흰색</value></data>
+  <data name="LightingStudioModuleValue_alternate" xml:space="preserve"><value>박자마다 교대</value></data>
+  <data name="LightingStudioModuleValue_waves" xml:space="preserve"><value>연속 음파</value></data>
 </root>

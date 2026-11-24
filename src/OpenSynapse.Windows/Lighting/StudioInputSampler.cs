@@ -1,8 +1,19 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using OpenSynapse.Core.Lighting;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Lighting;
+
+[Flags]
+internal enum StudioInputSources
+{
+    None = 0,
+    Audio = 1,
+    Screen = 2,
+    System = 4,
+    All = Audio | Screen | System,
+}
 
 /// <summary>
 /// Samples the display and system audio once per studio frame and exposes the
@@ -20,6 +31,8 @@ internal sealed class StudioInputSampler : ILightingInputAdapter
     private Task? _framePump;
     private AmbientCaptureFrame? _latestFrame;
     private bool _started;
+    private bool _audioStarted;
+    private int _sources = (int)StudioInputSources.All;
     private long _lastAudioTimestamp;
     private double _audioLevel;
     private int _disposed;
@@ -36,7 +49,7 @@ internal sealed class StudioInputSampler : ILightingInputAdapter
     {
         _display = display ?? throw new ArgumentNullException(nameof(display));
         _audio = audio ?? throw new ArgumentNullException(nameof(audio));
-        _system = system ?? (static () => new StudioSystemInput(DateTimeOffset.Now));
+        _system = system ?? new StudioSystemSampler().Sample;
     }
 
     /// <summary>The last level produced by <see cref="Sample"/>; silent input is zero.</summary>
@@ -45,8 +58,31 @@ internal sealed class StudioInputSampler : ILightingInputAdapter
     /// <summary>True once the display capture has produced at least one frame.</summary>
     internal bool HasScreenFrame => Volatile.Read(ref _latestFrame) is not null;
 
-    public async ValueTask StartAsync(CancellationToken cancellationToken)
+    internal static StudioInputSources RequiredSources(StudioEffectParams parameters)
     {
+        ArgumentNullException.ThrowIfNull(parameters);
+        if (parameters.Effect == StudioEffectKind.Audio) return StudioInputSources.Audio;
+        if (parameters.Effect == StudioEffectKind.Ambient) return StudioInputSources.Screen;
+        if (parameters.Effect != StudioEffectKind.Preset) return StudioInputSources.None;
+        var preset = parameters.PresetDefinition ?? StudioPresetCatalog.Default.Find(parameters.Preset);
+        var sources = StudioInputSources.None;
+        if (preset is null) return sources;
+        foreach (var layer in preset.Layers)
+        {
+            if (layer.ModuleId.StartsWith("music.", StringComparison.Ordinal)) sources |= StudioInputSources.Audio;
+            if (layer.ModuleId.StartsWith("screen.", StringComparison.Ordinal)) sources |= StudioInputSources.Screen;
+            if (layer.ModuleId.StartsWith("system.", StringComparison.Ordinal)) sources |= StudioInputSources.System;
+        }
+        return sources;
+    }
+
+    public ValueTask StartAsync(CancellationToken cancellationToken) =>
+        StartAsync(StudioInputSources.All, cancellationToken);
+
+    /// <summary>Starts only the requested sources; changed selections are serialized with stop/start.</summary>
+    public async ValueTask StartAsync(StudioInputSources sources, CancellationToken cancellationToken)
+    {
+        if ((sources & ~StudioInputSources.All) != 0) throw new ArgumentOutOfRangeException(nameof(sources));
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         await _lifecycle.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -54,13 +90,13 @@ internal sealed class StudioInputSampler : ILightingInputAdapter
             ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
             if (Volatile.Read(ref _started))
             {
-                // Apply and the layer editors share one sampler; a live session is exactly
-                // what they are asking for, so a second start is a no-op rather than a failure.
-                return;
+                if (Volatile.Read(ref _sources) == (int)sources) return;
+                await StopCoreAsync().ConfigureAwait(false);
             }
 
             var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             _stop = stop;
+            Volatile.Write(ref _sources, (int)sources);
             Volatile.Write(ref _latestFrame, null);
             lock (_audioGate)
             {
@@ -70,12 +106,26 @@ internal sealed class StudioInputSampler : ILightingInputAdapter
             Volatile.Write(ref _started, true);
             try
             {
-                await _audio.StartAsync(stop.Token).ConfigureAwait(false);
+                if (sources.HasFlag(StudioInputSources.Audio))
+                {
+                    try
+                    {
+                        await _audio.StartAsync(stop.Token).ConfigureAwait(false);
+                        Volatile.Write(ref _audioStarted, true);
+                    }
+                    catch (Exception exception) when (IsAudioUnavailable(exception))
+                    {
+                        // Optional audio must not prevent screen or system effects starting.
+                    }
+                }
                 var displayStarted = false;
                 try
                 {
-                    await _display.StartAsync(stop.Token).ConfigureAwait(false);
-                    displayStarted = true;
+                    if (sources.HasFlag(StudioInputSources.Screen))
+                    {
+                        await _display.StartAsync(stop.Token).ConfigureAwait(false);
+                        displayStarted = true;
+                    }
                 }
                 catch (AmbientCaptureException)
                 {
@@ -138,7 +188,8 @@ internal sealed class StudioInputSampler : ILightingInputAdapter
             (u, v) => SampleUv(pixels, rows, columns, u, v),
             _display.CaptureRegion,
             Audio: audio,
-            System: _system());
+            System: ((StudioInputSources)Volatile.Read(ref _sources)).HasFlag(StudioInputSources.System)
+                ? _system() : null);
     }
 
     internal void SetCaptureRegion(StudioScreenRect region) => _display.SetCaptureRegion(region);
@@ -190,7 +241,11 @@ internal sealed class StudioInputSampler : ILightingInputAdapter
         {
             await StopAsync().ConfigureAwait(false);
             await _display.DisposeAsync().ConfigureAwait(false);
-            await _audio.DisposeAsync().ConfigureAwait(false);
+            try
+            {
+                await _audio.DisposeAsync().ConfigureAwait(false);
+            }
+            catch (Exception exception) when (IsAudioUnavailable(exception)) { }
         }
     }
 
@@ -284,7 +339,7 @@ internal sealed class StudioInputSampler : ILightingInputAdapter
     {
         lock (_audioGate)
         {
-            if (!Volatile.Read(ref _started))
+            if (!Volatile.Read(ref _started) || !Volatile.Read(ref _audioStarted))
             {
                 return (0, StudioAudioFrame.Silence);
             }
@@ -317,6 +372,8 @@ internal sealed class StudioInputSampler : ILightingInputAdapter
         _stop = null;
         _framePump = null;
         Volatile.Write(ref _started, false);
+        Volatile.Write(ref _sources, (int)StudioInputSources.None);
+        Volatile.Write(ref _audioStarted, false);
         lock (_audioGate)
         {
             _lastAudioTimestamp = 0;
@@ -346,13 +403,20 @@ internal sealed class StudioInputSampler : ILightingInputAdapter
             {
             }
 
-            await _audio.StopAsync().ConfigureAwait(false);
+            try
+            {
+                await _audio.StopAsync().ConfigureAwait(false);
+            }
+            catch (Exception exception) when (IsAudioUnavailable(exception)) { }
         }
         finally
         {
             stop?.Dispose();
         }
     }
+
+    private static bool IsAudioUnavailable(Exception exception) =>
+        exception is COMException or NotSupportedException;
 
     private static void ValidateTarget(int rows, int columns)
     {

@@ -54,8 +54,6 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
     private CancellationTokenSource? _outputCancellation;
     private Task? _outputTask;
     private readonly Stopwatch _outputClock = new();
-    private readonly object _clockGate = new();
-    private readonly Dictionary<Guid, StudioPlaybackClock> _clocks = new();
     private StudioProject _project;
     private StudioHistory? _history;
     private StudioLayerItem? _selectedLayer;
@@ -110,6 +108,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
             new(StudioEffectKind.ChromaFile, AppStrings.Text("LightingStudioEffectChromaFile")),
             new(StudioEffectKind.Tidal, AppStrings.Text("LightingStudioEffectTidal")),
             new(StudioEffectKind.Radiate, AppStrings.Text("LightingStudioEffectRadiate")),
+            new(StudioEffectKind.Preset, AppStrings.Text("LightingStudioEffectPreset")),
         ];
         BlendChoices =
         [
@@ -227,7 +226,6 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
             NotifyDocumentChanged();
             if (IsApplied) TriggerAppliedEffect();
             _ = EnsureMediaSamplerAsync();
-            _ = EnsureInputAsync();
         }
     }
 
@@ -308,15 +306,19 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         if (layers.Length == 0) return new StudioRgb[rows * columns];
 
         var now = Math.Max(0, elapsed.TotalSeconds);
+        _previewSeconds = now;
         var timed = new (StudioLayerRender Layer, double Seconds)[layers.Length];
         for (var index = 0; index < layers.Length; index++)
         {
             var layer = layers[index];
-            var state = GetClock(layer.Id).Sample(now, layer.Params, rows, columns);
+            var state = GetPreviewClock(SelectedDevice?.EffectiveInstanceId, layer.Id)
+                .Sample(now, layer.Params, rows, columns);
             timed[index] = (layer with { Opacity = state.Running ? layer.Opacity : 0 }, state.LocalSeconds);
         }
 
         var input = _inputSampler?.Sample(rows, columns) ?? default;
+        if (SelectedDevice is { } device)
+            input = input with { Keys = PreviewKeysFor(device, rows, columns).Snapshot() };
         return StudioCompositor.RenderTimedLayers(timed, rows, columns, input);
     }
 
@@ -350,6 +352,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         SelectedLayer = next;
         SelectedLayerRow = next is null ? null : LayerRows.FirstOrDefault(row => row.Layer == next);
         StatusText = AppStrings.Text("LightingStudioStatusLayerRemoved");
+        NotifyDocumentChanged();
     }
 
     /// <summary>Moves the selected layer toward the top of the stack.</summary>
@@ -374,7 +377,8 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
     {
         if (SelectedParams is not { } parameters || _selectedLayer is not { } layer) return;
         if (parameters.PlaybackStart is not (StudioPlaybackStart.OnPress or StudioPlaybackStart.OnSelectedKeys)) return;
-        GetClock(layer.Id).Trigger(Math.Max(0, nowSeconds));
+        foreach (var device in Devices)
+            GetPreviewClock(device.EffectiveInstanceId, layer.Id).Trigger(Math.Max(0, nowSeconds));
     }
 
     private void TriggerAppliedEffect()
@@ -385,11 +389,11 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
             return;
         }
 
-        _source?.HandleInput(new StudioTriggerInput(0, 0), _inputClock.Elapsed.TotalSeconds);
+        _source?.TriggerPlayback(new StudioTriggerInput(0, 0), _inputClock.Elapsed.TotalSeconds);
         if (_hidRouter is null) return;
         foreach (var target in _hidRouter.GetTargets())
         {
-            _hidRouter.HandleInput(
+            _hidRouter.TriggerPlayback(
                 target.InstanceId,
                 new StudioTriggerInput(0, 0),
                 _outputClock.Elapsed.TotalSeconds);
@@ -412,8 +416,6 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         NotifyDocumentChanged();
     }
 
-    public void TogglePlayback() => IsPlaying = !IsPlaying;
-
     /// <summary>Called by the inspector for bindings that do not raise layer notifications.</summary>
     // Regions own their params after creation; later layer edits stay on the layer.
     public void NotifyEdited(bool captureHistory = true)
@@ -424,7 +426,6 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         OnPropertyChanged(nameof(CanRedo));
         NotifyDocumentChanged();
         _ = EnsureMediaSamplerAsync();
-        _ = EnsureInputAsync();
     }
 
     /// <summary>Commits the current edit as one undo step after the gesture settles.</summary>
@@ -450,18 +451,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
             var blade = Devices.FirstOrDefault(device =>
                 device.IsBlade || (device.Descriptor is not null &&
                     DeviceProtocolFamilies.UsesBladeMatrix(device.Descriptor.ProtocolFamily)));
-            if (_inputSampler is not null)
-            {
-                if (NeedsLiveInput())
-                {
-                    await _inputSampler.StartAsync(CancellationToken.None);
-                }
-                else
-                {
-                    // Switching away from an audio/ambient layer must release the capture.
-                    await _inputSampler.StopAsync();
-                }
-            }
+            await EnsureInputAsync();
 
             if (_lighting is not null && blade is not null)
             {
@@ -486,11 +476,12 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
                 _appliedBlade = blade;
                 _inputClock.Restart();
                 _source.Update(BuildLayersFor(blade));
+                RestoreBladeHeldKeys(blade, rows, columns);
                 await _lighting.ApplyExternalAsync(
                     _devices(),
                     _source,
                     restorePersistentEffect: _restoreAfterExternal is null);
-                _source.HandleInput(new StudioTriggerInput(0, 0), _inputClock.Elapsed.TotalSeconds);
+                _source.TriggerPlayback(new StudioTriggerInput(0, 0), _inputClock.Elapsed.TotalSeconds);
                 applied.Add(blade.Name);
             }
 
@@ -503,7 +494,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
                     StartOutputPump();
                     foreach (var target in targets)
                     {
-                        _hidRouter.HandleInput(target.InstanceId, new StudioTriggerInput(0, 0), 0);
+                        _hidRouter.TriggerPlayback(target.InstanceId, new StudioTriggerInput(0, 0), 0);
                     }
                     startOutputPump = true;
                     applied.AddRange(targets.Select(target => target.Definition.DisplayName));
@@ -619,23 +610,12 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         StatusText = AppStrings.Text("LightingStudioStatusNew");
     }
 
-    private StudioPlaybackClock GetClock(Guid id)
-    {
-        lock (_clockGate)
-        {
-            if (_clocks.TryGetValue(id, out var clock)) return clock;
-            var phase = id == Guid.Empty ? 0 : (id.GetHashCode() & 0x7FFF) / 32768d;
-            clock = new StudioPlaybackClock(phase);
-            _clocks[id] = clock;
-            return clock;
-        }
-    }
-
     private void ApplyProject(StudioProject project, bool resetHistory = true)
     {
         ArgumentNullException.ThrowIfNull(project);
         DetachProfile(_project.SelectedProfile);
         _project = project;
+        _previewKeys.Clear();
         _selectedRegion = null;
         AttachProfile(_project.SelectedProfile);
         SyncLayersFromProfile();
@@ -655,7 +635,6 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         OnPropertyChanged(nameof(Profiles));
         OnPropertyChanged(nameof(SelectedProfile));
         NotifyDocumentChanged();
-        _ = EnsureInputAsync();
         _ = EnsureMediaSamplerAsync();
     }
 
@@ -752,6 +731,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         if (IsApplied && _hidRouter is not null) RefreshHidSnapshots();
         if (IsApplied && _argbRouter is not null) RefreshArgbSnapshots(_argbRouter.GetTargets());
         if (IsApplied && _headsetRouter is not null) _headsetRouter.Update(BuildHeadsetLayers);
+        _ = EnsureInputAsync();
         DocumentChanged?.Invoke(this, EventArgs.Empty);
     }
 

@@ -140,6 +140,7 @@ public sealed partial class LightingStudioViewModel
     {
         var frames = new Dictionary<string, StudioDeviceFrame>(StringComparer.OrdinalIgnoreCase);
         var now = Math.Max(0, elapsed.TotalSeconds);
+        _previewSeconds = now;
         foreach (var device in Devices)
         {
             if (!device.HasMatrix) continue;
@@ -156,11 +157,13 @@ public sealed partial class LightingStudioViewModel
             for (var index = 0; index < layers.Length; index++)
             {
                 var layer = layers[index];
-                var state = GetClock(layer.Id).Sample(now, layer.Params, rows, columns);
+                var state = GetPreviewClock(device.EffectiveInstanceId, layer.Id)
+                    .Sample(now, layer.Params, rows, columns);
                 timed[index] = (layer with { Opacity = state.Running ? layer.Opacity : 0 }, state.LocalSeconds);
             }
 
             var input = _inputSampler?.Sample(rows, columns) ?? default;
+            input = input with { Keys = PreviewKeysFor(device, rows, columns).Snapshot() };
             frames[device.EffectiveInstanceId ?? string.Empty] = new StudioDeviceFrame(
                 rows,
                 columns,

@@ -209,6 +209,7 @@ public sealed partial class LightingStudioViewModel
     private void LoadProfile(StudioProfile? previous)
     {
         DetachProfile(previous);
+        _previewKeys.Clear();
         AttachProfile(_project.SelectedProfile);
         SyncLayersFromProfile();
         RebuildLayerRows();

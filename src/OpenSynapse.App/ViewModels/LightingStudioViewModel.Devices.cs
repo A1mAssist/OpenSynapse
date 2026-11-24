@@ -66,6 +66,9 @@ public sealed partial class LightingStudioViewModel
             }
         }
 
+        foreach (var id in _previewKeys.Keys.Where(id => !live.ContainsKey(id)).ToArray())
+            _previewKeys.Remove(id);
+
         OnPropertyChanged(nameof(CanApply));
         OnPropertyChanged(nameof(PreviewRows));
         OnPropertyChanged(nameof(PreviewColumns));

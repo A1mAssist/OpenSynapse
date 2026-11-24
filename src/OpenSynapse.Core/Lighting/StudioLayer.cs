@@ -23,6 +23,8 @@ public enum StudioEffectKind
     Radiate,
     /// <summary>OpenSynapse extension: plays an imported .chroma keyboard animation.</summary>
     ChromaFile,
+    /// <summary>OpenSynapse extension: a JSON preset rendered by the modular engine.</summary>
+    Preset,
 }
 
 public enum StudioBlendMode
@@ -31,6 +33,7 @@ public enum StudioBlendMode
     Add,
     Multiply,
     Screen,
+    Max,
 }
 
 /// <summary>

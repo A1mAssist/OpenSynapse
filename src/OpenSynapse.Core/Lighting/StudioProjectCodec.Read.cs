@@ -234,6 +234,18 @@ public static partial class StudioProjectCodec
             parameters.AudioStyle = audioStyle;
         if (Enum.TryParse<StudioReactiveStyle>(GetString(element, "reactiveStyle"), ignoreCase: true, out var reactiveStyle))
             parameters.ReactiveStyle = reactiveStyle;
+        parameters.Preset = GetString(element, "preset") ?? string.Empty;
+        if (TryGet(element, "presetDefinition", out var presetDefinition))
+        {
+            try
+            {
+                parameters.PresetDefinition = StudioPresetCodec.Parse(presetDefinition.GetRawText());
+            }
+            catch (InvalidDataException exception)
+            {
+                throw new InvalidOperationException($"params.presetDefinition: {exception.Message}", exception);
+            }
+        }
         parameters.Blur = ReadInt(element, "blur");
         parameters.MediaSrc = GetString(element, "mediaSrc");
         if (TryGet(element, "currentConfig", out var config) && config.ValueKind is not (JsonValueKind.Null or JsonValueKind.Undefined))

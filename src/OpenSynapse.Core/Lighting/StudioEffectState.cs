@@ -8,6 +8,10 @@ namespace OpenSynapse.Core.Lighting;
 public sealed class StudioEffectState
 {
     private readonly Dictionary<string, float[]> _fields = new(StringComparer.Ordinal);
+    private Dictionary<string, StudioEffectState>? _scopes;
+
+    /// <summary>Per-layer object slot for scratch buffers that are too large for float fields.</summary>
+    public object? Tag { get; set; }
 
     public float[] Field(string name, int length)
     {
@@ -26,7 +30,26 @@ public sealed class StudioEffectState
     public bool TryGet(string name, out float[] field) =>
         _fields.TryGetValue(name, out field!);
 
-    public void Clear() => _fields.Clear();
+    /// <summary>Isolates one preset module's fields from the other layers.</summary>
+    public StudioEffectState Scope(string name)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(name);
+        _scopes ??= new Dictionary<string, StudioEffectState>(StringComparer.Ordinal);
+        if (!_scopes.TryGetValue(name, out var scope))
+        {
+            scope = new StudioEffectState();
+            _scopes[name] = scope;
+        }
+
+        return scope;
+    }
+
+    public void Clear()
+    {
+        _fields.Clear();
+        _scopes?.Clear();
+        Tag = null;
+    }
 }
 
 /// <summary>Creates and reuses one state bag per layer id.</summary>

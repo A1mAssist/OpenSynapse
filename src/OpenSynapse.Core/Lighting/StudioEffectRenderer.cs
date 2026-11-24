@@ -83,6 +83,7 @@ public static partial class StudioEffectRenderer
             StudioEffectKind.Tidal => RenderTidal(parameters, rows, columns, time),
             StudioEffectKind.Radiate => RenderRadiate(parameters, rows, columns),
             StudioEffectKind.ChromaFile => RenderChromaFile(parameters, rows, columns, time),
+            StudioEffectKind.Preset => RenderPreset(parameters, rows, columns, time, input, state),
             _ => RenderSolid(parameters, rows, columns),
         };
     }

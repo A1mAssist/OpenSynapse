@@ -289,7 +289,7 @@
                 <MenuFlyoutItem local:Localized.Uid="LightingStudioLoad" Click="LoadClick" />
                 <MenuFlyoutItem local:Localized.Uid="LightingStudioSave" Click="SaveClick" />
                 <MenuFlyoutSeparator />
-                <MenuFlyoutItem local:Localized.Uid="LightingStudioImport" Click="ImportChromaClick" />
+                <MenuFlyoutItem local:Localized.Uid="LightingStudioImport" Click="ImportClick" />
                 <MenuFlyoutItem local:Localized.Uid="LightingStudioExport" Click="ExportChromaClick" />
               </MenuFlyout>
             </DropDownButton.Flyout>

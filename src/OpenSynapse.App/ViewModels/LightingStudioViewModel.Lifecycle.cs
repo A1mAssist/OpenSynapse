@@ -9,6 +9,7 @@ public sealed partial class LightingStudioViewModel
         {
             _hidRouter.WriteFailed -= OnOutputWriteFailed;
             _hidRouter.RestoreFailed -= OnHidRestoreFailed;
+            _hidRouter.InputObserved -= OnHidInputObserved;
         }
         if (_argbRouter is not null) _argbRouter.WriteFailed -= OnOutputWriteFailed;
         if (_headsetRouter is not null) _headsetRouter.WriteFailed -= OnOutputWriteFailed;
@@ -33,6 +34,8 @@ public sealed partial class LightingStudioViewModel
         if (_headsetRouter is not null) _ = _headsetRouter.DisposeAsync().AsTask();
         if (_chromaRouter is not null) _ = _chromaRouter.DisposeAsync().AsTask();
         _layerCache.Clear();
+        _previewKeys.Clear();
+        _previewClocks.Clear();
         _loadedMedia.Clear();
         _loadedChroma.Clear();
         _source = null;

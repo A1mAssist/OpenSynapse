@@ -499,7 +499,7 @@ public sealed partial class LightingStudioPage : UserControl
         RenderPreview();
     }
 
-    private async void ImportChromaClick(object sender, RoutedEventArgs e)
+    private async void ImportClick(object sender, RoutedEventArgs e)
     {
         if (_viewModel is null) return;
         var picker = new FileOpenPicker
@@ -507,6 +507,7 @@ public sealed partial class LightingStudioPage : UserControl
             SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
         };
         picker.FileTypeFilter.Add(OpenSynapse.Core.Lighting.StudioChromaFileService.Extension);
+        picker.FileTypeFilter.Add(StudioPresetCodec.Extension);
         picker.FileTypeFilter.Add(".json");
         picker.FileTypeFilter.Add(".zip");
         picker.FileTypeFilter.Add(".xml");
@@ -514,6 +515,16 @@ public sealed partial class LightingStudioPage : UserControl
         var file = await picker.PickSingleFileAsync();
         if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
         {
+            if (string.Equals(System.IO.Path.GetExtension(file.Path), StudioPresetCodec.Extension,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                _viewModel.CommitHistory();
+                await _viewModel.ImportPresetAsync(file.Path);
+                BindInspector();
+                RenderPreview();
+                return;
+            }
+
             ResetCanvasFit();
             var imported = await _viewModel.ImportChromaAsync(file.Path);
             RefreshCanvas();

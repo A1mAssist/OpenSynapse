@@ -151,6 +151,7 @@ public static partial class StudioProjectCodec
             {
                 StudioEffectKind.Radiate => StudioEffectKind.Spectrum,
                 StudioEffectKind.ChromaFile => StudioEffectKind.Solid,
+                StudioEffectKind.Preset => StudioEffectKind.Solid,
                 _ => item.Params.Effect,
             };
             dto.Name = StudioEffectMap.ToName(exportedEffect);
@@ -165,13 +166,14 @@ public static partial class StudioProjectCodec
         if (item.Opacity != 100) { extras.Opacity = item.Opacity; hasExtras = true; }
         if (item.Blend != StudioBlendMode.Normal) { extras.Blend = item.Blend.ToString(); hasExtras = true; }
         if (item.Params.Effect is StudioEffectKind.Gradient or StudioEffectKind.Radiate or
-            StudioEffectKind.ChromaFile)
+            StudioEffectKind.ChromaFile or StudioEffectKind.Preset)
         {
             extras.Effect = item.Params.Effect switch
             {
                 StudioEffectKind.Gradient => "gradient",
                 StudioEffectKind.Radiate => "radiate",
-                _ => "chroma-file",
+                StudioEffectKind.ChromaFile => "chroma-file",
+                _ => "preset",
             };
             hasExtras = true;
         }
@@ -245,6 +247,14 @@ public static partial class StudioProjectCodec
             dto.AudioStyle = p.AudioStyle.ToString().ToLowerInvariant();
         if (p.ReactiveStyle != StudioReactiveStyle.Ripple)
             dto.ReactiveStyle = p.ReactiveStyle.ToString().ToLowerInvariant();
+        if (!string.IsNullOrWhiteSpace(p.Preset)) dto.Preset = p.Preset;
+        var preset = p.PresetDefinition ??
+            (p.Effect == StudioEffectKind.Preset ? StudioPresetCatalog.Default.Find(p.Preset) : null);
+        if (preset is not null)
+        {
+            dto.Preset = preset.Id;
+            dto.PresetDefinition = RawJson(StudioPresetCodec.Serialize(preset));
+        }
         if (p.Blur != 0) dto.Blur = p.Blur;
         if (!string.IsNullOrWhiteSpace(p.MediaSrc)) dto.MediaSrc = p.MediaSrc;
         if (!string.IsNullOrWhiteSpace(p.CurrentConfigJson)) dto.CurrentConfig = RawJson(p.CurrentConfigJson);
@@ -387,6 +397,8 @@ public static partial class StudioProjectCodec
         public string? ScreenMode { get; set; }
         public string? AudioStyle { get; set; }
         public string? ReactiveStyle { get; set; }
+        public string? Preset { get; set; }
+        public JsonElement? PresetDefinition { get; set; }
         public int? Blur { get; set; }
         public string? MediaSrc { get; set; }
         public JsonElement? CurrentConfig { get; set; }

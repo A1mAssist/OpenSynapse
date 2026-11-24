@@ -9,4 +9,8 @@ public readonly record struct StudioSystemInput(
     double? CpuLoad = null,
     double? GpuLoad = null,
     double? BatteryPercent = null,
-    string? ForegroundProcess = null);
+    string? ForegroundProcess = null)
+{
+    /// <summary>Physical memory in use, 0..1; null when unavailable.</summary>
+    public double? MemoryLoad { get; init; }
+}

@@ -4305,4 +4305,194 @@ Nicht gespeicherte Makroänderungen gehen verloren.</value></data>
   <data name="TaskbarStatusClickTitle.Text" xml:space="preserve"><value>App per Klick öffnen</value></data>
   <data name="TaskbarStatusClickDescription.Text" xml:space="preserve"><value>Klicken Sie auf die Statusleiste in der Taskleiste, um das OpenSynapse-Fenster anzuzeigen.</value></data>
   <data name="TaskbarStatusClickToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>App per Klick öffnen</value></data>
+  <data name="LightingStudioEffectPreset" xml:space="preserve"><value>Modulvoreinstellung</value></data>
+  <data name="LightingStudioParamPreset" xml:space="preserve"><value>Voreinstellung</value></data>
+  <data name="LightingStudioPresetCategoryMusic" xml:space="preserve"><value>Musik</value></data>
+  <data name="LightingStudioPresetCategoryReactive" xml:space="preserve"><value>Reaktiv</value></data>
+  <data name="LightingStudioPresetSearch" xml:space="preserve"><value>Voreinstellungen suchen</value></data>
+  <data name="LightingStudioBlendMax" xml:space="preserve"><value>Maximum</value></data>
+  <data name="LightingStudioPresetAddColor" xml:space="preserve"><value>Farbe hinzufügen</value></data>
+  <data name="LightingStudioPresetBars" xml:space="preserve"><value>Spektrumbalken</value></data>
+  <data name="LightingStudioPresetCancel" xml:space="preserve"><value>Abbrechen</value></data>
+  <data name="LightingStudioPresetCircle" xml:space="preserve"><value>Kreis</value></data>
+  <data name="LightingStudioPresetColorPosition" xml:space="preserve"><value>Position des Farbstopps (%)</value></data>
+  <data name="LightingStudioPresetConfirm" xml:space="preserve"><value>OK</value></data>
+  <data name="LightingStudioPresetDiamond" xml:space="preserve"><value>Raute</value></data>
+  <data name="LightingStudioPresetEdit" xml:space="preserve"><value>Voreinstellung bearbeiten</value></data>
+  <data name="LightingStudioPresetExpansion" xml:space="preserve"><value>Ausbreitung (Zellen/s)</value></data>
+  <data name="LightingStudioPresetGlow" xml:space="preserve"><value>Leuchten</value></data>
+  <data name="LightingStudioPresetHold" xml:space="preserve"><value>Leuchten beim Halten beibehalten</value></data>
+  <data name="LightingStudioPresetLayers" xml:space="preserve"><value>Ebenen</value></data>
+  <data name="LightingStudioPresetLifetime" xml:space="preserve"><value>Dauer (s)</value></data>
+  <data name="LightingStudioPresetEmpty" xml:space="preserve"><value>Noch kein Preset importiert. Über „Importieren“ eine .oschroma-Datei laden.</value></data>
+  <data name="LightingStudioPresetMissing" xml:space="preserve"><value>Die Voreinstellung „{0}“ wurde nicht gefunden.</value></data>
+  <data name="LightingStudioPresetPattern" xml:space="preserve"><value>Effekttyp</value></data>
+  <data name="LightingStudioPresetPeaks" xml:space="preserve"><value>Spitzen anzeigen</value></data>
+  <data name="LightingStudioPresetRings" xml:space="preserve"><value>Anzahl der Ringe</value></data>
+  <data name="LightingStudioPresetRipple" xml:space="preserve"><value>Tastenwelle</value></data>
+  <data name="LightingStudioPresetSaveAs" xml:space="preserve"><value>Speichern unter…</value></data>
+  <data name="LightingStudioPresetShape" xml:space="preserve"><value>Wellenform</value></data>
+  <data name="LightingStudioPresetSpacing" xml:space="preserve"><value>Ringabstand (Zellen)</value></data>
+  <data name="LightingStudioModuleParam_amplitude" xml:space="preserve"><value>Amplitude</value></data>
+  <data name="LightingStudioModuleParam_aperture" xml:space="preserve"><value>Öffnung</value></data>
+  <data name="LightingStudioModuleParam_aspect" xml:space="preserve"><value>Seitenverhältnis</value></data>
+  <data name="LightingStudioModuleParam_axis" xml:space="preserve"><value>Achse</value></data>
+  <data name="LightingStudioModuleParam_background" xml:space="preserve"><value>Hintergrundhelligkeit</value></data>
+  <data name="LightingStudioModuleParam_blur" xml:space="preserve"><value>Unschärferadius</value></data>
+  <data name="LightingStudioModuleParam_cellsX" xml:space="preserve"><value>Spalten</value></data>
+  <data name="LightingStudioModuleParam_cellsY" xml:space="preserve"><value>Zeilen</value></data>
+  <data name="LightingStudioModuleParam_centered" xml:space="preserve"><value>Zentriert</value></data>
+  <data name="LightingStudioModuleParam_centers" xml:space="preserve"><value>Anzahl der Mittelpunkte</value></data>
+  <data name="LightingStudioModuleParam_centerX" xml:space="preserve"><value>Mittelpunkt X</value></data>
+  <data name="LightingStudioModuleParam_centerY" xml:space="preserve"><value>Mittelpunkt Y</value></data>
+  <data name="LightingStudioModuleParam_colorFlow" xml:space="preserve"><value>Farbflussgeschwindigkeit</value></data>
+  <data name="LightingStudioModuleParam_colorMode" xml:space="preserve"><value>Farbmodus</value></data>
+  <data name="LightingStudioModuleParam_count" xml:space="preserve"><value>Partikelanzahl</value></data>
+  <data name="LightingStudioModuleParam_cycles" xml:space="preserve"><value>Wellenzyklen</value></data>
+  <data name="LightingStudioModuleParam_decay" xml:space="preserve"><value>Abklingrate</value></data>
+  <data name="LightingStudioModuleParam_delay" xml:space="preserve"><value>Verzögerung (s)</value></data>
+  <data name="LightingStudioModuleParam_density" xml:space="preserve"><value>Dichte</value></data>
+  <data name="LightingStudioModuleParam_direction" xml:space="preserve"><value>Bewegungsrichtung</value></data>
+  <data name="LightingStudioModuleParam_expansion" xml:space="preserve"><value>Ausbreitungsgeschwindigkeit</value></data>
+  <data name="LightingStudioModuleParam_extent" xml:space="preserve"><value>Anzeigebereich</value></data>
+  <data name="LightingStudioModuleParam_fill" xml:space="preserve"><value>Füllstärke</value></data>
+  <data name="LightingStudioModuleParam_flare" xml:space="preserve"><value>Lichtscheinintensität</value></data>
+  <data name="LightingStudioModuleParam_focus" xml:space="preserve"><value>Fokus</value></data>
+  <data name="LightingStudioModuleParam_gain" xml:space="preserve"><value>Verstärkung</value></data>
+  <data name="LightingStudioModuleParam_gamma" xml:space="preserve"><value>Helligkeitskurve</value></data>
+  <data name="LightingStudioModuleParam_gaze" xml:space="preserve"><value>Blickbewegung</value></data>
+  <data name="LightingStudioModuleParam_glow" xml:space="preserve"><value>Leuchtstärke</value></data>
+  <data name="LightingStudioModuleParam_gravity" xml:space="preserve"><value>Schwerkraft</value></data>
+  <data name="LightingStudioModuleParam_halo" xml:space="preserve"><value>Halo-Intensität</value></data>
+  <data name="LightingStudioModuleParam_heartbeat" xml:space="preserve"><value>Herzschlagpuls</value></data>
+  <data name="LightingStudioModuleParam_height" xml:space="preserve"><value>Höhe</value></data>
+  <data name="LightingStudioModuleParam_heightColor" xml:space="preserve"><value>Farbe nach Höhe</value></data>
+  <data name="LightingStudioModuleParam_hold" xml:space="preserve"><value>Beim Halten beibehalten</value></data>
+  <data name="LightingStudioModuleParam_inverse" xml:space="preserve"><value>Helligkeit umkehren</value></data>
+  <data name="LightingStudioModuleParam_jitter" xml:space="preserve"><value>Zitterstärke</value></data>
+  <data name="LightingStudioModuleParam_life" xml:space="preserve"><value>Dauer (s)</value></data>
+  <data name="LightingStudioModuleParam_mapping" xml:space="preserve"><value>Farbzuordnung</value></data>
+  <data name="LightingStudioModuleParam_maxHold" xml:space="preserve"><value>Aufladezeit (s)</value></data>
+  <data name="LightingStudioModuleParam_memory" xml:space="preserve"><value>Nachleuchtdauer</value></data>
+  <data name="LightingStudioModuleParam_metric" xml:space="preserve"><value>Konturform</value></data>
+  <data name="LightingStudioModuleParam_mirror" xml:space="preserve"><value>Spiegeln</value></data>
+  <data name="LightingStudioModuleParam_mode" xml:space="preserve"><value>Modus</value></data>
+  <data name="LightingStudioModuleParam_motion" xml:space="preserve"><value>Bewegung</value></data>
+  <data name="LightingStudioModuleParam_onBeat" xml:space="preserve"><value>Im Takt auslösen</value></data>
+  <data name="LightingStudioModuleParam_origin" xml:space="preserve"><value>Ausgangspunkt</value></data>
+  <data name="LightingStudioModuleParam_path" xml:space="preserve"><value>Pfad</value></data>
+  <data name="LightingStudioModuleParam_peaks" xml:space="preserve"><value>Spitzen anzeigen</value></data>
+  <data name="LightingStudioModuleParam_profile" xml:space="preserve"><value>Profil</value></data>
+  <data name="LightingStudioModuleParam_pupil" xml:space="preserve"><value>Pupillengröße</value></data>
+  <data name="LightingStudioModuleParam_radius" xml:space="preserve"><value>Radius</value></data>
+  <data name="LightingStudioModuleParam_rainbow" xml:space="preserve"><value>Regenbogenfarben</value></data>
+  <data name="LightingStudioModuleParam_randomCenters" xml:space="preserve"><value>Zufällige Mittelpunkte</value></data>
+  <data name="LightingStudioModuleParam_rays" xml:space="preserve"><value>Strahlenanzahl</value></data>
+  <data name="LightingStudioModuleParam_reverse" xml:space="preserve"><value>Umkehren</value></data>
+  <data name="LightingStudioModuleParam_rim" xml:space="preserve"><value>Randbreite</value></data>
+  <data name="LightingStudioModuleParam_rings" xml:space="preserve"><value>Ringanzahl</value></data>
+  <data name="LightingStudioModuleParam_rotation" xml:space="preserve"><value>Drehgeschwindigkeit</value></data>
+  <data name="LightingStudioModuleParam_shape" xml:space="preserve"><value>Form</value></data>
+  <data name="LightingStudioModuleParam_size" xml:space="preserve"><value>Größe</value></data>
+  <data name="LightingStudioModuleParam_smoothing" xml:space="preserve"><value>Glättung</value></data>
+  <data name="LightingStudioModuleParam_softness" xml:space="preserve"><value>Kantenweichheit</value></data>
+  <data name="LightingStudioModuleParam_source" xml:space="preserve"><value>Eingangsquelle</value></data>
+  <data name="LightingStudioModuleParam_spacing" xml:space="preserve"><value>Abstand</value></data>
+  <data name="LightingStudioModuleParam_spin" xml:space="preserve"><value>Rotationsrate</value></data>
+  <data name="LightingStudioModuleParam_spokes" xml:space="preserve"><value>Speichenanzahl</value></data>
+  <data name="LightingStudioModuleParam_stars" xml:space="preserve"><value>Sternenlichtintensität</value></data>
+  <data name="LightingStudioModuleParam_tail" xml:space="preserve"><value>Schweiflänge</value></data>
+  <data name="LightingStudioModuleParam_taper" xml:space="preserve"><value>Verjüngung</value></data>
+  <data name="LightingStudioModuleParam_thickness" xml:space="preserve"><value>Dicke</value></data>
+  <data name="LightingStudioModuleParam_tilt" xml:space="preserve"><value>Neigung</value></data>
+  <data name="LightingStudioModuleParam_topology" xml:space="preserve"><value>Verbindungsmuster</value></data>
+  <data name="LightingStudioModuleParam_travel" xml:space="preserve"><value>Bewegungsgeschwindigkeit</value></data>
+  <data name="LightingStudioModuleParam_twist" xml:space="preserve"><value>Verdrehung</value></data>
+  <data name="LightingStudioModuleParam_velocity" xml:space="preserve"><value>Geschwindigkeit</value></data>
+  <data name="LightingStudioModuleParam_width" xml:space="preserve"><value>Breite</value></data>
+  <data name="LightingStudioModuleParam_window" xml:space="preserve"><value>Erfassungszeitraum (s)</value></data>
+  <data name="LightingStudioModuleParam_x" xml:space="preserve"><value>Horizontale Position</value></data>
+  <data name="LightingStudioModuleParam_y" xml:space="preserve"><value>Vertikale Position</value></data>
+  <data name="LightingStudioModuleValue_age" xml:space="preserve"><value>Nach Alter</value></data>
+  <data name="LightingStudioModuleValue_angle" xml:space="preserve"><value>Winkel</value></data>
+  <data name="LightingStudioModuleValue_arc" xml:space="preserve"><value>Bogen</value></data>
+  <data name="LightingStudioModuleValue_bass" xml:space="preserve"><value>Bass</value></data>
+  <data name="LightingStudioModuleValue_bass-history" xml:space="preserve"><value>Bassverlauf</value></data>
+  <data name="LightingStudioModuleValue_beat" xml:space="preserve"><value>Takt</value></data>
+  <data name="LightingStudioModuleValue_box" xml:space="preserve"><value>Rechteck</value></data>
+  <data name="LightingStudioModuleValue_bubbles" xml:space="preserve"><value>Blasen</value></data>
+  <data name="LightingStudioModuleValue_burn" xml:space="preserve"><value>Brennen</value></data>
+  <data name="LightingStudioModuleValue_burst" xml:space="preserve"><value>Ausbruch</value></data>
+  <data name="LightingStudioModuleValue_cascade" xml:space="preserve"><value>Kaskade</value></data>
+  <data name="LightingStudioModuleValue_center" xml:space="preserve"><value>Mitte</value></data>
+  <data name="LightingStudioModuleValue_chain" xml:space="preserve"><value>Kette</value></data>
+  <data name="LightingStudioModuleValue_chevron" xml:space="preserve"><value>Winkelform</value></data>
+  <data name="LightingStudioModuleValue_circle" xml:space="preserve"><value>Kreis</value></data>
+  <data name="LightingStudioModuleValue_circuit" xml:space="preserve"><value>Schaltkreis</value></data>
+  <data name="LightingStudioModuleValue_column" xml:space="preserve"><value>Spalte</value></data>
+  <data name="LightingStudioModuleValue_combo" xml:space="preserve"><value>Kombo</value></data>
+  <data name="LightingStudioModuleValue_comet" xml:space="preserve"><value>Komet</value></data>
+  <data name="LightingStudioModuleValue_constellation" xml:space="preserve"><value>Sternbild</value></data>
+  <data name="LightingStudioModuleValue_cracks" xml:space="preserve"><value>Risse</value></data>
+  <data name="LightingStudioModuleValue_cross" xml:space="preserve"><value>Kreuz</value></data>
+  <data name="LightingStudioModuleValue_curtain" xml:space="preserve"><value>Lichtvorhang</value></data>
+  <data name="LightingStudioModuleValue_curve" xml:space="preserve"><value>Kurve</value></data>
+  <data name="LightingStudioModuleValue_diffuse" xml:space="preserve"><value>Diffus</value></data>
+  <data name="LightingStudioModuleValue_domino" xml:space="preserve"><value>Domino</value></data>
+  <data name="LightingStudioModuleValue_drop" xml:space="preserve"><value>Fallen</value></data>
+  <data name="LightingStudioModuleValue_dye" xml:space="preserve"><value>Färben</value></data>
+  <data name="LightingStudioModuleValue_edge" xml:space="preserve"><value>Rand</value></data>
+  <data name="LightingStudioModuleValue_energy" xml:space="preserve"><value>Energie</value></data>
+  <data name="LightingStudioModuleValue_envelope" xml:space="preserve"><value>Hüllkurve</value></data>
+  <data name="LightingStudioModuleValue_flame" xml:space="preserve"><value>Flamme</value></data>
+  <data name="LightingStudioModuleValue_flat" xml:space="preserve"><value>Flach</value></data>
+  <data name="LightingStudioModuleValue_flower" xml:space="preserve"><value>Blume</value></data>
+  <data name="LightingStudioModuleValue_full" xml:space="preserve"><value>Vollständig</value></data>
+  <data name="LightingStudioModuleValue_grow" xml:space="preserve"><value>Wachsen</value></data>
+  <data name="LightingStudioModuleValue_halo" xml:space="preserve"><value>Halo</value></data>
+  <data name="LightingStudioModuleValue_heart" xml:space="preserve"><value>Herz</value></data>
+  <data name="LightingStudioModuleValue_heat" xml:space="preserve"><value>Wärme</value></data>
+  <data name="LightingStudioModuleValue_history" xml:space="preserve"><value>Verlauf</value></data>
+  <data name="LightingStudioModuleValue_horizontal" xml:space="preserve"><value>Horizontal</value></data>
+  <data name="LightingStudioModuleValue_ink" xml:space="preserve"><value>Tinte</value></data>
+  <data name="LightingStudioModuleValue_inward" xml:space="preserve"><value>Nach innen</value></data>
+  <data name="LightingStudioModuleValue_jelly" xml:space="preserve"><value>Qualle</value></data>
+  <data name="LightingStudioModuleValue_left" xml:space="preserve"><value>Links</value></data>
+  <data name="LightingStudioModuleValue_lightning" xml:space="preserve"><value>Blitz</value></data>
+  <data name="LightingStudioModuleValue_magnet" xml:space="preserve"><value>Magnet</value></data>
+  <data name="LightingStudioModuleValue_outside" xml:space="preserve"><value>Außen</value></data>
+  <data name="LightingStudioModuleValue_outward" xml:space="preserve"><value>Nach außen</value></data>
+  <data name="LightingStudioModuleValue_perimeter" xml:space="preserve"><value>Umfang</value></data>
+  <data name="LightingStudioModuleValue_point" xml:space="preserve"><value>Punkt</value></data>
+  <data name="LightingStudioModuleValue_polyline" xml:space="preserve"><value>Linienzug</value></data>
+  <data name="LightingStudioModuleValue_position" xml:space="preserve"><value>Nach Position</value></data>
+  <data name="LightingStudioModuleValue_press" xml:space="preserve"><value>Nach Tastendruck</value></data>
+  <data name="LightingStudioModuleValue_prism" xml:space="preserve"><value>Prisma</value></data>
+  <data name="LightingStudioModuleValue_radial" xml:space="preserve"><value>Radial</value></data>
+  <data name="LightingStudioModuleValue_radius" xml:space="preserve"><value>Radius</value></data>
+  <data name="LightingStudioModuleValue_rays" xml:space="preserve"><value>Strahlen</value></data>
+  <data name="LightingStudioModuleValue_right" xml:space="preserve"><value>Rechts</value></data>
+  <data name="LightingStudioModuleValue_ring" xml:space="preserve"><value>Ring</value></data>
+  <data name="LightingStudioModuleValue_row" xml:space="preserve"><value>Zeile</value></data>
+  <data name="LightingStudioModuleValue_scatter" xml:space="preserve"><value>Verteilte Farben</value></data>
+  <data name="LightingStudioModuleValue_shaft" xml:space="preserve"><value>Schaft</value></data>
+  <data name="LightingStudioModuleValue_shock" xml:space="preserve"><value>Stoß</value></data>
+  <data name="LightingStudioModuleValue_sine" xml:space="preserve"><value>Sinus</value></data>
+  <data name="LightingStudioModuleValue_snow" xml:space="preserve"><value>Schnee</value></data>
+  <data name="LightingStudioModuleValue_sonar" xml:space="preserve"><value>Sonar</value></data>
+  <data name="LightingStudioModuleValue_spectrum" xml:space="preserve"><value>Spektrum</value></data>
+  <data name="LightingStudioModuleValue_speed" xml:space="preserve"><value>Tippgeschwindigkeit</value></data>
+  <data name="LightingStudioModuleValue_splash" xml:space="preserve"><value>Spritzer</value></data>
+  <data name="LightingStudioModuleValue_spot" xml:space="preserve"><value>Spotlicht</value></data>
+  <data name="LightingStudioModuleValue_static" xml:space="preserve"><value>Statisch</value></data>
+  <data name="LightingStudioModuleValue_stripe" xml:space="preserve"><value>Streifen</value></data>
+  <data name="LightingStudioModuleValue_vertical" xml:space="preserve"><value>Vertikal</value></data>
+  <data name="LightingStudioModuleValue_volcano" xml:space="preserve"><value>Vulkan</value></data>
+  <data name="LightingStudioModuleValue_volume" xml:space="preserve"><value>Lautstärke</value></data>
+  <data name="LightingStudioModuleValue_wake" xml:space="preserve"><value>Nachlauf</value></data>
+  <data name="LightingStudioModuleValue_warp" xml:space="preserve"><value>Verzerrung</value></data>
+  <data name="LightingStudioModuleValue_waveform" xml:space="preserve"><value>Wellenform</value></data>
+  <data name="LightingStudioModuleValue_white" xml:space="preserve"><value>Weiß</value></data>
+  <data name="LightingStudioModuleValue_alternate" xml:space="preserve"><value>Pro Taktschlag wechseln</value></data>
+  <data name="LightingStudioModuleValue_waves" xml:space="preserve"><value>Kontinuierliche Schallwellen</value></data>
 </root>

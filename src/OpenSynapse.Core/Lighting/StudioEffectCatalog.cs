@@ -30,6 +30,7 @@ public enum StudioParameterField
     ScreenMode,
     AudioStyle,
     ReactiveStyle,
+    Preset,
     Blur,
     MediaSrc,
     GenerateConfig,
@@ -130,6 +131,8 @@ public static class StudioEffectCatalog
         parameters.ScreenMode = defaults.ScreenMode;
         parameters.AudioStyle = defaults.AudioStyle;
         parameters.ReactiveStyle = defaults.ReactiveStyle;
+        parameters.Preset = defaults.Preset;
+        parameters.PresetDefinition = null;
         parameters.ColorStopsCustom = defaults.ColorStopsCustom;
 
         parameters.ColorStops.Clear();
@@ -242,6 +245,9 @@ public static class StudioEffectCatalog
                 parameters.PlaybackStart = StudioPlaybackStart.OnPress;
                 parameters.PlaybackEnd = StudioPlaybackEnd.After;
                 parameters.Cycles = 1;
+                break;
+            case StudioEffectKind.Preset:
+                parameters.Preset = string.Empty;
                 break;
         }
 
@@ -392,6 +398,10 @@ public static class StudioEffectCatalog
                 (PlaybackStart, Choice(0)),
                 (PlaybackEnd, Choice(0)),
                 (Cycles, new StudioParameterRange(-1, 100, 1, -1)))),
+
+        Describe(StudioEffectKind.Preset,
+            Fields(Preset),
+            Ranges()),
     ];
 
     private static StudioEffectDescriptor Describe(
