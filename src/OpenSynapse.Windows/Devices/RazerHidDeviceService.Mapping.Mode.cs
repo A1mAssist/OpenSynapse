@@ -45,6 +45,28 @@ public sealed partial class RazerHidDeviceService
             }
             else
             {
+                // 02CF cannot report its mode, so an interrupted save can leave it in
+                // driver mode and every OBM read then fails until the app restarts.
+                // Put it back blind before a read unless the private-key runtime owns it.
+                if (depth == 1 && normalModeRead &&
+                    !RazerDeviceModeOwnership.IsDriverModeHeld(connection.Definition.ProductId))
+                {
+                    try
+                    {
+                        await SetMappingDeviceModeAsync(
+                            connection, RazerHidStandardProtocol.NormalDeviceMode,
+                            cancellationToken, verify: false)
+                            .ConfigureAwait(false);
+                    }
+                    catch (Exception exception) when (
+                        exception is InvalidDataException or NotSupportedException or
+                            RazerCommandRejectedException or RazerDeviceTimeoutException)
+                    {
+                        WriteDiagnostic(connection.Definition.ProductId,
+                            $"mapping normal mode restore before read failed: {exception.Message}");
+                    }
+                }
+
                 await action(cancellationToken).ConfigureAwait(false);
             }
         }
