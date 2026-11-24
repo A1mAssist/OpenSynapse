@@ -25,6 +25,7 @@ public sealed partial class SettingsPage
             ViewModel.BlackSharkDevices.CollectionChanged += OnTaskbarBatterySourcesChanged;
             ViewModel.BleDevices.CollectionChanged += OnTaskbarBatterySourcesChanged;
             ViewModel.AwBleHeadsetDevices.CollectionChanged += OnTaskbarBatterySourcesChanged;
+            ViewModel.ApBleHeadsetDevices.CollectionChanged += OnTaskbarBatterySourcesChanged;
         }
         RefreshTaskbarBatteryChoices();
     }
@@ -44,6 +45,7 @@ public sealed partial class SettingsPage
             viewModel.BlackSharkDevices.CollectionChanged -= OnTaskbarBatterySourcesChanged;
             viewModel.BleDevices.CollectionChanged -= OnTaskbarBatterySourcesChanged;
             viewModel.AwBleHeadsetDevices.CollectionChanged -= OnTaskbarBatterySourcesChanged;
+            viewModel.ApBleHeadsetDevices.CollectionChanged -= OnTaskbarBatterySourcesChanged;
         }
         ObserveTaskbarBatteryRows([]);
         TaskbarBatteryChoices.ItemsSource = null;
