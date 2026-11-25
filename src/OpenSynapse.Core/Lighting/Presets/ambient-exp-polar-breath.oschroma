@@ -1,0 +1,51 @@
+{
+  "format": "opensynapse-chroma",
+  "version": 1,
+  "id": "ambient-exp-polar-breath",
+  "name": "极光呼吸",
+  "kind": "ambient",
+  "category": "流场幻境",
+  "note": "发光帷幕一层层垂落，所有灯点一起缓慢明灭；青绿、紫、品红三段颜色互相渗透。",
+  "layers": [
+    {
+      "module": "ambient.flow",
+      "blend": "normal",
+      "opacity": 1.0,
+      "speed": 1.0,
+      "params": {
+        "mode": "aurora",
+        "frequency": 1.8,
+        "speed": 0.14,
+        "warp": 0.9,
+        "seed": 11
+      },
+      "palette": {
+        "stops": [
+          "#00FF88",
+          "#00CFFF",
+          "#8A2BE2",
+          "#FF4FD8"
+        ]
+      }
+    },
+    {
+      "module": "ambient.field",
+      "blend": "add",
+      "opacity": 0.32,
+      "speed": 1.0,
+      "params": {
+        "mode": "pulse",
+        "speed": 0.12,
+        "floor": 0.04
+      },
+      "palette": {
+        "stops": [
+          "#00FF88",
+          "#00CFFF",
+          "#8A2BE2",
+          "#FF4FD8"
+        ]
+      }
+    }
+  ]
+}

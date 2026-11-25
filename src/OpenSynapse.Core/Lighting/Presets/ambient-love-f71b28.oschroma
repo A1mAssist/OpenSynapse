@@ -1,0 +1,47 @@
+{
+  "format": "opensynapse-chroma",
+  "version": 1,
+  "id": "ambient-love-f71b28",
+  "name": "搏动红心",
+  "kind": "ambient",
+  "category": "浪漫爱心",
+  "note": "心形轮廓在灯区中央浮现，光晕从中心向外层层展开；以红色铺满灯区。",
+  "layers": [
+    {
+      "module": "ambient.mask",
+      "blend": "add",
+      "opacity": 1.0,
+      "speed": 1.0,
+      "params": {
+        "shape": "heart",
+        "scale": 0.92,
+        "fill": 1,
+        "pulse": 0.65,
+        "speed": 1.7,
+        "glow": 0.15
+      },
+      "palette": {
+        "stops": [
+          "#54030D",
+          "#EF0926"
+        ]
+      }
+    },
+    {
+      "module": "ambient.field",
+      "blend": "add",
+      "opacity": 0.22,
+      "speed": 1.0,
+      "params": {
+        "mode": "radial",
+        "speed": 0.65
+      },
+      "palette": {
+        "stops": [
+          "#54030D",
+          "#EF0926"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "format": "opensynapse-chroma",
+  "version": 1,
+  "id": "screen-add-viewfinder",
+  "name": "取景窗",
+  "kind": "screen",
+  "category": "屏幕取色",
+  "note": "只取屏幕中央 80% 的画面，四边留一点暗边，适合把桌面内容收进键区。",
+  "layers": [
+    {
+      "module": "screen.follow",
+      "blend": "normal",
+      "opacity": 1.0,
+      "speed": 1.0,
+      "palette": "white",
+      "params": {
+        "x": 0.1,
+        "y": 0.1,
+        "width": 0.8,
+        "height": 0.8,
+        "blur": 2
+      }
+    }
+  ]
+}

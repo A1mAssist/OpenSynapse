@@ -1,0 +1,33 @@
+{
+  "format": "opensynapse-chroma",
+  "version": 1,
+  "id": "ambient-breathe-cdf2f4",
+  "name": "虹膜开合",
+  "kind": "ambient",
+  "category": "呼吸律动",
+  "note": "亮度像胸腔一样一张一收；红、橙、黄、绿、青、蓝、紫依次过渡。",
+  "layers": [
+    {
+      "module": "ambient.field",
+      "blend": "normal",
+      "opacity": 1.0,
+      "speed": 1.0,
+      "params": {
+        "mode": "pulse",
+        "speed": 0.2,
+        "floor": 0.05
+      },
+      "palette": {
+        "stops": [
+          "#FF0000",
+          "#FFCC00",
+          "#36FF48",
+          "#62F1FF",
+          "#000CFF",
+          "#8000FF",
+          "#FF0000"
+        ]
+      }
+    }
+  ]
+}

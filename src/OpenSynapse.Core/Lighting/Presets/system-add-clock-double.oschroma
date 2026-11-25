@@ -1,0 +1,43 @@
+{
+  "format": "opensynapse-chroma",
+  "version": 1,
+  "id": "system-add-clock-double",
+  "name": "双线时钟",
+  "kind": "system",
+  "category": "系统状态",
+  "note": "在小时与工作时段两条进度条外，再叠一圈细白框和一圈金色内框。",
+  "layers": [
+    {
+      "module": "system.time-progress",
+      "blend": "max",
+      "opacity": 1.0,
+      "speed": 1.0,
+      "palette": "ice",
+      "params": {}
+    },
+    {
+      "module": "ambient.mask",
+      "blend": "add",
+      "opacity": 0.6,
+      "speed": 1.0,
+      "palette": "white",
+      "params": {
+        "shape": "frame",
+        "thickness": 0.12,
+        "fill": 0
+      }
+    },
+    {
+      "module": "ambient.mask",
+      "blend": "add",
+      "opacity": 0.85,
+      "speed": 1.0,
+      "palette": "gold",
+      "params": {
+        "shape": "frame",
+        "thickness": 0.03,
+        "fill": 0
+      }
+    }
+  ]
+}

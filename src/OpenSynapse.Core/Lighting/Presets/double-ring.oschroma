@@ -1,0 +1,32 @@
+{
+  "format": "opensynapse-chroma",
+  "version": 1,
+  "id": "double-ring",
+  "name": "双圈先后",
+  "kind": "reactive",
+  "category": "波纹扩散",
+  "note": "按键落点向外推开 2 圈波纹；红、橙、黄、绿、青、蓝、紫依次过渡。",
+  "layers": [
+    {
+      "module": "key.ripple",
+      "blend": "max",
+      "opacity": 1.0,
+      "speed": 1.0,
+      "palette": {
+        "stops": [
+          "#FF0000",
+          "#FFCC00",
+          "#36FF48",
+          "#62F1FF",
+          "#000CFF",
+          "#8000FF",
+          "#FF0000"
+        ]
+      },
+      "params": {
+        "rings": 2,
+        "shape": "circle"
+      }
+    }
+  ]
+}

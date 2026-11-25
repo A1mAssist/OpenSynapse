@@ -1,0 +1,25 @@
+{
+  "format": "opensynapse-chroma",
+  "version": 1,
+  "id": "key-add-comet-fall",
+  "name": "彗尾坠落",
+  "kind": "reactive",
+  "category": "光迹拓扑",
+  "note": "亮点头部沿水平方向掠过，后方拖着逐渐消失的长尾。",
+  "layers": [
+    {
+      "module": "key.sweep",
+      "blend": "max",
+      "opacity": 1.0,
+      "speed": 1.0,
+      "palette": "sunset",
+      "params": {
+        "motion": "comet",
+        "velocity": 10,
+        "tail": 4,
+        "life": 1.8,
+        "colorMode": "age"
+      }
+    }
+  ]
+}

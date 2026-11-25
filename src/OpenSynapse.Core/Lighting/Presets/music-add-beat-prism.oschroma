@@ -1,0 +1,40 @@
+{
+  "format": "opensynapse-chroma",
+  "version": 1,
+  "id": "music-add-beat-prism",
+  "name": "节拍棱镜",
+  "kind": "music",
+  "category": "频谱建筑",
+  "note": "频谱被压成中央棱镜，鼓点把棱镜边缘整个点亮。",
+  "layers": [
+    {
+      "module": "music.spectrum",
+      "blend": "max",
+      "opacity": 1.0,
+      "speed": 1.0,
+      "palette": "neon",
+      "params": {
+        "axis": "vertical",
+        "origin": "center",
+        "source": "spectrum",
+        "profile": "prism",
+        "mirror": true,
+        "peaks": true,
+        "softness": 0.035,
+        "smoothing": 0.1,
+        "colorFlow": 0.06
+      }
+    },
+    {
+      "module": "music.field",
+      "blend": "add",
+      "opacity": 0.18,
+      "speed": 1.0,
+      "palette": "neon",
+      "params": {
+        "source": "beat",
+        "gamma": 1.2
+      }
+    }
+  ]
+}

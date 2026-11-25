@@ -1,0 +1,31 @@
+{
+  "format": "opensynapse-chroma",
+  "version": 1,
+  "id": "music-add-aurora-ladder",
+  "name": "极光阶梯",
+  "kind": "music",
+  "category": "频谱建筑",
+  "note": "左右镜像的频谱被拉成弯阶；低频托住底边，高频把台阶推高，青绿到紫红沿阶流动。",
+  "layers": [
+    {
+      "module": "music.spectrum",
+      "blend": "max",
+      "opacity": 1.0,
+      "speed": 1.0,
+      "palette": "aurora",
+      "params": {
+        "axis": "vertical",
+        "origin": "edge",
+        "source": "spectrum",
+        "profile": "curve",
+        "mirror": true,
+        "peaks": true,
+        "softness": 0.03,
+        "smoothing": 0.15,
+        "jitter": 0.03,
+        "tilt": 0.35,
+        "colorFlow": 0.06
+      }
+    }
+  ]
+}

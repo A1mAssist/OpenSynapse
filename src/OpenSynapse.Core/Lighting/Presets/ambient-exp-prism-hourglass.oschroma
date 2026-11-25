@@ -1,0 +1,53 @@
+{
+  "format": "opensynapse-chroma",
+  "version": 1,
+  "id": "ambient-exp-prism-hourglass",
+  "name": "棱镜沙漏",
+  "kind": "ambient",
+  "category": "万花棱镜",
+  "note": "多边形轮廓缓慢旋转，三角光块在板面上回弹；玫红打底，蓝紫和黄穿插其间。",
+  "layers": [
+    {
+      "module": "ambient.geometry",
+      "blend": "normal",
+      "opacity": 1.0,
+      "speed": 1.0,
+      "params": {
+        "mode": "polygon",
+        "frequency": 2.1,
+        "sides": 6,
+        "speed": 0.14,
+        "rotation": 90,
+        "seed": 89
+      },
+      "palette": {
+        "stops": [
+          "#FFB3C7",
+          "#B8E0FF",
+          "#D9C2FF",
+          "#FFF1B8"
+        ]
+      }
+    },
+    {
+      "module": "ambient.mask",
+      "blend": "add",
+      "opacity": 0.6,
+      "speed": 1.0,
+      "params": {
+        "shape": "triangle",
+        "scale": 0.8,
+        "thickness": 0.05,
+        "fill": 0.12
+      },
+      "palette": {
+        "stops": [
+          "#FFB3C7",
+          "#B8E0FF",
+          "#D9C2FF",
+          "#FFF1B8"
+        ]
+      }
+    }
+  ]
+}

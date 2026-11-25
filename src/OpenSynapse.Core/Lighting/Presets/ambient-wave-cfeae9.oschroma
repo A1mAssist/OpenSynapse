@@ -1,0 +1,30 @@
+{
+  "format": "opensynapse-chroma",
+  "version": 1,
+  "id": "ambient-wave-cfeae9",
+  "name": "霓虹跑马",
+  "kind": "ambient",
+  "category": "流动波浪",
+  "note": "亮边沿外框循环奔跑；品红、青、黄绿三段颜色互相渗透。",
+  "layers": [
+    {
+      "module": "ambient.field",
+      "blend": "normal",
+      "opacity": 1.0,
+      "speed": 1.0,
+      "params": {
+        "mode": "border",
+        "speed": 0.5,
+        "softness": 0.12,
+        "flow": 0.5
+      },
+      "palette": {
+        "stops": [
+          "#FF00E5",
+          "#00FFF0",
+          "#9DFF00"
+        ]
+      }
+    }
+  ]
+}

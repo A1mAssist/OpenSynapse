@@ -1,0 +1,51 @@
+{
+  "format": "opensynapse-chroma",
+  "version": 1,
+  "id": "ambient-scene-0f7dc8",
+  "name": "熔岩地表",
+  "kind": "ambient",
+  "category": "自然风景",
+  "note": "细密噪点像雾一样漂移，暖色火星从底部升起；红与黄相互映衬。",
+  "layers": [
+    {
+      "module": "ambient.field",
+      "blend": "normal",
+      "opacity": 1.0,
+      "speed": 1.0,
+      "params": {
+        "mode": "noise",
+        "speed": 0.06,
+        "frequency": 1.8,
+        "contrast": 1.5
+      },
+      "palette": {
+        "stops": [
+          "#2A0000",
+          "#FF2A00",
+          "#FFB000",
+          "#FFF2A8"
+        ]
+      }
+    },
+    {
+      "module": "ambient.particles",
+      "blend": "add",
+      "opacity": 0.65,
+      "speed": 1.0,
+      "params": {
+        "mode": "embers",
+        "count": 36,
+        "speed": 0.45,
+        "size": 1.2
+      },
+      "palette": {
+        "stops": [
+          "#2A0000",
+          "#FF2A00",
+          "#FFB000",
+          "#FFF2A8"
+        ]
+      }
+    }
+  ]
+}
