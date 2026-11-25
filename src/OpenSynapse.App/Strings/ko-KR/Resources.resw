@@ -3574,6 +3574,12 @@
   <data name="LightingStudioSceneDeepEcho" xml:space="preserve"><value>딥 에코</value></data>
   <data name="LightingStudioSceneLavaPulse" xml:space="preserve"><value>라바 펄스</value></data>
   <data name="LightingStudioScenePrismSweep" xml:space="preserve"><value>프리즘 스윕</value></data>
+<data name="LightingStudioSceneAuroraDesc" xml:space="preserve"><value>청록 오로라 커튼이 천천히 밝아졌다 어두워진다</value></data>
+<data name="LightingStudioSceneHeartbeatDesc" xml:space="preserve"><value>하트 모양 빛이 0.67초마다 뛴다</value></data>
+<data name="LightingStudioSceneNeonChaseDesc" xml:space="preserve"><value>테두리를 도는 빛과 가로로 지나가는 빛띠</value></data>
+<data name="LightingStudioSceneDeepEchoDesc" xml:space="preserve"><value>짙은 남색 위로 청록 물결이 퍼진다</value></data>
+<data name="LightingStudioSceneLavaPulseDesc" xml:space="preserve"><value>불티가 솟아오르고 용암이 맥동한다</value></data>
+<data name="LightingStudioScenePrismSweepDesc" xml:space="preserve"><value>회전하는 다각형 위로 무지개 빛이 스친다</value></data>
   <data name="LightingStudioDeviceSummary" xml:space="preserve"><value>전체 장치: {0} · 단일 영역: {1}</value></data>
   <data name="LightingStudioStatusSceneSelected" xml:space="preserve"><value>장면 {0} 미리 보기 중. 적용하면 장치로 전송됩니다.</value></data>
   <data name="LightingStudioStatusSceneEditing" xml:space="preserve"><value>{0}을(를) 저장되지 않은 프로필로 열었습니다.</value></data>

@@ -20,8 +20,7 @@ public static class StudioSceneCatalog
     [
         Scene(
             "aurora-breathing",
-            "LightingStudioSceneAurora",
-            60,
+            "LightingStudioSceneAurora", "LightingStudioSceneAuroraDesc",
             // Aurora curtains drift across the board; a wide glow keeps the pulse readable on small strips.
             Breathing("#00FF88", "#8A2BE2", "b6e4c66e-0c1f-4a43-9a7b-0f1f0a8f5c02",
                 durationMs: 28_000, opacity: 12, blend: StudioBlendMode.Screen),
@@ -29,17 +28,15 @@ public static class StudioSceneCatalog
                 "#00FF88", "#8A2BE2")),
         Scene(
             "heartbeat",
-            "LightingStudioSceneHeartbeat",
-            90,
-            // Heart mask plus a 90 bpm pulse; breathing halves its cycle, so 2 * 666 ms.
+            "LightingStudioSceneHeartbeat", "LightingStudioSceneHeartbeatDesc",
+            // Heart mask plus a beat; breathing halves its cycle, so 1333 ms is a 0.67 s thump.
             Breathing("#FF2B4D", "#5A0010", "b6e4c66e-0c1f-4a43-9a7b-0f1f0a8f5c04",
                 durationMs: 1_333, opacity: 22, blend: StudioBlendMode.Screen),
             Preset("ambient-love-f71b28", "b6e4c66e-0c1f-4a43-9a7b-0f1f0a8f5c03",
                 "#EF0926", "#54030D")),
         Scene(
             "neon-chase",
-            "LightingStudioSceneNeonChase",
-            120,
+            "LightingStudioSceneNeonChase", "LightingStudioSceneNeonChaseDesc",
             // Border mode needs edges; a dim bed keeps single-zone and short strips from going dark.
             Solid("#22003A", "b6e4c66e-0c1f-4a43-9a7b-0f1f0a8f5c0d", opacity: 30, blend: StudioBlendMode.Add,
                 secondary: "#00FFF0"),
@@ -50,8 +47,7 @@ public static class StudioSceneCatalog
                 "#FF00E5", "#00FFF0")),
         Scene(
             "deep-echo",
-            "LightingStudioSceneDeepEcho",
-            60,
+            "LightingStudioSceneDeepEcho", "LightingStudioSceneDeepEchoDesc",
             // No bundled preset carries this one: a navy bed, a slow wide swell, and a 12 s breath.
             Breathing("#00E5D0", "#003F5C", "b6e4c66e-0c1f-4a43-9a7b-0f1f0a8f5c08",
                 durationMs: 12_000, opacity: 20, blend: StudioBlendMode.Screen),
@@ -62,8 +58,7 @@ public static class StudioSceneCatalog
                 blend: StudioBlendMode.Normal, secondary: "#00E5D0")),
         Scene(
             "lava-pulse",
-            "LightingStudioSceneLavaPulse",
-            100,
+            "LightingStudioSceneLavaPulse", "LightingStudioSceneLavaPulseDesc",
             // The ember field breathes with a slow fire pulse.
             Breathing("#FF2A00", "#FFB000", "b6e4c66e-0c1f-4a43-9a7b-0f1f0a8f5c0a",
                 durationMs: 1_200, opacity: 18, blend: StudioBlendMode.Screen),
@@ -71,8 +66,7 @@ public static class StudioSceneCatalog
                 "#FF2A00", "#FFB000")),
         Scene(
             "prism-sweep",
-            "LightingStudioScenePrismSweep",
-            80,
+            "LightingStudioScenePrismSweep", "LightingStudioScenePrismSweepDesc",
             Solid("#2A0A3C", "b6e4c66e-0c1f-4a43-9a7b-0f1f0a8f5c0e", opacity: 26, blend: StudioBlendMode.Add,
                 secondary: "#B8E0FF"),
             Wave("#000000", "#000000", "b6e4c66e-0c1f-4a43-9a7b-0f1f0a8f5c0c",
@@ -88,8 +82,9 @@ public static class StudioSceneCatalog
             ? null
             : All.FirstOrDefault(scene => string.Equals(scene.Id, id, StringComparison.OrdinalIgnoreCase));
 
-    private static StudioScene Scene(string id, string nameKey, int bpm, params StudioSceneLayer[] layers) =>
-        new(id, nameKey, bpm, layers);
+    private static StudioScene Scene(string id, string nameKey, string descriptionKey,
+        params StudioSceneLayer[] layers) =>
+        new(id, nameKey, descriptionKey, layers);
 
     private static StudioSceneLayer Preset(string presetId, string timebaseId, string primary, string secondary) =>
         Layer(StudioEffectKind.Preset, StudioRgb.FromHex(primary), StudioRgb.FromHex(secondary), timebaseId,

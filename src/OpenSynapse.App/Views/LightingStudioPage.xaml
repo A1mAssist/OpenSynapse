@@ -319,7 +319,7 @@
               </ListView.ItemContainerStyle>
               <ListView.ItemTemplate>
                 <DataTemplate>
-                  <Button Click="SceneCardClick" Margin="0,0,0,6" Padding="0"
+                  <Button Click="SceneCardClick" Margin="0,0,0,4" Padding="0"
                           HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
                           Background="Transparent" BorderThickness="0"
                           AutomationProperties.AutomationId="{Binding AutomationId}">
@@ -336,7 +336,9 @@
                           <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold"
                                      Foreground="{StaticResource DataBrush}" TextTrimming="CharacterEllipsis" />
                           <TextBlock Text="{Binding Detail}" FontSize="11"
-                                     Foreground="{StaticResource MutedBrush}" />
+                                     Foreground="{StaticResource MutedBrush}"
+                                     TextWrapping="Wrap" MaxLines="2"
+                                     TextTrimming="CharacterEllipsis" />
                         </StackPanel>
                         <FontIcon Grid.Column="2" Glyph="&#xE73E;" FontSize="12"
                                   Foreground="{StaticResource AccentBrush}"

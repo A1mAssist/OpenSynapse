@@ -3574,6 +3574,12 @@
   <data name="LightingStudioSceneDeepEcho" xml:space="preserve"><value>ディープエコー</value></data>
   <data name="LightingStudioSceneLavaPulse" xml:space="preserve"><value>ラバパルス</value></data>
   <data name="LightingStudioScenePrismSweep" xml:space="preserve"><value>プリズムスイープ</value></data>
+<data name="LightingStudioSceneAuroraDesc" xml:space="preserve"><value>青緑のオーロラの幕がゆっくり明滅する</value></data>
+<data name="LightingStudioSceneHeartbeatDesc" xml:space="preserve"><value>ハートの光が 0.67 秒ごとに脈打つ</value></data>
+<data name="LightingStudioSceneNeonChaseDesc" xml:space="preserve"><value>外枠を走る光と横切る光の帯</value></data>
+<data name="LightingStudioSceneDeepEchoDesc" xml:space="preserve"><value>深い紺の上を青緑の波が広がる</value></data>
+<data name="LightingStudioSceneLavaPulseDesc" xml:space="preserve"><value>火の粉が立ち上り、溶岩が脈動する</value></data>
+<data name="LightingStudioScenePrismSweepDesc" xml:space="preserve"><value>回転する多角形を虹色の光が横切る</value></data>
   <data name="LightingStudioDeviceSummary" xml:space="preserve"><value>全デバイス: {0} · 単色: {1}</value></data>
   <data name="LightingStudioStatusSceneSelected" xml:space="preserve"><value>シーン {0} をプレビュー中。適用するとデバイスに送信します。</value></data>
   <data name="LightingStudioStatusSceneEditing" xml:space="preserve"><value>{0} を未保存のプロファイルとして開きました。</value></data>

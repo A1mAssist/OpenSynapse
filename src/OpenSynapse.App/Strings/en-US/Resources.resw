@@ -3584,6 +3584,12 @@
   <data name="LightingStudioSceneDeepEcho" xml:space="preserve"><value>Deep Echo</value></data>
   <data name="LightingStudioSceneLavaPulse" xml:space="preserve"><value>Lava Pulse</value></data>
   <data name="LightingStudioScenePrismSweep" xml:space="preserve"><value>Prism Sweep</value></data>
+<data name="LightingStudioSceneAuroraDesc" xml:space="preserve"><value>Teal curtains drift and breathe in and out</value></data>
+<data name="LightingStudioSceneHeartbeatDesc" xml:space="preserve"><value>A heart-shaped glow thumps every 0.67 s</value></data>
+<data name="LightingStudioSceneNeonChaseDesc" xml:space="preserve"><value>A border runner circles under sweeping light bands</value></data>
+<data name="LightingStudioSceneDeepEchoDesc" xml:space="preserve"><value>Teal swells spread outward over deep navy</value></data>
+<data name="LightingStudioSceneLavaPulseDesc" xml:space="preserve"><value>Embers rise while the molten bed pulses</value></data>
+<data name="LightingStudioScenePrismSweepDesc" xml:space="preserve"><value>A rainbow band sweeps across rotating polygons</value></data>
   <data name="LightingStudioDeviceSummary" xml:space="preserve"><value>All devices: {0} · single-zone: {1}</value></data>
   <data name="LightingStudioStatusSceneSelected" xml:space="preserve"><value>Previewing {0}; apply to send it to the devices.</value></data>
   <data name="LightingStudioStatusSceneEditing" xml:space="preserve"><value>{0} opened as an unsaved profile.</value></data>

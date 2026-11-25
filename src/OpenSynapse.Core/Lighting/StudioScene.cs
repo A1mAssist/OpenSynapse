@@ -35,5 +35,5 @@ public sealed record StudioSceneLayer(
 public sealed record StudioScene(
     string Id,
     string NameKey,
-    int Bpm,
+    string DescriptionKey,
     IReadOnlyList<StudioSceneLayer> Layers);

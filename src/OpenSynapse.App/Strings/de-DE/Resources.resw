@@ -3574,6 +3574,12 @@
   <data name="LightingStudioSceneDeepEcho" xml:space="preserve"><value>Tiefes Echo</value></data>
   <data name="LightingStudioSceneLavaPulse" xml:space="preserve"><value>Lava-Puls</value></data>
   <data name="LightingStudioScenePrismSweep" xml:space="preserve"><value>Prismen-Sweep</value></data>
+<data name="LightingStudioSceneAuroraDesc" xml:space="preserve"><value>Türkise Vorhänge driften und atmen langsam</value></data>
+<data name="LightingStudioSceneHeartbeatDesc" xml:space="preserve"><value>Ein Herz aus Licht schlägt alle 0,67 s</value></data>
+<data name="LightingStudioSceneNeonChaseDesc" xml:space="preserve"><value>Licht läuft am Rahmen entlang, Streifen ziehen darüber</value></data>
+<data name="LightingStudioSceneDeepEchoDesc" xml:space="preserve"><value>Türkise Wellen breiten sich auf tiefem Marineblau aus</value></data>
+<data name="LightingStudioSceneLavaPulseDesc" xml:space="preserve"><value>Funken steigen auf, die Lava pulsiert</value></data>
+<data name="LightingStudioScenePrismSweepDesc" xml:space="preserve"><value>Ein Regenbogenband zieht über rotierende Vielecke</value></data>
   <data name="LightingStudioDeviceSummary" xml:space="preserve"><value>Alle Geräte: {0} · Einzonen: {1}</value></data>
   <data name="LightingStudioStatusSceneSelected" xml:space="preserve"><value>Vorschau der Szene {0}; mit Anwenden auf die Geräte übertragen.</value></data>
   <data name="LightingStudioStatusSceneEditing" xml:space="preserve"><value>{0} als ungespeichertes Profil geöffnet.</value></data>

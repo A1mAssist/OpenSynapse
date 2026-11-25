@@ -7613,6 +7613,24 @@
   <data name="LightingStudioScenePrismSweep" xml:space="preserve">
     <value>Призматический взмах</value>
   </data>
+  <data name="LightingStudioSceneAuroraDesc" xml:space="preserve">
+    <value>Бирюзовые занавеси медленно дышат</value>
+  </data>
+  <data name="LightingStudioSceneHeartbeatDesc" xml:space="preserve">
+    <value>Сердце из света бьётся раз в 0,67 с</value>
+  </data>
+  <data name="LightingStudioSceneNeonChaseDesc" xml:space="preserve">
+    <value>Бегущий по рамке свет и поперечные полосы</value>
+  </data>
+  <data name="LightingStudioSceneDeepEchoDesc" xml:space="preserve">
+    <value>Бирюзовые волны расходятся по тёмно-синему</value>
+  </data>
+  <data name="LightingStudioSceneLavaPulseDesc" xml:space="preserve">
+    <value>Искры поднимаются, лава пульсирует</value>
+  </data>
+  <data name="LightingStudioScenePrismSweepDesc" xml:space="preserve">
+    <value>Радужная полоса скользит по вращающимся многоугольникам</value>
+  </data>
   <data name="LightingStudioDeviceSummary" xml:space="preserve">
     <value>Все устройства: {0} · одна зона: {1}</value>
   </data>

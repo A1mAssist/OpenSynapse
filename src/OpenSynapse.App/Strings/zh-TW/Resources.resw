@@ -4010,6 +4010,12 @@
   <data name="LightingStudioSceneDeepEcho" xml:space="preserve"><value>深海回聲</value></data>
   <data name="LightingStudioSceneLavaPulse" xml:space="preserve"><value>熔岩脈衝</value></data>
   <data name="LightingStudioScenePrismSweep" xml:space="preserve"><value>稜鏡掃光</value></data>
+<data name="LightingStudioSceneAuroraDesc" xml:space="preserve"><value>青綠極光帷幕垂落，隨呼吸緩慢明滅</value></data>
+<data name="LightingStudioSceneHeartbeatDesc" xml:space="preserve"><value>心形光暈居中搏動，每 0.67 秒一次</value></data>
+<data name="LightingStudioSceneNeonChaseDesc" xml:space="preserve"><value>外框跑馬繞行，橫向光帶連續掠過</value></data>
+<data name="LightingStudioSceneDeepEchoDesc" xml:space="preserve"><value>深藍底色上，青藍湧浪向外擴散</value></data>
+<data name="LightingStudioSceneLavaPulseDesc" xml:space="preserve"><value>火星從底部升起，熔岩隨脈衝明暗</value></data>
+<data name="LightingStudioScenePrismSweepDesc" xml:space="preserve"><value>旋轉多邊形上，一道彩光斜向掃過</value></data>
   <data name="LightingStudioDeviceSummary" xml:space="preserve"><value>全部裝置 {0} 台 · 單色 {1} 台</value></data>
   <data name="LightingStudioStatusSceneSelected" xml:space="preserve"><value>正在預覽場景「{0}」，點「應用到裝置」下發。</value></data>
   <data name="LightingStudioStatusSceneEditing" xml:space="preserve"><value>「{0}」已作為未儲存的設定開啟。</value></data>

@@ -3574,6 +3574,12 @@
   <data name="LightingStudioSceneDeepEcho" xml:space="preserve"><value>Écho profond</value></data>
   <data name="LightingStudioSceneLavaPulse" xml:space="preserve"><value>Pulsation de lave</value></data>
   <data name="LightingStudioScenePrismSweep" xml:space="preserve"><value>Balayage prisme</value></data>
+<data name="LightingStudioSceneAuroraDesc" xml:space="preserve"><value>Des rideaux turquoise dérivent et respirent lentement</value></data>
+<data name="LightingStudioSceneHeartbeatDesc" xml:space="preserve"><value>Un cœur de lumière bat toutes les 0,67 s</value></data>
+<data name="LightingStudioSceneNeonChaseDesc" xml:space="preserve"><value>La lumière court sur le cadre, des bandes la traversent</value></data>
+<data name="LightingStudioSceneDeepEchoDesc" xml:space="preserve"><value>Des vagues turquoise s'étendent sur un bleu profond</value></data>
+<data name="LightingStudioSceneLavaPulseDesc" xml:space="preserve"><value>Des étincelles montent, la lave pulse</value></data>
+<data name="LightingStudioScenePrismSweepDesc" xml:space="preserve"><value>Un ruban arc-en-ciel balaie des polygones en rotation</value></data>
   <data name="LightingStudioDeviceSummary" xml:space="preserve"><value>Appareils : {0} · zone unique : {1}</value></data>
   <data name="LightingStudioStatusSceneSelected" xml:space="preserve"><value>Aperçu de la scène {0} ; appliquez pour l’envoyer aux appareils.</value></data>
   <data name="LightingStudioStatusSceneEditing" xml:space="preserve"><value>{0} ouvert comme profil non enregistré.</value></data>

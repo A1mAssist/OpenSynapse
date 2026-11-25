@@ -42,7 +42,7 @@ public sealed class StudioSceneCard : INotifyPropertyChanged
 
     public string Title => AppStrings.Text(Scene.NameKey);
 
-    public string Detail => $"BPM {Scene.Bpm}";
+    public string Detail => AppStrings.Text(Scene.DescriptionKey);
 
     public string AutomationId => $"StudioSceneCard_{Scene.Id}";
 
@@ -54,7 +54,11 @@ public sealed class StudioSceneCard : INotifyPropertyChanged
 
     public Visibility CheckVisibility => _selected ? Visibility.Visible : Visibility.Collapsed;
 
-    public void RefreshLocalization() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Title)));
+    public void RefreshLocalization()
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Title)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Detail)));
+    }
 
     internal void SetSelected(bool selected)
     {
