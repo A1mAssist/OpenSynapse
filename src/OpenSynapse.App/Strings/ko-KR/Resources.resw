@@ -3744,7 +3744,7 @@
   <data name="IntroductionV2NavigationBody" xml:space="preserve"><value>사이드바의 장치 페이지에서 마우스, 키보드, Blade 및 헤드셋을 관리합니다. 매크로와 프로필도 사이드바에 있습니다.</value></data>
   <data name="IntroductionV2NavigationBodyLite" xml:space="preserve"><value>사이드바의 장치 페이지에서 모든 주변 장치를 관리합니다. 매크로와 프로필도 사이드바에 있습니다.</value></data>
   <data name="IntroductionV2DevicesTitle" xml:space="preserve"><value>장치 선택</value></data>
-  <data name="IntroductionV2DevicesBody" xml:space="preserve"><value>장치 카드를 선택하여 설정을 여세요. 아무것도 표시되지 않으면 다시 검색을 선택하고 장치가 연결되어 있는지 확인하세요.</value></data>
+  <data name="IntroductionV2DevicesBody" xml:space="preserve"><value>사이드바에서 장치 목록을 펼친 다음 장치를 선택하여 설정을 여세요. 아무것도 표시되지 않으면 다시 검색을 선택하고 장치가 연결되어 있는지 확인하세요.</value></data>
   <data name="IntroductionV2DeviceSettingsTitle" xml:space="preserve"><value>장치 설정</value></data>
   <data name="IntroductionV2MouseBody" xml:space="preserve"><value>여기에서 DPI, 폴링 속도, 조명 및 기타 지원되는 옵션을 조정할 수 있으며 무선 마우스는 배터리 잔량도 표시합니다. 해당 카드에서 저장 또는 적용을 사용하세요. 변경 사항은 자동으로 기록되지 않습니다.</value></data>
   <data name="IntroductionV2KeyboardBody" xml:space="preserve"><value>여기에서 조명, 폴링 속도, 게임 모드 및 기타 지원되는 옵션을 조정할 수 있으며 무선 키보드는 배터리 잔량도 표시합니다. 해당 카드에서 저장 또는 적용을 사용하세요. 변경 사항은 자동으로 기록되지 않습니다.</value></data>

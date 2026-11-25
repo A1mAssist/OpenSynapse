@@ -3754,7 +3754,7 @@
   <data name="IntroductionV2NavigationBody" xml:space="preserve"><value>The Devices page in the sidebar manages mice, keyboards, Blades, and headsets; Macros and Profiles are in the sidebar too.</value></data>
   <data name="IntroductionV2NavigationBodyLite" xml:space="preserve"><value>The Devices page in the sidebar manages every peripheral; Macros and Profiles are in the sidebar too.</value></data>
   <data name="IntroductionV2DevicesTitle" xml:space="preserve"><value>Choose a device</value></data>
-  <data name="IntroductionV2DevicesBody" xml:space="preserve"><value>Select a device card to open its settings. If nothing appears, select Rescan and check that the device is connected.</value></data>
+  <data name="IntroductionV2DevicesBody" xml:space="preserve"><value>Expand Devices in the sidebar and select a device to open its settings. If nothing appears, select Rescan and check that the device is connected.</value></data>
   <data name="IntroductionV2DeviceSettingsTitle" xml:space="preserve"><value>Device settings</value></data>
   <data name="IntroductionV2MouseBody" xml:space="preserve"><value>Adjust DPI, polling rate, lighting, and other supported options here; wireless mice also show battery level. Use Save or Apply on the relevant card; changes are not written automatically.</value></data>
   <data name="IntroductionV2KeyboardBody" xml:space="preserve"><value>Adjust lighting, polling rate, game mode, and other supported options here; wireless keyboards also show battery level. Use Save or Apply on the relevant card; changes are not written automatically.</value></data>

@@ -4182,7 +4182,7 @@
   <data name="IntroductionV2NavigationBodyLite" xml:space="preserve"><value>左側“裝置”管理所有外設；
 宏和設定也在側欄。</value></data>
   <data name="IntroductionV2DevicesTitle" xml:space="preserve"><value>選擇裝置</value></data>
-  <data name="IntroductionV2DevicesBody" xml:space="preserve"><value>點裝置卡片進入設定。
+  <data name="IntroductionV2DevicesBody" xml:space="preserve"><value>展開左側「裝置」，點擊裝置名稱切換設定。
 沒看到裝置就重新探測。</value></data>
   <data name="IntroductionV2DeviceSettingsTitle" xml:space="preserve"><value>裝置設定</value></data>
   <data name="IntroductionV2MouseBody" xml:space="preserve"><value>在這裡調整 DPI、輪詢率、燈光等選項；無線滑鼠還會顯示電量。

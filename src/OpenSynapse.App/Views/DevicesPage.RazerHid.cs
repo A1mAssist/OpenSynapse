@@ -11,37 +11,11 @@ namespace OpenSynapse.App.Views;
 
 public sealed partial class DevicesPage : UserControl
 {
-    private void AdditionalDevicesToggleClick(object sender, RoutedEventArgs e)
-    {
-        var expanded = AdditionalDevicesPanel.Visibility != Visibility.Visible;
-        AdditionalDevicesPanel.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
-        AdditionalDevicesExpandButton.Visibility = expanded ? Visibility.Collapsed : Visibility.Visible;
-        AdditionalDevicesCollapseButton.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
-    }
-
     private void OpenBladeFanCurveWindowClick(object sender, RoutedEventArgs e) =>
         Host.OpenBladeFanCurveWindow();
 
     private void OpenThxAudioWindowClick(object sender, RoutedEventArgs e) =>
         Host.OpenThxAudioWindow();
-
-    private async void ConnectedDeviceCardClick(object sender, RoutedEventArgs e)
-    {
-        if (sender is not ConnectedDeviceCard { DataContext: ConnectedDeviceRowViewModel row })
-        {
-            return;
-        }
-
-        try
-        {
-            await SelectDeviceSourceAsync(row.Source);
-        }
-        catch (OperationCanceledException) when (Lifetime.IsCancellationRequested) { }
-        catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
-        {
-            ViewModel.ReportApplicationError(exception.Message);
-        }
-    }
 
     private void DeviceCardClick(object sender, RoutedEventArgs e)
     {

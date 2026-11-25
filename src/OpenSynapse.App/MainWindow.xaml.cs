@@ -108,6 +108,7 @@ public sealed partial class MainWindow : Window
         _viewModel.Blade.SetPadlessHyperBoostAccepted(_behaviorSettings.PadlessHyperBoostAccepted);
         InitializePageHost();
         InitializeHome();
+        RefreshDeviceNavigation();
         Localized.RefreshTree(RootLayout);
         RootLayout.Loaded += (_, _) =>
         {

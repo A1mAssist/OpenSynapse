@@ -4195,7 +4195,7 @@
   <data name="IntroductionV2NavigationBody" xml:space="preserve"><value>左侧“设备”管理鼠标、键盘、Blade 和耳机；&#10;宏和配置也在侧栏。</value></data>
   <data name="IntroductionV2NavigationBodyLite" xml:space="preserve"><value>左侧“设备”管理所有外设；&#10;宏和配置也在侧栏。</value></data>
   <data name="IntroductionV2DevicesTitle" xml:space="preserve"><value>选择设备</value></data>
-  <data name="IntroductionV2DevicesBody" xml:space="preserve"><value>点设备卡片进入设置。&#10;没看到设备就重新探测。</value></data>
+  <data name="IntroductionV2DevicesBody" xml:space="preserve"><value>展开左侧“设备”，点击设备名称切换设置。&#10;没看到设备就重新探测。</value></data>
   <data name="IntroductionV2DeviceSettingsTitle" xml:space="preserve"><value>设备设置</value></data>
   <data name="IntroductionV2MouseBody" xml:space="preserve"><value>在这里调整 DPI、轮询率、灯光等选项；无线鼠标还会显示电量。&#10;修改后按卡片里的按钮保存，不会自动写入。</value></data>
   <data name="IntroductionV2KeyboardBody" xml:space="preserve"><value>在这里调整灯光、轮询率、游戏模式等选项；无线键盘还会显示电量。&#10;修改后按卡片里的按钮保存，不会自动写入。</value></data>

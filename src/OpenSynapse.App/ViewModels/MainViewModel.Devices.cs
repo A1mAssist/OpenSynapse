@@ -58,11 +58,6 @@ public sealed partial class MainViewModel
             .ThenBy(device => device.Name, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
-    // Four cards fit a 1080p window without hiding the page controls behind "more".
-    public IReadOnlyList<ConnectedDeviceRowViewModel> PrimaryDevices => ConnectedDevices.Take(4).ToArray();
-
-    public IReadOnlyList<ConnectedDeviceRowViewModel> AdditionalDevices => ConnectedDevices.Skip(4).ToArray();
-
     public IReadOnlyList<HomeDeviceOption> HomeDevices => DeviceSelectorItems
         .Select(item => new HomeDeviceOption(item.Name, HomeDeviceIdentity(item), HomeDeviceSource(item), item.IconGlyph))
         .OrderBy(item => item.Source switch
@@ -85,7 +80,10 @@ public sealed partial class MainViewModel
         _ => null,
     };
 
-    private static string HomeDeviceIdentity(DeviceSelectorItemViewModel item) => item.Source switch
+    private static string HomeDeviceIdentity(DeviceSelectorItemViewModel item) =>
+        item.Source is { } source ? DeviceSourceIdentity(source, item.Name) : item.Name;
+
+    internal static string DeviceSourceIdentity(object source, string fallback) => source switch
     {
         DeviceRowViewModel row => row.Id,
         RazerHidDeviceRowViewModel row => row.Connection.InstanceId,
@@ -98,16 +96,11 @@ public sealed partial class MainViewModel
         RazerBleDeviceRowViewModel row => row.Device.Id,
         RazerAwBleHeadsetRowViewModel row => row.Device.Id,
         RazerApBleHeadsetRowViewModel row => row.Device.Id,
-        _ => item.Name,
+        _ => fallback,
     };
 
     public bool CanPairNewDevice =>
         !IsLiteMode && RazerHid.Devices.Any(device => device.CanPairNewDevice);
-
-    public Visibility AdditionalDevicesVisibility =>
-        AdditionalDevices.Count > 0
-            ? Visibility.Visible
-            : Visibility.Collapsed;
 
     private bool _batteryPrimeRunning;
     private bool _batteryPrimeRequested;
@@ -171,14 +164,11 @@ public sealed partial class MainViewModel
     private void RefreshDeviceOverviewVisibility()
     {
         _connectedDevicesCache = null;
-        OnPropertyChanged(nameof(PrimaryDevices));
-        OnPropertyChanged(nameof(AdditionalDevices));
         OnPropertyChanged(nameof(ConnectedDevices));
         OnPropertyChanged(nameof(EmptyStateText));
         OnPropertyChanged(nameof(EmptyStateVisibility));
         Blade.RefreshDeviceOverview();
         Viper.RefreshDeviceRow();
-        OnPropertyChanged(nameof(AdditionalDevicesVisibility));
         OnPropertyChanged(nameof(CanPairNewDevice));
         // Card art comes from the same product-image cache the lighting studio fills.
         ApplyDeviceImages();

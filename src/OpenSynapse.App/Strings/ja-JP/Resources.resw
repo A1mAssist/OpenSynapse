@@ -3744,7 +3744,7 @@
   <data name="IntroductionV2NavigationBody" xml:space="preserve"><value>サイドバーの「デバイス」ページでは、マウス、キーボード、Blade、ヘッドセットを管理できます。マクロとプロファイルもサイドバーにあります。</value></data>
   <data name="IntroductionV2NavigationBodyLite" xml:space="preserve"><value>サイドバーの「デバイス」ページでは、すべての周辺デバイスを管理できます。マクロとプロファイルもサイドバーにあります。</value></data>
   <data name="IntroductionV2DevicesTitle" xml:space="preserve"><value>デバイスを選択</value></data>
-  <data name="IntroductionV2DevicesBody" xml:space="preserve"><value>デバイス カードを選択して設定を開きます。何も表示されない場合は、「再スキャン」を選択し、デバイスが接続されていることを確認してください。</value></data>
+  <data name="IntroductionV2DevicesBody" xml:space="preserve"><value>サイドバーの「デバイス」を展開し、デバイスを選択して設定を開きます。何も表示されない場合は、「再スキャン」を選択し、デバイスが接続されていることを確認してください。</value></data>
   <data name="IntroductionV2DeviceSettingsTitle" xml:space="preserve"><value>デバイス設定</value></data>
   <data name="IntroductionV2MouseBody" xml:space="preserve"><value>ここで DPI、ポーリング レート、ライティング、その他の対応オプションを調整できます。ワイヤレス マウスではバッテリー残量も表示されます。該当するカードの保存または適用を使用してください。変更は自動では書き込まれません。</value></data>
   <data name="IntroductionV2KeyboardBody" xml:space="preserve"><value>ここでライティング、ポーリング レート、ゲーム モード、その他の対応オプションを調整できます。ワイヤレス キーボードではバッテリー残量も表示されます。該当するカードの保存または適用を使用してください。変更は自動では書き込まれません。</value></data>

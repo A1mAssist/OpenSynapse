@@ -70,14 +70,25 @@ public sealed partial class MainWindow
 
     internal void RequestDeviceNavigation(object source)
     {
-        RequestNavigation("devices");
-        _dispatcherQueue.TryEnqueue(async () => await DevicesPage.ShowDeviceAsync(source));
+        _dispatcherQueue.TryEnqueue(() =>
+        {
+            ShowPage("devices");
+            _lightingStudioPage?.OnNavigatedFrom();
+            _settingsPage?.UpdateChromaRestStatusTimer(AppWindow.IsVisible);
+            DevicesNavigationItem.IsExpanded = true;
+            _ = SelectDeviceNavigationAsync(source);
+            RestoreAndActivate();
+        });
     }
 
     private void OnOverviewDeviceRequested(object source) => RequestDeviceNavigation(source);
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
     {
+        if (args.PropertyName == nameof(MainViewModel.ConnectedDevices))
+        {
+            _dispatcherQueue.TryEnqueue(RefreshDeviceNavigation);
+        }
         if (args.PropertyName == nameof(BladeWorkspace.BladeProductId))
         {
             UpdatePerformanceSamplingState();
@@ -199,7 +210,10 @@ public sealed partial class MainWindow
 
     private void NavigationChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
-        var page = (args.SelectedItemContainer as NavigationViewItem)?.Tag as string;
+        if (_syncingDeviceNavigation) return;
+        var selected = args.SelectedItemContainer as NavigationViewItem;
+        var device = selected?.Tag as ConnectedDeviceRowViewModel;
+        var page = device is null ? selected?.Tag as string : "devices";
         if (string.IsNullOrWhiteSpace(page) || PageHost is null)
         {
             return;
@@ -219,6 +233,9 @@ public sealed partial class MainWindow
         }
         if (page == "devices")
         {
+            DevicesNavigationItem.IsExpanded = true;
+            var target = device ?? DefaultNavigationDevice();
+            if (target is not null) _ = SelectDeviceNavigationAsync(target.Source);
             var devices = DevicesPage;
             devices.RefreshAdvancedFeaturesVisibility();
             if (devices.IsBladePanelVisible)

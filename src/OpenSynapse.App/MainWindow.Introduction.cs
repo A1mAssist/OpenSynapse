@@ -115,25 +115,12 @@ public sealed partial class MainWindow
             RootLayout.UpdateLayout();
             if (definition.Kind == IntroductionStepKind.DeviceCards)
             {
-                var cardIndex = 0;
-                if (definition.Device is { } device)
-                {
-                    var cards = _viewModel.PrimaryDevices;
-                    for (var index = 0; index < cards.Count; index++)
-                    {
-                        if (ReferenceEquals(cards[index], device))
-                        {
-                            cardIndex = index;
-                            break;
-                        }
-                    }
-                }
-                // ItemsRepeater virtualizes its children; resolve the real card after layout.
-                target = DevicesPage.DeviceCardsRepeaterElement.TryGetElement(cardIndex) as FrameworkElement
-                    ?? target;
+                target = definition.Device is { } device
+                    ? FindDeviceNavigationItem(device.Source) ?? DevicesNavigationItem
+                    : DevicesNavigationItem;
             }
 
-            if (definition.Kind is IntroductionStepKind.DeviceControls or IntroductionStepKind.DeviceCards)
+            if (definition.Kind == IntroductionStepKind.DeviceControls)
             {
                 DevicesPage.CenterOn(target);
             }
@@ -261,17 +248,14 @@ public sealed partial class MainWindow
                 return DevicesNavigationItem;
             case IntroductionStepKind.DeviceCards:
                 RootNavigationView.SelectedItem = DevicesNavigationItem;
-                DevicesPage.ScrollToTop();
-                return DevicesPage.DeviceCardsRepeaterElement;
+                RootNavigationView.IsPaneOpen = true;
+                DevicesNavigationItem.IsExpanded = true;
+                return DevicesNavigationItem;
             case IntroductionStepKind.DeviceControls:
                 RootNavigationView.SelectedItem = DevicesNavigationItem;
-                if (step.Device is { Category: DeviceCategory.Laptop })
+                if (step.Device is { } device)
                 {
-                    DevicesPage.SelectDevice("blade");
-                }
-                else if (step.Device is { } device)
-                {
-                    await DevicesPage.ShowDeviceAsync(device.Source);
+                    await SelectDeviceNavigationAsync(device.Source);
                 }
 
                 DevicesPage.ScrollToTop();

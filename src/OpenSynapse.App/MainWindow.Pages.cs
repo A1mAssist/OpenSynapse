@@ -304,6 +304,9 @@ public sealed partial class MainWindow
                     overview.DataContext = null;
                     break;
                 case DevicesPage devices:
+                    if (_selectedDeviceKey is { } deviceKey)
+                        _deviceScrollOffsets[deviceKey] = devices.ScrollOffset;
+                    _displayedDeviceSource = null;
                     devices.Shutdown();
                     break;
                 case LightingStudioPage studio:

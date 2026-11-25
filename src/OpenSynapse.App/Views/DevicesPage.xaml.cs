@@ -15,7 +15,6 @@ public sealed partial class DevicesPage : UserControl
     internal MainWindow Host { get; set; } = null!;
 
     internal bool IsBladePanelVisible => BladeDevicePanel.Visibility == Visibility.Visible;
-    internal ItemsRepeater DeviceCardsRepeaterElement => DeviceCardsRepeater;
     internal FrameworkElement ViperAnchor => ViperPollingRateSaveButton;
     internal FrameworkElement IntroductionDeviceAnchor =>
         CurrentDeviceRoute() switch
@@ -28,7 +27,7 @@ public sealed partial class DevicesPage : UserControl
                 : RazerHidDevicePanel,
             "viper" => ViperPollingRateCard,
             "blade" => BladeIntroductionAnchor,
-            _ => DeviceCardsRepeater,
+            _ => DeviceEmptyStateText,
         };
     internal FrameworkElement BladeIntroductionAnchor =>
         BladeIntroductionCard.Visibility == Visibility.Visible
@@ -470,6 +469,15 @@ public sealed partial class DevicesPage : UserControl
 
     internal void ScrollToTop() => PageScrollViewer.ChangeView(
         0, 0, null, disableAnimation: true);
+
+    internal double ScrollOffset => PageScrollViewer.VerticalOffset;
+
+    internal void RestoreScrollOffset(double offset)
+    {
+        PageScrollViewer.UpdateLayout();
+        PageScrollViewer.ChangeView(0, Math.Clamp(offset, 0, PageScrollViewer.ScrollableHeight),
+            null, disableAnimation: true);
+    }
 
     internal void SetLiteMode(bool liteMode)
     {

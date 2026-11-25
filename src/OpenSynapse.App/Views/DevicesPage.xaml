@@ -26,9 +26,6 @@
       <Setter Property="HorizontalContentAlignment" Value="Stretch" />
       <Setter Property="VerticalContentAlignment" Value="Stretch" />
     </Style>
-    <DataTemplate x:Key="ConnectedDeviceCardTemplate">
-      <DevicePanels:ConnectedDeviceCard CardClicked="ConnectedDeviceCardClick" />
-    </DataTemplate>
   </UserControl.Resources>
   <ScrollViewer local:Localized.Uid="A11yDeviceScrollArea" x:Name="PageScrollViewer"
               HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled"
@@ -62,16 +59,7 @@
                     <TextBlock local:Localized.Uid="RazerDriverInstallHint" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
                   </StackPanel>
                 </Border>
-                <StackPanel Spacing="8">
-                <ItemsRepeater x:Name="DeviceCardsRepeater" ItemsSource="{Binding PrimaryDevices}" ItemTemplate="{StaticResource ConnectedDeviceCardTemplate}"><ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout></ItemsRepeater><TextBlock local:Localized.Uid="A11yDeviceProbeStatus" x:Name="DeviceEmptyStateText" Text="{Binding EmptyStateText}" Visibility="{Binding EmptyStateVisibility}" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
-                <StackPanel x:Name="AdditionalDevicesSection" Visibility="{Binding AdditionalDevicesVisibility}" Spacing="0">
-                  <Button local:Localized.Uid="DeviceExpandMore" x:Name="AdditionalDevicesExpandButton" Click="AdditionalDevicesToggleClick" Background="Transparent" BorderThickness="0" Padding="0" MinHeight="28" HorizontalAlignment="Left"><StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE70D;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" Foreground="{StaticResource AccentBrush}" /><TextBlock local:Localized.Uid="DeviceExpandMore" Foreground="{StaticResource AccentBrush}" /></StackPanel></Button>
-                  <StackPanel x:Name="AdditionalDevicesPanel" Visibility="Collapsed" Spacing="8">
-                  <ItemsRepeater ItemsSource="{Binding AdditionalDevices}" ItemTemplate="{StaticResource ConnectedDeviceCardTemplate}"><ItemsRepeater.Layout><StackLayout Spacing="8" /></ItemsRepeater.Layout></ItemsRepeater>
-                  </StackPanel>
-                  <Button local:Localized.Uid="DeviceCollapse" x:Name="AdditionalDevicesCollapseButton" Visibility="Collapsed" Click="AdditionalDevicesToggleClick" Background="Transparent" BorderThickness="0" Padding="0" Margin="0,8,0,0" MinHeight="28" HorizontalAlignment="Left"><StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE70E;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" Foreground="{StaticResource AccentBrush}" /><TextBlock local:Localized.Uid="DeviceCollapse" Foreground="{StaticResource AccentBrush}" /></StackPanel></Button>
-                </StackPanel>
-                </StackPanel>
+                <TextBlock local:Localized.Uid="A11yDeviceProbeStatus" x:Name="DeviceEmptyStateText" Text="{Binding EmptyStateText}" Visibility="{Binding EmptyStateVisibility}" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
                 <StackPanel x:Name="HuePanel" DataContext="{Binding Hue}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                     <StackPanel Spacing="4">
