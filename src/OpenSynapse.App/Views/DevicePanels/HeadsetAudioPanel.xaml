@@ -7,14 +7,11 @@
     xmlns:panels="using:OpenSynapse.App.Views.DevicePanels"
     xmlns:views="using:OpenSynapse.App.Views">
   <StackPanel Spacing="16">
-                  <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="4" ColumnSpacing="12">
-                    <TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" />
-                    <TextBlock Grid.Column="1" Text="{Binding StatusText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
-                    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                       <TextBlock Text="{Binding CategoryText}" Foreground="{StaticResource MutedBrush}" />
-                      <TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                     </StackPanel>
-                    <Button Grid.Row="1" Grid.Column="1" local:Localized.Uid="RazerHeadsetRefreshButton" Click="HeadsetAudioRefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" local:Localized.Uid="RazerHeadsetRefreshButton" Click="HeadsetAudioRefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
                   </Grid>
                   <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
                   <StackPanel Visibility="{Binding RipsawVisibility}">

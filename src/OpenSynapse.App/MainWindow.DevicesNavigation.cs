@@ -90,6 +90,8 @@ public sealed partial class MainWindow
             }
             if (_currentPage == "devices")
             {
+                _devicesPage?.SetDeviceHeader(_displayedDeviceSource is { } displayed
+                    ? FindDeviceNavigationItem(displayed)?.Tag as ConnectedDeviceRowViewModel : null);
                 RootNavigationView.SelectedItem = _displayedDeviceSource is { } source
                     ? FindDeviceNavigationItem(source) ?? DevicesNavigationItem
                     : DevicesNavigationItem;
@@ -133,6 +135,7 @@ public sealed partial class MainWindow
                     {
                         await page.ShowDeviceAsync(source);
                         if (!ReferenceEquals(_devicesPage, page)) return;
+                        page.SetDeviceHeader(FindDeviceNavigationItem(source)?.Tag as ConnectedDeviceRowViewModel);
                         _displayedDeviceSource = source;
                         _selectedDeviceKey = key;
                         page.RestoreScrollOffset(_deviceScrollOffsets.GetValueOrDefault(key));

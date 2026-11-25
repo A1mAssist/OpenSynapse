@@ -472,6 +472,34 @@ public sealed partial class DevicesPage : UserControl
 
     internal double ScrollOffset => PageScrollViewer.VerticalOffset;
 
+    internal void SetDeviceHeader(ConnectedDeviceRowViewModel? device)
+    {
+        DeviceHeader.DataContext = device;
+        DeviceHeader.Visibility = device is null ? Visibility.Collapsed : Visibility.Visible;
+        DeviceEmptyHeader.Visibility = device is null ? Visibility.Visible : Visibility.Collapsed;
+        if (device is null) return;
+        var statusPath = CurrentDeviceRoute() switch
+        {
+            "blade" => "Blade.ProtocolText",
+            "viper" => "Viper.ProtocolText",
+            "hue" => "Hue.DeviceStatusText",
+            "razer-hid" => "RazerHid.SelectedDevice.StatusText",
+            "kraken" => "RazerHid.SelectedKraken.StatusText",
+            "blackshark" => "SelectedBlackShark.StatusText",
+            "headsetaudio" => "Accessories.SelectedHeadsetAudio.StatusText",
+            "keyboard" => "Accessories.SelectedKeyboard.StatusText",
+            "gamepad" => "Accessories.SelectedGamepad.StatusText",
+            "coolingpad" => "CoolingPad.StatusText",
+            "kiyo" => null,
+            "chroma" => "Accessories.SelectedChroma.StatusText",
+            "ble" => null,
+            "awbleheadset" => null,
+            "apbleheadset" => null,
+            _ => null,
+        };
+        DeviceHeader.BindStatus(statusPath is null ? device : ViewModel, statusPath ?? nameof(device.Access));
+    }
+
     internal void RestoreScrollOffset(double offset)
     {
         PageScrollViewer.UpdateLayout();

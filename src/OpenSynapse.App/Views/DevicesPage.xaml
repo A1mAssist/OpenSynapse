@@ -31,7 +31,12 @@
               HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled"
               AutomationProperties.AutomationId="DevicesPageScrollViewer">
               <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
-                <Grid ColumnDefinitions="*,Auto,Auto"><StackPanel Spacing="5"><TextBlock local:Localized.Uid="Loc_E7F68C4BF6" Style="{StaticResource PageTitleStyle}" /><TextBlock local:Localized.Uid="Loc_0053B5D025" Foreground="{StaticResource MutedBrush}" /></StackPanel><Button local:Localized.Uid="Loc_PairNewDevice" Grid.Column="1" Click="PairNewDeviceClick" IsEnabled="{Binding CanPairNewDevice}" Visibility="{Binding CanPairNewDevice, Converter={StaticResource BoolToVisibilityConverter}}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" Margin="0,0,8,0" /><Button local:Localized.Uid="Loc_AB55074471" Grid.Column="2" Click="RefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" /></Grid>
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12" Margin="0,0,0,8">
+                  <TextBlock x:Name="DeviceEmptyHeader" local:Localized.Uid="Loc_E7F68C4BF6" Style="{StaticResource PageTitleStyle}" VerticalAlignment="Center" />
+                  <DevicePanels:ConnectedDeviceHeader x:Name="DeviceHeader" Visibility="Collapsed" />
+                  <Button local:Localized.Uid="Loc_PairNewDevice" Grid.Column="1" Click="PairNewDeviceClick" IsEnabled="{Binding CanPairNewDevice}" Visibility="{Binding CanPairNewDevice, Converter={StaticResource BoolToVisibilityConverter}}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+                  <Button local:Localized.Uid="Loc_AB55074471" Grid.Column="2" Click="RefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+                </Grid>
                 <InfoBar IsOpen="{Binding HasDeviceError}" IsClosable="False" Severity="Warning" Message="{Binding DeviceErrorText}" />
                 <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding RazerDrivers.HasMissing, Converter={StaticResource BoolToVisibilityConverter}}">
                   <StackPanel Spacing="10">
@@ -61,16 +66,7 @@
                 </Border>
                 <TextBlock local:Localized.Uid="A11yDeviceProbeStatus" x:Name="DeviceEmptyStateText" Text="{Binding EmptyStateText}" Visibility="{Binding EmptyStateVisibility}" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
                 <StackPanel x:Name="HuePanel" DataContext="{Binding Hue}" Visibility="Collapsed" Spacing="16">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                    <StackPanel Spacing="4">
-                      <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="HueTitle" Style="{StaticResource PageTitleStyle}" /></StackPanel>
-                      <TextBlock local:Localized.Uid="HueDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="3">
-                      <TextBlock Text="{Binding DeviceStatusText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{Binding StatusBrush}" HorizontalAlignment="Right" />
-                      <TextBlock Text="{Binding DeviceIdentity}" FontFamily="Cascadia Mono,Consolas" FontSize="10" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" HorizontalAlignment="Right" MaxWidth="300" />
-                    </StackPanel>
-                  </Grid>
+                  <TextBlock local:Localized.Uid="HueDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                   <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
                   <Border Style="{StaticResource CardStyle}" Padding="16">
                     <StackPanel Spacing="12">
@@ -114,7 +110,6 @@
                   </Border>
                 </StackPanel>
                 <StackPanel x:Name="RazerHidKrakenPanel" DataContext="{Binding RazerHid.SelectedKraken}" Visibility="Collapsed" Spacing="16">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock Text="{Binding StatusText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="10" Foreground="{StaticResource MutedBrush}" /></StackPanel></Grid>
                   <StackPanel Visibility="{Binding SerialVisibility}" Orientation="Horizontal" Spacing="8"><TextBlock local:Localized.Uid="RazerHidSerialLabel" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding Serial}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /><views:CopyTextButton Text="{Binding Serial}" /></StackPanel>
                   <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
                    <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ControlsVisibility}"><StackPanel Spacing="14"><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="RazerHidKrakenLightingTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel><ComboBox local:Localized.Uid="RazerHidLightingEffect" ItemsSource="{Binding EffectOptions}" SelectedIndex="{Binding SelectedEffectIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" /><Grid RowDefinitions="Auto,Auto" RowSpacing="6" Visibility="{Binding LightingPresetVisibility}"><TextBlock local:Localized.Uid="LightingPresetApplyLabel" Style="{StaticResource MetricLabelStyle}" /><ItemsControl Grid.Row="1" x:Name="KrakenLightingPresets" ItemsSource="{x:Bind LightingPresetOptions}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate><Button Tag="{Binding}" Click="KrakenLightingPresetButtonClick" Style="{StaticResource SecondaryButtonStyle}" Padding="8,5" Margin="0,0,6,0"><StackPanel Orientation="Horizontal" Spacing="6"><StackPanel Orientation="Horizontal" Spacing="2" VerticalAlignment="Center"><Border Width="12" Height="12" CornerRadius="2" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" Background="{Binding PrimaryBrush}" /><Border Width="12" Height="12" CornerRadius="2" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" Background="{Binding SecondaryBrush}" /><Border Width="12" Height="12" CornerRadius="2" BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="1" Background="{Binding TertiaryBrush}" /></StackPanel><TextBlock Text="{Binding Name}" VerticalAlignment="Center" /></StackPanel></Button></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></Grid>
@@ -129,14 +124,11 @@
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding ThxVisibility}"><StackPanel Spacing="12"><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="RazerHeadsetThxTitle" Text="THX Spatial Audio" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel><TextBlock local:Localized.Uid="RazerHeadsetThxDescription" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" /><TextBlock Text="{Binding ThxStatusText}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" /><StackPanel Orientation="Horizontal" Spacing="8"><Button local:Localized.Uid="ThxRefreshButton" Click="RazerHidKrakenRefreshThxClick" Style="{StaticResource SecondaryButtonStyle}" /><Button local:Localized.Uid="RazerHeadsetThxInstallButton" Click="RazerHidKrakenInstallThxClick" Visibility="{Binding ThxInstallerVisibility}" IsEnabled="{Binding CanInstallThx}" Style="{StaticResource PrimaryButtonStyle}" /></StackPanel><controls:DownloadProgressPanel State="{Binding ThxProgress}" /></StackPanel></Border>
                 </StackPanel>
                 <StackPanel x:Name="BlackSharkPanel" DataContext="{Binding SelectedBlackShark}" Visibility="Collapsed" Spacing="16">
-                  <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="4" ColumnSpacing="12">
-                    <TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" />
-                    <TextBlock Grid.Column="1" Text="{Binding StatusText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" />
-                    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                       <TextBlock Text="{Binding CategoryText}" Foreground="{StaticResource MutedBrush}" />
-                      <TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                     </StackPanel>
-                    <Button Grid.Row="1" Grid.Column="1" local:Localized.Uid="BlackSharkRefreshButton" Click="BlackSharkRefreshClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" local:Localized.Uid="BlackSharkRefreshButton" Click="BlackSharkRefreshClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
                   </Grid>
                   <StackPanel Visibility="{Binding SerialVisibility}" Orientation="Horizontal" Spacing="8"><TextBlock local:Localized.Uid="RazerHidSerialLabel" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding Serial}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /><views:CopyTextButton Text="{Binding Serial}" /></StackPanel>
                   <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
@@ -151,14 +143,11 @@
                 </StackPanel>
                 <DevicePanels:HeadsetAudioPanel x:Name="HeadsetAudioPanel" DataContext="{Binding Accessories.SelectedHeadsetAudio}" Visibility="Collapsed" />
                 <StackPanel x:Name="KeyboardPanel" DataContext="{Binding Accessories.SelectedKeyboard}" Visibility="Collapsed" Spacing="16">
-                  <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="4" ColumnSpacing="12">
-                    <TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" />
-                    <TextBlock Grid.Column="1" Text="{Binding StatusText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
-                    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                       <TextBlock Text="{Binding CategoryText}" Foreground="{StaticResource MutedBrush}" />
-                      <TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                     </StackPanel>
-                    <Button Grid.Row="1" Grid.Column="1" local:Localized.Uid="RazerKeyboardRefreshButton" Click="KeyboardRefreshClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" local:Localized.Uid="RazerKeyboardRefreshButton" Click="KeyboardRefreshClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
                   </Grid>
                   <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
                   <TextBlock Text="{Binding OperationStatusText}" Visibility="{Binding OperationStatusVisibility}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
@@ -212,14 +201,11 @@
                     <views:RazerMappingView DataContext="{Binding Mapping}" />
                   </Border>                </StackPanel>
                 <StackPanel x:Name="GamepadPanel" DataContext="{Binding Accessories.SelectedGamepad}" Visibility="Collapsed" Spacing="16">
-                  <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="4" ColumnSpacing="12">
-                    <TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" />
-                    <TextBlock Grid.Column="1" Text="{Binding StatusText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" />
-                    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                       <TextBlock Text="{Binding CategoryText}" Foreground="{StaticResource MutedBrush}" />
-                      <TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                     </StackPanel>
-                    <Button Grid.Row="1" Grid.Column="1" local:Localized.Uid="RazerGamepadRefresh" Click="GamepadRefreshClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" local:Localized.Uid="RazerGamepadRefresh" Click="GamepadRefreshClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
                   </Grid>
                   <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
                   <TextBlock Text="{Binding OperationStatusText}" Visibility="{Binding OperationStatusVisibility}" FontFamily="Cascadia Mono,Consolas" FontSize="10" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
@@ -311,12 +297,9 @@
                 </StackPanel>
                 <StackPanel x:Name="CoolingPadPanel" DataContext="{Binding CoolingPad}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                    <StackPanel Spacing="4">
-                      <TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" />
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                       <TextBlock Text="{Binding CategoryText}" Foreground="{StaticResource MutedBrush}" />
-                      <TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                     </StackPanel>
-                    <TextBlock Grid.Column="1" Text="{Binding StatusText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource AccentBrush}" />
                   </Grid>
                   <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
                   <Border Style="{StaticResource CardStyle}" Padding="16">
@@ -385,7 +368,6 @@
                 </StackPanel>
                 <StackPanel x:Name="KiyoPanel" DataContext="{Binding Kiyo}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                    <StackPanel Spacing="4"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel>
                     <Button Grid.Column="1" local:Localized.Uid="RazerKeyboardRefreshButton" Click="KiyoRefreshClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
                   </Grid>
                   <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
@@ -420,20 +402,13 @@
                   </Border>
                 </StackPanel>
                 <StackPanel x:Name="ChromaPanel" DataContext="{Binding Accessories.SelectedChroma}" Visibility="Collapsed" Spacing="16">
-                  <Grid x:Name="ChromaHeaderGrid" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="4" ColumnSpacing="12">
-                    <TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" />
-                    <TextBlock Grid.Column="1" Text="{Binding StatusText}" VerticalAlignment="Center" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
-                    <StackPanel Grid.Row="1" Spacing="4">
-                      <StackPanel Orientation="Horizontal" Spacing="12">
-                        <TextBlock Text="{Binding CategoryText}" Foreground="{StaticResource MutedBrush}" />
-                        <TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
-                      </StackPanel>
-                      <StackPanel Orientation="Horizontal" Spacing="12">
-                        <TextBlock Text="{Binding BatterySummary}" Visibility="{Binding BatteryVisibility}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
-                        <TextBlock Text="{Binding HardwareSummary}" Visibility="{Binding HardwareVisibility}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
-                      </StackPanel>
+                  <Grid x:Name="ChromaHeaderGrid" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding CategoryText}" Foreground="{StaticResource MutedBrush}" />
+                      <TextBlock Text="{Binding BatterySummary}" Visibility="{Binding BatteryVisibility}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                      <TextBlock Text="{Binding HardwareSummary}" Visibility="{Binding HardwareVisibility}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
                     </StackPanel>
-                    <Button Grid.Row="1" Grid.Column="1" local:Localized.Uid="RazerKeyboardRefreshButton" Click="ChromaRefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" local:Localized.Uid="RazerKeyboardRefreshButton" Click="ChromaRefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
                   </Grid>
                   <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
                   <TextBlock Text="{Binding OperationStatusText}" Visibility="{Binding OperationStatusVisibility}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
@@ -501,7 +476,9 @@
                   <views:AccessoryBodyPanel DataContext="{Binding Body}" />
                 </StackPanel>
                 <StackPanel x:Name="AwBleHeadsetPanel" DataContext="{Binding SelectedAwBleHeadset}" Visibility="Collapsed" Spacing="16">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><StackPanel Spacing="4"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel><Button Grid.Column="1" local:Localized.Uid="RazerKeyboardRefreshButton" Click="AwBleHeadsetRefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" /></Grid>
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <Button Grid.Column="1" local:Localized.Uid="RazerKeyboardRefreshButton" Click="AwBleHeadsetRefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
+                  </Grid>
                   <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="{Binding StatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" /><TextBlock Grid.Column="1" Text="{Binding OperationStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" HorizontalAlignment="Right" /></Grid>
                   <Border Style="{StaticResource CardStyle}" Padding="16"><StackPanel Spacing="10"><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="AwBleHeadsetBatteryLabel" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel><TextBlock Text="{Binding BatteryText}" Style="{StaticResource MetricValueStyle}" /><Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="6"><StackPanel Visibility="{Binding FirmwareVisibility}"><TextBlock local:Localized.Uid="AwBleHeadsetFirmwareLabel" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding FirmwareText}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /></StackPanel><StackPanel Grid.Column="1" Visibility="{Binding SerialVisibility}"><TextBlock local:Localized.Uid="AwBleHeadsetSerialLabel" Style="{StaticResource MetricLabelStyle}" /><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="{Binding SerialText}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /><views:CopyTextButton Text="{Binding SerialText}" /></StackPanel></StackPanel><StackPanel Grid.Row="1" Visibility="{Binding ConnectionVisibility}"><TextBlock local:Localized.Uid="AwBleHeadsetConnectionLabel" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding ConnectionText}" TextWrapping="Wrap" /></StackPanel><StackPanel Grid.Row="1" Grid.Column="1" Visibility="{Binding ChargingVisibility}"><TextBlock local:Localized.Uid="AwBleHeadsetChargingLabel" Style="{StaticResource MetricLabelStyle}" /><TextBlock Text="{Binding ChargingText}" TextWrapping="Wrap" /></StackPanel></Grid><TextBlock local:Localized.Uid="AwBleHeadsetDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" /></StackPanel></Border>
@@ -522,10 +499,6 @@
                 </StackPanel>
                 <StackPanel x:Name="ApBleHeadsetPanel" DataContext="{Binding SelectedApBleHeadset}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                    <StackPanel Spacing="4">
-                      <TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" />
-                      <TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" />
-                    </StackPanel>
                     <Button Grid.Column="1" local:Localized.Uid="RazerKeyboardRefreshButton" Click="ApBleHeadsetRefreshClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
                   </Grid>
                   <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
@@ -602,7 +575,6 @@
                 </StackPanel>
                 <StackPanel x:Name="BlePanel" DataContext="{Binding SelectedBle}" Visibility="Collapsed" Spacing="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                    <StackPanel Spacing="4"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" /></StackPanel>
                     <Button Grid.Column="1" local:Localized.Uid="RazerKeyboardRefreshButton" Click="BleRefreshClick" IsEnabled="{Binding CanEdit}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Center" />
                   </Grid>
                   <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
@@ -738,10 +710,6 @@
                 </StackPanel>
                 <StackPanel x:Name="RazerHidDevicePanel" DataContext="{Binding RazerHid.SelectedDevice}" Visibility="Collapsed" Spacing="16">
                   <views:DeviceApplicationRulesPanel x:Name="ApplicationRulesPanel" />
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                    <TextBlock Text="{Binding Name}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" />
-                    <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock Text="{Binding StatusText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" /><TextBlock Text="{Binding Identity}" FontFamily="Cascadia Mono,Consolas" FontSize="10" Foreground="{StaticResource MutedBrush}" /></StackPanel>
-                  </Grid>
                   <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
                   <TextBlock Text="{Binding OperationStatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding MappingVisibility}">
@@ -1106,7 +1074,6 @@
                   <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding HyperPollingVisibility}"><StackPanel Spacing="12"><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Text="HyperPolling" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel><TextBlock local:Localized.Uid="RazerHidHyperPollingDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" /><Grid ColumnDefinitions="180,Auto,*,Auto,Auto" ColumnSpacing="8"><NumberBox local:Localized.Uid="RazerHidHyperPollingIndicator" Visibility="{Binding HyperPollingIndicatorVisibility}" Value="{Binding HyperPollingIndicatorMode, Mode=TwoWay}" Minimum="1" Maximum="3" SpinButtonPlacementMode="Inline" IsEnabled="{Binding CanSetHyperPollingIndicator}" /><Button local:Localized.Uid="RazerHidApplyIndicatorButton" Grid.Column="1" Visibility="{Binding HyperPollingIndicatorVisibility}" Click="RazerHidApplyHyperPollingIndicatorClick" IsEnabled="{Binding CanSetHyperPollingIndicator}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" /><Button local:Localized.Uid="RazerHidPairButton" Grid.Column="3" Visibility="{Binding HyperPollingPairVisibility}" Click="RazerHidPairHyperPollingClick" IsEnabled="{Binding CanPairHyperPolling}" Style="{StaticResource PrimaryButtonStyle}" VerticalAlignment="Bottom" /><Button local:Localized.Uid="RazerHidUnpairButton" Grid.Column="4" Visibility="{Binding HyperPollingUnpairVisibility}" Click="RazerHidUnpairHyperPollingClick" IsEnabled="{Binding CanUnpairHyperPolling}" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Bottom" /></Grid></StackPanel></Border>
                 </StackPanel>
                 <StackPanel x:Name="BladeDevicePanel" Visibility="Collapsed" Spacing="16">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="{Binding Blade.DeviceName}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" FontSize="38" /><StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock Text="{Binding Blade.ProtocolText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" /><TextBlock Text="{Binding Blade.IdentityText}" FontFamily="Cascadia Mono,Consolas" FontSize="10" Foreground="{StaticResource MutedBrush}" /></StackPanel></Grid>
                   <StackPanel Visibility="{Binding Blade.SerialVisibility}" Orientation="Horizontal" Spacing="8"><TextBlock local:Localized.Uid="RazerHidSerialLabel" Foreground="{StaticResource MutedBrush}" /><TextBlock Text="{Binding Blade.Serial}" FontFamily="Cascadia Mono,Consolas" TextWrapping="Wrap" /><views:CopyTextButton Text="{Binding Blade.Serial}" /></StackPanel>
                   <TextBlock Text="{Binding ActivePowerSourceText}" Foreground="{StaticResource MutedBrush}" FontSize="12" />
                   <Border x:Name="BladeSensorPromptCard" Visibility="Collapsed" Style="{StaticResource CardStyle}" Padding="16">
@@ -1571,7 +1538,6 @@
                   </StackPanel>
                 </StackPanel>
                 <StackPanel x:Name="ViperDevicePanel" Visibility="Collapsed" Spacing="16">
-                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12"><TextBlock Text="{Binding Viper.DeviceName}" TextWrapping="Wrap" Style="{StaticResource PageTitleStyle}" /><StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock Text="{Binding Viper.ProtocolText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right" /><TextBlock Text="{Binding Viper.IdentityText}" FontFamily="Cascadia Mono,Consolas" FontSize="10" Foreground="{StaticResource MutedBrush}" /></StackPanel></Grid>
                   <Border Style="{StaticResource CardStyle}" Padding="16">
                     <views:RazerMappingView DataContext="{Binding Viper.Mapping}" />
                   </Border>
