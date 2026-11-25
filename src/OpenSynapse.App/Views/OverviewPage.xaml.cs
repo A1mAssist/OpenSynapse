@@ -104,8 +104,9 @@ public sealed partial class OverviewPage : UserControl
             .ToArray();
         var row = 0;
         var column = 0;
-        foreach (var card in visibleCards)
+        for (var index = 0; index < visibleCards.Length; index++)
         {
+            var card = visibleCards[index];
             if ((string)card.Tag == "telemetry")
             {
                 HomeCardsPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -120,11 +121,24 @@ public sealed partial class OverviewPage : UserControl
                 if (column == 0) HomeCardsPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
                 Grid.SetRow(card, row);
                 Grid.SetColumn(card, column);
-                column++;
-                if (column == 2)
+                // A card with no neighbour in its row takes the whole width instead
+                // of leaving half the page empty.
+                var alone = column == 0 &&
+                    (index + 1 >= visibleCards.Length || (string)visibleCards[index + 1].Tag == "telemetry");
+                Grid.SetColumnSpan(card, alone ? 2 : 1);
+                if (alone)
                 {
                     row++;
                     column = 0;
+                }
+                else
+                {
+                    column++;
+                    if (column == 2)
+                    {
+                        row++;
+                        column = 0;
+                    }
                 }
             }
             HomeCardsPanel.Children.Add(card);
