@@ -32,6 +32,53 @@ internal sealed partial class BladePowerTelemetryReader
         RunPowerModeTransactionAsync(
             () => SetBladePerformanceModeCoreAsync(devices, mode, cancellationToken, coolingPadConnected), cancellationToken);
 
+    /// <summary>
+    /// Shortcut path: the same two zone writes Razer sends, no readback verify.
+    /// HyperBoost keeps the full path because it also raises the CPU/GPU levels.
+    /// </summary>
+    public ValueTask<BladePerformanceMode> SetBladePerformanceModeFastAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        BladePerformanceMode mode,
+        CancellationToken cancellationToken = default,
+        bool coolingPadConnected = false) =>
+        RunPowerModeTransactionAsync(
+            () => SetBladePerformanceModeFastCoreAsync(devices, mode, cancellationToken, coolingPadConnected),
+            cancellationToken);
+
+    private async ValueTask<BladePerformanceMode> SetBladePerformanceModeFastCoreAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        BladePerformanceMode mode,
+        CancellationToken cancellationToken,
+        bool coolingPadConnected)
+    {
+        if (mode == BladePerformanceMode.Hyperboost)
+        {
+            return await SetBladePerformanceModeCoreAsync(devices, mode, cancellationToken, coolingPadConnected);
+        }
+        if (!Enum.IsDefined(mode))
+        {
+            throw new ArgumentOutOfRangeException(nameof(mode));
+        }
+
+        var blade = _resolver.FindReadyBlade(devices)
+            ?? throw new InvalidOperationException("The Blade platform control channel is unavailable.");
+        BladeTelemetryReader.EnsureControlWritesAdmitted(blade);
+        if (!blade.PublishesBladePerformanceMode(mode))
+            throw new InvalidOperationException($"Performance mode {mode} is not admitted for Blade PID {blade.Descriptor.ProductId:X4}.");
+        RazerCapabilityClient.EnsureValidated(_validation.PerformancePath, blade.Descriptor.Id, "Read the Blade performance mode successfully first.");
+
+        var original = await _fan.ReadThermalStateAsync(blade, cancellationToken);
+        // Same fan rule as the full path: a model that pins fixed fans to Custom must
+        // hand them back to firmware when it leaves Custom.
+        var fanMode = blade.FixedFanRequiresCustomMode && mode != BladePerformanceMode.Custom
+            ? BladeFanMode.Automatic
+            : original.FanMode;
+
+        await _fan.WriteThermalZoneAsync(blade, BladeFanProtocol.ZoneCpu, mode, fanMode, cancellationToken);
+        await _fan.WriteThermalZoneAsync(blade, BladeFanProtocol.ZoneGpu, mode, fanMode, cancellationToken);
+        return mode;
+    }
+
     private async ValueTask<BladePerformanceMode> SetBladePerformanceModeCoreAsync(
         IReadOnlyList<DeviceDescriptor> devices, BladePerformanceMode mode,
         CancellationToken cancellationToken, bool coolingPadConnected)

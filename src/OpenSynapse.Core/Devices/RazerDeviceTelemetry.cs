@@ -454,6 +454,17 @@ public partial interface IRazerDeviceTelemetryReader
         CancellationToken cancellationToken = default,
         bool coolingPadConnected = false);
 
+    /// <summary>
+    /// Shortcut path: the same zone writes Razer sends, without the readback verify.
+    /// The default falls back to the verified write so fakes keep compiling.
+    /// </summary>
+    ValueTask<BladePerformanceMode> SetBladePerformanceModeFastAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        BladePerformanceMode mode,
+        CancellationToken cancellationToken = default,
+        bool coolingPadConnected = false) =>
+        SetBladePerformanceModeAsync(devices, mode, cancellationToken, coolingPadConnected);
+
     ValueTask<BladeGameModeTelemetry> SetBladeGameModeAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         bool enabled,

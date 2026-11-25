@@ -499,6 +499,13 @@ internal sealed partial class BladeTelemetryReader
         bool coolingPadConnected = false) =>
         _power.SetBladePerformanceModeAsync(devices, mode, cancellationToken, coolingPadConnected);
 
+    public ValueTask<BladePerformanceMode> SetBladePerformanceModeFastAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        BladePerformanceMode mode,
+        CancellationToken cancellationToken = default,
+        bool coolingPadConnected = false) =>
+        _power.SetBladePerformanceModeFastAsync(devices, mode, cancellationToken, coolingPadConnected);
+
     public ValueTask<BladeGameModeTelemetry> SetBladeGameModeAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         bool enabled,

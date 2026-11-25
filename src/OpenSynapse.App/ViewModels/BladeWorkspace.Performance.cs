@@ -386,6 +386,7 @@ public sealed partial class BladeWorkspace
 
     internal async Task CyclePerformanceModeAsync(CancellationToken cancellationToken = default)
     {
+        BladePerformanceMode? previousMode = null;
         await RunDeviceOperationAsync(AppStrings.Text("Text_98C30F5D"), async () =>
         {
             if (!CanWritePerformanceMode || _blade._confirmedBladePerformanceModeIndex < 0)
@@ -416,16 +417,17 @@ public sealed partial class BladeWorkspace
                 cycleModes = [modes[0]];
             }
 
-            var nextMode = BladePerformanceModeCycle.GetNext(
-                modes[_blade._confirmedBladePerformanceModeIndex],
-                modes,
-                cycleModes);
+            previousMode = modes[_blade._confirmedBladePerformanceModeIndex];
+            var nextMode = BladePerformanceModeCycle.GetNext(previousMode.Value, modes, cycleModes);
             PerformanceModeIndex = modes.ToList().IndexOf(nextMode);
+            // Paint the switch before the write: the EC answers in ~100 ms and the
+            // shortcut must not feel like a blocking call.
+            SetPerformanceMode(nextMode);
             var target = CurrentPowerOverrides?.Blade ?? GetActiveProfile().Global.Blade;
             var previousFan = (target.FanMode, target.FanTargetRpm, target.FanCurve);
-            var actual = await _deviceTelemetryReader.SetBladePerformanceModeAsync(
+            var actual = await _deviceTelemetryReader.SetBladePerformanceModeFastAsync(
                 ActiveDescriptors,
-                modes[PerformanceModeIndex],
+                nextMode,
                 cancellationToken,
                 _bladeCoolingPadConnected);
             SetPerformanceMode(actual);
@@ -443,10 +445,11 @@ public sealed partial class BladeWorkspace
                 throw;
             }
             if (clearedFan && ReferenceEquals(target, EditablePerformanceProfile)) _fan().ClearPendingMode();
-            RequestDeviceRefresh();
             PerformanceModeChangedByUser?.Invoke(actual);
         }, cancellationToken, () =>
-            PerformanceModeIndex = _blade._confirmedBladePerformanceModeIndex);
+        {
+            if (previousMode is { } mode) SetPerformanceMode(mode);
+        });
     }
 
     internal async Task ToggleGamingModeAsync(CancellationToken cancellationToken = default)
@@ -465,7 +468,6 @@ public sealed partial class BladeWorkspace
                 current == 0,
                 cancellationToken);
             SetGameMode(actual);
-            RequestDeviceRefresh();
             GamingModeChangedByUser?.Invoke(actual.GameMode != 0);
         }, cancellationToken);
     }
