@@ -8,7 +8,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Added
 
-- **Lighting Studio scenes**: the studio now opens in a browse view with six whole-set scenes (Aurora Breathing, Heartbeat, Neon Chase, Deep Echo, Lava Pulse, Prism Sweep); scenes render on a shared 96×96 canvas and apply to keyboards, mice, mousepads, headsets and single-zone devices, while Edit expands one into a normal profile for fine-tuning.
+- **Lighting Studio scenes**: the studio now opens in a browse view with six whole-set scenes (Aurora Breathing, Heartbeat, Neon Chase, Deep Echo, Lava Pulse, Prism Sweep); each is a real layered effect with its own description and shared timeline rather than a fabricated BPM value, renders on a shared 96×96 canvas, and applies to keyboards, mice, mousepads, headsets and single-zone devices, while Edit expands one into a normal profile for fine-tuning.
 - **Taskbar status strip**: an optional “Click to open the app” setting opens the existing main window with a single click; changes apply immediately and persist across restarts. It is off by default.
 - **Kraken V3 Pro**: connect the 052C receiver and 052D wired identity through the bundle-declared NXP serial channel, with battery, sidetone, silence detection and haptics controls and profile restore.
 - **Ripsaw HD audio**: add the capture card's speaker, PC, HDMI and microphone monitoring volume/mute controls, with saved settings restored on connection.
@@ -22,6 +22,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 - **Naga scroll wheel**: Naga V3 Pro exposes its three-way tactile, free-spin and micro-tactile wheel mode, including profile apply and Smart Reel.
 - **DPI stage shortcuts**: the DPI card shows 1–5 buttons beside the current stage and switches immediately; the highlighted stage follows the mouse's own DPI button within a few seconds.
 - **Driver download progress**: driver package downloads show a progress bar with speed and remaining time, and use four parallel range requests for packages of 4 MB or more.
+- **THX download progress**: THX components use the same progress panel and parallel downloader as drivers, with bytes, speed and remaining time; the roughly 41 MB APO package is fetched in four range requests.
 
 ### Fixed
 
