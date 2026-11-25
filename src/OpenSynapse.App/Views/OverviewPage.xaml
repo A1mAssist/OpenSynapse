@@ -10,8 +10,8 @@
   <UserControl.Resources>
     <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
   </UserControl.Resources>
-  <ScrollView x:Name="PageScrollViewer" ContentOrientation="Vertical"
-              HorizontalScrollBarVisibility="Hidden">
+  <ScrollViewer x:Name="PageScrollViewer"
+              HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
               <StackPanel Padding="24,24,24,48" Spacing="16" MinWidth="640">
                 <StackPanel Spacing="5"><TextBlock local:Localized.Uid="Loc_16E65B7F4A" Style="{StaticResource PageTitleStyle}" /><TextBlock local:Localized.Uid="Loc_6F843C9A12" Foreground="{StaticResource MutedBrush}" /></StackPanel>
                 <InfoBar IsOpen="{Binding HasError}" IsClosable="False" Severity="Warning" Message="{Binding ErrorText}" />
@@ -110,5 +110,5 @@
                 </StackPanel>
                  </Grid>
               </StackPanel>
-  </ScrollView>
+  </ScrollViewer>
 </UserControl>

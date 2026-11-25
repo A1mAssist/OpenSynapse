@@ -270,7 +270,7 @@ public sealed partial class DevicesPage
     {
         if (e.Mode is PowerModes.StatusChange or PowerModes.Resume)
         {
-            DispatcherQueue.TryEnqueue(ViewModel.Refresh.RequestDeviceRefresh);
+            DispatcherQueue.TryEnqueue(() => ViewModel.Refresh.RequestDeviceRefresh("gpu-mode"));
         }
     }
 

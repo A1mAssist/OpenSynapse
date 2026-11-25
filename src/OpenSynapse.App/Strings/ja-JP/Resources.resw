@@ -3785,6 +3785,7 @@
   <data name="RazerMappingMacroUnsupported" xml:space="preserve"><value>このマクロはオンボードに保存できません: ステップ {0}: {1}。マクロを編集して再試行してください。</value></data>
   <data name="RazerMappingMacroUnsupportedSoftware" xml:space="preserve"><value>このマクロはオンボードに保存できません: ステップ {0}: {1}。ソフトウェア マクロを使用するか、マクロを編集してください。</value></data>
   <data name="RazerMappingMacroSlotOverwrite" xml:space="preserve"><value>このスロットには既に別のマクロが含まれています。保存すると上書きされます。</value></data>
+  <data name="RazerMappingHostRemapHint" xml:space="preserve"><value>このキーの元の機能を呼び出します。このキーに割り当てたマクロは実行されません。</value></data>
   <data name="RazerMappingMacroSoftwareApplied" xml:space="preserve"><value>マクロ: {0}</value></data>
   <data name="RazerMappingMacroAssignmentNotOff" xml:space="preserve"><value>このキーにはソフトウェア マクロがありますが、デバイス アクションも有効なため、2 回実行される可能性があります。修正するにはもう一度適用してください。</value></data>
   <data name="RazerMappingMacroCurrentOnce" xml:space="preserve"><value>{0} · 1 回実行</value></data>

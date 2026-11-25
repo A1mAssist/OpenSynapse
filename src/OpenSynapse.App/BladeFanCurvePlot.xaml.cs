@@ -26,6 +26,7 @@ public sealed partial class BladeFanCurvePlot : UserControl
     private const double PointMarkerSize = 6;
     private const double HandleGrabRadius = 22;
     private const double LiveMarkerSize = 16;
+    private const double ActualSpeedHalfWidth = 16;
     private static readonly double[] TemperatureTicks = [30, 45, 60, 75, 90, 105, 120];
     private static readonly double[] RpmTicks = [2000, 2500, 3000, 3500, 4000, 4500, 5000, 5600];
 
@@ -43,6 +44,8 @@ public sealed partial class BladeFanCurvePlot : UserControl
     private readonly TextBlock _rpmUnit = new();
     private readonly TextBlock _temperatureUnit = new();
     private readonly Ellipse[] _liveMarkers = [new(), new()];
+    private readonly Line[] _actualSpeedLines = [new(), new()];
+    private readonly Line[] _temperatureGuides = [new(), new()];
     private readonly SolidColorBrush[] _seriesBrushes =
     [
         new(global::Windows.UI.Color.FromArgb(0xFF, 0x2D, 0x9C, 0xDB)),
@@ -167,6 +170,28 @@ public sealed partial class BladeFanCurvePlot : UserControl
             marker.Visibility = Visibility.Collapsed;
             Canvas.SetZIndex(marker, 7);
             PlotCanvas.Children.Add(marker);
+
+            // The measured speed is a separate quantity from the setpoint, so it gets
+            // its own tick instead of moving the point off the curve.
+            var actual = _actualSpeedLines[series];
+            actual.Stroke = _seriesBrushes[series];
+            actual.StrokeThickness = 1.5;
+            actual.StrokeDashArray = new DoubleCollection { 3, 3 };
+            actual.IsHitTestVisible = false;
+            actual.Visibility = Visibility.Collapsed;
+            Canvas.SetZIndex(actual, 8);
+            PlotCanvas.Children.Add(actual);
+
+            // In merged mode only one curve drives the fans; the other temperature
+            // still matters, so it stays visible as a reference line.
+            var guide = _temperatureGuides[series];
+            guide.Stroke = _seriesBrushes[series];
+            guide.StrokeThickness = 1;
+            guide.StrokeDashArray = new DoubleCollection { 2, 4 };
+            guide.IsHitTestVisible = false;
+            guide.Visibility = Visibility.Collapsed;
+            Canvas.SetZIndex(guide, 2);
+            PlotCanvas.Children.Add(guide);
         }
     }
 
@@ -508,36 +533,133 @@ public sealed partial class BladeFanCurvePlot : UserControl
 
     private void RenderLive(double width, double height)
     {
-        if (_blade is null || _telemetry is null)
+        if (_blade is null || _telemetry is null || _editor is null)
+        {
+            HideLiveMarkers();
+            return;
+        }
+
+        if (_draggedSeries >= 0)
+        {
+            // BuildCurve normalizes point temperatures; run it mid-drag and it fights the pointer.
+            HideLiveMarkers();
+            return;
+        }
+
+        BladeFanCurve curve;
+        try
+        {
+            // The editor can hold a half-dragged, temporarily unordered curve.
+            curve = _editor.BuildCurve();
+        }
+        catch (ArgumentException)
         {
             HideLiveMarkers();
             return;
         }
 
         var temperatures = _telemetry.Temperatures;
-        ShowLivePoint(0, temperatures.Cpu, _blade.CurrentFanCpuRpm, CpuLiveReading, width, height);
-        ShowLivePoint(1, temperatures.Gpu, _blade.CurrentFanGpuRpm, GpuLiveReading, width, height);
+        HideLiveMarkers();
+
+        switch (curve.TemperatureMode)
+        {
+            case BladeFanCurveTemperatureMode.Cpu:
+                if (temperatures.Cpu is double cpuOnly)
+                {
+                    ShowLivePoint(
+                        0, cpuOnly, curve.EvaluateCpuRpm(cpuOnly), _blade.CurrentFanCpuRpm,
+                        CpuLiveReading, width, height);
+                }
+                break;
+
+            case BladeFanCurveTemperatureMode.Gpu:
+                if (temperatures.Gpu is double gpuOnly)
+                {
+                    ShowLivePoint(
+                        1, gpuOnly, curve.EvaluateGpuRpm(gpuOnly), _blade.CurrentFanGpuRpm,
+                        GpuLiveReading, width, height);
+                }
+                break;
+
+            case BladeFanCurveTemperatureMode.Both:
+                if (temperatures.Cpu is double cpuBoth && temperatures.Gpu is double gpuBoth)
+                {
+                    var cpuTarget = curve.EvaluateCpuRpm(cpuBoth);
+                    var gpuTarget = curve.EvaluateGpuRpm(gpuBoth);
+                    // Both fans run the merged maximum, so the point belongs on the
+                    // curve that won; the other temperature stays as a reference.
+                    var cpuWins = cpuTarget >= gpuTarget;
+                    ShowLivePoint(
+                        cpuWins ? 0 : 1,
+                        cpuWins ? cpuBoth : gpuBoth,
+                        Math.Max(cpuTarget, gpuTarget),
+                        cpuWins ? _blade.CurrentFanCpuRpm : _blade.CurrentFanGpuRpm,
+                        cpuWins ? CpuLiveReading : GpuLiveReading,
+                        width, height);
+                    ShowTemperatureGuide(
+                        cpuWins ? 1 : 0, cpuWins ? gpuBoth : cpuBoth, width, height);
+                }
+                break;
+
+            default:
+                if (temperatures.Cpu is double cpuIndependent)
+                {
+                    ShowLivePoint(
+                        0, cpuIndependent, curve.EvaluateCpuRpm(cpuIndependent),
+                        _blade.CurrentFanCpuRpm, CpuLiveReading, width, height);
+                }
+                if (temperatures.Gpu is double gpuIndependent)
+                {
+                    ShowLivePoint(
+                        1, gpuIndependent, curve.EvaluateGpuRpm(gpuIndependent),
+                        _blade.CurrentFanGpuRpm, GpuLiveReading, width, height);
+                }
+                break;
+        }
     }
 
-    private void ShowLivePoint(int series, double? temperature, int? rpm, TextBlock reading,
-        double width, double height)
+    private void ShowLivePoint(int series, double temperature, int targetRpm, int? actualRpm,
+        TextBlock reading, double width, double height)
     {
+        var x = XFromTemperature(temperature, width);
         var marker = _liveMarkers[series];
-        if (temperature is not double t || rpm is not int r)
+        Canvas.SetLeft(marker, x - LiveMarkerSize / 2);
+        Canvas.SetTop(marker, YFromRpm(targetRpm, height) - LiveMarkerSize / 2);
+        marker.Visibility = Visibility.Visible;
+
+        if (actualRpm is int actual)
         {
-            marker.Visibility = reading.Visibility = Visibility.Collapsed;
-            return;
+            var line = _actualSpeedLines[series];
+            var lineY = YFromRpm(actual, height);
+            line.X1 = x - ActualSpeedHalfWidth;
+            line.X2 = x + ActualSpeedHalfWidth;
+            line.Y1 = line.Y2 = lineY;
+            line.Visibility = Visibility.Visible;
+            reading.Text = $"{temperature:0}°C · {targetRpm:N0}→{actual:N0} RPM";
+        }
+        else
+        {
+            reading.Text = $"{temperature:0}°C · {targetRpm:N0} RPM";
         }
 
-        Canvas.SetLeft(marker, XFromTemperature(t, width) - LiveMarkerSize / 2);
-        Canvas.SetTop(marker, YFromRpm(r, height) - LiveMarkerSize / 2);
-        marker.Visibility = reading.Visibility = Visibility.Visible;
-        reading.Text = $"{t:0}°C · {r:N0} RPM";
+        reading.Visibility = Visibility.Visible;
+    }
+
+    private void ShowTemperatureGuide(int series, double temperature, double width, double height)
+    {
+        var guide = _temperatureGuides[series];
+        var x = XFromTemperature(temperature, width);
+        guide.X1 = guide.X2 = x;
+        guide.Y1 = PlotTopMargin;
+        guide.Y2 = height - PlotBottomMargin;
+        guide.Visibility = Visibility.Visible;
     }
 
     private void HideLiveMarkers()
     {
         foreach (var marker in _liveMarkers) marker.Visibility = Visibility.Collapsed;
+        foreach (var line in _actualSpeedLines) line.Visibility = Visibility.Collapsed;
+        foreach (var guide in _temperatureGuides) guide.Visibility = Visibility.Collapsed;
         CpuLiveReading.Visibility = GpuLiveReading.Visibility = Visibility.Collapsed;
     }
 

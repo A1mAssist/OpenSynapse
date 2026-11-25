@@ -9,7 +9,7 @@ public sealed partial class MacroWorkspace
     /// the macro editor only ever shows the user's own library.
     /// </summary>
     public IReadOnlyList<MacroDefinition> SystemShortcuts =>
-        SoftwareShortcutCatalog.Bindings(_getActiveProfile().SystemMacros);
+        SystemMacroCatalog.Bindings(_getActiveProfile().SystemMacros);
 
     /// <summary>
     /// Binds a private Razer key through the device workspace, which owns the

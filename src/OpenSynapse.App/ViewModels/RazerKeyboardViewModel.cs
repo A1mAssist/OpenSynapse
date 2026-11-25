@@ -307,7 +307,7 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
 
         var document = _getProfile();
         return document.Profiles.TryGetValue(document.ActiveProfileName, out var active)
-            ? OpenSynapse.Core.Macros.SoftwareShortcutCatalog.Bindings(active.SystemMacros)
+            ? OpenSynapse.Core.Macros.SystemMacroCatalog.Bindings(active.SystemMacros)
             : [];
     }
 

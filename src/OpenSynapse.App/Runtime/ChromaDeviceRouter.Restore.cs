@@ -11,6 +11,10 @@ internal sealed partial class ChromaDeviceRouter
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            lock (_frameState)
+            {
+                _pendingFrame = null;
+            }
             _diagnostic?.Invoke($"Chroma restore starting: touched={_touchedTargets.Count}.");
             await RestoreStandardAsync(cancellationToken).ConfigureAwait(false);
             await RestoreJolieAsync(cancellationToken).ConfigureAwait(false);
@@ -20,11 +24,11 @@ internal sealed partial class ChromaDeviceRouter
         {
             foreach (var instanceId in _jolieBaselines.Keys)
             {
-                _lastFrames.Remove(instanceId);
+                _lastFrames.TryRemove(instanceId, out _);
             }
             foreach (var instanceId in _hidBaselines.Keys)
             {
-                _lastFrames.Remove(instanceId);
+                _lastFrames.TryRemove(instanceId, out _);
             }
             _standardBaselines.Clear();
             _baselineFailures.Clear();
@@ -73,7 +77,7 @@ internal sealed partial class ChromaDeviceRouter
         // A wireless target can miss every baseline read and still receive frames.
         // Put it back on the firmware's own Spectrum effect instead of leaving the
         // last game frame (often black) on the LEDs.
-        foreach (var instanceId in _touchedTargets)
+        foreach (var instanceId in _touchedTargets.Keys)
         {
             if (_standardBaselines.ContainsKey(instanceId) ||
                 !_standardServices.TryGetValue(instanceId, out var service))

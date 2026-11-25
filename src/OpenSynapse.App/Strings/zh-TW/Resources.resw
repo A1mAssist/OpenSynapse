@@ -4226,6 +4226,7 @@
   <data name="RazerMappingMacroUnsupported" xml:space="preserve"><value>這個宏不能寫入板載：第 {0} 步：{1}。請返回宏編輯器修改。</value></data>
   <data name="RazerMappingMacroUnsupportedSoftware" xml:space="preserve"><value>這個宏不能寫入板載：第 {0} 步：{1}。請改用軟體宏，或返回宏編輯器修改。</value></data>
   <data name="RazerMappingMacroSlotOverwrite" xml:space="preserve"><value>槽位裡已有其他宏，儲存會覆蓋。</value></data>
+  <data name="RazerMappingHostRemapHint" xml:space="preserve"><value>將呼叫該鍵的原生功能，不觸發綁定在該鍵上的巨集。</value></data>
   <data name="RazerMappingMacroSoftwareApplied" xml:space="preserve"><value>宏：{0}</value></data>
   <data name="RazerMappingMacroAssignmentNotOff" xml:space="preserve"><value>這個按鍵已有軟體宏，但裝置原生功能沒有關閉，可能重複觸發。重新套用一次即可修復。</value></data>
   <data name="RazerMappingMacroCurrentOnce" xml:space="preserve"><value>{0} · 執行一次</value></data>

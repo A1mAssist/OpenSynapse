@@ -5,8 +5,8 @@
     UseLayoutRounding="True">
   <ScrollViewer x:Name="Scroller" Background="{StaticResource CanvasBrush}"
                 IsTabStop="False"
-                HorizontalScrollBarVisibility="Auto"
-                VerticalScrollBarVisibility="Auto"
+                HorizontalScrollBarVisibility="Hidden"
+                VerticalScrollBarVisibility="Hidden"
                 HorizontalScrollMode="Enabled"
                 VerticalScrollMode="Enabled"
                 ZoomMode="Disabled">

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using OpenSynapse.Core.Storage;
+using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.Windows.Audio;
 
@@ -18,20 +19,23 @@ internal sealed record ThxComponentInstallResult(
     bool RebootRequired = false,
     bool AlreadyInstalled = false);
 
+internal sealed record ThxInstallProgress(
+    long BytesReceived,
+    long TotalBytes,
+    double BytesPerSecond,
+    bool Installing = false)
+{
+    public double Fraction => TotalBytes > 0
+        ? Math.Clamp((double)BytesReceived / TotalBytes, 0d, 1d)
+        : 0d;
+}
+
 /// <summary>
 /// Downloads the official per-device THX package and runs its silent installer.
 /// The package contains THX APO/SCU/service components only; it does not carry Synapse.
 /// </summary>
 internal static class ThxComponentInstaller
 {
-    private static readonly HttpClient Client = new()
-    {
-        // The THX package is about 40 MB on Razer's CDN. The linked token below
-        // is the single budget for download + install; a shorter client timeout
-        // turns a slow but healthy download into an unhandled TaskCanceledException.
-        Timeout = Timeout.InfiniteTimeSpan,
-    };
-
     private static readonly TimeSpan InstallBudget = TimeSpan.FromMinutes(15);
 
     internal static async Task<ThxComponentInstallResult> InstallAsync(
@@ -40,7 +44,7 @@ internal static class ThxComponentInstaller
         bool repair = false,
         string? startService = null,
         ThxInstallerPackage? extra = null,
-        IProgress<double>? progress = null,
+        IProgress<ThxInstallProgress>? progress = null,
         Action<string>? diagnostic = null)
     {
         if (package.Length <= 0 || package.Sha256.Length != 64)
@@ -70,8 +74,9 @@ internal static class ThxComponentInstaller
                 package,
                 temporary,
                 token,
-                new Progress<double>(fraction =>
-                    progress?.Report(fraction * package.Length / totalLength)))
+                offset: 0,
+                totalLength,
+                progress)
                 .ConfigureAwait(false);
             if (downloadError is not null)
             {
@@ -83,15 +88,16 @@ internal static class ThxComponentInstaller
                     extra,
                     extraTemporary!,
                     token,
-                    new Progress<double>(fraction => progress?.Report(
-                        (package.Length + fraction * extra.Length) / totalLength)))
+                    package.Length,
+                    totalLength,
+                    progress)
                     .ConfigureAwait(false);
                 if (downloadError is not null)
                 {
                     return new(downloadError);
                 }
             }
-            progress?.Report(1d);
+            progress?.Report(new ThxInstallProgress(totalLength, totalLength, 0, Installing: true));
             diagnostic?.Invoke("thx installer download done");
 
             token.ThrowIfCancellationRequested();
@@ -179,50 +185,18 @@ internal static class ThxComponentInstaller
         ThxInstallerPackage package,
         string path,
         CancellationToken cancellationToken,
-        IProgress<double>? progress = null)
+        long offset,
+        long totalLength,
+        IProgress<ThxInstallProgress>? progress)
     {
-        using var response = await Client.GetAsync(
+        var downloadProgress = progress is null
+            ? null
+            : new ThxDownloadProgress(progress, offset, totalLength);
+        await RazerDriverDownloader.DownloadAsync(
             package.Uri,
-            HttpCompletionOption.ResponseHeadersRead,
-            cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        if (response.Content.Headers.ContentLength is { } declaredLength &&
-            declaredLength != package.Length)
-        {
-            return "ThxInstallerVerificationFailed";
-        }
-
-        var buffer = new byte[81920];
-        long received = 0;
-        var reportedPercent = -1;
-        await using (var source = await response.Content
-            .ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
-        await using (var target = new FileStream(
             path,
-            FileMode.CreateNew,
-            FileAccess.Write,
-            FileShare.None,
-            bufferSize: 81920,
-            FileOptions.Asynchronous | FileOptions.SequentialScan))
-        {
-            int read;
-            while ((read = await source
-                .ReadAsync(buffer.AsMemory(), cancellationToken)
-                .ConfigureAwait(false)) > 0)
-            {
-                await target
-                    .WriteAsync(buffer.AsMemory(0, read), cancellationToken)
-                    .ConfigureAwait(false);
-                received += read;
-                var percent = (int)Math.Min(100L, received * 100L / package.Length);
-                if (percent != reportedPercent)
-                {
-                    reportedPercent = percent;
-                    progress?.Report(percent / 100d);
-                }
-            }
-        }
-        progress?.Report(1d);
+            downloadProgress,
+            cancellationToken).ConfigureAwait(false);
 
         if (new FileInfo(path).Length != package.Length)
         {
@@ -236,6 +210,18 @@ internal static class ThxComponentInstaller
             StringComparison.OrdinalIgnoreCase)
                 ? null
                 : "ThxInstallerVerificationFailed";
+    }
+
+    private sealed class ThxDownloadProgress(
+        IProgress<ThxInstallProgress> progress,
+        long offset,
+        long totalLength) : IProgress<RazerDriverDownloadProgress>
+    {
+        public void Report(RazerDriverDownloadProgress value) =>
+            progress.Report(new ThxInstallProgress(
+                offset + value.BytesReceived,
+                totalLength,
+                value.BytesPerSecond));
     }
 
     private static async Task<ThxComponentInstallResult> RunAsync(

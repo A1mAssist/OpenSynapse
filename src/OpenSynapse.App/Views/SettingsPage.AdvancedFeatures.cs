@@ -61,10 +61,10 @@ public sealed partial class SettingsPage
         var offset = PageScrollViewer.VerticalOffset;
         var result = await dialog.ShowAsync();
         DispatcherQueue.TryEnqueue(() =>
-            PageScrollViewer.ScrollTo(
+            PageScrollViewer.ChangeView(
                 PageScrollViewer.HorizontalOffset,
                 offset,
-                new ScrollingScrollOptions(ScrollingAnimationMode.Disabled)));
+                null, disableAnimation: true));
         return result;
     }
 

@@ -263,6 +263,13 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
 
     private void UpdateMacroSlotWarning(RazerHidMappingRowViewModel row)
     {
+        if (row.Group == RazerHidMappingGroup.MouseButton &&
+            PreviewHostRemap(row) is { Outcome: HostRemapOutcome.HostInject })
+        {
+            row.SetMacroSlotWarning(AppStrings.Text("RazerMappingHostRemapHint"));
+            return;
+        }
+
         if (row.Group != RazerHidMappingGroup.Macro ||
             row.MacroTarget != MacroExecutionTarget.Onboard ||
             row.OptionIndex < 0 || row.OptionIndex >= _localMacros.Count ||

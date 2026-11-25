@@ -9,6 +9,8 @@ public sealed partial class BlackSharkHeadsetViewModel
     private bool _thxBusy;
     private string _thxErrorText = string.Empty;
 
+    public DownloadProgressState ThxProgress { get; } = new();
+
     private ThxHeadsetStatus ThxStatus => _thxStatus ??=
         ThxHeadsetAdmission.IsSupported(_connection.ProductId)
             ? ThxHeadsetAdmission.Check(_connection.ProductId)
@@ -67,11 +69,27 @@ public sealed partial class BlackSharkHeadsetViewModel
 
         _thxBusy = true;
         _thxErrorText = string.Empty;
+        ThxProgress.Reset();
+        var progress = new Progress<ThxInstallProgress>(update =>
+        {
+            if (!_thxBusy) return;
+            if (update.Installing)
+            {
+                ThxProgress.ShowInstalling();
+            }
+            else
+            {
+                ThxProgress.Report(
+                    update.BytesReceived,
+                    update.TotalBytes,
+                    update.BytesPerSecond);
+            }
+        });
         NotifyThxStatus();
         try
         {
             _thxStatus = await ThxHeadsetAdmission.InstallComponentsAsync(
-                _connection.ProductId, cancellationToken);
+                _connection.ProductId, cancellationToken, progress);
             if (_thxStatus.Availability != ThxHeadsetAvailability.Available &&
                 string.IsNullOrEmpty(_thxStatus.ErrorCode))
             {
@@ -88,6 +106,7 @@ public sealed partial class BlackSharkHeadsetViewModel
         finally
         {
             _thxBusy = false;
+            ThxProgress.Reset();
             NotifyThxStatus();
         }
     }

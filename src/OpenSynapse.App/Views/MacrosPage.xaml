@@ -7,8 +7,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
-  <ScrollView x:Name="PageScrollViewer" ContentOrientation="Vertical"
-              HorizontalScrollBarVisibility="Hidden">
+  <ScrollViewer x:Name="PageScrollViewer"
+              HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled">
               <StackPanel Padding="24,24,24,48" Spacing="16">
                 <StackPanel Spacing="5">
                   <TextBlock local:Localized.Uid="MacroPageTitle" Style="{StaticResource PageTitleStyle}" />
@@ -113,5 +113,5 @@
                 <TextBlock Text="{Binding Macros.StatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" />
                 <TextBlock local:Localized.Uid="MacroHint" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" />
               </StackPanel>
-  </ScrollView>
+  </ScrollViewer>
 </UserControl>

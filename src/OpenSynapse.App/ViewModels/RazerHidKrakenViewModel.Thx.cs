@@ -14,6 +14,8 @@ public sealed partial class RazerHidKrakenViewModel
     private bool _thxBusy;
     private string _thxErrorText = string.Empty;
 
+    public DownloadProgressState ThxProgress { get; } = new();
+
     private ThxHeadsetStatus ThxStatus => _thxStatus ??=
         ThxHeadsetAdmission.IsSupported(Connection.ProductId)
             ? ThxHeadsetAdmission.Check(Connection.ProductId)
@@ -71,11 +73,27 @@ public sealed partial class RazerHidKrakenViewModel
 
         _thxBusy = true;
         _thxErrorText = string.Empty;
+        ThxProgress.Reset();
+        var progress = new Progress<ThxInstallProgress>(update =>
+        {
+            if (!_thxBusy) return;
+            if (update.Installing)
+            {
+                ThxProgress.ShowInstalling();
+            }
+            else
+            {
+                ThxProgress.Report(
+                    update.BytesReceived,
+                    update.TotalBytes,
+                    update.BytesPerSecond);
+            }
+        });
         OnPropertyChanged(nameof(CanInstallThx));
         try
         {
             _thxStatus = await ThxHeadsetAdmission.InstallComponentsAsync(
-                Connection.ProductId, cancellationToken);
+                Connection.ProductId, cancellationToken, progress);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -89,6 +107,7 @@ public sealed partial class RazerHidKrakenViewModel
         finally
         {
             _thxBusy = false;
+            ThxProgress.Reset();
             NotifyStateChanged();
         }
     }

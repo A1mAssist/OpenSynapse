@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
+using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -28,6 +29,14 @@ public sealed partial class RazerHidDeviceService
     private readonly RazerHidRequestExecutor _executor;
     private readonly ConcurrentDictionary<(string DevicePath, ushort ProductId, string Probe), DateTimeOffset>
         _middlewareProbeCache = new();
+    // A control channel that answers nothing costs five HID retries per probe, and the
+    // whole pass holds the device write gate. Repeating that every rescan is what makes
+    // profile switches and lighting feel a beat behind, so a slow failure is remembered
+    // briefly instead of being paid again on the next pass.
+    private readonly ConcurrentDictionary<string, (DateTimeOffset ExpiresAt, string? Error)>
+        _unresolvedEndpointCache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly TimeSpan UnresolvedEndpointTtl = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan SlowUnresolvedProbe = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan MiddlewareProbePositiveTtl = TimeSpan.FromHours(12);
     // Middleware bundles increment the transaction id per exchange; the firmware only
     // matches it against the response, so one fixed value works for a single request.

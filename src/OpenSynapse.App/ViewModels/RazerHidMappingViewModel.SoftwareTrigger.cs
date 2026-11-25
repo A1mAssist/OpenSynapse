@@ -27,6 +27,18 @@ public sealed partial class RazerHidMappingViewModel
                 trigger.HyperShiftLayer == hyperShiftLayer &&
                 trigger.Input.Matches(input)));
 
+    private MacroDefinition? FindNativeMouseMacro(MacroInput input, bool hyperShiftLayer) =>
+        _systemMacros.FirstOrDefault(macro =>
+            NativeMouseButtonCatalog.ActionOf(macro.Id) is not null &&
+            macro.AllTriggers.Any(trigger =>
+                trigger.HyperShiftLayer == hyperShiftLayer &&
+                trigger.Input.Matches(input)));
+
+    /// <summary>The macro that would intercept this key's press on the host.</summary>
+    private MacroDefinition? FindHostOwner(MacroInput input, bool hyperShiftLayer) =>
+        _localMacros.Concat(_systemMacros).FirstOrDefault(macro =>
+            macro.Enabled && macro.FindTrigger(input, hyperShiftLayer) is not null);
+
     private static MacroSoftwareBinding? SoftwareBindingFor(
         MacroDefinition macro,
         MacroInput input,
@@ -340,6 +352,19 @@ public sealed partial class RazerHidMappingViewModel
             {
                 claims.Add(new RazerSoftwareMacroTriggerMatcher.Claim(
                     SoftwareShortcutCatalog.Actions[row.OptionIndex].MacroId,
+                    input,
+                    LayerIndex == 1));
+            }
+        }
+        // A host remap owns a native-button macro for the source key. Without this
+        // claim the next save would treat that binding as orphaned and clear it.
+        foreach (var row in pending.Where(row => row.Group == RazerHidMappingGroup.MouseButton))
+        {
+            if (PreviewHostRemap(row) is { Outcome: HostRemapOutcome.HostInject } plan &&
+                ResolveSoftwareTrigger(row.ButtonId) is { } input)
+            {
+                claims.Add(new RazerSoftwareMacroTriggerMatcher.Claim(
+                    NativeMouseButtonCatalog.MacroId(plan.TargetButtonId),
                     input,
                     LayerIndex == 1));
             }

@@ -23,10 +23,6 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
     private IReadOnlySet<string>? _presentInstanceIds;
     private bool _isBusy;
     private string _statusText = string.Empty;
-    private bool _isDownloading;
-    private double _downloadProgress;
-    private string _downloadDetailText = string.Empty;
-    private bool _isDownloadIndeterminate;
     private bool _downloadPhaseActive;
 
     public RazerDriverWorkspace(LocalDiagnosticLog diagnosticLog)
@@ -37,6 +33,8 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public ObservableCollection<RazerDriverRowViewModel> Missing => _missing;
+
+    public DownloadProgressState Download { get; } = new();
 
     public bool HasMissing => _missing.Count > 0;
 
@@ -61,50 +59,6 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
         {
             if (_statusText == value) return;
             _statusText = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool IsDownloading
-    {
-        get => _isDownloading;
-        private set
-        {
-            if (_isDownloading == value) return;
-            _isDownloading = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public double DownloadProgress
-    {
-        get => _downloadProgress;
-        private set
-        {
-            if (Math.Abs(_downloadProgress - value) < 0.01) return;
-            _downloadProgress = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public string DownloadDetailText
-    {
-        get => _downloadDetailText;
-        private set
-        {
-            if (_downloadDetailText == value) return;
-            _downloadDetailText = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool IsDownloadIndeterminate
-    {
-        get => _isDownloadIndeterminate;
-        private set
-        {
-            if (_isDownloadIndeterminate == value) return;
-            _isDownloadIndeterminate = value;
             OnPropertyChanged();
         }
     }
@@ -253,10 +207,7 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
         }
 
         IsBusy = true;
-        IsDownloading = false;
-        IsDownloadIndeterminate = false;
-        DownloadProgress = 0;
-        DownloadDetailText = string.Empty;
+        Download.Reset();
         var installed = 0;
         var commonMayBindLate = false;
         try
@@ -350,14 +301,12 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
                     _diagnosticLog.TryWrite(
                         "razer-driver",
                         $"Download {package.Name} failed: {exception.Message}");
-                    IsDownloading = false;
-                    DownloadDetailText = string.Empty;
+                    Download.Reset();
                     continue;
                 }
 
                 _downloadPhaseActive = false;
-                IsDownloading = false;
-                DownloadDetailText = string.Empty;
+                Download.Reset();
                 StatusText = AppStrings.FormatText("RazerDriverInstalling", package.Name);
                 var serviceResult = await OpenSynapseServiceClient
                     .TryInstallRazerDeviceDriverAsync(
@@ -519,8 +468,7 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
         finally
         {
             _downloadPhaseActive = false;
-            IsDownloading = false;
-            DownloadDetailText = string.Empty;
+            Download.Reset();
             IsBusy = false;
         }
     }
@@ -531,17 +479,11 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
             RazerDriverInstallStage.DownloadingCommon)
         {
             if (!_downloadPhaseActive) return;
-            IsDownloading = true;
-            IsDownloadIndeterminate = update.TotalBytes <= 0;
-            DownloadProgress = update.TotalBytes > 0
-                ? 100d * update.BytesReceived / update.TotalBytes
-                : 0d;
-            DownloadDetailText = FormatDownloadDetail(update);
+            Download.Report(update.BytesReceived, update.TotalBytes, update.BytesPerSecond);
         }
         else
         {
-            IsDownloading = false;
-            DownloadDetailText = string.Empty;
+            Download.Reset();
         }
 
         StatusText = update.Stage switch
@@ -555,33 +497,6 @@ public sealed class RazerDriverWorkspace : INotifyPropertyChanged
             _ => AppStrings.FormatText("RazerDriverInstalling", update.PackageName),
         };
     }
-
-    private static string FormatDownloadDetail(RazerDriverInstallProgress update)
-    {
-        var received = FormatBytes(update.BytesReceived);
-        var total = update.TotalBytes > 0 ? FormatBytes(update.TotalBytes) : "?";
-        var speed = update.BytesPerSecond > 0
-            ? $"{FormatBytes((long)update.BytesPerSecond)}/s"
-            : "--";
-        return update.Eta is { } eta
-            ? AppStrings.FormatText(
-                "RazerDriverDownloadDetail", received, total, speed, FormatEta(eta))
-            : AppStrings.FormatText(
-                "RazerDriverDownloadDetailNoEta", received, total, speed);
-    }
-
-    private static string FormatBytes(long bytes) => bytes switch
-    {
-        >= 1024L * 1024 * 1024 => $"{bytes / (1024d * 1024 * 1024):0.0} GB",
-        >= 1024L * 1024 => $"{bytes / (1024d * 1024):0.0} MB",
-        >= 1024 => $"{bytes / 1024d:0.0} KB",
-        _ => $"{bytes} B",
-    };
-
-    private static string FormatEta(TimeSpan eta) =>
-        eta.TotalHours >= 1
-            ? $"{(int)eta.TotalHours}:{eta.Minutes:00}:{eta.Seconds:00}"
-            : $"{eta.Minutes}:{eta.Seconds:00}";
 
     private static string DescribeFailure(RazerDriverInstallResult result) =>
         result.Failure switch

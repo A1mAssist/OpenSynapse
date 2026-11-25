@@ -65,7 +65,7 @@ public sealed partial class RazerHidDeviceViewModel
             log: _log,
             systemMacros: () => _getActiveProfile is null
                 ? []
-                : SoftwareShortcutCatalog.Bindings(_getActiveProfile().SystemMacros))
+                : SystemMacroCatalog.Bindings(_getActiveProfile().SystemMacros))
         { DeviceInstanceId = Connection.InstanceId };
 
     private MacroInput? ResolveDefaultSoftwareMacroTrigger(byte buttonId)

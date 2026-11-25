@@ -166,7 +166,9 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         {
             if (ReferenceEquals(_selectedLayer, value)) return;
             _selectedLayer = value;
-            _selectedRegion = null;
+            // Keep the region target with the layer; clearing it made a layer with
+            // regions show "whole layer" after switching away and back.
+            _selectedRegion = value?.Regions.FirstOrDefault();
             RefreshRegionChoices();
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedEffectChoice));

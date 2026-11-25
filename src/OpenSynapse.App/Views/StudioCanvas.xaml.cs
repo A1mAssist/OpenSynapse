@@ -357,9 +357,16 @@ public sealed partial class StudioCanvas : UserControl
     {
         Focus(FocusState.Programmatic);
         if (TryBeginPan(e)) return;
-        if (_tool != StudioCanvasTool.Select || !ReferenceEquals(e.OriginalSource, Surface)) return;
+        // A drag on the empty grid moves the view; Shift keeps the marquee for regions.
+        if (!ReferenceEquals(e.OriginalSource, Surface)) return;
         var point = e.GetCurrentPoint(Surface);
         if (!point.Properties.IsLeftButtonPressed) return;
+        if (!e.KeyModifiers.HasFlag(VirtualKeyModifiers.Shift))
+        {
+            BeginPan(e.GetCurrentPoint(Scroller).Position, e);
+            return;
+        }
+        if (_tool != StudioCanvasTool.Select) return;
         BeginMarquee(point.Position, e);
         e.Handled = true;
     }

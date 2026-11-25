@@ -139,14 +139,15 @@ internal sealed class DisplayPowerNotification
             (unchecked((nuint)wParam.ToInt64()) is DbtDeviceArrival or DbtDeviceRemoveComplete or DbtDevNodesChanged))
         {
             WindowsHidDiscovery.InvalidateInterfaceCache();
-            _viewModel.Refresh.RequestDeviceRefresh();
+            _viewModel.RazerHid.InvalidateUnresolvedEndpointCache();
+            _viewModel.Refresh.RequestDeviceRefresh("device-change");
         }
 
         if (message == WmDisplayChange)
         {
             // Monitor hotplug and resolution/refresh changes update the GPU modes,
             // the internal-display options, and the driver topology.
-            _viewModel.Refresh.RequestDeviceRefresh();
+            _viewModel.Refresh.RequestDeviceRefresh("display-change");
         }
 
         if (message == WmPowerBroadcast)
@@ -154,7 +155,7 @@ internal sealed class DisplayPowerNotification
             switch (unchecked((uint)wParam.ToInt64()))
             {
                 case PbtApmPowerStatusChange:
-                    _viewModel.Refresh.RequestDeviceRefresh();
+                    _viewModel.Refresh.RequestDeviceRefresh("power-status");
                     break;
                 case PbtApmSuspend:
                     PrepareForSuspend();
@@ -223,6 +224,7 @@ internal sealed class DisplayPowerNotification
             }
             _systemSuspended = false;
             WindowsHidDiscovery.InvalidateInterfaceCache();
+            _viewModel.RazerHid.InvalidateUnresolvedEndpointCache();
             // Devices come back with a fresh firmware state; forget what we wrote so
             // the next profile restore and the next Chroma frame repaint every LED.
             // Both collections belong to the UI-thread refresh path.

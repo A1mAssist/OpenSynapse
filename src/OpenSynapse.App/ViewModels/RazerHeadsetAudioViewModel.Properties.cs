@@ -18,6 +18,8 @@ public sealed partial class RazerHeadsetAudioViewModel
     /// </summary>
     public RazerHidKrakenViewModel? Lighting { get; }
 
+    public DownloadProgressState ThxProgress { get; } = new();
+
     public RazerMixer053EViewModel? Mixer053E { get; }
     public RazerRipsawViewModel? Ripsaw { get; }
     public Visibility RipsawVisibility => Ripsaw is null ? Visibility.Collapsed : Visibility.Visible;

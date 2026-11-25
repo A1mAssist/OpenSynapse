@@ -100,11 +100,22 @@ public sealed class BladeFanCurve
                 gpuTemperatureCelsius is not double gpuIndependent
                     ? throw MissingTemperature("CPU/GPU")
                     : new BladeFanTargets(
-                        EvaluateCurve(cpuIndependent, CpuPoints, MinimumCpuTemperatureCelsius).CpuRpm,
-                        EvaluateCurve(gpuIndependent, GpuPoints, MinimumGpuTemperatureCelsius).GpuRpm),
+                        EvaluateCpuRpm(cpuIndependent),
+                        EvaluateGpuRpm(gpuIndependent)),
             _ => throw new InvalidOperationException("Unknown fan curve temperature mode."),
         };
     }
+
+    /// <summary>
+    /// One curve's target speed at a temperature, independent of the merge mode. The
+    /// plot has to put the operating point on the curve that actually produced it, so
+    /// it must not go through the merged <see cref="Evaluate"/> result.
+    /// </summary>
+    public int EvaluateCpuRpm(double cpuTemperatureCelsius) =>
+        EvaluateCurve(cpuTemperatureCelsius, CpuPoints, MinimumCpuTemperatureCelsius).CpuRpm;
+
+    public int EvaluateGpuRpm(double gpuTemperatureCelsius) =>
+        EvaluateCurve(gpuTemperatureCelsius, GpuPoints, MinimumGpuTemperatureCelsius).GpuRpm;
 
     // The editor owns one visible speed column per curve; the other column is only
     // meaningful in Independent mode. Shared modes must not leak that stale column.

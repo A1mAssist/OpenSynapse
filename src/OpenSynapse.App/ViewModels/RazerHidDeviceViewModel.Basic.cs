@@ -16,6 +16,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
     private static readonly TimeSpan BatteryRefreshInterval = TimeSpan.FromSeconds(10);
     private DateTimeOffset _lastBatteryRefresh;
     private DateTimeOffset _lastSlowCardLoad;
+    private bool _slowCardsLoading;
 
     public Task LoadBasicStateAsync(CancellationToken cancellationToken = default) =>
         !IsReady || RequiresRescan
@@ -91,16 +92,21 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         bool force = false,
         CancellationToken cancellationToken = default)
     {
-        if (!IsReady || RequiresRescan)
+        if (!IsReady || RequiresRescan || _slowCardsLoading)
         {
             return;
         }
 
         var activeProfile = _activeOnboardProfileKnown ? ActiveOnboardProfileId : (byte?)null;
-        await _service.RunExclusiveAsync(
-            Connection,
-            token => LoadSlowCardsCoreAsync(force, token),
-            cancellationToken);
+        _slowCardsLoading = true;
+        try
+        {
+            await LoadSlowCardsCoreAsync(force, cancellationToken);
+        }
+        finally
+        {
+            _slowCardsLoading = false;
+        }
 
         // The profile button changes the active slot outside the app; the mapping
         // rows above still belong to the previous slot until they are re-read.
@@ -117,7 +123,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         CancellationToken cancellationToken)
     {
         if (!force &&
-            DateTimeOffset.UtcNow - _lastSlowCardLoad < TimeSpan.FromSeconds(10))
+            DateTimeOffset.UtcNow - _lastSlowCardLoad < TimeSpan.FromSeconds(30))
         {
             return;
         }
@@ -149,7 +155,12 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         {
             try
             {
-                await load(this, cancellationToken);
+                // One gate per card: a user write can land between cards instead of
+                // waiting for all eight reads to finish.
+                await _service.RunExclusiveAsync(
+                    Connection,
+                    token => load(this, token),
+                    cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {

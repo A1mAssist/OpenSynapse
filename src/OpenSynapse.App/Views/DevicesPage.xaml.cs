@@ -468,8 +468,8 @@ public sealed partial class DevicesPage : UserControl
 
     internal async Task ShowDeviceAsync(object? source) => await SelectDeviceSourceAsync(source);
 
-    internal void ScrollToTop() => PageScrollViewer.ScrollTo(
-        0, 0, new ScrollingScrollOptions(ScrollingAnimationMode.Disabled));
+    internal void ScrollToTop() => PageScrollViewer.ChangeView(
+        0, 0, null, disableAnimation: true);
 
     internal void SetLiteMode(bool liteMode)
     {
@@ -574,9 +574,9 @@ public sealed partial class DevicesPage : UserControl
             PageScrollViewer.VerticalOffset;
         var centeredOffset = targetTop -
             Math.Max(0, (PageScrollViewer.ViewportHeight - target.ActualHeight) / 2);
-        PageScrollViewer.ScrollTo(
+        PageScrollViewer.ChangeView(
             PageScrollViewer.HorizontalOffset,
             Math.Clamp(centeredOffset, 0, PageScrollViewer.ScrollableHeight),
-            new ScrollingScrollOptions(ScrollingAnimationMode.Disabled));
+            null, disableAnimation: true);
     }
 }

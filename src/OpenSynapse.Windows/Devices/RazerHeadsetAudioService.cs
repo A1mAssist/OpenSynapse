@@ -273,7 +273,7 @@ public sealed partial class RazerHeadsetAudioService
         IReadOnlyList<RazerNxpSerialDevice> serialDevices = [];
         try
         {
-            serialDevices = await RazerNxpSerialDiscovery.FindAllAsync(cancellationToken, diagnostic)
+            serialDevices = await RazerNxpSerialDiscovery.FindAllAsync(cancellationToken, diagnostic, usbDevices)
                 .ConfigureAwait(false);
         }
         catch (Exception exception) when (IsExpected(exception) ||

@@ -13,7 +13,7 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
 {
-    private static readonly TimeSpan DpiStageRefreshInterval = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan DpiStageRefreshInterval = TimeSpan.FromSeconds(10);
     private DateTimeOffset _lastDpiStageRefresh;
 
     [ProfileSetting("input.polling-rate", DeviceCategory.Unknown, powerScoped: true)]

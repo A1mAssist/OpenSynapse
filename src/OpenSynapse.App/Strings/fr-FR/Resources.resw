@@ -3785,6 +3785,7 @@
   <data name="RazerMappingMacroUnsupported" xml:space="preserve"><value>Cette macro ne peut pas être stockée sur l’appareil : étape {0} : {1}. Modifiez la macro et réessayez.</value></data>
   <data name="RazerMappingMacroUnsupportedSoftware" xml:space="preserve"><value>Cette macro ne peut pas être stockée sur l’appareil : étape {0} : {1}. Utilisez une macro logicielle ou modifiez la macro.</value></data>
   <data name="RazerMappingMacroSlotOverwrite" xml:space="preserve"><value>Cet emplacement contient déjà une autre macro ; l’enregistrement l’écrasera.</value></data>
+  <data name="RazerMappingHostRemapHint" xml:space="preserve"><value>Appelle la fonction native de cette touche ; la macro liée à cette touche ne s’exécute pas.</value></data>
   <data name="RazerMappingMacroSoftwareApplied" xml:space="preserve"><value>Macro : {0}</value></data>
   <data name="RazerMappingMacroAssignmentNotOff" xml:space="preserve"><value>Cette touche a une macro logicielle, mais l’action de l’appareil est toujours active ; elle peut donc se déclencher deux fois. Appliquez de nouveau pour corriger.</value></data>
   <data name="RazerMappingMacroCurrentOnce" xml:space="preserve"><value>{0} · Exécuter une fois</value></data>

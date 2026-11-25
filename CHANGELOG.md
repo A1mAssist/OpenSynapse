@@ -25,6 +25,10 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
+- **Page scrolling speed**: the six main pages scroll with the 1.7.3 wheel step again; the page root is back on `ScrollViewer`, so one notch moves the same distance instead of the smaller compositor step.
+- **Nested key mappings**: mapping a key onto a button that already runs a macro now calls that button's native function once and leaves the button's own macro to the physical key, matching Razer Synapse. Targets without a host-side injection path (buttons 6–10, private keys already bound to that same key) are reported as unsupported instead of silently nesting twice.
+- **Device refresh stalling**: a control channel that never answers is now remembered for 30 seconds instead of being re-probed on every pass, so a busy or half-detached device no longer blocks profile switches and lighting writes for seconds. Device-change, display-change and power events are also labelled in the log, so the next report names the trigger.
+- **Kraken V3 Pro detection**: the NXP serial bridge is now adopted by the USB device's container when the port id carries no VID/PID, so the receiver connects even when Windows exposes the bridge as a software port.
 - **Huntsman V3 Pro 8KHz extra keys**: the mapping page lists the four multimedia keys and the two side keys the product bundle assigns, and stops presenting the side keys as macro keys, so the rows match Razer Synapse.
 - **Game lighting restore**: ending a Chroma game session now restores every device that received frames. One slow or failed target no longer blocks the rest, and a session is no longer skipped when all writes time out. This fixes peripherals going dark after a game and a mouse stuck on the last frame, while unresponsive wireless targets no longer stall the whole lighting update.
 - **Page scrolling**: move the main pages to the compositor-based `ScrollView` and drop the whole-page opacity animation on navigation, so scrolling and page switches stay responsive on high-refresh displays.
@@ -33,6 +37,9 @@ All notable user-visible changes to OpenSynapse are documented here.
 - **THX preset sync**: while a headset's THX card is visible, poll the native state every two seconds and refresh the preset and curve when the headset's own controls change them, without writing back to the device.
 - **Taskbar battery freshness**: redraw the strip from the live device rows every second while keeping the ten-second HID read interval; opening the window also forces an immediate refresh so the strip matches the tray instead of lagging behind.
 - **Mouse DPI stages**: saving the stage table now also applies the active stage's DPI, so the pointer speed changes immediately and the DPI card refreshes.
+- **Lighting Studio regions**: switching back to a layer keeps its region selected instead of showing “whole layer”, and applying a new selection replaces that region instead of adding another.
+- **Background mouse mappings**: keep re-arming driver mode while the window is hidden, so a mouse that slept or re-paired no longer loses its private-key mappings until the window is opened.
+- **Device refresh cost**: cache unsupported capability probes for 30 seconds, skip a readout tick while a device write holds the gate, and load the slow device cards one lock at a time so a click does not wait for all of them.
 - **Export logs**: the button now opens the folder with the log selected instead of printing the file path.
 - **THX manifest download**: each request uses the current system proxy and gives up after 15 seconds with one retry, so a long-running session no longer keeps a cached direct connection and hangs; a failed fetch shows a network hint on the THX card.
 - **Scroll settings**: the mode and acceleration save buttons now share the same height and align.

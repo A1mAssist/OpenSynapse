@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using System.Diagnostics;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Protocols;
 
@@ -6,6 +7,12 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed partial class RazerHidDeviceService
 {
+    /// <summary>
+    /// Forgives cached probe failures after a device change or resume, so a replugged
+    /// endpoint is retried immediately instead of waiting out the negative cache.
+    /// </summary>
+    public void InvalidateUnresolvedEndpointCache() => _unresolvedEndpointCache.Clear();
+
     public async Task<IReadOnlyList<RazerHidDeviceConnection>> DiscoverAsync(
         CancellationToken cancellationToken = default)
     {
@@ -69,6 +76,17 @@ public sealed partial class RazerHidDeviceService
                 available,
                 _endpointCache.TryGetValue(group.Key.PhysicalDeviceKey, out var cachedPath) ? cachedPath : null);
 
+            if (_unresolvedEndpointCache.TryGetValue(group.Key.PhysicalDeviceKey, out var cachedUnresolved) &&
+                cachedUnresolved.ExpiresAt > DateTimeOffset.UtcNow)
+            {
+                WriteDiagnostic(definition.ProductId,
+                    $"control channel still unresolved for {UnresolvedEndpointTtl.TotalSeconds:0}s after a slow probe: {cachedUnresolved.Error}");
+                results.Add(CreateConnection(definition, null, group.Key.PhysicalDeviceKey,
+                    RazerHidEndpointState.RecognizedButUnresolved, cachedUnresolved.Error));
+                continue;
+            }
+
+            var probeStarted = Stopwatch.StartNew();
             var resolution = await ResolveEndpointPathAsync(
                 definition, ordered.Select(candidate => candidate.DevicePath), cancellationToken).ConfigureAwait(false);
             if (resolution.Path is null)
@@ -90,12 +108,19 @@ public sealed partial class RazerHidDeviceService
                 {
                     InvalidateMiddlewareProbeCache(candidate.DevicePath);
                 }
+
+                if (probeStarted.Elapsed >= SlowUnresolvedProbe)
+                {
+                    _unresolvedEndpointCache[group.Key.PhysicalDeviceKey] =
+                        (DateTimeOffset.UtcNow + UnresolvedEndpointTtl, lastError);
+                }
                 WriteDiagnostic(definition.ProductId, $"control channel unresolved: {lastError ?? "no side-effect-free GET answered"}");
                 results.Add(CreateConnection(definition, null, group.Key.PhysicalDeviceKey,
                     RazerHidEndpointState.RecognizedButUnresolved, lastError));
             }
             else
             {
+                _unresolvedEndpointCache.TryRemove(group.Key.PhysicalDeviceKey, out _);
                 _endpointCache[group.Key.PhysicalDeviceKey] = resolvedPath;
                 var resolvedDefinition = await ResolveLeviathanDefinitionAsync(
                     definition, resolvedPath, cancellationToken).ConfigureAwait(false);

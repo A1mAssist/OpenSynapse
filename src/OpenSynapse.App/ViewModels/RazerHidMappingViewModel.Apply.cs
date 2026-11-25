@@ -75,6 +75,9 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                                row.MacroTarget == MacroExecutionTarget.Onboard) &&
                               row.Group != RazerHidMappingGroup.WindowsShortcut)
                 .ToArray();
+            // A target key that already runs a host trigger must keep that trigger;
+            // the source key is rewritten to call the target's native function once.
+            var hostRemapPlans = BuildHostRemapPlans(assignmentRows);
             var hostOnlyOffRows = pending
                 .Where(row => row.IsHostOnly && row.Group == RazerHidMappingGroup.Off)
                 .ToArray();
@@ -211,6 +214,33 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
 
             foreach (var row in assignmentRows)
             {
+                if (hostRemapPlans.TryGetValue(row, out var plan))
+                {
+                    if (plan.Outcome == HostRemapOutcome.Unsupported)
+                    {
+                        _log?.Invoke(
+                            $"host remap unsupported: button=0x{row.ButtonId:X2} " +
+                            $"target=0x{plan.TargetButtonId:X2}");
+                        skipped.Add($"{row.ButtonName}: " +
+                            AppStrings.Text("RazerHidMappingUnsupportedAction"));
+                        continue;
+                    }
+
+                    try
+                    {
+                        await WriteHostRemapAsync(row, plan, backups, clears, cancellationToken)
+                            .ConfigureAwait(true);
+                    }
+                    catch
+                    {
+                        await RestoreAsync(clears, backups).ConfigureAwait(true);
+                        throw;
+                    }
+
+                    applied++;
+                    continue;
+                }
+
                 var action = row.CreateAction();
                 if (action is null)
                 {
@@ -315,6 +345,28 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
 
             foreach (var row in assignmentRows)
             {
+                if (hostRemapPlans.TryGetValue(row, out var plan))
+                {
+                    switch (plan.Outcome)
+                    {
+                        case HostRemapOutcome.HostInject:
+                            // The device now reports the source key; the description
+                            // stays the target's native function.
+                            row.SoftwareMacroId =
+                                NativeMouseButtonCatalog.MacroId(plan.TargetButtonId);
+                            row.LoadedOptionIndex = row.OptionIndex;
+                            break;
+                        case HostRemapOutcome.RestoreNativeAssignment when
+                            plan.Native is { } native:
+                            row.CurrentActionText =
+                                DescribeAssignment(native.FunctionId, native.Data);
+                            row.SoftwareMacroId = null;
+                            break;
+                    }
+
+                    continue;
+                }
+
                 var action = row.CreateAction();
                 if (action is null) continue;
                 row.CurrentActionText = DescribeAssignment(action.FunctionId, action.Data);

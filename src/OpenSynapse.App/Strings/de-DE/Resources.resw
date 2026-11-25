@@ -3785,6 +3785,7 @@
   <data name="RazerMappingMacroUnsupported" xml:space="preserve"><value>Dieses Makro kann nicht onboard gespeichert werden: Schritt {0}: {1}. Bearbeiten Sie das Makro und versuchen Sie es erneut.</value></data>
   <data name="RazerMappingMacroUnsupportedSoftware" xml:space="preserve"><value>Dieses Makro kann nicht onboard gespeichert werden: Schritt {0}: {1}. Verwenden Sie ein Softwaremakro oder bearbeiten Sie das Makro.</value></data>
   <data name="RazerMappingMacroSlotOverwrite" xml:space="preserve"><value>Dieser Slot enthält bereits ein anderes Makro; beim Speichern wird es überschrieben.</value></data>
+  <data name="RazerMappingHostRemapHint" xml:space="preserve"><value>Ruft die native Funktion dieser Taste auf; das an diese Taste gebundene Makro wird nicht ausgeführt.</value></data>
   <data name="RazerMappingMacroSoftwareApplied" xml:space="preserve"><value>Makro: {0}</value></data>
   <data name="RazerMappingMacroAssignmentNotOff" xml:space="preserve"><value>Diese Taste hat ein Softwaremakro, aber die Geräteaktion ist weiterhin aktiv, sodass sie möglicherweise zweimal ausgelöst wird. Wenden Sie die Einstellung erneut an, um das Problem zu beheben.</value></data>
   <data name="RazerMappingMacroCurrentOnce" xml:space="preserve"><value>{0} · Einmal ausführen</value></data>

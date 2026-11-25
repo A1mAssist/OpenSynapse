@@ -13,18 +13,28 @@ public sealed partial class RazerHeadsetAudioViewModel
         // command has finished so a queued 100% callback cannot overwrite the
         // final state with the "downloading" text.
         var finished = false;
-        var lastPercent = -1;
-        var progress = new Progress<double>(fraction =>
+        var progress = new Progress<ThxInstallProgress>(update =>
         {
             // IsBusy turns false before the post-install refresh, so a queued
             // progress callback cannot put the card back into "downloading".
             if (finished || !IsBusy) return;
-            var percent = (int)Math.Round(Math.Clamp(fraction, 0d, 1d) * 100d);
-            if (percent == lastPercent) return;
-            lastPercent = percent;
-            OperationStatusText =
-                $"{AppStrings.Text("RazerHeadsetThxDownloading")} {percent}%";
+            if (update.Installing)
+            {
+                ThxProgress.ShowInstalling();
+            }
+            else
+            {
+                ThxProgress.Report(
+                    update.BytesReceived,
+                    update.TotalBytes,
+                    update.BytesPerSecond);
+            }
+            var percent = (int)Math.Round(update.Fraction * 100d);
+            OperationStatusText = update.Installing
+                ? AppStrings.Text("RazerHeadsetThxDownloading")
+                : $"{AppStrings.Text("RazerHeadsetThxDownloading")} {percent}%";
         });
+        ThxProgress.Reset();
         try
         {
             await InstallThxAsync(
@@ -38,6 +48,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         finally
         {
             finished = true;
+            ThxProgress.Reset();
         }
     }
 

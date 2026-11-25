@@ -151,6 +151,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
     }
 
     internal RazerHidDeviceService? DeviceService => _deviceService;
+    internal void InvalidateUnresolvedEndpointCache() => _deviceService?.InvalidateUnresolvedEndpointCache();
     internal IReadOnlyList<RazerHidSpecialLightingConnection> KrakenConnections => _krakenConnections;
 
     internal IReadOnlyList<RazerHidDeviceConnection> CurrentConnections =>

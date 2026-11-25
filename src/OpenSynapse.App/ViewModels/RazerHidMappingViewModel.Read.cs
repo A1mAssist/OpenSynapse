@@ -311,7 +311,31 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 }
 
                 var softwareMacroIndex = -1;
+                // A host remap leaves the key self-mapped and binds a native button
+                // macro to it; show the target button rather than the raw self-map.
+                var nativeMouseIndex = -1;
                 if (shortcutIndex < 0 &&
+                    softwareTrigger is not null &&
+                    (LayerIndex == 0 || _canObserveHyperShiftLayer) &&
+                    IsHostRemapAssignment(assignment, id, softwareTrigger) &&
+                    FindNativeMouseMacro(softwareTrigger, LayerIndex == 1) is { } nativeMacro &&
+                    NativeMouseButtonCatalog.ActionOf(nativeMacro.Id) is { } native &&
+                    RazerHidMappingActions.MouseButtonOptionIndex((byte)native.Button) is var nativeOption &&
+                    nativeOption >= 0)
+                {
+                    nativeMouseIndex = nativeOption;
+                    row.GroupIndex = (int)RazerHidMappingGroup.MouseButton;
+                    row.OptionIndex = nativeOption;
+                    row.SoftwareMacroId = nativeMacro.Id;
+                    row.LoadedOptionIndex = nativeOption;
+                    // The dropdown and the "current" line must agree: the key calls
+                    // the target button's native function.
+                    row.CurrentActionText = DescribeAssignment(
+                        RazerHidMappingFunctions.ButtonCode, [(byte)native.Button]);
+                }
+
+                if (shortcutIndex < 0 &&
+                    nativeMouseIndex < 0 &&
                     softwareTrigger is not null &&
                     (LayerIndex == 0 || _canObserveHyperShiftLayer))
                 {

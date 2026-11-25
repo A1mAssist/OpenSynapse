@@ -8246,6 +8246,9 @@
   <data name="RazerMappingMacroSlotOverwrite" xml:space="preserve">
     <value>В этом слоте уже есть другой макрос; сохранение перезапишет его.</value>
   </data>
+  <data name="RazerMappingHostRemapHint" xml:space="preserve">
+    <value>Вызывает собственную функцию этой кнопки; макрос, привязанный к ней, не запускается.</value>
+  </data>
   <data name="RazerMappingMacroSoftwareApplied" xml:space="preserve">
     <value>Макрос: {0}</value>
   </data>

@@ -12,18 +12,21 @@ public sealed partial class RefreshWorkspace
         {
             while (true)
             {
-                var interval = Volatile.Read(ref _deviceWatchActive) != 0 &&
-                               IsDisplayAvailable
+                var active = Volatile.Read(ref _deviceWatchActive) != 0 && IsDisplayAvailable;
+                // Keep a slow heartbeat while the window is hidden: a mouse that slept
+                // or re-paired loses driver mode, and only this loop re-arms it.
+                var interval = active
                     ? LiteModePolicy.DeviceReadoutInterval(_liteMode)
-                    : Profile.ApplicationBindings.Count > 0
-                        ? TimeSpan.FromSeconds(10)
-                        : Timeout.InfiniteTimeSpan;
+                    : TimeSpan.FromSeconds(10);
                 await _deviceWatchSignal.WaitAsync(interval, cancellationToken);
                 try
                 {
                     var powerState = _currentPowerSource();
-                    var executablePath = _activeApplicationProvider.ExecutablePath;
-                    await SwitchDeviceProfilesAsync(executablePath, cancellationToken);
+                    if (active || Profile.ApplicationBindings.Count > 0)
+                    {
+                        var executablePath = _activeApplicationProvider.ExecutablePath;
+                        await SwitchDeviceProfilesAsync(executablePath, cancellationToken);
+                    }
                     var profileChanged = false;
 
                     // Discovery is event-driven: startup, device notifications, resume,
@@ -44,6 +47,12 @@ public sealed partial class RefreshWorkspace
                         Interlocked.Exchange(ref _displayProfileApplyRequested, 0) != 0;
                     if (refreshRequested || powerChanged || profileChanged || displayProfileRequested)
                     {
+                        if (refreshRequested)
+                        {
+                            _diagnosticLog.TryWrite(
+                                "device-watch",
+                                $"discovery requested ({Volatile.Read(ref _deviceRefreshReason)})");
+                        }
                         var snapshot = refreshRequested
                             ? await _discovery.DiscoverAsync(cancellationToken)
                             : new DeviceSnapshot(ActiveDescriptors, DateTimeOffset.UtcNow);
@@ -57,7 +66,10 @@ public sealed partial class RefreshWorkspace
                         // Nothing asked for a rescan, but the readouts on the device page are
                         // live numbers such as fan speed, so they still need a periodic read.
                         // This path only reads; it never writes a setting back to the device.
-                        await _pollHeadsetPower(cancellationToken);
+                        if (active)
+                        {
+                            await _pollHeadsetPower(cancellationToken);
+                        }
                         await RefreshDeviceReadoutsAsync(cancellationToken);
                         await _razerHid.KeepAliveDriverModeAsync(cancellationToken);
                     }

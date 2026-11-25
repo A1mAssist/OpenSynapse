@@ -288,7 +288,7 @@ internal static partial class ThxHeadsetAdmission
     internal static async Task<ThxHeadsetStatus> InstallComponentsAsync(
         ushort productId,
         CancellationToken cancellationToken = default,
-        IProgress<double>? progress = null,
+        IProgress<ThxInstallProgress>? progress = null,
         Action<string>? diagnostic = null)
     {
         var profile = GetProfile(productId);

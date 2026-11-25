@@ -77,13 +77,16 @@ public sealed partial class MacroWorkspace
             StringComparer.Ordinal.Equals(item.Id, macroId));
         if (row is null)
         {
-            return SoftwareShortcutCatalog.ActionOf(macroId) is { } shortcut
-                ? await TryApplyShortcutBindingAsync(
-                        shortcut,
-                        input,
-                        hyperShiftLayer,
-                        softwareBinding,
-                        cancellationToken)
+            if (SoftwareShortcutCatalog.ActionOf(macroId) is { } shortcut)
+            {
+                return await TryApplyBuiltInBindingAsync(
+                        shortcut.CreateMacro(), input, hyperShiftLayer, softwareBinding, cancellationToken)
+                    .ConfigureAwait(true);
+            }
+
+            return NativeMouseButtonCatalog.ActionOf(macroId) is { } native
+                ? await TryApplyBuiltInBindingAsync(
+                        native.CreateMacro(), input, hyperShiftLayer, softwareBinding, cancellationToken)
                     .ConfigureAwait(true)
                 : AppStrings.Text("MacroTriggerMacroMissing");
         }
@@ -185,7 +188,7 @@ public sealed partial class MacroWorkspace
             StringComparer.Ordinal.Equals(item.Id, macroId));
         if (row is null)
         {
-            return SoftwareShortcutCatalog.ActionOf(macroId) is null
+            return !IsBuiltInMacro(macroId)
                 ? null
                 : await TryClearShortcutTriggerAsync(
                         macroId, input, hyperShiftLayer, cancellationToken)
@@ -204,7 +207,7 @@ public sealed partial class MacroWorkspace
     {
         var row = Items.FirstOrDefault(item =>
             StringComparer.Ordinal.Equals(item.Id, macroId));
-        if (row is null && SoftwareShortcutCatalog.ActionOf(macroId) is not null)
+        if (row is null && IsBuiltInMacro(macroId))
         {
             return TryClearShortcutTriggersAsync(macroId, cancellationToken);
         }
@@ -219,8 +222,8 @@ public sealed partial class MacroWorkspace
     /// A built-in action ignores the trigger/playback choice: the mapping page
     /// only needs the button and the original assignment it has to restore.
     /// </summary>
-    private async Task<string?> TryApplyShortcutBindingAsync(
-        SoftwareShortcutAction action,
+    private async Task<string?> TryApplyBuiltInBindingAsync(
+        MacroDefinition prototype,
         MacroInput input,
         bool hyperShiftLayer,
         MacroSoftwareBinding? softwareBinding,
@@ -233,9 +236,9 @@ public sealed partial class MacroWorkspace
 
         var profile = _getActiveProfile();
         var stored = profile.SystemMacros.FirstOrDefault(item =>
-            StringComparer.Ordinal.Equals(item.Id, action.MacroId));
+            StringComparer.Ordinal.Equals(item.Id, prototype.Id));
         var added = stored is null;
-        stored ??= action.CreateMacro();
+        stored ??= prototype;
         var previousTrigger = stored.Trigger;
         var previousAdditional = CloneTriggers(stored.AdditionalTriggers);
         var previousBinding = stored.SoftwareBinding?.Clone();
@@ -305,6 +308,10 @@ public sealed partial class MacroWorkspace
     private MacroDefinition? FindSystemMacro(string macroId) =>
         _getActiveProfile().SystemMacros.FirstOrDefault(item =>
             StringComparer.Ordinal.Equals(item.Id, macroId));
+
+    private static bool IsBuiltInMacro(string macroId) =>
+        SoftwareShortcutCatalog.ActionOf(macroId) is not null ||
+        NativeMouseButtonCatalog.ActionOf(macroId) is not null;
 
     private async Task<string?> RemoveSystemMacroTriggersAsync(
         MacroDefinition stored,

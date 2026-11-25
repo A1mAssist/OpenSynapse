@@ -69,6 +69,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
     private string _lastRefreshText = AppStrings.Text("Text_E19E170A");
     private string? _lastObservedForegroundExecutablePath;
     private int _deviceRefreshRequested;
+    private string _deviceRefreshReason = "unspecified";
     private int _applicationSwitchRequested;
     private int _displayProfileApplyRequested;
     private int _deviceReadoutSamplingEnabled = 1;
@@ -200,8 +201,9 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
         }
     }
 
-    public void RequestDeviceRefresh()
+    public void RequestDeviceRefresh(string reason = "unspecified")
     {
+        Volatile.Write(ref _deviceRefreshReason, reason);
         Interlocked.Exchange(ref _deviceRefreshRequested, 1);
         SignalDeviceWatch();
     }
@@ -326,8 +328,11 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
     /// </summary>
     private async Task RefreshDeviceReadoutsAsync(CancellationToken cancellationToken)
     {
+        // A one-second poll must never queue ahead of a user write. Skip this tick
+        // when a device operation already holds the gate; the next tick retries.
         if (Volatile.Read(ref _deviceReadoutSamplingEnabled) == 0 ||
-            !await TryEnterOperationAsync(cancellationToken))
+            cancellationToken.IsCancellationRequested ||
+            !_deviceOperationGate.Wait(0))
         {
             return;
         }
