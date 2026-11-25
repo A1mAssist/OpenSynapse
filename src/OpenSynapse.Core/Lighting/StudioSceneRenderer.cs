@@ -3,14 +3,38 @@ namespace OpenSynapse.Core.Lighting;
 /// <summary>Turns a scene into layer frames or a throwaway profile for the world canvas.</summary>
 public static class StudioSceneRenderer
 {
-    public static StudioEffectParams BuildParams(StudioSceneLayer layer) => new()
+    public static StudioEffectParams BuildParams(StudioSceneLayer layer)
     {
-        Effect = layer.Effect,
-        Primary = layer.Primary,
-        Secondary = layer.Secondary,
-        DurationMs = layer.DurationMs,
-        Speed = layer.Speed,
-    };
+        var parameters = new StudioEffectParams
+        {
+            Effect = layer.Effect,
+            Primary = layer.Primary,
+            Secondary = layer.Secondary,
+            DurationMs = layer.DurationMs,
+            Speed = layer.Speed,
+            Angle = layer.Angle,
+            Width = layer.Width,
+        };
+
+        if (layer.Stops is { Count: > 0 } stops)
+        {
+            var step = stops.Count == 1 ? 0 : 100d / (stops.Count - 1);
+            for (var index = 0; index < stops.Count; index++)
+            {
+                parameters.ColorStops.Add(new StudioColorStop((int)Math.Round(index * step), stops[index]));
+            }
+        }
+
+        // A scene layer either names a preset or falls back to a built-in effect.
+        if (layer.PresetId is { Length: > 0 } presetId &&
+            StudioPresetCatalog.Default.Find(presetId) is { } preset)
+        {
+            parameters.Effect = StudioEffectKind.Preset;
+            parameters.PresetDefinition = preset;
+        }
+
+        return parameters;
+    }
 
     /// <summary>
     /// Layers for one target. A role with no dedicated layer falls back to the

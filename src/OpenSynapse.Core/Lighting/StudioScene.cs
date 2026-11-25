@@ -25,7 +25,11 @@ public sealed record StudioSceneLayer(
     double Speed,
     double Opacity,
     StudioBlendMode Blend,
-    Guid TimebaseId);
+    Guid TimebaseId,
+    string? PresetId = null,
+    IReadOnlyList<StudioRgb>? Stops = null,
+    int Angle = 0,
+    double Width = 50);
 
 /// <summary>A one-click effect shared by every controllable device.</summary>
 public sealed record StudioScene(
