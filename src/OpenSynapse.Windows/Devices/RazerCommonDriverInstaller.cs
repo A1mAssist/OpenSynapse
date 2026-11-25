@@ -25,11 +25,6 @@ internal static class RazerCommonDriverInstaller
     internal const string CabNetwork = "RzCommonCabNetwork";
     internal const string CabVerification = "RzCommonCabVerification";
 
-    private static readonly HttpClient Client = new()
-    {
-        Timeout = TimeSpan.FromMinutes(2),
-    };
-
     /// <summary>
     /// Starts the common service after the INF is staged. A demand-start driver
     /// can remain stopped until this is called, which leaves the RZCONTROL
@@ -146,7 +141,7 @@ internal static class RazerCommonDriverInstaller
                     return (null, new RazerDriverInstallResult(
                         false, RazerDriverInstallFailure.DownloadFailed, Error: probe));
                 }
-                await DownloadCabAsync(cabPath, cancellationToken).ConfigureAwait(false);
+                await DownloadCabAsync(cabPath, progress, cancellationToken).ConfigureAwait(false);
             }
 
             if (!File.Exists(infPath) || !File.Exists(sysPath) || !File.Exists(catPath))
@@ -193,8 +188,17 @@ internal static class RazerCommonDriverInstaller
     {
         try
         {
+            using var handler = new HttpClientHandler
+            {
+                UseProxy = true,
+                Proxy = WebRequest.GetSystemWebProxy(),
+            };
+            using var client = new HttpClient(handler)
+            {
+                Timeout = TimeSpan.FromSeconds(20),
+            };
             using var request = new HttpRequestMessage(HttpMethod.Head, CabUrl);
-            using var response = await Client
+            using var response = await client
                 .SendAsync(request, cancellationToken)
                 .ConfigureAwait(false);
             return ClassifyCabProbe(response.StatusCode);
@@ -209,26 +213,17 @@ internal static class RazerCommonDriverInstaller
         }
     }
 
-    private static async Task DownloadCabAsync(string path, CancellationToken cancellationToken)
+    private static async Task DownloadCabAsync(
+        string path,
+        IProgress<RazerDriverInstallProgress>? progress,
+        CancellationToken cancellationToken)
     {
         var temporary = path + ".download";
-        using (var response = await Client.GetAsync(
-                   CabUrl,
-                   HttpCompletionOption.ResponseHeadersRead,
-                   cancellationToken).ConfigureAwait(false))
-        {
-            response.EnsureSuccessStatusCode();
-            await using var source = await response.Content
-                .ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-            await using var target = new FileStream(
-                temporary,
-                FileMode.Create,
-                FileAccess.Write,
-                FileShare.None,
-                81920,
-                useAsync: true);
-            await source.CopyToAsync(target, cancellationToken).ConfigureAwait(false);
-        }
+        await RazerDriverDownloader.DownloadAsync(
+            CabUrl,
+            temporary,
+            progress is null ? null : new CommonDownloadProgressAdapter(progress),
+            cancellationToken).ConfigureAwait(false);
 
         var hash = ComputeSha256(temporary);
         if (new FileInfo(temporary).Length != CabSize ||
@@ -240,6 +235,19 @@ internal static class RazerCommonDriverInstaller
 
         File.Move(temporary, path, overwrite: true);
     }
+
+    private sealed class CommonDownloadProgressAdapter(
+        IProgress<RazerDriverInstallProgress> target) : IProgress<RazerDriverDownloadProgress>
+    {
+        public void Report(RazerDriverDownloadProgress value) =>
+            target.Report(new RazerDriverInstallProgress(
+                RazerDriverInstallStage.DownloadingCommon,
+                "RzCommon",
+                value.BytesReceived,
+                value.TotalBytes,
+                value.BytesPerSecond));
+    }
+
     private static void ExtractCab(string cabPath, string folder)
     {
         var startInfo = new ProcessStartInfo

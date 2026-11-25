@@ -18,12 +18,13 @@ internal static partial class ThxHeadsetAdmission
 
     internal static async Task<ThxInstallerPackage?> ResolvePresetInstallerAsync(
         ThxHeadsetProfile profile,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Action<string>? diagnostic = null)
     {
         // A missing preset degrades spatial processing but must not block the
         // install, so a failed fetch simply skips it.
         using var manifest = await RazerManifestResources
-            .FetchAsync(profile.InstallerPage, cancellationToken)
+            .FetchAsync(profile.InstallerPage, cancellationToken, diagnostic)
             .ConfigureAwait(false);
         return manifest is null
             ? null

@@ -1003,7 +1003,7 @@
     <value>Exporter les journaux</value>
   </data>
   <data name="DiagnosticsLogsExported" xml:space="preserve">
-    <value>Journaux exportés : {0}</value>
+    <value>Journaux exportés. Le dossier est ouvert.</value>
   </data>
   <data name="DiagnosticsLogsExportFailed" xml:space="preserve">
     <value>Échec de l’exportation des journaux : {0}</value>
@@ -2788,7 +2788,8 @@
   <data name="RazerHeadsetThxServiceBroken" xml:space="preserve"><value>L’inscription du service THX est endommagée (VSSrv.exe manquant). Réparez-la avec le bouton ci-dessous.</value></data>
   <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>Le service THX est prêt, mais le composant de contrôle est manquant. Installez-le avec le bouton ci-dessous.</value></data>
   <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>Téléchargement et installation des composants THX…</value></data>
-  <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>Les composants THX n’ont pas pu être téléchargés, vérifiés ou installés. Accordez les droits d’administrateur et réessayez.</value></data>
+  <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>Les composants THX n’ont pas pu être téléchargés, vérifiés ou installés. Vérifiez le réseau, accordez les droits d’administrateur et réessayez.</value></data>
+  <data name="RazerHeadsetThxManifestUnavailable" xml:space="preserve"><value>Impossible de récupérer la liste des composants Razer THX. Vérifiez le réseau ou le proxy, puis réessayez.</value></data>
   <data name="RazerHeadsetThxInstallCancelled" xml:space="preserve"><value>L’installation THX a été annulée car les droits d’administrateur n’ont pas été accordés. Sélectionnez « Oui » dans l’invite UAC et réessayez.</value></data>
   <data name="RazerHeadsetThxInstallBusy" xml:space="preserve"><value>Un autre programme d’installation est en cours ; les composants THX ne peuvent pas être installés pour le moment. Attendez qu’il se termine et réessayez.</value></data>
   <data name="RazerHeadsetThxInstallerExited" xml:space="preserve"><value>Le programme d’installation THX s’est arrêté de façon inattendue (code {0}). Si les composants sont déjà présents, redémarrez Windows et réessayez. Sinon, cliquez à nouveau sur « Télécharger et installer les composants THX ».</value></data>
@@ -3942,6 +3943,8 @@
   <data name="RazerDriverUnavailableDetail" xml:space="preserve"><value>VID_1532 / PID_{0} · paquet de pilotes officiel indisponible</value></data>
   <data name="RazerDriverCommonOffline" xml:space="preserve"><value>Le pilote commun Razer est indisponible pour le moment. Connectez-vous à Internet et Windows Update l’installera ; réessayez ensuite.</value></data>
   <data name="RazerDriverDownloading" xml:space="preserve"><value>Téléchargement du pilote {0}…</value></data>
+  <data name="RazerDriverDownloadDetail" xml:space="preserve"><value>{0} / {1} · {2} · {3} restant</value></data>
+  <data name="RazerDriverDownloadDetailNoEta" xml:space="preserve"><value>{0} / {1} · {2}</value></data>
   <data name="RazerDriverInstalling" xml:space="preserve"><value>Installation du pilote {0}…</value></data>
   <data name="RazerDriverInstallTimeout" xml:space="preserve"><value>Le délai d’installation du pilote Razer a expiré.</value></data>
   <data name="RazerDriverInstallExitCode" xml:space="preserve"><value>Le programme d’installation du pilote Razer a renvoyé {0}.</value></data>

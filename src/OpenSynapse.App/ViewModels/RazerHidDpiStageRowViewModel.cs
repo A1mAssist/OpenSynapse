@@ -10,6 +10,7 @@ public sealed class RazerHidDpiStageRowViewModel : INotifyPropertyChanged
     private int _x;
     private int _y;
     private bool _isEditable;
+    private bool _isActive;
 
     public RazerHidDpiStageRowViewModel(byte number, int x, int y, bool isEditable)
         : this(number, x, y, 0, isEditable)
@@ -30,6 +31,7 @@ public sealed class RazerHidDpiStageRowViewModel : INotifyPropertyChanged
     public byte Number { get; }
     public int Z { get; }
     public bool IsEditable => _isEditable;
+    public bool IsActive => _isActive;
     public string Label => AppStrings.FormatText("RazerHidDpiStageLabel", Number);
     // Synapse marks stages 1..5 red, green, blue, cyan and yellow.
     public SolidColorBrush StageBrush { get; }
@@ -43,6 +45,13 @@ public sealed class RazerHidDpiStageRowViewModel : INotifyPropertyChanged
         if (_isEditable == value) return;
         _isEditable = value;
         PropertyChanged?.Invoke(this, new(nameof(IsEditable)));
+    }
+
+    public void SetActive(bool value)
+    {
+        if (_isActive == value) return;
+        _isActive = value;
+        PropertyChanged?.Invoke(this, new(nameof(IsActive)));
     }
 
     private void SetField(ref int field, int value, [CallerMemberName] string? name = null)

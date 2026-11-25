@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
 
@@ -21,43 +22,70 @@ internal sealed record RazerManifestResource(
 /// </summary>
 internal static class RazerManifestResources
 {
-    private static readonly HttpClient Client = new()
-    {
-        Timeout = TimeSpan.FromSeconds(60),
-    };
-
     internal static Uri ManifestUri(int page) => new(
         $"https://apps.razer.com/synapse/products/{page}/mw/manifest.json");
 
     internal static async Task<JsonDocument?> FetchAsync(
         int page,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Action<string>? diagnostic = null)
     {
-        try
+        var uri = ManifestUri(page);
+        for (var attempt = 1; attempt <= 2; attempt++)
         {
-            using var response = await Client.GetAsync(
-                ManifestUri(page),
-                cancellationToken).ConfigureAwait(false);
-            if (response.StatusCode == HttpStatusCode.NotFound)
+            var started = Stopwatch.GetTimestamp();
+            try
             {
-                return null;
+                // A long-running app can outlive a proxy restart, and the default
+                // HttpClient proxy is captured once per process. Re-read the
+                // system proxy for every attempt so a recovered proxy is used.
+                using var handler = new HttpClientHandler
+                {
+                    UseProxy = true,
+                    Proxy = WebRequest.GetSystemWebProxy(),
+                };
+                using var client = new HttpClient(handler)
+                {
+                    Timeout = TimeSpan.FromSeconds(15),
+                };
+                using var response = await client.GetAsync(
+                    uri,
+                    cancellationToken).ConfigureAwait(false);
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    diagnostic?.Invoke($"manifest {page} not found");
+                    return null;
+                }
+                response.EnsureSuccessStatusCode();
+                await using var stream = await response.Content
+                    .ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+                var document = await JsonDocument.ParseAsync(
+                    stream,
+                    cancellationToken: cancellationToken).ConfigureAwait(false);
+                diagnostic?.Invoke(
+                    $"manifest {page} loaded attempt={attempt} " +
+                    $"ms={Stopwatch.GetElapsedTime(started).TotalMilliseconds:F0}");
+                return document;
             }
-            response.EnsureSuccessStatusCode();
-            await using var stream = await response.Content
-                .ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-            return await JsonDocument.ParseAsync(
-                stream,
-                cancellationToken: cancellationToken).ConfigureAwait(false);
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception) when (
+                exception is HttpRequestException or IOException or JsonException or TaskCanceledException)
+            {
+                diagnostic?.Invoke(
+                    $"manifest {page} attempt={attempt} failed " +
+                    $"ms={Stopwatch.GetElapsedTime(started).TotalMilliseconds:F0}: " +
+                    $"{exception.GetType().Name}: {exception.Message}");
+                if (attempt == 1)
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken)
+                        .ConfigureAwait(false);
+                }
+            }
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception exception) when (
-            exception is HttpRequestException or IOException or JsonException or TaskCanceledException)
-        {
-            return null;
-        }
+        return null;
     }
 
     internal static IReadOnlyList<RazerManifestResource> Read(JsonElement manifest)

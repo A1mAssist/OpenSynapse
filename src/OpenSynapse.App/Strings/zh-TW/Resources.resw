@@ -1309,7 +1309,7 @@
     <comment>导出日志</comment>
   </data>
   <data name="DiagnosticsLogsExported" xml:space="preserve">
-    <value>日誌已匯出：{0}</value>
+    <value>日誌已匯出，已開啟所在資料夾</value>
     <comment>日志已导出</comment>
   </data>
   <data name="DiagnosticsLogsExportFailed" xml:space="preserve">
@@ -3224,7 +3224,8 @@
   <data name="RazerHeadsetThxServiceBroken" xml:space="preserve"><value>THX 服務登錄已損壞（VSSrv.exe 缺失）。點下方按鈕修復。</value></data>
   <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>THX 服務已就緒，但缺少控制元件。點下方按鈕安裝。</value></data>
   <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>正在下載並安裝 THX 元件…</value></data>
-  <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>THX 元件下載、校驗或安裝失敗，請確認允許管理員權限後重試。</value></data>
+  <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>THX 元件下載、校驗或安裝失敗，請檢查網路連線並確認允許管理員權限後重試。</value></data>
+  <data name="RazerHeadsetThxManifestUnavailable" xml:space="preserve"><value>無法取得 Razer THX 元件清單，請檢查網路連線或代理後重試。</value></data>
   <data name="RazerHeadsetThxInstallCancelled" xml:space="preserve"><value>已取消 THX 安裝：沒有授予管理員權限。需要安裝時請點按鈕並在 UAC 提示中選“是”。</value></data>
   <data name="RazerHeadsetThxInstallBusy" xml:space="preserve"><value>另一個安裝程式正在執行，THX 元件暫時無法安裝。等它結束後再試。</value></data>
   <data name="RazerHeadsetThxInstallerExited" xml:space="preserve"><value>THX 安裝程式異常結束（程式碼 {0}）。如果元件已存在，重啟 Windows 後再試；否則重新點“下載並安裝 THX 元件”重試。</value></data>
@@ -4383,6 +4384,8 @@
   <data name="RazerDriverUnavailableDetail" xml:space="preserve"><value>VID_1532 / PID_{0} · 無法獲取官方驅動包</value></data>
   <data name="RazerDriverCommonOffline" xml:space="preserve"><value>目前無法獲取雷蛇通用驅動。連線網路後由 Windows Update 安裝，然後重試。</value></data>
   <data name="RazerDriverDownloading" xml:space="preserve"><value>正在下載 {0} 驅動…</value></data>
+  <data name="RazerDriverDownloadDetail" xml:space="preserve"><value>{0} / {1} · {2} · 剩餘 {3}</value></data>
+  <data name="RazerDriverDownloadDetailNoEta" xml:space="preserve"><value>{0} / {1} · {2}</value></data>
   <data name="RazerDriverInstalling" xml:space="preserve"><value>正在安裝 {0} 驅動…</value></data>
   <data name="RazerDriverInstallTimeout" xml:space="preserve"><value>Razer 驅動安裝超時。</value></data>
   <data name="RazerDriverInstallExitCode" xml:space="preserve"><value>Razer 驅動安裝程式返回 {0}。</value></data>

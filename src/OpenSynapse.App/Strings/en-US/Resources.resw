@@ -1003,7 +1003,7 @@
     <value>Export logs</value>
   </data>
   <data name="DiagnosticsLogsExported" xml:space="preserve">
-    <value>Logs exported: {0}</value>
+    <value>Logs exported. The folder is open.</value>
   </data>
   <data name="DiagnosticsLogsExportFailed" xml:space="preserve">
     <value>Log export failed: {0}</value>
@@ -2797,7 +2797,8 @@
   <data name="RazerHeadsetThxServiceBroken" xml:space="preserve"><value>The THX service registration is broken (VSSrv.exe is missing). Use the button below to repair it.</value></data>
   <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>The THX service is ready, but the control component is missing. Use the button below to install it.</value></data>
   <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>Downloading and installing THX components...</value></data>
-  <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>The THX components could not be downloaded, verified, or installed. Allow administrator rights and try again.</value></data>
+  <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>The THX components could not be downloaded, verified, or installed. Check your network connection, allow administrator rights, and try again.</value></data>
+  <data name="RazerHeadsetThxManifestUnavailable" xml:space="preserve"><value>Could not reach the Razer THX component manifest. Check your network connection or proxy and try again.</value></data>
   <data name="RazerHeadsetThxInstallCancelled" xml:space="preserve"><value>THX installation was cancelled because administrator rights were not granted. Select "Yes" in the UAC prompt and try again.</value></data>
   <data name="RazerHeadsetThxInstallBusy" xml:space="preserve"><value>Another installer is running, so the THX components cannot be installed right now. Wait for it to finish and try again.</value></data>
   <data name="RazerHeadsetThxInstallerExited" xml:space="preserve"><value>The THX installer exited unexpectedly (code {0}). If the components are already present, restart Windows and try again; otherwise click "Download and install THX components" again.</value></data>
@@ -3959,6 +3960,8 @@
   <data name="RazerDriverUnavailableDetail" xml:space="preserve"><value>VID_1532 / PID_{0} · official driver package unavailable</value></data>
   <data name="RazerDriverCommonOffline" xml:space="preserve"><value>The Razer common driver is unavailable right now. Connect to the internet and Windows Update will install it; then retry.</value></data>
   <data name="RazerDriverDownloading" xml:space="preserve"><value>Downloading the {0} driver…</value></data>
+  <data name="RazerDriverDownloadDetail" xml:space="preserve"><value>{0} / {1} · {2} · {3} left</value></data>
+  <data name="RazerDriverDownloadDetailNoEta" xml:space="preserve"><value>{0} / {1} · {2}</value></data>
   <data name="RazerDriverInstalling" xml:space="preserve"><value>Installing the {0} driver…</value></data>
   <data name="RazerDriverInstallTimeout" xml:space="preserve"><value>Razer driver installation timed out.</value></data>
   <data name="RazerDriverInstallExitCode" xml:space="preserve"><value>Razer driver installer returned {0}.</value></data>

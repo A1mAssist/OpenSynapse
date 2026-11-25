@@ -20,6 +20,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 - **Keyboard animations**: RazerHid keyboards can import a `.chroma` animation on the device page and play it through the software frame runtime; the file stays with the lighting profile.
 - **Naga side plates**: the 12-key and 7-key side plates report their buttons as firmware ids 64–75 and 80–86; mapping, macros and Turbo now resolve them, so every plate works.
 - **Naga scroll wheel**: Naga V3 Pro exposes its three-way tactile, free-spin and micro-tactile wheel mode, including profile apply and Smart Reel.
+- **DPI stage shortcuts**: the DPI card shows 1–5 buttons beside the current stage and switches immediately; the highlighted stage follows the mouse's own DPI button within a few seconds.
+- **Driver download progress**: driver package downloads show a progress bar with speed and remaining time, and use four parallel range requests for packages of 4 MB or more.
 
 ### Fixed
 
@@ -31,6 +33,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 - **THX preset sync**: while a headset's THX card is visible, poll the native state every two seconds and refresh the preset and curve when the headset's own controls change them, without writing back to the device.
 - **Taskbar battery freshness**: redraw the strip from the live device rows every second while keeping the ten-second HID read interval; opening the window also forces an immediate refresh so the strip matches the tray instead of lagging behind.
 - **Mouse DPI stages**: saving the stage table now also applies the active stage's DPI, so the pointer speed changes immediately and the DPI card refreshes.
+- **Export logs**: the button now opens the folder with the log selected instead of printing the file path.
+- **THX manifest download**: each request uses the current system proxy and gives up after 15 seconds with one retry, so a long-running session no longer keeps a cached direct connection and hangs; a failed fetch shows a network hint on the THX card.
 - **Scroll settings**: the mode and acceleration save buttons now share the same height and align.
 - **Mouse mapping hotspots**: place hotspots with the product page's actual image offsets, fixing the 10px-left/5px-down shift on SVG art such as the Basilisk V3 Pro Phantom Green; the profile-switch callout now draws as well.
 - **Studio key-triggered lighting**: match keyboard input and lighting-control HID interfaces by physical device identity, restoring reactive, ripple and key-started wave effects for newly created and imported layers. Keyboard and Blade reactive effects also retain fresh key presses after a long gap or before the first rendered frame.

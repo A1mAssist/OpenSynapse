@@ -6,10 +6,11 @@ internal static partial class ThxHeadsetAdmission
 {
     internal static async Task<ThxInstallerPackage?> ResolveInstallerAsync(
         ThxHeadsetProfile profile,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Action<string>? diagnostic = null)
     {
         using var manifest = await RazerManifestResources
-            .FetchAsync(profile.InstallerPage, cancellationToken)
+            .FetchAsync(profile.InstallerPage, cancellationToken, diagnostic)
             .ConfigureAwait(false);
         if (manifest is null)
         {

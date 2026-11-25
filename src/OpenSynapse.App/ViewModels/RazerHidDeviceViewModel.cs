@@ -367,7 +367,9 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         get => _activeDpiStage;
         set
         {
-            if (SetField(ref _activeDpiStage, value)) OnPropertyChanged(nameof(CanEditDpiStages));
+            if (!SetField(ref _activeDpiStage, value)) return;
+            OnPropertyChanged(nameof(CanEditDpiStages));
+            foreach (var row in DpiStages) row.SetActive(row.Number == value);
         }
     }
     public bool IsDpiStagesLoading

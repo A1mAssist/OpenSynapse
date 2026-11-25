@@ -299,7 +299,7 @@ internal static partial class ThxHeadsetAdmission
 
         if (profile.NativeVersion == ThxNativeVersion.V3)
         {
-            if (await ResolveInstallerAsync(profile, cancellationToken)
+            if (await ResolveInstallerAsync(profile, cancellationToken, diagnostic)
                 .ConfigureAwait(false) is not { } installer)
             {
                 diagnostic?.Invoke("thx installer unavailable");
@@ -308,7 +308,7 @@ internal static partial class ThxHeadsetAdmission
             diagnostic?.Invoke(
                 $"thx installer resolved bytes={installer.Length} " +
                 $"version={installer.Version?.ToString() ?? "-"} uri={installer.Uri}");
-            var preset = await ResolvePresetInstallerAsync(profile, cancellationToken)
+            var preset = await ResolvePresetInstallerAsync(profile, cancellationToken, diagnostic)
                 .ConfigureAwait(false);
             var installPreset = preset is not null &&
                 ShouldInstallPreset(ReadInstalledPresetVersion(), preset.Version);

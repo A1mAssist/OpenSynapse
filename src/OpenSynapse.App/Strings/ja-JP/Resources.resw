@@ -1003,7 +1003,7 @@
     <value>ログをエクスポート</value>
   </data>
   <data name="DiagnosticsLogsExported" xml:space="preserve">
-    <value>ログをエクスポートしました: {0}</value>
+    <value>ログをエクスポートしました。フォルダーを開きました。</value>
   </data>
   <data name="DiagnosticsLogsExportFailed" xml:space="preserve">
     <value>ログのエクスポートに失敗しました: {0}</value>
@@ -2788,7 +2788,8 @@
   <data name="RazerHeadsetThxServiceBroken" xml:space="preserve"><value>THX サービスの登録が破損しています（VSSrv.exe が見つかりません）。下のボタンから修復してください。</value></data>
   <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>THX サービスは準備できていますが、コントロール コンポーネントがありません。下のボタンからインストールしてください。</value></data>
   <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>THX コンポーネントをダウンロードしてインストールしています...</value></data>
-  <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>THX コンポーネントをダウンロード、検証、またはインストールできませんでした。管理者権限を許可して再試行してください。</value></data>
+  <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>THX コンポーネントをダウンロード、検証、またはインストールできませんでした。ネットワーク接続を確認し、管理者権限を許可して再試行してください。</value></data>
+  <data name="RazerHeadsetThxManifestUnavailable" xml:space="preserve"><value>Razer THX コンポーネントの一覧を取得できませんでした。ネットワークまたはプロキシを確認して再試行してください。</value></data>
   <data name="RazerHeadsetThxInstallCancelled" xml:space="preserve"><value>管理者権限が付与されなかったため、THX のインストールはキャンセルされました。UAC プロンプトで「はい」を選択して再試行してください。</value></data>
   <data name="RazerHeadsetThxInstallBusy" xml:space="preserve"><value>別のインストーラーが実行中のため、現在 THX コンポーネントをインストールできません。完了を待って再試行してください。</value></data>
   <data name="RazerHeadsetThxInstallerExited" xml:space="preserve"><value>THX インストーラーが予期せず終了しました（コード {0}）。コンポーネントが既に存在する場合は Windows を再起動して再試行してください。存在しない場合は、「THX コンポーネントをダウンロードしてインストール」をもう一度クリックしてください。</value></data>
@@ -3942,6 +3943,8 @@
   <data name="RazerDriverUnavailableDetail" xml:space="preserve"><value>VID_1532 / PID_{0} · 公式ドライバー パッケージを利用できません</value></data>
   <data name="RazerDriverCommonOffline" xml:space="preserve"><value>Razer 共通ドライバーを現在利用できません。インターネットに接続すると Windows Update によってインストールされるため、その後再試行してください。</value></data>
   <data name="RazerDriverDownloading" xml:space="preserve"><value>{0} ドライバーをダウンロードしています…</value></data>
+  <data name="RazerDriverDownloadDetail" xml:space="preserve"><value>{0} / {1} · {2} · 残り {3}</value></data>
+  <data name="RazerDriverDownloadDetailNoEta" xml:space="preserve"><value>{0} / {1} · {2}</value></data>
   <data name="RazerDriverInstalling" xml:space="preserve"><value>{0} ドライバーをインストールしています…</value></data>
   <data name="RazerDriverInstallTimeout" xml:space="preserve"><value>Razer ドライバーのインストールがタイムアウトしました。</value></data>
   <data name="RazerDriverInstallExitCode" xml:space="preserve"><value>Razer ドライバー インストーラーが {0} を返しました。</value></data>

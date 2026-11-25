@@ -29,6 +29,7 @@ public sealed partial class BlackSharkHeadsetViewModel
             "ThxRebootRequired" => AppStrings.Text("RazerHeadsetThxRebootRequired"),
             "ThxDownloadFailed" or "ThxDownloadVerificationFailed" =>
                 AppStrings.Text("RazerHeadsetThxDownloadFailed"),
+            "ThxInstallerUnavailable" => AppStrings.Text("RazerHeadsetThxManifestUnavailable"),
             "ThxInstallerCancelled" => AppStrings.Text("RazerHeadsetThxInstallCancelled"),
             "ThxInstallerBusy" => AppStrings.Text("RazerHeadsetThxInstallBusy"),
             "ThxInstallerTimeout" => AppStrings.Text("RazerHeadsetThxInstallTimeout"),

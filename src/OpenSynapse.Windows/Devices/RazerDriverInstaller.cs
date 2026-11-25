@@ -18,7 +18,15 @@ internal enum RazerDriverInstallStage
 
 internal sealed record RazerDriverInstallProgress(
     RazerDriverInstallStage Stage,
-    string PackageName);
+    string PackageName,
+    long BytesReceived = 0,
+    long TotalBytes = 0,
+    double BytesPerSecond = 0)
+{
+    public TimeSpan? Eta => TotalBytes > 0 && BytesPerSecond > 0
+        ? TimeSpan.FromSeconds(Math.Max(0d, (TotalBytes - BytesReceived) / BytesPerSecond))
+        : null;
+}
 
 internal enum RazerDriverInstallFailure
 {
@@ -50,11 +58,6 @@ internal static partial class RazerDriverInstaller
     private const uint WtdChoiceFile = 1;
     private const uint WtdStateActionVerify = 0;
     private const uint WtdStateActionClose = 2;
-
-    private static readonly HttpClient Client = new()
-    {
-        Timeout = TimeSpan.FromMinutes(5),
-    };
 
     internal static string CacheDirectory => AppDataPaths.Combine("DriverCache");
 
@@ -96,9 +99,47 @@ internal static partial class RazerDriverInstaller
             return new RazerDriverInstallResult(false, RazerDriverInstallFailure.Timeout);
         }
 
+        return await InstallVerifiedAsync(
+            productId, path, package.Name, progress, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Installs a package the caller already downloaded. The app downloads with
+    /// progress and hands the verified path to the elevated service or installer.
+    /// </summary>
+    internal static async Task<RazerDriverInstallResult> InstallAsync(
+        ushort productId,
+        string packagePath,
+        IProgress<RazerDriverInstallProgress>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        var path = Path.GetFullPath(packagePath);
+        try
+        {
+            VerifyPackage(path);
+        }
+        catch (Exception exception) when (
+            exception is InvalidDataException or IOException or UnauthorizedAccessException)
+        {
+            return new RazerDriverInstallResult(
+                false, RazerDriverInstallFailure.InvalidPackage, Error: exception.Message);
+        }
+
+        return await InstallVerifiedAsync(
+            productId, path, Path.GetFileName(path), progress, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    private static async Task<RazerDriverInstallResult> InstallVerifiedAsync(
+        ushort productId,
+        string path,
+        string packageName,
+        IProgress<RazerDriverInstallProgress>? progress,
+        CancellationToken cancellationToken)
+    {
         progress?.Report(new RazerDriverInstallProgress(
             RazerDriverInstallStage.Installing,
-            package.Name));
+            packageName));
         var result = await RunInstallerAsync(path, elevated: true, cancellationToken)
             .ConfigureAwait(false);
         return result.Success
@@ -114,29 +155,38 @@ internal static partial class RazerDriverInstaller
     /// </summary>
     internal static async Task<RazerDriverInstallResult> InstallAsServiceAsync(
         ushort productId,
+        string? packagePath = null,
         CancellationToken cancellationToken = default)
     {
-        if (await RazerDriverPackageCatalog
-                .ResolveAsync(productId, cancellationToken)
-                .ConfigureAwait(false) is not { } package)
-        {
-            return new RazerDriverInstallResult(
-                false,
-                RazerDriverInstallFailure.InvalidPackage,
-                Error: $"No Razer driver package is catalogued for PID {productId:X4}.");
-        }
-
         string path;
         try
         {
-            EnsureServiceCacheDirectory();
-            path = await EnsurePackageAsync(
-                    package,
-                    ServiceCacheDirectory,
-                    progress: null,
-                    cancellationToken)
-                .ConfigureAwait(false);
-            VerifyPackage(path);
+            if (!string.IsNullOrWhiteSpace(packagePath))
+            {
+                path = Path.GetFullPath(packagePath);
+                VerifyPackage(path);
+            }
+            else
+            {
+                if (await RazerDriverPackageCatalog
+                        .ResolveAsync(productId, cancellationToken)
+                        .ConfigureAwait(false) is not { } package)
+                {
+                    return new RazerDriverInstallResult(
+                        false,
+                        RazerDriverInstallFailure.InvalidPackage,
+                        Error: $"No Razer driver package is catalogued for PID {productId:X4}.");
+                }
+
+                EnsureServiceCacheDirectory();
+                path = await EnsurePackageAsync(
+                        package,
+                        ServiceCacheDirectory,
+                        progress: null,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+                VerifyPackage(path);
+            }
         }
         catch (InvalidDataException exception)
         {
@@ -205,27 +255,27 @@ internal static partial class RazerDriverInstaller
         progress?.Report(new RazerDriverInstallProgress(
             RazerDriverInstallStage.Downloading,
             package.Name));
-        using (var response = await Client.GetAsync(
-                   package.Url,
-                   HttpCompletionOption.ResponseHeadersRead,
-                   cancellationToken).ConfigureAwait(false))
-        {
-            response.EnsureSuccessStatusCode();
-
-            await using var source = await response.Content
-                .ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-            await using var target = new FileStream(
-                temporary,
-                FileMode.Create,
-                FileAccess.Write,
-                FileShare.None,
-                81920,
-                useAsync: true);
-            await source.CopyToAsync(target, cancellationToken).ConfigureAwait(false);
-        }
+        await RazerDriverDownloader.DownloadAsync(
+            package.Url,
+            temporary,
+            progress is null ? null : new DownloadProgressAdapter(progress, package.Name),
+            cancellationToken).ConfigureAwait(false);
 
         File.Move(temporary, path, overwrite: true);
         return path;
+    }
+
+    private sealed class DownloadProgressAdapter(
+        IProgress<RazerDriverInstallProgress> target,
+        string packageName) : IProgress<RazerDriverDownloadProgress>
+    {
+        public void Report(RazerDriverDownloadProgress value) =>
+            target.Report(new RazerDriverInstallProgress(
+                RazerDriverInstallStage.Downloading,
+                packageName,
+                value.BytesReceived,
+                value.TotalBytes,
+                value.BytesPerSecond));
     }
 
     /// <summary>

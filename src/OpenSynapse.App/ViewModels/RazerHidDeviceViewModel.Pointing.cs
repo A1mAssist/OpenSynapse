@@ -13,6 +13,9 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
 {
+    private static readonly TimeSpan DpiStageRefreshInterval = TimeSpan.FromSeconds(3);
+    private DateTimeOffset _lastDpiStageRefresh;
+
     [ProfileSetting("input.polling-rate", DeviceCategory.Unknown, powerScoped: true)]
     public Task ApplyPollingAsync(CancellationToken cancellationToken = default)
     {
@@ -132,20 +135,94 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         }
     }
 
+    /// <summary>
+    /// The mouse's DPI button cycles stages without telling the page, so the active
+    /// stage is re-read while the device page is open. Stage values and the live DPI
+    /// field are left alone so an edit in progress is never overwritten.
+    /// </summary>
+    public async Task RefreshDpiStageAsync(CancellationToken cancellationToken = default)
+    {
+        if (!Has(RazerHidBackendCapability.DpiStagesRead) || DpiStages.Count == 0 ||
+            !IsReady || RequiresRescan || IsDpiStagesBusy ||
+            DateTimeOffset.UtcNow - _lastDpiStageRefresh < DpiStageRefreshInterval)
+        {
+            return;
+        }
+
+        _lastDpiStageRefresh = DateTimeOffset.UtcNow;
+        try
+        {
+            var state = await _service.GetDpiStagesAsync(Connection, cancellationToken, log: false);
+            if (state.ActiveStage is < 1 || state.ActiveStage > state.Stages.Count ||
+                state.Stages.Count != DpiStages.Count ||
+                state.Stages.Where((stage, index) =>
+                    stage.X != DpiStages[index].X || stage.Y != DpiStages[index].Y).Any())
+            {
+                return;
+            }
+            var previous = DpiStages.FirstOrDefault(row => row.Number == ActiveDpiStage);
+            var followsHardware = previous is not null && DpiX == previous.X && DpiY == previous.Y;
+            ActiveDpiStage = state.ActiveStage;
+            if (followsHardware && state.Stages[state.ActiveStage - 1] is { } active &&
+                (active.X != DpiX || active.Y != DpiY))
+            {
+                DpiX = active.X;
+                DpiY = active.Y;
+                UpdateBasic(basic => basic with { DpiX = active.X, DpiY = active.Y });
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is System.ComponentModel.Win32Exception or
+            IOException or InvalidOperationException or NotSupportedException or InvalidDataException)
+        {
+            // A readout miss is expected on a sleeping wireless mouse and stays silent.
+        }
+    }
+
+    /// <summary>Applies one stage immediately, the way the hardware DPI button does.</summary>
+    public async Task SwitchDpiStageAsync(byte stage, CancellationToken cancellationToken = default)
+    {
+        if (stage is < 1 || stage > DpiStages.Count)
+        {
+            return;
+        }
+        await ApplyDpiStagesAsync(stage, cancellationToken);
+        if (ActiveDpiStage == stage)
+        {
+            return;
+        }
+        // The write did not land. Rebuild the rows so the radio group matches the device.
+        ReplaceDpiStages(new RazerHidDpiStages(ActiveDpiStage,
+            DpiStages.Select(row => new RazerHidDpiStage(row.Number, row.X, row.Y, row.Z)).ToArray()));
+    }
+
     [ProfileSetting("mouse.dpi-stages", DeviceCategory.Mouse, powerScoped: true)]
     public Task ApplyDpiStagesAsync(CancellationToken cancellationToken = default) =>
+        ApplyDpiStagesAsync(null, cancellationToken);
+
+    private Task ApplyDpiStagesAsync(byte? targetStage, CancellationToken cancellationToken) =>
         RunWriteAsync(RazerHidBackendCapability.DpiStagesWrite,
             () => IsDpiStagesBusy, value => IsDpiStagesBusy = value,
             async () =>
             {
-                var previousState = new RazerHidDpiStages(ActiveDpiStage,
-                    DpiStages.Select(stage => new RazerHidDpiStage(stage.Number, stage.X, stage.Y, stage.Z)).ToArray());
+                var rows = DpiStages
+                    .Select(stage => new RazerHidDpiStage(stage.Number, stage.X, stage.Y, stage.Z))
+                    .ToArray();
+                var activeStage = targetStage ?? ActiveDpiStage;
+                if (activeStage < 1 || activeStage > rows.Length)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(targetStage));
+                }
+                var previousState = new RazerHidDpiStages(ActiveDpiStage, rows);
                 var previousProfile = ReadProfile(settings => settings.Viper.DpiStages);
                 var previousDpiProfile = ReadProfile(settings => (settings.Viper.DpiX, settings.Viper.DpiY));
                 var previousDpi = (X: _basicState?.DpiX ?? DpiX, Y: _basicState?.DpiY ?? DpiY);
-                var state = new RazerHidDpiStages(ActiveDpiStage,
-                    DpiStages.Select(stage => new RazerHidDpiStage(stage.Number, stage.X, stage.Y, stage.Z)).ToArray());
+                var state = new RazerHidDpiStages(activeStage, rows);
                 await _service.SetDpiStagesAsync(Connection, state, cancellationToken);
+                ActiveDpiStage = activeStage;
                 if (Has(RazerHidBackendCapability.DpiStagesRead))
                     await TryReadbackAsync(async () =>
                         ReplaceDpiStages(await _service.GetDpiStagesAsync(Connection, cancellationToken)));

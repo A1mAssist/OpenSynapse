@@ -56,6 +56,10 @@
                       </ItemsControl.ItemTemplate>
                     </ItemsControl>
                     <TextBlock Text="{Binding RazerDrivers.StatusText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    <StackPanel Spacing="6" Visibility="{Binding RazerDrivers.IsDownloading, Converter={StaticResource BoolToVisibilityConverter}}">
+                      <ProgressBar Value="{Binding RazerDrivers.DownloadProgress}" Maximum="100" IsIndeterminate="{Binding RazerDrivers.IsDownloadIndeterminate}" />
+                      <TextBlock Text="{Binding RazerDrivers.DownloadDetailText}" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" />
+                    </StackPanel>
                     <Button local:Localized.Uid="RazerDriverInstall" Click="InstallRazerDriversClick" IsEnabled="{Binding RazerDrivers.CanInstall}" Style="{StaticResource PrimaryButtonStyle}" HorizontalAlignment="Left" />
                     <TextBlock local:Localized.Uid="RazerDriverInstallHint" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
                   </StackPanel>
@@ -889,7 +893,19 @@
                     <StackPanel Spacing="12">
                       <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock local:Localized.Uid="RazerHidDpiStagesTitle" FontSize="19" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" /></StackPanel>
                       <ProgressRing Width="20" Height="20" HorizontalAlignment="Left" IsActive="{Binding IsDpiStagesLoading}" Visibility="{Binding DpiStagesLoadingVisibility}" />
-                      <NumberBox local:Localized.Uid="RazerHidActiveDpiStage" Value="{Binding ActiveDpiStage, Mode=TwoWay}" Minimum="1" Maximum="5" SpinButtonPlacementMode="Inline" IsEnabled="{Binding CanWriteDpiStages}" Visibility="{Binding DpiStagesWriteVisibility}" />
+                      <StackPanel Orientation="Horizontal" Spacing="10" Visibility="{Binding DpiStagesWriteVisibility}">
+                        <NumberBox local:Localized.Uid="RazerHidActiveDpiStage" Value="{Binding ActiveDpiStage, Mode=TwoWay}" Minimum="1" Maximum="5" SpinButtonPlacementMode="Inline" IsEnabled="{Binding CanWriteDpiStages}" />
+                        <ItemsControl ItemsSource="{Binding DpiStages}" VerticalAlignment="Center">
+                          <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="6" /></ItemsPanelTemplate>
+                          </ItemsControl.ItemsPanel>
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                              <RadioButton Content="{Binding Number}" GroupName="RazerHidDpiStagePick" IsChecked="{Binding IsActive, Mode=OneWay}" IsEnabled="{Binding IsEditable}" Click="RazerHidSwitchDpiStageClick" MinWidth="44" ToolTipService.ToolTip="{Binding Label}" AutomationProperties.Name="{Binding Label}" />
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </StackPanel>
                       <Grid ColumnDefinitions="76,200,200" ColumnSpacing="10">
                         <TextBlock local:Localized.Uid="CommonStage" Margin="18,0,0,0" Style="{StaticResource MetricLabelStyle}" />
                         <TextBlock Grid.Column="1" Text="X" Style="{StaticResource MetricLabelStyle}" />

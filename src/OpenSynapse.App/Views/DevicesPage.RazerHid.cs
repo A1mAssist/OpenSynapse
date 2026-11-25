@@ -274,6 +274,15 @@ public sealed partial class DevicesPage : UserControl
     private async void RazerHidApplyDpiStagesClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.ApplyDpiStagesAsync(Lifetime) ?? Task.CompletedTask);
 
+    private async void RazerHidSwitchDpiStageClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: RazerHidDpiStageRowViewModel row } &&
+            SelectedRazerHidDevice is { } device)
+        {
+            await device.SwitchDpiStageAsync(row.Number, Lifetime);
+        }
+    }
+
     private async void RazerHidApplyIdleClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.ApplyIdleTimeoutAsync(Lifetime) ?? Task.CompletedTask);
 

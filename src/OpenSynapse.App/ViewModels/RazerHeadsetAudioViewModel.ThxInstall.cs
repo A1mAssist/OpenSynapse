@@ -56,6 +56,8 @@ public sealed partial class RazerHeadsetAudioViewModel
                 ? AppStrings.Text("RazerHeadsetThxRebootRequired")
                 : _thxStatus.ErrorCode switch
                 {
+                    "ThxInstallerUnavailable" =>
+                        AppStrings.Text("RazerHeadsetThxManifestUnavailable"),
                     "ThxInstallerCancelled" =>
                         AppStrings.Text("RazerHeadsetThxInstallCancelled"),
                     "ThxInstallerBusy" =>

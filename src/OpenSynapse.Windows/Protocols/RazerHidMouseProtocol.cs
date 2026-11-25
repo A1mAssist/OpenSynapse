@@ -54,22 +54,27 @@ internal static partial class RazerHidMouseProtocol
                 device, "razer_chroma_misc_get_active_profile", 0x01, 0x05, 0x84, [])
             : null;
 
-    internal static RazerHidRequest GetDpi(RazerHidDeviceDefinition device)
+    internal static RazerHidRequest GetDpi(RazerHidDeviceDefinition device, byte? storage = null)
     {
         if (device.Transactions.ContainsKey("razer_chroma_misc_get_dpi_xy_byte"))
         {
             return RazerHidStandardProtocol.Create(device,
                 "razer_chroma_misc_get_dpi_xy_byte", 0x03, 0x04, 0x81, []);
         }
-        var storage = device.GetRequiredFixedArgument("razer_chroma_misc_get_dpi_xy", 0);
+        // Synapse addresses the live DPI on the active onboard profile even though the
+        // manifest pins this argument to 00, so an explicit storage wins.
+        var effectiveStorage = storage
+            ?? device.GetFixedArgumentOrNull("razer_chroma_misc_get_dpi_xy", 0)
+            ?? RazerHidStandardProtocol.VariableStore;
         return RazerHidStandardProtocol.Create(device,
-            "razer_chroma_misc_get_dpi_xy", 0x07, 0x04, 0x85, [storage]);
+            "razer_chroma_misc_get_dpi_xy", 0x07, 0x04, 0x85, [effectiveStorage]);
     }
 
     internal static RazerHidRequest SetDpi(
         RazerHidDeviceDefinition device,
         int x,
-        int y)
+        int y,
+        byte? storage = null)
     {
         if (device.Transactions.ContainsKey("razer_chroma_misc_set_dpi_xy_byte"))
         {
@@ -82,9 +87,12 @@ internal static partial class RazerHidMouseProtocol
 
         ValidateDpi(device, x, nameof(x));
         ValidateDpi(device, y, nameof(y));
+        var effectiveStorage = storage
+            ?? device.GetFixedArgumentOrNull("razer_chroma_misc_set_dpi_xy", 0)
+            ?? RazerHidStandardProtocol.VariableStore;
         return RazerHidStandardProtocol.Create(device,
             "razer_chroma_misc_set_dpi_xy", 0x07, 0x04, 0x05,
-            [device.GetFixedArgumentOrNull("razer_chroma_misc_set_dpi_xy", 0) ?? RazerHidStandardProtocol.VariableStore, High(x), Low(x), High(y), Low(y), 0x00, 0x00]);
+            [effectiveStorage, High(x), Low(x), High(y), Low(y), 0x00, 0x00]);
     }
 
     internal static RazerHidRequest GetDpiStages(

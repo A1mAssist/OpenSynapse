@@ -1051,7 +1051,7 @@
     <value>Экспортировать журналы</value>
   </data>
   <data name="DiagnosticsLogsExported" xml:space="preserve">
-    <value>Экспортированы журналы: {0}</value>
+    <value>Журналы экспортированы. Папка открыта.</value>
   </data>
   <data name="DiagnosticsLogsExportFailed" xml:space="preserve">
     <value>Не удалось экспортировать журнал: {0}.</value>
@@ -3999,7 +3999,7 @@
     <value>Не удалось записать компонент управления THX. Проверьте разрешения для текущего профиля пользователя.</value>
   </data>
   <data name="ThxStatusInstallFailed" xml:space="preserve">
-    <value>Компоненты THX не удалось загрузить, проверить или установить. Разрешите права администратора и повторите попытку.</value>
+    <value>Компоненты THX не удалось загрузить, проверить или установить. Проверьте сеть, разрешите права администратора и повторите попытку.</value>
   </data>
   <data name="ThxWindowTitle" xml:space="preserve">
     <value>Пространственное аудио THX</value>
@@ -5251,6 +5251,9 @@
   </data>
   <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve">
     <value>Компоненты THX не удалось загрузить, проверить или установить. Разрешите права администратора и повторите попытку.</value>
+  </data>
+  <data name="RazerHeadsetThxManifestUnavailable" xml:space="preserve">
+    <value>Не удалось получить список компонентов Razer THX. Проверьте сеть или прокси и повторите попытку.</value>
   </data>
   <data name="RazerHeadsetThxInstallCancelled" xml:space="preserve">
     <value>Установка THX была отменена, поскольку не были предоставлены права администратора. Выберите «Да» в командной строке UAC и повторите попытку.</value>
@@ -8716,6 +8719,12 @@
   </data>
   <data name="RazerDriverDownloading" xml:space="preserve">
     <value>Загрузка драйвера {0}…</value>
+  </data>
+  <data name="RazerDriverDownloadDetail" xml:space="preserve">
+    <value>{0} / {1} · {2} · осталось {3}</value>
+  </data>
+  <data name="RazerDriverDownloadDetailNoEta" xml:space="preserve">
+    <value>{0} / {1} · {2}</value>
   </data>
   <data name="RazerDriverInstalling" xml:space="preserve">
     <value>Установка драйвера {0}…</value>

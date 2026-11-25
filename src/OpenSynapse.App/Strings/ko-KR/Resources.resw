@@ -1003,7 +1003,7 @@
     <value>로그 내보내기</value>
   </data>
   <data name="DiagnosticsLogsExported" xml:space="preserve">
-    <value>로그를 내보냈습니다: {0}</value>
+    <value>로그를 내보냈습니다. 폴더를 열었습니다.</value>
   </data>
   <data name="DiagnosticsLogsExportFailed" xml:space="preserve">
     <value>로그 내보내기 실패: {0}</value>
@@ -2788,7 +2788,8 @@
   <data name="RazerHeadsetThxServiceBroken" xml:space="preserve"><value>THX 서비스 등록이 손상되었습니다(VSSrv.exe 없음). 아래 버튼에서 복구하세요.</value></data>
   <data name="RazerHeadsetThxNativeMissing" xml:space="preserve"><value>THX 서비스는 준비되었지만 제어 구성 요소가 없습니다. 아래 버튼에서 설치하세요.</value></data>
   <data name="RazerHeadsetThxDownloading" xml:space="preserve"><value>THX 구성 요소 다운로드 및 설치 중...</value></data>
-  <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>THX 구성 요소를 다운로드, 검증 또는 설치할 수 없습니다. 관리자 권한을 허용하고 다시 시도하세요.</value></data>
+  <data name="RazerHeadsetThxDownloadFailed" xml:space="preserve"><value>THX 구성 요소를 다운로드, 검증 또는 설치할 수 없습니다. 네트워크 연결을 확인하고 관리자 권한을 허용한 후 다시 시도하세요.</value></data>
+  <data name="RazerHeadsetThxManifestUnavailable" xml:space="preserve"><value>Razer THX 구성 요소 목록을 가져오지 못했습니다. 네트워크 또는 프록시를 확인한 후 다시 시도하세요.</value></data>
   <data name="RazerHeadsetThxInstallCancelled" xml:space="preserve"><value>관리자 권한이 부여되지 않아 THX 설치가 취소되었습니다. UAC 프롬프트에서 “예”를 선택하고 다시 시도하세요.</value></data>
   <data name="RazerHeadsetThxInstallBusy" xml:space="preserve"><value>다른 설치 프로그램이 실행 중이어서 지금은 THX 구성 요소를 설치할 수 없습니다. 설치가 끝날 때까지 기다린 후 다시 시도하세요.</value></data>
   <data name="RazerHeadsetThxInstallerExited" xml:space="preserve"><value>THX 설치 프로그램이 예기치 않게 종료되었습니다(코드 {0}). 구성 요소가 이미 있는 경우 Windows를 다시 시작하고 다시 시도하세요. 그렇지 않으면 “THX 구성 요소 다운로드 및 설치”를 다시 클릭하세요.</value></data>
@@ -3942,6 +3943,8 @@
   <data name="RazerDriverUnavailableDetail" xml:space="preserve"><value>VID_1532 / PID_{0} · 공식 드라이버 패키지 사용 불가</value></data>
   <data name="RazerDriverCommonOffline" xml:space="preserve"><value>현재 Razer 공통 드라이버를 사용할 수 없습니다. 인터넷에 연결하면 Windows Update가 설치합니다. 그런 다음 다시 시도하세요.</value></data>
   <data name="RazerDriverDownloading" xml:space="preserve"><value>{0} 드라이버 다운로드 중…</value></data>
+  <data name="RazerDriverDownloadDetail" xml:space="preserve"><value>{0} / {1} · {2} · {3} 남음</value></data>
+  <data name="RazerDriverDownloadDetailNoEta" xml:space="preserve"><value>{0} / {1} · {2}</value></data>
   <data name="RazerDriverInstalling" xml:space="preserve"><value>{0} 드라이버 설치 중…</value></data>
   <data name="RazerDriverInstallTimeout" xml:space="preserve"><value>Razer 드라이버 설치 시간이 초과되었습니다.</value></data>
   <data name="RazerDriverInstallExitCode" xml:space="preserve"><value>Razer 드라이버 설치 프로그램이 {0}을(를) 반환했습니다.</value></data>

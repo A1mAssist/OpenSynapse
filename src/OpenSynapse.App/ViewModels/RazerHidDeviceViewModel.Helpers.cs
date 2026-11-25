@@ -34,6 +34,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             DpiStages.Add(row);
         }
         ActiveDpiStage = state.ActiveStage;
+        foreach (var row in DpiStages) row.SetActive(row.Number == ActiveDpiStage);
         OnPropertyChanged(nameof(CanEditDpiStages));
     }
 

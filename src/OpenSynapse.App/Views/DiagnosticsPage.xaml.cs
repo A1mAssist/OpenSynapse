@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using System.Diagnostics;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using OpenSynapse.App.ViewModels;
@@ -114,7 +116,18 @@ public sealed partial class DiagnosticsPage : UserControl
         try
         {
             var path = ViewModel.Diagnostics.ExportLogBundle();
-            DiagnosticsCopyStatusText.Text = AppStrings.FormatText("DiagnosticsLogsExported", path);
+            DiagnosticsCopyStatusText.Text = AppStrings.Text("DiagnosticsLogsExported");
+            try
+            {
+                Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"")
+                {
+                    UseShellExecute = true,
+                });
+            }
+            catch (Exception exception) when (exception is Win32Exception or InvalidOperationException)
+            {
+                // The bundle is already on disk even when Explorer refuses to open.
+            }
         }
         catch (Exception exception)
         {

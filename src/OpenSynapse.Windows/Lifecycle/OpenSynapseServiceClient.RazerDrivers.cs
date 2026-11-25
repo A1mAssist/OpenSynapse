@@ -46,13 +46,15 @@ public static partial class OpenSynapseServiceClient
     /// </summary>
     internal static async Task<RazerDriverInstallResult?> TryInstallRazerDeviceDriverAsync(
         ushort productId,
+        string? packagePath = null,
         CancellationToken cancellationToken = default)
     {
         var request = new OpenSynapseServiceRequest(
             OpenSynapseServiceProtocol.Version,
             OpenSynapseServiceProtocol.InstallRazerDeviceDriverOperation,
             Enabled: null,
-            ProductId: productId);
+            ProductId: productId,
+            PackagePath: packagePath);
 
         var response = await SendForResponseAsync(
                 request, cancellationToken, TimeSpan.FromMinutes(6))

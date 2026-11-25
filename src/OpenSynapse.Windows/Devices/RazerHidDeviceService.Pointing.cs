@@ -126,8 +126,20 @@ public sealed partial class RazerHidDeviceService
     public async Task<(int X, int Y)> GetDpiAsync(RazerHidDeviceConnection connection, CancellationToken cancellationToken = default)
     {
         var definition = connection.Definition;
+        var storage = await ResolveDpiStorageAsync(
+            connection, cancellationToken).ConfigureAwait(false);
+        WriteDiagnostic(connection.Definition.ProductId, $"dpi read storage=0x{storage:X2}");
+        return await GetDpiAsync(connection, definition, storage, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<(int X, int Y)> GetDpiAsync(
+        RazerHidDeviceConnection connection,
+        RazerHidDeviceDefinition definition,
+        byte storage,
+        CancellationToken cancellationToken)
+    {
         var response = await ExecuteAsync(connection,
-            RazerHidMouseProtocol.GetDpi(definition), cancellationToken).ConfigureAwait(false);
+            RazerHidMouseProtocol.GetDpi(definition, storage), cancellationToken).ConfigureAwait(false);
         var dpi = definition.UsesP1DpiScale
             ? RazerHidStandardProtocol.ParseP1Dpi(response)
             : RazerHidMouseProtocol.ParseDpi(response,
@@ -146,8 +158,11 @@ public sealed partial class RazerHidDeviceService
         {
             y = x;
         }
+        var storage = await ResolveDpiStorageAsync(
+            connection, cancellationToken).ConfigureAwait(false);
+        WriteDiagnostic(connection.Definition.ProductId, $"dpi write storage=0x{storage:X2}");
         await ExecuteWithoutResultAsync(connection,
-            RazerHidMouseProtocol.SetDpi(connection.Definition, x, y), cancellationToken).ConfigureAwait(false);
+            RazerHidMouseProtocol.SetDpi(connection.Definition, x, y, storage), cancellationToken).ConfigureAwait(false);
 
         if (!connection.Capabilities.Contains(RazerHidBackendCapability.DpiRead))
         {
@@ -156,7 +171,7 @@ public sealed partial class RazerHidDeviceService
 
         try
         {
-            return await GetDpiAsync(connection, cancellationToken).ConfigureAwait(false);
+            return await GetDpiAsync(connection, connection.Definition, storage, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception exception) when (exception is RazerDeviceTimeoutException or InvalidDataException)
         {
@@ -182,12 +197,16 @@ public sealed partial class RazerHidDeviceService
 
     public async Task<RazerHidDpiStages> GetDpiStagesAsync(
         RazerHidDeviceConnection connection,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool log = true)
     {
         var storage = await ResolveDpiStageStorageAsync(
             connection, "razer_chroma_misc_get_dpi_stages", cancellationToken).ConfigureAwait(false);
-        WriteDiagnostic(connection.Definition.ProductId,
-            $"dpi.stages read storage=0x{storage:X2}");
+        if (log)
+        {
+            WriteDiagnostic(connection.Definition.ProductId,
+                $"dpi.stages read storage=0x{storage:X2}");
+        }
         var request = RazerHidMouseProtocol.GetDpiStages(connection.Definition, storage);
         var response = await ExecuteAsync(connection, request, cancellationToken).ConfigureAwait(false);
         try
@@ -217,4 +236,14 @@ public sealed partial class RazerHidDeviceService
         }
         return await ResolveActiveProfileIdAsync(connection, cancellationToken).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// The live DPI belongs to the active onboard profile. The manifest's 00 is the
+    /// middleware buffer default, not a fixed argument: Synapse overwrites the first
+    /// byte with the profile id, so the shared profile resolver is the right source.
+    /// </summary>
+    private Task<byte> ResolveDpiStorageAsync(
+        RazerHidDeviceConnection connection,
+        CancellationToken cancellationToken) =>
+        ResolveActiveProfileIdAsync(connection, cancellationToken);
 }

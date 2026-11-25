@@ -30,7 +30,10 @@ internal static partial class OpenSynapseServiceHost
 
             case OpenSynapseServiceAction.InstallRazerDeviceDriver:
                 var deviceResult = await RazerDriverInstaller
-                    .InstallAsServiceAsync((ushort)request.ProductId!.Value, CancellationToken.None)
+                    .InstallAsServiceAsync(
+                        (ushort)request.ProductId!.Value,
+                        request.PackagePath,
+                        CancellationToken.None)
                     .ConfigureAwait(false);
                 return new OpenSynapseServiceResponse(
                     OpenSynapseServiceProtocol.Version,

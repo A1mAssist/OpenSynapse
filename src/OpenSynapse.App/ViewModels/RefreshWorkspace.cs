@@ -337,6 +337,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
             if (_razerHid.SelectedDevice is { } razerHidDevice)
             {
                 await razerHidDevice.RefreshBatteryStateAsync(cancellationToken);
+                await razerHidDevice.RefreshDpiStageAsync(cancellationToken);
             }
             if (ActiveDescriptors.Count == 0)
             {
