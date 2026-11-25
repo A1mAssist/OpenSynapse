@@ -10,8 +10,9 @@ public sealed class PresetEditorTests
     [Fact]
     public void BundledCatalogLoadsWithoutErrors()
     {
-        Assert.True(StudioPresetCatalog.Default.All.Count >= 513,
-            $"Expected at least 513 presets, found {StudioPresetCatalog.Default.All.Count}.");
+        // Only the free starter pack ships in source; the rest live in the paid content pack.
+        Assert.True(StudioPresetCatalog.Default.All.Count >= 1,
+            $"Expected the starter presets to load, found {StudioPresetCatalog.Default.All.Count}.");
         Assert.Empty(StudioPresetCatalog.Default.Errors);
     }
 
