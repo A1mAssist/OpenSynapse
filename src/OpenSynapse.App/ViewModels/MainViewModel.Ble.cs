@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using OpenSynapse.Core.Macros;
 using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.App.ViewModels;
@@ -95,7 +96,11 @@ public sealed partial class MainViewModel
             row.Device,
             message => _diagnosticLog.TryWrite("ble", message),
             () => _profile,
-            SaveProfileAsync);
+            SaveProfileAsync,
+            () => Macros.Items.Select(macro => macro.Definition).ToArray(),
+            Macros.TryApplyMacroBindingAsync,
+            Macros.TryClearMacroTriggerAsync,
+            () => SystemMacroCatalog.Bindings(GetActiveProfile().SystemMacros));
         await SelectedBle.LoadAsync(cancellationToken);
         row.SetBatteryPercent(SelectedBle.BatteryPercent);
     }

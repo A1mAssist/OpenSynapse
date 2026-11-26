@@ -8,11 +8,31 @@ internal static class RazerNagaSideButtons
     // keeps a new Naga model working when its PID is not listed yet.
     private static readonly HashSet<ushort> ProductIds =
     [
-        0x0015, 0x001F, 0x002E, 0x0036, 0x003E, 0x003F, 0x0040, 0x0041,
+        0x0015, 0x001F, 0x0021, 0x002E, 0x0036, 0x003E, 0x003F, 0x0040, 0x0041,
         0x0050, 0x0053, 0x0067, 0x008D, 0x008F, 0x0090, 0x0092, 0x0093,
         0x0096, 0x00A7, 0x00A8, 0x00A9, 0x00B4, 0x00B5, 0x00E7, 0x00E8,
         0x00E9,
     ];
+
+    // 00B4/00B5 mapping button list, in the order the firmware reports it. The
+    // device normally answers the list request; this covers the reads that time
+    // out or return no table, which used to leave the mapping page blank.
+    private static readonly byte[] NagaV2ProMappingButtonIds =
+    [
+        0x01, 0x02, 0x03, 0x34, 0x35, 0x0B, 0x0C,
+        0x40, 0x43, 0x46, 0x49, 0x41, 0x44, 0x47, 0x4A, 0x42, 0x45, 0x48, 0x4B,
+        0x09, 0x0A,
+    ];
+
+    internal static bool TryGetMappingButtonIds(
+        ushort productId,
+        out IReadOnlyList<byte> ids)
+    {
+        ids = productId is 0x00B4 or 0x00B5
+            ? NagaV2ProMappingButtonIds
+            : [];
+        return ids.Count > 0;
+    }
 
     internal static bool IsNaga(ushort vendorId, ushort productId, string? productName) =>
         vendorId switch

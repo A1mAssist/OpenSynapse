@@ -33,7 +33,8 @@ internal sealed class RazerPrivateKeyInput : IDisposable
     private readonly CancellationTokenSource _stop = new();
     private readonly Dictionary<string, HashSet<int>> _pressed =
         new(StringComparer.OrdinalIgnoreCase);
-    private readonly List<FileStream> _streams = [];
+    private readonly Dictionary<string, FileStream> _readers =
+        new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, long> _openFailureLoggedAt =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _loggedReaders = new(StringComparer.OrdinalIgnoreCase);
@@ -89,10 +90,8 @@ internal sealed class RazerPrivateKeyInput : IDisposable
         {
             try
             {
-                lock (_gate)
-                {
-                    _pressed.Clear();
-                }
+                // Readers now live across scans, so clearing held keys here
+                // would drop the release report of a key the user is holding.
                 await ReadAvailableAsync(cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -136,58 +135,81 @@ internal sealed class RazerPrivateKeyInput : IDisposable
             }
             return;
         }
-        var readers = new List<Task>();
-        try
+        foreach (var device in candidates)
         {
-            foreach (var device in candidates)
+            cancellationToken.ThrowIfCancellationRequested();
+            if (_disposed)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (_disposed)
-                {
-                    break;
-                }
+                break;
+            }
 
-                try
+            lock (_gate)
+            {
+                // A live reader already owns this collection. Reopening it on
+                // every scan would steal reports from the running reader.
+                if (_readers.ContainsKey(device.DevicePath))
                 {
-                    var stream = OpenReadStream(device);
-                    lock (_gate)
-                    {
-                        if (_disposed)
-                        {
-                            stream.Dispose();
-                            break;
-                        }
-                        _streams.Add(stream);
-                    }
-                    if (_loggedReaders.Add(device.DevicePath))
-                    {
-                        _log?.Invoke(
-                            $"Razer private key input: listening {device.DevicePath} usage=0x{device.UsagePage:X4}:0x{device.Usage:X4} input={device.InputReportByteLength}");
-                    }
-                    readers.Add(ReadLoopAsync(device, stream, cancellationToken));
-                }
-                catch (Exception exception) when (
-                    exception is Win32Exception or IOException or UnauthorizedAccessException or InvalidOperationException)
-                {
-                    // A collection may be present but not readable. Skip it and
-                    // keep the other collections on the same device available.
-                    if (ShouldLogFailure(device.DevicePath))
-                    {
-                        _log?.Invoke(
-                            $"Razer private key input: {device.DevicePath} open failed: {exception.Message}");
-                    }
+                    continue;
                 }
             }
 
-            if (readers.Count > 0)
+            try
             {
-                await Task.WhenAll(readers).ConfigureAwait(false);
+                var stream = OpenReadStream(device);
+                lock (_gate)
+                {
+                    if (_disposed)
+                    {
+                        stream.Dispose();
+                        break;
+                    }
+                    _readers[device.DevicePath] = stream;
+                }
+
+                if (_loggedReaders.Add(device.DevicePath))
+                {
+                    _log?.Invoke(
+                        $"Razer private key input: listening {device.DevicePath} usage=0x{device.UsagePage:X4}:0x{device.Usage:X4} input={device.InputReportByteLength}");
+                }
+
+                // Do not await: one long-lived device must not stop a device
+                // plugged in later from getting its own reader.
+                _ = ReadLoopAsync(device, stream, cancellationToken)
+                    .ContinueWith(
+                        _ => RemoveReader(device.DevicePath, stream),
+                        CancellationToken.None,
+                        TaskContinuationOptions.ExecuteSynchronously,
+                        TaskScheduler.Default);
+            }
+            catch (Exception exception) when (
+                exception is Win32Exception or IOException or UnauthorizedAccessException or InvalidOperationException)
+            {
+                // A collection may be present but not readable. Skip it and
+                // keep the other collections on the same device available.
+                if (ShouldLogFailure(device.DevicePath))
+                {
+                    _log?.Invoke(
+                        $"Razer private key input: {device.DevicePath} open failed: {exception.Message}");
+                }
             }
         }
-        finally
+    }
+
+    private void RemoveReader(string devicePath, FileStream stream)
+    {
+        lock (_gate)
         {
-            DisposeStreams();
+            if (_readers.TryGetValue(devicePath, out var tracked) && !ReferenceEquals(tracked, stream))
+            {
+                // A newer reader replaced this one; leave it alone.
+                stream.Dispose();
+                return;
+            }
+
+            _readers.Remove(devicePath);
         }
+
+        stream.Dispose();
     }
 
     private async Task ReadLoopAsync(
@@ -356,13 +378,18 @@ internal sealed class RazerPrivateKeyInput : IDisposable
 
     private void DisposeStreams()
     {
+        List<FileStream> streams;
         lock (_gate)
         {
-            foreach (var stream in _streams)
-            {
-                stream.Dispose();
-            }
-            _streams.Clear();
+            streams = _readers.Values.ToList();
+            _readers.Clear();
+        }
+
+        // Dispose outside the lock: a completing read publishes its release and
+        // would otherwise wait on the same lock from the continuation.
+        foreach (var stream in streams)
+        {
+            stream.Dispose();
         }
     }
 

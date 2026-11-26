@@ -44,6 +44,19 @@ public static class RazerKeyboardMacroTriggerResolver
         }
 
         // OBM keyboard mapping rows carry firmware key ids, not HID usages.
+        // 022B/0244 keypads do the same; their wheel and D-pad ids have no
+        // keyboard equivalent, so they stay unbound instead of becoming F/G/Space.
+        if (productId is 0x022B or 0x0244)
+        {
+            if (!RazerKeypadKeyCatalog.TryGetDefaultHidUsage(
+                    productId, hidUsage, out var keypadUsage))
+            {
+                return null;
+            }
+
+            hidUsage = keypadUsage;
+        }
+
         if (RazerHuntsmanV3ProKeys.UsesFirmwareKeyIds(productId))
         {
             if (!RazerHuntsmanV3ProKeys.TryGetHidUsage(hidUsage, out var hidUsageFromFirmware))

@@ -12,6 +12,37 @@ namespace OpenSynapse.Core.Devices;
 /// </summary>
 public static class RazerKeypadKeyCatalog
 {
+    // 022B/0244 report 64..75 (main pad), 80..86 (thumb row), 3 (scroll click),
+    // 60 (Alt) and 96 (Space). These are firmware ids, not HID usages. The value
+    // is the key each physical switch emits in the product's default layout
+    // (0244 BUTTON_LIST: KEY_1..KEY_SPACEBAR).
+    private static readonly IReadOnlyDictionary<byte, byte> TartarusDefaultHidUsages =
+        new Dictionary<byte, byte>
+        {
+            [64] = 30,  // KEY_1
+            [65] = 31,  // KEY_2
+            [66] = 32,  // KEY_3
+            [67] = 33,  // KEY_4
+            [80] = 34,  // KEY_5, first thumb key
+            [68] = 43,  // KEY_TAB
+            [69] = 20,  // KEY_Q
+            [70] = 26,  // KEY_W
+            [71] = 8,   // KEY_E
+            [81] = 21,  // KEY_R
+            [72] = 57,  // KEY_CAPS_LOCK
+            [73] = 4,   // KEY_A
+            [74] = 22,  // KEY_S
+            [75] = 7,   // KEY_D
+            [82] = 9,   // KEY_F
+            [83] = 225, // KEY_LEFT_SHIFT
+            [84] = 29,  // KEY_Z
+            [85] = 27,  // KEY_X
+            [86] = 6,   // KEY_C
+            // 0x03/0x60/0x96 are the scroll click, Alt and the bottom thumb key.
+            // The bundle order conflicts with the SVG selection order for those
+            // three, so they stay unbound instead of binding V to Space.
+        };
+
     // 02EB groupList / Studio sel1..sel27 order. FwIDs come from the bundle's
     // InputIDToMapping_Keyboard_Generic NormalMode table, not its LED matrix.
     private static readonly byte[] TartarusV2ProFirmwareIds =
@@ -69,6 +100,21 @@ public static class RazerKeypadKeyCatalog
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Converts a 022B/0244 mapping row id (firmware id) to the HID usage the
+    /// physical key emits by default. Wheel, D-pad and the unresolved bottom-row
+    /// ids return false so they cannot fall through to the HID table.
+    /// </summary>
+    public static bool TryGetDefaultHidUsage(
+        ushort productId,
+        byte firmwareId,
+        out byte hidUsage)
+    {
+        hidUsage = 0;
+        return productId is 0x022B or 0x0244 &&
+            TartarusDefaultHidUsages.TryGetValue(firmwareId, out hidUsage);
     }
 
     // The 3x4 main pad is SPAD_NUM_1..12 (64..75), the seven thumb keys are HPAD_NUM_1..7 (80..86),

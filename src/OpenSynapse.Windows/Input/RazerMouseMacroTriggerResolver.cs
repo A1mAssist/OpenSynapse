@@ -43,8 +43,8 @@ public static class RazerMouseMacroTriggerResolver
             };
         }
 
-        if (isNaga && (RazerNagaSideButtonResolver.ResolveFirmware(buttonId) ??
-                       RazerNagaSideButtonResolver.Resolve(buttonId)) is { } naga)
+        if (isNaga && (RazerNagaSideButtonResolver.ResolveFirmware(productId, buttonId) ??
+                       RazerNagaSideButtonResolver.Resolve(productId, buttonId)) is { } naga)
         {
             return naga;
         }

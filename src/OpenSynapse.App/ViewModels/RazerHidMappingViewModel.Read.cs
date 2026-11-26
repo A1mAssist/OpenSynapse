@@ -175,6 +175,13 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             }
             if (ids.Length == 0)
             {
+                if (RazerNagaSideButtons.TryGetMappingButtonIds(_productId, out var nagaIds))
+                {
+                    ids = nagaIds.ToArray();
+                }
+            }
+            if (ids.Length == 0)
+            {
                 // Razer's UI keeps these ids in the product bundle when the firmware returns no button list.
                 var visual = await _assetService.GetAsync(
                         _productId, _deviceKind, cancellationToken: cancellationToken)

@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
 using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Macros;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
@@ -92,6 +93,12 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
     private readonly Action<string>? _diagnostic;
     private readonly Func<ProfileDocument>? _getProfile;
     private readonly Func<CancellationToken, Task<bool>>? _saveProfile;
+    private readonly Func<IReadOnlyList<MacroDefinition>>? _localMacros;
+    private readonly Func<string, MacroInput, MacroTriggerMode, MacroPlaybackMode, int, bool,
+        MacroSoftwareBinding?, CancellationToken, Task<string?>>? _softwareMacroBinder;
+    private readonly Func<string, MacroInput, bool, CancellationToken, Task<string?>>?
+        _softwareMacroClearer;
+    private readonly Func<IReadOnlyList<MacroDefinition>>? _systemMacros;
     private RazerBleDeviceService? _service;
     private RazerHidMappingViewModel? _mapping;
     private bool _isBusy;
@@ -161,12 +168,21 @@ public sealed partial class RazerBleDeviceViewModel : INotifyPropertyChanged, IA
         RazerBleDevice device,
         Action<string>? diagnostic = null,
         Func<ProfileDocument>? getProfile = null,
-        Func<CancellationToken, Task<bool>>? saveProfile = null)
+        Func<CancellationToken, Task<bool>>? saveProfile = null,
+        Func<IReadOnlyList<MacroDefinition>>? localMacros = null,
+        Func<string, MacroInput, MacroTriggerMode, MacroPlaybackMode, int, bool,
+            MacroSoftwareBinding?, CancellationToken, Task<string?>>? softwareMacroBinder = null,
+        Func<string, MacroInput, bool, CancellationToken, Task<string?>>? softwareMacroClearer = null,
+        Func<IReadOnlyList<MacroDefinition>>? systemMacros = null)
     {
         _device = device;
         _diagnostic = diagnostic;
         _getProfile = getProfile;
         _saveProfile = saveProfile;
+        _localMacros = localMacros;
+        _softwareMacroBinder = softwareMacroBinder;
+        _softwareMacroClearer = softwareMacroClearer;
+        _systemMacros = systemMacros;
     }
     public event PropertyChangedEventHandler? PropertyChanged;
 

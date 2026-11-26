@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Win32.SafeHandles;
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Macros;
 using OpenSynapse.Windows.Devices;
 
@@ -109,6 +110,7 @@ internal sealed class RazerDeviceButtonInput : IDisposable
             _handler(new MacroInput
             {
                 Kind = MacroInputKind.NagaSideButton,
+                DeviceId = RazerProductAliases.Canonical(device.ProductId),
                 SideButton = sideButton,
             }, isDown);
             return;

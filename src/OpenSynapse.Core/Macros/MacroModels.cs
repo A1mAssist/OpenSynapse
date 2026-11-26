@@ -107,7 +107,10 @@ public sealed class MacroInput
         {
             MacroInputKind.Keyboard => VirtualKey == other.VirtualKey && Extended == other.Extended,
             MacroInputKind.MouseButton => MouseButton == other.MouseButton,
-            MacroInputKind.NagaSideButton => SideButton == other.SideButton,
+            // NagaSideButton carries the product id so two mice cannot share a
+            // side-button macro. Bindings saved before the id existed stay wildcards.
+            MacroInputKind.NagaSideButton => SideButton == other.SideButton &&
+                (DeviceId == 0 || other.DeviceId == 0 || DeviceId == other.DeviceId),
             MacroInputKind.DeviceButton => DeviceId == other.DeviceId &&
                 VirtualKey == other.VirtualKey &&
                 ScanCode == other.ScanCode &&

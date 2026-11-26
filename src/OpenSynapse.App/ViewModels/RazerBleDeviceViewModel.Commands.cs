@@ -143,12 +143,19 @@ public sealed partial class RazerBleDeviceViewModel
                 _mapping = new RazerHidMappingViewModel(
                     new RazerBleMappingTransport(_service),
                     canWrite: true,
+                    localMacros: _localMacros,
                     log: _diagnostic,
                     mappingProfileSaver: PersistMappingProfileAsync,
                     productId: RazerProductAliases.Canonical(_device.ProductId),
                     actionCatalog: IsNaga ? RazerNagaMappingActionCatalog.Instance : null,
+                    softwareTriggerBinder: _softwareMacroBinder,
+                    softwareTriggerClearer: _softwareMacroClearer,
+                    systemMacros: _systemMacros,
                     softwareTriggerResolver: buttonId => RazerMouseMacroTriggerResolver.Resolve(
-                        RazerProductAliases.Canonical(_device.ProductId), buttonId, IsNaga));
+                        RazerProductAliases.Canonical(_device.ProductId), buttonId, IsNaga))
+                {
+                    DeviceInstanceId = _device.Id,
+                };
                 OnPropertyChanged(nameof(Mapping));
             }
 
