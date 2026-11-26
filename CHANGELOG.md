@@ -32,7 +32,13 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
-- **THX preset choices**: filter V3 presets using installed device and spatial-mode metadata, so spatial-only presets are no longer offered while spatial audio is off; localize preset display names and immersive/competitive labels while retaining the original native IDs.
+- **Tartarus mapping**: resolve 022B/0244 keypad firmware ids to the key each switch actually emits, so software macros no longer bind to F7, G or Space; wheel and D-pad ids stay unbound instead of becoming keyboard keys.
+- **Naga mapping**: fall back to the product button table when the firmware returns no list, keep side-button triggers scoped to their own mouse, restore the missing Naga Epic identity, and enable software-macro binding on BLE Naga pages.
+- **Private-key hot-plug**: keep one reader per device and rescan incrementally, so a device connected after startup receives its private-key macros without restarting the app.
+- **Profile references**: rename per-device application rules together with their profile, block deleting a profile that rules still use (showing the reference count), restore the old profile if the rule save fails, and warn after importing a set with missing rule targets.
+- **Manual override scope**: changing Blade performance or fan no longer marks unrelated mice and keyboards as manually overridden.
+- **Update hardening**: protect the service data directory ownership, stage driver packages in the service cache before verification, and keep the service alive when a request carries an invalid path.
+- **THX preset choices**: filter V3 presets using installed device and spatial-mode metadata, so spatial-only presets are no longer offered while spatial audio is off; localize preset display names and immersive/competitive labels while retaining the original native IDs. Shared names use the corresponding Synapse translations in all eight supported languages.
 - **Headset save feedback**: show the saved status beside Refresh without shifting the page; remove the device header's identity tooltip.
 - **Ambient capture recovery**: recreate capture buffers before reading frames after a display-resolution change; retain the last frame and reopen capture after transient failures instead of leaving screen-sampled lighting black until manually restarted.
 - **Chroma takeover controls**: show the device toggle according to lighting capabilities even when the global service is off; honor saved device permissions before pausing Studio or sending game frames, and keep Studio running when only the takeover preference changes.

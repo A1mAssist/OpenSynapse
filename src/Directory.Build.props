@@ -2,9 +2,9 @@
   <PropertyGroup>
     <!-- MSI replaces versioned files by comparison, so every build needs a newer
          FileVersion; otherwise an upgrade keeps the old DLLs and mixes XAML with them. -->
-    <Version>1.7.4-beta25</Version>
+    <Version>1.7.4-beta27</Version>
     <AssemblyVersion>1.7.4.0</AssemblyVersion>
-    <FileVersion>1.7.4.25</FileVersion>
+    <FileVersion>1.7.4.27</FileVersion>
     <InformationalVersion>$(Version)</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
