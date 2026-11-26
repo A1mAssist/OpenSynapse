@@ -817,6 +817,13 @@ public sealed partial class MacroEditorWindow : Window
             return;
         }
 
+        if (_viewModel.Macros.IsMacroHolding)
+        {
+            // Closing is a release path even when nothing else is pending;
+            // otherwise the held key would outlive the window.
+            _viewModel.Macros.StopMacroPlayback();
+        }
+
         var hasPendingWork = _viewModel.Macros.HasUnsavedMacroChanges ||
             _viewModel.Macros.IsMacroRecording ||
             _viewModel.Macros.IsMacroCountdown ||
