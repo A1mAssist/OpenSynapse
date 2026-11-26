@@ -64,6 +64,13 @@ internal sealed partial class MacroRuntime
             throw new InvalidOperationException(string.Join(Environment.NewLine, plan.Warnings));
         }
 
+        if (plan.HasUnsupportedHoldPlacement)
+        {
+            // A held key survives the plan, so it cannot be repeated or looped.
+            throw new InvalidOperationException(
+                "A held input can only be used by a single-playback macro outside a loop.");
+        }
+
         CancellationTokenSource playback;
         CancellationTokenSource? previous;
         lock (_gate)
@@ -86,12 +93,18 @@ internal sealed partial class MacroRuntime
         previous?.Dispose();
         var releasedModifiers = await ReleaseTriggerModifiersAsync(triggerModifiers)
             .ConfigureAwait(false);
+        IReadOnlyList<MacroInput> heldInputs = [];
 
         try
         {
             do
             {
-                await ExecutePlanAsync(plan, playback.Token).ConfigureAwait(false);
+                heldInputs = await ExecutePlanAsync(plan, playback.Token).ConfigureAwait(false);
+                if (heldInputs.Count > 0)
+                {
+                    break;
+                }
+
                 if (!repeatUntilStopped)
                 {
                     break;
@@ -102,10 +115,35 @@ internal sealed partial class MacroRuntime
                 await Task.Delay(10, playback.Token).ConfigureAwait(false);
             }
             while (true);
+
+            if (heldInputs.Count > 0)
+            {
+                // The plan finished with keys still down. Keep ownership here
+                // instead of releasing immediately, so a Hold trigger can hold
+                // the key for as long as the user holds the trigger.
+                lock (_gate)
+                {
+                    _isHolding = true;
+                    _heldInputs = heldInputs;
+                }
+                PlaybackStateChanged?.Invoke();
+                _log?.Invoke(
+                    $"hold engaged macro={macro.Id} keys={heldInputs.Count}");
+                await Task.Delay(Timeout.Infinite, playback.Token).ConfigureAwait(false);
+            }
         }
         finally
         {
             await RestoreTriggerModifiersAsync(releasedModifiers).ConfigureAwait(false);
+            if (heldInputs.Count > 0)
+            {
+                // Release exactly what this playback pressed. ReleaseAllAsync
+                // would also drop keys a turbo or another playback owns.
+                await ReleaseInputsAsync(heldInputs).ConfigureAwait(false);
+                _log?.Invoke(
+                    $"hold released macro={macro.Id} keys={heldInputs.Count}");
+            }
+
             MacroInputHook? hookToDispose = null;
             lock (_gate)
             {
@@ -114,6 +152,8 @@ internal sealed partial class MacroRuntime
                     _playbackCancellation = null;
                     _isPlaying = false;
                     _isPaused = false;
+                    _isHolding = false;
+                    _heldInputs = null;
                     _activePlaybackMacroId = null;
                     _resumePlayback?.TrySetResult();
                     _resumePlayback = null;
@@ -148,7 +188,9 @@ internal sealed partial class MacroRuntime
         var changed = false;
         lock (_gate)
         {
-            if (!_isPlaying || _isPaused)
+            // Hold playback has no timeline to pause; only stop or trigger-up
+            // can end it.
+            if (!_isPlaying || _isPaused || _isHolding)
             {
                 return;
             }
@@ -264,7 +306,7 @@ internal sealed partial class MacroRuntime
         }
     }
 
-    private async Task ExecutePlanAsync(
+    private async Task<List<MacroInput>> ExecutePlanAsync(
         MacroPlaybackPlan plan,
         CancellationToken cancellationToken)
     {
@@ -325,20 +367,31 @@ internal sealed partial class MacroRuntime
                         break;
                 }
             }
+
+            // Normal completion returns what is still down. Held inputs are
+            // released by PlayAsync when the trigger or the user ends them.
+            return pressed;
         }
-        finally
+        catch
         {
-            foreach (var input in pressed)
+            // An exception or a cancellation must never leave a key down.
+            await ReleaseInputsAsync(pressed).ConfigureAwait(false);
+            throw;
+        }
+    }
+
+    private async Task ReleaseInputsAsync(IEnumerable<MacroInput> inputs)
+    {
+        foreach (var input in inputs)
+        {
+            try
             {
-                try
-                {
-                    await SendInputAsync(input, isDown: false, CancellationToken.None)
-                        .ConfigureAwait(false);
-                }
-                catch
-                {
-                    // Best effort release; the original error is more actionable.
-                }
+                await SendInputAsync(input, isDown: false, CancellationToken.None)
+                    .ConfigureAwait(false);
+            }
+            catch
+            {
+                // Best effort release; the original error is more actionable.
             }
         }
     }
