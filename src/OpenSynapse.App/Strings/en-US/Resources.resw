@@ -5025,4 +5025,10 @@
   <data name="RazerMappingSoftwareMacroKeyHint" xml:space="preserve">
     <value>The trigger key is the device key you are assigning.</value>
   </data>
+  <data name="MacroLibrarySharedHint" xml:space="preserve">
+    <value>Macros are shared by every profile; each profile keeps its own trigger keys and on/off state.</value>
+  </data>
+  <data name="MacroDeleteInUseElsewhere" xml:space="preserve">
+    <value>This macro is still bound in: {0}. Unbind it on the device page in those profiles first.</value>
+  </data>
 </root>

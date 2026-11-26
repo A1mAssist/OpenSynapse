@@ -10520,4 +10520,10 @@
   <data name="RazerMappingSoftwareMacroKeyHint" xml:space="preserve">
     <value>Клавиша триггера - это назначаемая клавиша устройства.</value>
   </data>
+  <data name="MacroLibrarySharedHint" xml:space="preserve">
+    <value>Макросы общие для всех профилей; каждый профиль хранит свои клавиши триггера и состояние включения.</value>
+  </data>
+  <data name="MacroDeleteInUseElsewhere" xml:space="preserve">
+    <value>Макрос всё ещё назначен в: {0}. Сначала снимите привязку на странице устройства в этих профилях.</value>
+  </data>
 </root>

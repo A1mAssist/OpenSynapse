@@ -5005,4 +5005,10 @@ Les modifications de macro non enregistrées seront perdues.</value></data>
   <data name="RazerMappingSoftwareMacroKeyHint" xml:space="preserve">
     <value>La touche de déclenchement est la touche de l'appareil affectée.</value>
   </data>
+  <data name="MacroLibrarySharedHint" xml:space="preserve">
+    <value>Les macros sont partagées par tous les profils ; chaque profil conserve ses propres touches de déclenchement et son état.</value>
+  </data>
+  <data name="MacroDeleteInUseElsewhere" xml:space="preserve">
+    <value>Cette macro est encore attribuée dans : {0}. Retirez-la d'abord sur la page de l'appareil de ces profils.</value>
+  </data>
 </root>

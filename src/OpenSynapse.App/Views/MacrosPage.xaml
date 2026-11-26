@@ -13,6 +13,7 @@
                 <StackPanel Spacing="5">
                   <TextBlock local:Localized.Uid="MacroPageTitle" Style="{StaticResource PageTitleStyle}" />
                   <TextBlock local:Localized.Uid="MacroPageDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                  <TextBlock local:Localized.Uid="MacroLibrarySharedHint" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" />
                 </StackPanel>
                 <Grid x:Name="MacroBodyLayout" ColumnDefinitions="300,*" ColumnSpacing="16">
                   <Border x:Name="MacroListCard" Style="{StaticResource CardStyle}" Padding="0">

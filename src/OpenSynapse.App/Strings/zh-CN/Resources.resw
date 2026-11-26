@@ -5466,4 +5466,10 @@
   <data name="RazerMappingSoftwareMacroKeyHint" xml:space="preserve">
     <value>触发键由当前设备按键决定。</value>
   </data>
+  <data name="MacroLibrarySharedHint" xml:space="preserve">
+    <value>宏由所有配置共享；每个配置只保留自己的触发键和启用状态。</value>
+  </data>
+  <data name="MacroDeleteInUseElsewhere" xml:space="preserve">
+    <value>该宏仍被这些配置绑定：{0}。请先在对应配置的设备页解除绑定。</value>
+  </data>
 </root>

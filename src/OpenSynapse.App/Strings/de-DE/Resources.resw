@@ -5005,4 +5005,10 @@ Nicht gespeicherte Makroänderungen gehen verloren.</value></data>
   <data name="RazerMappingSoftwareMacroKeyHint" xml:space="preserve">
     <value>Die Auslösetaste ist die Gerätetaste, die du zuweist.</value>
   </data>
+  <data name="MacroLibrarySharedHint" xml:space="preserve">
+    <value>Makros gelten für alle Profile; jedes Profil behält seine eigenen Auslösetasten und seinen Ein-/Aus-Status.</value>
+  </data>
+  <data name="MacroDeleteInUseElsewhere" xml:space="preserve">
+    <value>Dieses Makro ist noch zugewiesen in: {0}. Hebe die Zuweisung zuerst auf der Geräteseite dieser Profile auf.</value>
+  </data>
 </root>

@@ -15,6 +15,7 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
 {
     private readonly MacroRuntime _macroRuntime;
     private readonly Func<ProfileDefinition> _getActiveProfile;
+    private readonly Func<ProfileDocument?>? _getDocument;
     private readonly Func<CancellationToken, Task<bool>> _saveProfileAsync;
     private readonly LocalDiagnosticLog _diagnosticLog;
     private readonly SemaphoreSlim _macroSaveGate = new(1, 1);
@@ -48,11 +49,13 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         Func<ProfileDefinition> getActiveProfile,
         Func<CancellationToken, Task<bool>> saveProfileAsync,
         LocalDiagnosticLog diagnosticLog,
-        IMacroInputSink? macroInputSink = null)
+        IMacroInputSink? macroInputSink = null,
+        Func<ProfileDocument?>? getDocument = null)
     {
         _getActiveProfile = getActiveProfile;
         _saveProfileAsync = saveProfileAsync;
         _diagnosticLog = diagnosticLog;
+        _getDocument = getDocument;
         _macroRuntime = new MacroRuntime(
             sink: macroInputSink,
             log: message => _diagnosticLog.TryWrite("macro-input", message));
@@ -665,6 +668,22 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
             return;
         }
 
+        // The macro is shared, so deleting it affects every profile. Another
+        // profile's device key cannot be restored from here, so it has to be
+        // unbound there first.
+        var document = _getDocument?.Invoke();
+        if (document is not null &&
+            MacroLibrary.ProfilesBinding(
+                document,
+                selected.Id,
+                document.ActiveProfileName) is { Count: > 0 } otherProfiles)
+        {
+            StatusText = AppStrings.FormatText(
+                "MacroDeleteInUseElsewhere",
+                string.Join(", ", otherProfiles));
+            return;
+        }
+
         var wasDirty = _dirtyMacroIds.Contains(selected.Id);
         if (!await RestoreSoftwareBindingsAsync(selected.Definition, cancellationToken))
         {
@@ -672,7 +691,15 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
             return;
         }
 
-        profile.Macros.RemoveAt(index);
+        if (document is not null)
+        {
+            MacroLibrary.Remove(document, selected.Id);
+        }
+        else
+        {
+            profile.Macros.RemoveAt(index);
+        }
+
         Items.Remove(selected);
         _dirtyMacroIds.Remove(selected.Id);
         OnPropertyChanged(nameof(MacroListEmptyVisibility));

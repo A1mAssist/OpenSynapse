@@ -5446,4 +5446,10 @@
   <data name="RazerMappingSoftwareMacroKeyHint" xml:space="preserve">
     <value>觸發鍵由目前裝置按鍵決定。</value>
   </data>
+  <data name="MacroLibrarySharedHint" xml:space="preserve">
+    <value>巨集由所有設定共用；每個設定只保留自己的觸發鍵與啟用狀態。</value>
+  </data>
+  <data name="MacroDeleteInUseElsewhere" xml:space="preserve">
+    <value>此巨集仍被這些設定綁定：{0}。請先在對應設定的裝置頁解除綁定。</value>
+  </data>
 </root>

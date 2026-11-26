@@ -5005,4 +5005,10 @@
   <data name="RazerMappingSoftwareMacroKeyHint" xml:space="preserve">
     <value>トリガーキーは割り当て中のデバイスキーです。</value>
   </data>
+  <data name="MacroLibrarySharedHint" xml:space="preserve">
+    <value>マクロはすべてのプロファイルで共有され、トリガーキーと有効状態だけがプロファイルごとに保持されます。</value>
+  </data>
+  <data name="MacroDeleteInUseElsewhere" xml:space="preserve">
+    <value>このマクロは次のプロファイルで割り当てられています: {0}。先に各プロファイルのデバイスページで解除してください。</value>
+  </data>
 </root>

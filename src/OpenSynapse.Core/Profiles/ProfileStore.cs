@@ -79,6 +79,7 @@ public sealed class ProfileStore
             }
 
             document.ApplySafeDefaults();
+            MacroLibrary.NormalizeOnLoad(document);
             return document;
         }
         catch (JsonException exception)
@@ -131,6 +132,7 @@ public sealed class ProfileStore
             {
                 await CompleteV3MigrationAsync(document, legacyGpuMode, cancellationToken);
             }
+            MacroLibrary.NormalizeOnLoad(document);
             return document;
         }
         catch (JsonException)
@@ -177,6 +179,7 @@ public sealed class ProfileStore
         }
 
         document.ApplySafeDefaults();
+        MacroLibrary.NormalizeOnSave(document);
         var directory = Path.GetDirectoryName(FilePath);
         if (string.IsNullOrEmpty(directory))
         {

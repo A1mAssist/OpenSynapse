@@ -5005,4 +5005,10 @@
   <data name="RazerMappingSoftwareMacroKeyHint" xml:space="preserve">
     <value>트리거 키는 현재 할당 중인 장치 키입니다.</value>
   </data>
+  <data name="MacroLibrarySharedHint" xml:space="preserve">
+    <value>매크로는 모든 프로필에서 공유되며, 트리거 키와 사용 상태만 프로필별로 유지됩니다.</value>
+  </data>
+  <data name="MacroDeleteInUseElsewhere" xml:space="preserve">
+    <value>이 매크로는 다음 프로필에 할당되어 있습니다: {0}. 먼저 해당 프로필의 장치 페이지에서 해제하세요.</value>
+  </data>
 </root>
