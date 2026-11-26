@@ -2276,7 +2276,7 @@
     <value>Personnalisé</value>
   </data>
   <data name="ThxPresetDefault" xml:space="preserve">
-    <value>Par défaut</value>
+    <value>PAR DÉFAUT</value>
   </data>
   <data name="ThxEqualizerHint" xml:space="preserve">
     <value>Ajustez les bandes, puis choisissez Appliquer l’égaliseur.</value>
@@ -4925,7 +4925,7 @@ Les modifications de macro non enregistrées seront perdues.</value></data>
     <value>Mode jeu à localisation précise</value>
   </data>
   <data name="ThxPresetGameMode" xml:space="preserve">
-    <value>Mode jeu</value>
+    <value>Mode Gaming</value>
   </data>
   <data name="ThxPresetHipHop" xml:space="preserve">
     <value>Hip-hop</value>
@@ -4934,7 +4934,7 @@ Les modifications de macro non enregistrées seront perdues.</value></data>
     <value>Jazz</value>
   </data>
   <data name="ThxPresetMusicMode" xml:space="preserve">
-    <value>Mode musique</value>
+    <value>Mode Musique</value>
   </data>
   <data name="ThxPresetPop" xml:space="preserve">
     <value>Pop</value>
@@ -4949,9 +4949,18 @@ Les modifications de macro non enregistrées seront perdues.</value></data>
     <value>Mode voix</value>
   </data>
   <data name="ThxPresetImmersiveFormat" xml:space="preserve">
-    <value>{0} · Mode immersif</value>
+    <value>{0} · Mode immersif THX</value>
   </data>
   <data name="ThxPresetCompetitiveFormat" xml:space="preserve">
-    <value>{0} · Mode compétitif</value>
+    <value>{0} · Mode compétitif THX</value>
+  </data>
+  <data name="ProfileInUseByDeviceRules" xml:space="preserve">
+    <value>Le profil « {0} » est utilisé par {1} règle(s) d’application d’appareil. Supprimez-les ou modifiez-les d’abord.</value>
+  </data>
+  <data name="ProfileImportMissingReferences" xml:space="preserve">
+    <value>{0} règle(s) d’application d’appareil pointent vers des profils absents de l’ensemble importé.</value>
+  </data>
+  <data name="ProfileRenameRollbackFailed" xml:space="preserve">
+    <value>Le renommage du profil a échoué et le fichier de profil n’a pas pu être restauré : {0} / {1}</value>
   </data>
 </root>

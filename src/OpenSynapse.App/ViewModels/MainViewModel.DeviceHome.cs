@@ -12,6 +12,12 @@ public sealed partial class MainViewModel
     public DeviceApplicationRulesWorkspace DeviceRules { get; private set; } = null!;
     public HomeWorkspace Home { get; private set; } = null!;
 
+    // ProfilesWorkspace is constructed before the device home. A rename or delete
+    // invoked before that point is a wiring error, not a silent no-op.
+    private DeviceApplicationRulesWorkspace RequireDeviceRules() =>
+        DeviceRules ?? throw new InvalidOperationException(
+            "Device application rules are not initialized yet.");
+
     private void InitializeDeviceHome(IActiveApplicationProvider? activeApplicationProvider)
     {
         _applicationSwitch = new DeviceApplicationSwitchCoordinator();

@@ -34,6 +34,8 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
     private readonly Action<string> _reportApplicationError;
     private readonly Action _requestProfileApply;
     private readonly Func<string, string, CancellationToken, Task> _renameProfileReferences;
+    private readonly Func<string, int> _countProfileReferences;
+    private readonly Func<IEnumerable<string>, int> _countMissingProfileReferences;
     private readonly Action<bool, bool>? _persistStartup;
     private string _profileStatusText = AppStrings.Text("Text_A9AE645B");
     private string _activeProfileName = ProfileCatalog.DefaultProfileName;
@@ -61,7 +63,9 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
         Action<string> reportApplicationError,
         Action requestProfileApply,
         Func<string, string, CancellationToken, Task>? renameProfileReferences = null,
-        Action<bool, bool>? persistStartup = null)
+        Action<bool, bool>? persistStartup = null,
+        Func<string, int>? countProfileReferences = null,
+        Func<IEnumerable<string>, int>? countMissingProfileReferences = null)
     {
         _profileStore = profileStore;
         _getProfile = getProfile;
@@ -82,6 +86,8 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
         _reportApplicationError = reportApplicationError;
         _requestProfileApply = requestProfileApply;
         _renameProfileReferences = renameProfileReferences ?? ((_, _, _) => Task.CompletedTask);
+        _countProfileReferences = countProfileReferences ?? (_ => 0);
+        _countMissingProfileReferences = countMissingProfileReferences ?? (_ => 0);
         _persistStartup = persistStartup;
     }
 
@@ -169,12 +175,55 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
         }
 
         var name = ActiveProfileName;
-        await RunProfileOperationAsync(AppStrings.FormatText("DeleteProfile", ActiveProfileName), () =>
+        var label = AppStrings.FormatText("DeleteProfile", name);
+        if (!await TryEnterOperationAsync(cancellationToken))
         {
-            ProfileCatalog.Delete(_getProfile(), ActiveProfileName);
+            return;
+        }
+
+        var previous = _getProfile().Clone();
+        _setBusy(true);
+        _setDeviceOperationError(string.Empty);
+        try
+        {
+            // Check inside the operation so a rule added after the UI check
+            // cannot slip between the count and the delete.
+            var references = _countProfileReferences(name);
+            if (references > 0)
+            {
+                var blocked = AppStrings.FormatText(
+                    "ProfileInUseByDeviceRules", name, references);
+                _setDeviceOperationError(blocked);
+                ProfileStatusText = blocked;
+                return;
+            }
+
+            ProfileCatalog.Delete(_getProfile(), name);
             RefreshProfileState();
-            return Task.CompletedTask;
-        }, cancellationToken);
+            await _profileStore.SaveAsync(_getProfile(), cancellationToken);
+            _requestProfileApply();
+            ProfileStatusText =
+                AppStrings.FormatText("ProfileOperationSucceeded", label, ActiveProfileName) +
+                " · " + AppStrings.Text("SavedToCurrentProfile");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            _setProfile(previous);
+            RefreshProfileState();
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or KeyNotFoundException or IOException or UnauthorizedAccessException)
+        {
+            _setDeviceOperationError(AppStrings.FormatText("LabeledError", label, exception.Message));
+            ProfileStatusText = AppStrings.FormatText("ProfileOperationFailed", label, exception.Message);
+            _setProfile(previous);
+            RefreshProfileState();
+        }
+        finally
+        {
+            _setBusy(false);
+            _deviceOperationGate.Release();
+        }
+
         if (!_getProfile().Profiles.ContainsKey(name)) ProfileDeleted?.Invoke(name);
     }
 
@@ -203,15 +252,84 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
             return;
         }
 
-        var name = ProfileNameInput;
+        var requestedName = ProfileNameInput;
         var previousName = ActiveProfileName;
-        await RunProfileOperationAsync(AppStrings.FormatText("RenameProfile", name), () =>
+        var label = AppStrings.FormatText("RenameProfile", requestedName);
+        if (!await TryEnterOperationAsync(cancellationToken))
         {
-            ProfileCatalog.Rename(_getProfile(), ActiveProfileName, name);
-            ProfileNameInput = string.Empty;
+            return;
+        }
+
+        var previous = _getProfile().Clone();
+        _setBusy(true);
+        _setDeviceOperationError(string.Empty);
+        try
+        {
+            ProfileCatalog.Rename(_getProfile(), previousName, requestedName);
             RefreshProfileState();
-            return _renameProfileReferences(previousName, ActiveProfileName, cancellationToken);
-        }, cancellationToken);
+            var newName = ActiveProfileName;
+
+            // The profile file is the first half of the rename. If the rules
+            // file cannot follow, restore the profile instead of leaving the
+            // two documents pointing at different names.
+            await _profileStore.SaveAsync(_getProfile(), cancellationToken);
+
+            try
+            {
+                await _renameProfileReferences(previousName, newName, cancellationToken);
+            }
+            catch (OperationCanceledException cancellation) when (cancellationToken.IsCancellationRequested)
+            {
+                if (await RestoreProfileAsync(previous) is { } rollbackError)
+                {
+                    var rollback = AppStrings.FormatText(
+                        "ProfileRenameRollbackFailed", cancellation.Message, rollbackError);
+                    _setDeviceOperationError(rollback);
+                    ProfileStatusText = rollback;
+                }
+                return;
+            }
+            catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException)
+            {
+                if (await RestoreProfileAsync(previous) is { } rollbackError)
+                {
+                    var rollback = AppStrings.FormatText(
+                        "ProfileRenameRollbackFailed", exception.Message, rollbackError);
+                    _setDeviceOperationError(rollback);
+                    ProfileStatusText = rollback;
+                    return;
+                }
+
+                _setDeviceOperationError(
+                    AppStrings.FormatText("LabeledError", label, exception.Message));
+                ProfileStatusText = AppStrings.FormatText(
+                    "ProfileOperationFailed", label, exception.Message);
+                return;
+            }
+
+            ProfileNameInput = string.Empty;
+            _requestProfileApply();
+            ProfileStatusText =
+                AppStrings.FormatText("ProfileOperationSucceeded", label, newName) +
+                " · " + AppStrings.Text("SavedToCurrentProfile");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            _setProfile(previous);
+            RefreshProfileState();
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or KeyNotFoundException or IOException or UnauthorizedAccessException)
+        {
+            _setDeviceOperationError(AppStrings.FormatText("LabeledError", label, exception.Message));
+            ProfileStatusText = AppStrings.FormatText("ProfileOperationFailed", label, exception.Message);
+            _setProfile(previous);
+            RefreshProfileState();
+        }
+        finally
+        {
+            _setBusy(false);
+            _deviceOperationGate.Release();
+        }
     }
 
     public Task BindApplicationAsync(string executablePath, CancellationToken cancellationToken = default) =>
@@ -254,6 +372,18 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
             RefreshProfileState();
             return Task.CompletedTask;
         }, cancellationToken);
+
+        if (!ReferenceEquals(_getProfile(), imported))
+        {
+            return;
+        }
+
+        var missing = _countMissingProfileReferences(_getProfile().Profiles.Keys);
+        if (missing > 0)
+        {
+            ProfileStatusText += " · " + AppStrings.FormatText(
+                "ProfileImportMissingReferences", missing);
+        }
     }
 
     public async Task ExportProfilesAsync(string filePath, CancellationToken cancellationToken = default)
@@ -382,6 +512,25 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
         }
         OnPropertyChanged(nameof(ActiveProfileName));
         OnPropertyChanged(nameof(CanDeleteProfile));
+    }
+
+    /// <summary>
+    /// Restores the previous profile and writes it back. Returns the rollback
+    /// error when that write also fails; the caller must report both errors.
+    /// </summary>
+    private async Task<string?> RestoreProfileAsync(ProfileDocument previous)
+    {
+        _setProfile(previous);
+        RefreshProfileState();
+        try
+        {
+            await _profileStore.SaveAsync(_getProfile(), CancellationToken.None);
+            return null;
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException)
+        {
+            return exception.Message;
+        }
     }
 
     private async Task RunProfileOperationAsync(

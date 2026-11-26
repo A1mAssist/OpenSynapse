@@ -2285,7 +2285,7 @@
     <value>Custom</value>
   </data>
   <data name="ThxPresetDefault" xml:space="preserve">
-    <value>Default</value>
+    <value>DEFAULT</value>
   </data>
   <data name="ThxEqualizerHint" xml:space="preserve">
     <value>Adjust the bands, then choose Apply equalizer.</value>
@@ -4918,7 +4918,7 @@
   <data name="SettingAutoApplyInvalid" xml:space="preserve"><value>Enter a valid value within the allowed range.</value></data>
   <data name="SettingAutoApplyCancelled" xml:space="preserve"><value>Apply cancelled. Please retry.</value></data>
   <data name="ThxPresetFlat" xml:space="preserve">
-    <value>Flat</value>
+    <value>FLAT</value>
   </data>
   <data name="ThxPresetPodcast" xml:space="preserve">
     <value>Podcast</value>
@@ -4969,9 +4969,18 @@
     <value>Voice Mode</value>
   </data>
   <data name="ThxPresetImmersiveFormat" xml:space="preserve">
-    <value>{0} · Immersive Mode</value>
+    <value>{0} · THX Immersive Mode</value>
   </data>
   <data name="ThxPresetCompetitiveFormat" xml:space="preserve">
-    <value>{0} · Competitive Mode</value>
+    <value>{0} · THX Competitive Mode</value>
+  </data>
+  <data name="ProfileInUseByDeviceRules" xml:space="preserve">
+    <value>Profile "{0}" is used by {1} device application rule(s). Remove or repoint them first.</value>
+  </data>
+  <data name="ProfileImportMissingReferences" xml:space="preserve">
+    <value>{0} device application rule(s) point at profiles that are not in the imported set.</value>
+  </data>
+  <data name="ProfileRenameRollbackFailed" xml:space="preserve">
+    <value>The profile rename failed and the profile file could not be restored: {0} / {1}</value>
   </data>
 </root>

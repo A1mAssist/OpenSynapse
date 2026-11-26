@@ -3933,7 +3933,7 @@
     <value>Игра</value>
   </data>
   <data name="ThxPresetMovie" xml:space="preserve">
-    <value>Фильм</value>
+    <value>Кино</value>
   </data>
   <data name="ThxPresetMusic" xml:space="preserve">
     <value>Музыка</value>
@@ -3945,7 +3945,7 @@
     <value>Пользовательский</value>
   </data>
   <data name="ThxPresetDefault" xml:space="preserve">
-    <value>По умолчанию</value>
+    <value>ПО УМОЛЧАНИЮ</value>
   </data>
   <data name="ThxEqualizerHint" xml:space="preserve">
     <value>Отрегулируйте полосы, затем выберите «Применить эквалайзер».</value>
@@ -10413,7 +10413,7 @@
   <data name="SettingAutoApplyInvalid" xml:space="preserve"><value>Введите допустимое значение в указанном диапазоне.</value></data>
   <data name="SettingAutoApplyCancelled" xml:space="preserve"><value>Применение отменено. Повторите попытку.</value></data>
   <data name="ThxPresetFlat" xml:space="preserve">
-    <value>Ровное звучание</value>
+    <value>Ровный</value>
   </data>
   <data name="ThxPresetPodcast" xml:space="preserve">
     <value>Подкаст</value>
@@ -10464,9 +10464,18 @@
     <value>Голосовой режим</value>
   </data>
   <data name="ThxPresetImmersiveFormat" xml:space="preserve">
-    <value>{0} · Режим погружения</value>
+    <value>{0} · Режим погружения THX</value>
   </data>
   <data name="ThxPresetCompetitiveFormat" xml:space="preserve">
-    <value>{0} · Соревновательный режим</value>
+    <value>{0} · Режим THX для соревновательной игры</value>
+  </data>
+  <data name="ProfileInUseByDeviceRules" xml:space="preserve">
+    <value>Профиль «{0}» используется правилами приложений устройств: {1}. Сначала удалите или переназначьте их.</value>
+  </data>
+  <data name="ProfileImportMissingReferences" xml:space="preserve">
+    <value>Правила приложений устройств ({0}) ссылаются на профили, отсутствующие в импортированном наборе.</value>
+  </data>
+  <data name="ProfileRenameRollbackFailed" xml:space="preserve">
+    <value>Не удалось переименовать профиль, и файл профиля не удалось восстановить: {0} / {1}</value>
   </data>
 </root>

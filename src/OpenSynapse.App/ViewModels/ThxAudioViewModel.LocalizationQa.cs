@@ -34,14 +34,14 @@ public sealed partial class ThxAudioViewModel
         {
             foreach (var (locale, gameMode, immersive, competitive) in new[]
             {
-                ("en-US", "Game Mode", "Immersive Mode", "Competitive Mode"),
-                ("zh-CN", "游戏模式", "沉浸模式", "竞技模式"),
-                ("zh-TW", "遊戲模式", "沉浸模式", "競技模式"),
-                ("de-DE", "Spielmodus", "Immersiver Modus", "Wettbewerbsmodus"),
-                ("fr-FR", "Mode jeu", "Mode immersif", "Mode compétitif"),
-                ("ja-JP", "ゲームモード", "没入モード", "競技モード"),
-                ("ko-KR", "게임 모드", "몰입 모드", "경쟁 모드"),
-                ("ru-RU", "Игровой режим", "Режим погружения", "Соревновательный режим"),
+                ("en-US", "Game Mode", "THX Immersive Mode", "THX Competitive Mode"),
+                ("zh-CN", "游戏模式", "THX 沉浸模式", "THX 竞技模式"),
+                ("zh-TW", "遊戲模式", "THX 沈浸模式", "THX 競賽模式"),
+                ("de-DE", "Spiel-Modus", "THX Immersionsmodus", "THX Turniermodus"),
+                ("fr-FR", "Mode Gaming", "Mode immersif THX", "Mode compétitif THX"),
+                ("ja-JP", "ゲームモード", "THX イマーシブモード", "THX 競技モード"),
+                ("ko-KR", "게임 모드", "THX 몰입 모드", "THX 경쟁 모드"),
+                ("ru-RU", "Игровой режим", "Режим погружения THX", "Режим THX для соревновательной игры"),
             })
             {
                 AppLanguageSettings.Save(locale);

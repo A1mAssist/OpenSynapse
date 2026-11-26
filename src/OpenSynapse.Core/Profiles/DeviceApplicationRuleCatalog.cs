@@ -96,6 +96,36 @@ public static class DeviceApplicationRuleCatalog
         };
     }
 
+    /// <summary>
+    /// Counts rules and pending bindings that still point at the profile. Used to
+    /// block deleting a profile the device rules still need.
+    /// </summary>
+    public static int CountProfileReferences(
+        DeviceApplicationRuleDocument document,
+        string profileName)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentException.ThrowIfNullOrWhiteSpace(profileName);
+        return document.Rules.Count(rule =>
+                   StringComparer.OrdinalIgnoreCase.Equals(rule.ProfileName, profileName)) +
+               document.PendingBindings.Count(binding =>
+                   StringComparer.OrdinalIgnoreCase.Equals(binding.ProfileName, profileName));
+    }
+
+    /// <summary>
+    /// Counts references that no longer resolve to one of the supplied profile names.
+    /// </summary>
+    public static int CountMissingProfileReferences(
+        DeviceApplicationRuleDocument document,
+        IEnumerable<string> profileNames)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(profileNames);
+        var names = new HashSet<string>(profileNames, StringComparer.OrdinalIgnoreCase);
+        return document.Rules.Count(rule => !names.Contains(rule.ProfileName)) +
+               document.PendingBindings.Count(binding => !names.Contains(binding.ProfileName));
+    }
+
     public static DeviceApplicationRule? FindForExecutable(
         DeviceApplicationRuleDocument document,
         DeviceBindingKey device,

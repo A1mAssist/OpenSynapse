@@ -2699,7 +2699,7 @@
     <comment>人声</comment>
   </data>
   <data name="ThxPresetCustom" xml:space="preserve">
-    <value>自定義</value>
+    <value>自訂</value>
     <comment>自定义</comment>
   </data>
   <data name="ThxPresetDefault" xml:space="preserve">
@@ -5339,7 +5339,7 @@
   <data name="SettingAutoApplyInvalid" xml:space="preserve"><value>請輸入範圍內的有效數值。</value></data>
   <data name="SettingAutoApplyCancelled" xml:space="preserve"><value>套用已取消，請重試。</value></data>
   <data name="ThxPresetFlat" xml:space="preserve">
-    <value>平直</value>
+    <value>平坦</value>
   </data>
   <data name="ThxPresetPodcast" xml:space="preserve">
     <value>播客</value>
@@ -5390,9 +5390,18 @@
     <value>人聲模式</value>
   </data>
   <data name="ThxPresetImmersiveFormat" xml:space="preserve">
-    <value>{0} · 沉浸模式</value>
+    <value>{0} · THX 沈浸模式</value>
   </data>
   <data name="ThxPresetCompetitiveFormat" xml:space="preserve">
-    <value>{0} · 競技模式</value>
+    <value>{0} · THX 競賽模式</value>
+  </data>
+  <data name="ProfileInUseByDeviceRules" xml:space="preserve">
+    <value>設定「{0}」仍被 {1} 條裝置應用規則引用。請先刪除或改指向這些規則。</value>
+  </data>
+  <data name="ProfileImportMissingReferences" xml:space="preserve">
+    <value>有 {0} 條裝置應用規則指向匯入檔案中不存在的設定。</value>
+  </data>
+  <data name="ProfileRenameRollbackFailed" xml:space="preserve">
+    <value>設定重新命名失敗，且設定檔無法還原：{0} / {1}</value>
   </data>
 </root>

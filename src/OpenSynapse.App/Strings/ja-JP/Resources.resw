@@ -2270,13 +2270,13 @@
     <value>音楽</value>
   </data>
   <data name="ThxPresetVoice" xml:space="preserve">
-    <value>ボイス</value>
+    <value>ボーカル</value>
   </data>
   <data name="ThxPresetCustom" xml:space="preserve">
     <value>カスタム</value>
   </data>
   <data name="ThxPresetDefault" xml:space="preserve">
-    <value>既定</value>
+    <value>デフォルト</value>
   </data>
   <data name="ThxEqualizerHint" xml:space="preserve">
     <value>バンドを調整してから、「イコライザーを適用」を選択してください。</value>
@@ -4949,9 +4949,18 @@
     <value>ボイスモード</value>
   </data>
   <data name="ThxPresetImmersiveFormat" xml:space="preserve">
-    <value>{0} · 没入モード</value>
+    <value>{0} · THX イマーシブモード</value>
   </data>
   <data name="ThxPresetCompetitiveFormat" xml:space="preserve">
-    <value>{0} · 競技モード</value>
+    <value>{0} · THX 競技モード</value>
+  </data>
+  <data name="ProfileInUseByDeviceRules" xml:space="preserve">
+    <value>プロファイル「{0}」は {1} 件のデバイス アプリケーション ルールで使用されています。先に削除するか参照先を変更してください。</value>
+  </data>
+  <data name="ProfileImportMissingReferences" xml:space="preserve">
+    <value>{0} 件のデバイス アプリケーション ルールが、インポートしたセットに存在しないプロファイルを参照しています。</value>
+  </data>
+  <data name="ProfileRenameRollbackFailed" xml:space="preserve">
+    <value>プロファイルの名前変更に失敗し、プロファイル ファイルを復元できませんでした: {0} / {1}</value>
   </data>
 </root>

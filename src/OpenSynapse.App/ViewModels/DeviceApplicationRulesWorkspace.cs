@@ -152,6 +152,12 @@ public sealed partial class DeviceApplicationRulesWorkspace : INotifyPropertyCha
     internal async Task RenameProfile(string oldName, string newName, CancellationToken token = default) =>
         await SaveAsync(DeviceApplicationRuleCatalog.RenameProfileReferences(_document, oldName, newName), token);
 
+    internal int CountProfileReferences(string profileName) =>
+        DeviceApplicationRuleCatalog.CountProfileReferences(_document, profileName);
+
+    internal int CountMissingProfileReferences(IEnumerable<string> profileNames) =>
+        DeviceApplicationRuleCatalog.CountMissingProfileReferences(_document, profileNames);
+
     internal void RefreshRunningApplications(IEnumerable<string> paths)
     {
         var ordered = paths.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).ToArray();

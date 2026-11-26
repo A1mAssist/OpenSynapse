@@ -174,7 +174,13 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             SetDeviceOperationError,
             ReportApplicationError,
             () => Refresh!.RequestProfileApply(),
-            persistStartup: persistStartup);
+            persistStartup: persistStartup,
+            renameProfileReferences: (oldName, newName, token) =>
+                RequireDeviceRules().RenameProfile(oldName, newName, token),
+            countProfileReferences: profileName =>
+                RequireDeviceRules().CountProfileReferences(profileName),
+            countMissingProfileReferences: profileNames =>
+                RequireDeviceRules().CountMissingProfileReferences(profileNames));
         Fan = new FanWorkspace(
             deviceTelemetryReader,
             performanceMonitor,

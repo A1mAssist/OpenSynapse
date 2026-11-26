@@ -2270,13 +2270,13 @@
     <value>음악</value>
   </data>
   <data name="ThxPresetVoice" xml:space="preserve">
-    <value>음성</value>
+    <value>보컬</value>
   </data>
   <data name="ThxPresetCustom" xml:space="preserve">
-    <value>사용자 지정</value>
+    <value>커스텀</value>
   </data>
   <data name="ThxPresetDefault" xml:space="preserve">
-    <value>기본</value>
+    <value>기본 설정</value>
   </data>
   <data name="ThxEqualizerHint" xml:space="preserve">
     <value>밴드를 조정한 다음 이퀄라이저 적용을 선택하세요.</value>
@@ -4949,9 +4949,18 @@
     <value>음성 모드</value>
   </data>
   <data name="ThxPresetImmersiveFormat" xml:space="preserve">
-    <value>{0} · 몰입 모드</value>
+    <value>{0} · THX 몰입 모드</value>
   </data>
   <data name="ThxPresetCompetitiveFormat" xml:space="preserve">
-    <value>{0} · 경쟁 모드</value>
+    <value>{0} · THX 경쟁 모드</value>
+  </data>
+  <data name="ProfileInUseByDeviceRules" xml:space="preserve">
+    <value>프로필 "{0}"은(는) {1}개의 장치 애플리케이션 규칙에서 사용 중입니다. 먼저 해당 규칙을 삭제하거나 대상을 변경하세요.</value>
+  </data>
+  <data name="ProfileImportMissingReferences" xml:space="preserve">
+    <value>{0}개의 장치 애플리케이션 규칙이 가져온 집합에 없는 프로필을 가리킵니다.</value>
+  </data>
+  <data name="ProfileRenameRollbackFailed" xml:space="preserve">
+    <value>프로필 이름 바꾸기에 실패했으며 프로필 파일을 복원할 수 없습니다: {0} / {1}</value>
   </data>
 </root>

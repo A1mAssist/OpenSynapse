@@ -2270,13 +2270,13 @@
     <value>Musik</value>
   </data>
   <data name="ThxPresetVoice" xml:space="preserve">
-    <value>Stimme</value>
+    <value>Gesang</value>
   </data>
   <data name="ThxPresetCustom" xml:space="preserve">
-    <value>Benutzerdefiniert</value>
+    <value>Individuell</value>
   </data>
   <data name="ThxPresetDefault" xml:space="preserve">
-    <value>Standard</value>
+    <value>STANDARD</value>
   </data>
   <data name="ThxEqualizerHint" xml:space="preserve">
     <value>Passen Sie die Bänder an und wählen Sie dann „Equalizer anwenden“.</value>
@@ -4925,7 +4925,7 @@ Nicht gespeicherte Makroänderungen gehen verloren.</value></data>
     <value>Spielmodus mit präziser Ortung</value>
   </data>
   <data name="ThxPresetGameMode" xml:space="preserve">
-    <value>Spielmodus</value>
+    <value>Spiel-Modus</value>
   </data>
   <data name="ThxPresetHipHop" xml:space="preserve">
     <value>Hip-Hop</value>
@@ -4934,7 +4934,7 @@ Nicht gespeicherte Makroänderungen gehen verloren.</value></data>
     <value>Jazz</value>
   </data>
   <data name="ThxPresetMusicMode" xml:space="preserve">
-    <value>Musikmodus</value>
+    <value>Musik-Modus</value>
   </data>
   <data name="ThxPresetPop" xml:space="preserve">
     <value>Pop</value>
@@ -4949,9 +4949,18 @@ Nicht gespeicherte Makroänderungen gehen verloren.</value></data>
     <value>Sprachmodus</value>
   </data>
   <data name="ThxPresetImmersiveFormat" xml:space="preserve">
-    <value>{0} · Immersiver Modus</value>
+    <value>{0} · THX Immersionsmodus</value>
   </data>
   <data name="ThxPresetCompetitiveFormat" xml:space="preserve">
-    <value>{0} · Wettbewerbsmodus</value>
+    <value>{0} · THX Turniermodus</value>
+  </data>
+  <data name="ProfileInUseByDeviceRules" xml:space="preserve">
+    <value>Profil „{0}“ wird von {1} Geräteanwendungsregel(n) verwendet. Entfernen oder ändern Sie diese zuerst.</value>
+  </data>
+  <data name="ProfileImportMissingReferences" xml:space="preserve">
+    <value>{0} Geräteanwendungsregel(n) verweisen auf Profile, die im importierten Satz nicht enthalten sind.</value>
+  </data>
+  <data name="ProfileRenameRollbackFailed" xml:space="preserve">
+    <value>Das Umbenennen des Profils ist fehlgeschlagen, und die Profildatei konnte nicht wiederhergestellt werden: {0} / {1}</value>
   </data>
 </root>
