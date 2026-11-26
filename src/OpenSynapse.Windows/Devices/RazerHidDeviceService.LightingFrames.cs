@@ -22,34 +22,20 @@ public sealed partial class RazerHidDeviceService
         }
 
         RequireReady(connection);
-        byte[]? latch = null;
-        if (connection.Definition.HasSourceCapability("set_custom_effect") &&
-            connection.LightingZones.Values.Any(zone =>
-                zone.LightingEffects.Contains(RazerHidLightingEffect.Custom)))
-        {
-            try
-            {
-                latch = RazerHidLightingProtocol.CreateEffectRequests(
-                        connection.Definition,
-                        new RazerHidLightingSettings(RazerHidLightingEffect.Custom))
-                    .LastOrDefault()?.Report;
-            }
-            catch (NotSupportedException)
-            {
-                // A device without a custom-effect selector can still accept rows.
-            }
-        }
-
-        var reports = new byte[dimensions.Rows + (latch is null ? 0 : 1)][];
+        // The selector must land before the rows: firmware that clears its frame
+        // buffer on entering custom mode would otherwise swallow this frame.
+        var latch = RazerHidLightingProtocol.TryCreateCustomEffectRequest(connection)?.Report;
+        var offset = latch is null ? 0 : 1;
+        var reports = new byte[dimensions.Rows + offset][];
+        if (latch is not null) reports[0] = latch;
         for (var row = 0; row < dimensions.Rows; row++)
         {
-            reports[row] = RazerHidLightingProtocol.SetCustomRow(
+            reports[row + offset] = RazerHidLightingProtocol.SetCustomRow(
                 connection.Definition,
                 checked((byte)row),
                 0,
                 frame.Skip(row * dimensions.Columns).Take(dimensions.Columns).ToArray()).Report;
         }
-        if (latch is not null) reports[dimensions.Rows] = latch;
 
         try
         {
@@ -63,6 +49,10 @@ public sealed partial class RazerHidDeviceService
         }
         catch (NotSupportedException)
         {
+            if (latch is not null)
+            {
+                await SetCustomFrameEffectAsync(connection, cancellationToken).ConfigureAwait(false);
+            }
             for (var row = 0; row < dimensions.Rows; row++)
             {
                 await SetCustomRowAsync(
@@ -71,10 +61,6 @@ public sealed partial class RazerHidDeviceService
                     0,
                     frame.Skip(row * dimensions.Columns).Take(dimensions.Columns).ToArray(),
                     cancellationToken).ConfigureAwait(false);
-            }
-            if (latch is not null)
-            {
-                await SetCustomFrameEffectAsync(connection, cancellationToken).ConfigureAwait(false);
             }
         }
         catch (RazerDeviceTimeoutException exception) when (!exception.IsRetryableBusy)

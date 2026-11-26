@@ -83,6 +83,34 @@ internal static class RazerHidLightingProtocol
         }
     }
 
+    /// <summary>
+    /// Selects the custom-frame effect on a matrix device. Accessory keyboards are
+    /// published without a probed zone table, so their only evidence of the selector
+    /// is the manifest capability; probed devices keep their zone check.
+    /// </summary>
+    internal static RazerHidRequest? TryCreateCustomEffectRequest(RazerHidDeviceConnection connection)
+    {
+        var device = connection.Definition;
+        if (!device.HasSourceCapability("set_custom_effect")) return null;
+        if (connection.LightingZones.Count > 0 &&
+            !connection.LightingZones.Values.Any(zone =>
+                zone.LightingEffects.Contains(RazerHidLightingEffect.Custom)))
+        {
+            return null;
+        }
+
+        try
+        {
+            return CreateEffectRequests(device, new RazerHidLightingSettings(RazerHidLightingEffect.Custom))
+                .LastOrDefault();
+        }
+        catch (NotSupportedException)
+        {
+            // A device without a custom-effect selector can still accept rows.
+            return null;
+        }
+    }
+
     internal static RazerHidRequest GetBrightness(
         RazerHidDeviceDefinition device,
         RazerHidStorage? storage,

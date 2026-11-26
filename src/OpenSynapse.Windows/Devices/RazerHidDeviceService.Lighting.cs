@@ -157,17 +157,9 @@ public sealed partial class RazerHidDeviceService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(connection);
-        if (!connection.Definition.HasSourceCapability("set_custom_effect") ||
-            !connection.LightingZones.Values.Any(zone =>
-                zone.LightingEffects.Contains(RazerHidLightingEffect.Custom)))
-        {
-            return;
-        }
+        if (RazerHidLightingProtocol.TryCreateCustomEffectRequest(connection) is not { } request) return;
 
-        await SetLightingAsync(
-            connection,
-            new RazerHidLightingSettings(RazerHidLightingEffect.Custom),
-            cancellationToken).ConfigureAwait(false);
+        await ExecuteEffectAsync(connection, request, cancellationToken).ConfigureAwait(false);
     }
 
 

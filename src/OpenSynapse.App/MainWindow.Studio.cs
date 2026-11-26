@@ -103,8 +103,9 @@ public sealed partial class MainWindow
 
             var staticZone = StudioHidOutputRouter.FindStaticZone(connection);
             var writesFrames = connection.Capabilities.Contains(RazerHidBackendCapability.MatrixFrameWrite);
-            if (connection.Definition.MatrixDimensions is { } dimensions &&
-                (writesFrames || staticZone is null))
+            // A matrix definition without frame writes has no HID output path, so
+            // offering it here would add a row that the router can never target.
+            if (connection.Definition.MatrixDimensions is { } dimensions && writesFrames)
             {
                 options.Add(new StudioDeviceOption(
                     connection.Definition.DisplayName,

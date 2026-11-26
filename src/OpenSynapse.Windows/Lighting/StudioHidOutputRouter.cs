@@ -311,13 +311,6 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                     continue;
                 }
 
-                if (unchanged)
-                {
-                    // The device may have left custom mode while idle, so selecting the
-                    // custom frame again is part of the keep-alive, not just the pixels.
-                    output.CustomEffectAttempted = false;
-                }
-
                 if (!output.BaselineAttempted)
                 {
                     output.Baseline = await RazerHidLightingBaseline
@@ -335,11 +328,8 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                     }
                     if (isMatrix)
                     {
-                        if (!output.CustomEffectAttempted)
-                        {
-                            await _service.SetCustomFrameEffectAsync(target, cancellationToken).ConfigureAwait(false);
-                            output.CustomEffectAttempted = true;
-                        }
+                        // SetCustomFrameAsync selects the custom frame first, so the
+                        // keep-alive rewrite also re-arms a device that left the mode.
                         await _service.SetCustomFrameAsync(target, frame, cancellationToken)
                             .ConfigureAwait(false);
                     }
@@ -438,7 +428,6 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
         {
             if (!all && IsSelected(key)) continue;
             output.Frame = null;
-            output.CustomEffectAttempted = false;
             output.TakeOverPrepared = false;
             if (!output.Touched || output.Connection is null)
             {
@@ -605,7 +594,6 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
         internal long WorldGeneration { get; set; } = -1;
         internal RazerHidLightingBaseline? Baseline { get; set; }
         internal bool BaselineAttempted { get; set; }
-        internal bool CustomEffectAttempted { get; set; }
         internal bool Touched { get; set; }
         internal bool TakeOverPrepared { get; set; }
         internal bool ClockStarted { get; set; }
