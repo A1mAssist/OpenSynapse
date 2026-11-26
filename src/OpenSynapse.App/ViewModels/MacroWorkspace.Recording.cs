@@ -55,7 +55,6 @@ public sealed partial class MacroWorkspace
         }
 
         CancelMacroPlaybackCountdown();
-        CancelMacroCapture();
         CancelMacroStepCapture();
         var countdown = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _macroCountdownCancellation = countdown;

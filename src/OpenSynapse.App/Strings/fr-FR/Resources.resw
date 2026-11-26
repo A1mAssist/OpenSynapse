@@ -2531,7 +2531,7 @@
   <data name="MacroRowTriggerLabel.Text" xml:space="preserve"><value>Déclencheur</value></data>
   <data name="MacroRowTriggerUnsetBadge.Text" xml:space="preserve"><value>Non lié</value></data>
   <data name="MacroNoMacroSelected.Text" xml:space="preserve"><value>Aucune macro sélectionnée</value></data>
-  <data name="MacroEmptyEditorHint.Text" xml:space="preserve"><value>Utilisez Enregistrer pour capturer une séquence d’actions ou cliquez sur le clavier ci-dessous pour ajouter des actions individuelles.</value></data>
+  <data name="MacroEmptyEditorHint.Text" xml:space="preserve"><value>Utilisez Enregistrer pour capturer une séquence d’actions ou Insérer pour ajouter une action individuelle.</value></data>
   <data name="MacroKeyBindsTitle.Text" xml:space="preserve"><value>Touche déclencheuse</value></data>
   <data name="MacroTriggerSwitchHint.Text" xml:space="preserve"><value>L’interrupteur contrôle uniquement ce déclencheur ; la lecture manuelle n’est pas affectée.</value></data>
   <data name="MacroKeyBindsNoMacro.Text" xml:space="preserve"><value>Sélectionnez une macro pour afficher sa touche déclencheuse.</value></data>
@@ -4953,5 +4953,56 @@ Les modifications de macro non enregistrées seront perdues.</value></data>
   </data>
   <data name="ThxPresetCompetitiveFormat" xml:space="preserve">
     <value>{0} · Mode compétitif</value>
+  </data>
+  <data name="MacroHoldStepHint" xml:space="preserve">
+    <value>Reste enfoncée jusqu'au relâchement du déclencheur ou l'arrêt de la lecture.</value>
+  </data>
+  <data name="MacroStepAutoReleaseOnHint" xml:space="preserve">
+    <value>Appuie, attend la durée de maintien, puis relâche.</value>
+  </data>
+  <data name="MacroHoldStepBadge" xml:space="preserve">
+    <value>MAINTIEN</value>
+  </data>
+  <data name="MacroHoldPlaying" xml:space="preserve">
+    <value>Touche maintenue - arrêtez ou relâchez le déclencheur pour la relâcher.</value>
+  </data>
+  <data name="MacroHoldHint" xml:space="preserve">
+    <value>Cette macro maintient une touche enfoncée ; elle est relâchée à l'arrêt ou au relâchement du déclencheur.</value>
+  </data>
+  <data name="MacroHoldRequiresSinglePlayback" xml:space="preserve">
+    <value>Une étape de maintien exige une lecture unique. Changez le mode de lecture ou désactivez le maintien.</value>
+  </data>
+  <data name="MacroBindingUnassigned" xml:space="preserve">
+    <value>Non attribué</value>
+  </data>
+  <data name="MacroBindingMultiple" xml:space="preserve">
+    <value>{0} touches attribuées</value>
+  </data>
+  <data name="MacroBindingManagedHint" xml:space="preserve">
+    <value>Les attributions se gèrent dans l'affectation des touches de l'appareil.</value>
+  </data>
+  <data name="MacroBindingReadOnlyHint" xml:space="preserve">
+    <value>Modifiez la touche de déclenchement, le mode de déclenchement et la lecture dans l'affectation des touches de l'appareil.</value>
+  </data>
+  <data name="MacroManageBinding" xml:space="preserve">
+    <value>Gérer les attributions</value>
+  </data>
+  <data name="MacroKeyPickerTitle" xml:space="preserve">
+    <value>Sélecteur de touches et de souris</value>
+  </data>
+  <data name="MacroTriggerModeSequenceLabel" xml:space="preserve">
+    <value>Séquence</value>
+  </data>
+  <data name="RazerMappingActionSection" xml:space="preserve">
+    <value>Action</value>
+  </data>
+  <data name="RazerMappingMacroSection" xml:space="preserve">
+    <value>Macro</value>
+  </data>
+  <data name="RazerMappingAdvancedSection" xml:space="preserve">
+    <value>Avancé</value>
+  </data>
+  <data name="RazerMappingSoftwareMacroKeyHint" xml:space="preserve">
+    <value>La touche de déclenchement est la touche de l'appareil affectée.</value>
   </data>
 </root>

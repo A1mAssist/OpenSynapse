@@ -30,6 +30,11 @@ All notable user-visible changes to OpenSynapse are documented here.
 - **Driver download progress**: driver package downloads show a progress bar with speed and remaining time, and use four parallel range requests for packages of 4 MB or more.
 - **THX download progress**: THX components use the same progress panel and parallel downloader as drivers, with bytes, speed and remaining time; the roughly 41 MB APO package is fetched in four range requests.
 
+### Changed
+
+- **Macro held steps**: a step with auto-release off now keeps its key pressed until the trigger is released or playback is stopped, instead of being force-released when the macro ends. Held steps are limited to single playback; loops and repeating playback reject them. Existing macros that relied on the old forced release now hold the key.
+- **Macro trigger bindings**: the macro library and editor show bindings read-only. The device key assignment page is the only place that captures, edits or clears them, and clearing one key no longer removes the macro's other bindings.
+
 ### Fixed
 
 - **THX preset choices**: filter V3 presets using installed device and spatial-mode metadata, so spatial-only presets are no longer offered while spatial audio is off; localize preset display names and immersive/competitive labels while retaining the original native IDs.

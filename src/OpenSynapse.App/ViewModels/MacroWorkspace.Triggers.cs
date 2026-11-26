@@ -7,7 +7,6 @@ public sealed partial class MacroWorkspace
 {
     internal void RefreshMacroState()
     {
-        CancelMacroCapture();
         CancelMacroStepCapture();
         CancelMacroPlaybackShortcutCapture();
         CancelMacroCountdown();
@@ -36,227 +35,6 @@ public sealed partial class MacroWorkspace
         OnPropertyChanged(nameof(MacroListEmptyVisibility));
         OnPropertyChanged(nameof(MacroReferenceCandidates));
         NotifySelectedMacroChanged();
-    }
-
-    public Task CaptureMacroTriggerAsync(CancellationToken cancellationToken = default) =>
-        CaptureMacroTriggerCoreAsync(
-            allowModifierCombo: false,
-            allowDeviceButton: false,
-            cancellationToken);
-
-    public Task CaptureMacroTriggerComboAsync(CancellationToken cancellationToken = default) =>
-        CaptureMacroTriggerCoreAsync(
-            allowModifierCombo: true,
-            allowDeviceButton: false,
-            cancellationToken);
-
-    public Task CaptureMacroDeviceTriggerAsync(CancellationToken cancellationToken = default) =>
-        CaptureMacroTriggerCoreAsync(
-            allowModifierCombo: false,
-            allowDeviceButton: true,
-            cancellationToken);
-
-    private async Task CaptureMacroTriggerCoreAsync(
-        bool allowModifierCombo,
-        bool allowDeviceButton,
-        CancellationToken cancellationToken)
-    {
-        if (SelectedMacro is null)
-        {
-            return;
-        }
-
-        if (IsMacroRecording)
-        {
-            StatusText = AppStrings.Text("MacroRecordingBlocked");
-            return;
-        }
-
-        if (IsMacroCountdown)
-        {
-            StatusText = AppStrings.Text("MacroCountdownBlocked");
-            return;
-        }
-
-        var selected = SelectedMacro;
-        CancelMacroStepCapture();
-        CancelMacroPlaybackShortcutCapture();
-        if (_macroCaptureCancellation is not null)
-        {
-            _macroCaptureCancellation.Cancel();
-            return;
-        }
-
-        using var capture = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _macroCaptureCancellation = capture;
-        IsMacroTriggerCapturing = true;
-        StatusText = AppStrings.Text(
-            allowDeviceButton ? "MacroCapturePromptDevice" : "MacroCapturePrompt");
-        try
-        {
-            var trigger = await _macroRuntime.CaptureNextTriggerAsync(
-                allowModifierCombo,
-                allowNagaSideButton: !allowDeviceButton,
-                allowDeviceButton: allowDeviceButton,
-                cancellationToken: capture.Token);
-            if (trigger is null)
-            {
-                StatusText = AppStrings.Text("MacroCaptureDeviceHint");
-                return;
-            }
-
-            await ApplyMacroTriggerAsync(selected, trigger, cancellationToken);
-        }
-        catch (OperationCanceledException)
-        {
-            StatusText = AppStrings.Text("MacroCaptureCanceled");
-        }
-        finally
-        {
-            if (ReferenceEquals(_macroCaptureCancellation, capture))
-            {
-                _macroCaptureCancellation = null;
-                IsMacroTriggerCapturing = false;
-            }
-        }
-    }
-
-    private async Task ApplyMacroTriggerAsync(
-        MacroRowViewModel selected,
-        MacroTrigger trigger,
-        CancellationToken cancellationToken)
-    {
-        trigger.Mode = selected.Definition.Trigger?.Mode ??
-            selected.Definition.DefaultTriggerMode;
-        if (FindTriggerConflict(selected.Definition, trigger, selected) is { } conflict)
-        {
-            StatusText = AppStrings.FormatText("MacroTriggerConflict", conflict.Name);
-            return;
-        }
-
-        if (RazerSoftwareMacroAssignmentPolicy.NeedsDeviceAssignment(trigger.Input))
-        {
-            await BindDeviceTriggerAsync(selected, trigger, cancellationToken).ConfigureAwait(true);
-            return;
-        }
-
-        if (selected.Definition.SoftwareBinding is { } binding)
-        {
-            if (!await RestoreSoftwareBindingAsync(binding, cancellationToken).ConfigureAwait(true))
-            {
-                StatusText = AppStrings.Text("MacroTriggerRestoreFailed");
-                return;
-            }
-            selected.Definition.SoftwareBinding = null;
-        }
-
-        selected.SetTrigger(trigger);
-        MarkMacroDirty(selected);
-        if (!await TrySaveMacroProfileAsync(cancellationToken))
-        {
-            return;
-        }
-
-        RefreshMacroRuntime();
-        NotifyTriggerChanged();
-        StatusText = AppStrings.FormatText(
-            "MacroTriggerCaptured",
-            MacroRowViewModel.DescribeTrigger(trigger));
-    }
-
-    private async Task BindDeviceTriggerAsync(
-        MacroRowViewModel selected,
-        MacroTrigger trigger,
-        CancellationToken cancellationToken)
-    {
-        if (SoftwareTriggerBinder is null)
-        {
-            StatusText = AppStrings.Text("MacroTriggerDeviceUnavailable");
-            return;
-        }
-
-        // A different key adds another trigger. The mapping page allocates the
-        // binding for that key; reusing the first key's binding would make the
-        // new trigger restore the wrong button.
-        var matched = selected.Definition.FindTrigger(
-            trigger.Input, MacroModifierKeys.None, trigger.HyperShiftLayer);
-        var existing = matched is null
-            ? null
-            : matched.SoftwareBinding ??
-              (ReferenceEquals(matched, selected.Definition.Trigger)
-                  ? selected.Definition.SoftwareBinding
-                  : null);
-
-        StatusText = AppStrings.Text("MacroTriggerDeviceBinding");
-        var playbackSource = matched ?? trigger;
-        var playback = MacroPlaybackChoices.Normalize(
-            trigger.Mode,
-            selected.Definition.EffectivePlaybackMode(playbackSource));
-        var error = await SoftwareTriggerBinder(
-                selected.Id,
-                trigger.Input,
-                trigger.Mode,
-                playback,
-                selected.Definition.EffectiveRepeatCount(playbackSource),
-                trigger.HyperShiftLayer,
-                existing,
-                cancellationToken)
-            .ConfigureAwait(true);
-        if (error is not null)
-        {
-            StatusText = error;
-            return;
-        }
-
-        RefreshMacroRuntime();
-        NotifySelectedMacroChanged();
-        NotifyTriggerChanged();
-        StatusText = AppStrings.FormatText(
-            "MacroTriggerCaptured",
-            MacroRowViewModel.DescribeTrigger(trigger));
-    }
-
-    public async Task ClearMacroTriggerAsync(CancellationToken cancellationToken = default)
-    {
-        if (SelectedMacro is not { } selected || !CanEditMacro)
-        {
-            return;
-        }
-
-        CancelMacroCapture();
-        var triggers = selected.Definition.AllTriggers.ToArray();
-        var clearedInput = triggers.FirstOrDefault()?.Input;
-        var bindings = triggers
-            .Select(trigger => trigger.SoftwareBinding ??
-                (ReferenceEquals(trigger, selected.Definition.Trigger)
-                    ? selected.Definition.SoftwareBinding
-                    : null))
-            .Where(binding => binding is not null)
-            .ToArray();
-        var restored = true;
-        foreach (var binding in bindings)
-        {
-            if (!await RestoreSoftwareBindingAsync(binding!, cancellationToken))
-            {
-                restored = false;
-            }
-        }
-        selected.Definition.SoftwareBinding = null;
-        selected.SetTrigger(null);
-        selected.Definition.AdditionalTriggers.Clear();
-        MarkMacroDirty(selected);
-        if (!await TrySaveMacroProfileAsync(cancellationToken))
-        {
-            return;
-        }
-
-        RefreshMacroRuntime();
-        NotifySelectedMacroChanged();
-        NotifyTriggerChanged();
-        StatusText = AppStrings.Text(clearedInput is { } input &&
-            RazerSoftwareMacroAssignmentPolicy.NeedsDeviceAssignment(input) && !restored
-                ? "MacroTriggerClearedRestoreAssignment"
-                : "MacroTriggerCleared");
     }
 
     public Task CaptureMacroPlaybackStartShortcutAsync(CancellationToken cancellationToken = default) =>
@@ -299,7 +77,6 @@ public sealed partial class MacroWorkspace
             return;
         }
 
-        CancelMacroCapture();
         CancelMacroStepCapture();
         using var capture = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _macroPlaybackShortcutCaptureCancellation = capture;
@@ -365,13 +142,6 @@ public sealed partial class MacroWorkspace
 
         RefreshMacroRuntime();
         return true;
-    }
-
-    public void CancelMacroCapture()
-    {
-        _macroCaptureCancellation?.Cancel();
-        _macroCaptureCancellation = null;
-        IsMacroTriggerCapturing = false;
     }
 
     public void CancelMacroPlaybackShortcutCapture()

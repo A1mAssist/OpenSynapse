@@ -27,9 +27,7 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
     private string? _recordingMacroId;
     private bool _recordingAppend;
     private bool _recordingStopSubscribed;
-    private bool _isMacroTriggerCapturing;
     private bool _isMacroStepCapturing;
-    private CancellationTokenSource? _macroCaptureCancellation;
     private CancellationTokenSource? _macroPlaybackShortcutCaptureCancellation;
     private CancellationTokenSource? _macroStepCaptureCancellation;
     private CancellationTokenSource? _macroCountdownCancellation;
@@ -42,6 +40,7 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
     private MacroMouseTrackingMode _macroRecordingMouseTrackingMode = MacroMouseTrackingMode.None;
     private bool _isMacroPlaying;
     private bool _isMacroPaused;
+    private bool _isMacroHolding;
     private bool _isSavingMacroEnabled;
     private DispatcherQueue? _macroDispatcherQueue;
 
@@ -93,7 +92,6 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
                 FinishRecordingTake(save: true);
             }
 
-            CancelMacroCapture();
             CancelMacroStepCapture();
             CancelMacroPlaybackShortcutCapture();
             CancelMacroCountdown();
@@ -143,19 +141,16 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
     public Visibility MacroListEmptyVisibility =>
         Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
-    public Visibility MacroTriggerUnsetVisibility =>
-        SelectedMacro is null || SelectedMacro.Definition.Trigger is null
-            ? Visibility.Visible
-            : Visibility.Collapsed;
-    public Visibility MacroTriggerBoundVisibility =>
-        SelectedMacro is null || SelectedMacro.Definition.Trigger is null
-            ? Visibility.Collapsed
-            : Visibility.Visible;
-
     public Visibility MacroEmptyStepsVisibility =>
         SelectedMacro is null || SelectedMacro.Definition.Steps.Count > 0
             ? Visibility.Collapsed
             : Visibility.Visible;
+
+    public Visibility MacroHoldHintVisibility =>
+        SelectedMacro?.Definition is { } definition &&
+        MacroValidator.HasHeldInputs(definition)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
 
     public Visibility MacroUnsavedVisibility =>
         HasUnsavedMacroChanges ? Visibility.Visible : Visibility.Collapsed;
@@ -375,9 +370,6 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
                 ? "MacroCancelCountdown"
                 : "MacroStartRecording");
 
-    public string MacroCaptureButtonText => AppStrings.Text(
-        _isMacroTriggerCapturing ? "MacroCancelCapture" : "MacroCaptureTrigger");
-
     public string MacroPlayButtonText => AppStrings.Text("MacroPlayButton");
 
     public string MacroPlaybackShortcutText
@@ -458,20 +450,6 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         }
     }
 
-    public bool IsMacroTriggerCapturing
-    {
-        get => _isMacroTriggerCapturing;
-        private set
-        {
-            if (!SetField(ref _isMacroTriggerCapturing, value))
-            {
-                return;
-            }
-
-            OnPropertyChanged(nameof(MacroCaptureButtonText));
-        }
-    }
-
     public bool IsMacroPlaying
     {
         get => _isMacroPlaying;
@@ -487,6 +465,22 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
             OnPropertyChanged(nameof(CanPauseMacro));
             OnPropertyChanged(nameof(CanResumeMacro));
             OnPropertyChanged(nameof(CanStartMacroRecording));
+        }
+    }
+
+    /// <summary>Playback finished with inputs still down, waiting for release.</summary>
+    public bool IsMacroHolding
+    {
+        get => _isMacroHolding;
+        private set
+        {
+            if (!SetField(ref _isMacroHolding, value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(CanPauseMacro));
+            OnPropertyChanged(nameof(CanResumeMacro));
         }
     }
 
@@ -513,9 +507,9 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
 
     public bool CanStopMacro => IsMacroPlaying || IsMacroPlaybackCountdown;
 
-    public bool CanPauseMacro => IsMacroPlaying && !IsMacroPaused;
+    public bool CanPauseMacro => IsMacroPlaying && !IsMacroPaused && !IsMacroHolding;
 
-    public bool CanResumeMacro => IsMacroPlaying && IsMacroPaused;
+    public bool CanResumeMacro => IsMacroPlaying && IsMacroPaused && !IsMacroHolding;
 
     internal void InitializeMacroRuntime()
     {
@@ -559,7 +553,6 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
 
     public async Task CreateMacroAsync(CancellationToken cancellationToken = default)
     {
-        CancelMacroCapture();
         CancelMacroStepCapture();
         var profile = _getActiveProfile();
         if (profile.Macros.Count >= 64)
@@ -663,7 +656,6 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         }
 
         CancelMacroCountdown();
-        CancelMacroCapture();
         CancelMacroStepCapture();
         StopMacroPlayback();
         var profile = _getActiveProfile();
@@ -728,6 +720,7 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         if (!_getActiveProfile().Macros.Contains(owner) || !MacroStepTree.Enumerate(owner.Steps).Contains(step)) return;
         MarkMacroDirtyId(owner.Id);
         OnPropertyChanged(nameof(MacroTotalDurationText));
+        OnPropertyChanged(nameof(MacroHoldHintVisibility));
     }
 
     private void OnMacroRowDefinitionChanged(MacroRowViewModel row)
@@ -736,8 +729,6 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         OnPropertyChanged(nameof(MacroReferenceCandidates));
         if (ReferenceEquals(row, SelectedMacro))
         {
-            OnPropertyChanged(nameof(MacroTriggerBoundVisibility));
-            OnPropertyChanged(nameof(MacroTriggerUnsetVisibility));
             OnPropertyChanged(nameof(MacroTotalDurationText));
             OnPropertyChanged(nameof(CanPlayMacro));
             SyncExecutionModeFromSelection();
@@ -801,6 +792,7 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
             Math.Clamp(oldIndex, 0, Math.Max(0, Steps.Count - 1)));
         SelectedStep = target;
         OnPropertyChanged(nameof(MacroEmptyStepsVisibility));
+        OnPropertyChanged(nameof(MacroHoldHintVisibility));
         OnPropertyChanged(nameof(MacroTotalDurationText));
         OnPropertyChanged(nameof(CanPlayMacro));
     }
@@ -841,9 +833,8 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         OnPropertyChanged(nameof(CanEditMacro));
         OnPropertyChanged(nameof(CanEditMacroStep));
         OnPropertyChanged(nameof(MacroNoSelectionVisibility));
-        OnPropertyChanged(nameof(MacroTriggerBoundVisibility));
-        OnPropertyChanged(nameof(MacroTriggerUnsetVisibility));
         OnPropertyChanged(nameof(MacroEmptyStepsVisibility));
+        OnPropertyChanged(nameof(MacroHoldHintVisibility));
         OnPropertyChanged(nameof(MacroTotalDurationText));
         OnPropertyChanged(nameof(MacroReferenceCandidates));
         OnPropertyChanged(nameof(CanStartMacroRecording));
