@@ -254,6 +254,14 @@ public sealed partial class MainWindow
         }
     }
 
+    // Activating the device row also toggles its group after this event. Selecting the
+    // row already routes through NavigationChanged; keep the device list open afterward.
+    private void NavigationItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
+    {
+        if (!ReferenceEquals(args.InvokedItemContainer, DevicesNavigationItem)) return;
+        _dispatcherQueue.TryEnqueue(() => DevicesNavigationItem.IsExpanded = true);
+    }
+
     internal void UpdatePerformanceSamplingState()
     {
         // Separate windows keep sampling while the main window is hidden. Without

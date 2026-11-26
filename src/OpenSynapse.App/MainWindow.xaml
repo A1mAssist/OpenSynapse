@@ -37,7 +37,8 @@
         OpenPaneLength="224"
         Background="Transparent"
         FontFamily="{StaticResource AppFontFamily}"
-        SelectionChanged="NavigationChanged">
+        SelectionChanged="NavigationChanged"
+        ItemInvoked="NavigationItemInvoked">
       <NavigationView.MenuItems>
         <NavigationViewItem local:Localized.Uid="Loc_70C0B22D6C" x:Name="OverviewNavigationItem" Tag="overview" IsSelected="True"><NavigationViewItem.Icon><FontIcon Glyph="&#xE80F;" FontFamily="{StaticResource IconFontFamily}" FontSize="16" /></NavigationViewItem.Icon></NavigationViewItem>
         <NavigationViewItem local:Localized.Uid="Loc_D1F5A968DF" x:Name="DevicesNavigationItem" AutomationProperties.AutomationId="DevicesNavigationItem" Tag="devices" IsExpanded="True"><NavigationViewItem.Icon><SymbolIcon Symbol="AllApps" /></NavigationViewItem.Icon></NavigationViewItem>
