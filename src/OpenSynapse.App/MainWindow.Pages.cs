@@ -107,7 +107,7 @@ public sealed partial class MainWindow
             CreateStudioArgbRouter(sampler),
             CreateStudioHeadsetRouter(sampler),
             CreateStudioChromaRouter(sampler),
-            _viewModel.RestoreLightingAfterExternalAsync);
+            _viewModel.RestoreStudioLightingAsync);
         _studioDevicesDirty = true;
         return AddPage(page);
     }
@@ -128,7 +128,7 @@ public sealed partial class MainWindow
                 headset.ProductId,
                 1,
                 RazerMakoXChromaService.LedCount,
-                Category: "headset"));
+                Category: "headset") { IsOutputAvailable = headset.HasControlInterface });
             return;
         }
 

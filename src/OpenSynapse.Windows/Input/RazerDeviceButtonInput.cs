@@ -225,13 +225,16 @@ internal sealed class RazerDeviceButtonInput : IDisposable
         return device;
     }
 
+    internal static bool IsSupportedDevice(ushort vendorId, ushort productId) =>
+        vendorId == RazerVendorId || RazerNagaSideButtons.IsNaga(vendorId, productId, null);
+
     private static RazerDeviceInfo? ProbeDevice(string devicePath)
     {
         var parsed = DeviceIdParser.TryParse(
             devicePath,
             out var parsedVendorId,
             out var parsedProductId) &&
-            parsedVendorId == RazerVendorId &&
+            IsSupportedDevice(parsedVendorId, parsedProductId) &&
             parsedProductId != 0;
 
         using var handle = CreateFile(
@@ -272,7 +275,7 @@ internal sealed class RazerDeviceButtonInput : IDisposable
                 : null;
         }
 
-        if (attributes.VendorId != RazerVendorId)
+        if (!IsSupportedDevice(attributes.VendorId, attributes.ProductId))
         {
             return null;
         }

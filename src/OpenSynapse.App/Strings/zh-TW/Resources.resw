@@ -3234,14 +3234,14 @@
   <data name="RazerHeadsetThxRebootRequired" xml:space="preserve"><value>THX 元件已安裝，需要重啟電腦後生效。</value></data>
   <data name="RazerHeadsetThxInstallerLinkButton.Content" xml:space="preserve"><value>手動下載 THX 安裝包</value></data>
   <data name="RazerHeadsetThxReady" xml:space="preserve"><value>THX 元件已安裝。</value></data>
-  <data name="RazerHeadsetThxPartialRead" xml:space="preserve"><value>THX 已連線，但部分設定讀取失敗，目前顯示預設值。可以直接套用或重新整理重試。</value></data>
+  <data name="RazerHeadsetThxPartialRead" xml:space="preserve"><value>THX 已連線，部分設定讀取失敗，已暫時停用。請重新整理後重試。</value></data>
   <data name="RazerHeadsetThxSpatialToggle.Header" xml:space="preserve"><value>音訊模式</value></data>
   <data name="RazerHeadsetThxSpatialToggle.OnContent" xml:space="preserve"><value>空間音效</value></data>
   <data name="RazerHeadsetThxSpatialToggle.OffContent" xml:space="preserve"><value>立體聲</value></data>
   <data name="RazerHeadsetThxS3Baseline.Content" xml:space="preserve"><value>雷雲3 預設聲底</value></data>
   <data name="RazerHeadsetThxS3BaselineHint.Text" xml:space="preserve"><value>關閉空間音效並把 THX 歸零；0549 同時寫回雷雲3 的 Game 曲線。</value></data>
   <data name="RazerHeadsetThxPresetLabel.Header" xml:space="preserve"><value>預設</value></data>
-  <data name="RazerHeadsetThxPresetLabel.PlaceholderText" xml:space="preserve"><value>預設設定</value></data>
+  <data name="RazerHeadsetThxPresetLabel.PlaceholderText" xml:space="preserve"><value>選擇預設</value></data>
   <data name="RazerHeadsetThxPresetApply.Content" xml:space="preserve"><value>套用預設</value></data>
   <data name="RazerHeadsetThxEqualizerTitle.Text" xml:space="preserve"><value>THX 均衡器</value></data>
   <data name="RazerHeadsetThxEqualizerApply.Content" xml:space="preserve"><value>套用頻段</value></data>
@@ -3266,7 +3266,7 @@
   <data name="RazerHeadsetThxContainerMissing" xml:space="preserve"><value>沒有拿到耳機音訊端點的容器 ID，無法定位 THX。重新連線耳機後重新整理。</value></data>
   <data name="RazerHeadsetThxHelperFailed" xml:space="preserve"><value>THX 輔助程式啟動失敗。重新開啟套用後再試。</value></data>
   <data name="RazerHeadsetThxFailed" xml:space="preserve"><value>THX 元件沒有接受這次修改。重新安裝 THX 元件後重新整理。</value></data>
-  <data name="RazerHeadsetThxOperationRejected" xml:space="preserve"><value>THX 元件沒有正確安裝或尚未生效。請點安裝按鈕修復，裝完重啟電腦再試。</value></data>
+  <data name="RazerHeadsetThxOperationRejected" xml:space="preserve"><value>THX 未接受本次變更，已顯示讀取到的目前狀態。請調整設定或選擇其他預設後重試。</value></data>
   <data name="RazerHeadsetThxRejectedInstalled" xml:space="preserve"><value>THX 元件已安裝，但目前音訊裝置沒有載入它。重啟 Windows 後再試；仍然失敗就點安裝按鈕修復。</value></data>
   <data name="RazerHeadsetPresetDefault" xml:space="preserve"><value>預設</value></data>
   <data name="RazerHeadsetPresetGame" xml:space="preserve"><value>遊戲</value></data>
@@ -5234,4 +5234,109 @@
   <data name="PresetEditorIssueBetweenSpeed" xml:space="preserve"><value>必須在 0.1 到 5 之間</value></data>
   <data name="PresetEditorIssueBlend" xml:space="preserve"><value>不是支援的混合模式</value></data>
   <data name="PresetEditorIssueLayer" xml:space="preserve"><value>第 {0} 層 · {1}</value></data>
+  <data name="BladePerformanceCompatibilityTitle.Text" xml:space="preserve"><value>效能模式相容切換</value></data>
+  <data name="BladePerformanceCompatibilityDescription.Text" xml:space="preserve"><value>切換至效能或遊戲模式前，先經過一次自訂模式。若從平衡或安靜模式切回後，CPU 功耗仍受限，可嘗試開啟。</value></data>
+  <data name="BladePerformanceCompatibilityToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>效能模式相容切換</value></data>
+  <data name="LightingStudioOutputScope" xml:space="preserve"><value>套用裝置範圍</value></data>
+  <data name="LightingStudioApplyAll" xml:space="preserve"><value>套用到全部裝置</value></data>
+  <data name="LightingStudioApplyCurrent" xml:space="preserve"><value>僅套用目前裝置</value></data>
+  <data name="LightingStudioSelectOutputDevices" xml:space="preserve"><value>選擇裝置…</value></data>
+  <data name="LightingStudioConfirmOutputSelection" xml:space="preserve"><value>套用到所選裝置</value></data>
+  <data name="LightingStudioPreviewOutputSelection" xml:space="preserve"><value>預覽此範圍</value></data>
+  <data name="LightingStudioCancelOutputSelection" xml:space="preserve"><value>取消</value></data>
+  <data name="LightingStudioOutputSelectionHint" xml:space="preserve"><value>套用會更新裝置輸出；預覽僅更新畫面預覽及待套用範圍。</value></data>
+  <data name="LightingStudioPendingOutputScope" xml:space="preserve"><value>待套用 · {0} 台裝置 · {1}</value></data>
+  <data name="LightingStudioAppliedOutputScope" xml:space="preserve"><value>已套用 · {0} 台裝置 · {1}</value></data>
+  <data name="LightingStudioOutputOffline" xml:space="preserve"><value>{0}（離線）</value></data>
+  <data name="LightingStudioAmbientLayerScope" xml:space="preserve"><value>作用範圍</value></data>
+  <data name="LightingStudioAmbientScopeAll" xml:space="preserve"><value>全部裝置</value></data>
+  <data name="LightingStudioAmbientScopeCurrent" xml:space="preserve"><value>目前裝置</value></data>
+  <data name="LightingStudioAmbientScopeCustom" xml:space="preserve"><value>自訂選取範圍</value></data>
+  <data name="LightingStudioAmbientMapping" xml:space="preserve"><value>畫面映射</value></data>
+  <data name="LightingStudioAmbientMappingLegacyAuto" xml:space="preserve"><value>原專案映射</value></data>
+  <data name="LightingStudioAmbientMappingPerDevice" xml:space="preserve"><value>裝置獨立</value></data>
+  <data name="LightingStudioAmbientMappingSharedCanvas" xml:space="preserve"><value>跨裝置拼接</value></data>
+  <data name="LightingStudioAmbientCustomScopeHint" xml:space="preserve"><value>在畫布上選取 LED，然後點選「套用選區」。</value></data>
+  <data name="SurfaceCalibrationTitle" xml:space="preserve"><value>表面校準</value></data>
+  <data name="SurfaceCalibrationDescription" xml:space="preserve"><value>調整這隻滑鼠在目前表面的追蹤表現，設定按裝置儲存。</value></data>
+  <data name="SurfaceCalibrationRead" xml:space="preserve"><value>讀取滑鼠</value></data>
+  <data name="SurfaceCalibrationMode" xml:space="preserve"><value>校準方式</value></data>
+  <data name="SurfaceCalibrationModeDisabled" xml:space="preserve"><value>關閉校準</value></data>
+  <data name="SurfaceCalibrationModeAdaptive" xml:space="preserve"><value>自適應追蹤</value></data>
+  <data name="SurfaceCalibrationModeAdjustable" xml:space="preserve"><value>獨立抬起與落地</value></data>
+  <data name="SurfaceCalibrationModePreset" xml:space="preserve"><value>滑鼠墊預設</value></data>
+  <data name="SurfaceCalibrationModeManual" xml:space="preserve"><value>自訂表面</value></data>
+  <data name="SurfaceCalibrationEnabled" xml:space="preserve"><value>啟用校準</value></data>
+  <data name="SurfaceCalibrationSavedSurfaces" xml:space="preserve"><value>已儲存的表面</value></data>
+  <data name="SurfaceCalibrationPreset" xml:space="preserve"><value>滑鼠墊</value></data>
+  <data name="SurfaceCalibrationAsymmetric" xml:space="preserve"><value>獨立設定抬起與落地</value></data>
+  <data name="SurfaceCalibrationTracking" xml:space="preserve"><value>追蹤高度</value></data>
+  <data name="SurfaceCalibrationLift" xml:space="preserve"><value>抬起高度</value></data>
+  <data name="SurfaceCalibrationLanding" xml:space="preserve"><value>落地高度</value></data>
+  <data name="SurfaceCalibrationLod" xml:space="preserve"><value>LOD 距離</value></data>
+  <data name="SurfaceCalibrationRange" xml:space="preserve"><value>{0} · {1}–{2} {3}</value></data>
+  <data name="SurfaceCalibrationMillimeters" xml:space="preserve"><value>毫米</value></data>
+  <data name="SurfaceCalibrationLevels" xml:space="preserve"><value>檔</value></data>
+  <data name="SurfaceCalibrationLandingHint" xml:space="preserve"><value>落地高度必須低於抬起高度。</value></data>
+  <data name="SurfaceCalibrationManualTitle" xml:space="preserve"><value>校準新表面</value></data>
+  <data name="SurfaceCalibrationManualHint" xml:space="preserve"><value>將這隻滑鼠放在要使用的表面上。校準期間，滑鼠左鍵開始或結束採樣，Esc 取消。</value></data>
+  <data name="SurfaceCalibrationSurfaceName.PlaceholderText" xml:space="preserve"><value>表面名稱（選填）</value></data>
+  <data name="SurfaceCalibrationSurfaceName.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>表面名稱</value></data>
+  <data name="SurfaceCalibrationPrepare" xml:space="preserve"><value>新增校準</value></data>
+  <data name="SurfaceCalibrationMiniHint" xml:space="preserve"><value>套用這個預設前，需要進行 5 秒的表面採樣。</value></data>
+  <data name="SurfaceCalibrationPrepareMini" xml:space="preserve"><value>快速校準</value></data>
+  <data name="SurfaceCalibrationStart" xml:space="preserve"><value>開始</value></data>
+  <data name="SurfaceCalibrationFinish" xml:space="preserve"><value>完成採樣</value></data>
+  <data name="SurfaceCalibrationCancel" xml:space="preserve"><value>取消</value></data>
+  <data name="SurfaceCalibrationRetrySave" xml:space="preserve"><value>重試儲存</value></data>
+  <data name="SurfaceCalibrationRestoreSaved" xml:space="preserve"><value>還原已儲存設定</value></data>
+  <data name="SurfaceCalibrationApply" xml:space="preserve"><value>套用並儲存</value></data>
+  <data name="SurfaceCalibrationNotRead" xml:space="preserve"><value>尚未讀取目前校準狀態。</value></data>
+  <data name="SurfaceCalibrationReading" xml:space="preserve"><value>正在讀取這隻滑鼠的校準狀態…</value></data>
+  <data name="SurfaceCalibrationReadComplete" xml:space="preserve"><value>已讀取這隻滑鼠的目前校準狀態。</value></data>
+  <data name="SurfaceCalibrationUnknownState" xml:space="preserve"><value>滑鼠已回應，但無法確認目前表面或校準方式。請選擇設定後再套用。</value></data>
+  <data name="SurfaceCalibrationReadFailed" xml:space="preserve"><value>無法讀取目前校準。請重試讀取，或自行選擇要套用的設定。</value></data>
+  <data name="SurfaceCalibrationApplying" xml:space="preserve"><value>正在套用校準…</value></data>
+  <data name="SurfaceCalibrationApplied" xml:space="preserve"><value>已套用、讀回確認並儲存。</value></data>
+  <data name="SurfaceCalibrationReadbackUnavailable" xml:space="preserve"><value>已套用並儲存，但滑鼠讀回未能確認全部設定。</value></data>
+  <data name="SurfaceCalibrationMismatch" xml:space="preserve"><value>滑鼠讀回與要求的設定不一致，已保留原有儲存記錄。</value></data>
+  <data name="SurfaceCalibrationAppliedUnsaved" xml:space="preserve"><value>已套用至滑鼠，但未儲存。請先重試儲存，再更改設定。</value></data>
+  <data name="SurfaceCalibrationApplyFailed" xml:space="preserve"><value>校準套用失敗，請檢查連線後重試。</value></data>
+  <data name="SurfaceCalibrationInvalidValues" xml:space="preserve"><value>請檢查校準方式、表面與高度範圍；落地高度必須低於抬起高度。</value></data>
+  <data name="SurfaceCalibrationStoreFailed" xml:space="preserve"><value>無法讀取已儲存的校準記錄，原檔案已保留；後續儲存需要重試。</value></data>
+  <data name="SurfaceCalibrationUnknownDevice" xml:space="preserve"><value>尚未確認這台裝置的校準能力。</value></data>
+  <data name="SurfaceCalibrationUseUsb" xml:space="preserve"><value>藍牙連線不支援校準，請切換有線或 2.4G 連線。</value></data>
+  <data name="SurfaceCalibrationConnectionUnknown" xml:space="preserve"><value>尚未確認目前連線方式的校準協定，請嘗試有線或 2.4G 連線。</value></data>
+  <data name="SurfaceCalibrationInputUnavailable" xml:space="preserve"><value>目前連線無法接收採樣所需的校準事件，請嘗試支援的有線或 2.4G 連線。</value></data>
+  <data name="SurfaceCalibrationCleanupFailed" xml:space="preserve"><value>未能完全還原校準前的暫時狀態，請重新連接滑鼠後再繼續。</value></data>
+  <data name="SurfaceCalibrationNewSurfaceName" xml:space="preserve"><value>自訂表面 {0}</value></data>
+  <data name="SurfaceCalibrationNormalSpeed" xml:space="preserve"><value>移動速度正常。</value></data>
+  <data name="SurfaceCalibrationTooFast" xml:space="preserve"><value>請放慢滑鼠移動速度。</value></data>
+  <data name="SurfaceCalibrationSessionIdle" xml:space="preserve"><value>可以開始校準新表面。</value></data>
+  <data name="SurfaceCalibrationSessionPreparing" xml:space="preserve"><value>正在準備這隻滑鼠的採樣…</value></data>
+  <data name="SurfaceCalibrationSessionWaitingToStart" xml:space="preserve"><value>請在 35 秒內點「開始」或按這隻滑鼠的左鍵，Esc 取消。</value></data>
+  <data name="SurfaceCalibrationSessionStarting" xml:space="preserve"><value>正在等待滑鼠開始採樣…</value></data>
+  <data name="SurfaceCalibrationSessionSampling" xml:space="preserve"><value>在表面上移動這隻滑鼠。完成後點「完成採樣」或按滑鼠左鍵，Esc 取消。</value></data>
+  <data name="SurfaceCalibrationSessionEnding" xml:space="preserve"><value>正在結束採樣…</value></data>
+  <data name="SurfaceCalibrationSessionReading" xml:space="preserve"><value>正在讀取表面採樣結果…</value></data>
+  <data name="SurfaceCalibrationSessionApplying" xml:space="preserve"><value>正在套用新的表面校準…</value></data>
+  <data name="SurfaceCalibrationSessionSaving" xml:space="preserve"><value>正在儲存已校準的表面…</value></data>
+  <data name="SurfaceCalibrationSessionCompleted" xml:space="preserve"><value>表面校準已完成。</value></data>
+  <data name="SurfaceCalibrationSessionAppliedUnsaved" xml:space="preserve"><value>校準已套用，但未儲存。</value></data>
+  <data name="SurfaceCalibrationSessionCancelling" xml:space="preserve"><value>正在結束校準並還原暫時設定…</value></data>
+  <data name="SurfaceCalibrationSessionCancelled" xml:space="preserve"><value>校準已取消。</value></data>
+  <data name="SurfaceCalibrationSessionTimedOut" xml:space="preserve"><value>校準逾時，請重新準備後開始採樣。</value></data>
+  <data name="SurfaceCalibrationSessionDisconnected" xml:space="preserve"><value>滑鼠已中斷連線，請重新連接後再校準。</value></data>
+  <data name="SurfaceCalibrationSessionFailed" xml:space="preserve"><value>校準未完成，原有表面記錄已保留。</value></data>
+  <data name="SurfaceCalibrationRestoreFailed" xml:space="preserve"><value>連線後還原上次表面校準失敗，請讀取裝置狀態後重試。</value></data>
+  <data name="SurfaceCalibrationRecoveryUnavailable" xml:space="preserve"><value>無法完整讀取用於還原的目前校準狀態，請重新讀取裝置狀態後再套用。</value></data>
+  <data name="SurfaceCalibrationRestoreDefaults" xml:space="preserve"><value>還原預設校準</value></data>
+  <data name="SurfaceCalibrationAdjustmentUnconfirmed" xml:space="preserve"><value>目前尚未提供這款滑鼠的校準調整。仍可讀取狀態或關閉校準。</value></data>
+  <data name="NavigationPaneResizer.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>導覽列寬度</value></data>
+  <data name="NavigationPaneResizer.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>拖曳以調整寬度。左/右鍵：8 像素；Page Down/Up：32 像素；Home：預設寬度；End：最大寬度。</value></data>
+  <data name="SettingAutoApplyApplying" xml:space="preserve"><value>正在套用…</value></data>
+  <data name="SettingAutoApplyApplied" xml:space="preserve"><value>已套用並儲存</value></data>
+  <data name="SettingAutoApplyRetry" xml:space="preserve"><value>重試</value></data>
+  <data name="SettingAutoApplyInvalid" xml:space="preserve"><value>請輸入範圍內的有效數值。</value></data>
+  <data name="SettingAutoApplyCancelled" xml:space="preserve"><value>套用已取消，請重試。</value></data>
 </root>

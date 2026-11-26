@@ -10,8 +10,8 @@ public sealed partial class RazerHeadsetAudioViewModel
     public async Task ApplyAncAsync(CancellationToken cancellationToken = default)
     {
         if (!IsFeature91 && !IsMxicAnc && !IsValkyrieAnc) return;
-        var previousIndex = SelectedAncIndex;
-        var previousLevel = AncLevel;
+        var (previousIndex, previousLevel) = ConfirmedAudioValue(
+            HeadsetAudioSetting.Anc, (SelectedAncIndex, AncLevel));
         var state = DeviceAncStates[SelectedAncIndex];
         var level = (byte)Math.Round(AncLevel);
         var written = IsMxicAnc

@@ -193,7 +193,7 @@ public sealed partial class ProfileDefinition
         ThxSpatialEnabled = source.ThxSpatialEnabled,
         ThxEqualizerEnabled = source.ThxEqualizerEnabled,
         ThxPreset = source.ThxPreset,
-        ThxBands = CloneIntMap(source.ThxBands),
+        ThxBands = source.ThxBands is null ? null : new(source.ThxBands, StringComparer.OrdinalIgnoreCase),
         ThxBandsByPreset = CloneBandsByPreset(source.ThxBandsByPreset),
         ThxNormalizationEnabled = source.ThxNormalizationEnabled,
         ThxNormalizationLevel = source.ThxNormalizationLevel,
@@ -318,13 +318,13 @@ public sealed partial class ProfileDefinition
             ? null
             : new Dictionary<string, int>(source, StringComparer.OrdinalIgnoreCase);
 
-    internal static Dictionary<string, Dictionary<string, int>>? CloneBandsByPreset(
-        IReadOnlyDictionary<string, Dictionary<string, int>>? source) =>
+    internal static Dictionary<string, Dictionary<string, double>>? CloneBandsByPreset(
+        IReadOnlyDictionary<string, Dictionary<string, double>>? source) =>
         source is null
             ? null
             : source.ToDictionary(
                 pair => pair.Key,
-                pair => CloneIntMap(pair.Value)!,
+                pair => new Dictionary<string, double>(pair.Value, StringComparer.OrdinalIgnoreCase),
                 StringComparer.OrdinalIgnoreCase);
 
     private static Dictionary<string, string>? CloneStringMap(

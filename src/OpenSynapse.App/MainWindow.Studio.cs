@@ -116,6 +116,7 @@ public sealed partial class MainWindow
                     Category: CategoryName(connection.Definition.Category))
                 {
                     HasNoPixelOutput = connection.IsReady && !writesFrames,
+                    IsOutputAvailable = connection.IsReady,
                 });
                 continue;
             }
@@ -132,7 +133,10 @@ public sealed partial class MainWindow
                     1,
                     1,
                     IsSingleZone: true,
-                    Category: CategoryName(connection.Definition.Category)));
+                    Category: CategoryName(connection.Definition.Category))
+                {
+                    IsOutputAvailable = connection.IsReady,
+                });
             }
         }
 
@@ -188,7 +192,7 @@ public sealed partial class MainWindow
                 info.Columns,
                 IsArgb: true,
                 Layout: info.Layout,
-                Category: "argb"));
+                Category: "argb") { IsOutputAvailable = argb.IsReady });
         }
 
         AddHeadsetStudioDevice(options);
@@ -227,7 +231,10 @@ public sealed partial class MainWindow
                     .Where(connection => connection is not null)
                     .Select(connection => connection!))
                 .ToArray(),
-            inputProvider: (rows, columns) => sampler.Sample(rows, columns));
+            inputProvider: (rows, columns) => sampler.Sample(rows, columns))
+        {
+            BeforeTakeOverAsync = _viewModel.RazerHid.PrepareStudioLightingAsync,
+        };
     }
 
     private StudioArgbOutputRouter? CreateStudioArgbRouter(StudioInputSampler sampler)

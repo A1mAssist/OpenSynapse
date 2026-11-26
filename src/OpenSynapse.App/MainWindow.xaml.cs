@@ -89,6 +89,7 @@ public sealed partial class MainWindow : Window
             ?? throw new InvalidOperationException(AppStrings.Text("Text_693F327E"));
         _viewModel.Refresh.SetDeviceWatchActive(false);
         InitializeComponent();
+        InitializeNavigationPaneResize();
         // Lite hides CPU advanced controls; skip startup reads that touch PawnIO/the service.
         if (!_viewModel.IsLiteMode) { _ = _viewModel.CpuPower.RefreshCpuPowerLimitSafelyAsync(); _ = _viewModel.CpuCurve.RefreshSafelyAsync(); }
         RootNavigationView.DataContext = _viewModel;

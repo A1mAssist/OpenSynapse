@@ -120,8 +120,14 @@ public static class RazerApBleDiscovery
     }
 }
 
+internal interface IRazerApBleTransport : IDisposable
+{
+    Task<RazerApBleResponse?> ExchangeAsync(
+        ReadOnlyMemory<byte> frame, TimeSpan timeout, CancellationToken cancellationToken);
+}
+
 /// <summary>One AP-BLE round trip over a Razer audio GATT service.</summary>
-public sealed class WindowsRazerApBleTransport : IDisposable
+public sealed class WindowsRazerApBleTransport : IRazerApBleTransport
 {
     private readonly BluetoothLEDevice _bluetooth;
     private readonly GattDeviceService _service;

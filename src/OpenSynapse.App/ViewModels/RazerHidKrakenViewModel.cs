@@ -139,13 +139,22 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
     [NotProfileScoped]
     public async Task ApplyPersistedProfileAsync(
         PowerSourceKind powerSource,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool requireRestore = false)
     {
         if (_getProfile?.Invoke() is not { } document)
         {
+            if (requireRestore)
+                throw new InvalidOperationException("The headset lighting profile is unavailable.");
             return;
         }
 
+        if (requireRestore)
+        {
+            if (!Connection.IsReady)
+                throw new InvalidOperationException("The headset lighting interface is unavailable.");
+            Serial = await _service.TryReadSerialAsync(Connection, cancellationToken);
+        }
         var descriptor = new DeviceDescriptor(
             ProfileDeviceKey,
             Name,
@@ -162,13 +171,15 @@ public sealed partial class RazerHidKrakenViewModel : INotifyPropertyChanged
             resolveKraken: (_, _) => Task.FromResult<(
                 RazerHidSpecialLightingService Service,
                 RazerHidSpecialLightingConnection Connection)?>((_service, Connection)));
-        await applier.ApplyAsync(
+        var result = await applier.ApplyAsync(
             new DeviceProfileApplyContext(
                 document,
                 descriptor,
                 powerSource,
                 ProfileResolver.Resolve(document, descriptor, powerSource)),
             cancellationToken);
+        if (requireRestore && result.Status != ProfileDeviceApplyStatus.Applied)
+            throw new InvalidOperationException("The headset lighting profile could not be restored.");
     }
 
     [ProfileSetting("headset.chroma-effect", DeviceCategory.Headset, powerScoped: true)]

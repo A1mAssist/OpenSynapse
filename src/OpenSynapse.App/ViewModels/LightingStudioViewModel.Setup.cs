@@ -16,7 +16,7 @@ public sealed partial class LightingStudioViewModel
         StudioArgbOutputRouter? argbRouter = null,
         StudioHeadsetOutputRouter? headsetRouter = null,
         StudioChromaStandardOutputRouter? chromaRouter = null,
-        Func<Task>? restoreAfterExternal = null)
+        Func<IReadOnlyCollection<string>, Task>? restoreAfterExternal = null)
     {
         _lighting = lighting;
         _devices = devices ?? throw new ArgumentNullException(nameof(devices));
@@ -28,28 +28,36 @@ public sealed partial class LightingStudioViewModel
         _inputSampler = inputSampler;
         _world = new StudioWorldRenderer(
             (rows, columns) => _inputSampler?.Sample(rows, columns) ?? default);
+        _outputWorld = new StudioWorldRenderer(
+            (rows, columns) => _inputSampler?.Sample(rows, columns) ?? default);
         _restoreAfterExternal = restoreAfterExternal;
         _dispatcher = DispatcherQueue.GetForCurrentThread();
         if (_hidRouter is not null)
         {
-            _hidRouter.AttachWorld(_world);
+            _hidRouter.AttachWorld(_outputWorld);
+            _hidRouter.RestoreTargetsAsync = restoreAfterExternal is null ? null : RestoreOwnedTargetsAsync;
             _hidRouter.WriteFailed += OnOutputWriteFailed;
             _hidRouter.RestoreFailed += OnHidRestoreFailed;
             _hidRouter.InputObserved += OnHidInputObserved;
         }
         if (_argbRouter is not null)
         {
-            _argbRouter.AttachWorld(_world);
+            _argbRouter.AttachWorld(_outputWorld);
+            _argbRouter.RestoreTargetsAsync = restoreAfterExternal is null ? null : RestoreOwnedTargetsAsync;
             _argbRouter.WriteFailed += OnOutputWriteFailed;
+            _argbRouter.RestoreFailed += OnHidRestoreFailed;
         }
         if (_headsetRouter is not null)
         {
-            _headsetRouter.AttachWorld(_world);
+            _headsetRouter.AttachWorld(_outputWorld);
+            _headsetRouter.RestoreTargetsAsync = restoreAfterExternal is null ? null : RestoreOwnedTargetsAsync;
             _headsetRouter.WriteFailed += OnOutputWriteFailed;
+            _headsetRouter.RestoreFailed += OnHidRestoreFailed;
         }
         if (_chromaRouter is not null)
         {
-            _chromaRouter.AttachWorld(_world);
+            _chromaRouter.AttachWorld(_outputWorld);
+            _chromaRouter.RestoreTargetsAsync = restoreAfterExternal is null ? null : RestoreOwnedTargetsAsync;
             _chromaRouter.WriteFailed += OnOutputWriteFailed;
             _chromaRouter.RestoreFailed += OnHidRestoreFailed;
         }

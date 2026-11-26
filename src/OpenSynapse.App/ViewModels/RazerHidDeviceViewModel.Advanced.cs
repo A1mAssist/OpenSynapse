@@ -183,6 +183,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         try
         {
             KeyswitchOptimization = await _service.GetKeyswitchOptimizationAsync(Connection, cancellationToken);
+            _confirmedKeyswitch = KeyswitchOptimization;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -203,7 +204,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             () => IsKeyswitchBusy, value => IsKeyswitchBusy = value,
             async () =>
             {
-                var previous = KeyswitchOptimization;
+                var previous = _confirmedKeyswitch ?? KeyswitchOptimization;
                 var previousProfile = ReadProfile(settings => settings.Keyboard.SwitchType);
                 await _service.SetKeyswitchOptimizationAsync(Connection, KeyswitchOptimization, cancellationToken);
                 if (Has(RazerHidBackendCapability.KeyswitchOptimizationRead))
@@ -214,6 +215,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                     () => KeyswitchOptimization = previous,
                     token => _service.SetKeyswitchOptimizationAsync(Connection, previous, token),
                     cancellationToken);
+                _confirmedKeyswitch = KeyswitchOptimization;
             }, cancellationToken);
 
     [NotProfileScoped]

@@ -60,7 +60,7 @@
                       <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="4" Padding="12">
                         <StackPanel Spacing="8">
                           <TextBlock local:Localized.Uid="ThxVoiceClarityLabel" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
-                          <ToggleSwitch local:Localized.Uid="ThxVoiceClarityToggle" IsOn="{Binding VoiceClarityEnabled, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" />
+                          <ToggleSwitch local:Localized.Uid="ThxVoiceClarityToggle" IsOn="{Binding VoiceClarityEnabled, Mode=TwoWay}" IsEnabled="{Binding CanEditVoiceClarity}" />
                           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                             <Slider Minimum="0" Maximum="100" StepFrequency="1" Value="{Binding VoiceClarityLevel, Mode=TwoWay}" IsThumbToolTipEnabled="False" IsEnabled="{Binding VoiceClarityEnabled}" />
                             <TextBlock Grid.Column="1" Text="{Binding VoiceClarityLevelText}" FontFamily="Cascadia Mono,Consolas" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />

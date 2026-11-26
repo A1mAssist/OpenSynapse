@@ -86,16 +86,7 @@ public class StudioDeviceFrameSource : ISoftwareLightingFrameSource
     {
         lock (_gate)
         {
-            AdvanceKeyTime(nowSeconds);
-            if (input.IsDown)
-            {
-                _keys.Press(input.Row, input.Column);
-            }
-            else
-            {
-                _keys.Release(input.Row, input.Column);
-            }
-
+            RecordInput(input, nowSeconds);
             return _trigger.Handle(input, nowSeconds);
         }
     }
@@ -120,11 +111,7 @@ public class StudioDeviceFrameSource : ISoftwareLightingFrameSource
         StudioKeyState keys;
         lock (_gate)
         {
-            // A render-clock reset rebases elapsed time; stale input must not do so.
-            if (now < _lastRenderSeconds) _lastKeySeconds = now;
-            _lastRenderSeconds = now;
-            AdvanceKeyTime(now);
-            keys = _keys.Snapshot();
+            keys = SnapshotKeys(now);
             for (var index = 0; index < layers.Length; index++)
             {
                 var layer = layers[index];
@@ -178,7 +165,31 @@ public class StudioDeviceFrameSource : ISoftwareLightingFrameSource
         _lastKeySeconds = now;
     }
 
-    private StudioPlaybackClock GetClock(Guid id)
+    internal StudioEffectStateCache EffectStates => _states;
+
+    internal void RecordInput(StudioTriggerInput input, double nowSeconds)
+    {
+        lock (_gate)
+        {
+            AdvanceKeyTime(nowSeconds);
+            if (input.IsDown) _keys.Press(input.Row, input.Column);
+            else _keys.Release(input.Row, input.Column);
+        }
+    }
+
+    internal StudioKeyState SnapshotKeys(double now)
+    {
+        lock (_gate)
+        {
+            // A render-clock reset rebases elapsed time; stale input must not do so.
+            if (now < _lastRenderSeconds) _lastKeySeconds = now;
+            _lastRenderSeconds = now;
+            AdvanceKeyTime(now);
+            return _keys.Snapshot();
+        }
+    }
+
+    internal StudioPlaybackClock GetClock(Guid id)
     {
         lock (_gate)
         {

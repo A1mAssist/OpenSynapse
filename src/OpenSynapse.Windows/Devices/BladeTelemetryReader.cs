@@ -13,13 +13,14 @@ internal sealed partial class BladeTelemetryReader
     private readonly BladePowerTelemetryReader _power;
     private readonly BladeDisplayTelemetryReader _display;
 
-    public BladeTelemetryReader(RazerDeviceResolver resolver, RazerCapabilityClient client)
+    public BladeTelemetryReader(RazerDeviceResolver resolver, RazerCapabilityClient client,
+        Func<bool>? performanceCompatibilityEnabled = null)
     {
         ArgumentNullException.ThrowIfNull(resolver);
         _resolver = resolver;
         _client = client ?? throw new ArgumentNullException(nameof(client));
         _fan = new BladeFanTelemetryReader(resolver, client);
-        _power = new BladePowerTelemetryReader(resolver, client, _validation, _fan);
+        _power = new BladePowerTelemetryReader(resolver, client, _validation, _fan, performanceCompatibilityEnabled);
         _fan.CaptureBoostState = _power.ReadBoostStateAsync;
         _fan.RestoreBoostState = _power.TryRestoreBoostLevelsAsync;
         _display = new BladeDisplayTelemetryReader(resolver, client, _validation);

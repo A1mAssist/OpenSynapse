@@ -5280,7 +5280,7 @@
     <value>Установлены компоненты THX.</value>
   </data>
   <data name="RazerHeadsetThxPartialRead" xml:space="preserve">
-    <value>THX подключен, но некоторые настройки не удалось прочитать; показаны значения по умолчанию. Примените напрямую или обновите, чтобы повторить попытку.</value>
+    <value>THX подключен. Настройки, которые не удалось прочитать, временно отключены. Обновите, чтобы повторить попытку.</value>
   </data>
   <data name="RazerHeadsetThxSpatialToggle.Header" xml:space="preserve">
     <value>Аудио режим</value>
@@ -5301,7 +5301,7 @@
     <value>Предустановка</value>
   </data>
   <data name="RazerHeadsetThxPresetLabel.PlaceholderText" xml:space="preserve">
-    <value>Конфигурация по умолчанию</value>
+    <value>Выберите пресет</value>
   </data>
   <data name="RazerHeadsetThxPresetApply.Content" xml:space="preserve">
     <value>Применить пресет</value>
@@ -5376,7 +5376,7 @@
     <value>Компонент THX не принял это изменение. Установите или восстановите пакет THX, затем обновите его.</value>
   </data>
   <data name="RazerHeadsetThxOperationRejected" xml:space="preserve">
-    <value>Компонент THX неполный или еще не активен. Нажмите «Установить», чтобы восстановить его, затем перезагрузите Windows и повторите попытку.</value>
+    <value>THX не принял это изменение. Текущие настройки считаны заново и показаны здесь. Измените настройки или выберите другой пресет и повторите попытку.</value>
   </data>
   <data name="RazerHeadsetThxRejectedInstalled" xml:space="preserve">
     <value>Компоненты THX установлены, но текущее аудиоустройство их не загрузило. Перезагрузите Windows и повторите попытку; если это по-прежнему не удается, используйте кнопку установки для восстановления.</value>
@@ -10308,4 +10308,109 @@
   <data name="PresetEditorIssueBetweenSpeed" xml:space="preserve"><value>должно быть от 0,1 до 5</value></data>
   <data name="PresetEditorIssueBlend" xml:space="preserve"><value>не является поддерживаемым режимом смешивания</value></data>
   <data name="PresetEditorIssueLayer" xml:space="preserve"><value>Слой {0} · {1}</value></data>
+  <data name="BladePerformanceCompatibilityTitle.Text" xml:space="preserve"><value>Совместимое переключение режимов производительности</value></data>
+  <data name="BladePerformanceCompatibilityDescription.Text" xml:space="preserve"><value>Перед переходом в режим производительности или игры кратко включается пользовательский режим. Попробуйте включить, если после сбалансированного или тихого режима мощность CPU остаётся ограниченной.</value></data>
+  <data name="BladePerformanceCompatibilityToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Совместимое переключение режимов производительности</value></data>
+  <data name="LightingStudioOutputScope" xml:space="preserve"><value>Устройства вывода</value></data>
+  <data name="LightingStudioApplyAll" xml:space="preserve"><value>Применить ко всем устройствам</value></data>
+  <data name="LightingStudioApplyCurrent" xml:space="preserve"><value>Применить только к текущему устройству</value></data>
+  <data name="LightingStudioSelectOutputDevices" xml:space="preserve"><value>Выбрать устройства…</value></data>
+  <data name="LightingStudioConfirmOutputSelection" xml:space="preserve"><value>Применить к выбранным устройствам</value></data>
+  <data name="LightingStudioPreviewOutputSelection" xml:space="preserve"><value>Предпросмотр этой области</value></data>
+  <data name="LightingStudioCancelOutputSelection" xml:space="preserve"><value>Отмена</value></data>
+  <data name="LightingStudioOutputSelectionHint" xml:space="preserve"><value>Применение обновляет вывод на устройства. Предпросмотр меняет только изображение и цели следующего применения.</value></data>
+  <data name="LightingStudioPendingOutputScope" xml:space="preserve"><value>Ожидает применения · устройств: {0} · {1}</value></data>
+  <data name="LightingStudioAppliedOutputScope" xml:space="preserve"><value>Применено · устройств: {0} · {1}</value></data>
+  <data name="LightingStudioOutputOffline" xml:space="preserve"><value>{0} (не в сети)</value></data>
+  <data name="LightingStudioAmbientLayerScope" xml:space="preserve"><value>Область слоя</value></data>
+  <data name="LightingStudioAmbientScopeAll" xml:space="preserve"><value>Все устройства</value></data>
+  <data name="LightingStudioAmbientScopeCurrent" xml:space="preserve"><value>Текущее устройство</value></data>
+  <data name="LightingStudioAmbientScopeCustom" xml:space="preserve"><value>Произвольное выделение</value></data>
+  <data name="LightingStudioAmbientMapping" xml:space="preserve"><value>Отображение изображения</value></data>
+  <data name="LightingStudioAmbientMappingLegacyAuto" xml:space="preserve"><value>Исходное отображение проекта</value></data>
+  <data name="LightingStudioAmbientMappingPerDevice" xml:space="preserve"><value>На каждом устройстве</value></data>
+  <data name="LightingStudioAmbientMappingSharedCanvas" xml:space="preserve"><value>На нескольких устройствах</value></data>
+  <data name="LightingStudioAmbientCustomScopeHint" xml:space="preserve"><value>Выберите светодиоды на холсте и нажмите «Применить выделение».</value></data>
+  <data name="SurfaceCalibrationTitle" xml:space="preserve"><value>Surface calibration</value></data>
+  <data name="SurfaceCalibrationDescription" xml:space="preserve"><value>Adjust tracking for the surface under this mouse. Settings are saved for this device.</value></data>
+  <data name="SurfaceCalibrationRead" xml:space="preserve"><value>Read from mouse</value></data>
+  <data name="SurfaceCalibrationMode" xml:space="preserve"><value>Calibration mode</value></data>
+  <data name="SurfaceCalibrationModeDisabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="SurfaceCalibrationModeAdaptive" xml:space="preserve"><value>Adaptive tracking</value></data>
+  <data name="SurfaceCalibrationModeAdjustable" xml:space="preserve"><value>Independent lift and landing</value></data>
+  <data name="SurfaceCalibrationModePreset" xml:space="preserve"><value>Surface preset</value></data>
+  <data name="SurfaceCalibrationModeManual" xml:space="preserve"><value>Custom surface</value></data>
+  <data name="SurfaceCalibrationEnabled" xml:space="preserve"><value>Enabled</value></data>
+  <data name="SurfaceCalibrationSavedSurfaces" xml:space="preserve"><value>Saved surfaces</value></data>
+  <data name="SurfaceCalibrationPreset" xml:space="preserve"><value>Mouse mat</value></data>
+  <data name="SurfaceCalibrationAsymmetric" xml:space="preserve"><value>Independent lift and landing</value></data>
+  <data name="SurfaceCalibrationTracking" xml:space="preserve"><value>Tracking height</value></data>
+  <data name="SurfaceCalibrationLift" xml:space="preserve"><value>Lift-off height</value></data>
+  <data name="SurfaceCalibrationLanding" xml:space="preserve"><value>Landing height</value></data>
+  <data name="SurfaceCalibrationLod" xml:space="preserve"><value>Lift-off distance</value></data>
+  <data name="SurfaceCalibrationRange" xml:space="preserve"><value>{0} · {1}–{2} {3}</value></data>
+  <data name="SurfaceCalibrationMillimeters" xml:space="preserve"><value>mm</value></data>
+  <data name="SurfaceCalibrationLevels" xml:space="preserve"><value>levels</value></data>
+  <data name="SurfaceCalibrationLandingHint" xml:space="preserve"><value>Landing height must be lower than lift-off height.</value></data>
+  <data name="SurfaceCalibrationManualTitle" xml:space="preserve"><value>Calibrate a new surface</value></data>
+  <data name="SurfaceCalibrationManualHint" xml:space="preserve"><value>Place this mouse on the surface you want to use. During calibration, its left button starts or finishes sampling; Esc cancels.</value></data>
+  <data name="SurfaceCalibrationSurfaceName.PlaceholderText" xml:space="preserve"><value>Surface name (optional)</value></data>
+  <data name="SurfaceCalibrationSurfaceName.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Surface name</value></data>
+  <data name="SurfaceCalibrationPrepare" xml:space="preserve"><value>New calibration</value></data>
+  <data name="SurfaceCalibrationMiniHint" xml:space="preserve"><value>This preset needs a five-second surface sample before it can be applied.</value></data>
+  <data name="SurfaceCalibrationPrepareMini" xml:space="preserve"><value>Quick calibration</value></data>
+  <data name="SurfaceCalibrationStart" xml:space="preserve"><value>Start</value></data>
+  <data name="SurfaceCalibrationFinish" xml:space="preserve"><value>Finish sampling</value></data>
+  <data name="SurfaceCalibrationCancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="SurfaceCalibrationRetrySave" xml:space="preserve"><value>Retry saving</value></data>
+  <data name="SurfaceCalibrationRestoreSaved" xml:space="preserve"><value>Restore saved settings</value></data>
+  <data name="SurfaceCalibrationApply" xml:space="preserve"><value>Apply and save</value></data>
+  <data name="SurfaceCalibrationNotRead" xml:space="preserve"><value>Current calibration has not been read yet.</value></data>
+  <data name="SurfaceCalibrationReading" xml:space="preserve"><value>Reading calibration from this mouse…</value></data>
+  <data name="SurfaceCalibrationReadComplete" xml:space="preserve"><value>Showing the calibration read from this mouse.</value></data>
+  <data name="SurfaceCalibrationUnknownState" xml:space="preserve"><value>The mouse responded, but its current surface or mode could not be identified. Choose settings explicitly before applying.</value></data>
+  <data name="SurfaceCalibrationReadFailed" xml:space="preserve"><value>Could not read the current calibration. Try reading again, or explicitly choose settings to apply.</value></data>
+  <data name="SurfaceCalibrationApplying" xml:space="preserve"><value>Applying calibration…</value></data>
+  <data name="SurfaceCalibrationApplied" xml:space="preserve"><value>Applied, verified against the mouse, and saved.</value></data>
+  <data name="SurfaceCalibrationReadbackUnavailable" xml:space="preserve"><value>Applied and saved. The mouse could not confirm all settings on readback.</value></data>
+  <data name="SurfaceCalibrationMismatch" xml:space="preserve"><value>The mouse readback does not match the requested settings. The previous saved record was kept.</value></data>
+  <data name="SurfaceCalibrationAppliedUnsaved" xml:space="preserve"><value>Applied to the mouse, but not saved. Retry saving before changing settings.</value></data>
+  <data name="SurfaceCalibrationApplyFailed" xml:space="preserve"><value>Calibration could not be applied. Check the connection and try again.</value></data>
+  <data name="SurfaceCalibrationInvalidValues" xml:space="preserve"><value>Check the selected mode, surface and height ranges. Landing must be below lift-off.</value></data>
+  <data name="SurfaceCalibrationStoreFailed" xml:space="preserve"><value>Saved calibration records could not be read. The existing file has been kept; saving will need to be retried.</value></data>
+  <data name="SurfaceCalibrationUnknownDevice" xml:space="preserve"><value>Calibration support for this device has not been confirmed.</value></data>
+  <data name="SurfaceCalibrationUseUsb" xml:space="preserve"><value>Calibration is unavailable over Bluetooth. Connect by USB or 2.4 GHz to calibrate.</value></data>
+  <data name="SurfaceCalibrationConnectionUnknown" xml:space="preserve"><value>Calibration on this connection has not been confirmed. Try USB or 2.4 GHz.</value></data>
+  <data name="SurfaceCalibrationInputUnavailable" xml:space="preserve"><value>This connection cannot receive the calibration events needed for sampling. Try a supported USB or 2.4 GHz connection.</value></data>
+  <data name="SurfaceCalibrationCleanupFailed" xml:space="preserve"><value>Temporary calibration state could not be fully restored. Reconnect the mouse before continuing.</value></data>
+  <data name="SurfaceCalibrationNewSurfaceName" xml:space="preserve"><value>Custom surface {0}</value></data>
+  <data name="SurfaceCalibrationNormalSpeed" xml:space="preserve"><value>Movement speed is suitable.</value></data>
+  <data name="SurfaceCalibrationTooFast" xml:space="preserve"><value>Move the mouse more slowly.</value></data>
+  <data name="SurfaceCalibrationSessionIdle" xml:space="preserve"><value>Ready to calibrate a new surface.</value></data>
+  <data name="SurfaceCalibrationSessionPreparing" xml:space="preserve"><value>Preparing this mouse for sampling…</value></data>
+  <data name="SurfaceCalibrationSessionWaitingToStart" xml:space="preserve"><value>Click Start or press this mouse’s left button within 35 seconds. Esc cancels.</value></data>
+  <data name="SurfaceCalibrationSessionStarting" xml:space="preserve"><value>Waiting for the mouse to start sampling…</value></data>
+  <data name="SurfaceCalibrationSessionSampling" xml:space="preserve"><value>Move this mouse across the surface. Click Finish sampling or press its left button when ready; Esc cancels.</value></data>
+  <data name="SurfaceCalibrationSessionEnding" xml:space="preserve"><value>Finishing the sample…</value></data>
+  <data name="SurfaceCalibrationSessionReading" xml:space="preserve"><value>Reading the sampled surface…</value></data>
+  <data name="SurfaceCalibrationSessionApplying" xml:space="preserve"><value>Applying the new surface calibration…</value></data>
+  <data name="SurfaceCalibrationSessionSaving" xml:space="preserve"><value>Saving the calibrated surface…</value></data>
+  <data name="SurfaceCalibrationSessionCompleted" xml:space="preserve"><value>Surface calibration is complete.</value></data>
+  <data name="SurfaceCalibrationSessionAppliedUnsaved" xml:space="preserve"><value>Calibration is applied but not saved.</value></data>
+  <data name="SurfaceCalibrationSessionCancelling" xml:space="preserve"><value>Ending calibration and restoring temporary settings…</value></data>
+  <data name="SurfaceCalibrationSessionCancelled" xml:space="preserve"><value>Calibration cancelled.</value></data>
+  <data name="SurfaceCalibrationSessionTimedOut" xml:space="preserve"><value>Calibration timed out. Prepare again to start a new sample.</value></data>
+  <data name="SurfaceCalibrationSessionDisconnected" xml:space="preserve"><value>The mouse disconnected. Reconnect before calibrating again.</value></data>
+  <data name="SurfaceCalibrationSessionFailed" xml:space="preserve"><value>Calibration did not complete. The previous saved surface was kept.</value></data>
+  <data name="SurfaceCalibrationRestoreFailed" xml:space="preserve"><value>Could not restore the saved surface calibration. Read the device state and retry.</value></data>
+  <data name="SurfaceCalibrationRecoveryUnavailable" xml:space="preserve"><value>The current calibration could not be read completely for recovery. Read the device state again before applying changes.</value></data>
+  <data name="SurfaceCalibrationRestoreDefaults" xml:space="preserve"><value>Restore default calibration</value></data>
+  <data name="SurfaceCalibrationAdjustmentUnconfirmed" xml:space="preserve"><value>Calibration adjustment is not yet available for this mouse. You can still read its state or disable calibration.</value></data>
+  <data name="NavigationPaneResizer.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Ширина панели навигации</value></data>
+  <data name="NavigationPaneResizer.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Перетащите границу для изменения ширины. Влево/вправо: 8 пикселей; Page Down/Up: 32 пикселя; Home: исходная ширина; End: максимальная ширина.</value></data>
+  <data name="SettingAutoApplyApplying" xml:space="preserve"><value>Применение…</value></data>
+  <data name="SettingAutoApplyApplied" xml:space="preserve"><value>Применено и сохранено</value></data>
+  <data name="SettingAutoApplyRetry" xml:space="preserve"><value>Повторить</value></data>
+  <data name="SettingAutoApplyInvalid" xml:space="preserve"><value>Введите допустимое значение в указанном диапазоне.</value></data>
+  <data name="SettingAutoApplyCancelled" xml:space="preserve"><value>Применение отменено. Повторите попытку.</value></data>
 </root>

@@ -34,7 +34,8 @@ public sealed partial class LightingStudioPage : UserControl
     private bool _canvasFitted;
     private bool _savedProjectLoaded;
     private bool _fitting;
-    private bool _userZoomed;
+    private bool _fitOnResizePending;
+    private bool _userAdjustedView;
     private bool _syncingZoomPicker;
     private string? _fittedVisualSignature;
     private string? _builtVisualSignature;
@@ -54,6 +55,7 @@ public sealed partial class LightingStudioPage : UserControl
         LayerList.AddHandler(DragOverEvent, new DragEventHandler(LayerDragOver), true);
         LayerList.AddHandler(DropEvent, new DragEventHandler(LayerDrop), true);
         Inspector.CaptureRegionChanged += OnCaptureRegionChanged;
+        Inspector.AmbientScopeRequested += AmbientScopeRequested;
         Inspector.EditPresetRequested += (_, request) =>
             Host?.OpenPresetEditorWindow(request.Parameters, request.Preset);
         _timer.Tick += (_, _) => RenderPreview();
@@ -81,6 +83,7 @@ public sealed partial class LightingStudioPage : UserControl
         SetIconButtonLabels();
         UpdatePlayButton();
         _viewModel?.RefreshLocalization();
+        BindInspector();
     }
 
     /// <summary>
@@ -101,7 +104,7 @@ public sealed partial class LightingStudioPage : UserControl
         StudioArgbOutputRouter? argbRouter = null,
         StudioHeadsetOutputRouter? headsetRouter = null,
         StudioChromaStandardOutputRouter? chromaRouter = null,
-        Func<Task>? restoreAfterExternal = null)
+        Func<IReadOnlyCollection<string>, Task>? restoreAfterExternal = null)
     {
         _viewModel?.Dispose();
         _savedProjectLoaded = false;
@@ -126,7 +129,7 @@ public sealed partial class LightingStudioPage : UserControl
             else if (args.PropertyName == nameof(LightingStudioViewModel.SelectedParams)) BindInspector();
             else if (args.PropertyName == nameof(LightingStudioViewModel.SelectedEffectChoice))
             {
-                Inspector.Refresh();
+                BindInspector();
                 var effect = _viewModel?.SelectedParams?.Effect;
                 if (effect is StudioEffectKind.Ripple or StudioEffectKind.Reactive or StudioEffectKind.Radiate)
                 {
@@ -140,6 +143,8 @@ public sealed partial class LightingStudioPage : UserControl
             else if (args.PropertyName == nameof(LightingStudioViewModel.PreviewRows) ||
                      args.PropertyName == nameof(LightingStudioViewModel.PreviewColumns)) BuildPreview();
             else if (args.PropertyName == nameof(LightingStudioViewModel.IsEditing)) ApplyEditingState();
+            if (args.PropertyName is nameof(LightingStudioViewModel.SelectedDevice) or
+                nameof(LightingStudioViewModel.DeviceVisuals)) BindInspector();
         };
         Inspector.Changed += (_, _) =>
         {
@@ -159,9 +164,11 @@ public sealed partial class LightingStudioPage : UserControl
         };
         DeviceCanvas.ZoomChanged += (_, _) =>
         {
-            if (!_fitting) _userZoomed = true;
+            if (!_fitting) _userAdjustedView = true;
             SyncZoomPicker();
         };
+        DeviceCanvas.ViewPanned += (_, _) => _userAdjustedView = true;
+        DeviceCanvas.SizeChanged += (_, _) => QueueCanvasFitOnResize();
         UpdatePlayButton();
         if (_inputSampler is not null && Host is not null)
         {
@@ -171,6 +178,33 @@ public sealed partial class LightingStudioPage : UserControl
         ApplyEditingState();
         RefreshCanvas();
         RenderPreview();
+    }
+
+    private void QueueCanvasFitOnResize()
+    {
+        if (!_canvasFitted || _userAdjustedView || _fitOnResizePending) return;
+        _fitOnResizePending = true;
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            _fitOnResizePending = false;
+            FitCanvasNow();
+        });
+    }
+
+    private void FitCanvasNow()
+    {
+        if (!_canvasFitted || _userAdjustedView) return;
+        _fitting = true;
+        try
+        {
+            DeviceCanvas.CancelPendingZoomView();
+            DeviceCanvas.FitToView();
+            DeviceCanvas.CancelPendingZoomView();
+        }
+        finally
+        {
+            _fitting = false;
+        }
     }
 
     internal void OnNavigatedTo()
@@ -196,6 +230,7 @@ public sealed partial class LightingStudioPage : UserControl
 #if DEBUG
         AttachStudioSelectionDump();
         if (StartStudioSelectionQaIfRequested() || StartStudioBenchmarkIfRequested()) return;
+        _ = RunStudioViewportQaIfRequestedAsync();
 #endif
         RenderPreview();
         StudioTimingMark("navigate-exit");
@@ -275,7 +310,7 @@ public sealed partial class LightingStudioPage : UserControl
         _canvasFitted = false;
         _fittedVisualSignature = null;
         _builtVisualSignature = null;
-        _userZoomed = false;
+        _userAdjustedView = false;
         DeviceCanvas.CancelPendingZoomView();
     }
 
@@ -488,10 +523,16 @@ public sealed partial class LightingStudioPage : UserControl
                 return;
             }
 
-            _customZoomItem ??= new ComboBoxItem();
-            _customZoomItem.Content = $"{DeviceCanvas.ZoomPercent:0.#}%";
-            if (!ZoomPicker.Items.Contains(_customZoomItem)) ZoomPicker.Items.Add(_customZoomItem);
-            if (!ReferenceEquals(ZoomPicker.SelectedItem, _customZoomItem)) ZoomPicker.SelectedItem = _customZoomItem;
+            // Updating Content on the selected item does not refresh the closed
+            // ComboBox, so replace the item to show the new zoom percent.
+            if (_customZoomItem is not null)
+            {
+                if (ReferenceEquals(ZoomPicker.SelectedItem, _customZoomItem)) ZoomPicker.SelectedIndex = -1;
+                ZoomPicker.Items.Remove(_customZoomItem);
+            }
+            _customZoomItem = new ComboBoxItem { Content = $"{DeviceCanvas.ZoomPercent:0.#}%" };
+            ZoomPicker.Items.Add(_customZoomItem);
+            ZoomPicker.SelectedItem = _customZoomItem;
         }
         finally
         {
@@ -634,6 +675,8 @@ public sealed partial class LightingStudioPage : UserControl
     }
     private void BindInspector()
     {
+        Inspector.AmbientLayerScope = _viewModel?.AmbientLayerScope ?? StudioAmbientLayerScope.All;
+        Inspector.CanUseCurrentAmbientDevice = _viewModel?.CanUseCurrentAmbientDevice == true;
         Inspector.Parameters = _viewModel?.SelectedParams;
         if (Host is not null) Inspector.CaptureRegion = Host.BehaviorSettings.AmbientCaptureRegion;
         Inspector.Refresh();

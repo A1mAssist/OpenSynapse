@@ -21,6 +21,13 @@ public sealed partial class RazerKeyboardViewModel
         PowerSourceKind powerSource,
         CancellationToken cancellationToken = default)
     {
+        _restoringProfile = true;
+        try { await RestoreProfileAsync(powerSource, cancellationToken); }
+        finally { _restoringProfile = false; }
+    }
+
+    private async Task RestoreProfileAsync(PowerSourceKind powerSource, CancellationToken cancellationToken)
+    {
         if (_getProfile?.Invoke() is not { } document)
         {
             return;

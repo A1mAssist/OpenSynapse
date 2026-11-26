@@ -253,7 +253,7 @@ public sealed partial class RazerHeadsetAudioService
                     txn => RazerHeadsetAudioProtocol.SetEqBands(txn, previous),
                     CancellationToken.None).ConfigureAwait(false);
             }
-            catch (Exception exception) when (IsExpected(exception))
+            catch (Exception exception) when (IsExpected(exception) || exception is TimeoutException)
             {
                 _diagnostic?.Invoke($"restore protocol-25 EQ bands failed: {exception.Message}");
             }
@@ -285,23 +285,25 @@ public sealed partial class RazerHeadsetAudioService
             await SetProtocol25EqPresetAsync(preset, cancellationToken).ConfigureAwait(false);
             await SetProtocol25EqBandsAsync(bands, cancellationToken).ConfigureAwait(false);
         }
-        catch
+        catch (Exception original)
         {
-            await TryRestoreProtocol25EqAsync(previousPreset, previousBands).ConfigureAwait(false);
+            var presetError = await RestoreFieldAsync(
+                () => SetProtocol25EqPresetAsync(previousPreset, CancellationToken.None), "preset").ConfigureAwait(false);
+            var bandsError = await RestoreFieldAsync(
+                () => SetProtocol25EqBandsAsync(previousBands, CancellationToken.None), "bands").ConfigureAwait(false);
+            if (presetError is not null || bandsError is not null)
+                throw new InvalidOperationException($"Custom EQ failed: {original.Message}. Previous EQ could not be fully restored: {presetError} {bandsError}", original);
             throw;
         }
-    }
 
-    private async Task TryRestoreProtocol25EqAsync(byte preset, byte[] bands)
-    {
-        try
+        async Task<string?> RestoreFieldAsync(Func<Task> restore, string field)
         {
-            await SetProtocol25EqPresetAsync(preset, CancellationToken.None).ConfigureAwait(false);
-            await SetProtocol25EqBandsAsync(bands, CancellationToken.None).ConfigureAwait(false);
-        }
-        catch (Exception exception) when (IsExpected(exception))
-        {
-            _diagnostic?.Invoke($"restore protocol-25 EQ failed: {exception.Message}");
+            try { await restore().ConfigureAwait(false); return null; }
+            catch (Exception exception) when (IsExpected(exception) || exception is TimeoutException)
+            {
+                _diagnostic?.Invoke($"restore protocol-25 EQ {field} failed: {exception.Message}");
+                return $"{field}: {exception.Message}";
+            }
         }
     }
 
@@ -374,7 +376,7 @@ public sealed partial class RazerHeadsetAudioService
                     txn => writeRequest(previous, txn),
                     CancellationToken.None).ConfigureAwait(false);
             }
-            catch (Exception exception) when (IsExpected(exception))
+            catch (Exception exception) when (IsExpected(exception) || exception is TimeoutException)
             {
                 _diagnostic?.Invoke($"restore protocol-25 {label} failed: {exception.Message}");
             }

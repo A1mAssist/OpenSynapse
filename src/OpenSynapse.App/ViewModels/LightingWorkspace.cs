@@ -129,7 +129,8 @@ public sealed partial class LightingWorkspace : INotifyPropertyChanged
     internal async Task<string?> ApplyLoadedProfileAsync(
         DeviceDescriptor? blade,
         PowerSourceKind powerState,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool restoreFromStudio = false)
     {
         if (_bladeLightingController is null && !UsesFirmwareKeyboardLighting)
         {
@@ -155,7 +156,7 @@ public sealed partial class LightingWorkspace : INotifyPropertyChanged
             return null;
         }
 
-        if (StudioLightingActive?.Invoke() == true)
+        if (!restoreFromStudio && StudioLightingActive?.Invoke() == true)
         {
             return null;
         }
@@ -166,6 +167,7 @@ public sealed partial class LightingWorkspace : INotifyPropertyChanged
             return null;
         }
 
+        IReadOnlyList<DeviceDescriptor> devices = restoreFromStudio ? [blade] : _deviceDescriptors();
         if (!_isDisplayAvailable())
         {
             var offFingerprint = $"display-off\n{blade.Id}";
@@ -178,14 +180,14 @@ public sealed partial class LightingWorkspace : INotifyPropertyChanged
                 if (UsesFirmwareKeyboardLighting)
                 {
                     await _deviceTelemetryReader.SetBlade2023KeyboardEffectAsync(
-                        _deviceDescriptors(),
+                        devices,
                         BladeLighting2023Effect.Off,
                         cancellationToken).ConfigureAwait(false);
                 }
                 else if (CanApplyLightingEffects)
                 {
                     await _bladeLightingController!.ApplyAsync(
-                        _deviceDescriptors(),
+                        devices,
                         BladeLightingEffect.Off,
                         cancellationToken).ConfigureAwait(false);
                 }
@@ -254,7 +256,8 @@ public sealed partial class LightingWorkspace : INotifyPropertyChanged
                 powerState,
                 lightingEnabled,
                 chromaOverrideEnabled,
-                cancellationToken).ConfigureAwait(false);
+                cancellationToken,
+                devices).ConfigureAwait(false);
         }
 
         if (_bladeLightingDevicePath.Length > 0 &&
@@ -273,7 +276,7 @@ public sealed partial class LightingWorkspace : INotifyPropertyChanged
 
         try
         {
-            await _bladeLightingController!.ApplyAsync(_deviceDescriptors(), effect, cancellationToken);
+            await _bladeLightingController!.ApplyAsync(devices, effect, cancellationToken);
             _bladeLightingDevicePath = blade.Id;
             _lightingShadowFingerprint = fingerprint;
             _ = ObserveRuntime(_bladeLightingController.RuntimeCompletion);
@@ -300,14 +303,15 @@ public sealed partial class LightingWorkspace : INotifyPropertyChanged
         PowerSourceKind powerState,
         bool lightingEnabled,
         bool chromaOverrideEnabled,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IReadOnlyList<DeviceDescriptor> devices)
     {
         try
         {
             if (keyboardBrightness is byte brightness)
             {
                 _ = await _deviceTelemetryReader.SetBladeKeyboardBrightnessAsync(
-                    _deviceDescriptors(),
+                    devices,
                     brightness,
                     cancellationToken).ConfigureAwait(false);
             }
@@ -316,7 +320,7 @@ public sealed partial class LightingWorkspace : INotifyPropertyChanged
                 ? BladeLighting2023Admitted.ToWireEffect(effect.Mode)
                 : BladeLighting2023Effect.Off;
             _blade._bladeKeyboardEffect2023 = await _deviceTelemetryReader
-                .SetBlade2023KeyboardEffectAsync(_deviceDescriptors(), target, cancellationToken)
+                .SetBlade2023KeyboardEffectAsync(devices, target, cancellationToken)
                 .ConfigureAwait(false);
 
             _bladeLightingDevicePath = blade.Id;
@@ -353,24 +357,37 @@ public sealed partial class LightingWorkspace : INotifyPropertyChanged
         bool chromaOverrideEnabled = true) =>
         $"{_getProfile().ActiveProfileName}\n{powerState}\n{lightingEnabled}\n{chromaOverrideEnabled}\n{BladeLightingProfileCodec.Fingerprint(profile, devicePath)}";
 
-    internal async Task RestoreBladeLightingAfterExternalAsync()
+    internal async Task RestoreBladeLightingAfterExternalAsync(string? instanceId = null)
     {
         if (_bladeLightingController is null && !UsesFirmwareKeyboardLighting)
         {
+            if (instanceId is not null)
+                throw new InvalidOperationException("The Blade lighting controller is unavailable.");
             return;
         }
 
         await _deviceOperationGate.WaitAsync().ConfigureAwait(false);
         try
         {
-            _lightingShadowFingerprint = string.Empty;
             var blade = _deviceDescriptors().FirstOrDefault(device =>
                 DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
-                device.Access == DeviceAccessState.Available);
-            await ApplyLoadedProfileAsync(
+                device.Access == DeviceAccessState.Available &&
+                (instanceId is null || StringComparer.OrdinalIgnoreCase.Equals(device.Id, instanceId)));
+            if (instanceId is not null &&
+                (blade is null || !CanApplyLightingEffects || blade.ProtocolFamily == "blade-597"))
+                throw new InvalidOperationException($"Blade lighting instance {instanceId} is offline or unavailable.");
+            if (instanceId is not null && _bladeLightingDevicePath.Length > 0 &&
+                !StringComparer.OrdinalIgnoreCase.Equals(_bladeLightingDevicePath, instanceId))
+                throw new InvalidOperationException("The Blade lighting controller belongs to another instance.");
+
+            _lightingShadowFingerprint = string.Empty;
+            var error = await ApplyLoadedProfileAsync(
                 blade,
                 _currentPowerSource(),
-                CancellationToken.None).ConfigureAwait(false);
+                CancellationToken.None,
+                restoreFromStudio: instanceId is not null).ConfigureAwait(false);
+            if (instanceId is not null && error is not null)
+                throw new InvalidOperationException(error);
         }
         finally
         {

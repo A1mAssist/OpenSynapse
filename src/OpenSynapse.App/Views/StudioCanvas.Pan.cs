@@ -59,11 +59,12 @@ public sealed partial class StudioCanvas
 
     private void PanTo(Point position)
     {
-        Scroller.ChangeView(
-            Math.Max(0, _panOffsetX - (position.X - _panStart.X)),
-            Math.Max(0, _panOffsetY - (position.Y - _panStart.Y)),
-            null,
-            true);
+        var x = Math.Max(0, _panOffsetX - (position.X - _panStart.X));
+        var y = Math.Max(0, _panOffsetY - (position.Y - _panStart.Y));
+        if (Math.Abs(x - Scroller.HorizontalOffset) < 0.5 &&
+            Math.Abs(y - Scroller.VerticalOffset) < 0.5) return;
+        ViewPanned?.Invoke(this, EventArgs.Empty);
+        Scroller.ChangeView(x, y, null, true);
     }
 
     private void EndPan(PointerRoutedEventArgs e)

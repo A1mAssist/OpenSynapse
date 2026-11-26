@@ -85,6 +85,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
         }
 
         _isBusy = true;
+        _eqReadback.Invalidate();
         NotifyBusy();
         T? previous = default;
         var hasPrevious = false;

@@ -52,10 +52,12 @@ public sealed class RazerHeadsetThxBandViewModel : IEqualizerBand
 
     public RazerHeadsetThxBandViewModel(int frequency)
     {
+        FrequencyHertz = frequency;
         Label = frequency >= 1_000 ? $"{frequency / 1_000d:0.#} kHz" : $"{frequency} Hz";
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+    public int FrequencyHertz { get; }
     public string Label { get; }
     public string LevelText => $"{Level:+0.0;-0.0;0.0} dB";
     public double Minimum => -12;

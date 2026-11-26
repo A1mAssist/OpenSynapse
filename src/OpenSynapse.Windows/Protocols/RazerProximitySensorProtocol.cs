@@ -49,6 +49,8 @@ public readonly record struct RazerHidSensorRotation(
 public static class RazerProximitySensorProtocol
 {
     public const int MaximumConfigurationBytes = 8;
+    public const int ReadConfigurationBytes = 9;
+    public const int PhilipsCalibrationDataBytes = 48;
     public const byte DefaultProximityClassId = 0x00;
     public const byte AvagoProximitySensorId = 0x04;
     public const byte UniversalLiftCutOffMode = 0x01;
@@ -135,6 +137,60 @@ public static class RazerProximitySensorProtocol
             CommandClass,
             SetStateCommand,
             new byte[] { classId, sensorId, state });
+
+    public static byte[] CreateGetProximitySensorStateRequest(byte transactionId, byte classId, byte sensorId) =>
+        SensorRequest(transactionId, 3, 0x83, classId, sensorId, []);
+
+    public static byte[] CreateGetProximitySensorThresholdRequest(byte transactionId, byte classId, byte sensorId) =>
+        SensorRequest(transactionId, 8, 0x82, classId, sensorId, []);
+
+    public static byte[] CreateGetProximitySensorCalibrationDataRequest(byte transactionId, byte classId, byte sensorId) =>
+        SensorRequest(transactionId, 50, 0x88, classId, sensorId, []);
+
+    public static byte[] CreateSetProximitySensorCalibrationDataRequest(
+        byte transactionId, byte classId, byte sensorId, ReadOnlySpan<byte> data)
+    {
+        if (data.Length != PhilipsCalibrationDataBytes)
+            throw new ArgumentException("Philips calibration requires twelve big-endian 32-bit fields.", nameof(data));
+        return SensorRequest(transactionId, 50, 0x08, classId, sensorId, data);
+    }
+
+    public static byte[] CreateSetProximitySensorCalibrationRequest(
+        byte transactionId, byte classId, byte sensorId, ushort sampleRate, ushort sampleCount, ushort measuredResult) =>
+        SensorRequest(transactionId, 8, 0x01, classId, sensorId,
+            [(byte)(sampleRate >> 8), (byte)sampleRate, (byte)(sampleCount >> 8), (byte)sampleCount,
+                (byte)(measuredResult >> 8), (byte)measuredResult]);
+
+    public static byte[] CreateSetProximitySensorLiftToTrackCalibrationDataRequest(
+        byte transactionId, byte classId, byte sensorId, ReadOnlySpan<byte> data) =>
+        SensorRequest(transactionId, 18, 0x0C, classId, sensorId, data);
+
+    public static byte[] CreateSetProximitySensorTrackToLiftCalibrationDataRequest(
+        byte transactionId, byte classId, byte sensorId, ReadOnlySpan<byte> data) =>
+        SensorRequest(transactionId, 18, 0x0D, classId, sensorId, data);
+
+    public static byte[] CreateGetProximitySensorLiftToTrackCalibrationDataRequest(byte transactionId, byte classId, byte sensorId) =>
+        SensorRequest(transactionId, 18, 0x8C, classId, sensorId, []);
+
+    public static byte[] CreateGetProximitySensorTrackToLiftCalibrationDataRequest(byte transactionId, byte classId, byte sensorId) =>
+        SensorRequest(transactionId, 18, 0x8D, classId, sensorId, []);
+
+    public static byte[] ParseTrackingCalibrationData(ReadOnlySpan<byte> response, ReadOnlySpan<byte> request) =>
+        Payload(response, request, 18)[2..18].ToArray();
+
+    public static byte[] ParseCalibrationData(ReadOnlySpan<byte> response, ReadOnlySpan<byte> request) =>
+        Payload(response, request, 50)[2..50].ToArray();
+
+    private static byte[] SensorRequest(byte transactionId, byte size, byte command,
+        byte classId, byte sensorId, ReadOnlySpan<byte> data)
+    {
+        if (data.Length > size - 2) throw new ArgumentOutOfRangeException(nameof(data));
+        var arguments = new byte[size];
+        arguments[0] = classId;
+        arguments[1] = sensorId;
+        data.CopyTo(arguments.AsSpan(2));
+        return RazerFeatureReport.CreateRequest(transactionId, size, CommandClass, command, arguments);
+    }
 
     public static byte[] CreateSetProximitySensorThresholdRequest(
         byte transactionId,
@@ -254,11 +310,12 @@ public static class RazerProximitySensorProtocol
         ReadOnlySpan<byte> response,
         ReadOnlySpan<byte> request)
     {
-        var arguments = Payload(response, request, 11);
+        var arguments = Payload(response, request, ConfigurationSize);
+        // Synapse's 0B:85 declares ten bytes but reads parm0..parm8 from the fixed report buffer.
         return new RazerProximitySensorConfiguration(
             arguments[0],
             arguments[1],
-            arguments[2..11].ToArray());
+            response.Slice(RazerFeatureReport.ArgumentsOffset + 2, ReadConfigurationBytes).ToArray());
     }
 
     public static RazerProximitySensorState ParseState(
@@ -329,10 +386,13 @@ public static class RazerProximitySensorProtocol
     {
         // The transport rotates the transaction id, so compare the command rather than
         // the request's placeholder id.
-        if (!RazerFeatureReport.MatchesCommand(request, response) ||
-            !RazerFeatureReport.IsAcceptedStatus(response[1]) ||
+        if (request.Length != RazerFeatureReport.Length || response.Length != RazerFeatureReport.Length ||
+            !RazerFeatureReport.MatchesCommand(request, response) ||
+            response[1] != 0x02 ||
             response[6] < minimumArguments ||
-            response[6] > 80)
+            response[6] > 80 ||
+            (request[7] == CommandClass && request[8] is not (GetAngleTuneCommand or SetAngleTuneCommand) &&
+             (response[9] != request[9] || response[10] != request[10])))
         {
             throw new InvalidOperationException("Razer proximity sensor returned an invalid or unsuccessful feature report.");
         }

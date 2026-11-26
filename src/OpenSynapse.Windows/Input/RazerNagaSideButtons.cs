@@ -15,9 +15,14 @@ internal static class RazerNagaSideButtons
     ];
 
     internal static bool IsNaga(ushort vendorId, ushort productId, string? productName) =>
-        vendorId == RazerVendorId &&
-        (ProductIds.Contains(productId) ||
-         productName?.Contains("Naga", StringComparison.OrdinalIgnoreCase) == true);
+        vendorId switch
+        {
+            RazerVendorId => ProductIds.Contains(productId) ||
+                productName?.Contains("Naga", StringComparison.OrdinalIgnoreCase) == true,
+            // Naga BLE identities documented in RazerProductAliases; names alone cannot admit this vendor.
+            0x068E => productId is 0x0092 or 0x00A9 or 0x00B5 or 0x00E9,
+            _ => false,
+        };
 
     /// <summary>
     /// The Naga side plates report the keyboard number row (1-0), F12 and

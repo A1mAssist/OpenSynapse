@@ -4,121 +4,36 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed partial class RazerHidDeviceService
 {
-    public async Task SetSmartTrackingAsync(
-        RazerHidDeviceConnection connection,
-        RazerSmartTrackingMode mode,
-        int trackingDistance,
-        int liftOffDistance,
-        int landingDistance,
-        CancellationToken cancellationToken = default)
+    public Task SetSmartTrackingAsync(RazerHidDeviceConnection connection, RazerSmartTrackingMode mode,
+        int trackingDistance, int liftOffDistance, int landingDistance, CancellationToken cancellationToken = default)
     {
-        if (!Enum.IsDefined(mode))
-        {
+        if (mode is not (RazerSmartTrackingMode.Adaptive or RazerSmartTrackingMode.Adjustable))
             throw new ArgumentOutOfRangeException(nameof(mode));
-        }
-
-        var (classId, sensorId) = ResolveProximitySensor(connection.Definition.ProductId);
-        var distance = (byte)Math.Clamp(trackingDistance - 1, 0, 2);
-
-        await ExecuteWithoutResultAsync(
-            connection,
-            new RazerHidRequest(
-                "razer_proximity_sensor_set_state",
-                RazerProximitySensorProtocol.CreateSetProximitySensorStateRequest(
-                    MiddlewareTransactionId, classId, sensorId, 0x01)),
-            cancellationToken).ConfigureAwait(false);
-
-        if (mode == RazerSmartTrackingMode.Adjustable)
+        ThrowIfCalibrationWriteConflicts(connection);
+        return CreateSurfaceCalibrationClient(connection).ApplyAsync(new()
         {
-            await ExecuteWithoutResultAsync(
-                connection,
-                new RazerHidRequest(
-                    "razer_proximity_sensor_set_lift_setting",
-                    RazerProximitySensorProtocol.CreateSetProximitySensorLiftSettingRequest(
-                        MiddlewareTransactionId,
-                        classId,
-                        sensorId,
-                        RazerProximitySensorProtocol.PresetCalibrationHysteresisMode,
-                        0x00)),
-                cancellationToken).ConfigureAwait(false);
-            await ExecuteWithoutResultAsync(
-                connection,
-                new RazerHidRequest(
-                    "razer_proximity_sensor_set_configuration",
-                    RazerProximitySensorProtocol.CreateSetProximitySensorConfigurationRequest(
-                        MiddlewareTransactionId,
-                        classId,
-                        sensorId,
-                        new[]
-                        {
-                            (byte)Math.Clamp(liftOffDistance - 1, 0, 255),
-                            (byte)Math.Clamp(landingDistance - 1, 0, 255),
-                        })),
-                cancellationToken).ConfigureAwait(false);
-            return;
-        }
-
-        await ExecuteWithoutResultAsync(
-            connection,
-            new RazerHidRequest(
-                "razer_proximity_sensor_set_lift_setting",
-                RazerProximitySensorProtocol.CreateSetProximitySensorLiftSettingRequest(
-                    MiddlewareTransactionId,
-                    classId,
-                    sensorId,
-                    RazerProximitySensorProtocol.UniversalLiftCutOffMode,
-                    distance)),
-            cancellationToken).ConfigureAwait(false);
+            Mode = mode == RazerSmartTrackingMode.Adaptive ? RazerSurfaceCalibrationMode.Adaptive : RazerSurfaceCalibrationMode.Adjustable,
+            TrackingDistance = trackingDistance,
+            LiftOffDistance = liftOffDistance,
+            LandingDistance = landingDistance,
+        }, cancellationToken);
     }
 
-    public async Task<RazerSmartTrackingState> GetSmartTrackingAsync(
-        RazerHidDeviceConnection connection,
-        CancellationToken cancellationToken = default)
-    {
-        var (classId, sensorId) = ResolveProximitySensor(connection.Definition.ProductId);
-        var liftReport = RazerProximitySensorProtocol.CreateGetProximitySensorLiftSettingRequest(
-            MiddlewareTransactionId, classId, sensorId);
-        var liftResponse = await ExecuteAsync(
-                connection,
-                new RazerHidRequest("razer_proximity_sensor_get_lift_setting", liftReport),
-                cancellationToken)
-            .ConfigureAwait(false);
-        var lift = RazerProximitySensorProtocol.ParseLiftSetting(liftResponse, liftReport);
-        if (lift.LiftMode != RazerProximitySensorProtocol.PresetCalibrationHysteresisMode)
+    public Task<RazerSmartTrackingState> GetSmartTrackingAsync(RazerHidDeviceConnection connection, CancellationToken cancellationToken = default) =>
+        RunExclusiveAsync(connection, async token =>
         {
-            return new RazerSmartTrackingState(
-                RazerSmartTrackingMode.Adaptive,
-                lift.LiftHeight + 1,
-                0,
-                0);
-        }
-
-        var configurationReport =
-            RazerProximitySensorProtocol.CreateGetProximitySensorConfigurationRequest(
-                MiddlewareTransactionId, classId, sensorId);
-        var configurationResponse = await ExecuteAsync(
-                connection,
-                new RazerHidRequest("razer_proximity_sensor_get_configuration", configurationReport),
-                cancellationToken)
-            .ConfigureAwait(false);
-        var configuration = RazerProximitySensorProtocol.ParseConfiguration(
-            configurationResponse, configurationReport);
-        if (configuration.Parameters.Count < 2)
-        {
-            throw new InvalidDataException(
-                "The proximity sensor configuration did not include lift-off and landing distances.");
-        }
-
-        return new RazerSmartTrackingState(
-            RazerSmartTrackingMode.Adjustable,
-            0,
-            configuration.Parameters[0] + 1,
-            configuration.Parameters[1] + 1);
-    }
-
-    private static (byte ClassId, byte SensorId) ResolveProximitySensor(ushort productId) =>
-        RazerProximitySensorProfiles.TryGet(productId, out var profile)
-            ? (profile.ClassId, profile.SensorId)
-            : (RazerProximitySensorProtocol.DefaultProximityClassId,
-                RazerProximitySensorProtocol.AvagoProximitySensorId);
+            var profile = ResolveCalibrationProfile(connection);
+            var report = RazerProximitySensorProtocol.CreateGetProximitySensorLiftSettingRequest(
+                MiddlewareTransactionId, profile.ClassId, profile.SensorId);
+            var response = await ExecuteAsync(connection, new RazerHidRequest("razer_proximity_sensor_get_lift_setting", report), token).ConfigureAwait(false);
+            var lift = RazerProximitySensorProtocol.ParseLiftSetting(response, report);
+            if (lift.LiftMode == 1 && profile.Kind is RazerProximityCalibrationKind.Orca5 or RazerProximityCalibrationKind.Orca5Plus or RazerProximityCalibrationKind.SmartPixart)
+                return new RazerSmartTrackingState(RazerSmartTrackingMode.Adaptive, lift.LiftHeight + 1, 0, 0);
+            if (lift.LiftMode != 4 || profile.Kind is not (RazerProximityCalibrationKind.Orca5 or RazerProximityCalibrationKind.Orca5Plus))
+                return new RazerSmartTrackingState(RazerSmartTrackingMode.Unknown, 0, 0, 0) { RawLiftMode = lift.LiftMode };
+            report = RazerProximitySensorProtocol.CreateGetProximitySensorConfigurationRequest(MiddlewareTransactionId, profile.ClassId, profile.SensorId);
+            response = await ExecuteAsync(connection, new RazerHidRequest("razer_proximity_sensor_get_configuration", report), token).ConfigureAwait(false);
+            var data = RazerProximitySensorProtocol.ParseConfiguration(response, report);
+            return new RazerSmartTrackingState(RazerSmartTrackingMode.Adjustable, 0, data.Parameters[0] + 1, data.Parameters[1] + 1);
+        }, cancellationToken);
 }

@@ -24,6 +24,12 @@ public partial class App
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         AppStrings.Enable();
+#if DEBUG
+        if (TryLaunchSettingAutoApplyQa()) return;
+        if (TryLaunchNavigationPaneQa()) return;
+        if (TryLaunchStudioScopeQa()) return;
+        if (TryLaunchSurfaceCalibrationQa()) return;
+#endif
         var silentLaunch = Environment.GetCommandLineArgs()
             .Skip(1)
             .Any(argument => StringComparer.OrdinalIgnoreCase.Equals(argument, "--silent"));
@@ -118,7 +124,8 @@ public partial class App
             new WindowsHidDiscovery(
                 registryLoad.Registry,
                 message => _diagnosticLog.TryWrite("razer-hid", message)),
-            new RazerDeviceTelemetryReader(razerTransport, registryLoad.Registry),
+            new RazerDeviceTelemetryReader(razerTransport, registryLoad.Registry,
+                () => _behaviorSettings.BladePerformanceCompatibilityEnabled),
             _performanceMonitor,
             new ProfileStore(),
             new WindowsPowerSourceProvider(),

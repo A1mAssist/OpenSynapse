@@ -8,7 +8,7 @@ namespace OpenSynapse.Windows.Devices;
 /// Runtime facade over the per-family readers. It resolves the admitted devices,
 /// runs the readers and merges their results; protocol details live in the readers.
 /// </summary>
-public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
+public sealed partial class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
 {
     private readonly RazerDeviceResolver _resolver;
     private readonly BladeTelemetryReader _bladeReader;
@@ -27,13 +27,14 @@ public sealed class RazerDeviceTelemetryReader : IRazerDeviceTelemetryReader
 
     internal RazerDeviceTelemetryReader(
         IRazerFeatureTransport transport,
-        RazerDeviceRegistry registry)
+        RazerDeviceRegistry registry,
+        Func<bool>? performanceCompatibilityEnabled = null)
     {
         ArgumentNullException.ThrowIfNull(transport);
         ArgumentNullException.ThrowIfNull(registry);
         _resolver = new RazerDeviceResolver(registry);
         var client = new RazerCapabilityClient(transport);
-        _bladeReader = new BladeTelemetryReader(_resolver, client);
+        _bladeReader = new BladeTelemetryReader(_resolver, client, performanceCompatibilityEnabled);
         _razerHidReader = new RazerHidTelemetryReader(_resolver, client);
         _viperReader = new ViperTelemetryReader(_resolver, client);
     }

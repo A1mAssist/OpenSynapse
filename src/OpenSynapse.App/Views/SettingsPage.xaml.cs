@@ -66,6 +66,7 @@ public sealed partial class SettingsPage : UserControl
         _behaviorUiReady = false;
         LiteModeToggle.IsOn = settings.LiteModeEnabled;
         AdvancedFeaturesToggle.IsOn = settings.AdvancedFeaturesEnabled;
+        BladePerformanceCompatibilityToggle.IsOn = settings.BladePerformanceCompatibilityEnabled;
         ModeNotificationToggle.IsOn = settings.ModeChangeNotificationsEnabled;
         MacroPlaybackNotificationToggle.IsOn = settings.MacroPlaybackNotificationsEnabled;
         LowBatteryNotificationToggle.IsOn = settings.LowBatteryNotificationsEnabled;

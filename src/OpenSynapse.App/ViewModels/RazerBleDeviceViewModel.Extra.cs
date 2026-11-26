@@ -228,6 +228,7 @@ public sealed partial class RazerBleDeviceViewModel
             state =>
             {
                 SelectedBatteryChemistryIndex = (int)state;
+                _confirmedMouseChemistry = SelectedBatteryChemistryIndex;
                 BatteryChemistryVisibility = Visibility.Visible;
             },
             () => BatteryChemistryVisibility = Visibility.Collapsed);
@@ -238,6 +239,7 @@ public sealed partial class RazerBleDeviceViewModel
             {
                 SmartIlluminationEnabled = state.Status != 0;
                 SelectedSmartIlluminationModeIndex = state.Mode;
+                _confirmedSmartIllumination = (SmartIlluminationEnabled, SelectedSmartIlluminationModeIndex);
                 SmartIlluminationVisibility = Visibility.Visible;
             },
             () => SmartIlluminationVisibility = Visibility.Collapsed);
@@ -248,6 +250,7 @@ public sealed partial class RazerBleDeviceViewModel
             {
                 _snapTapPairCount = state.Pairs.Count;
                 SnapTapEnabled = state.Enabled;
+                _confirmedSnapTap = state.Enabled;
                 SnapTapVisibility = state.Pairs.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
                 OnPropertyChanged(nameof(SnapTapSummary));
             },
@@ -267,6 +270,7 @@ public sealed partial class RazerBleDeviceViewModel
             plan =>
             {
                 SelectedPowerPlanIndex = (int)plan;
+                _confirmedMousePowerPlan = SelectedPowerPlanIndex;
                 PowerPlanVisibility = Visibility.Visible;
             },
             () => PowerPlanVisibility = Visibility.Collapsed);
@@ -339,10 +343,13 @@ public sealed partial class RazerBleDeviceViewModel
 
     [ProfileSetting("ble.power-plan", DeviceCategory.Mouse)]
     public Task ApplyPowerPlanAsync(CancellationToken cancellationToken = default) =>
+        ApplyPowerPlanAsync(SelectedPowerPlanIndex, cancellationToken);
+
+    private Task<bool> ApplyPowerPlanAsync(int draft, CancellationToken cancellationToken) =>
         RunWriteAsync(
             service => service.SetPowerPlanAsync(
-                (RazerBlePowerPlan)SelectedPowerPlanIndex, cancellationToken: cancellationToken),
-            plan => SelectedPowerPlanIndex = (int)plan,
+                (RazerBlePowerPlan)draft, cancellationToken: cancellationToken),
+            plan => { SelectedPowerPlanIndex = (int)plan; _confirmedMousePowerPlan = SelectedPowerPlanIndex; },
             (plan, token) => PersistMouseAsync(
                 mouse => mouse.PowerPlan = (plan switch
                 {
@@ -390,10 +397,13 @@ public sealed partial class RazerBleDeviceViewModel
 
     [ProfileSetting("ble.battery-chemistry", DeviceCategory.Mouse)]
     public Task ApplyBatteryChemistryAsync(CancellationToken cancellationToken = default) =>
+        ApplyBatteryChemistryAsync(SelectedBatteryChemistryIndex, cancellationToken);
+
+    private Task<bool> ApplyBatteryChemistryAsync(int draft, CancellationToken cancellationToken) =>
         RunWriteAsync(
             service => service.SetBatteryChemistryAsync(
-                (RazerBleBatteryChemistry)SelectedBatteryChemistryIndex, cancellationToken),
-            state => SelectedBatteryChemistryIndex = (int)state,
+                (RazerBleBatteryChemistry)draft, cancellationToken),
+            state => { SelectedBatteryChemistryIndex = (int)state; _confirmedMouseChemistry = SelectedBatteryChemistryIndex; },
             (state, token) => PersistMouseAsync(mouse => mouse.BatteryChemistry = (byte)state, token),
             token => _service!.ReadBatteryChemistryAsync(token),
             (previous, token) => _service!.SetBatteryChemistryAsync(previous, token),
@@ -401,15 +411,19 @@ public sealed partial class RazerBleDeviceViewModel
 
     [ProfileSetting("ble.smart-illumination", DeviceCategory.Mouse)]
     public Task ApplySmartIlluminationAsync(CancellationToken cancellationToken = default) =>
+        ApplySmartIlluminationAsync((SmartIlluminationEnabled, SelectedSmartIlluminationModeIndex), cancellationToken);
+
+    private Task<bool> ApplySmartIlluminationAsync((bool Enabled, int Mode) draft, CancellationToken cancellationToken) =>
         RunWriteAsync(
             service => service.SetSmartIlluminationAsync(
-                SmartIlluminationEnabled ? (byte)1 : (byte)0,
-                (byte)SelectedSmartIlluminationModeIndex,
+                draft.Enabled ? (byte)1 : (byte)0,
+                (byte)draft.Mode,
                 cancellationToken: cancellationToken),
             state =>
             {
                 SmartIlluminationEnabled = state.Status != 0;
                 SelectedSmartIlluminationModeIndex = state.Mode;
+                _confirmedSmartIllumination = (SmartIlluminationEnabled, SelectedSmartIlluminationModeIndex);
             },
             (state, token) => PersistMouseAsync(
                 mouse => mouse.SmartIlluminationEnabled = state.Status != 0,
@@ -421,9 +435,12 @@ public sealed partial class RazerBleDeviceViewModel
 
     [ProfileSetting("ble.snap-tap", DeviceCategory.Mouse)]
     public Task ApplySnapTapAsync(CancellationToken cancellationToken = default) =>
+        ApplySnapTapAsync(SnapTapEnabled, cancellationToken);
+
+    private Task<bool> ApplySnapTapAsync(bool enabled, CancellationToken cancellationToken) =>
         RunWriteAsync(
-            service => service.SetSnapTapAsync(SnapTapEnabled, cancellationToken: cancellationToken),
-            state => SnapTapEnabled = state.Enabled,
+            service => service.SetSnapTapAsync(enabled, cancellationToken: cancellationToken),
+            state => { SnapTapEnabled = state.Enabled; _confirmedSnapTap = state.Enabled; },
             (state, token) => PersistMouseAsync(mouse => mouse.SnapTapEnabled = state.Enabled, token),
             token => _service!.ReadSnapTapAsync(cancellationToken: token),
             (previous, token) => _service!.SetSnapTapAsync(
@@ -433,14 +450,16 @@ public sealed partial class RazerBleDeviceViewModel
     /// <summary>Only the two timings are editable; the masks are carried over from the read.</summary>
     [ProfileSetting("ble.debounce", DeviceCategory.Mouse)]
     public Task ApplyDebounceAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(
-            service => service.SetDebounceAsync(
-                new RazerBleDebounceState(
+        ApplyDebounceAsync(new RazerBleDebounceState(
                     (byte)Math.Round(DebounceMake),
                     _debounceMakeMask,
                     (byte)Math.Round(DebounceBreak),
                     _debounceBreakMask),
-                cancellationToken),
+                cancellationToken);
+
+    private Task<bool> ApplyDebounceAsync(RazerBleDebounceState draft, CancellationToken cancellationToken) =>
+        RunWriteAsync(
+            service => service.SetDebounceAsync(draft, cancellationToken),
             ApplyDebounce,
             (state, token) => PersistMouseAsync(mouse => mouse.DebounceMilliseconds = state.Make, token),
             token => _service!.ReadDebounceAsync(token),
@@ -449,6 +468,7 @@ public sealed partial class RazerBleDeviceViewModel
 
     private void ApplyDebounce(RazerBleDebounceState state)
     {
+        _confirmedDebounce = state;
         _debounceMakeMask = state.MakeMask;
         _debounceBreakMask = state.BreakMask;
         DebounceMake = state.Make;

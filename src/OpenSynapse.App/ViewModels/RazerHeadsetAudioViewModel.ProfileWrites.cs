@@ -16,7 +16,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         if (IsCarol) { await SaveCarolEqAsync(false, cancellationToken); return; }
         if (IsKrakenBase) return;
         if (IsGip && !RazerGipHeadsetProtocol.SupportsEqPreset(_connection.ProductId)) return;
-        var previousIndex = SelectedEqPresetIndex;
+        var previousIndex = ConfirmedAudioValue(HeadsetAudioSetting.EqPreset, SelectedEqPresetIndex);
         var previous = ActivePresets[previousIndex].Value;
         var preset = ActivePresets[SelectedEqPresetIndex].Value;
         var applied = _connection.Transport switch
@@ -69,6 +69,10 @@ public sealed partial class RazerHeadsetAudioViewModel
             cancellationToken);
         if (!saved) return;
 
+        _eqReadback.AcceptPreset(Array.FindIndex(ActivePresets, item => item.Value == preset)
+            .ToString(System.Globalization.CultureInfo.InvariantCulture));
+        ConfirmAudioSetting(HeadsetAudioSetting.EqPreset, Array.FindIndex(ActivePresets, item => item.Value == preset));
+
         if (IsJolie)
         {
             ApplyJolietCurve(JolietCurveForPreset(preset));
@@ -87,10 +91,12 @@ public sealed partial class RazerHeadsetAudioViewModel
         if (IsNommoV2Audio) return;
         if (IsMarciAudio) { await SaveMarciEqAsync(true, cancellationToken); return; }
         if (IsCarol) { await SaveCarolEqAsync(true, cancellationToken); return; }
-        var previousPresetIndex = SelectedEqPresetIndex;
+        var previousPresetIndex = ConfirmedAudioValue(HeadsetAudioSetting.EqPreset, SelectedEqPresetIndex);
         var previousPreset = ActivePresets[previousPresetIndex].Value;
-        var previousBands = EqBands.Select(band => (int)Math.Round(band.Level)).ToArray();
-        var bands = EqBands.Select(band => ToFirmwareBand(band.Level)).ToArray();
+        var previousBands = ConfirmedAudioValue(HeadsetAudioSetting.EqBands,
+            EqBands.Select(band => band.Level).ToArray());
+        var requestedLevels = EqBands.Select(band => band.Level).ToArray();
+        var bands = requestedLevels.Select(ToFirmwareBand).ToArray();
         var customIndex = Array.FindIndex(ActivePresets, preset => preset.Key == "RazerHeadsetPresetCustom");
         var customPreset = customIndex >= 0 ? ActivePresets[customIndex].Value : (byte)0;
         var applied = false;
@@ -119,6 +125,7 @@ public sealed partial class RazerHeadsetAudioViewModel
 
         if (applied && customIndex >= 0)
         {
+            ConfirmAudioSetting(HeadsetAudioSetting.EqPreset, customIndex);
             SelectedEqPresetIndex = customIndex;
         }
         if (!applied) return;
@@ -134,11 +141,13 @@ public sealed partial class RazerHeadsetAudioViewModel
             },
             settings =>
             {
-                settings.EqBands = ToBandMap(previousBands.Select(value => (double)value));
+                settings.EqBands = ToBandMap(previousBands);
                 settings.EqPreset = previousPreset.ToString("X2");
             },
             () =>
             {
+                ConfirmAudioSetting(HeadsetAudioSetting.EqPreset, previousPresetIndex);
+                ConfirmAudioSetting(HeadsetAudioSetting.EqBands, previousBands);
                 for (var index = 0; index < previousBands.Length && index < EqBands.Count; index++)
                 {
                     EqBands[index].Level = previousBands[index];
@@ -147,7 +156,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             },
             token => WriteCustomEqHardwareAsync(
                 previousPreset,
-                previousBands.Select(value => ToFirmwareBand(value)).ToArray(),
+                previousBands.Select(ToFirmwareBand).ToArray(),
                 token),
             cancellationToken);
         if (saved && IsJolie)
@@ -155,13 +164,21 @@ public sealed partial class RazerHeadsetAudioViewModel
             _jolietCustomBands = EqBands.Select(band => band.Level).ToArray();
             _hasJolietCustomBands = true;
         }
+        if (saved)
+        {
+            var index = customIndex >= 0 ? customIndex : previousPresetIndex;
+            _eqReadback.Accept(index.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                requestedLevels);
+            ConfirmAudioSetting(HeadsetAudioSetting.EqPreset, index);
+            ConfirmAudioSetting(HeadsetAudioSetting.EqBands, requestedLevels);
+        }
     }
     [ProfileSetting("headset.microphone", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyMicrophoneAsync(CancellationToken cancellationToken = default)
     {
         if (IsJolie) return;
-        var previousMuted = MicMuted;
-        var previousVolume = MicVolume;
+        var (previousMuted, previousVolume) = ConfirmedAudioValue(
+            HeadsetAudioSetting.Microphone, (MicMuted, MicVolume));
         var writesVolume = IsFeature91 ||
             (IsProtocol25 && RazerProtocol25FeatureProtocol.SupportsHidMicVolume(_connection.ProductId)) ||
             _connection.Transport == RazerHeadsetAudioTransport.CamyT1;
@@ -260,7 +277,7 @@ public sealed partial class RazerHeadsetAudioViewModel
     public async Task ApplySourceAsync(CancellationToken cancellationToken = default)
     {
         if (!IsFeature91) return;
-        var previous = SelectedSourceIndex;
+        var previous = ConfirmedAudioValue(HeadsetAudioSetting.Source, SelectedSourceIndex);
         if (!await RunWriteAsync(
                 (service, token) => service.SetAudioSourceAsync(Sources[SelectedSourceIndex], token),
                 cancellationToken))
@@ -280,7 +297,7 @@ public sealed partial class RazerHeadsetAudioViewModel
     public async Task ApplyParametricEqAsync(CancellationToken cancellationToken = default)
     {
         if (!IsFeature91) return;
-        var previous = CurrentParametricEq();
+        var previous = ConfirmedAudioValue(HeadsetAudioSetting.ParametricEq, CurrentParametricEq());
         if (!await RunWriteAsync(
                 (service, token) => service.SetParametricEqAsync(CurrentParametricEq(), token),
                 cancellationToken))
@@ -300,7 +317,7 @@ public sealed partial class RazerHeadsetAudioViewModel
     public async Task ApplyMicCompressorAsync(CancellationToken cancellationToken = default)
     {
         if (!IsFeature91) return;
-        var previous = CurrentMicCompressor();
+        var previous = ConfirmedAudioValue(HeadsetAudioSetting.Compressor, CurrentMicCompressor());
         if (!await RunWriteAsync(
                 (service, token) => service.SetMicCompressorAsync(CurrentMicCompressor(), token),
                 cancellationToken))
@@ -351,7 +368,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         {
             if (!IsMxicDnd) return;
             // MXIC headsets only carry DND, and the composite must still save once.
-            var mxicPrevious = Dnd;
+            var mxicPrevious = ConfirmedAudioValue(HeadsetAudioSetting.Advanced,
+                (Dnd, AutoPause, GestureControl, Dolby, NightMode, VoicePrompts)).Dnd;
             if (!await RunMxicWriteAsync(
                     (service, token) => service.SetAudioDndAsync(Dnd, token), cancellationToken))
             {
@@ -363,7 +381,8 @@ public sealed partial class RazerHeadsetAudioViewModel
                 token => RestoreMxicDndAsync(mxicPrevious, token), cancellationToken);
             return;
         }
-        var previous = (Dnd, AutoPause, GestureControl, Dolby, NightMode, VoicePrompts);
+        var previous = ConfirmedAudioValue(HeadsetAudioSetting.Advanced,
+            (Dnd, AutoPause, GestureControl, Dolby, NightMode, VoicePrompts));
         if (!await RunWriteAsync(
                 (service, token) => WriteAdvancedAsync(
                     service, Dnd, AutoPause, GestureControl, Dolby, NightMode, VoicePrompts, token),
@@ -396,7 +415,8 @@ public sealed partial class RazerHeadsetAudioViewModel
     public async Task ApplyMicProcessingAsync(CancellationToken cancellationToken = default)
     {
         if (!IsFeature91) return;
-        var previous = (MicDeEsser, MicLimiterDb, SelectedMicReverbIndex, MicReverbIntensity);
+        var previous = ConfirmedAudioValue(HeadsetAudioSetting.MicProcessing,
+            (MicDeEsser, MicLimiterDb, SelectedMicReverbIndex, MicReverbIntensity));
         if (!await RunWriteAsync(
                 (service, token) => WriteMicProcessingAsync(
                     service, MicDeEsser, MicLimiterDb,
@@ -465,7 +485,8 @@ public sealed partial class RazerHeadsetAudioViewModel
 
     private async Task SaveAvneraAutoPauseAsync(CancellationToken cancellationToken)
     {
-        var previous = AutoPause;
+        var previous = ConfirmedAudioValue(HeadsetAudioSetting.Advanced,
+            (Dnd, AutoPause, GestureControl, Dolby, NightMode, VoicePrompts)).AutoPause;
         if (!await RunAvneraWriteAsync(
                 (service, token) => service.SetAutoPauseAsync(
                     AutoPause, _silenceDetectionPeriod, token),

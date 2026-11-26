@@ -139,6 +139,16 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 } while (_readQueued && !token.IsCancellationRequested);
             }, cancellationToken).ConfigureAwait(true);
         }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            // Mode setup/restoration happens outside ReadCoreAsync; keep its error visible.
+            _loaded = false;
+            StatusText = string.Empty;
+            ErrorText = exception.Message;
+            _log?.Invoke($"mapping read session failed: {exception}");
+            OnPropertyChanged(nameof(IsLoaded));
+            OnPropertyChanged(nameof(CanApply));
+        }
         finally
         {
             Volatile.Write(ref _readStarting, 0);

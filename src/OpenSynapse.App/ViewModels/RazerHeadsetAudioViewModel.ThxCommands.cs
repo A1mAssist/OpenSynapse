@@ -17,7 +17,7 @@ public sealed partial class RazerHeadsetAudioViewModel
                     ThxAudioEndpoint.Headphones, desired, token),
                 cancellationToken))
         {
-            SetThxSpatialDraft(previous);
+            SetThxSpatialDraft(_thxState?.SpatialEnabled ?? previous);
             return;
         }
 
@@ -25,8 +25,8 @@ public sealed partial class RazerHeadsetAudioViewModel
             settings => settings.ThxSpatialEnabled = ThxSpatialEnabled,
             settings => settings.ThxSpatialEnabled = previous,
             () => SetThxSpatialDraft(previous),
-            async token => await ThxController.SetSpatialAsync(
-                ThxAudioEndpoint.Headphones, previous, token),
+            async token => ApplyThxStatus(await ThxController.SetSpatialAsync(
+                ThxAudioEndpoint.Headphones, previous, token)),
             cancellationToken);
     }
 
@@ -48,8 +48,9 @@ public sealed partial class RazerHeadsetAudioViewModel
         {
             return;
         }
-        var previousIndex = SelectedThxPresetIndex;
+        var previousIndex = _thxState.Presets.ToList().FindIndex(item => item.Id == _thxState.SelectedPresetId);
         var previousPreset = _thxState.Presets.ElementAtOrDefault(previousIndex);
+        _diagnostic?.Invoke($"thx select preset requested={preset.Id} current={_thxState.SelectedPresetId ?? "-"}");
         if (!await RunThxAsync(
                 (controller, token) => SelectThxPresetAsync(controller, preset.Id, token),
                 cancellationToken))
@@ -65,7 +66,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             {
                 if (previousPreset is not null)
                 {
-                    await SelectThxPresetAsync(ThxController, previousPreset.Id, token);
+                    ApplyThxStatus(await SelectThxPresetAsync(ThxController, previousPreset.Id, token));
                 }
             },
             cancellationToken);
@@ -74,7 +75,6 @@ public sealed partial class RazerHeadsetAudioViewModel
     [ProfileSetting("headset.thx.bands", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyThxBandsAsync(CancellationToken cancellationToken = default)
     {
-        var previous = ThxBands.Select(band => band.Level).ToArray();
         var gains = ThxBands.Select(band => band.Level).ToArray();
         if (_thxState?.SelectedPresetId is not { Length: > 0 } presetId)
         {
@@ -83,6 +83,7 @@ public sealed partial class RazerHeadsetAudioViewModel
 
         // THX keeps one live gain set; selecting a named preset reloads its factory
         // curve. Save this preset's edit in the profile and replay it on switch.
+        var previous = _thxState.EqualizerBands.Select(band => band.GainDb).ToArray();
         if (!await RunThxAsync(
                 (controller, token) => controller.SetGainsAsync(
                     ThxAudioEndpoint.Headphones, gains, token),
@@ -97,15 +98,15 @@ public sealed partial class RazerHeadsetAudioViewModel
             settings =>
             {
                 settings.ThxPreset = presetId;
-                settings.ThxBands = ToBandMap(gains);
+                settings.ThxBands = ToThxBandMap(gains);
                 var map = settings.ThxBandsByPreset ??=
-                    new Dictionary<string, Dictionary<string, int>>(
+                    new Dictionary<string, Dictionary<string, double>>(
                         StringComparer.OrdinalIgnoreCase);
-                map[presetId] = ToBandMap(gains);
+                map[presetId] = ToThxBandMap(gains);
             },
             settings =>
             {
-                settings.ThxBands = ToBandMap(previous);
+                settings.ThxBands = ToThxBandMap(previous);
                 settings.ThxPreset = previousSavedPreset;
                 if (previousStored is null)
                 {
@@ -113,7 +114,7 @@ public sealed partial class RazerHeadsetAudioViewModel
                 }
                 else if (settings.ThxBandsByPreset is { } map)
                 {
-                    map[presetId] = ToBandMap(previousStored);
+                    map[presetId] = ToThxBandMap(previousStored);
                 }
             },
             () =>
@@ -123,8 +124,8 @@ public sealed partial class RazerHeadsetAudioViewModel
                     ThxBands[index].Level = previous[index];
                 }
             },
-            async token => await ThxController.SetGainsAsync(
-                ThxAudioEndpoint.Headphones, previous, token),
+            async token => ApplyThxStatus(await ThxController.SetGainsAsync(
+                ThxAudioEndpoint.Headphones, previous, token)),
             cancellationToken);
     }
 
@@ -239,9 +240,10 @@ public sealed partial class RazerHeadsetAudioViewModel
     /// controls change the preset outside this app, so a single page-load read
     /// leaves the combo showing the old value.
     /// </summary>
-    internal async Task PollThxAsync(CancellationToken cancellationToken)
+    private async Task PollThxAsync(Func<bool> isCurrent, CancellationToken cancellationToken)
     {
-        if (!CanApplyThx || _thxState is not { } current)
+        if (!CanApplyThx || _thxState is not { } current ||
+            _thxReadback.Begin(ThxDraftPreset, ThxBands.Select(band => band.Level)) is not { } revision)
         {
             return;
         }
@@ -251,16 +253,23 @@ public sealed partial class RazerHeadsetAudioViewModel
             var status = await ThxController.ReadAsync(
                 ThxAudioEndpoint.Headphones,
                 cancellationToken).ConfigureAwait(true);
-            if (status.State is not { } state ||
-                StringComparer.Ordinal.Equals(state.SelectedPresetId, current.SelectedPresetId))
+            if (!isCurrent() || !CanApplyThx ||
+                !_thxReadback.CanApply(revision, ThxDraftPreset, ThxBands.Select(band => band.Level)) ||
+                status.State is not { } state ||
+                (StringComparer.Ordinal.Equals(state.SelectedPresetId, current.SelectedPresetId) &&
+                    state.EqualizerBands.SequenceEqual(current.EqualizerBands)))
             {
                 return;
             }
 
             _diagnostic?.Invoke(
-                $"thx preset changed externally: {current.SelectedPresetId ?? "-"} -> " +
+                $"thx EQ changed externally: {current.SelectedPresetId ?? "-"} -> " +
                 $"{state.SelectedPresetId ?? "-"}");
-            ApplyThxStatus(status);
+            // An EQ read must not replace drafts in the other THX controls.
+            if (!current.Presets.Any(preset => preset.Id == state.SelectedPresetId)) return;
+            _thxState = current with { SelectedPresetId = state.SelectedPresetId, EqualizerBands = state.EqualizerBands };
+            ApplyThxEqualizerState(_thxState);
+            OnPropertyChanged(nameof(SelectedThxPresetIndex));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -327,7 +336,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             $"thx status availability={_thxStatus.Availability} error={_thxStatus.ErrorCode ?? "-"} " +
             $"service={ThxAudioAdmission.HasService(ThxHeadsetAdmission.ServiceName)} " +
             $"running={ThxAudioAdmission.HasRunningService(ThxHeadsetAdmission.ServiceName)} " +
-            $"health={ThxServiceControl.ReadServiceHealth(ThxHeadsetAdmission.ServiceName)}");
+            $"health={ThxServiceControl.ReadServiceHealth(ThxHeadsetAdmission.ServiceName, _diagnostic)}");
         if (_thxStatus.Availability != ThxHeadsetAvailability.Available)
         {
             _thxState = null;
@@ -370,32 +379,23 @@ public sealed partial class RazerHeadsetAudioViewModel
             var status = await action(ThxController, cancellationToken).ConfigureAwait(true);
             if (status.State is null)
             {
-                // A refused write does not mean the components went away; keep the
-                // panel the last admission check proved and report the reason.
                 _diagnostic?.Invoke(
                     $"thx operation failed availability={status.Availability} error={status.Error ?? "-"}");
-                _thxErrorText = status.Error is "ThxNativeFailure" or "ThxOperationRejected" ||
-                    status.Error?.StartsWith(
-                        "ThxOperationRejected",
-                        StringComparison.Ordinal) == true
-                    ? AppStrings.Text("RazerHeadsetThxRejectedInstalled")
-                    : ThxMessage(status.Error);
-                if (status.Error?.StartsWith("ThxOperationRejected", StringComparison.Ordinal) == true ||
-                    status.Error == "ThxNativeFailure")
-                {
-                    _thxStatus = new ThxHeadsetStatus(
-                        ThxHeadsetAvailability.InstalledButInactive,
-                        status.Error);
-                }
+                ApplyThxStatus(status);
                 OperationStatusText = string.Empty;
                 return false;
             }
             ApplyThxStatus(status);
+            if (!status.IsAvailable)
+            {
+                _diagnostic?.Invoke($"thx write rejected error={status.Error} current={status.State.SelectedPresetId}");
+                _thxErrorText = ThxMessage(status.Error);
+                OperationStatusText = string.Empty;
+                return false;
+            }
             ErrorText = string.Empty;
-            OperationStatusText = status.IsAvailable
-                ? AppStrings.Text("BlackSharkSaved")
-                : string.Empty;
-            return status.IsAvailable;
+            OperationStatusText = AppStrings.Text("BlackSharkSaved");
+            return true;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -425,8 +425,9 @@ public sealed partial class RazerHeadsetAudioViewModel
             _thxStatus = new ThxHeadsetStatus(ThxHeadsetAvailability.Available, null);
             ThxHeadsetAdmission.ClearRebootMarker(_connection.ProductId);
             // A missing enhancement is a failed read, not a missing capability.
-            // Keep the controls visible with defaults and say so.
-            _thxErrorText = state.SoundNormalization is null || state.VoiceClarity is null
+            // Preserve known values and disable settings until their read succeeds.
+            _thxErrorText = state.SoundNormalization is null || state.VoiceClarity is null || state.BassBoost is null ||
+                state.SelectedPresetId is null || state.EqualizerBands.Count != 10
                 ? AppStrings.Text("RazerHeadsetThxPartialRead")
                 : string.Empty;
         }
@@ -460,40 +461,62 @@ public sealed partial class RazerHeadsetAudioViewModel
         NotifyThxStatus();
     }
 
+    private void ApplyThxEqualizerState(ThxAudioState state)
+    {
+        _thxSelectedPresetIndex = state.SelectedPresetId is null
+            ? -1 : state.Presets.ToList().FindIndex(preset => preset.Id == state.SelectedPresetId);
+        if (ThxBands.Count == state.EqualizerBands.Count &&
+            ThxBands.Select(band => band.FrequencyHertz).SequenceEqual(state.EqualizerBands.Select(band => band.FrequencyHertz)))
+        {
+            for (var index = 0; index < ThxBands.Count; index++)
+                ThxBands[index].Level = state.EqualizerBands[index].GainDb;
+        }
+        else
+        {
+            ThxBands.Clear();
+            foreach (var band in state.EqualizerBands)
+                ThxBands.Add(new RazerHeadsetThxBandViewModel(band.FrequencyHertz) { Level = band.GainDb });
+        }
+        _thxReadback.Accept(ThxDraftPreset, ThxBands.Select(band => band.Level));
+        if (state.SelectedPresetId is { } presetId)
+            ConfirmAudioSetting(HeadsetAudioSetting.ThxPreset, presetId);
+        else
+            _confirmedAudioSettings.Remove(HeadsetAudioSetting.ThxPreset);
+        ConfirmAudioSetting(HeadsetAudioSetting.ThxBands, CaptureThxBands());
+    }
+
     private void ApplyThxState(ThxAudioState state)
     {
         _thxState = state;
         _thxSpatialEnabled = state.SpatialEnabled;
         _thxEqualizerEnabled = state.EqualizerEnabled;
-        _thxSelectedPresetIndex = Math.Max(0, state.Presets
-            .Select((preset, index) => (preset, index))
-            .FirstOrDefault(item => item.preset.Id == state.SelectedPresetId).index);
+        ApplyThxEqualizerState(state);
 
-        ThxBands.Clear();
-        foreach (var band in state.EqualizerBands)
-        {
-            ThxBands.Add(new RazerHeadsetThxBandViewModel(band.FrequencyHertz)
-            {
-                Level = band.GainDb,
-            });
-        }
-
-        _thxNormalizationEnabled = state.SoundNormalization?.Enabled ?? false;
-        _thxNormalizationLevel = state.SoundNormalization?.LevelPercent ?? 0;
-        _thxVoiceClarityEnabled = state.VoiceClarity?.Enabled ?? false;
-        _thxVoiceClarityLevel = state.VoiceClarity?.LevelPercent ?? 0;
-        _thxBassBoostEnabled = state.BassBoost?.Enabled ?? false;
-        _thxBassBoostLevel = state.BassBoost?.LevelPercent ?? 0;
-        _thxSidetoneEnabled = state.Sidetone?.Enabled ?? false;
-        _thxSidetoneLevel = state.Sidetone?.LevelPercent ?? 0;
-        _thxCaptureNormalizationEnabled = state.CaptureNormalization?.Enabled ?? false;
-        _thxCaptureNormalizationLevel = state.CaptureNormalization?.LevelPercent ?? 0;
-        _thxCaptureVocalClarityEnabled = state.CaptureVocalClarity?.Enabled ?? false;
-        _thxCaptureVocalClarityLevel = state.CaptureVocalClarity?.LevelPercent ?? 0;
-        _thxCaptureNoiseReductionEnabled = state.CaptureNoiseReduction?.Enabled ?? false;
-        _thxCaptureNoiseReductionLevel = state.CaptureNoiseReduction?.LevelPercent ?? 0;
-        _thxCaptureVoiceGateEnabled = state.CaptureVoiceGate?.Enabled ?? false;
-        _thxCaptureVoiceGateLevel = state.CaptureVoiceGate?.LevelPercent ?? 0;
+        (_thxNormalizationEnabled, _thxNormalizationLevel) = state.SoundNormalization is { } normalization
+            ? (normalization.Enabled, normalization.LevelPercent)
+            : ConfirmedAudioValue(HeadsetAudioSetting.ThxNormalization, (_thxNormalizationEnabled, _thxNormalizationLevel));
+        (_thxVoiceClarityEnabled, _thxVoiceClarityLevel) = state.VoiceClarity is { } voiceClarity
+            ? (voiceClarity.Enabled, voiceClarity.LevelPercent)
+            : ConfirmedAudioValue(HeadsetAudioSetting.ThxVoiceClarity, (_thxVoiceClarityEnabled, _thxVoiceClarityLevel));
+        (_thxBassBoostEnabled, _thxBassBoostLevel) = state.BassBoost is { } bassBoost
+            ? (bassBoost.Enabled, bassBoost.LevelPercent)
+            : ConfirmedAudioValue(HeadsetAudioSetting.ThxBassBoost, (_thxBassBoostEnabled, _thxBassBoostLevel));
+        (_thxSidetoneEnabled, _thxSidetoneLevel) = state.Sidetone is { } sidetone
+            ? (sidetone.Enabled, sidetone.LevelPercent)
+            : ConfirmedAudioValue(HeadsetAudioSetting.ThxSidetone, (_thxSidetoneEnabled, _thxSidetoneLevel));
+        (_thxCaptureNormalizationEnabled, _thxCaptureNormalizationLevel) = state.CaptureNormalization is { } captureNormalization
+            ? (captureNormalization.Enabled, captureNormalization.LevelPercent)
+            : ConfirmedAudioValue(HeadsetAudioSetting.ThxCaptureNormalization, (_thxCaptureNormalizationEnabled, _thxCaptureNormalizationLevel));
+        (_thxCaptureVocalClarityEnabled, _thxCaptureVocalClarityLevel) = state.CaptureVocalClarity is { } captureVocalClarity
+            ? (captureVocalClarity.Enabled, captureVocalClarity.LevelPercent)
+            : ConfirmedAudioValue(HeadsetAudioSetting.ThxCaptureVocalClarity, (_thxCaptureVocalClarityEnabled, _thxCaptureVocalClarityLevel));
+        (_thxCaptureNoiseReductionEnabled, _thxCaptureNoiseReductionLevel) = state.CaptureNoiseReduction is { } captureNoiseReduction
+            ? (captureNoiseReduction.Enabled, captureNoiseReduction.LevelPercent)
+            : ConfirmedAudioValue(HeadsetAudioSetting.ThxCaptureNoiseReduction, (_thxCaptureNoiseReductionEnabled, _thxCaptureNoiseReductionLevel));
+        (_thxCaptureVoiceGateEnabled, _thxCaptureVoiceGateLevel) = state.CaptureVoiceGate is { } captureVoiceGate
+            ? (captureVoiceGate.Enabled, captureVoiceGate.LevelPercent)
+            : ConfirmedAudioValue(HeadsetAudioSetting.ThxCaptureVoiceGate, (_thxCaptureVoiceGateEnabled, _thxCaptureVoiceGateLevel));
+        AcceptThxAutoApplyReadback(state);
         OnPropertyChanged(string.Empty);
     }
 
@@ -504,7 +527,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         "ThxContainerMissing" => AppStrings.Text("RazerHeadsetThxContainerMissing"),
         "ThxHelperMissing" or "ThxHelperStartFailed" or "ThxHelperExited" =>
             AppStrings.Text("RazerHeadsetThxHelperFailed"),
-        "ThxOperationRejected" or "ThxNativeFailure" or "ThxInvalidRequest" =>
+        "ThxNativeFailure" => AppStrings.Text("RazerHeadsetThxRejectedInstalled"),
+        "ThxOperationRejected" or "ThxInvalidRequest" =>
             AppStrings.Text("RazerHeadsetThxOperationRejected"),
         _ when error?.StartsWith("ThxOperationRejected:", StringComparison.Ordinal) == true =>
             AppStrings.Text("RazerHeadsetThxOperationRejected"),
@@ -516,6 +540,19 @@ public sealed partial class RazerHeadsetAudioViewModel
         _ => AppStrings.Text("RazerHeadsetThxFailed"),
     };
 
+    private void NotifyThxEnhancementAvailability()
+    {
+        OnPropertyChanged(nameof(CanApplyThxEqualizer));
+        OnPropertyChanged(nameof(CanApplyThxNormalization));
+        OnPropertyChanged(nameof(CanApplyThxVoiceClarity));
+        OnPropertyChanged(nameof(CanApplyThxBassBoost));
+        OnPropertyChanged(nameof(CanApplyThxSidetone));
+        OnPropertyChanged(nameof(CanApplyThxCaptureNormalization));
+        OnPropertyChanged(nameof(CanApplyThxCaptureVocalClarity));
+        OnPropertyChanged(nameof(CanApplyThxCaptureNoiseReduction));
+        OnPropertyChanged(nameof(CanApplyThxCaptureVoiceGate));
+    }
+
     private void NotifyThxStatus()
     {
         OnPropertyChanged(nameof(ThxStatusText));
@@ -523,7 +560,9 @@ public sealed partial class RazerHeadsetAudioViewModel
         OnPropertyChanged(nameof(ThxControlsVisibility));
         OnPropertyChanged(nameof(CanInstallThx));
         OnPropertyChanged(nameof(CanApplyThx));
+        NotifyThxEnhancementAvailability();
         OnPropertyChanged(nameof(ThxPresetOptions));
+        OnPropertyChanged(nameof(SelectedThxPresetIndex));
         OnPropertyChanged(nameof(ThxBandsVisibility));
         OnPropertyChanged(nameof(ThxNormalizationVisibility));
         OnPropertyChanged(nameof(ThxVoiceClarityVisibility));

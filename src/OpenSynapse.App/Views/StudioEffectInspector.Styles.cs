@@ -54,22 +54,30 @@ public sealed partial class StudioEffectInspector
         string labelKey,
         IReadOnlyList<KeyValuePair<T, string>> options,
         Func<StudioEffectParams, T> read,
-        Action<StudioEffectParams, T> write)
+        Action<StudioEffectParams, T> write,
+        string? automationId = null)
         where T : struct, Enum
     {
         var combo = new ComboBox
         {
-            ItemsSource = options,
-            DisplayMemberPath = "Value",
-            SelectedValuePath = "Key",
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        foreach (var option in options)
+        {
+            var item = new ComboBoxItem { Content = option.Value, Tag = option.Key };
+            if (automationId is not null)
+                Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(item, $"{automationId}{option.Key}");
+            combo.Items.Add(item);
+        }
+        if (automationId is not null)
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(combo, automationId);
         if (_parameters is { } parameters)
         {
-            combo.SelectedValue = read(parameters);
+            combo.SelectedItem = combo.Items.Cast<ComboBoxItem>().FirstOrDefault(item =>
+                item.Tag is T value && EqualityComparer<T>.Default.Equals(value, read(parameters)));
             combo.SelectionChanged += (_, _) =>
             {
-                if (combo.SelectedValue is T value) write(parameters, value);
+                if (combo.SelectedItem is ComboBoxItem { Tag: T value }) write(parameters, value);
                 RaiseChanged();
             };
         }

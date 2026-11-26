@@ -4,13 +4,46 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed partial class RazerHeadsetAudioService
 {
+    // USB endpoints of battery headsets; the wireless sibling still reports the battery.
+    private static readonly IReadOnlySet<ushort> WiredEndpointProductIds = new HashSet<ushort>
+    {
+        0x052D, // Kraken V3 Pro USB
+        0x0567, // Kraken V4 Pro USB
+        0x056E, // BlackShark V2 HyperSpeed USB
+    };
+
+    /// <summary>
+    /// True when the identity has a battery read path. Wired audio hardware
+    /// (sound cards, mixers, speakers, microphones) must stay out of battery lists.
+    /// </summary>
+    public static bool SupportsBattery(RazerHeadsetAudioConnection connection) =>
+        connection.HasControlInterface &&
+        !WiredEndpointProductIds.Contains(connection.ProductId) &&
+        SupportsBattery(connection.Transport, connection.ProductId);
+
+    private static bool SupportsBattery(RazerHeadsetAudioTransport transport, ushort productId) =>
+        transport switch
+        {
+            RazerHeadsetAudioTransport.Protocol25Feature65 =>
+                RazerCarolAudioProtocol.HasBattery(productId),
+            RazerHeadsetAudioTransport.AvneraFeature65 or
+                RazerHeadsetAudioTransport.Valkyrie64 or
+                RazerHeadsetAudioTransport.Billie64 or
+                RazerHeadsetAudioTransport.NxpSerial or
+                RazerHeadsetAudioTransport.Gip60 => true,
+            RazerHeadsetAudioTransport.Mxic64 or
+                RazerHeadsetAudioTransport.ValkyrieT3Feature64 or
+                RazerHeadsetAudioTransport.Jolie64 => RazerMxicHeadsetService.SupportsBattery(productId),
+            _ => false,
+        };
+
     /// <summary>
     /// Reads only the battery level for the tray poll. The page keeps its full probe
     /// set in <see cref="ReadStateAsync"/>.
     /// </summary>
     public async Task<int?> TryReadBatteryPercentAsync(CancellationToken cancellationToken = default)
     {
-        if (HasFeature91ProductCapabilities) return null;
+        if (!SupportsBattery(_transportKind, _productId)) return null;
         if (RazerCarolAudioProtocol.IsSupported(_productId))
             return _protocol25Transport is null ? null :
                 await TryReadCarolBatteryPercentAsync(cancellationToken).ConfigureAwait(false);
@@ -38,7 +71,7 @@ public sealed partial class RazerHeadsetAudioService
         Action<string>? diagnostic,
         CancellationToken cancellationToken = default)
     {
-        if (!connection.HasControlInterface) return null;
+        if (!SupportsBattery(connection)) return null;
 
         try
         {

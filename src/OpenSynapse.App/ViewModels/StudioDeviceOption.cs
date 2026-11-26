@@ -31,6 +31,7 @@ public sealed class StudioDeviceOption : INotifyPropertyChanged
     {
         Name = name;
         Descriptor = descriptor;
+        IsOutputAvailable = descriptor is null || descriptor.Access == DeviceAccessState.Available;
         InstanceId = instanceId;
         ProductId = productId;
         Rows = rows;
@@ -73,6 +74,8 @@ public sealed class StudioDeviceOption : INotifyPropertyChanged
 
     /// <summary>True when a matrix is visible but the device accepts neither frame writes nor a static zone.</summary>
     public bool HasNoPixelOutput { get; init; }
+
+    public bool IsOutputAvailable { get; init; }
 
     public StudioLedLayout? Layout { get; }
 

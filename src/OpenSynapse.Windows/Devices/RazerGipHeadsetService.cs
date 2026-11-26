@@ -11,6 +11,8 @@ internal interface IRazerHeadsetControlService : IAsyncDisposable
 {
     Task<RazerHeadsetAudioState> ReadStateAsync(CancellationToken cancellationToken);
 
+    Task<RazerHeadsetEqualizerState> ReadEqualizerAsync(int bandCount, CancellationToken cancellationToken);
+
     Task SetEqPresetAsync(byte preset, CancellationToken cancellationToken);
 
     Task SetEqBandsAsync(IReadOnlyList<byte> bands, CancellationToken cancellationToken);
@@ -41,7 +43,8 @@ public sealed class RazerGipHeadsetService : IRazerHeadsetControlService
 
     private delegate T PayloadParser<T>(ReadOnlySpan<byte> payload);
 
-    private readonly RazerGipHeadsetTransport _transport;
+    private readonly IRazerGipHeadsetTransport _transport;
+    private readonly SemaphoreSlim _eqGate = new(1, 1);
     private readonly RazerGipHeadsetCommands _commands;
     private readonly RazerGipHeadsetDialect _dialect;
     private readonly ushort _productId;
@@ -52,6 +55,12 @@ public sealed class RazerGipHeadsetService : IRazerHeadsetControlService
         string devicePath,
         ushort outputReportByteLength = RazerGipHeadsetProtocol.FrameLength + 1,
         Action<string>? diagnostic = null)
+        : this(productId, OpenTransport(productId, devicePath, outputReportByteLength), diagnostic)
+    {
+    }
+
+    internal RazerGipHeadsetService(
+        ushort productId, IRazerGipHeadsetTransport transport, Action<string>? diagnostic = null)
     {
         if (!RazerGipHeadsetProtocol.IsSupported(productId))
         {
@@ -62,15 +71,36 @@ public sealed class RazerGipHeadsetService : IRazerHeadsetControlService
         _commands = RazerGipHeadsetProtocol.Commands(productId);
         _dialect = RazerGipHeadsetProtocol.ResolveDialect(productId);
         _diagnostic = diagnostic;
-        _transport = new RazerGipHeadsetTransport(
-            devicePath,
-            outputReportByteLength == 0
-                ? RazerGipHeadsetProtocol.FrameLength + 1
-                : outputReportByteLength);
+        _transport = transport ?? throw new ArgumentNullException(nameof(transport));
+    }
+
+    private static RazerGipHeadsetTransport OpenTransport(
+        ushort productId, string devicePath, ushort outputReportByteLength)
+    {
+        _ = RazerGipHeadsetProtocol.ResolveDialect(productId);
+        return new(devicePath, outputReportByteLength == 0
+            ? RazerGipHeadsetProtocol.FrameLength + 1 : outputReportByteLength);
     }
 
     public static bool IsSupported(ushort productId) =>
         RazerGipHeadsetProtocol.IsSupported(productId);
+
+    public async Task<RazerHeadsetEqualizerState> ReadEqualizerAsync(
+        int bandCount, CancellationToken cancellationToken = default)
+    {
+        if (bandCount is not (0 or 10)) throw new ArgumentOutOfRangeException(nameof(bandCount));
+        await _eqGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            byte? preset = _commands.EqPresetRead == 0 ? null : RazerGipHeadsetProtocol.ReadEqPreset(
+                _productId, await ReadAsync(_commands.EqPresetRead, cancellationToken).ConfigureAwait(false));
+            var bands = bandCount == 0 || !RazerGipHeadsetProtocol.SupportsEqBands(_productId) ? null
+                : RazerGipHeadsetProtocol.ReadEqBands(_productId,
+                    await ReadAsync(_commands.EqBandsRead, cancellationToken).ConfigureAwait(false));
+            return new(preset, bands);
+        }
+        finally { _eqGate.Release(); }
+    }
 
     public async Task<RazerHeadsetAudioState> ReadStateAsync(CancellationToken cancellationToken)
     {
@@ -191,103 +221,173 @@ public sealed class RazerGipHeadsetService : IRazerHeadsetControlService
         }
     }
 
-    public async Task SetEqPresetAsync(byte preset, CancellationToken cancellationToken = default)
-    {
-        switch (_dialect)
-        {
-            case RazerGipHeadsetDialect.Simone:
-                await WriteAsync(_commands.EqPresetWrite, [0x00, preset], cancellationToken)
-                    .ConfigureAwait(false);
-                break;
-            case RazerGipHeadsetDialect.SimoneX:
-            case RazerGipHeadsetDialect.OdessaT1R:
-                await WriteAsync(_commands.EqPresetWrite, [preset], cancellationToken)
-                    .ConfigureAwait(false);
-                break;
-            case RazerGipHeadsetDialect.ValkyrieT3:
-            {
-                // The five-byte structure carries the voice-prompt and cloud fields;
-                // replace only the preset byte instead of rebuilding them.
-                var current = await ReadAsync(_commands.EqPresetRead, cancellationToken)
-                    .ConfigureAwait(false);
-                if (current.Length < 4)
-                {
-                    throw new InvalidDataException(
-                        $"Valkyrie T3 EQ preset response is {current.Length} bytes, expected 5.");
-                }
-                current[3] = preset;
-                await WriteAsync(_commands.EqPresetWrite, current, cancellationToken)
-                    .ConfigureAwait(false);
-                break;
-            }
-            case RazerGipHeadsetDialect.Protocol40:
-            {
-                // The frame carries a device selector; reuse the one the band read
-                // reports instead of assuming the dongle's primary index.
-                var selector = (byte)1;
-                try
-                {
-                    var current = await ReadAsync(_commands.EqPresetRead, cancellationToken)
-                        .ConfigureAwait(false);
-                    if (current.Length > 0)
-                    {
-                        selector = current[0];
-                    }
-                }
-                catch (Exception exception) when (IsExpected(exception))
-                {
-                    _diagnostic?.Invoke($"gip EQ selector read failed: {exception.Message}");
-                }
+    public Task SetEqPresetAsync(byte preset, CancellationToken cancellationToken = default) =>
+        SetEqualizerAsync(preset, null, cancellationToken);
 
-                await WriteAsync(
-                    _commands.EqPresetWrite, [selector, 1, 1, preset], cancellationToken)
-                    .ConfigureAwait(false);
-                break;
-            }
-            default:
-                throw new NotSupportedException("This GIP family has no EQ preset command.");
-        }
-    }
-
-    public async Task SetEqBandsAsync(
+    public Task SetEqBandsAsync(
         IReadOnlyList<byte> bands,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(bands);
-        var payload = RazerGipHeadsetProtocol.CreateEqBandsPayload(_productId, bands);
-        var prefix = payload.Length - bands.Count;
-        if (prefix > 0)
-        {
-            // Keep the device's own profile/device selector instead of inventing one.
-            try
-            {
-                var current = await ReadAsync(_commands.EqBandsRead, cancellationToken)
-                    .ConfigureAwait(false);
-                if (current.Length >= prefix)
-                {
-                    current.AsSpan(0, prefix).CopyTo(payload);
-                }
-            }
-            catch (Exception exception) when (IsExpected(exception))
-            {
-                _diagnostic?.Invoke($"gip EQ selector read failed: {exception.Message}");
-            }
-        }
-
-        await WriteAsync(_commands.EqBandsWrite, payload, cancellationToken).ConfigureAwait(false);
+        return SetEqualizerAsync(null, bands, cancellationToken);
     }
 
-    public async Task SetCustomEqAsync(
+    public Task SetCustomEqAsync(
         byte preset,
         IReadOnlyList<byte> bands,
         CancellationToken cancellationToken = default)
     {
-        if (_commands.EqPresetWrite != 0 &&
-            RazerGipHeadsetProtocol.SupportsCustomEqPreset(_productId))
+        ArgumentNullException.ThrowIfNull(bands);
+        return SetEqualizerAsync(
+            RazerGipHeadsetProtocol.SupportsCustomEqPreset(_productId) ? preset : null,
+            bands, cancellationToken);
+    }
+
+    private async Task SetEqualizerAsync(
+        byte? preset, IReadOnlyList<byte>? bands, CancellationToken cancellationToken)
+    {
+        // Copy and validate the caller's curve before any device mutation or await.
+        var requestedBands = bands is null ? null
+            : RazerGipHeadsetProtocol.CreateEqBandsPayload(_productId, bands);
+        await _eqGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
         {
-            await SetEqPresetAsync(preset, cancellationToken).ConfigureAwait(false);
+            if (preset.HasValue && _commands.EqPresetWrite == 0)
+            {
+                throw new NotSupportedException("This GIP family has no EQ preset command.");
+            }
+
+            var previousPreset = preset.HasValue
+                ? await ReadEqPresetPayloadAsync(cancellationToken).ConfigureAwait(false) : null;
+            var previousBands = requestedBands is not null
+                ? await ReadEqBandsPayloadAsync(cancellationToken).ConfigureAwait(false) : null;
+            var requestedPreset = preset.HasValue
+                ? CreateEqPresetPayload(preset.Value, previousPreset!) : null;
+            if (requestedBands is not null)
+            {
+                var prefix = requestedBands.Length - RazerGipHeadsetProtocol.EqBandCount(_productId);
+                previousBands!.AsSpan(0, prefix).CopyTo(requestedBands);
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                if (requestedPreset is not null)
+                {
+                    await WriteAsync(_commands.EqPresetWrite, requestedPreset, cancellationToken)
+                        .ConfigureAwait(false);
+                    await VerifyEqPresetAsync(requestedPreset, cancellationToken).ConfigureAwait(false);
+                }
+                if (requestedBands is not null)
+                {
+                    await WriteAsync(_commands.EqBandsWrite, requestedBands, cancellationToken)
+                        .ConfigureAwait(false);
+                    await VerifyEqBandsAsync(requestedBands, cancellationToken).ConfigureAwait(false);
+                    if (requestedPreset is not null)
+                    {
+                        await VerifyEqPresetAsync(requestedPreset, cancellationToken).ConfigureAwait(false);
+                    }
+                }
+            }
+            catch (Exception failure)
+            {
+                var rollbackFailures = new List<Exception>();
+                // Restore the curve before selecting the original preset; attempt both
+                // even if one restore fails, and do not reuse a cancelled caller token.
+                if (previousBands is not null)
+                {
+                    try
+                    {
+                        await WriteAsync(_commands.EqBandsWrite, previousBands, CancellationToken.None)
+                            .ConfigureAwait(false);
+                    }
+                    catch (Exception exception) { rollbackFailures.Add(exception); }
+                }
+                if (previousPreset is not null)
+                {
+                    try
+                    {
+                        await WriteAsync(_commands.EqPresetWrite,
+                            CreateEqPresetPayload(RazerGipHeadsetProtocol.ReadEqPreset(_productId, previousPreset),
+                                previousPreset), CancellationToken.None).ConfigureAwait(false);
+                    }
+                    catch (Exception exception) { rollbackFailures.Add(exception); }
+                }
+                if (previousBands is not null)
+                {
+                    try { await VerifyEqBandsAsync(previousBands, CancellationToken.None).ConfigureAwait(false); }
+                    catch (Exception exception) { rollbackFailures.Add(exception); }
+                }
+                if (previousPreset is not null)
+                {
+                    try { await VerifyEqPresetAsync(previousPreset, CancellationToken.None).ConfigureAwait(false); }
+                    catch (Exception exception) { rollbackFailures.Add(exception); }
+                }
+                if (rollbackFailures.Count > 0)
+                {
+                    throw new IOException("GIP EQ write failed and rollback could not be confirmed; hardware EQ state is uncertain.",
+                        new AggregateException(new[] { failure }.Concat(rollbackFailures)));
+                }
+                throw;
+            }
         }
-        await SetEqBandsAsync(bands, cancellationToken).ConfigureAwait(false);
+        finally { _eqGate.Release(); }
+    }
+
+    private async Task<byte[]> ReadEqPresetPayloadAsync(CancellationToken cancellationToken)
+    {
+        var payload = await ReadAsync(_commands.EqPresetRead, cancellationToken).ConfigureAwait(false);
+        _ = RazerGipHeadsetProtocol.ReadEqPreset(_productId, payload);
+        if (_dialect == RazerGipHeadsetDialect.ValkyrieT3 && payload.Length < 5)
+        {
+            throw new InvalidDataException("Valkyrie T3 EQ preset response is shorter than 5 bytes.");
+        }
+        return payload;
+    }
+
+    private async Task<byte[]> ReadEqBandsPayloadAsync(CancellationToken cancellationToken)
+    {
+        var payload = await ReadAsync(_commands.EqBandsRead, cancellationToken).ConfigureAwait(false);
+        var bands = RazerGipHeadsetProtocol.ReadEqBands(_productId, payload);
+        var length = RazerGipHeadsetProtocol.CreateEqBandsPayload(_productId, bands).Length;
+        return payload[..length];
+    }
+
+    private byte[] CreateEqPresetPayload(byte preset, byte[] current)
+    {
+        switch (_dialect)
+        {
+            case RazerGipHeadsetDialect.Simone: return [0x00, preset];
+            case RazerGipHeadsetDialect.SimoneX:
+            case RazerGipHeadsetDialect.OdessaT1R: return [preset];
+            case RazerGipHeadsetDialect.Protocol40: return [current[0], 1, 1, preset];
+            case RazerGipHeadsetDialect.ValkyrieT3:
+                var payload = current.ToArray();
+                payload[3] = preset;
+                return payload;
+            default: throw new NotSupportedException("This GIP family has no EQ preset command.");
+        }
+    }
+
+    private async Task VerifyEqPresetAsync(byte[] expected, CancellationToken cancellationToken)
+    {
+        var actual = await ReadEqPresetPayloadAsync(cancellationToken).ConfigureAwait(false);
+        if (RazerGipHeadsetProtocol.ReadEqPreset(_productId, actual) !=
+                RazerGipHeadsetProtocol.ReadEqPreset(_productId, expected) ||
+            ((_dialect is RazerGipHeadsetDialect.Protocol40 or RazerGipHeadsetDialect.ValkyrieT3) &&
+                actual[0] != expected[0]))
+        {
+            throw new IOException("GIP EQ preset readback did not match the requested preset/selector.");
+        }
+    }
+
+    private async Task VerifyEqBandsAsync(byte[] expected, CancellationToken cancellationToken)
+    {
+        var actual = await ReadEqBandsPayloadAsync(cancellationToken).ConfigureAwait(false);
+        if (!actual.SequenceEqual(expected))
+        {
+            throw new IOException("GIP EQ bands readback did not match the requested bands/selectors.");
+        }
     }
 
     public Task SetBassAsync(byte level, CancellationToken cancellationToken = default) =>

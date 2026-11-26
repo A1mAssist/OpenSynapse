@@ -359,19 +359,11 @@ public sealed partial class RazerMxicHeadsetService : IRazerHeadsetControlServic
         }
 
         ArgumentNullException.ThrowIfNull(bands);
-        if (bands.Count != RazerMxicHeadsetProtocol.TenBandCount)
-        {
-            throw new ArgumentException("Equalizer data must contain 10 bands.", nameof(bands));
-        }
-
-        if (_dialect == MxicDialect.ValkyrieT3 && bands.Any(value => value > 6 && value is not (>= 129 and <= 134)))
-            throw new ArgumentOutOfRangeException(nameof(bands), "Valkyrie T3 bands must encode -6..6 dB.");
         var requested = bands.ToArray();
+        ValidateEqBands(requested);
 
         if (_dialect == MxicDialect.Joliet)
         {
-            if (requested.Any(value => value > 6 && value is not (>= 129 and <= 134)))
-                throw new ArgumentOutOfRangeException(nameof(bands), "Joliet bands must encode -6..6 dB.");
             var preset = ReadEqPreset(await QueryReportAsync(
                 CreateEqPresetRead(), EqPresetHeader, "read EQ preset", cancellationToken).ConfigureAwait(false));
             // setEQSetting already carries the preset and the new curve. Reading
@@ -458,12 +450,19 @@ public sealed partial class RazerMxicHeadsetService : IRazerHeadsetControlServic
         {
             await WriteReportAsync(
                 writeRequest(value), writeHeader, $"set {label}", cancellationToken).ConfigureAwait(false);
-            var actual = parse(await QueryReportAsync(
-                readRequest, readHeader, $"read back {label}", cancellationToken).ConfigureAwait(false));
+            var response = await QueryReportAsync(
+                readRequest, readHeader, $"read back {label}", cancellationToken).ConfigureAwait(false);
+            var actual = parse(response);
             if (!matches(actual))
             {
-                throw new InvalidOperationException(
-                    $"{label} readback did not match the requested value.");
+                var message = $"{label} readback did not match the requested value.";
+                if (label == "EQ preset")
+                {
+                    _diagnostic?.Invoke($"mxic {message} PID=0x{_productId:X4}, dialect={_dialect}," +
+                        $" requested=0x{value:X2}, previous=0x{previous:X2}, actual=0x{actual:X2}," +
+                        $" payload={Convert.ToHexString(response)}.");
+                }
+                throw new InvalidOperationException(message);
             }
         }
         catch
@@ -502,7 +501,7 @@ public sealed partial class RazerMxicHeadsetService : IRazerHeadsetControlServic
             await WriteReportAsync(request, expectedHeader, label, CancellationToken.None)
                 .ConfigureAwait(false);
         }
-        catch (Exception exception) when (IsExpected(exception))
+        catch (Exception exception) when (IsExpected(exception) || exception is TimeoutException or OperationCanceledException)
         {
             _diagnostic?.Invoke($"mxic {label} failed: {exception.Message}");
         }

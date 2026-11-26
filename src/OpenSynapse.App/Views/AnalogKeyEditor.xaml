@@ -71,6 +71,7 @@
       </ItemsControl>
     </ScrollViewer>
 
+    <StackPanel x:Name="AnalogKeySelectionGroup" Spacing="8">
     <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
       <NumberBox local:Localized.Uid="AnalogKeyActuationMm"
                  Value="{Binding AnalogKeyActuationPointMillimeters, Mode=TwoWay}"
@@ -91,16 +92,14 @@
                  IsEnabled="{Binding CanEditAnalogKey}" />
     </Grid>
 
-    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+    </StackPanel>
+
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
       <StackPanel Spacing="2">
         <TextBlock Text="{Binding AnalogKeySelectionText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" />
         <TextBlock Text="{Binding AnalogKeyLayoutStatusText}" Style="{StaticResource MetricLabelStyle}" TextWrapping="Wrap" />
       </StackPanel>
-      <Button local:Localized.Uid="AnalogKeyApplySelected" Grid.Column="1"
-              Click="ApplySelectedClick"
-              IsEnabled="{Binding CanApplyAnalogKeySelection}"
-              Style="{StaticResource RazerHidSaveButtonStyle}" />
-      <Button local:Localized.Uid="AnalogKeyApplyAll" Grid.Column="2"
+      <Button local:Localized.Uid="AnalogKeyApplyAll" Grid.Column="1"
               Click="ApplyAllClick"
               IsEnabled="{Binding CanEditAnalogKey}"
               Style="{StaticResource RazerHidSaveButtonStyle}" />
@@ -108,7 +107,7 @@
     <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource LineBrush}"
             BorderThickness="1" CornerRadius="4" Padding="12"
             Visibility="{Binding AnalogSnapTapVisibility}">
-      <StackPanel Spacing="8">
+      <StackPanel x:Name="AnalogSnapTapGroup" Spacing="8">
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
           <StackPanel Spacing="2">
             <TextBlock Text="Snap Tap" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
@@ -118,7 +117,7 @@
                         IsOn="{Binding AnalogSnapTapEnabled, Mode=TwoWay}"
                         IsEnabled="{Binding CanEditAnalogKey}" />
         </Grid>
-        <ItemsControl ItemsSource="{Binding AnalogSnapTapPairs}">
+        <ItemsControl ItemsSource="{Binding AnalogSnapTapPairs}" IsEnabled="{Binding CanEditAnalogKey}">
           <ItemsControl.ItemTemplate>
             <DataTemplate>
               <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="8" Margin="0,0,0,6">
@@ -132,7 +131,6 @@
         <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
           <Button local:Localized.Uid="AnalogKeyAddPair" Click="AddSnapTapPairClick" Style="{StaticResource SecondaryButtonStyle}" MinHeight="30" Padding="10,0" IsEnabled="{Binding CanEditAnalogKey}" />
           <TextBlock Grid.Column="1" Text="{Binding AnalogSnapTapStatusText}" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" TextWrapping="Wrap" />
-          <Button local:Localized.Uid="AnalogKeyApplySnapTap" Grid.Column="2" Click="ApplySnapTapClick" IsEnabled="{Binding CanApplyAnalogSnapTap}" Style="{StaticResource RazerHidSaveButtonStyle}" />
         </Grid>
       </StackPanel>
     </Border>

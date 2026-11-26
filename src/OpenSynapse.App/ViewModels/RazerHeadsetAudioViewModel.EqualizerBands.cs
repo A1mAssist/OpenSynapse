@@ -43,6 +43,7 @@ public sealed partial class RazerHeadsetAudioViewModel
 
         _hasEqBands = true;
         OnPropertyChanged(nameof(EqBandsVisibility));
+        AcceptEqReadback();
     }
 
     private async Task RefreshEqBandsAsync(CancellationToken cancellationToken)

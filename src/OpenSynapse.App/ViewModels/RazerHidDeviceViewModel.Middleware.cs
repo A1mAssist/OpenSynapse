@@ -291,7 +291,7 @@ public sealed partial class RazerHidDeviceViewModel
                 await _service.SetIndicatorLedConfigurationAsync(Connection, configuration, cancellationToken);
                 if (Has(RazerHidBackendCapability.IndicatorLedConfigurationRead))
                     IndicatorLedEnabled = await _service.GetIndicatorLedConfigurationAsync(Connection, cancellationToken) != 0;
-                UpdateBasic(state => state with { IndicatorLedConfiguration = configuration });
+                UpdateBasic(state => state with { IndicatorLedConfiguration = IndicatorLedEnabled ? (byte)1 : (byte)0 });
             }, cancellationToken);
 
     public Task ApplyIndicatorLedV2Async(CancellationToken cancellationToken = default) =>
@@ -321,7 +321,7 @@ public sealed partial class RazerHidDeviceViewModel
                 await _service.SetBatteryDischargeCurveAsync(Connection, chemistry, cancellationToken);
                 if (Has(RazerHidBackendCapability.BatteryDischargeCurveRead))
                     SelectedBatteryCurveIndex = await _service.GetBatteryDischargeCurveAsync(Connection, cancellationToken);
-                UpdateBasic(state => state with { BatteryDischargeCurve = chemistry });
+                UpdateBasic(state => state with { BatteryDischargeCurve = checked((byte)SelectedBatteryCurveIndex) });
             }, cancellationToken);
 
     public Task ApplyGpuCardAsync(CancellationToken cancellationToken = default) =>

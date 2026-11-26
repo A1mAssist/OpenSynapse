@@ -407,7 +407,7 @@ public sealed partial class HeadsetAudioProfileApplier : IDeviceProfileApplier
         return bands;
     }
 
-    private static double[]? ReadThxBands(IReadOnlyDictionary<string, int>? source)
+    private static double[]? ReadThxBands(IReadOnlyDictionary<string, double>? source)
     {
         if (source is null)
         {

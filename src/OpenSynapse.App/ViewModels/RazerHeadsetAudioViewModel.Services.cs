@@ -177,6 +177,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         try
         {
             await write(cancellationToken);
+            _confirmAudioWrite?.Invoke();
             ErrorText = string.Empty;
             OperationStatusText = AppStrings.Text("BlackSharkSaved");
             return true;

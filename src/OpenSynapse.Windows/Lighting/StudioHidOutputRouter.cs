@@ -14,8 +14,6 @@ namespace OpenSynapse.Windows.Lighting;
 /// </summary>
 public sealed partial class StudioHidOutputRouter : IAsyncDisposable
 {
-    private const long OfflineRetentionMs = 10 * 60 * 1000;
-
     private readonly RazerHidDeviceService _service;
     private readonly Func<IReadOnlyList<RazerHidDeviceConnection>> _connections;
     private readonly Func<RazerHidDeviceConnection, bool> _isEnabled;
@@ -34,6 +32,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
         new(StringComparer.OrdinalIgnoreCase);
     private Func<RazerHidDeviceConnection, IReadOnlyList<StudioLayerRender>>? _layersForDevice;
     private long _layersVersion;
+    private HashSet<string>? _targetIds;
     private double _inputSeconds;
     private long _inputTimestamp;
     private int _stopped;
@@ -77,6 +76,8 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
 
     /// <summary>Raised off the UI thread when a stop cannot restore a device's own effect.</summary>
     public event Action<string, Exception>? RestoreFailed;
+
+    public Func<string, Task>? BeforeTakeOverAsync { get; set; }
 
     /// <summary>Mapped physical input, also available to the preview before Apply.</summary>
     internal event Action<string, StudioTriggerInput>? InputObserved;
@@ -164,7 +165,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                 _heldKeys[instanceId] = held = [];
             if (input.IsDown) held.Add((input.Row, input.Column));
             else held.Remove((input.Row, input.Column));
-            return Volatile.Read(ref _stopped) == 0 && _outputs.TryGetValue(instanceId, out var output)
+            return Volatile.Read(ref _stopped) == 0 && IsSelected(instanceId) && _outputs.TryGetValue(instanceId, out var output)
                 ? output.Source.HandleInput(input, nowSeconds)
                 : 0;
         }
@@ -172,7 +173,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
 
     public int TriggerPlayback(string instanceId, StudioTriggerInput input, double nowSeconds) =>
         Volatile.Read(ref _disposed) == 0 && Volatile.Read(ref _stopped) == 0 &&
-        _outputs.TryGetValue(instanceId, out var output)
+        IsSelected(instanceId) && _outputs.TryGetValue(instanceId, out var output)
             ? output.Source.TriggerPlayback(input, nowSeconds)
             : 0;
 
@@ -185,17 +186,14 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         cancellationToken.ThrowIfCancellationRequested();
 
-        var targets = _connections().Where(IsTarget).ToArray();
-        if (targets.Length == 0) return false;
-        // A dock and the mouse it links report the same HID path, and that path holds a
-        // single custom-frame slot: two writers overwrite each other, so the loser goes
-        // dark and the keep-alive re-arm shows up as a periodic blink.
-        var writers = CollapseSharedEndpoints(targets);
-
         await _applyGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (Volatile.Read(ref _stopped) != 0) return false;
+            await RestoreOutputsAsync(false, true, cancellationToken).ConfigureAwait(false);
+            var targets = _connections().Where(IsTarget).ToArray();
+            if (targets.Length == 0) return false;
+            var writers = CollapseSharedEndpoints(targets);
             var now = Environment.TickCount64;
 
             Func<RazerHidDeviceConnection, IReadOnlyList<StudioLayerRender>>? layersForDevice;
@@ -207,24 +205,6 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                 _inputTimestamp = Stopwatch.GetTimestamp();
                 layersForDevice = _layersForDevice;
                 layersVersion = _layersVersion;
-            }
-
-            var liveIds = targets.Select(target => target.InstanceId)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            // A device that briefly drops out keeps its baseline so Stop can restore it
-            // after the same physical instance reconnects. Only a long absence is dropped.
-            foreach (var (id, output) in _outputs.ToArray())
-            {
-                if (liveIds.Contains(id))
-                {
-                    output.OfflineSince = 0;
-                    continue;
-                }
-                output.OfflineSince = output.OfflineSince == 0 ? now : output.OfflineSince;
-                if (now - output.OfflineSince > OfflineRetentionMs)
-                {
-                    _outputs.TryRemove(id, out _);
-                }
             }
 
             foreach (var target in writers)
@@ -244,6 +224,10 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                     : dimensions.Columns;
                 _outputs.TryGetValue(target.InstanceId, out var previousOutput);
                 var output = previousOutput;
+
+                if (output is not null && output.Source is not StudioWorldDeviceFrameSource &&
+                    _world?.Canvas?.HasDevice(target.InstanceId) != true)
+                    output.WorldGeneration = worldGeneration;
 
                 // A reconnect is a new endpoint, and a manifest reload can replace the
                 // layout object; either invalidates this device's frame source and dedup state.
@@ -285,6 +269,8 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                         output.Baseline = previousOutput.Baseline;
                         output.BaselineAttempted = previousOutput.BaselineAttempted;
                         output.Touched = previousOutput.Touched;
+                        output.TakeOverPrepared = previousOutput.TakeOverPrepared &&
+                            previousOutput.Connection?.IsSameEndpoint(target) == true;
                     }
                     lock (_inputGate)
                     {
@@ -305,6 +291,12 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                     output.LayersVersion = layersVersion;
                 }
 
+                if (!output.ClockStarted)
+                {
+                    if (output.Source is not StudioWorldDeviceFrameSource && elapsed > TimeSpan.Zero)
+                        await output.Source.RenderAsync(TimeSpan.Zero, cancellationToken).ConfigureAwait(false);
+                    output.ClockStarted = true;
+                }
                 var colors = await output.Source.RenderAsync(elapsed, cancellationToken).ConfigureAwait(false);
                 var frame = new RazerHidColor[colors.Count];
                 for (var index = 0; index < frame.Length; index++)
@@ -336,6 +328,11 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                 try
                 {
                     output.Touched = true;
+                    if (!output.TakeOverPrepared)
+                    {
+                        if (BeforeTakeOverAsync is { } prepare) await prepare(target.InstanceId).ConfigureAwait(false);
+                        output.TakeOverPrepared = true;
+                    }
                     if (isMatrix)
                     {
                         if (!output.CustomEffectAttempted)
@@ -422,93 +419,115 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
         await _applyGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            var failures = new List<string>();
-            foreach (var (key, output) in _outputs.ToArray())
-            {
-                if (!output.Touched || output.Connection is null)
-                {
-                    _outputs.TryRemove(key, out _);
-                    continue;
-                }
-
-                // Restore the endpoint that is live now, not a stale path from before a
-                // reconnect. A device that is gone keeps its last state and is skipped.
-                var connection = output.Connection;
-                var current = _connections().FirstOrDefault(candidate =>
-                    candidate.IsReady &&
-                    candidate.Definition.ProductId == connection.Definition.ProductId &&
-                    string.Equals(candidate.InstanceId, connection.InstanceId,
-                        StringComparison.OrdinalIgnoreCase));
-                if (current is null)
-                {
-                    // Keep the baseline so a later Stop can restore the reconnected instance.
-                    continue;
-                }
-
-                if (output.Baseline is { } baseline)
-                {
-                    var restoreFailures = await baseline.RestoreAsync(_service, current, cancellationToken)
-                        .ConfigureAwait(false);
-                    if (restoreFailures.Count == 0)
-                    {
-                        _outputs.TryRemove(key, out _);
-                        continue;
-                    }
-
-                    ReportRestoreFailure(current, restoreFailures, failures);
-                    // Keep the entry so a later Stop retries the capture-based restore.
-                    continue;
-                }
-
-                if (!applyFallback)
-                {
-                    // The caller re-applies its configured lighting after the router stops.
-                    // Do not write the documented Spectrum exit effect over that restore.
-                    _outputs.TryRemove(key, out _);
-                    continue;
-                }
-
-                // No readable original effect. The extracted manifests document Spectrum
-                // as quickEffectOnExit, so use the official exit state instead of leaving
-                // the last Studio frame on the device.
-                bool exitApplied;
-                try
-                {
-                    exitApplied = await RazerHidLightingBaseline
-                        .ApplyExitEffectAsync(_service, current, cancellationToken).ConfigureAwait(false);
-                }
-                catch (Exception exception) when (RazerHidLightingBaseline.IsDeviceFailure(exception))
-                {
-                    ReportRestoreFailure(current, [exception], failures);
-                    // Keep the entry so a later Stop retries the exit effect.
-                    continue;
-                }
-
-                if (exitApplied)
-                {
-                    _outputs.TryRemove(key, out _);
-                    RestoreFailed?.Invoke(current.Definition.DisplayName, new NotSupportedException(
-                        "The device exposes no readable original effect; the documented Studio exit effect (Spectrum) was applied."));
-                    continue;
-                }
-
-                _outputs.TryRemove(key, out _);
-                var unsupported = new NotSupportedException(
-                    "The device exposes no readable original effect and does not admit the documented Studio exit effect.");
-                RestoreFailed?.Invoke(current.Definition.DisplayName, unsupported);
-                failures.Add($"{current.Definition.DisplayName}: {unsupported.Message}");
-            }
-
+            var failures = await RestoreOutputsAsync(true, applyFallback, cancellationToken).ConfigureAwait(false);
             if (failures.Count > 0)
-            {
                 throw new InvalidOperationException(
                     $"Could not restore the original lighting for {string.Join("; ", failures)}.");
-            }
         }
         finally
         {
             _applyGate.Release();
         }
+    }
+
+    private async Task<List<string>> RestoreOutputsAsync(
+        bool all, bool applyFallback, CancellationToken cancellationToken)
+    {
+        var failures = new List<string>();
+        foreach (var (key, output) in _outputs.ToArray())
+        {
+            if (!all && IsSelected(key)) continue;
+            output.Frame = null;
+            output.CustomEffectAttempted = false;
+            output.TakeOverPrepared = false;
+            if (!output.Touched || output.Connection is null)
+            {
+                _outputs.TryRemove(key, out _);
+                continue;
+            }
+
+            // Restore the endpoint that is live now, not a stale path from before a
+            // reconnect. A device that is gone keeps its last state and is skipped.
+            var connection = output.Connection;
+            var current = _connections().FirstOrDefault(candidate =>
+                candidate.IsReady &&
+                candidate.Definition.ProductId == connection.Definition.ProductId &&
+                string.Equals(candidate.InstanceId, connection.InstanceId,
+                    StringComparison.OrdinalIgnoreCase));
+            if (current is null)
+            {
+                // Keep the baseline so a later Stop can restore the reconnected instance.
+                continue;
+            }
+
+            if (RestoreTargetsAsync is { } restore)
+            {
+                try
+                {
+                    await restore([key]).ConfigureAwait(false);
+                    _outputs.TryRemove(key, out _);
+                }
+                catch (Exception exception) when (RazerHidLightingBaseline.IsDeviceFailure(exception))
+                {
+                    ReportRestoreFailure(current, [exception], failures);
+                }
+                continue;
+            }
+
+            if (output.Baseline is { } baseline)
+            {
+                var restoreFailures = await baseline.RestoreAsync(_service, current, cancellationToken)
+                    .ConfigureAwait(false);
+                if (restoreFailures.Count == 0)
+                {
+                    _outputs.TryRemove(key, out _);
+                    continue;
+                }
+
+                ReportRestoreFailure(current, restoreFailures, failures);
+                // Keep the entry so a later Stop retries the capture-based restore.
+                continue;
+            }
+
+            if (!applyFallback)
+            {
+                // The caller re-applies its configured lighting after the router stops.
+                // Do not write the documented Spectrum exit effect over that restore.
+                // No restore was performed; keep ownership until the caller can retry.
+                continue;
+            }
+
+            // No readable original effect. The extracted manifests document Spectrum
+            // as quickEffectOnExit, so use the official exit state instead of leaving
+            // the last Studio frame on the device.
+            bool exitApplied;
+            try
+            {
+                exitApplied = await RazerHidLightingBaseline
+                    .ApplyExitEffectAsync(_service, current, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception exception) when (RazerHidLightingBaseline.IsDeviceFailure(exception))
+            {
+                ReportRestoreFailure(current, [exception], failures);
+                // Keep the entry so a later Stop retries the exit effect.
+                continue;
+            }
+
+            if (exitApplied)
+            {
+                _outputs.TryRemove(key, out _);
+                RestoreFailed?.Invoke(current.Definition.DisplayName, new NotSupportedException(
+                    "The device exposes no readable original effect; the documented Studio exit effect (Spectrum) was applied."));
+                continue;
+            }
+
+            var unsupported = new NotSupportedException(
+                "The device exposes no readable original effect and does not admit the documented Studio exit effect.");
+            RestoreFailed?.Invoke(current.Definition.DisplayName, unsupported);
+            failures.Add($"{current.Definition.DisplayName}: {unsupported.Message}");
+        }
+
+        return failures;
     }
 
     public async ValueTask DisposeAsync()
@@ -551,6 +570,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
             : null;
 
     private bool IsTarget(RazerHidDeviceConnection connection) =>
+        IsSelected(connection.InstanceId) &&
         connection.IsReady &&
         _isEnabled(connection) &&
         _isOverrideEnabled(connection) &&
@@ -581,13 +601,14 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
         internal RazerHidDeviceConnection? Connection { get; set; }
         internal RazerHidColor[]? Frame { get; set; }
         internal long LastWriteTimestamp { get; set; }
-        internal long OfflineSince { get; set; }
         internal long LayersVersion { get; set; } = -1;
         internal long WorldGeneration { get; set; } = -1;
         internal RazerHidLightingBaseline? Baseline { get; set; }
         internal bool BaselineAttempted { get; set; }
         internal bool CustomEffectAttempted { get; set; }
         internal bool Touched { get; set; }
+        internal bool TakeOverPrepared { get; set; }
+        internal bool ClockStarted { get; set; }
     }
 
 }

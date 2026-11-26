@@ -101,6 +101,7 @@ public sealed class RazerApBleHeadsetViewModel : INotifyPropertyChanged, IAsyncD
     private bool _hasAutoPowerOff;
     private bool _hasChroma;
     private int _selectedEqPresetIndex;
+    private readonly OpenSynapse.Core.Audio.EqualizerReadback _eqReadback = new();
     private double _chromaBrightness = 100;
     private Color _chromaPrimaryColor = Color.FromArgb(255, 255, 0, 255);
     private int _selectedChromaEffectIndex;
@@ -268,6 +269,7 @@ public sealed class RazerApBleHeadsetViewModel : INotifyPropertyChanged, IAsyncD
         }
 
         _isBusy = true;
+        _eqReadback.Invalidate();
         SetBusy();
         try
         {
@@ -321,12 +323,34 @@ public sealed class RazerApBleHeadsetViewModel : INotifyPropertyChanged, IAsyncD
     public Task ApplyDndAsync(CancellationToken cancellationToken = default) =>
         WriteAsync(service => service.SetDndAsync(Dnd, cancellationToken), cancellationToken);
 
-    public Task ApplyEqPresetAsync(CancellationToken cancellationToken = default) =>
-        WriteAsync(
-            service => service.SetEqPresetAsync(
-                EqPresets[SelectedEqPresetIndex].Value,
-                cancellationToken: cancellationToken),
-            cancellationToken);
+    public Task ApplyEqPresetAsync(CancellationToken cancellationToken = default)
+    {
+        var index = SelectedEqPresetIndex;
+        return WriteAsync(async service =>
+        {
+            await service.SetEqPresetAsync(EqPresets[index].Value, cancellationToken: cancellationToken);
+            _eqReadback.Accept(index.ToString(), []);
+        }, cancellationToken);
+    }
+
+    internal async Task PollEqualizerAsync(Func<bool> isCurrent, CancellationToken cancellationToken)
+    {
+        if (!isCurrent() || _isBusy || !_hasEq || _service is not { } service ||
+            _eqReadback.Begin(SelectedEqPresetIndex.ToString(), []) is not { } revision) return;
+        try
+        {
+            var preset = await service.ReadSpeakerEqPresetAsync(cancellationToken);
+            var index = Array.FindIndex(EqPresets, item => item.Value == preset);
+            if (index < 0 || !isCurrent() || _isBusy || !ReferenceEquals(service, _service) ||
+                !_eqReadback.CanApply(revision, SelectedEqPresetIndex.ToString(), [])) return;
+            SelectedEqPresetIndex = index;
+            _eqReadback.Accept(index.ToString(), []);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // Keep the last good preset when a wireless read fails.
+        }
+    }
 
     public Task ApplyChromaBrightnessAsync(CancellationToken cancellationToken = default) =>
         WriteAsync(
@@ -364,6 +388,7 @@ public sealed class RazerApBleHeadsetViewModel : INotifyPropertyChanged, IAsyncD
         }
 
         _isBusy = true;
+        _eqReadback.Invalidate();
         SetBusy();
         try
         {
@@ -426,6 +451,7 @@ public sealed class RazerApBleHeadsetViewModel : INotifyPropertyChanged, IAsyncD
         {
             var index = Array.FindIndex(EqPresets, item => item.Value == preset);
             if (index >= 0) _selectedEqPresetIndex = index;
+            if (index >= 0) _eqReadback.Accept(index.ToString(), []);
         }
         if (state.ChromaBrightness is { } brightness) _chromaBrightness = brightness;
         if (state.ChromaEffect is { } effect)

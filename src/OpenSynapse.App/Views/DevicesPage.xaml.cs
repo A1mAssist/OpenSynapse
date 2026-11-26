@@ -15,7 +15,7 @@ public sealed partial class DevicesPage : UserControl
     internal MainWindow Host { get; set; } = null!;
 
     internal bool IsBladePanelVisible => BladeDevicePanel.Visibility == Visibility.Visible;
-    internal FrameworkElement ViperAnchor => ViperPollingRateSaveButton;
+    internal FrameworkElement ViperAnchor => ViperPollingRateCombo;
     internal FrameworkElement IntroductionDeviceAnchor =>
         CurrentDeviceRoute() switch
         {
@@ -48,8 +48,11 @@ public sealed partial class DevicesPage : UserControl
     public DevicesPage()
     {
         InitializeComponent();
+        InitializeMouseAutoApply();
+        InitializeKeyboardAutoApply();
         GpuModeStatusText.Text = AppStrings.Text("GpuModeReading");
         Loaded += DevicesPageLoaded;
+        InitializeEqualizerPolling();
         RegisterPropertyChangedCallback(UIElement.VisibilityProperty, DevicesPageVisibilityChanged);
         BladeBrightnessSlider.AddHandler(
             UIElement.PointerPressedEvent,
@@ -105,6 +108,11 @@ public sealed partial class DevicesPage : UserControl
 
     private void DevicesPageVisibilityChanged(DependencyObject sender, DependencyProperty dp)
     {
+        if (Visibility != Visibility.Visible && DataContext is MainViewModel hiddenModel)
+        {
+            _ = hiddenModel.RazerHid.SelectedDevice?.CancelSurfaceCalibrationAsync();
+            _ = hiddenModel.Viper.CancelCalibrationAsync();
+        }
         if (Visibility != Visibility.Visible) _restoreHeadsetPanel = false;
         if (Visibility != Visibility.Visible || Host is null ||
             DataContext is not MainViewModel viewModel)
@@ -196,6 +204,8 @@ public sealed partial class DevicesPage : UserControl
             ArrangeBladeAuxCards();
         }
         ViperDevicePanel.Visibility = device == "viper" ? Visibility.Visible : Visibility.Collapsed;
+        if (device != "viper") _ = ViewModel.Viper.CancelCalibrationAsync();
+        if (device != "razer-hid") _ = ViewModel.RazerHid.SelectedDevice?.CancelSurfaceCalibrationAsync();
         RazerHidDevicePanel.Visibility = device == "razer-hid" ? Visibility.Visible : Visibility.Collapsed;
         RazerHidKrakenPanel.Visibility = device == "kraken" ? Visibility.Visible : Visibility.Collapsed;
         BlackSharkPanel.Visibility = device == "blackshark" ? Visibility.Visible : Visibility.Collapsed;
@@ -216,6 +226,7 @@ public sealed partial class DevicesPage : UserControl
         if (device == "viper")
         {
             _ = ViewModel.Viper.Mapping.EnsureLoadedAsync(Lifetime);
+            _ = ViewModel.Viper.Calibration?.EnsureLoadedAsync(Lifetime);
         }
         if (device == "blade")
         {

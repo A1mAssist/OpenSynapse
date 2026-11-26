@@ -6,6 +6,10 @@ public static partial class StudioProjectCodec
 {
     private static ProfileDto ToProfileDto(StudioProfile profile, bool isDefault, bool export)
     {
+        if (export && profile.OutputScope.Mode != StudioOutputScopeMode.All)
+            throw new InvalidOperationException(
+                $"Native Chroma export cannot preserve the selected output devices in profile '{profile.Title}'. " +
+                "Save as an OpenSynapse project to keep the output scope.");
         var devices = CollectPlacements(profile);
         var deviceDtos = devices.Select((device, index) => ToProfileDeviceDto(device, index)).ToList();
         var dto = new ProfileDto
@@ -16,9 +20,10 @@ public static partial class StudioProjectCodec
             Devices = deviceDtos,
             Layers = profile.Items.Select(item => ToLayerDto(item, null, export)).ToList(),
         };
-        if (devices.Count > 0)
+        if (devices.Count > 0 || !export)
             dto.OpenSynapse = new ProfileExtrasDto
             {
+                OutputScope = export ? null : profile.OutputScope,
                 Devices = devices.Select((device, index) => new DeviceDto
                 {
                     // Must match the official array entry; otherwise import reads two placements.
@@ -217,6 +222,10 @@ public static partial class StudioProjectCodec
     }
     private static ParamsDto ToParamsDto(StudioEffectParams p, bool includeEffect = false, bool export = false)
     {
+        if (export && p.AmbientMapping != StudioAmbientMapping.LegacyAuto)
+            throw new InvalidOperationException(
+                $"Native Chroma export cannot preserve the '{p.AmbientMapping}' ambient mapping. " +
+                "Save as an OpenSynapse project to keep the mapping.");
         var dto = new ParamsDto { Color = Pack(p.Primary), Color2 = Pack(p.Secondary) };
         if (includeEffect && p.Effect != StudioEffectKind.Solid) dto.Effect = p.Effect == StudioEffectKind.Gradient ? "gradient" : StudioEffectMap.ToName(p.Effect);
         if (p.ColorStops.Count > 0)
@@ -243,6 +252,8 @@ public static partial class StudioProjectCodec
             dto.ScreenRect = new ScreenRectDto { Left = FromUnit(rect.X), Top = FromUnit(rect.Y), Right = FromUnit(rect.Width), Bottom = FromUnit(rect.Height) };
         if (p.ScreenMode != StudioScreenMode.Follow)
             dto.ScreenMode = p.ScreenMode.ToString().ToLowerInvariant();
+        if (p.AmbientMapping != StudioAmbientMapping.LegacyAuto)
+            dto.AmbientMapping = p.AmbientMapping;
         if (p.AudioStyle != StudioAudioStyle.Level)
             dto.AudioStyle = p.AudioStyle.ToString().ToLowerInvariant();
         if (p.ReactiveStyle != StudioReactiveStyle.Ripple)
@@ -335,7 +346,11 @@ public static partial class StudioProjectCodec
         public int? PlacementIndex { get; set; }
         public JsonElement? LedRef { get; set; }
     }
-    private sealed class ProfileExtrasDto { public List<DeviceDto> Devices { get; set; } = new(); }
+    private sealed class ProfileExtrasDto
+    {
+        public List<DeviceDto> Devices { get; set; } = new();
+        public StudioOutputScope? OutputScope { get; set; }
+    }
     private sealed class DeviceDto
     {
         public string? Id { get; set; }
@@ -395,6 +410,7 @@ public static partial class StudioProjectCodec
         public string? Screen { get; set; }
         public ScreenRectDto? ScreenRect { get; set; }
         public string? ScreenMode { get; set; }
+        public StudioAmbientMapping? AmbientMapping { get; set; }
         public string? AudioStyle { get; set; }
         public string? ReactiveStyle { get; set; }
         public string? Preset { get; set; }

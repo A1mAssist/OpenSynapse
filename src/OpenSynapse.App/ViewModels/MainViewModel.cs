@@ -464,7 +464,52 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     {
         await Lighting.RestoreBladeLightingAfterExternalAsync();
         await RazerHid.RestoreLightingAfterExternalAsync();
+        await Accessories.RestoreLightingAfterExternalAsync(
+            CurrentPowerSource, CancellationToken.None);
     });
+
+    /// <summary>Called after Studio has stopped writing the named owned instances.</summary>
+    internal async Task RestoreStudioLightingAsync(IReadOnlyCollection<string> instanceIds)
+    {
+        ArgumentNullException.ThrowIfNull(instanceIds);
+        var failures = new List<Exception>();
+        foreach (var instanceId in instanceIds.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            try
+            {
+                ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
+                if (CurrentDeviceDescriptors.Any(device =>
+                        DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
+                        StringComparer.OrdinalIgnoreCase.Equals(device.Id, instanceId)))
+                {
+                    await Lighting.RestoreBladeLightingAfterExternalAsync(instanceId).ConfigureAwait(true);
+                }
+                else if (RazerHid.CurrentConnections.Any(connection =>
+                             StringComparer.OrdinalIgnoreCase.Equals(connection.InstanceId, instanceId)))
+                {
+                    await RazerHid.RestoreLightingAfterExternalAsync(
+                        instanceIds: [instanceId]).ConfigureAwait(true);
+                }
+                else
+                {
+                    await Accessories.RestoreLightingAfterExternalAsync(
+                        CurrentPowerSource, CancellationToken.None, [instanceId]).ConfigureAwait(true);
+                }
+            }
+            catch (Exception exception)
+            {
+                failures.Add(new InvalidOperationException(
+                    $"Lighting restore failed for {instanceId}: {exception.Message}", exception));
+            }
+        }
+
+        if (failures.Count > 0)
+        {
+            throw new InvalidOperationException(
+                string.Join(Environment.NewLine, failures.Select(failure => failure.Message)),
+                new AggregateException(failures));
+        }
+    }
 
     public string EmptyStateText => ConnectedDevices.Count == 0
         ? AppStrings.Text("Text_76BEF6E0")

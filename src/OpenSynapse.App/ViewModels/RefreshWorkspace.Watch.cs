@@ -65,7 +65,7 @@ public sealed partial class RefreshWorkspace
                     {
                         // Nothing asked for a rescan, but the readouts on the device page are
                         // live numbers such as fan speed, so they still need a periodic read.
-                        // This path only reads; it never writes a setting back to the device.
+                        // Calibration recovery has its own slow, page-independent pass below.
                         if (active)
                         {
                             await _pollHeadsetPower(cancellationToken);
@@ -73,6 +73,7 @@ public sealed partial class RefreshWorkspace
                         await RefreshDeviceReadoutsAsync(cancellationToken);
                         await _razerHid.KeepAliveDriverModeAsync(cancellationToken);
                     }
+                    await MaintainSurfaceCalibrationsAsync(cancellationToken);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {

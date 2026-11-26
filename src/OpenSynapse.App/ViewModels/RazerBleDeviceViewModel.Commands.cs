@@ -45,9 +45,16 @@ public sealed partial class RazerBleDeviceViewModel
 
     [ProfileSetting("ble.polling-rate", DeviceCategory.Mouse)]
     public Task ApplyPollingRateAsync(CancellationToken cancellationToken = default) =>
+        ApplyPollingRateAsync(PollingRates[SelectedPollingIndex], cancellationToken);
+
+    private Task<bool> ApplyPollingRateAsync(int hertz, CancellationToken cancellationToken) =>
         RunWriteAsync(
-            service => service.SetPollingRateAsync(PollingRates[SelectedPollingIndex], cancellationToken),
-            applied => SelectedPollingIndex = Math.Max(0, PollingRates.ToList().IndexOf(applied)),
+            service => service.SetPollingRateAsync(hertz, cancellationToken),
+            applied =>
+            {
+                _confirmedMousePolling = applied;
+                SelectedPollingIndex = Math.Max(0, PollingRates.ToList().IndexOf(applied));
+            },
             (applied, token) => PersistMouseAsync(mouse => mouse.PollingRateHertz = applied, token),
             async token => (await _service!.ReadStateAsync(token)).PollingHertz
                 ?? throw new InvalidOperationException("The device did not report a polling rate."),
@@ -56,10 +63,14 @@ public sealed partial class RazerBleDeviceViewModel
 
     [ProfileSetting("ble.dpi", DeviceCategory.Mouse)]
     public Task ApplyDpiAsync(CancellationToken cancellationToken = default) =>
+        ApplyDpiAsync(((int)Math.Round(DpiX), (int)Math.Round(DpiY)), cancellationToken);
+
+    private Task<bool> ApplyDpiAsync((int X, int Y) draft, CancellationToken cancellationToken) =>
         RunWriteAsync(
-            service => service.SetDpiAsync((int)Math.Round(DpiX), (int)Math.Round(DpiY), cancellationToken),
+            service => service.SetDpiAsync(draft.X, draft.Y, cancellationToken),
             applied =>
             {
+                _confirmedMouseDpi = applied;
                 DpiX = applied.X;
                 DpiY = applied.Y;
             },
@@ -218,18 +229,11 @@ public sealed partial class RazerBleDeviceViewModel
 
     [ProfileSetting("ble.dpi-stages", DeviceCategory.Mouse)]
     public Task ApplyDpiStagesAsync(CancellationToken cancellationToken = default) =>
+        ApplyDpiStagesAsync(CaptureMouseDpiStages(), cancellationToken);
+
+    private Task<bool> ApplyDpiStagesAsync(RazerBleDpiStages draft, CancellationToken cancellationToken) =>
         RunWriteAsync(
-            async service =>
-            {
-                var state = new RazerBleDpiStages(
-                    (byte)ActiveDpiStage,
-                    DpiStages.Select(stage => new RazerBleDpiStage(
-                        stage.Index,
-                        (int)Math.Round(stage.X),
-                        (int)Math.Round(stage.Y),
-                        stage.Z)).ToArray());
-                return await service.SetDpiStagesAsync(state, cancellationToken);
-            },
+            service => service.SetDpiStagesAsync(draft, cancellationToken),
             state =>
             {
                 ApplyDpiStages(state);
@@ -322,22 +326,12 @@ public sealed partial class RazerBleDeviceViewModel
 
     [ProfileSetting("ble.power", DeviceCategory.Mouse)]
     public Task ApplyPowerAsync(CancellationToken cancellationToken = default) =>
+        ApplyPowerAsync(CaptureMousePower(), cancellationToken);
+
+    private Task<bool> ApplyPowerAsync(RazerBlePowerState draft, CancellationToken cancellationToken) =>
         RunWriteAsync(
             service => service.SetPowerAsync(
-                PowerLowBatteryVisibility == Visibility.Visible
-                    ? (int)Math.Round(LowBatteryThresholdPercent)
-                    : null,
-                PowerAutoSleepVisibility == Visibility.Visible ? AutoSleepEnabled : null,
-                PowerSleepTimeVisibility == Visibility.Visible
-                    ? (int)Math.Round(SleepMinutes)
-                    : null,
-                PowerTimeToDimVisibility == Visibility.Visible
-                    ? new RazerBleTimeToDimState(
-                        TimeToDimEnabled,
-                        (int)Math.Round(TimeToDimMinutes * 60d),
-                        _timeToDimPercentage)
-                    : null,
-                cancellationToken),
+                draft.LowBatteryPercent, draft.AutoSleep, draft.SleepMinutes, draft.TimeToDim, cancellationToken),
             state =>
             {
                 ApplyPower(state);
@@ -364,7 +358,8 @@ public sealed partial class RazerBleDeviceViewModel
         try
         {
             var state = await _service.ReadProfilesAsync(cancellationToken);
-            _service.MappingProfileId = state.ActiveId ?? 1;
+            if (state.ActiveId is > 0 && state.Ids.Contains(state.ActiveId.Value))
+                _service.MappingProfileId = state.ActiveId.Value;
             _profileIds = state.Ids;
             SelectedProfileIndex = state.ActiveId is { } active
                 ? Math.Max(0, state.Ids.ToList().IndexOf(active))

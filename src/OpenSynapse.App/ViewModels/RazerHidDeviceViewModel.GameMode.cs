@@ -74,7 +74,7 @@ public sealed partial class RazerHidDeviceViewModel
             {
                 if (!_gameModeKnown) return;
                 var requested = GameModeEnabled;
-                var previous = _gameModeEnabled;
+                var previous = _confirmedGameMode ?? _gameModeEnabled;
                 try
                 {
                     await _service.SetGameModeAsync(Connection, requested, cancellationToken);
@@ -113,6 +113,7 @@ public sealed partial class RazerHidDeviceViewModel
     {
         var state = await _service.GetGameModeAsync(Connection, cancellationToken);
         _gameModeEnabled = state.Enabled;
+        _confirmedGameMode = state.Enabled;
         _gameModeKnown = true;
         OnPropertyChanged(nameof(GameModeEnabled));
         OnPropertyChanged(nameof(GameModeText));

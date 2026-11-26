@@ -38,6 +38,7 @@ public sealed partial class RazerHeadsetAudioViewModel
     {
         AutoSleepEnabled = power.Enabled;
         SelectAutoSleepMinutes(power.Seconds / 60);
+        ConfirmAudioSetting(HeadsetAudioSetting.AutoSleep, (AutoSleepEnabled, SelectedAutoSleepMinutesIndex));
         _hasCarolPower = true;
         OnPropertyChanged(nameof(MakoXPowerVisibility));
     }
@@ -65,6 +66,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             if (_carolBands is { } current) ApplyEqBands(current);
             return;
         }
+        ConfirmAudioSetting(HeadsetAudioSetting.EqPreset, Array.FindIndex(CarolPresets, item => item.Value == preset));
         SelectedEqPresetIndex = Array.FindIndex(CarolPresets, item => item.Value == preset);
         await SaveHeadsetSettingAsync(
             settings =>
@@ -83,6 +85,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             },
             () =>
             {
+                ConfirmAudioSetting(HeadsetAudioSetting.EqPreset, Array.FindIndex(CarolPresets, item => item.Value == previousPreset));
                 SelectedEqPresetIndex = Array.FindIndex(CarolPresets, item => item.Value == previousPreset);
                 ApplyEqBands(previousBands);
             },

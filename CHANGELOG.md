@@ -8,6 +8,11 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Added
 
+- **Mouse surface calibration**: expose presets, manual sampling, lift-off and tracking settings according to device capabilities, with cancellation, timeout recovery and saved custom surfaces.
+- **Lighting output scope**: take over only selected devices; ambient layers can map the whole canvas, the selected devices together, or each device independently, so adjacent devices need not shift the keyboard's screen sampling area.
+- **Apply on edit completion**: headset audio, mouse and keyboard settings apply after editing, coalesce continuous changes and retain failure feedback, replacing the corresponding extra save buttons.
+- **Resizable navigation**: drag the device navigation boundary to make room for longer device names.
+
 - **Lighting Studio scenes**: the studio now opens in a browse view with six whole-set scenes (Aurora Breathing, Heartbeat, Neon Chase, Deep Echo, Lava Pulse, Prism Sweep); each is a real layered effect with its own description and shared timeline rather than a fabricated BPM value, renders on a shared 96×96 canvas, and applies to keyboards, mice, mousepads, headsets and single-zone devices, while Edit expands one into a normal profile for fine-tuning.
 - **Taskbar status strip**: an optional “Click to open the app” setting opens the existing main window with a single click; changes apply immediately and persist across restarts. It is off by default.
 - **Kraken V3 Pro**: connect the 052C receiver and 052D wired identity through the bundle-declared NXP serial channel, with battery, sidetone, silence detection and haptics controls and profile restore.
@@ -26,13 +31,21 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
+- **Viper manual calibration**: accept valid `0B:85` replies declaring ten bytes while retaining all nine calibration parameters, preventing the start panel from disappearing immediately after New; log calibration stages and failures.
+- **THX state and persistence**: list only native V3/V4 presets, retain usable controls after a rejected write or partial read, preserve half-decibel EQ values and parse service paths containing spaces correctly.
+- **Headset equalizers**: attempt to restore previous settings after a partial combined write; verify readback using each protocol's semantics and keep unavailable data from appearing as editable zero curves.
+- **Studio stop recovery**: restore lighting saved in device cards when stopping, and release and restore devices removed from the output scope.
+- **Studio layout**: fit the canvas when its viewport changes while preserving manual zoom; align output-scope controls with existing styles at the bottom of the page.
+- **Tray batteries**: exclude sound cards, wired audio and other devices without battery support from the battery list.
+- **Naga side buttons**: preserve firmware button identities through mapping reads, writes and input detection instead of incorrectly translating side buttons.
+
 - **Page scrolling speed**: the six main pages scroll with the 1.7.3 wheel step again; the page root is back on `ScrollViewer`, so one notch moves the same distance instead of the smaller compositor step.
 - **Nested key mappings**: mapping a key onto a button that already runs a macro now calls that button's native function once and leaves the button's own macro to the physical key, matching Razer Synapse. Targets without a host-side injection path (buttons 6–10, private keys already bound to that same key) are reported as unsupported instead of silently nesting twice.
 - **Device refresh stalling**: a control channel that never answers is now remembered for 30 seconds instead of being re-probed on every pass, so a busy or half-detached device no longer blocks profile switches and lighting writes for seconds. Device-change, display-change and power events are also labelled in the log, so the next report names the trigger.
 - **Kraken V3 Pro detection**: the NXP serial bridge is now adopted by the USB device's container when the port id carries no VID/PID, so the receiver connects even when Windows exposes the bridge as a software port.
 - **Huntsman V3 Pro 8KHz extra keys**: the mapping page lists the four multimedia keys and the two side keys the product bundle assigns, and stops presenting the side keys as macro keys, so the rows match Razer Synapse.
 - **Game lighting restore**: ending a Chroma game session now restores every device that received frames. One slow or failed target no longer blocks the rest, and a session is no longer skipped when all writes time out. This fixes peripherals going dark after a game and a mouse stuck on the last frame, while unresponsive wireless targets no longer stall the whole lighting update.
-- **Page scrolling**: move the main pages to the compositor-based `ScrollView` and drop the whole-page opacity animation on navigation, so scrolling and page switches stay responsive on high-refresh displays.
+- **Page navigation**: remove the whole-page opacity animation to reduce transition delays.
 - **Huntsman V3 Pro 8KHz mapping read**: put the keyboard back into normal mode before a mapping-page read, so a device left in driver mode by an interrupted save no longer rejects the whole keymap and shows “Unable to read key mappings”.
 - **Tartarus Pro mapping**: read the keypad's onboard table in driver mode, select the active keymap with `02:B6`/`02:37`, and use the 80-byte `02:92`/`02:8D` payloads, so all 28 mapping rows load instead of `0/28`.
 - **THX preset sync**: while a headset's THX card is visible, poll the native state every two seconds and refresh the preset and curve when the headset's own controls change them, without writing back to the device.

@@ -21,6 +21,16 @@ public sealed partial class StudioCanvas
     }
 
     internal int DebugHostCount => _hosts.Count;
+    internal Point DebugViewOffset => new(Scroller.HorizontalOffset, Scroller.VerticalOffset);
+
+    internal void DebugPanBy(double x, double y)
+    {
+        _panStart = new Point();
+        _panOffsetX = Scroller.HorizontalOffset;
+        _panOffsetY = Scroller.VerticalOffset;
+        PanTo(new Point(x, y));
+    }
+
     internal int DebugLedCount => _ledEntries.Count;
     internal string DebugFirstLedColor =>
         _ledEntries.Count == 0 ? "none" : _ledEntries[0].Brush.Color.ToString();

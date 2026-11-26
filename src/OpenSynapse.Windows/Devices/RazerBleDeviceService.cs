@@ -21,22 +21,29 @@ public sealed partial class RazerBleDeviceService : IDisposable
     private const byte BatteryId = 0;
     private readonly RazerBleSession _session;
     private readonly Action<string>? _diagnostic;
+    private readonly bool _requiresMappingMode;
     private byte? _regionId;
 
     public RazerBleDeviceService(
         RazerBleSession session,
         string name,
-        Action<string>? diagnostic = null)
+        Action<string>? diagnostic = null,
+        ushort productId = 0)
     {
         _session = session ?? throw new ArgumentNullException(nameof(session));
         Name = name;
         _diagnostic = diagnostic;
+        _requiresMappingMode = productId == 0x00B5;
     }
 
     public string Name { get; }
 
     /// <summary>Onboard profile the mapping table is read from and written to.</summary>
-    public byte MappingProfileId { get; set; } = 1;
+    public byte MappingProfileId
+    {
+        get => _mappingSessionProfile.Value ?? _requestedMappingProfile ?? 1;
+        set => _requestedMappingProfile = value;
+    }
 
     public static async Task<RazerBleDeviceService> OpenAsync(
         RazerBleDevice device,
@@ -45,7 +52,7 @@ public sealed partial class RazerBleDeviceService : IDisposable
     {
         ArgumentNullException.ThrowIfNull(device);
         var transport = await WindowsRazerBleTransport.ConnectAsync(device.Id, cancellationToken).ConfigureAwait(false);
-        return new RazerBleDeviceService(new RazerBleSession(transport, diagnostic: diagnostic), device.Name, diagnostic);
+        return new RazerBleDeviceService(new RazerBleSession(transport, diagnostic: diagnostic), device.Name, diagnostic, device.ProductId);
     }
 
     public async Task<RazerBleDeviceState> ReadStateAsync(CancellationToken cancellationToken = default)
@@ -141,8 +148,11 @@ public sealed partial class RazerBleDeviceService : IDisposable
         return await ReadLightingAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<IReadOnlyList<byte>> GetMappingButtonIdsAsync(
-        CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<byte>> GetMappingButtonIdsAsync(
+        CancellationToken cancellationToken = default) =>
+        RunMappingModeSessionAsync(GetMappingButtonIdsCoreAsync, cancellationToken);
+
+    private async Task<IReadOnlyList<byte>> GetMappingButtonIdsCoreAsync(CancellationToken cancellationToken)
     {
         try
         {
@@ -162,25 +172,36 @@ public sealed partial class RazerBleDeviceService : IDisposable
         }
     }
 
-    public async Task<RazerBleButtonAssignment> GetButtonAssignmentAsync(
+    public Task<RazerBleButtonAssignment> GetButtonAssignmentAsync(
         byte buttonId,
         byte mode = 0,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        RunMappingModeSessionAsync(token => GetButtonAssignmentCoreAsync(buttonId, mode, token), cancellationToken);
+
+    private async Task<RazerBleButtonAssignment> GetButtonAssignmentCoreAsync(
+        byte buttonId, byte mode, CancellationToken cancellationToken)
     {
         var response = await _session.SendAsync(
             transaction => RazerBleProtocol30.CreateGetButtonAssignment(
                 transaction, MappingProfileId, buttonId),
             "get button assignment", cancellationToken).ConfigureAwait(false);
         EnsureSuccess(response, "get button assignment");
-        return RazerBleProtocol30.ReadButtonAssignment(response, mode);
+        var assignment = RazerBleProtocol30.ReadButtonAssignment(response, mode);
+        if (assignment.ButtonId != buttonId)
+            throw new InvalidOperationException($"The BLE mapping reply belongs to button {assignment.ButtonId}, not {buttonId}.");
+        return assignment;
     }
 
-    public async Task SetButtonAssignmentAsync(
+    public Task SetButtonAssignmentAsync(
         byte buttonId,
         byte mode,
         byte functionId,
         ReadOnlyMemory<byte> data,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        RunMappingModeSessionAsync(token => SetButtonAssignmentCoreAsync(buttonId, mode, functionId, data, token), cancellationToken);
+
+    private async Task SetButtonAssignmentCoreAsync(
+        byte buttonId, byte mode, byte functionId, ReadOnlyMemory<byte> data, CancellationToken cancellationToken)
     {
         var normalized = RazerHidMappingActions.NormalizeKeyData(functionId, data.ToArray(), 0);
         var response = await _session.SendAsync(

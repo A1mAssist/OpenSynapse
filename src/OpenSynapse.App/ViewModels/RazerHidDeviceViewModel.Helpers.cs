@@ -24,8 +24,9 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(string.Empty);
     }
 
-    private void ReplaceDpiStages(RazerHidDpiStages state)
+    private void ReplaceDpiStages(RazerHidDpiStages state, bool confirm = true)
     {
+        if (confirm) _confirmedMouseDpiStages = state;
         DpiStages.Clear();
         foreach (var stage in state.Stages)
         {
@@ -542,7 +543,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(OledVisibility));
         OnPropertyChanged(nameof(OledWriteVisibility));
         OnPropertyChanged(nameof(CanEditOled));
-        NotifySmartTrackingChanged();
+        NotifyCalibrationChanged();
         OnLightingSelectionChanged();
     }
 

@@ -129,6 +129,7 @@ public sealed partial class RazerAwBleHeadsetViewModel
         }
 
         ControlsVisibility = any ? Visibility.Visible : Visibility.Collapsed;
+        AcceptEqReadback();
     }
 
     private void HideControls()

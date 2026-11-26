@@ -78,6 +78,7 @@ public sealed partial class RazerBleDeviceViewModel
 
     private void ApplyDpiStages(RazerBleDpiStages state)
     {
+        _confirmedMouseDpiStages = state;
         DpiStages.Clear();
         foreach (var stage in state.Stages)
         {
@@ -161,10 +162,13 @@ public sealed partial class RazerBleDeviceViewModel
             state.SleepMinutes is not null || state.TimeToDim is not null
             ? Visibility.Visible
             : Visibility.Collapsed;
+        _confirmedMousePower = CaptureMousePower();
     }
 
     private void Apply(RazerBleDeviceState state)
     {
+        _confirmedMousePolling = state.PollingHertz is { } polling && PollingRates.Contains(polling) ? polling : null;
+        _confirmedMouseDpi = state.Dpi is { } confirmedDpi ? (confirmedDpi.X, confirmedDpi.Y) : null;
         _firmware = state.Firmware?.ToVersionString();
         _serial = state.SerialNumber;
         _batteryPercent = state.BatteryPercent;

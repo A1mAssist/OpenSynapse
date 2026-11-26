@@ -77,7 +77,11 @@ public sealed partial class RazerHeadsetAudioViewModel
     public int SelectedMicReverbIndex
     {
         get => _micReverbRoomModeIndex;
-        set => SetField(ref _micReverbRoomModeIndex, Math.Clamp(value, 0, MicReverbModes.Length - 1));
+        set
+        {
+            if (value < 0) return;
+            SetField(ref _micReverbRoomModeIndex, Math.Clamp(value, 0, MicReverbModes.Length - 1));
+        }
     }
 
     public double MicReverbIntensity
@@ -212,6 +216,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         get => _selectedAncIndex;
         set
         {
+            if (value < 0) return;
             if (!SetField(ref _selectedAncIndex, Math.Clamp(value, 0, DeviceAncStates.Length - 1))) return;
             OnPropertyChanged(nameof(AncLevelVisibility));
         }
@@ -244,6 +249,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             OnPropertyChanged(nameof(CanApplyLighting));
             OnPropertyChanged(nameof(CanInstallThx));
             OnPropertyChanged(nameof(CanApplyThx));
+            NotifyThxEnhancementAvailability();
         }
     }
 

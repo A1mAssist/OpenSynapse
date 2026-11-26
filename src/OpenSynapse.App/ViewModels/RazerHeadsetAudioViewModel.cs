@@ -354,6 +354,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
                         _connection.DevicePath, _diagnostic).ReadAsync(cancellationToken);
                     AutoSleepEnabled = power.Enabled;
                     SelectAutoSleepMinutes(power.Minutes);
+                    ConfirmAudioSetting(HeadsetAudioSetting.AutoSleep, (AutoSleepEnabled, SelectedAutoSleepMinutesIndex));
                 }
             }
             catch (Exception exception) when (IsExpectedException(exception))
@@ -397,6 +398,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             ParametricEqFrequency = band.Frequency;
             ParametricEqGain = band.GainTenths;
             ParametricEqQ = band.QFactorTenths;
+            ConfirmAudioSetting(HeadsetAudioSetting.ParametricEq, CurrentParametricEq());
             _hasParametricEq = true;
             OnPropertyChanged(nameof(ParametricEqVisibility));
         }
@@ -417,7 +419,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     public async Task ApplyNoiseSuppressionAsync(CancellationToken cancellationToken = default)
     {
         if (!IsFeature91 && !IsProtocol25) return;
-        var previous = NoiseSuppression;
+        var previous = ConfirmedAudioValue(HeadsetAudioSetting.Noise, NoiseSuppression);
         if (!await RunWriteAsync((service, token) => service.SetNoiseSuppressionAsync(NoiseSuppression, token), cancellationToken)) return;
         await SaveSettingAsync(previous, NoiseSuppression, value => NoiseSuppression = value,
             (settings, value) => settings.NoiseSuppression = value,
@@ -489,6 +491,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         {
             ApplyEqBands(bands);
         }
+        if (state.EqPreset is not null || state.EqBands is not null) AcceptEqReadback();
         ApplyMicEqBands(state);
 
         if (state.Bass is byte bass)
@@ -595,6 +598,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         if (state.SidetonePercent is byte sidetone)
         {
             _sidetonePercent = sidetone;
+            if (state.MicReturnSwitch is null) MicMonitoringEnabled = sidetone > 0;
             _hasMicMonitoring = true;
             OnPropertyChanged(nameof(MicMonitoringVisibility));
         }
@@ -644,6 +648,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
             OnPropertyChanged(nameof(AncVisibility));
         }
         if (state.AncLevel is byte level) AncLevel = level;
+        AcceptAudioReadback(state);
     }
     private static string LocalizeHeadsetReadFailure(string raw) =>
         raw.Contains("does not support seeking", StringComparison.OrdinalIgnoreCase) ||
@@ -659,6 +664,8 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
     private bool BeginOperation()
     {
         if (IsBusy) return false;
+        _eqReadback.Invalidate();
+        _thxReadback.Invalidate();
         ErrorText = string.Empty;
         OperationStatusText = string.Empty;
         IsBusy = true;

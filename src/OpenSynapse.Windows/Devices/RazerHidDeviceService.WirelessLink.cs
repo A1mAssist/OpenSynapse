@@ -16,6 +16,43 @@ public sealed partial class RazerHidDeviceService
 
     private readonly ConcurrentDictionary<string, (bool Down, DateTimeOffset ExpiresAt)>
         _wirelessLinkProbeCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, byte> _disconnectedCalibrationLinks = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, long> _calibrationLinkGenerations = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, byte> _unavailableCalibrationLinkProbes = new(StringComparer.OrdinalIgnoreCase);
+
+    internal long GetCalibrationConnectionGeneration(RazerHidDeviceConnection connection) =>
+        _calibrationLinkGenerations.GetValueOrDefault(CalibrationLinkKey(connection));
+
+    internal bool IsCalibrationLinkDown(RazerHidDeviceConnection connection) =>
+        _disconnectedCalibrationLinks.ContainsKey(CalibrationLinkKey(connection));
+
+    private static string CalibrationLinkKey(RazerHidDeviceConnection connection) =>
+        $"{connection.Definition.ProductId:X4}:{connection.InstanceId}:{connection.DevicePath}";
+
+    internal async Task<bool?> ReadCalibrationLinkAsync(RazerHidDeviceConnection connection, CancellationToken token)
+    {
+        var key = CalibrationLinkKey(connection);
+        if (_unavailableCalibrationLinkProbes.ContainsKey(key)) return null;
+        try
+        {
+            var statuses = await GetMultipleDeviceWirelessConnectionStatusV2Async(connection, token).ConfigureAwait(false);
+            var status = statuses.FirstOrDefault(item => item.ProductId == connection.Definition.ProductId);
+            if (status.ProductId != connection.Definition.ProductId) return null;
+            var connected = status.Status == RazerPairingProtocol.WirelessLinkConnected;
+            if (!connected) _disconnectedCalibrationLinks.TryAdd(key, 0);
+            else if (_disconnectedCalibrationLinks.TryRemove(key, out _))
+                _calibrationLinkGenerations.AddOrUpdate(key, 1, static (_, value) => value + 1);
+            if (connection.DevicePath is { } path)
+                _wirelessLinkProbeCache[path] = (!connected, DateTimeOffset.UtcNow + WirelessLinkProbeLifetime);
+            return connected;
+        }
+        catch (Exception exception) when (exception is NotSupportedException or InvalidDataException)
+        {
+            _unavailableCalibrationLinkProbes.TryAdd(key, 0);
+            return null;
+        }
+        catch (RazerDeviceTimeoutException) { return null; }
+    }
 
     /// <summary>
     /// Runs one command and, when it times out, asks the receiver whether the device is
@@ -30,12 +67,21 @@ public sealed partial class RazerHidDeviceService
     {
         try
         {
-            return await _executor.ExecuteAsync(connection, request, cancellationToken).ConfigureAwait(false);
+            var response = await _executor.ExecuteAsync(connection, request, cancellationToken).ConfigureAwait(false);
+            // A receiver-status reply alone does not prove that the paired mouse has woken.
+            if (!(request.Report[7] == 0 && request.Report[8] == 0xBF) &&
+                _disconnectedCalibrationLinks.TryRemove(CalibrationLinkKey(connection), out _))
+            {
+                _calibrationLinkGenerations.AddOrUpdate(CalibrationLinkKey(connection), 1, static (_, value) => value + 1);
+                if (connection.DevicePath is { } path) _wirelessLinkProbeCache.TryRemove(path, out _);
+            }
+            return response;
         }
         catch (RazerDeviceTimeoutException exception) when (!exception.IsRetryableBusy)
         {
             if (await IsWirelessLinkDownAsync(connection, cancellationToken).ConfigureAwait(false))
             {
+                _disconnectedCalibrationLinks.TryAdd(CalibrationLinkKey(connection), 0);
                 throw new RazerDeviceTimeoutException(WirelessLinkDownMessage, wirelessLinkDown: true);
             }
 

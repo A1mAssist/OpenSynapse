@@ -30,6 +30,7 @@ internal readonly record struct RawInputFrame(
 /// </summary>
 internal static class RawInputRouter
 {
+    internal readonly record struct HidUsage(ushort Page, ushort Usage);
     private const uint WmInput = 0x00FF;
     private const uint WmQuit = 0x0012;
     private const uint RidInput = 0x10000003;
@@ -47,6 +48,7 @@ internal static class RawInputRouter
     private static readonly object Gate = new();
     private static readonly List<(int Id, Action<RawInputFrame> Handler)> Subscribers = [];
     private static readonly HashSet<int> MouseSubscribers = [];
+    private static readonly Dictionary<int, HidUsage[]> AdditionalUsages = [];
     private static Host? _host;
     private static int _nextId;
     private static int _mouseSubscriberCount;
@@ -71,14 +73,31 @@ internal static class RawInputRouter
     /// for them: pointing devices report far faster than keyboards, and every frame
     /// would otherwise allocate a subscriber snapshot for consumers that ignore them.
     /// </param>
-    internal static IDisposable Subscribe(Action<RawInputFrame> handler, bool includeMouse = false)
+    internal static IDisposable Subscribe(Action<RawInputFrame> handler, bool includeMouse = false,
+        IReadOnlyCollection<HidUsage>? additionalUsages = null)
     {
         ArgumentNullException.ThrowIfNull(handler);
         lock (Gate)
         {
             _host ??= Host.Start();
+            var usages = additionalUsages?.Where(usage => usage.Page is not (0x01 or 0x0C)).Distinct().ToArray() ?? [];
+            var added = usages.Where(usage => !AdditionalUsages.Values.Any(items => items.Contains(usage))).ToArray();
+            try
+            {
+                _host.RegisterUsages(added, removing: false);
+            }
+            catch
+            {
+                if (Subscribers.Count == 0)
+                {
+                    _host.Dispose();
+                    _host = null;
+                }
+                throw;
+            }
             var id = ++_nextId;
             Subscribers.Add((id, handler));
+            AdditionalUsages.Add(id, usages);
             if (includeMouse)
             {
                 MouseSubscribers.Add(id);
@@ -91,9 +110,16 @@ internal static class RawInputRouter
     private static void Remove(int id)
     {
         Host? host = null;
+        Exception? registrationError = null;
         lock (Gate)
         {
             Subscribers.RemoveAll(entry => entry.Id == id);
+            if (AdditionalUsages.Remove(id, out var usages))
+            {
+                var removed = usages.Where(usage => !AdditionalUsages.Values.Any(items => items.Contains(usage))).ToArray();
+                try { _host?.RegisterUsages(removed, removing: true); }
+                catch (Exception exception) { registrationError = exception; }
+            }
             if (MouseSubscribers.Remove(id))
             {
                 _mouseSubscriberCount = MouseSubscribers.Count;
@@ -106,6 +132,7 @@ internal static class RawInputRouter
         }
 
         host?.Dispose();
+        if (registrationError is not null) throw registrationError;
     }
 
     private static void Dispatch(RawInputFrame frame)
@@ -148,6 +175,8 @@ internal static class RawInputRouter
         private readonly WindowProc _windowProc;
         private readonly Dictionary<nint, string> _devicePaths = [];
         private readonly RawInputHid _hid = new();
+        private readonly object _registrationGate = new();
+        private readonly HashSet<HidUsage> _extraUsages = [];
         private Thread? _thread;
         private nint _window;
         private nint _previousWindowProc;
@@ -242,6 +271,7 @@ internal static class RawInputRouter
             {
                 try
                 {
+                    lock (_registrationGate) RegisterUsages(_extraUsages.ToArray(), removing: true);
                     RegisterInputs(removing: true);
                 }
                 catch
@@ -268,6 +298,25 @@ internal static class RawInputRouter
                     checked((uint)Marshal.SizeOf<RawInputDevice>())))
             {
                 throw new Win32Exception(Marshal.GetLastWin32Error());
+            }
+        }
+
+        internal void RegisterUsages(HidUsage[] usages, bool removing)
+        {
+            if (usages.Length == 0) return;
+            lock (_registrationGate)
+            {
+                var devices = usages.Select(usage => new RawInputDevice
+                {
+                    UsagePage = usage.Page,
+                    Usage = usage.Usage,
+                    Flags = removing ? RidevRemove : RidevInputSink,
+                    Target = removing ? 0 : _window,
+                }).ToArray();
+                if (!RegisterRawInputDevices(devices, checked((uint)devices.Length), checked((uint)Marshal.SizeOf<RawInputDevice>())))
+                    throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not register the calibration HID input usage.");
+                if (removing) _extraUsages.ExceptWith(usages);
+                else _extraUsages.UnionWith(usages);
             }
         }
 

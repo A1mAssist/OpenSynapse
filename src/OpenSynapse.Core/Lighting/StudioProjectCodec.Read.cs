@@ -16,7 +16,31 @@ public static partial class StudioProjectCodec
         if (TryGet(element, "layers", out var layers) && layers.ValueKind == JsonValueKind.Array)
             AttachLayers(ReadLayers(layers, new HashSet<Guid>()), profile.Items);
         ReadProfileDevices(element, profile);
+        if (TryGet(element, "openSynapse", out var extras) && extras.ValueKind == JsonValueKind.Object &&
+            TryGet(extras, "outputScope", out var scope))
+            profile.OutputScope = ReadOutputScope(scope);
         return profile;
+    }
+
+    private static StudioOutputScope ReadOutputScope(JsonElement element)
+    {
+        if (element.ValueKind != JsonValueKind.Object ||
+            !Enum.TryParse<StudioOutputScopeMode>(GetString(element, "mode"), true, out var mode) ||
+            !Enum.IsDefined(mode))
+            throw new InvalidOperationException("The profile outputScope.mode must be 'all' or 'selected'.");
+
+        var scope = new StudioOutputScope { Mode = mode };
+        if (!TryGet(element, "targets", out var targets)) return scope;
+        if (targets.ValueKind != JsonValueKind.Array)
+            throw new InvalidOperationException("The profile outputScope.targets must be an array.");
+        foreach (var target in targets.EnumerateArray())
+        {
+            var instanceId = GetString(target, "instanceId");
+            if (string.IsNullOrWhiteSpace(instanceId))
+                throw new InvalidOperationException("Each outputScope target must have a non-empty instanceId.");
+            scope.Targets.Add(new StudioOutputTarget(instanceId, GetString(target, "name") ?? string.Empty));
+        }
+        return scope;
     }
 
     private static void ReadProfileDevices(JsonElement element, StudioProfile profile)
@@ -88,11 +112,15 @@ public static partial class StudioProjectCodec
         if (!string.IsNullOrWhiteSpace(placement.LedRefJson)) existing.LedRefJson = placement.LedRefJson;
     }
 
-    private static bool IsSamePlacement(StudioDevicePlacement left, StudioDevicePlacement right) =>
-        SameNonEmpty(left.Id, right.Id) ||
-        SameNonEmpty(left.DeviceId, right.DeviceId) ||
-        (left.ProductId != 0 && left.ProductId == right.ProductId &&
-         SameNonEmpty(left.InstanceId, right.InstanceId));
+    private static bool IsSamePlacement(StudioDevicePlacement left, StudioDevicePlacement right)
+    {
+        // Native instanceId 0 can stand in for several distinct OpenSynapse identities.
+        if (!string.IsNullOrWhiteSpace(left.Id) && !string.IsNullOrWhiteSpace(right.Id))
+            return SameNonEmpty(left.Id, right.Id);
+        return SameNonEmpty(left.DeviceId, right.DeviceId) ||
+            (left.ProductId != 0 && left.ProductId == right.ProductId &&
+             SameNonEmpty(left.InstanceId, right.InstanceId));
+    }
     private static List<ParsedLayer> ReadLayers(JsonElement array, HashSet<Guid> seen)
     {
         var result = new List<ParsedLayer>();
@@ -230,6 +258,14 @@ public static partial class StudioProjectCodec
         parameters.Screen = GetString(element, "screen");
         if (Enum.TryParse<StudioScreenMode>(GetString(element, "screenMode"), ignoreCase: true, out var screenMode))
             parameters.ScreenMode = screenMode;
+        if (TryGet(element, "ambientMapping", out _))
+        {
+            if (!Enum.TryParse<StudioAmbientMapping>(GetString(element, "ambientMapping"), true, out var mapping) ||
+                !Enum.IsDefined(mapping))
+                throw new InvalidOperationException(
+                    "The params.ambientMapping must be 'legacyAuto', 'perDevice' or 'sharedCanvas'.");
+            parameters.AmbientMapping = mapping;
+        }
         if (Enum.TryParse<StudioAudioStyle>(GetString(element, "audioStyle"), ignoreCase: true, out var audioStyle))
             parameters.AudioStyle = audioStyle;
         if (Enum.TryParse<StudioReactiveStyle>(GetString(element, "reactiveStyle"), ignoreCase: true, out var reactiveStyle))

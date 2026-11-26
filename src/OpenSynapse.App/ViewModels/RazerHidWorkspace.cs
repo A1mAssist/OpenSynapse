@@ -201,6 +201,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
                 .ToArray();
             connections = RazerHidDeviceConnectionSiblings.Collapse(connections);
             _connectionSnapshot = connections;
+            await RestoreCalibrationsAsync(connections, cancellationToken).ConfigureAwait(true);
             await MigrateProfileInstanceKeysAsync(connections, cancellationToken).ConfigureAwait(true);
             await RestoreDeviceModesAsync(connections, cancellationToken);
             await RestoreAnalogJoystickModesAsync(connections, cancellationToken);
@@ -346,6 +347,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
             await selected.LoadSlowCardsAsync(force: true, selectionToken);
             await selected.LoadSoundbarAsync(selectionToken);
             await selected.LoadDpiStagesAsync(selectionToken);
+            await selected.LoadCalibrationAsync(selectionToken);
             await selected.ApplyConfiguredLightingAsync(selectionToken);
             NotifyDeviceOverview();
         }
@@ -436,6 +438,15 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         return path;
     }
 
+    internal Task PrepareStudioLightingAsync(string instanceId) =>
+        RunDisplayLightingOnDispatcherAsync(async () =>
+        {
+            var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { instanceId };
+            if (SelectedDevice is { } selected && ids.Contains(selected.InstanceId))
+                await selected.StopLightingRuntimeAsync(CancellationToken.None, restore: false);
+            await _softwareLightingOwner.StopAllAsync(CancellationToken.None, restore: false, instanceIds: ids);
+        });
+
     internal async Task SuspendLightingForChromaAsync()
     {
         if (SelectedDevice is { } selected)
@@ -444,20 +455,37 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
     }
 
     internal async Task RestoreLightingAfterExternalAsync(
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        IReadOnlyCollection<string>? instanceIds = null)
     {
+        var targets = instanceIds?.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (targets is { Count: 0 }) return;
         if (_deviceService is null)
         {
+            if (targets is not null)
+                throw new InvalidOperationException("The HID lighting service is unavailable.");
             return;
         }
 
+        var connections = CurrentConnections
+            .Where(connection => targets is null || targets.Contains(connection.InstanceId)).ToArray();
+        if (targets is not null && targets.Any(id => !connections.Any(connection =>
+                connection.IsReady && StringComparer.OrdinalIgnoreCase.Equals(connection.InstanceId, id))))
+        {
+            throw new InvalidOperationException("A requested HID lighting instance is offline or unavailable.");
+        }
+        var selected = SelectedDevice is { } device &&
+            (targets is null || targets.Contains(device.InstanceId)) ? device : null;
         var failed = await _softwareLightingOwner.RestoreAsync(
-            CurrentConnections, SelectedDevice, cancellationToken).ConfigureAwait(false);
+            connections, selected, cancellationToken, targets,
+            requireRestore: targets is not null).ConfigureAwait(false);
         foreach (var instanceId in failed)
         {
             _diagnosticLog.TryWrite(
                 "chroma", $"lighting restore after external source failed for {instanceId}.");
         }
+        if (targets is not null && failed.Count > 0)
+            throw new InvalidOperationException($"HID lighting restore failed for {string.Join(", ", failed)}.");
     }
 
     /// <summary>A Chroma session ended; hand back the keyboards it left on custom frames.</summary>
@@ -633,6 +661,8 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
     {
         _selectionCancellation?.Cancel();
         _selectionCancellation?.Dispose();
+        if (SelectedDevice is { } calibrationDevice)
+            await calibrationDevice.CancelSurfaceCalibrationAsync().ConfigureAwait(false);
         await _privateKeyRuntime.ResetAsync().ConfigureAwait(false);
         await _softwareLightingOwner.DisposeAsync().ConfigureAwait(false);
         if (SelectedDevice is { AnalogJoystickActive: true } joystickDevice)

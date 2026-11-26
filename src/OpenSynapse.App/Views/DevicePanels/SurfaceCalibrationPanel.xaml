@@ -1,0 +1,101 @@
+<UserControl
+    x:Class="OpenSynapse.App.Views.DevicePanels.SurfaceCalibrationPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App"
+    VerticalAlignment="Top"
+    Visibility="Collapsed"
+    Unloaded="PanelUnloaded"
+    DataContextChanged="PanelDataContextChanged">
+  <Border x:Name="Card" Visibility="Collapsed" Style="{StaticResource CardStyle}" Padding="16" AutomationProperties.AutomationId="SurfaceCalibrationCard">
+    <StackPanel Spacing="12">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+        <StackPanel Spacing="4">
+          <TextBlock local:Localized.Uid="SurfaceCalibrationTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+          <TextBlock local:Localized.Uid="SurfaceCalibrationDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+        </StackPanel>
+        <Button Grid.Column="1" local:Localized.Uid="SurfaceCalibrationRead" Click="ReadClick"
+                IsEnabled="{Binding CanRead}" VerticalAlignment="Top" Style="{StaticResource SecondaryButtonStyle}"
+                AutomationProperties.AutomationId="SurfaceCalibrationRead" />
+      </Grid>
+      <TextBlock Text="{Binding ConnectionHint}" Visibility="{Binding ConnectionHintVisibility}" TextWrapping="Wrap" />
+      <TextBlock local:Localized.Uid="SurfaceCalibrationAdjustmentUnconfirmed" Visibility="{Binding AdjustmentHintVisibility}"
+                 Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+      <InfoBar IsOpen="{Binding HasStoreError}" IsClosable="False" Severity="Warning" Message="{Binding StoreErrorText}" />
+      <StackPanel Spacing="12" Visibility="{Binding ControlsVisibility}">
+        <StackPanel Spacing="12">
+          <ComboBox IsEnabled="{Binding CanEdit}" local:Localized.Uid="SurfaceCalibrationMode" ItemsSource="{Binding Modes}" DisplayMemberPath="Name"
+                    SelectedItem="{Binding SelectedMode, Mode=TwoWay}" HorizontalAlignment="Stretch"
+                    AutomationProperties.AutomationId="SurfaceCalibrationMode" />
+          <ComboBox IsEnabled="{Binding CanEdit}" local:Localized.Uid="SurfaceCalibrationSavedSurfaces" ItemsSource="{Binding SavedSurfaces}" DisplayMemberPath="Name"
+                    SelectedItem="{Binding SelectedSavedSurface, Mode=TwoWay}" Visibility="{Binding SavedVisibility}"
+                    HorizontalAlignment="Stretch" AutomationProperties.AutomationId="SurfaceCalibrationSavedSurfaces" />
+          <ComboBox IsEnabled="{Binding CanEdit}" local:Localized.Uid="SurfaceCalibrationPreset" ItemsSource="{Binding Presets}" DisplayMemberPath="Name"
+                    SelectedItem="{Binding SelectedPreset, Mode=TwoWay}" Visibility="{Binding PresetVisibility}"
+                    HorizontalAlignment="Stretch" AutomationProperties.AutomationId="SurfaceCalibrationPreset" />
+          <ToggleSwitch IsEnabled="{Binding CanEdit}" local:Localized.Uid="SurfaceCalibrationAsymmetric" IsOn="{Binding IsAsymmetric, Mode=TwoWay}"
+                        Visibility="{Binding AsymmetricVisibility}" AutomationProperties.AutomationId="SurfaceCalibrationAsymmetric" />
+          <NumberBox IsEnabled="{Binding CanEdit}" Header="{Binding TrackingLabel}" Value="{Binding TrackingDistance, Mode=TwoWay}"
+                     Minimum="{Binding TrackingMinimum}" Maximum="{Binding TrackingMaximum}" SmallChange="{Binding TrackingStep}"
+                     Visibility="{Binding TrackingVisibility}" SpinButtonPlacementMode="Inline"
+                     AutomationProperties.Name="{Binding TrackingLabel}" AutomationProperties.AutomationId="SurfaceCalibrationTracking" />
+          <NumberBox IsEnabled="{Binding CanEdit}" Header="{Binding LodLabel}" Value="{Binding Lod, Mode=TwoWay}"
+                     Minimum="{Binding LodMinimum}" Maximum="{Binding LodMaximum}" SmallChange="{Binding LodStep}"
+                     Visibility="{Binding LodVisibility}" SpinButtonPlacementMode="Inline"
+                     AutomationProperties.Name="{Binding LodLabel}" AutomationProperties.AutomationId="SurfaceCalibrationLod" />
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Visibility="{Binding LiftVisibility}">
+            <NumberBox Grid.ColumnSpan="{Binding LiftColumnSpan}" IsEnabled="{Binding CanEdit}" Header="{Binding LiftLabel}" Value="{Binding LiftOffDistance, Mode=TwoWay}"
+                       Minimum="{Binding LiftMinimum}" Maximum="{Binding LiftMaximum}" SmallChange="{Binding LiftStep}"
+                       SpinButtonPlacementMode="Inline" AutomationProperties.Name="{Binding LiftLabel}"
+                       AutomationProperties.AutomationId="SurfaceCalibrationLift" />
+            <NumberBox IsEnabled="{Binding CanEdit}" Grid.Column="1" Header="{Binding LandingLabel}" Value="{Binding LandingDistance, Mode=TwoWay}"
+                       Minimum="{Binding LandingMinimum}" Maximum="{Binding LandingMaximum}" SmallChange="{Binding LandingStep}"
+                       Visibility="{Binding LandingVisibility}" SpinButtonPlacementMode="Inline"
+                       AutomationProperties.Name="{Binding LandingLabel}" AutomationProperties.AutomationId="SurfaceCalibrationLanding" />
+          </Grid>
+          <TextBlock local:Localized.Uid="SurfaceCalibrationLandingHint" Visibility="{Binding LandingVisibility}"
+                     TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" />
+          <StackPanel Spacing="8" Visibility="{Binding ManualVisibility}">
+            <TextBlock local:Localized.Uid="SurfaceCalibrationManualTitle" FontWeight="SemiBold" />
+            <TextBlock local:Localized.Uid="SurfaceCalibrationManualHint" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" />
+            <TextBox IsEnabled="{Binding CanEdit}" local:Localized.Uid="SurfaceCalibrationSurfaceName" Text="{Binding SurfaceName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     MaxLength="80" AutomationProperties.AutomationId="SurfaceCalibrationSurfaceName" />
+            <Button local:Localized.Uid="SurfaceCalibrationPrepare" IsEnabled="{Binding CanPrepare}" Click="PrepareClick"
+                    Style="{StaticResource SecondaryButtonStyle}" AutomationProperties.AutomationId="SurfaceCalibrationPrepare" />
+          </StackPanel>
+          <StackPanel Spacing="8" Visibility="{Binding MiniVisibility}">
+            <TextBlock local:Localized.Uid="SurfaceCalibrationMiniHint" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" />
+            <Button local:Localized.Uid="SurfaceCalibrationPrepareMini" IsEnabled="{Binding CanPrepareMini}" Click="MiniClick"
+                    Style="{StaticResource SecondaryButtonStyle}" AutomationProperties.AutomationId="SurfaceCalibrationPrepareMini" />
+          </StackPanel>
+        </StackPanel>
+        <Border Padding="12" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                Visibility="{Binding SessionVisibility}" AutomationProperties.AutomationId="SurfaceCalibrationSession">
+          <StackPanel Spacing="8">
+            <TextBlock Text="{Binding SessionText}" TextWrapping="Wrap" FontWeight="SemiBold"
+                       AutomationProperties.LiveSetting="Polite" />
+            <TextBlock Text="{Binding SpeedText}" TextWrapping="Wrap" Visibility="{Binding SpeedVisibility}" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button local:Localized.Uid="SurfaceCalibrationStart" IsEnabled="{Binding CanStart}" Click="StartClick" Style="{StaticResource SecondaryButtonStyle}" AutomationProperties.AutomationId="SurfaceCalibrationStart" />
+              <Button local:Localized.Uid="SurfaceCalibrationFinish" IsEnabled="{Binding CanFinish}" Click="FinishClick" Style="{StaticResource SecondaryButtonStyle}" AutomationProperties.AutomationId="SurfaceCalibrationFinish" />
+              <Button local:Localized.Uid="SurfaceCalibrationCancel" IsEnabled="{Binding CanCancel}" Click="CancelClick" Style="{StaticResource SecondaryButtonStyle}" AutomationProperties.AutomationId="SurfaceCalibrationCancel" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+        <TextBlock Text="{Binding StatusText}" Visibility="{Binding StatusVisibility}" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}"
+                   AutomationProperties.LiveSetting="Polite" AutomationProperties.AutomationId="SurfaceCalibrationStatus" />
+        <Button local:Localized.Uid="SurfaceCalibrationRestoreDefaults" IsEnabled="{Binding CanRestoreDefaults}"
+                Visibility="{Binding DefaultsVisibility}" Click="DefaultsClick" Style="{StaticResource SecondaryButtonStyle}"
+                AutomationProperties.AutomationId="SurfaceCalibrationRestoreDefaults" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+          <Button local:Localized.Uid="SurfaceCalibrationRetrySave" IsEnabled="{Binding CanRetrySave}" Visibility="{Binding RetrySaveVisibility}"
+                  Click="RetrySaveClick" Style="{StaticResource RazerHidSaveButtonStyle}" AutomationProperties.AutomationId="SurfaceCalibrationRetrySave" />
+          <Button local:Localized.Uid="SurfaceCalibrationRestoreSaved" IsEnabled="{Binding CanRestoreSaved}" Click="RestoreClick"
+                  Style="{StaticResource SecondaryButtonStyle}" AutomationProperties.AutomationId="SurfaceCalibrationRestoreSaved" />
+          <Button local:Localized.Uid="SurfaceCalibrationApply" IsEnabled="{Binding CanApply}" Click="ApplyClick"
+                  Style="{StaticResource PrimaryButtonStyle}" AutomationProperties.AutomationId="SurfaceCalibrationApply" />
+        </StackPanel>
+      </StackPanel>
+    </StackPanel>
+  </Border>
+</UserControl>

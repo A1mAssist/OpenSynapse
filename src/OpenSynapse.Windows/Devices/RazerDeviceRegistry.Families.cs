@@ -168,6 +168,12 @@ internal sealed partial class RazerDeviceRegistry
                 // The 00B8 dongle answers this even while the mouse is asleep or off,
                 // which is the only way to tell that state from a firmware fault.
                 [CapabilityIds.WirelessLinkStatusGet] = new(0x50, 0x00, 0xBF, ""),
+                [CapabilityIds.SurfaceStateGet] = new(0x03, 0x0B, 0x83, "0004"),
+                [CapabilityIds.SurfaceStateSet] = new(0x03, 0x0B, 0x03, ""),
+                [CapabilityIds.SurfaceConfigurationGet] = new(0x0A, 0x0B, 0x85, "0004"),
+                [CapabilityIds.SurfaceConfigurationSet] = new(0x0A, 0x0B, 0x05, ""),
+                [CapabilityIds.SurfaceLiftGet] = new(0x04, 0x0B, 0x8B, "0004"),
+                [CapabilityIds.SurfaceLiftSet] = new(0x04, 0x0B, 0x0B, ""),
             },
             // Future RazerHid devices need an audited built-in manifest and
             // verified Windows transport before any capability is admitted.
@@ -232,7 +238,11 @@ internal sealed partial class RazerDeviceRegistry
                     CapabilityIds.LogoModeGet or CapabilityIds.LogoModeSet or
                     CapabilityIds.LogoEffectSet or CapabilityIds.LogoStateSet))
                 .ToHashSet(StringComparer.Ordinal),
-            ["viper-184"] = FamilyCapabilities["viper-184"].Keys.ToHashSet(StringComparer.Ordinal),
+            ["viper-184"] = FamilyCapabilities["viper-184"].Keys
+                .Where(capability => capability is not (CapabilityIds.SurfaceStateGet or CapabilityIds.SurfaceStateSet or
+                    CapabilityIds.SurfaceConfigurationGet or CapabilityIds.SurfaceConfigurationSet or
+                    CapabilityIds.SurfaceLiftGet or CapabilityIds.SurfaceLiftSet))
+                .ToHashSet(StringComparer.Ordinal),
             ["razer-hid-standard"] = new HashSet<string>(StringComparer.Ordinal),
         };
 }

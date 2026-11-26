@@ -32,7 +32,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                 {
                     // The device could not be read back, so the state keeps the value it
                     // had. Claiming the requested rate would state something unknown.
-                    return;
+                    throw new InvalidOperationException(AppStrings.Text("SettingAutoApplyCancelled"));
                 }
                 var previousRate = _basicState?.PollingRate ?? requested;
                 SelectedPollingRate = rate;
@@ -84,7 +84,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                 {
                     // The device could not be read back, so the state keeps the values it
                     // had. Claiming the requested DPI would state something unknown.
-                    return;
+                    throw new InvalidOperationException(AppStrings.Text("SettingAutoApplyCancelled"));
                 }
                 (DpiX, DpiY) = (dpi.X, dpi.Y);
                 UpdateBasic(state => state with { DpiX = dpi.X, DpiY = dpi.Y });
@@ -163,6 +163,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             var previous = DpiStages.FirstOrDefault(row => row.Number == ActiveDpiStage);
             var followsHardware = previous is not null && DpiX == previous.X && DpiY == previous.Y;
             ActiveDpiStage = state.ActiveStage;
+            _confirmedMouseDpiStages = state;
             if (followsHardware && state.Stages[state.ActiveStage - 1] is { } active &&
                 (active.X != DpiX || active.Y != DpiY))
             {
@@ -216,7 +217,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                 {
                     throw new ArgumentOutOfRangeException(nameof(targetStage));
                 }
-                var previousState = new RazerHidDpiStages(ActiveDpiStage, rows);
+                var previousState = _confirmedMouseDpiStages ?? new RazerHidDpiStages(ActiveDpiStage, rows);
                 var previousProfile = ReadProfile(settings => settings.Viper.DpiStages);
                 var previousDpiProfile = ReadProfile(settings => (settings.Viper.DpiX, settings.Viper.DpiY));
                 var previousDpi = (X: _basicState?.DpiX ?? DpiX, Y: _basicState?.DpiY ?? DpiY);

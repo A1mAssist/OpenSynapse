@@ -34,11 +34,10 @@ public sealed class StudioWorldSampleMap
 }
 
 /// <summary>
-/// Shared spatial canvas. Every device LED is projected once into a square
-/// world grid, layers are rendered there with one clock, and each device
-/// samples its own LEDs back out.
+/// Cached world and LED geometry. Legacy effects use the square world grid;
+/// explicit Ambient mappings compose layers into separate device frames.
 /// </summary>
-public sealed class StudioWorldCanvas
+public sealed partial class StudioWorldCanvas
 {
     // Preview and hardware each render this grid. 96 keeps five heavy layers
     // around 2.5 ms/frame; finer grids cost more than the LED sampling gains.
@@ -74,7 +73,7 @@ public sealed class StudioWorldCanvas
         foreach (var device in devices) _byInstance[device.InstanceId] = device;
     }
 
-    /// <summary>True when at least two devices share the canvas and no layer needs a per-device keyboard frame.</summary>
+    /// <summary>True when the legacy world or explicit per-layer mapping owns device rendering.</summary>
     public bool Active { get; }
 
     public int Rows => GridSize;
@@ -112,6 +111,7 @@ public sealed class StudioWorldCanvas
             .Where(device => !string.IsNullOrWhiteSpace(device.InstanceId))
             .Where(device => device.MatrixRows > 0 && device.MatrixColumns > 0)
             .Where(device => device.DeviceRows > 0 && device.DeviceColumns > 0)
+            .Where(device => (long)device.MatrixRows * device.MatrixColumns <= StudioCompositor.MaxPixels)
             .Where(device => double.IsFinite(device.Visual.Width) && double.IsFinite(device.Visual.Height) &&
                 device.Visual.Width > 0 && device.Visual.Height > 0)
             .ToArray();
@@ -158,9 +158,17 @@ public sealed class StudioWorldCanvas
 
         var hasChromaFile = false;
         var layers = BuildLayers(profile, worldDevices, ref hasChromaFile);
-        var active = worldDevices.Length >= 2 && !hasChromaFile;
+        var legacyWorld = worldDevices.Length >= 2 && !hasChromaFile;
+        var mappedLayers = BuildMappedLayers(profile, worldDevices);
+        var usesLayerMapping = mappedLayers.Any(layer => IsMappedAmbient(layer.Render.Params));
+        var active = legacyWorld || usesLayerMapping;
         return new StudioWorldCanvas(
-            active, minX, minY, worldWidth, worldHeight, scale, offsetX, offsetY, worldDevices, layers);
+            active, minX, minY, worldWidth, worldHeight, scale, offsetX, offsetY, worldDevices, layers)
+        {
+            UsesLayerMapping = usesLayerMapping,
+            UsesLegacyWorld = legacyWorld,
+            MappedLayers = mappedLayers,
+        };
     }
 
     public bool HasDevice(string? instanceId) =>
@@ -341,7 +349,7 @@ public sealed class StudioWorldCanvas
 }
 
 /// <summary>One device's immutable world lookup tables.</summary>
-public sealed class StudioWorldDevice
+public sealed partial class StudioWorldDevice
 {
     private StudioWorldDevice(
         string instanceId,
@@ -449,7 +457,7 @@ public sealed class StudioWorldDevice
             width / 2, height / 2, width, height, rotation, rect.X, rect.Y, rect.Width, rect.Height);
         var centerWorldIndex = Project(
             centerX, centerY, worldMinX, worldMinY, scale, offsetX, offsetY);
-        return new StudioWorldDevice(
+        var device = new StudioWorldDevice(
             source.InstanceId,
             source.ProductId,
             source.MatrixRows,
@@ -460,6 +468,8 @@ public sealed class StudioWorldDevice
             worldIndices,
             distinct.ToArray(),
             centerWorldIndex);
+        device.BuildLedCoordinates(source, rect);
+        return device;
     }
 
     private static (double X, double Y) ToWorld(

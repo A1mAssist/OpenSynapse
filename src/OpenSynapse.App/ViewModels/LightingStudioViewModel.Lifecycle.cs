@@ -11,8 +11,16 @@ public sealed partial class LightingStudioViewModel
             _hidRouter.RestoreFailed -= OnHidRestoreFailed;
             _hidRouter.InputObserved -= OnHidInputObserved;
         }
-        if (_argbRouter is not null) _argbRouter.WriteFailed -= OnOutputWriteFailed;
-        if (_headsetRouter is not null) _headsetRouter.WriteFailed -= OnOutputWriteFailed;
+        if (_argbRouter is not null)
+        {
+            _argbRouter.WriteFailed -= OnOutputWriteFailed;
+            _argbRouter.RestoreFailed -= OnHidRestoreFailed;
+        }
+        if (_headsetRouter is not null)
+        {
+            _headsetRouter.WriteFailed -= OnOutputWriteFailed;
+            _headsetRouter.RestoreFailed -= OnHidRestoreFailed;
+        }
         if (_chromaRouter is not null)
         {
             _chromaRouter.WriteFailed -= OnOutputWriteFailed;

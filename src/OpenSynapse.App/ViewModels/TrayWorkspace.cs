@@ -70,7 +70,9 @@ public sealed class TrayWorkspace
                     new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row, $"ble:{row.Device.Id}")))
                 .Concat(_awBleDevices().Select(row =>
                     new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row, $"awble:{row.Device.Id}")))
-                .Concat(_apBleDevices().Select(row =>
+                .Concat(_apBleDevices()
+                    .Where(row => RazerApBleHeadsetService.SupportsBattery(row.Device))
+                    .Select(row =>
                     new PeripheralBattery(row.Name, row.BatteryPercent, row.IconGlyph, row, $"apble:{row.Device.Id}")))
                 .ToArray();
         }
@@ -93,7 +95,8 @@ public sealed class TrayWorkspace
         var keyboardRows = KeyboardRows(claimed).ToArray();
         var bleRows = _bleDevices().ToArray();
         var awBleRows = _awBleDevices().ToArray();
-        var apBleRows = _apBleDevices().ToArray();
+        var apBleRows = _apBleDevices()
+            .Where(row => RazerApBleHeadsetService.SupportsBattery(row.Device)).ToArray();
         var headsetBusy = _accessories.SelectedHeadsetAudio?.IsBusy == true;
 
         var results = new List<PeripheralBattery>(telemetry);
@@ -217,13 +220,18 @@ public sealed class TrayWorkspace
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     private IEnumerable<RazerHeadsetAudioDeviceRowViewModel> HeadsetRows(HashSet<string> claimed) =>
-        _accessories.HeadsetAudioDevices.Where(row => !claimed.Contains(row.Connection.DevicePath));
+        _accessories.HeadsetAudioDevices.Where(row =>
+            !claimed.Contains(row.Connection.DevicePath) &&
+            RazerHeadsetAudioService.SupportsBattery(row.Connection));
 
     private IEnumerable<BlackSharkDeviceRowViewModel> BlackSharkRows(HashSet<string> claimed) =>
-        _blackSharkDevices().Where(row => !claimed.Contains(row.Connection.DevicePath));
+        _blackSharkDevices().Where(row =>
+            row.Connection.Wireless && !claimed.Contains(row.Connection.DevicePath));
 
     private IEnumerable<RazerKeyboardDeviceRowViewModel> KeyboardRows(HashSet<string> claimed) =>
-        _accessories.KeyboardDevices.Where(row => !claimed.Contains(row.Connection.DevicePath));
+        _accessories.KeyboardDevices.Where(row =>
+            !claimed.Contains(row.Connection.DevicePath) &&
+            RazerKeyboardService.SupportsBattery(row.Connection));
 
     private static string HidKey(RazerHidDeviceRowViewModel row) =>
         $"razer-hid:{row.Connection.InstanceId}";

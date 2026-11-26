@@ -92,7 +92,9 @@ public sealed partial class MainViewModel
             return;
         }
 
-        foreach (var row in ApBleHeadsetDevices.Where(row => row.BatteryPercent is null).ToArray())
+        foreach (var row in ApBleHeadsetDevices
+                     .Where(row => row.BatteryPercent is null &&
+                         RazerApBleHeadsetService.SupportsBattery(row.Device)).ToArray())
         {
             if (SelectedApBleHeadset is { } selected &&
                 StringComparer.OrdinalIgnoreCase.Equals(row.Device.Id, selected.Device.Id))
@@ -128,7 +130,8 @@ public sealed partial class MainViewModel
         if (Accessories.SelectedHeadsetAudio?.IsBusy != true)
         {
             foreach (var row in Accessories.HeadsetAudioDevices
-                         .Where(row => row.BatteryPercent is null).ToArray())
+                         .Where(row => row.BatteryPercent is null &&
+                             RazerHeadsetAudioService.SupportsBattery(row.Connection)).ToArray())
             {
                 if (Accessories.SelectedHeadsetAudio is { } selected &&
                     StringComparer.OrdinalIgnoreCase.Equals(row.Connection.DevicePath, selected.DevicePath))
@@ -159,7 +162,8 @@ public sealed partial class MainViewModel
 
         if (SelectedBlackShark?.IsBusy != true)
         {
-            foreach (var row in BlackSharkDevices.Where(row => row.BatteryPercent is null).ToArray())
+            foreach (var row in BlackSharkDevices
+                         .Where(row => row.BatteryPercent is null && row.Connection.Wireless).ToArray())
             {
                 if (SelectedBlackShark is { } selected &&
                     StringComparer.OrdinalIgnoreCase.Equals(row.Connection.DevicePath, selected.DevicePath))
@@ -189,7 +193,8 @@ public sealed partial class MainViewModel
         }
 
         foreach (var row in Accessories.KeyboardDevices
-                     .Where(row => row.BatteryPercent is null && !row.Detail.IsBusy).ToArray())
+                     .Where(row => row.BatteryPercent is null && !row.Detail.IsBusy &&
+                         RazerKeyboardService.SupportsBattery(row.Connection)).ToArray())
         {
             if (Accessories.SelectedKeyboard is { } selected &&
                 StringComparer.OrdinalIgnoreCase.Equals(row.Connection.DevicePath, selected.DevicePath))

@@ -86,8 +86,8 @@ public sealed partial class RazerHidDeviceViewModel
             () => IsOledBusy, value => IsOledBusy = value,
             async () =>
             {
-                var previousBrightness = OledBrightness;
-                var previousLanguageIndex = SelectedOledLanguageIndex;
+                var previousBrightness = _confirmedOled?.Brightness ?? OledBrightness;
+                var previousLanguageIndex = _confirmedOled?.Language ?? SelectedOledLanguageIndex;
                 var previousLanguage = OledLanguageValues[previousLanguageIndex];
                 var previousProfile = ReadProfile(settings => (
                     settings.Keyboard.OledBrightness,
@@ -115,6 +115,7 @@ public sealed partial class RazerHidDeviceViewModel
                     {
                         OledBrightness = previousBrightness;
                         SelectedOledLanguageIndex = previousLanguageIndex;
+                        _confirmedOled = (previousBrightness, previousLanguageIndex);
                     },
                     async token =>
                     {
@@ -122,6 +123,7 @@ public sealed partial class RazerHidDeviceViewModel
                         await _service.SetOledLanguageAsync(Connection, previousLanguage, token);
                     },
                     cancellationToken);
+                _confirmedOled = (OledBrightness, SelectedOledLanguageIndex);
             }, cancellationToken);
 
     private async Task RefreshOledAsync(CancellationToken cancellationToken)
@@ -135,6 +137,7 @@ public sealed partial class RazerHidDeviceViewModel
         if (languageIndex >= 0)
         {
             SelectedOledLanguageIndex = languageIndex;
+            _confirmedOled = (OledBrightness, SelectedOledLanguageIndex);
         }
     }
 }

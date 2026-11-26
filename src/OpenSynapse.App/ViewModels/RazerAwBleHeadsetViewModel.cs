@@ -401,6 +401,7 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
         }
 
         _isBusy = true;
+        _eqReadback.Invalidate();
         NotifyBusy();
         OperationStatusText = string.Empty;
         try
@@ -472,7 +473,12 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
         var preset = EqPresets[Math.Clamp(SelectedEqPresetIndex, 0, EqPresets.Length - 1)].Value;
         return RunWriteAsync(
             service => service.SetEqPresetAsync(preset, cancellationToken),
-            applied => SelectedEqPresetIndex = IndexOfPreset(applied),
+            applied =>
+            {
+                SelectedEqPresetIndex = IndexOfPreset(applied);
+                CustomEqEnabled = RazerAwBleProtocol.IsCustomEqPreset(applied);
+                _eqReadback.AcceptPreset(EqDraftPreset);
+            },
             PersistEqPresetAsync,
             ct => _service!.ReadEqPresetAsync(ct),
             (value, ct) => _service!.SetEqPresetAsync(value, ct));
@@ -524,6 +530,7 @@ public sealed partial class RazerAwBleHeadsetViewModel : INotifyPropertyChanged,
 
     public async ValueTask DisposeAsync()
     {
+        _eqReadback.Invalidate();
         _service?.Dispose();
         _service = null;
         await Task.CompletedTask;

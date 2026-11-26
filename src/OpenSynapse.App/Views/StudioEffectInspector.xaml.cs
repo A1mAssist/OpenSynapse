@@ -51,6 +51,11 @@ public sealed partial class StudioEffectInspector : UserControl
         Rows.Children.Clear();
         if (_parameters is not { } parameters) return;
 
+        if (parameters.Effect == StudioEffectKind.Ambient)
+        {
+            Rows.Children.Add(BuildAmbientScopeRow());
+            Rows.Children.Add(BuildAmbientMappingRow());
+        }
         var descriptor = StudioEffectCatalog.Get(parameters.Effect);
         foreach (var field in descriptor.Fields)
         {

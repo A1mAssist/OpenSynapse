@@ -78,7 +78,9 @@ public sealed partial class RazerHidDeviceViewModel
                     return;
                 }
 
-                var previousStages = KnobStages.Select(row => row.ToStage()).ToArray();
+                var previousConfirmed = _confirmedKnob;
+                var previousStages = previousConfirmed?.Stages ?? KnobStages.Select(row => row.ToStage()).ToArray();
+                var previousSelection = previousConfirmed?.Selected ?? SelectedKnobStage?.Stage;
                 var previousStage = _knobCurrentStage;
                 var previousProfile = ReadProfile(settings => settings.Keyboard.KnobMode);
                 var target = SelectedKnobStage;
@@ -111,7 +113,15 @@ public sealed partial class RazerHidDeviceViewModel
                     await SaveProfileAsync(
                         settings => settings.Keyboard.KnobMode = applied.ModeId,
                         settings => settings.Keyboard.KnobMode = previousProfile,
-                        null,
+                        () =>
+                        {
+                            KnobStages.Clear();
+                            foreach (var stage in previousStages)
+                                KnobStages.Add(new RazerHidKnobStageRowViewModel(stage, table));
+                            SelectedKnobStage = KnobStages.FirstOrDefault(row => row.Stage == previousSelection);
+                            _knobCurrentStage = previousStage;
+                            _confirmedKnob = previousConfirmed;
+                        },
                         async token =>
                         {
                             await _service.SetKnobConfigurationAsync(
@@ -128,6 +138,7 @@ public sealed partial class RazerHidDeviceViewModel
                         },
                         cancellationToken);
                 }
+                ConfirmKnob();
             }, cancellationToken);
 
     private async Task RefreshKnobAsync(CancellationToken cancellationToken, byte? profileId = null)
@@ -166,6 +177,7 @@ public sealed partial class RazerHidDeviceViewModel
                 ?? KnobStages.FirstOrDefault(row => row.IsEnabled)
                 ?? KnobStages.FirstOrDefault();
             _knobCurrentStage = SelectedKnobStage?.ToStage();
+            ConfirmKnob();
             return;
         }
 
@@ -174,6 +186,7 @@ public sealed partial class RazerHidDeviceViewModel
         _knobCurrentStage = mode.Stage;
         SelectedKnobStage = KnobStages.FirstOrDefault(row => row.Stage == mode.Stage.Stage)
             ?? KnobStages.FirstOrDefault();
+        ConfirmKnob();
     }
 
     private async Task ApplyKnobStateAsync(

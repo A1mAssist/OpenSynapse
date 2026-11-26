@@ -8,6 +8,19 @@ public sealed partial class RazerMxicHeadsetService
     internal const ushort BarracudaV2XProductId = 0x05B3;
 
     /// <summary>
+    /// Only the dialects that issue a battery read. Joliet is the Mako speaker
+    /// family; 059F is the wired Kraken V4 X; other T3 identities have no
+    /// battery command in their bundle.
+    /// </summary>
+    public static bool SupportsBattery(ushort productId) =>
+        RazerProtocol40HeadsetProtocol.IsSupported(productId) ||
+        (RazerMxicHeadsetProtocol.UsesValkyrieT3Commands(productId)
+            ? productId == BarracudaV2XProductId
+            : !RazerMxicHeadsetProtocol.UsesJolietCommands(productId) &&
+              !RazerMxicHeadsetProtocol.UsesClass18Commands(productId) &&
+              RazerMxicHeadsetProtocol.IsSupported(productId));
+
+    /// <summary>
     /// Reads only the battery level for the tray poll. The page keeps its full probe
     /// set in <see cref="ReadStateAsync"/>; this path must not issue other commands.
     /// </summary>

@@ -48,12 +48,14 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
     private readonly StudioHeadsetOutputRouter? _headsetRouter;
     private readonly StudioInputSampler? _inputSampler;
     private readonly StudioWorldRenderer _world;
-    private readonly Func<Task>? _restoreAfterExternal;
+    private readonly StudioWorldRenderer _outputWorld;
+    private readonly Func<IReadOnlyCollection<string>, Task>? _restoreAfterExternal;
     private readonly DispatcherQueue? _dispatcher;
     private readonly Dictionary<StudioEffectParams, string?> _loadedMedia =
         new(ReferenceEqualityComparer.Instance);
     private CancellationTokenSource? _outputCancellation;
     private Task? _outputTask;
+    private readonly SemaphoreSlim _outputUpdateGate = new(1, 1);
     private readonly Stopwatch _outputClock = new();
     private StudioProject _project;
     private StudioHistory? _history;
@@ -69,10 +71,10 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
     private string _statusText = AppStrings.Text("LightingStudioStatusHint");
     private bool _isBusy;
     private bool _isApplied;
-    private bool _needsExternalRestore;
     private bool _isPlaying;
     private bool _worldDirty = true;
     private bool _worldInitialized;
+    private bool _outputWorldDirty = true;
     private int _disposed;
 
     internal void RefreshLocalization()
@@ -308,6 +310,8 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
     public StudioRgb[] RenderPreview(TimeSpan elapsed)
     {
         EnsureWorld();
+        if (SelectedDevice is { } excluded && !ScopeIncludes(PendingScope, excluded))
+            return new StudioRgb[PreviewRows * PreviewColumns];
         var now = Math.Max(0, elapsed.TotalSeconds);
         _previewSeconds = now;
         if (SelectedDevice is { } selected && UsesWorld(selected.EffectiveInstanceId) &&
@@ -456,13 +460,13 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         await _outputLifecycleGate.WaitAsync();
         try
         {
-            _suspendedOutput = false;
-            await ApplyOutputCoreAsync();
+            _suspendedOutputScope = null;
+            await ApplyOutputCoreAsync(null);
         }
         finally { _outputLifecycleGate.Release(); }
     }
 
-    private async Task ApplyOutputCoreAsync()
+    private async Task ApplyOutputCoreAsync(StudioOutputScope? resumeScope)
     {
         if (_isBusy || (_lighting is null && _hidRouter is null && _argbRouter is null &&
             _headsetRouter is null && _chromaRouter is null))
@@ -470,18 +474,31 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
             return;
         }
         var applied = new List<string>();
-        var startOutputPump = false;
+        var startOutputPump = _outputTask is { IsCompleted: false };
+        var wasApplied = IsApplied;
         IsBusy = true;
+        await _outputUpdateGate.WaitAsync();
         try
         {
-            var blade = Devices.FirstOrDefault(device =>
-                device.IsBlade || (device.Descriptor is not null &&
-                    DeviceProtocolFamilies.UsesBladeMatrix(device.Descriptor.ProtocolFamily)));
+            var scope = (resumeScope ?? PendingScope).Clone();
+            var blade = Devices.FirstOrDefault(device => device.IsOutputAvailable && ScopeIncludes(scope, device) &&
+                (device.IsBlade || (device.Descriptor is not null &&
+                    DeviceProtocolFamilies.UsesBladeMatrix(device.Descriptor.ProtocolFamily))));
             await EnsureInputAsync();
-            EnsureWorld();
-            _world.RestartOutputClock();
+            if (_appliedBlade is not null && !_appliedBlade.HasSameIdentity(blade))
+                await TryReleaseBladeAsync();
+            else if (_bladeRestoreId is not null) await TryReleaseBladeAsync();
+            await SetRouterTargetsAsync(scope);
+            _appliedScope = scope;
+            _outputWorldDirty = true;
+            EnsureWorld(output: true);
+            if (!wasApplied)
+            {
+                _outputWorld.RestartOutputClock();
+                _inputClock.Restart();
+            }
 
-            if (_lighting is not null && blade is not null)
+            if (_lighting is not null && blade is not null && _appliedBlade is null)
             {
                 // The live manifest is the authority for the sparse map. A 2024
                 // Blade 16 is 7 x 15 logical -> 6 x 16 device, not the 2025
@@ -503,18 +520,22 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
                     layout);
                 if (blade.EffectiveInstanceId is { } bladeInstanceId)
                 {
-                    _source.AttachWorld(_world, bladeInstanceId);
+                    _source.AttachWorld(_outputWorld, bladeInstanceId);
                 }
                 _appliedBlade = blade;
-                _inputClock.Restart();
-                _source.Update(BuildLayersFor(blade));
+                _source.Update(BuildLayersFor(blade, output: true));
                 RestoreBladeHeldKeys(blade, rows, columns);
                 await _lighting.ApplyExternalAsync(
-                    _devices(),
+                    _devices().Where(device => StudioLedSelection.SameInstance(
+                        device.Id, blade.EffectiveInstanceId)).ToArray(),
                     _source,
                     restorePersistentEffect: _restoreAfterExternal is null);
                 _source.TriggerPlayback(new StudioTriggerInput(0, 0), _inputClock.Elapsed.TotalSeconds);
-                applied.Add(blade.Name);
+            }
+            if (_appliedBlade is { } retainedBlade)
+            {
+                RefreshBladeWorldSource();
+                applied.Add(retainedBlade.Name);
             }
 
             if (_hidRouter is not null)
@@ -524,7 +545,7 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
                 {
                     RefreshHidSnapshots(targets);
                     StartOutputPump();
-                    foreach (var target in targets)
+                    foreach (var target in wasApplied ? [] : targets)
                     {
                         _hidRouter.TriggerPlayback(target.InstanceId, new StudioTriggerInput(0, 0), 0);
                     }
@@ -542,23 +563,31 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
             }
 
             IsApplied = applied.Count > 0;
+            _appliedNames.Clear();
+            foreach (var choice in GetOutputChoices().Where(choice => choice.IsSelected))
+                _appliedNames[choice.InstanceId] = choice.Name;
+            NotifyOutputScope();
             if (IsApplied)
             {
-                _needsExternalRestore = true;
                 SaveAppliedProject();
             }
+            else ClearAppliedProject();
             StatusText = applied.Count == 0
                 ? AppStrings.Text("LightingStudioStatusNoDevice")
                 : AppStrings.FormatText("LightingStudioStatusApplied", string.Join(", ", applied));
         }
         catch (Exception exception) when (IsExpected(exception))
         {
-            IsApplied = false;
+            IsApplied = wasApplied || _appliedBlade is not null ||
+                _hidRouter?.OwnedInstanceIds.Count > 0 || _argbRouter?.OwnedInstanceIds.Count > 0 ||
+                _headsetRouter?.OwnedInstanceIds.Count > 0 || _chromaRouter?.OwnedInstanceIds.Count > 0;
             StatusText = AppStrings.FormatText("LightingStudioStatusApplyFailed", exception.Message);
         }
         finally
         {
+            _outputUpdateGate.Release();
             IsBusy = false;
+            NotifyOutputScope();
         }
     }
 
@@ -761,12 +790,13 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
         InvalidateWorld();
         EnsureWorld();
         _layerCache.Clear();
-        if (_source is not null && _appliedBlade is not null) _source.Update(BuildLayersFor(_appliedBlade));
+        RefreshBladeWorldSource();
         if (IsApplied && _hidRouter is not null) RefreshHidSnapshots();
         if (IsApplied && _argbRouter is not null) RefreshArgbSnapshots(_argbRouter.GetTargets());
         if (IsApplied && _headsetRouter is not null) _headsetRouter.Update(BuildHeadsetLayers);
         if (IsApplied && _chromaRouter is not null) RefreshChromaSnapshots(_chromaRouter.GetTargets());
         _ = EnsureInputAsync();
+        NotifyOutputScope();
         DocumentChanged?.Invoke(this, EventArgs.Empty);
     }
 

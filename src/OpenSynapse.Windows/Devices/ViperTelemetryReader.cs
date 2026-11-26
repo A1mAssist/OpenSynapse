@@ -3,7 +3,7 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
 
-internal sealed class ViperTelemetryReader
+internal sealed partial class ViperTelemetryReader
 {
     private readonly RazerDeviceResolver _resolver;
     private readonly RazerCapabilityClient _client;

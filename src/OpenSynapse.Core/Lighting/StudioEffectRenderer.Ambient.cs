@@ -2,6 +2,47 @@ namespace OpenSynapse.Core.Lighting;
 
 public static partial class StudioEffectRenderer
 {
+    /// <summary>Samples cached LED coordinates, then blurs before the layer mask is applied.</summary>
+    internal static StudioRgb[] RenderMappedAmbient(
+        StudioEffectParams parameters, int rows, int columns,
+        IReadOnlyList<(double U, double V)> coordinates, StudioEffectInput input)
+    {
+        ArgumentNullException.ThrowIfNull(parameters);
+        ArgumentNullException.ThrowIfNull(coordinates);
+        if (rows <= 0 || columns <= 0 || (long)rows * columns > StudioCompositor.MaxPixels)
+            throw new ArgumentOutOfRangeException(nameof(rows));
+        if (coordinates.Count != rows * columns)
+            throw new ArgumentException("The LED coordinates do not match the matrix.", nameof(coordinates));
+        var uv = input.ScreenSamplerUv;
+        if (uv is null && input.ScreenSampler is { } grid)
+        {
+            uv = (u, v) => grid(
+                Math.Clamp((int)Math.Floor(u * StudioWorldCanvas.GridSize), 0, StudioWorldCanvas.GridSize - 1),
+                Math.Clamp((int)Math.Floor(v * StudioWorldCanvas.GridSize), 0, StudioWorldCanvas.GridSize - 1));
+        }
+        var frame = new StudioRgb[rows * columns];
+        if (uv is null) return frame;
+        var rect = StudioScreenRect.Resolve(parameters.Screen, parameters.ScreenRect);
+        if (input.ScreenCaptureRect?.Clamp() is { } capture)
+            rect = StudioScreenRect.MapIntoCapture(rect, capture);
+        var dominant = parameters.ScreenMode is StudioScreenMode.Dominant or StudioScreenMode.Monet
+            ? ScreenDominant(uv, rect) : default;
+        for (var index = 0; index < frame.Length; index++)
+        {
+            var (u, v) = coordinates[index];
+            var screenU = rect.X + u * rect.Width;
+            var screenV = rect.Y + v * rect.Height;
+            frame[index] = parameters.ScreenMode switch
+            {
+                StudioScreenMode.Band => Vivid(ScreenBand(uv, rect, screenU), 1.25),
+                StudioScreenMode.Dominant => Vivid(dominant, 1.25),
+                StudioScreenMode.Monet => Monet(dominant, u, v),
+                _ => uv(screenU, screenV),
+            };
+        }
+        return Blur(frame, rows, columns, Math.Clamp(parameters.Blur, 0, 20));
+    }
+
     private static StudioRgb[] RenderAmbient(StudioEffectParams parameters, int rows, int columns, StudioEffectInput input)
     {
         var frame = new StudioRgb[rows * columns];

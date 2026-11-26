@@ -78,6 +78,19 @@
             <TextBlock local:Localized.Uid="LightingStudioApply" />
           </StackPanel>
         </Button>
+        <DropDownButton x:Name="OutputScopeButton" MinWidth="34" MinHeight="34" Padding="8,0"
+                        AutomationProperties.AutomationId="StudioOutputScopeMenu">
+          <DropDownButton.Flyout>
+            <MenuFlyout Opening="OutputScopeMenuOpening">
+              <MenuFlyoutItem x:Name="ApplyAllMenuItem" local:Localized.Uid="LightingStudioApplyAll"
+                              AutomationProperties.AutomationId="StudioApplyAll" Click="ApplyAllClick" />
+              <MenuFlyoutItem x:Name="ApplyCurrentMenuItem" local:Localized.Uid="LightingStudioApplyCurrent"
+                              AutomationProperties.AutomationId="StudioApplyCurrent" Click="ApplyCurrentClick" />
+              <MenuFlyoutItem local:Localized.Uid="LightingStudioSelectOutputDevices"
+                              AutomationProperties.AutomationId="StudioSelectOutputDevices" Click="SelectOutputDevicesClick" />
+            </MenuFlyout>
+          </DropDownButton.Flyout>
+        </DropDownButton>
         <Button x:Name="StopButton" Click="StopClick" MinWidth="92"
                 Style="{StaticResource SecondaryButtonStyle}"
                 AutomationProperties.AutomationId="StudioStopButton">
@@ -513,6 +526,14 @@
                            Visibility="{Binding NoPixelOutputVisibility}" />
                 <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap"
                            FontSize="12" Foreground="{StaticResource MutedBrush}" />
+                <TextBlock Text="{Binding PendingOutputSummary}" TextTrimming="CharacterEllipsis"
+                           ToolTipService.ToolTip="{Binding PendingOutputSummary}"
+                           AutomationProperties.AutomationId="StudioPendingOutputScope"
+                           FontSize="12" Foreground="{StaticResource MutedBrush}" />
+                <TextBlock Text="{Binding AppliedOutputSummary}" TextTrimming="CharacterEllipsis"
+                           ToolTipService.ToolTip="{Binding AppliedOutputSummary}"
+                           AutomationProperties.AutomationId="StudioAppliedOutputScope"
+                           FontSize="12" Foreground="{StaticResource DataBrush}" />
               </StackPanel>
               <StackPanel x:Name="SelectionActions" Grid.Column="1" Orientation="Horizontal" Spacing="6"
                           VerticalAlignment="Center">

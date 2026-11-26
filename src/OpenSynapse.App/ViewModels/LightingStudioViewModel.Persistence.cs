@@ -43,10 +43,16 @@ public sealed partial class LightingStudioViewModel
     /// <summary>A scene is applied without touching the user's project file.</summary>
     private StudioProject AppliedProjectSnapshot()
     {
-        if (_activeScene is not { } scene) return _project;
+        if (_activeScene is not { } scene)
+        {
+            var snapshot = StudioProjectCodec.Deserialize(StudioProjectCodec.Serialize(_project));
+            if (snapshot.SelectedProfile is { } selected) selected.OutputScope = _appliedScope.Clone();
+            return snapshot;
+        }
         var project = new StudioProject { Name = AppStrings.Text(scene.NameKey) };
         var profile = StudioSceneRenderer.BuildProfile(
             scene, _project.SelectedProfile, AppStrings.Text(scene.NameKey));
+        profile.OutputScope = _appliedScope.Clone();
         project.Profiles.Add(profile);
         project.SelectedProfileId = profile.Id;
         return project;

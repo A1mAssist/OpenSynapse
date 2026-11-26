@@ -16,7 +16,7 @@ internal enum ThxServiceHealth
 /// </summary>
 internal static class ThxServiceControl
 {
-    internal static ThxServiceHealth ReadServiceHealth(string serviceName)
+    internal static ThxServiceHealth ReadServiceHealth(string serviceName, Action<string>? diagnostic = null)
     {
         string? imagePath;
         try
@@ -40,6 +40,7 @@ internal static class ThxServiceControl
         var executable = ResolveServiceImagePath(imagePath);
         if (executable is null || !File.Exists(executable))
         {
+            diagnostic?.Invoke($"thx service image missing service={serviceName} imagePath={imagePath ?? "-"} resolved={executable ?? "-"}");
             return ThxServiceHealth.ImageMissing;
         }
         return ThxAudioAdmission.HasRunningService(serviceName)
@@ -56,7 +57,11 @@ internal static class ThxServiceControl
 
         var expanded = Environment.ExpandEnvironmentVariables(imagePath.Trim());
         var end = expanded.StartsWith('"') ? expanded.IndexOf('"', 1) : -1;
-        var path = end > 0 ? expanded[1..end] : expanded.Split(' ', 2)[0];
+        var executable = System.Text.RegularExpressions.Regex.Match(
+            expanded, @"^.+?\.exe(?=\s|$)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        var path = end > 0 ? expanded[1..end]
+            : executable.Success ? executable.Value
+            : expanded.Split(' ', 2)[0];
         const string systemRoot = @"\SystemRoot\";
         if (path.StartsWith(systemRoot, StringComparison.OrdinalIgnoreCase))
         {

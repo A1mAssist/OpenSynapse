@@ -2,17 +2,20 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class ViperWorkspace
 {
-    public async Task ApplyPollingRateAsync(CancellationToken cancellationToken = default)
+    public async Task<string?> ApplyPollingRateAsync(CancellationToken cancellationToken = default)
     {
-        if (!CanSetPollingRate) return;
+        var target = MouseAutoApplyDevice;
+        if (target is null) return AppStrings.Text("SettingAutoApplyCancelled");
+        if (!CanSetPollingRate) return AppStrings.Text("SettingAutoApplyCancelled");
 
         var hertz = PollingRateIndex switch { 0 => 125, 1 => 500, 2 => 1000, _ => 0 };
-        await RunDeviceOperationAsync(AppStrings.Text("Text_CAEC7015"), async () =>
+        return await RunDeviceOperationAsync(AppStrings.Text("Text_CAEC7015"), async () =>
         {
             var settings = Profile.Global.Viper;
             var previous = settings.PollingRateHertz;
             var actual = await _deviceTelemetryReader.SetViperPollingRateAsync(
-                _deviceDescriptors(), hertz, cancellationToken);
+                [target], hertz, cancellationToken);
+            EnsureMouseApplyTarget(target);
             PollingRateText = $"{actual} Hz";
             PollingRateIndex = actual switch { 125 => 0, 500 => 1, _ => 2 };
             _confirmedPollingRateIndex = PollingRateIndex;
@@ -22,22 +25,25 @@ public sealed partial class ViperWorkspace
             try { saved = await _saveProfileAsync(cancellationToken); }
             finally { if (!saved) settings.PollingRateHertz = previous; }
             if (!saved) throw ProfileSaveFailed();
-        }, cancellationToken, () => PollingRateIndex = _confirmedPollingRateIndex);
+        }, target, cancellationToken, () => PollingRateIndex = _confirmedPollingRateIndex);
     }
 
-    public async Task ApplyDpiAsync(CancellationToken cancellationToken = default)
+    public async Task<string?> ApplyDpiAsync(CancellationToken cancellationToken = default)
     {
-        if (!CanSetDpi) return;
+        var target = MouseAutoApplyDevice;
+        if (target is null) return AppStrings.Text("SettingAutoApplyCancelled");
+        if (!CanSetDpi) return AppStrings.Text("SettingAutoApplyCancelled");
 
-        await RunDeviceOperationAsync(AppStrings.Text("Text_25083B1F"), async () =>
+        var x = checked((int)Math.Round(DpiXValue, MidpointRounding.AwayFromZero));
+        var y = checked((int)Math.Round(DpiYValue, MidpointRounding.AwayFromZero));
+        return await RunDeviceOperationAsync(AppStrings.Text("Text_25083B1F"), async () =>
         {
             var settings = Profile.Global.Viper;
             var previousX = settings.DpiX;
             var previousY = settings.DpiY;
-            var x = checked((int)Math.Round(DpiXValue, MidpointRounding.AwayFromZero));
-            var y = checked((int)Math.Round(DpiYValue, MidpointRounding.AwayFromZero));
             var actual = await _deviceTelemetryReader.SetViperDpiAsync(
-                _deviceDescriptors(), x, y, cancellationToken);
+                [target], x, y, cancellationToken);
+            EnsureMouseApplyTarget(target);
             DpiXValue = _confirmedDpiXValue = actual.X;
             DpiYValue = _confirmedDpiYValue = actual.Y;
             DpiText = $"{actual.X} × {actual.Y}";
@@ -55,24 +61,27 @@ public sealed partial class ViperWorkspace
                 }
             }
             if (!saved) throw ProfileSaveFailed();
-        }, cancellationToken, () =>
+        }, target, cancellationToken, () =>
         {
             DpiXValue = _confirmedDpiXValue;
             DpiYValue = _confirmedDpiYValue;
         });
     }
 
-    public async Task ApplyIdleAsync(CancellationToken cancellationToken = default)
+    public async Task<string?> ApplyIdleAsync(CancellationToken cancellationToken = default)
     {
-        if (!CanSetIdle) return;
+        var target = MouseAutoApplyDevice;
+        if (target is null) return AppStrings.Text("SettingAutoApplyCancelled");
+        if (!CanSetIdle) return AppStrings.Text("SettingAutoApplyCancelled");
 
-        await RunDeviceOperationAsync(AppStrings.Text("Text_C41C6FC1"), async () =>
+        var minutes = checked((int)Math.Round(IdleMinutesValue, MidpointRounding.AwayFromZero));
+        return await RunDeviceOperationAsync(AppStrings.Text("Text_C41C6FC1"), async () =>
         {
             var settings = Profile.Global.Viper;
             var previous = settings.IdleSeconds;
-            var minutes = checked((int)Math.Round(IdleMinutesValue, MidpointRounding.AwayFromZero));
             var actual = await _deviceTelemetryReader.SetViperIdleSecondsAsync(
-                _deviceDescriptors(), checked(minutes * 60), cancellationToken);
+                [target], checked(minutes * 60), cancellationToken);
+            EnsureMouseApplyTarget(target);
             IdleMinutesValue = _confirmedIdleMinutesValue = actual / 60d;
             IdleText = FormatDuration(actual);
             if (!ReferenceEquals(settings, Profile.Global.Viper)) throw ProfileSaveFailed();
@@ -81,20 +90,23 @@ public sealed partial class ViperWorkspace
             try { saved = await _saveProfileAsync(cancellationToken); }
             finally { if (!saved) settings.IdleSeconds = previous; }
             if (!saved) throw ProfileSaveFailed();
-        }, cancellationToken, () => IdleMinutesValue = _confirmedIdleMinutesValue);
+        }, target, cancellationToken, () => IdleMinutesValue = _confirmedIdleMinutesValue);
     }
 
-    public async Task ApplyBatteryChemistryAsync(CancellationToken cancellationToken = default)
+    public async Task<string?> ApplyBatteryChemistryAsync(CancellationToken cancellationToken = default)
     {
-        if (BatteryChemistryIndex is < 0 or > 2) return;
+        var target = MouseAutoApplyDevice;
+        if (target is null) return AppStrings.Text("SettingAutoApplyCancelled");
+        if (!CanSetBatteryChemistry || BatteryChemistryIndex is < 0 or > 2) return AppStrings.Text("SettingAutoApplyCancelled");
 
         var chemistry = checked((byte)BatteryChemistryIndex);
-        await RunDeviceOperationAsync(AppStrings.Text("Text_94C31F83"), async () =>
+        return await RunDeviceOperationAsync(AppStrings.Text("Text_94C31F83"), async () =>
         {
             var settings = Profile.Global.Viper;
             var previous = settings.BatteryChemistry;
             var actual = await _deviceTelemetryReader.SetViperBatteryChemistryAsync(
-                _deviceDescriptors(), chemistry, cancellationToken);
+                [target], chemistry, cancellationToken);
+            EnsureMouseApplyTarget(target);
             BatteryChemistryIndex = _confirmedBatteryChemistryIndex = actual;
             OnPropertyChanged(nameof(BatteryChemistryText));
             if (!ReferenceEquals(settings, Profile.Global.Viper)) throw ProfileSaveFailed();
@@ -103,7 +115,7 @@ public sealed partial class ViperWorkspace
             try { saved = await _saveProfileAsync(cancellationToken); }
             finally { if (!saved) settings.BatteryChemistry = previous; }
             if (!saved) throw ProfileSaveFailed();
-        }, cancellationToken);
+        }, target, cancellationToken);
     }
 
     private static InvalidOperationException ProfileSaveFailed() =>

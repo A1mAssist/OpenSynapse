@@ -649,6 +649,8 @@ internal sealed class RazerMousePrivateKeyRuntime
         var paths = await ResolvePathsAsync(productId, cancellationToken).ConfigureAwait(false);
         foreach (var path in paths)
         {
+            // Sampling owns this mouse's mode; do not fall through to another same-model mouse.
+            if (RazerSurfaceCalibrationSession.IsActivePath(path)) return null;
             try
             {
                 var response = await _transport

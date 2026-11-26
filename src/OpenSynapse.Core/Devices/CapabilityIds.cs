@@ -83,6 +83,12 @@ public static class CapabilityIds
     /// link from a real protocol fault.
     /// </summary>
     public const string WirelessLinkStatusGet = "wireless-link-status.get";
+    public const string SurfaceStateGet = "surface-state.get";
+    public const string SurfaceStateSet = "surface-state.set";
+    public const string SurfaceConfigurationGet = "surface-configuration.get";
+    public const string SurfaceConfigurationSet = "surface-configuration.set";
+    public const string SurfaceLiftGet = "surface-lift.get";
+    public const string SurfaceLiftSet = "surface-lift.set";
 
     public static IReadOnlyList<string> All { get; } = Array.AsReadOnly(new[]
     {
@@ -158,5 +164,11 @@ public static class CapabilityIds
         TouchpadStatusGet,
         TouchpadStatusSet,
         WirelessLinkStatusGet,
+        SurfaceStateGet,
+        SurfaceStateSet,
+        SurfaceConfigurationGet,
+        SurfaceConfigurationSet,
+        SurfaceLiftGet,
+        SurfaceLiftSet,
     });
 }

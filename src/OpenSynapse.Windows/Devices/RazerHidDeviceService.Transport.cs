@@ -13,8 +13,13 @@ public sealed partial class RazerHidDeviceService
     private Task<byte[]> ExecuteAsync(
         RazerHidDeviceConnection connection,
         RazerHidRequest request,
-        CancellationToken cancellationToken) =>
-        ExecuteWithWirelessLinkClassificationAsync(connection, request, cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        // Calibration waits do not hold the gate; reject competing settings while allowing reads and lighting.
+        if (request.Report[8] < 0x80 && request.Report[7] is not (0x03 or 0x0F))
+            ThrowIfCalibrationWriteConflicts(connection);
+        return ExecuteWithWirelessLinkClassificationAsync(connection, request, cancellationToken);
+    }
 
     private async Task ExecuteWithoutResultAsync(
         RazerHidDeviceConnection connection,

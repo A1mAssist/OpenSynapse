@@ -17,6 +17,7 @@ public sealed partial class LightingStudioPage
         SetButtonLabel(RedoButton, "LightingStudioRedo", tooltip: true);
 
         SetButtonLabel(ApplyButton, "LightingStudioApply");
+        SetButtonLabel(OutputScopeButton, "LightingStudioOutputScope", tooltip: true);
         SetButtonLabel(StopButton, "LightingStudioStop");
         SetButtonLabel(AddLayerButton, "LightingStudioAdd");
         SetButtonLabel(DuplicateLayerButton, "LightingStudioDuplicate");

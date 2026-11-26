@@ -7,7 +7,7 @@ public sealed partial class LightingStudioPage
 
     internal async Task RefreshDevicesFromHostAsync()
     {
-        if (_viewModel is null) return;
+        if (_viewModel is null || Host is null) return;
         if (_refreshRunning)
         {
             // A discovery is already in flight; run once more with the final state.

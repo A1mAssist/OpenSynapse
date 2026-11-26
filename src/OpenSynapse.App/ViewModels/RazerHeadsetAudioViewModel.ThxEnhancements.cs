@@ -25,6 +25,15 @@ public sealed partial class RazerHeadsetAudioViewModel
     private bool _thxCaptureVoiceGateEnabled;
     private int _thxCaptureVoiceGateLevel;
 
+    public bool CanApplyThxNormalization => CanApplyThx && _thxState?.SoundNormalization is not null;
+    public bool CanApplyThxVoiceClarity => CanApplyThx && _thxState?.VoiceClarity is not null;
+    public bool CanApplyThxBassBoost => CanApplyThx && _thxState?.BassBoost is not null;
+    public bool CanApplyThxSidetone => CanApplyThx && _thxState?.Sidetone is not null;
+    public bool CanApplyThxCaptureNormalization => CanApplyThx && _thxState?.CaptureNormalization is not null;
+    public bool CanApplyThxCaptureVocalClarity => CanApplyThx && _thxState?.CaptureVocalClarity is not null;
+    public bool CanApplyThxCaptureNoiseReduction => CanApplyThx && _thxState?.CaptureNoiseReduction is not null;
+    public bool CanApplyThxCaptureVoiceGate => CanApplyThx && _thxState?.CaptureVoiceGate is not null;
+
     public bool ThxNormalizationEnabled
     {
         get => _thxNormalizationEnabled;
@@ -220,8 +229,9 @@ public sealed partial class RazerHeadsetAudioViewModel
     [ProfileSetting("headset.thx.normalization", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyThxNormalizationAsync(CancellationToken cancellationToken = default)
     {
-        var previousEnabled = ThxNormalizationEnabled;
-        var previousLevel = ThxNormalizationLevel;
+        var previous = _thxState?.SoundNormalization;
+        var previousEnabled = previous?.Enabled ?? ThxNormalizationEnabled;
+        var previousLevel = previous?.LevelPercent ?? ThxNormalizationLevel;
         if (!await RunThxAsync(
                 (controller, token) => controller.SetEnhancementAsync(
                     ThxAudioEndpoint.Headphones,
@@ -250,20 +260,25 @@ public sealed partial class RazerHeadsetAudioViewModel
                 ThxNormalizationEnabled = previousEnabled;
                 ThxNormalizationLevel = previousLevel;
             },
-            async token => await ThxController.SetEnhancementAsync(
-                ThxAudioEndpoint.Headphones,
-                ThxAudioEnhancementKind.SoundNormalization,
-                previousEnabled,
-                previousLevel,
-                token),
+            async token =>
+            {
+                if (previous is not null)
+                    ApplyThxStatus(await ThxController.SetEnhancementAsync(
+                        ThxAudioEndpoint.Headphones,
+                        ThxAudioEnhancementKind.SoundNormalization,
+                        previous.Enabled,
+                        previous.LevelPercent,
+                        token));
+            },
             cancellationToken);
     }
 
     [ProfileSetting("headset.thx.voice-clarity", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyThxVoiceClarityAsync(CancellationToken cancellationToken = default)
     {
-        var previousEnabled = ThxVoiceClarityEnabled;
-        var previousLevel = ThxVoiceClarityLevel;
+        var previous = _thxState?.VoiceClarity;
+        var previousEnabled = previous?.Enabled ?? ThxVoiceClarityEnabled;
+        var previousLevel = previous?.LevelPercent ?? ThxVoiceClarityLevel;
         if (!await RunThxAsync(
                 (controller, token) => controller.SetEnhancementAsync(
                     ThxAudioEndpoint.Headphones,
@@ -292,20 +307,25 @@ public sealed partial class RazerHeadsetAudioViewModel
                 ThxVoiceClarityEnabled = previousEnabled;
                 ThxVoiceClarityLevel = previousLevel;
             },
-            async token => await ThxController.SetEnhancementAsync(
-                ThxAudioEndpoint.Headphones,
-                ThxAudioEnhancementKind.VoiceClarity,
-                previousEnabled,
-                previousLevel,
-                token),
+            async token =>
+            {
+                if (previous is not null)
+                    ApplyThxStatus(await ThxController.SetEnhancementAsync(
+                        ThxAudioEndpoint.Headphones,
+                        ThxAudioEnhancementKind.VoiceClarity,
+                        previous.Enabled,
+                        previous.LevelPercent,
+                        token));
+            },
             cancellationToken);
     }
 
     [ProfileSetting("headset.thx.bass-boost", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyThxBassBoostAsync(CancellationToken cancellationToken = default)
     {
-        var previousEnabled = ThxBassBoostEnabled;
-        var previousLevel = ThxBassBoostLevel;
+        var previous = _thxState?.BassBoost;
+        var previousEnabled = previous?.Enabled ?? ThxBassBoostEnabled;
+        var previousLevel = previous?.LevelPercent ?? ThxBassBoostLevel;
         if (!await RunThxAsync(
                 (controller, token) => controller.SetEnhancementAsync(
                     ThxAudioEndpoint.Headphones,
@@ -334,20 +354,25 @@ public sealed partial class RazerHeadsetAudioViewModel
                 ThxBassBoostEnabled = previousEnabled;
                 ThxBassBoostLevel = previousLevel;
             },
-            async token => await ThxController.SetEnhancementAsync(
-                ThxAudioEndpoint.Headphones,
-                ThxAudioEnhancementKind.BassBoost,
-                previousEnabled,
-                previousLevel,
-                token),
+            async token =>
+            {
+                if (previous is not null)
+                    ApplyThxStatus(await ThxController.SetEnhancementAsync(
+                        ThxAudioEndpoint.Headphones,
+                        ThxAudioEnhancementKind.BassBoost,
+                        previous.Enabled,
+                        previous.LevelPercent,
+                        token));
+            },
             cancellationToken);
     }
 
     [ProfileSetting("headset.thx.sidetone", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyThxSidetoneAsync(CancellationToken cancellationToken = default)
     {
-        var previousEnabled = ThxSidetoneEnabled;
-        var previousLevel = ThxSidetoneLevel;
+        var previous = _thxState?.Sidetone;
+        var previousEnabled = previous?.Enabled ?? ThxSidetoneEnabled;
+        var previousLevel = previous?.LevelPercent ?? ThxSidetoneLevel;
         if (!await RunThxAsync(
                 (controller, token) => controller.SetEnhancementAsync(
                     ThxAudioEndpoint.Headphones,
@@ -376,20 +401,25 @@ public sealed partial class RazerHeadsetAudioViewModel
                 ThxSidetoneEnabled = previousEnabled;
                 ThxSidetoneLevel = previousLevel;
             },
-            async token => await ThxController.SetEnhancementAsync(
-                ThxAudioEndpoint.Headphones,
-                ThxAudioEnhancementKind.Sidetone,
-                previousEnabled,
-                previousLevel,
-                token),
+            async token =>
+            {
+                if (previous is not null)
+                    ApplyThxStatus(await ThxController.SetEnhancementAsync(
+                        ThxAudioEndpoint.Headphones,
+                        ThxAudioEnhancementKind.Sidetone,
+                        previous.Enabled,
+                        previous.LevelPercent,
+                        token));
+            },
             cancellationToken);
     }
 
     [ProfileSetting("headset.thx.capture-normalization", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyThxCaptureNormalizationAsync(CancellationToken cancellationToken = default)
     {
-        var previousEnabled = ThxCaptureNormalizationEnabled;
-        var previousLevel = ThxCaptureNormalizationLevel;
+        var previous = _thxState?.CaptureNormalization;
+        var previousEnabled = previous?.Enabled ?? ThxCaptureNormalizationEnabled;
+        var previousLevel = previous?.LevelPercent ?? ThxCaptureNormalizationLevel;
         if (!await RunThxAsync(
                 (controller, token) => controller.SetEnhancementAsync(
                     ThxAudioEndpoint.Headphones,
@@ -418,20 +448,25 @@ public sealed partial class RazerHeadsetAudioViewModel
                 ThxCaptureNormalizationEnabled = previousEnabled;
                 ThxCaptureNormalizationLevel = previousLevel;
             },
-            async token => await ThxController.SetEnhancementAsync(
-                ThxAudioEndpoint.Headphones,
-                ThxAudioEnhancementKind.CaptureNormalization,
-                previousEnabled,
-                previousLevel,
-                token),
+            async token =>
+            {
+                if (previous is not null)
+                    ApplyThxStatus(await ThxController.SetEnhancementAsync(
+                        ThxAudioEndpoint.Headphones,
+                        ThxAudioEnhancementKind.CaptureNormalization,
+                        previous.Enabled,
+                        previous.LevelPercent,
+                        token));
+            },
             cancellationToken);
     }
 
     [ProfileSetting("headset.thx.capture-vocal-clarity", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyThxCaptureVocalClarityAsync(CancellationToken cancellationToken = default)
     {
-        var previousEnabled = ThxCaptureVocalClarityEnabled;
-        var previousLevel = ThxCaptureVocalClarityLevel;
+        var previous = _thxState?.CaptureVocalClarity;
+        var previousEnabled = previous?.Enabled ?? ThxCaptureVocalClarityEnabled;
+        var previousLevel = previous?.LevelPercent ?? ThxCaptureVocalClarityLevel;
         if (!await RunThxAsync(
                 (controller, token) => controller.SetEnhancementAsync(
                     ThxAudioEndpoint.Headphones,
@@ -460,20 +495,25 @@ public sealed partial class RazerHeadsetAudioViewModel
                 ThxCaptureVocalClarityEnabled = previousEnabled;
                 ThxCaptureVocalClarityLevel = previousLevel;
             },
-            async token => await ThxController.SetEnhancementAsync(
-                ThxAudioEndpoint.Headphones,
-                ThxAudioEnhancementKind.CaptureVocalClarity,
-                previousEnabled,
-                previousLevel,
-                token),
+            async token =>
+            {
+                if (previous is not null)
+                    ApplyThxStatus(await ThxController.SetEnhancementAsync(
+                        ThxAudioEndpoint.Headphones,
+                        ThxAudioEnhancementKind.CaptureVocalClarity,
+                        previous.Enabled,
+                        previous.LevelPercent,
+                        token));
+            },
             cancellationToken);
     }
 
     [ProfileSetting("headset.thx.capture-noise-reduction", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyThxCaptureNoiseReductionAsync(CancellationToken cancellationToken = default)
     {
-        var previousEnabled = ThxCaptureNoiseReductionEnabled;
-        var previousLevel = ThxCaptureNoiseReductionLevel;
+        var previous = _thxState?.CaptureNoiseReduction;
+        var previousEnabled = previous?.Enabled ?? ThxCaptureNoiseReductionEnabled;
+        var previousLevel = previous?.LevelPercent ?? ThxCaptureNoiseReductionLevel;
         if (!await RunThxAsync(
                 (controller, token) => controller.SetEnhancementAsync(
                     ThxAudioEndpoint.Headphones,
@@ -502,20 +542,25 @@ public sealed partial class RazerHeadsetAudioViewModel
                 ThxCaptureNoiseReductionEnabled = previousEnabled;
                 ThxCaptureNoiseReductionLevel = previousLevel;
             },
-            async token => await ThxController.SetEnhancementAsync(
-                ThxAudioEndpoint.Headphones,
-                ThxAudioEnhancementKind.CaptureNoiseReduction,
-                previousEnabled,
-                previousLevel,
-                token),
+            async token =>
+            {
+                if (previous is not null)
+                    ApplyThxStatus(await ThxController.SetEnhancementAsync(
+                        ThxAudioEndpoint.Headphones,
+                        ThxAudioEnhancementKind.CaptureNoiseReduction,
+                        previous.Enabled,
+                        previous.LevelPercent,
+                        token));
+            },
             cancellationToken);
     }
 
     [ProfileSetting("headset.thx.capture-voice-gate", DeviceCategory.Headset, powerScoped: true)]
     public async Task ApplyThxCaptureVoiceGateAsync(CancellationToken cancellationToken = default)
     {
-        var previousEnabled = ThxCaptureVoiceGateEnabled;
-        var previousLevel = ThxCaptureVoiceGateLevel;
+        var previous = _thxState?.CaptureVoiceGate;
+        var previousEnabled = previous?.Enabled ?? ThxCaptureVoiceGateEnabled;
+        var previousLevel = previous?.LevelPercent ?? ThxCaptureVoiceGateLevel;
         if (!await RunThxAsync(
                 (controller, token) => controller.SetEnhancementAsync(
                     ThxAudioEndpoint.Headphones,
@@ -544,12 +589,16 @@ public sealed partial class RazerHeadsetAudioViewModel
                 ThxCaptureVoiceGateEnabled = previousEnabled;
                 ThxCaptureVoiceGateLevel = previousLevel;
             },
-            async token => await ThxController.SetEnhancementAsync(
-                ThxAudioEndpoint.Headphones,
-                ThxAudioEnhancementKind.CaptureVoiceGate,
-                previousEnabled,
-                previousLevel,
-                token),
+            async token =>
+            {
+                if (previous is not null)
+                    ApplyThxStatus(await ThxController.SetEnhancementAsync(
+                        ThxAudioEndpoint.Headphones,
+                        ThxAudioEnhancementKind.CaptureVoiceGate,
+                        previous.Enabled,
+                        previous.LevelPercent,
+                        token));
+            },
             cancellationToken);
     }
 }

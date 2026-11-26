@@ -209,12 +209,6 @@ public sealed partial class DevicesPage : UserControl
     private RazerHidKrakenViewModel? SelectedRazerHidKraken =>
         (DataContext as MainViewModel)?.RazerHid?.SelectedKraken;
 
-    private async void RazerHidApplyPollingClick(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidDevice?.ApplyPollingAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void RazerHidApplyDpiClick(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidDevice?.ApplyDpiAsync(Lifetime) ?? Task.CompletedTask);
-
     // TwoWay NumberBox bindings write their default value back when the device
     // panel first attaches, which overwrote the DPI read from the device.
     private void RazerHidDpiXChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
@@ -233,20 +227,12 @@ public sealed partial class DevicesPage : UserControl
         }
     }
 
-    private async void RazerHidApplyGameModeClick(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidDevice?.ApplyGameModeAsync(Lifetime) ?? Task.CompletedTask);
-
     private async void RazerHidApplySensorRotationClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.ApplySensorRotationAsync(Lifetime) ?? Task.CompletedTask);
 
     private void RazerHidCalibrateSensorRotationClick(object sender, RoutedEventArgs e) =>
         SelectedRazerHidDevice?.BeginRotationCalibration();
 
-    private async void RazerHidApplySmartTrackingClick(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidDevice?.ApplySmartTrackingAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void RazerHidApplyDpiStagesClick(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidDevice?.ApplyDpiStagesAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void RazerHidSwitchDpiStageClick(object sender, RoutedEventArgs e)
     {
@@ -256,27 +242,6 @@ public sealed partial class DevicesPage : UserControl
             await device.SwitchDpiStageAsync(row.Number, Lifetime);
         }
     }
-
-    private async void RazerHidApplyIdleClick(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidDevice?.ApplyIdleTimeoutAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void RazerHidApplyLowBatteryClick(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidDevice?.ApplyLowBatteryThresholdAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void RazerHidApplyAutoSleepClick(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidDevice?.ApplyAutoSleepAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void RazerHidApplyChargeLimiterClick(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidDevice?.ApplyChargeLimiterAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void RazerHidApplyTimeToDimClick(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidDevice?.ApplyTimeToDimAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void RazerHidApplyIndicatorLedClick(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidDevice?.ApplyIndicatorLedAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void RazerHidApplyIndicatorLedV2Click(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidDevice?.ApplyIndicatorLedV2Async(Lifetime) ?? Task.CompletedTask);
 
     private void RazerHidIndicatorLedV2Loaded(object sender, RoutedEventArgs e) =>
         QueueIndicatorLedV2Reapply(sender);
@@ -295,9 +260,6 @@ public sealed partial class DevicesPage : UserControl
             device.ReapplyIndicatorLedV2Selection);
     }
 
-    private async void RazerHidApplyBatteryCurveClick(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidDevice?.ApplyBatteryCurveAsync(Lifetime) ?? Task.CompletedTask);
-
     private async void RazerHidApplyGpuCardClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.ApplyGpuCardAsync(Lifetime) ?? Task.CompletedTask);
 
@@ -306,9 +268,6 @@ public sealed partial class DevicesPage : UserControl
 
     private async void RazerHidApplyChromaTapClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.ApplyChromaTapAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void RazerHidApplyProfileDebounceClick(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidDevice?.ApplyProfileDebounceAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void RazerHidApplyLkScrollClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.ApplyLkScrollAsync(Lifetime) ?? Task.CompletedTask);
@@ -585,15 +544,6 @@ public sealed partial class DevicesPage : UserControl
     private async void RazerHidUnpairWirelessClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.UnpairWirelessAsync(Lifetime) ?? Task.CompletedTask);
 
-    private async void RazerHidApplyKnobClick(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidDevice?.ApplyKnobAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void RazerHidApplyAnalogKeyClick(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidDevice?.ApplyAnalogKeyAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void RazerHidApplyOledClick(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidDevice?.ApplyOledAsync(Lifetime) ?? Task.CompletedTask);
-
     private async void RazerHidApplyScrollFreeNotchedModeClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.ApplyScrollFreeNotchedModeAsync(Lifetime) ?? Task.CompletedTask);
 
@@ -608,9 +558,6 @@ public sealed partial class DevicesPage : UserControl
 
     private async void RazerHidKeyswitchExpanding(Expander sender, ExpanderExpandingEventArgs args) =>
         await (SelectedRazerHidDevice?.LoadKeyswitchAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void RazerHidApplyKeyswitchClick(object sender, RoutedEventArgs e) =>
-        await (SelectedRazerHidDevice?.ApplyKeyswitchAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void RazerHidFnPrimaryClick(object sender, RoutedEventArgs e) =>
         await (SelectedRazerHidDevice?.SetFnPrimaryAsync(true, Lifetime) ?? Task.CompletedTask);

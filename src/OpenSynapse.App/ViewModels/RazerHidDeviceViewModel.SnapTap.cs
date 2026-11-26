@@ -39,6 +39,7 @@ public sealed partial class RazerHidDeviceViewModel
         }
 
         _analogSnapTapPairs.Add(new AnalogSnapTapPairViewModel(_analogSnapTapKeyChoices));
+        AnalogSnapTapStatusText = AppStrings.Text("SnapTapNeedTwoKeys");
     }
 
     public void RemoveAnalogSnapTapPair(AnalogSnapTapPairViewModel pair)
@@ -46,6 +47,7 @@ public sealed partial class RazerHidDeviceViewModel
         if (pair is not null)
         {
             _analogSnapTapPairs.Remove(pair);
+            if (_analogSnapTapPairs.Count == 0) AnalogSnapTapEnabled = false;
         }
     }
 
@@ -55,9 +57,10 @@ public sealed partial class RazerHidDeviceViewModel
             () => IsAnalogKeyBusy, value => IsAnalogKeyBusy = value,
             async () =>
             {
-                var previousEnabled = AnalogSnapTapEnabled;
+                var previousConfirmed = _confirmedAnalogSnapTap;
+                var previousEnabled = previousConfirmed?.Enabled ?? AnalogSnapTapEnabled;
                 var previousProfile = ReadProfile(settings => settings.Keyboard.SnapTapEnabled);
-                var previousPairs = _analogSnapTapPairs
+                var previousPairs = previousConfirmed?.Pairs ?? _analogSnapTapPairs
                     .Where(pair => pair.Key1 is not null && pair.Key2 is not null)
                     .Select(pair => new RazerAnalogSnapTapPair(
                         pair.Key1!.KeyId, pair.Key2!.KeyId, pair.Mode))
@@ -105,7 +108,16 @@ public sealed partial class RazerHidDeviceViewModel
                 await SaveProfileAsync(
                     settings => settings.Keyboard.SnapTapEnabled = AnalogSnapTapEnabled,
                     settings => settings.Keyboard.SnapTapEnabled = previousProfile,
-                    () => AnalogSnapTapEnabled = previousEnabled,
+                    () =>
+                    {
+                        AnalogSnapTapEnabled = previousEnabled;
+                        _analogSnapTapPairs.Clear();
+                        foreach (var pair in previousPairs)
+                            _analogSnapTapPairs.Add(new AnalogSnapTapPairViewModel(_analogSnapTapKeyChoices,
+                                _analogKeyKeys.FirstOrDefault(key => key.KeyId == pair.KeyId1),
+                                _analogKeyKeys.FirstOrDefault(key => key.KeyId == pair.KeyId2), pair.Mode));
+                        _confirmedAnalogSnapTap = previousConfirmed;
+                    },
                     token => _service.SetAnalogSnapTapAsync(
                         Connection, profileId, previousEnabled, previousPairs, token),
                     cancellationToken);
@@ -137,6 +149,7 @@ public sealed partial class RazerHidDeviceViewModel
             }
 
             _analogSnapTapAvailable = true;
+            _confirmedAnalogSnapTap = (state.Enabled, state.Pairs.ToArray());
             AnalogSnapTapStatusText = AppStrings.Text("SnapTapPairHint");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

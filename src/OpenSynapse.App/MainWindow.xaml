@@ -53,6 +53,42 @@
         <Grid x:Name="PageHost" />
       </NavigationView.Content>
     </NavigationView>
+    <local:NavigationPaneResizeThumb
+        x:Name="NavigationPaneResizer"
+        local:Localized.Uid="NavigationPaneResizer"
+        AutomationProperties.AutomationId="NavigationPaneResizer"
+        Grid.Row="1" Canvas.ZIndex="1"
+        Width="8" HorizontalAlignment="Left" VerticalAlignment="Stretch"
+        IsTabStop="True" UseSystemFocusVisuals="True" Visibility="Collapsed">
+      <local:NavigationPaneResizeThumb.Template>
+        <ControlTemplate TargetType="local:NavigationPaneResizeThumb">
+          <!-- Native Thumb starts a drag only when it has a Parent; a template root has none. -->
+          <Grid>
+            <Thumb x:Name="ResizeThumb" IsTabStop="False" UseSystemFocusVisuals="False" AutomationProperties.AccessibilityView="Raw">
+              <Thumb.Template>
+                <ControlTemplate TargetType="Thumb">
+                  <Grid Background="Transparent">
+                    <VisualStateManager.VisualStateGroups>
+                      <VisualStateGroup x:Name="CommonStates">
+                        <VisualState x:Name="Normal" />
+                        <VisualState x:Name="PointerOver">
+                          <VisualState.Setters><Setter Target="ResizeLine.Background" Value="{StaticResource AccentBrush}" /><Setter Target="ResizeLine.Width" Value="2" /></VisualState.Setters>
+                        </VisualState>
+                        <VisualState x:Name="Pressed">
+                          <VisualState.Setters><Setter Target="ResizeLine.Background" Value="{StaticResource AccentPressedBrush}" /><Setter Target="ResizeLine.Width" Value="2" /></VisualState.Setters>
+                        </VisualState>
+                        <VisualState x:Name="Disabled" />
+                      </VisualStateGroup>
+                    </VisualStateManager.VisualStateGroups>
+                    <Border x:Name="ResizeLine" Width="1" HorizontalAlignment="Center" Background="{StaticResource LineBrush}" />
+                  </Grid>
+                </ControlTemplate>
+              </Thumb.Template>
+            </Thumb>
+          </Grid>
+        </ControlTemplate>
+      </local:NavigationPaneResizeThumb.Template>
+    </local:NavigationPaneResizeThumb>
     <Grid x:Name="LaunchVeil" Grid.RowSpan="2" Canvas.ZIndex="90" IsHitTestVisible="False" Background="#D9171717" />
     <Grid x:Name="LaunchBackdrop" Grid.RowSpan="2" Canvas.ZIndex="100" Background="{StaticResource CanvasBrush}" IsHitTestVisible="False" />
     <Grid x:Name="LaunchContent" AutomationProperties.AutomationId="LaunchContent" Grid.RowSpan="2" Canvas.ZIndex="110" Background="Transparent" IsHitTestVisible="False">

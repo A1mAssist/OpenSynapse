@@ -61,6 +61,7 @@ public static class StudioSceneRenderer
         if (template is not null)
         {
             // The scene profile is disposable; editing it must not move the user's template.
+            profile.OutputScope = template.OutputScope.Clone();
             foreach (var placement in template.Devices) profile.Devices.Add(placement.Clone());
         }
 

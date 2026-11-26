@@ -89,6 +89,7 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
     private readonly Action<string>? _diagnostic;
     private readonly Func<ProfileDocument>? _getProfile;
     private readonly Func<CancellationToken, Task<bool>>? _saveProfile;
+    private readonly IRazerFeatureTransport _transport = new RazerFeatureTransport();
     private bool _isBusy;
     private string _errorText = string.Empty;
     private string _operationStatusText = string.Empty;
@@ -137,6 +138,10 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    internal RazerKeyboardViewModel(RazerKeyboardConnection connection, IRazerFeatureTransport transport,
+        Func<ProfileDocument> getProfile, Func<CancellationToken, Task<bool>> saveProfile)
+        : this(connection, getProfile: getProfile, saveProfile: saveProfile) => _transport = transport;
 
     public string Name => _connection.Name;
     public string CategoryText => AppStrings.Text("RazerKeyboardCategory");
@@ -401,15 +406,16 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
     public async Task ApplyGameModeAsync(CancellationToken cancellationToken = default)
     {
         var previous = _appliedGameMode;
+        var desired = GameModeEnabled;
         if (!await RunWriteResultAsync(
-                (service, token) => service.SetGameModeAsync(GameModeEnabled, token), cancellationToken))
+                (service, token) => service.SetGameModeAsync(desired, token), cancellationToken))
         {
             return;
         }
 
-        _appliedGameMode = GameModeEnabled;
+        _appliedGameMode = desired;
         await SaveKeyboardSettingAsync(
-            settings => settings.GamingModeEnabled = GameModeEnabled,
+            settings => settings.GamingModeEnabled = desired,
             settings => settings.GamingModeEnabled = previous,
             () =>
             {
@@ -452,7 +458,7 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
 
     private RazerChromaStandardService OpenChromaService() =>
         new(
-            new RazerFeatureTransport(),
+            _transport,
             _connection.DevicePath,
             TimeSpan.FromMilliseconds(20),
             _diagnostic,
@@ -517,7 +523,7 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
     }
 
     private RazerKeyboardService OpenService() =>
-        new(new RazerFeatureTransport(), _connection.DevicePath, TimeSpan.FromMilliseconds(20), _diagnostic,
+        new(_transport, _connection.DevicePath, TimeSpan.FromMilliseconds(20), _diagnostic,
             _connection.ProductId);
 
     private async Task RunWriteAsync(

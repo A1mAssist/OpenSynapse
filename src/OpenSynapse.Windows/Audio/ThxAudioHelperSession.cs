@@ -80,17 +80,8 @@ internal sealed class ThxAudioHelperSession
                 "setEnhancement" => SetEnhancement(endpoint, device, request),
                 _ => false,
             };
-            if (!accepted)
-            {
-                return Fail("ThxOperationRejected");
-            }
-
-            var state = ReadState(profile, endpoint, device);
-            return new ThxAudioHelperResponse(
-                ThxAudioHelperProtocol.Version,
-                true,
-                new ThxAudioStatus(ThxAudioAvailability.Available, null, state),
-                null);
+            return ThxHeadsetHelperSession.CompleteOperation(accepted, request.Operation,
+                ReadState(profile, endpoint, device));
         }
         catch (Exception exception) when (
             exception is InvalidOperationException or InvalidDataException or ArgumentException or JsonException)
@@ -152,7 +143,6 @@ internal sealed class ThxAudioHelperSession
         }
 
         var target = ThxAudioAdmission.ToNativeGains(profile, endpoint, gains);
-        var current = ReadNativeGains(device);
         var selected = ThxVendorJson.ParseSelectedPreset(_native.GetSelectedPreset(device, PresetGroupId));
         if (!string.Equals(selected, nativePreset, StringComparison.Ordinal) &&
             !_native.SelectPreset(device, PresetGroupId, nativePreset))
@@ -160,7 +150,7 @@ internal sealed class ThxAudioHelperSession
             return false;
         }
 
-        if (current.SequenceEqual(target))
+        if (ReadNativeGains(device).SequenceEqual(target))
         {
             return true;
         }
@@ -226,13 +216,22 @@ internal sealed class ThxAudioHelperSession
     private ThxAudioState ReadState(
         ThxAudioProfile profile,
         ThxAudioEndpoint endpoint,
-        string device)
+        string device) => ReadState(profile, endpoint,
+            id => _native!.GetProperty(device, id),
+            () => _native!.GetPresetList(device, PresetGroupId),
+            () => _native!.GetSelectedPreset(device, PresetGroupId));
+
+    internal static ThxAudioState ReadState(
+        ThxAudioProfile profile,
+        ThxAudioEndpoint endpoint,
+        Func<string, string> readProperty,
+        Func<string> readPresets,
+        Func<string> readSelected)
     {
-        var spatial = ThxVendorJson.ParseBoolean(_native!.GetProperty(device, SpatialPropertyId));
-        var equalizer = ThxVendorJson.ParseBoolean(_native.GetProperty(device, EqualizerPropertyId));
-        var nativePresets = ThxVendorJson.ParsePresetIds(_native.GetPresetList(device, PresetGroupId));
-        var selectedNative = ThxVendorJson.ParseSelectedPreset(
-            _native.GetSelectedPreset(device, PresetGroupId));
+        var spatial = ThxVendorJson.ParseBoolean(readProperty(SpatialPropertyId));
+        var equalizer = ThxVendorJson.ParseBoolean(readProperty(EqualizerPropertyId));
+        var nativePresets = ThxVendorJson.ParsePresetIds(readPresets());
+        var selectedNative = ThxVendorJson.ParseSelectedPreset(readSelected());
         var selected = selectedNative is null
             ? null
             : LogicalToNativePreset.FirstOrDefault(pair =>
@@ -241,12 +240,15 @@ internal sealed class ThxAudioHelperSession
             .Where(pair => nativePresets.Contains(pair.Value, StringComparer.Ordinal))
             .Select(pair => new ThxAudioPreset(pair.Key, PresetNames[pair.Key]))
             .ToArray();
-        var gains = ReadNativeGains(device);
-        var voiceClarity = ReadEnhancement(device, VoiceClarityEnabledPropertyId, VoiceClarityLevelPropertyId);
+        var gains = ReadNativeGains(readProperty);
+        var voiceClarity = TryReadEnhancement(
+            () => readProperty(VoiceClarityEnabledPropertyId), () => readProperty(VoiceClarityLevelPropertyId));
         var normalization = endpoint == ThxAudioEndpoint.Speakers
-            ? ReadEnhancement(device, NormalizationEnabledPropertyId, NormalizationLevelPropertyId)
+            ? TryReadEnhancement(
+                () => readProperty(NormalizationEnabledPropertyId), () => readProperty(NormalizationLevelPropertyId))
             : null;
-        var bassBoost = TryReadEnhancement(device, BassBoostEnabledPropertyId, BassBoostLevelPropertyId);
+        var bassBoost = TryReadEnhancement(
+            () => readProperty(BassBoostEnabledPropertyId), () => readProperty(BassBoostLevelPropertyId));
         var factoryCurves = presets.ToDictionary(
             preset => preset.Id,
             preset => ThxAudioAdmission.FactoryCurve(profile, endpoint, preset.Id),
@@ -266,36 +268,28 @@ internal sealed class ThxAudioHelperSession
     }
 
     private IReadOnlyList<double> ReadNativeGains(string device) =>
+        ReadNativeGains(id => _native!.GetProperty(device, id));
+
+    private static IReadOnlyList<double> ReadNativeGains(Func<string, string> readProperty) =>
         Enumerable.Range(1, 10)
             .Select(index => ThxVendorJson.ParseFloat(
-                _native!.GetProperty(device, $"eq_band_{index}_gain_db"),
+                readProperty($"eq_band_{index}_gain_db"),
                 -12,
                 12))
             .ToArray();
 
-    private ThxAudioEnhancement ReadEnhancement(
-        string device,
-        string enabledProperty,
-        string levelProperty)
-    {
-        var enabled = ThxVendorJson.ParseBoolean(_native!.GetProperty(device, enabledProperty));
-        var level = ThxVendorJson.ParseFloat(_native.GetProperty(device, levelProperty), 0, 1);
-        return new ThxAudioEnhancement(
-            enabled,
-            checked((int)Math.Round(level * 100, MidpointRounding.AwayFromZero)));
-    }
-
-    private ThxAudioEnhancement? TryReadEnhancement(
-        string device,
-        string enabledProperty,
-        string levelProperty)
+    internal static ThxAudioEnhancement? TryReadEnhancement(Func<string> readEnabled, Func<string> readLevel)
     {
         try
         {
-            return ReadEnhancement(device, enabledProperty, levelProperty);
+            var enabled = ThxVendorJson.ParseBoolean(readEnabled());
+            var level = ThxVendorJson.ParseFloat(readLevel(), 0, 1);
+            return new ThxAudioEnhancement(
+                enabled,
+                checked((int)Math.Round(level * 100, MidpointRounding.AwayFromZero)));
         }
         catch (Exception exception) when (
-            exception is InvalidDataException or InvalidOperationException or JsonException)
+            exception is InvalidDataException or InvalidOperationException or JsonException or EntryPointNotFoundException)
         {
             return null;
         }

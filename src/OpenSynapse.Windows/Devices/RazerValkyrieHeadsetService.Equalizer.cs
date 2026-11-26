@@ -4,6 +4,21 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed partial class RazerValkyrieHeadsetService
 {
+    public async Task<RazerHeadsetEqualizerState> ReadEqualizerAsync(
+        int bandCount, CancellationToken cancellationToken = default)
+    {
+        if (bandCount is not (0 or 10)) throw new ArgumentOutOfRangeException(nameof(bandCount));
+        var preset = RazerValkyrieHeadsetProtocol.ReadEqPreset(await QueryAsync(
+            RazerValkyrieHeadsetProtocol.CreateGetEqPreset(), RazerValkyrieHeadsetProtocol.EqPresetHeader,
+            "EQ preset", cancellationToken).ConfigureAwait(false));
+        var bands = bandCount == 0 ? null : RazerValkyrieHeadsetProtocol.ReadEqBands(await QueryAsync(
+            RazerValkyrieHeadsetProtocol.CreateGetEqBands(_eqBandsWithProfile),
+            _eqBandsWithProfile ? RazerValkyrieHeadsetProtocol.EqBandsWithProfileHeader
+                : RazerValkyrieHeadsetProtocol.EqBandsBareHeader,
+            "EQ bands", cancellationToken).ConfigureAwait(false), _eqBandsWithProfile);
+        return new(preset, bands);
+    }
+
     private readonly SemaphoreSlim _eqGate = new(1, 1);
 
     public Task SetEqPresetAsync(byte preset, CancellationToken cancellationToken = default) =>

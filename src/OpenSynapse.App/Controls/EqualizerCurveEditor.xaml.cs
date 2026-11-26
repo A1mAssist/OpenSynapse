@@ -20,6 +20,7 @@ public sealed partial class EqualizerCurveEditor : UserControl
     private readonly List<(IEqualizerBand Band, Slider Slider, TextBlock Value)> _items = [];
     private INotifyCollectionChanged? _collection;
     private bool _refreshing;
+    internal event EventHandler? ControlsRebuilt;
 
     public EqualizerCurveEditor()
     {
@@ -111,6 +112,7 @@ public sealed partial class EqualizerCurveEditor : UserControl
         }
         EditorGrid.MinWidth = 56 + _items.Count * 50;
         DrawCurve();
+        ControlsRebuilt?.Invoke(this, EventArgs.Empty);
     }
 
     private static TextBlock CreateLabel(string text) => new()

@@ -5,11 +5,11 @@ using System.Diagnostics;
 namespace OpenSynapse.Windows.Lighting;
 
 /// <summary>
-/// Owns the shared world frame. One world source paints the whole canvas on a
-/// fixed square grid; every router target samples its own LEDs from that frame.
-/// Preview uses a separate source so preview input cannot move hardware clocks.
+/// Owns one timeline and input snapshot per role. Legacy projects sample a
+/// shared world frame; explicit Ambient mappings retain separate device frames.
+/// Preview input cannot move hardware clocks.
 /// </summary>
-public sealed class StudioWorldRenderer
+public sealed partial class StudioWorldRenderer
 {
     private readonly object _gate = new();
     private readonly Func<int, int, StudioEffectInput>? _inputProvider;
@@ -17,6 +17,10 @@ public sealed class StudioWorldRenderer
     private StudioWorldCanvas? _canvas;
     private StudioDeviceFrameSource? _outputSource;
     private StudioDeviceFrameSource? _previewSource;
+    private LayerPlayback? _outputPlayback;
+    private LayerPlayback? _previewPlayback;
+    private IReadOnlyDictionary<string, StudioDeviceFrame>? _outputDevices;
+    private IReadOnlyDictionary<string, StudioDeviceFrame>? _previewDevices;
     private (TimeSpan Elapsed, RazerRgb[] Frame)? _outputCache;
     private (TimeSpan Elapsed, RazerRgb[] Frame)? _previewCache;
     private long _outputFrameSlot = -1;
@@ -74,16 +78,29 @@ public sealed class StudioWorldRenderer
                 _previewSource = null;
                 _outputCache = null;
                 _previewCache = null;
+                _outputPlayback = null;
+                _previewPlayback = null;
+                _outputDevices = null;
+                _previewDevices = null;
                 return;
             }
 
             _canvas = canvas;
             _outputSource ??= new StudioDeviceFrameSource(canvas.Rows, canvas.Columns, _inputProvider);
             _previewSource ??= new StudioDeviceFrameSource(canvas.Rows, canvas.Columns, _inputProvider);
+            if (canvas.UsesLayerMapping)
+            {
+                _outputPlayback ??= new LayerPlayback(_outputSource);
+                _previewPlayback ??= new LayerPlayback(_previewSource);
+                _outputPlayback.Update(canvas);
+                _previewPlayback.Update(canvas);
+            }
             _outputSource.Update(canvas.Layers);
             _previewSource.Update(canvas.Layers);
             _outputCache = null;
             _previewCache = null;
+            _outputDevices = null;
+            _previewDevices = null;
         }
     }
 
@@ -98,7 +115,10 @@ public sealed class StudioWorldRenderer
         }
     }
 
-    /// <summary>Creates a router source when this world owns the target; null means use the old per-device path.</summary>
+    /// <summary>
+    /// Creates a router source when this world owns the target; null means use the old per-device path.
+    /// An explicit matrixRowOffset identifies a channel slice, including single-LED channel zero.
+    /// </summary>
     public StudioDeviceFrameSource? CreateSource(
         string? instanceId,
         int matrixRows,
@@ -106,7 +126,7 @@ public sealed class StudioWorldRenderer
         int deviceRows,
         int deviceColumns,
         StudioLedLayout? layout,
-        int matrixRowOffset = 0)
+        int? matrixRowOffset = null)
     {
         lock (_gate)
         {
@@ -166,6 +186,7 @@ public sealed class StudioWorldRenderer
             var frames = new Dictionary<string, StudioDeviceFrame>(StringComparer.OrdinalIgnoreCase);
             if (_canvas is not { } canvas) return frames;
             var world = RenderFrameLocked(elapsed, preview: true);
+            if (canvas.UsesLayerMapping) return _previewDevices!;
             foreach (var device in canvas.Devices)
             {
                 var colors = new StudioRgb[device.MatrixRows * device.MatrixColumns];
@@ -189,6 +210,8 @@ public sealed class StudioWorldRenderer
     {
         lock (_gate)
         {
+            if (_canvas?.UsesLayerMapping == true)
+                return _previewPlayback!.HandleInput(instanceId, input, seconds, 0);
             if (_previewSource is null || !TryMapInput(instanceId, input, rowOffset: 0, out var mapped)) return 0;
             return _previewSource.HandleInput(mapped, seconds);
         }
@@ -202,6 +225,8 @@ public sealed class StudioWorldRenderer
     {
         lock (_gate)
         {
+            if (_canvas?.UsesLayerMapping == true)
+                return _outputPlayback!.HandleInput(instanceId, input, _outputClock.Elapsed.TotalSeconds, rowOffset);
             if (_outputSource is null || !TryMapInput(instanceId, input, rowOffset, out var mapped)) return 0;
             return _outputSource.HandleInput(mapped, _outputClock.Elapsed.TotalSeconds);
         }
@@ -215,6 +240,9 @@ public sealed class StudioWorldRenderer
     {
         lock (_gate)
         {
+            if (_canvas?.UsesLayerMapping == true)
+                return _outputPlayback!.HandleInput(instanceId, input, _outputClock.Elapsed.TotalSeconds,
+                    rowOffset, playbackOnly: true);
             if (_outputSource is null || !TryMapInput(instanceId, input, rowOffset, out var mapped)) return 0;
             return _outputSource.TriggerPlayback(mapped, _outputClock.Elapsed.TotalSeconds);
         }
@@ -227,6 +255,11 @@ public sealed class StudioWorldRenderer
     {
         lock (_gate)
         {
+            if (_canvas?.UsesLayerMapping == true)
+            {
+                _outputPlayback!.RestoreHeldKeys(instanceId, keys, rowOffset);
+                return;
+            }
             if (_outputSource is null || _canvas is not { } canvas) return;
             var mapped = new List<(int Row, int Column)>();
             foreach (var (row, column) in keys)
@@ -266,11 +299,69 @@ public sealed class StudioWorldRenderer
         var cache = preview ? _previewCache : _outputCache;
         if (cache is { } cached && cached.Elapsed == elapsed) return cached.Frame;
 
-        var frame = source.RenderAsync(elapsed, CancellationToken.None)
-            .AsTask().GetAwaiter().GetResult().ToArray();
+        RazerRgb[] frame;
+        if (_canvas is { UsesLayerMapping: true } canvas)
+        {
+            var input = _inputProvider?.Invoke(canvas.Rows, canvas.Columns) ?? default;
+            var devices = (preview ? _previewPlayback : _outputPlayback)!.Render(elapsed.TotalSeconds, input);
+            if (preview) _previewDevices = devices;
+            else _outputDevices = devices;
+            // Compatibility world preview only. Device output never samples this projection.
+            frame = new RazerRgb[canvas.Rows * canvas.Columns];
+            foreach (var device in canvas.Devices)
+            {
+                var colors = devices[device.InstanceId].Frame;
+                for (var index = 0; index < colors.Length; index++)
+                {
+                    var color = colors[index];
+                    frame[device.WorldIndices[index]] = new(color.R, color.G, color.B);
+                }
+            }
+        }
+        else
+        {
+            frame = source.RenderAsync(elapsed, CancellationToken.None)
+                .AsTask().GetAwaiter().GetResult().ToArray();
+        }
         if (preview) _previewCache = (elapsed, frame);
         else _outputCache = (elapsed, frame);
         return frame;
+    }
+
+    /// <summary>Logical target frame, before the existing HID/sparse layout conversion.</summary>
+    internal RazerRgb[] RenderOutputDeviceFrame(string instanceId, int rows, int columns, int? rowOffset,
+        TimeSpan elapsed)
+    {
+        lock (_gate)
+        {
+            var result = new RazerRgb[rows * columns];
+            var world = RenderOutputFrame(elapsed);
+            if (_canvas is not { } canvas) return result;
+            if (!canvas.UsesLayerMapping)
+            {
+                if (!canvas.TryGetSampleMap(instanceId, rows, columns, rowOffset ?? 0, out var map)) return result;
+                for (var index = 0; index < result.Length; index++)
+                    if ((uint)map.WorldIndices[index] < (uint)world.Length) result[index] = world[map.WorldIndices[index]];
+                return result;
+            }
+            if (_outputDevices is null || !_outputDevices.TryGetValue(instanceId, out var frame)) return result;
+            for (var row = 0; row < rows; row++)
+            {
+                for (var column = 0; column < columns; column++)
+                {
+                    var sourceRow = Math.Clamp(row + (rowOffset ?? 0), 0, frame.Rows - 1);
+                    var sourceColumn = Math.Clamp(column, 0, frame.Columns - 1);
+                    if (rows == 1 && columns == 1 && rowOffset is null)
+                    {
+                        sourceRow = (frame.Rows - 1) / 2;
+                        sourceColumn = (frame.Columns - 1) / 2;
+                    }
+                    var color = frame.Frame[sourceRow * frame.Columns + sourceColumn];
+                    result[row * columns + column] = new(color.R, color.G, color.B);
+                }
+            }
+            return result;
+        }
     }
 
     private bool TryMapInput(
@@ -305,7 +396,7 @@ public sealed class StudioWorldRenderer
     }
 }
 
-/// <summary>One router target sampled from the shared world frame.</summary>
+/// <summary>One router target mapped from the renderer's logical device frame.</summary>
 internal sealed class StudioWorldDeviceFrameSource : StudioDeviceFrameSource
 {
     private readonly StudioWorldRenderer _world;
@@ -315,7 +406,7 @@ internal sealed class StudioWorldDeviceFrameSource : StudioDeviceFrameSource
     private readonly int _deviceRows;
     private readonly int _deviceColumns;
     private readonly StudioLedLayout? _layout;
-    private readonly int _rowOffset;
+    private readonly int? _rowOffset;
 
     public StudioWorldDeviceFrameSource(
         StudioWorldRenderer world,
@@ -325,7 +416,7 @@ internal sealed class StudioWorldDeviceFrameSource : StudioDeviceFrameSource
         int deviceRows,
         int deviceColumns,
         StudioLedLayout? layout,
-        int rowOffset)
+        int? rowOffset)
         : base(1, 1)
     {
         _world = world;
@@ -335,10 +426,10 @@ internal sealed class StudioWorldDeviceFrameSource : StudioDeviceFrameSource
         _deviceRows = Math.Max(1, deviceRows);
         _deviceColumns = Math.Max(1, deviceColumns);
         _layout = layout;
-        _rowOffset = Math.Max(0, rowOffset);
+        _rowOffset = rowOffset is { } offset ? Math.Max(0, offset) : null;
     }
 
-    // The world renderer already owns the world-space layer stack.
+    // Update(canvas) owns the complete layer stack and device-specific mapping plan.
     public override void Update(IEnumerable<StudioLayerRender> layers)
     {
     }
@@ -348,36 +439,28 @@ internal sealed class StudioWorldDeviceFrameSource : StudioDeviceFrameSource
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var world = _world.RenderOutputFrame(elapsed);
-        return ValueTask.FromResult<IReadOnlyList<RazerRgb>>(Sample(world));
+        var logical = _world.RenderOutputDeviceFrame(
+            _instanceId, _matrixRows, _matrixColumns, _rowOffset, elapsed);
+        return ValueTask.FromResult<IReadOnlyList<RazerRgb>>(Sample(logical));
     }
 
     public override int HandleInput(StudioTriggerInput input, double nowSeconds) =>
-        _world.HandleOutputInput(_instanceId, input, nowSeconds, _rowOffset);
+        _world.HandleOutputInput(_instanceId, input, nowSeconds, _rowOffset ?? 0);
 
     public override int TriggerPlayback(StudioTriggerInput input, double nowSeconds) =>
-        _world.TriggerOutputPlayback(_instanceId, input, nowSeconds, _rowOffset);
+        _world.TriggerOutputPlayback(_instanceId, input, nowSeconds, _rowOffset ?? 0);
 
     internal override void RestoreHeldKeys(IEnumerable<(int Row, int Column)> keys) =>
-        _world.RestoreOutputHeldKeys(_instanceId, keys, _rowOffset);
+        _world.RestoreOutputHeldKeys(_instanceId, keys, _rowOffset ?? 0);
 
-    private RazerRgb[] Sample(IReadOnlyList<RazerRgb> world)
+    private RazerRgb[] Sample(IReadOnlyList<RazerRgb> logical)
     {
         var colors = new RazerRgb[_deviceRows * _deviceColumns];
-        if (world.Count == 0 ||
-            !_world.TryGetSampleMap(_instanceId, _matrixRows, _matrixColumns, _rowOffset, out var map))
-        {
-            return colors;
-        }
-
         if (_layout is null)
         {
-            var count = Math.Min(map.WorldIndices.Length, colors.Length);
+            var count = Math.Min(logical.Count, colors.Length);
             for (var index = 0; index < count; index++)
-            {
-                var worldIndex = map.WorldIndices[index];
-                if ((uint)worldIndex < (uint)world.Count) colors[index] = world[worldIndex];
-            }
+                colors[index] = logical[index];
 
             return colors;
         }
@@ -392,11 +475,8 @@ internal sealed class StudioWorldDeviceFrameSource : StudioDeviceFrameSource
                 continue;
             }
 
-            var worldIndex = map.WorldIndices[led.MatrixRow * _matrixColumns + led.MatrixCol];
-            if ((uint)worldIndex < (uint)world.Count)
-            {
-                colors[led.DeviceRow * _deviceColumns + led.DeviceCol] = world[worldIndex];
-            }
+            colors[led.DeviceRow * _deviceColumns + led.DeviceCol] =
+                logical[led.MatrixRow * _matrixColumns + led.MatrixCol];
         }
 
         return colors;

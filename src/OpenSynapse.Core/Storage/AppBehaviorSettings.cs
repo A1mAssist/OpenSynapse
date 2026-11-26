@@ -27,6 +27,7 @@ public sealed class AppBehaviorSettings
     [JsonIgnore] public string? RecoveryFilePath { get; private set; }
 
     public bool ModeChangeNotificationsEnabled { get; set; } = true;
+    public bool BladePerformanceCompatibilityEnabled { get; set; }
     public bool MacroPlaybackNotificationsEnabled { get; set; } = true;
     public bool LowBatteryNotificationsEnabled { get; set; } = true;
     public bool TrayBatteryLevelsEnabled { get; set; } = true;
@@ -49,6 +50,7 @@ public sealed class AppBehaviorSettings
     public int? PerformanceOverlayY { get; set; }
     public int WindowWidth { get; set; }
     public int WindowHeight { get; set; }
+    public int NavigationPaneWidth { get; set; } = 224;
     public Dictionary<string, int> LowBatteryNotifiedLevels { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public HashSet<string> ChromaBlockedSources { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public bool ExperimentalChromaRestEnabled { get; set; } = true;

@@ -21,8 +21,17 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
     public async Task ApplyAsync(CancellationToken cancellationToken = default)
     {
         if (!CanApply) return;
-        await _transport.RunInMappingModeAsync(ApplyCoreAsync, cancellationToken, forWrite: true)
-            .ConfigureAwait(true);
+        try
+        {
+            await _transport.RunInMappingModeAsync(ApplyCoreAsync, cancellationToken, forWrite: true)
+                .ConfigureAwait(true);
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            StatusText = string.Empty;
+            ErrorText = exception.Message;
+            _log?.Invoke($"mapping apply session failed: {exception}");
+        }
     }
 
     private async Task ApplyCoreAsync(CancellationToken cancellationToken = default)

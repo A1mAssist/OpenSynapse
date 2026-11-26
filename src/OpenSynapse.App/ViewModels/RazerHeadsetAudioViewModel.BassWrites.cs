@@ -9,7 +9,7 @@ public sealed partial class RazerHeadsetAudioViewModel
     public async Task ApplyBassAsync(CancellationToken cancellationToken = default)
     {
         if (!IsFeature91 && !IsProtocol25 && !IsJolie) return;
-        var previous = Bass;
+        var previous = ConfirmedAudioValue(HeadsetAudioSetting.Bass, Bass);
         var desired = Bass;
         var applied = IsJolie
             ? await RunMxicWriteAsync(

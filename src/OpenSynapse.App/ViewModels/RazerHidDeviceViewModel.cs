@@ -158,6 +158,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         _lightingSettingsSaver = lightingSettingsSaver;
         _localMacros = localMacros;
         _getActiveProfile = getActiveProfile;
+        _getAutoApplyProfileDocument = getProfileDocument;
         _saveProfileAsync = saveProfileAsync;
         _getMachineSettings = getMachineSettings;
         _saveMachineSettingsAsync = saveMachineSettingsAsync;
@@ -188,6 +189,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         }
 
         DisposeMatrixEditor(); CancelRotationCalibration();
+        if (_calibration is not null) await _calibration.DisposeAsync().ConfigureAwait(false);
         try
         {
             await StopSoftwareLightingAsync(CancellationToken.None).ConfigureAwait(false);
@@ -247,7 +249,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         : string.Empty;
     public bool IsReady => Connection.IsReady;
     public bool RequiresRescan { get => _requiresRescan; private set => SetField(ref _requiresRescan, value); }
-    public bool CanWrite => IsReady && !RequiresRescan;
+    public bool CanWrite => IsReady && !RequiresRescan && _calibration?.IsSessionActive != true;
 
     private bool SupportsSoftwareLighting =>
         Connection.Definition.Category == DeviceCategory.Keyboard &&

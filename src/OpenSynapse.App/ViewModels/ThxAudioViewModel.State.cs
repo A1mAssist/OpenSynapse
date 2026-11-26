@@ -40,14 +40,15 @@ public sealed partial class ThxAudioViewModel
     {
         _availability = status.Availability;
         _errorCode = status.Error;
+        _state = status.IsAvailable || status.Availability == ThxAudioAvailability.OperationRejected
+            ? status.State : null;
         OnPropertyChanged(nameof(ControlsVisibility));
         OnPropertyChanged(nameof(UnavailableVisibility));
         OnPropertyChanged(nameof(HasError));
         OnPropertyChanged(nameof(UnavailableHint));
         OnPropertyChanged(nameof(InstallVisibility));
-        if (status.State is not { } state || !status.IsAvailable)
+        if (_state is not { } state)
         {
-            _state = null;
             OnPropertyChanged(nameof(CanEdit));
             OnPropertyChanged(nameof(BassBoostVisibility));
             OnPropertyChanged(nameof(HasEqualizerChanges));
@@ -58,18 +59,20 @@ public sealed partial class ThxAudioViewModel
             return;
         }
 
-        _state = state;
         _applying = true;
         try
         {
             SpatialEnabled = state.SpatialEnabled;
             EqualizerEnabled = state.EqualizerEnabled;
             VoiceClarityEnabled = state.VoiceClarity?.Enabled ?? false;
-            VoiceClarityLevel = state.VoiceClarity?.LevelPercent ?? 0;
+            if (state.VoiceClarity is { } voiceClarity)
+                VoiceClarityLevel = voiceClarity.LevelPercent;
             SoundNormalizationEnabled = state.SoundNormalization?.Enabled ?? false;
-            SoundNormalizationLevel = state.SoundNormalization?.LevelPercent ?? 0;
+            if (state.SoundNormalization is { } normalization)
+                SoundNormalizationLevel = normalization.LevelPercent;
             BassBoostEnabled = state.BassBoost?.Enabled ?? false;
-            BassBoostLevel = state.BassBoost?.LevelPercent ?? 0;
+            if (state.BassBoost is { } bassBoost)
+                BassBoostLevel = bassBoost.LevelPercent;
 
             Presets.Clear();
             foreach (var preset in state.Presets)
@@ -123,7 +126,7 @@ public sealed partial class ThxAudioViewModel
         OnPropertyChanged(nameof(HasEqualizerChanges));
         OnPropertyChanged(nameof(CanApplyEqualizer));
         OnPropertyChanged(nameof(CanResetEqualizer));
-        StatusText = AppStrings.Text("ThxStatusReady");
+        StatusText = status.IsAvailable ? AppStrings.Text("ThxStatusReady") : LocalizeError(status);
         NotifyStateChanged();
     }
 

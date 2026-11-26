@@ -27,6 +27,8 @@ public sealed partial class LightingStudioViewModel
         var stopsCustom = parameters.ColorStopsCustom;
 
         StudioEffectCatalog.ApplyDefaults(parameters);
+        if (parameters.Effect == StudioEffectKind.Ambient)
+            parameters.AmbientMapping = StudioAmbientMapping.PerDevice;
         if (keepColor) parameters.Primary = primary;
         if (keepSecondary) parameters.Secondary = secondary;
         if (keepRandom) parameters.RandomColor = randomColor;

@@ -97,8 +97,12 @@ public sealed partial class RazerHeadsetAudioViewModel
     public int SelectedAutoSleepMinutesIndex
     {
         get => _selectedAutoSleepMinutesIndex;
-        set => SetField(ref _selectedAutoSleepMinutesIndex,
-            Math.Clamp(value, 0, AutoSleepMinuteChoices.Length - 1));
+        set
+        {
+            if (value < 0) return;
+            SetField(ref _selectedAutoSleepMinutesIndex,
+                Math.Clamp(value, 0, AutoSleepMinuteChoices.Length - 1));
+        }
     }
 
     public int AutoSleepMinutes => AutoSleepMinuteChoices[_selectedAutoSleepMinutesIndex];

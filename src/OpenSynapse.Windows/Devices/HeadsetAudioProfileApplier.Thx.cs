@@ -233,7 +233,7 @@ public sealed partial class HeadsetAudioProfileApplier
         }
     }
 
-    private static double[]? ResolveThxBands(HeadsetProfileSettings profile)
+    internal static double[]? ResolveThxBands(HeadsetProfileSettings profile)
     {
         if (profile.ThxPreset is { Length: > 0 } preset)
         {

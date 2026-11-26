@@ -83,6 +83,7 @@ public sealed partial class StudioCanvas : UserControl
     public event Action<string, int, int>? BucketClicked;
     public event DeviceMovedEventHandler? DeviceMoved;
     public event EventHandler? ZoomChanged;
+    public event EventHandler? ViewPanned;
     public StudioCanvasTool Tool
     {
         get => _tool;

@@ -104,16 +104,12 @@ public sealed partial class RazerHeadsetAudioViewModel
     public bool CanApplyThx => !IsBusy && _thxState is not null &&
         _thxStatus.Availability == ThxHeadsetAvailability.Available;
 
+    public bool CanApplyThxEqualizer => CanApplyThx && _thxState?.SelectedPresetId is not null;
+
     public bool ThxSpatialEnabled
     {
         get => _thxSpatialEnabled;
-        set
-        {
-            if (SetField(ref _thxSpatialEnabled, value) && CanApplyThx)
-            {
-                _ = ApplyThxSpatialAsync();
-            }
-        }
+        set => SetField(ref _thxSpatialEnabled, value);
     }
 
     public bool ThxEqualizerEnabled
@@ -130,8 +126,12 @@ public sealed partial class RazerHeadsetAudioViewModel
     public int SelectedThxPresetIndex
     {
         get => _thxSelectedPresetIndex;
-        set => SetField(ref _thxSelectedPresetIndex,
-            Math.Clamp(value, 0, Math.Max(0, (_thxState?.Presets.Count ?? 0) - 1)));
+        set
+        {
+            if (value < 0) return; // Replacing ItemsSource temporarily clears the selection.
+            SetField(ref _thxSelectedPresetIndex,
+                Math.Clamp(value, 0, Math.Max(0, (_thxState?.Presets.Count ?? 0) - 1)));
+        }
     }
 
     public ObservableCollection<RazerHeadsetThxBandViewModel> ThxBands { get; } = new();
@@ -220,7 +220,11 @@ public sealed partial class RazerHeadsetAudioViewModel
     public int SelectedEqPresetIndex
     {
         get => _selectedEqPresetIndex;
-        set => SetField(ref _selectedEqPresetIndex, Math.Clamp(value, 0, ActivePresets.Length - 1));
+        set
+        {
+            if (value < 0) return;
+            SetField(ref _selectedEqPresetIndex, Math.Clamp(value, 0, ActivePresets.Length - 1));
+        }
     }
 
     public ObservableCollection<RazerHeadsetEqBandViewModel> EqBands { get; } = new();
@@ -284,7 +288,11 @@ public sealed partial class RazerHeadsetAudioViewModel
     public int SelectedSourceIndex
     {
         get => _selectedSourceIndex;
-        set => SetField(ref _selectedSourceIndex, Math.Clamp(value, 0, Sources.Length - 1));
+        set
+        {
+            if (value < 0) return;
+            SetField(ref _selectedSourceIndex, Math.Clamp(value, 0, Sources.Length - 1));
+        }
     }
 
     public bool NoiseSuppression

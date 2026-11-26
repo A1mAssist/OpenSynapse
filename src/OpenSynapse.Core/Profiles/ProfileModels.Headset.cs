@@ -13,8 +13,8 @@ public sealed class HeadsetProfileSettings
     public bool? ThxSpatialEnabled { get; set; }
     public bool? ThxEqualizerEnabled { get; set; }
     public string? ThxPreset { get; set; }
-    public Dictionary<string, int>? ThxBands { get; set; }
-    public Dictionary<string, Dictionary<string, int>>? ThxBandsByPreset { get; set; }
+    public Dictionary<string, double>? ThxBands { get; set; }
+    public Dictionary<string, Dictionary<string, double>>? ThxBandsByPreset { get; set; }
     public bool? ThxNormalizationEnabled { get; set; }
     public int? ThxNormalizationLevel { get; set; }
     public bool? ThxVoiceClarityEnabled { get; set; }
@@ -122,7 +122,7 @@ public sealed class HeadsetProfileSettings
                 MouseProfileSettings.ValidateRange(value, -128, 127, nameof(EqBandsTenths));
             EqBandsTenths = new Dictionary<string, int>(EqBandsTenths, StringComparer.OrdinalIgnoreCase);
         }
-        ThxBands = NormalizeBands(ThxBands, nameof(ThxBands));
+        ThxBands = NormalizeThxBands(ThxBands);
         ThxBandsByPreset = NormalizeBandsByPreset(ThxBandsByPreset);
         MicEqBands = NormalizeBands(MicEqBands, nameof(MicEqBands));
         ChromaParameters = ChromaParameters is null
@@ -155,20 +155,34 @@ public sealed class HeadsetProfileSettings
         return result;
     }
 
-    private static Dictionary<string, Dictionary<string, int>>? NormalizeBandsByPreset(
-        IReadOnlyDictionary<string, Dictionary<string, int>>? source)
+    private static Dictionary<string, double>? NormalizeThxBands(IReadOnlyDictionary<string, double>? source)
+    {
+        if (source is null) return null;
+        var result = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (key, value) in source)
+        {
+            if (string.IsNullOrWhiteSpace(key)) continue;
+            if (!double.IsFinite(value) || value is < -24 or > 100)
+                throw new InvalidDataException("THX band gains must be finite and between -24 and 100.");
+            result[key] = value;
+        }
+        return result;
+    }
+
+    private static Dictionary<string, Dictionary<string, double>>? NormalizeBandsByPreset(
+        IReadOnlyDictionary<string, Dictionary<string, double>>? source)
     {
         if (source is null)
         {
             return null;
         }
 
-        var result = new Dictionary<string, Dictionary<string, int>>(
+        var result = new Dictionary<string, Dictionary<string, double>>(
             StringComparer.OrdinalIgnoreCase);
         foreach (var (preset, bands) in source)
         {
             if (string.IsNullOrWhiteSpace(preset) ||
-                NormalizeBands(bands, nameof(ThxBandsByPreset)) is not { } normalized)
+                NormalizeThxBands(bands) is not { } normalized)
             {
                 continue;
             }

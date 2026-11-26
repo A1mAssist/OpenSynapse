@@ -20,6 +20,8 @@ public sealed partial class RazerAwBleHeadsetViewModel
             {
                 ApplyCustomEqBands(applied.Levels);
                 SelectedEqPresetIndex = IndexOfPreset(applied.Preset);
+                CustomEqEnabled = RazerAwBleProtocol.IsCustomEqPreset(applied.Preset);
+                AcceptEqReadback();
             },
             PersistCustomEqAsync,
             ct => ReadCustomEqSnapshotAsync(ct),

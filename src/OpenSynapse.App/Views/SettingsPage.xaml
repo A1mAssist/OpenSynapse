@@ -54,6 +54,18 @@
                     <ToggleSwitch local:Localized.Uid="A11yEnableAdvancedFeatures" x:Name="AdvancedFeaturesToggle" Grid.Column="1" Toggled="AdvancedFeaturesToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
                   </Grid>
                 </Border>
+                <Border x:Name="BladePerformanceCompatibilityCard" Style="{StaticResource CardStyle}" Padding="16"
+                        Visibility="{Binding Blade.PerformanceCompatibilityVisibility, FallbackValue=Collapsed}">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                    <StackPanel Spacing="4">
+                      <TextBlock local:Localized.Uid="BladePerformanceCompatibilityTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+                      <TextBlock local:Localized.Uid="BladePerformanceCompatibilityDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch x:Name="BladePerformanceCompatibilityToggle" local:Localized.Uid="BladePerformanceCompatibilityToggle"
+                                  Grid.Column="1" Toggled="BladePerformanceCompatibilityToggled" OnContent="" OffContent=""
+                                  MinWidth="44" VerticalAlignment="Center" AutomationProperties.AutomationId="BladePerformanceCompatibilityToggle" />
+                  </Grid>
+                </Border>
                 <Border x:Name="ModeNotificationCard" Style="{StaticResource CardStyle}" Padding="16">
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                     <StackPanel Spacing="4">

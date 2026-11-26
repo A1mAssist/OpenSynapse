@@ -14,6 +14,7 @@ public enum ThxAudioAvailability
     ControllerActive,
     Available,
     AvailableReadOnly,
+    OperationRejected,
 }
 
 public enum ThxAudioEnhancementKind

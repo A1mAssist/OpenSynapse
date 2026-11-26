@@ -5,12 +5,16 @@ namespace OpenSynapse.App.ViewModels;
 /// <summary>Builds the shared spatial canvas from the current devices and project.</summary>
 public sealed partial class LightingStudioViewModel
 {
-    private bool UsesWorld(string? instanceId) =>
-        _world.Active && _world.Canvas?.HasDevice(instanceId) == true;
+    private bool UsesWorld(string? instanceId, bool output = false)
+    {
+        var world = output ? _outputWorld : _world;
+        return world.Active && world.Canvas?.HasDevice(instanceId) == true;
+    }
 
     private void InvalidateWorld()
     {
         _worldDirty = true;
+        _outputWorldDirty = true;
         // Placements may have moved; rebuild the scene copy instead of reusing stale geometry.
         _sceneProfile = null;
     }
@@ -18,20 +22,30 @@ public sealed partial class LightingStudioViewModel
     private void RefreshBladeWorldSource()
     {
         if (!IsApplied || _source is null || _appliedBlade is null) return;
-        EnsureWorld();
-        _source.Update(BuildLayersFor(_appliedBlade));
+        EnsureWorld(output: true);
+        _source.Update(BuildLayersFor(_appliedBlade, output: true));
     }
 
-    private void EnsureWorld()
+    private void EnsureWorld(bool output = false)
     {
-        if (!_worldDirty && _worldInitialized) return;
-        _worldDirty = false;
-        _worldInitialized = true;
+        if (output)
+        {
+            if (!_outputWorldDirty) return;
+            _outputWorldDirty = false;
+        }
+        else
+        {
+            if (!_worldDirty && _worldInitialized) return;
+            _worldDirty = false;
+            _worldInitialized = true;
+        }
+        var world = output ? _outputWorld : _world;
+        var scope = output ? _appliedScope : PendingScope;
 
         var profile = CurrentProfile;
         if (profile is null)
         {
-            _world.Update(null);
+            world.Update(null);
             _layerCache.Clear();
             return;
         }
@@ -40,10 +54,10 @@ public sealed partial class LightingStudioViewModel
         foreach (var option in Devices)
         {
             var instanceId = option.EffectiveInstanceId;
-            if (!option.HasMatrix ||
+            if (!option.HasMatrix || !option.IsOutputAvailable ||
                 option.HasNoPixelOutput ||
                 option.EffectiveProductId == 0 ||
-                string.IsNullOrWhiteSpace(instanceId))
+                string.IsNullOrWhiteSpace(instanceId) || !ScopeIncludes(scope, option))
             {
                 continue;
             }
@@ -91,7 +105,7 @@ public sealed partial class LightingStudioViewModel
                 placement is { Height: > 0 } savedHeight ? savedHeight.Height : null));
         }
 
-        _world.Update(StudioWorldCanvas.Build(devices, profile));
+        world.Update(StudioWorldCanvas.Build(devices, profile));
         _layerCache.Clear();
     }
 }

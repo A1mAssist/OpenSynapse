@@ -172,8 +172,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         if (IsCarol) { await SaveCarolPowerAsync(cancellationToken); return; }
         if (!IsJolie || !BeginOperation()) return;
 
-        var previousEnabled = AutoSleepEnabled;
-        var previousIndex = SelectedAutoSleepMinutesIndex;
+        var (previousEnabled, previousIndex) = ConfirmedAudioValue(
+            HeadsetAudioSetting.AutoSleep, (AutoSleepEnabled, SelectedAutoSleepMinutesIndex));
         var minutes = AutoSleepMinutes;
         try
         {
@@ -189,7 +189,8 @@ public sealed partial class RazerHeadsetAudioViewModel
 
             AutoSleepEnabled = applied.Enabled;
             SelectAutoSleepMinutes(applied.Minutes);
-            await SaveHeadsetSettingAsync(
+            ConfirmAudioSetting(HeadsetAudioSetting.AutoSleep, (AutoSleepEnabled, SelectedAutoSleepMinutesIndex));
+            if (!await SaveHeadsetSettingAsync(
                 settings =>
                 {
                     settings.AutoSleepEnabled = applied.Enabled;
@@ -202,12 +203,13 @@ public sealed partial class RazerHeadsetAudioViewModel
                 },
                 () =>
                 {
+                    ConfirmAudioSetting(HeadsetAudioSetting.AutoSleep, (previousEnabled, previousIndex));
                     AutoSleepEnabled = previousEnabled;
                     SelectedAutoSleepMinutesIndex = previousIndex;
                 },
                 token => new RazerMakoXPowerService(_connection.DevicePath, _diagnostic)
                     .SetAsync(previousHardware.Enabled, previousHardware.Minutes, token),
-                cancellationToken);
+                cancellationToken)) return;
             ErrorText = string.Empty;
             OperationStatusText = AppStrings.Text("BlackSharkSaved");
         }

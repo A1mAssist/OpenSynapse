@@ -17,8 +17,13 @@ public enum StudioPlaybackEnd
     Toggle,
 }
 
-
-
+/// <summary>Coordinates used to map an Ambient layer onto its target devices.</summary>
+public enum StudioAmbientMapping
+{
+    LegacyAuto = 0,
+    PerDevice,
+    SharedCanvas,
+}
 
 /// <summary>How the Ambient effect maps the captured screen onto the matrix.</summary>
 public enum StudioScreenMode
@@ -233,6 +238,9 @@ public sealed class StudioEffectParams
 
     public StudioScreenMode ScreenMode { get; set; } = StudioScreenMode.Follow;
 
+    /// <summary>Missing fields in older projects retain their original mapping.</summary>
+    public StudioAmbientMapping AmbientMapping { get; set; } = StudioAmbientMapping.LegacyAuto;
+
     public StudioAudioStyle AudioStyle { get; set; } = StudioAudioStyle.Level;
 
     public StudioReactiveStyle ReactiveStyle { get; set; } = StudioReactiveStyle.Ripple;
@@ -401,6 +409,7 @@ public sealed class StudioEffectParams
             Screen = Screen,
             ScreenRect = ScreenRect,
             ScreenMode = ScreenMode,
+            AmbientMapping = AmbientMapping,
             AudioStyle = AudioStyle,
             ReactiveStyle = ReactiveStyle,
             Preset = Preset,

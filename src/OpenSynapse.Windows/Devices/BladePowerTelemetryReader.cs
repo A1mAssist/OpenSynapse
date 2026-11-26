@@ -10,18 +10,21 @@ internal sealed partial class BladePowerTelemetryReader
     private readonly RazerCapabilityClient _client;
     private readonly BladeValidationState _validation;
     private readonly BladeFanTelemetryReader _fan;
+    private readonly Func<bool>? _performanceCompatibilityEnabled;
     private readonly SemaphoreSlim _bladePowerModeTransactionGate = new(1, 1);
 
     public BladePowerTelemetryReader(
         RazerDeviceResolver resolver,
         RazerCapabilityClient client,
         BladeValidationState validation,
-        BladeFanTelemetryReader fan)
+        BladeFanTelemetryReader fan,
+        Func<bool>? performanceCompatibilityEnabled = null)
     {
         _resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
         _client = client ?? throw new ArgumentNullException(nameof(client));
         _validation = validation ?? throw new ArgumentNullException(nameof(validation));
         _fan = fan ?? throw new ArgumentNullException(nameof(fan));
+        _performanceCompatibilityEnabled = performanceCompatibilityEnabled;
     }
 
     public ValueTask<BladePerformanceMode> SetBladePerformanceModeAsync(
@@ -34,7 +37,7 @@ internal sealed partial class BladePowerTelemetryReader
 
     /// <summary>
     /// Shortcut path: the same two zone writes Razer sends, no readback verify.
-    /// HyperBoost keeps the full path because it also raises the CPU/GPU levels.
+    /// HyperBoost and compatibility transitions keep the full path for recovery.
     /// </summary>
     public ValueTask<BladePerformanceMode> SetBladePerformanceModeFastAsync(
         IReadOnlyList<DeviceDescriptor> devices,
@@ -51,7 +54,9 @@ internal sealed partial class BladePowerTelemetryReader
         CancellationToken cancellationToken,
         bool coolingPadConnected)
     {
-        if (mode == BladePerformanceMode.Hyperboost)
+        if (mode == BladePerformanceMode.Hyperboost ||
+            (mode is BladePerformanceMode.Performance or BladePerformanceMode.Gaming &&
+                _performanceCompatibilityEnabled?.Invoke() == true))
         {
             return await SetBladePerformanceModeCoreAsync(devices, mode, cancellationToken, coolingPadConnected);
         }
@@ -95,6 +100,9 @@ internal sealed partial class BladePowerTelemetryReader
             throw new InvalidOperationException($"Performance mode {mode} is not admitted for Blade PID {blade.Descriptor.ProductId:X4}.");
         RazerCapabilityClient.EnsureValidated(_validation.PerformancePath, blade.Descriptor.Id, "Read the Blade performance mode successfully first.");
 
+        var transitionViaCustom = mode is BladePerformanceMode.Performance or BladePerformanceMode.Gaming &&
+            blade.PublishesBladePerformanceMode(BladePerformanceMode.Custom) &&
+            _performanceCompatibilityEnabled?.Invoke() == true;
         var original = await _fan.ReadThermalStateAsync(blade, cancellationToken);
         // HyperBoost moves the EC to its own preset, so the CPU/GPU level goes with it:
         // the preset would otherwise run on whatever the previous mode left behind.
@@ -122,6 +130,14 @@ internal sealed partial class BladePowerTelemetryReader
                 mode != BladePerformanceMode.Custom
                     ? BladeFanMode.Automatic
                     : original.FanMode;
+            if (transitionViaCustom)
+            {
+                // Some ECs retain the quiet preset's power limits until Custom is entered.
+                await _fan.WriteThermalZoneAsync(blade, BladeFanProtocol.ZoneCpu,
+                    BladePerformanceMode.Custom, fanMode, cancellationToken);
+                await _fan.WriteThermalZoneAsync(blade, BladeFanProtocol.ZoneGpu,
+                    BladePerformanceMode.Custom, fanMode, cancellationToken);
+            }
             await _fan.WriteThermalZoneAsync(blade, 0x01, mode, fanMode, cancellationToken);
             await _fan.WriteThermalZoneAsync(blade, 0x02, mode, fanMode, cancellationToken);
 

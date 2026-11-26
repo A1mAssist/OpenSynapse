@@ -32,15 +32,25 @@ public sealed class RazerApBleHeadsetService : IDisposable
 {
     public static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(3);
     private static readonly TimeSpan ProbeTimeout = TimeSpan.FromMilliseconds(400);
+    private static readonly IReadOnlySet<ushort> MainsPoweredProductIds = new HashSet<ushort>
+    {
+        0x0558, // Leviathan V2 Pro BLE alias
+        0x0559, // Leviathan V2 X BLE alias
+    };
+    private static readonly string[] MainsPoweredNames =
+    [
+        "Leviathan", "Nommo", "Mako", "Seiren", "Soma",
+    ];
 
-    private readonly WindowsRazerApBleTransport _transport;
+    private readonly IRazerApBleTransport _transport;
+    private readonly SemaphoreSlim _eqGate = new(1, 1);
     private readonly TimeSpan _timeout;
     private readonly Action<string>? _diagnostic;
     private byte _transaction;
     private byte _profile;
 
     internal RazerApBleHeadsetService(
-        WindowsRazerApBleTransport transport,
+        IRazerApBleTransport transport,
         TimeSpan timeout,
         Action<string>? diagnostic = null,
         byte profile = RazerApBleProtocol.DefaultProfile)
@@ -53,6 +63,10 @@ public sealed class RazerApBleHeadsetService : IDisposable
 
     public static bool IsSupported(ushort productId) =>
         RazerHeadsetChannelCatalog.Resolve(productId) == RazerHeadsetChannel.ApBle;
+
+    public static bool SupportsBattery(RazerBleDevice device) =>
+        !MainsPoweredProductIds.Contains(device.ProductId) &&
+        !MainsPoweredNames.Any(name => device.Name.Contains(name, StringComparison.OrdinalIgnoreCase));
 
     public static async Task<RazerApBleHeadsetService> ConnectAsync(
         string deviceId,
@@ -256,16 +270,55 @@ public sealed class RazerApBleHeadsetService : IDisposable
             "mute",
             cancellationToken);
 
-    public Task SetEqPresetAsync(
+    public async Task SetEqPresetAsync(
         byte preset,
         RazerApBleAudioDeviceType type = RazerApBleAudioDeviceType.Speaker,
         byte group = 0,
-        CancellationToken cancellationToken = default) =>
-        WriteAsync(
-            RazerApBleProtocol.EqPresetSet,
-            RazerApBleProtocol.CreateEqPresetPayload(type, group, preset),
-            "EQ preset",
-            cancellationToken);
+        CancellationToken cancellationToken = default)
+    {
+        if (!Enum.IsDefined(type)) throw new ArgumentOutOfRangeException(nameof(type));
+        var requested = RazerApBleProtocol.CreateEqPresetPayload(type, group, preset);
+        await _eqGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var previous = await ReadEqPresetPayloadAsync(type, requested[1], _timeout, cancellationToken)
+                .ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                await WriteAndVerifyEqPresetAsync(requested, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception failure)
+            {
+                try
+                {
+                    // GET includes a leading reserved/profile byte; SET does not.
+                    await WriteAndVerifyEqPresetAsync(previous[1..4], CancellationToken.None)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception rollbackFailure)
+                {
+                    throw new IOException("AP-BLE EQ write failed and rollback could not be confirmed; hardware EQ state is uncertain.",
+                        new AggregateException(failure, rollbackFailure));
+                }
+                throw;
+            }
+        }
+        finally { _eqGate.Release(); }
+    }
+
+    private async Task WriteAndVerifyEqPresetAsync(byte[] requested, CancellationToken cancellationToken)
+    {
+        await WriteAsync(RazerApBleProtocol.EqPresetSet, requested, "EQ preset", cancellationToken)
+            .ConfigureAwait(false);
+        var actual = await ReadEqPresetPayloadAsync(
+            (RazerApBleAudioDeviceType)requested[0], requested[1], _timeout, cancellationToken)
+            .ConfigureAwait(false);
+        if (actual[3] != requested[2])
+        {
+            throw new IOException("AP-BLE EQ preset readback did not match the requested preset.");
+        }
+    }
 
     public Task SetGameModeAsync(bool enabled, CancellationToken cancellationToken = default) =>
         WriteAsync(
@@ -372,19 +425,40 @@ public sealed class RazerApBleHeadsetService : IDisposable
     public Task FactoryResetAsync(CancellationToken cancellationToken = default) =>
         WriteAsync(RazerApBleProtocol.FactoryReset, [], "factory reset", cancellationToken);
 
+    public Task<byte> ReadSpeakerEqPresetAsync(CancellationToken cancellationToken = default) =>
+        ReadEqPresetAsync(RazerApBleAudioDeviceType.Speaker, cancellationToken);
+
     private async Task<byte> ReadEqPresetAsync(
         RazerApBleAudioDeviceType type,
         CancellationToken cancellationToken)
     {
+        await _eqGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return (await ReadEqPresetPayloadAsync(type, null, ProbeTimeout, cancellationToken)
+                .ConfigureAwait(false))[3];
+        }
+        finally { _eqGate.Release(); }
+    }
+
+    private async Task<byte[]> ReadEqPresetPayloadAsync(
+        RazerApBleAudioDeviceType type, byte? group, TimeSpan timeout, CancellationToken cancellationToken)
+    {
         var payload = await ReadAsync(
             RazerApBleProtocol.EqPresetGet,
-            [_profile, (byte)type],
+            group.HasValue ? [_profile, (byte)type, group.Value] : [_profile, (byte)type],
             "EQ preset",
             cancellationToken,
-            ProbeTimeout).ConfigureAwait(false);
-        return payload.Length >= 4
-            ? payload[3]
-            : throw new InvalidDataException("AP-BLE EQ preset reply is too short.");
+            timeout).ConfigureAwait(false);
+        if (payload.Length < 4)
+        {
+            throw new InvalidDataException("AP-BLE EQ preset reply is too short.");
+        }
+        if (payload[1] != (byte)type || (group.HasValue && payload[2] != group.Value))
+        {
+            throw new InvalidDataException("AP-BLE EQ preset reply targets a different device type/group.");
+        }
+        return payload;
     }
 
     private async Task<bool> ReadBoolAsync(

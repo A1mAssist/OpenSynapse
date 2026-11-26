@@ -11,7 +11,6 @@ namespace OpenSynapse.Windows.Audio;
 internal sealed class ThxHeadsetHelperSession
 {
     private const string PresetGroupId = "profile_presets";
-    private const string DefaultPresetId = "default";
     private const string SpatialPropertyId = "spatial_enabled";
     private const string EqualizerPropertyId = "eq_enabled";
     private const string NormalizationEnabledPropertyId = "volume_leveling_enabled";
@@ -24,8 +23,6 @@ internal sealed class ThxHeadsetHelperSession
     private const int SidetoneMinimum = 1;
     private const int SidetoneMaximum = 3162;
     private static readonly int[] Frequencies = [31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-    private static readonly ThxAudioPreset DefaultPreset = new(DefaultPresetId, "Default");
-    private static readonly IReadOnlyList<double> DefaultGains = new double[10];
 
     private ThxHeadsetProfile? _profile;
     private ThxV3NativeClient? _v3;
@@ -53,19 +50,8 @@ internal sealed class ThxHeadsetHelperSession
                 "setEnhancement" => SetEnhancement(profile, request.ContainerId, request),
                 _ => false,
             };
-            if (!accepted)
-            {
-                return Fail($"ThxOperationRejected:{request.Operation}");
-            }
-
-            return new ThxAudioHelperResponse(
-                ThxAudioHelperProtocol.Version,
-                true,
-                new ThxAudioStatus(
-                    ThxAudioAvailability.Available,
-                    null,
-                    ReadState(profile, request.ContainerId)),
-                null);
+            return CompleteOperation(accepted, request.Operation,
+                ReadState(profile, request.ContainerId));
         }
         catch (Exception exception) when (
             exception is InvalidOperationException or InvalidDataException or ArgumentException or JsonException)
@@ -73,6 +59,12 @@ internal sealed class ThxHeadsetHelperSession
             return Fail(exception is ArgumentException ? "ThxInvalidRequest" : "ThxNativeFailure");
         }
     }
+
+    internal static ThxAudioHelperResponse CompleteOperation(bool accepted, string operation, ThxAudioState state) =>
+        new(ThxAudioHelperProtocol.Version, true,
+            new ThxAudioStatus(
+                accepted ? ThxAudioAvailability.Available : ThxAudioAvailability.OperationRejected,
+                accepted ? null : $"ThxOperationRejected:{operation}", state), null);
 
     private void EnsureClient(ThxHeadsetProfile profile, string? containerId)
     {
@@ -176,7 +168,9 @@ internal sealed class ThxHeadsetHelperSession
             return request.GainsDb is not { } gains || SetV3Gains(containerId!, gains);
         }
 
-        if (!_v4!.SelectPreset(_v4Device!, PresetGroupId, presetId))
+        if (!SelectV4Preset(
+                () => _v4!.GetPresetList(_v4Device!, PresetGroupId),
+                id => _v4!.SelectPreset(_v4Device!, PresetGroupId, id), presetId))
         {
             return false;
         }
@@ -386,34 +380,47 @@ internal sealed class ThxHeadsetHelperSession
             return ReadV3State(profile, containerId!);
         }
 
-        var spatial = ThxVendorJson.ParseBoolean(_v4!.GetProperty(_v4Device!, SpatialPropertyId));
-        var equalizer = ThxVendorJson.ParseBoolean(_v4.GetProperty(_v4Device!, EqualizerPropertyId));
-        var presets = ReadV4Presets();
-        var selected = ThxVendorJson.ParseSelectedPresetValue(
-            _v4.GetSelectedPreset(_v4Device!, PresetGroupId));
-        var gains = Enumerable.Range(1, 10)
-            .Select(index => ReadV4Float($"eq_band_{index}_gain_db"))
-            .ToArray();
+        return ReadV4State(
+            id => _v4!.GetProperty(_v4Device!, id),
+            () => _v4!.GetPresetList(_v4Device!, PresetGroupId),
+            () => _v4!.GetSelectedPreset(_v4Device!, PresetGroupId));
+    }
+
+    internal static ThxAudioState ReadV4State(
+        Func<string, string> readProperty,
+        Func<string> readPresets,
+        Func<string> readSelected)
+    {
+        var spatial = ThxVendorJson.ParseBoolean(readProperty(SpatialPropertyId));
+        var equalizer = ThxVendorJson.ParseBoolean(readProperty(EqualizerPropertyId));
+        var selected = TryRead(() => ThxVendorJson.ParseSelectedPresetValue(readSelected()));
+        var presets = ReadPresetList(readPresets, selected);
+        var gains = TryRead(() => Enumerable.Range(1, 10)
+            .Select(index => ThxVendorJson.ParseFloat(readProperty($"eq_band_{index}_gain_db"), -24, 24))
+            .ToArray());
         return new ThxAudioState(
             ThxAudioEndpoint.Headphones,
             spatial,
             equalizer,
             selected,
             presets,
-            ToBands(gains),
-            DefaultFactoryCurves(),
-            ReadV4Enhancement(NormalizationEnabledPropertyId, NormalizationLevelPropertyId),
-            ReadV4Enhancement(VoiceClarityEnabledPropertyId, VoiceClarityLevelPropertyId),
+            gains is null ? [] : ToBands(gains),
+            new Dictionary<string, IReadOnlyList<double>>(StringComparer.Ordinal),
+            ThxAudioHelperSession.TryReadEnhancement(
+                () => readProperty(NormalizationEnabledPropertyId), () => readProperty(NormalizationLevelPropertyId)),
+            ThxAudioHelperSession.TryReadEnhancement(
+                () => readProperty(VoiceClarityEnabledPropertyId), () => readProperty(VoiceClarityLevelPropertyId)),
             CanEdit: true,
-            BassBoost: ReadV4Enhancement(BassBoostEnabledPropertyId, BassBoostLevelPropertyId));
+            BassBoost: ThxAudioHelperSession.TryReadEnhancement(
+                () => readProperty(BassBoostEnabledPropertyId), () => readProperty(BassBoostLevelPropertyId)));
     }
 
     private ThxAudioState ReadV3State(ThxHeadsetProfile profile, string containerId)
     {
         var v3 = _v3!;
         var spatial = v3.GetSpatial(containerId);
-        var presets = ReadV3Presets(containerId);
         var selected = TryRead(() => ThxVendorJson.ParseSelectedPresetValue(v3.GetPreset(containerId)));
+        var presets = ReadV3PresetList(() => v3.GetPresetList(containerId), selected);
         var gains = TryRead(() => ThxVendorJson.ParseGains(v3.GetEqGains(containerId))) ?? [];
         return new ThxAudioState(
             ThxAudioEndpoint.Headphones,
@@ -422,7 +429,7 @@ internal sealed class ThxHeadsetHelperSession
             selected,
             presets,
             ToBands(gains),
-            DefaultFactoryCurves(),
+            new Dictionary<string, IReadOnlyList<double>>(StringComparer.Ordinal),
             TryReadEnhancement(
                 () => v3.GetNormalization(containerId),
                 () => v3.GetNormalizationLevel(containerId)),
@@ -459,68 +466,28 @@ internal sealed class ThxHeadsetHelperSession
         Func<float> level) =>
         TryRead(() => new ThxAudioEnhancement(enabled(), VoiceGatePercent(level())));
 
-    private IReadOnlyList<ThxAudioPreset> ReadV3Presets(string containerId) =>
-        ReadV3PresetList(() => _v3!.GetPresetList(containerId));
+    internal static IReadOnlyList<ThxAudioPreset> ReadV3PresetList(Func<string> read, string? selected = null) =>
+        ReadPresetList(read, selected);
 
-    internal static IReadOnlyList<ThxAudioPreset> ReadV3PresetList(Func<string> read)
+    private static IReadOnlyList<ThxAudioPreset> ReadPresetList(Func<string> read, string? selected = null)
     {
         // The 3.2.18.0 package can return a truncated preset list; spatial and EQ
         // still answer, so a broken list must not fail the whole card.
         var entries = TryRead(() => ThxVendorJson.ParsePresetEntries(read()));
-        return entries is null
-            ? [DefaultPreset]
-            : WithDefaultPreset(entries.Select(entry => new ThxAudioPreset(entry.Id, entry.Name)).ToArray());
-    }
-
-    private IReadOnlyList<ThxAudioPreset> ReadV4Presets()
-    {
-        var entries = TryRead(() => ThxVendorJson.ParsePresetEntries(
-            _v4!.GetPresetList(_v4Device!, PresetGroupId)));
-        return WithDefaultPreset(entries?.Select(entry => new ThxAudioPreset(entry.Id, entry.Name)).ToArray());
-    }
-
-    internal static IReadOnlyList<ThxAudioPreset> WithDefaultPreset(ThxAudioPreset[]? presets) =>
-        presets is not null && presets.Any(preset => preset.Id == DefaultPresetId)
+        var presets = entries?.Select(entry => new ThxAudioPreset(entry.Id, entry.Name)).ToArray() ?? [];
+        return string.IsNullOrWhiteSpace(selected) || presets.Any(preset => preset.Id == selected)
             ? presets
-            : [DefaultPreset, .. presets ?? []];
-
-    private static Dictionary<string, IReadOnlyList<double>> DefaultFactoryCurves() =>
-        new(StringComparer.Ordinal) { [DefaultPresetId] = DefaultGains };
-
-    private ThxAudioEnhancement? ReadV4Enhancement(string enabledProperty, string levelProperty)
-    {
-        try
-        {
-            var enabled = ThxVendorJson.ParseBoolean(_v4!.GetProperty(_v4Device!, enabledProperty));
-            var level = ThxVendorJson.ParseFloat(_v4.GetProperty(_v4Device!, levelProperty), 0, 1);
-            return new ThxAudioEnhancement(
-                enabled,
-                checked((int)Math.Round(level * 100, MidpointRounding.AwayFromZero)));
-        }
-        catch (Exception exception) when (exception is InvalidDataException or InvalidOperationException)
-        {
-            return null;
-        }
+            : [new ThxAudioPreset(selected, selected), .. presets];
     }
 
-    private double ReadV4Float(string propertyId)
-    {
-        try
-        {
-            return ThxVendorJson.ParseFloat(_v4!.GetProperty(_v4Device!, propertyId), -24, 24);
-        }
-        catch (Exception exception) when (exception is InvalidDataException or InvalidOperationException)
-        {
-            return 0;
-        }
-    }
+    internal static bool SelectV4Preset(Func<string> readPresets, Func<string, bool> select, string presetId) =>
+        ReadPresetList(readPresets).Any(preset => string.Equals(preset.Id, presetId, StringComparison.Ordinal)) &&
+        select(presetId);
 
-    private static IReadOnlyList<ThxAudioBand> ToBands(IReadOnlyList<double> gains) =>
-        Frequencies
-            .Select((frequency, index) => new ThxAudioBand(
-                frequency,
-                index < gains.Count ? gains[index] : 0))
-            .ToArray();
+    internal static IReadOnlyList<ThxAudioBand> ToBands(IReadOnlyList<double> gains) =>
+        gains.Count == Frequencies.Length
+            ? Frequencies.Select((frequency, index) => new ThxAudioBand(frequency, gains[index])).ToArray()
+            : [];
 
     private static bool ValidGains(IReadOnlyList<double> gains) =>
         gains.All(value => double.IsFinite(value) && value is >= -12 and <= 12);

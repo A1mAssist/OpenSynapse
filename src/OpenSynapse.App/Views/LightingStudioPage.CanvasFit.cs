@@ -63,31 +63,15 @@ public sealed partial class LightingStudioPage
         RenderPreview();
         StudioTimingMarkRefresh(timingStarted, visuals, "build");
         // Fit after the device manifest replaces the temporary grid, and when the
-        // selected device changes. Later frame refreshes keep the user's zoom.
+        // selected device changes. Later frame refreshes keep the user's view.
         if (!needsFit) return;
         _canvasFitted = true;
         _fittedVisualSignature = visualSignature;
-        if (_userZoomed) return;
-        void FitCanvas()
-        {
-            if (_userZoomed) return;
-            _fitting = true;
-            try
-            {
-                DeviceCanvas.CancelPendingZoomView();
-                DeviceCanvas.FitToView();
-                DeviceCanvas.CancelPendingZoomView();
-            }
-            finally
-            {
-                _fitting = false;
-            }
-        }
-
+        if (_userAdjustedView) return;
         DispatcherQueue.TryEnqueue(() =>
         {
-            FitCanvas();
-            DispatcherQueue.TryEnqueue(FitCanvas);
+            FitCanvasNow();
+            DispatcherQueue.TryEnqueue(FitCanvasNow);
         });
     }
 

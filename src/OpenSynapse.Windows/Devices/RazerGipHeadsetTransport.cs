@@ -6,11 +6,17 @@ using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
 
+internal interface IRazerGipHeadsetTransport : IAsyncDisposable
+{
+    Task<byte[]> QueryAsync(
+        byte[] frame, Func<byte[], bool> matches, TimeSpan timeout, CancellationToken cancellationToken);
+}
+
 /// <summary>
 /// Native GIP headset channel: a fixed 60-byte payload sent as HID report id 0x0F.
 /// The transport only moves frames; retry and status handling live in the protocol service.
 /// </summary>
-internal sealed class RazerGipHeadsetTransport : IAsyncDisposable
+internal sealed class RazerGipHeadsetTransport : IRazerGipHeadsetTransport
 {
     private readonly SafeFileHandle _handle;
     private readonly SemaphoreSlim _gate = new(1, 1);
@@ -54,7 +60,7 @@ internal sealed class RazerGipHeadsetTransport : IAsyncDisposable
             TaskScheduler.Default);
     }
 
-    internal async Task<byte[]> QueryAsync(
+    public async Task<byte[]> QueryAsync(
         byte[] frame,
         Func<byte[], bool> matches,
         TimeSpan timeout,

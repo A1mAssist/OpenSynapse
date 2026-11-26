@@ -283,17 +283,9 @@ public sealed class StudioBladeFrameSourceV2 : ISoftwareLightingFrameSource
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (UsesWorld &&
-            _world!.TryGetSampleMap(_worldInstanceId, _rows, _columns, rowOffset: 0, out var sampleMap))
+        if (UsesWorld)
         {
-            var world = _world.RenderOutputFrame(elapsed);
-            var sampled = new RazerRgb[_rows * _columns];
-            for (var index = 0; index < sampled.Length; index++)
-            {
-                var worldIndex = sampleMap.WorldIndices[index];
-                if ((uint)worldIndex < (uint)world.Length) sampled[index] = world[worldIndex];
-            }
-
+            var sampled = _world!.RenderOutputDeviceFrame(_worldInstanceId!, _rows, _columns, 0, elapsed);
             return ValueTask.FromResult(MapToDevice(sampled));
         }
 

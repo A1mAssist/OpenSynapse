@@ -85,7 +85,13 @@ public sealed partial class RazerBleProfileApplier : IDeviceProfileApplier
         await ApplyLightingAsync(service, lighting, results, cancellationToken);
         if (settings.ButtonMappings is { Count: > 0 } mappings)
         {
-            await ApplyButtonMappingsAsync(service, mappings, results, cancellationToken);
+            try
+            {
+                await service.RunMappingModeSessionAsync(
+                    token => ApplyButtonMappingsAsync(service, mappings, results, token), cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+            catch (Exception exception) { results.Add(Failed("ble.mapping", exception)); }
         }
 
         var status = results.Any(item => item.Status == ProfileSettingApplyStatus.Failed)

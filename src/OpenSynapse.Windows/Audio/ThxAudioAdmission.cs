@@ -296,7 +296,7 @@ internal static class ThxAudioAdmission
             return new(new ThxAudioStatus(
                 ThxAudioAvailability.ComponentsUnavailable,
                 "ThxServiceMissing",
-                null));
+                null), profile);
         }
 
         if (!HasVerifiedNativeClient(profile))

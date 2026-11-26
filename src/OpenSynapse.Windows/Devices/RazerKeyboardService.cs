@@ -67,6 +67,23 @@ public sealed partial class RazerKeyboardService
             [0x02F4] = "Razer Reclusa Mini 65%",
         };
 
+    // Mains-powered keyboards still enumerate this page and answer the shared
+    // feature channel, so the battery command is not evidence they have a battery.
+    private static readonly IReadOnlySet<ushort> BatteryProductIds = new HashSet<ushort>
+    {
+        0x023E, // Turret Keyboard Xbox One Edition
+        0x0249, // Pro Type
+        0x0277, // Pro Type Ultra
+        0x02B3, // BlackWidow V4 Pro 75%
+        0x02C4, // Pro Type Ergo
+        0x02CC, // BlackWidow V4 Low-profile HyperSpeed
+        0x02D4, // BlackWidow V4 Low-profile Tenkeyless HyperSpeed
+        0x02F4, // Reclusa Mini 65%
+    };
+
+    public static bool SupportsBattery(RazerKeyboardConnection connection) =>
+        BatteryProductIds.Contains(RazerProductAliases.Canonical(connection.ProductId));
+
     /// <summary>
     /// Keyboards whose lighting runs on the older class 0x0F effect commands, which carry
     /// no brightness command. The rest of the catalogue uses class 0x10.

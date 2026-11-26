@@ -24,7 +24,8 @@ public sealed partial class RazerHeadsetAudioViewModel
             return;
         }
 
-        var previous = MicEqBands.Select(band => (int)Math.Round(band.Level)).ToArray();
+        var previous = ConfirmedAudioValue(HeadsetAudioSetting.MicEqBands,
+            MicEqBands.Select(band => band.Level).ToArray());
         var bands = MicEqBands.Select(band => ToFirmwareBand(band.Level)).ToArray();
         if (!await RunValkyrieWriteAsync(
                 (service, token) => service.SetMicBandsAsync(bands, token),
@@ -35,7 +36,7 @@ public sealed partial class RazerHeadsetAudioViewModel
 
         await SaveHeadsetSettingAsync(
             settings => settings.MicEqBands = ToBandMap(MicEqBands.Select(band => band.Level)),
-            settings => settings.MicEqBands = ToBandMap(previous.Select(value => (double)value)),
+            settings => settings.MicEqBands = ToBandMap(previous),
             () =>
             {
                 for (var index = 0; index < previous.Length && index < MicEqBands.Count; index++)
@@ -47,7 +48,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             {
                 await using var service = OpenValkyrieService();
                 await service.SetMicBandsAsync(
-                    previous.Select(value => ToFirmwareBand(value)).ToArray(),
+                    previous.Select(ToFirmwareBand).ToArray(),
                     token);
             },
             cancellationToken);

@@ -21,20 +21,11 @@ public sealed partial class DevicesPage : UserControl
     private async void KeyboardRefreshClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.Accessories.SelectedKeyboard?.LoadAsync(Lifetime) ?? Task.CompletedTask);
 
-    private async void KeyboardApplyGameModeClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel.Accessories.SelectedKeyboard?.ApplyGameModeAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void KeyboardApplyBrightnessClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel.Accessories.SelectedKeyboard?.ApplyBrightnessAsync(Lifetime) ?? Task.CompletedTask);
-
     private async void KeyboardApplyLightingClick(object sender, RoutedEventArgs e)
     {
         await SuspendStudioLightingAsync();
         await (ViewModel.Accessories.SelectedKeyboard?.ApplyLightingAsync(Lifetime) ?? Task.CompletedTask);
     }
-
-    private async void KeyboardApplyPollingClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel.Accessories.SelectedKeyboard?.ApplyPollingAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void KeyboardReadOnboardMacrosClick(object sender, RoutedEventArgs e) =>
         await (ViewModel.Accessories.SelectedKeyboard?.LoadOnboardMacrosAsync(Lifetime) ?? Task.CompletedTask);

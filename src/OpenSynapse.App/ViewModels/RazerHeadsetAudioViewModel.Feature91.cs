@@ -60,6 +60,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             return;
         }
 
+        ConfirmAudioSetting(HeadsetAudioSetting.EqPreset, Array.FindIndex(MarciPresets, item => item.Value == preset));
         SelectedEqPresetIndex = Array.FindIndex(MarciPresets, item => item.Value == preset);
         var persisted = ResolveHeadsetProfileSettings();
         var persistedPreset = persisted?.EqPreset;
@@ -83,6 +84,7 @@ public sealed partial class RazerHeadsetAudioViewModel
             },
             () =>
             {
+                ConfirmAudioSetting(HeadsetAudioSetting.EqPreset, Array.FindIndex(MarciPresets, item => item.Value == previousPreset));
                 SelectedEqPresetIndex = Array.FindIndex(MarciPresets, item => item.Value == previousPreset);
                 ApplyEqBands(previousBands);
             },

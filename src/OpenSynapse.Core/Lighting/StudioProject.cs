@@ -17,7 +17,7 @@ public enum StudioLayerType
 public sealed class StudioProject : INotifyPropertyChanged
 {
     /// <summary>Written as <c>openSynapse.schemaVersion</c>; readers reject newer documents.</summary>
-    public const int CurrentSchemaVersion = 2;
+    public const int CurrentSchemaVersion = 3;
     private string _name = "Untitled Studio";
     private string? _selectedProfileId;
 
@@ -91,7 +91,10 @@ public sealed class StudioProject : INotifyPropertyChanged
         ArgumentNullException.ThrowIfNull(profile);
         var index = Profiles.IndexOf(profile);
         if (index < 0) return null;
-        var copy = new StudioProfile(profile.Title + " copy");
+        var copy = new StudioProfile(profile.Title + " copy")
+        {
+            OutputScope = profile.OutputScope.Clone(),
+        };
         foreach (var item in profile.Items) copy.Items.Add(item.Clone());
         foreach (var device in profile.Devices) copy.Devices.Add(device.Clone());
         Profiles.Insert(index + 1, copy);
@@ -177,6 +180,9 @@ public sealed class StudioProfile : INotifyPropertyChanged
 
     /// <summary>Canvas placement; exported as the profile-level Chroma devices.</summary>
     public ObservableCollection<StudioDevicePlacement> Devices { get; } = new();
+
+    /// <summary>Devices this profile may control, independent of canvas placement.</summary>
+    public StudioOutputScope OutputScope { get; set; } = new();
 
     public IEnumerable<StudioLayerItem> EnumerateLayers()
     {
@@ -371,7 +377,13 @@ public sealed class StudioLayerItem : INotifyPropertyChanged
     {
         Type = StudioLayerType.Layer,
         Title = title,
-        Params = new StudioEffectParams { Effect = effect },
+        Params = new StudioEffectParams
+        {
+            Effect = effect,
+            AmbientMapping = effect == StudioEffectKind.Ambient
+                ? StudioAmbientMapping.PerDevice
+                : StudioAmbientMapping.LegacyAuto,
+        },
     };
 
     public static StudioLayerItem CreateGroup(string title) => new()

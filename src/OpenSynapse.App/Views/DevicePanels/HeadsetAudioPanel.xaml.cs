@@ -1,4 +1,3 @@
-using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using OpenSynapse.App.ViewModels;
@@ -8,23 +7,10 @@ namespace OpenSynapse.App.Views.DevicePanels;
 
 public sealed partial class HeadsetAudioPanel : UserControl
 {
-    private readonly DispatcherQueueTimer? _thxPollTimer;
-    private bool _thxPolling;
-
     public HeadsetAudioPanel()
     {
         InitializeComponent();
-        var dispatcher = DispatcherQueue.GetForCurrentThread();
-        if (dispatcher is null)
-        {
-            return;
-        }
-
-        _thxPollTimer = dispatcher.CreateTimer();
-        _thxPollTimer.Interval = TimeSpan.FromSeconds(2);
-        _thxPollTimer.Tick += ThxPollTick;
-        Loaded += (_, _) => _thxPollTimer.Start();
-        Unloaded += (_, _) => _thxPollTimer.Stop();
+        InitializeAutoApply();
     }
 
     internal CancellationToken Lifetime { get; private set; } = CancellationToken.None;
@@ -35,31 +21,12 @@ public sealed partial class HeadsetAudioPanel : UserControl
 
     private RazerHeadsetAudioViewModel? ViewModel => DataContext as RazerHeadsetAudioViewModel;
 
-    private async void ThxPollTick(DispatcherQueueTimer sender, object args)
+    internal async Task PollEqualizerAsync(Func<bool> isVisible, CancellationToken cancellationToken)
     {
-        if (_thxPolling ||
-            Visibility != Visibility.Visible ||
-            Host is null ||
-            !Host.AppWindow.IsVisible ||
-            ViewModel is not { } viewModel ||
-            Accessories is null)
-        {
-            return;
-        }
-
-        _thxPolling = true;
-        try
-        {
-            await Accessories.RunHeadsetOperationAsync(
-                viewModel, (vm, token) => vm.PollThxAsync(token), Lifetime);
-        }
-        catch (OperationCanceledException) when (Lifetime.IsCancellationRequested)
-        {
-        }
-        finally
-        {
-            _thxPolling = false;
-        }
+        if (ViewModel is not { } viewModel || Accessories is null) return;
+        bool IsCurrent() => isVisible() && Visibility == Visibility.Visible && ReferenceEquals(ViewModel, viewModel);
+        await Accessories.RunHeadsetOperationAsync(
+            viewModel, (vm, token) => vm.PollEqualizerAsync(IsCurrent, token), cancellationToken);
     }
 
     private async Task RunAsync(Func<RazerHeadsetAudioViewModel, CancellationToken, Task> action)
@@ -80,55 +47,10 @@ public sealed partial class HeadsetAudioPanel : UserControl
         await (Accessories?.RefreshSelectedHeadsetAudioAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void HeadsetAudioInstallThxClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.InstallThxComponentsAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyEqPresetClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyEqPresetAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyEqBandsClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyEqBandsAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyMicEqBandsClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyMicEqBandsAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyBassClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyBassAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyMicClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyMicrophoneAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplySourceClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplySourceAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyNoiseClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyNoiseSuppressionAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyAncClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyAncAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyAdvancedClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyAdvancedAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyMicProcessingClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyMicProcessingAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyCamyT1Click(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyCamyT1Async(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyHapticsClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyHapticsAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyCompressorClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyMicCompressorAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyMicMonitoringClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyMicMonitoringAsync(Lifetime) ?? Task.CompletedTask);
+        await RunAsync((vm, token) => vm.InstallThxComponentsAsync(token));
 
     private async void HeadsetAudioLoadParametricEqClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.LoadParametricEqAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyParametricEqClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyParametricEqAsync(Lifetime) ?? Task.CompletedTask);
+        await RunAsync((vm, token) => vm.LoadParametricEqAsync(token));
 
     private async void HeadsetAudioApplyMatrixBrightnessClick(object sender, RoutedEventArgs e) =>
         await RunAsync((vm, token) => vm.ApplyMatrixBrightnessAsync(token));
@@ -136,17 +58,8 @@ public sealed partial class HeadsetAudioPanel : UserControl
     private async void HeadsetAudioApplyMatrixLightingClick(object sender, RoutedEventArgs e) =>
         await RunAsync((vm, token) => vm.ApplyMatrixLightingAsync(token));
 
-    private async void HeadsetAudioApplyAutoSleepClick(object sender, RoutedEventArgs e) =>
-        await RunAsync((vm, token) => vm.ApplyAutoSleepAsync(token));
-
     private async void HeadsetAudioApplyLightingClick(object sender, RoutedEventArgs e) =>
         await RunAsync((vm, token) => vm.Lighting?.ApplyAsync(token) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyThxPresetClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyThxPresetAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyThxBandsClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyThxBandsAsync(Lifetime) ?? Task.CompletedTask);
 
     private async void HeadsetAudioImportSynapseEqClick(object sender, RoutedEventArgs e)
     {
@@ -177,38 +90,14 @@ public sealed partial class HeadsetAudioPanel : UserControl
             json = string.Empty;
         }
 
-        if (ViewModel.TryLoadSynapseEq(json))
+        await RunAsync(async (vm, token) =>
         {
-            await ViewModel.ApplyThxBandsAsync(Lifetime);
-        }
+            if (vm.TryLoadSynapseEq(json)) await vm.ApplyThxBandsAsync(token);
+        });
     }
 
     private async void HeadsetAudioApplyThxS3BaselineClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyS3BaselineAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyThxNormalizationClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyThxNormalizationAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyThxVoiceClarityClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyThxVoiceClarityAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyThxBassBoostClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyThxBassBoostAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyThxSidetoneClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyThxSidetoneAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyThxCaptureNormalizationClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyThxCaptureNormalizationAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyThxCaptureVocalClarityClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyThxCaptureVocalClarityAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyThxCaptureNoiseReductionClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyThxCaptureNoiseReductionAsync(Lifetime) ?? Task.CompletedTask);
-
-    private async void HeadsetAudioApplyThxCaptureVoiceGateClick(object sender, RoutedEventArgs e) =>
-        await (ViewModel?.ApplyThxCaptureVoiceGateAsync(Lifetime) ?? Task.CompletedTask);
+        await RunAsync((vm, token) => vm.ApplyS3BaselineAsync(token));
 
     private async void Mixer053EMute1Click(object sender, RoutedEventArgs e) =>
         await (ViewModel?.Mixer053E?.ToggleMute1Async(Lifetime) ?? Task.CompletedTask);

@@ -415,7 +415,8 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
         var rejectedResponses = 0;
         var silentResponses = 0;
         var busyResponses = 0;
-        for (var attempt = 1; attempt <= MaxQueryAttempts; attempt++)
+        var queryAttempts = GetQueryAttempts(request);
+        for (var attempt = 1; attempt <= queryAttempts; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var setResult = await SetFeatureAsync(handle, request, directIo, cancellationToken)
@@ -547,7 +548,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
             await WaitAsync(QueryRetryDelay, directIo, cancellationToken).ConfigureAwait(false);
         }
 
-        if (rejectedResponses == MaxQueryAttempts)
+        if (rejectedResponses == queryAttempts)
             throw new RazerCommandRejectedException(lastError!);
 
         // A dead endpoint fails every command on its path, so busy/silent means the
@@ -556,7 +557,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
             throw new RazerDeviceTimeoutException(lastError ?? "The device is busy (0x01).",
                 retryableBusy: true);
 
-        if (silentResponses == MaxQueryAttempts)
+        if (silentResponses == queryAttempts)
             throw new RazerDeviceTimeoutException(lastError ?? "The device did not answer this command.",
                 busyResponses > 0);
 
@@ -565,6 +566,11 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
 
         throw new InvalidOperationException(lastError ?? "Razer feature query failed.");
     }
+
+    // Start/Stop may already have run when their acknowledgement is lost.
+    internal static int GetQueryAttempts(ReadOnlySpan<byte> request) =>
+        request.Length == RazerFeatureReport.Length && request[7] == 0x0B && request[8] == 0x09
+            ? 1 : MaxQueryAttempts;
 
     private static async Task<(bool Success, int Error)> SetFeatureAsync(
         SafeFileHandle handle,

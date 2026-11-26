@@ -19,14 +19,24 @@ public sealed partial class AnalogKeyEditor : UserControl
     private readonly Dictionary<byte, Path> _pathsByKeyId = [];
     private readonly Dictionary<byte, AnalogKeyKeyViewModel> _keysById = [];
     private readonly List<AnalogKeyKeyViewModel> _subscribedKeys = [];
+    private readonly SettingApplyQueue _applyQueue = new();
+    private readonly SettingAutoApply _snapTapAutoApply;
+    private CancellationTokenSource? _applyLifetime;
 
     public AnalogKeyEditor()
     {
         InitializeComponent();
+        SettingAutoApply.Attach(AnalogKeySelectionGroup, _applyQueue,
+            () => _viewModel?.AnalogKeyAutoApplyContext,
+            () => _viewModel?.PrepareAnalogKeySelectionAutoApply(ApplyToken));
+        _snapTapAutoApply = SettingAutoApply.Attach(AnalogSnapTapGroup, _applyQueue, () => _viewModel?.KeyboardAutoApplyContext,
+            () => _viewModel?.PrepareAnalogSnapTapAutoApply(ApplyToken));
         DataContextChanged += EditorDataContextChanged;
         Loaded += EditorLoaded;
         Unloaded += EditorUnloaded;
     }
+
+    private CancellationToken ApplyToken => _applyLifetime?.Token ?? new CancellationToken(true);
 
     private void EditorDataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args) =>
         BindViewModel();
@@ -50,6 +60,7 @@ public sealed partial class AnalogKeyEditor : UserControl
             return;
         }
 
+        _applyLifetime = new CancellationTokenSource();
         _viewModel.PropertyChanged += ViewModelPropertyChanged;
         BindKeys();
         DrawKeyboard();
@@ -57,6 +68,9 @@ public sealed partial class AnalogKeyEditor : UserControl
 
     private void UnbindViewModel()
     {
+        _applyLifetime?.Cancel();
+        _applyLifetime?.Dispose();
+        _applyLifetime = null;
         UnbindKeys();
         if (_viewModel is not null)
         {
@@ -245,19 +259,12 @@ public sealed partial class AnalogKeyEditor : UserControl
         }
     }
 
-    private async void ApplySelectedClick(object sender, RoutedEventArgs e)
+    private void ApplyAllClick(object sender, RoutedEventArgs e)
     {
         if (DataContext is RazerHidDeviceViewModel viewModel)
         {
-            await viewModel.ApplyAnalogKeyToSelectionAsync();
-        }
-    }
-
-    private async void ApplyAllClick(object sender, RoutedEventArgs e)
-    {
-        if (DataContext is RazerHidDeviceViewModel viewModel)
-        {
-            await viewModel.ApplyAnalogKeyToAllAsync();
+            if (viewModel.PrepareAnalogKeyAllApply(ApplyToken) is { } apply)
+                QueueApply(sender, viewModel, apply, error => viewModel.AnalogKeyLayoutStatusText = error);
         }
     }
 
@@ -275,14 +282,19 @@ public sealed partial class AnalogKeyEditor : UserControl
             sender is FrameworkElement { DataContext: AnalogSnapTapPairViewModel pair })
         {
             viewModel.RemoveAnalogSnapTapPair(pair);
+            _snapTapAutoApply.CommitEdit();
         }
     }
 
-    private async void ApplySnapTapClick(object sender, RoutedEventArgs e)
-    {
-        if (DataContext is RazerHidDeviceViewModel viewModel)
+    private void QueueApply(object key, RazerHidDeviceViewModel viewModel, Func<Task<string?>> apply, Action<string> reportError) =>
+        _applyQueue.Enqueue(key, async () =>
         {
-            await viewModel.ApplyAnalogSnapTapAsync();
-        }
-    }
+            if (!ReferenceEquals(viewModel, _viewModel)) return;
+            try
+            {
+                if (await apply() is { } error) reportError(error);
+            }
+            catch (OperationCanceledException) { reportError(AppStrings.Text("SettingAutoApplyCancelled")); }
+            catch (Exception exception) { reportError(exception.Message); }
+        });
 }

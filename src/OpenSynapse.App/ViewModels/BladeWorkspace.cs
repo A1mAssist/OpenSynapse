@@ -348,11 +348,16 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
                 OnPropertyChanged(nameof(CanSetPerformancePowerProfile));
                 OnPropertyChanged(nameof(PerformanceModeCardVisibility));
                 OnPropertyChanged(nameof(CanWritePerformanceMode));
+                OnPropertyChanged(nameof(PerformanceCompatibilityVisibility));
             }
         }
     }
     public bool CanWritePerformanceMode =>
         CanSetPerformanceMode && BladeModelCapabilities.AllowsControlWrites(_blade._bladeProductId);
+    public Visibility PerformanceCompatibilityVisibility =>
+        CanWritePerformanceMode && IsPerformanceModeAvailable(BladePerformanceMode.Custom) &&
+        (IsPerformanceModeAvailable(BladePerformanceMode.Performance) || IsPerformanceModeAvailable(BladePerformanceMode.Gaming))
+            ? Visibility.Visible : Visibility.Collapsed;
     public bool CanSetLightingPowerProfile => CanSetBrightness;
     public bool CanSetPerformancePowerProfile => CanSetPerformanceMode;
     public bool CanSetLogoPowerProfile => CanSetLogo;

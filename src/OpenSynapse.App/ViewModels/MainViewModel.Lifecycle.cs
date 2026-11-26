@@ -65,6 +65,7 @@ public sealed partial class MainViewModel
         // Dispose runs on the UI thread and still touches bound collections and
         // selections below; keep every continuation there.
         await RazerHid.DisposeAsync().ConfigureAwait(true);
+        await Viper.DisposeCalibrationAsync().ConfigureAwait(true);
         Macros.Dispose();
         _hue?.Dispose();
         CoolingPad.Dispose();

@@ -96,6 +96,10 @@ public sealed class RazerHidMappingTransport(
 
 public sealed class RazerBleMappingTransport(RazerBleDeviceService service) : IRazerMappingTransport
 {
+    public Task RunInMappingModeAsync(Func<CancellationToken, Task> action,
+        CancellationToken cancellationToken = default, bool forWrite = false) =>
+        service.RunMappingModeSessionAsync(action, cancellationToken);
+
     public Task<IReadOnlyList<byte>> GetButtonIdsAsync(CancellationToken cancellationToken = default) =>
         service.GetMappingButtonIdsAsync(cancellationToken);
 

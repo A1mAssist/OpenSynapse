@@ -276,6 +276,10 @@ public sealed partial class RazerHeadsetAudioViewModel
             .Select((level, index) => (Key: index.ToString(), Value: (int)Math.Round(level)))
             .ToDictionary(item => item.Key, item => item.Value, StringComparer.OrdinalIgnoreCase);
 
+    private static Dictionary<string, double> ToThxBandMap(IEnumerable<double> levels) =>
+        levels.Select((level, index) => (Key: index.ToString(CultureInfo.InvariantCulture), Value: level))
+            .ToDictionary(item => item.Key, item => item.Value, StringComparer.OrdinalIgnoreCase);
+
     private async Task WriteEqPresetHardwareAsync(byte preset, CancellationToken cancellationToken)
     {
         switch (_connection.Transport)
@@ -535,19 +539,22 @@ public sealed partial class RazerHeadsetAudioViewModel
         Func<CancellationToken, Task>? revertHardware,
         CancellationToken cancellationToken)
     {
-        if (_getActiveProfile is null || _saveProfileAsync is null ||
-            ResolveHeadsetProfileSettings() is not { } settings)
+        var contextChanged = _audioAutoApplyContextCurrent?.Invoke() == false;
+        var settings = contextChanged || _getActiveProfile is null || _saveProfileAsync is null
+            ? null : ResolveHeadsetProfileSettings();
+        if (!contextChanged && settings is null)
         {
             return true;
         }
 
-        edit(settings);
-        Exception? failure = null;
+        Exception? failure = contextChanged ? new OperationCanceledException() : null;
         try
         {
-            if (!await _saveProfileAsync(cancellationToken))
+            if (!contextChanged)
             {
-                failure = new IOException("The headset profile could not be saved.");
+                edit(settings!);
+                if (!await _saveProfileAsync!(cancellationToken))
+                    failure = new IOException("The headset profile could not be saved.");
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -564,13 +571,14 @@ public sealed partial class RazerHeadsetAudioViewModel
             return true;
         }
 
-        revert(settings);
+        if (settings is not null) revert(settings);
         revertUi?.Invoke();
         if (revertHardware is not null)
         {
             try
             {
                 await revertHardware(CancellationToken.None);
+                _confirmAudioRollback?.Invoke();
             }
             catch
             {

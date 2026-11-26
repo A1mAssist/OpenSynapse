@@ -151,21 +151,24 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
             softwareTriggerClearer: _softwareMacroClearer,
             afterApplyAsync: PersistMappingProfileAsync);
 
-    public async Task ApplyLowBatteryThresholdAsync(CancellationToken cancellationToken = default)
+    public async Task<string?> ApplyLowBatteryThresholdAsync(CancellationToken cancellationToken = default)
     {
+        var target = MouseAutoApplyDevice;
+        if (target is null) return AppStrings.Text("SettingAutoApplyCancelled");
         if (!CanSetLowBatteryThreshold)
         {
-            return;
+            return AppStrings.Text("SettingAutoApplyCancelled");
         }
 
-        await RunDeviceOperationAsync(AppStrings.Text("Text_B98036FA"), async () =>
+        var percent = checked((int)Math.Round(
+            LowBatteryThresholdPercent, MidpointRounding.AwayFromZero));
+        return await RunDeviceOperationAsync(AppStrings.Text("Text_B98036FA"), async () =>
         {
             var settings = Profile.Global.Viper;
             var previous = settings.LowBatteryThresholdPercent;
-            var percent = checked((int)Math.Round(
-                LowBatteryThresholdPercent, MidpointRounding.AwayFromZero));
             var actual = await _deviceTelemetryReader.SetViperLowBatteryThresholdAsync(
-                _deviceDescriptors(), percent, cancellationToken);
+                [target], percent, cancellationToken);
+            EnsureMouseApplyTarget(target);
             LowBatteryThresholdPercent = actual;
             _confirmedLowBatteryThresholdPercent = actual;
             LowBatteryThresholdText = $"{actual}%";
@@ -175,30 +178,37 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
             try { saved = await _saveProfileAsync(cancellationToken); }
             finally { if (!saved) settings.LowBatteryThresholdPercent = previous; }
             if (!saved) throw ProfileSaveFailed();
-        }, cancellationToken, () =>
+        }, target, cancellationToken, () =>
         {
             LowBatteryThresholdPercent = _confirmedLowBatteryThresholdPercent;
         });
     }
 
-    public async Task ApplyDpiStagesAsync(CancellationToken cancellationToken = default)
+    public async Task<string?> ApplyDpiStagesAsync(CancellationToken cancellationToken = default)
     {
+        var target = MouseAutoApplyDevice;
+        if (target is null) return AppStrings.Text("SettingAutoApplyCancelled");
         if (!CanSetDpiStages || DpiStages.Count is < 1 or > 5)
         {
-            return;
+            return AppStrings.Text("SettingAutoApplyCancelled");
         }
 
-        await RunDeviceOperationAsync(AppStrings.Text("Text_7F983785"), async () =>
+        var requested = new ViperDpiStagesTelemetry(
+            checked((byte)ActiveDpiStage),
+            DpiStages.Select(row => new ViperDpiStageTelemetry(
+                checked((byte)row.Number), checked((int)row.X), checked((int)row.Y))).ToArray());
+        return await RunDeviceOperationAsync(AppStrings.Text("Text_7F983785"), async () =>
         {
-            var previousProfile = Profile.Clone();
-            var requested = new ViperDpiStagesTelemetry(
-                checked((byte)ActiveDpiStage),
-                DpiStages.Select(row => new ViperDpiStageTelemetry(
-                    checked((byte)row.Number), checked((int)row.X), checked((int)row.Y))).ToArray());
+            var settings = Profile.Global.Viper;
+            var previousStages = settings.DpiStages;
+            var previousX = settings.DpiX;
+            var previousY = settings.DpiY;
             var actual = await _deviceTelemetryReader.SetViperDpiStagesAsync(
-                _deviceDescriptors(), requested, cancellationToken);
+                [target], requested, cancellationToken);
+            EnsureMouseApplyTarget(target);
             SetDpiStages(actual);
-            Profile.Global.Viper.DpiStages = new ViperDpiStagesProfile
+            if (!ReferenceEquals(settings, Profile.Global.Viper)) throw ProfileSaveFailed();
+            settings.DpiStages = new ViperDpiStagesProfile
             {
                 ActiveStage = actual.ActiveStage,
                 Stages = actual.Stages.Select(stage => new ViperDpiStageProfile
@@ -211,15 +221,22 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
             var activeStage = actual.Stages.FirstOrDefault(stage => stage.Number == actual.ActiveStage);
             if (activeStage is not null)
             {
-                Profile.Global.Viper.DpiX = activeStage.X;
-                Profile.Global.Viper.DpiY = activeStage.Y;
+                settings.DpiX = activeStage.X;
+                settings.DpiY = activeStage.Y;
             }
-            if (!await _saveProfileAsync(cancellationToken))
+            var saved = false;
+            try { saved = await _saveProfileAsync(cancellationToken); }
+            finally
             {
-                _setProfile(previousProfile);
-                throw new InvalidOperationException(AppStrings.Text("Text_86504D84"));
+                if (!saved)
+                {
+                    settings.DpiStages = previousStages;
+                    settings.DpiX = previousX;
+                    settings.DpiY = previousY;
+                }
             }
-        }, cancellationToken, RestoreDpiStages);
+            if (!saved) throw ProfileSaveFailed();
+        }, target, cancellationToken, RestoreDpiStages);
     }
 
     internal void ApplyTelemetry(RazerDeviceTelemetry telemetry)
@@ -493,12 +510,38 @@ public sealed partial class ViperWorkspace : INotifyPropertyChanged
 
     private ProfileDocument Profile => _getProfile();
 
-    private Task RunDeviceOperationAsync(
+    private async Task<string?> RunDeviceOperationAsync(
         string label,
         Func<Task> operation,
+        DeviceDescriptor target,
         CancellationToken cancellationToken,
-        Action? restoreSelection = null) =>
-        _runDeviceOperation(label, operation, cancellationToken, restoreSelection, null, null);
+        Action? restoreSelection = null)
+    {
+        var profile = Profile;
+        string? error = AppStrings.Text("SettingAutoApplyCancelled");
+        await _runDeviceOperation(label, async () =>
+        {
+            if (MouseAutoApplyDevice is null ||
+                !StringComparer.OrdinalIgnoreCase.Equals(target.Id, MouseAutoApplyContext) ||
+                !ReferenceEquals(profile, Profile))
+                throw new InvalidOperationException(AppStrings.Text("SettingAutoApplyCancelled"));
+            try
+            {
+                await operation();
+                error = null;
+            }
+            catch (Exception exception)
+            {
+                error = exception.Message;
+                throw;
+            }
+        }, cancellationToken, () =>
+        {
+            if (StringComparer.OrdinalIgnoreCase.Equals(target.Id, MouseAutoApplyContext))
+                restoreSelection?.Invoke();
+        }, null, null);
+        return error;
+    }
 
     private void SetDpiStages(ViperDpiStagesTelemetry stages, bool confirm = true)
     {

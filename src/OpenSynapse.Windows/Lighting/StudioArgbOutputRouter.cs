@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using OpenSynapse.Core.Lighting;
 using OpenSynapse.Windows.Devices;
 using OpenSynapse.Windows.Protocols;
@@ -38,6 +39,8 @@ public sealed class StudioArgbOutputRouter : IAsyncDisposable
     private StudioArgbPort[] _ports = [];
     private RazerHidSpecialLightingConnection? _connection;
     private string? _preparedKey;
+    private HashSet<string>? _targetIds;
+    private readonly ConcurrentDictionary<string, byte> _ownedIds = new(StringComparer.OrdinalIgnoreCase);
     private int _stopped;
     private int _disposed;
 
@@ -74,8 +77,36 @@ public sealed class StudioArgbOutputRouter : IAsyncDisposable
     /// <summary>Raised off the UI thread when one port rejects a frame.</summary>
     public event Action<string, Exception>? WriteFailed;
 
+    public event Action<string, Exception>? RestoreFailed;
+
+    public IReadOnlyCollection<string> OwnedInstanceIds => _ownedIds.Keys.ToArray();
+
+    /// <summary>Optional card restore, called under the gate for live owned targets only.</summary>
+    public Func<IReadOnlyCollection<string>, Task>? RestoreTargetsAsync { get; set; }
+
     /// <summary>Ports the next apply would write to.</summary>
-    public IReadOnlyList<StudioArgbPort> GetTargets() => Volatile.Read(ref _ports);
+    public IReadOnlyList<StudioArgbPort> GetTargets() =>
+        Volatile.Read(ref _ports).Where(port => IsSelected(port.InstanceId)).ToArray();
+
+    /// <summary>Null means All; empty selects nothing. IDs identify controllers, not channels.</summary>
+    public async Task SetTargetsAsync(
+        IReadOnlyCollection<string>? targetIds, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+        var selected = targetIds?.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        await _applyGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            Volatile.Write(ref _targetIds, selected);
+            await RestoreControllersAsync(false, false, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _applyGate.Release();
+        }
+    }
+
+    private bool IsSelected(string id) => Volatile.Read(ref _targetIds)?.Contains(id) ?? true;
 
     /// <summary>Attaches the shared world canvas; null keeps the per-port renderer.</summary>
     public void AttachWorld(StudioWorldRenderer world) =>
@@ -93,8 +124,6 @@ public sealed class StudioArgbOutputRouter : IAsyncDisposable
         await _applyGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            // A refresh starts a new session; Update re-arms the frame pump.
-            Volatile.Write(ref _stopped, 1);
             RazerHidSpecialLightingConnection? connection;
             try
             {
@@ -143,22 +172,9 @@ public sealed class StudioArgbOutputRouter : IAsyncDisposable
                 _preparedKey = null;
             }
 
-            var key = ConnectionKey(connection);
-            if (_prepare is not null && !string.Equals(_preparedKey, key, StringComparison.Ordinal))
-            {
-                _preparedKey = key;
-                try
-                {
-                    await _prepare(connection, cancellationToken).ConfigureAwait(false);
-                }
-                catch (Exception exception) when (IsWriteFailure(exception))
-                {
-                    // The old Chroma page treated a refused mode echo as non-fatal;
-                    // frames may still be accepted, so report it and keep going.
-                    _preparedKey = null;
-                    WriteFailed?.Invoke(connection.DisplayName, exception);
-                }
-            }
+            await RestoreControllersAsync(false, false, cancellationToken).ConfigureAwait(false);
+            if (IsSelected(connection.InstanceId))
+                await PrepareAsync(connection, cancellationToken).ConfigureAwait(false);
 
             return true;
         }
@@ -196,10 +212,14 @@ public sealed class StudioArgbOutputRouter : IAsyncDisposable
         await _applyGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (Volatile.Read(ref _stopped) != 0 || _connection is not { } connection)
+            if (Volatile.Read(ref _stopped) != 0) return false;
+            await RestoreControllersAsync(false, false, cancellationToken).ConfigureAwait(false);
+            if (_connection is not { } connection || !IsSelected(connection.InstanceId))
             {
                 return false;
             }
+
+            await PrepareAsync(connection, cancellationToken).ConfigureAwait(false);
 
             Func<StudioArgbPort, IReadOnlyList<StudioLayerRender>>? layersForPort;
             long layersVersion;
@@ -212,7 +232,11 @@ public sealed class StudioArgbOutputRouter : IAsyncDisposable
 
             foreach (var port in _ports)
             {
-                if (!_outputs.TryGetValue(port.Channel, out var output) ||
+                _outputs.TryGetValue(port.Channel, out var output);
+                if (output is not null && output.Source is not StudioWorldDeviceFrameSource &&
+                    _world?.Canvas?.HasDevice(port.InstanceId) != true)
+                    output.WorldGeneration = worldGeneration;
+                if (output is null ||
                     output.LedCount != port.LedCount ||
                     output.WorldGeneration != worldGeneration)
                 {
@@ -235,7 +259,6 @@ public sealed class StudioArgbOutputRouter : IAsyncDisposable
                     if (oldOutput is not null)
                     {
                         output.Frame = oldOutput.Frame;
-                        output.Touched = oldOutput.Touched;
                     }
                     _outputs[port.Channel] = output;
                 }
@@ -246,6 +269,12 @@ public sealed class StudioArgbOutputRouter : IAsyncDisposable
                     output.LayersVersion = layersVersion;
                 }
 
+                if (!output.ClockStarted)
+                {
+                    if (output.Source is not StudioWorldDeviceFrameSource && elapsed > TimeSpan.Zero)
+                        await output.Source.RenderAsync(TimeSpan.Zero, cancellationToken).ConfigureAwait(false);
+                    output.ClockStarted = true;
+                }
                 var colors = await output.Source.RenderAsync(elapsed, cancellationToken).ConfigureAwait(false);
                 var frame = new RazerHidColor[colors.Count];
                 for (var index = 0; index < frame.Length; index++)
@@ -261,7 +290,7 @@ public sealed class StudioArgbOutputRouter : IAsyncDisposable
 
                 try
                 {
-                    output.Touched = true;
+                    _ownedIds[connection.InstanceId] = 0;
                     await _writeFrame(connection, port.Channel, frame, cancellationToken).ConfigureAwait(false);
                     output.Frame = frame;
                 }
@@ -291,20 +320,57 @@ public sealed class StudioArgbOutputRouter : IAsyncDisposable
         await _applyGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (_connection is { } connection &&
-                _outputs.Values.Any(output => output.Touched))
-            {
-                // A failed restore keeps the outputs and prepared key so the next
-                // Stop can retry the same endpoint.
-                await _restore(connection, cancellationToken).ConfigureAwait(false);
-            }
-
+            await RestoreControllersAsync(true, true, cancellationToken).ConfigureAwait(false);
             _outputs.Clear();
             _preparedKey = null;
         }
         finally
         {
             _applyGate.Release();
+        }
+    }
+
+    private async Task PrepareAsync(RazerHidSpecialLightingConnection connection, CancellationToken cancellationToken)
+    {
+        var key = ConnectionKey(connection);
+        if (_prepare is null || string.Equals(_preparedKey, key, StringComparison.Ordinal)) return;
+        _ownedIds[connection.InstanceId] = 0;
+        try
+        {
+            await _prepare(connection, cancellationToken).ConfigureAwait(false);
+            _preparedKey = key;
+        }
+        catch (Exception exception) when (IsWriteFailure(exception))
+        {
+            _preparedKey = null;
+            WriteFailed?.Invoke(connection.DisplayName, exception);
+        }
+    }
+
+    private async Task RestoreControllersAsync(bool all, bool throwOnFailure, CancellationToken cancellationToken)
+    {
+        var departing = _ownedIds.Keys.Where(id => all || !IsSelected(id)).ToArray();
+        if (departing.Length == 0) return;
+        if (_connection is { } old && departing.Contains(old.InstanceId, StringComparer.OrdinalIgnoreCase))
+        {
+            _outputs.Clear();
+            _preparedKey = null;
+        }
+        try
+        {
+            // Discovery supplies the live endpoint; offline controllers retain ownership.
+            var current = await _discover(cancellationToken).ConfigureAwait(false);
+            if (current is null || !departing.Contains(current.InstanceId, StringComparer.OrdinalIgnoreCase)) return;
+            if (RestoreTargetsAsync is { } restore)
+                await restore([current.InstanceId]).ConfigureAwait(false);
+            else
+                await _restore(current, cancellationToken).ConfigureAwait(false);
+            _ownedIds.TryRemove(current.InstanceId, out _);
+        }
+        catch (Exception exception) when (IsWriteFailure(exception))
+        {
+            RestoreFailed?.Invoke("Razer Chroma Addressable RGB Controller", exception);
+            if (throwOnFailure) throw;
         }
     }
 
@@ -422,7 +488,7 @@ public sealed class StudioArgbOutputRouter : IAsyncDisposable
         internal int LedCount { get; }
         internal StudioDeviceFrameSource Source { get; }
         internal RazerHidColor[]? Frame { get; set; }
-        internal bool Touched { get; set; }
+        internal bool ClockStarted { get; set; }
         internal long LayersVersion { get; set; } = -1;
         internal long WorldGeneration { get; set; } = -1;
     }

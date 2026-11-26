@@ -26,7 +26,6 @@ public sealed partial class BladeFanCurvePlot : UserControl
     private const double PointMarkerSize = 6;
     private const double HandleGrabRadius = 22;
     private const double LiveMarkerSize = 16;
-    private const double ActualSpeedHalfWidth = 16;
     private static readonly double[] TemperatureTicks = [30, 45, 60, 75, 90, 105, 120];
     private static readonly double[] RpmTicks = [2000, 2500, 3000, 3500, 4000, 4500, 5000, 5600];
 
@@ -44,7 +43,8 @@ public sealed partial class BladeFanCurvePlot : UserControl
     private readonly TextBlock _rpmUnit = new();
     private readonly TextBlock _temperatureUnit = new();
     private readonly Ellipse[] _liveMarkers = [new(), new()];
-    private readonly Line[] _actualSpeedLines = [new(), new()];
+    private readonly Line[] _liveVerticalGuides = [new(), new()];
+    private readonly Line[] _liveHorizontalGuides = [new(), new()];
     private readonly Line[] _temperatureGuides = [new(), new()];
     private readonly SolidColorBrush[] _seriesBrushes =
     [
@@ -171,16 +171,19 @@ public sealed partial class BladeFanCurvePlot : UserControl
             Canvas.SetZIndex(marker, 7);
             PlotCanvas.Children.Add(marker);
 
-            // The measured speed is a separate quantity from the setpoint, so it gets
-            // its own tick instead of moving the point off the curve.
-            var actual = _actualSpeedLines[series];
-            actual.Stroke = _seriesBrushes[series];
-            actual.StrokeThickness = 1.5;
-            actual.StrokeDashArray = new DoubleCollection { 3, 3 };
-            actual.IsHitTestVisible = false;
-            actual.Visibility = Visibility.Collapsed;
-            Canvas.SetZIndex(actual, 8);
-            PlotCanvas.Children.Add(actual);
+            // A crosshair from the live point to both axes replaces the old
+            // floating speed tick. The reading still carries target -> actual RPM.
+            foreach (var liveGuide in new[] { _liveVerticalGuides[series], _liveHorizontalGuides[series] })
+            {
+                liveGuide.Stroke = _seriesBrushes[series];
+                liveGuide.StrokeThickness = 1;
+                liveGuide.StrokeDashArray = new DoubleCollection { 2, 4 };
+                liveGuide.Opacity = 0.55;
+                liveGuide.IsHitTestVisible = false;
+                liveGuide.Visibility = Visibility.Collapsed;
+                Canvas.SetZIndex(liveGuide, 2);
+                PlotCanvas.Children.Add(liveGuide);
+            }
 
             // In merged mode only one curve drives the fans; the other temperature
             // still matters, so it stays visible as a reference line.
@@ -622,19 +625,26 @@ public sealed partial class BladeFanCurvePlot : UserControl
         TextBlock reading, double width, double height)
     {
         var x = XFromTemperature(temperature, width);
+        var y = YFromRpm(targetRpm, height);
         var marker = _liveMarkers[series];
         Canvas.SetLeft(marker, x - LiveMarkerSize / 2);
-        Canvas.SetTop(marker, YFromRpm(targetRpm, height) - LiveMarkerSize / 2);
+        Canvas.SetTop(marker, y - LiveMarkerSize / 2);
         marker.Visibility = Visibility.Visible;
+
+        var vertical = _liveVerticalGuides[series];
+        vertical.X1 = vertical.X2 = x;
+        vertical.Y1 = y;
+        vertical.Y2 = height - PlotBottomMargin;
+        vertical.Visibility = Visibility.Visible;
+
+        var horizontal = _liveHorizontalGuides[series];
+        horizontal.X1 = PlotLeftMargin;
+        horizontal.X2 = x;
+        horizontal.Y1 = horizontal.Y2 = y;
+        horizontal.Visibility = Visibility.Visible;
 
         if (actualRpm is int actual)
         {
-            var line = _actualSpeedLines[series];
-            var lineY = YFromRpm(actual, height);
-            line.X1 = x - ActualSpeedHalfWidth;
-            line.X2 = x + ActualSpeedHalfWidth;
-            line.Y1 = line.Y2 = lineY;
-            line.Visibility = Visibility.Visible;
             reading.Text = $"{temperature:0}°C · {targetRpm:N0}→{actual:N0} RPM";
         }
         else
@@ -658,7 +668,8 @@ public sealed partial class BladeFanCurvePlot : UserControl
     private void HideLiveMarkers()
     {
         foreach (var marker in _liveMarkers) marker.Visibility = Visibility.Collapsed;
-        foreach (var line in _actualSpeedLines) line.Visibility = Visibility.Collapsed;
+        foreach (var guide in _liveVerticalGuides) guide.Visibility = Visibility.Collapsed;
+        foreach (var guide in _liveHorizontalGuides) guide.Visibility = Visibility.Collapsed;
         foreach (var guide in _temperatureGuides) guide.Visibility = Visibility.Collapsed;
         CpuLiveReading.Visibility = GpuLiveReading.Visibility = Visibility.Collapsed;
     }

@@ -26,7 +26,8 @@ internal sealed class RazerHidSoftwareLightingOwner : IAsyncDisposable
         IReadOnlyList<RazerHidDeviceConnection> connections,
         RazerHidDeviceViewModel? selected,
         CancellationToken cancellationToken,
-        IReadOnlySet<string>? instanceIds = null)
+        IReadOnlySet<string>? instanceIds = null,
+        bool requireRestore = false)
     {
         var failed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var connection in connections)
@@ -39,7 +40,8 @@ internal sealed class RazerHidSoftwareLightingOwner : IAsyncDisposable
 
             RazerHidDeviceViewModel device;
             if (selected is { } current &&
-                StringComparer.OrdinalIgnoreCase.Equals(current.InstanceId, connection.InstanceId))
+                StringComparer.OrdinalIgnoreCase.Equals(current.InstanceId, connection.InstanceId) &&
+                StringComparer.OrdinalIgnoreCase.Equals(current.Connection.DevicePath, connection.DevicePath))
             {
                 device = current;
                 if (_devices.Remove(connection.InstanceId, out var duplicate))
@@ -47,45 +49,53 @@ internal sealed class RazerHidSoftwareLightingOwner : IAsyncDisposable
                     await duplicate.DisposeAsync().ConfigureAwait(true);
                 }
             }
-            else if (_devices.TryGetValue(connection.InstanceId, out var cached))
+            else if (_devices.TryGetValue(connection.InstanceId, out var cached) &&
+                StringComparer.OrdinalIgnoreCase.Equals(cached.Connection.DevicePath, connection.DevicePath))
             {
                 device = cached;
             }
             else
             {
+                if (_devices.Remove(connection.InstanceId, out var stale))
+                    await stale.DisposeAsync().ConfigureAwait(true);
                 device = _create(connection);
             }
 
             // A failed Chroma write may have raised this flag; the connection is
             // still current, so give the saved profile one chance to land.
             device.ClearRequiresRescan();
-            if (!await device.ApplyConfiguredLightingAsync(cancellationToken).ConfigureAwait(true))
+            try
             {
-                failed.Add(connection.InstanceId);
+                if (!await (requireRestore
+                        ? device.RestoreConfiguredLightingAfterExternalAsync(cancellationToken)
+                        : device.ApplyConfiguredLightingAsync(cancellationToken)).ConfigureAwait(true))
+                {
+                    failed.Add(connection.InstanceId);
+                }
             }
-            if (ReferenceEquals(device, selected))
+            finally
             {
-                continue;
-            }
-
-            if (device.HasRunningSoftwareLighting)
-            {
-                _devices[connection.InstanceId] = device;
-            }
-            else
-            {
-                _devices.Remove(connection.InstanceId);
-                await device.DisposeAsync().ConfigureAwait(true);
+                if (!ReferenceEquals(device, selected))
+                {
+                    if (device.HasRunningSoftwareLighting)
+                        _devices[connection.InstanceId] = device;
+                    else
+                    {
+                        _devices.Remove(connection.InstanceId);
+                        await device.DisposeAsync().ConfigureAwait(true);
+                    }
+                }
             }
         }
 
-        await PruneAsync(connections, cancellationToken).ConfigureAwait(true);
+        await PruneAsync(connections, cancellationToken, instanceIds).ConfigureAwait(false);
         return failed;
     }
 
     internal async Task PruneAsync(
         IReadOnlyList<RazerHidDeviceConnection> connections,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IReadOnlySet<string>? instanceIds = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var livePaths = connections
@@ -94,6 +104,7 @@ internal sealed class RazerHidSoftwareLightingOwner : IAsyncDisposable
                 StringComparer.OrdinalIgnoreCase);
         foreach (var (instanceId, device) in _devices.ToArray())
         {
+            if (instanceIds is not null && !instanceIds.Contains(instanceId)) continue;
             if (livePaths.TryGetValue(instanceId, out var devicePath) &&
                 StringComparer.OrdinalIgnoreCase.Equals(devicePath, device.Connection.DevicePath))
             {
@@ -111,10 +122,12 @@ internal sealed class RazerHidSoftwareLightingOwner : IAsyncDisposable
     /// </summary>
     internal async Task StopAllAsync(
         CancellationToken cancellationToken,
-        bool restore = true)
+        bool restore = true,
+        IReadOnlySet<string>? instanceIds = null)
     {
         foreach (var device in _devices.Values.ToArray())
         {
+            if (instanceIds is not null && !instanceIds.Contains(device.InstanceId)) continue;
             await device.StopLightingRuntimeAsync(cancellationToken, restore).ConfigureAwait(true);
         }
     }

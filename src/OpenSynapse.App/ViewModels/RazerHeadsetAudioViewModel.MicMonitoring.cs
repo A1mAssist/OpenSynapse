@@ -16,7 +16,7 @@ public sealed partial class RazerHeadsetAudioViewModel
 
         if (IsMxicSidetone)
         {
-            var previousEnabled = MicMonitoringEnabled;
+            var previousEnabled = ConfirmedAudioValue(HeadsetAudioSetting.MicMonitoring, MicMonitoringEnabled);
             if (!await RunMxicWriteAsync(
                     (service, token) => service.SetSidetoneAsync(MicMonitoringEnabled, token),
                     cancellationToken))
@@ -39,7 +39,7 @@ public sealed partial class RazerHeadsetAudioViewModel
 
         if (IsValkyrieSidetone)
         {
-            var previousEnabled = MicMonitoringEnabled;
+            var previousEnabled = ConfirmedAudioValue(HeadsetAudioSetting.MicMonitoring, MicMonitoringEnabled);
             if (!await RunValkyrieWriteAsync(
                     (service, token) => service.SetSidetoneAsync(MicMonitoringEnabled, token),
                     cancellationToken))
@@ -62,7 +62,7 @@ public sealed partial class RazerHeadsetAudioViewModel
 
         if (IsAvnera65)
         {
-            var previousEnabled = MicMonitoringEnabled;
+            var previousEnabled = ConfirmedAudioValue(HeadsetAudioSetting.MicMonitoring, MicMonitoringEnabled);
             var previousPercent = _sidetonePercent;
             var target = MicMonitoringEnabled
                 ? (byte)Math.Max(1, (int)previousPercent)
@@ -93,7 +93,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         }
 
         if (!IsFeature91) return;
-        var previous = MicMonitoringEnabled;
+        var previous = ConfirmedAudioValue(HeadsetAudioSetting.MicMonitoring, MicMonitoringEnabled);
         if (!await RunWriteAsync(
                 (service, token) => service.SetMicReturnSwitchAsync(MicMonitoringEnabled, token),
                 cancellationToken))

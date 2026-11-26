@@ -71,6 +71,7 @@ public sealed partial class LightingStudioViewModel
             _previewKeys.Remove(id);
 
         OnPropertyChanged(nameof(CanApply));
+        NotifyOutputScope();
         OnPropertyChanged(nameof(PreviewRows));
         OnPropertyChanged(nameof(PreviewColumns));
         OnPropertyChanged(nameof(DeviceVisuals));
@@ -78,6 +79,7 @@ public sealed partial class LightingStudioViewModel
         _ = LoadAllVisualsAsync();
         _ = LoadDeviceImagesAsync();
         RefreshBladeWorldSource();
+        _ = RetryPendingRestoresAsync();
         if (IsApplied)
         {
             RefreshHidSnapshots();
@@ -94,6 +96,14 @@ public sealed partial class LightingStudioViewModel
 
     private async Task LoadAllVisualsAsync()
     {
+#if DEBUG
+        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("OPENSSYNAPSE_STUDIO_SCOPE_QA_OUT")))
+        {
+            foreach (var device in Devices)
+                if (GridVisual(device) is { } visual) AddVisual(visual);
+            return;
+        }
+#endif
         _visualsCancellation?.Cancel();
         _visualsCancellation?.Dispose();
         var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(60));
@@ -373,6 +383,9 @@ public sealed partial class LightingStudioViewModel
 
     private async Task LoadDeviceImagesAsync()
     {
+#if DEBUG
+        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("OPENSSYNAPSE_STUDIO_SCOPE_QA_OUT"))) return;
+#endif
         _imagesCancellation?.Cancel();
         var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         _imagesCancellation = cancellation;

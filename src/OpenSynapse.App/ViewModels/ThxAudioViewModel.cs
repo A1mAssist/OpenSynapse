@@ -100,6 +100,7 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
             {
                 OnPropertyChanged(nameof(CanRead));
                 OnPropertyChanged(nameof(CanEdit));
+                OnPropertyChanged(nameof(CanEditVoiceClarity));
                 OnPropertyChanged(nameof(CanApplyEqualizer));
                 OnPropertyChanged(nameof(CanResetEqualizer));
                 OnPropertyChanged(nameof(CanInstallComponents));
@@ -108,12 +109,13 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
     }
     public bool CanRead => !_busy && _controller is not null;
     public bool CanEdit => !_busy && _state?.CanEdit == true;
+    public bool CanEditVoiceClarity => CanEdit && _state?.VoiceClarity is not null;
     public Visibility DeviceCardVisibility => _isSupportedHost ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility ControlsVisibility => _availability is ThxAudioAvailability.Available or ThxAudioAvailability.AvailableReadOnly
+    public Visibility ControlsVisibility => _state is not null
         ? Visibility.Visible : Visibility.Collapsed;
     public Visibility UnavailableVisibility => ControlsVisibility == Visibility.Visible
         ? Visibility.Collapsed : Visibility.Visible;
-    public Visibility SoundNormalizationVisibility => SelectedEndpoint.Endpoint == ThxAudioEndpoint.Speakers
+    public Visibility SoundNormalizationVisibility => _state?.SoundNormalization is not null
         ? Visibility.Visible : Visibility.Collapsed;
     public Visibility BassBoostVisibility => _state?.BassBoost is not null
         ? Visibility.Visible : Visibility.Collapsed;
@@ -189,6 +191,8 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
             _state = null;
             Presets.Clear();
             Bands.Clear();
+            OnPropertyChanged(nameof(ControlsVisibility));
+            OnPropertyChanged(nameof(UnavailableVisibility));
             OnPropertyChanged(nameof(CanEdit));
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedEndpoint));
@@ -229,8 +233,8 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
         }
     }
 
-    public bool IsEditablePreset => Presets.Count > 0 &&
-        Presets[Math.Clamp(_selectedPresetIndex, 0, Presets.Count - 1)].Id is
+    public bool IsEditablePreset => _selectedPresetIndex >= 0 && _selectedPresetIndex < Presets.Count &&
+        Presets[_selectedPresetIndex].Id is
             "game" or "movie" or "music" or "voice" or "custom";
 
     public bool SpatialEnabled
@@ -262,6 +266,11 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
         get => _voiceClarityEnabled;
         set
         {
+            if (!_applying && _state?.VoiceClarity is null)
+            {
+                OnPropertyChanged();
+                return;
+            }
             if (SetField(ref _voiceClarityEnabled, value) && !_applying)
             {
                 _ = SetEnhancementAsync(ThxAudioEnhancementKind.VoiceClarity, value, null);
@@ -281,13 +290,18 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
         }
     }
 
-    public string VoiceClarityLevelText => $"{_voiceClarityLevel:0}%";
+    public string VoiceClarityLevelText => _state?.VoiceClarity is null ? "—" : $"{_voiceClarityLevel:0}%";
 
     public bool SoundNormalizationEnabled
     {
         get => _normalizationEnabled;
         set
         {
+            if (!_applying && _state?.SoundNormalization is null)
+            {
+                OnPropertyChanged();
+                return;
+            }
             if (SetField(ref _normalizationEnabled, value) && !_applying)
             {
                 _ = SetEnhancementAsync(ThxAudioEnhancementKind.SoundNormalization, value, null);
@@ -307,13 +321,18 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
         }
     }
 
-    public string SoundNormalizationLevelText => $"{_normalizationLevel:0}%";
+    public string SoundNormalizationLevelText => _state?.SoundNormalization is null ? "—" : $"{_normalizationLevel:0}%";
 
     public bool BassBoostEnabled
     {
         get => _bassBoostEnabled;
         set
         {
+            if (!_applying && _state?.BassBoost is null)
+            {
+                OnPropertyChanged();
+                return;
+            }
             if (SetField(ref _bassBoostEnabled, value) && !_applying)
             {
                 _ = SetEnhancementAsync(ThxAudioEnhancementKind.BassBoost, value, null);
@@ -333,7 +352,7 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
         }
     }
 
-    public string BassBoostLevelText => $"{_bassBoostLevel:0}%";
+    public string BassBoostLevelText => _state?.BassBoost is null ? "—" : $"{_bassBoostLevel:0}%";
 
     public Task EnsureLoadedAsync() => _loaded ? Task.CompletedTask : RefreshAsync();
 
@@ -433,20 +452,20 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
     private async Task SelectPresetAsync()
     {
         if (_controller is not { } controller || !CanEdit || SelectedPresetIndex < 0 ||
-            _state?.SelectedPresetId is not { } currentId)
+            _state is null)
         {
             return;
         }
 
         var selected = Presets[SelectedPresetIndex];
-        if (selected.Id == currentId)
+        if (selected.Id == _state.SelectedPresetId)
         {
             return;
         }
 
         var endpoint = SelectedEndpoint.Endpoint;
         if (!_presetCurves.TryGetValue(endpoint, out var curves) ||
-            !curves.TryGetValue(selected.Id, out var gains))
+            !curves.TryGetValue(selected.Id, out var gains) || gains.Length != Bands.Count || gains.Length == 0)
         {
             return;
         }
@@ -540,6 +559,8 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
         "ThxServiceNotReady" => AppStrings.Text("ThxStatusServiceNotReady"),
         "ThxRebootRequired" => AppStrings.Text("ThxStatusRebootRequired"),
         "ThxOperationRejected" => AppStrings.Text("ThxStatusOperationRejected"),
+        _ when status.Error?.StartsWith("ThxOperationRejected:", StringComparison.Ordinal) == true =>
+            AppStrings.Text("ThxStatusOperationRejected"),
         "ThxNativeFailure" => AppStrings.Text("ThxStatusNativeFailure"),
         "ThxInvalidRequest" => AppStrings.Text("ThxStatusInvalidRequest"),
         "ThxDownloadFailed" => AppStrings.Text("ThxStatusDownloadFailed"),

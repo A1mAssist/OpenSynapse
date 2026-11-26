@@ -6,6 +6,26 @@ public sealed partial class RazerHeadsetAudioService
 {
     private readonly SemaphoreSlim _eqGate = new(1, 1);
 
+    public async Task<RazerHeadsetEqualizerState> ReadEqualizerAsync(
+        int bandCount, CancellationToken cancellationToken = default)
+    {
+        if (bandCount is not (0 or 8 or 10)) throw new ArgumentOutOfRangeException(nameof(bandCount));
+        if (_transportKind is not (RazerHeadsetAudioTransport.Feature91 or RazerHeadsetAudioTransport.Protocol25Feature65))
+            throw new NotSupportedException("This audio transport has no hardware EQ reader.");
+
+        Task<byte[]> ReadAsync(Func<byte, byte[]> request, string label) =>
+            _protocol25Transport is not null
+                ? QueryProtocol25Async(request, cancellationToken)
+                : QueryAsync(request, label, cancellationToken);
+
+        var preset = RazerHeadsetAudioProtocol.ReadEqPreset(await ReadAsync(
+            txn => RazerHeadsetAudioProtocol.GetEqPreset(txn), "EQ preset").ConfigureAwait(false));
+        var bands = bandCount == 0 ? null : RazerHeadsetAudioProtocol.ReadEqBands(await ReadAsync(
+            txn => RazerHeadsetAudioProtocol.GetEqBands(txn, bandCount == 10), "EQ bands")
+                .ConfigureAwait(false), bandCount == 10);
+        return new(preset, bands);
+    }
+
     public Task SetEqPresetAsync(byte preset, CancellationToken cancellationToken = default) =>
         ExecuteEqAsync(token => SetEqPresetCoreAsync(preset, token), cancellationToken);
 

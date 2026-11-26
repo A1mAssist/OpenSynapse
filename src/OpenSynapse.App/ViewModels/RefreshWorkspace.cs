@@ -323,8 +323,8 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
 
     /// <summary>
     /// Reads the device telemetry again so the live readouts on the device page keep up.
-    /// This is a read-only path: it never pushes a stored profile back to the hardware,
-    /// so it cannot pin the fans or rewrite a setting the user did not just change.
+    /// Regular ticks only read state. A confirmed wireless reconnect may restore that
+    /// device's saved surface calibration once; game and power profiles are not reapplied.
     /// </summary>
     private async Task RefreshDeviceReadoutsAsync(CancellationToken cancellationToken)
     {
@@ -344,6 +344,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
                 await razerHidDevice.RefreshBatteryStateAsync(cancellationToken);
                 await razerHidDevice.RefreshDpiStageAsync(cancellationToken);
             }
+            await _razerHid.RestoreCalibrationsAsync(_razerHid.CurrentConnections, cancellationToken);
             if (ActiveDescriptors.Count == 0)
             {
                 return;
@@ -351,6 +352,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
             var live = await _deviceTelemetryReader.ReadLiveAsync(PeripheralDescriptors, cancellationToken);
             _blade.ApplyLiveTelemetry(live);
             _viper.ApplyLiveTelemetry(live);
+            await _viper.RefreshCalibrationAsync(cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -432,6 +434,7 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
 
             var telemetry = await _deviceTelemetryReader.ReadAsync(PeripheralDescriptors, cancellationToken);
             _applyDeviceTelemetry(telemetry);
+            await _viper.RefreshCalibrationAsync(cancellationToken);
             // The pre-read only has the previous snapshot; this reading came with the
             // devices just queried, so a transient mismatch must not survive the pass.
             powerState = PowerSourceResolver.Resolve(

@@ -21,6 +21,7 @@ public sealed partial class RazerHidDeviceViewModel
                 Connection, profileId, cancellationToken);
             _analogDeadZoneUnreadable = false;
             SetAnalogDeadZone(deadZone.Value);
+            _confirmedAnalogDeadZone = _analogKeyBottomDeadZone;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
