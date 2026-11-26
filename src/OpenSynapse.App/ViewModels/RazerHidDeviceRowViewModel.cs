@@ -84,6 +84,7 @@ public sealed class RazerHidDeviceRowViewModel : INotifyPropertyChanged, IDevice
         }
 
         _batteryPercent = percent;
+        _detail?.ApplyBatteryState(percent, null);
         PropertyChanged?.Invoke(this, new(nameof(IsBatteryAvailable)));
         PropertyChanged?.Invoke(this, new(nameof(BatteryText)));
         PropertyChanged?.Invoke(this, new(nameof(BatteryPercent)));
@@ -98,6 +99,7 @@ public sealed class RazerHidDeviceRowViewModel : INotifyPropertyChanged, IDevice
         }
 
         _isCharging = charging;
+        _detail?.ApplyBatteryState(null, charging);
         PropertyChanged?.Invoke(this, new(nameof(IsCharging)));
     }
 
@@ -106,12 +108,22 @@ public sealed class RazerHidDeviceRowViewModel : INotifyPropertyChanged, IDevice
         if (_detail is not null) _detail.PropertyChanged -= DetailPropertyChanged;
         _detail = detail;
         _detail.PropertyChanged += DetailPropertyChanged;
+        SetBatteryPercent(detail.BatteryPercent);
+        SetCharging(detail.IsCharging);
+        detail.ApplyBatteryState(_batteryPercent, _isCharging);
         PropertyChanged?.Invoke(this, new(nameof(Status)));
         PropertyChanged?.Invoke(this, new(nameof(StatusBrush)));
     }
 
     private void DetailPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
+        if (args.PropertyName is nameof(RazerHidDeviceViewModel.BatteryText) or
+            nameof(RazerHidDeviceViewModel.ChargingText))
+        {
+            SetBatteryPercent(_detail?.BatteryPercent);
+            SetCharging(_detail?.IsCharging);
+            _detail?.ApplyBatteryState(_batteryPercent, _isCharging);
+        }
         if (args.PropertyName is nameof(RazerHidDeviceViewModel.StatusText) or
             nameof(RazerHidDeviceViewModel.ProtocolAvailableCount))
         {

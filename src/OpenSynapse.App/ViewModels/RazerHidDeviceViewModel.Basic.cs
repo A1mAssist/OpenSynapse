@@ -13,8 +13,6 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
 {
-    private static readonly TimeSpan BatteryRefreshInterval = TimeSpan.FromSeconds(10);
-    private DateTimeOffset _lastBatteryRefresh;
     private DateTimeOffset _lastSlowCardLoad;
     private bool _slowCardsLoading;
 
@@ -34,7 +32,6 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         {
             var state = await _service.ReadBasicStateAsync(Connection, cancellationToken, _unsupported);
             _basicState = state;
-            _lastBatteryRefresh = DateTimeOffset.UtcNow;
             if (state.UnsupportedCapabilities.Count > 0)
             {
                 _unsupported.UnionWith(state.UnsupportedCapabilities);
@@ -189,63 +186,6 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         _unsupported.Clear();
         ErrorText = string.Empty;
         OnCapabilityChanged();
-        OnBasicStateChanged();
-    }
-
-    /// <summary>
-    /// Keeps the battery and charging readout current while the device page is open.
-    /// The device watch loop already refreshes live readouts; without this, a mouse
-    /// plugged in after the page opened kept showing its old charging state.
-    /// </summary>
-    public async Task RefreshBatteryStateAsync(CancellationToken cancellationToken = default)
-    {
-        if (_basicState is null || !IsReady || RequiresRescan || IsBasicBusy ||
-            DateTimeOffset.UtcNow - _lastBatteryRefresh < BatteryRefreshInterval)
-        {
-            return;
-        }
-
-        _lastBatteryRefresh = DateTimeOffset.UtcNow;
-        var battery = await TryReadAsync(
-            RazerHidBackendCapability.BatteryRead,
-            () => _service.GetBatteryPercentAsync(Connection, cancellationToken));
-        var charging = await TryReadAsync(
-            RazerHidBackendCapability.ChargingRead,
-            () => _service.GetChargingAsync(Connection, cancellationToken));
-
-        async Task<T?> TryReadAsync<T>(RazerHidBackendCapability capability, Func<Task<T>> read)
-            where T : struct
-        {
-            if (!Has(capability))
-            {
-                return null;
-            }
-            try
-            {
-                return await read();
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                throw;
-            }
-            catch (Exception exception) when (exception is Win32Exception or IOException or
-                InvalidOperationException or NotSupportedException or InvalidDataException)
-            {
-                // One side timing out must not discard the other side's fresh reading.
-                return null;
-            }
-        }
-
-        if (battery is null && charging is null)
-        {
-            return;
-        }
-
-        _basicState = _basicState with
-        {
-            BatteryPercent = battery ?? _basicState.BatteryPercent,
-            IsCharging = charging ?? _basicState.IsCharging,
-        };
         OnBasicStateChanged();
     }
 
