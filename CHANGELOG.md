@@ -32,6 +32,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
+- **THX preset choices**: filter V3 presets using installed device and spatial-mode metadata, so spatial-only presets are no longer offered while spatial audio is off; localize preset display names and immersive/competitive labels while retaining the original native IDs.
+- **Headset save feedback**: show the saved status beside Refresh without shifting the page; remove the device header's identity tooltip.
 - **Ambient capture recovery**: recreate capture buffers before reading frames after a display-resolution change; retain the last frame and reopen capture after transient failures instead of leaving screen-sampled lighting black until manually restarted.
 - **Chroma takeover controls**: show the device toggle according to lighting capabilities even when the global service is off; honor saved device permissions before pausing Studio or sending game frames, and keep Studio running when only the takeover preference changes.
 - **Device navigation width**: automatically fit the longest product name within the available window space until the user resizes the pane; retain manual widths and remove the resize tooltip and green hover line.

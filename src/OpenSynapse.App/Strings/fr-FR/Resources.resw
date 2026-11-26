@@ -4897,4 +4897,61 @@ Les modifications de macro non enregistrées seront perdues.</value></data>
   <data name="SettingAutoApplyRetry" xml:space="preserve"><value>Réessayer</value></data>
   <data name="SettingAutoApplyInvalid" xml:space="preserve"><value>Saisissez une valeur valide dans la plage autorisée.</value></data>
   <data name="SettingAutoApplyCancelled" xml:space="preserve"><value>Application annulée. Réessayez.</value></data>
+  <data name="ThxPresetFlat" xml:space="preserve">
+    <value>Neutre</value>
+  </data>
+  <data name="ThxPresetPodcast" xml:space="preserve">
+    <value>Podcast</value>
+  </data>
+  <data name="ThxPresetAcoustic" xml:space="preserve">
+    <value>Acoustique</value>
+  </data>
+  <data name="ThxPresetCinemaMode" xml:space="preserve">
+    <value>Mode cinéma</value>
+  </data>
+  <data name="ThxPresetClassical" xml:space="preserve">
+    <value>Classique</value>
+  </data>
+  <data name="ThxPresetEdm" xml:space="preserve">
+    <value>Musique électronique (EDM)</value>
+  </data>
+  <data name="ThxPresetFlatLive" xml:space="preserve">
+    <value>Neutre / Concert</value>
+  </data>
+  <data name="ThxPresetGameGrand" xml:space="preserve">
+    <value>Mode jeu grandiose</value>
+  </data>
+  <data name="ThxPresetGameHyperlocator" xml:space="preserve">
+    <value>Mode jeu à localisation précise</value>
+  </data>
+  <data name="ThxPresetGameMode" xml:space="preserve">
+    <value>Mode jeu</value>
+  </data>
+  <data name="ThxPresetHipHop" xml:space="preserve">
+    <value>Hip-hop</value>
+  </data>
+  <data name="ThxPresetJazz" xml:space="preserve">
+    <value>Jazz</value>
+  </data>
+  <data name="ThxPresetMusicMode" xml:space="preserve">
+    <value>Mode musique</value>
+  </data>
+  <data name="ThxPresetPop" xml:space="preserve">
+    <value>Pop</value>
+  </data>
+  <data name="ThxPresetRhythmBlues" xml:space="preserve">
+    <value>Rhythm and blues (R&amp;B)</value>
+  </data>
+  <data name="ThxPresetRock" xml:space="preserve">
+    <value>Rock</value>
+  </data>
+  <data name="ThxPresetVoiceMode" xml:space="preserve">
+    <value>Mode voix</value>
+  </data>
+  <data name="ThxPresetImmersiveFormat" xml:space="preserve">
+    <value>{0} · Mode immersif</value>
+  </data>
+  <data name="ThxPresetCompetitiveFormat" xml:space="preserve">
+    <value>{0} · Mode compétitif</value>
+  </data>
 </root>

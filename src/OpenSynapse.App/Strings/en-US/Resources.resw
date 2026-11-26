@@ -4917,4 +4917,61 @@
   <data name="SettingAutoApplyRetry" xml:space="preserve"><value>Retry</value></data>
   <data name="SettingAutoApplyInvalid" xml:space="preserve"><value>Enter a valid value within the allowed range.</value></data>
   <data name="SettingAutoApplyCancelled" xml:space="preserve"><value>Apply cancelled. Please retry.</value></data>
+  <data name="ThxPresetFlat" xml:space="preserve">
+    <value>Flat</value>
+  </data>
+  <data name="ThxPresetPodcast" xml:space="preserve">
+    <value>Podcast</value>
+  </data>
+  <data name="ThxPresetAcoustic" xml:space="preserve">
+    <value>Acoustic</value>
+  </data>
+  <data name="ThxPresetCinemaMode" xml:space="preserve">
+    <value>Cinema Mode</value>
+  </data>
+  <data name="ThxPresetClassical" xml:space="preserve">
+    <value>Classical</value>
+  </data>
+  <data name="ThxPresetEdm" xml:space="preserve">
+    <value>Electronic Dance Music (EDM)</value>
+  </data>
+  <data name="ThxPresetFlatLive" xml:space="preserve">
+    <value>Flat / Live</value>
+  </data>
+  <data name="ThxPresetGameGrand" xml:space="preserve">
+    <value>Game Grand</value>
+  </data>
+  <data name="ThxPresetGameHyperlocator" xml:space="preserve">
+    <value>Game Hyperlocator Mode</value>
+  </data>
+  <data name="ThxPresetGameMode" xml:space="preserve">
+    <value>Game Mode</value>
+  </data>
+  <data name="ThxPresetHipHop" xml:space="preserve">
+    <value>Hip Hop</value>
+  </data>
+  <data name="ThxPresetJazz" xml:space="preserve">
+    <value>Jazz</value>
+  </data>
+  <data name="ThxPresetMusicMode" xml:space="preserve">
+    <value>Music Mode</value>
+  </data>
+  <data name="ThxPresetPop" xml:space="preserve">
+    <value>Pop</value>
+  </data>
+  <data name="ThxPresetRhythmBlues" xml:space="preserve">
+    <value>Rhythm and Blues (R&amp;B)</value>
+  </data>
+  <data name="ThxPresetRock" xml:space="preserve">
+    <value>Rock</value>
+  </data>
+  <data name="ThxPresetVoiceMode" xml:space="preserve">
+    <value>Voice Mode</value>
+  </data>
+  <data name="ThxPresetImmersiveFormat" xml:space="preserve">
+    <value>{0} · Immersive Mode</value>
+  </data>
+  <data name="ThxPresetCompetitiveFormat" xml:space="preserve">
+    <value>{0} · Competitive Mode</value>
+  </data>
 </root>

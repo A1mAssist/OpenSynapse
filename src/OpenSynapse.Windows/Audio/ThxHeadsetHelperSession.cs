@@ -421,6 +421,10 @@ internal sealed class ThxHeadsetHelperSession
         var spatial = v3.GetSpatial(containerId);
         var selected = TryRead(() => ThxVendorJson.ParseSelectedPresetValue(v3.GetPreset(containerId)));
         var presets = ReadV3PresetList(() => v3.GetPresetList(containerId), selected);
+        presets = ThxV3PresetCatalog.Filter(presets,
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                "THX", "usb", "1532", profile.ProductId.ToString("x4", CultureInfo.InvariantCulture)),
+            profile.ProductId, spatial, selected);
         var gains = TryRead(() => ThxVendorJson.ParseGains(v3.GetEqGains(containerId))) ?? [];
         return new ThxAudioState(
             ThxAudioEndpoint.Headphones,

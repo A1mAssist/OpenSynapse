@@ -39,6 +39,8 @@ internal enum HeadsetAudioSetting
 public sealed partial class RazerHeadsetAudioViewModel
 {
 #if DEBUG
+    internal void SetAutoApplyPreviewStatus(string status) => OperationStatusText = status;
+
     internal void SetAutoApplyPreviewState(RazerHeadsetAudioState audio, ThxAudioState thx)
     {
         ApplyState(audio);

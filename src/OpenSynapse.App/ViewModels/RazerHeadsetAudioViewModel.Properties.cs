@@ -119,9 +119,7 @@ public sealed partial class RazerHeadsetAudioViewModel
     }
 
     public IReadOnlyList<string> ThxPresetOptions =>
-        _thxState?.Presets.Select(preset => preset.Id == "default"
-            ? AppStrings.Text("ThxPresetDefault")
-            : preset.DisplayName).ToArray() ?? [];
+        _thxState?.Presets.Select(ThxPresetDisplayNames.Get).ToArray() ?? [];
 
     public int SelectedThxPresetIndex
     {

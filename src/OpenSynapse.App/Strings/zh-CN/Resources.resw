@@ -5358,4 +5358,61 @@
   <data name="SettingAutoApplyRetry" xml:space="preserve"><value>重试</value></data>
   <data name="SettingAutoApplyInvalid" xml:space="preserve"><value>请输入范围内的有效数值。</value></data>
   <data name="SettingAutoApplyCancelled" xml:space="preserve"><value>应用已取消，请重试。</value></data>
+  <data name="ThxPresetFlat" xml:space="preserve">
+    <value>平直</value>
+  </data>
+  <data name="ThxPresetPodcast" xml:space="preserve">
+    <value>播客</value>
+  </data>
+  <data name="ThxPresetAcoustic" xml:space="preserve">
+    <value>原声</value>
+  </data>
+  <data name="ThxPresetCinemaMode" xml:space="preserve">
+    <value>影院模式</value>
+  </data>
+  <data name="ThxPresetClassical" xml:space="preserve">
+    <value>古典</value>
+  </data>
+  <data name="ThxPresetEdm" xml:space="preserve">
+    <value>电子舞曲</value>
+  </data>
+  <data name="ThxPresetFlatLive" xml:space="preserve">
+    <value>平直 / 现场</value>
+  </data>
+  <data name="ThxPresetGameGrand" xml:space="preserve">
+    <value>宏大游戏模式</value>
+  </data>
+  <data name="ThxPresetGameHyperlocator" xml:space="preserve">
+    <value>游戏精准定位模式</value>
+  </data>
+  <data name="ThxPresetGameMode" xml:space="preserve">
+    <value>游戏模式</value>
+  </data>
+  <data name="ThxPresetHipHop" xml:space="preserve">
+    <value>嘻哈</value>
+  </data>
+  <data name="ThxPresetJazz" xml:space="preserve">
+    <value>爵士</value>
+  </data>
+  <data name="ThxPresetMusicMode" xml:space="preserve">
+    <value>音乐模式</value>
+  </data>
+  <data name="ThxPresetPop" xml:space="preserve">
+    <value>流行</value>
+  </data>
+  <data name="ThxPresetRhythmBlues" xml:space="preserve">
+    <value>节奏布鲁斯</value>
+  </data>
+  <data name="ThxPresetRock" xml:space="preserve">
+    <value>摇滚</value>
+  </data>
+  <data name="ThxPresetVoiceMode" xml:space="preserve">
+    <value>人声模式</value>
+  </data>
+  <data name="ThxPresetImmersiveFormat" xml:space="preserve">
+    <value>{0} · 沉浸模式</value>
+  </data>
+  <data name="ThxPresetCompetitiveFormat" xml:space="preserve">
+    <value>{0} · 竞技模式</value>
+  </data>
 </root>

@@ -4897,4 +4897,61 @@
   <data name="SettingAutoApplyRetry" xml:space="preserve"><value>再試行</value></data>
   <data name="SettingAutoApplyInvalid" xml:space="preserve"><value>有効な範囲内の数値を入力してください。</value></data>
   <data name="SettingAutoApplyCancelled" xml:space="preserve"><value>適用がキャンセルされました。再試行してください。</value></data>
+  <data name="ThxPresetFlat" xml:space="preserve">
+    <value>フラット</value>
+  </data>
+  <data name="ThxPresetPodcast" xml:space="preserve">
+    <value>ポッドキャスト</value>
+  </data>
+  <data name="ThxPresetAcoustic" xml:space="preserve">
+    <value>アコースティック</value>
+  </data>
+  <data name="ThxPresetCinemaMode" xml:space="preserve">
+    <value>シネマモード</value>
+  </data>
+  <data name="ThxPresetClassical" xml:space="preserve">
+    <value>クラシック</value>
+  </data>
+  <data name="ThxPresetEdm" xml:space="preserve">
+    <value>エレクトロニック・ダンス・ミュージック（EDM）</value>
+  </data>
+  <data name="ThxPresetFlatLive" xml:space="preserve">
+    <value>フラット / ライブ</value>
+  </data>
+  <data name="ThxPresetGameGrand" xml:space="preserve">
+    <value>壮大なゲームモード</value>
+  </data>
+  <data name="ThxPresetGameHyperlocator" xml:space="preserve">
+    <value>ゲーム高精度定位モード</value>
+  </data>
+  <data name="ThxPresetGameMode" xml:space="preserve">
+    <value>ゲームモード</value>
+  </data>
+  <data name="ThxPresetHipHop" xml:space="preserve">
+    <value>ヒップホップ</value>
+  </data>
+  <data name="ThxPresetJazz" xml:space="preserve">
+    <value>ジャズ</value>
+  </data>
+  <data name="ThxPresetMusicMode" xml:space="preserve">
+    <value>音楽モード</value>
+  </data>
+  <data name="ThxPresetPop" xml:space="preserve">
+    <value>ポップ</value>
+  </data>
+  <data name="ThxPresetRhythmBlues" xml:space="preserve">
+    <value>リズム＆ブルース</value>
+  </data>
+  <data name="ThxPresetRock" xml:space="preserve">
+    <value>ロック</value>
+  </data>
+  <data name="ThxPresetVoiceMode" xml:space="preserve">
+    <value>ボイスモード</value>
+  </data>
+  <data name="ThxPresetImmersiveFormat" xml:space="preserve">
+    <value>{0} · 没入モード</value>
+  </data>
+  <data name="ThxPresetCompetitiveFormat" xml:space="preserve">
+    <value>{0} · 競技モード</value>
+  </data>
 </root>

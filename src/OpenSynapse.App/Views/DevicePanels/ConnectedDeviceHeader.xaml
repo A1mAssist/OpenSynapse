@@ -10,7 +10,7 @@
     <local:BatteryFillWidthConverter x:Key="BatteryFillWidthConverter" />
     <local:BatteryLevelBrushConverter x:Key="BatteryLevelBrushConverter" />
   </UserControl.Resources>
-      <Grid ColumnDefinitions="64,*" ColumnSpacing="16" MinHeight="72" ToolTipService.ToolTip="{Binding Identity}">
+      <Grid ColumnDefinitions="64,*" ColumnSpacing="16" MinHeight="72">
         <Grid Width="64" Height="64" VerticalAlignment="Center">
           <FontIcon Glyph="{Binding IconGlyph}" Visibility="{Binding IconVisibility}" FontFamily="{StaticResource IconFontFamily}" FontSize="32" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
           <Image Source="{Binding ProductImage}" Stretch="Uniform" AutomationProperties.AutomationId="DeviceHeaderProductImage" AutomationProperties.Name="{Binding Name}" />

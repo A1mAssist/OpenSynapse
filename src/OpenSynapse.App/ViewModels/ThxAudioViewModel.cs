@@ -533,16 +533,7 @@ public sealed partial class ThxAudioViewModel : INotifyPropertyChanged
         }
     }
 
-    private static string LocalizePreset(ThxAudioPreset preset) => preset.Id switch
-    {
-        "game" => AppStrings.Text("ThxPresetGame"),
-        "movie" => AppStrings.Text("ThxPresetMovie"),
-        "music" => AppStrings.Text("ThxPresetMusic"),
-        "voice" => AppStrings.Text("ThxPresetVoice"),
-        "custom" => AppStrings.Text("ThxPresetCustom"),
-        "default" => AppStrings.Text("ThxPresetDefault"),
-        _ => preset.DisplayName,
-    };
+    private static string LocalizePreset(ThxAudioPreset preset) => ThxPresetDisplayNames.Get(preset);
 
     private static string LocalizeError(ThxAudioStatus status) => status.Error switch
     {

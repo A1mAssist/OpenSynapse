@@ -10412,4 +10412,61 @@
   <data name="SettingAutoApplyRetry" xml:space="preserve"><value>Повторить</value></data>
   <data name="SettingAutoApplyInvalid" xml:space="preserve"><value>Введите допустимое значение в указанном диапазоне.</value></data>
   <data name="SettingAutoApplyCancelled" xml:space="preserve"><value>Применение отменено. Повторите попытку.</value></data>
+  <data name="ThxPresetFlat" xml:space="preserve">
+    <value>Ровное звучание</value>
+  </data>
+  <data name="ThxPresetPodcast" xml:space="preserve">
+    <value>Подкаст</value>
+  </data>
+  <data name="ThxPresetAcoustic" xml:space="preserve">
+    <value>Акустика</value>
+  </data>
+  <data name="ThxPresetCinemaMode" xml:space="preserve">
+    <value>Режим кино</value>
+  </data>
+  <data name="ThxPresetClassical" xml:space="preserve">
+    <value>Классика</value>
+  </data>
+  <data name="ThxPresetEdm" xml:space="preserve">
+    <value>Электронная танцевальная музыка (EDM)</value>
+  </data>
+  <data name="ThxPresetFlatLive" xml:space="preserve">
+    <value>Ровное звучание / Концерт</value>
+  </data>
+  <data name="ThxPresetGameGrand" xml:space="preserve">
+    <value>Масштабный игровой режим</value>
+  </data>
+  <data name="ThxPresetGameHyperlocator" xml:space="preserve">
+    <value>Игровой режим точного позиционирования</value>
+  </data>
+  <data name="ThxPresetGameMode" xml:space="preserve">
+    <value>Игровой режим</value>
+  </data>
+  <data name="ThxPresetHipHop" xml:space="preserve">
+    <value>Хип-хоп</value>
+  </data>
+  <data name="ThxPresetJazz" xml:space="preserve">
+    <value>Джаз</value>
+  </data>
+  <data name="ThxPresetMusicMode" xml:space="preserve">
+    <value>Режим музыки</value>
+  </data>
+  <data name="ThxPresetPop" xml:space="preserve">
+    <value>Поп</value>
+  </data>
+  <data name="ThxPresetRhythmBlues" xml:space="preserve">
+    <value>Ритм-н-блюз</value>
+  </data>
+  <data name="ThxPresetRock" xml:space="preserve">
+    <value>Рок</value>
+  </data>
+  <data name="ThxPresetVoiceMode" xml:space="preserve">
+    <value>Голосовой режим</value>
+  </data>
+  <data name="ThxPresetImmersiveFormat" xml:space="preserve">
+    <value>{0} · Режим погружения</value>
+  </data>
+  <data name="ThxPresetCompetitiveFormat" xml:space="preserve">
+    <value>{0} · Соревновательный режим</value>
+  </data>
 </root>

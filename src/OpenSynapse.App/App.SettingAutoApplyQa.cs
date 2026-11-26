@@ -312,6 +312,11 @@ public partial class App
         {
             status.Text = await ThxAudioViewModel.VerifyReadbackAsync();
         });
+        Button("QaThxLocalization", "验证 THX 预设翻译", () =>
+        {
+            status.Text = ThxAudioViewModel.VerifyPresetLocalization();
+            return Task.CompletedTask;
+        });
         Button("QaThxPartialRead", "验证 THX 部分读取", async () =>
         {
             var viewModel = new RazerHeadsetAudioViewModel(new RazerHeadsetAudioConnection(
@@ -358,7 +363,8 @@ public partial class App
             {
                 viewModel.SetAutoApplyPreviewState(audio, good);
                 await Task.Delay(50);
-                status.Text = Availability().All(value => value) && presetCombo?.SelectedItem is "Custom"
+                status.Text = Availability().All(value => value) &&
+                    presetCombo?.SelectedItem is string selected && selected == AppStrings.Text("ThxPresetCustom")
                     ? "PASS THX recovered: settings editable" : "FAIL THX recovery";
             };
             root.Children.Add(recovery);
@@ -387,7 +393,8 @@ public partial class App
             viewModel.SetAutoApplyPreviewState(
                 new RazerHeadsetAudioState(null, null, null, null, null, null, null, null, null, null, null, null, []),
                 new ThxAudioState(ThxAudioEndpoint.Headphones, true, true, "custom",
-                    [new("flat", "Flat"), new("custom", "Custom")],
+                    [new("flat", "Flat"), new("custom", "Custom"), new("EDM", "EDM"),
+                     new("EndOfAbyss_imm", "EndOfAbyss_imm"), new("HellLetLooseVietnam_cmm", "HellLetLooseVietnam_cmm")],
                     new[] { 31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 }
                         .Select(hz => new ThxAudioBand(hz, 0)).ToArray(),
                     new Dictionary<string, IReadOnlyList<double>>(),
@@ -404,7 +411,27 @@ public partial class App
             AutomationProperties.SetAutomationId(check, "QaHeadsetProfileResult");
             root.Children.Add(check);
             // No Accessories attachment: the production panel cannot dispatch hardware operations.
-            root.Children.Add(new HeadsetAudioPanel { DataContext = viewModel });
+            var panel = new HeadsetAudioPanel { DataContext = viewModel };
+            var saved = false;
+            var save = new Button { Content = "模拟保存提示", Style = (Style)Resources["SecondaryButtonStyle"] };
+            AutomationProperties.SetAutomationId(save, "QaHeadsetSavedStatus");
+            save.Click += async (_, _) =>
+            {
+                panel.UpdateLayout();
+                var controls = (FrameworkElement)panel.FindName("ThxSpatialGroup");
+                var before = controls.TransformToVisual(panel).TransformPoint(default).Y;
+                var height = panel.ActualHeight;
+                saved = !saved;
+                viewModel.SetAutoApplyPreviewStatus(saved ? AppStrings.Text("BlackSharkSaved") : string.Empty);
+                await Task.Delay(50);
+                panel.UpdateLayout();
+                var after = controls.TransformToVisual(panel).TransformPoint(default).Y;
+                check.Text = Math.Abs(before - after) < 0.1 && Math.Abs(height - panel.ActualHeight) < 0.1
+                    ? $"PASS saved status layout: visible={saved}, offset={after - before:0.0}"
+                    : $"FAIL saved status moved controls: {before} -> {after}, height {height} -> {panel.ActualHeight}";
+            };
+            root.Children.Add(save);
+            root.Children.Add(panel);
         });
         _settingAutoApplyQaWindow = new Window { Title = "OpenSynapse Auto Apply QA", Content = new ScrollViewer { Content = root } };
         _settingAutoApplyQaWindow.AppWindow.Resize(new global::Windows.Graphics.SizeInt32(1000, 950));
