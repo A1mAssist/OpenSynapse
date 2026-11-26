@@ -43,6 +43,7 @@ internal sealed class RazerProtocol25FeatureTransport(string devicePath)
         try
         {
             string? lastReadError = null;
+            byte[]? lastResponse = null;
             for (var outAttempt = 0; outAttempt < MaxOutAttempts; outAttempt++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -64,6 +65,7 @@ internal sealed class RazerProtocol25FeatureTransport(string devicePath)
                             Marshal.GetLastWin32Error(), "Protocol-25 audio feature read failed.").Message;
                         continue;
                     }
+                    lastResponse = response;
                     if (!RazerProtocol25FeatureProtocol.Matches(request, response))
                     {
                         continue;
@@ -91,7 +93,9 @@ internal sealed class RazerProtocol25FeatureTransport(string devicePath)
             }
 
             throw new TimeoutException(
-                lastReadError ?? "The audio device did not return a matching protocol-25 response.");
+                (lastReadError ?? "The audio device did not return a matching protocol-25 response.") +
+                $" Request header={Convert.ToHexString(request.AsSpan(0, 9))};" +
+                $" last response header={(lastResponse is null ? "none" : Convert.ToHexString(lastResponse.AsSpan(0, 9)))}.");
         }
         finally
         {

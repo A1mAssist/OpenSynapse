@@ -63,6 +63,12 @@ public sealed partial class MainWindow
         _viewModel.DeviceRules.EnabledChanged += enabled => _viewModel.SetApplicationSwitchingEnabled(enabled);
         _viewModel.SuspendStudioLightingForDisplay = SuspendStudioLightingForDisplayAsync;
         _viewModel.ResumeStudioLightingForDisplay = ResumeStudioLightingForDisplayAsync;
+        _viewModel.SuspendStudioForChroma = () =>
+            _lightingStudioPage?.ViewModel?.SuspendForExternalAsync() ?? Task.CompletedTask;
+        _viewModel.ResumeStudioAfterChroma = () =>
+            _lightingStudioPage?.ViewModel?.ResumeAfterExternalAsync() ?? Task.CompletedTask;
+        _viewModel.CancelStudioResumeAfterChroma = () =>
+            _lightingStudioPage?.ViewModel?.DiscardSuspendedOutput();
     }
 
     private Task OnHomeQuickActionAsync(string id, string? argument, CancellationToken cancellationToken)
@@ -273,7 +279,7 @@ public sealed partial class MainWindow
     /// </summary>
     private bool IsPinned(string page) =>
         StringComparer.Ordinal.Equals(page, "studio") &&
-        _lightingStudioPage?.ViewModel?.IsApplied == true;
+        _lightingStudioPage?.ViewModel is { } studio && (studio.IsApplied || studio.HasSuspendedOutput);
 
     private void ReleasePage(string page)
     {

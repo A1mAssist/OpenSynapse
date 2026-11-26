@@ -14,6 +14,7 @@ public partial class App
     private Task? _chromaBrokerStartTask;
     private bool _chromaBrokerLaunched;
     private ChromaDeviceRouter? _chromaDeviceRouter;
+    private ChromaLightingSession? _chromaLightingSession;
     internal bool IsChromaRestRunning => _chromaRestHost?.IsRunning == true;
 
     internal ChromaRestSnapshot GetChromaRestSnapshot() =>
@@ -40,6 +41,8 @@ public partial class App
         }
 
         await DisposeChromaHostsAsync().ConfigureAwait(false);
+        if (_audioMuteViewModel.Refresh.IsDisplayAvailable)
+            await _audioMuteViewModel.ResumeStudioAfterChromaAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -57,6 +60,14 @@ public partial class App
         }
 
         _chromaDeviceRouter ??= CreateChromaDeviceRouter(viewModel);
+        _chromaLightingSession ??= new ChromaLightingSession(
+            viewModel.SuspendLightingForChromaAsync,
+            () => RestoreChromaAsync(viewModel),
+            () => _behaviorSettings.ExperimentalChromaRestEnabled && Volatile.Read(ref _closing) == 0,
+            () => viewModel.StudioLightingActive?.Invoke() == true ||
+                viewModel.RazerHid.SelectedDevice?.HasRunningSoftwareLighting == true);
+        viewModel.ChromaLightingActive = () => _chromaLightingSession.IsActive || _chromaLightingSession.HasPendingRestore;
+        viewModel.Lighting.SetChromaIntegrationEnabled(_behaviorSettings.ExperimentalChromaRestEnabled);
         StartChromaBroker(viewModel);
         StartChromaRestHost(viewModel);
     }
@@ -77,11 +88,20 @@ public partial class App
                 .Where(connection => connection.HasControlInterface).ToArray(),
             message => _diagnosticLog.TryWrite("chroma", message));
 
-    private async Task RestoreChromaAsync(MainViewModel viewModel)
+    private async Task StopChromaOutputAsync(MainViewModel viewModel, bool restoreLighting = true)
     {
         try
         {
-            await viewModel.RazerHid.RestoreChromaFrameSinkAsync().ConfigureAwait(false);
+            if (_bladeLightingController is not null)
+                await _bladeLightingController.StopAsync().ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            _diagnosticLog.TryWrite("chroma", $"Blade stop failed: {exception}");
+        }
+        try
+        {
+            await viewModel.RazerHid.RestoreChromaFrameSinkAsync(restoreLighting: restoreLighting).ConfigureAwait(false);
         }
         catch (Exception exception)
         {
@@ -93,7 +113,7 @@ public partial class App
         {
             if (_chromaDeviceRouter is not null)
             {
-                await _chromaDeviceRouter.RestoreAsync().ConfigureAwait(false);
+                await _chromaDeviceRouter.RestoreAsync(restoreLighting: restoreLighting).ConfigureAwait(false);
             }
         }
         catch (Exception exception)
@@ -101,7 +121,18 @@ public partial class App
             _diagnosticLog.TryWrite(
                 "chroma", $"device-router restore failed: {exception.Message}");
         }
+    }
 
+    private async Task RestoreChromaAsync(MainViewModel viewModel)
+    {
+        var restore = !_behaviorSettings.ExperimentalChromaRestEnabled || _behaviorSettings.RestoreLightingAfterChromaSession;
+        await StopChromaOutputAsync(viewModel, restore).ConfigureAwait(false);
+        if (Volatile.Read(ref _closing) != 0) return;
+        if (!restore)
+        {
+            await viewModel.CancelStudioResumeAfterChromaAsync().ConfigureAwait(false);
+            return;
+        }
         try
         {
             await viewModel.RestoreLightingAfterExternalAsync().ConfigureAwait(false);
@@ -111,7 +142,14 @@ public partial class App
             _diagnosticLog.TryWrite(
                 "chroma", $"configured-lighting restore failed: {exception.Message}");
         }
+        // A failed peripheral restore must not strand the suspended Studio session.
+        await viewModel.ResumeStudioAfterChromaAsync().ConfigureAwait(false);
     }
+
+    internal Task SetChromaDisplayAvailableAsync(bool available) =>
+        _chromaLightingSession is { } session && _audioMuteViewModel is { } viewModel
+            ? session.SetOutputAvailableAsync(available, () => StopChromaOutputAsync(viewModel))
+            : Task.CompletedTask;
 
     private void StartChromaRestHost(MainViewModel viewModel)
     {
@@ -135,7 +173,7 @@ public partial class App
                     _chromaDeviceRouter?.ApplyAsync(kind, frame, rows, columns, token) ?? Task.FromResult(false),
                 viewModel.Lighting.IsBladeChromaOverrideEnabled,
                 _behaviorSettings.ChromaBlockedSources,
-                suspendLighting: () => viewModel.SuspendStudioLightingAsync());
+                lightingSession: _chromaLightingSession);
             _chromaRestHost = host;
             _ = StartChromaRestHostAsync(host);
         }
@@ -168,11 +206,9 @@ public partial class App
         {
             var applier = new ChromaSdkEffectApplier(viewModel, _bladeLightingController, _chromaDeviceRouter);
             host = new ChromaBrokerHost(
-                applier.ApplyAsync,
-                () => Volatile.Read(ref _closing) != 0 || !_behaviorSettings.RestoreLightingAfterChromaSession
-                    ? Task.CompletedTask
-                    : RestoreChromaAsync(viewModel),
-                () => _behaviorSettings.RestoreLightingAfterChromaSession,
+                (effect, token) => _chromaLightingSession!.ApplyAsync(
+                    ChromaLightingSource.Sdk, ct => applier.ApplyAsync(effect, ct), token, (int)effect.DeviceType),
+                () => _chromaLightingSession!.ReleaseAsync(ChromaLightingSource.Sdk),
                 log: message => _diagnosticLog.TryWrite("chroma-broker", message));
             host.StartAsync();
             _chromaBrokerHost = host;

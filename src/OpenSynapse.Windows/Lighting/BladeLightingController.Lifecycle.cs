@@ -72,6 +72,7 @@ public sealed partial class BladeLightingController
             ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
             if (Volatile.Read(ref _displayAvailable) == 0 && effect.Mode != BladeLightingMode.Off)
             {
+                _externalPlayback = null;
                 return;
             }
             var (device, manifest) = FindReadyBlade(devices);
@@ -210,59 +211,21 @@ public sealed partial class BladeLightingController
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
             if (Volatile.Read(ref _displayAvailable) == 0)
             {
+                _externalPlayback = (devices.ToArray(), source, restorePersistentEffect);
                 return;
             }
-            if (ReferenceEquals(_externalSource, source) &&
+            if (ReferenceEquals(_externalPlayback?.Source, source) &&
                 _runtime is not null &&
                 !_runtimeCompletion.IsCompleted)
             {
                 return;
             }
 
-            var (device, manifest) = FindReadyBlade(devices);
-            await ValidateCurrentPathAsync(device.Id, manifest, cancellationToken).ConfigureAwait(false);
-            await StopCoreAsync().ConfigureAwait(false);
-            _transactionId = 0;
-            if (_lightingDialect is not (BladeLightingDialect.LedMatrixBlade or BladeLightingDialect.LedMatrixBlade2))
-            {
-                _modeLease = await _modeCoordinator.AcquireAsync(
-                    device.Id,
-                    token => SendAsync(device.Id,
-                        BladeDeviceModeProtocol.CreateSetSoftwareRequest(NextTransactionId()), token),
-                    () => SendAsync(device.Id,
-                        BladeDeviceModeProtocol.CreateSetNormalRequest(NextTransactionId()),
-                        CancellationToken.None),
-                    cancellationToken).ConfigureAwait(false);
-            }
-            try
-            {
-                await SendLightingEngineGateAsync(device.Id, cancellationToken).ConfigureAwait(false);
-                var pump = new BladeMatrixFramePump(
-                    _transport,
-                    device.Id,
-                    restorePersistentEffect
-                        ? token => RestoreAsync(device.Id, device.Name, reportFallback: true, token)
-                        : token => ReleaseModeLeaseAsync(CancellationToken.None),
-                    _matrixRows,
-                    _matrixColumns,
-                    CreateFrameRequestBuilder());
-                await StartRuntimeAsync(pump, source, null, cancellationToken).ConfigureAwait(false);
-                _externalSource = source;
-            }
-            catch
-            {
-                try
-                {
-                    await ReleaseModeLeaseAsync(CancellationToken.None).ConfigureAwait(false);
-                }
-                catch
-                {
-                    // Preserve the takeover failure as the primary error.
-                }
-                throw;
-            }
+            await ApplyExternalCoreAsync(devices, source, restorePersistentEffect, cancellationToken)
+                .ConfigureAwait(false);
         }
         finally
         {
@@ -270,28 +233,88 @@ public sealed partial class BladeLightingController
         }
     }
 
+    private async Task ApplyExternalCoreAsync(
+        IReadOnlyList<DeviceDescriptor> devices,
+        ISoftwareLightingFrameSource source,
+        bool restorePersistentEffect,
+        CancellationToken cancellationToken)
+    {
+        var (device, manifest) = FindReadyBlade(devices);
+        await ValidateCurrentPathAsync(device.Id, manifest, cancellationToken).ConfigureAwait(false);
+        await StopCoreAsync().ConfigureAwait(false);
+        _transactionId = 0;
+        if (_lightingDialect is not (BladeLightingDialect.LedMatrixBlade or BladeLightingDialect.LedMatrixBlade2))
+        {
+            _modeLease = await _modeCoordinator.AcquireAsync(
+                device.Id,
+                token => SendAsync(device.Id,
+                    BladeDeviceModeProtocol.CreateSetSoftwareRequest(NextTransactionId()), token),
+                () => SendAsync(device.Id,
+                    BladeDeviceModeProtocol.CreateSetNormalRequest(NextTransactionId()),
+                    CancellationToken.None),
+                cancellationToken).ConfigureAwait(false);
+        }
+        try
+        {
+            await SendLightingEngineGateAsync(device.Id, cancellationToken).ConfigureAwait(false);
+            var pump = new BladeMatrixFramePump(
+                _transport,
+                device.Id,
+                restorePersistentEffect
+                    ? token => RestoreAsync(device.Id, device.Name, reportFallback: true, token)
+                    : token => ReleaseModeLeaseAsync(CancellationToken.None),
+                _matrixRows,
+                _matrixColumns,
+                CreateFrameRequestBuilder());
+            await StartRuntimeAsync(pump, source, null, cancellationToken).ConfigureAwait(false);
+            _externalPlayback = ([device], source, restorePersistentEffect);
+        }
+        catch
+        {
+            try
+            {
+                await ReleaseModeLeaseAsync(CancellationToken.None).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Preserve the takeover failure as the primary error.
+            }
+            throw;
+        }
+    }
+
     public async Task SetDisplayAvailableAsync(
         bool available,
         IReadOnlyList<DeviceDescriptor>? devices = null)
     {
-        Volatile.Write(ref _displayAvailable, available ? 1 : 0);
-        if (available)
-        {
-            return;
-        }
-
-        CancelNativeEffectKeepAlive();
-        Interlocked.Exchange(ref _turnOffOnStop, 1);
+        await _gate.WaitAsync().ConfigureAwait(false);
         try
         {
-            await _gate.WaitAsync().ConfigureAwait(false);
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+            if (Volatile.Read(ref _displayAvailable) == (available ? 1 : 0))
+            {
+                return;
+            }
+            Volatile.Write(ref _displayAvailable, available ? 1 : 0);
+            if (available)
+            {
+                if (_externalPlayback is { } playback)
+                {
+                    await ApplyExternalCoreAsync(
+                        playback.Devices, playback.Source, playback.RestorePersistentEffect,
+                        CancellationToken.None).ConfigureAwait(false);
+                }
+                return;
+            }
+
+            CancelNativeEffectKeepAlive();
+            Interlocked.Exchange(ref _turnOffOnStop, 1);
             try
             {
                 var modeDevicePath = _modeLease?.DevicePath;
                 var runtime = _runtime;
                 var offSent = false;
                 _runtime = null;
-                _externalSource = null;
                 _keyboardInput = null;
                 try
                 {
@@ -367,12 +390,12 @@ public sealed partial class BladeLightingController
             }
             finally
             {
-                _gate.Release();
+                Interlocked.Exchange(ref _turnOffOnStop, 0);
             }
         }
         finally
         {
-            Interlocked.Exchange(ref _turnOffOnStop, 0);
+            _gate.Release();
         }
     }
 
@@ -410,7 +433,7 @@ public sealed partial class BladeLightingController
     {
         var runtime = _runtime;
         _runtime = null;
-        _externalSource = null;
+        _externalPlayback = null;
         _keyboardInput = null;
         try
         {

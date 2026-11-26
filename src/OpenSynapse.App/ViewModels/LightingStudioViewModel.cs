@@ -453,6 +453,17 @@ public sealed partial class LightingStudioViewModel : INotifyPropertyChanged, ID
 
     public async Task ApplyAsync()
     {
+        await _outputLifecycleGate.WaitAsync();
+        try
+        {
+            _suspendedOutput = false;
+            await ApplyOutputCoreAsync();
+        }
+        finally { _outputLifecycleGate.Release(); }
+    }
+
+    private async Task ApplyOutputCoreAsync()
+    {
         if (_isBusy || (_lighting is null && _hidRouter is null && _argbRouter is null &&
             _headsetRouter is null && _chromaRouter is null))
         {

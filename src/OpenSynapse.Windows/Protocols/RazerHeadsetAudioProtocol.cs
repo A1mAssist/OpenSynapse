@@ -563,6 +563,14 @@ public static partial class RazerHeadsetAudioProtocol
                 $"Razer audio reports must be 64, 65 or {RazerFeatureReport.Length} bytes; got {response.Length}.");
         }
 
+        if (response.Length is 64 or 65)
+        {
+            var size = response[RazerFeatureReport.DataSizeOffset];
+            if (size > response.Length - RazerFeatureReport.ArgumentsOffset - 2)
+                throw new InvalidDataException("Protocol-25 audio response declares too many data bytes.");
+            return response.Slice(RazerFeatureReport.ArgumentsOffset, size);
+        }
+
         return response[RazerFeatureReport.ArgumentsOffset..];
     }
 

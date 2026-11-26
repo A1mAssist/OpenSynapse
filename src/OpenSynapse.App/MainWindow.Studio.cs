@@ -65,21 +65,15 @@ public sealed partial class MainWindow
         return page;
     }
 
-    private bool _studioAppliedBeforeDisplayOff;
-
-    private async Task SuspendStudioLightingForDisplayAsync()
-    {
-        _studioAppliedBeforeDisplayOff = _lightingStudioPage?.ViewModel?.IsApplied == true;
-        await SuspendStudioLightingAsync();
-    }
+    private Task SuspendStudioLightingForDisplayAsync() =>
+        _lightingStudioPage?.ViewModel?.SuspendForExternalAsync() ?? Task.CompletedTask;
 
     private async Task ResumeStudioLightingForDisplayAsync()
     {
-        var reapply = _studioAppliedBeforeDisplayOff;
-        _studioAppliedBeforeDisplayOff = false;
-        if (reapply && _lightingStudioPage?.ViewModel is { } viewModel)
+        if (_viewModel.ChromaLightingActive?.Invoke() != true &&
+            _lightingStudioPage?.ViewModel is { } viewModel)
         {
-            await viewModel.ApplyAsync();
+            await viewModel.ResumeAfterExternalAsync();
         }
     }
 

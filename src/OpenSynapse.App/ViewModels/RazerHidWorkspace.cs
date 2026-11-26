@@ -436,6 +436,13 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         return path;
     }
 
+    internal async Task SuspendLightingForChromaAsync()
+    {
+        if (SelectedDevice is { } selected)
+            await selected.StopLightingRuntimeAsync(CancellationToken.None, restore: false);
+        await _softwareLightingOwner.StopAllAsync(CancellationToken.None, restore: false);
+    }
+
     internal async Task RestoreLightingAfterExternalAsync(
         CancellationToken cancellationToken = default)
     {
@@ -454,8 +461,8 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
     }
 
     /// <summary>A Chroma session ended; hand back the keyboards it left on custom frames.</summary>
-    internal Task RestoreChromaFrameSinkAsync(CancellationToken cancellationToken = default) =>
-        _chromaFrameSink?.RestoreAsync(cancellationToken) ?? Task.CompletedTask;
+    internal Task RestoreChromaFrameSinkAsync(CancellationToken cancellationToken = default, bool restoreLighting = true) =>
+        _chromaFrameSink?.RestoreAsync(cancellationToken, restoreLighting) ?? Task.CompletedTask;
 
     /// <summary>
     /// Session ending runs on the UI thread, so the HID writes happen on a worker

@@ -306,9 +306,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             ApplyAllBleProfilesAsync,
             (power, token) => AccessoryProfileReplay.ApplyAsync(this, _diagnosticLog, power, token),
             liteMode: liteMode);
-        Refresh.StudioLightingActive = () => StudioLightingActive?.Invoke() == true;
-        Lighting.StudioLightingActive = () => StudioLightingActive?.Invoke() == true;
-        RazerHid.StudioLightingActive = () => StudioLightingActive?.Invoke() == true;
+        Refresh.StudioLightingActive = () => StudioLightingActive?.Invoke() == true || ChromaLightingActive?.Invoke() == true;
+        Lighting.StudioLightingActive = () => StudioLightingActive?.Invoke() == true || ChromaLightingActive?.Invoke() == true;
+        RazerHid.StudioLightingActive = () => StudioLightingActive?.Invoke() == true || ChromaLightingActive?.Invoke() == true;
         FullscreenPolling = new FullscreenPollingRateService(
             () => _profile, () => CurrentPowerSource, RazerHid, Accessories, Refresh, _diagnosticLog);
         InitializeDeviceHome(activeApplicationProvider);
@@ -421,17 +421,50 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
     internal Func<Task>? SuspendStudioLighting { get; set; }
 
     internal Task SuspendStudioLightingAsync() =>
-        SuspendStudioLighting?.Invoke() ?? Task.CompletedTask;
+        RunLightingOnDispatcherAsync(() => SuspendStudioLighting?.Invoke() ?? Task.CompletedTask);
+
+    internal Func<Task>? SuspendStudioForChroma { get; set; }
+    internal Func<Task>? ResumeStudioAfterChroma { get; set; }
+    internal Action? CancelStudioResumeAfterChroma { get; set; }
+    internal Func<bool>? ChromaLightingActive { get; set; }
+
+    internal Task SuspendLightingForChromaAsync() => RunLightingOnDispatcherAsync(async () =>
+    {
+        if (SuspendStudioForChroma is { } suspend) await suspend();
+        await RazerHid.SuspendLightingForChromaAsync();
+    });
+
+    internal Task ResumeStudioAfterChromaAsync() => RunLightingOnDispatcherAsync(() =>
+        ResumeStudioAfterChroma?.Invoke() ?? Task.CompletedTask);
+
+    internal Task CancelStudioResumeAfterChromaAsync() => RunLightingOnDispatcherAsync(() =>
+    {
+        CancelStudioResumeAfterChroma?.Invoke();
+        return Task.CompletedTask;
+    });
+
+    internal Task RunLightingOnDispatcherAsync(Func<Task> action)
+    {
+        if (_dispatcher is null || _dispatcher.HasThreadAccess) return action();
+        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (!_dispatcher.TryEnqueue(async () =>
+            {
+                try { await action(); completion.TrySetResult(); }
+                catch (Exception error) { completion.TrySetException(error); }
+            }))
+            completion.TrySetException(new InvalidOperationException("The lighting dispatcher is unavailable."));
+        return completion.Task;
+    }
 
     /// <summary>True while the Lighting Studio effect is the active lighting surface.</summary>
     internal Func<bool>? StudioLightingActive { get; set; }
 
     // Shared hand-back path for Chroma hosts and Lighting Studio.
-    internal async Task RestoreLightingAfterExternalAsync()
+    internal Task RestoreLightingAfterExternalAsync() => RunLightingOnDispatcherAsync(async () =>
     {
-        await Lighting.RestoreBladeLightingAfterExternalAsync().ConfigureAwait(false);
-        await RazerHid.RestoreLightingAfterExternalAsync().ConfigureAwait(false);
-    }
+        await Lighting.RestoreBladeLightingAfterExternalAsync();
+        await RazerHid.RestoreLightingAfterExternalAsync();
+    });
 
     public string EmptyStateText => ConnectedDevices.Count == 0
         ? AppStrings.Text("Text_76BEF6E0")

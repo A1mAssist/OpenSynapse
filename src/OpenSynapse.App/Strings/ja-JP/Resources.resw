@@ -1483,9 +1483,9 @@
   <data name="GamingModeProfileSaveFailed" xml:space="preserve"><value>ゲーミング モードを変更しましたが、プロファイルを保存できませんでした。</value></data>
   <data name="BladeFnRuntimeStoppedBeforeAudioSync" xml:space="preserve"><value>Blade Fn ランタイムは、オーディオ同期が完了する前に安全に停止しました。</value></data>
   <data name="PerformanceSamplingUnavailable" xml:space="preserve"><value>サンプリングに失敗しました · 最後の値を表示しています</value></data>
-  <data name="ChromaRestTitle.Text" xml:space="preserve"><value>Chroma 統合</value><comment>Chroma integration title</comment></data>
-  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>互換性のある REST および SDK クライアントが、接続されたライティングをローカルで制御できるようにします。公式 Chroma DLL とブローカーには Razer Synapse は不要です。</value><comment>Chroma integration description</comment></data>
-  <data name="ChromaRestToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Chroma 統合</value><comment>Chroma integration toggle</comment></data>
+  <data name="ChromaRestTitle.Text" xml:space="preserve"><value>ゲームのライティング連動（Chroma）</value><comment>Chroma integration title</comment></data>
+  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>対応するゲームやアプリによる照明の制御を許可します。オフにするとゲームの照明を停止し、OpenSynapse のエフェクトに戻ります。</value><comment>Chroma integration description</comment></data>
+  <data name="ChromaRestToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>ゲームのライティング連動（Chroma）</value><comment>Chroma integration toggle</comment></data>
   <data name="ChromaRestStatus.Text" xml:space="preserve"><value>無効</value></data>
   <data name="ChromaRestStatusDisabled" xml:space="preserve"><value>無効</value></data>
   <data name="ChromaRestStatusUnavailable" xml:space="preserve"><value>利用できません</value></data>

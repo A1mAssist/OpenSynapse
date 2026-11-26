@@ -482,10 +482,13 @@ public sealed partial class SettingsPage : UserControl
 
         var settings = Host.BehaviorSettings;
         var previous = settings.ExperimentalChromaRestEnabled;
+        toggle.IsEnabled = false;
+        var saved = false;
         try
         {
             settings.ExperimentalChromaRestEnabled = toggle.IsOn;
             settings.Save();
+            saved = true;
             ViewModel.Lighting.SetChromaIntegrationEnabled(toggle.IsOn);
             if (Host.SetChromaRestEnabled is not null)
             {
@@ -497,12 +500,20 @@ public sealed partial class SettingsPage : UserControl
             exception is IOException or UnauthorizedAccessException or
             InvalidOperationException or SocketException or System.Security.SecurityException)
         {
-            settings.ExperimentalChromaRestEnabled = previous;
-            ViewModel.Lighting.SetChromaIntegrationEnabled(previous);
-            _behaviorUiReady = false;
-            toggle.IsOn = previous;
-            _behaviorUiReady = true;
+            if (!saved)
+            {
+                settings.ExperimentalChromaRestEnabled = previous;
+                ViewModel.Lighting.SetChromaIntegrationEnabled(previous);
+                _behaviorUiReady = false;
+                toggle.IsOn = previous;
+                _behaviorUiReady = true;
+            }
             ViewModel.ReportApplicationError(AppStrings.FormatText("BehaviorSettingError", exception.Message));
+        }
+        finally
+        {
+            toggle.IsEnabled = true;
+            RefreshChromaRestStatus();
         }
     }
 

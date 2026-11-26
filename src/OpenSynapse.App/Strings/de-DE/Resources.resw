@@ -1483,9 +1483,9 @@
   <data name="GamingModeProfileSaveFailed" xml:space="preserve"><value>Der Gaming-Modus wurde geändert, aber das Profil konnte nicht gespeichert werden.</value></data>
   <data name="BladeFnRuntimeStoppedBeforeAudioSync" xml:space="preserve"><value>Die Blade-Fn-Laufzeit wurde sicher beendet, bevor die Audiosynchronisierung abgeschlossen war.</value></data>
   <data name="PerformanceSamplingUnavailable" xml:space="preserve"><value>Messung fehlgeschlagen · letzter Wert wird angezeigt</value></data>
-  <data name="ChromaRestTitle.Text" xml:space="preserve"><value>Chroma-Integration</value><comment>Chroma integration title</comment></data>
-  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>Erlauben Sie kompatiblen REST- und SDK-Clients, die Beleuchtung verbundener Geräte lokal zu steuern. Die offizielle Chroma DLL und der Broker benötigen Razer Synapse nicht.</value><comment>Chroma integration description</comment></data>
-  <data name="ChromaRestToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Chroma-Integration</value><comment>Chroma integration toggle</comment></data>
+  <data name="ChromaRestTitle.Text" xml:space="preserve"><value>Spielbeleuchtung (Chroma)</value><comment>Chroma integration title</comment></data>
+  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>Kompatible Spiele und Apps dürfen die Gerätebeleuchtung steuern. Beim Ausschalten wird die Spielbeleuchtung beendet und der OpenSynapse-Effekt wiederhergestellt.</value><comment>Chroma integration description</comment></data>
+  <data name="ChromaRestToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Spielbeleuchtung (Chroma)</value><comment>Chroma integration toggle</comment></data>
   <data name="ChromaRestStatus.Text" xml:space="preserve"><value>Deaktiviert</value></data>
   <data name="ChromaRestStatusDisabled" xml:space="preserve"><value>Deaktiviert</value></data>
   <data name="ChromaRestStatusUnavailable" xml:space="preserve"><value>Nicht verfügbar</value></data>

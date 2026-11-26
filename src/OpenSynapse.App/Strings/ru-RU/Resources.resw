@@ -1908,15 +1908,15 @@
     <value>Не удалось выполнить выборку · показано последнее значение</value>
   </data>
   <data name="ChromaRestTitle.Text" xml:space="preserve">
-    <value>Интеграция с Chroma</value>
+    <value>Подсветка в играх (Chroma)</value>
     <comment>Chroma integration title</comment>
   </data>
   <data name="ChromaRestDescription.Text" xml:space="preserve">
-    <value>Разрешить совместимым клиентам REST и SDK управлять подсветкой подключённых устройств локально. Официальная библиотека Chroma и её служба работают без Razer Synapse.</value>
+    <value>Разрешить совместимым играм и приложениям управлять подсветкой устройств. При отключении игровые эффекты прекращаются и восстанавливается эффект OpenSynapse.</value>
     <comment>Chroma integration description</comment>
   </data>
   <data name="ChromaRestToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Интеграция с Chroma</value>
+    <value>Подсветка в играх (Chroma)</value>
     <comment>Chroma integration toggle</comment>
   </data>
   <data name="ChromaRestStatus.Text" xml:space="preserve">

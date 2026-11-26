@@ -44,7 +44,7 @@ internal sealed class RazerHidSoftwareLightingOwner : IAsyncDisposable
                 device = current;
                 if (_devices.Remove(connection.InstanceId, out var duplicate))
                 {
-                    await duplicate.DisposeAsync().ConfigureAwait(false);
+                    await duplicate.DisposeAsync().ConfigureAwait(true);
                 }
             }
             else if (_devices.TryGetValue(connection.InstanceId, out var cached))
@@ -59,7 +59,7 @@ internal sealed class RazerHidSoftwareLightingOwner : IAsyncDisposable
             // A failed Chroma write may have raised this flag; the connection is
             // still current, so give the saved profile one chance to land.
             device.ClearRequiresRescan();
-            if (!await device.ApplyConfiguredLightingAsync(cancellationToken).ConfigureAwait(false))
+            if (!await device.ApplyConfiguredLightingAsync(cancellationToken).ConfigureAwait(true))
             {
                 failed.Add(connection.InstanceId);
             }
@@ -75,11 +75,11 @@ internal sealed class RazerHidSoftwareLightingOwner : IAsyncDisposable
             else
             {
                 _devices.Remove(connection.InstanceId);
-                await device.DisposeAsync().ConfigureAwait(false);
+                await device.DisposeAsync().ConfigureAwait(true);
             }
         }
 
-        await PruneAsync(connections, cancellationToken).ConfigureAwait(false);
+        await PruneAsync(connections, cancellationToken).ConfigureAwait(true);
         return failed;
     }
 
@@ -115,7 +115,7 @@ internal sealed class RazerHidSoftwareLightingOwner : IAsyncDisposable
     {
         foreach (var device in _devices.Values.ToArray())
         {
-            await device.StopLightingRuntimeAsync(cancellationToken, restore).ConfigureAwait(false);
+            await device.StopLightingRuntimeAsync(cancellationToken, restore).ConfigureAwait(true);
         }
     }
 

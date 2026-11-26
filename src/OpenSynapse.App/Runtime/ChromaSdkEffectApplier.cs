@@ -48,7 +48,6 @@ internal sealed class ChromaSdkEffectApplier
 
     internal async Task<bool> ApplyAsync(ChromaSdkEffect effect, CancellationToken cancellationToken)
     {
-        await _viewModel.SuspendStudioLightingAsync().ConfigureAwait(false);
         if (effect.DeviceType != ChromaSdkDeviceType.Keyboard)
         {
             var kind = effect.DeviceType switch

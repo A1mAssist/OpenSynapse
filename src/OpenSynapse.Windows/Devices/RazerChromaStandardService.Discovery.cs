@@ -15,7 +15,7 @@ public sealed partial class RazerChromaStandardService
     // rzDevice25's 0F:84/0F:04 brightness pair and rejects the shared
     // 10:85 path with an empty payload.
     private static readonly FrozenSet<ushort> DirectLegacyBrightnessProducts =
-        new ushort[] { 0x00EA, 0x00EB }.ToFrozenSet();
+        new ushort[] { 0x00EA, 0x00EB, 0x0F2C, 0x0F2E }.ToFrozenSet();
 
     // The 030C-0317 bundles share the class-0x0F effect pair [80,15,2]/[80,15,130]
     // and the direct brightness pair [3,15,4]/[3,15,132]. Their 0x10 entries come
@@ -24,6 +24,9 @@ public sealed partial class RazerChromaStandardService
         new ushort[] { 0x030C, 0x030D, 0x030E, 0x030F, 0x0310, 0x0316, 0x0317 }.ToFrozenSet();
 
     internal static bool IsIotProduct(ushort productId) => IotProducts.Contains(productId);
+
+    // GlitterWireless inherits rzDevice25's 0F:84/0F:04 and 0F:82/0F:02 pairs.
+    internal static bool IsWirelessArgbProduct(ushort productId) => productId is 0x0F2C or 0x0F2E;
 
     internal static RazerChromaChannel ChannelFor(ushort productId) => productId switch
     {

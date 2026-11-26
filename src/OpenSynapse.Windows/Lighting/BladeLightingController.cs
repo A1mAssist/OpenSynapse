@@ -85,7 +85,8 @@ public sealed partial class BladeLightingController : IBladeLightingController
     private readonly TimeSpan _nativeEffectKeepAliveInterval;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private SoftwareLightingRuntime? _runtime;
-    private ISoftwareLightingFrameSource? _externalSource;
+    private (IReadOnlyList<DeviceDescriptor> Devices, ISoftwareLightingFrameSource Source,
+        bool RestorePersistentEffect)? _externalPlayback;
     private WindowsKeyboardLightingAdapter? _keyboardInput;
     private BladeSoftwareModeCoordinator.BladeSoftwareModeLease? _modeLease;
     private Task _runtimeCompletion = Task.CompletedTask;

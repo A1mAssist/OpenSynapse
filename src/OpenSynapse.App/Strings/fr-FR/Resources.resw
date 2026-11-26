@@ -1483,9 +1483,9 @@
   <data name="GamingModeProfileSaveFailed" xml:space="preserve"><value>Le mode jeu a changé, mais le profil n’a pas pu être enregistré.</value></data>
   <data name="BladeFnRuntimeStoppedBeforeAudioSync" xml:space="preserve"><value>Le moteur Fn du Blade s’est arrêté proprement avant la fin de la synchronisation audio.</value></data>
   <data name="PerformanceSamplingUnavailable" xml:space="preserve"><value>Échec de l’échantillonnage · dernière valeur affichée</value></data>
-  <data name="ChromaRestTitle.Text" xml:space="preserve"><value>Intégration Chroma</value><comment>Chroma integration title</comment></data>
-  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>Autorisez les clients REST et SDK compatibles à contrôler localement l’éclairage connecté. La DLL Chroma officielle et le broker ne nécessitent pas Razer Synapse.</value><comment>Chroma integration description</comment></data>
-  <data name="ChromaRestToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Intégration Chroma</value><comment>Chroma integration toggle</comment></data>
+  <data name="ChromaRestTitle.Text" xml:space="preserve"><value>Éclairage des jeux (Chroma)</value><comment>Chroma integration title</comment></data>
+  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>Autorisez les jeux et applications compatibles à contrôler l’éclairage. Désactivez cette option pour arrêter les effets des jeux et retrouver votre effet OpenSynapse.</value><comment>Chroma integration description</comment></data>
+  <data name="ChromaRestToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Éclairage des jeux (Chroma)</value><comment>Chroma integration toggle</comment></data>
   <data name="ChromaRestStatus.Text" xml:space="preserve"><value>Désactivé</value></data>
   <data name="ChromaRestStatusDisabled" xml:space="preserve"><value>Désactivé</value></data>
   <data name="ChromaRestStatusUnavailable" xml:space="preserve"><value>Indisponible</value></data>

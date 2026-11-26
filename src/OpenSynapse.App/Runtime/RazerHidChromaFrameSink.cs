@@ -140,11 +140,13 @@ internal sealed class RazerHidChromaFrameSink
     }
 
     /// <summary>Hands every device that received a frame back to its own effect.</summary>
-    internal async Task RestoreAsync(CancellationToken cancellationToken = default)
+    internal async Task RestoreAsync(CancellationToken cancellationToken = default, bool restoreLighting = true)
     {
+        Interlocked.Increment(ref _latestFrameVersion);
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            if (!restoreLighting) return;
             foreach (var (instanceId, baseline) in _baselines.ToArray())
             {
                 var connection = _connections().FirstOrDefault(candidate =>
@@ -169,13 +171,13 @@ internal sealed class RazerHidChromaFrameSink
                 }
             }
 
+        }
+        finally
+        {
             _lastFrames.Clear();
             _customEffectPrepared.Clear();
             _baselines.Clear();
             _baselineAttempted.Clear();
-        }
-        finally
-        {
             _gate.Release();
         }
     }

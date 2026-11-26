@@ -285,6 +285,9 @@ internal sealed class DisplayPowerNotification
     {
         try
         {
+            var pauseExternal = suspending || (!available && _turnOffPeripheralLightingOnDisplayOff?.Invoke() == true);
+            if (pauseExternal && Application.Current is App pausingApp)
+                await pausingApp.SetChromaDisplayAvailableAsync(false).ConfigureAwait(false);
             if (suspending)
             {
                 await _viewModel.Lighting.PrepareForSuspendAsync().ConfigureAwait(false);
@@ -310,6 +313,9 @@ internal sealed class DisplayPowerNotification
             {
                 await _viewModel.Lighting.SetDisplayAvailableAsync(available).ConfigureAwait(false);
             }
+
+            if (available && Application.Current is App resumingApp)
+                await resumingApp.SetChromaDisplayAvailableAsync(true).ConfigureAwait(false);
 
             if (_setBladeIndicatorDisplayAvailable is not null)
             {

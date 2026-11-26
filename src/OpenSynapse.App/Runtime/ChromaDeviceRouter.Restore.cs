@@ -5,31 +5,31 @@ namespace OpenSynapse.App.Runtime;
 
 internal sealed partial class ChromaDeviceRouter
 {
-    /// <summary>Restores the effect each whole-device target had before the session.</summary>
-    internal async Task RestoreAsync(CancellationToken cancellationToken = default)
+    /// <summary>Stops queued frames and optionally restores each target's original effect.</summary>
+    internal async Task RestoreAsync(CancellationToken cancellationToken = default, bool restoreLighting = true)
     {
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             lock (_frameState)
             {
-                _pendingFrame = null;
+                _restoring = true;
+                _pendingFrames.Clear();
             }
             _diagnostic?.Invoke($"Chroma restore starting: touched={_touchedTargets.Count}.");
-            await RestoreStandardAsync(cancellationToken).ConfigureAwait(false);
-            await RestoreJolieAsync(cancellationToken).ConfigureAwait(false);
-            await RestoreHidAsync(cancellationToken).ConfigureAwait(false);
+            if (restoreLighting)
+            {
+                await RestoreStandardAsync(cancellationToken).ConfigureAwait(false);
+                await RestoreJolieAsync(cancellationToken).ConfigureAwait(false);
+                await RestoreHidAsync(cancellationToken).ConfigureAwait(false);
+            }
         }
         finally
         {
-            foreach (var instanceId in _jolieBaselines.Keys)
-            {
-                _lastFrames.TryRemove(instanceId, out _);
-            }
-            foreach (var instanceId in _hidBaselines.Keys)
-            {
-                _lastFrames.TryRemove(instanceId, out _);
-            }
+            _lastFrames.Clear();
+            _lastFrameAt.Clear();
+            _lastColors.Clear();
+            _lastColorAt.Clear();
             _standardBaselines.Clear();
             _baselineFailures.Clear();
             _touchedTargets.Clear();
@@ -40,13 +40,20 @@ internal sealed partial class ChromaDeviceRouter
             _jolieBaselines.Clear();
             _jolieBaselineAttempted.Clear();
             _joliePrepared.Clear();
-            if (_makoService is not null)
+            try
             {
-                await _makoService.DisposeAsync().ConfigureAwait(false);
-                _makoService = null;
-                _makoPath = null;
+                if (_makoService is not null)
+                {
+                    await _makoService.DisposeAsync().ConfigureAwait(false);
+                    _makoService = null;
+                    _makoPath = null;
+                }
             }
-            _gate.Release();
+            finally
+            {
+                lock (_frameState) _restoring = false;
+                _gate.Release();
+            }
         }
     }
 

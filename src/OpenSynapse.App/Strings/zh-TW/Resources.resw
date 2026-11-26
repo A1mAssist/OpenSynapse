@@ -1865,9 +1865,9 @@
   <data name="GamingModeProfileSaveFailed" xml:space="preserve"><value>遊戲模式已切換，但設定檔儲存失敗。</value><comment>游戏模式配置保存失败</comment></data>
   <data name="BladeFnRuntimeStoppedBeforeAudioSync" xml:space="preserve"><value>Blade Fn 執行時在音訊同步完成前已被安全停止。</value><comment>Fn 运行时提前停止</comment></data>
   <data name="PerformanceSamplingUnavailable" xml:space="preserve"><value>取樣失敗 · 顯示上次值</value><comment>性能采样不可用</comment></data>
-  <data name="ChromaRestTitle.Text" xml:space="preserve"><value>Chroma 整合</value><comment>Chroma 集成标题</comment></data>
-  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>允許相容的 REST 與 SDK 用戶端在本機控制已連線裝置的燈光；官方 Chroma DLL + broker 不需要安裝雷雲。</value><comment>Chroma 集成说明</comment></data>
-  <data name="ChromaRestToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Chroma 整合</value><comment>Chroma 集成开关</comment></data>
+  <data name="ChromaRestTitle.Text" xml:space="preserve"><value>遊戲燈光連動（Chroma）</value><comment>Chroma 集成标题</comment></data>
+  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>允許相容的遊戲與應用程式控制裝置燈光。關閉後停止遊戲燈效，恢復 OpenSynapse 中的燈光。</value><comment>Chroma 集成说明</comment></data>
+  <data name="ChromaRestToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>遊戲燈光連動（Chroma）</value><comment>Chroma 集成开关</comment></data>
   <data name="ChromaRestStatus.Text" xml:space="preserve"><value>已禁用</value><comment>Chroma REST 状态</comment></data>
   <data name="ChromaRestStatusDisabled" xml:space="preserve"><value>已禁用</value><comment>Chroma REST 已禁用</comment></data>
   <data name="ChromaRestStatusUnavailable" xml:space="preserve"><value>不可用</value><comment>Chroma REST 不可用</comment></data>

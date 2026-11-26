@@ -45,7 +45,7 @@ public enum RazerChromaChannel
     LegacyPerLed,
     /// <summary>
     /// Class-0x0F effects with the direct 0F:84/0F:04 brightness pair. Used by
-    /// the Basilisk V4 family and the 030C-0317 IoT lamps.
+    /// the Basilisk V4 family, 030C-0317 IoT lamps and wireless ARGB controllers.
     /// </summary>
     LegacyBrightness,
 }
@@ -190,6 +190,7 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
             catch (Exception exception) when (IsExpected(exception))
             {
                 errors.Add($"brightness: {exception.Message}");
+                _diagnostic?.Invoke($"chroma brightness read failed: {exception.Message}");
             }
         }
 
@@ -222,6 +223,7 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
         catch (Exception exception) when (IsExpected(exception))
         {
             errors.Add($"effect: {exception.Message}");
+            _diagnostic?.Invoke($"chroma effect read failed: {exception.Message}");
         }
 
         System.Version? firmware = null;

@@ -13,28 +13,45 @@ public sealed partial class RazerChromaStandardService
 
     private async Task<byte> ReadLegacyBrightnessAsync(CancellationToken cancellationToken)
     {
+        // rzDevice25 resolves AllRegion to the first advertised region for reads.
+        var region = _productId is { } productId && IsWirelessArgbProduct(productId)
+            ? await ResolveLegacyRegionAsync(cancellationToken).ConfigureAwait(false)
+            : RazerLegacyChromaProtocol.ReadRegionId;
+        return await ReadLegacyBrightnessAsync(region, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<byte> ReadLegacyBrightnessAsync(byte region, CancellationToken cancellationToken)
+    {
         return RazerLegacyChromaProtocol.ReadDirectBrightnessPercent(
             await QueryAsync(
                 transaction => RazerLegacyChromaProtocol.GetDirectBrightness(
-                    transaction, LegacyBrightnessProfileId, RazerLegacyChromaProtocol.ReadRegionId),
+                    transaction, LegacyBrightnessProfileId, region),
                 "read brightness",
                 cancellationToken).ConfigureAwait(false));
     }
 
     private async Task SetLegacyBrightnessAsync(byte percent, CancellationToken cancellationToken)
     {
-        byte? previous = null;
+        // A global ARGB write changes all three independently configured ports.
+        byte[] regions = _productId is { } productId && IsWirelessArgbProduct(productId)
+            ? [26, 27, 28]
+            : [RazerLegacyChromaProtocol.ReadRegionId];
+        var previous = new Dictionary<byte, byte>();
         try
         {
-            previous = await ReadLegacyBrightnessAsync(cancellationToken).ConfigureAwait(false);
+            foreach (var region in regions)
+            {
+                previous[region] = await ReadLegacyBrightnessAsync(region, cancellationToken).ConfigureAwait(false);
+            }
         }
         catch (Exception exception) when (IsExpected(exception))
         {
+            previous.Clear();
             _diagnostic?.Invoke(
                 $"direct brightness readback unavailable ({exception.Message}); writing without restore");
         }
 
-        if (previous == percent)
+        if (previous.Count == regions.Length && previous.Values.All(value => value == percent))
         {
             return;
         }
@@ -46,9 +63,9 @@ public sealed partial class RazerChromaStandardService
                     transaction, percent, LegacyBrightnessProfileId, RazerLegacyChromaProtocol.ReadRegionId),
                 "set brightness",
                 cancellationToken).ConfigureAwait(false);
-            if (previous is not null)
+            foreach (var region in previous.Keys)
             {
-                var actual = await ReadLegacyBrightnessAsync(cancellationToken).ConfigureAwait(false);
+                var actual = await ReadLegacyBrightnessAsync(region, cancellationToken).ConfigureAwait(false);
                 if (Math.Abs(actual - percent) > 1)
                 {
                     throw new InvalidOperationException(
@@ -58,18 +75,22 @@ public sealed partial class RazerChromaStandardService
         }
         catch (Exception updateException)
         {
-            if (previous is not { } restore)
+            if (previous.Count == 0)
             {
                 throw;
             }
 
             try
             {
-                await QueryAsync(
-                    transaction => RazerLegacyChromaProtocol.SetDirectBrightness(
-                        transaction, restore, LegacyBrightnessProfileId, RazerLegacyChromaProtocol.ReadRegionId),
-                    "restore brightness",
-                    cancellationToken).ConfigureAwait(false);
+                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                foreach (var (region, restore) in previous)
+                {
+                    await QueryAsync(
+                        transaction => RazerLegacyChromaProtocol.SetDirectBrightness(
+                            transaction, restore, LegacyBrightnessProfileId, region),
+                        "restore brightness",
+                        timeout.Token).ConfigureAwait(false);
+                }
             }
             catch (Exception restoreException)
             {

@@ -203,7 +203,7 @@ internal sealed class ChromaBrokerHost : IAsyncDisposable
                     }
                     catch (Exception exception)
                     {
-                        _log?.Invoke($"frame apply failed: {exception.Message}");
+                        _log?.Invoke($"frame apply failed: {exception}");
                     }
                 }
             }

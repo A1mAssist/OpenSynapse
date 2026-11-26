@@ -27,6 +27,7 @@ internal sealed partial class ChromaRestHost : IAsyncDisposable
     private readonly IBladeLightingController _lighting;
     private readonly Func<Task> _restoreLighting;
     private readonly Func<Task>? _suspendLighting;
+    private readonly ChromaLightingSession? _lightingSession;
     private readonly Func<bool> _bladeChromaOverrideEnabled;
     private readonly Func<ChromaDeviceKind, IReadOnlyList<RazerRgb>, int, int, CancellationToken, Task<bool>>? _applyEffect;
     private readonly Func<bool> _restorePersistentEffect;
@@ -60,12 +61,14 @@ internal sealed partial class ChromaRestHost : IAsyncDisposable
         Func<bool>? bladeChromaOverrideEnabled = null,
         IEnumerable<string>? blockedSources = null,
         int port = Port, TimeSpan? requestTimeout = null,
-        Func<Task>? suspendLighting = null)
+        Func<Task>? suspendLighting = null,
+        ChromaLightingSession? lightingSession = null)
     {
         _devices = devices ?? throw new ArgumentNullException(nameof(devices));
         _lighting = lighting ?? throw new ArgumentNullException(nameof(lighting));
         _restoreLighting = restoreLighting ?? throw new ArgumentNullException(nameof(restoreLighting));
         _suspendLighting = suspendLighting;
+        _lightingSession = lightingSession;
         _bladeChromaOverrideEnabled = bladeChromaOverrideEnabled ?? (() => true);
         _applyEffect = applyEffect;
         _restorePersistentEffect = restorePersistentEffect ?? (() => true);
@@ -120,8 +123,7 @@ internal sealed partial class ChromaRestHost : IAsyncDisposable
             }
             if (released)
             {
-                await StopLightingAsync().ConfigureAwait(false);
-                await _restoreLighting().ConfigureAwait(false);
+                await ReleaseLightingAsync().ConfigureAwait(false);
             }
         }
         finally
@@ -539,7 +541,7 @@ internal sealed partial class ChromaRestHost : IAsyncDisposable
                 session.ApplyInProgress = true;
                 claimedSession = true;
             }
-            if (!wasActive && _suspendLighting is not null)
+            if (_lightingSession is null && !wasActive && _suspendLighting is not null)
             {
                 await _suspendLighting().ConfigureAwait(false);
             }
@@ -548,41 +550,41 @@ internal sealed partial class ChromaRestHost : IAsyncDisposable
                 session.Effects[effectId!] = frame;
             }
 
-            var changed = frame.BladeFrame is null || _frameSource.Publish(frame.BladeFrame);
-            if (!changed)
+            async Task<bool> ApplyFrameAsync(CancellationToken token)
             {
-                Interlocked.Increment(ref _framesSkipped);
-            }
-            // Re-assert ownership on every frame. If the user changed the
-            // normal effect while a game is alive, the next game frame takes
-            // the device back without restarting an already active runtime.
-            var applied = false;
-            var devices = _devices();
-            if (frame.BladeFrame is not null &&
-                _bladeChromaOverrideEnabled() && devices.Any(device =>
-                    device.ProtocolFamily is "blade-710" or "blade-710-chroma" &&
-                    device.Access == DeviceAccessState.Available))
-            {
-                try
+                var changed = frame.BladeFrame is null || _frameSource.Publish(frame.BladeFrame);
+                if (!changed) Interlocked.Increment(ref _framesSkipped);
+                var applied = false;
+                var devices = _devices();
+                if (frame.BladeFrame is not null &&
+                    _bladeChromaOverrideEnabled() && devices.Any(device =>
+                        device.ProtocolFamily is "blade-710" or "blade-710-chroma" &&
+                        device.Access == DeviceAccessState.Available))
                 {
-                    await _lighting.ApplyExternalAsync(
-                        devices,
-                        _frameSource,
-                        restorePersistentEffect: false,
-                        _stop.Token).ConfigureAwait(false);
-                    applied = true;
+                    try
+                    {
+                        await _lighting.ApplyExternalAsync(
+                            devices, _frameSource, restorePersistentEffect: false, token).ConfigureAwait(false);
+                        applied = true;
+                    }
+                    catch (InvalidOperationException) when (_applyEffect is not null)
+                    {
+                        // RazerHid-only systems do not have a Blade target.
+                    }
                 }
-                catch (InvalidOperationException) when (_applyEffect is not null)
+                if (_applyEffect is not null)
                 {
-                    // RazerHid-only systems do not have a Blade target.
+                    applied |= await _applyEffect(
+                        frame.Kind, frame.ChromaFrame, frame.Rows, frame.Columns, token)
+                        .ConfigureAwait(false);
                 }
+                if (changed && applied) Interlocked.Increment(ref _framesAccepted);
+                return applied;
             }
-            if (_applyEffect is not null)
-            {
-                applied |= await _applyEffect(
-                    frame.Kind, frame.ChromaFrame, frame.Rows, frame.Columns, _stop.Token)
-                    .ConfigureAwait(false);
-            }
+            var applied = _lightingSession is null
+                ? await ApplyFrameAsync(_stop.Token).ConfigureAwait(false)
+                : await _lightingSession.ApplyAsync(
+                    ChromaLightingSource.Rest, ApplyFrameAsync, _stop.Token, (int)frame.Kind).ConfigureAwait(false);
             if (!applied)
             {
                 if (createEffect && effectId is not null)
@@ -598,10 +600,6 @@ internal sealed partial class ChromaRestHost : IAsyncDisposable
                     }
                 }
                 return (DeviceNotConnected, null);
-            }
-            if (changed)
-            {
-                Interlocked.Increment(ref _framesAccepted);
             }
             session.ActiveEffectId = effectId;
             return (Success, effectId);
@@ -656,6 +654,8 @@ internal sealed partial class ChromaRestHost : IAsyncDisposable
                         session.LastHeartbeat = DateTimeOffset.UtcNow;
                     }
                 }
+                if (_lightingSession is not null && !session.Active)
+                    await _lightingSession.ReleaseAsync(ChromaLightingSource.Rest).ConfigureAwait(false);
                 SignalSessionSweep();
             }
         }
@@ -820,8 +820,7 @@ internal sealed partial class ChromaRestHost : IAsyncDisposable
             // then be stopped by this stale cleanup.
             if (wasActive && !HasActiveSession())
             {
-                await StopLightingAsync().ConfigureAwait(false);
-                await _restoreLighting().ConfigureAwait(false);
+                await ReleaseLightingAsync().ConfigureAwait(false);
             }
         }
         finally
@@ -869,7 +868,7 @@ internal sealed partial class ChromaRestHost : IAsyncDisposable
                 session.ActiveEffectId = null;
                 _frameSource.Clear();
             }
-            if (wasActive && clearedKind != ChromaDeviceKind.Keyboard && _applyEffect is not null)
+            if (_lightingSession is null && wasActive && clearedKind != ChromaDeviceKind.Keyboard && _applyEffect is not null)
             {
                 await _applyEffect(
                     clearedKind,
@@ -880,8 +879,7 @@ internal sealed partial class ChromaRestHost : IAsyncDisposable
             }
             if (removed && wasActive && !HasActiveSession())
             {
-                await StopLightingAsync().ConfigureAwait(false);
-                await _restoreLighting().ConfigureAwait(false);
+                await ReleaseLightingAsync().ConfigureAwait(false);
             }
         }
         finally
@@ -904,8 +902,7 @@ internal sealed partial class ChromaRestHost : IAsyncDisposable
             }
             if (hadActiveSession)
             {
-                await StopLightingAsync().ConfigureAwait(false);
-                await _restoreLighting().ConfigureAwait(false);
+                await ReleaseLightingAsync().ConfigureAwait(false);
             }
         }
         finally
@@ -917,6 +914,17 @@ internal sealed partial class ChromaRestHost : IAsyncDisposable
     private bool HasActiveSession()
     {
         lock (_gate) return _sessions.Values.Any(session => session.Active);
+    }
+
+    private async Task ReleaseLightingAsync()
+    {
+        if (_lightingSession is not null)
+        {
+            await _lightingSession.ReleaseAsync(ChromaLightingSource.Rest).ConfigureAwait(false);
+            return;
+        }
+        await StopLightingAsync().ConfigureAwait(false);
+        await _restoreLighting().ConfigureAwait(false);
     }
 
     private async Task StopLightingAsync()

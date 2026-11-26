@@ -60,7 +60,8 @@ internal static class RazerProtocol25FeatureProtocol
         request.Length is 64 or 65 &&
         response[0] == request[0] &&
         response[2] == request[2] &&
-        response[6] == request[6] &&
+        // Noa's reader matches transaction/class/command and uses the returned payload length.
+        (request[0] == 0x08 || response[6] == request[6]) &&
         response[7] == request[7] &&
         response[8] == request[8];
 

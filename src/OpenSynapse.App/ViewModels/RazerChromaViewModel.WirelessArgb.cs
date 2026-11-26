@@ -57,11 +57,11 @@ public sealed partial class RazerChromaViewModel
 
     private async Task LoadWirelessArgbAsync(CancellationToken cancellationToken)
     {
-        if (_connection.ProductId is not (0x0F2C or 0x0F2E)) return;
+        if (!RazerChromaStandardService.IsWirelessArgbProduct(_connection.ProductId)) return;
 
         _wirelessArgb ??= new(_diagnostic);
         _wirelessArgbConnection = await RazerWirelessArgbService.FindAsync(
-            _connection.ProductId,
+            _connection,
             _diagnostic,
             cancellationToken).ConfigureAwait(false);
         OnPropertyChanged(nameof(WirelessArgbVisibility));

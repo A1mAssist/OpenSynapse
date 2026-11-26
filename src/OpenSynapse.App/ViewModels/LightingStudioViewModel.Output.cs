@@ -436,12 +436,65 @@ public sealed partial class LightingStudioViewModel
     /// </summary>
     internal async Task SuspendOutputAsync()
     {
-        if (!IsApplied) return;
+        if (!IsApplied && !HasSuspendedOutput) return;
         await StopAsync();
+    }
+
+    private bool _suspendedOutput;
+    private bool _suspendedWasPlaying;
+    private readonly SemaphoreSlim _outputLifecycleGate = new(1, 1);
+    internal bool HasSuspendedOutput => _suspendedOutput;
+
+    internal void DiscardSuspendedOutput()
+    {
+        if (!HasSuspendedOutput) return;
+        _suspendedOutput = false;
+        ClearAppliedProject();
+    }
+
+    internal async Task SuspendForExternalAsync()
+    {
+        await _outputLifecycleGate.WaitAsync();
+        try
+        {
+            if (!IsApplied) return;
+            _suspendedOutput = true;
+            _suspendedWasPlaying = IsPlaying;
+            await StopOutputCoreAsync(preserveAppliedState: true);
+        }
+        finally { _outputLifecycleGate.Release(); }
+    }
+
+    internal async Task ResumeAfterExternalAsync()
+    {
+        await _outputLifecycleGate.WaitAsync();
+        try
+        {
+            if (!HasSuspendedOutput) return;
+            await ApplyOutputCoreAsync();
+            if (IsApplied)
+            {
+                _suspendedOutput = false;
+                IsPlaying = _suspendedWasPlaying;
+            }
+        }
+        finally { _outputLifecycleGate.Release(); }
     }
 
     public async Task StopAsync()
     {
+        await _outputLifecycleGate.WaitAsync();
+        try
+        {
+            _suspendedOutput = false;
+            await StopOutputCoreAsync(preserveAppliedState: false);
+        }
+        finally { _outputLifecycleGate.Release(); }
+    }
+
+    private async Task StopOutputCoreAsync(bool preserveAppliedState)
+    {
+        if (_isBusy) return;
         if (_lighting is null && _hidRouter is null && _argbRouter is null &&
             _headsetRouter is null && _chromaRouter is null)
         {
@@ -490,11 +543,14 @@ public sealed partial class LightingStudioViewModel
             _source = null;
             _appliedBlade = null;
             IsApplied = false;
-            _activeScene = null;
-            UpdateSceneSelection();
-            _sceneProfile = null;
-            OnPropertyChanged(nameof(SelectedSceneCard));
-            ClearAppliedProject();
+            if (!preserveAppliedState)
+            {
+                _activeScene = null;
+                UpdateSceneSelection();
+                _sceneProfile = null;
+                OnPropertyChanged(nameof(SelectedSceneCard));
+                ClearAppliedProject();
+            }
             if (failures.Count > 0)
             {
                 StatusText = AppStrings.FormatText(

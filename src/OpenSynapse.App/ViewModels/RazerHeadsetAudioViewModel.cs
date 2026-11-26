@@ -665,7 +665,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         return true;
     }
     private static bool IsExpectedException(Exception exception) =>
-        exception is IOException or InvalidDataException or InvalidOperationException or ArgumentOutOfRangeException or
+        exception is IOException or InvalidDataException or InvalidOperationException or ArgumentOutOfRangeException or TimeoutException or
             System.ComponentModel.Win32Exception or UnauthorizedAccessException;
 
     private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)

@@ -74,8 +74,10 @@ internal sealed partial class ChromaDeviceRouter
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly SemaphoreSlim _makoGate = new(1, 1);
     private readonly object _frameState = new();
-    private (ChromaDeviceKind Kind, IReadOnlyList<RazerRgb> Frame, int Rows, int Columns)? _pendingFrame;
-    private int _framePump;
+    private readonly Dictionary<ChromaDeviceKind,
+        (IReadOnlyList<RazerRgb> Frame, int Rows, int Columns, CancellationToken Token)> _pendingFrames = [];
+    private bool _framePump;
+    private bool _restoring;
     private volatile bool _resetCache;
 
     internal ChromaDeviceRouter(
@@ -122,51 +124,62 @@ internal sealed partial class ChromaDeviceRouter
         {
             throw new ArgumentException("The Chroma frame does not match its dimensions.", nameof(frame));
         }
+        cancellationToken.ThrowIfCancellationRequested();
 
         lock (_frameState)
         {
-            _pendingFrame = (kind, frame.ToArray(), rows, columns);
-        }
-        if (Interlocked.CompareExchange(ref _framePump, 1, 0) == 0)
-        {
-            _ = PumpFramesAsync();
+            if (_restoring) return Task.FromResult(false);
+            _pendingFrames[kind] = (frame.ToArray(), rows, columns, cancellationToken);
+            if (!_framePump)
+            {
+                _framePump = true;
+                _ = Task.Run(PumpFramesAsync);
+            }
         }
         return Task.FromResult(true);
     }
 
     private async Task PumpFramesAsync()
     {
-        try
+        while (true)
         {
-            while (true)
+            await _gate.WaitAsync().ConfigureAwait(false);
+            try
             {
-                (ChromaDeviceKind Kind, IReadOnlyList<RazerRgb> Frame, int Rows, int Columns) pending;
+                KeyValuePair<ChromaDeviceKind,
+                    (IReadOnlyList<RazerRgb> Frame, int Rows, int Columns, CancellationToken Token)>[] pending;
                 lock (_frameState)
                 {
-                    if (_pendingFrame is not { } next)
+                    if (_pendingFrames.Count == 0)
                     {
-                        Volatile.Write(ref _framePump, 0);
+                        _framePump = false;
                         return;
                     }
-                    pending = next;
-                    _pendingFrame = null;
+                    pending = _pendingFrames.ToArray();
+                    _pendingFrames.Clear();
                 }
 
-                try
+                foreach (var (kind, frame) in pending)
                 {
-                    await ApplyCoreAsync(
-                            pending.Kind, pending.Frame, pending.Rows, pending.Columns, CancellationToken.None)
-                        .ConfigureAwait(false);
-                }
-                catch (Exception)
-                {
-                    // One bad frame must not stop the pump; the next frame replaces it.
+                    try
+                    {
+                        frame.Token.ThrowIfCancellationRequested();
+                        await ApplyCoreAsync(kind, frame.Frame, frame.Rows, frame.Columns, frame.Token)
+                            .ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException) when (frame.Token.IsCancellationRequested)
+                    {
+                    }
+                    catch (Exception)
+                    {
+                        // One bad frame must not stop the other device channels.
+                    }
                 }
             }
-        }
-        finally
-        {
-            Volatile.Write(ref _framePump, 0);
+            finally
+            {
+                _gate.Release();
+            }
         }
     }
 
@@ -183,65 +196,58 @@ internal sealed partial class ChromaDeviceRouter
             throw new ArgumentException("The Chroma frame does not match its dimensions.", nameof(frame));
         }
 
-        var targets = BuildTargets().Where(target => target.Kind == kind).ToArray();
+        var liveTargets = BuildTargets();
+        var targets = liveTargets.Where(target => target.Kind == kind).ToArray();
         if (targets.Length == 0) return false;
 
-        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
+        if (_resetCache)
         {
-            if (_resetCache)
+            _resetCache = false;
+            _lastFrames.Clear();
+            _lastFrameAt.Clear();
+            _lastColors.Clear();
+            _lastColorAt.Clear();
+            _customEffectPrepared.Clear();
+            _joliePrepared.Clear();
+        }
+        var liveIds = liveTargets.Select(target => target.InstanceId)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        TrimStale(_lastFrames, liveIds);
+        TrimStale(_lastFrameAt, liveIds);
+        TrimStale(_lastColors, liveIds);
+        TrimStale(_lastColorAt, liveIds);
+        TrimStale(_customEffectPrepared, liveIds);
+        TrimStale(_joliePrepared, liveIds);
+        TrimStale(_jolieBaselines, liveIds);
+        TrimStale(_jolieBaselineAttempted, liveIds);
+        if (_makoService is not null && (_makoPath is null || !liveIds.Contains(_makoPath)))
+        {
+            await _makoService.DisposeAsync().ConfigureAwait(false);
+            _makoService = null;
+            _makoPath = null;
+        }
+
+        var now = Environment.TickCount64;
+        var tasks = new List<Task<bool>>(targets.Length);
+        foreach (var target in targets)
+        {
+            if (_targetFailures.TryGetValue(target.InstanceId, out var failure) &&
+                failure.CooldownUntil > now)
             {
-                _resetCache = false;
-                _lastFrames.Clear();
-                _lastFrameAt.Clear();
-                _lastColors.Clear();
-                _lastColorAt.Clear();
-                _customEffectPrepared.Clear();
-                _joliePrepared.Clear();
-            }
-            var liveIds = targets.Select(target => target.InstanceId)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            TrimStale(_lastFrames, liveIds);
-            TrimStale(_lastFrameAt, liveIds);
-            TrimStale(_lastColors, liveIds);
-            TrimStale(_lastColorAt, liveIds);
-            TrimStale(_customEffectPrepared, liveIds);
-            TrimStale(_joliePrepared, liveIds);
-            TrimStale(_jolieBaselines, liveIds);
-            TrimStale(_jolieBaselineAttempted, liveIds);
-            if (_makoService is not null && (_makoPath is null || !liveIds.Contains(_makoPath)))
-            {
-                await _makoService.DisposeAsync().ConfigureAwait(false);
-                _makoService = null;
-                _makoPath = null;
+                continue;
             }
 
-            var now = Environment.TickCount64;
-            var tasks = new List<Task<bool>>(targets.Length);
-            foreach (var target in targets)
-            {
-                if (_targetFailures.TryGetValue(target.InstanceId, out var failure) &&
-                    failure.CooldownUntil > now)
-                {
-                    continue;
-                }
-
-                _touchedTargets.TryAdd(target.InstanceId, 0);
-                // Write every target in the same frame window instead of stacking
-                // one device's latency on top of the next.
-                tasks.Add(ApplyTargetGuardedAsync(target, frame, rows, columns, cancellationToken));
-            }
-            if (tasks.Count == 0)
-            {
-                return false;
-            }
-            var results = await Task.WhenAll(tasks).ConfigureAwait(false);
-            return results.Any(applied => applied);
+            _touchedTargets.TryAdd(target.InstanceId, 0);
+            // Write every target in the same frame window instead of stacking
+            // one device's latency on top of the next.
+            tasks.Add(ApplyTargetGuardedAsync(target, frame, rows, columns, cancellationToken));
         }
-        finally
+        if (tasks.Count == 0)
         {
-            _gate.Release();
+            return false;
         }
+        var results = await Task.WhenAll(tasks).ConfigureAwait(false);
+        return results.Any(applied => applied);
     }
 
     private async Task<bool> ApplyTargetGuardedAsync(

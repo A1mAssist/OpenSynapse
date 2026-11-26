@@ -1483,9 +1483,9 @@
   <data name="GamingModeProfileSaveFailed" xml:space="preserve"><value>게임 모드를 변경했지만 프로필을 저장하지 못했습니다.</value></data>
   <data name="BladeFnRuntimeStoppedBeforeAudioSync" xml:space="preserve"><value>오디오 동기화가 완료되기 전에 Blade Fn 런타임이 안전하게 중지되었습니다.</value></data>
   <data name="PerformanceSamplingUnavailable" xml:space="preserve"><value>샘플링 실패 · 마지막 값 표시 중</value></data>
-  <data name="ChromaRestTitle.Text" xml:space="preserve"><value>Chroma 통합</value><comment>Chroma integration title</comment></data>
-  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>호환되는 REST 및 SDK 클라이언트가 연결된 조명을 로컬에서 제어하도록 허용합니다. 공식 Chroma DLL과 브로커는 Razer Synapse가 필요하지 않습니다.</value><comment>Chroma integration description</comment></data>
-  <data name="ChromaRestToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Chroma 통합</value><comment>Chroma integration toggle</comment></data>
+  <data name="ChromaRestTitle.Text" xml:space="preserve"><value>게임 조명 연동 (Chroma)</value><comment>Chroma integration title</comment></data>
+  <data name="ChromaRestDescription.Text" xml:space="preserve"><value>호환되는 게임과 앱이 기기 조명을 제어하도록 허용합니다. 끄면 게임 조명이 중지되고 OpenSynapse 효과로 돌아갑니다.</value><comment>Chroma integration description</comment></data>
+  <data name="ChromaRestToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>게임 조명 연동 (Chroma)</value><comment>Chroma integration toggle</comment></data>
   <data name="ChromaRestStatus.Text" xml:space="preserve"><value>사용 안 함</value></data>
   <data name="ChromaRestStatusDisabled" xml:space="preserve"><value>사용 안 함</value></data>
   <data name="ChromaRestStatusUnavailable" xml:space="preserve"><value>사용할 수 없음</value></data>
