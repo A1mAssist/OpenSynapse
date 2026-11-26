@@ -263,10 +263,6 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
 
     internal void RequestDeviceReadout() => SignalDeviceWatch();
 
-    internal void MarkManualDeviceChange() => _applicationSwitch.MarkManualOverrides(
-        _razerHid.CurrentConnections.Select(connection => new DeviceBindingKey(
-            RazerHidDeviceDefinition.VendorId, connection.Definition.ProductId, connection.InstanceId)));
-
     internal Task SwitchDeviceProfilesAsync(string? executablePath, CancellationToken token) =>
         ApplyDeviceApplicationRulesAsync(executablePath, token);
 

@@ -45,7 +45,7 @@ public static class StudioPresetEngine
                 columns,
                 time * layer.Speed,
                 input.Audio,
-                ScaleKeys(input.Keys, layer.Speed),
+                ScaleKeys(input.Keys, layer.Speed, rows, columns),
                 input.ScreenSampler,
                 input.ScreenSamplerUv,
                 layer.RenderPalette,
@@ -67,17 +67,49 @@ public static class StudioPresetEngine
         return frame;
     }
 
-    private static StudioKeyState? ScaleKeys(StudioKeyState? keys, double speed)
+    private static StudioKeyState? ScaleKeys(StudioKeyState? keys, double speed, int rows, int columns)
     {
-        if (keys is null || speed == 1) return keys;
-        return new StudioKeyState(keys.Rows, keys.Columns, keys.Cells, keys.LastRow, keys.LastColumn,
+        if (keys is null) return null;
+        var sameGrid = keys.Rows == rows && keys.Columns == columns;
+        if (speed == 1 && sameGrid) return keys;
+
+        var cells = sameGrid ? keys.Cells : new float[rows * columns];
+        if (!sameGrid)
+        {
+            for (var row = 0; row < keys.Rows; row++)
+            {
+                for (var column = 0; column < keys.Columns; column++)
+                {
+                    var value = keys.Cells[row * keys.Columns + column];
+                    if (value <= 0) continue;
+                    var targetRow = MapIndex(row, keys.Rows, rows);
+                    var targetColumn = MapIndex(column, keys.Columns, columns);
+                    var index = targetRow * columns + targetColumn;
+                    cells[index] = Math.Max(cells[index], value);
+                }
+            }
+        }
+
+        return new StudioKeyState(rows, columns, cells,
+            sameGrid || keys.LastRow < 0 ? keys.LastRow : MapIndex(keys.LastRow, keys.Rows, rows),
+            sameGrid || keys.LastColumn < 0 ? keys.LastColumn : MapIndex(keys.LastColumn, keys.Columns, columns),
             keys.SecondsSincePress * speed,
             keys.Presses.Select(press => press with
             {
+                Row = sameGrid ? press.Row : MapIndex(press.Row, keys.Rows, rows),
+                Column = sameGrid ? press.Column : MapIndex(press.Column, keys.Columns, columns),
                 Age = press.Age * speed,
                 ReleaseAge = press.ReleaseAge * speed,
             }).ToArray());
     }
+
+    private static int MapIndex(int value, int count, int targetCount) =>
+        count <= 1 || targetCount <= 1
+            ? 0
+            : Math.Clamp(
+                (int)Math.Round(value * (targetCount - 1d) / (count - 1d)),
+                0,
+                targetCount - 1);
 
     private sealed class StudioPresetScratch(StudioPresetConfig? definition, int rows, int columns)
     {

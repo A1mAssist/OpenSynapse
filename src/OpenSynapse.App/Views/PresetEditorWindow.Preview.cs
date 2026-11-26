@@ -33,6 +33,7 @@ public sealed partial class PresetEditorWindow
     private double _deviceCellSize;
     private double _worldCellSize;
     private StudioEffectState _deviceState = new();
+    private StudioEffectState _worldState = new();
     private StudioPresetConfig? _compiled;
     private StudioWorldCanvas? _worldCanvas;
     private StudioKeyHeat? _keyHeat;
@@ -307,6 +308,7 @@ public sealed partial class PresetEditorWindow
     {
         _compiled = null;
         _worldCanvas = null;
+        _worldState = new StudioEffectState();
         _keyHeat = null;
         _lastAutoKeyStep = -1;
         _autoKeyRow = -1;
@@ -439,8 +441,13 @@ public sealed partial class PresetEditorWindow
         StudioRgb[] frame;
         try
         {
-            frame = StudioCompositor.RenderLayers(
-                _worldCanvas.Layers, WorldGrid, WorldGrid, _seconds, BuildPreviewInput());
+            // The editor builds one whole-canvas preset layer. Render it with a
+            // persistent state so stateful key modules do not restart every frame.
+            frame = _worldCanvas.Layers is [var layer]
+                ? StudioEffectRenderer.Render(
+                    layer.Params, WorldGrid, WorldGrid, _seconds, BuildPreviewInput(), _worldState)
+                : StudioCompositor.RenderLayers(
+                    _worldCanvas.Layers, WorldGrid, WorldGrid, _seconds, BuildPreviewInput());
         }
         catch (Exception exception) when (exception is InvalidDataException or ArgumentException or
             InvalidOperationException or IndexOutOfRangeException)
@@ -556,12 +563,15 @@ public sealed partial class PresetEditorWindow
     {
         _keyHeat?.Decay(elapsed);
         if (!_simulateKeys || _keyHeat is null) return;
-        var step = (int)Math.Floor(_seconds / 0.18);
+        // Keep one readable press on screen; the old 180 ms scan stacked most of
+        // the preset's life into a random-looking patchwork.
+        var step = (int)Math.Floor(_seconds / 0.9);
         if (step == _lastAutoKeyStep) return;
         if (_autoKeyRow >= 0) _keyHeat.Release(_autoKeyRow, _autoKeyColumn);
         if (_keyHeat.Rows <= 0 || _keyHeat.Columns <= 0) return;
+        // Walk one column at a time so the preview reads as a sweep, not noise.
         _autoKeyRow = step % _keyHeat.Rows;
-        _autoKeyColumn = (step * 7 + step / Math.Max(1, _keyHeat.Rows)) % _keyHeat.Columns;
+        _autoKeyColumn = (step / _keyHeat.Rows) % _keyHeat.Columns;
         _keyHeat.Press(_autoKeyRow, _autoKeyColumn);
         _lastAutoKeyStep = step;
     }

@@ -220,6 +220,43 @@ public sealed class PresetEditorStateTests
     }
 
     [Fact]
+    public void WorldCanvasPreviewScalesDeviceKeyPressesToTheCanvas()
+    {
+        var preset = StudioPresetCodec.Parse("""
+            {
+              "format": "opensynapse-chroma",
+              "version": 1,
+              "id": "key-scale-test",
+              "name": "Key scale test",
+              "kind": "reactive",
+              "layers": [
+                {
+                  "module": "key.glow",
+                  "blend": "normal",
+                  "opacity": 1.0,
+                  "speed": 1.0,
+                  "palette": { "stops": ["#FFFFFF"] },
+                  "params": { "shape": "point", "life": 2, "background": 0 }
+                }
+              ]
+            }
+            """);
+        var heat = new StudioKeyHeat(6, 22);
+        heat.Press(2, 7);
+        var input = StudioPresetPreviewSimulation.Create(0.05, preset.Layers, heat.Snapshot());
+
+        var frame = StudioPresetEngine.Render(preset, 96, 96, 0.05, input);
+        var brightest = frame
+            .Select((color, index) => (color, index))
+            .MaxBy(entry => entry.color.R + entry.color.G + entry.color.B);
+        var row = brightest.index / 96;
+        var column = brightest.index % 96;
+
+        Assert.InRange(row, 36, 40);
+        Assert.InRange(column, 30, 34);
+    }
+
+    [Fact]
     public void CompilerRejectsInvalidDraftsAndSerializesStrictShape()
     {
         var emptyId = MinimalDraft();
