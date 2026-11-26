@@ -5,8 +5,11 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerHidMappingRowViewModel
 {
+    // One table drives both directions: the combo writes an index, the saved
+    // trigger reads a mode back. Adding a mode cannot desync them.
     private static readonly MacroTriggerMode[] SoftwareTriggerModes =
     [
+        MacroTriggerMode.Press,
         MacroTriggerMode.Hold,
         MacroTriggerMode.Toggle,
         MacroTriggerMode.HoldRepeat,
@@ -20,9 +23,13 @@ public sealed partial class RazerHidMappingRowViewModel
     private double _loadedExecutionRepeatCount = 1;
 
     public IReadOnlyList<string> TriggerModeOptions => AppStrings.Texts(
+        "MacroTriggerModePress",
         "RazerMappingMacroTriggerHold",
         "RazerMappingMacroPlaybackToggle",
         "RazerMappingMacroPlaybackHoldRepeat");
+
+    internal static int IndexOf(MacroTriggerMode mode) =>
+        Math.Max(0, Array.IndexOf(SoftwareTriggerModes, mode));
 
     public MacroTriggerMode TriggerMode =>
         SoftwareTriggerModes[

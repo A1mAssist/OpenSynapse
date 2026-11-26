@@ -294,12 +294,8 @@ public sealed partial class RazerHidMappingViewModel
         }
     }
 
-    private static int SoftwareTriggerModeIndex(MacroTriggerMode mode) => mode switch
-    {
-        MacroTriggerMode.Toggle => 1,
-        MacroTriggerMode.HoldRepeat => 2,
-        _ => 0,
-    };
+    private static int SoftwareTriggerModeIndex(MacroTriggerMode mode) =>
+        RazerHidMappingRowViewModel.IndexOf(mode);
 
     private bool NeedsNativeKeyboardAssignment(RazerMappingAssignment assignment) =>
         _deviceKind == RazerMappingDeviceKind.Keyboard &&

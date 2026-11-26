@@ -227,6 +227,7 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(MacroSlotVisibility));
             OnPropertyChanged(nameof(MacroNoSlotVisibility));
             OnPropertyChanged(nameof(MacroTargetVisibility));
+            OnPropertyChanged(nameof(MacroSectionVisibility));
             OnPropertyChanged(nameof(SoftwareTriggerVisibility));
             OnPropertyChanged(nameof(OnboardBehaviorVisibility));
             OnPropertyChanged(nameof(MacroSoftwareHintVisibility));
@@ -437,6 +438,11 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
         : Visibility.Collapsed;
     public Visibility MacroTargetVisibility =>
         _groupIndex == (int)RazerHidMappingGroup.Macro && _canUseSoftwareMacro && _canUseOnboardMacro
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    /// <summary>Whether the whole macro section applies to this row.</summary>
+    public Visibility MacroSectionVisibility =>
+        _groupIndex == (int)RazerHidMappingGroup.Macro
             ? Visibility.Visible
             : Visibility.Collapsed;
     public Visibility SoftwareTriggerVisibility =>
