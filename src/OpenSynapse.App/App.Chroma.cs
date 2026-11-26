@@ -2,6 +2,9 @@ using System.Net.Sockets;
 using System.Security.Principal;
 using OpenSynapse.App.Runtime;
 using OpenSynapse.App.ViewModels;
+using OpenSynapse.ChromaSdk.Protocol;
+using OpenSynapse.Core.Devices;
+using OpenSynapse.Core.Lighting;
 using OpenSynapse.Windows.Lifecycle;
 using OpenSynapse.Windows.Lighting;
 
@@ -60,17 +63,30 @@ public partial class App
         }
 
         _chromaDeviceRouter ??= CreateChromaDeviceRouter(viewModel);
+        viewModel.RazerHid.ChromaLightingSettingsApplier = (instanceId, apply, token) =>
+            _chromaDeviceRouter?.ApplyHidLightingSettingsAsync(instanceId, apply, token) ?? apply();
         _chromaLightingSession ??= new ChromaLightingSession(
             viewModel.SuspendLightingForChromaAsync,
             () => RestoreChromaAsync(viewModel),
             () => _behaviorSettings.ExperimentalChromaRestEnabled && Volatile.Read(ref _closing) == 0,
             () => viewModel.StudioLightingActive?.Invoke() == true ||
-                viewModel.RazerHid.SelectedDevice?.HasRunningSoftwareLighting == true);
+                viewModel.RazerHid.SelectedDevice?.HasRunningSoftwareLighting == true,
+            channel => HasChromaTargets(viewModel, (ChromaDeviceKind)channel));
+        viewModel.Lighting.ChromaTargetsChanged = () =>
+            _chromaLightingSession?.RefreshTargetsAsync() ?? Task.CompletedTask;
         viewModel.ChromaLightingActive = () => _chromaLightingSession.IsActive || _chromaLightingSession.HasPendingRestore;
         viewModel.Lighting.SetChromaIntegrationEnabled(_behaviorSettings.ExperimentalChromaRestEnabled);
         StartChromaBroker(viewModel);
         StartChromaRestHost(viewModel);
     }
+
+    private bool HasChromaTargets(MainViewModel viewModel, ChromaDeviceKind kind) =>
+        _chromaDeviceRouter?.HasEnabledTargets(kind) == true ||
+        kind == ChromaDeviceKind.Keyboard && _bladeLightingController is not null &&
+        viewModel.Lighting.IsBladeChromaOverrideEnabled() &&
+        viewModel.CurrentDeviceDescriptors.Any(device =>
+            device.Access == DeviceAccessState.Available &&
+            device.ProtocolFamily is "blade-710" or "blade-710-chroma");
 
     private ChromaDeviceRouter CreateChromaDeviceRouter(MainViewModel viewModel) =>
         new(
@@ -86,7 +102,9 @@ public partial class App
             () => viewModel.RazerHid.KrakenConnections,
             () => viewModel.Accessories.HeadsetAudioConnections
                 .Where(connection => connection.HasControlInterface).ToArray(),
-            message => _diagnosticLog.TryWrite("chroma", message));
+            message => _diagnosticLog.TryWrite("chroma", message),
+            connection => viewModel.RazerHid.IsLightingEnabled(connection) &&
+                viewModel.RazerHid.IsChromaOverrideEnabled(connection));
 
     private async Task StopChromaOutputAsync(MainViewModel viewModel, bool restoreLighting = true)
     {
@@ -207,7 +225,9 @@ public partial class App
             var applier = new ChromaSdkEffectApplier(viewModel, _bladeLightingController, _chromaDeviceRouter);
             host = new ChromaBrokerHost(
                 (effect, token) => _chromaLightingSession!.ApplyAsync(
-                    ChromaLightingSource.Sdk, ct => applier.ApplyAsync(effect, ct), token, (int)effect.DeviceType),
+                    ChromaLightingSource.Sdk, ct => applier.ApplyAsync(effect, ct), token,
+                    // SDK device ids are 1..6; the shared channels use ChromaDeviceKind (0..5).
+                    (int)effect.DeviceType - (int)ChromaSdkDeviceType.Keyboard),
                 () => _chromaLightingSession!.ReleaseAsync(ChromaLightingSource.Sdk),
                 log: message => _diagnosticLog.TryWrite("chroma-broker", message));
             host.StartAsync();

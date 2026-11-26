@@ -99,6 +99,7 @@ public sealed partial class MainWindow
         }
         finally { _syncingDeviceNavigation = false; }
 
+        UpdateNavigationPaneWidth();
         if (_currentPage != "devices") return;
         if (DefaultNavigationDevice() is { } target)
         {

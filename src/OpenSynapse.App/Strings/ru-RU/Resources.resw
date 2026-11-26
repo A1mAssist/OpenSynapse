@@ -3507,7 +3507,7 @@
     <value>Запись не удалась; см. сообщение выше.</value>
   </data>
   <data name="CpuPowerLimitDescription" xml:space="preserve">
-    <value>Закройте стену питания корпуса ЦП (PL1/PL2). Применяется только в пользовательском режиме производительности.</value>
+    <value>Ограничение мощности процессора (PL1/PL2). Настраивается в пользовательском режиме производительности или HyperBoost.</value>
   </data>
   <data name="CpuPowerLimitValue" xml:space="preserve">
     <value>PL1 {0:0} Ж · PL2 {1:0} Ж</value>
@@ -10407,7 +10407,6 @@
   <data name="SurfaceCalibrationRestoreDefaults" xml:space="preserve"><value>Restore default calibration</value></data>
   <data name="SurfaceCalibrationAdjustmentUnconfirmed" xml:space="preserve"><value>Calibration adjustment is not yet available for this mouse. You can still read its state or disable calibration.</value></data>
   <data name="NavigationPaneResizer.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Ширина панели навигации</value></data>
-  <data name="NavigationPaneResizer.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Перетащите границу для изменения ширины. Влево/вправо: 8 пикселей; Page Down/Up: 32 пикселя; Home: исходная ширина; End: максимальная ширина.</value></data>
   <data name="SettingAutoApplyApplying" xml:space="preserve"><value>Применение…</value></data>
   <data name="SettingAutoApplyApplied" xml:space="preserve"><value>Применено и сохранено</value></data>
   <data name="SettingAutoApplyRetry" xml:space="preserve"><value>Повторить</value></data>

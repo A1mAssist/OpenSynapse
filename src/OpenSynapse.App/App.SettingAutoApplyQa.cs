@@ -54,7 +54,7 @@ public partial class App
                     await Task.Yield();
                     await action();
                 }
-                catch (Exception error) { status.Text = "FAIL " + error.Message; }
+                catch (Exception error) { status.Text = "FAIL " + error; }
             };
             toolbar.Children.Add(button);
         }
@@ -299,6 +299,13 @@ public partial class App
         {
             root.Children.Clear();
             root.Children.Add(new ViperAutoApplyQa().CreatePreview());
+            return Task.CompletedTask;
+        });
+        Button("QaChromaOverridePreview", "联动开关预览", () =>
+        {
+            var preview = DevicesPage.CreateChromaOverridePreview();
+            root.Children.Clear();
+            root.Children.Add(preview);
             return Task.CompletedTask;
         });
         Button("QaBladeThxReadback", "验证 Blade THX 失败恢复", async () =>

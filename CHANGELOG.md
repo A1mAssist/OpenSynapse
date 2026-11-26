@@ -8,6 +8,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Added
 
+- **HyperBoost CPU power limits**: allow CPU power presets in Custom and HyperBoost modes, retain a separate HyperBoost baseline for restoring firmware limits, and restore the previous hardware values if saving fails.
 - **Mouse surface calibration**: expose presets, manual sampling, lift-off and tracking settings according to device capabilities, with cancellation, timeout recovery and saved custom surfaces.
 - **Lighting output scope**: take over only selected devices; ambient layers can map the whole canvas, the selected devices together, or each device independently, so adjacent devices need not shift the keyboard's screen sampling area.
 - **Apply on edit completion**: headset audio, mouse and keyboard settings apply after editing, coalesce continuous changes and retain failure feedback, replacing the corresponding extra save buttons.
@@ -31,6 +32,9 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
+- **Ambient capture recovery**: recreate capture buffers before reading frames after a display-resolution change; retain the last frame and reopen capture after transient failures instead of leaving screen-sampled lighting black until manually restarted.
+- **Chroma takeover controls**: show the device toggle according to lighting capabilities even when the global service is off; honor saved device permissions before pausing Studio or sending game frames, and keep Studio running when only the takeover preference changes.
+- **Device navigation width**: automatically fit the longest product name within the available window space until the user resizes the pane; retain manual widths and remove the resize tooltip and green hover line.
 - **Viper manual calibration**: accept valid `0B:85` replies declaring ten bytes while retaining all nine calibration parameters, preventing the start panel from disappearing immediately after New; log calibration stages and failures.
 - **THX state and persistence**: list only native V3/V4 presets, retain usable controls after a rejected write or partial read, preserve half-decibel EQ values and parse service paths containing spaces correctly.
 - **Headset equalizers**: attempt to restore previous settings after a partial combined write; verify readback using each protocol's semantics and keep unavailable data from appearing as editable zero curves.

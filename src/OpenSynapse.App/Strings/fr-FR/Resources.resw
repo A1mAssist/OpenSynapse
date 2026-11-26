@@ -2017,7 +2017,7 @@
   <data name="CpuCurvePawnIoMissing" xml:space="preserve"><value>PawnIO est requis pour le chemin Ryzen SMU. Ouvrez sa page de téléchargement depuis la carte de limite de puissance du CPU.</value></data>
   <data name="CpuCurveModuleMissing" xml:space="preserve"><value>RyzenSMU.bin est manquant ; réinstallez l’application.</value></data>
   <data name="CpuCurveApplyFailed" xml:space="preserve"><value>L’écriture a échoué ; consultez le message ci-dessus.</value></data>
-  <data name="CpuPowerLimitDescription" xml:space="preserve"><value>Plafonne la puissance du CPU (PL1/PL2). S’applique uniquement en mode de performances personnalisé.</value></data>
+  <data name="CpuPowerLimitDescription" xml:space="preserve"><value>Limite la puissance du CPU (PL1/PL2). Réglable en mode de performances Personnalisé ou HyperBoost.</value></data>
   <data name="CpuPowerLimitValue" xml:space="preserve"><value>PL1 {0:0} W · PL2 {1:0} W</value></data>
   <data name="CpuPowerLimitAuto" xml:space="preserve"><value>Automatique (micrologiciel)</value></data>
   <data name="CpuPowerLimitPawnIoMissing" xml:space="preserve"><value>PawnIO n’est pas installé. Choisissez Télécharger PawnIO, installez-le, puis redémarrez OpenSynapse.</value></data>
@@ -4892,7 +4892,6 @@ Les modifications de macro non enregistrées seront perdues.</value></data>
   <data name="SurfaceCalibrationRestoreDefaults" xml:space="preserve"><value>Restore default calibration</value></data>
   <data name="SurfaceCalibrationAdjustmentUnconfirmed" xml:space="preserve"><value>Calibration adjustment is not yet available for this mouse. You can still read its state or disable calibration.</value></data>
   <data name="NavigationPaneResizer.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Largeur du volet de navigation</value></data>
-  <data name="NavigationPaneResizer.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Faites glisser pour redimensionner. Gauche/Droite : 8 pixels ; Page suivante/précédente : 32 pixels ; Début : largeur par défaut ; Fin : largeur maximale.</value></data>
   <data name="SettingAutoApplyApplying" xml:space="preserve"><value>Application…</value></data>
   <data name="SettingAutoApplyApplied" xml:space="preserve"><value>Appliqué et enregistré</value></data>
   <data name="SettingAutoApplyRetry" xml:space="preserve"><value>Réessayer</value></data>

@@ -27,22 +27,19 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
     private int _cpuPowerLimitIndex = -1;
     private bool _isRefreshingCpuPowerLimit;
     private readonly Func<bool> _isBusy;
-    private readonly Func<bool> _isCustomMode;
-    private readonly Func<bool> _isPerformanceModeConfirmed;
+    private readonly Func<BladePerformanceMode?> _getPerformanceMode;
     private readonly Func<string, Func<Task>, CancellationToken, Action?, Task> _runOperation;
     private readonly Func<BladeProfileSettings> _getProfileSettings;
     private readonly Func<CancellationToken, Task<bool>> _saveProfileAsync;
 
     internal CpuPowerLimitWorkspace(Func<bool> isBusy,
-        Func<bool> isCustomMode,
-        Func<bool> isPerformanceModeConfirmed,
+        Func<BladePerformanceMode?> getPerformanceMode,
         Func<string, Func<Task>, CancellationToken, Action?, Task> runOperation,
         Func<BladeProfileSettings> getProfileSettings,
         Func<CancellationToken, Task<bool>> saveProfileAsync)
     {
         _isBusy = isBusy;
-        _isCustomMode = isCustomMode;
-        _isPerformanceModeConfirmed = isPerformanceModeConfirmed;
+        _getPerformanceMode = getPerformanceMode;
         _runOperation = runOperation;
         _getProfileSettings = getProfileSettings;
         _saveProfileAsync = saveProfileAsync;
@@ -117,7 +114,7 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
 
     public bool CanSetCpuPowerLimit =>
         !_isBusy() &&
-        _isCustomMode() &&
+        CpuPowerLimit.SupportsPerformanceMode(_getPerformanceMode()) &&
         _cpuPowerLimitReport is
         {
             Availability: CpuPowerLimitAvailability.Available,
@@ -132,6 +129,7 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
 
     private async Task RefreshCpuPowerLimitAsync(CancellationToken cancellationToken = default)
     {
+        var mode = _getPerformanceMode();
         CpuPowerLimitReport report;
         try
         {
@@ -148,11 +146,11 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
                 exception.Message);
         }
 
-        if (report.Availability == CpuPowerLimitAvailability.Available)
+        if (report.Availability == CpuPowerLimitAvailability.Available && mode == _getPerformanceMode())
         {
-            CpuPowerBaselineStore.Instance.Capture(
+            CpuPowerBaselineStore.ForMode(mode).Capture(
                 report,
-                allowCapture: _isPerformanceModeConfirmed() && !_isCustomMode());
+                allowCapture: mode is not null and not (BladePerformanceMode.Custom or BladePerformanceMode.Hyperboost));
         }
 
         PublishCpuPowerLimit(report);
@@ -177,20 +175,26 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
     public async Task ApplyCpuPowerLimitAsync(CancellationToken cancellationToken = default)
     {
         var requestedIndex = _cpuPowerLimitIndex;
-        if (requestedIndex < 0 || requestedIndex >= CpuPowerLimitPresets.Length || !_isCustomMode())
+        var mode = _getPerformanceMode();
+        if (requestedIndex < 0 || requestedIndex >= CpuPowerLimitPresets.Length ||
+            !CpuPowerLimit.SupportsPerformanceMode(mode) ||
+            _cpuPowerLimitReport is not { Availability: CpuPowerLimitAvailability.Available, IsLocked: false })
         {
             return;
         }
 
         var target = _getProfileSettings();
         var previousProfile = target.CpuPowerLimitWatts;
-        var previousIndex = _cpuPowerLimitIndex;
+        var previousReport = _cpuPowerLimitReport;
         await _runOperation(
             AppStrings.Text("CpuPowerLimitTitle"),
             async () =>
             {
+                await CpuPowerBaselineStore.CaptureHyperBoostAsync(mode, cancellationToken);
+                if (mode != _getPerformanceMode())
+                    throw new InvalidOperationException(AppStrings.Text("CpuPowerLimitUnavailable"));
                 var report = requestedIndex == 0
-                    ? await RestoreAutoCpuPowerLimitAsync(cancellationToken)
+                    ? await RestoreAutoCpuPowerLimitAsync(mode, cancellationToken)
                     : await ApplyCpuPowerLimitPresetAsync(requestedIndex, cancellationToken);
                 if (report.Availability != CpuPowerLimitAvailability.Available)
                 {
@@ -215,14 +219,15 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
                 catch
                 {
                     target.CpuPowerLimitWatts = previousProfile;
-                    await RestorePowerPresetAsync(previousIndex);
+                    await RestorePowerReportAsync(previousReport);
                     throw;
                 }
 
                 PublishCpuPowerLimit(report);
             },
             cancellationToken,
-            () => RestoreCpuPowerLimitIndex(requestedIndex));
+            () => SetCpuPowerLimitIndex(previousProfile is int watts
+                ? Array.IndexOf(CpuPowerLimitPresets, (double)watts) : 0));
 
         // The report is published while RunDeviceOperationAsync still holds IsBusy, so the
         // picker would stay disabled. Re-raise CanSet now that the operation has cleared it.
@@ -247,13 +252,16 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
             return;
         }
 
-        if (!_isCustomMode())
+        var mode = _getPerformanceMode();
+        if (!CpuPowerLimit.SupportsPerformanceMode(mode))
         {
             return;
         }
 
         try
         {
+            await CpuPowerBaselineStore.CaptureHyperBoostAsync(mode, cancellationToken);
+            if (mode != _getPerformanceMode()) return;
             var report = await ApplyCpuPowerLimitPresetAsync(requestedIndex, cancellationToken);
             if (report.Availability == CpuPowerLimitAvailability.Available)
             {
@@ -280,25 +288,26 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
     }
 
     private static Task<CpuPowerLimitReport> RestoreAutoCpuPowerLimitAsync(
+        BladePerformanceMode? mode,
         CancellationToken cancellationToken) =>
-        CpuPowerBaselineStore.Instance.Current is { } baseline
+        CpuPowerBaselineStore.ForMode(mode).Current is { } baseline
             ? CpuPowerLimitBroker.RestoreAsync(baseline, cancellationToken)
             : Task.FromResult(CpuPowerLimitReport.Unavailable(
                 CpuPowerLimitAvailability.Failed,
-                "No trusted CPU power baseline was captured outside Custom mode."));
+                "No trusted CPU power baseline is available for the current performance mode."));
 
-    private static async Task RestorePowerPresetAsync(int index)
+    private static async Task RestorePowerReportAsync(CpuPowerLimitReport? report)
     {
-        if (index < 0)
+        if (report is not { Availability: CpuPowerLimitAvailability.Available })
         {
             return;
         }
 
         try
         {
-            _ = index == 0
-                ? await RestoreAutoCpuPowerLimitAsync(CancellationToken.None)
-                : await ApplyCpuPowerLimitPresetAsync(index, CancellationToken.None);
+            await CpuPowerLimitBroker.RestoreAsync(new CpuPowerLimit(
+                report.Pl1Watts, report.Pl2Watts,
+                CpuPowerLimit.MinimumTimeSeconds, CpuPowerLimit.MaximumTimeSeconds), CancellationToken.None);
         }
         catch
         {
@@ -323,8 +332,6 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
         NotifyStateChanged();
     }
 
-    private void RestoreCpuPowerLimitIndex(int index) => SetCpuPowerLimitIndex(index);
-
     internal void NotifyBusyChanged()
     {
         OnPropertyChanged(nameof(CanSetCpuPowerLimit));
@@ -334,10 +341,10 @@ public sealed class CpuPowerLimitWorkspace : INotifyPropertyChanged
     internal void NotifyModeChanged()
     {
         OnPropertyChanged(nameof(CanSetCpuPowerLimit));
-        if (_isPerformanceModeConfirmed() && !_isCustomMode())
+        if (_getPerformanceMode() is not null and not BladePerformanceMode.Custom)
         {
             // The startup read can happen before the performance mode is known.
-            // Capture the baseline once a non-Custom mode has been confirmed.
+            // HyperBoost captures into its own store; Custom keeps the legacy baseline.
             _ = RefreshCpuPowerLimitSafelyAsync();
         }
     }

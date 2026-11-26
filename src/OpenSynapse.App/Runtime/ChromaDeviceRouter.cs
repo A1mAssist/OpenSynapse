@@ -50,6 +50,7 @@ internal sealed partial class ChromaDeviceRouter
     private readonly Func<IReadOnlyList<RazerChromaDeviceConnection>> _standardConnections;
     private readonly Func<IReadOnlyList<RazerHidSpecialLightingConnection>> _krakenConnections;
     private readonly Func<IReadOnlyList<RazerHeadsetAudioConnection>> _headsetConnections;
+    private readonly Func<RazerHidDeviceConnection, bool> _isHidOverrideEnabled;
     private readonly Action<string>? _diagnostic;
     private readonly ConcurrentDictionary<string, RazerChromaStandardService> _standardServices = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, RazerChromaStandardState> _standardBaselines = new(StringComparer.OrdinalIgnoreCase);
@@ -88,7 +89,8 @@ internal sealed partial class ChromaDeviceRouter
         Func<IReadOnlyList<RazerChromaDeviceConnection>> standardConnections,
         Func<IReadOnlyList<RazerHidSpecialLightingConnection>> krakenConnections,
         Func<IReadOnlyList<RazerHeadsetAudioConnection>> headsetConnections,
-        Action<string>? diagnostic = null)
+        Action<string>? diagnostic = null,
+        Func<RazerHidDeviceConnection, bool>? isHidOverrideEnabled = null)
     {
         _hid = hid;
         _special = special;
@@ -98,11 +100,15 @@ internal sealed partial class ChromaDeviceRouter
         _krakenConnections = krakenConnections ?? throw new ArgumentNullException(nameof(krakenConnections));
         _headsetConnections = headsetConnections ?? throw new ArgumentNullException(nameof(headsetConnections));
         _diagnostic = diagnostic;
+        _isHidOverrideEnabled = isHidOverrideEnabled ?? (static _ => true);
     }
 
     internal IReadOnlySet<ChromaDeviceKind> SupportedKinds => BuildTargets()
         .Select(target => target.Kind)
         .ToHashSet();
+
+    internal bool HasEnabledTargets(ChromaDeviceKind kind) =>
+        BuildTargets().Any(target => target.Kind == kind && IsTargetEnabled(target));
 
     /// <summary>Sleep or a device power-cycle clears the firmware's last frame.</summary>
     internal void ResetCache() => _resetCache = true;
@@ -197,7 +203,7 @@ internal sealed partial class ChromaDeviceRouter
         }
 
         var liveTargets = BuildTargets();
-        var targets = liveTargets.Where(target => target.Kind == kind).ToArray();
+        var targets = liveTargets.Where(target => target.Kind == kind && IsTargetEnabled(target)).ToArray();
         if (targets.Length == 0) return false;
 
         if (_resetCache)
@@ -543,6 +549,10 @@ internal sealed partial class ChromaDeviceRouter
             .Where(keyboard => StringComparer.OrdinalIgnoreCase.Equals(keyboard.DevicePath, instanceId))
             .Select(StudioKeyboardCatalog.CreateConnection)
             .FirstOrDefault(connection => connection is not null);
+
+    private bool IsTargetEnabled(ChromaTarget target) =>
+        target.Transport is not (ChromaTargetTransport.HidMatrix or ChromaTargetTransport.HidStatic) ||
+        FindHid(target.InstanceId) is { } connection && _isHidOverrideEnabled(connection);
 
     private IReadOnlyList<ChromaTarget> BuildTargets()
     {

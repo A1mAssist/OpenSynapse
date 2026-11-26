@@ -145,7 +145,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         }
     }
 
-    public async Task ApplyLightingSettingsAsync(CancellationToken cancellationToken = default)
+    public async Task ApplyLightingSettingsAsync(
+        CancellationToken cancellationToken = default, bool preserveStudio = false)
     {
         if (_lightingSettingsSaver is null || !CanEditLightingSettings)
         {
@@ -157,15 +158,6 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(OperationStatusText));
         try
         {
-            if (!LightingEnabled)
-            {
-                await DisableLightingAsync(cancellationToken);
-            }
-            else
-            {
-                await ApplyConfiguredLightingAsync(cancellationToken);
-            }
-
             if (!await _lightingSettingsSaver(
                     LightingEnabled,
                     ChromaOverrideEnabled,
@@ -173,7 +165,26 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             {
                 throw new RazerHidProfileSaveException("RazerHid lighting settings could not be saved.");
             }
-            _operationSucceeded = true;
+
+            if (preserveStudio)
+            {
+                _operationSucceeded = true;
+                OnPropertyChanged(nameof(OperationStatusText));
+                return;
+            }
+
+            await _lightingSettingsApplier(async () =>
+            {
+                if (!LightingEnabled)
+                {
+                    await DisableLightingAsync(cancellationToken);
+                }
+                else if (!await ApplyConfiguredLightingAsync(cancellationToken))
+                {
+                    return;
+                }
+                _operationSucceeded = true;
+            }, cancellationToken);
             OnPropertyChanged(nameof(OperationStatusText));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -185,8 +196,9 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         }
         finally
         {
+            LightingEnabled = _lightingEnabledResolver?.Invoke() ?? LightingEnabled;
+            ChromaOverrideEnabled = _chromaOverrideResolver?.Invoke() ?? ChromaOverrideEnabled;
             IsLightingSettingsBusy = false;
-            OnPropertyChanged(nameof(CanEditLightingSettings));
         }
     }
 

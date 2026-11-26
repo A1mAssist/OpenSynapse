@@ -470,7 +470,8 @@ public sealed partial class DevicesPage : UserControl
 
     private async void AutoApplyBladeLightingSettingsToggled(object sender, RoutedEventArgs e)
     {
-        if (_bladeLightingSettingsInFlight || sender is not ToggleSwitch { FocusState: not FocusState.Unfocused })
+        if (_bladeLightingSettingsInFlight ||
+            sender is not ToggleSwitch { FocusState: not FocusState.Unfocused } toggle)
         {
             return;
         }
@@ -478,8 +479,13 @@ public sealed partial class DevicesPage : UserControl
         _bladeLightingSettingsInFlight = true;
         try
         {
-            await SuspendStudioLightingAsync();
-            await ViewModel.Blade.ApplyLightingSettingsAsync(Lifetime);
+            var isChromaOverride = toggle.Tag is "chromaOverride";
+            if (isChromaOverride) ViewModel.Blade.ChromaOverrideEnabled = toggle.IsOn;
+            else ViewModel.Blade.LightingEnabled = toggle.IsOn;
+            if (!isChromaOverride) await SuspendStudioLightingAsync();
+            await ViewModel.Blade.ApplyLightingSettingsAsync(Lifetime,
+                preserveStudio: isChromaOverride && ViewModel.StudioLightingActive?.Invoke() == true);
+            await (ViewModel.Lighting.ChromaTargetsChanged?.Invoke() ?? Task.CompletedTask);
         }
         finally
         {

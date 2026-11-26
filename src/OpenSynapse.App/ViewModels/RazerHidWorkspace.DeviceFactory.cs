@@ -40,7 +40,8 @@ public sealed partial class RazerHidWorkspace
             _getMachineSettings,
             _saveMachineSettingsAsync,
             _getProfile,
-            message => _diagnosticLog.TryWrite("mapping", message));
+            message => _diagnosticLog.TryWrite("mapping", message),
+            (apply, token) => ChromaLightingSettingsApplier?.Invoke(connection.InstanceId, apply, token) ?? apply());
         device.AttachMatrixLayout(_matrixLayoutLoader.LoadLayoutAsync, _dispatcherQueue);
         device.Onboard.LocalMacroProvider = _localMacros;
         device.SoftwareMacroBinder = _softwareMacroBinder;

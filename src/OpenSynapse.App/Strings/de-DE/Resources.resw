@@ -2017,7 +2017,7 @@
   <data name="CpuCurvePawnIoMissing" xml:space="preserve"><value>PawnIO ist für den Ryzen-SMU-Pfad erforderlich. Öffnen Sie die Downloadseite über die Karte „CPU-Energiegrenze“.</value></data>
   <data name="CpuCurveModuleMissing" xml:space="preserve"><value>RyzenSMU.bin fehlt; installieren Sie die App erneut.</value></data>
   <data name="CpuCurveApplyFailed" xml:space="preserve"><value>Der Schreibvorgang ist fehlgeschlagen; siehe Meldung oben.</value></data>
-  <data name="CpuPowerLimitDescription" xml:space="preserve"><value>Begrenzen Sie die Leistungsaufnahme des CPU-Pakets (PL1/PL2). Gilt nur im benutzerdefinierten Leistungsmodus.</value></data>
+  <data name="CpuPowerLimitDescription" xml:space="preserve"><value>Begrenzt die CPU-Paketleistung (PL1/PL2). Im benutzerdefinierten Leistungsmodus oder in HyperBoost einstellbar.</value></data>
   <data name="CpuPowerLimitValue" xml:space="preserve"><value>PL1 {0:0} W · PL2 {1:0} W</value></data>
   <data name="CpuPowerLimitAuto" xml:space="preserve"><value>Automatisch (Firmware)</value></data>
   <data name="CpuPowerLimitPawnIoMissing" xml:space="preserve"><value>PawnIO ist nicht installiert. Wählen Sie „PawnIO herunterladen“, installieren Sie es und starten Sie OpenSynapse dann neu.</value></data>
@@ -4892,7 +4892,6 @@ Nicht gespeicherte Makroänderungen gehen verloren.</value></data>
   <data name="SurfaceCalibrationRestoreDefaults" xml:space="preserve"><value>Restore default calibration</value></data>
   <data name="SurfaceCalibrationAdjustmentUnconfirmed" xml:space="preserve"><value>Calibration adjustment is not yet available for this mouse. You can still read its state or disable calibration.</value></data>
   <data name="NavigationPaneResizer.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Breite des Navigationsbereichs</value></data>
-  <data name="NavigationPaneResizer.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Zum Ändern der Breite ziehen. Links/Rechts: 8 Pixel; Bild ab/auf: 32 Pixel; Pos1: Standardbreite; Ende: maximale Breite.</value></data>
   <data name="SettingAutoApplyApplying" xml:space="preserve"><value>Wird angewendet…</value></data>
   <data name="SettingAutoApplyApplied" xml:space="preserve"><value>Angewendet und gespeichert</value></data>
   <data name="SettingAutoApplyRetry" xml:space="preserve"><value>Erneut versuchen</value></data>

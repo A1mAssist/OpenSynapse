@@ -133,19 +133,19 @@ public sealed partial class BladeWorkspace
             applied++;
         }
 
-        // Razer only applies the CPU watt override in Custom mode. Use the mode
-        // that was actually verified, not the requested profile value.
+        // Use the verified mode, including HyperBoost, rather than the requested profile value.
         if (profile.CpuPowerLimitWatts is int watts &&
-            effectivePerformanceMode == BladePerformanceMode.Custom)
+            CpuPowerLimit.SupportsPerformanceMode(effectivePerformanceMode))
         {
+            await CpuPowerBaselineStore.CaptureHyperBoostAsync(effectivePerformanceMode, cancellationToken);
             CpuPowerLimitReport? report = null;
             if (watts <= 0)
             {
-                if (CpuPowerBaselineStore.Instance.Current is not { } baseline)
+                if (CpuPowerBaselineStore.ForMode(effectivePerformanceMode).Current is not { } baseline)
                 {
                     _diagnosticLog.TryWrite(
                         "cpu-power",
-                        "Auto restore skipped: no trusted baseline was captured outside Custom mode.");
+                        "Auto restore skipped: no trusted baseline is available for the current performance mode.");
                 }
                 else
                 {

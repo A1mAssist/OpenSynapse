@@ -7,7 +7,8 @@ internal sealed class ChromaLightingSession(
     Func<Task> suspendLighting,
     Func<Task> restoreLighting,
     Func<bool> enabled,
-    Func<bool>? needsSuspension = null)
+    Func<bool>? needsSuspension = null,
+    Func<int, bool>? hasTargets = null)
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
     private int _owner;
@@ -29,6 +30,15 @@ internal sealed class ChromaLightingSession(
         try
         {
             if (!enabled()) return true;
+            if (!HasTargets(channel))
+            {
+                if (_owner == (int)source)
+                {
+                    _latestFrames.Remove(channel);
+                    await RestoreIfNoTargetsAsync().ConfigureAwait(false);
+                }
+                return true;
+            }
             if (IsActive && _owner != (int)source) return false;
             if (!_outputAvailable)
             {
@@ -63,13 +73,33 @@ internal sealed class ChromaLightingSession(
         try
         {
             if (_owner != (int)source) return;
-            Volatile.Write(ref _owner, 0);
-            _latestFrames.Clear();
-            _needsTakeover = false;
-            if (_outputAvailable) await restoreLighting().ConfigureAwait(false);
-            else _restorePending = true;
+            await ReleaseCoreAsync().ConfigureAwait(false);
         }
         finally { _gate.Release(); }
+    }
+
+    internal async Task RefreshTargetsAsync()
+    {
+        await _gate.WaitAsync().ConfigureAwait(false);
+        try { await RestoreIfNoTargetsAsync().ConfigureAwait(false); }
+        finally { _gate.Release(); }
+    }
+
+    private bool HasTargets(int channel) => hasTargets?.Invoke(channel) != false;
+
+    private Task RestoreIfNoTargetsAsync() =>
+        IsActive && !_latestFrames.Keys.Any(HasTargets) ? ReleaseCoreAsync() : Task.CompletedTask;
+
+    private async Task ReleaseCoreAsync()
+    {
+        var neverTookOver = _needsTakeover;
+        Volatile.Write(ref _owner, 0);
+        _latestFrames.Clear();
+        _needsTakeover = false;
+        // Frames queued while asleep have not suspended or written any lighting.
+        if (neverTookOver) return;
+        if (_outputAvailable) await restoreLighting().ConfigureAwait(false);
+        else _restorePending = true;
     }
 
     internal async Task SetOutputAvailableAsync(bool available, Func<Task> stopOutput)
@@ -85,6 +115,7 @@ internal sealed class ChromaLightingSession(
                 catch { _restorePending = true; throw; }
             }
             _outputAvailable = available;
+            if (available) await RestoreIfNoTargetsAsync().ConfigureAwait(false);
             if (!available && IsActive) await stopOutput().ConfigureAwait(false);
             else if (available && IsActive && enabled())
             {
@@ -94,8 +125,8 @@ internal sealed class ChromaLightingSession(
                     _needsTakeover = false;
                 }
                 // Static clients send only once; waking must repaint without another game frame.
-                foreach (var frame in _latestFrames.Values)
-                    await frame(CancellationToken.None).ConfigureAwait(false);
+                foreach (var (channel, frame) in _latestFrames)
+                    if (HasTargets(channel)) await frame(CancellationToken.None).ConfigureAwait(false);
             }
         }
         finally { _gate.Release(); }

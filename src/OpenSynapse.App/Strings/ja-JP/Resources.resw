@@ -2017,7 +2017,7 @@
   <data name="CpuCurvePawnIoMissing" xml:space="preserve"><value>Ryzen SMU パスには PawnIO が必要です。CPU 電力上限カードからダウンロード ページを開いてください。</value></data>
   <data name="CpuCurveModuleMissing" xml:space="preserve"><value>RyzenSMU.bin が見つかりません。アプリを再インストールしてください。</value></data>
   <data name="CpuCurveApplyFailed" xml:space="preserve"><value>書き込みに失敗しました。上のメッセージを参照してください。</value></data>
-  <data name="CpuPowerLimitDescription" xml:space="preserve"><value>CPU パッケージの電力上限（PL1/PL2）を制限します。カスタム パフォーマンス モードでのみ適用されます。</value></data>
+  <data name="CpuPowerLimitDescription" xml:space="preserve"><value>CPU パッケージの電力上限（PL1/PL2）を制限します。カスタムまたは HyperBoost パフォーマンス モードで調整できます。</value></data>
   <data name="CpuPowerLimitValue" xml:space="preserve"><value>PL1 {0:0} W · PL2 {1:0} W</value></data>
   <data name="CpuPowerLimitAuto" xml:space="preserve"><value>自動（ファームウェア）</value></data>
   <data name="CpuPowerLimitPawnIoMissing" xml:space="preserve"><value>PawnIO がインストールされていません。PawnIO のダウンロードを選択してインストールし、OpenSynapse を再起動してください。</value></data>
@@ -4892,7 +4892,6 @@
   <data name="SurfaceCalibrationRestoreDefaults" xml:space="preserve"><value>Restore default calibration</value></data>
   <data name="SurfaceCalibrationAdjustmentUnconfirmed" xml:space="preserve"><value>Calibration adjustment is not yet available for this mouse. You can still read its state or disable calibration.</value></data>
   <data name="NavigationPaneResizer.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>ナビゲーションの幅</value></data>
-  <data name="NavigationPaneResizer.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>ドラッグして幅を調整。左右キー：8 ピクセル、Page Down/Up：32 ピクセル、Home：既定の幅、End：最大幅。</value></data>
   <data name="SettingAutoApplyApplying" xml:space="preserve"><value>適用中…</value></data>
   <data name="SettingAutoApplyApplied" xml:space="preserve"><value>適用して保存しました</value></data>
   <data name="SettingAutoApplyRetry" xml:space="preserve"><value>再試行</value></data>

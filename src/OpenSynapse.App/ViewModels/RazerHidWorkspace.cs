@@ -102,6 +102,8 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
+    internal Func<string, Func<Task>, CancellationToken, Task>? ChromaLightingSettingsApplier { get; set; }
+
     public ObservableCollection<RazerHidDeviceRowViewModel> Devices { get; } = new();
     public ObservableCollection<RazerHidKrakenDeviceRowViewModel> KrakenDevices { get; } = new();
 
@@ -804,14 +806,20 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         var previousChromaOverrideEnabled = settings.ChromaOverrideEnabled;
         settings.LightingEnabled = lightingEnabled;
         settings.ChromaOverrideEnabled = chromaOverrideEnabled;
-        if (await _saveProfileAsync(cancellationToken))
+        var saved = false;
+        try
         {
-            return true;
+            saved = await _saveProfileAsync(cancellationToken);
+            return saved;
         }
-
-        settings.LightingEnabled = previousLightingEnabled;
-        settings.ChromaOverrideEnabled = previousChromaOverrideEnabled;
-        return false;
+        finally
+        {
+            if (!saved)
+            {
+                settings.LightingEnabled = previousLightingEnabled;
+                settings.ChromaOverrideEnabled = previousChromaOverrideEnabled;
+            }
+        }
     }
 
     private DeviceProfileSettings GetDeviceSettings(RazerHidDeviceConnection connection)

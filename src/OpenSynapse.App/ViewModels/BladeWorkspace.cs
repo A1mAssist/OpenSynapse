@@ -954,6 +954,7 @@ public sealed partial class BladeWorkspace : INotifyPropertyChanged, IAsyncDispo
     }
 
     internal bool IsCustomMode => _blade.IsCustomMode;
+    internal BladePerformanceMode? ConfirmedPerformanceMode => _blade.ConfirmedPerformanceMode;
 
     private void ClearCustomPerformance()
     {

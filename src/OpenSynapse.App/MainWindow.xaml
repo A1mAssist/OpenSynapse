@@ -68,18 +68,6 @@
               <Thumb.Template>
                 <ControlTemplate TargetType="Thumb">
                   <Grid Background="Transparent">
-                    <VisualStateManager.VisualStateGroups>
-                      <VisualStateGroup x:Name="CommonStates">
-                        <VisualState x:Name="Normal" />
-                        <VisualState x:Name="PointerOver">
-                          <VisualState.Setters><Setter Target="ResizeLine.Background" Value="{StaticResource AccentBrush}" /><Setter Target="ResizeLine.Width" Value="2" /></VisualState.Setters>
-                        </VisualState>
-                        <VisualState x:Name="Pressed">
-                          <VisualState.Setters><Setter Target="ResizeLine.Background" Value="{StaticResource AccentPressedBrush}" /><Setter Target="ResizeLine.Width" Value="2" /></VisualState.Setters>
-                        </VisualState>
-                        <VisualState x:Name="Disabled" />
-                      </VisualStateGroup>
-                    </VisualStateManager.VisualStateGroups>
                     <Border x:Name="ResizeLine" Width="1" HorizontalAlignment="Center" Background="{StaticResource LineBrush}" />
                   </Grid>
                 </ControlTemplate>

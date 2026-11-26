@@ -40,7 +40,7 @@ public sealed partial class MainWindow
         LaunchVeil.Visibility = LaunchBackdrop.Visibility = LaunchContent.Visibility = Visibility.Collapsed;
         TitleBarLogo.Opacity = TitleBarTitleText.Opacity = TitleBarSubtitleText.Opacity = 1;
         RootNavigationView.IsPaneOpen = true;
-        foreach (var name in new[] { "Blade 16 2025", "Viper V3 HyperSpeed", "Basilisk V3 Pro 35K", "USB Sound Card" })
+        foreach (var name in new[] { "Blade 16 2025", "Viper V3 HyperSpeed", "Basilisk V3 Pro 35K Phantom Green Edition", "USB Sound Card" })
             DevicesNavigationItem.MenuItems.Add(new NavigationViewItem
             {
                 Content = new TextBlock { Text = name, TextTrimming = TextTrimming.CharacterEllipsis, MaxLines = 1 },
@@ -71,15 +71,34 @@ public sealed partial class MainWindow
             };
             panel.Children.Add(button);
         }
-        Add("Narrow", () => Resize(1000), () => RootNavigationView.OpenPaneLength < 360 && settings.NavigationPaneWidth == 360);
+        bool LabelsFit() => DevicesNavigationItem.MenuItems.OfType<NavigationViewItem>()
+            .Select(item => (TextBlock)item.Content).All(label => label.ActualWidth > 0 && !label.IsTextTrimmed);
+        Add("AutoFit", UpdateNavigationPaneWidth, () => !settings.NavigationPaneWidthCustomized && LabelsFit() &&
+            ToolTipService.GetToolTip(NavigationPaneResizer) is null);
+        Add("LongerName", () =>
+        {
+            ((TextBlock)((NavigationViewItem)DevicesNavigationItem.MenuItems[2]).Content).Text =
+                "Basilisk V3 Pro 35K - Xbox 25 Anniversary Edition";
+            UpdateNavigationPaneWidth();
+        }, () => LabelsFit() && !settings.NavigationPaneWidthCustomized);
+        Add("Compact", () => Resize(850),
+            () => RootNavigationView.DisplayMode == NavigationViewDisplayMode.Compact);
+        Add("OpenCompact", () => RootNavigationView.IsPaneOpen = true,
+            () => RootNavigationView.IsPaneOpen && !_navigationPaneTransitioning && LabelsFit());
+        Add("Expanded", () => Resize(1280),
+            () => RootNavigationView.DisplayMode == NavigationViewDisplayMode.Expanded);
+        Add("Narrow", () => Resize(1040), () => RootNavigationView.OpenPaneLength < 360 && settings.NavigationPaneWidth == 360);
         Add("Wide", () => Resize(1280), () => RootNavigationView.OpenPaneLength == 360);
         Add("Collapse", () => RootNavigationView.IsPaneOpen = false, () => NavigationPaneResizer.Visibility == Visibility.Collapsed);
-        Add("Expand", () => RootNavigationView.IsPaneOpen = true, () => NavigationPaneResizer.Visibility == Visibility.Visible);
+        Add("Expand", () => RootNavigationView.IsPaneOpen = true,
+            () => NavigationPaneResizer.Visibility == Visibility.Visible && (settings.NavigationPaneWidthCustomized || LabelsFit()));
         Add("Reload", () =>
         {
-            settings.NavigationPaneWidth = AppBehaviorSettings.Load().NavigationPaneWidth;
+            var saved = AppBehaviorSettings.Load();
+            settings.NavigationPaneWidth = saved.NavigationPaneWidth;
+            settings.NavigationPaneWidthCustomized = saved.NavigationPaneWidthCustomized;
             UpdateNavigationPaneWidth();
-        }, () => RootNavigationView.OpenPaneLength == 360 && settings.NavigationPaneWidth == 360);
+        }, () => RootNavigationView.OpenPaneLength == 360 && settings.NavigationPaneWidth == 360 && settings.NavigationPaneWidthCustomized);
         PageHost.Children.Add(panel);
         Localized.RefreshTree(RootLayout);
         RootLayout.Loaded += (_, _) => Resize(1280);

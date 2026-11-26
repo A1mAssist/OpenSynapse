@@ -322,8 +322,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             SaveProfileAsync);
         CpuPower = new CpuPowerLimitWorkspace(
             () => IsBusy,
-            () => Blade.IsCustomMode,
-            () => Blade.PerformanceModeIndex >= 0,
+            () => Blade.ConfirmedPerformanceMode,
             RunDeviceOperation,
             () => Blade.EditablePlatformProfile,
             SaveProfileAsync);
@@ -334,7 +333,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         };
         Blade.PerformanceModeChangedByUser += mode =>
         {
-            if (mode == BladePerformanceMode.Custom)
+            if (CpuPowerLimit.SupportsPerformanceMode(mode))
             {
                 // The EC re-applies its own wall on the mode write; restore the
                 // watt preset the profile names once the switch is confirmed.

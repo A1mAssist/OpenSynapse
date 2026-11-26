@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Threading.Channels;
+using OpenSynapse.Core.Diagnostics;
 using OpenSynapse.Core.Displays;
 using OpenSynapse.Windows.Displays;
 using OpenSynapse.Windows.Protocols;
@@ -65,6 +66,7 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
     internal const int ScreenSampleRows = 18;
     private readonly Func<CancellationToken, ValueTask<IDisplayCaptureSession>> _openSession;
     private readonly double _edgeBandFraction;
+    private readonly LocalDiagnosticLog? _log;
     private Channel<AmbientCaptureFrame> _frames = CreateFrameChannel();
     private readonly object _lifecycleGate = new();
     private CancellationTokenSource? _stop;
@@ -73,7 +75,7 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
     private int _disposed;
 
     internal WindowsDisplayCaptureAdapter()
-        : this(WindowsGraphicsCaptureSession.OpenInternalDisplayAsync, DefaultEdgeBandFraction)
+        : this(WindowsGraphicsCaptureSession.OpenInternalDisplayAsync, DefaultEdgeBandFraction, new LocalDiagnosticLog())
     {
     }
 
@@ -86,7 +88,8 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
 
     private WindowsDisplayCaptureAdapter(
         Func<CancellationToken, ValueTask<IDisplayCaptureSession>> openSession,
-        double edgeBandFraction)
+        double edgeBandFraction,
+        LocalDiagnosticLog? log = null)
     {
         _openSession = openSession ?? throw new ArgumentNullException(nameof(openSession));
         if (double.IsNaN(edgeBandFraction) || edgeBandFraction is <= 0 or > 0.5)
@@ -94,13 +97,23 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
             throw new ArgumentOutOfRangeException(nameof(edgeBandFraction));
         }
         _edgeBandFraction = edgeBandFraction;
+        _log = log;
     }
 
     public async ValueTask StartAsync(CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         cancellationToken.ThrowIfCancellationRequested();
-        var session = await _openSession(cancellationToken).ConfigureAwait(false);
+        IDisplayCaptureSession? session = null;
+        try
+        {
+            session = await _openSession(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (
+            !cancellationToken.IsCancellationRequested && IsTransientCaptureFailure(exception))
+        {
+            _log?.TryWrite("ambient-capture", $"Start interrupted; retrying: {exception}");
+        }
         var sessionOwnedByWorker = false;
         try
         {
@@ -123,7 +136,7 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
         }
         finally
         {
-            if (!sessionOwnedByWorker)
+            if (!sessionOwnedByWorker && session is not null)
             {
                 await session.DisposeAsync().ConfigureAwait(false);
             }
@@ -198,26 +211,67 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
                 "Windows returned a display capture frame that is not BGRA8.");
         }
 
-        var stride = checked(width * 4);
-        var bytes = new byte[checked(stride * height)];
+        var bitmapStride = checked(bitmap.PixelWidth * 4);
+        var bytes = new byte[checked(bitmapStride * bitmap.PixelHeight)];
         var destination = new global::Windows.Storage.Streams.Buffer(checked((uint)bytes.Length));
         bitmap.CopyToBuffer(destination);
         using var reader = global::Windows.Storage.Streams.DataReader.FromBuffer(destination);
         reader.ReadBytes(bytes);
+        var stride = checked(width * 4);
+        if (width != bitmap.PixelWidth || height != bitmap.PixelHeight)
+        {
+            var cropped = new byte[checked(stride * height)];
+            for (var row = 0; row < height; row++)
+            {
+                Buffer.BlockCopy(bytes, row * bitmapStride, cropped, row * stride, stride);
+            }
+            bytes = cropped;
+        }
         return new RawDisplayFrame(bytes, width, height, stride);
     }
 
     private async Task CaptureAsync(
-        IDisplayCaptureSession session,
+        IDisplayCaptureSession? session,
         ChannelWriter<AmbientCaptureFrame> writer,
         CancellationToken cancellationToken)
     {
         Exception? failure = null;
+        var retries = 0;
+        var previousWidth = 0;
+        var previousHeight = 0;
         try
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                var raw = await session.ReadFrameAsync(cancellationToken).ConfigureAwait(false);
+                RawDisplayFrame raw;
+                try
+                {
+                    session ??= await _openSession(cancellationToken).ConfigureAwait(false);
+                    raw = await session.ReadFrameAsync(cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception exception) when (
+                    !cancellationToken.IsCancellationRequested && IsTransientCaptureFailure(exception))
+                {
+                    if (retries == 0)
+                        _log?.TryWrite("ambient-capture", $"Capture interrupted; retaining last frame and reopening: {exception}");
+                    if (session is not null)
+                    {
+                        var interrupted = session;
+                        session = null;
+                        await interrupted.DisposeAsync().ConfigureAwait(false);
+                    }
+                    retries = Math.Min(retries + 1, 4);
+                    await Task.Delay(500 * retries, cancellationToken).ConfigureAwait(false);
+                    continue;
+                }
+                if (retries != 0 || raw.Width != previousWidth || raw.Height != previousHeight)
+                {
+                    _log?.TryWrite("ambient-capture",
+                        $"{(retries == 0 ? "Frame size" : "Capture recovered")}: {raw.Width}x{raw.Height}; backend={session.GetType().Name}");
+                    retries = 0;
+                    previousWidth = raw.Width;
+                    previousHeight = raw.Height;
+                }
                 var bounds = CaptureRegion.ToPixelBounds(raw.Width, raw.Height);
                 var edgeBand = Math.Clamp(
                     (int)Math.Ceiling(Math.Min(bounds.Width, bounds.Height) * _edgeBandFraction),
@@ -257,12 +311,14 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
         catch (Exception exception)
         {
             failure = exception;
+            _log?.TryWrite("ambient-capture", $"Capture stopped: {exception}");
         }
         finally
         {
             try
             {
-                await session.DisposeAsync().ConfigureAwait(false);
+                if (session is not null)
+                    await session.DisposeAsync().ConfigureAwait(false);
             }
             catch (Exception disposeException)
             {
@@ -281,6 +337,10 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
             System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
         }
     }
+
+    private static bool IsTransientCaptureFailure(Exception exception) => exception is
+        AmbientCaptureException { Failure: AmbientCaptureFailure.TopologyUnavailable or AmbientCaptureFailure.CaptureFailed }
+        or COMException { HResult: not unchecked((int)0x80070005) };
 
     private async Task StopCoreAsync()
     {
@@ -574,34 +634,39 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
                     continue;
                 }
 
+                global::Windows.Graphics.SizeInt32 contentSize;
                 using (latest)
                 {
-                    var contentSize = latest.ContentSize;
+                    contentSize = latest.ContentSize;
+                    if (contentSize.Width <= 0 || contentSize.Height <= 0)
+                    {
+                        throw new AmbientCaptureException(
+                            AmbientCaptureFailure.TopologyUnavailable,
+                            "The display is changing capture dimensions.");
+                    }
                     try
                     {
-                        using var bitmap = await SoftwareBitmap.CreateCopyFromSurfaceAsync(
-                            latest.Surface,
-                            BitmapAlphaMode.Ignore).AsTask(cancellationToken).ConfigureAwait(false);
-                        var raw = CopyPixels(bitmap, contentSize.Width, contentSize.Height);
-                        if (contentSize.Width != _size.Width || contentSize.Height != _size.Height)
+                        if (contentSize.Width == _size.Width && contentSize.Height == _size.Height)
                         {
-                            _framePool.Recreate(
-                                _device,
-                                DirectXPixelFormat.B8G8R8A8UIntNormalized,
-                                2,
-                                contentSize);
-                            _size = contentSize;
+                            using var bitmap = await SoftwareBitmap.CreateCopyFromSurfaceAsync(
+                                latest.Surface,
+                                BitmapAlphaMode.Ignore).AsTask(cancellationToken).ConfigureAwait(false);
+                            return CopyPixels(bitmap, contentSize.Width, contentSize.Height);
                         }
-                        return raw;
                     }
                     catch (COMException exception)
                     {
                         throw new AmbientCaptureException(
-                            AmbientCaptureFailure.CaptureFailed,
+                            exception.HResult == unchecked((int)0x80070005)
+                                ? AmbientCaptureFailure.PermissionDenied
+                                : AmbientCaptureFailure.CaptureFailed,
                             "Failed to read an internal display capture frame.",
                             exception);
                     }
                 }
+                // A transition frame still owns an old-size surface; release it before recreating the pool.
+                _framePool.Recreate(_device, DirectXPixelFormat.B8G8R8A8UIntNormalized, 2, contentSize);
+                _size = contentSize;
             }
         }
 

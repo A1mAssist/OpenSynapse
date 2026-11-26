@@ -38,6 +38,7 @@ public sealed partial class LightingWorkspace : INotifyPropertyChanged
 
     /// <summary>Set while the Lighting Studio output pump owns the devices.</summary>
     internal Func<bool>? StudioLightingActive { get; set; }
+    internal Func<Task>? ChromaTargetsChanged { get; set; }
 
     internal LightingWorkspace(
         IBladeLightingController? bladeLightingController,
@@ -77,10 +78,10 @@ public sealed partial class LightingWorkspace : INotifyPropertyChanged
 
     /// <summary>
     /// Chroma takes over through the per-key matrix path, which firmware-rendered models do
-    /// not have, so the override is hidden there even when Chroma is enabled globally.
+    /// not have. Keep the device preference visible when the global service is off.
     /// </summary>
     public Visibility BladeChromaOverrideVisibility =>
-        _chromaIntegrationEnabled && SupportsMatrixLighting
+        SupportsMatrixLighting
             ? Visibility.Visible
             : Visibility.Collapsed;
 

@@ -36,7 +36,7 @@ internal sealed class GdiDesktopCaptureSession : IDisplayCaptureSession
         if (_sourceWidth <= 0 || _sourceHeight <= 0)
         {
             throw new AmbientCaptureException(
-                AmbientCaptureFailure.Unsupported,
+                AmbientCaptureFailure.TopologyUnavailable,
                 "Windows did not report a primary display size to capture.");
         }
 
@@ -82,6 +82,13 @@ internal sealed class GdiDesktopCaptureSession : IDisplayCaptureSession
     public async ValueTask<RawDisplayFrame> ReadFrameAsync(CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        if (GetSystemMetrics(SystemMetricCxScreen) != _sourceWidth ||
+            GetSystemMetrics(SystemMetricCyScreen) != _sourceHeight)
+        {
+            throw new AmbientCaptureException(
+                AmbientCaptureFailure.TopologyUnavailable,
+                "The desktop capture dimensions changed; the capture buffers must be recreated.");
+        }
         if (!StretchBlt(
                 _memory,
                 0,

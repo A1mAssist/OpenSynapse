@@ -1,6 +1,7 @@
 using System.Globalization;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Storage;
+using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.App;
 
@@ -10,16 +11,34 @@ namespace OpenSynapse.App;
 /// </summary>
 internal sealed class CpuPowerBaselineStore
 {
-    private static readonly string FilePath = AppDataPaths.Combine("cpu-power-baseline.txt");
+    private readonly string _filePath;
     private const string FileVersion = "v2";
 
-    public static CpuPowerBaselineStore Instance { get; } = new();
+    public static CpuPowerBaselineStore Instance { get; } = new(AppDataPaths.Combine("cpu-power-baseline.txt"));
+    private static CpuPowerBaselineStore HyperBoost { get; } = new(AppDataPaths.Combine("cpu-power-baseline-hyperboost.txt"));
+
+    public static CpuPowerBaselineStore ForMode(BladePerformanceMode? mode) =>
+        mode == BladePerformanceMode.Hyperboost ? HyperBoost : Instance;
 
     public CpuPowerLimit? Current { get; private set; }
 
-    private CpuPowerBaselineStore() => Current = Read();
+    internal CpuPowerBaselineStore(string filePath)
+    {
+        _filePath = filePath;
+        Current = Read();
+    }
 
-    /// <summary>Records the first available non-Custom wall and never overwrites it (INV-07).</summary>
+    // Capture HyperBoost's own wall before its first override, never restore another mode's wall.
+    internal static async Task CaptureHyperBoostAsync(BladePerformanceMode? mode, CancellationToken cancellationToken)
+    {
+        if (mode != BladePerformanceMode.Hyperboost || HyperBoost.Current is not null) return;
+        var report = await CpuPowerLimitBroker.ReadAsync(cancellationToken);
+        HyperBoost.Capture(report, allowCapture: true);
+        if (HyperBoost.Current is null)
+            throw new InvalidOperationException(report.Detail ?? "The HyperBoost CPU power baseline could not be read.");
+    }
+
+    /// <summary>Records the first trusted wall for this store and never overwrites it (INV-07).</summary>
     public void Capture(CpuPowerLimitReport report, bool allowCapture)
     {
         if (!allowCapture ||
@@ -39,9 +58,9 @@ internal sealed class CpuPowerBaselineStore
 
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(_filePath)!);
             File.WriteAllText(
-                FilePath,
+                _filePath,
                 string.Create(
                     CultureInfo.InvariantCulture,
                     $"{FileVersion} {baseline.Pl1Watts} {baseline.Pl2Watts}"));
@@ -54,16 +73,16 @@ internal sealed class CpuPowerBaselineStore
         }
     }
 
-    private static CpuPowerLimit? Read()
+    private CpuPowerLimit? Read()
     {
         try
         {
-            if (!File.Exists(FilePath))
+            if (!File.Exists(_filePath))
             {
                 return null;
             }
 
-            var parts = File.ReadAllText(FilePath)
+            var parts = File.ReadAllText(_filePath)
                 .Split(' ', StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length != 3 ||
                 !StringComparer.Ordinal.Equals(parts[0], FileVersion) ||

@@ -30,6 +30,9 @@ public readonly record struct CpuPowerLimit(
     public const double MinimumTimeSeconds = 0.001;
     public const double MaximumTimeSeconds = 0.25;
 
+    public static bool SupportsPerformanceMode(BladePerformanceMode? mode) =>
+        mode is BladePerformanceMode.Custom or BladePerformanceMode.Hyperboost;
+
     private const ulong WattsMask = 0x7FFFUL;
     private const ulong TimeMask = 0xFFUL;
     private const int WattsShift = 32;

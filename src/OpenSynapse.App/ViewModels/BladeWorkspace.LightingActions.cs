@@ -285,7 +285,8 @@ public sealed partial class BladeWorkspace
         }, cancellationToken, RefreshLightingEditor);
     }
 
-    public async Task ApplyLightingSettingsAsync(CancellationToken cancellationToken = default)
+    public async Task ApplyLightingSettingsAsync(
+        CancellationToken cancellationToken = default, bool preserveStudio = false)
     {
         if (!CanSetLightingSettings)
         {
@@ -296,26 +297,40 @@ public sealed partial class BladeWorkspace
             AppStrings.Text("Text_09707A2C"),
             async () =>
             {
-                var previousProfile = Profile.Clone();
                 var target = EditableLightingBladeProfile;
+                var previousLightingEnabled = target.LightingEnabled;
+                var previousChromaOverrideEnabled = target.ChromaOverrideEnabled;
                 target.LightingEnabled = LightingEnabled;
                 target.ChromaOverrideEnabled = ChromaOverrideEnabled;
-                if (!await SaveProfileAsync(cancellationToken))
+                var saved = false;
+                try
                 {
-                    Profile = previousProfile;
-                    throw new InvalidOperationException(AppStrings.Text("Text_C7D0CD75"));
+                    saved = await SaveProfileAsync(cancellationToken);
+                    if (!saved)
+                        throw new InvalidOperationException(AppStrings.Text("Text_C7D0CD75"));
+                }
+                finally
+                {
+                    if (!saved)
+                    {
+                        target.LightingEnabled = previousLightingEnabled;
+                        target.ChromaOverrideEnabled = previousChromaOverrideEnabled;
+                    }
                 }
 
-                if (IsSelectedLightingPowerActive && IsDisplayAvailable)
+                if (!preserveStudio && IsSelectedLightingPowerActive && IsDisplayAvailable)
                 {
                     _lighting().ShadowFingerprint = string.Empty;
                     var blade = ActiveDescriptors.FirstOrDefault(device =>
                         DeviceProtocolFamilies.IsBlade(device.ProtocolFamily) &&
                         device.Access == DeviceAccessState.Available);
-                    await _lighting().ApplyLoadedProfileAsync(
+                    var error = await _lighting().ApplyLoadedProfileAsync(
                         blade,
                         CurrentPowerSource,
-                        cancellationToken);
+                        cancellationToken,
+                        restoreFromStudio: true);
+                    if (error is not null)
+                        throw new InvalidOperationException(error);
                 }
                 RefreshLightingEditor();
             },

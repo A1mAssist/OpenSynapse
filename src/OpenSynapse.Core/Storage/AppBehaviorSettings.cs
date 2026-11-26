@@ -51,6 +51,7 @@ public sealed class AppBehaviorSettings
     public int WindowWidth { get; set; }
     public int WindowHeight { get; set; }
     public int NavigationPaneWidth { get; set; } = 224;
+    public bool NavigationPaneWidthCustomized { get; set; }
     public Dictionary<string, int> LowBatteryNotifiedLevels { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public HashSet<string> ChromaBlockedSources { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public bool ExperimentalChromaRestEnabled { get; set; } = true;

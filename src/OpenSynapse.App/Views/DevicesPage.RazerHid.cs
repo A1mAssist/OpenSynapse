@@ -350,13 +350,19 @@ public sealed partial class DevicesPage : UserControl
 
     private async void RazerHidLightingSettingsToggled(object sender, RoutedEventArgs e)
     {
-        if (SelectedRazerHidDevice is not { } device)
+        if (sender is not ToggleSwitch { FocusState: not FocusState.Unfocused } toggle ||
+            SelectedRazerHidDevice is not { } device || !device.CanEditLightingSettings)
         {
             return;
         }
 
-        await SuspendStudioLightingAsync();
-        await device.ApplyLightingSettingsAsync(Lifetime);
+        var isChromaOverride = toggle.Tag is "chromaOverride";
+        if (isChromaOverride) device.ChromaOverrideEnabled = toggle.IsOn;
+        else device.LightingEnabled = toggle.IsOn;
+        if (!isChromaOverride) await SuspendStudioLightingAsync();
+        await device.ApplyLightingSettingsAsync(Lifetime,
+            preserveStudio: isChromaOverride && ViewModel.StudioLightingActive?.Invoke() == true);
+        await (ViewModel.Lighting.ChromaTargetsChanged?.Invoke() ?? Task.CompletedTask);
     }
 
     private async void RazerHidApplyLedStateClick(object sender, RoutedEventArgs e) =>

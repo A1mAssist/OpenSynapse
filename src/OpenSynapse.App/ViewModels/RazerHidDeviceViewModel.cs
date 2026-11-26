@@ -93,6 +93,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
     private readonly Func<bool>? _lightingEnabledResolver;
     private readonly Func<bool>? _chromaOverrideResolver;
     private readonly Func<bool, bool, CancellationToken, Task<bool>>? _lightingSettingsSaver;
+    private readonly Func<Func<Task>, CancellationToken, Task> _lightingSettingsApplier;
     private readonly Func<IReadOnlyList<MacroDefinition>>? _localMacros;
     private readonly Func<ProfileDefinition>? _getActiveProfile;
     private readonly Func<CancellationToken, Task<bool>>? _saveProfileAsync;
@@ -130,7 +131,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         Func<MachineSettings>? getMachineSettings = null,
         Func<CancellationToken, Task<bool>>? saveMachineSettingsAsync = null,
         Func<ProfileDocument>? getProfileDocument = null,
-        Action<string>? log = null)
+        Action<string>? log = null,
+        Func<Func<Task>, CancellationToken, Task>? lightingSettingsApplier = null)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
         Connection = connection ?? throw new ArgumentNullException(nameof(connection));
@@ -156,6 +158,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         _lightingEnabledResolver = lightingEnabledResolver;
         _chromaOverrideResolver = chromaOverrideResolver;
         _lightingSettingsSaver = lightingSettingsSaver;
+        _lightingSettingsApplier = lightingSettingsApplier ?? (static (apply, _) => apply());
         _localMacros = localMacros;
         _getActiveProfile = getActiveProfile;
         _getAutoApplyProfileDocument = getProfileDocument;
@@ -503,8 +506,11 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         (Has(RazerHidBackendCapability.LightingEffectWrite) ||
          Has(RazerHidBackendCapability.MatrixFrameWrite)));
     public Visibility ChromaOverrideVisibility => VisibleWhen(
-        _chromaIntegrationEnabled && LightingZones.Count > 0 &&
-        Has(RazerHidBackendCapability.MatrixFrameWrite));
+        LightingZones.Count > 0 &&
+        (Connection.Definition.MatrixDimensions is not null &&
+         Has(RazerHidBackendCapability.MatrixFrameWrite) ||
+         Has(RazerHidBackendCapability.LightingEffectWrite) &&
+         StudioHidOutputRouter.FindStaticZone(Connection) is not null));
     internal void SetChromaIntegrationEnabled(bool enabled)
     {
         if (_chromaIntegrationEnabled == enabled) return;
@@ -539,7 +545,11 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
     public bool IsLightingSettingsBusy
     {
         get => _isLightingSettingsBusy;
-        private set => SetField(ref _isLightingSettingsBusy, value);
+        private set
+        {
+            if (SetField(ref _isLightingSettingsBusy, value))
+                OnPropertyChanged(nameof(CanEditLightingSettings));
+        }
     }
     public bool CanEditLightingSettings => _lightingSettingsSaver is not null &&
         IsReady && !RequiresRescan && !IsLightingSettingsBusy;

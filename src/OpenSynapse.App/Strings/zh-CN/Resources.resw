@@ -2413,7 +2413,7 @@
   <data name="CpuCurvePawnIoMissing" xml:space="preserve"><value>需要安装 PawnIO，可在 CPU 功耗墙卡片打开下载页。</value></data>
   <data name="CpuCurveModuleMissing" xml:space="preserve"><value>缺少 RyzenSMU.bin，请重新安装应用。</value></data>
   <data name="CpuCurveApplyFailed" xml:space="preserve"><value>写入失败，详情见上方提示。</value></data>
-  <data name="CpuPowerLimitDescription" xml:space="preserve"><value>限制 CPU 封装功耗上限（PL1/PL2）。仅在自定义性能模式下生效。</value></data>
+  <data name="CpuPowerLimitDescription" xml:space="preserve"><value>限制 CPU 封装功耗上限（PL1/PL2）。可在自定义或 HyperBoost 性能模式下调整。</value></data>
   <data name="CpuPowerLimitValue" xml:space="preserve"><value>PL1 {0:0} W · PL2 {1:0} W</value></data>
   <data name="CpuPowerLimitAuto" xml:space="preserve"><value>自动（固件）</value></data>
   <data name="CpuPowerLimitPawnIoMissing" xml:space="preserve"><value>未安装 PawnIO。点“下载 PawnIO”安装后重启 OpenSynapse。</value></data>
@@ -5353,7 +5353,6 @@
   <data name="SurfaceCalibrationRestoreDefaults" xml:space="preserve"><value>恢复默认校准</value></data>
   <data name="SurfaceCalibrationAdjustmentUnconfirmed" xml:space="preserve"><value>当前尚未提供这款鼠标的校准调整。仍可读取状态或关闭校准。</value></data>
   <data name="NavigationPaneResizer.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>导航栏宽度</value></data>
-  <data name="NavigationPaneResizer.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>拖动以调整宽度。左/右键：8 像素；Page Down/Up：32 像素；Home：默认宽度；End：最大宽度。</value></data>
   <data name="SettingAutoApplyApplying" xml:space="preserve"><value>正在应用…</value></data>
   <data name="SettingAutoApplyApplied" xml:space="preserve"><value>已应用并保存</value></data>
   <data name="SettingAutoApplyRetry" xml:space="preserve"><value>重试</value></data>

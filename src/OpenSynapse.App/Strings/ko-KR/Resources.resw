@@ -2017,7 +2017,7 @@
   <data name="CpuCurvePawnIoMissing" xml:space="preserve"><value>Ryzen SMU 경로에는 PawnIO가 필요합니다. CPU 전력 한도 카드에서 다운로드 페이지를 여세요.</value></data>
   <data name="CpuCurveModuleMissing" xml:space="preserve"><value>RyzenSMU.bin이 없습니다. 앱을 다시 설치하세요.</value></data>
   <data name="CpuCurveApplyFailed" xml:space="preserve"><value>쓰기에 실패했습니다. 위의 메시지를 확인하세요.</value></data>
-  <data name="CpuPowerLimitDescription" xml:space="preserve"><value>CPU 패키지 전력 한도(PL1/PL2)를 제한합니다. 사용자 지정 성능 모드에서만 적용됩니다.</value></data>
+  <data name="CpuPowerLimitDescription" xml:space="preserve"><value>CPU 패키지 전력 한도(PL1/PL2)를 제한합니다. 사용자 지정 또는 HyperBoost 성능 모드에서 조정할 수 있습니다.</value></data>
   <data name="CpuPowerLimitValue" xml:space="preserve"><value>PL1 {0:0} W · PL2 {1:0} W</value></data>
   <data name="CpuPowerLimitAuto" xml:space="preserve"><value>자동(펌웨어)</value></data>
   <data name="CpuPowerLimitPawnIoMissing" xml:space="preserve"><value>PawnIO가 설치되어 있지 않습니다. PawnIO 다운로드를 선택하여 설치한 후 OpenSynapse를 다시 시작하세요.</value></data>
@@ -4892,7 +4892,6 @@
   <data name="SurfaceCalibrationRestoreDefaults" xml:space="preserve"><value>Restore default calibration</value></data>
   <data name="SurfaceCalibrationAdjustmentUnconfirmed" xml:space="preserve"><value>Calibration adjustment is not yet available for this mouse. You can still read its state or disable calibration.</value></data>
   <data name="NavigationPaneResizer.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>탐색 창 너비</value></data>
-  <data name="NavigationPaneResizer.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>드래그하여 너비를 조절합니다. 왼쪽/오른쪽: 8픽셀, Page Down/Up: 32픽셀, Home: 기본 너비, End: 최대 너비.</value></data>
   <data name="SettingAutoApplyApplying" xml:space="preserve"><value>적용 중…</value></data>
   <data name="SettingAutoApplyApplied" xml:space="preserve"><value>적용 및 저장됨</value></data>
   <data name="SettingAutoApplyRetry" xml:space="preserve"><value>다시 시도</value></data>

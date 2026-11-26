@@ -111,10 +111,12 @@ internal sealed class BladeViewModel
     internal IReadOnlyList<BladePerformanceMode> PerformanceModes =>
         BladeModelCapabilities.PerformanceModesFor(_bladeProductId);
 
-    internal bool IsCustomMode =>
+    internal BladePerformanceMode? ConfirmedPerformanceMode =>
         _confirmedBladePerformanceModeIndex >= 0 &&
-        _confirmedBladePerformanceModeIndex < PerformanceModes.Count &&
-        PerformanceModes[_confirmedBladePerformanceModeIndex] == BladePerformanceMode.Custom;
+        _confirmedBladePerformanceModeIndex < PerformanceModes.Count
+            ? PerformanceModes[_confirmedBladePerformanceModeIndex] : null;
+
+    internal bool IsCustomMode => ConfirmedPerformanceMode == BladePerformanceMode.Custom;
 
     internal void SetPerformanceMode(BladePerformanceMode mode, bool confirm = true)
     {

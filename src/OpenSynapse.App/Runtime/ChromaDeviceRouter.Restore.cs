@@ -5,6 +5,27 @@ namespace OpenSynapse.App.Runtime;
 
 internal sealed partial class ChromaDeviceRouter
 {
+    // Keep the user's hardware write behind any in-flight frame and retire only its baseline.
+    internal async Task ApplyHidLightingSettingsAsync(
+        string instanceId, Func<Task> apply, CancellationToken cancellationToken)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            await RestoreHidAsync(cancellationToken, instanceId);
+            ForgetFrameState(instanceId);
+            _hidBaselines.TryRemove(instanceId, out _);
+            _hidBaselineAttempted.TryRemove(instanceId, out _);
+            _touchedTargets.TryRemove(instanceId, out _);
+            _targetFailures.TryRemove(instanceId, out _);
+            await apply();
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
     /// <summary>Stops queued frames and optionally restores each target's original effect.</summary>
     internal async Task RestoreAsync(CancellationToken cancellationToken = default, bool restoreLighting = true)
     {
@@ -140,7 +161,7 @@ internal sealed partial class ChromaDeviceRouter
         }
     }
 
-    private async Task RestoreHidAsync(CancellationToken cancellationToken)
+    private async Task RestoreHidAsync(CancellationToken cancellationToken, string? targetInstanceId = null)
     {
         if (_hid is null)
         {
@@ -149,6 +170,8 @@ internal sealed partial class ChromaDeviceRouter
 
         foreach (var (instanceId, baseline) in _hidBaselines.ToArray())
         {
+            if (targetInstanceId is not null &&
+                !StringComparer.OrdinalIgnoreCase.Equals(instanceId, targetInstanceId)) continue;
             var connection = FindHid(instanceId);
             if (connection is null) continue;
             try
