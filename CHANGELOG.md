@@ -38,6 +38,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
+- **Device navigation**: clicking the whole Devices row now keeps the device group expanded and opens the current device page, instead of requiring the chevron first.
 - **Tartarus mapping**: resolve 022B/0244 keypad firmware ids to the key each switch actually emits, so software macros no longer bind to F7, G or Space; wheel and D-pad ids stay unbound instead of becoming keyboard keys.
 - **Naga mapping**: fall back to the product button table when the firmware returns no list, keep side-button triggers scoped to their own mouse, restore the missing Naga Epic identity, and enable software-macro binding on BLE Naga pages.
 - **Private-key hot-plug**: keep one reader per device and rescan incrementally, so a device connected after startup receives its private-key macros without restarting the app.
