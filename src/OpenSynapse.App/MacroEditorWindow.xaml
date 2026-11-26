@@ -5,7 +5,7 @@
     xmlns:local="using:OpenSynapse.App"
     Title="Macro editor">
   <Grid x:Name="RootLayout" Background="Transparent" RequestedTheme="Dark" Padding="16" RowDefinitions="*,Auto,Auto">
-    <Grid Grid.Row="0" ColumnDefinitions="512,16,*">
+    <Grid Grid.Row="0" ColumnDefinitions="460,16,*">
       <Grid Grid.Column="2" RowDefinitions="Auto,*">
         <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
           <Button x:Name="MacroRecordButton" local:Localized.Uid="MacroRecordButton" MinWidth="112" Style="{StaticResource SecondaryButtonStyle}">
@@ -62,7 +62,12 @@
                       <Border Grid.Column="2" Visibility="{Binding GroupVisibility}" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="3" Padding="5,1" VerticalAlignment="Center">
                         <TextBlock Text="{Binding GroupText}" FontFamily="Cascadia Mono,Consolas" FontSize="9" Foreground="{StaticResource AccentBrush}" />
                       </Border>
-                      <TextBlock Grid.Column="3" Text="{Binding NameText}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                      <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <Border Visibility="{Binding HoldBadgeVisibility}" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource ThermalBrush}" BorderThickness="1" CornerRadius="3" Padding="5,1" VerticalAlignment="Center">
+                          <TextBlock local:Localized.Uid="MacroHoldStepBadge" FontFamily="Cascadia Mono,Consolas" FontSize="9" Foreground="{StaticResource ThermalBrush}" />
+                        </Border>
+                        <TextBlock Text="{Binding NameText}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                      </StackPanel>
                       <TextBlock Grid.Column="4" Text="{Binding DirectionText}" Visibility="{Binding DirectionVisibility}" FontFamily="Cascadia Mono,Consolas" FontSize="9" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
                       <Button Grid.Column="5" local:Localized.Uid="MacroStepDeleteButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" Tag="{Binding}" Click="DeleteMacroStepRowClick" VerticalAlignment="Center"><FontIcon Glyph="&#xE74D;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" /></Button>
                     </Grid>
@@ -111,30 +116,12 @@
                     <TextBlock Text="{Binding Macros.MacroTotalDurationText}" FontFamily="Cascadia Mono,Consolas" FontSize="11" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
                   </StackPanel>
                 </StackPanel>
-                <Grid Grid.Row="2" Grid.ColumnSpan="2" ColumnDefinitions="*,*,Auto" ColumnSpacing="8" Visibility="{Binding Macros.MacroEditorVisibility}">
-                  <ComboBox local:Localized.Uid="MacroTriggerModeHeader"
-                            ItemsSource="{Binding Macros.MacroTriggerModeOptions}"
-                            SelectedIndex="{Binding Macros.MacroTriggerModeIndex, Mode=TwoWay}"
-                            IsEnabled="{Binding Macros.CanEditMacro}"
-                            HorizontalAlignment="Stretch" />
-                  <ComboBox Grid.Column="1"
-                            local:Localized.Uid="MacroExecutionModeHeader"
-                            ItemsSource="{Binding Macros.MacroExecutionOptions}"
-                            SelectedIndex="{Binding Macros.MacroExecutionModeIndex, Mode=TwoWay}"
-                            Visibility="{Binding Macros.MacroExecutionModeVisibility}"
-                            IsEnabled="{Binding Macros.CanEditMacro}"
-                            HorizontalAlignment="Stretch" />
-                  <NumberBox Grid.Column="2"
-                             local:Localized.Uid="MacroExecutionRepeat"
-                             Minimum="1"
-                             Maximum="999"
-                             SmallChange="1"
-                             SpinButtonPlacementMode="Compact"
-                             Value="{Binding Macros.MacroExecutionRepeatCount, Mode=TwoWay}"
-                             Visibility="{Binding Macros.MacroExecutionRepeatVisibility}"
-                             IsEnabled="{Binding Macros.CanEditMacro}"
-                             HorizontalAlignment="Stretch" />
-                </Grid>
+                <TextBlock Grid.Row="2" Grid.ColumnSpan="2"
+                           local:Localized.Uid="MacroHoldHint"
+                           Foreground="{StaticResource ThermalBrush}"
+                           FontSize="11"
+                           TextWrapping="Wrap"
+                           Visibility="{Binding Macros.MacroHoldHintVisibility}" />
               </Grid>
             </Border>
           </Grid>
@@ -143,14 +130,13 @@
       </Grid>
 
       <Grid Grid.Column="0" RowDefinitions="Auto,10,Auto,10,*">
-      <Grid Grid.Row="0" ColumnDefinitions="*,12,*">
+      <Grid Grid.Row="0" RowDefinitions="Auto,10,Auto">
       <Border Grid.Row="0" Style="{StaticResource CardStyle}" Padding="0">
-        <StackPanel>
-          <Grid Padding="12,8">
+        <Expander IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="12,2,12,10">
+          <Expander.Header>
             <TextBlock local:Localized.Uid="MacroProperties" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
-          </Grid>
-          <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="12,8,12,10">
-            <ContentControl IsEnabled="{Binding Macros.CanEditMacro}" HorizontalContentAlignment="Stretch">
+          </Expander.Header>
+          <ContentControl IsEnabled="{Binding Macros.CanEditMacro}" HorizontalContentAlignment="Stretch">
               <StackPanel Spacing="8">
                 <StackPanel Spacing="4">
                   <TextBlock local:Localized.Uid="MacroNameLabel" Style="{StaticResource MetricLabelStyle}" />
@@ -165,18 +151,16 @@
                   <NumberBox Value="{Binding Macros.SelectedMacro.PlaybackSpeed, Mode=TwoWay}" Minimum="0.1" Maximum="4" SmallChange="0.1" SpinButtonPlacementMode="Compact" />
                 </StackPanel>
               </StackPanel>
-            </ContentControl>
-          </Border>
-        </StackPanel>
+          </ContentControl>
+        </Expander>
       </Border>
 
-      <Border Grid.Column="2" Style="{StaticResource CardStyle}" Padding="0">
-        <StackPanel>
-          <Grid Padding="12,8" ColumnDefinitions="*,Auto" ColumnSpacing="4">
+      <Border Grid.Row="2" Style="{StaticResource CardStyle}" Padding="0">
+        <Expander IsExpanded="False" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="12,2,12,10">
+          <Expander.Header>
             <TextBlock local:Localized.Uid="MacroRecordingOptions" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
-          </Grid>
-          <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="12,8,12,10">
-            <ContentControl IsEnabled="{Binding Macros.CanEditMacro}" HorizontalContentAlignment="Stretch">
+          </Expander.Header>
+          <ContentControl IsEnabled="{Binding Macros.CanEditMacro}" HorizontalContentAlignment="Stretch">
               <StackPanel Spacing="8">
                 <StackPanel Spacing="4">
                   <TextBlock local:Localized.Uid="MacroRecordDelayMode" Style="{StaticResource MetricLabelStyle}" />
@@ -222,50 +206,36 @@
                   <TextBlock local:Localized.Uid="MacroRecordOwnWindowDescription" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
                 </StackPanel>
               </StackPanel>
-            </ContentControl>
-          </Border>
-        </StackPanel>
+          </ContentControl>
+        </Expander>
       </Border>
       </Grid>
 
-      <Border Grid.Row="2" Style="{StaticResource CardStyle}" Padding="0">
+      <Border x:Name="MacroBindingReadOnly" Grid.Row="2" Style="{StaticResource CardStyle}" Padding="0"
+              AutomationProperties.AutomationId="MacroBindingReadOnly">
         <StackPanel>
-          <Grid Padding="12,10" ColumnDefinitions="*,Auto" ColumnSpacing="4">
+          <Grid Padding="12,10">
             <TextBlock local:Localized.Uid="MacroKeyBindsTitle" FontSize="13" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
-            <Button Grid.Column="1" x:Name="MacroTriggerCaptureButton" Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0" Style="{StaticResource IconButtonStyle}" IsEnabled="{Binding Macros.CanEditMacro}" ToolTipService.ToolTip="{Binding Macros.MacroCaptureButtonText}">
-              <FontIcon Glyph="&#xE710;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
-              <Button.Flyout>
-                <MenuFlyout Opening="MacroTriggerFlyoutOpening">
-                  <MenuFlyoutItem local:Localized.Uid="MacroTriggerCaptureSingle" Click="CaptureMacroTriggerClick" Style="{StaticResource MacroMenuItemStyle}" />
-                  <MenuFlyoutItem local:Localized.Uid="MacroTriggerCaptureCombo" Click="CaptureMacroTriggerComboClick" Style="{StaticResource MacroMenuItemStyle}" />
-                  <MenuFlyoutSubItem x:Name="MacroMouseSideTriggerMenu" local:Localized.Uid="MacroTriggerMouseSide" />
-                  <MenuFlyoutSubItem x:Name="MacroNagaTriggerMenu" local:Localized.Uid="MacroTriggerNaga" />
-                  <MenuFlyoutItem local:Localized.Uid="MacroTriggerDevice" Click="CaptureMacroDeviceTriggerClick" Style="{StaticResource MacroMenuItemStyle}" />
-                </MenuFlyout>
-              </Button.Flyout>
-            </Button>
           </Grid>
-          <Grid Padding="12,0,12,10" ColumnDefinitions="*,Auto" ColumnSpacing="8">
-            <StackPanel Spacing="4" VerticalAlignment="Center">
-              <StackPanel Orientation="Horizontal" Spacing="7">
-                <FontIcon Glyph="&#xE765;" FontFamily="{StaticResource IconFontFamily}" FontSize="13" Foreground="{StaticResource AccentBrush}" />
-                <TextBlock Text="{Binding Macros.SelectedMacro.TriggerText}" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" TextWrapping="Wrap" />
-              </StackPanel>
-              <TextBlock local:Localized.Uid="MacroKeyBindsNoMacro" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Visibility="{Binding Macros.MacroNoSelectionVisibility}" />
-              <TextBlock local:Localized.Uid="MacroTriggerUnsetHint" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Visibility="{Binding Macros.MacroTriggerUnsetVisibility}" />
-              <TextBlock local:Localized.Uid="MacroTriggerModeMovedHint" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Visibility="{Binding Macros.MacroTriggerBoundVisibility}" />
+          <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="12,8,12,10">
+            <StackPanel Spacing="4">
+              <TextBlock x:Name="MacroBindingSummary"
+                         AutomationProperties.AutomationId="MacroBindingSummary"
+                         Text="{Binding Macros.SelectedMacro.BindingSummary}"
+                         FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                         FontWeight="SemiBold"
+                         TextWrapping="Wrap" />
+              <ItemsControl ItemsSource="{Binding Macros.SelectedMacro.BindingLines}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding}" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <TextBlock Text="{Binding Macros.MacroExecutionSummary}" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" />
+              <TextBlock local:Localized.Uid="MacroBindingReadOnlyHint" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" />
             </StackPanel>
-            <Button Grid.Column="1"
-                    local:Localized.Uid="MacroTriggerClearIcon"
-                    Width="28" Height="28" MinWidth="28" MinHeight="28" Padding="0"
-                    Style="{StaticResource IconButtonStyle}"
-                    Click="ClearMacroTriggerClick"
-                    IsEnabled="{Binding Macros.CanEditMacro}"
-                    Visibility="{Binding Macros.MacroTriggerBoundVisibility}"
-                    VerticalAlignment="Center">
-              <FontIcon Glyph="&#xE711;" FontFamily="{StaticResource IconFontFamily}" FontSize="12" />
-            </Button>
-          </Grid>
+          </Border>
         </StackPanel>
       </Border>
 
@@ -302,10 +272,13 @@
                   <NumberBox Value="{Binding Macros.SelectedStep.DelaySeconds, Mode=TwoWay}" Minimum="0" Maximum="60" SmallChange="0.5" SpinButtonPlacementMode="Compact" />
                 </StackPanel>
 
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Visibility="{Binding Macros.SelectedStep.AutoReleaseVisibility, FallbackValue=Collapsed}">
-                  <TextBlock x:Name="MacroStepAutoReleaseLabel" local:Localized.Uid="MacroStepAutoReleaseLabel" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
-                  <ToggleSwitch Grid.Column="1" IsOn="{Binding Macros.SelectedStep.AutoRelease, Mode=TwoWay}" OnContent="" OffContent="" MinWidth="44" AutomationProperties.LabeledBy="{Binding ElementName=MacroStepAutoReleaseLabel}" />
-                </Grid>
+                <StackPanel Spacing="2" Visibility="{Binding Macros.SelectedStep.AutoReleaseVisibility, FallbackValue=Collapsed}">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <TextBlock x:Name="MacroStepAutoReleaseLabel" local:Localized.Uid="MacroStepAutoReleaseLabel" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
+                    <ToggleSwitch Grid.Column="1" IsOn="{Binding Macros.SelectedStep.AutoRelease, Mode=TwoWay}" OnContent="" OffContent="" MinWidth="44" AutomationProperties.LabeledBy="{Binding ElementName=MacroStepAutoReleaseLabel}" />
+                  </Grid>
+                  <TextBlock Text="{Binding Macros.SelectedStep.AutoReleaseHint}" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" />
+                </StackPanel>
 
                 <StackPanel Spacing="4" Visibility="{Binding Macros.SelectedStep.HoldVisibility, FallbackValue=Collapsed}">
                   <TextBlock local:Localized.Uid="MacroStepHoldLabel" Style="{StaticResource MetricLabelStyle}" />
@@ -372,7 +345,10 @@
       </ScrollViewer>
       </Grid>
     </Grid>
-    <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="12" Margin="0,12,0,0">
+    <Expander x:Name="MacroKeyPickerExpander" Grid.Row="1" IsExpanded="False" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Margin="0,12,0,0" Padding="12,4,12,12">
+      <Expander.Header>
+        <TextBlock local:Localized.Uid="MacroKeyPickerTitle" Style="{StaticResource MetricLabelStyle}" />
+      </Expander.Header>
       <Grid ColumnDefinitions="*,248" ColumnSpacing="20">
         <StackPanel Grid.Column="0" Spacing="8">
           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
@@ -446,7 +422,7 @@
           </StackPanel>
         </StackPanel>
       </Grid>
-    </Border>
+    </Expander>
 
     <TextBlock Grid.Row="2" Text="{Binding Macros.StatusText}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" Margin="0,10,0,0" />
   </Grid>

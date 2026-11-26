@@ -33,6 +33,8 @@ internal sealed partial class MacroRuntime : IDisposable
     private TaskCompletionSource? _resumePlayback;
     private bool _isPlaying;
     private bool _isPaused;
+    private bool _isHolding;
+    private IReadOnlyList<MacroInput>? _heldInputs;
     private string? _activePlaybackMacroId;
     private bool _disposed;
     private bool _recordingPending;
@@ -115,6 +117,21 @@ internal sealed partial class MacroRuntime : IDisposable
             lock (_gate)
             {
                 return _isPaused;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Playback finished but deliberately left inputs down. The next trigger
+    /// release or <see cref="StopPlayback"/> releases them.
+    /// </summary>
+    public bool IsHolding
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _isHolding;
             }
         }
     }
@@ -340,6 +357,7 @@ internal sealed partial class MacroRuntime : IDisposable
     {
         CancellationTokenSource? playback;
         MacroInputHook? hookToDispose;
+        var heldInputs = 0;
         lock (_gate)
         {
             if (_disposed)
@@ -355,6 +373,9 @@ internal sealed partial class MacroRuntime : IDisposable
             _recording = null;
             _hyperShiftHeld = false;
             _isPaused = false;
+            _isHolding = false;
+            heldInputs = _heldInputs?.Count ?? 0;
+            _heldInputs = null;
             _resumePlayback?.TrySetResult();
             _resumePlayback = null;
             playback = _playbackCancellation;
@@ -364,6 +385,13 @@ internal sealed partial class MacroRuntime : IDisposable
         StopAllTurbo();
         playback?.Cancel(); playback?.Dispose();
         DisposeHook(hookToDispose);
+        if (heldInputs > 0)
+        {
+            // Shutdown is the one path where the playback task may never run
+            // its own cleanup, so the sink drops whatever it still holds.
+            _log?.Invoke($"hold released on dispose keys={heldInputs}");
+            _ = _sink.ReleaseAllAsync();
+        }
     }
 
     private static bool HasTrigger(IReadOnlyList<MacroDefinition> macros) =>

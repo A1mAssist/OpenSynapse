@@ -33,16 +33,44 @@ public sealed class MacroPlaybackPlan
     private MacroPlaybackPlan(
         IReadOnlyList<MacroPlaybackAction> actions,
         long totalDurationMilliseconds,
-        IReadOnlyList<string> warnings)
+        IReadOnlyList<string> warnings,
+        MacroPlaybackMode playbackMode,
+        IReadOnlyList<MacroInput> heldInputs,
+        bool hasHeldInputsInLoop)
     {
         Actions = actions;
         TotalDurationMilliseconds = totalDurationMilliseconds;
         Warnings = warnings;
+        PlaybackMode = playbackMode;
+        HeldInputs = heldInputs;
+        HasHeldInputsInLoop = hasHeldInputsInLoop;
     }
 
     public IReadOnlyList<MacroPlaybackAction> Actions { get; }
     public long TotalDurationMilliseconds { get; }
     public IReadOnlyList<string> Warnings { get; }
+    public MacroPlaybackMode PlaybackMode { get; }
+
+    /// <summary>
+    /// Inputs the plan presses and never releases. The runtime owns their
+    /// release; a plan on its own only describes the actions.
+    /// </summary>
+    public IReadOnlyList<MacroInput> HeldInputs { get; }
+
+    public bool ContainsHeldInputs => HeldInputs.Count > 0;
+
+    /// <summary>A held input cannot be re-pressed every cycle safely.</summary>
+    public bool HasHeldInputsInLoop { get; }
+
+    /// <summary>
+    /// Held inputs only release on trigger-up or stop, so repeating playback
+    /// would leave them down for the whole run.
+    /// </summary>
+    public bool RequiresSinglePlayback =>
+        ContainsHeldInputs && PlaybackMode != MacroPlaybackMode.Once;
+
+    public bool HasUnsupportedHoldPlacement =>
+        RequiresSinglePlayback || HasHeldInputsInLoop;
 
     public static MacroPlaybackPlan Build(
         MacroDefinition macro,
@@ -61,8 +89,13 @@ public sealed class MacroPlaybackPlan
                 : 1;
         }
         var builder = new Builder(macros ?? new Dictionary<string, MacroDefinition>(StringComparer.Ordinal));
-        builder.ExpandMacro(normalized, depth: 0, speed: normalized.PlaybackSpeed, stack: []);
-        return builder.Build();
+        builder.ExpandMacro(
+            normalized,
+            depth: 0,
+            speed: normalized.PlaybackSpeed,
+            stack: [],
+            insideLoop: false);
+        return builder.Build(normalized.PlaybackMode);
     }
 
     private static void EnsureValidSource(MacroDefinition macro)
@@ -111,15 +144,19 @@ public sealed class MacroPlaybackPlan
     {
         private readonly List<MacroPlaybackAction> _actions = [];
         private readonly List<string> _warnings = [];
+        private readonly List<MacroInput> _openDowns = [];
         private long _totalDuration;
+        private bool _hasHeldInputsInLoop;
 
-        public MacroPlaybackPlan Build() => new(_actions, _totalDuration, _warnings);
+        public MacroPlaybackPlan Build(MacroPlaybackMode playbackMode) =>
+            new(_actions, _totalDuration, _warnings, playbackMode, _openDowns, _hasHeldInputsInLoop);
 
         public void ExpandMacro(
             MacroDefinition macro,
             int depth,
             double speed,
-            HashSet<string> stack)
+            HashSet<string> stack,
+            bool insideLoop)
         {
             if (depth > MacroDefinition.MaxNestingDepth)
             {
@@ -139,7 +176,7 @@ public sealed class MacroPlaybackPlan
                     : 1;
                 for (var repetition = 0; repetition < repeatCount; repetition++)
                 {
-                    ExpandSteps(macro.Steps, depth, speed, stack);
+                    ExpandSteps(macro.Steps, depth, speed, stack, insideLoop);
                 }
             }
             finally
@@ -152,7 +189,8 @@ public sealed class MacroPlaybackPlan
             IReadOnlyList<MacroStep> steps,
             int depth,
             double speed,
-            HashSet<string> stack)
+            HashSet<string> stack,
+            bool insideLoop)
         {
             if (depth > MacroDefinition.MaxNestingDepth)
             {
@@ -167,7 +205,7 @@ public sealed class MacroPlaybackPlan
                 switch (step.Kind)
                 {
                     case MacroStepKind.Input when step.Input is { } input:
-                        AddInput(step, input, delay, speed);
+                        AddInput(step, input, delay, speed, insideLoop);
                         break;
 
                     case MacroStepKind.Delay:
@@ -202,7 +240,7 @@ public sealed class MacroPlaybackPlan
                         for (var iteration = 0; iteration < step.LoopCount; iteration++)
                         {
                             AddDelay(delay);
-                            ExpandSteps(step.Children, depth + 1, speed, stack);
+                            ExpandSteps(step.Children, depth + 1, speed, stack, insideLoop: true);
                         }
                         break;
 
@@ -229,7 +267,8 @@ public sealed class MacroPlaybackPlan
                                 referenced.PlaybackSpeed,
                                 MacroDefinition.MinPlaybackSpeed,
                                 MacroDefinition.MaxPlaybackSpeed),
-                            stack);
+                            stack,
+                            insideLoop);
                         break;
 
                     case MacroStepKind.MouseMove when step.MousePath.Count > 0:
@@ -302,7 +341,12 @@ public sealed class MacroPlaybackPlan
             });
         }
 
-        private void AddInput(MacroStep step, MacroInput input, int delay, double speed)
+        private void AddInput(
+            MacroStep step,
+            MacroInput input,
+            int delay,
+            double speed,
+            bool insideLoop)
         {
             var downKind = input.Kind == MacroInputKind.MouseButton
                 ? MacroPlaybackActionKind.MouseButtonDown
@@ -342,6 +386,11 @@ public sealed class MacroPlaybackPlan
 
             if (!step.AutoRelease)
             {
+                if (insideLoop)
+                {
+                    _hasHeldInputsInLoop = true;
+                }
+
                 return;
             }
 
@@ -376,6 +425,23 @@ public sealed class MacroPlaybackPlan
             EnsureActionBudget();
             _actions.Add(action);
             _totalDuration += action.DelayMilliseconds;
+            if (action.Input is { } input)
+            {
+                switch (action.Kind)
+                {
+                    case MacroPlaybackActionKind.KeyDown:
+                    case MacroPlaybackActionKind.MouseButtonDown:
+                        _openDowns.RemoveAll(open => open.Matches(input));
+                        _openDowns.Add(input);
+                        break;
+
+                    case MacroPlaybackActionKind.KeyUp:
+                    case MacroPlaybackActionKind.MouseButtonUp:
+                        _openDowns.RemoveAll(open => open.Matches(input));
+                        break;
+                }
+            }
+
             if (action.Kind == MacroPlaybackActionKind.MouseMove &&
                 action.MousePath.Count > 0)
             {

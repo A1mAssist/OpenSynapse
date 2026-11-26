@@ -110,7 +110,12 @@ public sealed partial class MacroWorkspace
             return;
         }
 
-        CancelMacroCapture();
+        if (MacroValidator.HasUnsupportedHoldPlayback(selected.Definition))
+        {
+            StatusText = AppStrings.Text("MacroHoldRequiresSinglePlayback");
+            return;
+        }
+
         CancelMacroStepCapture();
         CancelMacroPlaybackShortcutCapture();
         if (!useCountdown)
@@ -252,6 +257,12 @@ public sealed partial class MacroWorkspace
         var wasPlaying = IsMacroPlaying;
         IsMacroPlaying = _macroRuntime.IsPlaying;
         IsMacroPaused = _macroRuntime.IsPaused;
+        var wasHolding = IsMacroHolding;
+        IsMacroHolding = _macroRuntime.IsHolding;
+        if (IsMacroHolding && !wasHolding)
+        {
+            StatusText = AppStrings.Text("MacroHoldPlaying");
+        }
         if (wasPlaying && !IsMacroPlaying)
         {
             _diagnosticLog.TryWrite("macro", "playback stopped");

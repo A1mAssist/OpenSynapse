@@ -92,13 +92,19 @@ public sealed partial class MacroEditorWindow : Window
     }
 
     /// <summary>
-    /// A recording or a capture outlives the window unless it is canceled, so
-    /// the window stops both when it closes. The take is discarded rather than
-    /// committed: closing without pressing save must not write it.
+    /// A recording, a capture or a held macro outlives the window unless it is
+    /// stopped, so the window stops all of them when it closes. The take is
+    /// discarded rather than committed: closing without pressing save must not
+    /// write it.
     /// </summary>
     internal void CancelPendingCapture()
     {
-        _viewModel.Macros.CancelMacroCapture();
+        if (_viewModel.Macros.IsMacroHolding)
+        {
+            // Closing the editor must not leave the held key down.
+            _viewModel.Macros.StopMacroPlayback();
+        }
+
         _viewModel.Macros.CancelMacroStepCapture();
         _viewModel.Macros.CancelMacroPlaybackShortcutCapture();
         _viewModel.Macros.CancelMacroPlaybackCountdown();
@@ -454,8 +460,11 @@ public sealed partial class MacroEditorWindow : Window
         }
     }
 
-    private async void MacroInsertCaptureClick(object sender, RoutedEventArgs e) =>
+    private async void MacroInsertCaptureClick(object sender, RoutedEventArgs e)
+    {
+        MacroKeyPickerExpander.IsExpanded = true;
         await _viewModel.Macros.AddMacroInputStepAsync(_lifetime.Token);
+    }
 
     private async void AddMacroDelayClick(object sender, RoutedEventArgs e) =>
         await _viewModel.Macros.AddMacroDelayAsync(_lifetime.Token);
@@ -470,9 +479,6 @@ public sealed partial class MacroEditorWindow : Window
         _viewModel.Macros.KeyPicker.Selected = option;
         await _viewModel.Macros.AddMacroStepFromPickerAsync(_lifetime.Token);
     }
-
-    private async void CaptureMacroTriggerClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Macros.CaptureMacroTriggerAsync(_lifetime.Token);
 
     private async void CaptureMacroPlaybackStartShortcutClick(object sender, RoutedEventArgs e) =>
         await _viewModel.Macros.CaptureMacroPlaybackStartShortcutAsync(_lifetime.Token);
@@ -531,8 +537,11 @@ public sealed partial class MacroEditorWindow : Window
     private async void SaveMacroClick(object sender, RoutedEventArgs e) =>
         await _viewModel.Macros.SaveSelectedMacroAsync(_lifetime.Token);
 
-    private async void RecaptureMacroStepClick(object sender, RoutedEventArgs e) =>
+    private async void RecaptureMacroStepClick(object sender, RoutedEventArgs e)
+    {
+        MacroKeyPickerExpander.IsExpanded = true;
         await _viewModel.Macros.RecaptureMacroStepInputAsync(_lifetime.Token);
+    }
 
     private async void MoveMacroStepUpClick(object sender, RoutedEventArgs e) =>
         await _viewModel.Macros.MoveSelectedMacroStepAsync(-1, _lifetime.Token);
@@ -793,15 +802,6 @@ public sealed partial class MacroEditorWindow : Window
         }
     }
 
-    private async void CaptureMacroTriggerComboClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Macros.CaptureMacroTriggerComboAsync(_lifetime.Token);
-
-    private async void CaptureMacroDeviceTriggerClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Macros.CaptureMacroDeviceTriggerAsync(_lifetime.Token);
-
-    private async void ClearMacroTriggerClick(object sender, RoutedEventArgs e) =>
-        await _viewModel.Macros.ClearMacroTriggerAsync(_lifetime.Token);
-
     private void TogglePauseMacroClick(object sender, RoutedEventArgs e) =>
         _viewModel.Macros.ToggleMacroPlaybackPause();
 
@@ -817,11 +817,17 @@ public sealed partial class MacroEditorWindow : Window
             return;
         }
 
+        if (_viewModel.Macros.IsMacroHolding)
+        {
+            // Closing is a release path even when nothing else is pending;
+            // otherwise the held key would outlive the window.
+            _viewModel.Macros.StopMacroPlayback();
+        }
+
         var hasPendingWork = _viewModel.Macros.HasUnsavedMacroChanges ||
             _viewModel.Macros.IsMacroRecording ||
             _viewModel.Macros.IsMacroCountdown ||
-            _viewModel.Macros.IsMacroStepCapturing ||
-            _viewModel.Macros.IsMacroTriggerCapturing;
+            _viewModel.Macros.IsMacroStepCapturing;
         if (!hasPendingWork)
         {
             return;

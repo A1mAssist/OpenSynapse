@@ -2531,7 +2531,7 @@
   <data name="MacroRowTriggerLabel.Text" xml:space="preserve"><value>トリガー</value></data>
   <data name="MacroRowTriggerUnsetBadge.Text" xml:space="preserve"><value>未割り当て</value></data>
   <data name="MacroNoMacroSelected.Text" xml:space="preserve"><value>マクロが選択されていません</value></data>
-  <data name="MacroEmptyEditorHint.Text" xml:space="preserve"><value>記録を使用して一連のアクションをキャプチャするか、下のキーボードをクリックして単一のアクションを追加します。</value></data>
+  <data name="MacroEmptyEditorHint.Text" xml:space="preserve"><value>「録画」で動作シーケンスを記録するか、「挿入」で単一のアクションを追加します。</value></data>
   <data name="MacroKeyBindsTitle.Text" xml:space="preserve"><value>トリガー キー</value></data>
   <data name="MacroTriggerSwitchHint.Text" xml:space="preserve"><value>このスイッチはこのトリガーのみを制御します。手動再生には影響しません。</value></data>
   <data name="MacroKeyBindsNoMacro.Text" xml:space="preserve"><value>トリガー キーを表示するマクロを選択してください。</value></data>
@@ -4962,5 +4962,62 @@
   </data>
   <data name="ProfileRenameRollbackFailed" xml:space="preserve">
     <value>プロファイルの名前変更に失敗し、プロファイル ファイルを復元できませんでした: {0} / {1}</value>
+  </data>
+  <data name="MacroHoldStepHint" xml:space="preserve">
+    <value>トリガーキーを離すか再生を停止するまで押し続けます。</value>
+  </data>
+  <data name="MacroStepAutoReleaseOnHint" xml:space="preserve">
+    <value>押して保持時間だけ待ち、自動で離します。</value>
+  </data>
+  <data name="MacroHoldStepBadge" xml:space="preserve">
+    <value>保持</value>
+  </data>
+  <data name="MacroHoldPlaying" xml:space="preserve">
+    <value>キーを保持中 - 停止するかトリガーキーを離すと解放されます。</value>
+  </data>
+  <data name="MacroHoldHint" xml:space="preserve">
+    <value>キーを保持するステップを含みます。停止またはトリガーキーを離すと解放されます。</value>
+  </data>
+  <data name="MacroHoldRequiresSinglePlayback" xml:space="preserve">
+    <value>保持ステップは単一再生でのみ使えます。再生方法を変更するか保持をオフにしてください。</value>
+  </data>
+  <data name="MacroBindingUnassigned" xml:space="preserve">
+    <value>未割り当て</value>
+  </data>
+  <data name="MacroBindingMultiple" xml:space="preserve">
+    <value>{0} 個のキーに割り当て済み</value>
+  </data>
+  <data name="MacroBindingManagedHint" xml:space="preserve">
+    <value>割り当てはデバイスのキー割り当てで管理します。</value>
+  </data>
+  <data name="MacroBindingReadOnlyHint" xml:space="preserve">
+    <value>トリガーキー、トリガー方法、再生方法はデバイスのキー割り当てで変更してください。</value>
+  </data>
+  <data name="MacroManageBinding" xml:space="preserve">
+    <value>割り当てを管理</value>
+  </data>
+  <data name="MacroKeyPickerTitle" xml:space="preserve">
+    <value>キー / マウス選択</value>
+  </data>
+  <data name="MacroTriggerModeSequenceLabel" xml:space="preserve">
+    <value>シーケンス</value>
+  </data>
+  <data name="RazerMappingActionSection" xml:space="preserve">
+    <value>アクション</value>
+  </data>
+  <data name="RazerMappingMacroSection" xml:space="preserve">
+    <value>マクロ</value>
+  </data>
+  <data name="RazerMappingAdvancedSection" xml:space="preserve">
+    <value>詳細</value>
+  </data>
+  <data name="RazerMappingSoftwareMacroKeyHint" xml:space="preserve">
+    <value>トリガーキーは割り当て中のデバイスキーです。</value>
+  </data>
+  <data name="MacroLibrarySharedHint" xml:space="preserve">
+    <value>マクロはすべてのプロファイルで共有され、トリガーキーと有効状態だけがプロファイルごとに保持されます。</value>
+  </data>
+  <data name="MacroDeleteInUseElsewhere" xml:space="preserve">
+    <value>このマクロは次のプロファイルで割り当てられています: {0}。先に各プロファイルのデバイスページで解除してください。</value>
   </data>
 </root>

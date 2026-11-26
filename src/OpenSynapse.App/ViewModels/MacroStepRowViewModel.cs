@@ -79,6 +79,18 @@ public sealed class MacroStepRowViewModel : INotifyPropertyChanged
     public Visibility AutoReleaseVisibility =>
         IsInput && Step.IsDown ? Visibility.Visible : Visibility.Collapsed;
 
+    public bool IsHeldInput => Step.IsHeldInput;
+
+    public Visibility HoldBadgeVisibility =>
+        IsHeldInput ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>
+    /// Spells out what the switch does. "Auto release" is an internal field
+    /// name; the user needs to know whether the key stays down.
+    /// </summary>
+    public string AutoReleaseHint => AppStrings.Text(
+        IsHeldInput ? "MacroHoldStepHint" : "MacroStepAutoReleaseOnHint");
+
     public Visibility DelayMillisecondsVisibility =>
         IsDelay ? Visibility.Collapsed : Visibility.Visible;
 
@@ -115,6 +127,9 @@ public sealed class MacroStepRowViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(NameText));
             OnPropertyChanged(nameof(HoldVisibility));
             OnPropertyChanged(nameof(AutoReleaseVisibility));
+            OnPropertyChanged(nameof(IsHeldInput));
+            OnPropertyChanged(nameof(HoldBadgeVisibility));
+            OnPropertyChanged(nameof(AutoReleaseHint));
             Changed();
         }
     }
@@ -320,6 +335,9 @@ public sealed class MacroStepRowViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(DirectionText));
             OnPropertyChanged(nameof(NameText));
             OnPropertyChanged(nameof(HoldVisibility));
+            OnPropertyChanged(nameof(IsHeldInput));
+            OnPropertyChanged(nameof(HoldBadgeVisibility));
+            OnPropertyChanged(nameof(AutoReleaseHint));
             Changed();
         }
     }
@@ -454,6 +472,9 @@ public sealed class MacroStepRowViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(StepGlyph));
         OnPropertyChanged(nameof(HoldVisibility));
         OnPropertyChanged(nameof(AutoReleaseVisibility));
+        OnPropertyChanged(nameof(IsHeldInput));
+        OnPropertyChanged(nameof(HoldBadgeVisibility));
+        OnPropertyChanged(nameof(AutoReleaseHint));
         OnPropertyChanged(nameof(InputDirectionVisibility));
         OnPropertyChanged(nameof(DirectionIndex));
         OnPropertyChanged(nameof(TextVisibility));

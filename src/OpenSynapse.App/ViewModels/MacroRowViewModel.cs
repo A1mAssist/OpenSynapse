@@ -49,8 +49,6 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
 
             Definition.Enabled = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(TriggerText));
-            OnPropertyChanged(nameof(TriggerChipText));
             OnDefinitionChanged();
             EnabledChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -64,17 +62,27 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
     public Visibility TriggerUnsetBadgeVisibility =>
         HasTrigger ? Visibility.Collapsed : Visibility.Visible;
 
-    public string TriggerText => Definition.AllTriggers.FirstOrDefault() is { } trigger
-        ? Definition.Enabled
-            ? AppStrings.FormatText("MacroTriggerValue", DescribeTrigger(trigger))
-            : AppStrings.FormatText("MacroTriggerValueDisabled", DescribeTrigger(trigger))
-        : AppStrings.Text("MacroTriggerUnset");
+    /// <summary>
+    /// Triggers are written by the device mapping page. These read-only views
+    /// exist so the macro pages can show what the device page bound.
+    /// </summary>
+    public int BindingCount => Definition.AllTriggers.Count();
 
-    public string TriggerChipText => Definition.AllTriggers.FirstOrDefault() is { } trigger
-        ? Definition.Enabled
-            ? DescribeTrigger(trigger)
-            : AppStrings.FormatText("MacroTriggerChipDisabled", DescribeTrigger(trigger))
-        : AppStrings.Text("MacroCaptureTrigger");
+    public bool IsUnbound => BindingCount == 0;
+
+    public bool HasMultipleTriggers => BindingCount > 1;
+
+    public string BindingSummary => BindingCount switch
+    {
+        0 => AppStrings.Text("MacroBindingUnassigned"),
+        1 => DescribeBinding(Definition.AllTriggers.First()),
+        _ => AppStrings.FormatText("MacroBindingMultiple", BindingCount),
+    };
+
+    /// <summary>Only a macro bound to several keys needs the detail list.</summary>
+    public IReadOnlyList<string> BindingLines => HasMultipleTriggers
+        ? Definition.AllTriggers.Select(DescribeBinding).ToArray()
+        : [];
 
     public string StepsText => AppStrings.FormatText(
         "MacroStepCount",
@@ -200,6 +208,8 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
             trigger.Mode = (MacroTriggerMode)index;
 
             OnPropertyChanged();
+            OnPropertyChanged(nameof(BindingSummary));
+            OnPropertyChanged(nameof(BindingLines));
             OnPropertyChanged(nameof(IsRepeating));
             OnPropertyChanged(nameof(PlaybackModeIndex));
             OnPropertyChanged(nameof(RepeatCount));
@@ -221,8 +231,11 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
         }
 
         Definition.Trigger = trigger;
-        OnPropertyChanged(nameof(TriggerText));
-        OnPropertyChanged(nameof(TriggerChipText));
+        OnPropertyChanged(nameof(BindingSummary));
+        OnPropertyChanged(nameof(BindingLines));
+        OnPropertyChanged(nameof(BindingCount));
+        OnPropertyChanged(nameof(IsUnbound));
+        OnPropertyChanged(nameof(HasMultipleTriggers));
         OnPropertyChanged(nameof(HasTrigger));
         OnPropertyChanged(nameof(TriggerToggleVisibility));
         OnPropertyChanged(nameof(TriggerUnsetBadgeVisibility));
@@ -240,8 +253,11 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
     {
         OnPropertyChanged(nameof(Name));
         OnPropertyChanged(nameof(Enabled));
-        OnPropertyChanged(nameof(TriggerText));
-        OnPropertyChanged(nameof(TriggerChipText));
+        OnPropertyChanged(nameof(BindingSummary));
+        OnPropertyChanged(nameof(BindingLines));
+        OnPropertyChanged(nameof(BindingCount));
+        OnPropertyChanged(nameof(IsUnbound));
+        OnPropertyChanged(nameof(HasMultipleTriggers));
         OnPropertyChanged(nameof(HasTrigger));
         OnPropertyChanged(nameof(TriggerToggleVisibility));
         OnPropertyChanged(nameof(TriggerUnsetBadgeVisibility));
@@ -297,6 +313,16 @@ public sealed class MacroRowViewModel : INotifyPropertyChanged
                 AppStrings.FormatText("MacroWheelDown", Math.Abs(input.WheelDelta)),
             _ => MacroInputFormatter.Describe(input),
         };
+
+    private static string DescribeBinding(MacroTrigger trigger) =>
+        $"{DescribeTrigger(trigger)} · {AppStrings.Text(trigger.Mode switch
+        {
+            MacroTriggerMode.Hold => "RazerMappingMacroTriggerHold",
+            MacroTriggerMode.Toggle => "RazerMappingMacroPlaybackToggle",
+            MacroTriggerMode.HoldRepeat => "RazerMappingMacroPlaybackHoldRepeat",
+            MacroTriggerMode.Sequence => "MacroTriggerModeSequenceLabel",
+            _ => "MacroTriggerModePress",
+        })}";
 
     private void OnDefinitionChanged() =>
         DefinitionChanged?.Invoke(this, EventArgs.Empty);

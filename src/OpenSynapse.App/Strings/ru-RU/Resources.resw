@@ -4479,7 +4479,7 @@
     <value>Макрос не выбран</value>
   </data>
   <data name="MacroEmptyEditorHint.Text" xml:space="preserve">
-    <value>Используйте «Запись», чтобы записать последовательность действий, или щелкните клавиатуру ниже, чтобы добавить отдельные действия.</value>
+    <value>Запишите последовательность действий или добавьте одно действие через «Вставить».</value>
   </data>
   <data name="MacroKeyBindsTitle.Text" xml:space="preserve">
     <value>Триггерная клавиша</value>
@@ -10477,5 +10477,62 @@
   </data>
   <data name="ProfileRenameRollbackFailed" xml:space="preserve">
     <value>Не удалось переименовать профиль, и файл профиля не удалось восстановить: {0} / {1}</value>
+  </data>
+  <data name="MacroHoldStepHint" xml:space="preserve">
+    <value>Удерживается до отпускания триггера или остановки воспроизведения.</value>
+  </data>
+  <data name="MacroStepAutoReleaseOnHint" xml:space="preserve">
+    <value>Нажимает, ждёт время удержания и отпускает.</value>
+  </data>
+  <data name="MacroHoldStepBadge" xml:space="preserve">
+    <value>УДЕРЖ.</value>
+  </data>
+  <data name="MacroHoldPlaying" xml:space="preserve">
+    <value>Клавиша удерживается - остановите или отпустите триггер.</value>
+  </data>
+  <data name="MacroHoldHint" xml:space="preserve">
+    <value>Макрос удерживает клавишу; она отпускается при остановке или отпускании триггера.</value>
+  </data>
+  <data name="MacroHoldRequiresSinglePlayback" xml:space="preserve">
+    <value>Удерживаемый шаг требует однократного воспроизведения. Измените режим воспроизведения или отключите удержание.</value>
+  </data>
+  <data name="MacroBindingUnassigned" xml:space="preserve">
+    <value>Не назначено</value>
+  </data>
+  <data name="MacroBindingMultiple" xml:space="preserve">
+    <value>Назначено клавиш: {0}</value>
+  </data>
+  <data name="MacroBindingManagedHint" xml:space="preserve">
+    <value>Привязки управляются в назначении клавиш устройства.</value>
+  </data>
+  <data name="MacroBindingReadOnlyHint" xml:space="preserve">
+    <value>Измените клавишу, режим триггера и воспроизведение в назначении клавиш устройства.</value>
+  </data>
+  <data name="MacroManageBinding" xml:space="preserve">
+    <value>Управлять привязками</value>
+  </data>
+  <data name="MacroKeyPickerTitle" xml:space="preserve">
+    <value>Выбор клавиши и мыши</value>
+  </data>
+  <data name="MacroTriggerModeSequenceLabel" xml:space="preserve">
+    <value>Последовательность</value>
+  </data>
+  <data name="RazerMappingActionSection" xml:space="preserve">
+    <value>Действие</value>
+  </data>
+  <data name="RazerMappingMacroSection" xml:space="preserve">
+    <value>Макрос</value>
+  </data>
+  <data name="RazerMappingAdvancedSection" xml:space="preserve">
+    <value>Дополнительно</value>
+  </data>
+  <data name="RazerMappingSoftwareMacroKeyHint" xml:space="preserve">
+    <value>Клавиша триггера - это назначаемая клавиша устройства.</value>
+  </data>
+  <data name="MacroLibrarySharedHint" xml:space="preserve">
+    <value>Макросы общие для всех профилей; каждый профиль хранит свои клавиши триггера и состояние включения.</value>
+  </data>
+  <data name="MacroDeleteInUseElsewhere" xml:space="preserve">
+    <value>Макрос всё ещё назначен в: {0}. Сначала снимите привязку на странице устройства в этих профилях.</value>
   </data>
 </root>

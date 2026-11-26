@@ -22,8 +22,8 @@
                       <Button local:Localized.Uid="Loc_311EB20F8C" Grid.Column="1" Click="DeleteProfileClick" IsEnabled="{Binding Profiles.CanDeleteProfile}" Style="{StaticResource IconButtonStyle}"><SymbolIcon Symbol="Delete" /></Button>
                     </Grid>
                     <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
-                      <TextBox local:Localized.Uid="Loc_00DC0BB70D" Text="{Binding Profiles.ProfileNameInput, Mode=TwoWay}" MaxLength="64" />
-                      <Button local:Localized.Uid="Loc_9D032642E0" Grid.Column="1" Click="CreateProfileClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource PrimaryButtonStyle}" />
+                      <TextBox x:Name="ProfileNameBox" AutomationProperties.AutomationId="ProfileNameBox" local:Localized.Uid="Loc_00DC0BB70D" Text="{Binding Profiles.ProfileNameInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="64" />
+                      <Button x:Name="ProfileCreateButton" AutomationProperties.AutomationId="ProfileCreateButton" local:Localized.Uid="Loc_9D032642E0" Grid.Column="1" Click="CreateProfileClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource PrimaryButtonStyle}" />
                       <Button local:Localized.Uid="Loc_212999B9CD" Grid.Column="2" Click="CloneProfileClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" />
                       <Button local:Localized.Uid="Loc_12964C8CFC" Grid.Column="3" Click="RenameProfileClick" IsEnabled="{Binding CanRefresh}" Style="{StaticResource SecondaryButtonStyle}" />
                     </Grid>

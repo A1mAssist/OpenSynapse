@@ -27,7 +27,6 @@ public sealed partial class MacroWorkspace
             return;
         }
 
-        CancelMacroCapture();
         var input = await CaptureMacroInputAsync(cancellationToken);
         if (input is null || !ReferenceEquals(SelectedMacro, selected))
         {
@@ -236,7 +235,6 @@ public sealed partial class MacroWorkspace
             return;
         }
 
-        CancelMacroCapture();
         var input = await CaptureMacroInputAsync(cancellationToken);
         if (input is null || !ReferenceEquals(SelectedStep, selectedStep))
         {

@@ -100,7 +100,12 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
         Firmware = new FirmwareWorkspace(
             firmwareUpdateClient ?? new RazerFirmwareUpdateClient(),
             () => _deviceDescriptors);
-        Macros = new MacroWorkspace(() => GetActiveProfile(), SaveProfileAsync, _diagnosticLog, macroInputSink);
+        Macros = new MacroWorkspace(
+            () => GetActiveProfile(),
+            SaveProfileAsync,
+            _diagnosticLog,
+            macroInputSink,
+            () => _profile);
         Viper = new ViperWorkspace(
             deviceTelemetryReader,
             () => _profile,

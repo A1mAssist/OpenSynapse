@@ -30,6 +30,12 @@ All notable user-visible changes to OpenSynapse are documented here.
 - **Driver download progress**: driver package downloads show a progress bar with speed and remaining time, and use four parallel range requests for packages of 4 MB or more.
 - **THX download progress**: THX components use the same progress panel and parallel downloader as drivers, with bytes, speed and remaining time; the roughly 41 MB APO package is fetched in four range requests.
 
+### Changed
+
+- **Macro held steps**: a step with auto-release off now keeps its key pressed until the trigger is released or playback is stopped, instead of being force-released when the macro ends. Held steps are limited to single playback; loops and repeating playback reject them. Existing macros that relied on the old forced release now hold the key.
+- **Macro trigger bindings**: the macro library and editor show bindings read-only. The device key assignment page is the only place that captures, edits or clears them, and clearing one key no longer removes the macro's other bindings.
+- **Shared macro library**: macro recordings belong to every profile. Switching or creating a profile keeps the macros; only the trigger keys, the device assignment and the on/off switch are per profile, and a new profile starts with every macro available but unbound. Deleting a macro removes it from all profiles, so a profile that still binds it has to be unbound first. Existing per-profile macros are merged into the library on the first start, and two profiles that shared an id with different steps keep both macros.
+
 ### Fixed
 
 - **Tartarus mapping**: resolve 022B/0244 keypad firmware ids to the key each switch actually emits, so software macros no longer bind to F7, G or Space; wheel and D-pad ids stay unbound instead of becoming keyboard keys.

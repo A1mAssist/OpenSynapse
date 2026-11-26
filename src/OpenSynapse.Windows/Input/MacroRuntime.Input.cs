@@ -323,6 +323,9 @@ internal sealed partial class MacroRuntime
                             suppressed.MacroId))
                     {
                         stopPlayback = true;
+                        _log?.Invoke(
+                            $"hold trigger released macro={suppressed.MacroId} " +
+                            "reason=trigger-up");
                     }
                     return true;
                 }

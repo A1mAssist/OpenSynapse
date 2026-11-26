@@ -17,6 +17,11 @@ public sealed class ProfileDocument
     public PowerProfileOverrides LowPowerAdapter { get; set; } = new();
     public PowerProfileOverrides OnBattery { get; set; } = new();
     public Dictionary<string, string> ApplicationBindings { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>
+    /// The recorded steps of every macro, shared by all profiles. Each profile
+    /// keeps its own trigger keys, device assignment and enabled switch.
+    /// </summary>
+    public List<MacroDefinition> MacroLibrary { get; set; } = [];
 
     public static ProfileDocument CreateDefault()
     {
@@ -33,6 +38,10 @@ public sealed class ProfileDocument
             Version = Version,
             ActiveProfileName = ActiveProfileName,
             ApplicationBindings = new Dictionary<string, string>(ApplicationBindings, StringComparer.OrdinalIgnoreCase),
+            MacroLibrary = (MacroLibrary ?? [])
+                .Where(macro => macro is not null)
+                .Select(macro => macro.Clone())
+                .ToList(),
         };
         foreach (var (name, profile) in Profiles)
         {
@@ -61,6 +70,7 @@ public sealed class ProfileDocument
             LowPowerAdapter = selected.LowPowerAdapter,
             OnBattery = selected.OnBattery,
             ApplicationBindings = ApplicationBindings,
+            MacroLibrary = MacroLibrary ?? [],
         };
     }
 
@@ -72,6 +82,15 @@ public sealed class ProfileDocument
         LowPowerAdapter ??= new PowerProfileOverrides();
         OnBattery ??= new PowerProfileOverrides();
         ApplicationBindings = ProfileDictionary.Normalize(ApplicationBindings);
+        MacroLibrary = (MacroLibrary ?? [])
+            .Where(macro => macro is not null)
+            .Take(64)
+            .ToList();
+        foreach (var macro in MacroLibrary)
+        {
+            macro.ApplySafeDefaults();
+        }
+
         Global.ApplySafeDefaults();
         foreach (var settings in Devices.Values)
         {

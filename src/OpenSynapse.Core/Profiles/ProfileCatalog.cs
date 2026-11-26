@@ -31,7 +31,11 @@ public static class ProfileCatalog
         var normalized = NormalizeName(name);
         document.EnsureProfileCatalog();
         EnsureUnique(document, normalized);
-        document.Profiles.Add(normalized, new ProfileDefinition());
+        var profile = new ProfileDefinition();
+        document.Profiles.Add(normalized, profile);
+        // A new profile starts with every macro available, unbound, instead of
+        // an empty list that would force the user to record it again.
+        MacroLibrary.Seed(document, profile);
     }
 
     public static void Clone(ProfileDocument document, string sourceName, string destinationName)

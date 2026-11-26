@@ -2967,7 +2967,7 @@
   <data name="MacroRowTriggerLabel.Text" xml:space="preserve"><value>觸發</value></data>
   <data name="MacroRowTriggerUnsetBadge.Text" xml:space="preserve"><value>未繫結</value></data>
   <data name="MacroNoMacroSelected.Text" xml:space="preserve"><value>未選擇宏</value></data>
-  <data name="MacroEmptyEditorHint.Text" xml:space="preserve"><value>點選"錄製"開始錄製動作序列，或直接點選下方鍵盤新增單個動作。</value></data>
+  <data name="MacroEmptyEditorHint.Text" xml:space="preserve"><value>點擊「錄製」開始錄製動作序列，或點擊「插入」新增單一動作。</value></data>
   <data name="MacroKeyBindsTitle.Text" xml:space="preserve"><value>觸發鍵</value></data>
   <data name="MacroTriggerSwitchHint.Text" xml:space="preserve"><value>開關只控制這個觸發鍵；手動播放不受影響。</value></data>
   <data name="MacroKeyBindsNoMacro.Text" xml:space="preserve"><value>選擇一個宏以檢視它的觸發鍵。</value></data>
@@ -5403,5 +5403,62 @@
   </data>
   <data name="ProfileRenameRollbackFailed" xml:space="preserve">
     <value>設定重新命名失敗，且設定檔無法還原：{0} / {1}</value>
+  </data>
+  <data name="MacroHoldStepHint" xml:space="preserve">
+    <value>保持按下，直到觸發鍵放開或手動停止。</value>
+  </data>
+  <data name="MacroStepAutoReleaseOnHint" xml:space="preserve">
+    <value>按下後等待指定時間，然後自動放開。</value>
+  </data>
+  <data name="MacroHoldStepBadge" xml:space="preserve">
+    <value>保持</value>
+  </data>
+  <data name="MacroHoldPlaying" xml:space="preserve">
+    <value>保持按下中，停止或放開觸發鍵即釋放。</value>
+  </data>
+  <data name="MacroHoldHint" xml:space="preserve">
+    <value>包含保持按下的步驟，停止或放開觸發鍵時釋放。</value>
+  </data>
+  <data name="MacroHoldRequiresSinglePlayback" xml:space="preserve">
+    <value>保持按下只能用於單次播放。請調整播放方式或關閉保持。</value>
+  </data>
+  <data name="MacroBindingUnassigned" xml:space="preserve">
+    <value>未分配</value>
+  </data>
+  <data name="MacroBindingMultiple" xml:space="preserve">
+    <value>已綁定 {0} 個按鍵</value>
+  </data>
+  <data name="MacroBindingManagedHint" xml:space="preserve">
+    <value>綁定由裝置按鍵分配管理。</value>
+  </data>
+  <data name="MacroBindingReadOnlyHint" xml:space="preserve">
+    <value>觸發鍵、觸發方式、播放策略請在裝置按鍵分配中修改。</value>
+  </data>
+  <data name="MacroManageBinding" xml:space="preserve">
+    <value>管理綁定</value>
+  </data>
+  <data name="MacroKeyPickerTitle" xml:space="preserve">
+    <value>鍵位 / 滑鼠選擇器</value>
+  </data>
+  <data name="MacroTriggerModeSequenceLabel" xml:space="preserve">
+    <value>序列</value>
+  </data>
+  <data name="RazerMappingActionSection" xml:space="preserve">
+    <value>動作</value>
+  </data>
+  <data name="RazerMappingMacroSection" xml:space="preserve">
+    <value>巨集設定</value>
+  </data>
+  <data name="RazerMappingAdvancedSection" xml:space="preserve">
+    <value>進階</value>
+  </data>
+  <data name="RazerMappingSoftwareMacroKeyHint" xml:space="preserve">
+    <value>觸發鍵由目前裝置按鍵決定。</value>
+  </data>
+  <data name="MacroLibrarySharedHint" xml:space="preserve">
+    <value>巨集由所有設定共用；每個設定只保留自己的觸發鍵與啟用狀態。</value>
+  </data>
+  <data name="MacroDeleteInUseElsewhere" xml:space="preserve">
+    <value>此巨集仍被這些設定綁定：{0}。請先在對應設定的裝置頁解除綁定。</value>
   </data>
 </root>

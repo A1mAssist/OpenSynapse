@@ -5,6 +5,7 @@ public enum MacroValidationFailure
     None,
     StepIncomplete,
     ReferenceInvalid,
+    HoldRequiresSinglePlayback,
 }
 
 /// <summary>
@@ -21,9 +22,14 @@ public static class MacroValidator
             return MacroValidationFailure.StepIncomplete;
         }
 
-        return ValidateReferences(macro, macros)
-            ? MacroValidationFailure.None
-            : MacroValidationFailure.ReferenceInvalid;
+        if (!ValidateReferences(macro, macros))
+        {
+            return MacroValidationFailure.ReferenceInvalid;
+        }
+
+        return HasUnsupportedHoldPlayback(macro)
+            ? MacroValidationFailure.HoldRequiresSinglePlayback
+            : MacroValidationFailure.None;
     }
 
     public static bool ValidateTree(MacroDefinition macro)
@@ -36,6 +42,32 @@ public static class MacroValidator
     {
         var count = 0;
         return ValidateStepList(steps, depth: 0, ref count);
+    }
+
+    /// <summary>
+    /// A held input keeps its key down after the plan ends. That is only safe
+    /// for a single playback: repeating would never release it, and a loop
+    /// would press it again every iteration.
+    /// </summary>
+    public static bool HasUnsupportedHoldPlayback(MacroDefinition macro) =>
+        HasHeldInputs(macro) &&
+        (macro.EffectivePlaybackMode(macro.Trigger) != MacroPlaybackMode.Once ||
+         HasHeldInputsInLoop(macro));
+
+    public static bool HasHeldInputs(MacroDefinition macro) =>
+        MacroStepTree.Enumerate(macro.Steps).Any(step => step.IsHeldInput);
+
+    private static bool HasHeldInputsInLoop(MacroDefinition macro) =>
+        macro.Steps.Any(step => ContainsHeldInput(step, insideLoop: false));
+
+    private static bool ContainsHeldInput(MacroStep step, bool insideLoop)
+    {
+        if (step.Kind != MacroStepKind.Loop)
+        {
+            return insideLoop && step.IsHeldInput;
+        }
+
+        return step.Children.Any(child => ContainsHeldInput(child, insideLoop: true));
     }
 
     public static bool ValidateReferences(

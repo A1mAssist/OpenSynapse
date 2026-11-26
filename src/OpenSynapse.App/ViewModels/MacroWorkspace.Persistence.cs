@@ -30,7 +30,6 @@ public sealed partial class MacroWorkspace
             return;
         }
 
-        CancelMacroCapture();
         CancelMacroStepCapture();
         if (!await SaveMacroChangesCoreAsync(forceSelected: true, cancellationToken))
         {
@@ -353,6 +352,12 @@ public sealed partial class MacroWorkspace
             if (!ValidateMacroReferences(row.Definition))
             {
                 StatusText = AppStrings.Text("MacroReferenceInvalid");
+                return false;
+            }
+
+            if (MacroValidator.HasUnsupportedHoldPlayback(row.Definition))
+            {
+                StatusText = AppStrings.Text("MacroHoldRequiresSinglePlayback");
                 return false;
             }
 

@@ -2531,7 +2531,7 @@
   <data name="MacroRowTriggerLabel.Text" xml:space="preserve"><value>트리거</value></data>
   <data name="MacroRowTriggerUnsetBadge.Text" xml:space="preserve"><value>바인딩되지 않음</value></data>
   <data name="MacroNoMacroSelected.Text" xml:space="preserve"><value>선택한 매크로 없음</value></data>
-  <data name="MacroEmptyEditorHint.Text" xml:space="preserve"><value>기록을 사용하여 동작 시퀀스를 캡처하거나 아래 키보드를 클릭하여 단일 동작을 추가하세요.</value></data>
+  <data name="MacroEmptyEditorHint.Text" xml:space="preserve"><value>기록으로 동작 시퀀스를 녹화하거나 삽입으로 단일 동작을 추가하세요.</value></data>
   <data name="MacroKeyBindsTitle.Text" xml:space="preserve"><value>트리거 키</value></data>
   <data name="MacroTriggerSwitchHint.Text" xml:space="preserve"><value>스위치는 이 트리거만 제어하며 수동 재생에는 영향을 주지 않습니다.</value></data>
   <data name="MacroKeyBindsNoMacro.Text" xml:space="preserve"><value>트리거 키를 보려면 매크로를 선택하세요.</value></data>
@@ -4962,5 +4962,62 @@
   </data>
   <data name="ProfileRenameRollbackFailed" xml:space="preserve">
     <value>프로필 이름 바꾸기에 실패했으며 프로필 파일을 복원할 수 없습니다: {0} / {1}</value>
+  </data>
+  <data name="MacroHoldStepHint" xml:space="preserve">
+    <value>트리거 키를 놓거나 재생을 중지할 때까지 누르고 있습니다.</value>
+  </data>
+  <data name="MacroStepAutoReleaseOnHint" xml:space="preserve">
+    <value>누른 뒤 유지 시간만큼 기다렸다가 자동으로 놓습니다.</value>
+  </data>
+  <data name="MacroHoldStepBadge" xml:space="preserve">
+    <value>유지</value>
+  </data>
+  <data name="MacroHoldPlaying" xml:space="preserve">
+    <value>키 유지 중 - 중지하거나 트리거 키를 놓으면 해제됩니다.</value>
+  </data>
+  <data name="MacroHoldHint" xml:space="preserve">
+    <value>키를 유지하는 단계가 있습니다. 중지하거나 트리거 키를 놓으면 해제됩니다.</value>
+  </data>
+  <data name="MacroHoldRequiresSinglePlayback" xml:space="preserve">
+    <value>유지 단계는 단일 재생에서만 사용할 수 있습니다. 재생 방식을 바꾸거나 유지를 끄세요.</value>
+  </data>
+  <data name="MacroBindingUnassigned" xml:space="preserve">
+    <value>할당되지 않음</value>
+  </data>
+  <data name="MacroBindingMultiple" xml:space="preserve">
+    <value>키 {0}개에 할당됨</value>
+  </data>
+  <data name="MacroBindingManagedHint" xml:space="preserve">
+    <value>할당은 장치 키 할당에서 관리합니다.</value>
+  </data>
+  <data name="MacroBindingReadOnlyHint" xml:space="preserve">
+    <value>트리거 키, 트리거 방식, 재생 방식은 장치 키 할당에서 변경하세요.</value>
+  </data>
+  <data name="MacroManageBinding" xml:space="preserve">
+    <value>할당 관리</value>
+  </data>
+  <data name="MacroKeyPickerTitle" xml:space="preserve">
+    <value>키 / 마우스 선택기</value>
+  </data>
+  <data name="MacroTriggerModeSequenceLabel" xml:space="preserve">
+    <value>시퀀스</value>
+  </data>
+  <data name="RazerMappingActionSection" xml:space="preserve">
+    <value>동작</value>
+  </data>
+  <data name="RazerMappingMacroSection" xml:space="preserve">
+    <value>매크로</value>
+  </data>
+  <data name="RazerMappingAdvancedSection" xml:space="preserve">
+    <value>고급</value>
+  </data>
+  <data name="RazerMappingSoftwareMacroKeyHint" xml:space="preserve">
+    <value>트리거 키는 현재 할당 중인 장치 키입니다.</value>
+  </data>
+  <data name="MacroLibrarySharedHint" xml:space="preserve">
+    <value>매크로는 모든 프로필에서 공유되며, 트리거 키와 사용 상태만 프로필별로 유지됩니다.</value>
+  </data>
+  <data name="MacroDeleteInUseElsewhere" xml:space="preserve">
+    <value>이 매크로는 다음 프로필에 할당되어 있습니다: {0}. 먼저 해당 프로필의 장치 페이지에서 해제하세요.</value>
   </data>
 </root>

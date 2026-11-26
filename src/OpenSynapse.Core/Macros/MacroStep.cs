@@ -5,6 +5,11 @@ public sealed class MacroStep
     public MacroStepKind Kind { get; set; }
     public MacroInput? Input { get; set; }
     public bool IsDown { get; set; }
+    /// <summary>
+    /// <c>true</c> releases the input after <see cref="HoldMilliseconds"/>;
+    /// <c>false</c> keeps it pressed until the trigger is released or playback
+    /// is stopped. A held input is only supported by a single-playback macro.
+    /// </summary>
     public bool AutoRelease { get; set; } = true;
     public int DelayMilliseconds { get; set; }
     public int HoldMilliseconds { get; set; } = DefaultHoldMilliseconds;
@@ -29,6 +34,13 @@ public sealed class MacroStep
     public const int MaxWorkingDirectoryLength = 1024;
     public const int MaxMousePathPoints = 4096;
     public const int MaxLoopCount = 999;
+
+    /// <summary>
+    /// A step that presses an input and deliberately leaves it down. The field
+    /// name is kept for file compatibility; it no longer means "release now".
+    /// </summary>
+    public bool IsHeldInput =>
+        Kind == MacroStepKind.Input && IsDown && !AutoRelease;
 
     public void ApplySafeDefaults()
     {
