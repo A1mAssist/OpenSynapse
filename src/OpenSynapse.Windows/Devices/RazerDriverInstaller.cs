@@ -159,11 +159,21 @@ internal static partial class RazerDriverInstaller
         CancellationToken cancellationToken = default)
     {
         string path;
+        string? staged = null;
         try
         {
             if (!string.IsNullOrWhiteSpace(packagePath))
             {
-                path = Path.GetFullPath(packagePath);
+                // The caller's path lives in a user-writable cache. Copy it into
+                // the SYSTEM-owned service cache first, then verify and execute
+                // the copy so the bytes cannot be swapped after verification.
+                EnsureServiceCacheDirectory();
+                var source = Path.GetFullPath(packagePath);
+                staged = Path.Combine(
+                    ServiceCacheDirectory,
+                    $"install-{Guid.NewGuid():N}{Path.GetExtension(source)}");
+                File.Copy(source, staged, overwrite: false);
+                path = staged;
                 VerifyPackage(path);
             }
             else
@@ -190,26 +200,31 @@ internal static partial class RazerDriverInstaller
         }
         catch (InvalidDataException exception)
         {
+            DeleteStaged(staged);
             return new RazerDriverInstallResult(
                 false, RazerDriverInstallFailure.InvalidPackage, Error: exception.Message);
         }
         catch (HttpRequestException exception)
         {
+            DeleteStaged(staged);
             return new RazerDriverInstallResult(
                 false, RazerDriverInstallFailure.DownloadFailed, Error: exception.Message);
         }
         catch (IOException exception)
         {
+            DeleteStaged(staged);
             return new RazerDriverInstallResult(
                 false, RazerDriverInstallFailure.DownloadFailed, Error: exception.Message);
         }
         catch (UnauthorizedAccessException exception)
         {
+            DeleteStaged(staged);
             return new RazerDriverInstallResult(
                 false, RazerDriverInstallFailure.StartFailed, Error: exception.Message);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
+            DeleteStaged(staged);
             return new RazerDriverInstallResult(
                 false,
                 RazerDriverInstallFailure.Timeout,
@@ -218,11 +233,35 @@ internal static partial class RazerDriverInstaller
 
         var result = await RunInstallerAsync(path, elevated: false, cancellationToken)
             .ConfigureAwait(false);
-        return result.Success
-            ? await CompleteInstallAsync(
-                    productId, path, result, elevated: false, cancellationToken)
-                .ConfigureAwait(false)
-            : result;
+        try
+        {
+            return result.Success
+                ? await CompleteInstallAsync(
+                        productId, path, result, elevated: false, cancellationToken)
+                    .ConfigureAwait(false)
+                : result;
+        }
+        finally
+        {
+            DeleteStaged(staged);
+        }
+    }
+
+    private static void DeleteStaged(string? staged)
+    {
+        if (staged is null)
+        {
+            return;
+        }
+
+        try
+        {
+            File.Delete(staged);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException)
+        {
+        }
     }
 
     internal static async Task<string> EnsurePackageAsync(

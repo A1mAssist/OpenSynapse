@@ -429,6 +429,7 @@ public static class OpenSynapseServiceRequestParser
                 OpenSynapseServiceProtocol.ApplyUpdateOperation) &&
             !string.IsNullOrWhiteSpace(request.PackageFileName) &&
             !string.IsNullOrWhiteSpace(request.PackagePath) &&
+            IsUsablePath(request.PackagePath) &&
             !string.IsNullOrWhiteSpace(request.PackageVersion) &&
             request.WaitProcessId is > 0)
         {
@@ -444,5 +445,21 @@ public static class OpenSynapseServiceRequestParser
         }
 
         return OpenSynapseServiceAction.Unsupported;
+    }
+
+    // Path.GetFullPath throws on control characters; reject them before the
+    // request reaches code that builds a path outside a try/catch.
+    private static bool IsUsablePath(string path)
+    {
+        foreach (var character in path)
+        {
+            if (character < ' ' || character == '"' || character == '<' ||
+                character == '>' || character == '|')
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

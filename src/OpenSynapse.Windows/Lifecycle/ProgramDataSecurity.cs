@@ -32,6 +32,8 @@ internal static class ProgramDataSecurity
             {
                 var security = new DirectoryInfo(service).GetAccessControl();
                 security.SetAccessRuleProtection(isProtected: false, preserveInheritance: false);
+                security.SetOwner(new SecurityIdentifier(
+                    WellKnownSidType.LocalSystemSid, null));
                 new DirectoryInfo(service).SetAccessControl(security);
             }
         }
@@ -47,6 +49,10 @@ internal static class ProgramDataSecurity
         Directory.CreateDirectory(path);
         var security = new DirectorySecurity();
         security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+        // An owner keeps WRITE_DAC even when its ACEs are removed. Without this
+        // the interactive user could re-grant write access to the directory.
+        security.SetOwner(new SecurityIdentifier(
+            WellKnownSidType.LocalSystemSid, null));
         const InheritanceFlags inheritance =
             InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit;
         security.AddAccessRule(new FileSystemAccessRule(

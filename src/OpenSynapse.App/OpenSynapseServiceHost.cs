@@ -131,7 +131,8 @@ internal static partial class OpenSynapseServiceHost
                 }
                 catch (Exception exception) when (
                     exception is IOException or InvalidOperationException or
-                        UnauthorizedAccessException or JsonException)
+                        UnauthorizedAccessException or JsonException or ArgumentException or
+                        NotSupportedException)
                 {
                     // A single malformed or disconnected client must not kill the service.
                 }
