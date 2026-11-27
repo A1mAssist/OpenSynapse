@@ -6,9 +6,12 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ## [Unreleased]
 
+## [1.7.4] - 2026-11-28
+
 ### Added
 
 - **Help center**: add an offline help page with Chinese and English guides and interactive control examples.
+- **Preset editor**: create, open and fine-tune `.oschroma` presets, preview module changes, and save or export the result; the app includes 12 free starter presets.
 - **HyperBoost CPU power limits**: allow CPU power presets in Custom and HyperBoost modes, retain a separate HyperBoost baseline for restoring firmware limits, and restore the previous hardware values if saving fails.
 - **Mouse surface calibration**: expose presets, manual sampling, lift-off and tracking settings according to device capabilities, with cancellation, timeout recovery and saved custom surfaces.
 - **Lighting output scope**: take over only selected devices; ambient layers can map the whole canvas, the selected devices together, or each device independently, so adjacent devices need not shift the keyboard's screen sampling area.
@@ -39,6 +42,8 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
+- **Keyboard and peripheral frame output**: prepare extended custom lighting once per output session instead of resetting the effect on every frame, while retaining the per-frame latch required by older keyboards. Manifest keyboards use their declared payload lengths and frame pacing; wireless keyboard aliases share the correct transaction channel and counter.
+- **Numeric settings auto-apply**: clicking outside an input group commits the edited value, including a click on empty page space. Enter finishes the edit without activating an unrelated button such as receiver pairing; moving between related inputs keeps the edit together.
 - **Studio dock and mouse output**: keep each logical device on a shared HID path and route the mouse's complete frame to its own channel, fixing the dock changing color while the linked Basilisk V3 Pro 35K stays unchanged.
 - **Profile creation, cloning and renaming**: all three actions on the sidebar Profiles page prompt for a name. Rename starts with the current name selected; cancelling leaves the profile intact, and invalid or duplicate names are rejected.
 - **Mouse polling-rate controls**: a missing readback after a write keeps the controls available for retry instead of hiding them as unsupported. Only a confirmed rate is saved to the profile.
