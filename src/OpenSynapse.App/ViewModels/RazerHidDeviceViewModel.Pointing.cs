@@ -30,9 +30,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                 var reported = await _service.SetPollingRateAsync(Connection, requested, cancellationToken);
                 if (reported is not { } rate)
                 {
-                    // The device could not be read back, so the state keeps the value it
-                    // had. Claiming the requested rate would state something unknown.
-                    throw new InvalidOperationException(AppStrings.Text("SettingAutoApplyCancelled"));
+                    // Missing readback is retryable, not evidence that polling-rate control is unsupported.
+                    throw new RazerDeviceTimeoutException("Polling-rate write was acknowledged, but readback was unavailable.");
                 }
                 var previousRate = _basicState?.PollingRate ?? requested;
                 SelectedPollingRate = rate;

@@ -321,6 +321,12 @@ public partial class App
             root.Children.Add(preview);
             return Task.CompletedTask;
         });
+        Button("QaPollingRate", "轮询率刷新", async () =>
+        {
+            var preview = await DevicesPage.CreatePollingRateQaAsync();
+            root.Children.Clear();
+            root.Children.Add(preview);
+        });
         Button("QaBladeThxReadback", "验证 Blade THX 失败恢复", async () =>
         {
             status.Text = await ThxAudioViewModel.VerifyReadbackAsync();
