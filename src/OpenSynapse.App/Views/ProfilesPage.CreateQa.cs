@@ -32,7 +32,7 @@ public sealed partial class ProfilesPage
         page.Unloaded += (_, _) => macros.Dispose();
         var root = new StackPanel { Spacing = 16, Background = (Brush)Application.Current.Resources["CanvasBrush"] };
         page.Content = root;
-        root.Children.Add(new TextBlock { Text = "配置新建 · 隔离验收", FontSize = 26 });
+        root.Children.Add(new TextBlock { Text = "配置管理 · 隔离验收", FontSize = 26 });
         var status = new TextBlock { Text = "READY", TextWrapping = TextWrapping.Wrap };
         AutomationProperties.SetAutomationId(status, "ProfileQaStatus");
         var create = new Button { Content = AppStrings.Text("Loc_9D032642E0/Content"),
@@ -63,8 +63,49 @@ public sealed partial class ProfilesPage
             else status.Text = "FAIL profile create or persistence";
         };
         root.Children.Add(create);
+        AddOperation("ProfileQaClone", "Loc_212999B9CD/Content", clone: true);
+        AddOperation("ProfileQaRename", "Loc_12964C8CFC/Content", clone: false);
         root.Children.Add(status);
         return page;
+
+        void AddOperation(string id, string label, bool clone)
+        {
+            var button = new Button { Content = AppStrings.Text(label),
+                Style = (Style)Application.Current.Resources["SecondaryButtonStyle"] };
+            AutomationProperties.SetAutomationId(button, id);
+            button.Click += async (_, _) =>
+            {
+                status.Text = "WORKING";
+                var before = document.Profiles.Count;
+                var previous = document.ActiveProfileName;
+                var dpi = document.Profiles[previous].Global.Viper.DpiX;
+                var applyBefore = applied;
+                if (clone) await page.CloneProfileAsync(workspace, default);
+                else await page.RenameProfileAsync(workspace, default);
+                var saved = await store.LoadAsync();
+                var current = document.ActiveProfileName;
+                if (current != previous && saved.ActiveProfileName == current &&
+                    document.Profiles.Count == before + (clone ? 1 : 0) &&
+                    saved.Profiles.Count == document.Profiles.Count && applied == applyBefore + 1 &&
+                    saved.Profiles[current].Global.Viper.DpiX == dpi &&
+                    saved.Profiles.ContainsKey(previous) == clone)
+                {
+                    document.Profiles[current].Global.Viper.DpiX = dpi + 100;
+                    await store.SaveAsync(document);
+                    var reloaded = await store.LoadAsync();
+                    status.Text = reloaded.Profiles[current].Global.Viper.DpiX == dpi + 100 &&
+                        (!clone || reloaded.Profiles[previous].Global.Viper.DpiX == dpi)
+                        ? $"PASS {(clone ? "cloned" : "renamed")}, selected, edited and reloaded: {current}"
+                        : "FAIL profile settings were not independent";
+                }
+                else if (document.Profiles.Count == before && saved.Profiles.Count == before &&
+                    current == previous && saved.ActiveProfileName == previous && applied == applyBefore &&
+                    saved.Profiles[previous].Global.Viper.DpiX == dpi)
+                    status.Text = "PASS unchanged: " + workspace.ProfileStatusText;
+                else status.Text = "FAIL profile operation or persistence";
+            };
+            root.Children.Add(button);
+        }
     }
 }
 #endif

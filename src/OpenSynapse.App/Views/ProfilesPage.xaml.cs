@@ -182,12 +182,13 @@ public sealed partial class ProfilesPage : UserControl
 
     private async Task CreateProfileAsync(ProfilesWorkspace profiles, CancellationToken cancellationToken)
     {
-        if (await ShowCreateProfileDialogAsync(profiles.ProfileNameInput) is not { } name) return;
+        if (await ShowProfileNameDialogAsync(AppStrings.Text("ProfileCreateTitle"),
+            AppStrings.Text("Loc_9D032642E0/Content"), profiles.ProfileNameInput) is not { } name) return;
         profiles.ProfileNameInput = name;
         await profiles.CreateProfileAsync(cancellationToken);
     }
 
-    private async Task<string?> ShowCreateProfileDialogAsync(string initialName)
+    private async Task<string?> ShowProfileNameDialogAsync(string title, string confirmText, string initialName)
     {
         var nameBox = new TextBox
         {
@@ -199,9 +200,9 @@ public sealed partial class ProfilesPage : UserControl
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(nameBox, "NewProfileNameBox");
         var dialog = new ContentDialog
         {
-            Title = AppStrings.Text("ProfileCreateTitle"),
+            Title = title,
             Content = nameBox,
-            PrimaryButtonText = AppStrings.Text("Loc_9D032642E0/Content"),
+            PrimaryButtonText = confirmText,
             CloseButtonText = AppStrings.Text("Text_949856B3"),
             IsPrimaryButtonEnabled = !string.IsNullOrWhiteSpace(initialName),
             DefaultButton = ContentDialogButton.Primary,
@@ -213,10 +214,28 @@ public sealed partial class ProfilesPage : UserControl
     }
 
     private async void CloneProfileClick(object sender, RoutedEventArgs e) =>
-        await ViewModel.Profiles.CloneActiveProfileAsync(Lifetime);
+        await CloneProfileAsync(ViewModel.Profiles, Lifetime);
+
+    private async Task CloneProfileAsync(ProfilesWorkspace profiles, CancellationToken cancellationToken)
+    {
+        if (await ShowProfileNameDialogAsync(AppStrings.FormatText("CloneProfile", profiles.ActiveProfileName),
+            AppStrings.Text("Loc_212999B9CD/Content"), profiles.ProfileNameInput) is not { } name) return;
+        profiles.ProfileNameInput = name;
+        await profiles.CloneActiveProfileAsync(cancellationToken);
+    }
 
     private async void RenameProfileClick(object sender, RoutedEventArgs e) =>
-        await ViewModel.Profiles.RenameActiveProfileAsync(Lifetime);
+        await RenameProfileAsync(ViewModel.Profiles, Lifetime);
+
+    private async Task RenameProfileAsync(ProfilesWorkspace profiles, CancellationToken cancellationToken)
+    {
+        var initialName = string.IsNullOrWhiteSpace(profiles.ProfileNameInput)
+            ? profiles.ActiveProfileName : profiles.ProfileNameInput;
+        if (await ShowProfileNameDialogAsync(AppStrings.FormatText("RenameProfile", profiles.ActiveProfileName),
+            AppStrings.Text("Loc_12964C8CFC/Content"), initialName) is not { } name) return;
+        profiles.ProfileNameInput = name;
+        await profiles.RenameActiveProfileAsync(cancellationToken);
+    }
 
     private async void DeleteProfileClick(object sender, RoutedEventArgs e)
     {
