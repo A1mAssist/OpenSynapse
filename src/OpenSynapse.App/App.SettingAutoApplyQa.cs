@@ -327,6 +327,12 @@ public partial class App
             root.Children.Clear();
             root.Children.Add(preview);
         });
+        Button("QaPowerInput", "鼠标电源输入", async () =>
+        {
+            var preview = await DevicesPage.CreatePowerInputQaAsync();
+            root.Children.Clear();
+            root.Children.Add(preview);
+        });
         Button("QaBladeThxReadback", "验证 Blade THX 失败恢复", async () =>
         {
             status.Text = await ThxAudioViewModel.VerifyReadbackAsync();

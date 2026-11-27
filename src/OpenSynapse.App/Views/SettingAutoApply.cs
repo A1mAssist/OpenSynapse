@@ -30,6 +30,7 @@ internal sealed class SettingAutoApply
     private bool _pointerDown;
     private bool _applying;
     private bool _scheduledUserEdit;
+    private UIElement? _pointerRoot;
     private long _revision;
     private long _scheduleRevision;
     private (DependencyObject Input, object Value)[]? _submittedValues;
@@ -70,6 +71,7 @@ internal sealed class SettingAutoApply
         group.Loaded += (_, _) => group.DispatcherQueue.TryEnqueue(() => Hook(group));
         group.Unloaded += (_, _) =>
         {
+            UnhookPointerRoot();
             _delay.Stop();
             _dismiss.Stop();
             _scheduleRevision++;
@@ -79,14 +81,37 @@ internal sealed class SettingAutoApply
             _hooked.Clear();
         };
         group.DataContextChanged += (_, _) => Reset();
+        group.GotFocus += (_, _) =>
+        {
+            UnhookPointerRoot();
+            if (group.XamlRoot is { } root &&
+                FindInput(FocusManager.GetFocusedElement(root) as DependencyObject) is NumberBox)
+            {
+                _pointerRoot = root.Content as UIElement;
+                _pointerRoot?.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(PointerPressedOutsideInput), true);
+            }
+        };
         group.LostFocus += (_, e) =>
         {
             if (FindInput(e.OriginalSource as DependencyObject) is NumberBox && !ContainsFocus())
-                Commit(_getContext(), userEdit: true);
+            {
+                UnhookPointerRoot();
+                Schedule(TimeSpan.Zero, userEdit: true);
+            }
+        };
+        group.PreviewKeyDown += (_, e) =>
+        {
+            // Commit on key-up, before disabling a busy input can redirect Enter to another button.
+            if (e.Key == VirtualKey.Enter && FindInput(e.OriginalSource as DependencyObject) is NumberBox)
+                e.Handled = true;
         };
         group.AddHandler(UIElement.KeyUpEvent, new KeyEventHandler((_, e) =>
         {
-            if (e.Key == VirtualKey.Enter) Schedule(TimeSpan.Zero, userEdit: true);
+            if (e.Key == VirtualKey.Enter)
+            {
+                if (FindInput(e.OriginalSource as DependencyObject) is NumberBox) e.Handled = true;
+                Schedule(TimeSpan.Zero, userEdit: true);
+            }
             else if (e.Key is VirtualKey.Space or VirtualKey.Left or VirtualKey.Right or
                 VirtualKey.Up or VirtualKey.Down or VirtualKey.Home or VirtualKey.End or VirtualKey.PageUp or VirtualKey.PageDown)
             {
@@ -99,6 +124,7 @@ internal sealed class SettingAutoApply
 
     private void Reset()
     {
+        UnhookPointerRoot();
         _revision++;
         _scheduleRevision++;
         _delay.Stop();
@@ -109,6 +135,20 @@ internal sealed class SettingAutoApply
         _retryApply = null;
         _submittedValues = null;
         _retry.Visibility = Visibility.Collapsed;
+    }
+
+    private void UnhookPointerRoot()
+    {
+        _pointerRoot?.RemoveHandler(UIElement.PointerPressedEvent, new PointerEventHandler(PointerPressedOutsideInput));
+        _pointerRoot = null;
+    }
+
+    private void PointerPressedOutsideInput(object sender, PointerRoutedEventArgs e)
+    {
+        var input = FindInput(e.OriginalSource as DependencyObject);
+        // Moving between a group's X/Y fields is still the same edit.
+        if (input is not null && _hooked.Contains(input)) return;
+        Schedule(TimeSpan.Zero, userEdit: true);
     }
 
     private void Hook(DependencyObject element)
@@ -268,17 +308,27 @@ internal sealed class SettingAutoApply
         if (_hooked.OfType<ComboBox>().Any(combo => combo.IsDropDownOpen)) return;
         foreach (var number in _hooked.OfType<NumberBox>().Where(number => number.IsLoaded && number.IsEnabled && IsVisible(number)))
         {
-            if (!double.IsFinite(number.Value) ||
-                !double.TryParse(number.Text, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.CurrentCulture, out var value) ||
+            var text = NumberText(number) ?? number.Text;
+            if (!double.TryParse(text, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.CurrentCulture, out var value) ||
                 !double.IsFinite(value) || value < number.Minimum || value > number.Maximum)
             {
                 Show(AppStrings.Text("SettingAutoApplyInvalid"), retry: false);
                 return;
             }
+            // A click on non-focusable space does not make NumberBox commit its TextBox.
+            if (userEdit) number.Value = value;
         }
         var values = CaptureValues();
         if (_submittedValues is not null && _submittedValues.SequenceEqual(values)) return;
         if (_prepareApply() is { } apply) Submit(context, apply);
+    }
+
+    private static string? NumberText(DependencyObject element)
+    {
+        if (element is TextBox text) return text.Text;
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+            if (NumberText(VisualTreeHelper.GetChild(element, i)) is { } value) return value;
+        return null;
     }
 
     private (DependencyObject Input, object Value)[] CaptureValues() => _hooked
