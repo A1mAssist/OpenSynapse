@@ -40,11 +40,13 @@ All notable user-visible changes to OpenSynapse are documented here.
 ### Fixed
 
 - **Studio dock and mouse output**: keep each logical device on a shared HID path and route the mouse's complete frame to its own channel, fixing the dock changing color while the linked Basilisk V3 Pro 35K stays unchanged.
-- **New profiles**: the sidebar Profiles page prompts for a name before creating and selecting a profile; cancelling leaves the current profile intact.
+- **Profile creation, cloning and renaming**: all three actions on the sidebar Profiles page prompt for a name. Rename starts with the current name selected; cancelling leaves the profile intact, and invalid or duplicate names are rejected.
+- **Mouse polling-rate controls**: a missing readback after a write keeps the controls available for retry instead of hiding them as unsupported. Only a confirmed rate is saved to the profile.
+- **Background battery refresh**: refresh device battery readings and the tray display while the main window is hidden, and share readings between the device page and tray to avoid duplicate queries.
 - **HyperPolling indicator**: name the three status modes, read back changes and use the receiver's own command channel. Indicator colors follow connection or battery status and cannot be customized.
 - **Surface calibration sampling**: Enter, Space or any mouse's left button can finish sampling while the pointer is suspended. Cancellation restores the temporary sensor state; enabled Manual/Mini readback differences are retained as applied but unconfirmed instead of discarding firmware-recalculated values.
 - **Studio device images**: show cached product images immediately while revalidating the manifest in the background.
-- **Device navigation**: clicking the whole Devices row expands the group and selects its first device after the native toggle completes, instead of navigating without keeping the group open.
+- **Device navigation**: clicking the whole Devices row expands the group and selects its first device; clicking it again collapses the group without reopening it during navigation.
 - **Tartarus mapping**: resolve 022B/0244 keypad firmware ids to the key each switch actually emits, so software macros no longer bind to F7, G or Space; wheel and D-pad ids stay unbound instead of becoming keyboard keys.
 - **Naga mapping**: fall back to the product button table when the firmware returns no list, keep side-button triggers scoped to their own mouse, restore the missing Naga Epic identity, and enable software-macro binding on BLE Naga pages.
 - **Private-key hot-plug**: keep one reader per device and rescan incrementally, so a device connected after startup receives its private-key macros without restarting the app.
