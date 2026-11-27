@@ -74,6 +74,7 @@ public sealed partial class RefreshWorkspace
                         await _razerHid.KeepAliveDriverModeAsync(cancellationToken);
                     }
                     await MaintainSurfaceCalibrationsAsync(cancellationToken);
+                    await _razerHid.RefreshBatteriesAsync(cancellationToken);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {

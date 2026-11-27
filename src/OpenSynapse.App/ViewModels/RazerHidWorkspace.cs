@@ -441,7 +441,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
     }
 
     internal Task PrepareStudioLightingAsync(string instanceId) =>
-        RunDisplayLightingOnDispatcherAsync(async () =>
+        RunOnDispatcherAsync(async () =>
         {
             var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { instanceId };
             if (SelectedDevice is { } selected && ids.Contains(selected.InstanceId))
@@ -625,39 +625,6 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         CancellationToken cancellationToken = default) =>
         _specialLightingService?.ResetSessionAsync(devicePath, cancellationToken) ??
         Task.CompletedTask;
-
-    internal async Task<int?> ReadBatteryPercentAsync(
-        RazerHidDeviceRowViewModel row,
-        CancellationToken cancellationToken)
-    {
-        if (_deviceService is null) return null;
-        try
-        {
-            var percent = await _deviceService
-                .GetBatteryPercentAsync(row.Connection, cancellationToken)
-                .ConfigureAwait(false);
-            row.SetBatteryPercent(percent);
-            if (row.Connection.Capabilities.Contains(RazerHidBackendCapability.ChargingRead))
-            {
-                try
-                {
-                    row.SetCharging(await _deviceService
-                        .GetChargingAsync(row.Connection, cancellationToken)
-                        .ConfigureAwait(false));
-                }
-                catch (Exception) when (!cancellationToken.IsCancellationRequested)
-                {
-                    // The charging query is optional; keep the last known state.
-                }
-            }
-            return percent;
-        }
-        catch (Exception) when (!cancellationToken.IsCancellationRequested)
-        {
-            // No answer means no percentage for this row; the menu still lists it.
-            return null;
-        }
-    }
 
     public async ValueTask DisposeAsync()
     {

@@ -324,7 +324,7 @@ public sealed partial class RazerHidWorkspace
             try
             {
                 using var restoreTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-                await RunDisplayLightingOnDispatcherAsync(() =>
+                await RunOnDispatcherAsync(() =>
                         _softwareLightingOwner.RestoreAsync(
                             connections, SelectedDevice, restoreTimeout.Token))
                     .ConfigureAwait(false);
@@ -348,7 +348,7 @@ public sealed partial class RazerHidWorkspace
             $"display-on: razorhid {restored} restored, {failed} failure(s), {missing} missing device(s).");
     }
 
-    private Task RunDisplayLightingOnDispatcherAsync(Func<Task> action)
+    private Task RunOnDispatcherAsync(Func<Task> action)
     {
         if (_dispatcherQueue is null || _dispatcherQueue.HasThreadAccess)
         {
