@@ -211,9 +211,20 @@ internal sealed class RazerHidSoftwareLightingRuntime : IAsyncDisposable
                     previous.Frame.AsSpan().SequenceEqual(frame))
                     continue;
 
-                await _service.SetCustomFrameAsync(target, frame, cancellationToken).ConfigureAwait(false);
-                _lastFrames[target.InstanceId] = new AppliedFrame(target, frame);
-                wrote = true;
+                try
+                {
+                    if (!RazerHidLightingProtocol.RequiresCustomFrameLatch(target.Definition) &&
+                        (previous is null || !previous.Connection.IsSameEndpoint(target)))
+                        await _service.SetCustomFrameEffectAsync(target, cancellationToken).ConfigureAwait(false);
+                    await _service.SetCustomFrameAsync(target, frame, cancellationToken, prepareEffect: false).ConfigureAwait(false);
+                    _lastFrames[target.InstanceId] = new AppliedFrame(target, frame);
+                    wrote = true;
+                }
+                catch
+                {
+                    _lastFrames.Remove(target.InstanceId);
+                    throw;
+                }
             }
 
             return wrote || targets.Length > 0;

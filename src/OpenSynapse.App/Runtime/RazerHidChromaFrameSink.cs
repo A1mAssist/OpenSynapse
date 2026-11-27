@@ -73,6 +73,7 @@ internal sealed class RazerHidChromaFrameSink
             if (targets.Length == 0)
             {
                 _lastFrames.Clear();
+                _customEffectPrepared.Clear();
                 return false;
             }
 
@@ -117,19 +118,28 @@ internal sealed class RazerHidChromaFrameSink
 
             foreach (var (target, frame) in writes)
             {
-                if (!_customEffectPrepared.TryGetValue(target.InstanceId, out var prepared) ||
-                    !prepared.IsSameEndpoint(target))
+                try
                 {
-                    if (_baselineAttempted.Add(target.InstanceId))
+                    if (!_customEffectPrepared.TryGetValue(target.InstanceId, out var prepared) ||
+                        !prepared.IsSameEndpoint(target))
                     {
-                        _baselines[target.InstanceId] = await RazerHidLightingBaseline
-                            .CaptureAsync(_service, target, cancellationToken).ConfigureAwait(false);
+                        if (_baselineAttempted.Add(target.InstanceId))
+                        {
+                            _baselines[target.InstanceId] = await RazerHidLightingBaseline
+                                .CaptureAsync(_service, target, cancellationToken).ConfigureAwait(false);
+                        }
+                        await _service.SetCustomFrameEffectAsync(target, cancellationToken).ConfigureAwait(false);
+                        _customEffectPrepared[target.InstanceId] = target;
                     }
-                    await _service.SetCustomFrameEffectAsync(target, cancellationToken).ConfigureAwait(false);
-                    _customEffectPrepared[target.InstanceId] = target;
+                    await _service.SetCustomFrameAsync(target, frame, cancellationToken, prepareEffect: false).ConfigureAwait(false);
+                    _lastFrames[target.InstanceId] = new FrameState(target, frame);
                 }
-                await _service.SetCustomFrameAsync(target, frame, cancellationToken).ConfigureAwait(false);
-                _lastFrames[target.InstanceId] = new FrameState(target, frame);
+                catch
+                {
+                    _lastFrames.Remove(target.InstanceId);
+                    _customEffectPrepared.Remove(target.InstanceId);
+                    throw;
+                }
             }
             return true;
         }

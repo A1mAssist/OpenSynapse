@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.Windows.Protocols;
@@ -154,6 +155,8 @@ public sealed partial class RazerFeatureTransport
             await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
+                var pacedKeyboard = logicalProductId is { } productId &&
+                    StudioKeyboardCatalog.TryGet(RazerProductAliases.Canonical(productId), out _);
                 for (var index = 0; index < requests.Count - 1; index++)
                 {
                     var request = requests[index];
@@ -164,6 +167,9 @@ public sealed partial class RazerFeatureTransport
                     {
                         throw new Win32Exception(result.Error, "A Razer frame report was rejected.");
                     }
+                    // rzDevice25.setChromaFrameLightingEngine spaces consecutive rows by 1 ms.
+                    if (pacedKeyboard)
+                        await WaitAsync(TimeSpan.FromMilliseconds(1), directIo: true, cancellationToken).ConfigureAwait(false);
                 }
 
                 var last = requests[^1];
@@ -234,7 +240,13 @@ public sealed partial class RazerFeatureTransport
         }
 
         var isHost = RazerDualDongleCatalog.CanHost(productId);
-        if (isHost && logicalProductId is { } childProductId && childProductId != productId)
+        if (logicalProductId is { } keyboardProductId &&
+            StudioKeyboardCatalog.TryGet(RazerProductAliases.Canonical(keyboardProductId), out _))
+        {
+            // Share the settings channel's rolling transaction counter across frame sessions.
+            PrepareStandardTransaction(devicePath, request, logicalProductId);
+        }
+        else if (isHost && logicalProductId is { } childProductId && childProductId != productId)
         {
             // Linked children share their rolling counter with single queries across HID opens.
             PrepareStandardTransaction(devicePath, request, childProductId);

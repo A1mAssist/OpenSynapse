@@ -9,7 +9,8 @@ public sealed partial class RazerHidDeviceService
     public async Task SetCustomFrameAsync(
         RazerHidDeviceConnection connection,
         IReadOnlyList<RazerHidColor> frame,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool prepareEffect = true)
     {
         ArgumentNullException.ThrowIfNull(frame);
         var dimensions = connection.Definition.MatrixDimensions ??
@@ -22,12 +23,13 @@ public sealed partial class RazerHidDeviceService
         }
 
         RequireReady(connection);
-        // The selector must land before the rows: firmware that clears its frame
-        // buffer on entering custom mode would otherwise swallow this frame.
-        var latch = RazerHidLightingProtocol.TryCreateCustomEffectRequest(connection)?.Report;
-        var offset = latch is null ? 0 : 1;
-        var reports = new byte[dimensions.Rows + offset][];
-        if (latch is not null) reports[0] = latch;
+        // Streaming owners prepare extended effects once; legacy matrices latch after every frame.
+        var latchAfterRows = RazerHidLightingProtocol.RequiresCustomFrameLatch(connection.Definition);
+        var selector = prepareEffect || latchAfterRows
+            ? RazerHidLightingProtocol.TryCreateCustomEffectRequest(connection)?.Report : null;
+        var offset = selector is not null && !latchAfterRows ? 1 : 0;
+        var reports = new byte[dimensions.Rows + (selector is null ? 0 : 1)][];
+        if (selector is not null) reports[latchAfterRows ? dimensions.Rows : 0] = selector;
         for (var row = 0; row < dimensions.Rows; row++)
         {
             reports[row + offset] = RazerHidLightingProtocol.SetCustomRow(
@@ -50,7 +52,7 @@ public sealed partial class RazerHidDeviceService
         }
         catch (NotSupportedException)
         {
-            if (latch is not null)
+            if (selector is not null && !latchAfterRows)
             {
                 await SetCustomFrameEffectAsync(connection, cancellationToken).ConfigureAwait(false);
             }
@@ -63,6 +65,8 @@ public sealed partial class RazerHidDeviceService
                     frame.Skip(row * dimensions.Columns).Take(dimensions.Columns).ToArray(),
                     cancellationToken).ConfigureAwait(false);
             }
+            if (selector is not null && latchAfterRows)
+                await SetCustomFrameEffectAsync(connection, cancellationToken).ConfigureAwait(false);
         }
         catch (RazerDeviceTimeoutException exception) when (!exception.IsRetryableBusy)
         {

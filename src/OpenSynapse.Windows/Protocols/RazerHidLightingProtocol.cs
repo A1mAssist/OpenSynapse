@@ -8,6 +8,10 @@ internal static class RazerHidLightingProtocol
     private const string ExtendedPrefix = "razer_chroma_extended_matrix_effect_";
     private const string MousePrefix = "razer_chroma_mouse_extended_matrix_effect_";
 
+    // rzDevice25LedMatrix commits each frame with a trailing custom-effect selector.
+    internal static bool RequiresCustomFrameLatch(RazerHidDeviceDefinition device) =>
+        device.Transactions.ContainsKey("razer_chroma_standard_matrix_set_custom_frame");
+
     internal static RazerHidRequest CreateEffect(
         RazerHidDeviceDefinition device,
         RazerHidLightingSettings settings)
@@ -210,7 +214,8 @@ internal static class RazerHidLightingProtocol
             ? "razer_chroma_extended_matrix_set_custom_frame2"
             : "razer_chroma_extended_matrix_set_custom_frame";
         var arguments = new byte[] { 0x00, 0x00, row, startColumn, stopColumn }.Concat(rgb).ToArray();
-        var dataSize = builder.EndsWith('2') ? checked((byte)arguments.Length) : (byte)0x47;
+        var dataSize = builder.EndsWith('2') || StudioKeyboardCatalog.TryGet(device.ProductId, out _)
+            ? checked((byte)arguments.Length) : (byte)0x47;
         return RazerHidStandardProtocol.Create(device, builder, dataSize, 0x0F, 0x03, arguments,
             allowArgumentsBeyondDeclaredSize: arguments.Length > dataSize);
     }
@@ -294,6 +299,8 @@ internal static class RazerHidLightingProtocol
                 [0x07, 1, Math.Clamp(value.Speed, (byte)1, (byte)3), 1, value.Primary.Red, value.Primary.Green, value.Primary.Blue],
             RazerHidLightingEffect.StarlightDual =>
                 [0x07, 2, Math.Clamp(value.Speed, (byte)1, (byte)3), 2, value.Primary.Red, value.Primary.Green, value.Primary.Blue, value.Secondary.Red, value.Secondary.Green, value.Secondary.Blue],
+            // rzDevice25 sends six bytes including profile/region when there are no colours.
+            RazerHidLightingEffect.Custom when StudioKeyboardCatalog.TryGet(device.ProductId, out _) => [0x08, 0, 0, 0],
             RazerHidLightingEffect.Custom => [0x08, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             _ => throw new NotSupportedException($"Extended lighting does not support {value.Effect}."),
         };

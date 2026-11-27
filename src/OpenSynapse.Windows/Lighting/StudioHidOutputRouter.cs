@@ -270,6 +270,8 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                         output.Touched = previousOutput.Touched;
                         output.TakeOverPrepared = previousOutput.TakeOverPrepared &&
                             previousOutput.Connection?.IsSameEndpoint(target) == true;
+                        output.CustomEffectPrepared = previousOutput.CustomEffectPrepared &&
+                            previousOutput.Connection?.IsSameEndpoint(target) == true;
                     }
                     lock (_inputGate)
                     {
@@ -327,9 +329,12 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                     }
                     if (isMatrix)
                     {
-                        // SetCustomFrameAsync selects the custom frame first, so the
-                        // keep-alive rewrite also re-arms a device that left the mode.
-                        await _service.SetCustomFrameAsync(target, frame, cancellationToken)
+                        if (!output.CustomEffectPrepared && !RazerHidLightingProtocol.RequiresCustomFrameLatch(target.Definition))
+                        {
+                            await _service.SetCustomFrameEffectAsync(target, cancellationToken).ConfigureAwait(false);
+                            output.CustomEffectPrepared = true;
+                        }
+                        await _service.SetCustomFrameAsync(target, frame, cancellationToken, prepareEffect: false)
                             .ConfigureAwait(false);
                     }
                     else
@@ -346,6 +351,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
                     // One endpoint dropping out must not skip the remaining devices.
                     // A failed write may have landed partially, so force a full rewrite next tick.
                     output.Frame = null;
+                    output.CustomEffectPrepared = false;
                     WriteFailed?.Invoke(target.Definition.DisplayName, exception);
                 }
             }
@@ -392,6 +398,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
             if (!all && IsSelected(key)) continue;
             output.Frame = null;
             output.TakeOverPrepared = false;
+            output.CustomEffectPrepared = false;
             if (!output.Touched || output.Connection is null)
             {
                 _outputs.TryRemove(key, out _);
@@ -559,6 +566,7 @@ public sealed partial class StudioHidOutputRouter : IAsyncDisposable
         internal bool BaselineAttempted { get; set; }
         internal bool Touched { get; set; }
         internal bool TakeOverPrepared { get; set; }
+        internal bool CustomEffectPrepared { get; set; }
         internal bool ClockStarted { get; set; }
     }
 

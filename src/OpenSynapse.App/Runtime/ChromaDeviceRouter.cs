@@ -367,7 +367,7 @@ internal sealed partial class ChromaDeviceRouter
                 await _hid.SetCustomFrameEffectAsync(connection, cancellationToken).ConfigureAwait(false);
                 _customEffectPrepared[target.InstanceId] = connection;
             }
-            await _hid.SetCustomFrameAsync(connection, colors, cancellationToken).ConfigureAwait(false);
+            await _hid.SetCustomFrameAsync(connection, colors, cancellationToken, prepareEffect: false).ConfigureAwait(false);
             _lastFrames[target.InstanceId] = resized;
             _lastFrameAt[target.InstanceId] = now;
             return true;

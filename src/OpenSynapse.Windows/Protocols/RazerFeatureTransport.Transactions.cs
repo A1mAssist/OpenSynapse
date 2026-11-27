@@ -45,15 +45,18 @@ public sealed partial class RazerFeatureTransport
         var parsed = DeviceIdParser.TryParse(devicePath, out var vendorId, out var pathProductId);
         var isHost = parsed && vendorId == 0x1532 &&
             RazerDualDongleCatalog.CanHost(pathProductId);
+        var manifestKeyboard = parsed && vendorId == 0x1532 &&
+            StudioKeyboardCatalog.TryGet(RazerProductAliases.Canonical(logicalProductId ?? pathProductId), out _);
 
-        if (isHost && logicalProductId is { } linkedChildId && linkedChildId != pathProductId)
+        if (isHost && logicalProductId is { } linkedChildId &&
+            RazerProductAliases.Canonical(linkedChildId) != RazerProductAliases.Canonical(pathProductId))
         {
             // rzDevice25DualLinkKeyboard rolls 0x80 | n; the paired mouse uses 0..30.
             var category = RazerDualDongleCatalog.CategoryOf(linkedChildId);
             if (category == DeviceCategory.Unknown)
             {
-                category = RazerHidDeviceCatalog.BuiltIn.Find(0x1532, linkedChildId)?.Category
-                    ?? DeviceCategory.Unknown;
+                category = manifestKeyboard ? DeviceCategory.Keyboard
+                    : RazerHidDeviceCatalog.BuiltIn.Find(0x1532, linkedChildId)?.Category ?? DeviceCategory.Unknown;
             }
 
             return category == DeviceCategory.Keyboard
@@ -67,8 +70,8 @@ public sealed partial class RazerFeatureTransport
             // DualLinkKeyboard rotates every command from the same high-bank sequence,
             // including the firmware handshake whose catalog transaction is the 0xFF wildcard.
             if (commandClass == 0x00 && commandId is 0x41 or 0x46)
-                return NextTransactionId(ref sequence);
-            return (byte)(0x80 | NextTransactionId(ref sequence));
+                return manifestKeyboard ? NextDockTransactionId(ref sequence) : NextTransactionId(ref sequence);
+            return (byte)(0x80 | (manifestKeyboard ? NextDockTransactionId(ref sequence) : NextTransactionId(ref sequence)));
         }
         if (isHost && RazerDualDongleCatalog.CategoryOf(pathProductId) == DeviceCategory.Keyboard &&
             IsLinkerCommand(commandClass, commandId))
@@ -86,6 +89,9 @@ public sealed partial class RazerFeatureTransport
                 sequence = -1;
             return (byte)(0xE0 | NextDockTransactionId(ref sequence));
         }
+        // rzDevice25 wraps before 31; 0x1F is not part of its rolling sequence.
+        if (manifestKeyboard)
+            return NextDockTransactionId(ref sequence);
         if (requested == 0xFF)
         {
             // Only the devices that opt in rotate the wildcard. Everyone else keeps
@@ -149,7 +155,7 @@ public sealed partial class RazerFeatureTransport
         var isLinkedChild = false;
         if (logicalProductId is { } childProductId &&
             DeviceIdParser.TryParse(devicePath, out _, out var parentProductId) &&
-            childProductId != parentProductId &&
+            RazerProductAliases.Canonical(childProductId) != RazerProductAliases.Canonical(parentProductId) &&
             RazerDualDongleCatalog.CanHost(parentProductId))
         {
             isLinkedChild = true;
