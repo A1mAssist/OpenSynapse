@@ -5481,4 +5481,757 @@
   <data name="MacroDeleteInUseElsewhere" xml:space="preserve">
     <value>该宏仍被这些配置绑定：{0}。请先在对应配置的设备页解除绑定。</value>
   </data>
+  <data name="HelpNavigationItem.Content" xml:space="preserve"><value>帮助</value></data>
+  <data name="Help_Chrome_SearchPlaceholder" xml:space="preserve"><value>搜索功能、设备或问题…</value></data>
+  <data name="Help_Chrome_HomeTitle" xml:space="preserve"><value>帮助</value></data>
+  <data name="Help_Chrome_HomeDescription" xml:space="preserve"><value>快速查找支持设备、安装、灯光、宏和故障排查说明。</value></data>
+  <data name="Help_Chrome_CommonTasks" xml:space="preserve"><value>常用</value></data>
+  <data name="Help_Chrome_AllTopics" xml:space="preserve"><value>按主题浏览</value></data>
+  <data name="Help_Chrome_ViewAll" xml:space="preserve"><value>查看全部</value></data>
+  <data name="Help_Chrome_TopicCount" xml:space="preserve"><value>{0} 篇主题</value></data>
+  <data name="Help_Chrome_Directory" xml:space="preserve"><value>目录</value></data>
+  <data name="Help_Chrome_Back" xml:space="preserve"><value>后退</value></data>
+  <data name="Help_Chrome_Forward" xml:space="preserve"><value>前进</value></data>
+  <data name="Help_Chrome_SpecimenBadge" xml:space="preserve"><value>示例 · 不会写入设备</value></data>
+  <data name="Help_Chrome_Related" xml:space="preserve"><value>相关主题</value></data>
+  <data name="Help_Chrome_Previous" xml:space="preserve"><value>上一篇</value></data>
+  <data name="Help_Chrome_Next" xml:space="preserve"><value>下一篇</value></data>
+  <data name="Help_Chrome_NoResults" xml:space="preserve"><value>没有找到，试试设备名或功能名。</value></data>
+  <data name="Help_Chrome_Recent" xml:space="preserve"><value>最近查看</value></data>
+  <data name="Help_Chrome_SearchResults" xml:space="preserve"><value>搜索结果</value></data>
+  <data name="Help_Chrome_AppliesTo" xml:space="preserve"><value>适用：{0}</value></data>
+  <data name="Help_Chrome_Faq" xml:space="preserve"><value>常见问题</value></data>
+  <data name="Help_Chrome_Help" xml:space="preserve"><value>帮助</value></data>
+  <data name="Help_Chrome_OpenInApp" xml:space="preserve"><value>在界面中打开</value></data>
+  <data name="Help_Category_getting_started_Title" xml:space="preserve"><value>入门</value></data>
+  <data name="Help_Category_getting_started_Description" xml:space="preserve"><value>首次启动、连接设备和基本操作。</value></data>
+  <data name="Help_Category_devices_Title" xml:space="preserve"><value>设备</value></data>
+  <data name="Help_Category_devices_Description" xml:space="preserve"><value>按设备族查看键盘、鼠标、Blade、耳机、音箱、手柄和配件等支持范围。</value></data>
+  <data name="Help_Category_lighting_Title" xml:space="preserve"><value>灯光工作室</value></data>
+  <data name="Help_Category_lighting_Description" xml:space="preserve"><value>浏览场景、选择输出设备并恢复灯光。</value></data>
+  <data name="Help_Category_macros_Title" xml:space="preserve"><value>宏</value></data>
+  <data name="Help_Category_macros_Description" xml:space="preserve"><value>录制动作并绑定到按键。</value></data>
+  <data name="Help_Category_profiles_Title" xml:space="preserve"><value>配置与规则</value></data>
+  <data name="Help_Category_profiles_Description" xml:space="preserve"><value>应用切换时自动切换配置。</value></data>
+  <data name="Help_Category_diagnostics_Title" xml:space="preserve"><value>诊断与更新</value></data>
+  <data name="Help_Category_diagnostics_Description" xml:space="preserve"><value>查看状态报告并导出日志。</value></data>
+  <data name="Help_Category_troubleshooting_Title" xml:space="preserve"><value>故障排查</value></data>
+  <data name="Help_Category_troubleshooting_Description" xml:space="preserve"><value>设备或灯效不符合预期时该检查什么。</value></data>
+  <data name="Help_Common_ConnectDevice" xml:space="preserve"><value>连接新设备</value></data>
+  <data name="Help_Common_ApplyLighting" xml:space="preserve"><value>应用一套灯效</value></data>
+  <data name="Help_Common_CreateMacro" xml:space="preserve"><value>创建一个宏</value></data>
+  <data name="Help_Common_DeviceNotRecognized" xml:space="preserve"><value>设备不识别</value></data>
+  <data name="Help_Audience_General" xml:space="preserve"><value>通用</value></data>
+  <data name="Help_Audience_Devices" xml:space="preserve"><value>设备</value></data>
+  <data name="Help_Audience_Keyboard" xml:space="preserve"><value>键盘</value></data>
+  <data name="Help_Audience_Mouse" xml:space="preserve"><value>鼠标</value></data>
+  <data name="Help_Audience_Blade" xml:space="preserve"><value>Blade 笔记本</value></data>
+  <data name="Help_Audience_Headset" xml:space="preserve"><value>耳机</value></data>
+  <data name="Help_Audience_Speaker" xml:space="preserve"><value>音箱</value></data>
+  <data name="Help_Audience_Microphone" xml:space="preserve"><value>麦克风</value></data>
+  <data name="Help_Audience_Mousepad" xml:space="preserve"><value>鼠标垫</value></data>
+  <data name="Help_Audience_Monitor" xml:space="preserve"><value>显示器</value></data>
+  <data name="Help_Audience_Controller" xml:space="preserve"><value>手柄</value></data>
+  <data name="Help_Audience_Accessory" xml:space="preserve"><value>配件</value></data>
+  <data name="Help_Audience_NetworkLighting" xml:space="preserve"><value>网络灯光</value></data>
+  <data name="Help_Audience_Studio" xml:space="preserve"><value>灯光工作室</value></data>
+  <data name="Help_Audience_Macros" xml:space="preserve"><value>宏</value></data>
+  <data name="Help_Audience_Profiles" xml:space="preserve"><value>配置</value></data>
+  <data name="Help_Audience_Diagnostics" xml:space="preserve"><value>诊断</value></data>
+  <data name="Help_Audience_Troubleshooting" xml:space="preserve"><value>故障排查</value></data>
+  <data name="Help_getting_started_first_launch_Title" xml:space="preserve"><value>首次启动</value></data>
+  <data name="Help_getting_started_first_launch_Summary" xml:space="preserve"><value>完成语言、连接和首次设置检查，知道配置存在哪里以及何时需要额外组件。</value></data>
+  <data name="Help_getting_started_first_launch_Keywords" xml:space="preserve"><value>首次 启动 安装 MSI 便携 语言 雷云 数据目录 入门 首次启动 托盘 精简模式 设置 初始</value></data>
+  <data name="Help_getting_started_first_launch_Intro" xml:space="preserve"><value>第一次使用时，先让一台设备完成读取和一次简单设置，再添加自动切换、宏或工作室灯效。这样遇到问题时容易判断是连接失败，还是某项功能尚不可用。</value></data>
+  <data name="Help_getting_started_first_launch_Before" xml:space="preserve"><value>使用 Windows 11 x64。安装版和便携版都可管理受支持的设备；便携版使用部分系统功能时可能请求管理员权限。扫描前退出 Razer Synapse，释放设备控制。</value></data>
+  <data name="Help_getting_started_first_launch_Step1" xml:space="preserve"><value>打开 OpenSynapse，在“设置 → 语言”选择简体中文、English 或跟随系统；切换后界面立即更新。</value></data>
+  <data name="Help_getting_started_first_launch_Step2" xml:space="preserve"><value>进入“设备”，连接一台已唤醒的设备，等待读取结束。核对型号、连接状态以及实际出现的控制项。</value></data>
+  <data name="Help_getting_started_first_launch_Step3" xml:space="preserve"><value>选择一个容易观察的设置，例如灯光亮度；在卡片有“应用”或“保存”时点击它，自动应用的控件则等待完成提示，再观察设备。</value></data>
+  <data name="Help_getting_started_first_launch_Step4" xml:space="preserve"><value>打开“设置”按需开启开机启动和静默启动。需要迁移已有配置时，先在“配置”导出当前文件，再导入备份。</value></data>
+  <data name="Help_getting_started_first_launch_Check" xml:space="preserve"><value>完成后应能重新打开设备页读到设置，且状态区没有待处理错误。设备缺失或控件灰色时，从“诊断 → 重新检查”查看原因。</value></data>
+  <data name="Help_getting_started_first_launch_Note1" xml:space="preserve"><value>本地配置和日志位于 %LOCALAPPDATA%\A1mAssist\OpenSynapse。应用更新与设备固件更新不同；当前不提供设备固件更新、Razer 账号登录或云同步。</value></data>
+  <data name="Help_getting_started_first_launch_Faq1Q" xml:space="preserve"><value>必须一直用管理员身份运行吗？</value></data>
+  <data name="Help_getting_started_first_launch_Faq1A" xml:space="preserve"><value>普通外设控制不要求长期提升权限。GPU 切换或安装 THX 等组件需要时，使用对应入口的权限提示。</value></data>
+  <data name="Help_getting_started_first_launch_Faq2Q" xml:space="preserve"><value>需要先安装雷云吗？</value></data>
+  <data name="Help_getting_started_first_launch_Faq2A" xml:space="preserve"><value>核心设备控制不依赖雷云。部分 Blade 功能键、Kiyo 原生设置和 THX 音效需要匹配的驱动或组件，具体要求见对应专题。</value></data>
+  <data name="Help_getting_started_first_launch_Faq3Q" xml:space="preserve"><value>关闭窗口后功能还会运行吗？</value></data>
+  <data name="Help_getting_started_first_launch_Faq3A" xml:space="preserve"><value>主窗口关闭后可留在托盘。软件宏、动态灯光和温度曲线依赖 OpenSynapse 运行；要完全结束应用，使用托盘退出。</value></data>
+  <data name="Help_getting_started_connect_device_Title" xml:space="preserve"><value>连接设备</value></data>
+  <data name="Help_getting_started_connect_device_Summary" xml:space="preserve"><value>从 USB、接收器或蓝牙连接开始，确认设备在线并完成一次设置。</value></data>
+  <data name="Help_getting_started_connect_device_Keywords" xml:space="preserve"><value>连接 USB 蓝牙 接收器 无线 唤醒 扫描 配对 设备 检测 刷新 权限 驱动</value></data>
+  <data name="Help_getting_started_connect_device_Intro" xml:space="preserve"><value>设备能输入、能播放声音与能读取高级设置是两件事。OpenSynapse 按当前连接提供控制，因此同一设备换成 USB、无线接收器或蓝牙后，页面可能不同。</value></data>
+  <data name="Help_getting_started_connect_device_Before" xml:space="preserve"><value>准备可传输数据的线缆或匹配的接收器；无线设备需要开机并退出休眠。蓝牙设备先在 Windows 中配对，Hue 桥则从设置页单独配对。</value></data>
+  <data name="Help_getting_started_connect_device_Step1" xml:space="preserve"><value>将设备或接收器直接接到电脑。若经过扩展坞后反复掉线，先用电脑上的 USB 口排除供电和连接问题。</value></data>
+  <data name="Help_getting_started_connect_device_Step2" xml:space="preserve"><value>确认 Windows 能识别设备，退出雷云后打开“设备”，使用刷新或重新扫描并等待读取完成。</value></data>
+  <data name="Help_getting_started_connect_device_Step3" xml:space="preserve"><value>打开对应设备，核对型号及在线状态。接收器在线但外设休眠时，先移动鼠标、按键或重新开机，再读取。</value></data>
+  <data name="Help_getting_started_connect_device_Step4" xml:space="preserve"><value>调整一个可用设置并等待应用完成，再刷新核对；若控件无法使用，进入诊断查看该次读取失败的原因。</value></data>
+  <data name="Help_getting_started_connect_device_Check" xml:space="preserve"><value>成功时设备页显示当前值，设备实际表现与修改一致。只有名称出现但设置不可用时，继续检查连接状态，不能据此判断全部功能已受支持。</value></data>
+  <data name="Help_getting_started_connect_device_Note1" xml:space="preserve"><value>避免多个硬件管理程序同时写同一设备。OpenSynapse 不会自动结束雷云进程；关闭其窗口未必等于退出后台程序。</value></data>
+  <data name="Help_getting_started_connect_device_Faq1Q" xml:space="preserve"><value>无线接收器出现了，鼠标却读不到？</value></data>
+  <data name="Help_getting_started_connect_device_Faq1A" xml:space="preserve"><value>先唤醒鼠标并确认它与该接收器配对。接收器可以一直在线，而鼠标本体已经关机或休眠。</value></data>
+  <data name="Help_getting_started_connect_device_Faq2Q" xml:space="preserve"><value>蓝牙下为什么少了控制项？</value></data>
+  <data name="Help_getting_started_connect_device_Faq2A" xml:space="preserve"><value>连接方式可能使用不同的控制通道。只使用当前页提供的功能，需要更多控制时尝试受支持的 USB 或接收器连接。</value></data>
+  <data name="Help_getting_started_connect_device_Faq3Q" xml:space="preserve"><value>Hue 桥为什么不在设备列表？</value></data>
+  <data name="Help_getting_started_connect_device_Faq3A" xml:space="preserve"><value>未配对的 Hue 桥不会占设备卡。进入“设置 → 飞利浦 Hue → 配置”，配对完成后才会出现在设备列表。</value></data>
+  <data name="Help_devices_keyboard_Title" xml:space="preserve"><value>键盘入门</value></data>
+  <data name="Help_devices_keyboard_Summary" xml:space="preserve"><value>检查连接，调整灯光和游戏模式，再按需要进入映射或逐键触发。</value></data>
+  <data name="Help_devices_keyboard_Keywords" xml:space="preserve"><value>键盘 灯光 游戏模式 Fn HyperShift 轮询 快捷键 映射 按键 亮度 配置 板载 Huntsman BlackWidow Ornata Cynosa DeathStalker Tartarus 磁轴 光轴</value></data>
+  <data name="Help_devices_keyboard_Intro" xml:space="preserve"><value>先把键盘基础设置调到适合输入的状态，再配置特殊按键。游戏模式、Fn 行为、轮询率、旋钮或屏幕设置随型号变化，页面会显示当前连接支持的项目。</value></data>
+  <data name="Help_devices_keyboard_Before" xml:space="preserve"><value>确保键盘可正常输入并已完成设备读取。无线键盘先唤醒；若要调灯光，先停止工作室或外部游戏灯光，便于观察设备页的效果。</value></data>
+  <data name="Help_devices_keyboard_Step1" xml:space="preserve"><value>进入“设备”选择键盘，查看固件、电量或连接状态，并记录当前设置作为回退参考。</value></data>
+  <data name="Help_devices_keyboard_Step2" xml:space="preserve"><value>在灯光卡中选择可用区域、亮度和效果，提交修改并观察键盘；分区型号需要分别检查所选区域。</value></data>
+  <data name="Help_devices_keyboard_Step3" xml:space="preserve"><value>按需调整游戏模式或 Fn 行为，等待应用完成后在普通文本窗口测试。若某键失效，先检查游戏模式和已有映射。</value></data>
+  <data name="Help_devices_keyboard_Step4" xml:space="preserve"><value>需要快捷键或宏时进入“按键映射”；需要改变模拟键触发行程时进入“逐键触发”。每完成一项就测试，再建立按程序切换规则。</value></data>
+  <data name="Help_devices_keyboard_Check" xml:space="preserve"><value>重新读取后检查设置是否保留，并确认日常输入、功能键和需要的快捷键仍正常。灯光页面有成功状态但硬件未变时，再检查是否被外部灯光接管。</value></data>
+  <data name="Help_devices_keyboard_Note1" xml:space="preserve"><value>普通层与 HyperShift 层是不同的映射。软件宏只在可观测的触发层运行；多数设备的 HyperShift 由固件处理，不能默认用于软件宏。</value></data>
+  <data name="Help_devices_keyboard_Faq1Q" xml:space="preserve"><value>为什么找不到 Rapid Trigger？</value></data>
+  <data name="Help_devices_keyboard_Faq1A" xml:space="preserve"><value>它需要支持模拟键的型号和可用连接，不是所有机械键盘都有。已有模拟键但缺逐键布局时，页面也会明确提示。</value></data>
+  <data name="Help_devices_keyboard_Faq2Q" xml:space="preserve"><value>Fn 或多媒体键不工作怎么办？</value></data>
+  <data name="Help_devices_keyboard_Faq2A" xml:space="preserve"><value>先检查映射和 Fn 行为；部分 Blade 功能键还需要匹配的雷蛇驱动，不能靠改变灯光配置修复。</value></data>
+  <data name="Help_devices_keyboard_Faq3Q" xml:space="preserve"><value>软件关闭后映射和宏还有效吗？</value></data>
+  <data name="Help_devices_keyboard_Faq3A" xml:space="preserve"><value>设备原生映射与可写入的板载宏由设备执行；软件宏依赖 OpenSynapse 保持运行。保存位置应在绑定时确认。</value></data>
+  <data name="Help_devices_mouse_Title" xml:space="preserve"><value>鼠标入门</value></data>
+  <data name="Help_devices_mouse_Summary" xml:space="preserve"><value>核对当前连接，设置舒适的指针速度，再配置侧键、灯光和省电。</value></data>
+  <data name="Help_devices_mouse_Keywords" xml:space="preserve"><value>鼠标 DPI 灵敏度 侧键 滚轮 轮询率 电池 校准 电量 接收器 无线 档位 Viper DeathAdder Basilisk Naga Cobra Orochi Mamba Lancehead</value></data>
+  <data name="Help_devices_mouse_Intro" xml:space="preserve"><value>鼠标页把传感器设置、按键、滚轮、灯光和电源分开。先确定当前 DPI 和活动档位，再测试其他选项，能避免把档位切换误认为设置没有保存。</value></data>
+  <data name="Help_devices_mouse_Before" xml:space="preserve"><value>唤醒无线鼠标并确认接收器配对。调整期间保持同一连接方式；切换 USB、接收器或蓝牙后，应重新检查可用档位和轮询率。</value></data>
+  <data name="Help_devices_mouse_Step1" xml:space="preserve"><value>打开“设备”中的鼠标，核对在线状态、电量和当前 DPI。若接收器在线但鼠标休眠，先移动鼠标再刷新。</value></data>
+  <data name="Help_devices_mouse_Step2" xml:space="preserve"><value>先选一个常用 DPI 档位，在当前设置允许的范围内调整。需要多档时同时核对各档数值和活动档位，提交整组修改。</value></data>
+  <data name="Help_devices_mouse_Step3" xml:space="preserve"><value>在日常应用中移动指针测试，再单独调整轮询率或滚轮行为。每次只改一项，保留能稳定使用的值。</value></data>
+  <data name="Help_devices_mouse_Step4" xml:space="preserve"><value>需要侧键快捷动作时进入按键映射；需要延长续航时调整休眠和低电量行为。最后重新读取，核对 DPI 与电源设置。</value></data>
+  <data name="Help_devices_mouse_Check" xml:space="preserve"><value>正常情况下，当前 DPI 与活动档位吻合，按档位切换键会切到已设定的值。下方帮助示例仅演示选择档位，不会改变真实鼠标。</value></data>
+  <data name="Help_devices_mouse_Note1" xml:space="preserve"><value>不要在同一轮试用中同时改变 DPI、轮询率和 Windows 指针速度，否则难以判断是哪项造成差异。表面校准只在设备页提供该功能时操作。</value></data>
+  <data name="Help_devices_mouse_Faq1Q" xml:space="preserve"><value>改完 DPI 过一会又变了？</value></data>
+  <data name="Help_devices_mouse_Faq1A" xml:space="preserve"><value>检查活动档位、鼠标上的 DPI 键和应用切换规则。前台程序触发另一配置时，当前设备设置可能随之改变。</value></data>
+  <data name="Help_devices_mouse_Faq2Q" xml:space="preserve"><value>左右方向速度能分开吗？</value></data>
+  <data name="Help_devices_mouse_Faq2A" xml:space="preserve"><value>只有当前页提供独立 X/Y DPI 时才可以。没有该选项的连接按页面支持的统一数值设置。</value></data>
+  <data name="Help_devices_mouse_Faq3Q" xml:space="preserve"><value>侧键同时执行原动作和宏？</value></data>
+  <data name="Help_devices_mouse_Faq3A" xml:space="preserve"><value>到映射页重新应用软件宏绑定，检查原生动作是否已关闭；仅关闭宏触发开关不一定恢复设备原动作。</value></data>
+  <data name="Help_devices_overview_Title" xml:space="preserve"><value>设备与支持范围</value></data>
+  <data name="Help_devices_overview_Summary" xml:space="preserve"><value>区分设备识别、可用控制和只读状态，找到适合当前连接的教程。</value></data>
+  <data name="Help_devices_overview_Keywords" xml:space="preserve"><value>设备 类型 型号 支持 PID VID 只读 能力 连接 固件 支持设备 设备列表 兼容 适配 鼠标 键盘 Blade 笔记本 耳机 音箱 麦克风 鼠标垫 显示器 手柄 配件 Hue 雷蛇 Razer</value></data>
+  <data name="Help_devices_overview_Intro" xml:space="preserve"><value>设备页会按实际发现的设备和连接显示功能。相同系列的不同型号、接收器和蓝牙身份可能拥有不同的控制项；设备目录记录可识别身份，不等于每款硬件都已完成实测。</value></data>
+  <data name="Help_devices_overview_Before" xml:space="preserve"><value>先连接并唤醒设备，等待读取完成。需要核对支持范围时，使用型号和 Windows 设备管理器中的硬件 ID，一并记录连接方式。</value></data>
+  <data name="Help_devices_overview_Step1" xml:space="preserve"><value>进入“设备”选择实际连接的卡片，核对名称和状态；多台同型号设备时注意区分具体实例。</value></data>
+  <data name="Help_devices_overview_Step2" xml:space="preserve"><value>先读顶部信息，再查看输入、灯光、电源或音频等设置卡；没有出现的选项不能通过套用其他型号的教程强行开启。</value></data>
+  <data name="Help_devices_overview_Step3" xml:space="preserve"><value>需要改变设置时，一次修改一项；有应用按钮就提交，自动应用控件则等待状态完成，再刷新核对。</value></data>
+  <data name="Help_devices_overview_Step4" xml:space="preserve"><value>遇到只读或错误状态，先到诊断页重新检查；仍不可用时保存型号、硬件 ID、连接方式和错误文本，方便定位。</value></data>
+  <data name="Help_devices_overview_Check" xml:space="preserve"><value>成功读取的字段应有实际数值，且对应操作能完成。空值或“--”表示未获得该项信息，不表示电量为零或功能已关闭。</value></data>
+  <data name="Help_devices_overview_Note1" xml:space="preserve"><value>以当前页能力和诊断结果决定可用操作。不要把支持列表中的识别 ID 数量当成实测型号数量，也不要为补齐控件而更换不匹配的驱动。</value></data>
+  <data name="Help_devices_overview_Faq1Q" xml:space="preserve"><value>同一设备为什么有多个身份？</value></data>
+  <data name="Help_devices_overview_Faq1A" xml:space="preserve"><value>有线、无线接收器和蓝牙可能报告不同 ID；多个功能接口也可能属于同一实体设备。先按页面状态确认正在控制哪条连接。</value></data>
+  <data name="Help_devices_overview_Faq2Q" xml:space="preserve"><value>识别到型号却不能修改？</value></data>
+  <data name="Help_devices_overview_Faq2A" xml:space="preserve"><value>读取可能失败、端点被其他程序占用，或当前连接只提供信息读取。先查看错误并重新扫描，不要把识别成功当作写入能力。</value></data>
+  <data name="Help_devices_overview_Faq3Q" xml:space="preserve"><value>这里能升级设备固件吗？</value></data>
+  <data name="Help_devices_overview_Faq3A" xml:space="preserve"><value>当前显示固件信息用于识别和排错，不提供设备固件更新。设置页的更新针对 OpenSynapse 本身。</value></data>
+  <data name="Help_devices_blade_Title" xml:space="preserve"><value>Blade 笔记本控制入门</value></data>
+  <data name="Help_devices_blade_Summary" xml:space="preserve"><value>找到性能、散热、显示和键盘灯光入口，并核对插电与电池状态。</value></data>
+  <data name="Help_devices_blade_Keywords" xml:space="preserve"><value>Blade 笔记本 性能 散热 显示 刷新率 充电 灯光 Fn Lite 雷蛇 风扇 转速 曲线 温度 电池 充电上限 MUX 独显 混合 键盘灯光 遥测</value></data>
+  <data name="Help_devices_blade_Intro" xml:space="preserve"><value>Blade 页按机型提供性能模式、风扇、显示、GPU、灯光和电源控制。插电与使用电池时可用选项可能不同，设置也可能按供电状态保存。</value></data>
+  <data name="Help_devices_blade_Before" xml:space="preserve"><value>确认已识别 Blade，并先查看供电状态和温度。若只看到外设内容，检查设置中的 Lite 模式；关闭 Lite 后需重启恢复笔记本界面。</value></data>
+  <data name="Help_devices_blade_Step1" xml:space="preserve"><value>进入“设备”选择 Blade，先查看设备信息、当前性能模式和温度／风扇读数，记录调整前状态。</value></data>
+  <data name="Help_devices_blade_Step2" xml:space="preserve"><value>选择机型提供的性能模式并等待状态完成，再观察实际负载下的温度和噪声；不要只凭空闲时读数判断模式无效。</value></data>
+  <data name="Help_devices_blade_Step3" xml:space="preserve"><value>在显示和电源区域按需设置刷新率、充电上限或触控板；只使用当前可用选项，应用后核对实际状态。</value></data>
+  <data name="Help_devices_blade_Step4" xml:space="preserve"><value>在灯光区域调整键盘亮度或效果。需要逐键图层时进入工作室；需要风扇或 GPU 调校时先阅读对应专题。</value></data>
+  <data name="Help_devices_blade_Check" xml:space="preserve"><value>完成后应看到操作成功状态，并在刷新后保持预期值。切换供电状态后再次查看当前模式，确认没有误把另一供电配置当成设置丢失。</value></data>
+  <data name="Help_devices_blade_Note1" xml:space="preserve"><value>型号支持范围不同；并非每台 Blade 都有相同 GPU 模式、风扇曲线或显示选项。部分 Fn 和多媒体键需要匹配的雷蛇设备驱动。</value></data>
+  <data name="Help_devices_blade_Faq1Q" xml:space="preserve"><value>为什么某些性能选项在电池上不可用？</value></data>
+  <data name="Help_devices_blade_Faq1A" xml:space="preserve"><value>机型和供电状态会限制性能档位。接上适配器后重新读取，按界面允许的选项操作。</value></data>
+  <data name="Help_devices_blade_Faq2Q" xml:space="preserve"><value>笔记本控制入口不见了？</value></data>
+  <data name="Help_devices_blade_Faq2A" xml:space="preserve"><value>先检查 Lite 模式是否开启，再确认 Blade 已识别。关闭 Lite 后按提示重启；仍缺失时查看诊断。</value></data>
+  <data name="Help_devices_blade_Faq3Q" xml:space="preserve"><value>切换供电后模式为什么变了？</value></data>
+  <data name="Help_devices_blade_Faq3A" xml:space="preserve"><value>检查插电／电池配置，以及是否选择了按供电自动切换的 GPU 模式。重新核对当前供电状态和已应用设置。</value></data>
+  <data name="Help_devices_headset_Title" xml:space="preserve"><value>耳机音频、麦克风与连接</value></data>
+  <data name="Help_devices_headset_Summary" xml:space="preserve"><value>先确认 Windows 输入输出，再逐项调整 EQ、侧音和设备提供的音效。</value></data>
+  <data name="Help_devices_headset_Keywords" xml:space="preserve"><value>耳机 BlackShark Kraken Barracuda Nari EQ 麦克风 侧音 ANC 蓝牙 THX 耳麦 Hammerhead 黑鲨 音频 降噪 游戏 语音 电量</value></data>
+  <data name="Help_devices_headset_Intro" xml:space="preserve"><value>耳机设置取决于型号、USB／接收器／蓝牙连接及音频组件。先把播放和录音路径接通，再调音效；能读取电量并不意味着同一连接也支持 EQ 或麦克风控制。</value></data>
+  <data name="Help_devices_headset_Before" xml:space="preserve"><value>在 Windows 声音设置和目标应用中选择正确的输出、输入设备，解除实体静音。先用较低音量播放熟悉的音频，避免同时改变多个增强项。</value></data>
+  <data name="Help_devices_headset_Step1" xml:space="preserve"><value>进入“设备”选择耳机，检查在线、电量和连接方式。接收器在线但耳机关机时先开机，再刷新。</value></data>
+  <data name="Help_devices_headset_Step2" xml:space="preserve"><value>选择页面提供的 EQ 预设；需要自定义频段时小幅调整，按应用按钮或自动应用状态完成，再比较相同片段。</value></data>
+  <data name="Help_devices_headset_Step3" xml:space="preserve"><value>在麦克风区域确认静音和音量，再单独调整侧音、降噪或噪音门等可用项目；用录音或通话测试音色和拾音。</value></data>
+  <data name="Help_devices_headset_Step4" xml:space="preserve"><value>按需设置 ANC、游戏／语音平衡或休眠；需要 THX 时进入专门音频区域检查组件状态，调整后刷新核对。</value></data>
+  <data name="Help_devices_headset_Check" xml:space="preserve"><value>播放、录音和修改后的设置应各自正常。侧音用于在耳机中听到自己，不代表目标应用已选中正确麦克风。</value></data>
+  <data name="Help_devices_headset_Note1" xml:space="preserve"><value>蓝牙和接收器能力可能不同。缺少某项时先看当前连接和状态，不把另一耳机或连接方式的控制项当作本机必有功能。</value></data>
+  <data name="Help_devices_headset_Faq1Q" xml:space="preserve"><value>有声音但不能调整 EQ？</value></data>
+  <data name="Help_devices_headset_Faq1A" xml:space="preserve"><value>Windows 可以通过通用音频端点播放，而高级控制仍需要匹配的设备连接或 THX 组件。查看当前页能力与错误。</value></data>
+  <data name="Help_devices_headset_Faq2Q" xml:space="preserve"><value>开了侧音，别人仍听不到？</value></data>
+  <data name="Help_devices_headset_Faq2A" xml:space="preserve"><value>侧音只是本地监听。检查实体静音、Windows 输入设备、应用麦克风权限和应用内输入选择。</value></data>
+  <data name="Help_devices_headset_Faq3Q" xml:space="preserve"><value>换成蓝牙后原设置卡消失？</value></data>
+  <data name="Help_devices_headset_Faq3A" xml:space="preserve"><value>同一耳机的蓝牙身份可能只开放部分能力。使用当前页项目，或切回已支持高级控制的连接。</value></data>
+  <data name="Help_devices_speaker_Title" xml:space="preserve"><value>音箱与声霸音频设置</value></data>
+  <data name="Help_devices_speaker_Summary" xml:space="preserve"><value>核对输出和输入源，调整音量、EQ、低音及灯光，区分各型号的功能。</value></data>
+  <data name="Help_devices_speaker_Keywords" xml:space="preserve"><value>音箱 声霸 Nommo Leviathan 音量 静音 EQ 低音 输入源 Dolby 音响 Soundbar Mako 输入 灯光</value></data>
+  <data name="Help_devices_speaker_Intro" xml:space="preserve"><value>Nommo 与 Leviathan 等系列会按型号显示音频和灯光控制。有的音量操作对应 Windows 输出端点，有的音效来自设备或 THX，因此应先确认声音实际从哪条路径播放。</value></data>
+  <data name="Help_devices_speaker_Before" xml:space="preserve"><value>在 Windows 与播放器选择对应输出，确认音箱供电、实体音量和静音状态。使用 USB 控制时保持数据连接，即使声音通过其他输入播放。</value></data>
+  <data name="Help_devices_speaker_Step1" xml:space="preserve"><value>进入“设备”选择音箱或声霸，刷新信息，确认当前输入源和在线状态。</value></data>
+  <data name="Help_devices_speaker_Step2" xml:space="preserve"><value>从较低音量开始播放熟悉的片段，调整页面提供的主音量或静音；若无声，先查 Windows 输出和实体控制。</value></data>
+  <data name="Help_devices_speaker_Step3" xml:space="preserve"><value>选择 EQ 预设，再单独调整低音或其他可用效果。每次提交后听同一片段；需要 THX 自定义 EQ 时检查对应音频入口。</value></data>
+  <data name="Help_devices_speaker_Step4" xml:space="preserve"><value>最后设置灯光亮度或效果，重新读取音频设置。若需要工作室动态灯效，确认设备在工作室中可输出再应用。</value></data>
+  <data name="Help_devices_speaker_Check" xml:space="preserve"><value>音量和音效的改变应作用于当前播放路径；刷新后仍显示所选值。灯光能改而音频无变化时，应先核对音频输入与输出路由。</value></data>
+  <data name="Help_devices_speaker_Note1" xml:space="preserve"><value>不要把所有音箱都当成有自定义多段 EQ、THX 或输入切换。只调整当前型号已显示且可用的项目。</value></data>
+  <data name="Help_devices_speaker_Faq1Q" xml:space="preserve"><value>灯能控制但没有声音？</value></data>
+  <data name="Help_devices_speaker_Faq1A" xml:space="preserve"><value>灯光与音频路径独立。检查 Windows 输出、播放器设备、音箱输入源和静音，再排查灯光以外的问题。</value></data>
+  <data name="Help_devices_speaker_Faq2Q" xml:space="preserve"><value>Nommo 只有预设没有频段滑杆？</value></data>
+  <data name="Help_devices_speaker_Faq2A" xml:space="preserve"><value>不同代际与连接提供的 EQ 能力不同。使用预设；需要 THX 频段时查看设备对应的 THX 页面是否开放。</value></data>
+  <data name="Help_devices_speaker_Faq3Q" xml:space="preserve"><value>低音数值能按 dB 理解吗？</value></data>
+  <data name="Help_devices_speaker_Faq3A" xml:space="preserve"><value>仅在页面标注 dB 时才按 dB 使用；部分设备显示的是档位。按当前单位调整并用实际听感比较。</value></data>
+  <data name="Help_devices_microphone_Title" xml:space="preserve"><value>麦克风增益、静音与监听</value></data>
+  <data name="Help_devices_microphone_Summary" xml:space="preserve"><value>先确认录音输入，逐步调整麦克风音量、滤波、限幅和监听。</value></data>
+  <data name="Help_devices_microphone_Keywords" xml:space="preserve"><value>麦克风 Seiren 录音 音量 增益 静音 监听 高通 限幅 噪音门 滤波 灯光 点阵 音频</value></data>
+  <data name="Help_devices_microphone_Intro" xml:space="preserve"><value>麦克风调校应从录音路径和适当音量开始。高通、限幅、降噪和监听按型号提供，不应先同时开启所有处理再判断拾音质量。</value></data>
+  <data name="Help_devices_microphone_Before" xml:space="preserve"><value>在 Windows 和录音应用中选择该麦克风并允许访问，解除实体静音。准备一段正常音量和较大音量的说话测试。</value></data>
+  <data name="Help_devices_microphone_Step1" xml:space="preserve"><value>打开“设备”中的麦克风，刷新并检查音量与静音读数。没有信号时先回到 Windows 输入测试。</value></data>
+  <data name="Help_devices_microphone_Step2" xml:space="preserve"><value>录一段正常说话，逐步调整麦克风音量，使声音清楚且大声时不过载；有应用按钮就提交，否则等待自动完成。</value></data>
+  <data name="Help_devices_microphone_Step3" xml:space="preserve"><value>按需试用页面提供的高通滤波、限幅或噪音门。每次录同一段话比较，注意低频、句首和句尾是否被削弱。</value></data>
+  <data name="Help_devices_microphone_Step4" xml:space="preserve"><value>需要本地监听时开启对应监听／侧音选项并调低起始音量；最后刷新设置，再在实际通话或录音应用复查。</value></data>
+  <data name="Help_devices_microphone_Check" xml:space="preserve"><value>目标应用能录到清楚的声音，静音开关能阻止输入，重新读取后设置保留。仅在耳机中听到监听声音不代表录音应用的输入已正确。</value></data>
+  <data name="Help_devices_microphone_Note1" xml:space="preserve"><value>标成“原始值”的增益、Q 或压缩器参数没有通用单位换算，保留不需要改的原值。Seiren Emote 的识别不等于支持其点阵动画输出。</value></data>
+  <data name="Help_devices_microphone_Faq1Q" xml:space="preserve"><value>应用显示已连接但录不到？</value></data>
+  <data name="Help_devices_microphone_Faq1A" xml:space="preserve"><value>检查应用内输入设备、Windows 麦克风权限、实体静音和音量。设备控制连接与应用录音路径需要分别确认。</value></data>
+  <data name="Help_devices_microphone_Faq2Q" xml:space="preserve"><value>声音断断续续？</value></data>
+  <data name="Help_devices_microphone_Faq2A" xml:space="preserve"><value>先关闭或降低噪音门与降噪比较，再检查连接。门限过高可能截掉轻声和句尾。</value></data>
+  <data name="Help_devices_microphone_Faq3Q" xml:space="preserve"><value>没有 EQ 或灯效卡正常吗？</value></data>
+  <data name="Help_devices_microphone_Faq3A" xml:space="preserve"><value>正常，不同型号只开放自己的能力。先完成录音和音量测试，再使用实际出现的附加控制。</value></data>
+  <data name="Help_devices_mousepad_Title" xml:space="preserve"><value>鼠标垫灯光与工作室联动</value></data>
+  <data name="Help_devices_mousepad_Summary" xml:space="preserve"><value>设置鼠标垫亮度与效果，并确认它是否支持工作室逐灯输出。</value></data>
+  <data name="Help_devices_mousepad_Keywords" xml:space="preserve"><value>鼠标垫 Firefly Goliathus 灯光 亮度 分区 Chroma Hyperflux Strider RGB 边缘</value></data>
+  <data name="Help_devices_mousepad_Intro" xml:space="preserve"><value>发光鼠标垫的设置主要控制边缘或底部灯光，与鼠标传感器的 DPI、抬升距离和表面校准分开。先用静态颜色检查连接，再尝试动态联动。</value></data>
+  <data name="Help_devices_mousepad_Before" xml:space="preserve"><value>连接鼠标垫的数据线并等待识别。若另一灯光软件或游戏正在控制它，先停止该来源，避免覆盖设备页设置。</value></data>
+  <data name="Help_devices_mousepad_Step1" xml:space="preserve"><value>打开“设备”选择鼠标垫，查看当前可用的灯光区域、亮度和效果列表。</value></data>
+  <data name="Help_devices_mousepad_Step2" xml:space="preserve"><value>先选择静态色和明显可见的亮度，应用后观察实际发光区域；有多个区域时分别选择并检查。</value></data>
+  <data name="Help_devices_mousepad_Step3" xml:space="preserve"><value>再选择动态效果，调整页面提供的颜色、速度或方向，提交并观察一轮完整动画。</value></data>
+  <data name="Help_devices_mousepad_Step4" xml:space="preserve"><value>需要多设备联动时进入工作室，确认此鼠标垫可输出，再仅应用到它进行测试；完成后用“停止”结束工作室控制。</value></data>
+  <data name="Help_devices_mousepad_Check" xml:space="preserve"><value>基础灯效应与页面选择一致；工作室测试时，已应用范围应包含鼠标垫。单色设备只会呈现代表色，不能据此期待每颗灯独立变化。</value></data>
+  <data name="Help_devices_mousepad_Note1" xml:space="preserve"><value>鼠标垫的灯光页不执行鼠标表面校准。需要校准时回到鼠标设备页，确认鼠标本身提供相应入口。</value></data>
+  <data name="Help_devices_mousepad_Faq1Q" xml:space="preserve"><value>鼠标垫亮了但不能逐灯编辑？</value></data>
+  <data name="Help_devices_mousepad_Faq1A" xml:space="preserve"><value>亮灯只说明基础灯光可用。工作室需要对应输出能力；标有“无逐像素输出”的设备会在应用时跳过。</value></data>
+  <data name="Help_devices_mousepad_Faq2Q" xml:space="preserve"><value>工作室停止后为什么颜色不同？</value></data>
+  <data name="Help_devices_mousepad_Faq2A" xml:space="preserve"><value>恢复取决于原灯效是否可读和设备的恢复路径；可能恢复已保存配置或默认退场效果。可回设备页重新应用想要的灯效。</value></data>
+  <data name="Help_devices_mousepad_Faq3Q" xml:space="preserve"><value>充电问题也在这里处理吗？</value></data>
+  <data name="Help_devices_mousepad_Faq3A" xml:space="preserve"><value>只有页面显示的充电相关项目才能在此管理。灯效成功不证明无线充电或鼠标连接正常，两者需分别检查。</value></data>
+  <data name="Help_devices_monitor_Title" xml:space="preserve"><value>显示器灯光与显示设置的区别</value></data>
+  <data name="Help_devices_monitor_Summary" xml:space="preserve"><value>连接显示器的数据接口以调节 Chroma 灯光，把屏幕画面设置留在正确入口。</value></data>
+  <data name="Help_devices_monitor_Keywords" xml:space="preserve"><value>显示器 Raptor 27 Chroma 灯光 USB HDMI DisplayPort 刷新率 亮度 屏幕</value></data>
+  <data name="Help_devices_monitor_Intro" xml:space="preserve"><value>Raptor 显示器在 OpenSynapse 中提供对应型号的 Chroma 灯光控制。屏幕能显示画面不代表灯光控制连接已建立；视频线与 USB 数据连接需要分别检查。</value></data>
+  <data name="Help_devices_monitor_Before" xml:space="preserve"><value>先确认 Windows 正常识别显示器，再连接型号要求的 USB 数据链路。停止外部灯光来源，方便观察灯效变化。</value></data>
+  <data name="Help_devices_monitor_Step1" xml:space="preserve"><value>进入“设备”选择显示器，检查是否显示灯光卡。仅能在 Windows 显示设置看到屏幕时，继续检查 USB 数据连接。</value></data>
+  <data name="Help_devices_monitor_Step2" xml:space="preserve"><value>在灯光卡选择支持的亮度和静态色，提交后观察机身或底座灯光，确认正在控制目标显示器。</value></data>
+  <data name="Help_devices_monitor_Step3" xml:space="preserve"><value>按需切换其他灯效并检查状态；要联动其他设备时，在工作室中确认输出能力并选择显示器。</value></data>
+  <data name="Help_devices_monitor_Step4" xml:space="preserve"><value>需要屏幕分辨率、刷新率或画面亮度时，使用 Windows 显示设置或显示器自身菜单；Blade 内屏专属选项在 Blade 页。</value></data>
+  <data name="Help_devices_monitor_Check" xml:space="preserve"><value>灯光修改应改变机身发光区域。若画面没有变化而灯效已更新，这是正确结果；屏幕图像参数不由 Chroma 灯效控制。</value></data>
+  <data name="Help_devices_monitor_Note1" xml:space="preserve"><value>显示器帮助中的“亮度”若出现在灯光卡，指灯光亮度，不是屏幕背光。不要把 Blade 内屏的 GPU、刷新率或局部调光功能套用到外接显示器。</value></data>
+  <data name="Help_devices_monitor_Faq1Q" xml:space="preserve"><value>有画面却没有设备卡？</value></data>
+  <data name="Help_devices_monitor_Faq1A" xml:space="preserve"><value>先确认 USB 数据连接，只有 HDMI 或 DisplayPort 画面输出未必提供可用的灯光端点，再刷新并查看诊断。</value></data>
+  <data name="Help_devices_monitor_Faq2Q" xml:space="preserve"><value>为什么不能改分辨率？</value></data>
+  <data name="Help_devices_monitor_Faq2A" xml:space="preserve"><value>此设备入口用于已支持的灯光控制。分辨率在 Windows 显示设置中调整。</value></data>
+  <data name="Help_devices_monitor_Faq3Q" xml:space="preserve"><value>两台同型号屏幕怎么区分？</value></data>
+  <data name="Help_devices_monitor_Faq3A" xml:space="preserve"><value>先只对一台应用明显静态色并观察，确认设备实例后再加入联动范围。不要只凭相同产品名称判断目标。</value></data>
+  <data name="Help_devices_controller_Title" xml:space="preserve"><value>手柄摇杆、扳机与按键</value></data>
+  <data name="Help_devices_controller_Summary" xml:space="preserve"><value>从输入读数开始，逐项设置死区、扳机、振动或按键分配。</value></data>
+  <data name="Help_devices_controller_Keywords" xml:space="preserve"><value>手柄 Wolverine Raiju 摇杆 死区 扳机 振动 按键 配置 Kitsune 震动 D-pad SOCD 按键映射 轮询率 Profile</value></data>
+  <data name="Help_devices_controller_Intro" xml:space="preserve"><value>手柄页按型号提供摇杆、扳机、按键分配、方向键和振动。先确认游戏能接收输入，再调整一个项目并回到同一测试场景比较，避免把游戏内设置与设备设置混淆。</value></data>
+  <data name="Help_devices_controller_Before" xml:space="preserve"><value>使用受支持的连接，等待读取完成。记录原死区和按键分配；不要在比赛或无法暂停的游戏中更改输入行为。</value></data>
+  <data name="Help_devices_controller_Step1" xml:space="preserve"><value>在“设备”选择手柄，检查在线状态；若页面提供原始输入读数，轻推摇杆和按扳机，确认读数随动作变化。</value></data>
+  <data name="Help_devices_controller_Step2" xml:space="preserve"><value>在摇杆区域先选左右目标，再小幅调整灵敏度、死区或外圈设置；使用该区域的应用动作，测试回中是否稳定。</value></data>
+  <data name="Help_devices_controller_Step3" xml:space="preserve"><value>按需修改扳机模式、范围或数字触发行程；再单独设置振动或方向键行为，避免同时改变多个手感因素。</value></data>
+  <data name="Help_devices_controller_Step4" xml:space="preserve"><value>在按键分配中选目标动作并应用，回到游戏测试实际输入，再重新读取确认。若游戏也启用了重映射，分别核对两边设置。</value></data>
+  <data name="Help_devices_controller_Check" xml:space="preserve"><value>摇杆回中、扳机响应与按键动作应符合预期，且没有新的读写错误。若游戏同时提供死区或重映射，记录两边设置以便判断叠加效果。</value></data>
+  <data name="Help_devices_controller_Note1" xml:space="preserve"><value>控制项取决于当前型号和连接。手柄按键分配不自动等同于键盘／鼠标软件宏触发，只有界面明确开放的绑定方式才可使用。</value></data>
+  <data name="Help_devices_controller_Faq1Q" xml:space="preserve"><value>摇杆有轻微漂移怎么办？</value></data>
+  <data name="Help_devices_controller_Faq1A" xml:space="preserve"><value>先观察回中读数，再小幅增加内死区测试。若明显偏移在其他应用中同样存在，应继续检查手柄本身。</value></data>
+  <data name="Help_devices_controller_Faq2Q" xml:space="preserve"><value>改了映射但游戏里还是旧动作？</value></data>
+  <data name="Help_devices_controller_Faq2A" xml:space="preserve"><value>检查操作是否应用成功，以及游戏或其他输入软件是否又做了一层映射；逐层测试同一个按键。</value></data>
+  <data name="Help_devices_controller_Faq3Q" xml:space="preserve"><value>某些扳机设置为什么没有？</value></data>
+  <data name="Help_devices_controller_Faq3A" xml:space="preserve"><value>当前型号或连接未开放对应控制。不要照抄另一款手柄的设置；按当前卡片中的可用项调整。</value></data>
+  <data name="Help_devices_accessory_Title" xml:space="preserve"><value>底座、支架与灯光配件</value></data>
+  <data name="Help_devices_accessory_Summary" xml:space="preserve"><value>识别配件与所接设备，设置实际支持的灯光区域，并找到专门控制入口。</value></data>
+  <data name="Help_devices_accessory_Keywords" xml:space="preserve"><value>配件 底座 扩展坞 支架 Dock ARGB Chroma 充电 控制器 Aether Core Thunderbolt 风扇 冷却垫 AIO 水泵 鼠标底座 触觉 Sensa 音频混音器 USB 声卡 灯带 灯泡</value></data>
+  <data name="Help_devices_accessory_Intro" xml:space="preserve"><value>配件包含充电底座、支架、扩展坞和灯光控制器。配件本身与插在它上面的鼠标、耳机等设备可能各有控制页，修改前要先确认目标。</value></data>
+  <data name="Help_devices_accessory_Before" xml:space="preserve"><value>接好配件供电和数据连接，等待读取完成。不要把插入普通 USB Hub 当作该 Hub 自身支持 Chroma 控制。</value></data>
+  <data name="Help_devices_accessory_Step1" xml:space="preserve"><value>进入“设备”，核对配件名称、连接状态和页面标题；需要改变鼠标 DPI 或耳机音频时，应选择对应外设卡片。</value></data>
+  <data name="Help_devices_accessory_Step2" xml:space="preserve"><value>在配件灯光卡选择区域或通道，先应用静态色和亮度，观察底座、灯条或支架上的对应位置。</value></data>
+  <data name="Help_devices_accessory_Step3" xml:space="preserve"><value>按页面提供的选项设置动态效果；多通道控制器逐个确认目标，避免把一个通道的变化当作整机变化。</value></data>
+  <data name="Help_devices_accessory_Step4" xml:space="preserve"><value>需要统一灯效时在工作室选择该配件并核对输出范围；相机、散热底座和 Hue 则使用各自专题中的专门流程。</value></data>
+  <data name="Help_devices_accessory_Check" xml:space="preserve"><value>应用后目标区域应改变，其他外设设置应符合各自页面的状态。充电状态与灯光状态需分别查看，不能用亮灯判断已成功充电。</value></data>
+  <data name="Help_devices_accessory_Note1" xml:space="preserve"><value>ARGB 控制器、充电底座与网络灯具使用不同连接和恢复方式。工作室只向当前可输出的设备下发，预览图不代表该配件具备所有功能。</value></data>
+  <data name="Help_devices_accessory_Faq1Q" xml:space="preserve"><value>底座在线，鼠标却没有读数？</value></data>
+  <data name="Help_devices_accessory_Faq1A" xml:space="preserve"><value>底座与鼠标是不同状态。确认鼠标已开机、唤醒并连接到正确接收器，再刷新鼠标页。</value></data>
+  <data name="Help_devices_accessory_Faq2Q" xml:space="preserve"><value>灯光能改，充电上限却没有？</value></data>
+  <data name="Help_devices_accessory_Faq2A" xml:space="preserve"><value>灯光控制不代表可设置充电策略。只有实际显示的电源或充电控件可用。</value></data>
+  <data name="Help_devices_accessory_Faq3Q" xml:space="preserve"><value>停止工作室后配件还亮着？</value></data>
+  <data name="Help_devices_accessory_Faq3A" xml:space="preserve"><value>停止表示结束工作室输出，不一定熄灯。设备可能恢复配置、使用退场灯效或保留状态；要熄灯，回设备页选择 Off（若提供）。</value></data>
+  <data name="Help_devices_network_lighting_Title" xml:space="preserve"><value>网络灯光与 Hue 控制</value></data>
+  <data name="Help_devices_network_lighting_Summary" xml:space="preserve"><value>了解 Hue 入口、配对后设备卡及逐灯开关、亮度和颜色的操作边界。</value></data>
+  <data name="Help_devices_network_lighting_Keywords" xml:space="preserve"><value>网络灯光 Hue 飞利浦 桥 局域网 IP 扫描 配对 亮度 颜色 Philips Bridge 网桥 开关</value></data>
+  <data name="Help_devices_network_lighting_Intro" xml:space="preserve"><value>Hue 桥通过局域网连接，与 USB 灯光配件不同。未配对时从设置页进入，保存配对信息后才出现在设备列表；当前流程提供桥发现、配对和逐灯控制。</value></data>
+  <data name="Help_devices_network_lighting_Before" xml:space="preserve"><value>电脑与桥需能在同一局域网通信，灯具已在 Hue 系统中配置好。首次使用请先完成 Hue 配对专题的步骤。</value></data>
+  <data name="Help_devices_network_lighting_Step1" xml:space="preserve"><value>打开“设置 → 飞利浦 Hue → 配置”；已配对时也可从设备列表打开 Hue。检查当前桥地址和状态。</value></data>
+  <data name="Help_devices_network_lighting_Step2" xml:space="preserve"><value>点击“刷新”读取灯具列表。桥未出现时点“扫描”，或输入已确认的桥 IP 地址；未配对时先按桥按钮完成配对。</value></data>
+  <data name="Help_devices_network_lighting_Step3" xml:space="preserve"><value>找到目标灯，调整开关和支持的亮度，点击对应“应用”；先测试一盏灯，确认名称与实际灯具一致。</value></data>
+  <data name="Help_devices_network_lighting_Step4" xml:space="preserve"><value>需要颜色时选中目标灯，选择颜色并点击“应用颜色”，观察灯具后再刷新核对。</value></data>
+  <data name="Help_devices_network_lighting_Check" xml:space="preserve"><value>成功时灯具实际响应且刷新得到预期状态。读到灯具列表只说明桥可访问；灯具断电时仍需先恢复灯具供电。</value></data>
+  <data name="Help_devices_network_lighting_Note1" xml:space="preserve"><value>当前 Hue 控制不包含 Entertainment／DTLS 实时流光。不要把逐灯颜色控制理解为自动加入工作室所有动态场景。</value></data>
+  <data name="Help_devices_network_lighting_Faq1Q" xml:space="preserve"><value>为什么设备页刷新找不到新桥？</value></data>
+  <data name="Help_devices_network_lighting_Faq1A" xml:space="preserve"><value>未配对桥只在设置页 Hue 面板中扫描。进入“配置”后点击“扫描”，桥配对后才成为设备卡。</value></data>
+  <data name="Help_devices_network_lighting_Faq2Q" xml:space="preserve"><value>离开页面后会一直扫描网络吗？</value></data>
+  <data name="Help_devices_network_lighting_Faq2A" xml:space="preserve"><value>不会持续后台发现。需要更新桥或灯具状态时回到面板扫描或刷新。</value></data>
+  <data name="Help_devices_network_lighting_Faq3Q" xml:space="preserve"><value>只有亮度，没有颜色效果？</value></data>
+  <data name="Help_devices_network_lighting_Faq3A" xml:space="preserve"><value>亮度、色彩能力取决于灯具与当前控制入口。先确认所选灯支持颜色，并使用“应用颜色”；实时娱乐流光不在此流程内。</value></data>
+  <data name="Help_lighting_browse_scenes_Title" xml:space="preserve"><value>浏览灯光场景</value></data>
+  <data name="Help_lighting_browse_scenes_Summary" xml:space="preserve"><value>选择场景并检查预览，明确输出范围后应用；已在输出时切换会影响硬件。</value></data>
+  <data name="Help_lighting_browse_scenes_Keywords" xml:space="preserve"><value>灯光 工作室 Studio 场景 浏览 预览 播放 暂停 应用 灯效 预设 效果 图层</value></data>
+  <data name="Help_lighting_browse_scenes_Intro" xml:space="preserve"><value>工作室浏览页把设备画布和场景放在一起。场景卡用于选择效果，画布用于观察；如果已有设备输出会话，切换场景或编辑参数可能立即更新真实灯光。</value></data>
+  <data name="Help_lighting_browse_scenes_Before" xml:space="preserve"><value>确认设备已连接并支持工作室输出。只想比较画布效果时，先点击“停止”结束已有硬件会话；“暂停”不是释放设备控制的替代操作。</value></data>
+  <data name="Help_lighting_browse_scenes_Step1" xml:space="preserve"><value>进入“灯光工作室”，先查看已应用范围与状态；若只想浏览，停止当前输出并等待完成。</value></data>
+  <data name="Help_lighting_browse_scenes_Step2" xml:space="preserve"><value>点击场景卡，在设备画布观察颜色、方向和节奏。场景选择会启动预览播放，需要时使用播放／暂停观察细节。</value></data>
+  <data name="Help_lighting_browse_scenes_Step3" xml:space="preserve"><value>打开“应用到设备”旁的范围菜单，先选择仅当前设备或明确的一组设备。核对设备名称，避免误选全部。</value></data>
+  <data name="Help_lighting_browse_scenes_Step4" xml:space="preserve"><value>执行应用，等待状态列出已下发设备，再观察硬件。需要长期编辑此场景时点击“编辑”，调整图层后保存；结束控制时点击“停止”。</value></data>
+  <data name="Help_lighting_browse_scenes_Check" xml:space="preserve"><value>画布效果和硬件输出应在所选范围内一致；单色设备显示代表色。出现跳过或失败时按设备状态处理，不把画布动画当成写入成功。</value></data>
+  <data name="Help_lighting_browse_scenes_Note1" xml:space="preserve"><value>只有帮助页内的场景示例保证不会写设备。真实工作室在已有输出时会更新设备；浏览前先停止，才能明确结束此前的输出。</value></data>
+  <data name="Help_lighting_browse_scenes_Faq1Q" xml:space="preserve"><value>没再点应用，灯为什么也变了？</value></data>
+  <data name="Help_lighting_browse_scenes_Faq1A" xml:space="preserve"><value>先前会话仍在向设备输出。切换场景会更新会话内容；需要仅看预览时先停止输出。</value></data>
+  <data name="Help_lighting_browse_scenes_Faq2Q" xml:space="preserve"><value>暂停后设备还保持工作室颜色？</value></data>
+  <data name="Help_lighting_browse_scenes_Faq2A" xml:space="preserve"><value>暂停控制播放，不负责退出设备会话。要恢复设备页灯光使用“停止”，并查看恢复结果。</value></data>
+  <data name="Help_lighting_browse_scenes_Faq3Q" xml:space="preserve"><value>选场景会覆盖已保存的工程吗？</value></data>
+  <data name="Help_lighting_browse_scenes_Faq3A" xml:space="preserve"><value>浏览选择不会直接覆盖手动保存的工程。进入编辑会把场景转成可编辑配置档；要保留修改应保存，重要工程可先导出备份。</value></data>
+  <data name="Help_lighting_apply_scope_Title" xml:space="preserve"><value>选择灯光输出范围</value></data>
+  <data name="Help_lighting_apply_scope_Summary" xml:space="preserve"><value>区分画布当前设备、图层选区、待应用范围和真正已应用的设备。</value></data>
+  <data name="Help_lighting_apply_scope_Keywords" xml:space="preserve"><value>灯光 范围 全部 当前 所选 待应用 已应用 选区 离线 多设备 灯效 应用 全部设备 当前设备 选择 输出</value></data>
+  <data name="Help_lighting_apply_scope_Intro" xml:space="preserve"><value>当前查看哪台设备、图层覆盖哪些灯，以及哪些设备正在接收输出，是三个不同选择。输出范围用实例区分设备；同型号的两台设备也可分别选择。</value></data>
+  <data name="Help_lighting_apply_scope_Before" xml:space="preserve"><value>先确认要控制的设备在线且可输出。已有工作室会话时注意“已应用”摘要，它可能与正在编辑的“待应用”范围不同。</value></data>
+  <data name="Help_lighting_apply_scope_Step1" xml:space="preserve"><value>进入工作室，选择场景或工程，查看“待应用”和“已应用”摘要中的设备数与名称。</value></data>
+  <data name="Help_lighting_apply_scope_Step2" xml:space="preserve"><value>打开范围菜单。只改当前画布设备时选“仅应用当前设备”；确实要一起控制时才选“应用到全部设备”，这两个动作会直接应用。</value></data>
+  <data name="Help_lighting_apply_scope_Step3" xml:space="preserve"><value>需要指定多台时点“选择设备…”，勾选目标。按“预览此范围”只更新待应用选择；按“应用到所选设备”提交硬件输出。</value></data>
+  <data name="Help_lighting_apply_scope_Step4" xml:space="preserve"><value>提交后核对“已应用”摘要与实际灯光。取消某台设备后重新应用，查看该设备的退出恢复状态；离线目标需恢复连接后再确认输出。</value></data>
+  <data name="Help_lighting_apply_scope_Check" xml:space="preserve"><value>完成时已应用摘要只包含本次目标，未选设备不应继续由本会话控制。选区高亮或待应用摘要改变本身不代表设备范围已经切换。</value></data>
+  <data name="Help_lighting_apply_scope_Note1" xml:space="preserve"><value>“应用选区”设置图层覆盖的灯珠；“应用到所选设备”决定硬件目标。预览一个新范围不会自动停止原来已应用的范围。</value></data>
+  <data name="Help_lighting_apply_scope_Faq1Q" xml:space="preserve"><value>为什么换了当前设备，其他设备还在亮？</value></data>
+  <data name="Help_lighting_apply_scope_Faq1A" xml:space="preserve"><value>当前设备用于浏览或编辑，不等于输出范围。使用“仅应用当前设备”或重新选择输出设备并应用。</value></data>
+  <data name="Help_lighting_apply_scope_Faq2Q" xml:space="preserve"><value>为什么勾选设备后应用按钮仍灰色？</value></data>
+  <data name="Help_lighting_apply_scope_Faq2A" xml:space="preserve"><value>至少需要一台当前在线且可输出的所选设备；操作忙碌时也会暂时禁用。离线或仅预览设备不能满足条件。</value></data>
+  <data name="Help_lighting_apply_scope_Faq3Q" xml:space="preserve"><value>同型号设备会一起被选中吗？</value></data>
+  <data name="Help_lighting_apply_scope_Faq3A" xml:space="preserve"><value>范围按具体实例保存。核对列表中的设备和实际响应，不要仅凭产品名称判断两台设备是否共用选择。</value></data>
+  <data name="Help_lighting_stop_restore_Title" xml:space="preserve"><value>停止与恢复灯光</value></data>
+  <data name="Help_lighting_stop_restore_Summary" xml:space="preserve"><value>正确结束工作室输出，检查恢复结果，并处理保留最后一帧或默认退场效果。</value></data>
+  <data name="Help_lighting_stop_restore_Keywords" xml:space="preserve"><value>灯光 停止 暂停 恢复 退场 默认 最后一帧 Chroma 外部 灯效 基线 之前效果 挂起 退出</value></data>
+  <data name="Help_lighting_stop_restore_Intro" xml:space="preserve"><value>“停止”结束工作室输出并调用设备的恢复流程。恢复结果取决于设备原状态是否可读、已有保存配置和当前连接；不保证所有型号都回到进入工作室前的每一个颜色。</value></data>
+  <data name="Help_lighting_stop_restore_Before" xml:space="preserve"><value>先明确希望回到哪个设备页灯效，必要时记下颜色和亮度。外部游戏灯光或其他管理程序也可能控制同一设备。</value></data>
+  <data name="Help_lighting_stop_restore_Step1" xml:space="preserve"><value>进入工作室点击“停止”，等待停止或恢复状态完成；不要只暂停画布动画。</value></data>
+  <data name="Help_lighting_stop_restore_Step2" xml:space="preserve"><value>观察每台此前接收输出的设备。状态如提示使用默认退场灯效，说明无法完整恢复原状态，应按实际灯光判断是否需要再设置。</value></data>
+  <data name="Help_lighting_stop_restore_Step3" xml:space="preserve"><value>需要指定效果时回到设备页，选择并应用所需亮度、颜色和灯效，刷新确认；此时先不要重新启动工作室。</value></data>
+  <data name="Help_lighting_stop_restore_Step4" xml:space="preserve"><value>若颜色随后又被改动，检查设置中的游戏灯光联动及当前外部来源，停止相关来源后重试。仍有失败时记录设备名和状态并导出日志。</value></data>
+  <data name="Help_lighting_stop_restore_Check" xml:space="preserve"><value>工作室应显示已停止；设备应回到可解释的保存效果或退场效果。继续出现恢复失败时，应保留该错误而不是把停止状态当作恢复成功。</value></data>
+  <data name="Help_lighting_stop_restore_Note1" xml:space="preserve"><value>恢复期间设备断开可能使写入失败。重新连接后先检查设备页状态并应用所需效果，不通过反复播放覆盖排错现场。</value></data>
+  <data name="Help_lighting_stop_restore_Faq1Q" xml:space="preserve"><value>停止是不是把灯关掉？</value></data>
+  <data name="Help_lighting_stop_restore_Faq1A" xml:space="preserve"><value>停止结束工作室控制，不一定熄灯。想关灯时在设备页选 Off 或关闭灯光（若提供）。</value></data>
+  <data name="Help_lighting_stop_restore_Faq2Q" xml:space="preserve"><value>为什么回到光谱而不是原颜色？</value></data>
+  <data name="Help_lighting_stop_restore_Faq2A" xml:space="preserve"><value>设备可能无法读取完整原效果，因此采用默认退场灯效或保存配置。可在设备页重新设置原颜色。</value></data>
+  <data name="Help_lighting_stop_restore_Faq3Q" xml:space="preserve"><value>暂停与停止的区别是什么？</value></data>
+  <data name="Help_lighting_stop_restore_Faq3A" xml:space="preserve"><value>暂停用于观看或暂停播放；停止结束输出会话并执行恢复。需要让设备页重新接管灯光时使用停止。</value></data>
+  <data name="Help_macros_record_edit_Title" xml:space="preserve"><value>录制与编辑宏</value></data>
+  <data name="Help_macros_record_edit_Summary" xml:space="preserve"><value>创建宏，选择录制间隔与鼠标轨迹，修剪步骤并完成一次可控试播。</value></data>
+  <data name="Help_macros_record_edit_Keywords" xml:space="preserve"><value>宏 录制 编辑 F9 延迟 鼠标轨迹 追加 替换 保存 步骤 按键 输入 文本</value></data>
+  <data name="Help_macros_record_edit_Intro" xml:space="preserve"><value>把一个短任务录制成功，再逐步扩展，比一次录入很长流程更容易修正。宏中的键鼠动作会作用于实际前台窗口，先在可撤销的文本或测试场景中试用。</value></data>
+  <data name="Help_macros_record_edit_Before" xml:space="preserve"><value>在宏页创建或选中宏并打开编辑器。先确认停止录制键 F9，以及播放停止快捷键；默认播放停止是 F10，可在播放快捷键中修改。</value></data>
+  <data name="Help_macros_record_edit_Step1" xml:space="preserve"><value>给新宏命名，打开录制选项，选择记录实际间隔、固定间隔或不记录延迟；第一次录制建议保留实际间隔。</value></data>
+  <data name="Help_macros_record_edit_Step2" xml:space="preserve"><value>选择鼠标轨迹方式。不需要指针移动时选不记录；需要移动时根据任务选择绝对坐标、相对移动、相对起点或相对前台窗口。</value></data>
+  <data name="Help_macros_record_edit_Step3" xml:space="preserve"><value>开始录制，倒计时后切到目标窗口执行短流程。已有步骤时明确选择替换或追加；完成后按 F9 停止并保存。</value></data>
+  <data name="Help_macros_record_edit_Step4" xml:space="preserve"><value>回到步骤列表删除多余点击，调整等待时间，检查按下与释放是否完整。录制期间不能编辑，必须先结束录制。</value></data>
+  <data name="Help_macros_record_edit_Step5" xml:space="preserve"><value>保存后选择单次播放，切到目标窗口测试。太快导致遗漏时增加必要等待，再绑定触发键或配置循环。</value></data>
+  <data name="Help_macros_record_edit_Check" xml:space="preserve"><value>状态应显示录制动作数或保存成功，步骤列表与任务一致，单次播放只执行预期动作。先完成这一步，再试连续运行。</value></data>
+  <data name="Help_macros_record_edit_Note1" xml:space="preserve"><value>开启“录制本软件窗口”后，点击编辑器也会进入宏；用 F9 停止可避免把停止按钮点击录进去。坐标类动作还依赖窗口位置与屏幕布局。</value></data>
+  <data name="Help_macros_record_edit_Faq1Q" xml:space="preserve"><value>重新录制会删掉原步骤吗？</value></data>
+  <data name="Help_macros_record_edit_Faq1A" xml:space="preserve"><value>已有动作时会提供替换或追加。替换用于重做整段，追加把新动作放到末尾；确认前检查选择。</value></data>
+  <data name="Help_macros_record_edit_Faq2Q" xml:space="preserve"><value>为什么播放比手动操作容易漏动作？</value></data>
+  <data name="Help_macros_record_edit_Faq2A" xml:space="preserve"><value>目标程序可能尚未准备好，尤其切窗或加载后。保留必要延迟并从单次播放调试，不先提高速度。</value></data>
+  <data name="Help_macros_record_edit_Faq3Q" xml:space="preserve"><value>鼠标点错位置怎么修？</value></data>
+  <data name="Help_macros_record_edit_Faq3A" xml:space="preserve"><value>核对录制所用坐标模式、窗口位置和缩放。可改用更合适的相对模式重新录制，或在步骤中调整位置。</value></data>
+  <data name="Help_macros_trigger_binding_Title" xml:space="preserve"><value>绑定宏触发键</value></data>
+  <data name="Help_macros_trigger_binding_Summary" xml:space="preserve"><value>绑定单键、组合键或设备按键，检查冲突，并在解绑后恢复原动作。</value></data>
+  <data name="Help_macros_trigger_binding_Keywords" xml:space="preserve"><value>宏 触发 绑定 单键 组合键 侧键 冲突 启用 解绑 软件 触发键 按键 鼠标按键 按住 切换 原生功能</value></data>
+  <data name="Help_macros_trigger_binding_Intro" xml:space="preserve"><value>宏页触发按钮与设备映射页可共同管理软件宏绑定。触发开关决定实体按键是否启动宏，不限制手动播放；改变设备映射动作也可能清除对应宏触发。</value></data>
+  <data name="Help_macros_trigger_binding_Before" xml:space="preserve"><value>先保存宏并成功单次播放。特殊设备按键需要在线且可绑定的设备；有其他宏占用同一触发键时先决定保留哪一个。</value></data>
+  <data name="Help_macros_trigger_binding_Step1" xml:space="preserve"><value>在宏页选择目标宏，点击触发键按钮，按需要选择捕获单键、组合键或设备按键。</value></data>
+  <data name="Help_macros_trigger_binding_Step2" xml:space="preserve"><value>按下要绑定的键并核对显示名称。遇到冲突时清除旧宏的触发键或换键，不能靠重复捕获覆盖不明绑定。</value></data>
+  <data name="Help_macros_trigger_binding_Step3" xml:space="preserve"><value>为特殊鼠标／键盘键等待设备绑定完成；若提示关闭原生动作失败，回到设备映射页检查并重新应用。</value></data>
+  <data name="Help_macros_trigger_binding_Step4" xml:space="preserve"><value>开启该宏的触发开关，选择按一下、按住、切换或按住循环等可用方式，再到测试窗口触发并检查停止行为。</value></data>
+  <data name="Help_macros_trigger_binding_Step5" xml:space="preserve"><value>不再使用时清除触发键。若状态提示原生功能仍关闭，去设备映射页选择原动作并保存；不要只关闭触发开关就结束恢复。</value></data>
+  <data name="Help_macros_trigger_binding_Check" xml:space="preserve"><value>触发标签应显示正确按键，设备映射页应显示同一宏；实际按键只执行所需动作。解绑后再测试原动作是否回来。</value></data>
+  <data name="Help_macros_trigger_binding_Note1" xml:space="preserve"><value>帮助示例不会绑定真实按键。真实设备的软件宏绑定可能关闭原生动作；OpenSynapse 退出后软件宏不能运行，原动作是否恢复以实际映射为准。</value></data>
+  <data name="Help_macros_trigger_binding_Faq1Q" xml:space="preserve"><value>关掉触发开关后，为什么还能点播放？</value></data>
+  <data name="Help_macros_trigger_binding_Faq1A" xml:space="preserve"><value>这是正常设计。开关只控制绑定的触发键，手动播放仍可用于调试。</value></data>
+  <data name="Help_macros_trigger_binding_Faq2Q" xml:space="preserve"><value>按键同时返回网页并运行宏？</value></data>
+  <data name="Help_macros_trigger_binding_Faq2A" xml:space="preserve"><value>原生后退动作可能未成功关闭。到设备映射页重新应用软件宏，确认状态后再测试。</value></data>
+  <data name="Help_macros_trigger_binding_Faq3Q" xml:space="preserve"><value>更换特殊键时提示先解绑？</value></data>
+  <data name="Help_macros_trigger_binding_Faq3A" xml:space="preserve"><value>先清除当前宏的特殊键绑定，确认恢复状态，再捕获新键。这能避免旧键继续处于关闭原动作的状态。</value></data>
+  <data name="Help_profiles_device_rules_Title" xml:space="preserve"><value>设备应用规则</value></data>
+  <data name="Help_profiles_device_rules_Summary" xml:space="preserve"><value>按设备、配置和应用 exe 建立前台切换规则，检查匹配、恢复与重复绑定。</value></data>
+  <data name="Help_profiles_device_rules_Keywords" xml:space="preserve"><value>配置 规则 设备 应用 程序 exe 前台 自动 切换 绑定 路径</value></data>
+  <data name="Help_profiles_device_rules_Intro" xml:space="preserve"><value>每条规则把一个具体设备、一个已保存配置和一个应用 exe 路径关联起来。前台程序匹配时只对关联设备应用该配置；不要把它理解成所有设备共用一个全局当前配置。</value></data>
+  <data name="Help_profiles_device_rules_Before" xml:space="preserve"><value>先创建需要的配置，并确认目标鼠标或键盘出现在可绑定列表中；当前列表只开放受支持的鼠标／键盘连接。应用匹配使用实际 exe 路径，启动器、快捷方式和最终游戏进程可能不是同一个目标。</value></data>
+  <data name="Help_profiles_device_rules_Step1" xml:space="preserve"><value>打开“配置”，在应用规则区域明确选择设备和配置。也可从提供入口的设备页展开“按程序自动切换”。</value></data>
+  <data name="Help_profiles_device_rules_Step2" xml:space="preserve"><value>从正在运行的程序列表选目标 exe，或点击 exe 浏览按钮选择实际程序文件，再添加绑定。浏览前必须已选设备和配置。</value></data>
+  <data name="Help_profiles_device_rules_Step3" xml:space="preserve"><value>检查规则中的设备、完整路径、配置名称及启用状态；按需开启程序自动切换。相同设备与相同 exe 再绑定会更新原规则。</value></data>
+  <data name="Help_profiles_device_rules_Step4" xml:space="preserve"><value>切到目标程序前台，查看规则状态是否显示已应用，并检查该设备设置；再切到无匹配规则的程序，检查恢复结果。</value></data>
+  <data name="Help_profiles_device_rules_Step5" xml:space="preserve"><value>应用安装路径改变或换了设备实例时，重新选择 exe 并关联当前设备。删除配置前先移除或改指向引用它的规则。</value></data>
+  <data name="Help_profiles_device_rules_Check" xml:space="preserve"><value>目标程序在前台时，关联设备应显示预期设置；其他设备按各自规则工作。规则等待、设备离线、配置缺失或应用失败要分别处理。</value></data>
+  <data name="Help_profiles_device_rules_Note1" xml:space="preserve"><value>没有“最近规则胜出”的通用优先级。同一设备与同一路径只保留一条绑定；手动修改可暂时覆盖当前应用规则，前台程序改变后会重新匹配。</value></data>
+  <data name="Help_profiles_device_rules_Faq1Q" xml:space="preserve"><value>程序已经打开，为什么不切换？</value></data>
+  <data name="Help_profiles_device_rules_Faq1A" xml:space="preserve"><value>它需要成为前台程序，且实际 exe 路径匹配。检查是否绑定了启动器、旧安装路径，或设备／规则未启用。</value></data>
+  <data name="Help_profiles_device_rules_Faq2Q" xml:space="preserve"><value>同一个游戏能给鼠标和键盘用不同配置吗？</value></data>
+  <data name="Help_profiles_device_rules_Faq2A" xml:space="preserve"><value>可以，为每个可绑定设备分别建立规则，选择各自配置。同一 exe 可以关联多台不同设备。</value></data>
+  <data name="Help_profiles_device_rules_Faq3Q" xml:space="preserve"><value>切走应用后会怎样？</value></data>
+  <data name="Help_profiles_device_rules_Faq3A" xml:space="preserve"><value>正常情况下会为该设备恢复进入规则前记录的回退配置；若期间手动覆盖、配置被删除或应用失败，以规则状态为准。</value></data>
+  <data name="Help_diagnostics_logs_Title" xml:space="preserve"><value>日志与诊断</value></data>
+  <data name="Help_diagnostics_logs_Summary" xml:space="preserve"><value>重现问题、更新读取结果，并复制诊断或导出本地日志供定位。</value></data>
+  <data name="Help_diagnostics_logs_Keywords" xml:space="preserve"><value>诊断 日志 报告 错误 重新检查 复制 导出 ZIP 服务 更新 读回 状态</value></data>
+  <data name="Help_diagnostics_logs_Intro" xml:space="preserve"><value>诊断页集中展示设备通信和最近读取结果，优先列出需要处理的项目。反馈前保留一次清晰的复现过程和错误时间，比连续重装更有助于定位。</value></data>
+  <data name="Help_diagnostics_logs_Before" xml:space="preserve"><value>记下设备型号、连接方式、执行动作和发生时间。涉及灯光时记录场景与输出设备，涉及配置时记录前台 exe 与规则目标。</value></data>
+  <data name="Help_diagnostics_logs_Step1" xml:space="preserve"><value>打开“诊断”，点击“重新检查”，等本次读取结束后查看错误项目与状态。</value></data>
+  <data name="Help_diagnostics_logs_Step2" xml:space="preserve"><value>根据提示完成一次具体修正，例如唤醒外设、退出占用程序或恢复连接，再重新检查同一项。</value></data>
+  <data name="Help_diagnostics_logs_Step3" xml:space="preserve"><value>需要文字报告时点“复制诊断”，等待复制成功后粘贴到本地文本查看；报告会包含版本和最近读取状态。</value></data>
+  <data name="Help_diagnostics_logs_Step4" xml:space="preserve"><value>需要更完整记录时点“导出日志”，等待本地 ZIP 生成。日志包位于数据目录的 logs\exports；按界面打开的文件位置取用。</value></data>
+  <data name="Help_diagnostics_logs_Step5" xml:space="preserve"><value>提供报告时附上最短复现步骤、预期结果与实际结果，注明错误是否在换接口、唤醒或重新检查后仍出现。</value></data>
+  <data name="Help_diagnostics_logs_Check" xml:space="preserve"><value>复制应有成功提示，导出应有实际 ZIP 文件。重新检查后仍失败的项目与复现时间一起保留，避免使用更早的成功状态解释本次失败。</value></data>
+  <data name="Help_diagnostics_logs_Note1" xml:space="preserve"><value>日志和报告可能包含序列号、设备名称、程序路径和连接信息。公开分享前查看内容并移除不必要的个人信息；复制与导出本身只生成本地内容。</value></data>
+  <data name="Help_diagnostics_logs_Faq1Q" xml:space="preserve"><value>没有错误项目代表所有功能都已实测吗？</value></data>
+  <data name="Help_diagnostics_logs_Faq1A" xml:space="preserve"><value>不代表。它说明当前检查没有列出需处理问题；功能仍受型号、连接和已实现能力限制。</value></data>
+  <data name="Help_diagnostics_logs_Faq2Q" xml:space="preserve"><value>复制或导出会自动上传吗？</value></data>
+  <data name="Help_diagnostics_logs_Faq2A" xml:space="preserve"><value>不会。复制写入剪贴板，导出生成本地文件，需要你自行选择如何分享。</value></data>
+  <data name="Help_diagnostics_logs_Faq3Q" xml:space="preserve"><value>什么时候需要两者都提供？</value></data>
+  <data name="Help_diagnostics_logs_Faq3A" xml:space="preserve"><value>简短状态问题通常先用复制报告；崩溃、间歇失败或服务问题可加日志包，便于查看发生前后的记录。</value></data>
+  <data name="Help_troubleshooting_device_not_recognized_Title" xml:space="preserve"><value>设备不识别</value></data>
+  <data name="Help_troubleshooting_device_not_recognized_Summary" xml:space="preserve"><value>先分清 Windows 未识别、外设休眠、控制连接失败与当前能力不支持。</value></data>
+  <data name="Help_troubleshooting_device_not_recognized_Keywords" xml:space="preserve"><value>设备 不识别 缺失 离线 USB 线缆 蓝牙 接收器 驱动 扫描 只读 检测 服务 刷新</value></data>
+  <data name="Help_troubleshooting_device_not_recognized_Intro" xml:space="preserve"><value>先确认 Windows 是否能看到设备，再判断 OpenSynapse 是否能读取控制设置。设备缺卡、卡片只读和单个功能缺失是不同情况，应沿最短路径逐步排查。</value></data>
+  <data name="Help_troubleshooting_device_not_recognized_Before" xml:space="preserve"><value>准备型号、连接方式和可用数据线；无线设备充足供电并唤醒。若通过扩展坞连接，准备直接连接电脑的端口进行比较。</value></data>
+  <data name="Help_troubleshooting_device_not_recognized_Step1" xml:space="preserve"><value>在 Windows 设置或设备管理器检查目标设备。完全未出现时，先换数据线或接口、确认电源与配对，不先改应用配置。</value></data>
+  <data name="Help_troubleshooting_device_not_recognized_Step2" xml:space="preserve"><value>接收器存在而外设读不到时先唤醒或开机；蓝牙先完成 Windows 配对。确认不是只充电线或只连接了音频／视频而缺数据链路。</value></data>
+  <data name="Help_troubleshooting_device_not_recognized_Step3" xml:space="preserve"><value>退出 Razer Synapse 和其他正在管理同一设备的程序，回到设备页刷新或重新扫描，等待读取结束。</value></data>
+  <data name="Help_troubleshooting_device_not_recognized_Step4" xml:space="preserve"><value>若设备出现但只读，进入“诊断 → 重新检查”，查看端点占用、读取失败或缺失组件。Kiyo 与 THX 按各自专题补齐需要的组件。</value></data>
+  <data name="Help_troubleshooting_device_not_recognized_Step5" xml:space="preserve"><value>仍缺失时记录 Windows 硬件 ID、具体连接方式和错误文本，复制诊断并导出日志；用这些信息核对支持范围。Hue 则到设置页扫描配对。</value></data>
+  <data name="Help_troubleshooting_device_not_recognized_Check" xml:space="preserve"><value>最终应能说明失败在哪一层：Windows 连接、应用读取或单项能力。恢复后做一次小设置并重新读取，确认设备真正可用。</value></data>
+  <data name="Help_troubleshooting_device_not_recognized_Note1" xml:space="preserve"><value>可识别 ID 不等于所有功能都已验证。不要用不匹配驱动或其他型号参数试图解锁控制；系统能处理基本输入也不保证高级设置可用。</value></data>
+  <data name="Help_troubleshooting_device_not_recognized_Faq1Q" xml:space="preserve"><value>应该先重装 OpenSynapse 吗？</value></data>
+  <data name="Help_troubleshooting_device_not_recognized_Faq1A" xml:space="preserve"><value>先完成连接、唤醒、占用和诊断检查。重装不会修复错误线缆、未配对外设或当前连接缺少的能力。</value></data>
+  <data name="Help_troubleshooting_device_not_recognized_Faq2Q" xml:space="preserve"><value>拔插后能用，过一会又失效？</value></data>
+  <data name="Help_troubleshooting_device_not_recognized_Faq2A" xml:space="preserve"><value>记录是否发生休眠、换供电、进入游戏或另一管理程序启动；在失效后立即重新检查，保留当时日志。</value></data>
+  <data name="Help_troubleshooting_device_not_recognized_Faq3Q" xml:space="preserve"><value>蓝牙和 USB 一种能用一种不能用？</value></data>
+  <data name="Help_troubleshooting_device_not_recognized_Faq3A" xml:space="preserve"><value>这两种连接可能使用不同身份和控制能力。保留可用连接，记录失败连接的具体信息，不把一条路径成功推广到所有路径。</value></data>
+  <data name="Help_troubleshooting_lighting_not_restored_Title" xml:space="preserve"><value>灯光没有恢复</value></data>
+  <data name="Help_troubleshooting_lighting_not_restored_Summary" xml:space="preserve"><value>结束工作室和外部接管，重新应用明确的设备效果，并保存恢复失败信息。</value></data>
+  <data name="Help_troubleshooting_lighting_not_restored_Keywords" xml:space="preserve"><value>灯光 不恢复 卡住 最后一帧 默认 退场 停止 Chroma 游戏 接管 恢复 未恢复 基线 外部</value></data>
+  <data name="Help_troubleshooting_lighting_not_restored_Intro" xml:space="preserve"><value>停止后仍有颜色不一定是失败：设备可能恢复保存配置、使用退场效果或保留最后状态。真正需要排查的是停止报错、无法重新设置，或效果被另一来源反复覆盖。</value></data>
+  <data name="Help_troubleshooting_lighting_not_restored_Before" xml:space="preserve"><value>记下原本希望恢复的效果、受影响设备和刚才的输出范围。确认设备在线，避免在断连状态下反复应用。</value></data>
+  <data name="Help_troubleshooting_lighting_not_restored_Step1" xml:space="preserve"><value>打开工作室点击“停止”，等待完成，记录是否显示恢复失败或默认退场灯效；暂停播放不够。</value></data>
+  <data name="Help_troubleshooting_lighting_not_restored_Step2" xml:space="preserve"><value>若只有部分设备异常，先核对它们是否仍在线，并查看本次已应用范围与错误中的设备名，分别处理各台。</value></data>
+  <data name="Help_troubleshooting_lighting_not_restored_Step3" xml:space="preserve"><value>检查设置里的游戏灯光联动和外部来源，停止正在接管的游戏或其他灯光程序，再回到对应设备页。</value></data>
+  <data name="Help_troubleshooting_lighting_not_restored_Step4" xml:space="preserve"><value>直接应用一个明确的静态色和亮度，确认能重新控制；成功后再恢复想要的灯效或配置，避免先重启另一工作室会话。</value></data>
+  <data name="Help_troubleshooting_lighting_not_restored_Step5" xml:space="preserve"><value>仍失败时到诊断重新检查，附上停止状态、设备名称、恢复目标和发生时间导出日志；按实际连接问题处理后再试。</value></data>
+  <data name="Help_troubleshooting_lighting_not_restored_Check" xml:space="preserve"><value>设备页能重新应用并保持预期效果，即说明控制已恢复。若只恢复默认退场效果，按设备支持情况重新设定即可；持续报错需保留诊断。</value></data>
+  <data name="Help_troubleshooting_lighting_not_restored_Note1" xml:space="preserve"><value>反复开始新的输出会话可能改变恢复所依据的状态。先完成停止与设备页单色测试，再恢复动态效果，能保持问题可解释。</value></data>
+  <data name="Help_troubleshooting_lighting_not_restored_Faq1Q" xml:space="preserve"><value>停止后全变成光谱，是坏了吗？</value></data>
+  <data name="Help_troubleshooting_lighting_not_restored_Faq1A" xml:space="preserve"><value>先查看是否提示默认退场灯效。这通常表示无法完整读取原状态；重新应用所需设备效果即可继续检查。</value></data>
+  <data name="Help_troubleshooting_lighting_not_restored_Faq2Q" xml:space="preserve"><value>静态色刚生效又被改回去？</value></data>
+  <data name="Help_troubleshooting_lighting_not_restored_Faq2A" xml:space="preserve"><value>通常需要检查仍活动的工作室、游戏 Chroma 或其他灯光来源。一次只保留一个控制来源后测试。</value></data>
+  <data name="Help_troubleshooting_lighting_not_restored_Faq3Q" xml:space="preserve"><value>退出软件能保证恢复原灯效吗？</value></data>
+  <data name="Help_troubleshooting_lighting_not_restored_Faq3A" xml:space="preserve"><value>不能把退出当作所有设备的恢复保证。先在应用内停止并核对结果；恢复失败时保留日志，再处理连接或组件问题。</value></data>
+  <data name="Help_getting_started_settings_Title" xml:space="preserve"><value>设置与更新</value></data>
+  <data name="Help_getting_started_settings_Summary" xml:space="preserve"><value>设置后台运行方式、任务栏电量显示和更新检查，按需要精简界面。</value></data>
+  <data name="Help_getting_started_settings_Keywords" xml:space="preserve"><value>设置 开机启动 静默 托盘 电池 低电量 任务栏 状态条 更新 Lite 语言</value></data>
+  <data name="Help_getting_started_settings_Intro" xml:space="preserve"><value>设置页集中管理应用行为。开机启动决定是否随 Windows 登录启动，静默启动决定启动时是否只显示托盘图标；它们与某台设备的休眠或灯光配置分开。</value></data>
+  <data name="Help_getting_started_settings_Before" xml:space="preserve"><value>先确认设备页能读到外设电量。没有电量读数的设备不会因为打开通知或状态条而获得电量信息。安装版与便携版的更新入口能力可能不同。</value></data>
+  <data name="Help_getting_started_settings_Step1" xml:space="preserve"><value>打开“设置”，开启“开机启动”后再按需开启“静默启动”。下次登录时，从托盘图标打开主界面检查启动效果。</value></data>
+  <data name="Help_getting_started_settings_Step2" xml:space="preserve"><value>开启“外设低电量通知”接收读到 20% 和 10% 时的提醒；开启“托盘菜单外设电量”后，右键托盘查看鼠标和键盘电量。</value></data>
+  <data name="Help_getting_started_settings_Step3" xml:space="preserve"><value>开启“任务栏状态条”，按需选择最多 3 台设备；不选设备时自动显示电量最低者。想单击状态条打开窗口，再开启“点击打开主界面”。</value></data>
+  <data name="Help_getting_started_settings_Step4" xml:space="preserve"><value>在更新区域选择更新源并点击“检查更新”。有新版时按提示下载，保存工作后再执行安装或重启；自动更新开关用于启动时检查并提示。</value></data>
+  <data name="Help_getting_started_settings_Step5" xml:space="preserve"><value>只管理外设时可开启 Lite 模式，并按提示重启；它会隐藏笔记本控制、性能面板和高级设置。语言切换则立即生效。</value></data>
+  <data name="Help_getting_started_settings_Check" xml:space="preserve"><value>重新打开设置核对开关，右键托盘确认电量菜单；更新是否成功，以更新状态和“关于”中的版本为准。</value></data>
+  <data name="Help_getting_started_settings_Note1" xml:space="preserve"><value>状态条显示已连接外设电量。若设备不在线或暂时没有读数，先恢复设备连接；反复切换显示开关不会修复读取失败。</value></data>
+  <data name="Help_getting_started_settings_Faq1Q" xml:space="preserve"><value>静默启动为什么不可用？</value></data>
+  <data name="Help_getting_started_settings_Faq1A" xml:space="preserve"><value>先开启开机启动。静默启动只改变随登录启动时的窗口显示，不会停止后台功能。</value></data>
+  <data name="Help_getting_started_settings_Faq2Q" xml:space="preserve"><value>为什么低电量时没有通知？</value></data>
+  <data name="Help_getting_started_settings_Faq2A" xml:space="preserve"><value>检查电量是否成功读取、低电量开关以及 Windows 对 OpenSynapse 的通知权限。它不是每下降 1% 都提醒。</value></data>
+  <data name="Help_getting_started_settings_Faq3Q" xml:space="preserve"><value>便携版无法直接更新怎么办？</value></data>
+  <data name="Help_getting_started_settings_Faq3A" xml:space="preserve"><value>按更新状态提供的方式获取新包，退出应用后更换程序文件。用户数据保存在独立的本地数据目录；迁移前仍可导出配置备份。</value></data>
+  <data name="Help_devices_keyboard_mapping_Title" xml:space="preserve"><value>按键映射与软件／板载宏</value></data>
+  <data name="Help_devices_keyboard_mapping_Summary" xml:space="preserve"><value>为键盘或鼠标按键选择动作，区分普通层、HyperShift 和宏运行位置。</value></data>
+  <data name="Help_devices_keyboard_mapping_Keywords" xml:space="preserve"><value>映射 重映射 按键 侧键 普通层 HyperShift 软件 板载 宏 原动作</value></data>
+  <data name="Help_devices_keyboard_mapping_Intro" xml:space="preserve"><value>按键映射决定按下实体键时执行什么动作。选择软件宏时由 OpenSynapse 执行；选择设备板载宏时由设备存储和执行，后者只对具有可写宏槽的设备开放。</value></data>
+  <data name="Help_devices_keyboard_mapping_Before" xml:space="preserve"><value>设备必须在线并提供映射页。若要绑定宏，先在宏编辑器中创建、保存并单次测试；先选一个不影响基本操作的键进行试用。</value></data>
+  <data name="Help_devices_keyboard_mapping_Step1" xml:space="preserve"><value>进入“设备 → 对应设备 → 按键映射”，先点“读取”，选择普通层或需要的 HyperShift 层。</value></data>
+  <data name="Help_devices_keyboard_mapping_Step2" xml:space="preserve"><value>点击设备图上的键位或旁边的按键标签，核对当前动作，再选择键盘按键、媒体动作、DPI 或列表提供的其他动作。</value></data>
+  <data name="Help_devices_keyboard_mapping_Step3" xml:space="preserve"><value>绑定宏时选择本地宏和运行位置。软件方式按需选触发方式；板载方式选择空闲宏槽和设备支持的播放行为，留意覆盖槽位提示。</value></data>
+  <data name="Help_devices_keyboard_mapping_Step4" xml:space="preserve"><value>点击“保存”，等待同步和状态完成。回到目标应用按一次该键，再重新读取检查映射；若要恢复，重新选择原动作并保存。</value></data>
+  <data name="Help_devices_keyboard_mapping_Check" xml:space="preserve"><value>保存后“当前动作”应显示新动作或“宏：名称”。软件宏绑定还会反映到宏页的触发键；两个入口管理的是同一绑定。</value></data>
+  <data name="Help_devices_keyboard_mapping_Note1" xml:space="preserve"><value>保存到已占用的宏槽可能覆盖原宏。软件宏通常会关闭该键的设备原动作以避免双重触发；解绑后若提示原生功能仍关闭，请在映射页手动恢复。</value></data>
+  <data name="Help_devices_keyboard_mapping_Faq1Q" xml:space="preserve"><value>HyperShift 层为什么不能选软件宏？</value></data>
+  <data name="Help_devices_keyboard_mapping_Faq1A" xml:space="preserve"><value>多数设备在固件内部处理该层，应用无法可靠观察触发。若页面支持，可在该层使用板载宏。</value></data>
+  <data name="Help_devices_keyboard_mapping_Faq2Q" xml:space="preserve"><value>关闭 OpenSynapse 后按键没反应？</value></data>
+  <data name="Help_devices_keyboard_mapping_Faq2A" xml:space="preserve"><value>检查是否选了软件运行位置。软件宏需要应用运行，且宏页触发开关开启；板载宏则由设备执行。</value></data>
+  <data name="Help_devices_keyboard_mapping_Faq3Q" xml:space="preserve"><value>为什么宏槽无法写入？</value></data>
+  <data name="Help_devices_keyboard_mapping_Faq3A" xml:space="preserve"><value>有些设备只支持读取槽位，或者宏包含板载存储不支持的步骤。按页面错误调整宏，或改用软件运行。</value></data>
+  <data name="Help_devices_keyboard_actuation_Title" xml:space="preserve"><value>逐键触发、Rapid Trigger 与 Snap Tap</value></data>
+  <data name="Help_devices_keyboard_actuation_Summary" xml:space="preserve"><value>在支持模拟键的键盘上调整触发行程，检查选区和回读，再配置成对按键。</value></data>
+  <data name="Help_devices_keyboard_actuation_Keywords" xml:space="preserve"><value>键盘 模拟键 逐键 触发行程 快速触发 Rapid Trigger RT Snap Tap 死区</value></data>
+  <data name="Help_devices_keyboard_actuation_Intro" xml:space="preserve"><value>触发行程决定按到多深才触发，Rapid Trigger 用于调整连续按放的响应。先用少量常用键试调，再扩展到整块键盘；过浅的行程可能让轻触或手指停放也产生输入。</value></data>
+  <data name="Help_devices_keyboard_actuation_Before" xml:space="preserve"><value>需要设备页提供“模拟键”或“逐键触发”，并成功读取对应键位。识别到模拟键但提示布局尚未收录时，无法按键盘图逐键调整。</value></data>
+  <data name="Help_devices_keyboard_actuation_Step1" xml:space="preserve"><value>打开键盘设备页的逐键触发区域，在键盘图选择要调整的键，核对已选数量，先用一两个键测试。</value></data>
+  <data name="Help_devices_keyboard_actuation_Step2" xml:space="preserve"><value>在页面允许的范围内调整“触发行程 (mm)”和“RT 灵敏度 (mm)”。自动应用时等待状态；提供“应用到所选”时点击提交，确认读回后再用“应用到全部”。</value></data>
+  <data name="Help_devices_keyboard_actuation_Step3" xml:space="preserve"><value>需要时调整“连续 Rapid Trigger”和底部死区。若提示死区不接受写入或读数超出范围，保留原值，先完成可用项目。</value></data>
+  <data name="Help_devices_keyboard_actuation_Step4" xml:space="preserve"><value>配置 Snap Tap 时，为每组选择两个不同的键；最多 4 组，组间不重复用键，Windows 和 Menu 键不参与。至少配一组后再启用，并等待应用结果。</value></data>
+  <data name="Help_devices_keyboard_actuation_Step5" xml:space="preserve"><value>在文本窗口或目标应用中检查按下、松开和连续输入。出现误触时增加触发行程或关闭相关功能，再重新读取确认。</value></data>
+  <data name="Help_devices_keyboard_actuation_Check" xml:space="preserve"><value>以“已应用到…个键；已读回”等成功状态为准。出现“已写入，但读回失败”时结果尚未确认，应重新读取后再扩大到全部键。</value></data>
+  <data name="Help_devices_keyboard_actuation_Note1" xml:space="preserve"><value>这些设置会改变真实输入行为；帮助正文中的名称不代表每款键盘都有此功能。页面没有提供的选项不要套用其他型号的数值。</value></data>
+  <data name="Help_devices_keyboard_actuation_Faq1Q" xml:space="preserve"><value>选了几个键，为什么整块键盘一起变？</value></data>
+  <data name="Help_devices_keyboard_actuation_Faq1A" xml:space="preserve"><value>检查是否使用了“应用到全部”。逐键调节前先确认选中数量和目标按钮；需要恢复时只选受影响键或按原值重新应用。</value></data>
+  <data name="Help_devices_keyboard_actuation_Faq2Q" xml:space="preserve"><value>Snap Tap 为什么拒绝保存？</value></data>
+  <data name="Help_devices_keyboard_actuation_Faq2A" xml:space="preserve"><value>检查每组是否选齐两个键，是否把同一键放进多组，以及是否在没有按键对时开启。按页面具体提示修正。</value></data>
+  <data name="Help_devices_keyboard_actuation_Faq3Q" xml:space="preserve"><value>如何判断数值真的生效？</value></data>
+  <data name="Help_devices_keyboard_actuation_Faq3A" xml:space="preserve"><value>重新读取并悬停或选择对应键，核对行程和 RT 状态，再做输入测试。仅看到输入框里的新数字不等于设备已接受。</value></data>
+  <data name="Help_devices_mouse_performance_Title" xml:space="preserve"><value>DPI 档位、轮询率与滚轮</value></data>
+  <data name="Help_devices_mouse_performance_Summary" xml:space="preserve"><value>建立一组可切换的 DPI，按连接支持选择轮询率，并单独测试滚轮行为。</value></data>
+  <data name="Help_devices_mouse_performance_Keywords" xml:space="preserve"><value>DPI X Y 档位 灵敏度 轮询率 Hz HyperPolling 滚轮 Smart Reel</value></data>
+  <data name="Help_devices_mouse_performance_Intro" xml:space="preserve"><value>DPI 决定移动距离对应的指针位移，轮询率决定设备报告的频率；两者解决的问题不同。先确定合适的 DPI，再比较轮询率，能更清楚地判断手感和系统负载。</value></data>
+  <data name="Help_devices_mouse_performance_Before" xml:space="preserve"><value>设备需成功读取 DPI 或轮询率。高轮询选项受鼠标、接收器和连接方式限制；以当前下拉列表为准，不把宣传中的最高值作为所有连接的默认值。</value></data>
+  <data name="Help_devices_mouse_performance_Step1" xml:space="preserve"><value>进入鼠标页，先记下当前 DPI、活动档位和轮询率。若有独立 X/Y 数值，先设为相同，建立容易比较的基准。</value></data>
+  <data name="Help_devices_mouse_performance_Step2" xml:space="preserve"><value>在“DPI 档位”中填写需要的各档，选择活动档；例如在允许范围内设置 800 与 1600 两档，分别用于精细移动和普通桌面。</value></data>
+  <data name="Help_devices_mouse_performance_Step3" xml:space="preserve"><value>提交整张档位表，或等待自动应用结束，再按鼠标的档位切换键测试。当前 DPI、活动档和实际指针速度应一致变化。</value></data>
+  <data name="Help_devices_mouse_performance_Step4" xml:space="preserve"><value>单独选择一个可用轮询率并等待完成，在目标程序中测试流畅度。若高档出现卡顿或续航下降，改回之前稳定的档位比较。</value></data>
+  <data name="Help_devices_mouse_performance_Step5" xml:space="preserve"><value>仅在页面提供时调整滚轮模式、加速或 Smart Reel。逐项测试滚动后重新读取，确认没有误切到另一个 DPI 档。</value></data>
+  <data name="Help_devices_mouse_performance_Check" xml:space="preserve"><value>完成后重新读取整组 DPI 与轮询率，并测试所有保留的档位。读回不匹配时保留错误文本，不把输入框内的草稿值当成硬件当前值。</value></data>
+  <data name="Help_devices_mouse_performance_Note1" xml:space="preserve"><value>更高轮询率不一定改善每个应用的体验，也可能增加系统负载和耗电。选择在常用程序中稳定、手感合适的档位即可。</value></data>
+  <data name="Help_devices_mouse_performance_Faq1Q" xml:space="preserve"><value>为什么 4000 或 8000 Hz 不出现？</value></data>
+  <data name="Help_devices_mouse_performance_Faq1A" xml:space="preserve"><value>当前设备或接收器组合可能未提供该档，蓝牙也可能使用不同限制。确认连接方式并以列表可选值为准。</value></data>
+  <data name="Help_devices_mouse_performance_Faq2Q" xml:space="preserve"><value>只改活动 DPI 会改整张档位表吗？</value></data>
+  <data name="Help_devices_mouse_performance_Faq2A" xml:space="preserve"><value>当前 DPI 和多档表是不同设置。需要长期使用多个档位时，修改并提交档位表，同时核对活动档。</value></data>
+  <data name="Help_devices_mouse_performance_Faq3Q" xml:space="preserve"><value>应用规则会影响性能设置吗？</value></data>
+  <data name="Help_devices_mouse_performance_Faq3A" xml:space="preserve"><value>会，规则匹配时可给这台设备应用所选配置。测试固定数值前，先确认目标程序没有启用另一组设备规则。</value></data>
+  <data name="Help_devices_mouse_power_Title" xml:space="preserve"><value>无线鼠标休眠与低电量</value></data>
+  <data name="Help_devices_mouse_power_Summary" xml:space="preserve"><value>设置空闲休眠和低电量行为，区分接收器在线、外设休眠与缺失读数。</value></data>
+  <data name="Help_devices_mouse_power_Keywords" xml:space="preserve"><value>鼠标 无线 电池 电量 充电 休眠 超时 省电 低电量 阈值</value></data>
+  <data name="Help_devices_mouse_power_Intro" xml:space="preserve"><value>无线鼠标可以休眠而接收器仍保持连接。调整省电前先确认电量与休眠设置已读出，再根据使用习惯缩短或延长空闲时间；应用的电量通知与设备自身低电量行为是不同设置。</value></data>
+  <data name="Help_devices_mouse_power_Before" xml:space="preserve"><value>只对当前连接提供电池或省电控制的鼠标操作。测试时先唤醒鼠标；“--”或读取失败不能当成 0% 电量。</value></data>
+  <data name="Help_devices_mouse_power_Step1" xml:space="preserve"><value>打开鼠标设备页，查看电量和充电状态；若显示休眠或关机，移动鼠标或开机后刷新，确认读数恢复。</value></data>
+  <data name="Help_devices_mouse_power_Step2" xml:space="preserve"><value>在电源区域调整空闲休眠时间，按页面标明的单位输入；有应用按钮时提交，否则等待自动应用状态结束。</value></data>
+  <data name="Help_devices_mouse_power_Step3" xml:space="preserve"><value>页面提供低电量阈值或低电量行为时再调整，提交后重新读取。可更换电池的型号如提供电池类型选项，应与实际安装的电池一致。</value></data>
+  <data name="Help_devices_mouse_power_Step4" xml:space="preserve"><value>让鼠标空闲到设定时间，再移动唤醒。需要桌面提醒时另到“设置”开启低电量通知、托盘电量或任务栏状态条。</value></data>
+  <data name="Help_devices_mouse_power_Check" xml:space="preserve"><value>省电设置重新读取后应保持，休眠后可以正常唤醒。充电或唤醒后的电量以新读取为准，不要求每次刷新都变化。</value></data>
+  <data name="Help_devices_mouse_power_Note1" xml:space="preserve"><value>缩短休眠时间可能增加再次使用时的唤醒等待。长时间高轮询和高亮度灯光也会影响续航，应分别调整并比较。</value></data>
+  <data name="Help_devices_mouse_power_Faq1Q" xml:space="preserve"><value>接收器在线但电量消失，是坏了吗？</value></data>
+  <data name="Help_devices_mouse_power_Faq1A" xml:space="preserve"><value>不一定。先唤醒外设再刷新，接收器在线并不保证鼠标本体也在线。仍失败再查诊断。</value></data>
+  <data name="Help_devices_mouse_power_Faq2Q" xml:space="preserve"><value>通知阈值能跟鼠标低电量阈值一起改吗？</value></data>
+  <data name="Help_devices_mouse_power_Faq2A" xml:space="preserve"><value>设备页阈值控制设备行为；设置页通知按读到的 20% 和 10% 触发，两者不共用同一个输入框。</value></data>
+  <data name="Help_devices_mouse_power_Faq3Q" xml:space="preserve"><value>为什么没有休眠或电池类型选项？</value></data>
+  <data name="Help_devices_mouse_power_Faq3A" xml:space="preserve"><value>当前型号或连接没有提供对应控制，或读取未完成。不要用其他鼠标的参数填入；先确认连接与诊断状态。</value></data>
+  <data name="Help_devices_blade_fan_gpu_Title" xml:space="preserve"><value>Blade 风扇策略与 GPU 模式</value></data>
+  <data name="Help_devices_blade_fan_gpu_Summary" xml:space="preserve"><value>在自动、固定转速和曲线之间切换，并理解集显、标准和独显直连的实际行为。</value></data>
+  <data name="Help_devices_blade_fan_gpu_Keywords" xml:space="preserve"><value>Blade 风扇 自动 固定 RPM 曲线 GPU 集显 独显 标准 MUX 重启 外接屏</value></data>
+  <data name="Help_devices_blade_fan_gpu_Intro" xml:space="preserve"><value>风扇策略决定由固件还是应用控制转速；GPU 模式决定显示链路和独显是否启用。先分别验证，再组合使用，避免同时改变散热、供电和显示状态后难以定位问题。</value></data>
+  <data name="Help_devices_blade_fan_gpu_Before" xml:space="preserve"><value>保存正在进行的工作，记录原风扇和 GPU 模式。只使用当前机型开放的控件；切换显卡前检查外接显示器和页面提示，准备按要求重启 Windows。</value></data>
+  <data name="Help_devices_blade_fan_gpu_Step1" xml:space="preserve"><value>进入 Blade 页的风扇区域，先选自动模式观察正常负载下的温度与转速；自动模式把控制交回固件。</value></data>
+  <data name="Help_devices_blade_fan_gpu_Step2" xml:space="preserve"><value>需要固定噪声水平时选择固定转速并提交；需要随温度变化时打开曲线编辑，按温度节点设置转速并保存。两者都会覆盖固件自动策略。</value></data>
+  <data name="Help_devices_blade_fan_gpu_Step3" xml:space="preserve"><value>在 GPU 模式中，标准模式由核显驱动内屏、独显按需工作；集显模式停用独显；独显直连在支持的 MUX 上改变内屏连接并需要重启。选择前阅读当前提示。</value></data>
+  <data name="Help_devices_blade_fan_gpu_Step4" xml:space="preserve"><value>需要按供电切换时，使用页面提供的自动模式：插电用标准模式，电池用集显模式。遇到外接屏或显示链路限制时先处理提示，再继续。</value></data>
+  <data name="Help_devices_blade_fan_gpu_Step5" xml:space="preserve"><value>等待操作结束，按提示重启后重新核对 GPU 状态、屏幕输出及风扇读数。想恢复风扇默认策略时改回自动；需要独显时切回可用的标准模式。</value></data>
+  <data name="Help_devices_blade_fan_gpu_Check" xml:space="preserve"><value>风扇模式与实时转速应对应，GPU 状态应明确显示已应用或需要重启。若提示上次操作尚未确认，不要连续切换，先按提示重启 Windows。</value></data>
+  <data name="Help_devices_blade_fan_gpu_Note1" xml:space="preserve"><value>集显模式通过 Windows 停用独显，不等同于 MUX 切换。独显连接的外接屏可能失去画面；应用会根据机型和显示连接限制可用操作。</value></data>
+  <data name="Help_devices_blade_fan_gpu_Faq1Q" xml:space="preserve"><value>暂停或退出应用后曲线还能继续跟随温度吗？</value></data>
+  <data name="Help_devices_blade_fan_gpu_Faq1A" xml:space="preserve"><value>软件曲线需要应用持续读取温度并执行控制。要交回设备自动调速，先切回自动模式并确认状态。</value></data>
+  <data name="Help_devices_blade_fan_gpu_Faq2Q" xml:space="preserve"><value>为什么集显模式被禁用？</value></data>
+  <data name="Help_devices_blade_fan_gpu_Faq2A" xml:space="preserve"><value>可能有外接屏、内屏由独显驱动，或当前机型未提供安全切换能力。以提示原因处理，不通过反复点击绕过。</value></data>
+  <data name="Help_devices_blade_fan_gpu_Faq3Q" xml:space="preserve"><value>提示重启，是重启软件吗？</value></data>
+  <data name="Help_devices_blade_fan_gpu_Faq3A" xml:space="preserve"><value>显卡操作提示的重启通常指 Windows 重启。特别是“上次操作尚未确认”时，仅重新打开软件不能完成恢复。</value></data>
+  <data name="Help_devices_headset_thx_Title" xml:space="preserve"><value>安装并调试 THX 音效</value></data>
+  <data name="Help_devices_headset_thx_Summary" xml:space="preserve"><value>从音频页安装缺失组件，选择输出，并用空间音频和 EQ 做可重复比较。</value></data>
+  <data name="Help_devices_headset_thx_Keywords" xml:space="preserve"><value>THX Spatial Audio 空间音频 均衡器 EQ 音频组件 安装 服务 输出 音效</value></data>
+  <data name="Help_devices_headset_thx_Intro" xml:space="preserve"><value>THX 效果需要匹配的音频驱动、服务和控制组件共同工作。设备能正常播放声音时，THX 仍可能不可用；应从该设备的音频入口查看状态，而不是手动复制一个 DLL。</value></data>
+  <data name="Help_devices_headset_thx_Before" xml:space="preserve"><value>需要页面提供 THX 的设备和连接。先确认 Windows 实际输出到目标设备；安装缺失组件需要联网，安装器可能请求管理员权限。</value></data>
+  <data name="Help_devices_headset_thx_Step1" xml:space="preserve"><value>打开耳机设备页的 THX 区域，或 Blade 的音频窗口，查看组件与输出状态。先记下任何服务或设备不可用提示。</value></data>
+  <data name="Help_devices_headset_thx_Step2" xml:space="preserve"><value>如出现“下载并安装 THX 组件”，点击并等待完成，处理安装器提示后重新读取。不要把下载完成当作音效已启用。</value></data>
+  <data name="Help_devices_headset_thx_Step3" xml:space="preserve"><value>在提供输出选择的窗口中选中正在使用的输出，开启空间音频；用同一段音频开关比较，保持音量不变。</value></data>
+  <data name="Help_devices_headset_thx_Step4" xml:space="preserve"><value>选择 EQ 预设后再微调频段；使用“应用均衡器”或该设备的自动应用控件。需要撤销时恢复预设，或在提供时“全部置零”。</value></data>
+  <data name="Help_devices_headset_thx_Step5" xml:space="preserve"><value>单独试用低音增强、人声清晰度或音量标准化等已开放项目；重新读取确认，并在目标播放器或游戏中复查输出。</value></data>
+  <data name="Help_devices_headset_thx_Check" xml:space="preserve"><value>组件可用、输出正确、重新读取保留设置，且切换音效有预期变化，才完成这一流程。无变化时先查音频路由，再查诊断信息。</value></data>
+  <data name="Help_devices_headset_thx_Note1" xml:space="preserve"><value>THX 的软件处理与耳机硬件侧音、ANC 等设置是不同功能。安装 THX 不会给所有耳机连接增加同样的控制项。</value></data>
+  <data name="Help_devices_headset_thx_Faq1Q" xml:space="preserve"><value>为什么只放入 DLL 仍不工作？</value></data>
+  <data name="Help_devices_headset_thx_Faq1A" xml:space="preserve"><value>控制组件需要音频服务和匹配的端点效果配合。使用页面的安装入口补齐缺失部分，然后重新读取。</value></data>
+  <data name="Help_devices_headset_thx_Faq2Q" xml:space="preserve"><value>THX 已开启却听不出变化？</value></data>
+  <data name="Help_devices_headset_thx_Faq2A" xml:space="preserve"><value>确认播放器输出到同一个耳机或扬声器，检查 Windows 与应用内输出选择；再用明显的测试片段比较开关。</value></data>
+  <data name="Help_devices_headset_thx_Faq3Q" xml:space="preserve"><value>找不到安装按钮或空间音频？</value></data>
+  <data name="Help_devices_headset_thx_Faq3A" xml:space="preserve"><value>当前型号、连接或音频栈可能没有对应入口。先查看状态和诊断，不要安装其他型号的驱动包来补按钮。</value></data>
+  <data name="Help_devices_kiyo_camera_Title" xml:space="preserve"><value>Kiyo 相机与白平衡</value></data>
+  <data name="Help_devices_kiyo_camera_Summary" xml:space="preserve"><value>读取相机参数，切换自动白平衡，并通过雷蛇原生相机设置调整画面。</value></data>
+  <data name="Help_devices_kiyo_camera_Keywords" xml:space="preserve"><value>Kiyo 相机 摄像头 白平衡 自动 对焦 缩放 亮度 对比度 饱和度 DLL</value></data>
+  <data name="Help_devices_kiyo_camera_Intro" xml:space="preserve"><value>Kiyo 页用于读取图像参数和应用自动白平衡。亮度、对比度等更多画面设置通过“打开雷蛇相机设置”进入原生窗口，不在这里提供一套通用数值滑杆。</value></data>
+  <data name="Help_devices_kiyo_camera_Before" xml:space="preserve"><value>连接受支持的 Kiyo，并确保本机有与型号匹配的雷蛇相机原生组件。OpenSynapse 不随包提供这些 DLL；组件缺失时设备入口可能仍在，但会显示错误。</value></data>
+  <data name="Help_devices_kiyo_camera_Step1" xml:space="preserve"><value>进入“设备”选择相机，点击刷新，检查固件、序列号及亮度、对比度、白平衡等读数。</value></data>
+  <data name="Help_devices_kiyo_camera_Step2" xml:space="preserve"><value>需要自动适应环境色温时开启“自动白平衡”，需要锁定当前白平衡状态时关闭，再点击“应用白平衡”。</value></data>
+  <data name="Help_devices_kiyo_camera_Step3" xml:space="preserve"><value>等待“白平衡已写入并回读”状态，再用实际视频应用观察颜色。这里切换的是自动状态，不是手动输入任意色温。</value></data>
+  <data name="Help_devices_kiyo_camera_Step4" xml:space="preserve"><value>点击“打开雷蛇相机设置”调整原生窗口提供的画面选项，完成后回到 OpenSynapse 刷新读数，再检查视频应用中的实际画面。</value></data>
+  <data name="Help_devices_kiyo_camera_Check" xml:space="preserve"><value>参数应刷新为实际值，白平衡状态与选择一致。某字段显示“--”只表示该项没有读到；不应把它当成零值写入。</value></data>
+  <data name="Help_devices_kiyo_camera_Note1" xml:space="preserve"><value>相机页管理参数，不提供视频预览或录制。不同型号的原生窗口和可读字段可能不同，不能用另一型号的 DLL 替代。</value></data>
+  <data name="Help_devices_kiyo_camera_Faq1Q" xml:space="preserve"><value>相机能在视频软件中用，为什么这里报组件缺失？</value></data>
+  <data name="Help_devices_kiyo_camera_Faq1A" xml:space="preserve"><value>Windows 视频采集与雷蛇参数控制使用不同组件。检查页面指定的相机组件，而不是反复重装 OpenSynapse。</value></data>
+  <data name="Help_devices_kiyo_camera_Faq2Q" xml:space="preserve"><value>为什么不能直接拖亮度滑杆？</value></data>
+  <data name="Help_devices_kiyo_camera_Faq2A" xml:space="preserve"><value>本页显示读取值；更多图像参数由雷蛇原生设置窗口处理。点击“打开雷蛇相机设置”操作。</value></data>
+  <data name="Help_devices_kiyo_camera_Faq3Q" xml:space="preserve"><value>白平衡应用失败后怎么办？</value></data>
+  <data name="Help_devices_kiyo_camera_Faq3A" xml:space="preserve"><value>保留错误文本，刷新检查当前状态，再确认组件和相机连接。原生窗口打不开时也先看错误，不连续切换自动开关。</value></data>
+  <data name="Help_devices_cooling_pad_Title" xml:space="preserve"><value>散热底座转速与曲线</value></data>
+  <data name="Help_devices_cooling_pad_Summary" xml:space="preserve"><value>读取 RPM，在固定档、目标转速和温度曲线之间选择，并确认控制状态。</value></data>
+  <data name="Help_devices_cooling_pad_Keywords" xml:space="preserve"><value>散热底座 散热垫 Cooling Pad 风扇 RPM 固定档 智能曲线 温度 HyperBoost</value></data>
+  <data name="Help_devices_cooling_pad_Intro" xml:space="preserve"><value>散热底座提供目标转速、固件固定档和应用驱动的温度曲线。固定档适合保持稳定风量，智能曲线按所选 CPU／GPU 温度源调整；切换策略时前一策略会让出控制。</value></data>
+  <data name="Help_devices_cooling_pad_Before" xml:space="preserve"><value>接好底座供电与 USB 数据线并确认已连接。智能曲线还需要可用的性能温度读取；没有温度时不能按曲线更新目标转速。</value></data>
+  <data name="Help_devices_cooling_pad_Step1" xml:space="preserve"><value>进入“设备”选择散热底座，点击“刷新”，先检查当前 RPM 和已读取的模式。</value></data>
+  <data name="Help_devices_cooling_pad_Step2" xml:space="preserve"><value>使用“固定档”时从低、中、高或关闭中选择，点击“应用档位”，等待当前模式和读回 RPM 更新。</value></data>
+  <data name="Help_devices_cooling_pad_Step3" xml:space="preserve"><value>需要具体目标转速时，在风扇区域输入页面允许的 RPM 并点击“应用”；比较目标与回读状态，留意设备对数值的实际接受结果。</value></data>
+  <data name="Help_devices_cooling_pad_Step4" xml:space="preserve"><value>使用“智能曲线”时选择静音、平衡或性能，再选择 CPU、GPU 或 CPU + GPU 温度源，点击“应用曲线”。观察温度变化后目标转速是否更新。</value></data>
+  <data name="Help_devices_cooling_pad_Step5" xml:space="preserve"><value>要结束曲线跟随，选“手动”并应用，再设所需目标转速或固定档。最后单独调整灯光，避免把灯效状态当成风扇状态。</value></data>
+  <data name="Help_devices_cooling_pad_Check" xml:space="preserve"><value>固定档应报告所选模式与 RPM；曲线应先显示等待温度，再显示活动转速。出现“温度不可用，本轮不写入”时先恢复温度来源。</value></data>
+  <data name="Help_devices_cooling_pad_Note1" xml:space="preserve"><value>智能曲线依赖 OpenSynapse 持续运行。手动、固定档或曲线切换可能结束 HyperBoost 的控制；按页面状态确认当前真正生效的策略。</value></data>
+  <data name="Help_devices_cooling_pad_Faq1Q" xml:space="preserve"><value>目标 RPM 与实际转速不同？</value></data>
+  <data name="Help_devices_cooling_pad_Faq1A" xml:space="preserve"><value>设备可能按自身支持的转速档接受设置，风扇也需要时间稳定。先刷新看回读与错误，不连续重复写同一值。</value></data>
+  <data name="Help_devices_cooling_pad_Faq2Q" xml:space="preserve"><value>曲线为什么一直不升速？</value></data>
+  <data name="Help_devices_cooling_pad_Faq2A" xml:space="preserve"><value>确认选对温度源且有有效读数，再检查是否仍处于手动或固定档。温度不可用时程序会跳过该轮写入。</value></data>
+  <data name="Help_devices_cooling_pad_Faq3Q" xml:space="preserve"><value>关闭曲线等于关闭风扇吗？</value></data>
+  <data name="Help_devices_cooling_pad_Faq3A" xml:space="preserve"><value>不是。切回手动结束温度跟随；要停风扇，使用固定档中的“关闭”（若提供）并确认回读。</value></data>
+  <data name="Help_devices_hue_pairing_Title" xml:space="preserve"><value>发现并配对 Hue 桥</value></data>
+  <data name="Help_devices_hue_pairing_Summary" xml:space="preserve"><value>从设置页扫描，使用桥按钮授权，找不到时通过手动 IP 完成配对。</value></data>
+  <data name="Help_devices_hue_pairing_Keywords" xml:space="preserve"><value>Hue 飞利浦 Philips 配对 桥 按钮 IP 地址 SSDP 局域网 配置</value></data>
+  <data name="Help_devices_hue_pairing_Intro" xml:space="preserve"><value>Hue 的首次入口是设置页“飞利浦 Hue”卡片。扫描结果只用于选择桥；必须按桥上的实体按钮并完成配对，应用才会保存连接并显示设备卡。</value></data>
+  <data name="Help_devices_hue_pairing_Before" xml:space="preserve"><value>桥已通电并接入局域网，电脑能访问该网络，灯具已由 Hue 配置完成。若使用访客 Wi-Fi 或网络隔离，先恢复电脑与桥之间的通信。</value></data>
+  <data name="Help_devices_hue_pairing_Step1" xml:space="preserve"><value>进入“设置 → 飞利浦 Hue → 配置”，等待首次扫描；桥稍后上线时再点击“扫描”。</value></data>
+  <data name="Help_devices_hue_pairing_Step2" xml:space="preserve"><value>从“Hue 桥”列表选择目标。未发现时，在手动地址框填入桥的局域网 IP，例如 192.168.1.2，确认地址属于你的桥。</value></data>
+  <data name="Help_devices_hue_pairing_Step3" xml:space="preserve"><value>按下桥上的配对按钮，随即回到面板点击“配对”。若仍提示按按钮，再按一次并重试。</value></data>
+  <data name="Help_devices_hue_pairing_Step4" xml:space="preserve"><value>看到“已配对”后点击刷新，确认读取到灯具数量；回到设备列表，应能看到 Hue 卡片。</value></data>
+  <data name="Help_devices_hue_pairing_Step5" xml:space="preserve"><value>用一盏灯测试开关、亮度或颜色，点击对应应用动作，确认实际灯具响应后再配置其他灯。</value></data>
+  <data name="Help_devices_hue_pairing_Check" xml:space="preserve"><value>配对状态、桥地址和灯具列表应同时正确，重新打开面板仍可读取。仅发现桥或输入地址尚不代表完成配对。</value></data>
+  <data name="Help_devices_hue_pairing_Note1" xml:space="preserve"><value>手动 IP 用于访问已知桥，不会替代实体按钮授权。桥地址改变或换桥后，先确认新地址与配对状态，再尝试控制灯。</value></data>
+  <data name="Help_devices_hue_pairing_Faq1Q" xml:space="preserve"><value>扫描不到，但 Hue 手机应用能用？</value></data>
+  <data name="Help_devices_hue_pairing_Faq1A" xml:space="preserve"><value>手机和电脑可能处在不同网络或隔离区。确认电脑能访问桥的局域网 IP，再用手动地址尝试。</value></data>
+  <data name="Help_devices_hue_pairing_Faq2Q" xml:space="preserve"><value>按了按钮仍提示需要配对？</value></data>
+  <data name="Help_devices_hue_pairing_Faq2A" xml:space="preserve"><value>确认操作的是所选桥，并在按按钮后及时点“配对”。检查桥地址，不要把另一台桥的扫描结果误选为目标。</value></data>
+  <data name="Help_devices_hue_pairing_Faq3Q" xml:space="preserve"><value>已经配对，灯具列表却为空？</value></data>
+  <data name="Help_devices_hue_pairing_Faq3A" xml:space="preserve"><value>先点刷新，确认灯已在 Hue 中配置且桥可访问；检查错误文本。重新扫描只能找桥，不会替你添加新灯具。</value></data>
+  <data name="Help_lighting_layers_Title" xml:space="preserve"><value>图层、选区与保存</value></data>
+  <data name="Help_lighting_layers_Summary" xml:space="preserve"><value>用底色和局部效果构建一个工程，检查层级、区域和保存后的结果。</value></data>
+  <data name="Help_lighting_layers_Keywords" xml:space="preserve"><value>Studio 图层 层级 混合 不透明度 区域 灯珠 选区 保存 载入 ChromaEffects</value></data>
+  <data name="Help_lighting_layers_Intro" xml:space="preserve"><value>每个图层提供效果、启用状态、不透明度和混合方式。列表顶部图层覆盖下方图层；用底层统一颜色，再在上层添加局部区域，最容易看清叠加关系。</value></data>
+  <data name="Help_lighting_layers_Before" xml:space="preserve"><value>进入工作室“编辑”模式。仅想编辑草稿时先停止硬件输出；已有输出时图层改动可能即时反映到设备。重要工程先保存或导出。</value></data>
+  <data name="Help_lighting_layers_Step1" xml:space="preserve"><value>从场景进入“编辑”，或使用新建工程；选择要编辑的配置档，并给它起容易辨认的名称。</value></data>
+  <data name="Help_lighting_layers_Step2" xml:space="preserve"><value>新增一个纯色图层作为底色，设置颜色与不透明度，再新增一个不同效果的图层，用上移／下移检查层级关系。</value></data>
+  <data name="Help_lighting_layers_Step3" xml:space="preserve"><value>选中上层，在画布选择要覆盖的灯珠，点击“应用选区”。检查高亮区域与状态中的灯数，再调整该层或区域的效果。</value></data>
+  <data name="Help_lighting_layers_Step4" xml:space="preserve"><value>需要保留底色时降低上层不透明度或选择合适混合方式；逐层开关可定位是谁遮住了效果。使用撤销／重做修正试调。</value></data>
+  <data name="Help_lighting_layers_Step5" xml:space="preserve"><value>点击“保存”并等待成功状态；用“载入”重新读取保存的工程前，先保存当前草稿。需要交换文件时使用工作室的 Chroma 文件导入／导出。</value></data>
+  <data name="Help_lighting_layers_Step6" xml:space="preserve"><value>最后明确输出范围并应用，观察各设备，再停止检查恢复。保存草稿与应用到硬件是不同动作。</value></data>
+  <data name="Help_lighting_layers_Check" xml:space="preserve"><value>关闭上层应能看到底层，选区效果只覆盖指定灯珠，保存后载入仍保留层级和参数。设备图退化为网格时也应核对实际选中灯数。</value></data>
+  <data name="Help_lighting_layers_Note1" xml:space="preserve"><value>工作室配置档属于灯光工程，与“配置”页的设备应用规则不是同一个选择器。“应用选区”也不负责选择硬件输出设备。</value></data>
+  <data name="Help_lighting_layers_Faq1Q" xml:space="preserve"><value>底层效果为什么看不见？</value></data>
+  <data name="Help_lighting_layers_Faq1A" xml:space="preserve"><value>先看顶部是否有正常混合、完全不透明的整机图层。暂时关闭上层，或缩小它的选区、降低不透明度。</value></data>
+  <data name="Help_lighting_layers_Faq2Q" xml:space="preserve"><value>画布选中了灯，效果仍铺满设备？</value></data>
+  <data name="Help_lighting_layers_Faq2A" xml:space="preserve"><value>选择高亮只是编辑选择。还需对目标图层点“应用选区”，并确认状态提示和区域列表。</value></data>
+  <data name="Help_lighting_layers_Faq3Q" xml:space="preserve"><value>保存了工程，设备为什么没变？</value></data>
+  <data name="Help_lighting_layers_Faq3A" xml:space="preserve"><value>保存只保存工程内容。要下发需明确输出范围并应用；反过来，应用成功也不能替代重要草稿的手动保存。</value></data>
+  <data name="Help_lighting_screen_sampling_Title" xml:space="preserve"><value>屏幕采样与氛围灯</value></data>
+  <data name="Help_lighting_screen_sampling_Summary" xml:space="preserve"><value>选择氛围取色方式，区分全局捕获区域、图层区域和设备映射。</value></data>
+  <data name="Help_lighting_screen_sampling_Keywords" xml:space="preserve"><value>屏幕 采样 氛围 Ambient 捕获 区域 跟随 色带 主色 莫奈 跨设备</value></data>
+  <data name="Help_lighting_screen_sampling_Intro" xml:space="preserve"><value>“氛围”效果从屏幕取色。屏幕捕获区域先决定读哪部分画面，图层屏幕区域再决定使用其中哪部分；作用范围和画面映射则决定灯光落到哪些灯珠以及如何跨设备排列。</value></data>
+  <data name="Help_lighting_screen_sampling_Before" xml:space="preserve"><value>进入工作室编辑，准备一个色彩明显、会变化的普通桌面窗口。先停止不需要的硬件输出，并用一个设备或一小组灯珠试调。</value></data>
+  <data name="Help_lighting_screen_sampling_Step1" xml:space="preserve"><value>选择或新增图层，把效果设为“氛围”，在取色方式中选择跟随屏幕、屏幕色带、区域主色或莫奈配色，先观察各自区别。</value></data>
+  <data name="Help_lighting_screen_sampling_Step2" xml:space="preserve"><value>调整“屏幕捕获区域 (%)”，拖动框或输入 0–100% 的位置与尺寸，框住需要采样的画面；该设置作用于所有环境光图层。</value></data>
+  <data name="Help_lighting_screen_sampling_Step3" xml:space="preserve"><value>在本层“屏幕区域”选择全屏、边缘或自定义。只有选择自定义时，下面的自定义效果区域才用于限定本层取色。</value></data>
+  <data name="Help_lighting_screen_sampling_Step4" xml:space="preserve"><value>用“作用范围”选择全部设备或当前设备；需要自定义灯珠时在画布选灯并点“应用选区”。再选择“设备独立”或“跨设备拼接”的画面映射。</value></data>
+  <data name="Help_lighting_screen_sampling_Step5" xml:space="preserve"><value>核对硬件输出范围后应用，移动色块窗口观察对应灯光。跨设备拼接时调整画布上的设备位置，使色彩变化顺序符合实际摆放。</value></data>
+  <data name="Help_lighting_screen_sampling_Step6" xml:space="preserve"><value>满意后保存工程；无变化时先测试静态色排除输出问题，再重置捕获区域为全屏检查取色。</value></data>
+  <data name="Help_lighting_screen_sampling_Check" xml:space="preserve"><value>移动不同颜色内容时预览和目标灯光应有对应变化。当前设备图层范围与硬件输出范围都需包含目标，二者缺一会导致看得到预览却没有实际输出。</value></data>
+  <data name="Help_lighting_screen_sampling_Note1" xml:space="preserve"><value>调整捕获区域会影响其他氛围图层；只想改变一层时优先改该层屏幕区域或选区。已有输出会话中这些修改可能立即改变灯光。</value></data>
+  <data name="Help_lighting_screen_sampling_Faq1Q" xml:space="preserve"><value>为什么多个氛围图层同时改变了取色？</value></data>
+  <data name="Help_lighting_screen_sampling_Faq1A" xml:space="preserve"><value>“屏幕捕获区域”是共享设置。重置它后，在各层单独设置屏幕区域和自定义效果区域。</value></data>
+  <data name="Help_lighting_screen_sampling_Faq2Q" xml:space="preserve"><value>只想让键盘跟屏幕，其他灯保持底色？</value></data>
+  <data name="Help_lighting_screen_sampling_Faq2A" xml:space="preserve"><value>将该氛围层作用范围设为当前键盘，或应用键盘灯珠选区；其他设备仍可保留底层效果，再核对整体输出范围。</value></data>
+  <data name="Help_lighting_screen_sampling_Faq3Q" xml:space="preserve"><value>设备独立与跨设备拼接怎么选？</value></data>
+  <data name="Help_lighting_screen_sampling_Faq3A" xml:space="preserve"><value>设备独立让各设备各自映射画面；跨设备拼接按共享画布位置取色，适合按实际桌面排列的多个设备。先用两个明显色块比较。</value></data>
+  <data name="Help_macros_playback_loops_Title" xml:space="preserve"><value>宏循环与停止方式</value></data>
+  <data name="Help_macros_playback_loops_Summary" xml:space="preserve"><value>区分整宏重复与内部循环，选择能正确停止的触发方式。</value></data>
+  <data name="Help_macros_playback_loops_Keywords" xml:space="preserve"><value>宏 循环 重复 次数 持续 按住 切换 F10 停止 速度 延迟</value></data>
+  <data name="Help_macros_playback_loops_Intro" xml:space="preserve"><value>整宏播放方式决定整段执行几次，步骤中的循环只重复其中一部分。两者叠加会放大执行次数，应先用少量重复确认实际动作，再启用持续运行。</value></data>
+  <data name="Help_macros_playback_loops_Before" xml:space="preserve"><value>先完成单次试播，并记住当前停止播放快捷键，默认 F10。确保目标窗口可以接受测试输入，连续运行前避免保留无意的点击或文本动作。</value></data>
+  <data name="Help_macros_playback_loops_Step1" xml:space="preserve"><value>打开宏编辑器，先选择执行一次或重复少量次数，在原速下核对整段结果。</value></data>
+  <data name="Help_macros_playback_loops_Step2" xml:space="preserve"><value>需要仅重复部分动作时添加循环步骤，把目标动作放入该循环并设置次数。检查缩进结构，确认后续动作没有误放进循环。</value></data>
+  <data name="Help_macros_playback_loops_Step3" xml:space="preserve"><value>设置触发方式：按一下或按住提供单次／有限重复；切换方式可选择持续到停止；按住循环在持续按住期间重复。按界面给出的组合选择。</value></data>
+  <data name="Help_macros_playback_loops_Step4" xml:space="preserve"><value>先以有限次数保存并测试，再启用需要的持续模式。播放速度只在流程稳定后调整，等待目标窗口的步骤应保留足够延迟。</value></data>
+  <data name="Help_macros_playback_loops_Step5" xml:space="preserve"><value>运行中测试释放按键、再次按触发键或停止快捷键是否按所选方式结束；也可用“停止”。若改过快捷键，以当前显示为准。</value></data>
+  <data name="Help_macros_playback_loops_Check" xml:space="preserve"><value>有限循环执行次数正确，持续模式能用预期动作停止，并且停止后没有残留按住的键。次数异常时同时检查外层播放重复和内部循环。</value></data>
+  <data name="Help_macros_playback_loops_Note1" xml:space="preserve"><value>“停止录制”的 F9 与“停止播放”的默认 F10 不同。持续宏通知可在设置页开启，但通知不是停止操作本身。</value></data>
+  <data name="Help_macros_playback_loops_Faq1Q" xml:space="preserve"><value>为什么选不到持续循环？</value></data>
+  <data name="Help_macros_playback_loops_Faq1A" xml:space="preserve"><value>当前触发方式可能不支持。持续执行只在可再次停止的切换或按住循环方式中开放，切换触发方式后再选择。</value></data>
+  <data name="Help_macros_playback_loops_Faq2Q" xml:space="preserve"><value>设置重复 3 次，为什么动作执行更多？</value></data>
+  <data name="Help_macros_playback_loops_Faq2A" xml:space="preserve"><value>宏内可能已有循环或引用其他宏。外层重复会再次运行这些内容，先逐层检查实际次数。</value></data>
+  <data name="Help_macros_playback_loops_Faq3Q" xml:space="preserve"><value>宏一直运行怎么停？</value></data>
+  <data name="Help_macros_playback_loops_Faq3A" xml:space="preserve"><value>用当前停止快捷键（默认 F10）或“停止”。按住循环可松开触发键；切换模式可再次触发。停下后再修改循环和延迟。</value></data>
+  <data name="Help_macros_import_export_Title" xml:space="preserve"><value>宏导入与导出</value></data>
+  <data name="Help_macros_import_export_Summary" xml:space="preserve"><value>导入 OpenSynapse JSON 或受支持的雷云 XML，检查步骤后再使用，并导出可复用备份。</value></data>
+  <data name="Help_macros_import_export_Keywords" xml:space="preserve"><value>宏 导入 导出 JSON XML 雷云 Synapse 备份 引用 文件</value></data>
+  <data name="Help_macros_import_export_Intro" xml:space="preserve"><value>单独交换宏时使用宏页的导入／导出，不必替换整个配置文档。导出格式是 OpenSynapse JSON；导入也可读取支持的雷云 XML，但文件名相同不保证所有动作都兼容。</value></data>
+  <data name="Help_macros_import_export_Before" xml:space="preserve"><value>先停止录制和播放，保存当前宏。导入后检查动作、延迟、坐标与触发设置，尤其是来自其他电脑或屏幕布局的文件。</value></data>
+  <data name="Help_macros_import_export_Step1" xml:space="preserve"><value>在宏页点击“导入…”，选择 .json 或 .xml 文件，等待导入结果；失败时读取具体错误，不通过改扩展名改变文件格式。</value></data>
+  <data name="Help_macros_import_export_Step2" xml:space="preserve"><value>打开导入的宏检查步骤树。导入会为宏生成新 ID，并重新关联同一文件内的宏引用；已有宏不会按同名自动被替换。</value></data>
+  <data name="Help_macros_import_export_Step3" xml:space="preserve"><value>按当前窗口位置调整坐标，检查快捷键、循环与延迟，先单次试播。需要绑定设备按键时在本机重新核对设备与触发状态。</value></data>
+  <data name="Help_macros_import_export_Step4" xml:space="preserve"><value>要备份时选择目标宏点击“导出”，保存为 JSON。宏引用了其他宏时，导出会包含所需的被引用宏；缺失或无效引用需先修复。</value></data>
+  <data name="Help_macros_import_export_Step5" xml:space="preserve"><value>确认导出成功并记录文件位置。共享前检查其中的输入文本、程序路径和坐标，确保接收者知道需要调整的环境条件。</value></data>
+  <data name="Help_macros_import_export_Check" xml:space="preserve"><value>导入后列表出现新宏且单次播放正确，导出后有对应文件与成功状态。格式失败、步骤不完整或引用错误时，应先修复再导出。</value></data>
+  <data name="Help_macros_import_export_Note1" xml:space="preserve"><value>宏导出不等于整机备份，也不等于已写入设备板载存储。软件绑定、板载宏槽和完整配置迁移需分别处理。</value></data>
+  <data name="Help_macros_import_export_Faq1Q" xml:space="preserve"><value>能导出雷云 XML 吗？</value></data>
+  <data name="Help_macros_import_export_Faq1A" xml:space="preserve"><value>当前宏页导出 OpenSynapse JSON；XML 是兼容导入入口，不能把导出的 JSON 改名当作雷云 XML。</value></data>
+  <data name="Help_macros_import_export_Faq2Q" xml:space="preserve"><value>导入为什么出现多个宏？</value></data>
+  <data name="Help_macros_import_export_Faq2A" xml:space="preserve"><value>文件可能包含主宏及其引用宏。保留所需依赖，先检查引用关系再删除，避免让主宏失去目标。</value></data>
+  <data name="Help_macros_import_export_Faq3Q" xml:space="preserve"><value>文件能读但导入被拒绝？</value></data>
+  <data name="Help_macros_import_export_Faq3A" xml:space="preserve"><value>可能包含不支持的步骤、不完整引用或超过当前配置的宏数量限制。按具体提示修正；当前每个配置最多 64 个宏。</value></data>
+  <data name="Help_profiles_create_backup_Title" xml:space="preserve"><value>创建与备份配置</value></data>
+  <data name="Help_profiles_create_backup_Summary" xml:space="preserve"><value>创建、复制和重命名配置，导入前保留备份，并区分配置库与其他本地数据。</value></data>
+  <data name="Help_profiles_create_backup_Keywords" xml:space="preserve"><value>配置 创建 新建 复制 克隆 重命名 删除 导入 导出 JSON 备份 迁移</value></data>
+  <data name="Help_profiles_create_backup_Intro" xml:space="preserve"><value>配置页管理可复用的配置库。创建适合从新设置开始，复制适合在已有设置上试调；应用规则再把配置关联到设备和程序。配置库导出不等于备份整个应用数据目录。</value></data>
+  <data name="Help_profiles_create_backup_Before" xml:space="preserve"><value>先停止正在录制或播放的宏，保存重要编辑。导入会替换当前配置文档；开始之前导出当前库，选择一个可写且容易找到的位置。</value></data>
+  <data name="Help_profiles_create_backup_Step1" xml:space="preserve"><value>打开“配置”，输入新名称并创建。想沿用已有设置时，先选择来源配置，再输入新名称点击复制。</value></data>
+  <data name="Help_profiles_create_backup_Step2" xml:space="preserve"><value>确认列表已选中预期配置，再到对应设备页检查编辑目标与保存状态。需要自动切换时另建“设备＋配置＋exe”规则。</value></data>
+  <data name="Help_profiles_create_backup_Step3" xml:space="preserve"><value>修改名称时用重命名入口，让引用一起更新；删除前先改掉引用该配置的设备规则，且至少保留一个配置。</value></data>
+  <data name="Help_profiles_create_backup_Step4" xml:space="preserve"><value>点击“导出”保存整个配置文档为 JSON，等待成功状态。备份文件名加入容易识别的日期或用途。</value></data>
+  <data name="Help_profiles_create_backup_Step5" xml:space="preserve"><value>确认已有备份后才导入目标文件。导入完成检查配置列表、宏和规则状态；缺失引用需重新选择有效配置，不能当成自动合并完成。</value></data>
+  <data name="Help_profiles_create_backup_Step6" xml:space="preserve"><value>需要迁移整个应用时，退出后另外复制 %LOCALAPPDATA%\A1mAssist\OpenSynapse 数据目录；工作室工程也可用自己的导出入口备份。</value></data>
+  <data name="Help_profiles_create_backup_Check" xml:space="preserve"><value>创建或复制后名称出现在列表，导出有成功状态与实际文件；导入后重点检查仍被规则引用的配置是否存在，设备设置是否适合当前硬件。</value></data>
+  <data name="Help_profiles_create_backup_Note1" xml:space="preserve"><value>配置导入替换库，不会把所有独立数据一起搬过来。设备应用规则保存在单独文件，工作室工程也独立保存；迁移后还需核对设备实例和 exe 路径。</value></data>
+  <data name="Help_profiles_create_backup_Faq1Q" xml:space="preserve"><value>新建配置为什么也看到已有宏？</value></data>
+  <data name="Help_profiles_create_backup_Faq1A" xml:space="preserve"><value>新配置会带入宏库中的宏供复用，初始不带触发绑定；无需为了新配置重新录制全部宏。</value></data>
+  <data name="Help_profiles_create_backup_Faq2Q" xml:space="preserve"><value>为什么不能删除某个配置？</value></data>
+  <data name="Help_profiles_create_backup_Faq2A" xml:space="preserve"><value>可能它是最后一个配置，或设备规则仍引用它。先保留另一个配置并改掉规则引用，再删除。</value></data>
+  <data name="Help_profiles_create_backup_Faq3Q" xml:space="preserve"><value>导出配置能完整恢复工作室和设置吗？</value></data>
+  <data name="Help_profiles_create_backup_Faq3A" xml:space="preserve"><value>不能仅靠这一个文件。配置导出保存配置文档；完整迁移还需独立规则、设置和工作室数据，退出后备份整个本地数据目录更合适。</value></data>
+  <data name="Help_Specimen_DpiTitle" xml:space="preserve"><value>DPI 档位</value></data>
+  <data name="Help_Specimen_DpiHint" xml:space="preserve"><value>点击档位。此预览只在帮助页内保留状态。</value></data>
+  <data name="Help_Specimen_DpiStage" xml:space="preserve"><value>档位 {0}</value></data>
+  <data name="Help_Specimen_SceneTitle" xml:space="preserve"><value>场景卡片</value></data>
+  <data name="Help_Specimen_SceneHint" xml:space="preserve"><value>选择一个预览场景，不会向设备发送效果。</value></data>
+  <data name="Help_Specimen_SceneAuroraTitle" xml:space="preserve"><value>极光</value></data>
+  <data name="Help_Specimen_SceneAuroraDescription" xml:space="preserve"><value>缓慢的绿色波纹。</value></data>
+  <data name="Help_Specimen_SceneEmberTitle" xml:space="preserve"><value>余烬</value></data>
+  <data name="Help_Specimen_SceneEmberDescription" xml:space="preserve"><value>温暖的脉冲。</value></data>
+  <data name="Help_Specimen_SceneTideTitle" xml:space="preserve"><value>潮汐</value></data>
+  <data name="Help_Specimen_SceneTideDescription" xml:space="preserve"><value>冷蓝色流动。</value></data>
+  <data name="Help_Specimen_ScopeTitle" xml:space="preserve"><value>输出范围</value></data>
+  <data name="Help_Specimen_ScopeHint" xml:space="preserve"><value>选择预览效果要发往哪里。</value></data>
+  <data name="Help_Specimen_ScopeAll" xml:space="preserve"><value>全部设备</value></data>
+  <data name="Help_Specimen_ScopeSelected" xml:space="preserve"><value>选中的设备</value></data>
+  <data name="Help_Specimen_ScopeSingle" xml:space="preserve"><value>仅当前设备</value></data>
+  <data name="Help_Specimen_MacroTitle" xml:space="preserve"><value>宏步骤</value></data>
+  <data name="Help_Specimen_MacroHint" xml:space="preserve"><value>选中一行并删除。更改只保留在此示例中。</value></data>
+  <data name="Help_Specimen_MacroDelay" xml:space="preserve"><value>等待 200 毫秒</value></data>
+  <data name="Help_Specimen_MacroChord" xml:space="preserve"><value>按下 Ctrl+C</value></data>
+  <data name="Help_Specimen_MacroText" xml:space="preserve"><value>输入“OpenSynapse”</value></data>
+  <data name="Help_Specimen_MacroRemove" xml:space="preserve"><value>删除步骤</value></data>
+  <data name="Help_Specimen_KeyTitle" xml:space="preserve"><value>触发键绑定</value></data>
+  <data name="Help_Specimen_KeyHint" xml:space="preserve"><value>选择一个触发键，不会改变原生动作。</value></data>
+  <data name="Help_Specimen_KeyMacro" xml:space="preserve"><value>宏：每日启动</value></data>
+  <data name="Help_Specimen_KeyMouse4" xml:space="preserve"><value>鼠标键 4</value></data>
+  <data name="Help_Specimen_KeyMouse5" xml:space="preserve"><value>鼠标键 5</value></data>
+  <data name="Help_Specimen_KeyF13" xml:space="preserve"><value>F13</value></data>
 </root>

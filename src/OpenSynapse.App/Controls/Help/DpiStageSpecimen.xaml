@@ -1,0 +1,53 @@
+<UserControl
+    x:Class="OpenSynapse.App.Controls.Help.DpiStageSpecimen"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App">
+  <StackPanel Spacing="10">
+    <TextBlock local:Localized.Uid="Help_Specimen_DpiTitle"
+               FontSize="13"
+               FontFamily="{StaticResource AppFontSemiBoldFamily}"
+               FontWeight="SemiBold" />
+    <TextBlock local:Localized.Uid="Help_Specimen_DpiHint"
+               FontSize="12"
+               Foreground="{StaticResource MutedBrush}"
+               TextWrapping="Wrap" />
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <ToggleButton x:Name="DpiStage1"
+                    AutomationProperties.AutomationId="HelpDpiStage1"
+                    Content="800"
+                    Tag="1"
+                    MinWidth="62"
+                    Click="StageClick" />
+      <ToggleButton x:Name="DpiStage2"
+                    AutomationProperties.AutomationId="HelpDpiStage2"
+                    Content="1600"
+                    Tag="2"
+                    MinWidth="62"
+                    Click="StageClick" />
+      <ToggleButton x:Name="DpiStage3"
+                    AutomationProperties.AutomationId="HelpDpiStage3"
+                    Content="2400"
+                    Tag="3"
+                    MinWidth="62"
+                    Click="StageClick" />
+      <ToggleButton x:Name="DpiStage4"
+                    AutomationProperties.AutomationId="HelpDpiStage4"
+                    Content="3200"
+                    Tag="4"
+                    MinWidth="62"
+                    Click="StageClick" />
+      <ToggleButton x:Name="DpiStage5"
+                    AutomationProperties.AutomationId="HelpDpiStage5"
+                    Content="6400"
+                    Tag="5"
+                    MinWidth="62"
+                    Click="StageClick" />
+    </StackPanel>
+    <TextBlock x:Name="SelectionText"
+               AutomationProperties.AutomationId="HelpDpiSelection"
+               FontFamily="Cascadia Mono,Consolas"
+               FontSize="12"
+               Foreground="{StaticResource AccentBrush}" />
+  </StackPanel>
+</UserControl>

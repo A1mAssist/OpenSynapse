@@ -17,6 +17,8 @@ public sealed partial class MainWindow
     private MacrosPage? _macrosPage;
     private SettingsPage? _settingsPage;
     private DiagnosticsPage? _diagnosticsPage;
+    private HelpPage? _helpPage;
+    private readonly HelpViewModel _helpViewModel = new();
     private string _currentPage = "overview";
     private readonly List<string> _pageUseOrder = [];
 
@@ -31,6 +33,7 @@ public sealed partial class MainWindow
     private SettingsPage SettingsPage => EnsureCachedPage("settings", ref _settingsPage, CreateSettingsPage);
     private DiagnosticsPage DiagnosticsPage =>
         EnsureCachedPage("diagnostics", ref _diagnosticsPage, CreateDiagnosticsPage);
+    private HelpPage HelpPage => EnsureCachedPage("help", ref _helpPage, CreateHelpPage);
 
     private T EnsureCachedPage<T>(string key, ref T? page, Func<T> create)
         where T : FrameworkElement
@@ -187,6 +190,14 @@ public sealed partial class MainWindow
         return AddPage(page);
     }
 
+    private HelpPage CreateHelpPage()
+    {
+        _helpViewModel.RefreshLocalization();
+        var page = new HelpPage { DataContext = _helpViewModel };
+        page.PageNavigationRequested += RequestNavigation;
+        return AddPage(page);
+    }
+
     private T AddPage<T>(T page) where T : FrameworkElement
     {
         page.Visibility = Visibility.Collapsed;
@@ -206,6 +217,7 @@ public sealed partial class MainWindow
             "macros" => MacrosPage,
             "settings" => SettingsPage,
             "diagnostics" => DiagnosticsPage,
+            "help" => HelpPage,
             _ => OverviewPage,
         };
         TouchPage(page);
@@ -292,6 +304,7 @@ public sealed partial class MainWindow
             "macros" => _macrosPage,
             "settings" => _settingsPage,
             "diagnostics" => _diagnosticsPage,
+            "help" => _helpPage,
             _ => null,
         };
         if (view is not null)
@@ -347,6 +360,9 @@ public sealed partial class MainWindow
                 break;
             case "diagnostics":
                 _diagnosticsPage = null;
+                break;
+            case "help":
+                _helpPage = null;
                 break;
         }
         _pageUseOrder.Remove(page);

@@ -185,6 +185,7 @@ public sealed partial class MainWindow
     {
         var page = Environment.GetEnvironmentVariable("OPENSSYNAPSE_START_PAGE");
         if (string.IsNullOrWhiteSpace(page)) return;
+        _pendingHelpTopic = Environment.GetEnvironmentVariable("OPENSSYNAPSE_HELP_TOPIC");
         if (int.TryParse(Environment.GetEnvironmentVariable("OPENSSYNAPSE_START_PAGE_DELAY_MS"), out var delay) &&
             delay > 0)
         {
@@ -220,6 +221,12 @@ public sealed partial class MainWindow
         }
 
         ShowPage(page);
+        if (page == "help")
+        {
+            var topicId = _pendingHelpTopic;
+            _pendingHelpTopic = null;
+            HelpPage.OnNavigatedTo(topicId);
+        }
         if (page == "studio")
         {
             LightingStudioPage.OnNavigatedTo();
@@ -258,6 +265,13 @@ public sealed partial class MainWindow
     // row already routes through NavigationChanged; keep the device list open afterward.
     private void NavigationItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
     {
+        if (ReferenceEquals(args.InvokedItemContainer, HelpNavigationItem) &&
+            IsPageCurrent("help"))
+        {
+            HelpPage.ShowHome();
+            return;
+        }
+
         if (!ReferenceEquals(args.InvokedItemContainer, DevicesNavigationItem)) return;
         _dispatcherQueue.TryEnqueue(() => DevicesNavigationItem.IsExpanded = true);
     }
@@ -341,6 +355,10 @@ public sealed partial class MainWindow
                 : defaultHeight,
             minimumHeight,
             maxHeight);
+#if DEBUG
+        width = QaWindowDimension("OPENSSYNAPSE_QA_WINDOW_WIDTH", width, scale, minimumWidth, maxWidth);
+        height = QaWindowDimension("OPENSSYNAPSE_QA_WINDOW_HEIGHT", height, scale, minimumHeight, maxHeight);
+#endif
         var bounds = new RectInt32(
             workArea.X + Math.Max(0, (workArea.Width - width) / 2),
             workArea.Y + Math.Max(0, (workArea.Height - height) / 2),
@@ -348,4 +366,16 @@ public sealed partial class MainWindow
             height);
         AppWindow.MoveAndResize(bounds);
     }
+
+#if DEBUG
+    private static int QaWindowDimension(
+        string variable,
+        int fallback,
+        double scale,
+        int minimum,
+        int maximum) =>
+        int.TryParse(Environment.GetEnvironmentVariable(variable), out var logical) && logical > 0
+            ? Math.Clamp((int)Math.Round(logical * scale), minimum, maximum)
+            : fallback;
+#endif
 }

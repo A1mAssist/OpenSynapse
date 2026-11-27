@@ -1,0 +1,44 @@
+<UserControl
+    x:Class="OpenSynapse.App.Controls.Help.ScopeSelectorSpecimen"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App">
+  <StackPanel Spacing="10">
+    <TextBlock local:Localized.Uid="Help_Specimen_ScopeTitle"
+               FontSize="13"
+               FontFamily="{StaticResource AppFontSemiBoldFamily}"
+               FontWeight="SemiBold" />
+    <TextBlock local:Localized.Uid="Help_Specimen_ScopeHint"
+               FontSize="12"
+               Foreground="{StaticResource MutedBrush}"
+               TextWrapping="Wrap" />
+    <StackPanel Orientation="Horizontal" Spacing="18">
+      <RadioButton x:Name="AllScope"
+                   AutomationProperties.AutomationId="HelpScopeAll"
+                   GroupName="HelpScope"
+                   local:Localized.Uid="Help_Specimen_ScopeAll"
+                   Checked="ScopeChecked" />
+      <RadioButton x:Name="SelectedScope"
+                   AutomationProperties.AutomationId="HelpScopeSelected"
+                   GroupName="HelpScope"
+                   local:Localized.Uid="Help_Specimen_ScopeSelected"
+                   Checked="ScopeChecked" />
+      <RadioButton x:Name="SingleScope"
+                   AutomationProperties.AutomationId="HelpScopeSingle"
+                   GroupName="HelpScope"
+                   local:Localized.Uid="Help_Specimen_ScopeSingle"
+                   Checked="ScopeChecked" />
+    </StackPanel>
+    <StackPanel x:Name="DeviceSelection"
+                Orientation="Horizontal"
+                Spacing="18"
+                Visibility="Collapsed">
+      <CheckBox AutomationProperties.AutomationId="HelpScopeDeviceBlade"
+                Content="Blade 16"
+                IsChecked="True" />
+      <CheckBox AutomationProperties.AutomationId="HelpScopeDeviceViper"
+                Content="Viper V3"
+                IsChecked="True" />
+    </StackPanel>
+  </StackPanel>
+</UserControl>

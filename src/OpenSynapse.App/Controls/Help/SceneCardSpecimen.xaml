@@ -1,0 +1,156 @@
+<UserControl
+    x:Class="OpenSynapse.App.Controls.Help.SceneCardSpecimen"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App">
+  <UserControl.Resources>
+    <Style x:Key="SceneToggleStyle" TargetType="ToggleButton">
+      <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Foreground" Value="{StaticResource DataBrush}" />
+      <Setter Property="Padding" Value="6" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ToggleButton">
+            <Border x:Name="Root"
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="{TemplateBinding CornerRadius}"
+                    Padding="{TemplateBinding Padding}">
+              <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup x:Name="CommonStates">
+                  <VisualState x:Name="Normal" />
+                  <VisualState x:Name="PointerOver">
+                    <VisualState.Setters>
+                      <Setter Target="Root.Background" Value="{StaticResource SurfaceRaisedBrush}" />
+                    </VisualState.Setters>
+                  </VisualState>
+                  <VisualState x:Name="Pressed">
+                    <VisualState.Setters>
+                      <Setter Target="Root.Background" Value="{StaticResource SurfaceMutedBrush}" />
+                    </VisualState.Setters>
+                  </VisualState>
+                  <VisualState x:Name="Disabled">
+                    <VisualState.Setters>
+                      <Setter Target="Root.Opacity" Value="0.55" />
+                    </VisualState.Setters>
+                  </VisualState>
+                </VisualStateGroup>
+                <VisualStateGroup x:Name="CheckStates">
+                  <VisualState x:Name="Unchecked" />
+                  <VisualState x:Name="Checked">
+                    <VisualState.Setters>
+                      <Setter Target="Root.BorderBrush" Value="{StaticResource AccentBrush}" />
+                      <Setter Target="Root.Background" Value="{StaticResource SurfaceRaisedBrush}" />
+                    </VisualState.Setters>
+                  </VisualState>
+                  <VisualState x:Name="Indeterminate" />
+                </VisualStateGroup>
+              </VisualStateManager.VisualStateGroups>
+              <ContentPresenter Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+            </Border>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+  </UserControl.Resources>
+  <StackPanel Spacing="10">
+    <TextBlock local:Localized.Uid="Help_Specimen_SceneTitle"
+               FontSize="13"
+               FontFamily="{StaticResource AppFontSemiBoldFamily}"
+               FontWeight="SemiBold" />
+    <TextBlock local:Localized.Uid="Help_Specimen_SceneHint"
+               FontSize="12"
+               Foreground="{StaticResource MutedBrush}"
+               TextWrapping="Wrap" />
+    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+      <ToggleButton x:Name="AuroraCard"
+                    AutomationProperties.AutomationId="HelpSceneAurora"
+                    Tag="Aurora"
+                    Style="{StaticResource SceneToggleStyle}"
+                    HorizontalContentAlignment="Stretch"
+                    Click="SceneClick">
+        <StackPanel Spacing="7">
+          <Border Height="38" CornerRadius="2">
+            <Border.Background>
+              <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                <GradientStop Color="#0B3B2D" Offset="0" />
+                <GradientStop Color="#44D62C" Offset="0.55" />
+                <GradientStop Color="#B4F5D3" Offset="1" />
+              </LinearGradientBrush>
+            </Border.Background>
+          </Border>
+          <TextBlock local:Localized.Uid="Help_Specimen_SceneAuroraTitle"
+                     FontSize="12"
+                     FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                     FontWeight="SemiBold" />
+          <TextBlock local:Localized.Uid="Help_Specimen_SceneAuroraDescription"
+                     FontSize="10"
+                     Foreground="{StaticResource MutedBrush}"
+                     TextWrapping="Wrap" />
+        </StackPanel>
+      </ToggleButton>
+      <ToggleButton x:Name="EmberCard"
+                    Grid.Column="1"
+                    AutomationProperties.AutomationId="HelpSceneEmber"
+                    Tag="Ember"
+                    Style="{StaticResource SceneToggleStyle}"
+                    HorizontalContentAlignment="Stretch"
+                    Click="SceneClick">
+        <StackPanel Spacing="7">
+          <Border Height="38" CornerRadius="2">
+            <Border.Background>
+              <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                <GradientStop Color="#3A1208" Offset="0" />
+                <GradientStop Color="#F07D79" Offset="0.5" />
+                <GradientStop Color="#F0B95A" Offset="1" />
+              </LinearGradientBrush>
+            </Border.Background>
+          </Border>
+          <TextBlock local:Localized.Uid="Help_Specimen_SceneEmberTitle"
+                     FontSize="12"
+                     FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                     FontWeight="SemiBold" />
+          <TextBlock local:Localized.Uid="Help_Specimen_SceneEmberDescription"
+                     FontSize="10"
+                     Foreground="{StaticResource MutedBrush}"
+                     TextWrapping="Wrap" />
+        </StackPanel>
+      </ToggleButton>
+      <ToggleButton x:Name="TideCard"
+                    Grid.Column="2"
+                    AutomationProperties.AutomationId="HelpSceneTide"
+                    Tag="Tide"
+                    Style="{StaticResource SceneToggleStyle}"
+                    HorizontalContentAlignment="Stretch"
+                    Click="SceneClick">
+        <StackPanel Spacing="7">
+          <Border Height="38" CornerRadius="2">
+            <Border.Background>
+              <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                <GradientStop Color="#071C33" Offset="0" />
+                <GradientStop Color="#59C7D9" Offset="0.55" />
+                <GradientStop Color="#D7F8FA" Offset="1" />
+              </LinearGradientBrush>
+            </Border.Background>
+          </Border>
+          <TextBlock local:Localized.Uid="Help_Specimen_SceneTideTitle"
+                     FontSize="12"
+                     FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                     FontWeight="SemiBold" />
+          <TextBlock local:Localized.Uid="Help_Specimen_SceneTideDescription"
+                     FontSize="10"
+                     Foreground="{StaticResource MutedBrush}"
+                     TextWrapping="Wrap" />
+        </StackPanel>
+      </ToggleButton>
+    </Grid>
+  </StackPanel>
+</UserControl>

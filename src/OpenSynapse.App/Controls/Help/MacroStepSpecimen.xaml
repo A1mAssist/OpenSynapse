@@ -1,0 +1,56 @@
+<UserControl
+    x:Class="OpenSynapse.App.Controls.Help.MacroStepSpecimen"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App">
+  <StackPanel Spacing="10">
+    <TextBlock local:Localized.Uid="Help_Specimen_MacroTitle"
+               FontSize="13"
+               FontFamily="{StaticResource AppFontSemiBoldFamily}"
+               FontWeight="SemiBold" />
+    <TextBlock local:Localized.Uid="Help_Specimen_MacroHint"
+               FontSize="12"
+               Foreground="{StaticResource MutedBrush}"
+               TextWrapping="Wrap" />
+    <ListView x:Name="StepList"
+              ItemsSource="{x:Bind Rows}"
+              SelectionMode="Single"
+              AutomationProperties.AutomationId="HelpMacroStepList"
+              MinHeight="116"
+              MaxHeight="160"
+              Background="Transparent"
+              BorderThickness="0"
+              Padding="0">
+      <ListView.ItemTemplate>
+        <DataTemplate>
+          <Grid ColumnDefinitions="30,*"
+                ColumnSpacing="8"
+                MinHeight="32"
+                AutomationProperties.AutomationId="{Binding AutomationId}">
+            <Border Width="24"
+                    Height="24"
+                    Background="{StaticResource SurfaceRaisedBrush}"
+                    CornerRadius="12"
+                    VerticalAlignment="Center">
+              <TextBlock Text="{Binding Number}"
+                         FontFamily="Cascadia Mono,Consolas"
+                         FontSize="11"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center" />
+            </Border>
+            <TextBlock Grid.Column="1"
+                       Text="{Binding Text}"
+                       VerticalAlignment="Center"
+                       TextWrapping="Wrap" />
+          </Grid>
+        </DataTemplate>
+      </ListView.ItemTemplate>
+    </ListView>
+    <Button x:Name="RemoveButton"
+            AutomationProperties.AutomationId="HelpMacroRemove"
+            local:Localized.Uid="Help_Specimen_MacroRemove"
+            Click="RemoveStepClick"
+            Style="{StaticResource SecondaryButtonStyle}"
+            HorizontalAlignment="Left" />
+  </StackPanel>
+</UserControl>

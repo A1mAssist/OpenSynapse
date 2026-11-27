@@ -8,7 +8,14 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Title="OpenSynapse">
-  <Grid x:Name="RootLayout" Background="{StaticResource CanvasBrush}" RowDefinitions="48,*" SizeChanged="RootLayoutSizeChanged">
+  <Grid x:Name="RootLayout"
+        Background="{StaticResource CanvasBrush}"
+        RowDefinitions="48,*"
+        KeyboardAcceleratorPlacementMode="Hidden"
+        SizeChanged="RootLayoutSizeChanged">
+    <Grid.KeyboardAccelerators>
+      <KeyboardAccelerator Key="F1" Invoked="HelpAcceleratorInvoked" />
+    </Grid.KeyboardAccelerators>
     <Grid x:Name="AppTitleBar" Grid.Row="0" ColumnDefinitions="224,*" Background="{StaticResource CanvasBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1">
       <Grid Padding="16,0" VerticalAlignment="Stretch">
         <Grid x:Name="TitleBarBrand" ColumnDefinitions="Auto,Auto" VerticalAlignment="Center" HorizontalAlignment="Left">
@@ -48,6 +55,7 @@
         <NavigationViewItem local:Localized.Uid="Loc_D1F42581D7" x:Name="DiagnosticsNavigationItem" AutomationProperties.AutomationId="DiagnosticsNavigationItem" Tag="diagnostics"><NavigationViewItem.Icon><SymbolIcon Symbol="Document" /></NavigationViewItem.Icon></NavigationViewItem>
       </NavigationView.MenuItems>
       <NavigationView.FooterMenuItems>
+        <NavigationViewItem local:Localized.Uid="HelpNavigationItem" x:Name="HelpNavigationItem" AutomationProperties.AutomationId="HelpNavigationItem" Tag="help"><NavigationViewItem.Icon><FontIcon Glyph="&#xE9CE;" FontFamily="{StaticResource IconFontFamily}" FontSize="16" /></NavigationViewItem.Icon></NavigationViewItem>
         <NavigationViewItem local:Localized.Uid="SettingsNavigationItem" x:Name="SettingsNavigationItem" AutomationProperties.AutomationId="SettingsNavigationItem" Tag="settings"><NavigationViewItem.Icon><FontIcon Glyph="&#xE713;" FontFamily="{StaticResource IconFontFamily}" FontSize="16" /></NavigationViewItem.Icon></NavigationViewItem>
       </NavigationView.FooterMenuItems>
       <NavigationView.Content>

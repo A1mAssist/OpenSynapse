@@ -1,0 +1,354 @@
+<UserControl
+    x:Class="OpenSynapse.App.Views.HelpPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:views="using:OpenSynapse.App.Views"
+    AutomationProperties.AutomationId="HelpPage"
+    KeyboardAcceleratorPlacementMode="Hidden">
+  <UserControl.KeyboardAccelerators>
+    <KeyboardAccelerator Key="F" Modifiers="Control" Invoked="SearchAcceleratorInvoked" />
+    <KeyboardAccelerator Key="Escape" Invoked="EscapeAcceleratorInvoked" />
+  </UserControl.KeyboardAccelerators>
+
+  <Grid RowDefinitions="Auto,*">
+    <Grid Padding="24,18,24,10"
+          ColumnDefinitions="Auto,*,Auto"
+          ColumnSpacing="10">
+      <StackPanel Orientation="Horizontal" Spacing="2">
+        <Button x:Name="HelpBackButton"
+                AutomationProperties.AutomationId="HelpBackButton"
+                AutomationProperties.Name="{Binding BackText}"
+                Click="BackHistoryClick"
+                IsEnabled="{Binding CanGoBack}"
+                Style="{StaticResource IconButtonStyle}"
+                Width="30"
+                Height="30"
+                MinWidth="30"
+                MinHeight="30"
+                BorderThickness="0"
+                CornerRadius="6"
+                ToolTipService.ToolTip="{Binding BackText}">
+          <Button.Resources>
+            <SolidColorBrush x:Key="ButtonBackgroundDisabled" Color="Transparent" />
+            <SolidColorBrush x:Key="ButtonBorderBrushDisabled" Color="Transparent" />
+          </Button.Resources>
+          <FontIcon Glyph="&#xE72B;"
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="12" />
+        </Button>
+        <Button x:Name="HelpForwardButton"
+                AutomationProperties.AutomationId="HelpForwardButton"
+                AutomationProperties.Name="{Binding ForwardText}"
+                Click="ForwardHistoryClick"
+                IsEnabled="{Binding CanGoForward}"
+                Style="{StaticResource IconButtonStyle}"
+                Width="30"
+                Height="30"
+                MinWidth="30"
+                MinHeight="30"
+                BorderThickness="0"
+                CornerRadius="6"
+                ToolTipService.ToolTip="{Binding ForwardText}">
+          <Button.Resources>
+            <SolidColorBrush x:Key="ButtonBackgroundDisabled" Color="Transparent" />
+            <SolidColorBrush x:Key="ButtonBorderBrushDisabled" Color="Transparent" />
+          </Button.Resources>
+          <FontIcon Glyph="&#xE72A;"
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="12" />
+        </Button>
+      </StackPanel>
+      <TextBox x:Name="HelpSearchBox"
+               Grid.Column="1"
+               AutomationProperties.AutomationId="HelpSearchBox"
+               AutomationProperties.Name="{Binding SearchPlaceholder}"
+               PlaceholderText="{Binding SearchPlaceholder}"
+               Text="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+               MaxWidth="480"
+               HorizontalAlignment="Stretch"
+               FontSize="14" />
+      <Border Grid.Column="2" Width="72" />
+    </Grid>
+
+    <ScrollViewer x:Name="HelpScrollViewer"
+                  Grid.Row="1"
+                  IsTabStop="True"
+                  AutomationProperties.Name="{Binding FocusTitle}"
+                  HorizontalScrollBarVisibility="Disabled"
+                  HorizontalScrollMode="Disabled">
+      <Grid Padding="24,6,24,48">
+        <StackPanel Visibility="{Binding HomeVisibility}"
+                    AutomationProperties.AutomationId="HelpHomeView"
+                    Spacing="22">
+          <StackPanel Spacing="6">
+            <TextBlock Text="{Binding HomeTitle}"
+                       AutomationProperties.HeadingLevel="Level1"
+                       Style="{StaticResource PageTitleStyle}" />
+            <TextBlock Text="{Binding HomeDescription}"
+                       FontSize="14"
+                       Foreground="{StaticResource MutedBrush}"
+                       TextWrapping="Wrap" />
+          </StackPanel>
+
+          <StackPanel Spacing="10">
+            <TextBlock Text="{Binding CommonTasksTitle}"
+                       AutomationProperties.HeadingLevel="Level2"
+                       FontSize="16"
+                       FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                       FontWeight="SemiBold" />
+            <ItemsRepeater ItemsSource="{Binding CommonTasks}">
+              <ItemsRepeater.Layout>
+                <UniformGridLayout MinItemWidth="140"
+                                   MaximumRowsOrColumns="4"
+                                   MinColumnSpacing="20"
+                                   MinRowSpacing="2"
+                                   ItemsStretch="None" />
+              </ItemsRepeater.Layout>
+              <ItemsRepeater.ItemTemplate>
+                <DataTemplate>
+                  <HyperlinkButton Content="{Binding Title}"
+                                   Tag="{Binding TopicId}"
+                                   AutomationProperties.AutomationId="{Binding AutomationId}"
+                                   Click="TopicClick"
+                                   HorizontalAlignment="Left"
+                                   Padding="0" />
+                </DataTemplate>
+              </ItemsRepeater.ItemTemplate>
+            </ItemsRepeater>
+            <Border Height="1" Margin="0,4,0,0" Background="{StaticResource LineBrush}" />
+          </StackPanel>
+
+          <StackPanel Visibility="{Binding RecentVisibility}" Spacing="10">
+            <TextBlock Text="{Binding RecentText}"
+                       AutomationProperties.HeadingLevel="Level2"
+                       FontSize="16"
+                       FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                       FontWeight="SemiBold" />
+            <ItemsRepeater ItemsSource="{Binding RecentTopics}">
+              <ItemsRepeater.Layout>
+                <UniformGridLayout MinItemWidth="140"
+                                   MaximumRowsOrColumns="4"
+                                   MinColumnSpacing="20"
+                                   MinRowSpacing="2"
+                                   ItemsStretch="None" />
+              </ItemsRepeater.Layout>
+              <ItemsRepeater.ItemTemplate>
+                <DataTemplate>
+                  <HyperlinkButton Content="{Binding Title}"
+                                   Tag="{Binding TopicId}"
+                                   AutomationProperties.AutomationId="{Binding AutomationId}"
+                                   Click="TopicClick"
+                                   HorizontalAlignment="Left"
+                                   Padding="0" />
+                </DataTemplate>
+              </ItemsRepeater.ItemTemplate>
+            </ItemsRepeater>
+            <Border Height="1" Margin="0,4,0,0" Background="{StaticResource LineBrush}" />
+          </StackPanel>
+
+          <StackPanel Spacing="10">
+            <TextBlock Text="{Binding AllTopicsTitle}"
+                       AutomationProperties.HeadingLevel="Level2"
+                       FontSize="16"
+                       FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                       FontWeight="SemiBold" />
+            <ItemsControl ItemsSource="{Binding Categories}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border BorderBrush="{StaticResource LineBrush}"
+                          BorderThickness="0,0,0,1"
+                          Padding="0,14"
+                          AutomationProperties.AutomationId="{Binding AutomationId}">
+                    <Grid ColumnDefinitions="*,Auto"
+                          RowDefinitions="Auto,Auto,Auto"
+                          ColumnSpacing="16"
+                          RowSpacing="5">
+                      <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="{Binding Title}"
+                                   FontSize="16"
+                                   FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding TopicCountText}"
+                                   FontSize="11"
+                                   Foreground="{StaticResource MutedBrush}"
+                                   VerticalAlignment="Center" />
+                      </StackPanel>
+                      <HyperlinkButton Grid.Column="1"
+                                       Content="{Binding ViewAllText}"
+                                       Tag="{Binding CategoryId}"
+                                       AutomationProperties.AutomationId="{Binding ViewAllAutomationId}"
+                                       Click="CategoryClick"
+                                       Padding="0"
+                                       VerticalAlignment="Top" />
+                      <TextBlock Grid.Row="1"
+                                 Grid.ColumnSpan="2"
+                                 Text="{Binding Description}"
+                                 FontSize="12"
+                                 Foreground="{StaticResource MutedBrush}"
+                                 TextWrapping="Wrap" />
+                      <ItemsControl Grid.Row="2"
+                                    Grid.ColumnSpan="2"
+                                    ItemsSource="{Binding Topics}">
+                        <ItemsControl.ItemsPanel>
+                          <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="20" />
+                          </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <HyperlinkButton Content="{Binding Title}"
+                                             Tag="{Binding TopicId}"
+                                             AutomationProperties.AutomationId="{Binding AutomationId}"
+                                             Click="TopicClick"
+                                             Padding="0" />
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </StackPanel>
+
+        <StackPanel Visibility="{Binding CategoryVisibility}"
+                    AutomationProperties.AutomationId="HelpCategoryView"
+                    Spacing="20">
+          <StackPanel Orientation="Horizontal" Spacing="4">
+            <HyperlinkButton Content="{Binding HelpText}"
+                             Click="HomeClick"
+                             Padding="0" />
+            <TextBlock Text="/"
+                       Foreground="{StaticResource MutedBrush}"
+                       VerticalAlignment="Center" />
+            <TextBlock Text="{Binding CategoryTitle}"
+                       Foreground="{StaticResource MutedBrush}"
+                       VerticalAlignment="Center" />
+          </StackPanel>
+          <StackPanel Spacing="6">
+            <TextBlock Text="{Binding CategoryTitle}"
+                       AutomationProperties.HeadingLevel="Level1"
+                       Style="{StaticResource PageTitleStyle}" />
+            <TextBlock Text="{Binding CategoryDescription}"
+                       FontSize="14"
+                       Foreground="{StaticResource MutedBrush}"
+                       TextWrapping="Wrap" />
+          </StackPanel>
+          <ItemsControl ItemsSource="{Binding CategoryTopics}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Button Tag="{Binding TopicId}"
+                        AutomationProperties.AutomationId="{Binding AutomationId}"
+                        AutomationProperties.Name="{Binding Title}"
+                        Click="TopicClick"
+                        Background="Transparent"
+                        BorderBrush="{StaticResource LineBrush}"
+                        BorderThickness="0,0,0,1"
+                        CornerRadius="0"
+                        Padding="16,12"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch">
+                  <StackPanel Spacing="3">
+                    <TextBlock Text="{Binding Title}"
+                               FontSize="15"
+                               FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource AccentBrush}"
+                               TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding Summary}"
+                               FontSize="12"
+                               Foreground="{StaticResource MutedBrush}"
+                               TextWrapping="Wrap" />
+                  </StackPanel>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+
+        <views:HelpArticleView x:Name="ArticleView"
+                               Visibility="{Binding ArticleVisibility}" />
+
+        <StackPanel Visibility="{Binding SearchVisibility}"
+                    AutomationProperties.AutomationId="HelpSearchView"
+                    Spacing="18">
+          <TextBlock Text="{Binding SearchResultsText}"
+                     AutomationProperties.HeadingLevel="Level1"
+                     Style="{StaticResource PageTitleStyle}" />
+          <ItemsControl ItemsSource="{Binding SearchGroups}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Spacing="6" Margin="0,0,0,18">
+                  <TextBlock Text="{Binding CategoryTitle}"
+                             FontSize="13"
+                             FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                             FontWeight="SemiBold"
+                             Foreground="{StaticResource AccentBrush}" />
+                  <ItemsControl ItemsSource="{Binding Results}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Button Tag="{Binding TopicId}"
+                                AutomationProperties.AutomationId="{Binding AutomationId}"
+                                AutomationProperties.Name="{Binding Heading}"
+                                Click="TopicClick"
+                                Background="Transparent"
+                                BorderBrush="{StaticResource LineBrush}"
+                                BorderThickness="0,0,0,1"
+                                CornerRadius="0"
+                                Padding="16,12"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Stretch">
+                          <StackPanel Spacing="4">
+                            <TextBlock Text="{Binding Heading}"
+                                       FontFamily="{StaticResource AppFontSemiBoldFamily}"
+                                       FontWeight="SemiBold"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding Summary}"
+                                       FontSize="12"
+                                       Foreground="{StaticResource MutedBrush}"
+                                       TextWrapping="Wrap" />
+                          </StackPanel>
+                        </Button>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+
+        <StackPanel Visibility="{Binding NoResultsVisibility}"
+                    AutomationProperties.AutomationId="HelpNoResultsView"
+                    Spacing="18">
+          <TextBlock Text="{Binding SearchResultsText}"
+                     AutomationProperties.HeadingLevel="Level1"
+                     Style="{StaticResource PageTitleStyle}" />
+          <TextBlock Text="{Binding NoResultsText}"
+                     FontSize="15"
+                     Foreground="{StaticResource MutedBrush}"
+                     TextWrapping="Wrap" />
+          <ItemsRepeater ItemsSource="{Binding NoResultCategories}">
+            <ItemsRepeater.Layout>
+              <UniformGridLayout MinItemWidth="170"
+                                 MaximumRowsOrColumns="3"
+                                 MinColumnSpacing="8"
+                                 MinRowSpacing="8"
+                                 ItemsStretch="Fill" />
+            </ItemsRepeater.Layout>
+            <ItemsRepeater.ItemTemplate>
+              <DataTemplate>
+                <Button Content="{Binding Title}"
+                        Tag="{Binding CategoryId}"
+                        AutomationProperties.AutomationId="{Binding AutomationId}"
+                        Click="CategoryClick"
+                        Style="{StaticResource SecondaryButtonStyle}" />
+              </DataTemplate>
+            </ItemsRepeater.ItemTemplate>
+          </ItemsRepeater>
+        </StackPanel>
+      </Grid>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

@@ -1,0 +1,31 @@
+<UserControl
+    x:Class="OpenSynapse.App.Controls.Help.HelpSpecimenHost"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App"
+    MaxWidth="520"
+    HorizontalAlignment="Stretch">
+  <Border Background="{StaticResource CardBrush}"
+          BorderBrush="{StaticResource LineBrush}"
+          BorderThickness="1"
+          CornerRadius="4"
+          Padding="14">
+    <StackPanel Spacing="12">
+      <Border Background="{StaticResource SurfaceRaisedBrush}"
+              CornerRadius="10"
+              Padding="10,4"
+              HorizontalAlignment="Left">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <FontIcon Glyph="&#xE946;"
+                    FontFamily="{StaticResource IconFontFamily}"
+                    FontSize="11"
+                    Foreground="{StaticResource AccentBrush}" />
+          <TextBlock local:Localized.Uid="Help_Chrome_SpecimenBadge"
+                     FontSize="11"
+                     Foreground="{StaticResource MutedBrush}" />
+        </StackPanel>
+      </Border>
+      <ContentPresenter Content="{x:Bind SpecimenContent, Mode=OneWay}" />
+    </StackPanel>
+  </Border>
+</UserControl>

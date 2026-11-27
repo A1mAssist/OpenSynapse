@@ -179,6 +179,7 @@ public sealed partial class MainWindow : Window
         ((App)Application.Current).RefreshTrayLocalization();
         RefreshIntroductionLocalization();
         _performanceOverlayWindow?.RefreshLocalization();
+        _helpViewModel.RefreshLocalization();
     }
 
     internal void RefreshLightingPresetOptions() => _devicesPage?.RefreshLightingPresetOptions();
