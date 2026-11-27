@@ -8,6 +8,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Added
 
+- **Help center**: add an offline help page with Chinese and English guides and interactive control examples.
 - **HyperBoost CPU power limits**: allow CPU power presets in Custom and HyperBoost modes, retain a separate HyperBoost baseline for restoring firmware limits, and restore the previous hardware values if saving fails.
 - **Mouse surface calibration**: expose presets, manual sampling, lift-off and tracking settings according to device capabilities, with cancellation, timeout recovery and saved custom surfaces.
 - **Lighting output scope**: take over only selected devices; ambient layers can map the whole canvas, the selected devices together, or each device independently, so adjacent devices need not shift the keyboard's screen sampling area.
@@ -26,7 +27,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 - **Keyboard animations**: RazerHid keyboards can import a `.chroma` animation on the device page and play it through the software frame runtime; the file stays with the lighting profile.
 - **Naga side plates**: the 12-key and 7-key side plates report their buttons as firmware ids 64–75 and 80–86; mapping, macros and Turbo now resolve them, so every plate works.
 - **Naga scroll wheel**: Naga V3 Pro exposes its three-way tactile, free-spin and micro-tactile wheel mode, including profile apply and Smart Reel.
-- **DPI stage shortcuts**: the DPI card shows 1–5 buttons beside the current stage and switches immediately; the highlighted stage follows the mouse's own DPI button within a few seconds.
+- **DPI stage shortcuts**: the DPI card shows 1–5 buttons and switches immediately, without a duplicate stage input; the highlighted stage follows the mouse's own DPI button within a few seconds.
 - **Driver download progress**: driver package downloads show a progress bar with speed and remaining time, and use four parallel range requests for packages of 4 MB or more.
 - **THX download progress**: THX components use the same progress panel and parallel downloader as drivers, with bytes, speed and remaining time; the roughly 41 MB APO package is fetched in four range requests.
 
@@ -38,7 +39,12 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ### Fixed
 
-- **Device navigation**: clicking the whole Devices row now keeps the device group expanded and opens the current device page, instead of requiring the chevron first.
+- **Studio dock and mouse output**: keep each logical device on a shared HID path and route the mouse's complete frame to its own channel, fixing the dock changing color while the linked Basilisk V3 Pro 35K stays unchanged.
+- **New profiles**: the sidebar Profiles page prompts for a name before creating and selecting a profile; cancelling leaves the current profile intact.
+- **HyperPolling indicator**: name the three status modes, read back changes and use the receiver's own command channel. Indicator colors follow connection or battery status and cannot be customized.
+- **Surface calibration sampling**: Enter, Space or any mouse's left button can finish sampling while the pointer is suspended. Cancellation restores the temporary sensor state; enabled Manual/Mini readback differences are retained as applied but unconfirmed instead of discarding firmware-recalculated values.
+- **Studio device images**: show cached product images immediately while revalidating the manifest in the background.
+- **Device navigation**: clicking the whole Devices row expands the group and selects its first device after the native toggle completes, instead of navigating without keeping the group open.
 - **Tartarus mapping**: resolve 022B/0244 keypad firmware ids to the key each switch actually emits, so software macros no longer bind to F7, G or Space; wheel and D-pad ids stay unbound instead of becoming keyboard keys.
 - **Naga mapping**: fall back to the product button table when the firmware returns no list, keep side-button triggers scoped to their own mouse, restore the missing Naga Epic identity, and enable software-macro binding on BLE Naga pages.
 - **Private-key hot-plug**: keep one reader per device and rescan incrementally, so a device connected after startup receives its private-key macros without restarting the app.
@@ -68,7 +74,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 - **Huntsman V3 Pro 8KHz mapping read**: put the keyboard back into normal mode before a mapping-page read, so a device left in driver mode by an interrupted save no longer rejects the whole keymap and shows “Unable to read key mappings”.
 - **Tartarus Pro mapping**: read the keypad's onboard table in driver mode, select the active keymap with `02:B6`/`02:37`, and use the 80-byte `02:92`/`02:8D` payloads, so all 28 mapping rows load instead of `0/28`.
 - **THX preset sync**: while a headset's THX card is visible, poll the native state every two seconds and refresh the preset and curve when the headset's own controls change them, without writing back to the device.
-- **Taskbar battery freshness**: redraw the strip from the live device rows every second while keeping the ten-second HID read interval; opening the window also forces an immediate refresh so the strip matches the tray instead of lagging behind.
+- **Taskbar battery freshness**: redraw the strip from live device rows every second while keeping the ten-second HID read interval. Recover after transient taskbar failures and use the fullscreen notification state to hide the strip, so it remains available while the app is in the background.
 - **Mouse DPI stages**: saving the stage table now also applies the active stage's DPI, so the pointer speed changes immediately and the DPI card refreshes.
 - **Lighting Studio regions**: switching back to a layer keeps its region selected instead of showing “whole layer”, and applying a new selection replaces that region instead of adding another.
 - **Background mouse mappings**: keep re-arming driver mode while the window is hidden, so a mouse that slept or re-paired no longer loses its private-key mappings until the window is opened.
