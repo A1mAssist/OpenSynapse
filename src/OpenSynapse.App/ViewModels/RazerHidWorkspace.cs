@@ -219,10 +219,13 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
                 _selectionCancellation?.Cancel();
                 _selectionCancellation?.Dispose();
                 _selectionCancellation = null;
+                var rows = connections.Select(connection => new RazerHidDeviceRowViewModel(
+                    connection, Devices.FirstOrDefault(row => StringComparer.OrdinalIgnoreCase.Equals(
+                        row.Connection.InstanceId, connection.InstanceId)))).ToArray();
                 Devices.Clear();
-                foreach (var connection in connections)
+                foreach (var row in rows)
                 {
-                    Devices.Add(new RazerHidDeviceRowViewModel(connection));
+                    Devices.Add(row);
                 }
                 var selectedRow = Devices.FirstOrDefault(row =>
                     StringComparer.OrdinalIgnoreCase.Equals(row.Connection.InstanceId, selectedInstanceId));

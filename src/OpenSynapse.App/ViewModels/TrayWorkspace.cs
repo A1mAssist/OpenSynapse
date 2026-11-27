@@ -208,14 +208,13 @@ public sealed class TrayWorkspace
             .ToArray();
 
     private IEnumerable<RazerHidDeviceRowViewModel> BatteryDevices() =>
-        _razerHid.Devices.Where(row => row.Connection.IsReady &&
-            row.HardwareCategory != DeviceCategory.Laptop &&
-            row.Connection.Capabilities.Contains(RazerHidBackendCapability.BatteryRead));
+        _razerHid.Devices.Where(row => row.CanReadBattery &&
+            row.HardwareCategory != DeviceCategory.Laptop);
 
     /// <summary>Paths the RazerHid rows already cover, so nothing is listed twice.</summary>
     private HashSet<string> ClaimedDevicePaths() =>
         _razerHid.Devices
-            .Select(row => row.Connection.DevicePath)
+            .Select(row => row.BatteryReadConnection.DevicePath)
             .OfType<string>()
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 

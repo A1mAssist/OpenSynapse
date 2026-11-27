@@ -15,9 +15,22 @@ public sealed class RazerHidDeviceRowViewModel : INotifyPropertyChanged, IDevice
     private readonly Brush _statusBrush;
     private readonly Brush _partialStatusBrush;
 
-    public RazerHidDeviceRowViewModel(RazerHidDeviceConnection connection)
+    public RazerHidDeviceRowViewModel(
+        RazerHidDeviceConnection connection,
+        RazerHidDeviceRowViewModel? previous = null)
     {
         _connection = connection;
+        BatteryReadConnection = connection;
+        if (previous is not null &&
+            connection.Definition.ProductId == previous.Connection.Definition.ProductId &&
+            StringComparer.OrdinalIgnoreCase.Equals(connection.InstanceId, previous.Connection.InstanceId))
+        {
+            _batteryPercent = previous.BatteryPercent;
+            _isCharging = previous.IsCharging;
+            // Keep the last verified read endpoint while the receiver's mouse is asleep.
+            if (!connection.IsReady && previous.CanReadBattery)
+                BatteryReadConnection = previous.BatteryReadConnection;
+        }
         _statusBrush = new SolidColorBrush(connection.EndpointState == RazerHidEndpointState.Resolved
             ? Color.FromArgb(255, 68, 214, 44)
             : Color.FromArgb(255, 240, 185, 90));
@@ -27,6 +40,9 @@ public sealed class RazerHidDeviceRowViewModel : INotifyPropertyChanged, IDevice
     public event PropertyChangedEventHandler? PropertyChanged;
     public Brush SelectorBackground { get; private set; } = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
     public RazerHidDeviceConnection Connection => _connection;
+    internal RazerHidDeviceConnection BatteryReadConnection { get; }
+    internal bool CanReadBattery => BatteryReadConnection.IsReady &&
+        BatteryReadConnection.Capabilities.Contains(RazerHidBackendCapability.BatteryRead);
     internal RazerHidDeviceViewModel? Detail => _detail;
     public DeviceCategory HardwareCategory => _connection.Definition.Category;
     public string Name => _connection.Definition.DisplayName;

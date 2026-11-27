@@ -16,23 +16,36 @@ public sealed partial class RazerHidWorkspace
         public DateTimeOffset LastAttempt;
         public DateTimeOffset LastDiagnostic;
         public bool Failed;
+        public bool WakeDetected;
     }
 
-    internal async Task RefreshBatteriesAsync(CancellationToken cancellationToken)
+    internal async Task<bool> RefreshBatteriesAsync(CancellationToken cancellationToken)
     {
-        foreach (var row in Devices.Where(row => row.Connection.IsReady &&
-                     row.HardwareCategory != DeviceCategory.Laptop &&
-                     row.Connection.Capabilities.Contains(RazerHidBackendCapability.BatteryRead)).ToArray())
+        foreach (var row in Devices.Where(row => row.CanReadBattery &&
+                     row.HardwareCategory != DeviceCategory.Laptop).ToArray())
         {
             await ReadBatteryPercentAsync(row, cancellationToken);
         }
+
+        // Consume each successful wake read once so a failed discovery cannot spin.
+        var needsDiscovery = false;
+        foreach (var row in Devices)
+        {
+            if (!row.Connection.IsReady && _batteryReads.TryGetValue(row, out var state) && state.WakeDetected)
+            {
+                state.WakeDetected = false;
+                needsDiscovery = true;
+            }
+        }
+        return needsDiscovery;
     }
 
     internal async Task<int?> ReadBatteryPercentAsync(
         RazerHidDeviceRowViewModel row,
         CancellationToken cancellationToken)
     {
-        if (_deviceService is null || !row.Connection.IsReady) return row.BatteryPercent;
+        var connection = row.BatteryReadConnection;
+        if (_deviceService is null || !connection.IsReady) return row.BatteryPercent;
         var state = _batteryReads.GetOrCreateValue(row);
         await state.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -47,7 +60,7 @@ public sealed partial class RazerHidWorkspace
             string? failure = null;
             try
             {
-                percent = await _deviceService.GetBatteryPercentAsync(row.Connection, timeout.Token)
+                percent = await _deviceService.GetBatteryPercentAsync(connection, timeout.Token)
                     .ConfigureAwait(false);
             }
             catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
@@ -56,11 +69,11 @@ public sealed partial class RazerHidWorkspace
             }
 
             if (!timeout.IsCancellationRequested &&
-                row.Connection.Capabilities.Contains(RazerHidBackendCapability.ChargingRead))
+                connection.Capabilities.Contains(RazerHidBackendCapability.ChargingRead))
             {
                 try
                 {
-                    charging = await _deviceService.GetChargingAsync(row.Connection, timeout.Token)
+                    charging = await _deviceService.GetChargingAsync(connection, timeout.Token)
                         .ConfigureAwait(false);
                 }
                 catch (Exception) when (!cancellationToken.IsCancellationRequested)
@@ -81,6 +94,7 @@ public sealed partial class RazerHidWorkspace
                 state.LastDiagnostic = now;
             }
             state.Failed = percent is null;
+            state.WakeDetected = percent is not null && !row.Connection.IsReady;
             state.LastAttempt = now;
             await RunOnDispatcherAsync(() =>
             {
