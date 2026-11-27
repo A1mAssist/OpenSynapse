@@ -261,7 +261,7 @@ public sealed partial class MainWindow
         }
     }
 
-    // Finish the native group toggle before selecting a child, which can load a page synchronously.
+    // Select a child after the native toggle, without reopening a group the user just collapsed.
     private void NavigationItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
     {
         if (ReferenceEquals(args.InvokedItemContainer, HelpNavigationItem) &&
@@ -275,7 +275,7 @@ public sealed partial class MainWindow
         _dispatcherQueue.TryEnqueue(() =>
         {
             if (_lifetime.IsCancellationRequested) return;
-            DevicesNavigationItem.IsExpanded = true;
+            if (DevicesNavigationItem.MenuItems.Count > 0 && !DevicesNavigationItem.IsExpanded) return;
             RootNavigationView.SelectedItem = DevicesNavigationItem.MenuItems
                 .OfType<NavigationViewItem>().FirstOrDefault() ?? DevicesNavigationItem;
         });
