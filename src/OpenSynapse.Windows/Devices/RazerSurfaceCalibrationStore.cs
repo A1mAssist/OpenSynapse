@@ -48,7 +48,8 @@ public sealed class RazerSurfaceCalibrationStore
         if (saved is null) return null;
         if (saved.Engine != client.Profile.Kind) throw new InvalidDataException("The saved calibration belongs to a different sensor engine.");
         var current = await client.ReadAsync(cancellationToken).ConfigureAwait(false);
-        var match = client.CompareReadback(saved.Configuration, current);
+        var match = RazerSurfaceCalibrationReadbackPolicy.NormalizeSampledReadback(
+            client.CompareReadback(saved.Configuration, current), saved.Configuration, current);
         if (match == RazerSurfaceCalibrationReadback.Consistent) return match;
         RequireRestorableSnapshot(client.Profile, current);
         var original = current;
@@ -68,7 +69,8 @@ public sealed class RazerSurfaceCalibrationStore
         {
             return RazerSurfaceCalibrationReadback.Unavailable;
         }
-        match = client.CompareReadback(saved.Configuration, current);
+        match = RazerSurfaceCalibrationReadbackPolicy.NormalizeSampledReadback(
+            client.CompareReadback(saved.Configuration, current), saved.Configuration, current);
         if (match == RazerSurfaceCalibrationReadback.Mismatch)
             await RestoreOriginalAsync(client, original, new InvalidDataException("The restored calibration does not match the device readback.")).ConfigureAwait(false);
         return match;

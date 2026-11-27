@@ -112,7 +112,30 @@ public sealed partial class RazerHidDeviceViewModel
     public Visibility HyperPollingIndicatorVisibility => VisibleWhen(Has(RazerHidBackendCapability.HyperPollingIndicatorWrite));
     public Visibility HyperPollingPairVisibility => VisibleWhen(Has(RazerHidBackendCapability.HyperPollingPairWrite));
     public Visibility HyperPollingUnpairVisibility => VisibleWhen(Has(RazerHidBackendCapability.HyperPollingUnpairWrite));
-    public byte HyperPollingIndicatorMode { get => _hyperPollingIndicatorMode; set => SetField(ref _hyperPollingIndicatorMode, value); }
+    public IReadOnlyList<string> HyperPollingIndicatorOptions =>
+    [
+        AppStrings.Text("HyperPollingIndicatorConnection"),
+        AppStrings.Text("HyperPollingIndicatorBattery"),
+        AppStrings.Text("HyperPollingIndicatorWarning"),
+    ];
+    public byte HyperPollingIndicatorMode
+    {
+        get => _hyperPollingIndicatorMode;
+        set
+        {
+            if (SetField(ref _hyperPollingIndicatorMode, value)) OnPropertyChanged(nameof(HyperPollingIndicatorIndex));
+        }
+    }
+    public int HyperPollingIndicatorIndex
+    {
+        get => HyperPollingIndicatorMode - 1;
+        set
+        {
+            if (value is < 0 or >= 3 || value == HyperPollingIndicatorMode - 1) return;
+            _hyperPollingIndicatorLoaded = true;
+            HyperPollingIndicatorMode = (byte)(value + 1);
+        }
+    }
     public bool IsHyperPollingBusy
     {
         get => _isHyperPollingBusy;
@@ -125,7 +148,7 @@ public sealed partial class RazerHidDeviceViewModel
             OnPropertyChanged(nameof(CanUnpairHyperPolling));
         }
     }
-    public bool CanUseHyperPolling => CanWrite;
+    public bool CanUseHyperPolling => CanWrite && !IsHyperPollingBusy;
     public bool CanSetHyperPollingIndicator => CanUseHyperPolling && Has(RazerHidBackendCapability.HyperPollingIndicatorWrite);
     public bool CanPairHyperPolling => CanUseHyperPolling && Has(RazerHidBackendCapability.HyperPollingPairWrite);
     public bool CanUnpairHyperPolling => CanUseHyperPolling && Has(RazerHidBackendCapability.HyperPollingUnpairWrite);

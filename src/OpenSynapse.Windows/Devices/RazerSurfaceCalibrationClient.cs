@@ -155,6 +155,20 @@ public sealed partial class RazerSurfaceCalibrationClient : IRazerSurfaceCalibra
         }, cancellationToken);
     }
 
+    public Task AbortAsync(RazerSurfaceCalibrationState snapshot, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        return _transaction(async token =>
+        {
+            // The firmware can reject configuration writes while it is leaving sampling.
+            // Ending the temporary state and restoring lift is enough; the sampled data
+            // was never applied, so do not rewrite the user's existing calibration.
+            await SetStateAsync(false, token).ConfigureAwait(false);
+            if (snapshot.LiftMode is { } mode) await SetLiftAsync(mode, snapshot.LiftHeight ?? 0, token).ConfigureAwait(false);
+            if (snapshot.SensorState == 1) await SetStateAsync(true, token).ConfigureAwait(false);
+        }, cancellationToken);
+    }
+
     // These engine flows never call their JS setDriverMode helper. Do not invent a mode change.
     public Task RestoreDeviceModeAsync(RazerSurfaceCalibrationState snapshot, CancellationToken cancellationToken = default)
     {

@@ -54,6 +54,21 @@ public enum RazerSurfaceCalibrationReadback
     Mismatch,
 }
 
+public static class RazerSurfaceCalibrationReadbackPolicy
+{
+    public static RazerSurfaceCalibrationReadback NormalizeSampledReadback(
+        RazerSurfaceCalibrationReadback readback,
+        RazerSurfaceCalibrationConfiguration configuration,
+        RazerSurfaceCalibrationState state) =>
+        readback == RazerSurfaceCalibrationReadback.Mismatch &&
+        configuration.Mode is RazerSurfaceCalibrationMode.Manual or RazerSurfaceCalibrationMode.Mini &&
+        state.SensorState == 1
+            // The vendor calibration engine trusts its acknowledged write. Pixart
+            // may return recalculated parameters that are not byte-identical.
+            ? RazerSurfaceCalibrationReadback.Unavailable
+            : readback;
+}
+
 public interface IRazerSurfaceCalibrationClient
 {
     RazerProximitySensorProfile Profile { get; }
@@ -64,6 +79,7 @@ public interface IRazerSurfaceCalibrationClient
     Task StopAsync(RazerSurfaceCalibrationMode mode, CancellationToken cancellationToken = default);
     Task<RazerSurfaceCalibrationRawData> ReadResultAsync(RazerSurfaceCalibrationMode mode, CancellationToken cancellationToken = default);
     Task RestoreAsync(RazerSurfaceCalibrationState snapshot, CancellationToken cancellationToken = default);
+    Task AbortAsync(RazerSurfaceCalibrationState snapshot, CancellationToken cancellationToken = default);
     Task RestoreDeviceModeAsync(RazerSurfaceCalibrationState snapshot, CancellationToken cancellationToken = default);
     RazerSurfaceCalibrationConfiguration CreateCandidate(RazerSurfaceCalibrationConfiguration configuration, RazerSurfaceCalibrationRawData raw);
     RazerSurfaceCalibrationReadback CompareReadback(RazerSurfaceCalibrationConfiguration configuration, RazerSurfaceCalibrationState state);

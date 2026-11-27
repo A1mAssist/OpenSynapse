@@ -49,7 +49,21 @@ public sealed partial class MainWindow
             });
         RootNavigationView.SelectedItem = DevicesNavigationItem.MenuItems[1];
         var panel = new StackPanel { Padding = new Thickness(24), Spacing = 16 };
-        panel.Children.Add(new TextBlock { Text = "Viper V3 HyperSpeed", FontSize = 28 });
+        var selectedLabel = new TextBlock { Text = "Viper V3 HyperSpeed", FontSize = 28 };
+        panel.Children.Add(selectedLabel);
+        var groupState = new TextBlock();
+        AutomationProperties.SetAutomationId(groupState, "NavigationQaGroupState");
+        panel.Children.Add(groupState);
+        void UpdateSelection()
+        {
+            selectedLabel.Text = (RootNavigationView.SelectedItem as NavigationViewItem)?.Content is TextBlock label
+                ? label.Text : (RootNavigationView.SelectedItem as NavigationViewItem)?.Tag as string ?? "none";
+            groupState.Text = $"Expanded={DevicesNavigationItem.IsExpanded}; " +
+                $"FirstSelected={ReferenceEquals(RootNavigationView.SelectedItem, DevicesNavigationItem.MenuItems.FirstOrDefault())}";
+        }
+        RootNavigationView.SelectionChanged += (_, _) => UpdateSelection();
+        DevicesNavigationItem.RegisterPropertyChangedCallback(NavigationViewItem.IsExpandedProperty, (_, _) => UpdateSelection());
+        UpdateSelection();
         var status = new TextBlock { Text = "READY" };
         AutomationProperties.SetAutomationId(status, "NavigationQaStatus");
         panel.Children.Add(status);

@@ -178,7 +178,39 @@ public sealed partial class ProfilesPage : UserControl
     }
 
     private async void CreateProfileClick(object sender, RoutedEventArgs e) =>
-        await ViewModel.Profiles.CreateProfileAsync(Lifetime);
+        await CreateProfileAsync(ViewModel.Profiles, Lifetime);
+
+    private async Task CreateProfileAsync(ProfilesWorkspace profiles, CancellationToken cancellationToken)
+    {
+        if (await ShowCreateProfileDialogAsync(profiles.ProfileNameInput) is not { } name) return;
+        profiles.ProfileNameInput = name;
+        await profiles.CreateProfileAsync(cancellationToken);
+    }
+
+    private async Task<string?> ShowCreateProfileDialogAsync(string initialName)
+    {
+        var nameBox = new TextBox
+        {
+            Text = initialName,
+            Header = AppStrings.Text("Loc_00DC0BB70D/PlaceholderText"),
+            MaxLength = 64,
+            MinWidth = 280,
+        };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetAutomationId(nameBox, "NewProfileNameBox");
+        var dialog = new ContentDialog
+        {
+            Title = AppStrings.Text("ProfileCreateTitle"),
+            Content = nameBox,
+            PrimaryButtonText = AppStrings.Text("Loc_9D032642E0/Content"),
+            CloseButtonText = AppStrings.Text("Text_949856B3"),
+            IsPrimaryButtonEnabled = !string.IsNullOrWhiteSpace(initialName),
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = XamlRoot,
+        };
+        nameBox.TextChanged += (_, _) => dialog.IsPrimaryButtonEnabled = !string.IsNullOrWhiteSpace(nameBox.Text);
+        dialog.Opened += (_, _) => { nameBox.Focus(FocusState.Programmatic); nameBox.SelectAll(); };
+        return await dialog.ShowAsync() == ContentDialogResult.Primary ? nameBox.Text.Trim() : null;
+    }
 
     private async void CloneProfileClick(object sender, RoutedEventArgs e) =>
         await ViewModel.Profiles.CloneActiveProfileAsync(Lifetime);

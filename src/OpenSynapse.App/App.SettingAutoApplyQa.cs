@@ -308,6 +308,19 @@ public partial class App
             root.Children.Add(preview);
             return Task.CompletedTask;
         });
+        Button("QaProfileCreate", "配置新建", async () =>
+        {
+            var preview = await ProfilesPage.CreateProfileQaAsync();
+            root.Children.Clear();
+            root.Children.Add(preview);
+        });
+        Button("QaHyperPollingPreview", "接收器指示灯", () =>
+        {
+            var preview = DevicesPage.CreateHyperPollingPreview();
+            root.Children.Clear();
+            root.Children.Add(preview);
+            return Task.CompletedTask;
+        });
         Button("QaBladeThxReadback", "验证 Blade THX 失败恢复", async () =>
         {
             status.Text = await ThxAudioViewModel.VerifyReadbackAsync();

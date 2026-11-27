@@ -143,6 +143,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         static (viewModel, token) => viewModel.LoadAnalogJoystickAsync(token),
         static (viewModel, token) => viewModel.LoadOledAsync(token),
         static (viewModel, token) => viewModel.LoadHapticScrollAsync(token),
+        static (viewModel, token) => viewModel.LoadHyperPollingIndicatorAsync(token),
     ];
 
     /// <summary>

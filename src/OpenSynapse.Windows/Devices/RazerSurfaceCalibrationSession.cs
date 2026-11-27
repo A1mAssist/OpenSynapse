@@ -54,6 +54,7 @@ public sealed class RazerSurfaceCalibrationSession : IAsyncDisposable
     public RazerSurfaceCalibrationConfiguration? Candidate { get; private set; }
     public RazerSurfaceCalibrationRecord? SavedRecord { get; private set; }
     public RazerSurfaceCalibrationReadback Readback { get; private set; } = RazerSurfaceCalibrationReadback.Unavailable;
+    public string? ReadbackDetail { get; private set; }
     public RazerSurfaceCalibrationEventKind? Speed { get; private set; }
     public Exception? Error { get; private set; }
     public Exception? CleanupError { get; private set; }
@@ -209,7 +210,12 @@ public sealed class RazerSurfaceCalibrationSession : IAsyncDisposable
             {
                 var actual = await _client.ReadAsync(_stop.Token).ConfigureAwait(false);
                 _appliedState = actual;
-                Readback = _client.CompareReadback(Candidate, actual);
+                var compared = _client.CompareReadback(Candidate, actual);
+                if (compared == RazerSurfaceCalibrationReadback.Mismatch)
+                    ReadbackDetail = $"mode={Candidate.Mode} lod={Candidate.Lod} sensor={actual.SensorState?.ToString() ?? "?"} " +
+                        $"params={Convert.ToHexString(actual.Parameters)} calibration={Convert.ToHexString(actual.CalibrationData)} " +
+                        $"thresholds={string.Join(',', actual.Thresholds)}";
+                Readback = RazerSurfaceCalibrationReadbackPolicy.NormalizeSampledReadback(compared, Candidate, actual);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
@@ -254,6 +260,7 @@ public sealed class RazerSurfaceCalibrationSession : IAsyncDisposable
                         catch (Exception exception) { CleanupError = exception; }
                     }
                     if (_applied) await _client.RestoreDeviceModeAsync(original, cleanup.Token).WaitAsync(cleanup.Token).ConfigureAwait(false);
+                    else if (startSent) await _client.AbortAsync(original, cleanup.Token).WaitAsync(cleanup.Token).ConfigureAwait(false);
                     else await _client.RestoreAsync(original, cleanup.Token).WaitAsync(cleanup.Token).ConfigureAwait(false);
                 }
                 catch (Exception exception) { CleanupError = exception; }
@@ -318,6 +325,12 @@ public sealed class RazerSurfaceCalibrationSession : IAsyncDisposable
                     _start.TrySetResult();
                     break;
                 case RazerSurfaceCalibrationEventKind.LeftButtonDown when State == RazerSurfaceCalibrationSessionState.Sampling:
+                    _finish.TrySetResult();
+                    break;
+                case RazerSurfaceCalibrationEventKind.LeftButtonDownAny when State == RazerSurfaceCalibrationSessionState.Sampling:
+                    _finish.TrySetResult();
+                    break;
+                case RazerSurfaceCalibrationEventKind.Confirm when State == RazerSurfaceCalibrationSessionState.Sampling:
                     _finish.TrySetResult();
                     break;
                 case RazerSurfaceCalibrationEventKind.Started when State == RazerSurfaceCalibrationSessionState.Starting:

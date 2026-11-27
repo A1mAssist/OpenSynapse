@@ -81,9 +81,28 @@ public sealed class StudioDeviceVisualLoader : IDisposable
     {
         if (productId == 0) return StudioProductImage.Unavailable(name, "no-product");
 
+        if (await _images.GetCachedAsync(productId, name, cancellationToken).ConfigureAwait(false) is { } cached)
+        {
+            // The cached image is enough to paint the card; manifest revalidation can finish later.
+            _ = RevalidateManifestAsync(productId);
+            return cached;
+        }
+
         var result = await _service.GetAsync(productId, 0, cancellationToken).ConfigureAwait(false);
         var coverProductId = result.Manifest?.CoverProductId ?? productId;
         return await _images.GetAsync(coverProductId, name, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task RevalidateManifestAsync(ushort productId)
+    {
+        try
+        {
+            await _service.GetAsync(productId, 0, CancellationToken.None).ConfigureAwait(false);
+        }
+        catch
+        {
+            // The image cache is independent of a background manifest refresh.
+        }
     }
 
     public void Dispose() => _http.Dispose();

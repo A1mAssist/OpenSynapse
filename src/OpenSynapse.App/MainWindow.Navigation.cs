@@ -261,8 +261,7 @@ public sealed partial class MainWindow
         }
     }
 
-    // Activating the device row also toggles its group after this event. Selecting the
-    // row already routes through NavigationChanged; keep the device list open afterward.
+    // Finish the native group toggle before selecting a child, which can load a page synchronously.
     private void NavigationItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
     {
         if (ReferenceEquals(args.InvokedItemContainer, HelpNavigationItem) &&
@@ -273,7 +272,13 @@ public sealed partial class MainWindow
         }
 
         if (!ReferenceEquals(args.InvokedItemContainer, DevicesNavigationItem)) return;
-        _dispatcherQueue.TryEnqueue(() => DevicesNavigationItem.IsExpanded = true);
+        _dispatcherQueue.TryEnqueue(() =>
+        {
+            if (_lifetime.IsCancellationRequested) return;
+            DevicesNavigationItem.IsExpanded = true;
+            RootNavigationView.SelectedItem = DevicesNavigationItem.MenuItems
+                .OfType<NavigationViewItem>().FirstOrDefault() ?? DevicesNavigationItem;
+        });
     }
 
     internal void UpdatePerformanceSamplingState()

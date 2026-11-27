@@ -117,7 +117,11 @@ public sealed partial class SurfaceCalibrationViewModel
         {
             var actual = await _client.ReadAsync(token).ConfigureAwait(true);
             appliedState = actual;
-            readback = _client.CompareReadback(candidate, actual);
+            var compared = _client.CompareReadback(candidate, actual);
+            if (compared == RazerSurfaceCalibrationReadback.Mismatch)
+                _log?.Invoke($"surface-calibration pid={_identity.ProductId:X4} apply readback mismatch mode={candidate.Mode} " +
+                    $"sensor={actual.SensorState?.ToString() ?? "?"} params={Convert.ToHexString(actual.Parameters)}");
+            readback = RazerSurfaceCalibrationReadbackPolicy.NormalizeSampledReadback(compared, candidate, actual);
             if (readback == RazerSurfaceCalibrationReadback.Mismatch)
             {
                 _status = AppStrings.Text("SurfaceCalibrationMismatch");

@@ -1239,6 +1239,7 @@
     <value>读取不完整 · {0}/16 条记录</value>
     <comment>读取不完整 · {0}/16 条记录</comment>
   </data>
+  <data name="ProfileCreateTitle" xml:space="preserve"><value>新建配置</value></data>
   <data name="CreateProfile" xml:space="preserve">
     <value>新建配置 {0}</value>
     <comment>新建配置 {0}</comment>
@@ -2101,6 +2102,10 @@
   <data name="RazerHidDpiStageLabel" xml:space="preserve"><value>档位 {0}</value></data>
   <data name="RazerHidHyperPollingDescription.Text" xml:space="preserve"><value>管理接收器指示灯和鼠标配对。配对操作会再次确认。</value></data>
   <data name="RazerHidHyperPollingIndicator.Header" xml:space="preserve"><value>指示灯模式</value></data>
+  <data name="HyperPollingIndicatorConnection" xml:space="preserve"><value>连接状态</value></data>
+  <data name="HyperPollingIndicatorBattery" xml:space="preserve"><value>当前电量</value></data>
+  <data name="HyperPollingIndicatorWarning" xml:space="preserve"><value>仅低电量警告</value></data>
+  <data name="HyperPollingIndicatorDescription.Text" xml:space="preserve"><value>指示灯颜色由接收器根据连接或电量状态自动显示，不支持自定义颜色。</value></data>
   <data name="RazerHidApplyIndicatorButton.Content" xml:space="preserve"><value>应用</value></data>
   <data name="RazerHidPairButton.Content" xml:space="preserve"><value>配对</value></data>
   <data name="RazerHidUnpairButton.Content" xml:space="preserve"><value>取消配对</value></data>
@@ -5299,7 +5304,7 @@
   <data name="SurfaceCalibrationLevels" xml:space="preserve"><value>档</value></data>
   <data name="SurfaceCalibrationLandingHint" xml:space="preserve"><value>落地高度必须低于抬起高度。</value></data>
   <data name="SurfaceCalibrationManualTitle" xml:space="preserve"><value>校准新表面</value></data>
-  <data name="SurfaceCalibrationManualHint" xml:space="preserve"><value>把这只鼠标放在要使用的表面上。校准期间，鼠标左键开始或结束采样，Esc 取消。</value></data>
+  <data name="SurfaceCalibrationManualHint" xml:space="preserve"><value>把这只鼠标放在要使用的表面上。开始后指针可能暂时不动；按 Enter 或空格结束采样，也可以按任意鼠标左键。Esc 取消。</value></data>
   <data name="SurfaceCalibrationSurfaceName.PlaceholderText" xml:space="preserve"><value>表面名称（可选）</value></data>
   <data name="SurfaceCalibrationSurfaceName.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>表面名称</value></data>
   <data name="SurfaceCalibrationPrepare" xml:space="preserve"><value>新建校准</value></data>
@@ -5336,7 +5341,7 @@
   <data name="SurfaceCalibrationSessionPreparing" xml:space="preserve"><value>正在准备这只鼠标的采样…</value></data>
   <data name="SurfaceCalibrationSessionWaitingToStart" xml:space="preserve"><value>请在 35 秒内点“开始”或按这只鼠标的左键，Esc 取消。</value></data>
   <data name="SurfaceCalibrationSessionStarting" xml:space="preserve"><value>正在等待鼠标开始采样…</value></data>
-  <data name="SurfaceCalibrationSessionSampling" xml:space="preserve"><value>在表面上移动这只鼠标。完成后点“完成采样”或按鼠标左键，Esc 取消。</value></data>
+  <data name="SurfaceCalibrationSessionSampling" xml:space="preserve"><value>在表面上移动这只鼠标。完成后按 Enter/空格，或按任意鼠标左键结束采样；Esc 取消。</value></data>
   <data name="SurfaceCalibrationSessionEnding" xml:space="preserve"><value>正在结束采样…</value></data>
   <data name="SurfaceCalibrationSessionReading" xml:space="preserve"><value>正在读取表面采样结果…</value></data>
   <data name="SurfaceCalibrationSessionApplying" xml:space="preserve"><value>正在应用新的表面校准…</value></data>

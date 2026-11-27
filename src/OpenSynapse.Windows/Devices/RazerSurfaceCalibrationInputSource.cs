@@ -83,9 +83,12 @@ public sealed class RazerSurfaceCalibrationInputSource(string instanceId) : IRaz
             byte z = 0, q = 0;
             if (frame.IsMouse)
             {
-                // Movement never enters a task queue; only this exact physical mouse's left press does.
-                if ((frame.MouseFlags & 1) == 0 || !mousePaths.Contains(frame.DevicePath)) return;
-                kind = RazerSurfaceCalibrationEventKind.LeftButtonDown;
+                // Calibration can hide the pointer. Any left press still finishes, even if Windows
+                // reports it through a different HID path than discovery returned.
+                if ((frame.MouseFlags & 1) == 0) return;
+                kind = mousePaths.Contains(frame.DevicePath)
+                    ? RazerSurfaceCalibrationEventKind.LeftButtonDown
+                    : RazerSurfaceCalibrationEventKind.LeftButtonDownAny;
             }
             else if (frame.IsHid)
             {
@@ -96,8 +99,14 @@ public sealed class RazerSurfaceCalibrationInputSource(string instanceId) : IRaz
             }
             else
             {
-                if (frame.VirtualKey != 0x1B || (frame.Flags & 1) != 0) return;
-                kind = RazerSurfaceCalibrationEventKind.Escape;
+                if ((frame.Flags & 1) != 0) return;
+                kind = frame.VirtualKey switch
+                {
+                    0x1B => RazerSurfaceCalibrationEventKind.Escape,
+                    0x0D or 0x20 => RazerSurfaceCalibrationEventKind.Confirm,
+                    _ => default,
+                };
+                if (kind == default) return;
             }
             handler(new(instanceId, sessionId, kind, z, q));
         }

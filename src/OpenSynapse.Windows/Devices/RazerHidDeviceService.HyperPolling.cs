@@ -4,6 +4,19 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed partial class RazerHidDeviceService
 {
+    public async Task<byte> GetHyperPollingIndicatorAsync(
+        RazerHidDeviceConnection connection,
+        CancellationToken cancellationToken = default)
+    {
+        // The get/set pair shares the receiver transaction declared by the catalog.
+        var response = await ExecuteAsync(connection, RazerHidStandardProtocol.Create(connection.Definition,
+            "razer_chroma_misc_set_hyperpolling_wireless_dongle_indicator_led_mode",
+            0x01, 0x07, 0x90, []), cancellationToken).ConfigureAwait(false);
+        var mode = RazerHidStandardProtocol.Arguments(response, 1)[0];
+        return mode is >= 1 and <= 3 ? mode
+            : throw new RazerReportMismatchException($"Invalid HyperPolling indicator mode: {mode}.");
+    }
+
     public Task SetHyperPollingIndicatorAsync(
         RazerHidDeviceConnection connection,
         byte mode,
@@ -13,9 +26,17 @@ public sealed partial class RazerHidDeviceService
         {
             throw new ArgumentOutOfRangeException(nameof(mode));
         }
-        return ExecuteWithoutResultAsync(connection, RazerHidStandardProtocol.Create(connection.Definition,
-            "razer_chroma_misc_set_hyperpolling_wireless_dongle_indicator_led_mode",
-            0x01, 0x07, 0x10, [mode]), cancellationToken);
+        return RunExclusiveAsync(connection, async token =>
+        {
+            await ExecuteWithoutResultAsync(connection, RazerHidStandardProtocol.Create(connection.Definition,
+                "razer_chroma_misc_set_hyperpolling_wireless_dongle_indicator_led_mode",
+                0x01, 0x07, 0x10, [mode]), token).ConfigureAwait(false);
+            var actual = await GetHyperPollingIndicatorAsync(connection, token).ConfigureAwait(false);
+            WriteDiagnostic(connection.Definition.ProductId,
+                $"HyperPolling indicator: requested={mode}, readback={actual}.");
+            if (actual != mode)
+                throw new RazerReportMismatchException($"HyperPolling indicator readback mismatch: requested={mode}, actual={actual}.");
+        }, cancellationToken);
     }
 
     public async Task PairHyperPollingAsync(

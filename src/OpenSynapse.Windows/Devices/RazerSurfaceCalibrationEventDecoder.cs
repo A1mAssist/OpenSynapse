@@ -3,7 +3,7 @@ namespace OpenSynapse.Windows.Devices;
 public enum RazerSurfaceCalibrationEventKind
 {
     Started, Ended, Halted, Reset, NormalSpeed, TooFast,
-    LeftButtonDown, Escape, Sample, Disconnected,
+    LeftButtonDown, Escape, Sample, Disconnected, LeftButtonDownAny, Confirm,
 }
 
 public readonly record struct RazerSurfaceCalibrationInput(

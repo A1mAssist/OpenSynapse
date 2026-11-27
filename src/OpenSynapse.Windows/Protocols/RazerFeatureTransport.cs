@@ -44,6 +44,12 @@ public interface IRazerFeatureTransport
         CancellationToken cancellationToken) =>
         throw new NotSupportedException("This transport does not support persistent HID sessions.");
 
+    Task<IRazerFeatureSession> OpenSessionForProductAsync(
+        string devicePath,
+        ushort logicalProductId,
+        CancellationToken cancellationToken) =>
+        OpenSessionAsync(devicePath, cancellationToken);
+
     async Task SendBatchAsync(
         string devicePath,
         IReadOnlyList<byte[]> requests,
@@ -231,14 +237,26 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
             allowRemainingPacketsMismatch);
     }
 
-    public async Task<IRazerFeatureSession> OpenSessionAsync(
+    public Task<IRazerFeatureSession> OpenSessionAsync(
         string devicePath,
+        CancellationToken cancellationToken) =>
+        OpenSessionCoreAsync(devicePath, null, cancellationToken);
+
+    public Task<IRazerFeatureSession> OpenSessionForProductAsync(
+        string devicePath,
+        ushort logicalProductId,
+        CancellationToken cancellationToken) =>
+        OpenSessionCoreAsync(devicePath, logicalProductId, cancellationToken);
+
+    private async Task<IRazerFeatureSession> OpenSessionCoreAsync(
+        string devicePath,
+        ushort? logicalProductId,
         CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
         var handle = await OpenHandleAsync(devicePath, cancellationToken).ConfigureAwait(false);
         var gate = _gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
-        return new RazerFeatureSession(handle, gate, devicePath);
+        return new RazerFeatureSession(handle, gate, devicePath, logicalProductId);
     }
 
     internal Task<byte[]> SendPreparedAsync(

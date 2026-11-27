@@ -85,6 +85,25 @@ public sealed class StudioProductImageService
         }
     }
 
+    /// <summary>Returns usable disk cache without touching the network.</summary>
+    public async Task<StudioProductImage?> GetCachedAsync(
+        ushort productId,
+        string? name,
+        CancellationToken cancellationToken = default)
+    {
+        if (productId == 0) return null;
+        if (TryMemory(productId, name, out var remembered))
+            return remembered.State == StudioProductImageState.Loaded ? remembered : null;
+
+        var cachePath = CachePath(productId);
+        if (!await IsCachedImageAsync(cachePath, cancellationToken).ConfigureAwait(false))
+            return null;
+
+        var cached = StudioProductImage.Loaded(name, cachePath);
+        Remember(productId, cached);
+        return cached;
+    }
+
     private async Task<StudioProductImage> DownloadAsync(
         ushort productId,
         string cachePath,

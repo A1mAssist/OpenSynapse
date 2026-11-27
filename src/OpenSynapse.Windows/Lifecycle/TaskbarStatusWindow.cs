@@ -44,6 +44,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         public long NextAttachAttempt;
         public bool IsChild;
         public bool Vertical;
+        public string? HiddenReason;
         public IntPtr BatteryFont;
         public IntPtr IconFont;
     }
@@ -162,7 +163,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     {
         foreach (var surface in _surfaces)
         {
-            HideSurface(surface);
+            HideSurface(surface, "no battery data");
         }
     }
 
@@ -395,9 +396,14 @@ public sealed partial class TaskbarStatusWindow : IDisposable
     {
         if (surface.Window == IntPtr.Zero || !_contentAvailable) return;
         var taskbar = surface.Taskbar;
-        if (!IsWindow(taskbar) || !IsWindowVisible(taskbar) || IsFullscreenAppActive())
+        if (!IsWindow(taskbar) || !IsWindowVisible(taskbar))
         {
-            HideSurface(surface);
+            HideSurface(surface, "taskbar hidden or unavailable");
+            return;
+        }
+        if (IsFullscreenAppActive())
+        {
+            HideSurface(surface, "fullscreen notification state");
             return;
         }
         if (!TryGetLayout(surface, out var x, out var y, out var width, out var height))
@@ -405,10 +411,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             // Explorer briefly invalidates the taskbar while input methods and
             // overflow flyouts change. Keep the last frame instead of blinking out.
             if (++surface.LayoutFailures < 30) return;
-            _log?.Invoke(
-                $"taskbar-status: layout unavailable on 0x{taskbar.ToInt64():X}; " +
-                "hiding the strip.");
-            HideSurface(surface);
+            HideSurface(surface, "layout unavailable");
             return;
         }
         surface.LayoutFailures = 0;
@@ -417,15 +420,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         // child strip below it is painted over. Re-assert the top of the child band.
         if (surface.IsChild)
         {
-            var above = GetWindow(surface.Window, GwHwndPrev);
-            if (above != IntPtr.Zero && IsWindowVisible(above))
-            {
-                SetWindowPos(
-                    surface.Window,
-                    IntPtr.Zero,
-                    0, 0, 0, 0,
-                    SwpNoMove | SwpNoSize | SwpNoActivate);
-            }
+            RaiseChildAboveSiblings(surface.Window);
         }
 
         if (!surface.IsChild)
@@ -435,7 +430,7 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             {
                 _log?.Invoke(
                     $"taskbar-status: positioning failed ({Marshal.GetLastWin32Error()}).");
-                HideSurface(surface);
+                HideSurface(surface, "positioning failed");
                 return;
             }
             x = origin.X;
@@ -460,12 +455,13 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             {
                 _log?.Invoke(
                     $"taskbar-status: positioning failed ({Marshal.GetLastWin32Error()}).");
-                HideSurface(surface);
+                HideSurface(surface, "positioning failed");
                 return;
             }
 
             surface.LastRect = rect;
             if (!surface.IsChild) RaiseOwnerAboveTaskbar(surface);
+            RecordSurfaceShown(surface);
             return;
         }
 
@@ -474,10 +470,29 @@ public sealed partial class TaskbarStatusWindow : IDisposable
             ShowWindow(surface.Window, SwShowNoActivate);
         }
         if (!surface.IsChild) RaiseOwnerAboveTaskbar(surface);
+        RecordSurfaceShown(surface);
     }
 
-    private static void HideSurface(StatusSurface surface)
+    internal static void RaiseChildAboveSiblings(IntPtr window)
     {
+        // A hidden immediate sibling can still have a visible content bridge above it.
+        if (GetWindow(window, GwHwndPrev) == IntPtr.Zero) return;
+        SetWindowPos(window, IntPtr.Zero, 0, 0, 0, 0,
+            SwpNoMove | SwpNoSize | SwpNoActivate);
+    }
+
+    private void RecordSurfaceShown(StatusSurface surface)
+    {
+        if (surface.HiddenReason is null) return;
+        _log?.Invoke($"taskbar-status: strip restored on 0x{surface.Taskbar.ToInt64():X} after {surface.HiddenReason}.");
+        surface.HiddenReason = null;
+    }
+
+    private void HideSurface(StatusSurface surface, string reason)
+    {
+        if (surface.HiddenReason != reason)
+            _log?.Invoke($"taskbar-status: strip hidden on 0x{surface.Taskbar.ToInt64():X}: {reason}.");
+        surface.HiddenReason = reason;
         surface.LayoutFailures = 0;
         if (surface.Window != IntPtr.Zero)
         {

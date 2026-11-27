@@ -15,7 +15,7 @@ public sealed partial class SurfaceCalibrationViewModel
             if (state != previousState)
             {
                 previousState = state;
-                _log?.Invoke($"surface-calibration pid={_identity.ProductId:X4} session={session.SessionId} state={state} error={session.Error} cleanup={session.CleanupError}");
+                _log?.Invoke($"surface-calibration pid={_identity.ProductId:X4} session={session.SessionId} state={state} error={session.Error} cleanup={session.CleanupError} readback={session.ReadbackDetail}");
             }
             SessionStateChanged(session);
         };

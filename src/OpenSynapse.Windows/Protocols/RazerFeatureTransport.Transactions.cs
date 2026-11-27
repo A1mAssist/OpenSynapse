@@ -77,8 +77,10 @@ public sealed partial class RazerFeatureTransport
             // commands through the DualLinkKeyboard bank.
             return (byte)(0x80 | NextTransactionId(ref sequence));
         }
-        if (isHost && IsLinkerCommand(commandClass, commandId))
+        if (isHost && (IsLinkerCommand(commandClass, commandId) ||
+            pathProductId == 0x00B3 && commandClass == 0x07 && commandId is 0x10 or 0x90))
         {
+            // 00B3's rzDevice25LinkerUma sends its indicator configuration to the E0 bank.
             // rzDevice25Linker* restarts its E0 counter after every HID open.
             if (freshDockHandle)
                 sequence = -1;

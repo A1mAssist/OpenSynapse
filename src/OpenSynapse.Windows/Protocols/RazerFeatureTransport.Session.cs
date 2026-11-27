@@ -10,7 +10,8 @@ public sealed partial class RazerFeatureTransport
     private sealed class RazerFeatureSession(
         SafeFileHandle handle,
         SemaphoreSlim gate,
-        string devicePath) : IRazerFeatureSession
+        string devicePath,
+        ushort? logicalProductId) : IRazerFeatureSession
     {
         private readonly object _transactionSync = new();
         private byte _transactionId;
@@ -42,7 +43,7 @@ public sealed partial class RazerFeatureTransport
             await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                PrepareSessionTransaction(report);
+                PrepareSessionTransaction(devicePath, logicalProductId, report, ref _dockTransactionSequence);
                 var result = await Task.Run(() =>
                 {
                     var success = NativeMethods.HidD_SetFeature(handle, report, report.Length);
@@ -156,7 +157,7 @@ public sealed partial class RazerFeatureTransport
                 for (var index = 0; index < requests.Count - 1; index++)
                 {
                     var request = requests[index];
-                    PrepareSessionTransaction(request);
+                    PrepareSessionTransaction(devicePath, logicalProductId, request, ref _dockTransactionSequence);
                     var result = await SetFeatureAsync(handle, request, directIo: true, cancellationToken)
                         .ConfigureAwait(false);
                     if (!result.Success)
@@ -166,7 +167,7 @@ public sealed partial class RazerFeatureTransport
                 }
 
                 var last = requests[^1];
-                PrepareSessionTransaction(last);
+                PrepareSessionTransaction(devicePath, logicalProductId, last, ref _dockTransactionSequence);
                 await ExecuteOnHandleAsync(
                     handle,
                     last,
@@ -195,7 +196,7 @@ public sealed partial class RazerFeatureTransport
             await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                PrepareSessionTransaction(request);
+                PrepareSessionTransaction(devicePath, logicalProductId, request, ref _dockTransactionSequence);
                 return await ExecuteOnHandleAsync(
                     handle,
                     request,
@@ -213,29 +214,6 @@ public sealed partial class RazerFeatureTransport
             }
         }
 
-        private void PrepareSessionTransaction(byte[] request)
-        {
-            if (!DeviceIdParser.TryParse(devicePath, out var vendorId, out var productId) ||
-                vendorId != 0x1532)
-            {
-                return;
-            }
-
-            if (productId == 0x00A4)
-            {
-                request[2] = PrepareTransactionId(
-                    devicePath, request[2], request[7], request[8], ref _dockTransactionSequence);
-                return;
-            }
-
-            if (RazerDualDongleCatalog.CanHost(productId) &&
-                IsLinkerCommand(request[7], request[8]))
-            {
-                request[2] = PrepareTransactionId(
-                    devicePath, request[2], request[7], request[8], ref _dockTransactionSequence);
-            }
-        }
-
         public ValueTask DisposeAsync()
         {
             if (Interlocked.Exchange(ref _disposed, 1) == 0)
@@ -243,6 +221,28 @@ public sealed partial class RazerFeatureTransport
                 handle.Dispose();
             }
             return ValueTask.CompletedTask;
+        }
+    }
+
+    internal static void PrepareSessionTransaction(
+        string devicePath, ushort? logicalProductId, byte[] request, ref int sequence)
+    {
+        if (!DeviceIdParser.TryParse(devicePath, out var vendorId, out var productId) ||
+            vendorId != 0x1532)
+        {
+            return;
+        }
+
+        var isHost = RazerDualDongleCatalog.CanHost(productId);
+        if (isHost && logicalProductId is { } childProductId && childProductId != productId)
+        {
+            // Linked children share their rolling counter with single queries across HID opens.
+            PrepareStandardTransaction(devicePath, request, childProductId);
+        }
+        else if (productId == 0x00A4 || isHost && IsLinkerCommand(request[7], request[8]))
+        {
+            request[2] = PrepareTransactionId(
+                devicePath, request[2], request[7], request[8], ref sequence, logicalProductId);
         }
     }
 }

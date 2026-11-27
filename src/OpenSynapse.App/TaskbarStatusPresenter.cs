@@ -195,7 +195,7 @@ internal sealed class TaskbarStatusPresenter : IDisposable
             _diagnosticLog.TryWrite("taskbar-status", $"window unavailable: {exception.Message}");
             _statusWindow?.Dispose();
             _statusWindow = null;
-            _timer?.Stop();
+            SetTimerInterval(BatteryReadInterval);
         }
     }
 

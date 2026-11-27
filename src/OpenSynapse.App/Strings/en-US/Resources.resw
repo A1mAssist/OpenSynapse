@@ -945,6 +945,7 @@
   <data name="MappingReadIncomplete" xml:space="preserve">
     <value>Incomplete read · {0}/16 records</value>
   </data>
+  <data name="ProfileCreateTitle" xml:space="preserve"><value>New profile</value></data>
   <data name="CreateProfile" xml:space="preserve">
     <value>Create profile {0}</value>
   </data>
@@ -1714,6 +1715,10 @@
   <data name="RazerHidDpiStageLabel" xml:space="preserve"><value>Stage {0}</value></data>
   <data name="RazerHidHyperPollingDescription.Text" xml:space="preserve"><value>Manage the receiver indicator and mouse pairing. Pairing actions require confirmation.</value></data>
   <data name="RazerHidHyperPollingIndicator.Header" xml:space="preserve"><value>Indicator mode</value></data>
+  <data name="HyperPollingIndicatorConnection" xml:space="preserve"><value>Connection status</value></data>
+  <data name="HyperPollingIndicatorBattery" xml:space="preserve"><value>Battery level</value></data>
+  <data name="HyperPollingIndicatorWarning" xml:space="preserve"><value>Low battery warning only</value></data>
+  <data name="HyperPollingIndicatorDescription.Text" xml:space="preserve"><value>The receiver chooses the indicator color from its connection or battery status. Custom colors are not supported.</value></data>
   <data name="RazerHidApplyIndicatorButton.Content" xml:space="preserve"><value>Apply</value></data>
   <data name="RazerHidPairButton.Content" xml:space="preserve"><value>Pair</value></data>
   <data name="RazerHidUnpairButton.Content" xml:space="preserve"><value>Unpair</value></data>
@@ -4858,7 +4863,7 @@
   <data name="SurfaceCalibrationLevels" xml:space="preserve"><value>levels</value></data>
   <data name="SurfaceCalibrationLandingHint" xml:space="preserve"><value>Landing height must be lower than lift-off height.</value></data>
   <data name="SurfaceCalibrationManualTitle" xml:space="preserve"><value>Calibrate a new surface</value></data>
-  <data name="SurfaceCalibrationManualHint" xml:space="preserve"><value>Place this mouse on the surface you want to use. During calibration, its left button starts or finishes sampling; Esc cancels.</value></data>
+  <data name="SurfaceCalibrationManualHint" xml:space="preserve"><value>Place this mouse on the surface you want to use. The pointer may stop moving during sampling. Press Enter or Space to finish, or click any mouse’s left button. Esc cancels.</value></data>
   <data name="SurfaceCalibrationSurfaceName.PlaceholderText" xml:space="preserve"><value>Surface name (optional)</value></data>
   <data name="SurfaceCalibrationSurfaceName.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Surface name</value></data>
   <data name="SurfaceCalibrationPrepare" xml:space="preserve"><value>New calibration</value></data>
@@ -4895,7 +4900,7 @@
   <data name="SurfaceCalibrationSessionPreparing" xml:space="preserve"><value>Preparing this mouse for sampling…</value></data>
   <data name="SurfaceCalibrationSessionWaitingToStart" xml:space="preserve"><value>Click Start or press this mouse’s left button within 35 seconds. Esc cancels.</value></data>
   <data name="SurfaceCalibrationSessionStarting" xml:space="preserve"><value>Waiting for the mouse to start sampling…</value></data>
-  <data name="SurfaceCalibrationSessionSampling" xml:space="preserve"><value>Move this mouse across the surface. Click Finish sampling or press its left button when ready; Esc cancels.</value></data>
+  <data name="SurfaceCalibrationSessionSampling" xml:space="preserve"><value>Move this mouse across the surface. Press Enter/Space or any mouse’s left button when ready; Esc cancels.</value></data>
   <data name="SurfaceCalibrationSessionEnding" xml:space="preserve"><value>Finishing the sample…</value></data>
   <data name="SurfaceCalibrationSessionReading" xml:space="preserve"><value>Reading the sampled surface…</value></data>
   <data name="SurfaceCalibrationSessionApplying" xml:space="preserve"><value>Applying the new surface calibration…</value></data>

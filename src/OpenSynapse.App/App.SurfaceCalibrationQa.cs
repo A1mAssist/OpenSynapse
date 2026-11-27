@@ -320,6 +320,7 @@ public partial class App
         public int Reads { get; private set; }
         public int Applies { get; private set; }
         public int Restores { get; private set; }
+        public int Aborts { get; private set; }
         public int Starts { get; private set; }
         public int Stops { get; private set; }
         public int Results { get; private set; }
@@ -354,6 +355,13 @@ public partial class App
         { Results++; return Task.FromResult(new RazerSurfaceCalibrationRawData { Parameters = RawParameters.ToArray() }); }
         public Task RestoreAsync(RazerSurfaceCalibrationState snapshot, CancellationToken cancellationToken = default)
         { cancellationToken.ThrowIfCancellationRequested(); Restores++; _state = snapshot; return Task.CompletedTask; }
+        public Task AbortAsync(RazerSurfaceCalibrationState snapshot, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Aborts++;
+            _state = _state with { SensorState = snapshot.SensorState, LiftMode = snapshot.LiftMode, LiftHeight = snapshot.LiftHeight };
+            return Task.CompletedTask;
+        }
         public Task RestoreDeviceModeAsync(RazerSurfaceCalibrationState snapshot, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public RazerSurfaceCalibrationConfiguration CreateCandidate(RazerSurfaceCalibrationConfiguration configuration, RazerSurfaceCalibrationRawData raw) => configuration with { RawData = raw };
         public RazerSurfaceCalibrationReadback CompareReadback(RazerSurfaceCalibrationConfiguration configuration, RazerSurfaceCalibrationState state) =>

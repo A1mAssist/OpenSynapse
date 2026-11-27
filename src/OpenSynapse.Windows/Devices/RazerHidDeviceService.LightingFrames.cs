@@ -40,7 +40,8 @@ public sealed partial class RazerHidDeviceService
         try
         {
             await using var session = await _transport
-                .OpenSessionAsync(connection.DevicePath!, cancellationToken).ConfigureAwait(false);
+                .OpenSessionForProductAsync(connection.DevicePath!, connection.Definition.ProductId, cancellationToken)
+                .ConfigureAwait(false);
             // A matrix frame is six row reports. Over a wireless dongle, reading every
             // acknowledgement is the difference between the 25 fps cadence and ~10 fps.
             // The final query also drains any replies the device kept.

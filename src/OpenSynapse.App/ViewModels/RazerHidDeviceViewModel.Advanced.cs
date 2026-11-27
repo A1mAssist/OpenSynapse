@@ -260,6 +260,19 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             },
             cancellationToken);
 
+    private bool _hyperPollingIndicatorLoaded;
+
+    private async Task LoadHyperPollingIndicatorAsync(CancellationToken cancellationToken)
+    {
+        if (Has(RazerHidBackendCapability.HyperPollingIndicatorWrite) && !IsHyperPollingBusy && !_hyperPollingIndicatorLoaded)
+        {
+            var mode = await _service.GetHyperPollingIndicatorAsync(Connection, cancellationToken);
+            // A choice made during the initial read is a draft, not stale device state.
+            if (!_hyperPollingIndicatorLoaded) HyperPollingIndicatorMode = mode;
+            _hyperPollingIndicatorLoaded = true;
+        }
+    }
+
     public Task SetHyperPollingIndicatorAsync(CancellationToken cancellationToken = default) =>
         RunWriteAsync(RazerHidBackendCapability.HyperPollingIndicatorWrite,
             () => IsHyperPollingBusy, value => IsHyperPollingBusy = value,
