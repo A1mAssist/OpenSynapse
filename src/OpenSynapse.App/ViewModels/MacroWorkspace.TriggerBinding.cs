@@ -1,4 +1,5 @@
 using OpenSynapse.Core.Macros;
+using OpenSynapse.Windows.Input;
 
 namespace OpenSynapse.App.ViewModels;
 
@@ -15,6 +16,9 @@ public sealed partial class MacroWorkspace
         bool hyperShiftLayer = false,
         CancellationToken cancellationToken = default)
     {
+        if (!RazerSoftwareMacroAssignmentPolicy.CanAssign(input))
+            return AppStrings.Text("RazerMappingMacroSoftwareUnavailable");
+
         var row = Items.FirstOrDefault(item =>
             StringComparer.Ordinal.Equals(item.Id, macroId));
         if (row is null)

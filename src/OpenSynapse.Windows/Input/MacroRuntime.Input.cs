@@ -1,4 +1,5 @@
 using OpenSynapse.Core.Macros;
+using OpenSynapse.Core.Devices;
 
 namespace OpenSynapse.Windows.Input;
 
@@ -103,6 +104,7 @@ internal sealed partial class MacroRuntime
         if (value.HyperShiftLayer is null &&
             value.Input.Kind == MacroInputKind.RazerKey &&
             value.Input.DeviceId is > 0 and <= 0xFFFF &&
+            RazerPrivateKeyCatalog.CanObserveHyperShift((ushort)value.Input.DeviceId) &&
             RazerPrivateKeyCatalog.IsHyperShift(
                 (ushort)value.Input.DeviceId,
                 value.Input.RazerKeyCode))
@@ -556,7 +558,10 @@ internal sealed partial class MacroRuntime
         input.Kind switch
         {
             MacroInputKind.MouseButton => new InputKey(input.Kind, input.MouseButton, false),
-            MacroInputKind.NagaSideButton => new InputKey(input.Kind, input.SideButton, false),
+            MacroInputKind.NagaSideButton => new InputKey(input.Kind, input.SideButton, false,
+                input.DeviceId is > 0 and <= ushort.MaxValue
+                    ? RazerProductAliases.Canonical((ushort)input.DeviceId) : input.DeviceId,
+                input.InstanceId?.Trim().ToUpperInvariant()),
             MacroInputKind.DeviceButton => new InputKey(
                 input.Kind,
                 (input.VirtualKey << 16) | input.ScanCode,

@@ -3813,6 +3813,7 @@
   <data name="RazerMappingHyperShiftSoftwareUnavailable" xml:space="preserve"><value>OpenSynapse はこのデバイスの HyperShift レイヤーを監視できません（ほとんどのデバイスはファームウェアで処理します）。ここではソフトウェア マクロを利用できません。デバイスが HyperShift に対応している場合は、そのレイヤーのオンボード マクロを使用してください。</value></data>
   <data name="RazerMappingKeyboardButton" xml:space="preserve"><value>キー {0}</value></data>
   <data name="RazerMappingNagaSideButton" xml:space="preserve"><value>サイド ボタン {0}</value></data>
+  <data name="RazerMappingNagaPanelButton" xml:space="preserve"><value>{0} ボタンパネル · サイド {1}</value></data>
   <data name="RazerMappingButtonColumn" xml:space="preserve"><value>ボタン</value></data>
   <data name="RazerMappingButtonLeft" xml:space="preserve"><value>左</value></data>
   <data name="RazerMappingButtonRight" xml:space="preserve"><value>右</value></data>

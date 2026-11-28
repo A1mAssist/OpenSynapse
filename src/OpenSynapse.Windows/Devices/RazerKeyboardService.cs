@@ -429,6 +429,12 @@ public sealed partial class RazerKeyboardService
             _ = await GetMappingButtonIdsAsync(cancellationToken).ConfigureAwait(false);
         }
 
+        if (_mappingProtocol == RazerKeyboardMappingProtocol.KeyTable8F)
+        {
+            var profile = await ResolveProfileIdAsync(cancellationToken).ConfigureAwait(false);
+            return await ReadKeyTableAssignmentAsync(profile, buttonId, mode, cancellationToken).ConfigureAwait(false);
+        }
+
         if (_mappingProtocol == RazerKeyboardMappingProtocol.Middleware02)
         {
             return RazerHidMappingProtocol.ParseAssignment(
@@ -472,6 +478,39 @@ public sealed partial class RazerKeyboardService
 
         var normalized = RazerHidMappingActions.NormalizeKeyData(
             functionId, data.ToArray(), _productId);
+        if (_mappingProtocol == RazerKeyboardMappingProtocol.KeyTable8F)
+        {
+            var profile = await ResolveProfileIdAsync(cancellationToken).ConfigureAwait(false);
+            var request = RazerHidMappingProtocol.SetKeyAssignment(profile, buttonId, mode, functionId, normalized);
+            var previous = await ReadKeyTableAssignmentAsync(profile, buttonId, mode, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await QueryPreparedAsync(request.Report, "mapping 02:0D", cancellationToken).ConfigureAwait(false);
+                var actual = await ReadKeyTableAssignmentAsync(profile, buttonId, mode, cancellationToken).ConfigureAwait(false);
+                if (actual.FunctionId != functionId || !actual.Data.SequenceEqual(normalized))
+                    throw new InvalidOperationException("The keyboard kept a different key assignment.");
+            }
+            catch (Exception failure)
+            {
+                try
+                {
+                    using var cleanup = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+                    await QueryPreparedAsync(RazerHidMappingProtocol.SetKeyAssignment(
+                        profile, buttonId, mode, previous.FunctionId, previous.Data.ToArray()).Report,
+                        "restore mapping 02:0D", cleanup.Token).ConfigureAwait(false);
+                    var restored = await ReadKeyTableAssignmentAsync(profile, buttonId, mode, cleanup.Token).ConfigureAwait(false);
+                    if (restored.FunctionId != previous.FunctionId || !restored.Data.SequenceEqual(previous.Data))
+                        throw new InvalidOperationException("The keyboard did not restore the previous key assignment.");
+                }
+                catch (Exception recovery)
+                {
+                    throw new IOException("The keyboard mapping failed and could not be restored.",
+                        new AggregateException(failure, recovery));
+                }
+                throw;
+            }
+            return;
+        }
         if (_mappingProtocol == RazerKeyboardMappingProtocol.Middleware02)
         {
             await QueryPreparedAsync(
@@ -507,6 +546,26 @@ public sealed partial class RazerKeyboardService
                 "The keyboard kept a different button assignment.");
         }
     }
+
+    private async Task<RazerHidButtonAssignment> ReadKeyTableAssignmentAsync(
+        byte profile, byte buttonId, byte mode, CancellationToken cancellationToken)
+    {
+        var request = UsesMultiKeyTable
+            ? RazerHidMappingProtocol.GetMultiKeyAssignment(profile, buttonId, mode)
+            : RazerHidMappingProtocol.GetKeyAssignment(profile, buttonId, mode);
+        var response = await QueryPreparedAsync(request.Report, request.BuilderName, cancellationToken).ConfigureAwait(false);
+        var arguments = RazerHidStandardProtocol.Arguments(response, 5);
+        if (arguments[0] != profile || arguments[1] != buttonId || arguments[2] != mode ||
+            arguments[4] > 5 || arguments.Length < 5 + arguments[4])
+            throw new InvalidDataException("The keyboard key assignment has an invalid selector or data size.");
+        return UsesMultiKeyTable
+            ? RazerHidMappingProtocol.ParseMultiKeyAssignment(response, buttonId)
+            : RazerHidMappingProtocol.ParseAssignment(response);
+    }
+
+    // These analogV3 bundles read 02:9E but keep analogKeyboard=false for 02:0D writes.
+    private bool UsesMultiKeyTable => _productId is 0x02D0 or 0x02D1 or 0x02D8 or
+        0x02E4 or 0x02E5 or 0x02EA or 0x02E6;
 
     /// <summary>
     /// Mapping tables follow the profile the keyboard is on; profile 1 is only the fallback.

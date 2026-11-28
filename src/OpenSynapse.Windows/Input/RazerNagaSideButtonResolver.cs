@@ -4,9 +4,8 @@ using OpenSynapse.Core.Macros;
 namespace OpenSynapse.Windows.Input;
 
 /// <summary>
-/// Naga side plates expose their default layout as the keyboard number row
-/// (1-0) plus '-' and '='. The mapping page reports those HID usages, while
-/// the macro runtime names the same physical inputs 1-12.
+/// Keeps keyboard output usages separate from the physical mapping ids of Naga
+/// side plates. Only the firmware-id reader belongs on the mapping page.
 /// </summary>
 public static class RazerNagaSideButtonResolver
 {
@@ -28,12 +27,24 @@ public static class RazerNagaSideButtonResolver
     /// </summary>
     public static MacroInput? ResolveFirmware(byte buttonId) => ResolveFirmware(0, buttonId);
 
-    public static MacroInput? ResolveFirmware(ushort productId, byte buttonId) => buttonId switch
+    public static MacroInput? ResolveFirmware(ushort productId, byte buttonId)
     {
-        >= 64 and <= 75 => Side(productId, buttonId - 63),
-        >= 80 and <= 86 => Side(productId, buttonId - 79),
-        _ => null,
-    };
+        var panelSize = GetPanelButtonCount(productId, buttonId);
+        return panelSize switch
+        {
+            12 => Side(productId, buttonId - 63),
+            > 0 => Side(productId, buttonId - 79),
+            _ => null,
+        };
+    }
+
+    public static int GetPanelButtonCount(ushort productId, byte buttonId)
+    {
+        if (buttonId is >= 64 and <= 75)
+            return RazerProductAliases.Canonical(productId) == 0x0050 ? 0 : 12;
+        var smallPlateSize = productId == 0 ? 7 : RazerNagaSideButtons.SmallPlateButtonCount(productId);
+        return buttonId >= 80 && buttonId < 80 + smallPlateSize ? smallPlateSize : 0;
+    }
 
     public static bool IsNagaProduct(ushort productId, string? productName) =>
         RazerNagaSideButtons.IsNaga(0x1532, productId, productName);

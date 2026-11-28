@@ -100,7 +100,9 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
         _catalog = catalog;
         _groupOptions = RazerMappingText.GroupOptions(
             _canUseOnboardMacro || _canUseSoftwareMacro, hostOnly)
-            .Where(option => catalog.SupportsGroup(option.Group)).ToArray();
+            .Where(option => catalog.SupportsGroup(option.Group))
+            .Where(option => catalog is not RazerNagaMappingActionCatalog || canUseSoftwareMacro ||
+                option.Group != RazerHidMappingGroup.WindowsShortcut).ToArray();
         ButtonId = buttonId;
         var buttonName = catalog.DescribeButton(buttonId);
         ButtonNameIsFallback = buttonName.StartsWith("Button ", StringComparison.Ordinal);
@@ -140,6 +142,7 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
             // (numpad *), so the private report codes must not rename those rows.
             if (productId != 0 &&
                 !RazerHuntsmanV3ProKeys.UsesFirmwareKeyIds(productId) &&
+                !RazerNagaSideButtonResolver.IsNagaProduct(productId, null) &&
                 RazerPrivateKeyCatalog.IsPrivate(productId, row.ButtonId))
             {
                 row.SetButtonName(RazerPrivateKeyCatalog.Describe(productId, row.ButtonId));
@@ -491,6 +494,8 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
         ? AppStrings.Text("RazerMappingMacroHeader")
         : AppStrings.Text("RazerMappingActionColumn");
     public bool CanApply => IsAssignmentReadable && _groupIndex > 0 && _catalog.SupportsGroup(Group) &&
+        (_catalog is not RazerNagaMappingActionCatalog ||
+         Group != RazerHidMappingGroup.WindowsShortcut || _canUseSoftwareMacro) &&
         (Group != RazerHidMappingGroup.Macro ||
          _localMacros.Count > 0 &&
          !HasMacroError &&

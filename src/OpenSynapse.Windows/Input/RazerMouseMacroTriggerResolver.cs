@@ -4,8 +4,7 @@ namespace OpenSynapse.Windows.Input;
 
 /// <summary>
 /// Resolves a mouse mapping button id to the trigger the macro runtime sees.
-/// Naga side plates win over overlapping private-key slots 32 and 33; other
-/// private keys still resolve through the catalog.
+/// Naga firmware ids and private report codes occupy separate namespaces.
 /// </summary>
 public static class RazerMouseMacroTriggerResolver
 {
@@ -43,8 +42,7 @@ public static class RazerMouseMacroTriggerResolver
             };
         }
 
-        if (isNaga && (RazerNagaSideButtonResolver.ResolveFirmware(productId, buttonId) ??
-                       RazerNagaSideButtonResolver.Resolve(productId, buttonId)) is { } naga)
+        if (isNaga && RazerNagaSideButtonResolver.ResolveFirmware(productId, buttonId) is { } naga)
         {
             return naga;
         }
@@ -94,7 +92,7 @@ public static class RazerMouseMacroTriggerResolver
             };
         }
 
-        return RazerPrivateKeyCatalog.IsPrivate(productId, buttonId)
+        return !isNaga && RazerPrivateKeyCatalog.IsPrivate(productId, buttonId)
             ? new MacroInput
             {
                 Kind = MacroInputKind.RazerKey,

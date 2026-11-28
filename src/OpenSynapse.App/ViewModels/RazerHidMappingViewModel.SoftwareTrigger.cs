@@ -503,7 +503,9 @@ public sealed partial class RazerHidMappingViewModel
     private Task<string?> BindSoftwareTriggerAsync(
         string macroId, MacroInput input, MacroTriggerMode mode, MacroPlaybackMode playback,
         int repeat, bool hyperShiftLayer, MacroSoftwareBinding? binding, CancellationToken cancellationToken) =>
-        _keypadMacroTransaction is { } transaction
+        !RazerSoftwareMacroAssignmentPolicy.CanAssign(input)
+            ? Task.FromResult<string?>(AppStrings.Text("RazerMappingMacroSoftwareUnavailable"))
+            : _keypadMacroTransaction is { } transaction
             ? transaction.BindAsync(macroId, input, mode, playback, repeat, hyperShiftLayer, binding, cancellationToken)
             : _softwareTriggerBinder!(macroId, input, mode, playback, repeat, hyperShiftLayer, binding, cancellationToken);
 

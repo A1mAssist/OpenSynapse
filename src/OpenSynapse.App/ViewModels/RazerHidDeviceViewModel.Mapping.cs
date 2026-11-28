@@ -54,7 +54,7 @@ public sealed partial class RazerHidDeviceViewModel
             actionCatalog: RazerKeypadInputCatalog.UsesHostMapping(Connection.Definition.ProductId)
                 ? new RazerTartarusProMappingActionCatalog(Connection.Definition.ProductId)
                 : IsNagaMouse
-                ? RazerNagaMappingActionCatalog.Instance
+                ? new RazerNagaMappingActionCatalog(Connection.Definition.ProductId)
                 : IsKeypad
                     ? new RazerKeypadMappingActionCatalog(Connection.Definition.ProductId)
                     // Every keyboard needs its own names: the shared catalog maps

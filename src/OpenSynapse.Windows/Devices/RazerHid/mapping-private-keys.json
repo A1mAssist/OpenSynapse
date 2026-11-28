@@ -1634,6 +1634,14 @@
       "6A": {
         "code": 84,
         "label": "ScrollModeSwitch"
+      },
+      "39": {
+        "code": 89,
+        "label": "HyperShift"
+      },
+      "80": {
+        "code": 210,
+        "label": "Key9"
       }
     }
   },
@@ -1656,6 +1664,14 @@
       "6A": {
         "code": 84,
         "label": "ScrollModeSwitch"
+      },
+      "39": {
+        "code": 89,
+        "label": "HyperShift"
+      },
+      "80": {
+        "code": 210,
+        "label": "Key9"
       }
     }
   },
@@ -1678,6 +1694,14 @@
       "6A": {
         "code": 84,
         "label": "ScrollModeSwitch"
+      },
+      "39": {
+        "code": 89,
+        "label": "HyperShift"
+      },
+      "80": {
+        "code": 210,
+        "label": "Key9"
       }
     }
   },

@@ -111,6 +111,8 @@ internal sealed class RazerDeviceButtonInput : IDisposable
             {
                 Kind = MacroInputKind.NagaSideButton,
                 DeviceId = RazerProductAliases.Canonical(device.ProductId),
+                InstanceId = device.InstanceId,
+                DeviceName = device.DisplayName,
                 SideButton = sideButton,
             }, isDown);
             return;
@@ -250,13 +252,7 @@ internal sealed class RazerDeviceButtonInput : IDisposable
         if (handle.IsInvalid)
         {
             return parsed
-                ? new RazerDeviceInfo(
-                    parsedProductId,
-                    null,
-                    RazerNagaSideButtons.IsNaga(
-                        parsedVendorId,
-                        parsedProductId,
-                        null))
+                ? CreateDeviceInfo(devicePath, parsedVendorId, parsedProductId, null)
                 : null;
         }
 
@@ -267,13 +263,7 @@ internal sealed class RazerDeviceButtonInput : IDisposable
         if (!HidD_GetAttributes(handle, ref attributes))
         {
             return parsed
-                ? new RazerDeviceInfo(
-                    parsedProductId,
-                    null,
-                    RazerNagaSideButtons.IsNaga(
-                        parsedVendorId,
-                        parsedProductId,
-                        null))
+                ? CreateDeviceInfo(devicePath, parsedVendorId, parsedProductId, null)
                 : null;
         }
 
@@ -286,13 +276,23 @@ internal sealed class RazerDeviceButtonInput : IDisposable
         var productName = HidD_GetProductString(handle, product, product.Length)
             ? DecodeHidString(product)
             : null;
-        return new RazerDeviceInfo(
-            attributes.ProductId,
-            productName,
-            RazerNagaSideButtons.IsNaga(
-                attributes.VendorId,
-                attributes.ProductId,
-                productName));
+        return CreateDeviceInfo(devicePath, attributes.VendorId, attributes.ProductId, productName);
+    }
+
+    private static RazerDeviceInfo CreateDeviceInfo(
+        string devicePath, ushort vendorId, ushort productId, string? productName)
+    {
+        var isNaga = RazerNagaSideButtons.IsNaga(vendorId, productId, productName);
+        string? physicalKey = null;
+        if (isNaga)
+        {
+            var identity = RazerFilterInfBinder.TryGetHidRegistryInstanceId(devicePath) is { } instanceId
+                ? WindowsHidDiscovery.GetDeviceIdentity(instanceId) : default;
+            physicalKey = WindowsHidDiscovery.GetPhysicalDeviceKey(devicePath,
+                Guid.TryParse(identity.ContainerId, out var container) ? container : null,
+                identity.UsbParentDeviceId);
+        }
+        return new RazerDeviceInfo(productId, productName, isNaga, physicalKey);
     }
 
     private static string DecodeHidString(byte[] buffer)
@@ -337,7 +337,8 @@ internal sealed class RazerDeviceButtonInput : IDisposable
     private readonly record struct RazerDeviceInfo(
         ushort ProductId,
         string? ProductName,
-        bool IsNaga)
+        bool IsNaga,
+        string? InstanceId)
     {
         internal string DisplayName => string.IsNullOrWhiteSpace(ProductName)
             ? $"Razer {ProductId:X4}"

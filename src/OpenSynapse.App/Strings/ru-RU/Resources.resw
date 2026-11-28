@@ -8330,6 +8330,7 @@
   <data name="RazerMappingNagaSideButton" xml:space="preserve">
     <value>Боковая кнопка {0}</value>
   </data>
+  <data name="RazerMappingNagaPanelButton" xml:space="preserve"><value>Панель на {0} кнопок · Кнопка {1}</value></data>
   <data name="RazerMappingButtonColumn" xml:space="preserve">
     <value>Кнопка</value>
   </data>

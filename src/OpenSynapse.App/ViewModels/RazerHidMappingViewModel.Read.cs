@@ -56,7 +56,9 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             // Keys the product bundle does not place on the photo (the 009C DPI
             // buttons) still get a callout so they can be edited, just without
             // a connector line.
-            foreach (var row in Rows.Where(row => !_layout.Hotspots.ContainsKey(row.ButtonId)))
+            foreach (var row in Rows.Where(row =>
+                !RazerNagaSideButtonResolver.IsNagaProduct(_productId, null) &&
+                !_layout.Hotspots.ContainsKey(row.ButtonId)))
             {
                 LeftRows.Add(row);
             }
@@ -73,6 +75,11 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         TableRows.Clear();
         if (_layout is not null)
         {
+            // Different Naga plates share one picture; keep their unplaced keys reachable
+            // without stretching the photo's callouts across dozens of rows.
+            if (RazerNagaSideButtonResolver.IsNagaProduct(_productId, null))
+                foreach (var row in Rows.Where(row => !_layout.Hotspots.ContainsKey(row.ButtonId)))
+                    TableRows.Add(row);
             return;
         }
 
@@ -196,14 +203,20 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                     : null;
                 var keyboardIds = visual.Keyboard is { } keyboard
                     ? keyboard.ButtonIdsByKeyName.Values
-                        .Concat(RazerKeypadKeyCatalog.ExtraButtonIds(_productId))
-                        .Concat(RazerKeyboardExtraKeyCatalog.ExtraButtonIds(_productId))
                         .Distinct()
                         .Order()
                         .ToArray()
                     : analogIds;
                 var mouseIds = visual.Mouse?.ButtonNames?.Keys.Order().ToArray();
                 ids = _deviceKind == RazerMappingDeviceKind.Keyboard ? keyboardIds ?? mouseIds ?? [] : mouseIds ?? keyboardIds ?? [];
+            }
+
+            // Media keys must survive incomplete firmware lists and analog-layout fallbacks.
+            if (_deviceKind == RazerMappingDeviceKind.Keyboard)
+            {
+                ids = ids.Concat(RazerKeypadKeyCatalog.ExtraButtonIds(_productId))
+                    .Concat(RazerKeyboardExtraKeyCatalog.ExtraButtonIds(_productId))
+                    .Distinct().Order().ToArray();
             }
 
             var additional = await _transport.GetAdditionalButtonIdsAsync(
@@ -222,7 +235,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             var unreadable = 0;
             foreach (var id in ids.Where(id => id != 0))
             {
-                var softwareTrigger = _softwareTriggerResolver?.Invoke(id);
+                var softwareTrigger = ResolveSoftwareTrigger(id);
                 if (softwareTrigger is null &&
                     !RazerKeyboardExtraKeyCatalog.TryGetDialProtocolId(_productId, id, out _))
                 {
@@ -233,6 +246,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                     _localMacroOptions,
                     _macrosAvailable && _onboardWritable,
                     softwareTrigger is not null &&
+                    RazerSoftwareMacroAssignmentPolicy.CanAssign(softwareTrigger) &&
                     _softwareTriggerBinder is not null &&
                     (_canWrite ||
                      !RazerSoftwareMacroAssignmentPolicy.NeedsDeviceAssignment(softwareTrigger)) &&
@@ -321,11 +335,14 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                     SoftwareShortcutCatalog.ActionOf(shortcutMacro.Id) is { } shortcut)
                 {
                     shortcutIndex = SoftwareShortcutCatalog.IndexOf(shortcut.Id);
-                    row.GroupIndex = (int)RazerHidMappingGroup.WindowsShortcut;
-                    row.OptionIndex = shortcutIndex;
+                    var canAssign = RazerSoftwareMacroAssignmentPolicy.CanAssign(softwareTrigger);
+                    row.GroupIndex = (int)(canAssign ? RazerHidMappingGroup.WindowsShortcut : RazerHidMappingGroup.Keep);
+                    if (canAssign) row.OptionIndex = shortcutIndex;
                     row.SoftwareMacroId = shortcut.MacroId;
                     row.LoadedOptionIndex = shortcutIndex;
-                    row.CurrentActionText = RazerMappingActionNames.Localize(shortcut.Name);
+                    row.CurrentActionText = canAssign
+                        ? RazerMappingActionNames.Localize(shortcut.Name)
+                        : $"{RazerMappingActionNames.Localize(shortcut.Name)} · {AppStrings.Text("RazerMappingMacroSoftwareUnavailable")}";
                 }
 
                 var softwareMacroIndex = -1;
@@ -378,9 +395,12 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                         var softwareTriggerDefinition = softwareMacro.FindTrigger(
                             softwareTrigger,
                             LayerIndex == 1);
-                        row.GroupIndex = (int)RazerHidMappingGroup.Macro;
-                        row.MacroTargetIndex = (int)MacroExecutionTarget.Software;
-                        row.OptionIndex = softwareMacroIndex;
+                        row.GroupIndex = (int)(row.CanUseSoftwareMacro ? RazerHidMappingGroup.Macro : RazerHidMappingGroup.Keep);
+                        if (row.CanUseSoftwareMacro)
+                        {
+                            row.MacroTargetIndex = (int)MacroExecutionTarget.Software;
+                            row.OptionIndex = softwareMacroIndex;
+                        }
                         row.SoftwareTriggerModeIndex = SoftwareTriggerModeIndex(triggerMode);
                         row.ExecutionModeIndex =
                             (int)softwareMacro.EffectivePlaybackMode(softwareTriggerDefinition);
@@ -389,15 +409,16 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                         row.SoftwareMacroId = softwareMacro.Id;
                         row.MarkSoftwareModeLoaded();
                         row.LoadedOptionIndex = softwareMacroIndex;
-                        row.CurrentActionText = AppStrings.FormatText(
-                            "RazerMappingMacroSoftwareApplied",
-                            softwareMacro.Name);
+                        row.CurrentActionText = row.CanUseSoftwareMacro
+                            ? AppStrings.FormatText("RazerMappingMacroSoftwareApplied", softwareMacro.Name)
+                            : $"{softwareMacro.Name} · {AppStrings.Text("RazerMappingMacroSoftwareUnavailable")}";
                     }
                 }
 
                 UpdateMacroValidation(row);
                 UpdateMacroSlotWarning(row);
                 if ((softwareMacroIndex >= 0 || shortcutIndex >= 0) && assignmentIsOff == false &&
+                    RazerSoftwareMacroAssignmentPolicy.CanAssign(softwareTrigger!) &&
                     RazerSoftwareMacroAssignmentPolicy.NeedsOff(softwareTrigger!))
                 {
                     row.SetMacroSlotWarning(

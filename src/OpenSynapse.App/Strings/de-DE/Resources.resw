@@ -3813,6 +3813,7 @@
   <data name="RazerMappingHyperShiftSoftwareUnavailable" xml:space="preserve"><value>OpenSynapse kann die HyperShift-Ebene auf diesem Gerät nicht beobachten (die meisten Geräte verwalten sie in der Firmware). Softwaremakros sind hier nicht verfügbar; wenn das Gerät HyperShift unterstützt, verwenden Sie ein Onboard-Makro auf dieser Ebene.</value></data>
   <data name="RazerMappingKeyboardButton" xml:space="preserve"><value>Taste {0}</value></data>
   <data name="RazerMappingNagaSideButton" xml:space="preserve"><value>Seitentaste {0}</value></data>
+  <data name="RazerMappingNagaPanelButton" xml:space="preserve"><value>{0}-Tasten-Seitenteil · Taste {1}</value></data>
   <data name="RazerMappingButtonColumn" xml:space="preserve"><value>Schaltfläche</value></data>
   <data name="RazerMappingButtonLeft" xml:space="preserve"><value>Links</value></data>
   <data name="RazerMappingButtonRight" xml:space="preserve"><value>Rechts</value></data>

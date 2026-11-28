@@ -309,6 +309,7 @@ public sealed partial class RazerMappingView : UserControl
                 KeyboardCanvas.Children.Add(text);
             }
         }
+        DrawKeyboardMediaButtons(layout);
     }
 
     private void KeyboardKeyPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)

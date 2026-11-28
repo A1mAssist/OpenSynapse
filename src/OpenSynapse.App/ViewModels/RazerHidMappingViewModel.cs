@@ -74,7 +74,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             MacroSoftwareBinding?, CancellationToken, Task<string?>>? softwareTriggerBinder = null,
         Func<string, MacroInput, bool, CancellationToken, Task<string?>>? softwareTriggerClearer = null,
         Func<IReadOnlyList<MacroDefinition>>? systemMacros = null,
-        Func<CancellationToken, Task<KeypadMacroBindingTransaction>>? keypadMacroTransactionFactory = null)
+        Func<CancellationToken, Task<KeypadMacroBindingTransaction>>? keypadMacroTransactionFactory = null,
+        bool canObserveHyperShiftLayer = true)
     {
         _transport = transport;
         _catalog = actionCatalog ?? RazerHidMappingActionCatalog.Instance;
@@ -92,8 +93,9 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         _log = log;
         _productId = productId;
         _deviceKind = deviceKind;
-        _canObserveHyperShiftLayer = RazerKeypadInputCatalog.UsesHostMapping(productId) ||
-            RazerPrivateKeyCatalog.HasHyperShiftKey(productId);
+        _canObserveHyperShiftLayer = canObserveHyperShiftLayer &&
+            (RazerKeypadInputCatalog.UsesHostMapping(productId) ||
+             RazerPrivateKeyCatalog.CanObserveHyperShift(productId));
         _assetService = assetService ?? RazerMappingAssetService.Shared;
     }
 

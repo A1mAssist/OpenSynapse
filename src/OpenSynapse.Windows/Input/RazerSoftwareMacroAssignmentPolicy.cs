@@ -9,6 +9,10 @@ namespace OpenSynapse.Windows.Input;
 /// </summary>
 public static class RazerSoftwareMacroAssignmentPolicy
 {
+    // Naga side keys are observed through their keyboard output. Off removes that
+    // output, and Raw Input cannot suppress the original key when it is left on.
+    public static bool CanAssign(MacroInput input) => input.Kind != MacroInputKind.NagaSideButton;
+
     public static bool NeedsOff(MacroInput input) =>
         input.Kind is MacroInputKind.RazerKey or
             MacroInputKind.NagaSideButton or

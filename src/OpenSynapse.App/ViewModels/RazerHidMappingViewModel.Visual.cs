@@ -11,6 +11,8 @@ public sealed partial class RazerHidMappingViewModel
     private ImageSource? _keyboardScrollImage;
     private ImageSource? _keyboardDpadImage;
 
+    internal ushort ProductId => _productId;
+
     public ImageSource? KeyboardBackgroundImage
     {
         get => _keyboardBackgroundImage;

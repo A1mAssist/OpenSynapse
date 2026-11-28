@@ -411,12 +411,12 @@
       <StackPanel Spacing="12">
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
           <StackPanel Spacing="2">
-            <TextBlock Text="{Binding SelectedButtonName}" FontSize="17" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding SelectedButtonName}" AutomationProperties.AutomationId="RazerMappingSelectedButton" FontSize="17" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
             <TextBlock Text="{Binding SelectedRow.CurrentActionText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
           </StackPanel>
           <Button local:Localized.Uid="A11yClose" Grid.Column="1" Content="✕" Click="CloseEditorClick" Style="{StaticResource SecondaryButtonStyle}" VerticalAlignment="Top" />
         </Grid>
-        <ContentControl Content="{Binding SelectedRow}" ContentTemplate="{StaticResource MappingEditorTemplate}" />
+        <ContentControl Content="{Binding SelectedRow}" ContentTemplate="{StaticResource MappingEditorTemplate}" HorizontalContentAlignment="Stretch" />
       </StackPanel>
     </Border>
 

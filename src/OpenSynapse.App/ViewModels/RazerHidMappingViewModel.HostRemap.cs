@@ -32,6 +32,7 @@ public sealed partial class RazerHidMappingViewModel
 
         var sourceInput = _softwareTriggerResolver?.Invoke(row.ButtonId);
         if (sourceInput is null ||
+            !RazerSoftwareMacroAssignmentPolicy.CanAssign(sourceInput) ||
             sourceInput.Kind == MacroInputKind.MouseButton && sourceInput.MouseButton > 10)
         {
             return new HostRemapPlan(HostRemapOutcome.FirmwareChain, 0, null, null, null);
@@ -115,7 +116,8 @@ public sealed partial class RazerHidMappingViewModel
         }
 
         if (_softwareTriggerBinder is null ||
-            _softwareTriggerResolver?.Invoke(row.ButtonId) is not { } sourceInput)
+            _softwareTriggerResolver?.Invoke(row.ButtonId) is not { } sourceInput ||
+            !RazerSoftwareMacroAssignmentPolicy.CanAssign(sourceInput))
         {
             throw new InvalidOperationException(
                 AppStrings.Text("RazerMappingMacroSoftwareUnavailable"));

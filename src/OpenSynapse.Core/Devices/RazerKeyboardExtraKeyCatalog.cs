@@ -77,6 +77,25 @@ public static class RazerKeyboardExtraKeyCatalog
     public static IReadOnlyList<byte> ExtraButtonIds(ushort productId) =>
         ExtraKeys.TryGetValue(productId, out var ids) ? ids : [];
 
+    // Chroma's selection shapes sometimes cover all three media keys as one lighting zone.
+    public static IReadOnlyList<byte> MediaButtonsForShape(ushort productId, string shapeId) =>
+        (productId, shapeId) switch
+        {
+            (0x0226 or 0x0228 or 0x025A or 0x025C or 0x026C, "selection-1") or
+            (0x0266, "selection-24") => [Previous, PlayPause, Next],
+            (0x0226 or 0x0228 or 0x025A or 0x025C or 0x026C, "selection-2") or
+            (0x0266, "selection-23") => [MuteOrDialClick],
+            (0x025D, "selection-1") => [Previous],
+            (0x025D, "selection-2") => [PlayPause],
+            (0x025D, "selection-3") => [Next],
+            (0x025D, "selection-4") => [MuteOrDialClick],
+            (0x0287, "selPrevious") or (0x028D, "selBack") => [Previous],
+            (0x0287 or 0x028D, "selPause") => [PlayPause],
+            (0x0287 or 0x028D, "selNext") => [Next],
+            (0x0287 or 0x028D, "selMute") => [MuteOrDialClick],
+            _ => [],
+        };
+
     /// <summary>
     /// Returns the App resource key for a named extra key, or null when this
     /// product does not expose the id. Core deliberately does not localize.

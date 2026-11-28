@@ -448,7 +448,8 @@ public sealed partial class RazerHidDeviceService
             var ids = response[6] == 0 ? [] : RazerHidMappingProtocol.ParseButtonList(response);
             return AddExtraButtonIds(connection.Definition.ProductId, ids);
         }
-        catch (Exception exception) when (exception is NotSupportedException or RazerDeviceTimeoutException)
+        catch (Exception exception) when (exception is NotSupportedException or RazerDeviceTimeoutException or
+            RazerCommandRejectedException)
         {
             // Razer's own UI never asks this GET for every product; some firmware only
             // answers the assignment table. The caller falls back to the product bundle ids.

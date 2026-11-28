@@ -147,12 +147,13 @@ public sealed partial class RazerBleDeviceViewModel
                     log: _diagnostic,
                     mappingProfileSaver: PersistMappingProfileAsync,
                     productId: RazerProductAliases.Canonical(_device.ProductId),
-                    actionCatalog: IsNaga ? RazerNagaMappingActionCatalog.Instance : null,
+                    actionCatalog: IsNaga ? new RazerNagaMappingActionCatalog(_device.ProductId) : null,
                     softwareTriggerBinder: _softwareMacroBinder,
                     softwareTriggerClearer: _softwareMacroClearer,
                     systemMacros: _systemMacros,
                     softwareTriggerResolver: buttonId => RazerMouseMacroTriggerResolver.Resolve(
-                        RazerProductAliases.Canonical(_device.ProductId), buttonId, IsNaga))
+                        RazerProductAliases.Canonical(_device.ProductId), buttonId, IsNaga),
+                    canObserveHyperShiftLayer: false)
                 {
                     DeviceInstanceId = _device.Id,
                 };

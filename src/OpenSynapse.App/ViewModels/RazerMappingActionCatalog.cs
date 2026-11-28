@@ -152,18 +152,26 @@ public sealed class RazerKeypadMappingActionCatalog : RazerKeyboardMappingAction
 }
 
 /// <summary>
-/// Naga side plates report the keyboard number row, not the 1-12 names the
-/// mapping rows should show.
+/// Names Naga firmware rows by their plate; output keyboard usages are unrelated.
 /// </summary>
 public sealed class RazerNagaMappingActionCatalog : RazerHidMappingActionCatalog
 {
+    private readonly ushort _productId;
+
+    public RazerNagaMappingActionCatalog(ushort productId = 0) => _productId = productId;
+
     public static new RazerNagaMappingActionCatalog Instance { get; } = new();
 
-    public override string DescribeButton(byte buttonId) =>
-        (RazerNagaSideButtonResolver.ResolveFirmware(buttonId) ??
-         RazerNagaSideButtonResolver.Resolve(buttonId)) is { } input
-            ? AppStrings.FormatText("RazerMappingNagaSideButton", input.SideButton)
+    public override string DescribeButton(byte buttonId)
+    {
+        var panelSize = RazerNagaSideButtonResolver.GetPanelButtonCount(_productId, buttonId);
+        if (panelSize > 0)
+            return AppStrings.FormatText("RazerMappingNagaPanelButton", panelSize,
+                panelSize == 12 ? buttonId - 63 : buttonId - 79);
+        return RazerSpecialKeyMap.TryResolve(_productId, buttonId, out var keyCode)
+            ? RazerPrivateKeyCatalog.Describe(_productId, keyCode)
             : base.DescribeButton(buttonId);
+    }
 }
 
 /// <summary>

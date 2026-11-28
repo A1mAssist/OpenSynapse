@@ -65,6 +65,9 @@ public sealed partial class RazerHidWorkspace
         MacroSoftwareBinding? existingBinding,
         CancellationToken cancellationToken)
     {
+        if (!RazerSoftwareMacroAssignmentPolicy.CanAssign(input))
+            return AppStrings.Text("RazerMappingMacroSoftwareUnavailable");
+
         var device = FindDeviceForTrigger(input);
         if (device is null)
         {
@@ -135,19 +138,14 @@ public sealed partial class RazerHidWorkspace
     {
         if (input.Kind == MacroInputKind.NagaSideButton)
         {
-            if (SelectedDevice is { } selected && IsNaga(selected.Connection))
-            {
-                return selected;
-            }
-
-            var naga = Devices.FirstOrDefault(row =>
-                row.Connection.IsReady && IsNaga(row.Connection));
-            if (naga is not null)
-            {
-                var device = naga.Detail ?? CreateDeviceViewModel(naga.Connection);
-                naga.AttachDetail(device);
-                return device;
-            }
+            var matches = Devices.Where(row => row.Connection.IsReady && IsNaga(row.Connection) &&
+                RazerNagaSideButtons.MatchesDevice(input.DeviceId, input.InstanceId,
+                    row.Connection.Definition.ProductId, row.Connection.InstanceId)).ToArray();
+            if (matches.Length != 1) return null;
+            var naga = matches[0];
+            var device = naga.Detail ?? CreateDeviceViewModel(naga.Connection);
+            naga.AttachDetail(device);
+            return device;
         }
 
         if (input.Kind == MacroInputKind.MouseButton && input.MouseButton > 5)

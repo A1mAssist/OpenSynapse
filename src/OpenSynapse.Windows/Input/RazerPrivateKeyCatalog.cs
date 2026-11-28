@@ -37,7 +37,7 @@ internal static class RazerPrivateKeyCatalog
         "006C|32=SensitivityStageUp;33=SensitivityStageDown;80=CycleUpProfile;82=CycleUpSensitivityStages",
         "02CC|246=BUTTON_D2;247=AI_Launcher;32=BUTTON_M_01;33=BUTTON_M_02;34=BUTTON_M_03;35=BUTTON_M_04;65=BUTTON_D41;82=DIAL_CLICK;83=MEDIA_NEXT;84=MEDIA_PREV;85=MEDIA_PAUSE_PLAY",
         "00DA|210=AI_Launcher;32=SensitivityStageUp;33=SensitivityStageDown;80=CycleUpProfile;82=CycleUpSensitivityStages",
-        "00E7,00E8|2=Key1;210=Key9;3=Key2;32=SensitivityStageUp;33=SensitivityStageDown;4=Key3;5=Key4;6=Key5;7=Key6;8=Key7;80=CycleUpProfile;84=ScrollModeSwitch;89=Key8",
+        "00E7,00E8|2=Key1;210=Key9;3=Key2;32=SensitivityStageUp;33=SensitivityStageDown;4=Key3;5=Key4;6=Key5;7=Key6;8=Key7;80=CycleUpProfile;84=ScrollModeSwitch;89=HyperShift",
         "02EB|1=KEY_FN;103=DKM_KEYPAD_103;104=DKM_KEYPAD_104;105=KEY_ID_RIGHT_STICK_BTN",
         "02C4|247=AI_Launcher;32=BUTTON_M_01;33=BUTTON_M_02;34=BUTTON_M_03;35=BUTTON_M_04;36=BUTTON_M_05;65=BUTTON_D41;82=DIAL_CLICK;83=MEDIA_NEXT;84=MEDIA_PREV;85=MEDIA_PAUSE_PLAY;96=DKM_KB_LEFTKNOB",
         "00DD|33=SensitivityStageDown;80=CycleUpProfile",
@@ -79,6 +79,11 @@ internal static class RazerPrivateKeyCatalog
     internal static bool HasHyperShiftKey(ushort productId) =>
         TryGetMapping(productId, out var mapping) &&
         mapping.Values.Any(label => label == "HyperShift");
+
+    // Naga's private key names do not establish a per-device layer bridge. A
+    // global shift flag would also shift unrelated keyboards and mice.
+    internal static bool CanObserveHyperShift(ushort productId) =>
+        RazerProductAliases.Canonical(productId) != 0x00E7 && HasHyperShiftKey(productId);
 
     internal static bool IsHyperShift(ushort productId, int keyCode) =>
         TryGetMapping(productId, out var mapping) &&

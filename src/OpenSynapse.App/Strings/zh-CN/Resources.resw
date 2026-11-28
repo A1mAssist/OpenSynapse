@@ -4269,6 +4269,7 @@
   <data name="RazerMappingHyperShiftSoftwareUnavailable" xml:space="preserve"><value>OpenSynapse 无法观测该设备的 HyperShift 层（多数设备由固件处理）。软件宏在这里不可用；如果设备支持 HyperShift，请在 HyperShift 层使用板载宏。</value></data>
   <data name="RazerMappingKeyboardButton" xml:space="preserve"><value>键位 {0}</value></data>
   <data name="RazerMappingNagaSideButton" xml:space="preserve"><value>侧键 {0}</value></data>
+  <data name="RazerMappingNagaPanelButton" xml:space="preserve"><value>{0} 键侧板 · 侧键 {1}</value></data>
   <data name="RazerMappingButtonColumn" xml:space="preserve"><value>按键</value></data>
   <data name="RazerMappingButtonLeft" xml:space="preserve"><value>左键</value></data>
   <data name="RazerMappingButtonRight" xml:space="preserve"><value>右键</value></data>

@@ -27,6 +27,7 @@ docs/*
 !docs/DEVICE_ADAPTATION.zh-CN.md
 !docs/HEADSET_TRANSPORT_MATRIX.md
 !docs/MAPPING_PAGE.md
+!docs/NAGA_KEYBOARD_MAPPING.md
 !docs/RELEASING.zh-CN.md
 !docs/FEATURE_BACKLOG.zh-CN.md
 artifacts/borderless-capture-probe.exe

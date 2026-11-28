@@ -3813,6 +3813,7 @@
   <data name="RazerMappingHyperShiftSoftwareUnavailable" xml:space="preserve"><value>OpenSynapse는 이 장치의 HyperShift 레이어를 관찰할 수 없습니다(대부분의 장치는 펌웨어에서 처리). 여기서는 소프트웨어 매크로를 사용할 수 없습니다. 장치가 HyperShift를 지원하는 경우 해당 레이어의 온보드 매크로를 사용하세요.</value></data>
   <data name="RazerMappingKeyboardButton" xml:space="preserve"><value>키 {0}</value></data>
   <data name="RazerMappingNagaSideButton" xml:space="preserve"><value>측면 버튼 {0}</value></data>
+  <data name="RazerMappingNagaPanelButton" xml:space="preserve"><value>{0}버튼 패널 · 측면 {1}</value></data>
   <data name="RazerMappingButtonColumn" xml:space="preserve"><value>버튼</value></data>
   <data name="RazerMappingButtonLeft" xml:space="preserve"><value>왼쪽</value></data>
   <data name="RazerMappingButtonRight" xml:space="preserve"><value>오른쪽</value></data>

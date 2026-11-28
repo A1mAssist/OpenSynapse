@@ -25,6 +25,7 @@ public partial class App
     {
         AppStrings.Enable();
 #if DEBUG
+        if (TryLaunchMappingReviewQa()) return;
         if (TryLaunchKeypadMappingQa()) return;
         if (TryLaunchSettingAutoApplyQa()) return;
         if (TryLaunchNavigationPaneQa()) return;

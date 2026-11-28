@@ -143,7 +143,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             foreach (var row in softwareRows)
             {
                 if (_softwareTriggerBinder is null ||
-                    _softwareTriggerResolver?.Invoke(row.ButtonId) is null)
+                    _softwareTriggerResolver?.Invoke(row.ButtonId) is not { } input ||
+                    !RazerSoftwareMacroAssignmentPolicy.CanAssign(input))
                 {
                     throw new InvalidOperationException(
                         AppStrings.Text("RazerMappingMacroSoftwareUnavailable"));
@@ -171,7 +172,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             foreach (var row in shortcutRows)
             {
                 if (_softwareTriggerBinder is null ||
-                    _softwareTriggerResolver?.Invoke(row.ButtonId) is null)
+                    _softwareTriggerResolver?.Invoke(row.ButtonId) is not { } input ||
+                    !RazerSoftwareMacroAssignmentPolicy.CanAssign(input))
                 {
                     throw new InvalidOperationException(
                         AppStrings.Text("RazerMappingMacroSoftwareUnavailable"));

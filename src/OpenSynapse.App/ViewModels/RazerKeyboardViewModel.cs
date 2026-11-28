@@ -291,7 +291,7 @@ public sealed partial class RazerKeyboardViewModel : INotifyPropertyChanged
             canWrite: true,
             macroServiceFactory: CreateService,
             localMacros: () => Onboard.LocalMacroProvider?.Invoke() ?? [],
-            actionCatalog: RazerKeyboardMappingActionCatalog.Instance,
+            actionCatalog: new RazerKeyboardMappingActionCatalog(_connection.ProductId),
             mappingProfileSaver: PersistMappingProfileAsync,
             productId: _connection.DisplayProductId,
             deviceKind: RazerMappingDeviceKind.Keyboard,

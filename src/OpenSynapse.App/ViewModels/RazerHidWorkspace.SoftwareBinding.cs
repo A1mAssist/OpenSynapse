@@ -1,6 +1,7 @@
 using OpenSynapse.Core.Macros;
 using OpenSynapse.Core.Profiles;
 using OpenSynapse.Windows.Devices;
+using OpenSynapse.Windows.Input;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.App.ViewModels;
@@ -92,10 +93,13 @@ public sealed partial class RazerHidWorkspace
             return false;
         }
 
-        var candidates = CurrentConnections.Where(candidate =>
+        var isNaga = RazerNagaSideButtonResolver.IsNagaProduct(binding.ProductId, null);
+        var candidates = CurrentConnections.Where(candidate => candidate.IsReady &&
+            (isNaga ? RazerNagaSideButtons.MatchesDevice(binding.ProductId, binding.InstanceId,
+                candidate.Definition.ProductId, candidate.InstanceId) :
             candidate.Definition.ProductId == binding.ProductId &&
             (string.IsNullOrWhiteSpace(binding.InstanceId) ||
-             StringComparer.OrdinalIgnoreCase.Equals(candidate.InstanceId, binding.InstanceId))).ToArray();
+             StringComparer.OrdinalIgnoreCase.Equals(candidate.InstanceId, binding.InstanceId)))).ToArray();
         var connection = candidates.Length == 1 ? candidates[0] : null;
         if (connection is null)
         {

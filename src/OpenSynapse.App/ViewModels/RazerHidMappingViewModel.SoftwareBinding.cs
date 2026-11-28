@@ -24,7 +24,8 @@ public sealed partial class RazerHidMappingViewModel
         MacroSoftwareBinding? existingBinding,
         CancellationToken cancellationToken)
     {
-        if (_softwareTriggerBinder is null || _softwareTriggerResolver is null)
+        if (_softwareTriggerBinder is null || _softwareTriggerResolver is null ||
+            !RazerSoftwareMacroAssignmentPolicy.CanAssign(input))
         {
             return AppStrings.Text("RazerMappingMacroSoftwareUnavailable");
         }
