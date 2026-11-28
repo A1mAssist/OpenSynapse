@@ -110,10 +110,10 @@ internal sealed partial class MacroRuntime
             var next = TimeSpan.Zero;
             while (!token.IsCancellationRequested)
             {
-                await SendInputAsync(target, isDown: true, token).ConfigureAwait(false);
+                await SendOwnedInputAsync(target, isDown: true, cancellation, token).ConfigureAwait(false);
                 held = true;
                 await Task.Delay(hold, token).ConfigureAwait(false);
-                await SendInputAsync(target, isDown: false, token).ConfigureAwait(false);
+                await SendOwnedInputAsync(target, isDown: false, cancellation, token).ConfigureAwait(false);
                 held = false;
 
                 // Sleep to an absolute deadline: the two SendInput calls and the hold
@@ -151,21 +151,20 @@ internal sealed partial class MacroRuntime
             {
                 try
                 {
-                    await SendInputAsync(target, isDown: false, CancellationToken.None)
+                    await SendOwnedInputAsync(target, isDown: false, cancellation, CancellationToken.None)
                         .ConfigureAwait(false);
                 }
                 catch (Exception exception)
                 {
                     _log?.Invoke($"turbo release failed: {exception.Message}");
-                    // A rejected key-up leaves the synthetic button held for the
-                    // whole desktop, so clear the sink's pressed set as a last resort.
+                    // Retry this owner's release without dropping unrelated held keys.
                     try
                     {
-                        await _sink.ReleaseAllAsync().ConfigureAwait(false);
+                        await SendOwnedInputAsync(target, false, cancellation, CancellationToken.None).ConfigureAwait(false);
                     }
                     catch (Exception fallback)
                     {
-                        _log?.Invoke($"turbo release-all failed: {fallback.Message}");
+                        _log?.Invoke($"turbo release retry failed: {fallback.Message}");
                     }
                 }
             }
@@ -184,7 +183,7 @@ internal sealed partial class MacroRuntime
     }
 
     private static string TurboKey(MacroInput input) =>
-        $"{input.DeviceId:X4}:{input.RazerKeyCode:X2}";
+        $"{input.DeviceId:X4}:{input.RazerKeyCode:X2}:{input.InstanceId?.Trim().ToUpperInvariant()}";
 
     [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod")]
     private static extern uint TimeBeginPeriod(uint period);

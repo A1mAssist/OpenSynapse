@@ -92,6 +92,8 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
             message => diagnosticLog.TryWrite("mouse-private-key", message));
         if (_deviceService is not null)
         {
+            _deviceService.KeypadMappingProfileResolver = connection => ProfileResolver.Resolve(
+                _getProfile(), connection.ToDescriptor(), _currentPowerSource()).Keyboard.ButtonMappings ?? [];
             _chromaFrameSink = new RazerHidChromaFrameSink(
                 _deviceService,
                 () => CurrentConnections,
@@ -103,6 +105,8 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
     public event PropertyChangedEventHandler? PropertyChanged;
 
     internal Func<string, Func<Task>, CancellationToken, Task>? ChromaLightingSettingsApplier { get; set; }
+    internal Func<CancellationToken, Task<KeypadMacroBindingTransaction>>? KeypadMacroTransactionFactory { get; set; }
+    internal Func<IReadOnlyList<(ushort ProductId, string InstanceId)>, CancellationToken, Task<bool>>? MigrateKeypadMacroTriggersAsync { get; set; }
 
     public ObservableCollection<RazerHidDeviceRowViewModel> Devices { get; } = new();
     public ObservableCollection<RazerHidKrakenDeviceRowViewModel> KrakenDevices { get; } = new();
@@ -205,7 +209,15 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
             _connectionSnapshot = connections;
             await RestoreCalibrationsAsync(connections, cancellationToken).ConfigureAwait(true);
             await MigrateProfileInstanceKeysAsync(connections, cancellationToken).ConfigureAwait(true);
+            if (MigrateKeypadMacroTriggersAsync is { } migrateKeypadMacros &&
+                !await migrateKeypadMacros(connections.Where(connection => connection.IsReady &&
+                    RazerKeypadInputCatalog.UsesHostMapping(connection.Definition.ProductId))
+                    .Select(connection => (connection.Definition.ProductId, connection.InstanceId)).ToArray(), cancellationToken).ConfigureAwait(true))
+            {
+                _setDeviceOperationError(AppStrings.Text("MacroSaveFailed"));
+            }
             await RestoreDeviceModesAsync(connections, cancellationToken);
+            await _deviceService.SyncKeypadMappingsAsync(connections, cancellationToken).ConfigureAwait(true);
             await RestoreAnalogJoystickModesAsync(connections, cancellationToken);
             await SyncPrivateKeyDriverModeAsync(cancellationToken);
             await RestoreInitialLightingAsync(connections, cancellationToken).ConfigureAwait(true);
@@ -633,6 +645,11 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         if (SelectedDevice is { } calibrationDevice)
             await calibrationDevice.CancelSurfaceCalibrationAsync().ConfigureAwait(false);
         await _privateKeyRuntime.ResetAsync().ConfigureAwait(false);
+        if (_deviceService is not null)
+        {
+            await _deviceService.StopKeypadMappingsAsync().ConfigureAwait(false);
+            _deviceService.KeypadMappingProfileResolver = null;
+        }
         await _softwareLightingOwner.DisposeAsync().ConfigureAwait(false);
         if (SelectedDevice is { AnalogJoystickActive: true } joystickDevice)
         {

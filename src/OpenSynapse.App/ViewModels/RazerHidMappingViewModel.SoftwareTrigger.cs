@@ -97,6 +97,12 @@ public sealed partial class RazerHidMappingViewModel
             .FirstOrDefault(binding => binding is not null &&
                 binding.Layer == Mode &&
                 binding.ButtonId == row.ButtonId);
+        if (previous is null && row.SoftwareMacroId is { } macroId &&
+            FindMacroById(macroId) is { } macro && ResolveSoftwareTrigger(row.ButtonId) is { } input)
+        {
+            var current = SoftwareBindingFor(macro, input, LayerIndex == 1);
+            if (current?.Layer == Mode && current.ButtonId == row.ButtonId) previous = current;
+        }
         if (previous is not null &&
             (backup is null || IsAssignmentWrittenByBinding(row, backup.Assignment)))
         {
@@ -150,7 +156,7 @@ public sealed partial class RazerHidMappingViewModel
     {
         var macro = ResolveSoftwareMacro(row)!;
         var input = ResolveSoftwareTrigger(row.ButtonId)!;
-        var error = await _softwareTriggerBinder!(
+        var error = await BindSoftwareTriggerAsync(
                 macro.Id,
                 input,
                 row.TriggerMode,
@@ -217,7 +223,7 @@ public sealed partial class RazerHidMappingViewModel
                     .ConfigureAwait(true);
             }
 
-            var error = await _softwareTriggerBinder!(
+            var error = await BindSoftwareTriggerAsync(
                     action.MacroId,
                     input,
                     MacroTriggerMode.Press,
@@ -268,7 +274,7 @@ public sealed partial class RazerHidMappingViewModel
 
         try
         {
-            var error = await _softwareTriggerBinder(
+            var error = await BindSoftwareTriggerAsync(
                     macro.Id,
                     input,
                     row.TriggerMode,
@@ -310,7 +316,7 @@ public sealed partial class RazerHidMappingViewModel
     private (byte FunctionId, byte[] Data)? NativeKeyboardAssignment(byte buttonId) =>
         _deviceKind == RazerMappingDeviceKind.Keyboard
             // Keypad rows are firmware ids; writing one as a key code lands on another key.
-            && _productId is not (0x022B or 0x0244 or 0x02EB)
+            && !RazerKeypadInputCatalog.UsesHostMapping(_productId) && _productId != 0x02EB
             ? RazerHidMappingActions.NativeKeyboardAssignment(buttonId, _productId)
             : null;
 
@@ -426,7 +432,7 @@ public sealed partial class RazerHidMappingViewModel
         IReadOnlyList<ClearedSoftwareTrigger> clears,
         CancellationToken cancellationToken)
     {
-        if (_softwareTriggerClearer is null)
+        if (_softwareTriggerClearer is null && _keypadMacroTransaction is null)
         {
             return;
         }
@@ -436,7 +442,7 @@ public sealed partial class RazerHidMappingViewModel
             _log?.Invoke(
                 $"software trigger cleared macro={clear.MacroId} " +
                 $"code=0x{clear.Trigger.Input.RazerKeyCode:X2} button={clear.SoftwareBinding?.ButtonId}");
-            var error = await _softwareTriggerClearer(
+            var error = await ClearSoftwareTriggerAsync(
                     clear.MacroId,
                     clear.Trigger.Input,
                     clear.Trigger.HyperShiftLayer,
@@ -451,6 +457,7 @@ public sealed partial class RazerHidMappingViewModel
 
     private async Task RestoreSoftwareTriggersAsync(IReadOnlyList<ClearedSoftwareTrigger> clears)
     {
+        if (_keypadMacroTransaction is not null) return;
         // Only a cleared trigger needs a binder; without a clearer nothing was removed.
         if (_softwareTriggerBinder is null || _softwareTriggerClearer is null)
         {
@@ -487,7 +494,22 @@ public sealed partial class RazerHidMappingViewModel
         IReadOnlyList<ClearedSoftwareTrigger> clears,
         IReadOnlyList<AssignmentBackup> backups)
     {
+        // The keypad transaction owns one rollback after the complete save fails.
+        if (RazerKeypadInputCatalog.UsesHostMapping(_productId)) return;
         await RestoreSoftwareTriggersAsync(clears).ConfigureAwait(true);
         await RestoreAssignmentsAsync(backups).ConfigureAwait(true);
     }
+
+    private Task<string?> BindSoftwareTriggerAsync(
+        string macroId, MacroInput input, MacroTriggerMode mode, MacroPlaybackMode playback,
+        int repeat, bool hyperShiftLayer, MacroSoftwareBinding? binding, CancellationToken cancellationToken) =>
+        _keypadMacroTransaction is { } transaction
+            ? transaction.BindAsync(macroId, input, mode, playback, repeat, hyperShiftLayer, binding, cancellationToken)
+            : _softwareTriggerBinder!(macroId, input, mode, playback, repeat, hyperShiftLayer, binding, cancellationToken);
+
+    private Task<string?> ClearSoftwareTriggerAsync(
+        string macroId, MacroInput input, bool hyperShiftLayer, CancellationToken cancellationToken) =>
+        _keypadMacroTransaction is { } transaction
+            ? transaction.ClearAsync(macroId, input, hyperShiftLayer, cancellationToken)
+            : _softwareTriggerClearer!(macroId, input, hyperShiftLayer, cancellationToken);
 }

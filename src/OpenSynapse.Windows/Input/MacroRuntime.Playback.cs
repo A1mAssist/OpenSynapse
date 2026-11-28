@@ -34,7 +34,8 @@ internal sealed partial class MacroRuntime
         MacroDefinition macro,
         MacroModifierKeys triggerModifiers,
         CancellationToken cancellationToken = default,
-        MacroTrigger? trigger = null)
+        MacroTrigger? trigger = null,
+        bool usesDeviceLayer = false)
     {
         ArgumentNullException.ThrowIfNull(macro);
         cancellationToken.ThrowIfCancellationRequested();
@@ -72,34 +73,42 @@ internal sealed partial class MacroRuntime
         }
 
         CancellationTokenSource playback;
-        CancellationTokenSource? previous;
+        Task previous;
+        var completed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         lock (_gate)
         {
-            previous = _playbackCancellation;
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            _playbackCancellation?.Cancel();
+            previous = _playbackCompletion;
             playback = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             _playbackCancellation = playback;
+            _playbackCompletion = completed.Task;
             _isPlaying = true;
             _isPaused = false;
+            _isHolding = false;
+            _heldInputs = null;
             _resumePlayback?.TrySetResult();
             _resumePlayback = null;
             _activePlaybackMacroId = macro.Id;
+            _activePlaybackUsesDeviceLayer = usesDeviceLayer;
             // Manual playback also needs the hook so the stop shortcut can
             // stop it even when no macro has a trigger.
             EnsureHookLocked();
         }
-        PlaybackStateChanged?.Invoke();
-        PlaybackStarted?.Invoke(macro, trigger?.Mode, playbackMode);
-        previous?.Cancel();
-        previous?.Dispose();
-        var releasedModifiers = await ReleaseTriggerModifiersAsync(triggerModifiers)
-            .ConfigureAwait(false);
+        IReadOnlyList<MacroInput> releasedModifiers = [];
         IReadOnlyList<MacroInput> heldInputs = [];
 
         try
         {
+            // Even a cancelled replacement waits for the earlier owner's key-up.
+            await previous.ConfigureAwait(false);
+            playback.Token.ThrowIfCancellationRequested();
+            PlaybackStateChanged?.Invoke();
+            PlaybackStarted?.Invoke(macro, trigger?.Mode, playbackMode);
+            releasedModifiers = await ReleaseTriggerModifiersAsync(triggerModifiers).ConfigureAwait(false);
             do
             {
-                heldInputs = await ExecutePlanAsync(plan, playback.Token).ConfigureAwait(false);
+                heldInputs = await ExecutePlanAsync(plan, playback, playback.Token).ConfigureAwait(false);
                 if (heldInputs.Count > 0)
                 {
                     break;
@@ -123,8 +132,11 @@ internal sealed partial class MacroRuntime
                 // the key for as long as the user holds the trigger.
                 lock (_gate)
                 {
-                    _isHolding = true;
-                    _heldInputs = heldInputs;
+                    if (ReferenceEquals(_playbackCancellation, playback))
+                    {
+                        _isHolding = true;
+                        _heldInputs = heldInputs;
+                    }
                 }
                 PlaybackStateChanged?.Invoke();
                 _log?.Invoke(
@@ -139,7 +151,7 @@ internal sealed partial class MacroRuntime
             {
                 // Release exactly what this playback pressed. ReleaseAllAsync
                 // would also drop keys a turbo or another playback owns.
-                await ReleaseInputsAsync(heldInputs).ConfigureAwait(false);
+                await ReleaseInputsAsync(heldInputs, playback).ConfigureAwait(false);
                 _log?.Invoke(
                     $"hold released macro={macro.Id} keys={heldInputs.Count}");
             }
@@ -155,6 +167,7 @@ internal sealed partial class MacroRuntime
                     _isHolding = false;
                     _heldInputs = null;
                     _activePlaybackMacroId = null;
+                    _activePlaybackUsesDeviceLayer = false;
                     _resumePlayback?.TrySetResult();
                     _resumePlayback = null;
                     if (CanDetachHookLocked())
@@ -162,9 +175,10 @@ internal sealed partial class MacroRuntime
                         hookToDispose = DetachHookLocked();
                     }
                 }
+                playback.Dispose();
             }
             DisposeHook(hookToDispose);
-            playback.Dispose();
+            completed.TrySetResult();
             PlaybackStateChanged?.Invoke();
         }
     }
@@ -179,7 +193,7 @@ internal sealed partial class MacroRuntime
             _resumePlayback?.TrySetResult();
             _resumePlayback = null;
         }
-        playback?.Cancel();
+        try { playback?.Cancel(); } catch (ObjectDisposedException) { }
         PlaybackStateChanged?.Invoke();
     }
 
@@ -227,7 +241,8 @@ internal sealed partial class MacroRuntime
         MacroModifierKeys triggerModifiers,
         CancellationTokenSource? holdCancellation,
         MacroInput? holdInput,
-        MacroTrigger? trigger)
+        MacroTrigger? trigger,
+        bool usesDeviceLayer)
     {
         // A filter mouse's XBUTTON state can be up; poll only when it is actually down.
         var holdMonitor = holdCancellation is { } hold && holdInput is { } input &&
@@ -240,7 +255,8 @@ internal sealed partial class MacroRuntime
                 macro,
                 triggerModifiers,
                 holdCancellation?.Token ?? CancellationToken.None,
-                trigger).ConfigureAwait(false);
+                trigger,
+                usesDeviceLayer).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -308,6 +324,7 @@ internal sealed partial class MacroRuntime
 
     private async Task<List<MacroInput>> ExecutePlanAsync(
         MacroPlaybackPlan plan,
+        object owner,
         CancellationToken cancellationToken)
     {
         var pressed = new List<MacroInput>();
@@ -329,7 +346,7 @@ internal sealed partial class MacroRuntime
                 {
                     case MacroPlaybackActionKind.KeyDown:
                     case MacroPlaybackActionKind.MouseButtonDown:
-                        await SendInputAsync(action.Input!, isDown: true, cancellationToken)
+                        await SendOwnedInputAsync(action.Input!, isDown: true, owner, cancellationToken)
                             .ConfigureAwait(false);
                         if (action.Input is { } downInput)
                         {
@@ -340,7 +357,7 @@ internal sealed partial class MacroRuntime
 
                     case MacroPlaybackActionKind.KeyUp:
                     case MacroPlaybackActionKind.MouseButtonUp:
-                        await SendInputAsync(action.Input!, isDown: false, cancellationToken)
+                        await SendOwnedInputAsync(action.Input!, isDown: false, owner, cancellationToken)
                             .ConfigureAwait(false);
                         if (action.Input is { } upInput)
                         {
@@ -375,18 +392,18 @@ internal sealed partial class MacroRuntime
         catch
         {
             // An exception or a cancellation must never leave a key down.
-            await ReleaseInputsAsync(pressed).ConfigureAwait(false);
+            await ReleaseInputsAsync(pressed, owner).ConfigureAwait(false);
             throw;
         }
     }
 
-    private async Task ReleaseInputsAsync(IEnumerable<MacroInput> inputs)
+    private async Task ReleaseInputsAsync(IEnumerable<MacroInput> inputs, object owner)
     {
         foreach (var input in inputs)
         {
             try
             {
-                await SendInputAsync(input, isDown: false, CancellationToken.None)
+                await SendOwnedInputAsync(input, isDown: false, owner, CancellationToken.None)
                     .ConfigureAwait(false);
             }
             catch
@@ -427,6 +444,36 @@ internal sealed partial class MacroRuntime
             Input = input,
             IsDown = isDown,
         }, cancellationToken);
+    }
+
+    internal async Task SendOwnedInputAsync(MacroInput input, bool isDown, object owner,
+        CancellationToken cancellationToken)
+    {
+        await _outputGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var key = KeyOf(input);
+            _outputOwners.TryGetValue(key, out var owners);
+            if (isDown)
+            {
+                // Another owner already holds the output; adding a claim needs no OS event.
+                if (owners is null || owners.Contains(owner))
+                    await SendInputAsync(input, true, cancellationToken).ConfigureAwait(false);
+                if (owners is null) _outputOwners[key] = owners = [];
+                owners.Add(owner);
+            }
+            else
+            {
+                if (owners is not null && (!owners.Contains(owner) || owners.Count > 1))
+                {
+                    owners.Remove(owner);
+                    return;
+                }
+                await SendInputAsync(input, false, cancellationToken).ConfigureAwait(false);
+                _outputOwners.Remove(key);
+            }
+        }
+        finally { _outputGate.Release(); }
     }
 
     private async Task<IReadOnlyList<MacroInput>> ReleaseTriggerModifiersAsync(

@@ -6,6 +6,8 @@ public enum BladeMappingInputKind
 {
     Keyboard,
     RazerKey,
+    MouseButton,
+    MouseWheel,
 }
 
 public enum BladeMappingOutputKind

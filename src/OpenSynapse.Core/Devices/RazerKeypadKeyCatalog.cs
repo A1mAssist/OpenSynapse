@@ -54,6 +54,9 @@ public static class RazerKeypadKeyCatalog
         58, 50, 24, 61,
     ];
 
+    public static IReadOnlyList<byte> TartarusV2ProMappingIds { get; } =
+        Array.AsReadOnly(TartarusV2ProFirmwareIds);
+
     /// <summary>
     /// 022B/0244 expose the wheel and D-pad outside the numbered SVG selection paths.
     /// The keypad bundle maps ScrollClick to firmware id 3, ScrollUp/ScrollDown to
@@ -65,13 +68,13 @@ public static class RazerKeypadKeyCatalog
         productId switch
         {
             0x022B or 0x0244 => [0x03, 0x09, 0x0A, 0x2C, 0x2D, 0x2E, 0x2F, 0x3C],
-            0x02EB => [0x3B, 0xD9, 0xDA, 0xDB],
-            // Only the 0111 carries a wheel; the other four expose Alt, Space and the
-            // nine D-pad directions.
+            // Fn, profile/keymap cycle and stick press are excluded by the device mapping UI.
+            0x02EB => [],
+            // Diagonals are combinations of two arrow inputs, not independent buttons.
             0x0111 =>
-                [0xE0, 0xE1, 0xE3, 0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8],
+                [0xE0, 0xE1, 0xE3, 0xE4, 0xE5, 0xF0, 0xF1, 0xF2, 0xF3],
             0x0113 or 0x0201 or 0x0207 or 0x0208 =>
-                [0xE0, 0xE1, 0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8],
+                [0xE0, 0xE1, 0xF0, 0xF1, 0xF2, 0xF3],
             _ => [],
         };
 

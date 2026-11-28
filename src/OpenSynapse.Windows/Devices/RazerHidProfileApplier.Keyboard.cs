@@ -99,7 +99,18 @@ public sealed partial class RazerHidProfileApplier
             await ApplyJoystickModeAsync(connection, false, results, cancellationToken);
         }
 
-        if (profile.ButtonMappings is { Count: > 0 } mappings)
+        if (RazerHidDeviceService.UsesHostKeypadMapping(connection))
+        {
+            try
+            {
+                await _service.ReplaceKeypadMappingsAsync(
+                    connection, profile.ButtonMappings ?? [], cancellationToken).ConfigureAwait(false);
+                results.Add(Applied("mapping"));
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+            catch (Exception exception) { results.Add(Failed("mapping", exception)); }
+        }
+        else if (profile.ButtonMappings is { Count: > 0 } mappings)
         {
             await ApplyButtonMappingsAsync(connection, mappings, results, cancellationToken);
         }

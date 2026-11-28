@@ -1,5 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Automation;
+using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using OpenSynapse.App.ViewModels;
 using Windows.Foundation;
@@ -40,6 +42,14 @@ public sealed partial class RazerMappingView
         button.Content = row;
         button.Tag = row;
         button.Visibility = row is null ? Visibility.Collapsed : Visibility.Visible;
+        button.SetBinding(AutomationProperties.NameProperty, new Binding
+        {
+            Source = row, Path = new PropertyPath(nameof(RazerHidMappingRowViewModel.ButtonName)),
+        });
+        button.SetBinding(ToolTipService.ToolTipProperty, new Binding
+        {
+            Source = row, Path = new PropertyPath(nameof(RazerHidMappingRowViewModel.CurrentActionText)),
+        });
     }
 
     private void UpdateKeypadWidgetSelection()
@@ -80,20 +90,20 @@ public sealed partial class RazerMappingView
         var accent = Application.Current.Resources["AccentBrush"] as Brush ??
             new SolidColorBrush(Color.FromArgb(255, 0x44, 0xD6, 0x2C));
         var selected = mapping.SelectedRow?.ButtonId;
-        AddKeypadConnector(KeypadScrollUpButton, 0x09, new Point(195, 37), new Point(160, 37),
-            new Point(136, 48), accent, selected);
-        AddKeypadConnector(KeypadScrollClickButton, 0x03, new Point(195, 77), new Point(160, 77),
-            new Point(136, 72), accent, selected);
-        AddKeypadConnector(KeypadScrollDownButton, 0x0A, new Point(195, 117), new Point(160, 117),
-            new Point(136, 96), accent, selected);
-        AddKeypadConnector(KeypadDpadUpButton, 0x2C, new Point(195, 287), new Point(195, 284),
-            new Point(196, 284), accent, selected);
-        AddKeypadConnector(KeypadDpadDownButton, 0x2D, new Point(195, 412), new Point(195, 380),
-            new Point(196, 359), accent, selected);
-        AddKeypadConnector(KeypadDpadLeftButton, 0x2E, new Point(130, 328), new Point(145, 328),
-            new Point(160, 322), accent, selected);
-        AddKeypadConnector(KeypadDpadRightButton, 0x2F, new Point(260, 328), new Point(245, 328),
-            new Point(234, 322), accent, selected);
+        AddKeypadConnector(KeypadScrollUpButton, 0x09, new Point(195, 40), new Point(165, 40),
+            new Point(138, 72), accent, selected);
+        AddKeypadConnector(KeypadScrollClickButton, 0x03, new Point(195, 94), new Point(165, 94),
+            new Point(138, 94), accent, selected);
+        AddKeypadConnector(KeypadScrollDownButton, 0x0A, new Point(195, 148), new Point(165, 148),
+            new Point(138, 116), accent, selected);
+        AddKeypadConnector(KeypadDpadUpButton, 0x2C, new Point(195, 318), new Point(195, 324),
+            new Point(195, 330), accent, selected);
+        AddKeypadConnector(KeypadDpadDownButton, 0x2D, new Point(195, 393), new Point(195, 387),
+            new Point(195, 380), accent, selected);
+        AddKeypadConnector(KeypadDpadLeftButton, 0x2E, new Point(132, 355), new Point(151, 355),
+            new Point(170, 355), accent, selected);
+        AddKeypadConnector(KeypadDpadRightButton, 0x2F, new Point(258, 355), new Point(239, 355),
+            new Point(220, 355), accent, selected);
     }
 
     private void AddKeypadConnector(

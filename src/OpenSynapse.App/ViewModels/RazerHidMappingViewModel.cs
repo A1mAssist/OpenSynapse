@@ -30,6 +30,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
     private readonly Func<IReadOnlyList<MacroDefinition>>? _systemMacroProvider;
     private readonly Func<CancellationToken, Task>? _afterApplyAsync;
     private readonly Func<IReadOnlyList<ButtonMappingProfile>, CancellationToken, Task>? _mappingProfileSaver;
+    private readonly Func<CancellationToken, Task<KeypadMacroBindingTransaction>>? _keypadMacroTransactionFactory;
+    private KeypadMacroBindingTransaction? _keypadMacroTransaction;
     private readonly Action<string>? _log;
     private readonly ushort _productId;
     private readonly RazerMappingDeviceKind _deviceKind;
@@ -42,6 +44,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
     private bool _isBusy;
     private string _statusText = string.Empty;
     private string _errorText = string.Empty;
+    private string _readErrorText = string.Empty;
     private bool _loaded;
     private int _layerIndex;
     private RazerHidMappingRowViewModel? _selectedRow;
@@ -70,7 +73,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         Func<string, MacroInput, MacroTriggerMode, MacroPlaybackMode, int, bool,
             MacroSoftwareBinding?, CancellationToken, Task<string?>>? softwareTriggerBinder = null,
         Func<string, MacroInput, bool, CancellationToken, Task<string?>>? softwareTriggerClearer = null,
-        Func<IReadOnlyList<MacroDefinition>>? systemMacros = null)
+        Func<IReadOnlyList<MacroDefinition>>? systemMacros = null,
+        Func<CancellationToken, Task<KeypadMacroBindingTransaction>>? keypadMacroTransactionFactory = null)
     {
         _transport = transport;
         _catalog = actionCatalog ?? RazerHidMappingActionCatalog.Instance;
@@ -84,10 +88,12 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         _systemMacroProvider = systemMacros;
         _afterApplyAsync = afterApplyAsync;
         _mappingProfileSaver = mappingProfileSaver;
+        _keypadMacroTransactionFactory = keypadMacroTransactionFactory;
         _log = log;
         _productId = productId;
         _deviceKind = deviceKind;
-        _canObserveHyperShiftLayer = RazerPrivateKeyCatalog.HasHyperShiftKey(productId);
+        _canObserveHyperShiftLayer = RazerKeypadInputCatalog.UsesHostMapping(productId) ||
+            RazerPrivateKeyCatalog.HasHyperShiftKey(productId);
         _assetService = assetService ?? RazerMappingAssetService.Shared;
     }
 
@@ -127,6 +133,18 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         private set { if (_statusText == value) return; _statusText = value; OnPropertyChanged(); }
     }
     public bool HasError => _errorText.Length > 0;
+    internal string ReadErrorText
+    {
+        get => _readErrorText;
+        private set
+        {
+            if (_readErrorText == value) return;
+            _readErrorText = value;
+            OnPropertyChanged();
+        }
+    }
+    public Visibility HostMappingHintVisibility => RazerKeypadInputCatalog.UsesHostMapping(_productId)
+        ? Visibility.Visible : Visibility.Collapsed;
     public string ErrorText
     {
         get => _errorText;
@@ -143,7 +161,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         get => _layerIndex;
         set
         {
-            if (_layerIndex == value) return;
+            if (_layerIndex == value || value < 0 || value >= LayerNames.Count) return;
             _layerIndex = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(HyperShiftSoftwareUnavailableVisibility));
@@ -154,8 +172,9 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             }
         }
     }
-    public IReadOnlyList<string> LayerNames => AppStrings.Texts(
-        "RazerMappingLayerNormal", "RazerMappingLayerHyperShift");
+    public IReadOnlyList<string> LayerNames => _transport.SupportsHyperShift
+        ? AppStrings.Texts("RazerMappingLayerNormal", "RazerMappingLayerHyperShift")
+        : AppStrings.Texts("RazerMappingLayerNormal");
 
     public RazerHidMappingRowViewModel? SelectedRow
     {
@@ -198,7 +217,23 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
     private static bool IsExpected(Exception exception) =>
         exception is InvalidOperationException or InvalidDataException or NotSupportedException or
             IOException or TimeoutException or UnauthorizedAccessException or
-            System.ComponentModel.Win32Exception;
+            System.ComponentModel.Win32Exception ||
+        exception is AggregateException aggregate && aggregate.InnerExceptions.All(IsExpected);
+
+    private static string MappingErrorText(Exception exception) => exception switch
+    {
+        RazerKeypadMappingUnavailableException { Reason: RazerKeypadMappingUnavailableReason.DriverMissing } =>
+            AppStrings.Text("RazerKeypadDriverMissing"),
+        RazerKeypadMappingUnavailableException { Reason: RazerKeypadMappingUnavailableReason.DriverInUse } =>
+            AppStrings.Text("RazerKeypadDriverInUse"),
+        RazerKeypadMappingUnavailableException { Reason: RazerKeypadMappingUnavailableReason.AmbiguousDevice } =>
+            AppStrings.Text("RazerKeypadAmbiguousDevice"),
+        RazerKeypadMappingUnavailableException { Reason: RazerKeypadMappingUnavailableReason.RecoveryMissing } =>
+            AppStrings.Text("RazerKeypadRecoveryMissing"),
+        RazerKeypadMappingUnavailableException { Reason: RazerKeypadMappingUnavailableReason.Stopped } =>
+            AppStrings.Text("RazerKeypadRuntimeStopped"),
+        _ => exception.Message,
+    };
 
     private static bool IsRetryableMappingRead(Exception exception) =>
         exception is RazerDeviceTimeoutException { IsRetryableBusy: true } or

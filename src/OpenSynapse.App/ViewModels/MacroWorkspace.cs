@@ -72,6 +72,9 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
     /// </summary>
     public Func<MacroSoftwareBinding, CancellationToken, Task<bool>>? SoftwareBindingRestorer { get; set; }
 
+    public Func<IReadOnlyList<MacroSoftwareBinding>, CancellationToken,
+        Task<SoftwareBindingRestoreTransaction?>>? SoftwareBindingRestoreTransactionFactory { get; set; }
+
     public ObservableCollection<MacroRowViewModel> Items { get; } = new();
     public ObservableCollection<MacroStepRowViewModel> Steps { get; } = new();
 
@@ -554,6 +557,9 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
 
     internal void SetHyperShiftHeld(bool held) => _macroRuntime.SetHyperShiftHeld(held);
 
+    internal void HandleDeviceMappingInput(MacroInput input, bool isDown, bool hyperShiftLayer) =>
+        _macroRuntime.HandleDeviceInput(input, isDown, hyperShiftLayer);
+
     public async Task CreateMacroAsync(CancellationToken cancellationToken = default)
     {
         CancelMacroStepCapture();
@@ -685,12 +691,23 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         }
 
         var wasDirty = _dirtyMacroIds.Contains(selected.Id);
-        if (!await RestoreSoftwareBindingsAsync(selected.Definition, cancellationToken))
+        var keypadBindings = KeypadSoftwareBindings(selected.Definition, selected.Definition.AllTriggers.ToArray());
+        await using var restoration = await BeginKeypadBindingRestoreAsync(keypadBindings, cancellationToken)
+            .ConfigureAwait(true);
+        if (keypadBindings.Length > 0 && restoration is null ||
+            !await RestoreSoftwareBindingsAsync(selected.Definition, cancellationToken, includeKeypad: false))
         {
             StatusText = AppStrings.Text("MacroTriggerRestoreFailed");
             return;
         }
 
+        var memberships = (document?.Profiles.Values.AsEnumerable() ?? [profile])
+            .Append(profile).Distinct()
+            .Select(item => (Profile: item, Index: item.Macros.FindIndex(macro => macro.Id == selected.Id)))
+            .Where(item => item.Index >= 0)
+            .Select(item => (item.Profile, item.Index, Macro: item.Profile.Macros[item.Index])).ToArray();
+        var libraryIndex = document?.MacroLibrary.FindIndex(macro => macro.Id == selected.Id) ?? -1;
+        var libraryMacro = libraryIndex < 0 ? null : document!.MacroLibrary[libraryIndex];
         if (document is not null)
         {
             MacroLibrary.Remove(document, selected.Id);
@@ -707,13 +724,24 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         SelectedMacro = Items.FirstOrDefault();
         if (!await TrySaveMacroProfileAsync(cancellationToken))
         {
-            profile.Macros.Insert(index, selected.Definition);
+            foreach (var membership in memberships)
+            {
+                membership.Profile.Macros.RemoveAll(macro => macro.Id == selected.Id);
+                membership.Profile.Macros.Insert(
+                    Math.Min(membership.Index, membership.Profile.Macros.Count), membership.Macro);
+            }
+            if (document is not null && libraryMacro is not null)
+            {
+                document.MacroLibrary.RemoveAll(macro => macro.Id == selected.Id);
+                document.MacroLibrary.Insert(Math.Min(libraryIndex, document.MacroLibrary.Count), libraryMacro);
+            }
             Items.Insert(Math.Min(index, Items.Count), selected);
             RestoreMacroDirtyState(selected.Id, wasDirty);
             SelectedMacro = selected;
             return;
         }
 
+        restoration?.Commit();
         RefreshMacroRuntime();
         StatusText = AppStrings.Text("MacroDeleted");
     }
@@ -789,7 +817,8 @@ public sealed partial class MacroWorkspace : INotifyPropertyChanged
         _macroRuntime.SetPlaybackShortcuts(
             profile.Shortcuts.MacroPlaybackStart,
             profile.Shortcuts.MacroPlaybackStop);
-        _macroRuntime.UpdateMacros(profile.Macros.Concat(SystemShortcuts));
+        _macroRuntime.UpdateMacros(profile.Macros.Concat(SystemShortcuts)
+            .Select(OpenSynapse.Windows.Macros.RazerKeypadMacroMigration.ForRuntime));
         OnPropertyChanged(nameof(CanPlayMacro));
         OnPropertyChanged(nameof(MacroPlaybackShortcutText));
         MacrosChanged?.Invoke();

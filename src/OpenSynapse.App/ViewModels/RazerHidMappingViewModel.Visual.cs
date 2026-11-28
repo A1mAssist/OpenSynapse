@@ -49,6 +49,8 @@ public sealed partial class RazerHidMappingViewModel
             ? Visibility.Visible
             : Visibility.Collapsed;
 
+    public bool ShowKeypadLabels => _productId == 0x02EB;
+
     internal void StartVisualLoad()
     {
         if (_visualLoadStarted || _productId == 0)

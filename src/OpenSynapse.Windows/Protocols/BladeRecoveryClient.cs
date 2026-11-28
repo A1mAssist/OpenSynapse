@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.Windows.Protocols;
 
@@ -32,7 +33,10 @@ public sealed class BladeRecoveryClient : IAsyncDisposable
     public static async Task<BladeRecoveryClient> StartAsync(string recoveryHostPath, string markerPath,
         string featureDevicePath, string filterDevicePath,
         IReadOnlyList<(ushort ScanCode, ushort Flag)> hooks, TimeSpan readyTimeout,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        IReadOnlyList<uint>? mouseHooks = null,
+        bool restoreDeviceMode = true,
+        ulong legacyKeypadIdentity = 0)
     {
         if (readyTimeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(readyTimeout));
         markerPath = Path.GetFullPath(markerPath);
@@ -55,7 +59,10 @@ public sealed class BladeRecoveryClient : IAsyncDisposable
                 cancellationToken).ConfigureAwait(false);
             marker = new BladeRecoveryMarker(BladeRecoveryProtocol.CurrentMarkerVersion,
                 Environment.ProcessId, featureDevicePath, filterDevicePath, DateTimeOffset.UtcNow,
-                BladeRecoveryProtocol.FormatHooks(hooks));
+                BladeRecoveryProtocol.FormatHooks(hooks),
+                BladeRecoveryProtocol.FormatMouseHooks(mouseHooks ?? []), restoreDeviceMode, legacyKeypadIdentity);
+            if (legacyKeypadIdentity != 0)
+                new RazerLegacyKeypadControl(BladeRecoveryProtocol.GetLegacyKeypadIdentity(marker)).RequireAvailable();
             await BladeRecoveryProtocol.WriteMarkerAtomicAsync(markerPath, marker, cancellationToken)
                 .ConfigureAwait(false);
         }

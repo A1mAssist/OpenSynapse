@@ -6,21 +6,6 @@ namespace OpenSynapse.Windows.Devices;
 
 public sealed partial class RazerHidDeviceService
 {
-    private enum AssignmentTable
-    {
-        Key,
-        Analog,
-        Multi,
-    }
-
-    // The Tartarus Pro engine reads each input from whichever assignment table answers;
-    // analog keys are not guaranteed to share a table with the wheel or D-pad. 0x8C is
-    // the mouse button table and must never be tried for a keypad.
-    private static readonly AssignmentTable[] KeypadAssignmentTables =
-        [AssignmentTable.Analog, AssignmentTable.Key, AssignmentTable.Multi];
-
-    private readonly ConcurrentDictionary<(string InstanceId, byte ButtonId), AssignmentTable>
-        _assignmentTables = new();
     // Firmware that rejects the 00:84 mode read cannot be switched into driver mode,
     // so remember it instead of failing (and re-logging) every mapping operation.
     private readonly ConcurrentDictionary<string, bool> _mappingModeUnavailable =
@@ -28,10 +13,6 @@ public sealed partial class RazerHidDeviceService
     // Tartarus firmware can answer the 00:84 mode read with a payload that cannot be
     // parsed, but still switches modes through 00:04. Remember that so later rows skip it.
     private readonly ConcurrentDictionary<string, bool> _mappingModeBlind =
-        new(StringComparer.OrdinalIgnoreCase);
-    // The Tartarus Pro reads its OBM table only in driver mode. Probe the
-    // mode/param pairs Synapse uses, then keep the one where a real key read answers.
-    private readonly ConcurrentDictionary<string, (byte Mode, byte Parameter)> _tartarusMappingModes =
         new(StringComparer.OrdinalIgnoreCase);
     /// <summary>
     /// Mapping tables are keyed by the profile the device is actually on. Profile 1 is only a
@@ -82,9 +63,9 @@ public sealed partial class RazerHidDeviceService
         byte buttonId,
         byte mode,
         CancellationToken cancellationToken = default) =>
-        WithMappingModeAsync(connection,
+        RunExclusiveAsync(connection, _ => WithMappingModeAsync(connection,
             () => GetButtonAssignmentCoreAsync(connection, buttonId, mode, cancellationToken),
-            cancellationToken);
+            cancellationToken), cancellationToken);
 
     private async Task<RazerHidButtonAssignment> GetButtonAssignmentCoreAsync(
         RazerHidDeviceConnection connection,
@@ -92,10 +73,11 @@ public sealed partial class RazerHidDeviceService
         byte mode,
         CancellationToken cancellationToken)
     {
-        if (UsesLegacyKeypadProfile(connection))
+        ValidateKeypadFirmwareInput(connection, buttonId, mode);
+        if (UsesHostKeypadMapping(connection))
         {
-            return await GetLegacyAssignmentAsync(
-                connection, buttonId, mode, cancellationToken).ConfigureAwait(false);
+            var runtime = await GetKeypadRuntimeAsync(connection, cancellationToken).ConfigureAwait(false);
+            return runtime.GetAssignment(buttonId, mode);
         }
 
         if (RazerKeyboardExtraKeyCatalog.TryGetDialProtocolId(
@@ -110,13 +92,6 @@ public sealed partial class RazerHidDeviceService
         }
 
         var profileId = await ResolveMappingProfileIdAsync(connection, cancellationToken).ConfigureAwait(false);
-        if (UsesPerInputAssignmentTables(connection))
-        {
-            var (_, assignment) = await ReadKeypadAssignmentAsync(
-                connection, profileId, buttonId, mode, cancellationToken).ConfigureAwait(false);
-            return assignment;
-        }
-
         if (UsesMultiKeyAssignments(connection))
         {
             return RazerHidMappingProtocol.ParseMultiKeyAssignment(
@@ -156,108 +131,20 @@ public sealed partial class RazerHidDeviceService
     private static bool UsesMultiKeyAssignments(RazerHidDeviceConnection connection) =>
         connection.Definition.ProductId is 0x02A5 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF or 0x02EB;
 
-    // The Tartarus Pro OBM engine reads each input from the analog, key or multi-key
-    // table, in that order; only the Huntsman V3 Pro family reads everything multi-key.
-    private static bool UsesPerInputAssignmentTables(RazerHidDeviceConnection connection) =>
-        connection.Definition.ProductId == 0x0244;
-
     // Synapse switches these keyboards to driver mode before its mapping page. In normal
-    // mode the Tartarus V2/Pro/02EB answers 0x05 and the Huntsman V3 Pro family answers
+    // mode the 02EB answers 0x05 and the Huntsman V3 Pro family answers
     // 0x01 busy for the OBM tables, which looks like a dead device.
     private static bool RequiresMappingDriverMode(RazerHidDeviceConnection connection) =>
         // The Basilisk V3 Pro pair accepts an OBM write in normal mode but keeps
         // applying the old assignment until the host switches to driver mode.
         connection.Definition.ProductId is 0x00AA or 0x00AB or
-            0x022B or 0x0244 or 0x02A6 or 0x02A7 or 0x02B0 or 0x02CF or 0x02EB;
+            0x02A6 or 0x02A7 or 0x02B0 or 0x02CF or 0x02EB;
 
-    // 022B/02A6/02A7/02B0/02CF/02EB reject the 00:84 mode read but still need
-    // driver mode for their OBM and analog-key writes. 0244 has its own
-    // functional probe in Mapping.Mode.cs.
+    // 02A6/02A7/02B0/02CF/02EB reject the 00:84 mode read but still need
+    // driver mode for their OBM and analog-key writes.
     private static bool UsesBlindMappingDriverMode(RazerHidDeviceConnection connection) =>
-        connection.Definition.ProductId is 0x022B or 0x02A6 or 0x02A7 or
+        connection.Definition.ProductId is 0x02A6 or 0x02A7 or
             0x02B0 or 0x02CF or 0x02EB;
-
-    private static readonly (byte Mode, byte Parameter)[] TartarusProMappingModes =
-        [(0x03, 0x00), (0x03, 0x01), (0x00, 0x00)];
-
-    private async Task<(AssignmentTable Table, RazerHidButtonAssignment Assignment)>
-        ReadKeypadAssignmentAsync(
-            RazerHidDeviceConnection connection,
-            byte profileId,
-            byte buttonId,
-            byte mode,
-            CancellationToken cancellationToken)
-    {
-        var key = (connection.InstanceId, buttonId);
-        if (_assignmentTables.TryGetValue(key, out var known))
-        {
-            try
-            {
-                return (known, await ReadAssignmentTableAsync(
-                    connection, profileId, buttonId, mode, known, cancellationToken).ConfigureAwait(false));
-            }
-            catch (Exception exception) when (IsAssignmentTableMiss(exception))
-            {
-                // A firmware update or profile change can move an input to another table;
-                // probe again instead of failing this row for the rest of the session.
-                _assignmentTables.TryRemove(key, out _);
-            }
-        }
-
-        Exception? lastError = null;
-        foreach (var table in KeypadAssignmentTables)
-        {
-            try
-            {
-                var assignment = await ReadAssignmentTableAsync(
-                    connection, profileId, buttonId, mode, table, cancellationToken).ConfigureAwait(false);
-                _assignmentTables[key] = table;
-                return (table, assignment);
-            }
-            catch (Exception exception) when (IsAssignmentTableMiss(exception))
-            {
-                lastError = exception;
-            }
-        }
-
-        throw new NotSupportedException(
-            $"Device 1532:{connection.Definition.ProductId:X4} rejected every assignment table " +
-            $"for button 0x{buttonId:X2}: {lastError?.Message}");
-    }
-
-    private static bool IsAssignmentTableMiss(Exception exception) =>
-        exception is NotSupportedException or RazerCommandRejectedException or
-            RazerDeviceTimeoutException or InvalidDataException;
-
-    private async Task<RazerHidButtonAssignment> ReadAssignmentTableAsync(
-        RazerHidDeviceConnection connection,
-        byte profileId,
-        byte buttonId,
-        byte mode,
-        AssignmentTable table,
-        CancellationToken cancellationToken)
-    {
-        // 0244 declares the full 80-byte report on 0x8D/0x92; its firmware rejects the
-        // shorter payload Synapse uses for newer devices.
-        byte dataSize = connection.Definition.ProductId == 0x0244
-            ? (byte)RazerHidMappingProtocol.ReportDataSize
-            : RazerHidMappingProtocol.SingleAssignmentDataSize;
-        var request = table switch
-        {
-            AssignmentTable.Analog => RazerHidMappingProtocol.GetAnalogKeyAssignment(
-                profileId, buttonId, mode, dataSize),
-            AssignmentTable.Key => RazerHidMappingProtocol.GetKeyAssignment(
-                profileId, buttonId, mode, dataSize),
-            _ => RazerHidMappingProtocol.GetMultiKeyAssignment(profileId, buttonId, mode),
-        };
-        var response = await ExecuteAsync(connection, request, cancellationToken).ConfigureAwait(false);
-        return table switch
-        {
-            AssignmentTable.Analog => RazerHidMappingProtocol.ParseAnalogAssignment(response),
-            AssignmentTable.Multi => RazerHidMappingProtocol.ParseMultiKeyAssignment(response, buttonId),
-            _ => RazerHidMappingProtocol.ParseAssignment(response),
-        };
-    }
 
     // Huntsman V3 Pro runs the OBM engine with analogKeyboard=false: it reads the
     // multi-key table but writes through the normal 0x0D key command. 02EB's keypad
@@ -283,17 +170,19 @@ public sealed partial class RazerHidDeviceService
         IReadOnlyList<byte> data,
         CancellationToken cancellationToken = default)
     {
-        if (UsesLegacyKeypadProfile(connection))
+        ValidateKeypadFirmwareInput(connection, buttonId, mode);
+        if (UsesHostKeypadMapping(connection))
         {
-            await SetLegacyAssignmentAsync(
-                connection, buttonId, mode, functionId, data, cancellationToken)
-                .ConfigureAwait(false);
+            var assignment = new RazerHidButtonAssignment(buttonId, mode, functionId, data);
+            RazerKeypadInputCatalog.ValidateAssignment(assignment, connection.Definition.ProductId);
+            var runtime = await GetKeypadRuntimeAsync(connection, cancellationToken).ConfigureAwait(false);
+            await runtime.SetAssignmentAsync(assignment, cancellationToken).ConfigureAwait(false);
             return;
         }
 
         // Synapse flips a wireless mouse back to driver mode before touching onboard
         // mappings; in normal mode the firmware accepts the frame but keeps the old
-        // assignment, which looked like "this device refuses edits". The Tartarus Pro/02EB
+        // assignment, which looked like "this device refuses edits". The keypads
         // take the scoped mapping-mode wrapper instead, which restores normal mode.
         if (connection.Definition.Category == DeviceCategory.Mouse &&
             !RequiresMappingDriverMode(connection) &&
@@ -329,15 +218,7 @@ public sealed partial class RazerHidDeviceService
             }
 
             RazerHidRequest request;
-            if (UsesPerInputAssignmentTables(connection))
-            {
-                // The keypad engine writes every key through 0x0D even when the row is
-                // read from the analog table; 0x12 is only for the keyboard engine.
-                request = RazerHidMappingProtocol.SetKeyAssignment(
-                    profileId, buttonId, mode, functionId, data.ToArray(),
-                    (byte)RazerHidMappingProtocol.ReportDataSize);
-            }
-            else if (UsesMultiKeyAssignments(connection))
+            if (UsesMultiKeyAssignments(connection))
             {
                 request = WritesMultiKeyThroughKeyTable(connection)
                     ? RazerHidMappingProtocol.SetKeyAssignment(
@@ -376,34 +257,19 @@ public sealed partial class RazerHidDeviceService
         string devicePath,
         CancellationToken cancellationToken)
     {
-        // The five Synapse 2 keypads keep their mapping in a P2 profile blob.
-        // Their HID tables reject 0x8D/0x9E, so the usual probe cannot see it.
-        if (UsesLegacyKeypadProfile(definition.ProductId))
+        // Host keypads have no hardware OBM mapping table to probe.
+        if (RazerKeypadInputCatalog.UsesHostMapping(definition.ProductId))
         {
-            return true;
-        }
-
-        // 0244 answers 0x05 to every table while it is in normal mode, and discovery
-        // must not switch modes. Its mapping capabilities are declared statically.
-        if (definition.ProductId == 0x0244)
-        {
-            return true;
+            return false;
         }
 
         var analog = definition.ProductId is 0x0266 or 0x0282;
-        var multi = definition.ProductId is 0x0244 or 0x02A5 or 0x02A6 or 0x02A7 or 0x02B0 or
+        var multi = definition.ProductId is 0x02A5 or 0x02A6 or 0x02A7 or 0x02B0 or
             0x02CF or 0x02EB;
-        // 022B keypads map the first art key to firmware key id 64 (0x40).
-        // 0244 reads the main pad and wheel/D-pad rows through the multi-key table.
+        // 02EB uses the generic firmware ids, starting with key 1.
         (bool Multi, byte Id)[] probes = definition.ProductId switch
         {
-            0x0244 => [(true, 0x40), (true, 0x03)],
-            0x02EB => [(true, 0x40), (true, 0x03)],
-            0x022B =>
-            [
-                (false, 0x40),
-                (false, 0x02),
-            ],
+            0x02EB => [(true, 0x01)],
             _ => [(multi, (byte)0x02)],
         };
 
@@ -520,6 +386,15 @@ public sealed partial class RazerHidDeviceService
         RazerHidDeviceConnection connection,
         CancellationToken cancellationToken)
     {
+        if (UsesHostKeypadMapping(connection))
+        {
+            _ = await GetKeypadRuntimeAsync(connection, cancellationToken).ConfigureAwait(false);
+            return RazerKeypadInputCatalog.GetButtonIds(connection.Definition.ProductId);
+        }
+
+        if (connection.Definition.ProductId == 0x02EB)
+            return RazerKeypadKeyCatalog.TartarusV2ProMappingIds;
+
         // Keyboards list their key table with 0x8F. The 0x84 button list also carries
         // modifier buttons that 0x8D rejects, so it cannot drive keyboard rows.
         if (connection.Definition.Category == DeviceCategory.Keyboard)

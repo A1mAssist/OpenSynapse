@@ -31,6 +31,8 @@ internal static class RazerMappingActionNames
         {
             return AppStrings.FormatText("RazerMappingKeyNumpad", Localize(name[3..]));
         }
+        if (name == "Left Arrow") return AppStrings.Text("RazerMappingKeyLeftArrow");
+        if (name == "Right Arrow") return AppStrings.Text("RazerMappingKeyRightArrow");
         if (name.StartsWith("Left ", StringComparison.Ordinal))
         {
             return $"{AppStrings.Text("RazerMappingKeyLeft")} {Localize(name[5..])}";

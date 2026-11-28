@@ -252,7 +252,7 @@ public sealed class WindowsMacroInputSink : IMacroInputSink
         {
             Mouse = new MouseInput
             {
-                MouseData = unchecked((uint)(input.WheelDelta << 16)),
+                MouseData = unchecked((uint)input.WheelDelta),
                 Flags = input.WheelHorizontal ? MouseEventHWheel : MouseEventWheel,
                 ExtraInfo = InjectionTag,
             },

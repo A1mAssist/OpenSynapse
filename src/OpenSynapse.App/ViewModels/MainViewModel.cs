@@ -241,6 +241,13 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IAsyncDispos
             SetDeviceOperationError,
             DispatcherQueue.GetForCurrentThread());
         Macros.SoftwareBindingRestorer = RazerHid.RestoreSoftwareMacroBindingAsync;
+        Macros.SoftwareBindingRestoreTransactionFactory = RazerHid.BeginSoftwareBindingRestoreAsync;
+        RazerHid.KeypadMacroTransactionFactory = Macros.BeginKeypadMacroTransactionAsync;
+        RazerHid.MigrateKeypadMacroTriggersAsync = Macros.MigrateKeypadMacroTriggersAsync;
+        if (razerHidDeviceService is not null)
+        {
+            razerHidDeviceService.KeypadInput += Macros.HandleDeviceMappingInput;
+        }
         Macros.SoftwareTriggerBinder = RazerHid.BindSoftwareMacroTriggerAsync;
         Macros.TriggerChanged += (_, _) => RazerHid.InvalidateMappings();
         Macros.SetUnhandledRazerKeyHandler(

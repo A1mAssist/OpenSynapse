@@ -12,6 +12,7 @@ public sealed record RazerMappingAssignment(byte FunctionId, IReadOnlyList<byte>
 /// </summary>
 public interface IRazerMappingTransport
 {
+    bool SupportsHyperShift => true;
     Task<IReadOnlyList<byte>> GetButtonIdsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>

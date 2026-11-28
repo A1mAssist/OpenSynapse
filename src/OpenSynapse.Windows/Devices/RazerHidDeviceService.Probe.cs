@@ -100,7 +100,12 @@ public sealed partial class RazerHidDeviceService
         var isProbeDefinition =
             definition.SourceCapabilities.Count == 0 && definition.Transactions.Count == 0;
         var buttonList = RazerHidMappingProtocol.GetButtonList();
-        if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
+        if (RazerKeypadInputCatalog.UsesHostMapping(definition.ProductId))
+        {
+            // The 022B/0244 bundles enable host mapping, with no isObm branch.
+            // Readiness is checked by the per-instance input session, not a HID probe.
+        }
+        else if (await ProbeMiddlewareAsync(definition.ProductId, devicePath, definition.DeviceWait,
                 "mapping", buttonList.Report,
                 response => RazerHidMappingProtocol.ParseButtonList(response).Any(id => id != 0),
                 cancellationToken).ConfigureAwait(false))
@@ -110,8 +115,7 @@ public sealed partial class RazerHidDeviceService
         else if (definition.Category == DeviceCategory.Keyboard &&
                  await ProbeKeyAssignmentAsync(definition, devicePath, cancellationToken).ConfigureAwait(false))
         {
-            // Keypads such as 0244 keep their key ids in the product bundle and only answer
-            // the key-assignment table, not the button-list GET.
+            // Some keyboards answer the key-assignment table, not the button-list GET.
             result.UnionWith(MappingCapabilities);
         }
         else
@@ -371,7 +375,8 @@ public sealed partial class RazerHidDeviceService
             }
         }
 
-        if (definition.Category is DeviceCategory.Mouse or DeviceCategory.Keyboard)
+        if ((definition.Category is DeviceCategory.Mouse or DeviceCategory.Keyboard) &&
+            !RazerKeypadInputCatalog.UsesHostMapping(definition.ProductId))
         {
             // This read-only GET is the last-resort endpoint probe. Some mapping-only
             // firmware answers it when the catalog's identity probes time out, so the

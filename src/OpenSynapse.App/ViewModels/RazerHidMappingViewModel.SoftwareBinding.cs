@@ -81,7 +81,8 @@ public sealed partial class RazerHidMappingViewModel
         var boundMatchesInput = boundRow is not null &&
             ResolveSoftwareTrigger(boundRow.ButtonId) is { } boundInput &&
             boundInput.Matches(input);
-        var row = boundMatchesInput ? boundRow : inputRow ?? boundRow;
+        var row = boundMatchesInput ? boundRow : inputRow ??
+            (RazerKeypadInputCatalog.UsesHostMapping(_productId) ? null : boundRow);
         if (row is null)
         {
             return AppStrings.Text("RazerMappingMacroTriggerMissing");
@@ -112,6 +113,10 @@ public sealed partial class RazerHidMappingViewModel
         row.SoftwareTriggerModeIndex = SoftwareTriggerModeIndex(triggerMode);
         row.ExecutionModeIndex = (int)playbackMode;
         row.ExecutionRepeatCount = Math.Clamp(repeatCount, 1, MacroDefinition.MaxRepeatCount);
+
+        if (RazerKeypadInputCatalog.UsesHostMapping(_productId))
+            return await BindKeypadSoftwareMacroAsync(row, macro, input, existingBinding, cancellationToken)
+                .ConfigureAwait(true);
 
         RazerMappingAssignment? assignment = null;
         var binding = existingBinding is not null &&
@@ -217,7 +222,7 @@ public sealed partial class RazerHidMappingViewModel
                 .ConfigureAwait(true);
             await ReloadAfterBindFailureAsync().ConfigureAwait(true);
             _log?.Invoke($"software macro bind failed: {exception}");
-            return exception.Message;
+            return MappingErrorText(exception);
         }
 
         row.CurrentActionText = AppStrings.FormatText(
@@ -227,6 +232,79 @@ public sealed partial class RazerHidMappingViewModel
         row.MarkSoftwareModeLoaded();
         row.LoadedOptionIndex = macroIndex;
         StatusText = AppStrings.FormatText("RazerMappingMacroSoftwareApplied", macro.Name);
+        return null;
+    }
+
+    private async Task<string?> BindKeypadSoftwareMacroAsync(
+        RazerHidMappingRowViewModel row, MacroDefinition macro, MacroInput input,
+        MacroSoftwareBinding? existingBinding, CancellationToken cancellationToken)
+    {
+        if (_keypadMacroTransactionFactory is null || _mappingProfileSaver is null)
+            return AppStrings.Text("MacroSaveFailed");
+
+        string? error = null;
+        var committed = false;
+        IsBusy = true;
+        try
+        {
+            await _transport.RunInMappingModeAsync(async token =>
+            {
+                var backup = new AssignmentBackup(row,
+                    await _transport.GetAssignmentAsync(row.ButtonId, Mode, token).ConfigureAwait(true));
+                var clears = SoftwareTriggersToClear([row]);
+                _keypadMacroTransaction = await _keypadMacroTransactionFactory(token).ConfigureAwait(true);
+                try
+                {
+                    var binding = existingBinding is not null && existingBinding.ButtonId == row.ButtonId &&
+                        IsAssignmentWrittenByBinding(row, backup.Assignment)
+                        ? existingBinding.Clone()
+                        : SoftwareBindingFor(macro, input, LayerIndex == 1) is { } currentBinding &&
+                            IsAssignmentWrittenByBinding(row, backup.Assignment)
+                            ? currentBinding
+                            : CreateSoftwareBinding(row, [backup], clears);
+                    await ClearSoftwareTriggersAsync(clears, token).ConfigureAwait(true);
+                    await _transport.SetAssignmentAsync(row.ButtonId, Mode,
+                        RazerHidMappingFunctions.Off, [], token).ConfigureAwait(true);
+                    error = await BindSoftwareTriggerAsync(macro.Id, input, row.TriggerMode,
+                        row.ExecutionMode, row.EffectiveExecutionRepeatCount, LayerIndex == 1,
+                        binding, token).ConfigureAwait(true);
+                    if (error is not null) return;
+                    _keypadMacroTransaction.PrepareSave();
+                    await PersistMappingProfileAsync(token).ConfigureAwait(true);
+                    committed = true;
+                    _keypadMacroTransaction.Commit();
+                }
+                finally
+                {
+                    if (!committed) await RestoreAssignmentsAsync([backup]).ConfigureAwait(true);
+                    var transaction = _keypadMacroTransaction!;
+                    _keypadMacroTransaction = null;
+                    await transaction.DisposeAsync().ConfigureAwait(true);
+                }
+            }, cancellationToken, forWrite: true).ConfigureAwait(true);
+        }
+        catch (Exception exception) when (IsExpected(exception))
+        {
+            error = MappingErrorText(exception);
+            _log?.Invoke($"keypad macro bind failed: {exception}");
+        }
+        finally
+        {
+            IsBusy = false;
+            if (!committed) await ReloadAfterBindFailureAsync().ConfigureAwait(true);
+        }
+
+        if (error is not null)
+        {
+            ErrorText = error;
+            return error;
+        }
+        row.CurrentActionText = AppStrings.FormatText("RazerMappingMacroSoftwareApplied", macro.Name);
+        row.SoftwareMacroId = macro.Id;
+        row.SetMacroSlotWarning(string.Empty);
+        row.MarkSoftwareModeLoaded();
+        row.LoadedOptionIndex = LocalMacroIndex(macro.Id);
+        StatusText = row.CurrentActionText;
         return null;
     }
 

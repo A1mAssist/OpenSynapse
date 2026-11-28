@@ -8,8 +8,8 @@ using OpenSynapse.Windows.Protocols;
 namespace OpenSynapse.Windows.Devices;
 
 /// <summary>
-/// Keyboard input reader for the installed Razer filter driver. The hook list is
-/// per model: the driver only reports the scancodes the caller registers.
+/// Input reader for the installed Razer filter driver. Hooks belong to the
+/// selected device endpoint and only suppress the inputs the caller registers.
 /// </summary>
 public sealed class RazerFilterInputHost : IAsyncDisposable
 {
@@ -19,6 +19,7 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
     private readonly IRazerFilterDriverChannel _driver;
     private readonly Action<BladeMappingInputEvent> _eventHandler;
     private readonly (ushort ScanCode, ushort Flag)[] _hooks;
+    private readonly uint[] _mouseHooks;
     private readonly CancellationTokenSource _stop = new();
     private readonly object _disposeSync = new();
     private readonly Channel<BladeMappingInputEvent> _events =
@@ -29,6 +30,7 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
         });
     private readonly object _lifecycleGate = new();
     private readonly List<(ushort ScanCode, ushort Flag)> _installedHooks = [];
+    private readonly List<uint> _installedMouseHooks = [];
     private readonly HashSet<(ushort ScanCode, bool Extended)> _submittedKeyboardKeys = [];
     private Task[] _readers = [];
     private Task? _consumer;
@@ -46,15 +48,17 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
     public RazerFilterInputHost(
         string devicePath,
         IReadOnlyList<(ushort ScanCode, ushort Flag)> hooks,
-        Action<BladeMappingInputEvent> eventHandler)
-        : this(new WindowsRazerFilterDriverChannel(devicePath), hooks, eventHandler)
+        Action<BladeMappingInputEvent> eventHandler,
+        IReadOnlyList<uint>? mouseHooks = null)
+        : this(new WindowsRazerFilterDriverChannel(devicePath), hooks, eventHandler, mouseHooks)
     {
     }
 
     internal RazerFilterInputHost(
         IRazerFilterDriverChannel driver,
         IReadOnlyList<(ushort ScanCode, ushort Flag)> hooks,
-        Action<BladeMappingInputEvent> eventHandler)
+        Action<BladeMappingInputEvent> eventHandler,
+        IReadOnlyList<uint>? mouseHooks = null)
     {
         _driver = driver ?? throw new ArgumentNullException(nameof(driver));
         ArgumentNullException.ThrowIfNull(hooks);
@@ -62,6 +66,11 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
             ? [.. hooks]
             : throw new ArgumentException("At least one input hook is required.", nameof(hooks));
         _eventHandler = eventHandler ?? throw new ArgumentNullException(nameof(eventHandler));
+        _mouseHooks = mouseHooks is null ? [] : [.. mouseHooks.Distinct()];
+        foreach (var buttons in _mouseHooks)
+        {
+            _ = RazerFilterInputProtocol.CreateMouseHook(buttons);
+        }
     }
 
     public Task Completion => _completion ?? Task.CompletedTask;
@@ -153,20 +162,32 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
             startedReaders.Add(ReadLoopAsync(1));
             EnsureCompletion(startedReaders);
 
-            WriteEnabled(EnableInputHooks, true);
-            _hooksEnabled = true;
-            WriteEnabled(EnableInputNotify, true);
-            _notifyEnabled = true;
-
-            foreach (var hook in _hooks)
+            lock (_lifecycleGate)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                _driver.WriteControl(
-                    RazerFilterInputProtocol.SetInputHook,
-                    RazerFilterInputProtocol.CreateKeyboardHook(hook.ScanCode, hook.Flag));
-                _installedHooks.Add(hook);
-            }
+                // A failed reader must not clear hooks while startup installs more.
+                _stop.Token.ThrowIfCancellationRequested();
+                WriteEnabled(EnableInputHooks, true);
+                _hooksEnabled = true;
+                WriteEnabled(EnableInputNotify, true);
+                _notifyEnabled = true;
 
+                foreach (var hook in _hooks)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    _driver.WriteControl(
+                        RazerFilterInputProtocol.SetInputHook,
+                        RazerFilterInputProtocol.CreateKeyboardHook(hook.ScanCode, hook.Flag));
+                    _installedHooks.Add(hook);
+                }
+                foreach (var buttons in _mouseHooks)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    _driver.WriteControl(
+                        RazerFilterInputProtocol.SetInputHook,
+                        RazerFilterInputProtocol.CreateMouseHook(buttons));
+                    _installedMouseHooks.Add(buttons);
+                }
+            }
         }
         catch (Exception startupError)
         {
@@ -350,6 +371,16 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
                     errors);
             }
             _installedHooks.Clear();
+            for (var index = _installedMouseHooks.Count - 1; index >= 0; index--)
+            {
+                var buttons = _installedMouseHooks[index];
+                TryControl(
+                    () => _driver.WriteControl(
+                        RazerFilterInputProtocol.ClearInputHook,
+                        RazerFilterInputProtocol.CreateMouseClearKey(buttons)),
+                    errors);
+            }
+            _installedMouseHooks.Clear();
 
             TryControl(
                 () =>
@@ -452,11 +483,15 @@ internal sealed class WindowsRazerFilterDriverChannel : IRazerFilterDriverChanne
 
     private readonly SafeFileHandle _handle;
     private readonly ReadContext[] _reads;
+    private readonly bool _legacyKeypad;
+    private readonly int _frameLength;
     private bool _disposed;
 
-    internal WindowsRazerFilterDriverChannel(string devicePath)
+    internal WindowsRazerFilterDriverChannel(string devicePath, bool legacyKeypad = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
+        _legacyKeypad = legacyKeypad;
+        _frameLength = legacyKeypad ? 64 : RazerFilterInputProtocol.InputFrameLength;
         _handle = NativeMethods.CreateFile(
             devicePath,
             0,
@@ -472,7 +507,8 @@ internal sealed class WindowsRazerFilterDriverChannel : IRazerFilterDriverChanne
             throw new Win32Exception(error, "Could not open the Razer filter endpoint.");
         }
 
-        _reads = [new ReadContext(), new ReadContext()];
+        _reads = Enumerable.Range(0, legacyKeypad ? RazerLegacyKeypadInputHost.ReadSlots : 2)
+            .Select(_ => new ReadContext(_frameLength)).ToArray();
     }
 
     public void PostRead(int slot)
@@ -482,11 +518,11 @@ internal sealed class WindowsRazerFilterDriverChannel : IRazerFilterDriverChanne
         context.Prepare();
         if (!NativeMethods.DeviceIoControl(
                 _handle,
-                RazerFilterInputProtocol.ReadInput,
-                IntPtr.Zero,
-                0,
+                _legacyKeypad ? 0x88883008 : RazerFilterInputProtocol.ReadInput,
+                _legacyKeypad ? context.Buffer : IntPtr.Zero,
+                _legacyKeypad ? _frameLength : 0,
                 context.Buffer,
-                RazerFilterInputProtocol.InputFrameLength,
+                _frameLength,
                 out _,
                 context.Overlapped))
         {
@@ -518,6 +554,7 @@ internal sealed class WindowsRazerFilterDriverChannel : IRazerFilterDriverChanne
             throw new Win32Exception(error, "Razer filter input read failed.");
         }
 
+        if (length > _frameLength) throw new InvalidDataException("The Razer input read exceeded its buffer.");
         var frame = new byte[checked((int)length)];
         Marshal.Copy(context.Buffer, frame, 0, frame.Length);
         return frame;
@@ -610,15 +647,18 @@ internal sealed class WindowsRazerFilterDriverChannel : IRazerFilterDriverChanne
 
     private sealed class ReadContext : OverlappedCompletion
     {
-        internal ReadContext()
+        private readonly byte[] _empty;
+        internal ReadContext(int length)
         {
-            Buffer = Marshal.AllocHGlobal(RazerFilterInputProtocol.InputFrameLength);
+            _empty = new byte[length];
+            Buffer = Marshal.AllocHGlobal(length);
         }
 
         internal IntPtr Buffer { get; }
 
         internal void Prepare()
         {
+            Marshal.Copy(_empty, 0, Buffer, _empty.Length);
             WaitHandle.Reset();
             ResetOverlapped();
         }

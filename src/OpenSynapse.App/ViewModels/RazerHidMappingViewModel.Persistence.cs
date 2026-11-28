@@ -42,7 +42,9 @@ public sealed partial class RazerHidMappingViewModel
             {
                 var assignment = await _transport.GetAssignmentAsync(
                     row.ButtonId, Mode, cancellationToken).ConfigureAwait(true);
-                var decoded = _catalog is RazerViperMappingActionCatalog
+                var decoded = RazerKeypadInputCatalog.UsesHostMapping(_productId)
+                    ? RazerHidMappingActions.Decode(assignment.FunctionId, assignment.Data)
+                    : _catalog is RazerViperMappingActionCatalog
                     ? null
                     : _catalog.Decode(assignment.FunctionId, assignment.Data);
                 var mapping = RazerHidMappingActions.ToProfileMapping(
@@ -64,6 +66,10 @@ public sealed partial class RazerHidMappingViewModel
             {
                 _log?.Invoke(
                     $"mapping button {row.ButtonId} profile snapshot failed: {exception.Message}");
+                if (RazerKeypadInputCatalog.UsesHostMapping(_productId))
+                {
+                    throw;
+                }
             }
         }
 

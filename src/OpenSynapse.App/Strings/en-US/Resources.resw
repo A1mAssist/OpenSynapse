@@ -5798,4 +5798,12 @@
   <data name="Help_Specimen_KeyMouse4" xml:space="preserve"><value>Mouse 4</value></data>
   <data name="Help_Specimen_KeyMouse5" xml:space="preserve"><value>Mouse 5</value></data>
   <data name="Help_Specimen_KeyF13" xml:space="preserve"><value>F13</value></data>
+  <data name="RazerMappingHostHint.Text" xml:space="preserve"><value>Mappings are saved in this device's local profile. Keep OpenSynapse running to use them.</value></data>
+  <data name="RazerMappingKeypadDirectionHint.Text" xml:space="preserve"><value>Diagonal presses combine the two adjacent direction mappings.</value></data>
+  <data name="RazerKeypadDriverMissing" xml:space="preserve"><value>Keypad mapping needs its Razer filter driver. Install or repair the device driver, reconnect the keypad, then refresh.</value></data>
+  <data name="RazerKeypadDriverInUse" xml:space="preserve"><value>Another application is capturing this keypad. Exit Razer Synapse, then refresh.</value></data>
+  <data name="RazerKeypadAmbiguousDevice" xml:space="preserve"><value>This legacy keypad cannot be uniquely identified. Connect only one device of this model, reconnect it, then refresh.</value></data>
+  <data name="RazerKeypadRecoveryMissing" xml:space="preserve"><value>A required input recovery component is missing. Repair the OpenSynapse installation before enabling keypad mapping.</value></data>
+  <data name="RazerKeypadRuntimeStopped" xml:space="preserve"><value>Keypad input stopped. Reconnect the keypad and refresh to restore mapping.</value></data>
+  <data name="RazerMappingKeypadStickClick" xml:space="preserve"><value>Right stick press</value></data>
 </root>

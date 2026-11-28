@@ -292,6 +292,22 @@ public sealed partial class RazerMappingView : UserControl
             }
 
             KeyboardCanvas.Children.Add(element);
+            if (Mapping.ShowKeypadLabels && source.KeyName is { } label &&
+                layout.ButtonIdsByKeyName.TryGetValue(label, out var labelId) &&
+                OpenSynapse.Core.Devices.RazerKeypadKeyCatalog.TartarusV2ProMappingIds.Contains(labelId))
+            {
+                var bounds = geometry.Bounds;
+                var text = new TextBlock
+                {
+                    Text = label, FontSize = 12,
+                    Foreground = Application.Current.Resources["DataBrush"] as Brush,
+                    Width = bounds.Width, TextAlignment = TextAlignment.Center,
+                    IsHitTestVisible = false,
+                };
+                Canvas.SetLeft(text, bounds.X);
+                Canvas.SetTop(text, bounds.Y + Math.Max(0, (bounds.Height - 18) / 2));
+                KeyboardCanvas.Children.Add(text);
+            }
         }
     }
 

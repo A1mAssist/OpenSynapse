@@ -45,6 +45,13 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
     {
     }
 
+    internal static RazerFilterMacroInputSink CreateForKeypad(string filterPath, Action<string>? log = null) =>
+        new(new WindowsMacroInputSink(), (_, token) =>
+        {
+            token.ThrowIfCancellationRequested();
+            return new ValueTask<IRazerFilterDriverChannel?>(new WindowsRazerFilterDriverChannel(filterPath));
+        }, log);
+
     internal RazerFilterMacroInputSink(
         IMacroInputSink fallback,
         Func<bool, CancellationToken, ValueTask<IRazerFilterDriverChannel?>> open,
@@ -142,6 +149,7 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
             _gate.Release();
         }
 
+        await ReleasePressedThroughFallbackAsync(CancellationToken.None).ConfigureAwait(false);
         await ReleaseMouseThroughFallbackAsync(CancellationToken.None).ConfigureAwait(false);
     }
 
@@ -408,8 +416,8 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
 
         var clampedX = Math.Clamp(x, left, left + width - 1);
         var clampedY = Math.Clamp(y, top, top + height - 1);
-        normalizedX = 1 + (int)((long)(clampedX - left) * 65_535 / (width - 1));
-        normalizedY = 1 + (int)((long)(clampedY - top) * 65_535 / (height - 1));
+        normalizedX = (int)((long)(clampedX - left) * 65_535 / (width - 1));
+        normalizedY = (int)((long)(clampedY - top) * 65_535 / (height - 1));
         return true;
     }
 
@@ -603,6 +611,8 @@ public sealed class RazerFilterMacroInputSink : IMacroInputSink, IAsyncDisposabl
         }
 
         scanCode = 0;
+        // Pause's E1 sequence cannot be represented by the driver's E0 flag.
+        if (input.VirtualKey == 0x13) return false;
         if (input.VirtualKey is <= 0 or > 0xFF)
         {
             return false;

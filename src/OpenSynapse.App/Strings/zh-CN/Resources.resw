@@ -6239,4 +6239,12 @@
   <data name="Help_Specimen_KeyMouse4" xml:space="preserve"><value>鼠标键 4</value></data>
   <data name="Help_Specimen_KeyMouse5" xml:space="preserve"><value>鼠标键 5</value></data>
   <data name="Help_Specimen_KeyF13" xml:space="preserve"><value>F13</value></data>
+  <data name="RazerMappingHostHint.Text" xml:space="preserve"><value>改键保存在此设备的本地配置中，需要保持 OpenSynapse 运行才能生效。</value></data>
+  <data name="RazerMappingKeypadDirectionHint.Text" xml:space="preserve"><value>斜向按动会同时触发相邻两个方向的映射。</value></data>
+  <data name="RazerKeypadDriverMissing" xml:space="preserve"><value>单手键盘改键需要此设备的 Razer 过滤驱动。请安装或修复驱动，重新插拔单手键盘后刷新。</value></data>
+  <data name="RazerKeypadDriverInUse" xml:space="preserve"><value>另一个程序正在接管此单手键盘。请退出 Razer Synapse 后刷新。</value></data>
+  <data name="RazerKeypadAmbiguousDevice" xml:space="preserve"><value>无法唯一识别此旧款单手键盘。请只连接一台同型号设备，重新插拔后刷新。</value></data>
+  <data name="RazerKeypadRecoveryMissing" xml:space="preserve"><value>按键恢复组件缺失。请先修复 OpenSynapse 安装，再启用单手键盘改键。</value></data>
+  <data name="RazerKeypadRuntimeStopped" xml:space="preserve"><value>单手键盘输入已断开。请重新插拔设备后刷新，以恢复改键。</value></data>
+  <data name="RazerMappingKeypadStickClick" xml:space="preserve"><value>右摇杆按下</value></data>
 </root>

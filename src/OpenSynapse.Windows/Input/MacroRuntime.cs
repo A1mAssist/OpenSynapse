@@ -30,6 +30,9 @@ internal sealed partial class MacroRuntime : IDisposable
     private bool _triggerCaptureAllowsDeviceButton;
     private Func<bool>? _isOwnWindowForeground;
     private CancellationTokenSource? _playbackCancellation;
+    private Task _playbackCompletion = Task.CompletedTask;
+    private readonly SemaphoreSlim _outputGate = new(1, 1);
+    private readonly Dictionary<InputKey, HashSet<object>> _outputOwners = [];
     private TaskCompletionSource? _resumePlayback;
     private bool _isPlaying;
     private bool _isPaused;
@@ -43,6 +46,7 @@ internal sealed partial class MacroRuntime : IDisposable
     private bool _playbackStartHotkeyHeld;
     private bool _playbackStopHotkeyHeld;
     private bool _hyperShiftHeld;
+    private bool _activePlaybackUsesDeviceLayer;
 
     internal MacroRuntime(
         Func<MacroInput, bool>? isPhysicallyDown = null,
@@ -383,7 +387,7 @@ internal sealed partial class MacroRuntime : IDisposable
             hookToDispose = DetachHookLocked();
         }
         StopAllTurbo();
-        playback?.Cancel(); playback?.Dispose();
+        try { playback?.Cancel(); } catch (ObjectDisposedException) { }
         DisposeHook(hookToDispose);
         if (heldInputs > 0)
         {

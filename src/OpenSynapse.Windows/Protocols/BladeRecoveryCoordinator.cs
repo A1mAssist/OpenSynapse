@@ -1,3 +1,5 @@
+using OpenSynapse.Windows.Devices;
+
 namespace OpenSynapse.Windows.Protocols;
 
 public static class BladeRecoveryCoordinator
@@ -5,9 +7,17 @@ public static class BladeRecoveryCoordinator
     public static async Task RecoverAsync(
         BladeRecoveryMarker marker,
         IReadOnlyList<BladeRecoverySyntheticKey> keys) =>
-        await RecoverAsync(marker, keys, BladeRecoveryFilterRestorer.DisableAndClear,
+        await RecoverAsync(marker, keys,
+            (path, hooks) =>
+            {
+                if (marker.LegacyKeypadIdentity != 0)
+                    new RazerLegacyKeypadControl(BladeRecoveryProtocol.GetLegacyKeypadIdentity(marker)).Restore();
+                else BladeRecoveryFilterRestorer.DisableAndClear(
+                    path, hooks, BladeRecoveryProtocol.ParseMouseHooks(marker.MouseHooks));
+            },
             path => BladeRecoveryDeviceRestorer.RestoreNormalModeAsync(new RazerFeatureTransport(), path),
-            values => BladeRecoveryDeviceRestorer.ReleaseSyntheticKeys(values)).ConfigureAwait(false);
+            values => BladeRecoveryDeviceRestorer.ReleaseSyntheticKeys(values,
+                marker.RestoreDeviceMode || marker.LegacyKeypadIdentity != 0 ? null : marker.FilterDevicePath)).ConfigureAwait(false);
 
     internal static async Task RecoverAsync(
         BladeRecoveryMarker marker,
@@ -26,7 +36,10 @@ public static class BladeRecoveryCoordinator
             : BladeRecoveryProtocol.ParseHooks(marker.Hooks);
         var errors = new List<Exception>();
         try { restoreFilter(marker.FilterDevicePath, hooks); } catch (Exception exception) { errors.Add(exception); }
-        try { await restoreNormalMode(marker.DevicePath).ConfigureAwait(false); } catch (Exception exception) { errors.Add(exception); }
+        if (marker.RestoreDeviceMode)
+        {
+            try { await restoreNormalMode(marker.DevicePath).ConfigureAwait(false); } catch (Exception exception) { errors.Add(exception); }
+        }
         try { releaseKeys(keys); } catch (Exception exception) { errors.Add(exception); }
         if (errors.Count != 0) throw new AggregateException("Blade recovery was incomplete.", errors);
     }

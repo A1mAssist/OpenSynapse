@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using OpenSynapse.Windows.Devices;
 
 namespace OpenSynapse.Windows.Protocols;
 
@@ -10,11 +11,16 @@ public sealed record BladeRecoveryMarker(
     string DevicePath,
     string FilterDevicePath,
     DateTimeOffset StartedAtUtc,
-    string Hooks = "");
+    string Hooks = "",
+    string MouseHooks = "",
+    bool RestoreDeviceMode = true,
+    ulong LegacyKeypadIdentity = 0);
 
 public static class BladeRecoveryProtocol
 {
-    public const int CurrentMarkerVersion = 3;
+    public const int CurrentMarkerVersion = 5;
+    private const int MouseMarkerVersion = 4;
+    private const int HookMarkerVersion = 3;
     private const int LegacyMarkerVersion = 2;
     public const int MaximumMarkerBytes = 16 * 1024;
     private const int MaximumHooks = 64;
@@ -41,14 +47,20 @@ public static class BladeRecoveryProtocol
 
             if (!root.TryGetProperty("version", out var versionElement) ||
                 !versionElement.TryGetInt32(out var version) ||
-                version is not (LegacyMarkerVersion or CurrentMarkerVersion))
+                version is not (LegacyMarkerVersion or HookMarkerVersion or MouseMarkerVersion or CurrentMarkerVersion))
             {
                 throw new ArgumentException("Unsupported recovery marker version.", nameof(json));
             }
             var expected = new HashSet<string>(StringComparer.Ordinal)
                 { "version", "ownerPid", "devicePath", "filterDevicePath", "startedAtUtc" };
-            if (version >= CurrentMarkerVersion)
+            if (version >= HookMarkerVersion)
                 expected.Add("hooks");
+            if (version >= MouseMarkerVersion)
+            {
+                expected.Add("mouseHooks");
+                expected.Add("restoreDeviceMode");
+            }
+            if (version >= CurrentMarkerVersion) expected.Add("legacyKeypadIdentity");
             foreach (var property in root.EnumerateObject())
             {
                 if (!expected.Remove(property.Name))
@@ -59,15 +71,22 @@ public static class BladeRecoveryProtocol
 
             if (!root.GetProperty("ownerPid").TryGetInt32(out var ownerPid) || ownerPid <= 0)
                 throw new ArgumentException("Recovery marker ownerPid must be positive.", nameof(json));
-            var hooks = version >= CurrentMarkerVersion
+            var hooks = version >= HookMarkerVersion
                 ? root.GetProperty("hooks").GetString() is { Length: > 0 } value ? value : string.Empty
                 : string.Empty;
-            if (version >= CurrentMarkerVersion)
+            if (version >= HookMarkerVersion)
                 ParseHooks(hooks);
+            var mouseHooks = version >= MouseMarkerVersion
+                ? root.GetProperty("mouseHooks").GetString() ?? string.Empty
+                : string.Empty;
+            ParseMouseHooks(mouseHooks);
+            var restoreDeviceMode = version < MouseMarkerVersion ||
+                root.GetProperty("restoreDeviceMode").GetBoolean();
             var devicePath = root.GetProperty("devicePath").GetString();
             ValidateBladeDevicePath(devicePath);
             var filterDevicePath = root.GetProperty("filterDevicePath").GetString();
-            ValidateFilterDevicePath(filterDevicePath);
+            var legacyKeypadIdentity = version >= CurrentMarkerVersion
+                ? root.GetProperty("legacyKeypadIdentity").GetUInt64() : 0;
             var timestampText = root.GetProperty("startedAtUtc").GetString();
             if (!DateTimeOffset.TryParse(
                     timestampText,
@@ -79,7 +98,10 @@ public static class BladeRecoveryProtocol
                 throw new ArgumentException("Recovery marker startedAtUtc must be a UTC timestamp.", nameof(json));
             }
 
-            return new(version, ownerPid, devicePath!, filterDevicePath!, startedAtUtc, hooks);
+            var marker = new BladeRecoveryMarker(version, ownerPid, devicePath!, filterDevicePath!, startedAtUtc,
+                hooks, mouseHooks, restoreDeviceMode, legacyKeypadIdentity);
+            ValidateMarker(marker);
+            return marker;
         }
         catch (JsonException exception)
         {
@@ -94,7 +116,7 @@ public static class BladeRecoveryProtocol
     public static string SerializeMarker(BladeRecoveryMarker marker)
     {
         ValidateMarker(marker);
-        if (marker.Version < CurrentMarkerVersion)
+        if (marker.Version < HookMarkerVersion)
         {
             return JsonSerializer.Serialize(new
             {
@@ -105,6 +127,29 @@ public static class BladeRecoveryProtocol
                 startedAtUtc = marker.StartedAtUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
             });
         }
+        if (marker.Version < MouseMarkerVersion)
+        {
+            return JsonSerializer.Serialize(new
+            {
+                version = marker.Version,
+                ownerPid = marker.OwnerPid,
+                devicePath = marker.DevicePath,
+                filterDevicePath = marker.FilterDevicePath,
+                startedAtUtc = marker.StartedAtUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
+                hooks = marker.Hooks,
+            });
+        }
+        if (marker.Version < CurrentMarkerVersion) return JsonSerializer.Serialize(new
+        {
+            version = marker.Version,
+            ownerPid = marker.OwnerPid,
+            devicePath = marker.DevicePath,
+            filterDevicePath = marker.FilterDevicePath,
+            startedAtUtc = marker.StartedAtUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
+            hooks = marker.Hooks,
+            mouseHooks = marker.MouseHooks,
+            restoreDeviceMode = marker.RestoreDeviceMode,
+        });
         return JsonSerializer.Serialize(new
         {
             version = marker.Version,
@@ -113,7 +158,38 @@ public static class BladeRecoveryProtocol
             filterDevicePath = marker.FilterDevicePath,
             startedAtUtc = marker.StartedAtUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
             hooks = marker.Hooks,
+            mouseHooks = marker.MouseHooks,
+            restoreDeviceMode = marker.RestoreDeviceMode,
+            legacyKeypadIdentity = marker.LegacyKeypadIdentity,
         });
+    }
+
+    public static string FormatMouseHooks(IReadOnlyList<uint> hooks)
+    {
+        ArgumentNullException.ThrowIfNull(hooks);
+        var value = string.Join(';', hooks.Select(static hook => hook.ToString("X8", CultureInfo.InvariantCulture)));
+        ParseMouseHooks(value);
+        return value;
+    }
+
+    public static IReadOnlyList<uint> ParseMouseHooks(string hooks)
+    {
+        ArgumentNullException.ThrowIfNull(hooks);
+        if (hooks.Length == 0) return [];
+        var parts = hooks.Split(';');
+        if (parts.Length > MaximumHooks)
+            throw new ArgumentException("Recovery mouse hook count is out of range.", nameof(hooks));
+        var parsed = new List<uint>(parts.Length);
+        foreach (var part in parts)
+        {
+            if (part.Length != 8 ||
+                !uint.TryParse(part, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var buttons) ||
+                parsed.Contains(buttons))
+                throw new ArgumentException("Recovery mouse hook is invalid.", nameof(hooks));
+            _ = RazerFilterInputProtocol.CreateMouseHook(buttons);
+            parsed.Add(buttons);
+        }
+        return parsed;
     }
 
     public static string FormatHooks(IReadOnlyList<(ushort ScanCode, ushort Flag)> hooks)
@@ -221,6 +297,7 @@ public static class BladeRecoveryProtocol
         string filterDevicePath)
     {
         ArgumentNullException.ThrowIfNull(marker);
+        if (marker.LegacyKeypadIdentity != 0) return marker;
         if (!TryGetProductId(marker.DevicePath, BladeDevicePathPrefix, out var markerPid) ||
             !TryGetProductId(devicePath, BladeDevicePathPrefix, out var devicePid) ||
             markerPid != devicePid ||
@@ -241,15 +318,38 @@ public static class BladeRecoveryProtocol
     private static void ValidateMarker(BladeRecoveryMarker marker)
     {
         ArgumentNullException.ThrowIfNull(marker);
-        if (marker.Version is not (LegacyMarkerVersion or CurrentMarkerVersion) ||
+        if (marker.Version is not (LegacyMarkerVersion or HookMarkerVersion or MouseMarkerVersion or CurrentMarkerVersion) ||
             marker.OwnerPid <= 0 || marker.StartedAtUtc.Offset != TimeSpan.Zero)
             throw new ArgumentException("Recovery marker values are invalid.", nameof(marker));
-        if (marker.Version >= CurrentMarkerVersion)
+        if (marker.Version >= HookMarkerVersion)
             ParseHooks(marker.Hooks);
         else if (marker.Hooks.Length != 0)
             throw new ArgumentException("Legacy recovery markers cannot carry hooks.", nameof(marker));
+        ParseMouseHooks(marker.MouseHooks);
+        if (marker.Version < MouseMarkerVersion &&
+            (marker.MouseHooks.Length != 0 || !marker.RestoreDeviceMode))
+            throw new ArgumentException("Legacy recovery markers cannot carry mouse or mode options.", nameof(marker));
         ValidateBladeDevicePath(marker.DevicePath);
-        ValidateFilterDevicePath(marker.FilterDevicePath);
+        if (marker.LegacyKeypadIdentity == 0)
+            ValidateFilterDevicePath(marker.FilterDevicePath);
+        else
+        {
+            if (marker.Version < CurrentMarkerVersion || marker.RestoreDeviceMode ||
+                !TryGetProductId(marker.DevicePath, BladeDevicePathPrefix, out var productId) ||
+                !RazerKeypadInputCatalog.IsLegacy(productId) ||
+                (productId != 0x0111 && marker.MouseHooks.Length != 0) ||
+                !StringComparer.OrdinalIgnoreCase.Equals(marker.FilterDevicePath,
+                    new RazerLegacyKeypadIdentity(marker.LegacyKeypadIdentity, productId).Path))
+                throw new ArgumentException("Recovery marker legacy keypad identity is invalid.", nameof(marker));
+        }
+    }
+
+    internal static RazerLegacyKeypadIdentity GetLegacyKeypadIdentity(BladeRecoveryMarker marker)
+    {
+        ValidateMarker(marker);
+        if (marker.LegacyKeypadIdentity == 0) throw new ArgumentException("No legacy keypad identity.", nameof(marker));
+        TryGetProductId(marker.DevicePath, BladeDevicePathPrefix, out var productId);
+        return new(marker.LegacyKeypadIdentity, productId);
     }
 
     private static void ValidateBladeDevicePath(string? devicePath)

@@ -11,6 +11,8 @@ namespace OpenSynapse.App.ViewModels;
 /// </summary>
 public interface IRazerMappingActionCatalog
 {
+    bool SupportsGroup(RazerHidMappingGroup group) => true;
+
     IReadOnlyList<string> OptionNames(
         RazerHidMappingGroup group,
         IReadOnlyList<RazerHidMacroOption>? macros = null);
@@ -110,8 +112,17 @@ public sealed class RazerKeypadMappingActionCatalog : RazerKeyboardMappingAction
 {
     public static new RazerKeypadMappingActionCatalog Instance { get; } = new();
 
-    public override string DescribeButton(byte buttonId) => buttonId switch
+    private readonly ushort _productId;
+
+    public RazerKeypadMappingActionCatalog(ushort productId = 0) : base(productId) => _productId = productId;
+
+    public override string DescribeButton(byte buttonId) => _productId == 0x02EB
+        ? buttonId == 0xDB ? AppStrings.Text("RazerMappingKeypadStickClick") : base.DescribeButton(buttonId)
+        : buttonId switch
     {
+        0x03 => AppStrings.Text("RazerMappingKeypadScrollClick"),
+        0x09 => AppStrings.Text("RazerMappingButtonScrollUp"),
+        0x0A => AppStrings.Text("RazerMappingButtonScrollDown"),
         0x2C => AppStrings.Text("RazerMappingKeypadDpadUp"),
         0x2D => AppStrings.Text("RazerMappingKeypadDpadDown"),
         0x2E => AppStrings.Text("RazerMappingKeypadDpadLeft"),

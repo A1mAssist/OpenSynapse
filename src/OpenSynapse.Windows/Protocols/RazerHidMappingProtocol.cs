@@ -103,7 +103,7 @@ internal static class RazerHidMappingProtocol
             TransactionId, dataSize, MappingClass, GetAnalogKeyAssignmentCommand,
             new[] { profileId, keyId, mode }));
 
-    /// <summary>0244 picks the keymap before every assignment-table read (02:B6 → 02:37).</summary>
+    /// <summary>02EB selects its active keymap before accessing the assignment table.</summary>
     internal static RazerHidRequest GetActiveKeymap(byte profileId) => new(
         "mapping.getActiveKeymap",
         RazerFeatureReport.CreateRequest(

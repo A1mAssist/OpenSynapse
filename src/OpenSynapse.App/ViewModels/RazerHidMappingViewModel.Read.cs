@@ -144,7 +144,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             // Mode setup/restoration happens outside ReadCoreAsync; keep its error visible.
             _loaded = false;
             StatusText = string.Empty;
-            ErrorText = exception.Message;
+            ErrorText = MappingErrorText(exception);
+            ReadErrorText = ErrorText;
             _log?.Invoke($"mapping read session failed: {exception}");
             OnPropertyChanged(nameof(IsLoaded));
             OnPropertyChanged(nameof(CanApply));
@@ -407,8 +408,13 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
 
             ReplaceRows(rows, selectedButtonId);
             StartVisualLoad();
-            _loaded = true;
+            _loaded = rows.Count > unreadable;
             _hasReadAnyLayer = true;
+            ReadErrorText = unreadable > 0
+                ? AppStrings.FormatText("RazerHidMappingReadCountPartial", rows.Count - unreadable,
+                    rows.Count, unreadable)
+                : string.Empty;
+            ErrorText = ReadErrorText;
             StatusText = Rows.Count == 0
                 ? AppStrings.Text("RazerHidMappingNoButtons")
                 : unreadable > 0
@@ -427,7 +433,8 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
             _loaded = false;
             ClearRows();
             StatusText = string.Empty;
-            ErrorText = exception.Message;
+            ErrorText = MappingErrorText(exception);
+            ReadErrorText = ErrorText;
             _log?.Invoke($"mapping read failed: {exception}");
         }
         finally

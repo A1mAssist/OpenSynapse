@@ -11,7 +11,6 @@ namespace OpenSynapse.Windows.Protocols;
 /// </summary>
 internal static class RazerFilterControlTransport
 {
-    internal const uint ProfileTransfer = 0x88883004;
     private const uint ShareReadWrite = 3;
     private const uint OpenExisting = 3;
 
@@ -39,43 +38,21 @@ internal static class RazerFilterControlTransport
         }
     }
 
-    /// <summary>
-    /// Legacy keypad P2 profile transfer. The RZCONTROL endpoint takes the
-    /// 24-byte header plus records at 0x88883004 and returns the declared
-    /// output buffer.
-    /// </summary>
-    internal static ValueTask<byte[]> TransferAsync(
-        string controlDevicePath,
-        byte[] input,
-        int outputLength,
-        CancellationToken cancellationToken)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(controlDevicePath);
-        ArgumentNullException.ThrowIfNull(input);
-        if (outputLength <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(outputLength));
-        }
-
-        return new(Task.Run(
-            () => Transfer(controlDevicePath, input, outputLength),
-            cancellationToken));
-    }
-
-    private static byte[] Transfer(string controlDevicePath, byte[] input, int outputLength)
+    internal static byte[] Transfer(string controlDevicePath, byte[] input, int outputLength,
+        uint controlCode)
     {
         using var handle = CreateFile(controlDevicePath, 0, ShareReadWrite, 0, OpenExisting, 0, 0);
         if (handle.IsInvalid)
         {
             throw new Win32Exception(
                 Marshal.GetLastWin32Error(),
-                "Could not open the Razer control endpoint for a keypad profile transfer.");
+                "Could not open the legacy Razer control endpoint.");
         }
 
         var output = new byte[outputLength];
         if (!DeviceIoControl(
                 handle,
-                ProfileTransfer,
+                controlCode,
                 input,
                 input.Length,
                 output,
@@ -85,9 +62,10 @@ internal static class RazerFilterControlTransport
         {
             throw new Win32Exception(
                 Marshal.GetLastWin32Error(),
-                $"The Razer control endpoint rejected the {input.Length}-byte keypad profile transfer.");
+                $"The Razer control endpoint rejected IOCTL 0x{controlCode:X8}.");
         }
 
+        if (returned > output.Length) throw new InvalidDataException("The Razer control reply exceeded its buffer.");
         if (returned < output.Length)
         {
             Array.Resize(ref output, (int)returned);

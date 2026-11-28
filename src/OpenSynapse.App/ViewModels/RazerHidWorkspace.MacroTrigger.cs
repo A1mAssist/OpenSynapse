@@ -31,7 +31,8 @@ public sealed partial class RazerHidWorkspace
             foreach (var trigger in macro.AllTriggers)
             {
                 if (trigger.Input.Kind == MacroInputKind.RazerKey &&
-                    trigger.Input.DeviceId is > 0 and <= 0xFFFF)
+                    trigger.Input.DeviceId is > 0 and <= 0xFFFF &&
+                    !RazerKeypadInputCatalog.UsesHostMapping(trigger.Input.DeviceId))
                 {
                     wanted.Add((ushort)trigger.Input.DeviceId);
                 }

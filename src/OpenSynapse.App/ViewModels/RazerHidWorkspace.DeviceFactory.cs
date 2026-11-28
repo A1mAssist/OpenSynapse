@@ -46,6 +46,7 @@ public sealed partial class RazerHidWorkspace
         device.Onboard.LocalMacroProvider = _localMacros;
         device.SoftwareMacroBinder = _softwareMacroBinder;
         device.SoftwareMacroClearer = _softwareMacroClearer;
+        device.KeypadMacroTransactionFactory = KeypadMacroTransactionFactory;
         return device;
     }
 }

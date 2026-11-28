@@ -3,11 +3,12 @@ using System.IO.MemoryMappedFiles;
 
 namespace OpenSynapse.Windows.Protocols;
 
-public readonly record struct BladeRecoverySyntheticKey(ushort ScanCode, bool Extended);
+public readonly record struct BladeRecoverySyntheticKey(
+    ushort ScanCode, bool Extended, bool IsMouseButton = false, ushort VirtualKey = 0);
 
 public sealed class BladeRecoverySharedState : IDisposable
 {
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2;
     public const int MaximumKeys = 64;
     private const uint Magic = 0x4B52534F;
     private const int HeaderLength = 24;
@@ -40,8 +41,10 @@ public sealed class BladeRecoverySharedState : IDisposable
     public void Write(IReadOnlyCollection<BladeRecoverySyntheticKey> keys)
     {
         ArgumentNullException.ThrowIfNull(keys);
-        var normalized = keys.Distinct().OrderBy(static key => key.ScanCode).ThenBy(static key => key.Extended).ToArray();
-        if (normalized.Length > MaximumKeys || normalized.Any(static key => key.ScanCode == 0))
+        var normalized = keys.Distinct().OrderBy(static key => key.IsMouseButton)
+            .ThenBy(static key => key.ScanCode).ThenBy(static key => key.Extended)
+            .ThenBy(static key => key.VirtualKey).ToArray();
+        if (normalized.Length > MaximumKeys || normalized.Any(static key => !IsValidKey(key)))
             throw new ArgumentException("Synthetic key state is invalid.", nameof(keys));
 
         lock (_sync)
@@ -62,8 +65,11 @@ public sealed class BladeRecoverySharedState : IDisposable
             for (var index = 0; index < normalized.Length; index++)
             {
                 var offset = HeaderLength + index * EntryLength;
-                BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(offset), normalized[index].ScanCode);
+                BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(offset),
+                    normalized[index].VirtualKey != 0 ? normalized[index].VirtualKey : normalized[index].ScanCode);
                 payload[offset + 2] = normalized[index].Extended ? (byte)1 : (byte)0;
+                payload[offset + 3] = normalized[index].IsMouseButton ? (byte)1 :
+                    normalized[index].VirtualKey != 0 ? (byte)2 : (byte)0;
             }
             BinaryPrimitives.WriteUInt32LittleEndian(payload.AsSpan(20), CalculateChecksum(payload));
             _view.WriteArray(0, payload, 0, payload.Length);
@@ -86,8 +92,9 @@ public sealed class BladeRecoverySharedState : IDisposable
                 Thread.MemoryBarrier();
                 var second = _view.ReadUInt32(12);
                 if (first != second || (second & 1) != 0) continue;
+                var version = BinaryPrimitives.ReadUInt32LittleEndian(payload.AsSpan(4));
                 if (BinaryPrimitives.ReadUInt32LittleEndian(payload) != Magic ||
-                    BinaryPrimitives.ReadUInt32LittleEndian(payload.AsSpan(4)) != CurrentVersion ||
+                    version is not (1 or CurrentVersion) ||
                     BinaryPrimitives.ReadUInt32LittleEndian(payload.AsSpan(8)) != MaximumKeys)
                     break;
                 var count = BinaryPrimitives.ReadUInt32LittleEndian(payload.AsSpan(16));
@@ -102,9 +109,17 @@ public sealed class BladeRecoverySharedState : IDisposable
                     var offset = HeaderLength + index * EntryLength;
                     var scanCode = BinaryPrimitives.ReadUInt16LittleEndian(payload.AsSpan(offset));
                     var flags = payload[offset + 2];
-                    if (scanCode == 0 || (flags & ~1) != 0 || payload[offset + 3] != 0) { keys = []; return false; }
-                    var key = new BladeRecoverySyntheticKey(scanCode, (flags & 1) != 0);
-                    if (!unique.Add(key)) { keys = []; return false; }
+                    var kind = payload[offset + 3];
+                    if (scanCode == 0 || (flags & ~1) != 0 || kind > 2 ||
+                        version == 1 && kind != 0)
+                    {
+                        keys = [];
+                        return false;
+                    }
+                    var key = kind == 2
+                        ? new BladeRecoverySyntheticKey(0, (flags & 1) != 0, VirtualKey: scanCode)
+                        : new BladeRecoverySyntheticKey(scanCode, (flags & 1) != 0, kind == 1);
+                    if (!IsValidKey(key) || !unique.Add(key)) { keys = []; return false; }
                     result.Add(key);
                 }
                 keys = result;
@@ -120,6 +135,12 @@ public sealed class BladeRecoverySharedState : IDisposable
         _view.Dispose();
         _map.Dispose();
     }
+
+    private static bool IsValidKey(BladeRecoverySyntheticKey key) => key.IsMouseButton
+        ? key.ScanCode is >= 1 and <= 5 && !key.Extended && key.VirtualKey == 0
+        : key.VirtualKey != 0
+            ? key.ScanCode == 0 && key.VirtualKey <= 0xFF
+            : key.ScanCode != 0;
 
     private static uint CalculateChecksum(byte[] payload)
     {

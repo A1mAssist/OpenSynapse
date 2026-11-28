@@ -39,6 +39,33 @@ internal static class RazerFilterInputProtocol
         return payload;
     }
 
+    internal static byte[] CreateMouseHook(uint buttons)
+    {
+        var payload = new byte[InputHookLength];
+        WriteMouseHook(payload, buttons);
+        return payload;
+    }
+
+    internal static byte[] CreateMouseClearKey(uint buttons)
+    {
+        var payload = new byte[0x20];
+        WriteMouseHook(payload, buttons);
+        return payload;
+    }
+
+    private static void WriteMouseHook(Span<byte> payload, uint buttons)
+    {
+        var flags = (ushort)buttons;
+        if (buttons is not (0x0003 or 0x000C or 0x0030 or 0x00C0 or 0x0300) &&
+            !(flags == 0x0400 && (short)(buttons >> 16) != 0))
+        {
+            throw new ArgumentOutOfRangeException(nameof(buttons), "Mouse hook must pair button edges or specify a wheel delta.");
+        }
+
+        BinaryPrimitives.WriteUInt32LittleEndian(payload[4..], 2);
+        BinaryPrimitives.WriteUInt32LittleEndian(payload[12..], buttons);
+    }
+
     internal static byte[] CreateKeyboardInput(ushort scanCode, bool isDown, bool extended)
     {
         var payload = new byte[ConsumerInputLength];
@@ -51,9 +78,7 @@ internal static class RazerFilterInputProtocol
         return payload;
     }
 
-    // SubmitInput type 2 carries one 0x18-byte mouse record at +8:
-    // max value (i32), button flags (u16), reserved (u16), x (i32),
-    // y (i32), wheel (i32), modifiers (u32).
+    // SubmitInput type 2 forwards MOUSE_INPUT_DATA unchanged from offset 8.
     internal static byte[] CreateMouseInput(
         int maximumValue,
         ushort buttonFlags,
@@ -61,13 +86,17 @@ internal static class RazerFilterInputProtocol
         int y,
         int wheel = 0)
     {
+        if (maximumValue is not (0 or 65_536))
+            throw new ArgumentOutOfRangeException(nameof(maximumValue));
+        if (wheel is < short.MinValue or > short.MaxValue)
+            throw new ArgumentOutOfRangeException(nameof(wheel));
         var payload = new byte[ConsumerInputLength];
         BinaryPrimitives.WriteUInt32LittleEndian(payload.AsSpan(4), 2);
-        BinaryPrimitives.WriteInt32LittleEndian(payload.AsSpan(8), maximumValue);
+        BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(10), maximumValue == 0 ? (ushort)0 : (ushort)3);
         BinaryPrimitives.WriteUInt16LittleEndian(payload.AsSpan(12), buttonFlags);
-        BinaryPrimitives.WriteInt32LittleEndian(payload.AsSpan(16), x);
-        BinaryPrimitives.WriteInt32LittleEndian(payload.AsSpan(20), y);
-        BinaryPrimitives.WriteInt32LittleEndian(payload.AsSpan(24), wheel);
+        BinaryPrimitives.WriteInt16LittleEndian(payload.AsSpan(14), (short)wheel);
+        BinaryPrimitives.WriteInt32LittleEndian(payload.AsSpan(20), x);
+        BinaryPrimitives.WriteInt32LittleEndian(payload.AsSpan(24), y);
         return payload;
     }
 
@@ -103,6 +132,30 @@ internal static class RazerFilterInputProtocol
 
         var eventType = BinaryPrimitives.ReadUInt32LittleEndian(frame[8..]);
         var kind = BinaryPrimitives.ReadUInt32LittleEndian(frame[16..]);
+        if ((eventType, kind) == (2, 2))
+        {
+            var mouseFlags = BinaryPrimitives.ReadUInt16LittleEndian(frame[24..]);
+            if (mouseFlags == 0x0400)
+            {
+                var delta = BinaryPrimitives.ReadInt16LittleEndian(frame[26..]);
+                input = new(BladeMappingInputKind.MouseWheel, delta, true);
+                return delta != 0;
+            }
+
+            // RzCommon splits a native mouse packet into individual button edges.
+            var button = mouseFlags switch
+            {
+                0x0001 or 0x0002 => 1,
+                0x0004 or 0x0008 => 2,
+                0x0010 or 0x0020 => 3,
+                0x0040 or 0x0080 => 4,
+                0x0100 or 0x0200 => 5,
+                _ => 0,
+            };
+            input = new(BladeMappingInputKind.MouseButton, button,
+                (mouseFlags & 0x0155) != 0);
+            return button != 0;
+        }
         if ((eventType, kind) is not ((2, 1) or (4, 3)))
             return false;
 

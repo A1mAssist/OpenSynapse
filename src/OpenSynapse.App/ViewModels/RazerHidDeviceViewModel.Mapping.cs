@@ -26,6 +26,8 @@ public sealed partial class RazerHidDeviceViewModel
 
     public Func<byte, MacroInput?>? SoftwareMacroTriggerResolver { get; set; }
 
+    public Func<CancellationToken, Task<KeypadMacroBindingTransaction>>? KeypadMacroTransactionFactory { get; set; }
+
     private bool IsNagaMouse =>
         Connection.Definition.Category == DeviceCategory.Mouse &&
         RazerNagaSideButtons.IsNaga(
@@ -34,8 +36,11 @@ public sealed partial class RazerHidDeviceViewModel
     private bool IsKeypad =>
         Connection.Definition.ProductId is 0x022B or 0x0244 or 0x02EB;
 
-    public RazerHidMappingViewModel Mapping =>
-        _mapping ??= new RazerHidMappingViewModel(
+    public RazerHidMappingViewModel Mapping => _mapping ??= CreateMapping();
+
+    private RazerHidMappingViewModel CreateMapping()
+    {
+        var mapping = new RazerHidMappingViewModel(
             new RazerHidMappingTransport(_service, Connection),
             Has(RazerHidBackendCapability.MappingWrite),
             RazerOnboardMacroDevices.Products.Contains(Connection.Definition.ProductId)
@@ -46,10 +51,12 @@ public sealed partial class RazerHidDeviceViewModel
             deviceKind: Connection.Definition.Category == DeviceCategory.Keyboard
                 ? RazerMappingDeviceKind.Keyboard
                 : RazerMappingDeviceKind.Mouse,
-            actionCatalog: IsNagaMouse
+            actionCatalog: RazerKeypadInputCatalog.UsesHostMapping(Connection.Definition.ProductId)
+                ? new RazerTartarusProMappingActionCatalog(Connection.Definition.ProductId)
+                : IsNagaMouse
                 ? RazerNagaMappingActionCatalog.Instance
                 : IsKeypad
-                    ? RazerKeypadMappingActionCatalog.Instance
+                    ? new RazerKeypadMappingActionCatalog(Connection.Definition.ProductId)
                     // Every keyboard needs its own names: the shared catalog maps
                     // firmware/HID ids 1..15 and 0x34..0x6A to mouse buttons.
                     : Connection.Definition.Category == DeviceCategory.Keyboard
@@ -62,14 +69,53 @@ public sealed partial class RazerHidDeviceViewModel
             softwareTriggerResolver: ResolveSoftwareMacroTrigger,
             softwareTriggerBinder: SoftwareMacroBinder,
             softwareTriggerClearer: SoftwareMacroClearer,
+            keypadMacroTransactionFactory: KeypadMacroTransactionFactory,
             log: _log,
             systemMacros: () => _getActiveProfile is null
                 ? []
                 : SystemMacroCatalog.Bindings(_getActiveProfile().SystemMacros))
         { DeviceInstanceId = Connection.InstanceId };
+        mapping.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(RazerHidMappingViewModel.ReadErrorText))
+            {
+                OnPropertyChanged(nameof(StatusText));
+                OnPropertyChanged(nameof(ProtocolAvailableCount));
+                OnPropertyChanged(nameof(ProtocolDetails));
+            }
+        };
+        return mapping;
+    }
+
+    private IReadOnlyDictionary<string, string>? MappingProtocolErrors
+    {
+        get
+        {
+            if (_mapping is not { ReadErrorText.Length: > 0 } mapping)
+            {
+                return _basicState?.Errors;
+            }
+            var errors = _basicState?.Errors.ToDictionary(pair => pair.Key, pair => pair.Value)
+                ?? new Dictionary<string, string>(StringComparer.Ordinal);
+            errors[nameof(RazerHidBackendCapability.MappingRead)] = mapping.ReadErrorText;
+            errors[nameof(RazerHidBackendCapability.MappingWrite)] = mapping.ReadErrorText;
+            return errors;
+        }
+    }
 
     private MacroInput? ResolveDefaultSoftwareMacroTrigger(byte buttonId)
     {
+        if (RazerKeypadInputCatalog.UsesHostMapping(Connection.Definition.ProductId))
+        {
+            return new MacroInput
+            {
+                Kind = MacroInputKind.RazerKey,
+                DeviceId = Connection.Definition.ProductId,
+                InstanceId = Connection.InstanceId,
+                RazerKeyCode = buttonId,
+            };
+        }
+
         if (Connection.Definition.Category == DeviceCategory.Keyboard)
         {
             return RazerKeyboardMacroTriggerResolver.Resolve(
@@ -112,6 +158,8 @@ public sealed partial class RazerHidDeviceViewModel
         }
         if (_getActiveProfile is null || _saveProfileAsync is null)
         {
+            if (RazerKeypadInputCatalog.UsesHostMapping(Connection.Definition.ProductId))
+                throw new InvalidOperationException(AppStrings.Text("MacroSaveFailed"));
             return;
         }
 
@@ -122,24 +170,32 @@ public sealed partial class RazerHidDeviceViewModel
             var previous = settings.Keyboard.ButtonMappings;
             settings.Keyboard.ButtonMappings = RazerHidMappingActions.MergeButtonMappings(
                 previous, mappings, mode);
-            if (await _saveProfileAsync(cancellationToken).ConfigureAwait(true))
+            var saved = false;
+            try
             {
-                return;
+                saved = await _saveProfileAsync(cancellationToken).ConfigureAwait(true);
+                if (saved) return;
             }
-
-            settings.Keyboard.ButtonMappings = previous;
+            finally
+            {
+                if (!saved) settings.Keyboard.ButtonMappings = previous;
+            }
         }
         else
         {
             var previous = settings.Viper.ButtonMappings;
             settings.Viper.ButtonMappings = RazerHidMappingActions.MergeButtonMappings(
                 previous, mappings, mode);
-            if (await _saveProfileAsync(cancellationToken).ConfigureAwait(true))
+            var saved = false;
+            try
             {
-                return;
+                saved = await _saveProfileAsync(cancellationToken).ConfigureAwait(true);
+                if (saved) return;
             }
-
-            settings.Viper.ButtonMappings = previous;
+            finally
+            {
+                if (!saved) settings.Viper.ButtonMappings = previous;
+            }
         }
 
         throw new IOException("RazerHid mapping could not be saved to the profile.");

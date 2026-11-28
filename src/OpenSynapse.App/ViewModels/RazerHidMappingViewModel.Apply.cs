@@ -29,7 +29,11 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         catch (Exception exception) when (IsExpected(exception))
         {
             StatusText = string.Empty;
-            ErrorText = exception.Message;
+            ErrorText = MappingErrorText(exception);
+            if (RazerKeypadInputCatalog.UsesHostMapping(_productId))
+            {
+                SetLoadError(ErrorText);
+            }
             _log?.Invoke($"mapping apply session failed: {exception}");
         }
     }
@@ -39,6 +43,9 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         if (!CanApply) return;
         var applied = 0;
         ClearedSoftwareTrigger[] clears = [];
+        var backups = new List<AssignmentBackup>();
+        var keypadMutationStarted = false;
+        var keypadSaved = false;
         try
         {
             IsBusy = true;
@@ -191,8 +198,6 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 .Where(row => !row.IsHostOnly)
                 .ToArray();
 
-            var backups = new List<AssignmentBackup>(
-                assignmentRows.Length + softwareAssignmentRows.Length + shortcutAssignmentRows.Length);
             foreach (var row in assignmentRows
                          .Concat(softwareAssignmentRows)
                          .Concat(shortcutAssignmentRows))
@@ -201,6 +206,19 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                     row,
                     await _transport.GetAssignmentAsync(row.ButtonId, Mode, cancellationToken)
                         .ConfigureAwait(true)));
+            }
+
+            if (RazerKeypadInputCatalog.UsesHostMapping(_productId))
+            {
+                if (_mappingProfileSaver is null ||
+                    _keypadMacroTransactionFactory is null &&
+                    (clears.Length > 0 || softwareModeRows.Count > 0 || shortcutRows.Length > 0))
+                {
+                    throw new InvalidOperationException(AppStrings.Text("MacroSaveFailed"));
+                }
+                if (_keypadMacroTransactionFactory is not null)
+                    _keypadMacroTransaction = await _keypadMacroTransactionFactory(cancellationToken).ConfigureAwait(true);
+                keypadMutationStarted = true;
             }
 
             try
@@ -382,11 +400,16 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                 row.SoftwareMacroId = null;
             }
 
-            if (assignmentRows.Length > 0 && _mappingProfileSaver is not null)
+            if (_mappingProfileSaver is not null &&
+                (assignmentRows.Length > 0 || RazerKeypadInputCatalog.UsesHostMapping(_productId) &&
+                    (applied > 0 || clears.Length > 0)))
             {
                 try
                 {
+                    _keypadMacroTransaction?.PrepareSave();
                     await PersistMappingProfileAsync(cancellationToken).ConfigureAwait(true);
+                    keypadSaved = true;
+                    _keypadMacroTransaction?.Commit();
                 }
                 catch
                 {
@@ -415,17 +438,31 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         {
             await RestoreSoftwareTriggersAsync(clears).ConfigureAwait(true);
             DisableOnboardForSession();
-            ErrorText = exception.Message;
+            ErrorText = MappingErrorText(exception);
             _log?.Invoke($"mapping apply disabled onboard writes: {exception}");
         }
         catch (Exception exception) when (IsExpected(exception) || exception is ArgumentException)
         {
-            ErrorText = exception.Message;
+            ErrorText = MappingErrorText(exception);
             _log?.Invoke($"mapping apply failed: {exception}");
         }
         finally
         {
+            if (keypadMutationStarted && !keypadSaved)
+                await RestoreAssignmentsAsync(backups).ConfigureAwait(true);
+            if (_keypadMacroTransaction is { } transaction)
+            {
+                _keypadMacroTransaction = null;
+                await transaction.DisposeAsync().ConfigureAwait(true);
+            }
             IsBusy = false;
+            if (keypadMutationStarted && !keypadSaved)
+            {
+                var error = ErrorText;
+                await ReadCoreAsync(CancellationToken.None).ConfigureAwait(true);
+                StatusText = string.Empty;
+                if (!string.IsNullOrWhiteSpace(error)) ErrorText = error;
+            }
             OnPropertyChanged(nameof(CanApply));
         }
     }
@@ -459,6 +496,7 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
         ErrorText = string.IsNullOrWhiteSpace(message)
             ? AppStrings.Text("RazerHidMappingReadFailed")
             : message;
+        ReadErrorText = ErrorText;
         OnPropertyChanged(nameof(IsLoaded));
         OnPropertyChanged(nameof(CanApply));
     }

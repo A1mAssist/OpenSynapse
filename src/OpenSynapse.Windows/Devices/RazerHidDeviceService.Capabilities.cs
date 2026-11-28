@@ -100,8 +100,8 @@ public sealed partial class RazerHidDeviceService
             Add(RazerHidBackendCapability.BatteryDischargeCurveWrite, "set_battery_discharge_curve", "razer_chroma_misc_set_battery_discharge_curve");
         }
         Add(RazerHidBackendCapability.MacroStorageInfoRead, "get_macro_storage_info", "razer_chroma_misc_get_macro_storage_info");
-        // The 022B/0244/02EB bundles carry the keypad OBM table, so mapping is a declared
-        // feature. A rejected GET only means the table is not readable now.
+        // Host keypads check their per-device input session before exposing assignments;
+        // 02EB uses its own firmware table.
         if (device.ProductId is 0x0111 or 0x0113 or 0x0201 or 0x0207 or 0x0208 or
             0x022B or 0x0244 or 0x02EB)
         {

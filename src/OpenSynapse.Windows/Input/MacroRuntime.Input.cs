@@ -23,6 +23,7 @@ internal sealed partial class MacroRuntime
 
             _hyperShiftHeld = held;
             if (_isPlaying &&
+                !_activePlaybackUsesDeviceLayer &&
                 _activePlaybackMacroId is { } activeId &&
                 _macroMap.TryGetValue(activeId, out var active) &&
                 active.AllTriggers.Any() &&
@@ -36,6 +37,22 @@ internal sealed partial class MacroRuntime
         {
             StopPlayback();
         }
+    }
+
+    internal bool HandleDeviceInput(MacroInput input, bool isDown, bool hyperShiftLayer)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        if (input.Kind != MacroInputKind.RazerKey ||
+            string.IsNullOrWhiteSpace(input.InstanceId) ||
+            !input.IsValid(allowPrimaryMouseButton: false, allowDeviceButton: true))
+        {
+            throw new ArgumentException("A device mapping input requires a valid private key and device instance.", nameof(input));
+        }
+
+        return HandleInput(new MacroInputEvent(input, isDown, Environment.TickCount64)
+        {
+            HyperShiftLayer = hyperShiftLayer,
+        });
     }
 
     private bool HandleInput(MacroInputEvent value)
@@ -69,7 +86,7 @@ internal sealed partial class MacroRuntime
         {
             _log?.Invoke(
                 $"input {MacroInputFormatter.Describe(value.Input)} down={value.IsDown} " +
-                $"modifiers={value.Modifiers} hyperShift={_hyperShiftHeld}");
+                $"modifiers={value.Modifiers} hyperShift={value.HyperShiftLayer ?? _hyperShiftHeld}");
         }
 
         // A Razer private key only exists on the device's own report stream; the
@@ -83,7 +100,8 @@ internal sealed partial class MacroRuntime
             _ = Task.Run(() => _log?.Invoke(message));
         }
 
-        if (value.Input.Kind == MacroInputKind.RazerKey &&
+        if (value.HyperShiftLayer is null &&
+            value.Input.Kind == MacroInputKind.RazerKey &&
             value.Input.DeviceId is > 0 and <= 0xFFFF &&
             RazerPrivateKeyCatalog.IsHyperShift(
                 (ushort)value.Input.DeviceId,
@@ -256,7 +274,8 @@ internal sealed partial class MacroRuntime
 
             if (_triggerCapture is { } capture)
             {
-                if (value.Input.Kind == MacroInputKind.RazerKey &&
+                if (value.HyperShiftLayer is null &&
+                    value.Input.Kind == MacroInputKind.RazerKey &&
                     value.Input.DeviceId is > 0 and <= 0xFFFF &&
                     RazerPrivateKeyCatalog.IsHyperShift(
                         (ushort)value.Input.DeviceId,
@@ -290,7 +309,7 @@ internal sealed partial class MacroRuntime
                 {
                     Input = value.Input.Clone(),
                     Modifiers = modifiers,
-                    HyperShiftLayer = _hyperShiftHeld,
+                    HyperShiftLayer = value.HyperShiftLayer ?? _hyperShiftHeld,
                 });
                 return true;
             }
@@ -371,7 +390,8 @@ internal sealed partial class MacroRuntime
                     TraceSkipped(macro, "no steps");
                     continue;
                 }
-                var trigger = macro.FindTrigger(value.Input, value.Modifiers, _hyperShiftHeld);
+                var trigger = macro.FindTrigger(
+                    value.Input, value.Modifiers, value.HyperShiftLayer ?? _hyperShiftHeld);
                 if (trigger is null)
                 {
                     TraceSkipped(macro, "no matching trigger");
@@ -450,6 +470,7 @@ internal sealed partial class MacroRuntime
             }
 
             if (!suppress &&
+                value.HyperShiftLayer is null &&
                 value.IsDown &&
                 value.Input.Kind == MacroInputKind.RazerKey &&
                 _recording is null &&
@@ -468,7 +489,7 @@ internal sealed partial class MacroRuntime
             {
                 if (!suppress &&
                     playMacro is null &&
-                    TurboResolver?.Invoke(value.Input, _hyperShiftHeld) is { } turbo)
+                    TurboResolver?.Invoke(value.Input, value.HyperShiftLayer ?? _hyperShiftHeld) is { } turbo)
                 {
                     StartTurbo(value.Input, turbo);
                 }
@@ -490,7 +511,8 @@ internal sealed partial class MacroRuntime
             // low-level hook thread. Windows drops slow hooks and the desktop
             // would stall until the plan finishes.
             _ = Task.Run(() => ObservePlaybackAsync(
-                playMacro, playModifiers, holdCancellation, holdInput, playTrigger));
+                playMacro, playModifiers, holdCancellation, holdInput, playTrigger,
+                value.HyperShiftLayer.HasValue));
         }
         if (unhandledRazerKey is not null)
         {
@@ -544,7 +566,8 @@ internal sealed partial class MacroRuntime
                 input.Kind,
                 input.RazerKeyCode,
                 false,
-                input.DeviceId),
+                input.DeviceId,
+                input.InstanceId?.Trim().ToUpperInvariant()),
             _ => new InputKey(input.Kind, input.VirtualKey, input.Extended),
         };
 
@@ -552,7 +575,8 @@ internal sealed partial class MacroRuntime
         MacroInputKind Kind,
         int Code,
         bool Extended,
-        int DeviceId = 0);
+        int DeviceId = 0,
+        string? InstanceId = null);
 
     private readonly record struct SuppressedInput(
         MacroTriggerMode Mode,

@@ -66,6 +66,24 @@ public static class RazerFilterEndpointDiscovery
         }, cancellationToken));
     }
 
+    internal static bool IsOnlyHidContainer(string featureDevicePath, ushort productId, CancellationToken cancellationToken)
+    {
+        NativeMethods.HidD_GetHidGuid(out var hidGuid);
+        var devices = EnumerateCandidates(hidGuid, cancellationToken)
+            .Where(candidate => candidate.Path.Contains($"vid_1532&pid_{productId:x4}", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        var containers = devices.Select(device => device.ContainerId).Distinct().ToArray();
+        return containers.Length == 1 && containers[0] != Guid.Empty &&
+            devices.Any(device => StringComparer.OrdinalIgnoreCase.Equals(device.Path, featureDevicePath));
+    }
+
+    internal static bool IsHidProductPresent(ushort productId)
+    {
+        NativeMethods.HidD_GetHidGuid(out var hidGuid);
+        return EnumerateCandidates(hidGuid, CancellationToken.None).Any(candidate =>
+            candidate.Path.Contains($"vid_1532&pid_{productId:x4}&", StringComparison.OrdinalIgnoreCase));
+    }
+
     /// <summary>
     /// Finds the RZCONTROL endpoint for any product whose Razer driver exposes one.
     /// </summary>

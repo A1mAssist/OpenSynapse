@@ -99,7 +99,8 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
         _macroTargetIndex = _canUseOnboardMacro ? (int)MacroExecutionTarget.Onboard : (int)MacroExecutionTarget.Software;
         _catalog = catalog;
         _groupOptions = RazerMappingText.GroupOptions(
-            _canUseOnboardMacro || _canUseSoftwareMacro, hostOnly);
+            _canUseOnboardMacro || _canUseSoftwareMacro, hostOnly)
+            .Where(option => catalog.SupportsGroup(option.Group)).ToArray();
         ButtonId = buttonId;
         var buttonName = catalog.DescribeButton(buttonId);
         ButtonNameIsFallback = buttonName.StartsWith("Button ", StringComparison.Ordinal);
@@ -489,7 +490,7 @@ public sealed partial class RazerHidMappingRowViewModel : INotifyPropertyChanged
     public string ActionHeader => Group == RazerHidMappingGroup.Macro
         ? AppStrings.Text("RazerMappingMacroHeader")
         : AppStrings.Text("RazerMappingActionColumn");
-    public bool CanApply => IsAssignmentReadable && _groupIndex > 0 &&
+    public bool CanApply => IsAssignmentReadable && _groupIndex > 0 && _catalog.SupportsGroup(Group) &&
         (Group != RazerHidMappingGroup.Macro ||
          _localMacros.Count > 0 &&
          !HasMacroError &&

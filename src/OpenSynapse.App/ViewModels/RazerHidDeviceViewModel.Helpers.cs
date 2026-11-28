@@ -67,9 +67,9 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
             // earlier optional read marked it unsupported. Count distinct names.
             var unavailable = new HashSet<string>(
                 _unsupported.Select(capability => capability.ToString()), StringComparer.Ordinal);
-            if (_basicState is not null)
+            if (MappingProtocolErrors is { } errors)
             {
-                unavailable.UnionWith(_basicState.Errors.Keys);
+                unavailable.UnionWith(errors.Keys);
             }
             return Math.Max(0, Connection.Capabilities.Count - unavailable.Count);
         }

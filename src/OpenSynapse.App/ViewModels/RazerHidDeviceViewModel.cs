@@ -243,7 +243,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         };
     public int ProtocolTotalCount => Connection.Capabilities.Count;
     public IReadOnlyList<DeviceProtocolDetailViewModel> ProtocolDetails =>
-        BuildProtocolDetails(Connection, _unsupported, _basicState?.Errors);
+        BuildProtocolDetails(Connection, _unsupported, MappingProtocolErrors);
 
     public string ErrorText { get => _errorText; private set => SetField(ref _errorText, value); }
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);

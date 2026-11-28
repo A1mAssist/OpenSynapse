@@ -12,7 +12,8 @@ public static class BladeRecoveryFilterRestorer
 
     public static void DisableAndClear(
         string filterDevicePath,
-        IReadOnlyList<(ushort ScanCode, ushort Flag)> hooks)
+        IReadOnlyList<(ushort ScanCode, ushort Flag)> hooks,
+        IReadOnlyList<uint>? mouseHooks = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filterDevicePath);
         using var handle = CreateFile(filterDevicePath, 0, ShareReadWrite, 0, OpenExisting, 0, 0);
@@ -20,14 +21,15 @@ public static class BladeRecoveryFilterRestorer
             throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not open the Razer filter endpoint.");
 
         var errors = new List<Exception>();
-        foreach (var (code, payload) in CreateRecoveryPlan(hooks))
+        foreach (var (code, payload) in CreateRecoveryPlan(hooks, mouseHooks))
             TryControl(handle, code, payload, errors);
         if (errors.Count != 0)
             throw new AggregateException("Razer filter recovery was incomplete.", errors);
     }
 
     internal static IReadOnlyList<(uint Code, byte[] Payload)> CreateRecoveryPlan(
-        IReadOnlyList<(ushort ScanCode, ushort Flag)> hooks)
+        IReadOnlyList<(ushort ScanCode, ushort Flag)> hooks,
+        IReadOnlyList<uint>? mouseHooks = null)
     {
         ArgumentNullException.ThrowIfNull(hooks);
         var plan = new List<(uint, byte[])>(hooks.Count + 3)
@@ -38,6 +40,12 @@ public static class BladeRecoveryFilterRestorer
         plan.AddRange(hooks.Reverse().Select(static hook =>
             (RazerFilterInputProtocol.ClearInputHook,
                 RazerFilterInputProtocol.CreateKeyboardClearKey(hook.ScanCode, hook.Flag))));
+        if (mouseHooks is not null)
+        {
+            plan.AddRange(mouseHooks.Reverse().Select(static buttons =>
+                (RazerFilterInputProtocol.ClearInputHook,
+                    RazerFilterInputProtocol.CreateMouseClearKey(buttons))));
+        }
         plan.Add((RazerFilterInputHost.EnableInputNotify, BitConverter.GetBytes(0)));
         plan.Add((RazerFilterInputHost.EnableInputHooks, BitConverter.GetBytes(0)));
         return plan;

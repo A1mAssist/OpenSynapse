@@ -15,4 +15,5 @@ public readonly record struct MacroInputEvent(
     public int WindowWidth { get; init; }
     public int WindowHeight { get; init; }
     public MacroModifierKeys Modifiers { get; init; }
+    public bool? HyperShiftLayer { get; init; }
 }

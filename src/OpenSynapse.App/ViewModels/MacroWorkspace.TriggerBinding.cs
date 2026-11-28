@@ -63,7 +63,7 @@ public sealed partial class MacroWorkspace
     /// Applies the trigger and execution choices from the mapping page in one save.
     /// Returns null on success, or the user-facing error when the profile was not changed.
     /// </summary>
-    public async Task<string?> TryApplyMacroBindingAsync(
+    public Task<string?> TryApplyMacroBindingAsync(
         string macroId,
         MacroInput input,
         MacroTriggerMode triggerMode,
@@ -71,7 +71,20 @@ public sealed partial class MacroWorkspace
         int repeatCount,
         bool hyperShiftLayer,
         MacroSoftwareBinding? softwareBinding,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        TryApplyMacroBindingCoreAsync(macroId, input, triggerMode, playbackMode, repeatCount,
+            hyperShiftLayer, softwareBinding, cancellationToken, deferSave: false);
+
+    private async Task<string?> TryApplyMacroBindingCoreAsync(
+        string macroId,
+        MacroInput input,
+        MacroTriggerMode triggerMode,
+        MacroPlaybackMode playbackMode,
+        int repeatCount,
+        bool hyperShiftLayer,
+        MacroSoftwareBinding? softwareBinding,
+        CancellationToken cancellationToken,
+        bool deferSave)
     {
         var row = Items.FirstOrDefault(item =>
             StringComparer.Ordinal.Equals(item.Id, macroId));
@@ -80,13 +93,13 @@ public sealed partial class MacroWorkspace
             if (SoftwareShortcutCatalog.ActionOf(macroId) is { } shortcut)
             {
                 return await TryApplyBuiltInBindingAsync(
-                        shortcut.CreateMacro(), input, hyperShiftLayer, softwareBinding, cancellationToken)
+                        shortcut.CreateMacro(), input, hyperShiftLayer, softwareBinding, cancellationToken, deferSave)
                     .ConfigureAwait(true);
             }
 
             return NativeMouseButtonCatalog.ActionOf(macroId) is { } native
                 ? await TryApplyBuiltInBindingAsync(
-                        native.CreateMacro(), input, hyperShiftLayer, softwareBinding, cancellationToken)
+                        native.CreateMacro(), input, hyperShiftLayer, softwareBinding, cancellationToken, deferSave)
                     .ConfigureAwait(true)
                 : AppStrings.Text("MacroTriggerMacroMissing");
         }
@@ -156,6 +169,7 @@ public sealed partial class MacroWorkspace
             : null;
         row.Refresh();
         MarkMacroDirty(row);
+        if (deferSave) return null;
         if (!await TrySaveMacroProfileAsync(cancellationToken).ConfigureAwait(true))
         {
             row.SetTrigger(previousTrigger);
@@ -178,11 +192,19 @@ public sealed partial class MacroWorkspace
     /// Removes one trigger from a macro without changing the editor selection.
     /// Returns null on success, or the user-facing error when the profile was not changed.
     /// </summary>
-    public async Task<string?> TryClearMacroTriggerAsync(
+    public Task<string?> TryClearMacroTriggerAsync(
         string macroId,
         MacroInput input,
         bool hyperShiftLayer,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        TryClearMacroTriggerCoreAsync(macroId, input, hyperShiftLayer, cancellationToken, deferSave: false);
+
+    private async Task<string?> TryClearMacroTriggerCoreAsync(
+        string macroId,
+        MacroInput input,
+        bool hyperShiftLayer,
+        CancellationToken cancellationToken,
+        bool deferSave)
     {
         var row = Items.FirstOrDefault(item =>
             StringComparer.Ordinal.Equals(item.Id, macroId));
@@ -191,14 +213,14 @@ public sealed partial class MacroWorkspace
             return !IsBuiltInMacro(macroId)
                 ? null
                 : await TryClearShortcutTriggerAsync(
-                        macroId, input, hyperShiftLayer, cancellationToken)
+                        macroId, input, hyperShiftLayer, cancellationToken, deferSave)
                     .ConfigureAwait(true);
         }
 
         var trigger = row?.Definition.FindTrigger(input, MacroModifierKeys.None, hyperShiftLayer);
         return row is null || trigger is null
             ? null
-            : await ClearMacroTriggersAsync(row, [trigger], cancellationToken).ConfigureAwait(true);
+            : await ClearMacroTriggersAsync(row, [trigger], cancellationToken, deferSave).ConfigureAwait(true);
     }
 
     public Task<string?> TryClearMacroTriggerAsync(
@@ -227,7 +249,8 @@ public sealed partial class MacroWorkspace
         MacroInput input,
         bool hyperShiftLayer,
         MacroSoftwareBinding? softwareBinding,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool deferSave = false)
     {
         if (IsMacroRecording || IsMacroCountdown)
         {
@@ -263,6 +286,7 @@ public sealed partial class MacroWorkspace
             profile.SystemMacros.Add(stored);
         }
 
+        if (deferSave) return null;
         if (!await TrySaveMacroProfileAsync(cancellationToken, prepareDirtyMacros: false)
                 .ConfigureAwait(true))
         {
@@ -285,13 +309,14 @@ public sealed partial class MacroWorkspace
         string macroId,
         MacroInput input,
         bool hyperShiftLayer,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool deferSave = false)
     {
         var stored = FindSystemMacro(macroId);
         var trigger = stored?.FindTrigger(input, MacroModifierKeys.None, hyperShiftLayer);
         return stored is null || trigger is null
             ? null
-            : await RemoveSystemMacroTriggersAsync(stored, [trigger], cancellationToken)
+            : await RemoveSystemMacroTriggersAsync(stored, [trigger], cancellationToken, deferSave)
                 .ConfigureAwait(true);
     }
 
@@ -316,12 +341,19 @@ public sealed partial class MacroWorkspace
     private async Task<string?> RemoveSystemMacroTriggersAsync(
         MacroDefinition stored,
         IReadOnlyList<MacroTrigger> triggers,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool deferSave = false)
     {
         if (IsMacroRecording || IsMacroCountdown)
         {
             return AppStrings.Text("MacroEditBusy");
         }
+
+        MacroSoftwareBinding[] keypadBindings = deferSave ? [] : KeypadSoftwareBindings(stored, triggers);
+        await using var restoration = await BeginKeypadBindingRestoreAsync(keypadBindings, cancellationToken)
+            .ConfigureAwait(true);
+        if (keypadBindings.Length > 0 && restoration is null)
+            return AppStrings.Text("MacroTriggerRestoreFailed");
 
         var previousTrigger = stored.Trigger;
         var previousAdditional = CloneTriggers(stored.AdditionalTriggers);
@@ -346,6 +378,7 @@ public sealed partial class MacroWorkspace
             profile.SystemMacros.Remove(stored);
         }
 
+        if (deferSave) return null;
         if (!await TrySaveMacroProfileAsync(cancellationToken, prepareDirtyMacros: false)
                 .ConfigureAwait(true))
         {
@@ -360,6 +393,7 @@ public sealed partial class MacroWorkspace
             return AppStrings.Text("MacroSaveFailed");
         }
 
+        restoration?.Commit();
         RefreshMacroRuntime();
         return null;
     }
@@ -367,7 +401,8 @@ public sealed partial class MacroWorkspace
     private async Task<string?> ClearMacroTriggersAsync(
         MacroRowViewModel row,
         IReadOnlyList<MacroTrigger> triggers,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool deferSave = false)
     {
         if (triggers.Count == 0)
         {
@@ -378,6 +413,12 @@ public sealed partial class MacroWorkspace
         {
             return AppStrings.Text("MacroEditBusy");
         }
+
+        MacroSoftwareBinding[] keypadBindings = deferSave ? [] : KeypadSoftwareBindings(row.Definition, triggers);
+        await using var restoration = await BeginKeypadBindingRestoreAsync(keypadBindings, cancellationToken)
+            .ConfigureAwait(true);
+        if (keypadBindings.Length > 0 && restoration is null)
+            return AppStrings.Text("MacroTriggerRestoreFailed");
 
         var wasDirty = _dirtyMacroIds.Contains(row.Id);
         var previousTrigger = row.Definition.Trigger?.Clone();
@@ -400,6 +441,7 @@ public sealed partial class MacroWorkspace
             row.Refresh();
         }
         MarkMacroDirty(row);
+        if (deferSave) return null;
         if (!await TrySaveMacroProfileAsync(cancellationToken).ConfigureAwait(true))
         {
             row.SetTrigger(previousTrigger);
@@ -409,6 +451,7 @@ public sealed partial class MacroWorkspace
             return AppStrings.Text("MacroSaveFailed");
         }
 
+        restoration?.Commit();
         RefreshMacroRuntime();
         NotifySelectedMacroChanged();
         return null;
