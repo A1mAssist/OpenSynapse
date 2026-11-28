@@ -6,109 +6,98 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ## [Unreleased]
 
-## [1.7.4] - 2026-11-28
+Cumulative changes for 1.7.4, including the beta34 test build and its corrected MSI installer.
 
 ### Added
 
-- **Help center**: add an offline help page with Chinese and English guides and interactive control examples.
-- **Preset editor**: create, open and fine-tune `.oschroma` presets, preview module changes, and save or export the result; the app includes 12 free starter presets.
-- **HyperBoost CPU power limits**: allow CPU power presets in Custom and HyperBoost modes, retain a separate HyperBoost baseline for restoring firmware limits, and restore the previous hardware values if saving fails.
-- **Mouse surface calibration**: expose presets, manual sampling, lift-off and tracking settings according to device capabilities, with cancellation, timeout recovery and saved custom surfaces.
-- **Lighting output scope**: take over only selected devices; ambient layers can map the whole canvas, the selected devices together, or each device independently, so adjacent devices need not shift the keyboard's screen sampling area.
-- **Apply on edit completion**: headset audio, mouse and keyboard settings apply after editing, coalesce continuous changes and retain failure feedback, replacing the corresponding extra save buttons.
-- **Resizable navigation**: drag the device navigation boundary to make room for longer device names.
-
-- **Lighting Studio scenes**: the studio now opens in a browse view with six whole-set scenes (Aurora Breathing, Heartbeat, Neon Chase, Deep Echo, Lava Pulse, Prism Sweep); each is a real layered effect with its own description and shared timeline rather than a fabricated BPM value, renders on a shared 96×96 canvas, and applies to keyboards, mice, mousepads, headsets and single-zone devices, while Edit expands one into a normal profile for fine-tuning.
-- **Taskbar status strip**: an optional “Click to open the app” setting opens the existing main window with a single click; changes apply immediately and persist across restarts. It is off by default.
-- **Kraken V3 Pro**: connect the 052C receiver and 052D wired identity through the bundle-declared NXP serial channel, with battery, sidetone, silence detection and haptics controls and profile restore.
-- **Ripsaw HD audio**: add the capture card's speaker, PC, HDMI and microphone monitoring volume/mute controls, with saved settings restored on connection.
-- **Clio audio**: add Clio and Clio X controls through their dedicated Carol protocol, including product-specific EQ and power settings.
-- **Nommo audio**: expose volume, mute and EQ presets on the native Nommo Chroma and Nommo Pro device pages; Pro also supports eight-band EQ, bass, Dolby, input selection and profile restore.
-- **Dock volume**: Thunderbolt 5 Dock, Monitor Stand, Laptop Monitor Stand and Handheld Dock can adjust the current Windows default playback device's volume and mute state.
-- **Wireless Control Pod**: connect through its dedicated Bluetooth protocol, map eight button/rotation gestures to media actions or saved macros, and restore device mode when the session ends.
-- **Update source**: automatic updates can use the Gitee mirror; Settings offers Automatic, Gitee and GitHub, and Automatic prefers Gitee while falling back when it is unreachable or behind.
-- **Keyboard animations**: RazerHid keyboards can import a `.chroma` animation on the device page and play it through the software frame runtime; the file stays with the lighting profile.
-- **Naga side plates**: the 12-key and 7-key side plates report their buttons as firmware ids 64–75 and 80–86; mapping, macros and Turbo now resolve them, so every plate works.
-- **Naga scroll wheel**: Naga V3 Pro exposes its three-way tactile, free-spin and micro-tactile wheel mode, including profile apply and Smart Reel.
-- **DPI stage shortcuts**: the DPI card shows 1–5 buttons and switches immediately, without a duplicate stage input; the highlighted stage follows the mouse's own DPI button within a few seconds.
-- **Driver download progress**: driver package downloads show a progress bar with speed and remaining time, and use four parallel range requests for packages of 4 MB or more.
-- **THX download progress**: THX components use the same progress panel and parallel downloader as drivers, with bytes, speed and remaining time; the roughly 41 MB APO package is fetched in four range requests.
+- **Help center**: offline Chinese and English guides with interactive control examples.
+- **Preset editor**: create, open and fine-tune `.oschroma` presets, preview changes, and save or export them. The app includes 12 free starter presets.
+- **Lighting Studio scenes**: a default browse view with six layered scenes—Aurora Breathing, Heartbeat, Neon Chase, Deep Echo, Lava Pulse and Prism Sweep—on a shared timeline and 96×96 canvas. Apply a scene to supported devices or expand it into an editable profile.
+- **Lighting output scope**: take over only selected devices. Ambient layers can map the whole canvas, selected devices together, or each device independently, keeping adjacent devices from shifting the keyboard's screen sampling area.
+- **Keyboard animations**: import `.chroma` animations on RazerHid keyboard pages for software playback; the animation stays with the lighting profile.
+- **Mouse surface calibration**: capability-based presets, manual sampling, lift-off and tracking settings, with cancellation, timeout recovery and saved custom surfaces.
+- **DPI stage shortcuts**: switch with the 1–5 buttons, without a duplicate stage input. The highlighted stage follows the mouse's physical DPI button within a few seconds.
+- **Naga V2 Pro haptic wheel**: edit stages and custom curves over USB or the receiver, verify writes and restore previous settings on failure. Bluetooth exposes supported stage settings.
+- **Naga V3 Pro scroll wheel**: tactile, free-spin and micro-tactile modes, including profile apply and Smart Reel.
+- **HyperBoost CPU power limits**: adjust CPU power presets in Custom and HyperBoost modes. HyperBoost retains its own firmware baseline, and a failed save restores the previous hardware values.
+- **Kraken V3 Pro**: connect the 052C receiver and 052D wired identity through the NXP serial channel, with battery, sidetone, silence-detection sleep, haptics and profile restore. Detection also handles ports whose IDs omit VID/PID.
+- **Ripsaw HD audio**: speaker, PC, HDMI and microphone monitoring volume/mute controls, with saved settings restored on connection.
+- **Clio audio**: dedicated Clio and Clio X EQ and power controls.
+- **Nommo audio**: native Nommo Chroma and Nommo Pro volume, mute and EQ presets; Pro also supports eight-band EQ, bass, Dolby, input selection and profile restore.
+- **Dock volume**: Thunderbolt 5 Dock, Monitor Stand, Laptop Monitor Stand and Handheld Dock can control the current Windows default playback device's volume and mute state.
+- **Wireless Control Pod**: eight button/rotation gestures can use media actions or saved macros over its dedicated Bluetooth connection; device mode is restored when the session ends.
+- **Taskbar status strip**: an optional, persistent “Click to open the app” setting opens the existing main window. It is off by default.
+- **Download progress**: driver and THX downloads share a panel showing progress, bytes, speed and remaining time. Packages of 4 MB or more use four parallel requests when the server supports ranges.
+- **Update source**: choose Automatic, Gitee or GitHub. Automatic prefers Gitee and falls back when it is unreachable or behind.
 
 ### Changed
 
-- **Macro held steps**: a step with auto-release off now keeps its key pressed until the trigger is released or playback is stopped, instead of being force-released when the macro ends. Held steps are limited to single playback; loops and repeating playback reject them. Existing macros that relied on the old forced release now hold the key.
-- **Macro trigger bindings**: the macro library and editor show bindings read-only. The device key assignment page is the only place that captures, edits or clears them, and clearing one key no longer removes the macro's other bindings.
-- **Shared macro library**: macro recordings belong to every profile. Switching or creating a profile keeps the macros; only the trigger keys, the device assignment and the on/off switch are per profile, and a new profile starts with every macro available but unbound. Deleting a macro removes it from all profiles, so a profile that still binds it has to be unbound first. Existing per-profile macros are merged into the library on the first start, and two profiles that shared an id with different steps keep both macros.
+- **Apply on edit completion**: headset audio, mouse and keyboard settings apply when editing finishes. Clicking outside the input group, including blank page space, commits numeric edits; Enter finishes editing without activating another button. Related inputs remain one edit, continuous changes are coalesced, and failures remain visible.
+- **Device navigation**: click the whole Devices row to expand it and open the first device; click again to collapse it. The pane initially fits the longest product name within available space and retains a manually dragged width. The resize tooltip and green hover line are removed.
+- **Macro held steps**: with auto-release off, a key stays pressed until the trigger is released or playback stops. Held steps support single playback; loops and repeats reject them. Macros that relied on the old forced release at completion now hold the key.
+- **Macro trigger bindings**: the library and editor show read-only summaries; the device assignment page is the editing entry point. Clearing one key preserves the macro's other bindings.
+- **Shared macro library**: recordings are shared across profiles, while triggers, assignments and enabled state remain per profile. New profiles have the existing macros available but unbound. Migration keeps differing recordings that shared an ID; deleting a macro requires removing its remaining profile bindings first.
 
 ### Fixed
 
-- **Keyboard and peripheral frame output**: prepare extended custom lighting once per output session instead of resetting the effect on every frame, while retaining the per-frame latch required by older keyboards. Manifest keyboards use their declared payload lengths and frame pacing; wireless keyboard aliases share the correct transaction channel and counter.
-- **Numeric settings auto-apply**: clicking outside an input group commits the edited value, including a click on empty page space. Enter finishes the edit without activating an unrelated button such as receiver pairing; moving between related inputs keeps the edit together.
-- **Studio dock and mouse output**: keep each logical device on a shared HID path and route the mouse's complete frame to its own channel, fixing the dock changing color while the linked Basilisk V3 Pro 35K stays unchanged.
-- **Profile creation, cloning and renaming**: all three actions on the sidebar Profiles page prompt for a name. Rename starts with the current name selected; cancelling leaves the profile intact, and invalid or duplicate names are rejected.
-- **Mouse polling-rate controls**: a missing readback after a write keeps the controls available for retry instead of hiding them as unsupported. Only a confirmed rate is saved to the profile.
-- **Background battery refresh**: refresh device battery readings and the tray display while the main window is hidden, and share readings between the device page and tray to avoid duplicate queries.
-- **HyperPolling indicator**: name the three status modes, read back changes and use the receiver's own command channel. Indicator colors follow connection or battery status and cannot be customized.
-- **Surface calibration sampling**: Enter, Space or any mouse's left button can finish sampling while the pointer is suspended. Cancellation restores the temporary sensor state; enabled Manual/Mini readback differences are retained as applied but unconfirmed instead of discarding firmware-recalculated values.
-- **Studio device images**: show cached product images immediately while revalidating the manifest in the background.
-- **Device navigation**: clicking the whole Devices row expands the group and selects its first device; clicking it again collapses the group without reopening it during navigation.
-- **Tartarus mapping**: resolve 022B/0244 keypad firmware ids to the key each switch actually emits, so software macros no longer bind to F7, G or Space; wheel and D-pad ids stay unbound instead of becoming keyboard keys.
-- **Naga mapping**: fall back to the product button table when the firmware returns no list, keep side-button triggers scoped to their own mouse, restore the missing Naga Epic identity, and enable software-macro binding on BLE Naga pages.
-- **Private-key hot-plug**: keep one reader per device and rescan incrementally, so a device connected after startup receives its private-key macros without restarting the app.
-- **Profile references**: rename per-device application rules together with their profile, block deleting a profile that rules still use (showing the reference count), restore the old profile if the rule save fails, and warn after importing a set with missing rule targets.
-- **Manual override scope**: changing Blade performance or fan no longer marks unrelated mice and keyboards as manually overridden.
-- **Update hardening**: protect the service data directory ownership, stage driver packages in the service cache before verification, and keep the service alive when a request carries an invalid path.
-- **THX preset choices**: filter V3 presets using installed device and spatial-mode metadata, so spatial-only presets are no longer offered while spatial audio is off; localize preset display names and immersive/competitive labels while retaining the original native IDs. Shared names use the corresponding Synapse translations in all eight supported languages.
-- **Headset save feedback**: show the saved status beside Refresh without shifting the page; remove the device header's identity tooltip.
-- **Ambient capture recovery**: recreate capture buffers before reading frames after a display-resolution change; retain the last frame and reopen capture after transient failures instead of leaving screen-sampled lighting black until manually restarted.
-- **Chroma takeover controls**: show the device toggle according to lighting capabilities even when the global service is off; honor saved device permissions before pausing Studio or sending game frames, and keep Studio running when only the takeover preference changes.
-- **Device navigation width**: automatically fit the longest product name within the available window space until the user resizes the pane; retain manual widths and remove the resize tooltip and green hover line.
-- **Viper manual calibration**: accept valid `0B:85` replies declaring ten bytes while retaining all nine calibration parameters, preventing the start panel from disappearing immediately after New; log calibration stages and failures.
-- **THX state and persistence**: list only native V3/V4 presets, retain usable controls after a rejected write or partial read, preserve half-decibel EQ values and parse service paths containing spaces correctly.
-- **Headset equalizers**: attempt to restore previous settings after a partial combined write; verify readback using each protocol's semantics and keep unavailable data from appearing as editable zero curves.
-- **Studio stop recovery**: restore lighting saved in device cards when stopping, and release and restore devices removed from the output scope.
-- **Studio layout**: fit the canvas when its viewport changes while preserving manual zoom; align output-scope controls with existing styles at the bottom of the page.
-- **Tray batteries**: exclude sound cards, wired audio and other devices without battery support from the battery list.
-- **Naga side buttons**: preserve firmware button identities through mapping reads, writes and input detection instead of incorrectly translating side buttons.
+#### Input, mapping and profiles
 
-- **Page scrolling speed**: the six main pages scroll with the 1.7.3 wheel step again; the page root is back on `ScrollViewer`, so one notch moves the same distance instead of the smaller compositor step.
-- **Nested key mappings**: mapping a key onto a button that already runs a macro now calls that button's native function once and leaves the button's own macro to the physical key, matching Razer Synapse. Targets without a host-side injection path (buttons 6–10, private keys already bound to that same key) are reported as unsupported instead of silently nesting twice.
-- **Device refresh stalling**: a control channel that never answers is now remembered for 30 seconds instead of being re-probed on every pass, so a busy or half-detached device no longer blocks profile switches and lighting writes for seconds. Device-change, display-change and power events are also labelled in the log, so the next report names the trigger.
-- **Kraken V3 Pro detection**: the NXP serial bridge is now adopted by the USB device's container when the port id carries no VID/PID, so the receiver connects even when Windows exposes the bridge as a software port.
-- **Huntsman V3 Pro 8KHz extra keys**: the mapping page lists the four multimedia keys and the two side keys the product bundle assigns, and stops presenting the side keys as macro keys, so the rows match Razer Synapse.
-- **Game lighting restore**: ending a Chroma game session now restores every device that received frames. One slow or failed target no longer blocks the rest, and a session is no longer skipped when all writes time out. This fixes peripherals going dark after a game and a mouse stuck on the last frame, while unresponsive wireless targets no longer stall the whole lighting update.
-- **Page navigation**: remove the whole-page opacity animation to reduce transition delays.
-- **Huntsman V3 Pro 8KHz mapping read**: put the keyboard back into normal mode before a mapping-page read, so a device left in driver mode by an interrupted save no longer rejects the whole keymap and shows “Unable to read key mappings”.
-- **Tartarus Pro mapping**: read the keypad's onboard table in driver mode, select the active keymap with `02:B6`/`02:37`, and use the 80-byte `02:92`/`02:8D` payloads, so all 28 mapping rows load instead of `0/28`.
-- **THX preset sync**: while a headset's THX card is visible, poll the native state every two seconds and refresh the preset and curve when the headset's own controls change them, without writing back to the device.
-- **Taskbar battery freshness**: redraw the strip from live device rows every second while keeping the ten-second HID read interval. Recover after transient taskbar failures and use the fullscreen notification state to hide the strip, so it remains available while the app is in the background.
-- **Mouse DPI stages**: saving the stage table now also applies the active stage's DPI, so the pointer speed changes immediately and the DPI card refreshes.
-- **Lighting Studio regions**: switching back to a layer keeps its region selected instead of showing “whole layer”, and applying a new selection replaces that region instead of adding another.
-- **Background mouse mappings**: keep re-arming driver mode while the window is hidden, so a mouse that slept or re-paired no longer loses its private-key mappings until the window is opened.
-- **Device refresh cost**: cache unsupported capability probes for 30 seconds, skip a readout tick while a device write holds the gate, and load the slow device cards one lock at a time so a click does not wait for all of them.
-- **Export logs**: the button now opens the folder with the log selected instead of printing the file path.
-- **THX manifest download**: each request uses the current system proxy and gives up after 15 seconds with one retry, so a long-running session no longer keeps a cached direct connection and hangs; a failed fetch shows a network hint on the THX card.
-- **Scroll settings**: the mode and acceleration save buttons now share the same height and align.
-- **Mouse mapping hotspots**: place hotspots with the product page's actual image offsets, fixing the 10px-left/5px-down shift on SVG art such as the Basilisk V3 Pro Phantom Green; the profile-switch callout now draws as well.
-- **Studio key-triggered lighting**: match keyboard input and lighting-control HID interfaces by physical device identity, restoring reactive, ripple and key-started wave effects for newly created and imported layers. Keyboard and Blade reactive effects also retain fresh key presses after a long gap or before the first rendered frame.
-- **Blade performance**: accept the GPU Extreme readback (`0x03`) reported by Blade 18 (2026), preserving both CPU/GPU readings and access to the supported Custom levels; Extreme is displayed as the current state without adding an unverified write option.
-- **Display refresh**: run display-driver queries and refresh-rate changes off the UI thread so device refreshes do not stall page scrolling; UI updates and device-operation ordering are preserved.
-- **Blade diagnostics**: show localized names for auto sleep, time to dim, indicator LED and GPU detection instead of raw resource keys.
-- **Mouse mapping layout**: align both button lists at the top so unequal button counts no longer stagger the two columns.
-- **Macro execution**: persist trigger and playback choices even before a trigger key is assigned, so restarting or switching macros keeps the selection; changing only the trigger mode also saves automatically.
-- **Audio discovery**: keep separate audio devices visible together and track each wireless receiver independently; a USB sound card no longer hides a second headset.
-- **Kitty Bluetooth audio**: preserve the six supported models' product identities, accept both documented response types and empty acknowledgements, and release failed GATT connections before retrying.
-- **Nommo V2 and Soma Pro audio**: use their own report IDs and supported commands; restore Nommo's seven bass levels and preserve Soma's 0.1 dB EQ values without sending unrelated headset or lighting commands.
-- **Bluetooth mice**: mapping and scroll settings read and write the active onboard profile instead of the first slot, and the profile list loads before the mapping table, so switching profiles no longer leaves stale mappings.
-- **Naga identities**: Naga Pro, Naga V2 Pro and their Bluetooth identities are matched, and the missing private keys for 0053, 008D, 0096 and the cycle-scroll action are included.
-- **Service install**: a clean MSI install now creates OpenSynapseService in the same elevation, resolving the installing user from the active console session when the MSI action runs as SYSTEM; registration is optional and no longer fails the install with 1721, and the app retries on first launch when the SID is unavailable.
-- **Blade lighting**: launch and window restore reapply the saved keyboard effect; an unrelated Blade fan or thermal error no longer suppresses the lighting write. Reactive and ripple effects also light the arrow keys correctly because right Ctrl no longer shares the left-arrow LED cell.
-- **Blade fan curve**: the first curve write re-declares manual fan mode, so a Blade that already reports Manual no longer keeps following its old curve or sticks at one RPM.
-- **Touchpad indicator**: the lamp is re-sent after the software-mode takeover and retried until the EC confirms it, covering the autostart case.
-- **02CF and 02A6 extra keys**: the single media key exposes its real Play/Pause row, the Xbox Game Bar and Cycle Apps side keys get their own names, and the 02A6 side keys are complete.
-- **Tartarus Pro**: OBM reads select the keymap the device actually reports.
-- **Mouse Dock Pro**: short profile-id replies from linked devices are accepted, so the onboard profile list loads and writes are no longer rejected.
-- **About**: the brand credit stays untranslated.
+- **Keypad mapping families**: Nostromo, Orbweaver, Tartarus and their Chroma variants use the legacy driver input path; Tartarus V2 and Tartarus Pro use per-device driver interception and host mapping. Correct ordinary keys, D-pad and wheel actions, keep normal and HyperShift layers separate, and retain the layer used at key-down until release.
+- **Tartarus V2 Pro**: use its own 27-key onboard mapping table and active keymap, restore the previous target after reads/writes, and verify saved assignments. Reserved controls and joystick axes are excluded from ordinary key rows.
+- **Naga side plates**: separate firmware button IDs from private input IDs, name 2/6/7/12-key plate entries by model, and use product tables when firmware omits its list; complete Naga Epic, Pro and V2 Pro identities and connection aliases. Unreadable slots cannot be edited, and input state is scoped to the physical mouse. Preserve old software bindings when saving other keys, clearing a shared trigger only after its last reference is removed.
+- **Keyboard media and extra keys**: restore clickable media-key entries and independent keyboard-service mapping reads/writes. Huntsman V3 Pro and 8KHz models retain their own Play/Pause, Xbox Game Bar and Cycle Apps assignments; incomplete device lists no longer hide supported controls. Reads recover from an interrupted save that left the keyboard in driver mode.
+- **Input order and release**: process driver events in submission order so press/release events cannot overtake one another. Retry failed macro key releases before another playback and preserve recovery on shutdown.
+- **Nested mappings**: a source mapped to an occupied target calls that target's native action once, leaving its macro to the physical target key. Unsupported host-injection combinations, including mouse buttons 6–10 and self-native private keys, report an error instead of nesting again.
+- **Background and hot-plug mappings**: maintain mouse driver mode while hidden and create private-key readers for newly connected devices. Macro trigger/playback choices persist even before assigning a trigger.
+- **Profile actions and selection**: New, Clone and Rename prompt for a valid, unique name; cancellation preserves the profile. Refreshing the catalog no longer switches a newly selected profile back to the first entry.
+- **Profile references and rules**: rename application-rule references with the profile, block deletion while references remain, roll back a failed rule save, and warn about missing imported targets. Blade performance/fan edits no longer mark unrelated devices as manually overridden.
+- **Onboard and Bluetooth profiles**: background reads preserve an unapplied slot selection. Bluetooth mapping and scroll changes target the active profile; Mouse Dock Pro accepts short linked-device profile replies.
+- **Polling-rate controls**: retain controls after transient readback failures and preserve the selected fullscreen rate instead of showing an empty value after switching, including 8000 Hz. Device changes and initialization no longer save a control's temporary default; failed saves restore the selection.
+- **DPI and calibration**: applying the stage table also applies the active DPI. Viper calibration no longer dismisses its start panel on a valid short reply; Enter, Space or any mouse's left button can finish sampling while the pointer is suspended. Cancellation restores sensor state, and firmware-recalculated Manual/Mini values remain applied but unconfirmed instead of being discarded.
+- **Receiver indicators and mouse power**: use each receiver's command channel and the correct three status modes, with readback checks. Indicator colors follow connection/battery state rather than a custom RGB value. Correct the low-battery threshold command for the affected mouse family.
+- **Mapping layout**: align mouse key lists at the top and place hotspots using the product image's actual offsets, including Basilisk V3 Pro Phantom Green.
+
+#### Lighting
+
+- **Keyboard frame output**: initialize extended custom mode once per output session, retain the latch required by older keyboards, and use model-specific payload lengths, pacing and transaction channels. Failed writes and reconnects reset the session for reinitialization.
+- **Key-triggered effects**: associate input and lighting HID interfaces by physical device. Reactive fade and ripple effects use individual key presses, preserve other keys' effects, and keep unlit overlay pixels transparent rather than blacking out lower layers. Fresh presses survive the first frame or a long rendering gap.
+- **Studio regions and timing**: keep each layer's region when switching layers; applying a new selection replaces that region. Maintain shared scene timing across device renderers and remove stale layer/device state when the canvas changes.
+- **Dock and mouse output**: preserve separate logical devices on a shared HID path and send the full Basilisk V3 Pro 35K frame to the mouse channel instead of only changing Mouse Dock Pro.
+- **Ambient capture**: recreate buffers after resolution changes, retain the last valid frame during transient capture failures and reopen capture automatically, covering fullscreen transitions that previously left screen-sampled lighting black.
+- **Chroma takeover and restore**: show per-device takeover controls even when the global service is off, honor device permissions and keep Studio running when only preferences change. Restore devices after game sessions, including sessions whose writes timed out; one failed target no longer blocks the rest.
+- **Stop and display-off recovery**: stopping Studio restores device-card lighting, as does removing a device from its scope. Display-off handling pauses frame output before switching peripherals off and restores saved lighting on wake, avoiding competing profile writes.
+- **ARGB effects**: expose supported Wave and Starlight modes on wireless ARGB controllers, with color inputs appropriate to the selected effect.
+- **Studio layout**: fit the canvas after viewport changes while preserving manual zoom, place styled output-scope controls at the bottom, and display cached device images while refreshing them in the background.
+
+#### Audio
+
+- **THX presets**: list native V3/V4 presets and filter V3 choices by device and spatial mode. Shared names and immersive/competitive labels use the Synapse translations in all eight supported languages while native IDs stay unchanged. Visible THX cards follow native preset/curve changes every two seconds without writing them back.
+- **THX state and feedback**: retain usable controls after a rejected write or partial read, preserve half-decibel EQ values and parse service paths containing spaces correctly. “Saved” appears beside Refresh without moving the page; the device-header identity tooltip is removed.
+- **Hardware EQ and Leviathan V2 Pro**: use each protocol's value scale and readback semantics, attempt rollback after partial combined writes, and keep unavailable curves uneditable. Correct Leviathan V2 Pro's EQ scale that made bands appear at maximum and restore its spatial/head-tracking mode selector.
+- **Audio discovery and Bluetooth**: keep multiple receivers visible independently, preserve the six supported Kitty Bluetooth models' identities, accept their documented responses and release failed connections before retrying.
+- **Nommo V2 and Soma Pro**: use their own report IDs and capabilities, restore Nommo's seven bass levels and retain Soma's 0.1 dB EQ precision.
+
+#### Blade, interface and performance
+
+- **Blade performance and fans**: accept the Blade 18 (2026) GPU Extreme readback without adding an unverified write option. Re-declare manual mode before the first fan-curve write, and retry the touchpad indicator after software takeover until the EC confirms it.
+- **Blade lighting**: reapply saved effects on startup and window restore even if another thermal setting fails; correct the right-Ctrl/left-arrow LED overlap. Diagnostics use localized labels.
+- **Scrolling and device refresh**: restore the 1.7.3 wheel step on the six main pages and remove the whole-page fade. Display queries and refresh-rate changes run off the UI thread; unsupported or unresponsive probes are cached for 30 seconds, busy write queues skip readout ticks, and slow cards no longer hold one shared lock for all reads.
+- **Preset preview resources**: stop rendering when playback is paused or the editor is hidden/minimized, and resume with the window.
+- **Battery displays**: refresh while the app is hidden and share device readings with the tray. The taskbar strip redraws live state every second with a ten-second HID read interval, recovers from transient taskbar errors and avoids secondary-monitor clock and task-button areas. Devices without battery support are excluded.
+- **Device application rules**: use the page's card style below key mapping, show the card only when applicable and restore its separator.
+- **Small UI fixes**: exporting logs opens the folder with the file selected; About keeps the brand credit untranslated.
+
+#### Installation and device communication
+
+- **MSI shutdown**: fix helper startup failing with WMI error 21 and falsely reporting that input recovery is still running. Report actual launch/query failures and preserve recovery/updater waits. The corrected beta34 installer is `Setup-fixed.msi`.
+- **Service installation and requests**: register the service during elevated MSI installation; optional registration can retry on first launch. Protect service-directory ownership, verify driver packages in the protected service cache, and keep invalid-path requests from terminating the service worker.
+- **Download failures**: validate returned byte ranges, cancel remaining segments after a failure, bound stalled reads and replace cached packages only after a complete download. THX manifest requests use the current proxy with a 15-second timeout and one retry.
+- **Device communication**: correct affected peripheral report lengths, product aliases and profile/port response checks, and improve timeout cancellation and native resource cleanup.
+
+### Current limitations
+
+- **Naga side-button software bindings**: new software macros, Windows shortcuts and implicit host forwarding remain unavailable until an independent, suppressible input path is implemented. Supported firmware mappings and onboard macros remain available; old software bindings are retained for removal and restoration, not advertised as working.
+- **Host-mapped keypads**: require the matching Razer filter driver, `OpenSynapse.RecoveryHost.exe` and a running app. Legacy capture requires Synapse to be closed and one device of the same model; older driver output also follows Windows input-injection privilege rules.
 
 ## [1.7.3] - 2026-11-22
 
