@@ -359,14 +359,18 @@ public sealed partial class RazerHidMappingViewModel : INotifyPropertyChanged
                     nativeOption >= 0)
                 {
                     nativeMouseIndex = nativeOption;
-                    row.GroupIndex = (int)RazerHidMappingGroup.MouseButton;
-                    row.OptionIndex = nativeOption;
+                    var canAssign = RazerSoftwareMacroAssignmentPolicy.CanAssign(softwareTrigger);
+                    row.GroupIndex = (int)(canAssign ? RazerHidMappingGroup.MouseButton : RazerHidMappingGroup.Keep);
+                    if (canAssign) row.OptionIndex = nativeOption;
                     row.SoftwareMacroId = nativeMacro.Id;
                     row.LoadedOptionIndex = nativeOption;
                     // The dropdown and the "current" line must agree: the key calls
                     // the target button's native function.
-                    row.CurrentActionText = DescribeAssignment(
+                    var actionText = DescribeAssignment(
                         RazerHidMappingFunctions.ButtonCode, [(byte)native.Button]);
+                    row.CurrentActionText = canAssign
+                        ? actionText
+                        : $"{actionText} · {AppStrings.Text("RazerMappingMacroSoftwareUnavailable")}";
                 }
 
                 if (shortcutIndex < 0 &&

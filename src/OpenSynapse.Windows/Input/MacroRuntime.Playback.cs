@@ -103,6 +103,7 @@ internal sealed partial class MacroRuntime
             // Even a cancelled replacement waits for the earlier owner's key-up.
             await previous.ConfigureAwait(false);
             playback.Token.ThrowIfCancellationRequested();
+            await RetryPendingOutputReleasesAsync(playback.Token).ConfigureAwait(false);
             PlaybackStateChanged?.Invoke();
             PlaybackStarted?.Invoke(macro, trigger?.Mode, playbackMode);
             releasedModifiers = await ReleaseTriggerModifiersAsync(triggerModifiers).ConfigureAwait(false);
@@ -408,7 +409,7 @@ internal sealed partial class MacroRuntime
             }
             catch
             {
-                // Best effort release; the original error is more actionable.
+                // SendOwnedInputAsync retains failed releases for recovery before the next playback.
             }
         }
     }
@@ -453,6 +454,8 @@ internal sealed partial class MacroRuntime
         try
         {
             var key = KeyOf(input);
+            if (await RetryPendingOutputReleaseAsync(key).ConfigureAwait(false) && !isDown)
+                return;
             _outputOwners.TryGetValue(key, out var owners);
             if (isDown)
             {
@@ -469,11 +472,40 @@ internal sealed partial class MacroRuntime
                     owners.Remove(owner);
                     return;
                 }
-                await SendInputAsync(input, false, cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    await SendInputAsync(input, false, cancellationToken).ConfigureAwait(false);
+                }
+                catch
+                {
+                    _pendingOutputReleases[key] = input.Clone();
+                    throw;
+                }
                 _outputOwners.Remove(key);
             }
         }
         finally { _outputGate.Release(); }
+    }
+
+    private async Task RetryPendingOutputReleasesAsync(CancellationToken cancellationToken)
+    {
+        await _outputGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            foreach (var key in _pendingOutputReleases.Keys.ToArray())
+                await RetryPendingOutputReleaseAsync(key).ConfigureAwait(false);
+        }
+        finally { _outputGate.Release(); }
+    }
+
+    // The output gate keeps a new owner from claiming the key until recovery succeeds.
+    private async Task<bool> RetryPendingOutputReleaseAsync(InputKey key)
+    {
+        if (!_pendingOutputReleases.TryGetValue(key, out var input)) return false;
+        await SendInputAsync(input, isDown: false, CancellationToken.None).ConfigureAwait(false);
+        _pendingOutputReleases.Remove(key);
+        _outputOwners.Remove(key);
+        return true;
     }
 
     private async Task<IReadOnlyList<MacroInput>> ReleaseTriggerModifiersAsync(

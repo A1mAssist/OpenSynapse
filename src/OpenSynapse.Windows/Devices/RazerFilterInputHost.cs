@@ -26,14 +26,14 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
         Channel.CreateUnbounded<BladeMappingInputEvent>(new UnboundedChannelOptions
         {
             SingleReader = true,
-            SingleWriter = false,
+            SingleWriter = true,
         });
     private readonly object _lifecycleGate = new();
     private readonly List<(ushort ScanCode, ushort Flag)> _installedHooks = [];
     private readonly List<uint> _installedMouseHooks = [];
     private readonly HashSet<(ushort ScanCode, bool Extended)> _submittedKeyboardKeys = [];
-    private Task[] _readers = [];
-    private Task? _consumer;
+    private readonly Task<ReadOnlyMemory<byte>>?[] _pendingReads = new Task<ReadOnlyMemory<byte>>?[2];
+    private Task _reader = Task.CompletedTask;
     private Task? _completion;
     private Task? _disposeTask;
     private bool _hooksEnabled;
@@ -153,14 +153,15 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
         cancellationToken.ThrowIfCancellationRequested();
         _started = true;
         _accepting = true;
-        var startedReaders = new List<Task>(2);
         try
         {
-            _driver.PostRead(0);
-            startedReaders.Add(ReadLoopAsync(0));
-            _driver.PostRead(1);
-            startedReaders.Add(ReadLoopAsync(1));
-            EnsureCompletion(startedReaders);
+            for (var slot = 0; slot < _pendingReads.Length; slot++)
+            {
+                _driver.PostRead(slot);
+                _pendingReads[slot] = _driver.CompleteReadAsync(slot);
+            }
+            _reader = ReadLoopAsync();
+            EnsureCompletion();
 
             lock (_lifecycleGate)
             {
@@ -192,8 +193,9 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
         catch (Exception startupError)
         {
             var cleanupError = StopDriver();
-            EnsureCompletion(startedReaders);
-            cleanupError ??= await ObserveCompletionAsync().ConfigureAwait(false);
+            EnsureCompletion();
+            var completionError = await ObserveCompletionAsync().ConfigureAwait(false);
+            cleanupError ??= completionError;
             DisposeDriver();
             _disposed = true;
             _stop.Dispose();
@@ -246,20 +248,20 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
         }
     }
 
-    private async Task ReadLoopAsync(int slot)
+    private async Task ReadLoopAsync()
     {
         try
         {
-            while (true)
+            for (var slot = 0; ; slot = (slot + 1) % _pendingReads.Length)
             {
-                var frame = await _driver.CompleteReadAsync(slot).ConfigureAwait(false);
+                var frame = await _pendingReads[slot]!.ConfigureAwait(false);
                 lock (_lifecycleGate)
                 {
                     _stop.Token.ThrowIfCancellationRequested();
 
-                    // Match the official double-buffer flow: re-arm this context before
-                    // processing the completed frame.
+                    // Re-arm before delivery, but consume in posting order to preserve key edges.
                     _driver.PostRead(slot);
+                    _pendingReads[slot] = _driver.CompleteReadAsync(slot);
                 }
                 if (_accepting &&
                     RazerFilterInputProtocol.TryParseInputFrame(frame.Span, out var input))
@@ -286,10 +288,9 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
         }
     }
 
-    private async Task SuperviseAsync(Task[] readers, Task consumer)
+    private async Task SuperviseAsync(Task reader, Task consumer)
     {
-        var allReaders = Task.WhenAll(readers);
-        await Task.WhenAny(allReaders, consumer).ConfigureAwait(false);
+        await Task.WhenAny(reader, consumer).ConfigureAwait(false);
         if (!_stop.IsCancellationRequested)
         {
             StopDriver();
@@ -298,7 +299,7 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
         Exception? error = null;
         try
         {
-            await allReaders.ConfigureAwait(false);
+            await reader.ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (_stop.IsCancellationRequested)
         {
@@ -306,6 +307,15 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
         catch (Exception exception)
         {
             error = exception;
+        }
+
+        // Cancellation must finish for both native buffers before the driver can be disposed.
+        foreach (var pendingRead in _pendingReads)
+        {
+            if (pendingRead is null) continue;
+            try { await pendingRead.ConfigureAwait(false); }
+            catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
+            catch (Exception exception) { error ??= exception; }
         }
 
         _events.Writer.TryComplete(error);
@@ -437,16 +447,14 @@ public sealed class RazerFilterInputHost : IAsyncDisposable
         }
     }
 
-    private void EnsureCompletion(IReadOnlyCollection<Task> readers)
+    private void EnsureCompletion()
     {
         if (_completion is not null)
         {
             return;
         }
 
-        _readers = [.. readers];
-        _consumer = ConsumeAsync();
-        _completion = SuperviseAsync(_readers, _consumer);
+        _completion = SuperviseAsync(_reader, ConsumeAsync());
     }
 
     private void DisposeDriver()

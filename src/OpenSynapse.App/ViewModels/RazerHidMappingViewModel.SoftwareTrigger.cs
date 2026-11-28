@@ -331,6 +331,18 @@ public sealed partial class RazerHidMappingViewModel
         // trigger claimed by input, not by row, or moving the alias row clears
         // the binding the real row still needs.
         var claims = new List<RazerSoftwareMacroTriggerMatcher.Claim>();
+        // Keep also preserves unavailable legacy bindings shared by multiple rows.
+        foreach (var row in Rows.Where(row => row.Group == RazerHidMappingGroup.Keep))
+        {
+            if (row.SoftwareMacroId is { } macroId &&
+                FindMacroById(macroId) is { } macro &&
+                ResolveSoftwareTrigger(row.ButtonId) is { } input &&
+                macro.FindTrigger(input, LayerIndex == 1) is not null)
+            {
+                claims.Add(new RazerSoftwareMacroTriggerMatcher.Claim(
+                    macroId, input, LayerIndex == 1));
+            }
+        }
         // A row that is still a software macro row keeps its trigger even when
         // it is not part of this save. Otherwise saving a different key could
         // clear the macro that the other key still owns.

@@ -33,6 +33,7 @@ internal sealed partial class MacroRuntime : IDisposable
     private Task _playbackCompletion = Task.CompletedTask;
     private readonly SemaphoreSlim _outputGate = new(1, 1);
     private readonly Dictionary<InputKey, HashSet<object>> _outputOwners = [];
+    private readonly Dictionary<InputKey, MacroInput> _pendingOutputReleases = [];
     private TaskCompletionSource? _resumePlayback;
     private bool _isPlaying;
     private bool _isPaused;
