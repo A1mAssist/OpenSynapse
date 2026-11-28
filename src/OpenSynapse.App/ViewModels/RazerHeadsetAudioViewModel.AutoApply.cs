@@ -12,6 +12,7 @@ internal enum HeadsetAudioSetting
     EqBands,
     MicEqBands,
     Bass,
+    SpatialMode,
     Microphone,
     Source,
     Noise,
@@ -39,6 +40,12 @@ internal enum HeadsetAudioSetting
 public sealed partial class RazerHeadsetAudioViewModel
 {
 #if DEBUG
+    internal void SetAudioPreviewState(RazerHeadsetAudioState audio)
+    {
+        ApplyState(audio);
+        SetProbeState(RazerHeadsetProbeState.Ready);
+    }
+
     internal void SetAutoApplyPreviewStatus(string status) => OperationStatusText = status;
 
     internal void SetAutoApplyPreviewState(RazerHeadsetAudioState audio, ThxAudioState thx)
@@ -69,6 +76,8 @@ public sealed partial class RazerHeadsetAudioViewModel
 
     internal Func<CancellationToken, Task<string?>>? PrepareAutoApply(HeadsetAudioSetting setting) => setting switch
     {
+        HeadsetAudioSetting.SpatialMode => PrepareAudioSetting(setting,
+            SelectedSpatialModeIndex, value => SelectedSpatialModeIndex = value, ApplySpatialModeAsync),
         HeadsetAudioSetting.EqPreset => PrepareAudioSetting(setting,
             SelectedEqPresetIndex, value => SelectedEqPresetIndex = value, ApplyEqPresetAsync),
         HeadsetAudioSetting.EqBands => PrepareAudioSetting(setting,
@@ -131,6 +140,7 @@ public sealed partial class RazerHeadsetAudioViewModel
 
     private bool IsAudioSettingAvailable(HeadsetAudioSetting setting) => setting switch
     {
+        HeadsetAudioSetting.SpatialMode => _connection.ProductId == 0x0548 && _spatialMode is not null,
         HeadsetAudioSetting.EqPreset => !IsKrakenBase &&
             (!IsGip || RazerGipHeadsetProtocol.SupportsEqPreset(_connection.ProductId)) && EqPresetVisibility == Visibility.Visible,
         HeadsetAudioSetting.EqBands => !IsNommoV2Audio && EqBands.Count is 8 or 10 && EqBandsVisibility == Visibility.Visible,

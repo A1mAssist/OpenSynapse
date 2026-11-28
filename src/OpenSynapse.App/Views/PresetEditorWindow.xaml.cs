@@ -63,6 +63,7 @@ public sealed partial class PresetEditorWindow : Window
         if (File.Exists(appIconPath)) AppWindow.SetIcon(appIconPath);
 
         AppWindow.Closing += OnPresetEditorClosing;
+        AppWindow.Changed += OnPreviewWindowChanged;
         Closed += OnClosed;
         RootLayout.Loaded += OnRootLoaded;
         ConfigurePresenter(scale);
@@ -218,7 +219,7 @@ public sealed partial class PresetEditorWindow : Window
         if (_loaded) return;
         _loaded = true;
         ResetPreviewClock();
-        _previewTimer.Start();
+        UpdatePreviewTimer();
         _autosaveTimer.Start();
         await HandleRecoveryAsync();
         BuildParameterEditor();
@@ -486,6 +487,23 @@ public sealed partial class PresetEditorWindow : Window
             _studio.DeviceVisuals.CollectionChanged -= OnStudioVisualsChanged;
         }
         AppWindow.Closing -= OnPresetEditorClosing;
+        AppWindow.Changed -= OnPreviewWindowChanged;
+    }
+
+    private bool CanRenderPreview => _loaded && AppWindow.IsVisible && !IsIconic(Handle);
+
+    private void OnPreviewWindowChanged(AppWindow sender, AppWindowChangedEventArgs args)
+    {
+        if (!args.DidVisibilityChange && !args.DidPresenterChange && !args.DidSizeChange) return;
+        UpdatePreviewTimer();
+        if (CanRenderPreview) RenderPreviewNow();
+    }
+
+    private void UpdatePreviewTimer()
+    {
+        _lastPreviewTimestamp = Stopwatch.GetTimestamp();
+        if (CanRenderPreview && _playing) _previewTimer.Start();
+        else _previewTimer.Stop();
     }
 
     [DllImport("user32.dll")]

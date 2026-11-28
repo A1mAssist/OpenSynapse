@@ -179,12 +179,13 @@ internal static partial class OpenSynapseServiceHost
                 using var readTimeout = CancellationTokenSource.CreateLinkedTokenSource(
                     cancellationToken);
                 readTimeout.CancelAfter(RequestReadTimeout);
-                line = await reader.ReadLineAsync(readTimeout.Token).ConfigureAwait(false);
+                line = await OpenSynapseServiceProtocol.ReadMessageAsync(reader, readTimeout.Token).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
                 return;
             }
+            catch (InvalidDataException) { return; }
 
             OpenSynapseServiceRequest? request = null;
             if (!string.IsNullOrWhiteSpace(line) &&

@@ -17,12 +17,13 @@ public sealed partial class MainViewModel
         _peripheralLightingSuspended = true;
         await RunDisplayLightingStepAsync("studio suspend", SuspendStudioLightingForDisplay)
             .ConfigureAwait(true);
-        await RunDisplayLightingStepAsync(
-                "razorhid off", () => RazerHid.SetDisplayLightingAvailableAsync(false))
-            .ConfigureAwait(true);
-        await RunDisplayLightingStepAsync(
-                "chroma off", () => Accessories.SetDisplayLightingAvailableAsync(false))
-            .ConfigureAwait(true);
+        await _deviceOperationGate.WaitAsync();
+        try
+        {
+            await RunDisplayLightingStepAsync("razorhid off", () => RazerHid.SetDisplayLightingAvailableAsync(false));
+            await RunDisplayLightingStepAsync("chroma off", () => Accessories.SetDisplayLightingAvailableAsync(false));
+        }
+        finally { _deviceOperationGate.Release(); }
     }
 
     internal async Task ResumePeripheralLightingForDisplayAsync()
@@ -54,7 +55,7 @@ public sealed partial class MainViewModel
         {
             await action().ConfigureAwait(true);
         }
-        catch (Exception exception) when (exception is not OperationCanceledException)
+        catch (Exception exception)
         {
             _diagnosticLog.TryWrite(
                 "lighting-display",

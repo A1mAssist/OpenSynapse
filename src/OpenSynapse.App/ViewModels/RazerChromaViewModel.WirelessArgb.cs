@@ -63,7 +63,7 @@ public sealed partial class RazerChromaViewModel
         _wirelessArgbConnection = await RazerWirelessArgbService.FindAsync(
             _connection,
             _diagnostic,
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken);
         OnPropertyChanged(nameof(WirelessArgbVisibility));
         OnPropertyChanged(nameof(CanApplyWirelessArgb));
     }
@@ -81,7 +81,7 @@ public sealed partial class RazerChromaViewModel
                     connection,
                     port.Index,
                     new RazerHidColor(port.Color.R, port.Color.G, port.Color.B),
-                    cancellationToken).ConfigureAwait(false);
+                    cancellationToken);
             }
 
             ErrorText = string.Empty;

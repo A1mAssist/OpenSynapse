@@ -64,7 +64,7 @@ public static class ViperObmProtocol
             throw new ArgumentOutOfRangeException(nameof(mode));
         }
 
-        return Create(0x50, 0x02, 0x8C, profileId, buttonId, (byte)mode);
+        return Create(0x0A, 0x02, 0x8C, profileId, buttonId, (byte)mode);
     }
 
     public static byte[] CreateSetAssignmentRequest(ViperObmAssignment assignment)
@@ -94,7 +94,7 @@ public static class ViperObmProtocol
             arguments[index + 5] = assignment.FunctionData[index];
         }
 
-        return Create(0x50, 0x02, 0x0C, arguments);
+        return Create(0x0A, 0x02, 0x0C, arguments);
     }
 
     public static byte ParseMaximumProfiles(ReadOnlySpan<byte> response) =>

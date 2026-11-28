@@ -2,17 +2,56 @@ namespace OpenSynapse.Core.Lighting;
 
 public static partial class StudioEffectRenderer
 {
+    private static StudioRgb[] RenderRippleInput(StudioEffectParams parameters, int rows, int columns,
+        double time, StudioEffectInput input)
+    {
+        if (parameters.PlaybackStart == StudioPlaybackStart.Random)
+            return RenderRipple(parameters, rows, columns, time);
+        var result = Fill(rows, columns, StudioRgb.Transparent);
+        if (input.Keys is not { } keys) return result;
+        var scratch = new StudioRgb[result.Length];
+        foreach (var press in keys.Presses.Reverse())
+        {
+            var row = Math.Clamp(press.Row * rows / Math.Max(1, keys.Rows), 0, rows - 1);
+            var column = Math.Clamp(press.Column * columns / Math.Max(1, keys.Columns), 0, columns - 1);
+            if (parameters.PlaybackStart == StudioPlaybackStart.OnSelectedKeys &&
+                input.TriggerMask is { } mask && mask[row * columns + column] == 0) continue;
+            var geometry = MeasureRipple(parameters, rows, columns, row, column);
+            if (!double.IsFinite(press.Age) || press.Age < 0) continue;
+            var cycleLength = geometry.LifetimeSeconds + Math.Max(0, parameters.PauseMs) / 1000d;
+            var cycle = (int)(press.Age / cycleLength);
+            if (parameters.PlaybackEnd == StudioPlaybackEnd.After && cycle >= Math.Max(1, parameters.Cycles)) continue;
+            var localTime = press.Age % cycleLength;
+            if (localTime > geometry.LifetimeSeconds) continue;
+            var wave = RenderRipple(parameters, rows, columns, localTime, row, column, transparent: true, scratch);
+            for (var index = 0; index < result.Length; index++)
+            {
+                var color = wave[index];
+                if (color.Transparency >= 100 || color == StudioRgb.Black) continue;
+                // Native Ripple overlays the newest wave's nonzero pixels.
+                result[index] = color;
+            }
+        }
+        return result;
+    }
+
     private static StudioRgb[] RenderRipple(
         StudioEffectParams parameters,
         int rows,
         int columns,
-        double time)
+        double time,
+        int? centerRow = null,
+        int? centerColumn = null,
+        bool transparent = false,
+        StudioRgb[]? scratch = null)
     {
         // CRippleEffect 0x53c60 draws concentric filled circles: the outer
         // palette color, a fractional next-color rim, the inner ring edge and
         // a black hole. The image is cropped to the device matrix.
-        var frame = new StudioRgb[rows * columns];
-        var geometry = MeasureRipple(parameters, rows, columns);
+        var background = transparent ? StudioRgb.Transparent : StudioRgb.Black;
+        var frame = scratch ?? new StudioRgb[rows * columns];
+        Array.Fill(frame, background);
+        var geometry = MeasureRipple(parameters, rows, columns, centerRow, centerColumn);
         var maxSide = Math.Max(rows, columns);
         // Native gradient count: longest side (at least 4) plus the ring
         // thickness. The extra short-side/2 entries are a repeated tail.
@@ -35,21 +74,23 @@ public static partial class StudioEffectRenderer
             outer - geometry.Thickness + 1,
             ScaleTruncated(palette[Math.Min(palette.Length - 1, outer)], 1 - fraction));
         PaintCircle(frame, rows, columns, geometry.CenterRow, geometry.CenterColumn,
-            outer - geometry.Thickness, StudioRgb.Black);
+            outer - geometry.Thickness, background);
         return frame;
     }
 
     private static RippleGeometry MeasureRipple(
         StudioEffectParams parameters,
         int rows,
-        int columns)
+        int columns,
+        int? pressRow = null,
+        int? pressColumn = null)
     {
         var speed = Math.Clamp(parameters.Speed, 1, 50);
         var velocity = speed / (double)NativeFramesPerSecond;
         var thickness = Math.Max(1, (int)(Math.Clamp(parameters.Width, 100, 400) / 100d));
         // Native uses the last LED index, not the matrix extent, as its center.
-        var centerRow = (rows - 1) / 2;
-        var centerColumn = (columns - 1) / 2;
+        var centerRow = pressRow ?? (rows - 1) / 2;
+        var centerColumn = pressColumn ?? (columns - 1) / 2;
         var maxDistance = Math.Sqrt(
             Math.Pow(Math.Max(centerRow, rows - 1 - centerRow), 2) +
             Math.Pow(Math.Max(centerColumn, columns - 1 - centerColumn), 2));

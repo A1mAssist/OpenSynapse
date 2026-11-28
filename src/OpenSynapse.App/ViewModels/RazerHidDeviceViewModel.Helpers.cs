@@ -298,6 +298,19 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         }
     }
 
+    private void RefreshPollingOptions()
+    {
+        var rates = PollingOptions;
+        if (_displayedPollingRates.SequenceEqual(rates)) return;
+        _displayedPollingRates = rates.ToArray();
+        _pollingOptionTexts = rates.Select(rate => $"{rate} Hz").ToArray();
+        // Both pickers need the widened ladder before an 8000 Hz selection is published.
+        OnPropertyChanged(nameof(PollingOptions));
+        OnPropertyChanged(nameof(PollingOptionTexts));
+        OnPropertyChanged(nameof(FullscreenPollingOptionTexts));
+        OnPropertyChanged(nameof(FullscreenPollingVisibility));
+    }
+
     private void OnBasicStateChanged()
     {
         OnPropertyChanged(nameof(BasicErrors));
@@ -311,10 +324,9 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SoftwareModeText));
         OnPropertyChanged(nameof(BatteryText));
         OnPropertyChanged(nameof(ChargingText));
-        // The first successful polling read can widen the ladder to the HyperPolling steps.
-        OnPropertyChanged(nameof(PollingOptions));
-        OnPropertyChanged(nameof(PollingOptionTexts));
+        RefreshPollingOptions();
         OnPropertyChanged(nameof(SelectedPollingRateIndex));
+        OnPropertyChanged(nameof(SelectedFullscreenPollingRateIndex));
         OnPropertyChanged(nameof(PollingRateText));
         OnPropertyChanged(nameof(DpiText));
         OnPropertyChanged(nameof(IdleTimeoutText));
@@ -442,6 +454,8 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(PollingWriteVisibility));
         OnPropertyChanged(nameof(CanEditPolling));
         OnPropertyChanged(nameof(CanWritePolling));
+        OnPropertyChanged(nameof(FullscreenPollingVisibility));
+        OnPropertyChanged(nameof(CanEditFullscreenPolling));
         OnPropertyChanged(nameof(DpiVisibility));
         OnPropertyChanged(nameof(DpiReadVisibility));
         OnPropertyChanged(nameof(DpiWriteVisibility));

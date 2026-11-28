@@ -313,7 +313,7 @@ Naga V3 Pro（`00E7`/`00E8`）使用 Naga V2 Pro（`00A8`）协议。Viper V4 Pr
 | Razer Blade Stealth (Mid 2017) | `1532:022D` | — |
 | Razer Book (2020) | `1532:026A` | — |
 
-Blade 16 (2023) 只提供固件渲染的关闭、呼吸、光谱和波浪效果，没有逐键矩阵通道。Blade 15 Advanced (2019, `023A`) 使用继承的 6x16 `03:0A` 灯效和 `03:0B` 帧通道。2026 款 Blade 16/18 按 P23/P24 对齐热控状态、固定风扇转速、软件风扇曲线、充电上限、性能模式、适配器功率和 VGA MUX；原生键盘灯光使用中间件的 03:0A 固件灯效报文和 03:0B 软件帧报文。MUX 写入按 0D:8A 能力位；只有设备报告 DynamicDisplaySwitch 时才显示 DDS，否则只显示 Hybrid/Discrete。2026 的 deviceFeatures 未列出最大风扇开关，因此不暴露 Max Fan。Blade 18 (2026) 的 bundle 把 `Gaming` wire value（0x01）显示为 Turbo，OpenSynapse 只做同一个显示别名，不新增第二种模式。Blade 16 (2026) 的 HyperBoost 和风扇读取已在一台实机核对；Blade 18 (2026) 仍为 bundle 对齐结果。2018–2023 款中，中间件声明 `hasGPUmode` 的 Blade 现在统一开放 `0D:89/09/8A` VGA MUX（Hybrid/Discrete）；2021 款 Blade 15 Advanced 保留 legacy `0D:90/10/8B` 路径。
+Blade 16 (2023) 只提供固件渲染的关闭、呼吸、光谱和波浪效果，没有逐键矩阵通道。Blade 15 Advanced (2019, `023A`) 使用继承的 6x16 `03:0A` 灯效和 `03:0B` 帧通道。2026 款 Blade 16/18 按 P23/P24 对齐热控状态、固定风扇转速、软件风扇曲线、充电上限、性能模式、适配器功率和 VGA MUX；原生键盘灯光使用中间件的 03:0A 固件灯效报文和 03:0B 软件帧报文。MUX 写入按 0D:8A 能力位；只有设备报告 DynamicDisplaySwitch 时才显示 DDS，否则只显示 Hybrid/Discrete。2026 的 deviceFeatures 未列出最大风扇开关，因此不暴露 Max Fan。Blade 18 (2026) 的 bundle 把 `Gaming` wire value（0x01）显示为 Turbo，OpenSynapse 只做同一个显示别名，不新增第二种模式。Blade 16 (2026) 的 HyperBoost 和风扇读取已在一台实机核对；Blade 18 (2026) 仍为 bundle 对齐结果。2018–2023 款中，中间件声明 `hasGPUmode` 的 Blade 使用 `0D:89/09/8A` VGA MUX。2021 款 Blade 15 Advanced（`0276`）也使用这组 size=2 命令，按 `0D:8A` 的实际能力位开放模式，切换及失败恢复均读回验证；`0D:90/10` 是风扇冷却模式，`0D:8B` 是独立的 Synapse UI 展示标志，不参与 MUX 控制。0276 的路由来自同 PID 原始产品调用，尚未做实机切换验收。
 
 ## 耳机
 
@@ -385,7 +385,7 @@ THX 三项（低音增强、声音标准化、声音清晰度）由 THX 原生�
 | Razer Kraken V4 | `1532:056C` | 音频页与灯光（2.4 GHz 接收器） |
 | Razer Kraken V4 Pro | `1532:0567`、`1532:0568` | 音频页；`0568` 是 2.4 GHz 接收器 |
 | Razer Kraken V4 X | `1532:056D` | 音频页 |
-| Razer Kraken V4 X Sensa HD Haptics | `1532:059F` | 音频页（`rzDevice40BillieT3H`，class 0x18）；侧音/触觉仍受限 |
+| Razer Kraken V4 X Sensa HD Haptics | `1532:059F` | 音频页：64-byte report 2 的 Protocol40 feature 通道，支持 EQ、麦克风静音和勿扰；独立 Sensa 端点与侧音尚未支持 |
 | Razer Kraken X USB | `1532:0526` | 音频页 |
 | Razer Marci | `1532:0F66` | 音频页 |
 | Razer Mako X | `1532:05AD` | 音频页（`rzDeviceJolie`）；对齐雷云的快速效果（静态/呼吸/火焰/光谱/星光/旋转/音频计）按 25 fps 逐帧输出，另含自动待机 |
@@ -500,18 +500,18 @@ Raptor 27 提供对应型号的 Chroma 灯光控制。
 | Razer Freyja | `1532:0F45` | 灯光 + Sensa HD 触觉页：开关、强度、增益、感知/瞬态/信号增益 |
 | Lian Li O11 Dynamic - Razer Edition | `1532:0F13` | — |
 | Razer Soma Sensa HD Haptics | `1532:0F6D` | 灯光 + Sensa HD 触觉页：开关、强度、增益、感知/瞬态/信号增益 |
-| Razer Aether Lamp | `1532:030E` | 仅灯光 |
-| Razer Aether Lamp Pro | `1532:030D` | 仅灯光 |
-| Razer Aether Light Bulb | `1532:030F` | 仅灯光 |
-| Razer Aether Light Strip | `1532:0310` | 仅灯光 |
-| Razer Aether Monitor Light Bar | `1532:0316` | 仅灯光 |
-| Razer Aether Standing Light Bars | `1532:0317` | 仅灯光 |
+| Razer Aether Lamp | `1532:030E` | 未支持：尚未实现 rzIoT 网络端点 |
+| Razer Aether Lamp Pro | `1532:030D` | 未支持：尚未实现 rzIoT 网络端点 |
+| Razer Aether Light Bulb | `1532:030F` | 未支持：尚未实现 rzIoT 网络端点 |
+| Razer Aether Light Strip | `1532:0310` | 未支持：尚未实现 rzIoT 网络端点 |
+| Razer Aether Monitor Light Bar | `1532:0316` | 未支持：尚未实现 rzIoT 网络端点 |
+| Razer Aether Standing Light Bars | `1532:0317` | 未支持：尚未实现 rzIoT 网络端点 |
 | Razer Audio Mixer | `1532:053E` | 专用 HID 子集：固件/序列号/设备模式、推子与静音状态、通道/麦克风静音、亮度；推子/路由/EQ 仍由雷蛇原生混音器处理 |
 | Razer Base Station Chroma (Headphone Stand) | `1532:0F08` | — |
 | Razer Base Station V2 Chroma | `1532:0F20` | — |
 | Razer Base Station V3 Chroma | `1532:0F6A` | 仅灯光 |
 | Razer Charging Pad Chroma | `1532:0F26` | — |
-| Razer Chroma Addressable RGB Controller | `1532:030A` | 标准 Chroma 灯光 |
+| ASRock Chroma 主板 | `1532:030A` | 未支持：尚未实现 ASRock native/channel 端点 |
 | Razer Chroma Addressable RGB Controller | `1532:0F1F` | 逐灯 ARGB 控制；6 端口 × 80 颗 |
 | Razer Chroma Hardware Development Kit (HDK) | `1532:0F09` | — |
 | Razer Chroma Mug Holder | `1532:0F07` | — |
@@ -519,11 +519,11 @@ Raptor 27 提供对应型号的 Chroma 灯光控制。
 | Razer Chroma Wireless ARGB Controller | `1532:0F2E` | 标准 Chroma 灯光 |
 | Razer Core | `1532:0215` | — |
 | Razer Core X Chroma | `1532:0F1A` | — |
-| Razer Core X V2 | `1532:0F51` | 仅灯光 |
-| Razer Hanbo AIO | `1532:0F35` | 灯光 + AIO 页：风扇/水泵转速、占空比、静音/均衡/性能模式、温度；曲线接口未暴露 |
+| Razer Core X V2 | `1532:0F51` | class 03 逐灯亮度与 LedMatrix 灯效；灯效写入尚无已实现的回读 |
+| Razer Hanbo AIO 240MM / 360MM | `1532:0F35` | Elsa output/input AIO 页：风扇/水泵转速、占空比和模式；灯光与 CPU/GPU 温度读取尚未支持，曲线控件未暴露 |
 | Razer Handheld Dock Chroma | `1532:0F5C` | 仅灯光 |
 | Razer Head Cushion Chroma | `1532:0F36` | 仅灯光 |
-| Razer Key Light Chroma | `1532:030C` | 仅灯光 |
+| Razer Key Light Chroma | `1532:030C` | 未支持：尚未实现 rzIoT 网络端点 |
 | Razer Laptop Cooling Pad | `1532:0F43` | 独立风扇页：当前/目标转速与回读、固定低/中/高/关闭档、静音/平衡/性能智能曲线、灯光 |
 | Razer Laptop Monitor Stand Chroma | `1532:0F5A` | 仅灯光 |
 | Razer Laptop Stand Chroma | `1532:0F0D` | — |

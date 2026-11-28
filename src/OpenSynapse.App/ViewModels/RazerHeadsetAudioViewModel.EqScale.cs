@@ -22,6 +22,8 @@ public sealed partial class RazerHeadsetAudioViewModel
             : (byte)Math.Round(level)),
         RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
             RazerValkyrieHeadsetProtocol.EncodeEqBandLevel((sbyte)Math.Round(level)),
+        RazerHeadsetAudioTransport.Protocol25Feature65 when RazerProtocol25FeatureProtocol.UsesNoaEqualizer(_connection.ProductId) =>
+            RazerProtocol25FeatureProtocol.EncodeNoaEqBand(level),
         RazerHeadsetAudioTransport.Protocol25Feature65 => IsCarol
             ? RazerCarolAudioProtocol.EncodeBand(level) : unchecked((byte)(sbyte)Math.Round(level)),
         _ => (byte)Math.Round(level),
@@ -39,6 +41,8 @@ public sealed partial class RazerHeadsetAudioViewModel
         RazerHeadsetAudioTransport.Jolie64 => (level & 0x80) != 0 ? -(level & 0x7F) : level,
         RazerHeadsetAudioTransport.Valkyrie64 or RazerHeadsetAudioTransport.Billie64 =>
             RazerValkyrieHeadsetProtocol.DecodeEqBandLevel(level),
+        RazerHeadsetAudioTransport.Protocol25Feature65 when RazerProtocol25FeatureProtocol.UsesNoaEqualizer(_connection.ProductId) =>
+            RazerProtocol25FeatureProtocol.DecodeNoaEqBand(level),
         RazerHeadsetAudioTransport.Protocol25Feature65 => IsCarol
             ? RazerCarolAudioProtocol.DecodeBand(level) : unchecked((sbyte)level),
         _ => level,

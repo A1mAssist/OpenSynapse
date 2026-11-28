@@ -16,7 +16,7 @@ public sealed partial class RazerGamepadService
             foreach (var motor in VibrationMotorIds)
                 previous[motor] = RazerGamepadProtocol.ReadVibrationScale(await QueryAsync(
                     t => RazerGamepadProtocol.CreateGetVibrationScaleRequest(t, profile, motor),
-                    $"read vibration {motor}", cancellationToken).ConfigureAwait(false), motor);
+                    $"read vibration {motor}", cancellationToken).ConfigureAwait(false), motor, profile);
             if (previous.Values.All(value => value == scale)) return;
             var attempted = new List<byte>();
             try
@@ -31,7 +31,7 @@ public sealed partial class RazerGamepadService
                 {
                     var actual = RazerGamepadProtocol.ReadVibrationScale(await QueryAsync(
                         t => RazerGamepadProtocol.CreateGetVibrationScaleRequest(t, profile, motor),
-                        $"read back vibration {motor}", cancellationToken).ConfigureAwait(false), motor);
+                        $"read back vibration {motor}", cancellationToken).ConfigureAwait(false), motor, profile);
                     if (actual != scale) throw new InvalidOperationException($"Motor {motor} readback was {actual}, expected {scale}.");
                 }
             }

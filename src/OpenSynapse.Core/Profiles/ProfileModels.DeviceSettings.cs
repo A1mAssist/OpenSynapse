@@ -28,6 +28,8 @@ public sealed class MouseProfileSettings
     public int? SmartReelThreshold { get; set; }
     public int? ActiveOnboardProfileId { get; set; }
     public int? HapticScrollLevel { get; set; }
+    public HapticScrollProfile? HapticScroll { get; set; }
+    public int? HapticProfileId { get; set; }
     public string? PowerPlan { get; set; }
     public bool? SmartIlluminationEnabled { get; set; }
     public int? SleepTimeoutSeconds { get; set; }
@@ -74,6 +76,9 @@ public sealed class MouseProfileSettings
         {
             throw new InvalidDataException("Haptic scroll level must be between 1 and 6.");
         }
+        HapticScroll?.Validate();
+        if (HapticProfileId is < 1 or > 5)
+            throw new InvalidDataException("Hapticore profile must be between 1 and 5.");
         if (!string.IsNullOrWhiteSpace(PowerPlan))
         {
             if (!Enum.TryParse<MousePowerPlan>(PowerPlan, ignoreCase: true, out var powerPlan) ||

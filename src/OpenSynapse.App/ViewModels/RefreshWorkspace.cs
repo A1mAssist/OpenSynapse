@@ -377,6 +377,13 @@ public sealed partial class RefreshWorkspace : INotifyPropertyChanged
         var powerState = _lastPowerState ?? _currentPowerSource();
         try
         {
+            // A queued refresh may acquire the gate after the display-off writes have finished.
+            if (!IsDisplayAvailable)
+            {
+                Interlocked.Exchange(ref _deviceRefreshRequested, 1);
+                if (applyDisplayProfile) Interlocked.Exchange(ref _displayProfileApplyRequested, 1);
+                return;
+            }
             var snapshot = knownSnapshot ?? await _discovery.DiscoverAsync(cancellationToken);
             // WindowsHidDiscovery reports a soft failure as an empty snapshot plus an
             // error instead of throwing. Keep the last known devices so a transient

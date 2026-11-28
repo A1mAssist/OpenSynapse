@@ -40,6 +40,12 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         public int Dpi = 96;
         public int VisibleBatteryCount;
         public int LayoutFailures;
+        public bool LayoutUnsafe;
+        public Task<Rect?>? TrayQuery;
+        public Rect TrayQueryBounds;
+        public int TrayQueryDpi;
+        public Rect? AutomationTrayBounds;
+        public long NextTrayQuery;
         public int AttachFailures;
         public long NextAttachAttempt;
         public bool IsChild;
@@ -410,7 +416,8 @@ public sealed partial class TaskbarStatusWindow : IDisposable
         {
             // Explorer briefly invalidates the taskbar while input methods and
             // overflow flyouts change. Keep the last frame instead of blinking out.
-            if (++surface.LayoutFailures < 30) return;
+            // Unknown tray bounds or a crowded taskbar must release the old slot immediately.
+            if (!surface.LayoutUnsafe && ++surface.LayoutFailures < 30) return;
             HideSurface(surface, "layout unavailable");
             return;
         }

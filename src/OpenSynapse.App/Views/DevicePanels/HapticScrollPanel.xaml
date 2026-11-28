@@ -1,0 +1,42 @@
+<UserControl x:Class="OpenSynapse.App.Views.DevicePanels.HapticScrollPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App"
+    xmlns:panels="using:OpenSynapse.App.Views.DevicePanels">
+  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding HapticScrollVisibility}">
+    <StackPanel Spacing="16">
+      <TextBlock local:Localized.Uid="RazerHidHapticScrollTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" />
+      <TextBlock local:Localized.Uid="HapticCurveDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+      <ContentControl IsEnabled="{Binding CanEditHapticScroll}" HorizontalContentAlignment="Stretch">
+      <StackPanel x:Name="HapticSettings" Spacing="12">
+        <ItemsControl ItemsSource="{Binding HapticScrollStages}">
+          <ItemsControl.ItemsPanel><ItemsPanelTemplate>
+            <ItemsWrapGrid Orientation="Horizontal" ItemWidth="168" />
+          </ItemsPanelTemplate></ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate><DataTemplate>
+            <CheckBox IsChecked="{Binding IsActive, Mode=TwoWay}" MinWidth="0" Margin="0,0,12,0"
+                      HorizontalContentAlignment="Stretch" AutomationProperties.Name="{Binding Name}">
+              <TextBlock Text="{Binding Name}" TextWrapping="Wrap" />
+            </CheckBox>
+          </DataTemplate></ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <ComboBox local:Localized.Uid="RazerHidHapticScrollActiveLabel" AutomationProperties.AutomationId="HapticActiveStage"
+                  ItemsSource="{Binding HapticScrollStageNames}" SelectedIndex="{Binding SelectedHapticScrollStageIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" />
+        <StackPanel Spacing="12" Visibility="{Binding HapticCurveEditorVisibility}">
+          <ToggleSwitch local:Localized.Uid="HapticCurveLinked" AutomationProperties.AutomationId="HapticCurveLinked"
+                        IsOn="{Binding HapticCurvesLinked, Mode=TwoWay}" OnContent="" OffContent="" />
+          <panels:HapticScrollDirectionEditor AutomationProperties.AutomationId="HapticCurveUp" DataContext="{Binding HapticCurveUp}" EditCommitted="CurveEditCommitted" />
+          <Grid Visibility="{Binding HapticCurveDownVisibility}">
+            <panels:HapticScrollDirectionEditor AutomationProperties.AutomationId="HapticCurveDown" DataContext="{Binding HapticCurveDown}" EditCommitted="CurveEditCommitted" />
+          </Grid>
+        </StackPanel>
+      </StackPanel>
+      </ContentControl>
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button local:Localized.Uid="HapticCurveRead" Click="ReadClick" IsEnabled="{Binding CanApplyHapticScroll}" Style="{StaticResource SecondaryButtonStyle}" />
+        <Button local:Localized.Uid="HapticCurveDefault" Click="DefaultClick" IsEnabled="{Binding CanCreateHapticCurve}" Style="{StaticResource SecondaryButtonStyle}" />
+        <Button local:Localized.Uid="HapticCurveRestore" Click="RestoreClick" IsEnabled="{Binding CanRestoreHapticCurve}" Style="{StaticResource SecondaryButtonStyle}" />
+      </StackPanel>
+    </StackPanel>
+  </Border>
+</UserControl>

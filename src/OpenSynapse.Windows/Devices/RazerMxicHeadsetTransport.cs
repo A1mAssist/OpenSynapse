@@ -37,6 +37,7 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
     private readonly bool _useControlStatusReport;
     private uint _readThreadId;
     private bool _disposed;
+    private Task? _pendingStatus;
 
     internal RazerMxicHeadsetTransport(
         string devicePath,
@@ -89,6 +90,7 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            ThrowIfStatusPending();
             while (_reports.Reader.TryRead(out _))
             {
             }
@@ -123,6 +125,7 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            ThrowIfStatusPending();
             // AudioMxicDevice sends the command again when getInputReport returns a
             // non-OK status. The first status after a wireless wake-up can be transient,
             // so a single failed status must not discard the whole read.
@@ -237,33 +240,33 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
         // gate forever and leave the card on its reading state. A separate handle and a
         // bounded wait keep a status read optional, just like AudioMxicDevice treats
         // an empty getInputReport result.
-        SafeFileHandle? statusHandle = null;
+        var endpointGate = RazerFeatureTransport.EndpointGate(_devicePath);
+        await endpointGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            statusHandle = NativeMethods.CreateFile(
-                _devicePath,
-                NativeMethods.GenericRead,
-                NativeMethods.FileShareRead | NativeMethods.FileShareWrite,
-                IntPtr.Zero,
-                NativeMethods.OpenExisting,
-                0,
-                IntPtr.Zero);
-            if (statusHandle.IsInvalid)
-            {
-                return null;
-            }
-
+            RazerFeatureTransport.ThrowIfNativeCallPending(_devicePath);
             bool succeeded;
             try
             {
-                var handle = statusHandle;
                 succeeded = await CancellableNativeCall.RunAsync(
-                    () => NativeMethods.HidD_GetInputReport(handle, candidate, candidate.Length),
+                    token =>
+                    {
+                        using var handle = NativeMethods.CreateFile(_devicePath, NativeMethods.GenericRead,
+                            NativeMethods.FileShareRead | NativeMethods.FileShareWrite, IntPtr.Zero,
+                            NativeMethods.OpenExisting, 0, IntPtr.Zero);
+                        token.ThrowIfCancellationRequested();
+                        return !handle.IsInvalid && NativeMethods.HidD_GetInputReport(handle, candidate, candidate.Length);
+                    },
                     ControlReportTimeout,
-                    cancellationToken).ConfigureAwait(false);
+                    cancellationToken, pending =>
+                    {
+                        _pendingStatus = pending;
+                        RazerFeatureTransport.TrackPendingCall(_devicePath, pending);
+                    }).ConfigureAwait(false);
             }
             catch (TimeoutException)
             {
+                ThrowIfStatusPending();
                 return null;
             }
 
@@ -273,8 +276,14 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
         }
         finally
         {
-            statusHandle?.Dispose();
+            endpointGate.Release();
         }
+    }
+
+    private void ThrowIfStatusPending()
+    {
+        if (_pendingStatus is not null)
+            throw new IOException("MXIC session cannot be reused after an unfinished status call.");
     }
 
     private void ReadLoop()
@@ -321,6 +330,8 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
         }
         finally
         {
+            _readThreadId = 0;
+            _handle.Dispose();
             _reports.Writer.TryComplete();
         }
     }
@@ -338,14 +349,9 @@ internal sealed class RazerMxicHeadsetTransport : IRazerMxicHeadsetTransport
         // closing it under a live call can leave the request in the driver. Cancel first.
         CancellableNativeCall.CancelSynchronousIo(Interlocked.Exchange(ref _readThreadId, 0));
 
-        var teardown = Task.Run(async () =>
-        {
-            _handle.Dispose();
-            await _readLoop.ConfigureAwait(false);
-        });
         try
         {
-            await teardown.WaitAsync(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+            await _readLoop.WaitAsync(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
         }
         catch (Exception exception) when (exception is TimeoutException or OperationCanceledException)
         {

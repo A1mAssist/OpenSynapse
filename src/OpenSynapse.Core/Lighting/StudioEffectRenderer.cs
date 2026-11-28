@@ -24,7 +24,8 @@ public readonly record struct StudioEffectInput(
     int? FireRate = null,
     StudioAudioFrame? Audio = null,
     StudioKeyState? Keys = null,
-    StudioSystemInput? System = null);
+    StudioSystemInput? System = null,
+    byte[]? TriggerMask = null);
 
 /// <summary>
 /// Renders one studio effect into an arbitrary LED matrix. Every effect is a pure
@@ -74,7 +75,7 @@ public static partial class StudioEffectRenderer
                 input.FireSeed ?? parameters.FireSeed,
                 input.FireRate ?? parameters.FireRate),
             StudioEffectKind.Reactive => RenderReactive(parameters, rows, columns, time, input),
-            StudioEffectKind.Ripple => RenderRipple(parameters, rows, columns, time),
+            StudioEffectKind.Ripple => RenderRippleInput(parameters, rows, columns, time, input),
             StudioEffectKind.Starlight => RenderStarlight(parameters, rows, columns, time, input.StarlightSeed),
             StudioEffectKind.Ambient => RenderAmbient(parameters, rows, columns, input),
             StudioEffectKind.Audio => RenderAudio(parameters, rows, columns, time, input),
@@ -190,7 +191,7 @@ public static partial class StudioEffectRenderer
             ? 0
             : (tick - 1) % timing.CycleFrames;
         var offset = timing.CycleFrames - cursor;
-        var frame = new StudioRgb[rows * columns];
+        var frame = Fill(rows, columns, StudioRgb.Transparent);
         for (var row = 0; row < rows; row++)
         {
             var y = row / (double)rows;
@@ -253,7 +254,9 @@ public static partial class StudioEffectRenderer
             StudioEffectKind.Wave when rows > 0 && columns > 0 =>
                 MeasureWave(parameters, rows, columns).CycleFrames / NativeFramesPerSecond,
             StudioEffectKind.Ripple when rows > 0 && columns > 0 =>
-                MeasureRipple(parameters, rows, columns).LifetimeSeconds,
+                parameters.PlaybackStart == StudioPlaybackStart.Random
+                    ? MeasureRipple(parameters, rows, columns).LifetimeSeconds
+                    : MeasureRipple(parameters, rows, columns, 0, 0).LifetimeSeconds,
             StudioEffectKind.Wheel when MeasureWheelSteps(parameters) > 0 =>
                 MeasureWheelSteps(parameters) / (double)NativeFramesPerSecond,
             StudioEffectKind.Tidal when rows > 0 && columns > 0 =>
@@ -297,6 +300,9 @@ public static partial class StudioEffectRenderer
         double time,
         StudioEffectInput input)
     {
+        if (parameters.ReactiveStyle == StudioReactiveStyle.KeyFade && input.Keys is { } keyState)
+            return RenderKeyFade(parameters, rows, columns, keyState);
+
         if (input.Keys is { } history &&
             history.Presses.Count > 0 &&
             parameters.ReactiveStyle != StudioReactiveStyle.Ripple)
@@ -314,7 +320,7 @@ public static partial class StudioEffectRenderer
         if (parameters.RandomColor)
         {
             var peak = RandomHue((long)Math.Floor(time / period));
-            var random = GradientTable([], peak, StudioRgb.Black, frames);
+            var random = GradientTable([], peak, StudioRgb.Transparent, frames);
             return Fill(rows, columns, random[PaletteCursor(time, frames)]);
         }
 
@@ -322,7 +328,7 @@ public static partial class StudioEffectRenderer
         // sentinel at one 25 fps frame per entry.
         var palette = parameters.ColorStops.Count > 0
             ? GradientTable(parameters, frames)
-            : GradientTable([], parameters.Primary, StudioRgb.Black, frames);
+            : GradientTable([], parameters.Primary, StudioRgb.Transparent, frames);
         return Fill(rows, columns, palette[PaletteCursor(time, frames)]);
     }
 

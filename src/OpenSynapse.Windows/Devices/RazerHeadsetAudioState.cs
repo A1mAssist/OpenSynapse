@@ -36,6 +36,7 @@ public sealed record RazerHeadsetAudioState(
     public ushort? SilenceDetectionPeriod { get; init; }
     public string? SerialNumber { get; init; }
     public byte? Edition { get; init; }
+    public byte? SpatialMode { get; init; }
     public byte? LinkStatus { get; init; }
     public RazerCarolPowerState? CarolPower { get; init; }
     public byte? ExternalPowerStatus { get; init; }

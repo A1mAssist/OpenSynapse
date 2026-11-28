@@ -18,7 +18,7 @@ public sealed partial class RazerChromaViewModel
         PowerSourceKind powerSource,
         CancellationToken cancellationToken = default)
     {
-        if (_getProfile?.Invoke() is not { } document)
+        if (_connection.Channel == RazerChromaChannel.None || _getProfile?.Invoke() is not { } document)
         {
             return;
         }

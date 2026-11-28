@@ -14,7 +14,7 @@ public sealed partial class RazerHeadsetAudioService
             firmware = RazerKrakenBaseProtocol.ParseFirmware(
                 await QueryKrakenBaseAsync(
                         RazerKrakenBaseProtocol.CreateFirmwareRequest(), cancellationToken)
-                    .ConfigureAwait(false));
+                    .ConfigureAwait(false), _productId);
         }
         catch (Exception exception) when (IsExpected(exception))
         {
@@ -27,7 +27,7 @@ public sealed partial class RazerHeadsetAudioService
         {
             serial = RazerKrakenBaseProtocol.ParseSerialNumber(
                 await QueryKrakenBaseAsync(
-                        RazerKrakenBaseProtocol.CreateSerialNumberRequest(), cancellationToken)
+                        RazerKrakenBaseProtocol.CreateSerialNumberRequest(_productId), cancellationToken)
                     .ConfigureAwait(false));
         }
         catch (Exception exception) when (IsExpected(exception))

@@ -2,6 +2,26 @@ namespace OpenSynapse.Core.Lighting;
 
 public static partial class StudioEffectRenderer
 {
+    private static StudioRgb[] RenderKeyFade(
+        StudioEffectParams parameters, int rows, int columns, StudioKeyState keys)
+    {
+        var frame = Fill(rows, columns, StudioRgb.Transparent);
+        var duration = (parameters.DurationMs > 0 ? parameters.DurationMs : 1_500) / 1000d;
+        var cycles = parameters.PlaybackEnd == StudioPlaybackEnd.After ? Math.Max(1, parameters.Cycles) : -1;
+        var frames = PaletteFrames(parameters, 1_500);
+        var palette = parameters.RandomColor ? null : GradientTable([], parameters.Primary, StudioRgb.Transparent, frames);
+        // Paint oldest first: a new press restarts only its LED, never the other keys.
+        for (var index = keys.Presses.Count - 1; index >= 0; index--)
+        {
+            var press = keys.Presses[index];
+            if ((uint)press.Row >= (uint)rows || (uint)press.Column >= (uint)columns ||
+                (cycles >= 0 && press.Age >= duration * cycles)) continue;
+            var colors = palette ?? GradientTable([], StudioRgb.FromHsv(press.Hue, 1, 1), StudioRgb.Transparent, frames);
+            frame[press.Row * columns + press.Column] = colors[PaletteCursor(press.Age, frames)];
+        }
+        return frame;
+    }
+
     /// <summary>
     /// Native key-reactive visuals. Every style replays the live press history, so a
     /// new key press or release changes the next frame.

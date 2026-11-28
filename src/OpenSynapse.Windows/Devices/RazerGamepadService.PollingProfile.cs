@@ -1,3 +1,4 @@
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
@@ -16,9 +17,9 @@ public sealed partial class RazerGamepadService
     public static IReadOnlyList<int> PollingRatesFor(ushort productId) =>
         UsesHighSpeedPolling(productId) ? HighSpeedPollingRates : StandardPollingRates;
 
-    public static bool SupportsProfileSwitch(ushort productId) => productId != 0x1013;
+    public static bool SupportsProfileSwitch(ushort productId) => RazerProductAliases.Canonical(productId) != 0x1013;
 
-    public static bool SupportsSingleProfile(ushort productId) => productId is
+    public static bool SupportsSingleProfile(ushort productId) => RazerProductAliases.Canonical(productId) is
         0x0A45 or 0x0A57 or 0x0A5A or 0x0A74 or 0x0A7C or 0x1025 or 0x1030 or 0x1013;
 
     public async Task<RazerGamepadPollingProfileState> ReadPollingProfileAsync(
@@ -50,7 +51,7 @@ public sealed partial class RazerGamepadService
             cancellationToken).ConfigureAwait(false);
         if (active.Ok)
         {
-            _profileId = active.Value;
+            _profileId = active.Value == 0 && SupportsSingleProfile(_productId) ? (byte)1 : active.Value;
         }
 
         int? polling = null;
@@ -198,7 +199,7 @@ public sealed partial class RazerGamepadService
             $"The gamepad kept profile {applied.Value} instead of {profileId}.");
     }
 
-    private static bool UsesHighSpeedPolling(ushort productId) => productId is
+    private static bool UsesHighSpeedPolling(ushort productId) => RazerProductAliases.Canonical(productId) is
         0x0A57 or 0x0A5A or 0x0A74 or 0x0A7C or 0x1025 or 0x1030 or 0x1013;
 
     public async Task<int> ReadPollingRateForProfileAsync(

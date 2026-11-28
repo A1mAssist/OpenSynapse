@@ -24,6 +24,12 @@ public partial class App
         if (Environment.GetEnvironmentVariable("OPENSSYNAPSE_SETTING_AUTO_APPLY_QA") != "1") return false;
         if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("OPENSSYNAPSE_UI_TEST_INSTANCE")))
             throw new InvalidOperationException("Auto-apply QA requires an isolated instance.");
+        UnhandledException += (_, args) =>
+        {
+            var directory = OpenSynapse.Core.Storage.AppDataPaths.Root;
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(Path.Combine(directory, "qa-unhandled.txt"), args.Exception.ToString());
+        };
         var root = new StackPanel { Padding = new Thickness(28), Spacing = 16,
             Background = (Brush)Resources["CanvasBrush"] };
         var queue = new SettingApplyQueue();
@@ -321,9 +327,42 @@ public partial class App
             root.Children.Add(preview);
             return Task.CompletedTask;
         });
+        Button("QaApplicationRules", "按程序自动切换卡片", async () =>
+        {
+            _settingAutoApplyQaWindow?.AppWindow.Resize(new global::Windows.Graphics.SizeInt32(1280, 1000));
+            var preview = await DevicesPage.CreateApplicationRulesPreview();
+            root.Children.Clear();
+            root.Children.Add(preview);
+        });
         Button("QaPollingRate", "轮询率刷新", async () =>
         {
             var preview = await DevicesPage.CreatePollingRateQaAsync();
+            root.Children.Clear();
+            root.Children.Add(preview);
+        });
+        Button("QaFullscreenPolling", "全屏轮询率刷新", () =>
+        {
+            var preview = DevicesPage.CreateFullscreenPollingQa();
+            root.Children.Clear();
+            root.Children.Add(preview);
+            return Task.CompletedTask;
+        });
+        Button("QaKeyboardFullscreenPolling", "键盘全屏轮询率", () =>
+        {
+            var preview = DevicesPage.CreateKeyboardFullscreenPollingQa();
+            root.Children.Clear();
+            root.Children.Add(preview);
+            return Task.CompletedTask;
+        });
+        Button("QaHapticScroll", "Naga Hapticore 曲线", async () =>
+        {
+            var preview = await HapticScrollQa.CreatePanel();
+            root.Children.Clear();
+            root.Children.Add(preview);
+        });
+        Button("QaBleHapticScroll", "Naga 蓝牙滚轮档位", async () =>
+        {
+            var preview = await HapticScrollQa.CreateBlePanel();
             root.Children.Clear();
             root.Children.Add(preview);
         });
@@ -457,6 +496,31 @@ public partial class App
             };
             root.Children.Add(save);
             root.Children.Add(panel);
+        });
+        Button("QaLeviathanPreview", "Leviathan V2 Pro", () =>
+        {
+            var viewModel = new RazerHeadsetAudioViewModel(new RazerHeadsetAudioConnection(
+                "qa-leviathan", 0x0548, "Leviathan V2 Pro", 65,
+                Transport: RazerHeadsetAudioTransport.Protocol25Feature65));
+            viewModel.SetAudioPreviewState(new RazerHeadsetAudioState(null, null, null, 1,
+                Enumerable.Repeat((byte)50, 10).ToArray(), 4, null, null, null, null, null, null, [])
+                { SpatialMode = 1 });
+            root.Children.Clear();
+            root.Children.Add(new TextBlock { Text = "Leviathan V2 Pro", FontSize = 26 });
+            var panel = new HeadsetAudioPanel { DataContext = viewModel };
+            var reveal = new Button { Content = "查看空间音频", Style = (Style)Resources["SecondaryButtonStyle"] };
+            AutomationProperties.SetAutomationId(reveal, "QaLeviathanReveal");
+            reveal.Click += (_, _) => (panel.FindName("SpatialModeGroup") as FrameworkElement)?.StartBringIntoView();
+            root.Children.Add(reveal);
+            root.Children.Add(panel);
+            return Task.CompletedTask;
+        });
+        Button("QaLightingSettings", "接收器与无线 ARGB", () =>
+        {
+            var preview = DevicesPage.CreateLightingSettingsPreview();
+            root.Children.Clear();
+            root.Children.Add(preview);
+            return Task.CompletedTask;
         });
         _settingAutoApplyQaWindow = new Window { Title = "OpenSynapse Auto Apply QA", Content = new ScrollViewer { Content = root } };
         _settingAutoApplyQaWindow.AppWindow.Resize(new global::Windows.Graphics.SizeInt32(1000, 950));

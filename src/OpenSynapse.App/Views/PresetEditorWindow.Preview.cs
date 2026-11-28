@@ -350,7 +350,11 @@ public sealed partial class PresetEditorWindow
 
     private void RenderPreviewTick()
     {
-        if (!_loaded) return;
+        if (!CanRenderPreview || !_playing)
+        {
+            UpdatePreviewTimer();
+            return;
+        }
         var now = Stopwatch.GetTimestamp();
         var elapsed = Math.Clamp((now - _lastPreviewTimestamp) / (double)Stopwatch.Frequency, 0, 0.25);
         _lastPreviewTimestamp = now;
@@ -380,7 +384,10 @@ public sealed partial class PresetEditorWindow
 
     private void RenderPreviewNow()
     {
-        if (!_loaded || NoPreviewText is null) return;
+        if (!CanRenderPreview || NoPreviewText is null) return;
+#if DEBUG
+        _qaPreviewRenders++;
+#endif
         if (_compiled is null)
         {
             NoPreviewText.Visibility = Visibility.Visible;
@@ -758,6 +765,7 @@ public sealed partial class PresetEditorWindow
 
     private void UpdatePlayButton()
     {
+        UpdatePreviewTimer();
         if (PlayButton is null) return;
         PlayButton.Content = _playing
             ? PresetEditorText.Get("PresetEditorPause", "Pause")

@@ -9,6 +9,7 @@ public sealed partial class RazerHidDeviceViewModel
 {
     private int _selectedFullscreenPollingRate;
     private bool _fullscreenPollingEnabled;
+    private bool _fullscreenPollingLoaded;
 
     public Visibility FullscreenPollingVisibility => VisibleWhen(
         Has(RazerHidBackendCapability.PollingRateWrite) && PollingOptions.Count > 1);
@@ -16,7 +17,7 @@ public sealed partial class RazerHidDeviceViewModel
     public bool FullscreenPollingEnabled
     {
         get => _fullscreenPollingEnabled;
-        private set
+        set
         {
             if (SetField(ref _fullscreenPollingEnabled, value))
             {
@@ -58,54 +59,74 @@ public sealed partial class RazerHidDeviceViewModel
                 : 0;
         OnPropertyChanged(nameof(FullscreenPollingEnabled));
         OnPropertyChanged(nameof(SelectedFullscreenPollingRateIndex));
+        _fullscreenPollingLoaded = true;
     }
 
+    internal bool HasFullscreenPollingChange(bool enabled, int index) =>
+        _fullscreenPollingLoaded && index >= 0 && index < PollingOptions.Count &&
+        (enabled ? PollingOptions[index] : (int?)null) != ReadProfile(settings => IsKeyboard
+            ? settings.Keyboard.FullscreenPollingRateHertz : settings.Viper.FullscreenPollingRateHertz);
+
     [ProfileSetting("input.fullscreen-polling", DeviceCategory.Unknown, powerScoped: true)]
-    public Task ApplyFullscreenPollingAsync(
+    public async Task ApplyFullscreenPollingAsync(
         bool enabled,
         int rateIndex,
         CancellationToken cancellationToken = default)
     {
         if (rateIndex < 0 || rateIndex >= PollingOptions.Count)
         {
-            return Task.CompletedTask;
+            NotifyFullscreenPollingSelection();
+            return;
         }
 
         var rate = enabled ? PollingOptions[rateIndex] : (int?)null;
-        var previousEnabled = FullscreenPollingEnabled;
-        var previousRate = _selectedFullscreenPollingRate;
         var previousProfile = ReadProfile(settings => IsKeyboard
             ? settings.Keyboard.FullscreenPollingRateHertz
             : settings.Viper.FullscreenPollingRateHertz);
-        return RunWriteAsync(
-            RazerHidBackendCapability.PollingRateWrite,
-            () => IsPollingBusy,
-            value => IsPollingBusy = value,
-            async () =>
-            {
-                FullscreenPollingEnabled = enabled;
-                _selectedFullscreenPollingRate = PollingOptions[rateIndex];
-                OnPropertyChanged(nameof(SelectedFullscreenPollingRateIndex));
-                await SaveProfileAsync(
-                    settings =>
-                    {
-                        if (IsKeyboard) settings.Keyboard.FullscreenPollingRateHertz = rate;
-                        else settings.Viper.FullscreenPollingRateHertz = rate;
-                    },
-                    settings =>
-                    {
-                        if (IsKeyboard) settings.Keyboard.FullscreenPollingRateHertz = previousProfile;
-                        else settings.Viper.FullscreenPollingRateHertz = previousProfile;
-                    },
-                    () =>
-                    {
-                        FullscreenPollingEnabled = previousEnabled;
-                        _selectedFullscreenPollingRate = previousRate;
-                        OnPropertyChanged(nameof(SelectedFullscreenPollingRateIndex));
-                    },
-                    null,
-                    cancellationToken);
-            },
-            cancellationToken);
+        var previousEnabled = previousProfile is not null;
+        var previousRate = previousProfile ?? _selectedFullscreenPollingRate;
+        try
+        {
+            await RunWriteAsync(
+                RazerHidBackendCapability.PollingRateWrite,
+                () => IsPollingBusy,
+                value => IsPollingBusy = value,
+                async () =>
+                {
+                    FullscreenPollingEnabled = enabled;
+                    _selectedFullscreenPollingRate = PollingOptions[rateIndex];
+                    OnPropertyChanged(nameof(SelectedFullscreenPollingRateIndex));
+                    await SaveProfileAsync(
+                        settings =>
+                        {
+                            if (IsKeyboard) settings.Keyboard.FullscreenPollingRateHertz = rate;
+                            else settings.Viper.FullscreenPollingRateHertz = rate;
+                        },
+                        settings =>
+                        {
+                            if (IsKeyboard) settings.Keyboard.FullscreenPollingRateHertz = previousProfile;
+                            else settings.Viper.FullscreenPollingRateHertz = previousProfile;
+                        },
+                        () =>
+                        {
+                            FullscreenPollingEnabled = previousEnabled;
+                            _selectedFullscreenPollingRate = previousRate;
+                            OnPropertyChanged(nameof(SelectedFullscreenPollingRateIndex));
+                        },
+                        null,
+                        cancellationToken);
+                },
+                cancellationToken);
+        }
+        finally
+        {
+            NotifyFullscreenPollingSelection();
+        }
+    }
+
+    private void NotifyFullscreenPollingSelection()
+    {
+        OnPropertyChanged(nameof(FullscreenPollingEnabled));
+        OnPropertyChanged(nameof(SelectedFullscreenPollingRateIndex));
     }
 }

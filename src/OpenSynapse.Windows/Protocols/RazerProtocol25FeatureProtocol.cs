@@ -38,6 +38,17 @@ internal static class RazerProtocol25FeatureProtocol
     internal static bool SupportsHidAudioInput(ushort productId) =>
         productId is 0x056F or 0x058E or 0x05A6;
 
+    internal static bool UsesNoaEqualizer(ushort productId) => productId is 0x0532 or 0x0548 or 0x05A3;
+
+    // Noa uses a percentage scale: 50 is flat. Match the middleware's floor/ceil pair.
+    internal static byte EncodeNoaEqBand(double decibels) => double.IsFinite(decibels)
+        ? (byte)Math.Floor((Math.Clamp(decibels, -12, 12) + 12) * 100 / 24)
+        : throw new ArgumentOutOfRangeException(nameof(decibels));
+
+    internal static double DecodeNoaEqBand(byte level) => level <= 100
+        ? Math.Ceiling(level * 24d / 100 - 12)
+        : throw new InvalidDataException($"Invalid Noa EQ level: {level}.");
+
     internal static byte[] CreateRequest(ushort productId, byte[] report91)
     {
         ArgumentNullException.ThrowIfNull(report91);

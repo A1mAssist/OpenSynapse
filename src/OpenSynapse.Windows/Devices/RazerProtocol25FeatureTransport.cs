@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
@@ -23,9 +22,8 @@ internal sealed class RazerProtocol25FeatureTransport(string devicePath)
     private const int MaxOutAttempts = 20;
     private const int MaxInAttempts = 10;
     private static readonly TimeSpan RetryDelay = TimeSpan.FromMilliseconds(5);
-    private static readonly ConcurrentDictionary<string, SemaphoreSlim> Gates =
-        new(StringComparer.OrdinalIgnoreCase);
-    private readonly SemaphoreSlim _gate = Gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
+    private static readonly TimeSpan ExchangeTimeout = TimeSpan.FromSeconds(3);
+    private readonly SemaphoreSlim _gate = RazerFeatureTransport.EndpointGate(devicePath);
 
     public async Task<byte[]> QueryAsync(byte[] request, CancellationToken cancellationToken)
     {
@@ -39,7 +37,23 @@ internal sealed class RazerProtocol25FeatureTransport(string devicePath)
             throw new ArgumentException("A HID device path is required.", nameof(devicePath));
         }
 
-        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        if (!await _gate.WaitAsync(ExchangeTimeout, cancellationToken).ConfigureAwait(false))
+            throw new TimeoutException("The audio channel is still occupied by a pending HID call.");
+        try
+        {
+            RazerFeatureTransport.ThrowIfNativeCallPending(devicePath);
+            return await CancellableNativeCall.RunAsync(token => QueryCore(request, token),
+                ExchangeTimeout, cancellationToken, task => RazerFeatureTransport.TrackPendingCall(devicePath, task))
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    private byte[] QueryCore(byte[] request, CancellationToken cancellationToken)
+    {
         try
         {
             string? lastReadError = null;
@@ -48,6 +62,7 @@ internal sealed class RazerProtocol25FeatureTransport(string devicePath)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 using var handle = Open(devicePath);
+                cancellationToken.ThrowIfCancellationRequested();
                 if (!HidD_SetFeature(handle, request, request.Length))
                 {
                     throw new Win32Exception(
@@ -56,7 +71,9 @@ internal sealed class RazerProtocol25FeatureTransport(string devicePath)
 
                 for (var inAttempt = 0; inAttempt < MaxInAttempts; inAttempt++)
                 {
-                    await Task.Delay(RetryDelay, cancellationToken).ConfigureAwait(false);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    Thread.Sleep(RetryDelay);
+                    cancellationToken.ThrowIfCancellationRequested();
                     var response = new byte[request.Length];
                     response[0] = request[0];
                     if (!HidD_GetFeature(handle, response, response.Length))
@@ -97,10 +114,7 @@ internal sealed class RazerProtocol25FeatureTransport(string devicePath)
                 $" Request header={Convert.ToHexString(request.AsSpan(0, 9))};" +
                 $" last response header={(lastResponse is null ? "none" : Convert.ToHexString(lastResponse.AsSpan(0, 9)))}.");
         }
-        finally
-        {
-            _gate.Release();
-        }
+        catch (OperationCanceledException) { throw; }
     }
 
     private static SafeFileHandle Open(string path)

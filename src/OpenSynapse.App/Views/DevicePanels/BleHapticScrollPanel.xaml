@@ -1,0 +1,18 @@
+<UserControl x:Class="OpenSynapse.App.Views.DevicePanels.BleHapticScrollPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App">
+  <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{Binding HapticStageEntryVisibility}">
+    <StackPanel Spacing="12">
+      <TextBlock local:Localized.Uid="RazerHidHapticScrollTitle" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" />
+      <TextBlock local:Localized.Uid="HapticBleDescription" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+      <TextBlock Text="{Binding HapticStageProfileText}" Foreground="{StaticResource MutedBrush}" />
+      <StackPanel x:Name="BleHapticSettings" Spacing="10" Visibility="{Binding HapticStageVisibility}">
+        <NumberBox local:Localized.Uid="BleHapticStage" AutomationProperties.AutomationId="BleHapticActiveStage"
+                   Value="{Binding SelectedHapticStage, Mode=TwoWay}" Minimum="1" Maximum="{Binding MaxHapticStage}"
+                   SmallChange="1" SpinButtonPlacementMode="Compact" IsEnabled="{Binding CanEdit}" />
+      </StackPanel>
+      <Button local:Localized.Uid="HapticCurveRead" Click="ReadClick" IsEnabled="{Binding CanEdit}" HorizontalAlignment="Left" Style="{StaticResource SecondaryButtonStyle}" />
+    </StackPanel>
+  </Border>
+</UserControl>

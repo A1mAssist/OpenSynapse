@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace OpenSynapse.Core.Lighting;
 public static partial class StudioProjectCodec
 {
-    private static StudioProfile ReadProfile(JsonElement element)
+    private static StudioProfile ReadProfile(JsonElement element, StudioReactiveStyle reactiveDefault)
     {
         var title = GetString(element, "title");
         if (string.IsNullOrWhiteSpace(title)) title = "Profile";
@@ -14,7 +14,7 @@ public static partial class StudioProjectCodec
             IsDefault = ReadBool(element, "default"),
         };
         if (TryGet(element, "layers", out var layers) && layers.ValueKind == JsonValueKind.Array)
-            AttachLayers(ReadLayers(layers, new HashSet<Guid>()), profile.Items);
+            AttachLayers(ReadLayers(layers, new HashSet<Guid>(), reactiveDefault), profile.Items);
         ReadProfileDevices(element, profile);
         if (TryGet(element, "openSynapse", out var extras) && extras.ValueKind == JsonValueKind.Object &&
             TryGet(extras, "outputScope", out var scope))
@@ -121,17 +121,17 @@ public static partial class StudioProjectCodec
             (left.ProductId != 0 && left.ProductId == right.ProductId &&
              SameNonEmpty(left.InstanceId, right.InstanceId));
     }
-    private static List<ParsedLayer> ReadLayers(JsonElement array, HashSet<Guid> seen)
+    private static List<ParsedLayer> ReadLayers(JsonElement array, HashSet<Guid> seen, StudioReactiveStyle reactiveDefault)
     {
         var result = new List<ParsedLayer>();
         foreach (var element in array.EnumerateArray())
         {
             if (element.ValueKind != JsonValueKind.Object) continue;
             var isGroup = IsGroup(element);
-            var item = ReadLayer(element, isGroup);
+            var item = ReadLayer(element, isGroup, reactiveDefault);
             if (!seen.Add(item.Id)) continue;
             if (isGroup && TryGet(element, "layers", out var children) && children.ValueKind == JsonValueKind.Array)
-                AttachLayers(ReadLayers(children, seen), item.Children);
+                AttachLayers(ReadLayers(children, seen, reactiveDefault), item.Children);
             Guid? parentGroupId = null;
             if (Guid.TryParse(GetString(element, "groupId"), out var groupId)) parentGroupId = groupId;
             result.Add(new ParsedLayer(item, parentGroupId));
@@ -149,10 +149,10 @@ public static partial class StudioProjectCodec
                 target.Add(layer.Item);
         }
     }
-    private static StudioLayerItem ReadLayer(JsonElement element, bool isGroup)
+    private static StudioLayerItem ReadLayer(JsonElement element, bool isGroup, StudioReactiveStyle reactiveDefault)
     {
         var paramsElement = TryGet(element, "params", out var rawParams) ? rawParams : default;
-        var parameters = ReadParams(paramsElement);
+        var parameters = ReadParams(paramsElement, reactiveDefault);
         parameters.Effect = ReadEffect(element, paramsElement);
         if (TryGet(element, "params2", out var rawParams2) && rawParams2.ValueKind == JsonValueKind.Object)
             ReadParams2(rawParams2, parameters);
@@ -176,17 +176,17 @@ public static partial class StudioProjectCodec
             Blend = blend,
             Params = parameters,
         };
-        ReadRegions(element, item);
+        ReadRegions(element, item, reactiveDefault);
         return item;
     }
-    private static void ReadRegions(JsonElement layer, StudioLayerItem item)
+    private static void ReadRegions(JsonElement layer, StudioLayerItem item, StudioReactiveStyle reactiveDefault)
     {
         if (!TryGet(layer, "regions", out var regions) || regions.ValueKind != JsonValueKind.Array) return;
         foreach (var region in regions.EnumerateArray())
         {
             if (region.ValueKind != JsonValueKind.Object) continue;
             TryGet(region, "params", out var rp);
-            var parsed = new StudioRegion { Params = ReadParams(rp) };
+            var parsed = new StudioRegion { Params = ReadParams(rp, reactiveDefault) };
             // Chroma keeps the effect name on the layer and only effect params on the region.
             if (!TryGet(rp, "effect", out _)) parsed.Params.Effect = item.Params.Effect;
             if (TryGet(region, "params2", out var rp2) && rp2.ValueKind == JsonValueKind.Object)
@@ -223,19 +223,21 @@ public static partial class StudioProjectCodec
             }
         return device;
     }
-    private static StudioEffectParams ReadParams(JsonElement element)
+    private static StudioEffectParams ReadParams(JsonElement element, StudioReactiveStyle reactiveDefault)
     {
-        var parameters = new StudioEffectParams();
+        var parameters = new StudioEffectParams { ReactiveStyle = reactiveDefault };
         if (element.ValueKind != JsonValueKind.Object) return parameters;
-        if (TryGet(element, "color", out var color) && TryReadColor(color, out var primary)) parameters.Primary = primary;
-        if (TryGet(element, "color2", out var color2) && TryReadColor(color2, out var secondary)) parameters.Secondary = secondary;
+        parameters.Primary = TryGet(element, "color", out var color) && TryReadColor(color, out var primary)
+            ? primary : StudioRgb.Transparent;
+        parameters.Secondary = TryGet(element, "color2", out var color2) && TryReadColor(color2, out var secondary)
+            ? secondary : StudioRgb.Transparent;
         if (TryParseEffectName(GetString(element, "effect"), out var paramsEffect)) parameters.Effect = paramsEffect;
         if (TryGet(element, "colorStops", out var stops) && stops.ValueKind == JsonValueKind.Array)
             foreach (var stop in stops.EnumerateArray())
             {
                 if (stop.ValueKind != JsonValueKind.Object) continue;
                 var stopColor = TryGet(stop, "Color", out var rawColor) ? rawColor : default;
-                var rgb = TryReadColor(stopColor, out var parsedColor) ? parsedColor : StudioRgb.Black;
+                var rgb = TryReadColor(stopColor, out var parsedColor) ? parsedColor : StudioRgb.Transparent;
                 parameters.ColorStops.Add(new StudioColorStop(Math.Clamp(ReadInt(stop, "Stop"), 0, 100), rgb));
             }
         parameters.ColorStopsCustom = ReadBool(element, "colorStopsCustom");
@@ -394,6 +396,7 @@ public static partial class StudioProjectCodec
                     Params = new StudioEffectParams
                     {
                         Effect = effect,
+                        ReactiveStyle = StudioReactiveStyle.Ripple,
                         Primary = TryGet(layer, "primary", out var primary) && TryReadColor(primary, out var primaryColor) ? primaryColor : defaults.Primary,
                         Secondary = TryGet(layer, "secondary", out var secondary) && TryReadColor(secondary, out var secondaryColor) ? secondaryColor : defaults.Secondary,
                         Speed = speed,

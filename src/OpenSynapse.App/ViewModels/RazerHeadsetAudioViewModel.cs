@@ -493,6 +493,7 @@ public sealed partial class RazerHeadsetAudioViewModel : INotifyPropertyChanged,
         }
         if (state.EqPreset is not null || state.EqBands is not null) AcceptEqReadback();
         ApplyMicEqBands(state);
+        if (state.SpatialMode is { } spatialMode) ApplySpatialMode(spatialMode);
 
         if (state.Bass is byte bass)
         {

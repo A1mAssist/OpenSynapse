@@ -112,6 +112,7 @@ public static class RazerHapticoreScrollProtocol
     public const int MaxProfileId = 5;
     public const int MaxStage = 6;
     public const int MaxGeneratorTablePoints = 9;
+    public const int NativeGeneratorTableChunkPoints = 8;
 
     private const byte StateSize = 2;
     private const byte GroupSize = 80;
@@ -369,8 +370,24 @@ public static class RazerHapticoreScrollProtocol
 
     public static byte[] CreateGetGeneratorCustomMetaDataRequest(
         byte transactionId,
-        byte profileId) =>
-        Create(transactionId, GroupSize, GetGeneratorCustomMetaDataCommandId, profileId);
+        byte profileId)
+    {
+        ValidateProfile(profileId);
+        return Create(transactionId, GroupSize, GetGeneratorCustomMetaDataCommandId, profileId);
+    }
+
+    public static byte[] CreateSetGeneratorCustomMetaDataRawRequest(byte transactionId, byte profileId, byte[] metadata)
+    {
+        ValidateProfile(profileId);
+        if (metadata is not { Length: CustomMetaDataSize })
+            throw new ArgumentException("Hapticore metadata must contain 40 bytes.", nameof(metadata));
+        var arguments = (byte[])metadata.Clone();
+        arguments[0] = profileId;
+        return Create(transactionId, GroupSize, SetGeneratorCustomMetaDataCommandId, arguments);
+    }
+
+    public static byte[] ParseGeneratorCustomMetaDataRaw(ReadOnlySpan<byte> response, ReadOnlySpan<byte> request) =>
+        Arguments(response, request, CustomMetaDataSize, "Hapticore scroll custom metadata")[..CustomMetaDataSize].ToArray();
 
     public static byte[] CreateSetGeneratorCustomMetaDataRequest(
         byte transactionId,
@@ -385,6 +402,7 @@ public static class RazerHapticoreScrollProtocol
         RazerHapticoreScrollDirection upDirection,
         RazerHapticoreScrollDirection downDirection)
     {
+        ValidateProfile(profileId);
         ValidateDirection(upDirection, nameof(upDirection));
         ValidateDirection(downDirection, nameof(downDirection));
 

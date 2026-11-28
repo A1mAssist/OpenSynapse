@@ -5,8 +5,12 @@ namespace OpenSynapse.Core.Lighting;
 /// <summary>A device-independent RGB color used by the lighting studio compositor.</summary>
 public readonly record struct StudioRgb(byte R, byte G, byte B)
 {
+    /// <summary>Chroma's high-byte transparency: 0 is opaque, 100 is clear.</summary>
+    public byte Transparency { get; init; }
+
     public static StudioRgb Black => new(0, 0, 0);
     public static StudioRgb White => new(255, 255, 255);
+    public static StudioRgb Transparent => new(0, 0, 0) { Transparency = 100 };
 
     public static StudioRgb FromHex(string value)
     {
@@ -29,7 +33,10 @@ public readonly record struct StudioRgb(byte R, byte G, byte B)
         return new StudioRgb(
             (byte)Math.Round(from.R + (to.R - from.R) * t),
             (byte)Math.Round(from.G + (to.G - from.G) * t),
-            (byte)Math.Round(from.B + (to.B - from.B) * t));
+            (byte)Math.Round(from.B + (to.B - from.B) * t))
+        {
+            Transparency = (byte)Math.Round(from.Transparency + (to.Transparency - from.Transparency) * t),
+        };
     }
 
     /// <summary>HSV with hue, saturation and value in the 0..1 range.</summary>

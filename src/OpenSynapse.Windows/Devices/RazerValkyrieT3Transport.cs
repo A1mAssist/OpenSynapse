@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
@@ -17,24 +16,26 @@ internal sealed class RazerValkyrieT3Transport : IRazerMxicHeadsetTransport
     // Every service opens its own HID handle, but the device has one feature-report
     // buffer. A frame write from the effect pump can otherwise replace the reply to
     // a state query, so transports for the same device share one gate.
-    private static readonly ConcurrentDictionary<string, SemaphoreSlim> SharedGates =
-        new(StringComparer.OrdinalIgnoreCase);
-
     private readonly IRazerValkyrieT3FeatureIo _io;
     private readonly SemaphoreSlim _gate;
     private static readonly TimeSpan NativeCallTimeout = TimeSpan.FromSeconds(1);
     private byte _transaction;
     private bool _disposed;
+    private Task? _pending;
+    private readonly string? _path;
+    private readonly byte _transactionMask;
 
-    internal RazerValkyrieT3Transport(string path) : this(new NativeFeatureIo(path), path) { }
-    internal RazerValkyrieT3Transport(IRazerValkyrieT3FeatureIo io) : this(io, null) { }
+    internal RazerValkyrieT3Transport(string path, byte transactionMask = 0) : this(new NativeFeatureIo(path), path, transactionMask) { }
+    internal RazerValkyrieT3Transport(IRazerValkyrieT3FeatureIo io, byte transactionMask = 0) : this(io, null, transactionMask) { }
 
-    private RazerValkyrieT3Transport(IRazerValkyrieT3FeatureIo io, string? path)
+    internal RazerValkyrieT3Transport(IRazerValkyrieT3FeatureIo io, string? path, byte transactionMask)
     {
         _io = io;
+        _path = path;
+        _transactionMask = (byte)(transactionMask & 0xE0);
         _gate = path is null
             ? new SemaphoreSlim(1, 1)
-            : SharedGates.GetOrAdd(path, _ => new SemaphoreSlim(1, 1));
+            : RazerFeatureTransport.EndpointGate(path);
     }
 
     public async Task SendAsync(byte[] report, CancellationToken cancellationToken) =>
@@ -51,6 +52,7 @@ internal sealed class RazerValkyrieT3Transport : IRazerMxicHeadsetTransport
         try
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
+            ThrowIfPending();
             if (report.Length != 64 || report[0] != 7)
             {
                 throw new ArgumentException(
@@ -59,7 +61,7 @@ internal sealed class RazerValkyrieT3Transport : IRazerMxicHeadsetTransport
 
             var request = report.ToArray();
             _transaction = (byte)((_transaction % 31) + 1);
-            request[2] = _transaction;
+            request[2] = (byte)(_transactionMask | _transaction);
             await RunNativeAsync(() => { _io.Send(request); return true; }, cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -79,13 +81,14 @@ internal sealed class RazerValkyrieT3Transport : IRazerMxicHeadsetTransport
         try
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
+            ThrowIfPending();
             if (report.Length != 64 || report[0] != 7)
                 throw new ArgumentException("A Valkyrie T3 feature64/report7 request is required.", nameof(report));
             var request = report.ToArray();
             // rzDevice25ValkyrieT3 increments before sending and wraps 31 -> 1,
             // so a transaction of 0 is never put on the wire.
             _transaction = (byte)((_transaction % 31) + 1);
-            request[2] = _transaction;
+            request[2] = (byte)(_transactionMask | _transaction);
             // Keep ownership until the synchronous HID call has actually completed.
             await RunNativeAsync(() => { _io.Send(request); return true; }, cancellationToken)
                 .ConfigureAwait(false);
@@ -110,15 +113,25 @@ internal sealed class RazerValkyrieT3Transport : IRazerMxicHeadsetTransport
     }
 
     /// <summary>
-    /// A blocking HidD call must be cancelled at the deadline, not abandoned: the
-    /// pending request stays in the HID driver and every later open or read fails
-    /// until the device is replugged.
+    /// An unfinished call poisons this session and retains ownership of its I/O
+    /// until it completes, even when the driver ignores cancellation.
     /// </summary>
-    private static async Task<T> RunNativeAsync<T>(Func<T> call, CancellationToken cancellationToken)
+    private void ThrowIfPending()
+    {
+        if (_pending is not null)
+            throw new IOException("Valkyrie T3 session cannot be reused after an unfinished HID call.");
+        if (_path is not null) RazerFeatureTransport.ThrowIfNativeCallPending(_path);
+    }
+
+    private async Task<T> RunNativeAsync<T>(Func<T> call, CancellationToken cancellationToken)
     {
         try
         {
-            return await CancellableNativeCall.RunAsync(call, NativeCallTimeout, cancellationToken)
+            return await CancellableNativeCall.RunAsync(call, NativeCallTimeout, cancellationToken, pending =>
+                {
+                    _pending = pending;
+                    if (_path is not null) RazerFeatureTransport.TrackPendingCall(_path, pending);
+                })
                 .ConfigureAwait(false);
         }
         catch (TimeoutException exception)
@@ -130,7 +143,15 @@ internal sealed class RazerValkyrieT3Transport : IRazerMxicHeadsetTransport
     public async ValueTask DisposeAsync()
     {
         await _gate.WaitAsync().ConfigureAwait(false);
-        try { if (!_disposed) { _disposed = true; _io.Dispose(); } }
+        try
+        {
+            if (_disposed) return;
+            _disposed = true;
+            if (_pending is { IsCompleted: false } pending)
+                _ = pending.ContinueWith(_ => _io.Dispose(), CancellationToken.None,
+                    TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            else _io.Dispose();
+        }
         finally { _gate.Release(); }
     }
 

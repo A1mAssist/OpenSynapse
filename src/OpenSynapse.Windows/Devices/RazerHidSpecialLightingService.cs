@@ -29,7 +29,8 @@ public sealed class RazerHidSpecialLightingConnection
         bool supportsStaticColor,
         bool isMergedIntoAudioPage,
         string? error,
-        string? containerId = null)
+        string? containerId = null,
+        int outputReportLength = RazerHidKrakenProtocol.ReportLength)
     {
         ProductId = productId;
         DisplayName = displayName;
@@ -43,6 +44,7 @@ public sealed class RazerHidSpecialLightingConnection
         IsMergedIntoAudioPage = isMergedIntoAudioPage;
         Error = error;
         ContainerId = containerId;
+        OutputReportLength = outputReportLength;
     }
 
     public ushort ProductId { get; }
@@ -63,6 +65,7 @@ public sealed class RazerHidSpecialLightingConnection
     internal string? ControlDevicePath { get; }
     internal string? FeatureDevicePath { get; }
     internal string? ContainerId { get; }
+    internal int OutputReportLength { get; }
 
     public bool MatchesAudioConnection(RazerHeadsetAudioConnection audio)
     {
@@ -126,11 +129,11 @@ public sealed partial class RazerHidSpecialLightingService
                 Effects(RazerHidLightingEffect.Off, RazerHidLightingEffect.Static), false),
             [0x0510] = Kylie("Razer Kraken 7.1 V2"),
             [0x0520] = Kylie("Razer Kraken Tournament Edition"),
-            [0x0521] = Kylie("Razer Kraken Kitty Edition"),
-            [0x0526] = Kylie("Razer Kraken X USB"),
-            [0x0527] = Kylie("Razer Kraken Ultimate"),
-            [0x0560] = Kylie("Razer Kraken Kitty V2"),
-            [0x0554] = Kylie("Razer Kraken Kitty V2 Pro"),
+            [0x0521] = Kraken40("Razer Kraken Kitty Edition"),
+            [0x0526] = Kraken40("Razer Kraken X USB", fixedGreen: true),
+            [0x0527] = Kraken40("Razer Kraken Ultimate", dual: false),
+            [0x0560] = Kraken40("Razer Kraken Kitty V2"),
+            [0x0554] = Kraken40("Razer Kraken Kitty V2 Pro"),
             // The Kraken V4 exposes a 64-byte FF14 output report on the USB-C cable.
             // The 2.4 GHz receiver (056C) inherits the same collection and lighting
             // methods from AudioBillieT2Dongle; its report byte 9 is 0x80.
@@ -300,10 +303,12 @@ public sealed partial class RazerHidSpecialLightingService
                         ? item.FeatureReportByteLength == RazerProtocol40HeadsetProtocol.ReportLength
                     : !argb &&
                       item.DevicePath.Contains("&MI_03", StringComparison.OrdinalIgnoreCase) &&
-                      item.OutputReportByteLength == (definition!.Kind ==
+                      (RazerKraken40LightingProtocol.IsSupported(item.ProductId)
+                          ? item.OutputReportByteLength >= RazerHidKrakenProtocol.ReportLength
+                          : item.OutputReportByteLength == (definition!.Kind ==
                           RazerHidSpecialLightingKind.KrystalT2
                               ? RazerKrystalT2LightingProtocol.OutputReportLength
-                              : RazerHidKrakenProtocol.ReportLength)));
+                              : RazerHidKrakenProtocol.ReportLength))));
             var name = argb
                 ? "Razer Chroma Addressable RGB Controller"
                 : definition!.Name;
@@ -345,7 +350,8 @@ public sealed partial class RazerHidSpecialLightingService
                 !argb && definition!.WritesColor,
                 mergedIntoAudioPage,
                 error,
-                group.Select(item => item.ContainerId).FirstOrDefault(id => id is not null)));
+                group.Select(item => item.ContainerId).FirstOrDefault(id => id is not null),
+                endpoint?.OutputReportByteLength ?? RazerHidKrakenProtocol.ReportLength));
         }
         return results;
     }
@@ -625,6 +631,17 @@ public sealed partial class RazerHidSpecialLightingService
             throw new InvalidOperationException(connection.Error ?? "The special lighting endpoint is not resolved.");
         }
     }
+
+    private static KrakenDefinition Kraken40(string name, bool fixedGreen = false, bool dual = true) =>
+        new(name, RazerHidKrakenLayout.Kylie,
+            (fixedGreen
+                ? new[] { RazerHidLightingEffect.Off, RazerHidLightingEffect.Static,
+                    RazerHidLightingEffect.BreathingSingle, RazerHidLightingEffect.Custom }
+                : new[] { RazerHidLightingEffect.Off, RazerHidLightingEffect.Static,
+                    RazerHidLightingEffect.BreathingSingle, RazerHidLightingEffect.Spectrum,
+                    RazerHidLightingEffect.Custom }
+                    .Concat(dual ? new[] { RazerHidLightingEffect.BreathingDual } : [])).ToFrozenSet(),
+            !fixedGreen);
 
     private sealed record KrakenDefinition(
         string Name,

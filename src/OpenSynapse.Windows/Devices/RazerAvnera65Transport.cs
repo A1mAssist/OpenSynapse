@@ -26,18 +26,25 @@ internal sealed class RazerAvnera65Transport : IRazerAvnera65Transport
     private static readonly TimeSpan ResponseTimeout = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan RetryDelay = TimeSpan.FromMilliseconds(50);
     private readonly IRazerAvnera65Io _io;
-    private readonly SemaphoreSlim _gate = new(1, 1);
+    private readonly SemaphoreSlim _gate;
+    private readonly string? _path;
     private Exception? _ioFailure;
     private bool _disposed;
+    private Task? _pending;
 
     internal RazerAvnera65Transport(
         string devicePath,
         int readLength = RazerAvnera65Protocol.ReadLength)
-        : this(new NativeFeatureIo(devicePath, readLength))
+        : this(new NativeFeatureIo(devicePath, readLength), devicePath)
     {
     }
 
-    internal RazerAvnera65Transport(IRazerAvnera65Io io) => _io = io;
+    internal RazerAvnera65Transport(IRazerAvnera65Io io, string? path = null)
+    {
+        _io = io;
+        _path = path;
+        _gate = path is null ? new(1, 1) : RazerFeatureTransport.EndpointGate(path);
+    }
 
     public async Task SendAsync(byte[] report, CancellationToken cancellationToken)
     {
@@ -52,9 +59,9 @@ internal sealed class RazerAvnera65Transport : IRazerAvnera65Transport
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
             ThrowIfIoFailed();
-            await RunIoAsync(() =>
+            await RunIoAsync(token =>
             {
-                _io.Send(report);
+                _io.Send(report, token);
                 return true;
             }, cancellationToken).ConfigureAwait(false);
         }
@@ -81,9 +88,9 @@ internal sealed class RazerAvnera65Transport : IRazerAvnera65Transport
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
             ThrowIfIoFailed();
-            await RunIoAsync(() =>
+            await RunIoAsync(token =>
             {
-                _io.Send(report);
+                _io.Send(report, token);
                 return true;
             }, cancellationToken).ConfigureAwait(false);
 
@@ -92,7 +99,7 @@ internal sealed class RazerAvnera65Transport : IRazerAvnera65Transport
             for (var attempt = 0; attempt < 10; attempt++)
             {
                 await Task.Delay(RetryDelay, timeout.Token).ConfigureAwait(false);
-                var reply = await RunIoAsync(_io.Read, timeout.Token).ConfigureAwait(false);
+                var reply = await RunIoAsync(_ => _io.Read(), timeout.Token).ConfigureAwait(false);
                 if (RazerAvnera65Protocol.Matches(reply, expectedHeader))
                 {
                     return reply;
@@ -118,7 +125,10 @@ internal sealed class RazerAvnera65Transport : IRazerAvnera65Transport
         {
             if (_disposed) return;
             _disposed = true;
-            _io.Dispose();
+            if (_pending is { IsCompleted: false } pending)
+                _ = pending.ContinueWith(_ => _io.Dispose(), CancellationToken.None,
+                    TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            else _io.Dispose();
         }
         finally
         {
@@ -129,13 +139,19 @@ internal sealed class RazerAvnera65Transport : IRazerAvnera65Transport
     private void ThrowIfIoFailed()
     {
         if (_ioFailure is not null) throw new IOException(_ioFailure.Message, _ioFailure);
+        if (_path is not null) RazerFeatureTransport.ThrowIfNativeCallPending(_path);
     }
 
-    private async Task<T> RunIoAsync<T>(Func<T> call, CancellationToken cancellationToken)
+    private async Task<T> RunIoAsync<T>(Func<CancellationToken, T> call, CancellationToken cancellationToken)
     {
         try
         {
-            return await CancellableNativeCall.RunAsync(call, ResponseTimeout, cancellationToken)
+            return await CancellableNativeCall.RunAsync(call, ResponseTimeout, cancellationToken,
+                    pending =>
+                    {
+                        _pending = pending;
+                        if (_path is not null) RazerFeatureTransport.TrackPendingCall(_path, pending);
+                    })
                 .ConfigureAwait(false);
         }
         catch (TimeoutException exception) when (!_disposed)
@@ -159,6 +175,11 @@ internal sealed class RazerAvnera65Transport : IRazerAvnera65Transport
     internal interface IRazerAvnera65Io : IDisposable
     {
         void Send(byte[] report);
+        void Send(byte[] report, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Send(report);
+        }
         byte[] Read();
     }
 
@@ -190,8 +211,11 @@ internal sealed class RazerAvnera65Transport : IRazerAvnera65Transport
             }
         }
 
-        public void Send(byte[] report)
+        public void Send(byte[] report) => Send(report, CancellationToken.None);
+
+        public void Send(byte[] report, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (_useOutputReport)
             {
                 if (WriteFile(_handle, report, report.Length, out var written, IntPtr.Zero))
@@ -218,6 +242,8 @@ internal sealed class RazerAvnera65Transport : IRazerAvnera65Transport
                 _useOutputReport = false;
             }
 
+            // A late ERROR_INVALID_PARAMETER must not start a second write after timeout.
+            cancellationToken.ThrowIfCancellationRequested();
             if (!HidD_SetFeature(_handle, report, report.Length))
             {
                 var error = Marshal.GetLastWin32Error();

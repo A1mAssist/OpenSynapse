@@ -79,9 +79,12 @@ startup entry points to the Program Files executable. User data must stay in
 `%LOCALAPPDATA%\A1mAssist\OpenSynapse`, not under the Velopack-managed
 `%LOCALAPPDATA%\OpenSynapse` directory, because MSI cleanup removes the latter.
 The patch script also makes same-version products eligible for
-`RemoveExistingProducts` and guards the action with `NOT Installed`, so beta
+`RemoveExistingProducts`, scheduled after `InstallValidate` and before new files are installed, so beta
 builds sharing the numeric `ProductVersion` replace each other instead of
 stacking and leaving a stale `MSI:OpenSynapse` ARP entry.
+The close action requests normal app shutdown before using a bounded force-exit
+fallback. It keeps the input recovery host alive until cleanup finishes; an
+updater or unfinished recovery blocks installation instead of racing it.
 
 Velopack release assets must be generated as one set. Keep the generated feed
 files (`*.nupkg`, `RELEASES`, `releases.win.json`, `assets.win.json`) unchanged.

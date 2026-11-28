@@ -174,14 +174,29 @@ public static partial class RazerBleProtocol30
 
     public static byte ReadSingleByte(RazerBleResponse response) => First(response);
 
-    public static byte[] CreateGetHapticActiveStage(byte transactionId, byte profileId) =>
-        CreateFrame(transactionId, 0x15, 0x80, param6: profileId);
+    public static byte[] CreateGetHapticActiveStage(byte transactionId, byte profileId)
+    {
+        ValidateHapticProfile(profileId);
+        return CreateFrame(transactionId, 0x15, 0x80, param6: profileId);
+    }
 
-    public static byte[] CreateGetHapticMaxStage(byte transactionId, byte profileId) =>
-        CreateFrame(transactionId, 0x15, 0x81, param6: profileId);
+    public static byte[] CreateGetHapticMaxStage(byte transactionId, byte profileId)
+    {
+        ValidateHapticProfile(profileId);
+        return CreateFrame(transactionId, 0x15, 0x81, param6: profileId);
+    }
 
-    public static byte[] CreateSetHapticActiveStage(byte transactionId, byte profileId, byte stage) =>
-        CreateFrame(transactionId, 0x15, 0x00, param6: profileId, payload: [stage]);
+    public static byte[] CreateSetHapticActiveStage(byte transactionId, byte profileId, byte stage)
+    {
+        ValidateHapticProfile(profileId);
+        if (stage is < 1 or > 6) throw new ArgumentOutOfRangeException(nameof(stage));
+        return CreateFrame(transactionId, 0x15, 0x00, param6: profileId, payload: [stage]);
+    }
+
+    private static void ValidateHapticProfile(byte profileId)
+    {
+        if (profileId is < 1 or > 5) throw new ArgumentOutOfRangeException(nameof(profileId));
+    }
 
     public static byte[] CreateGetProfileName(
         byte transactionId,

@@ -326,6 +326,7 @@ public static partial class ProfileResolver
         MicrophoneMute = First(power?.MicrophoneMute, device?.MicrophoneMute, global?.MicrophoneMute),
         NoiseSuppression = First(power?.NoiseSuppression, device?.NoiseSuppression, global?.NoiseSuppression),
         AudioSourceIndex = First(power?.AudioSourceIndex, device?.AudioSourceIndex, global?.AudioSourceIndex),
+        SpatialMode = First(power?.SpatialMode, device?.SpatialMode, global?.SpatialMode),
         Dolby = First(power?.Dolby, device?.Dolby, global?.Dolby),
         NightMode = First(power?.NightMode, device?.NightMode, global?.NightMode),
         VoicePrompts = First(power?.VoicePrompts, device?.VoicePrompts, global?.VoicePrompts),

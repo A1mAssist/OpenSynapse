@@ -56,6 +56,20 @@ public enum RazerSurfaceCalibrationReadback
 
 public static class RazerSurfaceCalibrationReadbackPolicy
 {
+    public static bool RetainsSavedConfiguration(RazerSurfaceCalibrationReadback readback,
+        RazerSurfaceCalibrationConfiguration configuration, RazerSurfaceCalibrationState state) =>
+        readback == RazerSurfaceCalibrationReadback.Consistent ||
+        readback == RazerSurfaceCalibrationReadback.Mismatch &&
+        NormalizeSampledReadback(readback, configuration, state) == RazerSurfaceCalibrationReadback.Unavailable;
+
+    public static string DescribeReadback(RazerSurfaceCalibrationConfiguration configuration,
+        RazerSurfaceCalibrationState state) =>
+        $"mode={configuration.Mode} lod={configuration.Lod} sensor={state.SensorState?.ToString() ?? "?"} " +
+        $"liftMode={state.LiftMode?.ToString() ?? "?"} liftHeight={state.LiftHeight?.ToString() ?? "?"} " +
+        $"params={Convert.ToHexString(state.Parameters)} liftToTrack={Convert.ToHexString(state.LiftToTrackData)} " +
+        $"trackToLift={Convert.ToHexString(state.TrackToLiftData)} calibration={Convert.ToHexString(state.CalibrationData)} " +
+        $"thresholds={string.Join(',', state.Thresholds)}";
+
     public static RazerSurfaceCalibrationReadback NormalizeSampledReadback(
         RazerSurfaceCalibrationReadback readback,
         RazerSurfaceCalibrationConfiguration configuration,

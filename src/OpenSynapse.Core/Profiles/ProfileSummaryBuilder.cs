@@ -303,7 +303,7 @@ public static class ProfileSummaryBuilder
             ? null
             : true), "ProfileSummary_Item_SmartReel", scope);
         AddIf(group, settings.ActiveOnboardProfileId, "ProfileSummary_Item_OnboardProfile", scope);
-        AddIf(group, settings.HapticScrollLevel, "ProfileSummary_Item_HapticScroll", scope);
+        AddIf(group, settings.HapticScrollLevel ?? settings.HapticScroll?.ActiveStage, "ProfileSummary_Item_HapticScroll", scope);
         AddIf(group, settings.PowerPlan, "ProfileSummary_Item_PowerPlan", scope);
         AddIf(group, settings.SmartIlluminationEnabled, "ProfileSummary_Item_SmartIllumination", scope);
         AddIf(group, settings.SleepTimeoutSeconds, "ProfileSummary_Item_SleepTimeout", scope);
@@ -384,7 +384,7 @@ public static class ProfileSummaryBuilder
             "ProfileSummary_Item_Microphone", scope);
         AddIf(group, settings.NoiseSuppression, "ProfileSummary_Item_NoiseSuppression", scope);
         AddIf(group, settings.AudioSourceIndex, "ProfileSummary_Item_AudioSource", scope);
-        AddIf(group, settings.Dolby ?? settings.NightMode ?? settings.VoicePrompts,
+        AddIf(group, FirstPresent(settings.Dolby, settings.NightMode, settings.VoicePrompts, settings.SpatialMode),
             "ProfileSummary_Item_AdvancedAudio", scope);
         AddIf(group, FirstPresent(settings.MicDeEsser, settings.MicLimiterDb, settings.MicReverbIndex,
             settings.MicReverbIntensity, settings.MicCompressorEnabled, settings.MicCompressorProfile),

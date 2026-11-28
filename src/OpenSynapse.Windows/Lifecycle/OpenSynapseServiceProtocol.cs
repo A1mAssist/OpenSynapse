@@ -82,6 +82,21 @@ public static class OpenSynapseServiceProtocol
     }
 
     public const int MaximumMessageLength = 4096;
+
+    public static async Task<string?> ReadMessageAsync(TextReader reader, CancellationToken cancellationToken)
+    {
+        var buffer = new char[MaximumMessageLength + 1];
+        var count = 0;
+        // One request per connection; never allocate an unbounded line from the caller.
+        while (count < buffer.Length)
+        {
+            var read = await reader.ReadAsync(buffer.AsMemory(count, 1), cancellationToken).ConfigureAwait(false);
+            if (read == 0) return count == 0 ? null : new string(buffer, 0, count);
+            if (buffer[count] is '\n' or '\r') return new string(buffer, 0, count);
+            count++;
+        }
+        throw new InvalidDataException("The service request exceeds the message limit.");
+    }
 }
 
 public sealed record OpenSynapseServiceRequest(

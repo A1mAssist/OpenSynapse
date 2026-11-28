@@ -104,8 +104,8 @@ public interface IRazerFeatureSession : IAsyncDisposable
         bool allowRemainingPacketsMismatch = false);
 
     /// <summary>
-    /// Uses a prebuilt report and runs the HID exchange on the caller's thread. Frame pumps
-    /// use this to avoid rebuilding the report and hopping through the thread pool per row.
+    /// Uses a prebuilt report in a bounded native operation. Batch frame pumps
+    /// use one worker for the whole frame instead of a thread-pool hop per row.
     /// </summary>
     Task<byte[]> QueryPreparedFastAsync(
         ReadOnlyMemory<byte> request,
@@ -200,6 +200,8 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
     // process-wide; otherwise one transport can read another's response.
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> _gates =
         new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, Task> _pendingCalls =
+        new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, int[]> _leviathanTransactions =
         new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, int[]> _transactionSequences =
@@ -254,6 +256,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
         CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
+        ThrowIfNativeCallPending(devicePath);
         var handle = await OpenHandleAsync(devicePath, cancellationToken).ConfigureAwait(false);
         var gate = _gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
         return new RazerFeatureSession(handle, gate, devicePath, logicalProductId);
@@ -353,6 +356,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
         await gate.WaitAsync(cancellationToken);
         try
         {
+            ThrowIfNativeCallPending(devicePath);
             if (usesLeviathanReportId)
             {
                 var sequence = _leviathanTransactions.GetOrAdd(devicePath, static _ => [-1]);
@@ -364,19 +368,25 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
 
             try
             {
-                using var handle = await OpenHandleAsync(devicePath, cancellationToken).ConfigureAwait(false);
-                return await ExecuteOnHandleAsync(
-                    handle,
-                    request,
-                    deviceWait,
-                    responseReportId,
-                    cancellationToken,
-                    allowRemainingPacketsMismatch,
-                    usesLeviathanReportId,
-                    usesMouseDockLinker,
-                    directIo: false,
-                    message => WriteDiagnostic(devicePath, request, message),
-                    usesMarciAudio: logicalProductId == 0x0F66).ConfigureAwait(false);
+                var handle = await OpenHandleAsync(devicePath, cancellationToken).ConfigureAwait(false);
+                Task? pending = null;
+                try
+                {
+                    return await ExecuteOnHandleAsync(
+                        handle,
+                        request,
+                        deviceWait,
+                        responseReportId,
+                        cancellationToken,
+                        allowRemainingPacketsMismatch,
+                        usesLeviathanReportId,
+                        usesMouseDockLinker,
+                        directIo: false,
+                        message => WriteDiagnostic(devicePath, request, message),
+                        usesMarciAudio: logicalProductId == 0x0F66,
+                        onPending: task => { pending = task; TrackPendingCall(devicePath, task); }).ConfigureAwait(false);
+                }
+                finally { DisposeHandleAfterCall(handle, pending); }
             }
             catch (Exception exception) when (exception is Win32Exception or IOException or InvalidOperationException or NotSupportedException)
             {
@@ -388,6 +398,31 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
         {
             gate.Release();
         }
+    }
+
+    internal static SemaphoreSlim EndpointGate(string devicePath) =>
+        _gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
+
+    internal static void ThrowIfNativeCallPending(string devicePath)
+    {
+        if (_pendingCalls.TryGetValue(devicePath, out var pending) && !pending.IsCompleted)
+            throw new IOException("The previous HID operation is still unwinding; reconnect after it completes.");
+    }
+
+    internal static void TrackPendingCall(string devicePath, Task task)
+    {
+        _pendingCalls[devicePath] = task;
+        _ = task.ContinueWith(completed =>
+        {
+            _pendingCalls.TryRemove(new KeyValuePair<string, Task>(devicePath, completed));
+        }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+    }
+
+    private static void DisposeHandleAfterCall(SafeFileHandle handle, Task? pending)
+    {
+        if (pending is null || pending.IsCompleted) handle.Dispose();
+        else _ = pending.ContinueWith(_ => handle.Dispose(), CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
 
     private static async Task<SafeFileHandle> OpenHandleAsync(
@@ -426,7 +461,8 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
         bool usesMouseDockLinker,
         bool directIo = false,
         Action<string>? diagnostic = null,
-        bool usesMarciAudio = false)
+        bool usesMarciAudio = false,
+        Action<Task>? onPending = null)
     {
         string? lastError = null;
         string? lastValidationError = null;
@@ -437,7 +473,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
         for (var attempt = 1; attempt <= queryAttempts; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var setResult = await SetFeatureAsync(handle, request, directIo, cancellationToken)
+            var setResult = await SetFeatureAsync(handle, request, directIo, cancellationToken, onPending)
                 .ConfigureAwait(false);
             if (!setResult.Success)
             {
@@ -463,7 +499,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
 
                 var candidate = new byte[RazerFeatureReport.Length];
                 candidate[0] = responseReportId;
-                var getResult = await GetFeatureAsync(handle, candidate, directIo, cancellationToken)
+                var getResult = await GetFeatureAsync(handle, candidate, directIo, cancellationToken, onPending)
                     .ConfigureAwait(false);
                 if (!getResult.Success)
                 {
@@ -594,7 +630,8 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
         SafeFileHandle handle,
         byte[] request,
         bool directIo,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Action<Task>? onPending = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (directIo)
@@ -609,7 +646,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
             {
                 var success = NativeMethods.HidD_SetFeature(handle, request, request.Length);
                 return (Success: success, Error: Marshal.GetLastWin32Error());
-            }, NativeCallTimeout, cancellationToken).ConfigureAwait(false);
+            }, NativeCallTimeout, cancellationToken, onPending).ConfigureAwait(false);
         }
         catch (TimeoutException)
         {
@@ -623,7 +660,8 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
         SafeFileHandle handle,
         byte[] request,
         bool directIo,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Action<Task>? onPending = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (directIo)
@@ -638,7 +676,7 @@ public sealed partial class RazerFeatureTransport : IRazerFeatureTransport
             {
                 var success = NativeMethods.HidD_GetFeature(handle, request, request.Length);
                 return (Success: success, Error: Marshal.GetLastWin32Error());
-            }, NativeCallTimeout, cancellationToken).ConfigureAwait(false);
+            }, NativeCallTimeout, cancellationToken, onPending).ConfigureAwait(false);
         }
         catch (TimeoutException)
         {

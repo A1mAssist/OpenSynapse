@@ -18,6 +18,7 @@ public sealed partial class UsbAccessoriesWorkspace
     private readonly ConcurrentDictionary<string, ChromaDisplaySnapshot> _chromaDisplaySnapshots =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly SemaphoreSlim _displayLightingGate = new(1, 1);
+    private bool _displayLightingAvailable = true;
     private readonly HashSet<string> _headsetDisplayLightingOff = new(StringComparer.OrdinalIgnoreCase);
 
     [NotProfileScoped]
@@ -26,6 +27,7 @@ public sealed partial class UsbAccessoriesWorkspace
         await _displayLightingGate.WaitAsync().ConfigureAwait(true);
         try
         {
+            _displayLightingAvailable = available;
             if (available)
             {
                 await RestoreDisplayLightingAsync().ConfigureAwait(false);
@@ -51,18 +53,26 @@ public sealed partial class UsbAccessoriesWorkspace
         {
             try
             {
-                using var timeout =
-                    new CancellationTokenSource(TimeSpan.FromMilliseconds(1500));
                 var service = CreateChromaDisplayService(connection);
-                var state = await service.ReadStateAsync(timeout.Token).ConfigureAwait(false);
-                RazerChromaEffect? effect = state.Effect is { } value && value != RazerChromaEffect.CustomFrame
+                RazerChromaStandardState? state = null;
+                try
+                {
+                    using var captureTimeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(1500));
+                    state = await service.ReadStateAsync(captureTimeout.Token).ConfigureAwait(false);
+                }
+                catch (Exception exception)
+                {
+                    _diagnosticLog.TryWrite("lighting-display-chroma",
+                        $"chroma {connection.ProductId:X4} snapshot unavailable: {exception.Message}");
+                }
+                RazerChromaEffect? effect = state?.Effect is { } value && value != RazerChromaEffect.CustomFrame
                     ? value
                     : null;
                 _chromaDisplaySnapshots[SnapshotKey(connection)] = new ChromaDisplaySnapshot(
                     connection.ProductId,
                     connection.DevicePath,
                     effect,
-                    state.Colors.ToArray());
+                    state?.Colors.ToArray() ?? []);
                 if (effect is null)
                 {
                     _diagnosticLog.TryWrite(
@@ -70,7 +80,8 @@ public sealed partial class UsbAccessoriesWorkspace
                         $"chroma {connection.ProductId:X4} has no restorable effect; turning off");
                 }
 
-                await service.TurnOffForShutdownAsync(timeout.Token).ConfigureAwait(false);
+                using var writeTimeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(1500));
+                await service.TurnOffForShutdownAsync(writeTimeout.Token).ConfigureAwait(false);
                 Interlocked.Increment(ref turnedOff);
             }
             catch (Exception exception)
@@ -127,9 +138,18 @@ public sealed partial class UsbAccessoriesWorkspace
 
             if (snapshot.Effect is not { } effect)
             {
-                _diagnosticLog.TryWrite(
-                    "lighting-display-chroma",
-                    $"chroma {snapshot.ProductId:X4} has no saved effect; leaving profile state");
+                try
+                {
+                    using var restoreTimeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(1500));
+                    await RestoreChromaLightingAfterExternalAsync(connection, null, PowerSourceKind.Unknown, restoreTimeout.Token);
+                    Interlocked.Increment(ref restored);
+                }
+                catch (Exception exception)
+                {
+                    Interlocked.Increment(ref failed);
+                    _diagnosticLog.TryWrite("lighting-display-chroma",
+                        $"chroma {snapshot.ProductId:X4} configured lighting restore failed: {exception.Message}");
+                }
                 return;
             }
 
@@ -223,6 +243,7 @@ public sealed partial class UsbAccessoriesWorkspace
         CancellationToken cancellationToken,
         IReadOnlyCollection<string>? instanceIds = null)
     {
+        if (!_displayLightingAvailable) return;
         var targets = instanceIds?.ToHashSet(StringComparer.OrdinalIgnoreCase);
         var pending = targets is null ? null : new HashSet<string>(targets, StringComparer.OrdinalIgnoreCase);
         var failures = new List<Exception>();
@@ -354,7 +375,8 @@ public sealed partial class UsbAccessoriesWorkspace
         byte[] effectColors = effect switch
         {
             RazerChromaEffect.Static => ParseColor(settings.PrimaryColor),
-            RazerChromaEffect.Breathing => [.. ParseColor(settings.PrimaryColor), .. ParseColor(settings.SecondaryColor)],
+            RazerChromaEffect.Breathing or RazerChromaEffect.Starlight =>
+                [.. ParseColor(settings.PrimaryColor), .. ParseColor(settings.SecondaryColor)],
             _ => [],
         };
         if (argb is not null)

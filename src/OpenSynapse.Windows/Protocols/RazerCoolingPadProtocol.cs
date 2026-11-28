@@ -61,9 +61,9 @@ public static partial class RazerCoolingPadProtocol
     private const byte GetCoolingModeCommandId = 0x90;
     private const byte CoolingModeSourceFirmware = 0x00;
     private const byte CoolingModeSourceSynapse = 0x01;
-    private const byte SetSpeedDataSize = 0x06;
-    private const byte GetSpeedDataSize = 0x06;
-    private const byte GetFanInformationDataSize = 0x08;
+    private const byte SetSpeedDataSize = 0x03;
+    private const byte GetSpeedDataSize = 0x03;
+    private const byte GetFanInformationDataSize = 0x0C;
     private const byte CoolingModeDataSize = 0x03;
 
     public static byte[] CreateGetSpeedRequest() =>
@@ -190,11 +190,11 @@ public static partial class RazerCoolingPadProtocol
     }
 
     /// <summary>
-    /// Reads the fan speed as a big-endian 16-bit value at data[2..3].
+    /// Reads the fan speed in 50 RPM units at data[2].
     /// </summary>
     public static int ParseSpeedRpm(ReadOnlySpan<byte> response)
     {
-        ValidateResponse(response, CreateGetSpeedRequest(), expectedArguments: 4);
+        ValidateResponse(response, CreateGetSpeedRequest(), expectedArguments: 3);
         var arguments = response[RazerFeatureReport.ArgumentsOffset..];
         if (arguments[0] != ClassId || arguments[1] != ThermalId)
         {
@@ -202,7 +202,7 @@ public static partial class RazerCoolingPadProtocol
                 "Cooling pad returned an unexpected thermal object; expected class 1, Fan1 (thermal id 5).");
         }
 
-        return ReadBigEndianUInt16(arguments, 2);
+        return arguments[2] * RpmPerUnit;
     }
 
     /// <summary>

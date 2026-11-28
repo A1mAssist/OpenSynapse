@@ -70,8 +70,12 @@ public sealed class RazerChromaDeviceRowViewModel : INotifyPropertyChanged
 
 public sealed partial class RazerChromaViewModel : INotifyPropertyChanged, IAsyncDisposable
 {
-    private static readonly RazerChromaEffect[] Effects =
+    private static readonly RazerChromaEffect[] BasicEffects =
         [RazerChromaEffect.Off, RazerChromaEffect.Static, RazerChromaEffect.Breathing, RazerChromaEffect.Spectrum];
+    private static readonly RazerChromaEffect[] WirelessArgbEffects =
+        [.. BasicEffects, RazerChromaEffect.Wave, RazerChromaEffect.Starlight];
+    private RazerChromaEffect[] Effects => RazerChromaStandardService.IsWirelessArgbProduct(_connection.ProductId)
+        ? WirelessArgbEffects : BasicEffects;
 
     private const ushort ArgbProductId = 0x0F1F;
     private static readonly string[] ArgbPortNumbers = ["1", "2", "3", "4", "5", "6"];
@@ -165,12 +169,8 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged, IAsyn
     public Visibility HardwareVisibility =>
         string.IsNullOrEmpty(HardwareSummary) ? Visibility.Collapsed : Visibility.Visible;
     public IReadOnlyList<string> LightingEffectOptions =>
-    [
-        AppStrings.Text("RazerLightingEffectOff"),
-        AppStrings.Text("RazerLightingEffectStatic"),
-        AppStrings.Text("RazerLightingEffectBreathing"),
-        AppStrings.Text("RazerLightingEffectSpectrum"),
-    ];
+        Effects.Select(effect => AppStrings.Text(effect == RazerChromaEffect.Starlight
+            ? "Text_51212D25" : "RazerLightingEffect" + effect)).ToArray();
 
     public int SelectedLightingEffectIndex
     {
@@ -179,6 +179,7 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged, IAsyn
         {
             if (!SetField(ref _selectedEffectIndex, Math.Clamp(value, 0, Effects.Length - 1))) return;
             OnPropertyChanged(nameof(SecondaryColorVisibility));
+            OnPropertyChanged(nameof(PrimaryColorVisibility));
         }
     }
 
@@ -207,9 +208,13 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged, IAsyn
     }
 
     public Microsoft.UI.Xaml.Visibility SecondaryColorVisibility =>
-        Effects[_selectedEffectIndex] == RazerChromaEffect.Breathing
+        Effects[_selectedEffectIndex] is RazerChromaEffect.Breathing or RazerChromaEffect.Starlight
             ? Microsoft.UI.Xaml.Visibility.Visible
             : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+    public Visibility PrimaryColorVisibility =>
+        Effects[_selectedEffectIndex] is RazerChromaEffect.Static or RazerChromaEffect.Breathing or RazerChromaEffect.Starlight
+            ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility ArgbVisibility => _argbConnection is null ? Visibility.Collapsed : Visibility.Visible;
     public Visibility ArgbDriverVisibility => _argbDriverMissing ? Visibility.Visible : Visibility.Collapsed;
@@ -261,6 +266,7 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged, IAsyn
     }
 
     public bool CanEdit => !IsBusy && _hasEditableState;
+    public Visibility LightingVisibility => _connection.Channel == RazerChromaChannel.None ? Visibility.Collapsed : Visibility.Visible;
     public bool CanRefresh => !IsBusy;
     public string ErrorText { get => _errorText; private set => SetField(ref _errorText, value); }
     public bool HasError => !string.IsNullOrWhiteSpace(ErrorText);
@@ -287,6 +293,11 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged, IAsyn
         {
             // Default playback is independent of the dock's lighting collection.
             if (Body is { HasEndpointAudio: true } endpointBody) await endpointBody.LoadAsync(cancellationToken);
+            if (_connection.Channel == RazerChromaChannel.None)
+            {
+                if (Body is { } bodyOnly) await bodyOnly.LoadAsync(cancellationToken);
+                return;
+            }
             var state = await OpenService().ReadStateAsync(cancellationToken);
             _wirelessOnline = null;
             if (RazerChromaStandardService.IsIotProduct(_connection.ProductId))
@@ -392,7 +403,7 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged, IAsyn
         var colors = effect switch
         {
             RazerChromaEffect.Static => new byte[] { PrimaryColor.R, PrimaryColor.G, PrimaryColor.B },
-            RazerChromaEffect.Breathing =>
+            RazerChromaEffect.Breathing or RazerChromaEffect.Starlight =>
                 [PrimaryColor.R, PrimaryColor.G, PrimaryColor.B, SecondaryColor.R, SecondaryColor.G, SecondaryColor.B],
             _ => [],
         };
@@ -418,7 +429,7 @@ public sealed partial class RazerChromaViewModel : INotifyPropertyChanged, IAsyn
         byte[] PreviousColors() => Effects[previousIndex] switch
         {
             RazerChromaEffect.Static => [previousPrimary.R, previousPrimary.G, previousPrimary.B],
-            RazerChromaEffect.Breathing =>
+            RazerChromaEffect.Breathing or RazerChromaEffect.Starlight =>
                 [previousPrimary.R, previousPrimary.G, previousPrimary.B,
                  previousSecondary.R, previousSecondary.G, previousSecondary.B],
             _ => [],

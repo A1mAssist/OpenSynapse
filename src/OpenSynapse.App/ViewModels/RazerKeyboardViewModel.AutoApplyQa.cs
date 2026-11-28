@@ -7,6 +7,19 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerKeyboardViewModel
 {
+    internal static RazerKeyboardViewModel CreateFullscreenPollingPreview(
+        ProfileDocument profile, Func<CancellationToken, Task<bool>> save)
+    {
+        var vm = new RazerKeyboardViewModel(new("qa-keyboard", 0x0249, "Razer Pro Type · QA", 91, false),
+            new AutoApplyTransport(), () => profile, save);
+        vm.ApplyState(new(null, null, null, null, false, 1000, []));
+        profile.Devices[vm.ProfileDeviceKey] = new DeviceProfileSettings
+        {
+            Keyboard = new() { FullscreenPollingRateHertz = 8000 },
+        };
+        return vm;
+    }
+
     internal static RazerKeyboardViewModel CreateAutoApplyPreview()
     {
         var profile = ProfileDocument.CreateDefault();

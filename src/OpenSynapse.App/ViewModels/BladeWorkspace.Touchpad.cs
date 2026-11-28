@@ -4,6 +4,13 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class BladeWorkspace
 {
+    private readonly object _touchpadSyncGate = new();
+    private readonly CancellationTokenSource _touchpadSyncStop = new();
+    private Task _touchpadSyncTask = Task.CompletedTask;
+    private (DeviceDescriptor[] Devices, bool Enabled, long Version)? _touchpadPending;
+    private long _touchpadSyncVersion;
+    private bool _touchpadSyncRunning;
+
     private void ApplyTouchpadState()
     {
         if (_touchpadController?.GetEnabled() is bool touchpadEnabled)
@@ -29,7 +36,7 @@ public sealed partial class BladeWorkspace
             }
             var retry = now < _touchpadIndicatorRetryUntil;
             var settle = retry && now - _touchpadIndicatorSyncedAt >= 5_000;
-            if (changed || firstRead || (retry && (!_touchpadIndicatorConfirmed || settle)))
+            if (changed || firstRead || settle)
             {
                 _touchpadIndicatorSyncedAt = now;
                 // Also write on the first read: the lighting take-over can reset
@@ -55,33 +62,59 @@ public sealed partial class BladeWorkspace
         }
     }
 
-    private async Task SyncObservedTouchpadIndicatorAsync(
+    private Task SyncObservedTouchpadIndicatorAsync(
         IReadOnlyList<DeviceDescriptor> devices,
         bool enabled)
     {
-        try
+        lock (_touchpadSyncGate)
         {
-            _touchpadIndicatorConfirmed = await _deviceTelemetryReader.SetBladeTouchpadStatusAsync(
-                devices, enabled, CancellationToken.None);
-            if (!_touchpadIndicatorConfirmed)
-            {
-                _diagnosticLog.TryWrite(
-                    "device-operation",
-                    $"touchpad indicator did not follow the device state enabled={enabled}");
-            }
-            else
-            {
-                _diagnosticLog.TryWrite(
-                    "blade-touchpad",
-                    $"indicator synchronized enabled={enabled}");
-            }
+            if (IsDisposed || _touchpadSyncStop.IsCancellationRequested) return Task.CompletedTask;
+            _touchpadPending = (devices.ToArray(), enabled, ++_touchpadSyncVersion);
+            if (_touchpadSyncRunning) return _touchpadSyncTask;
+            _touchpadSyncRunning = true;
+            return _touchpadSyncTask = DrainTouchpadIndicatorAsync();
         }
-        catch (Exception exception) when (RuntimeErrors.IsExpected(exception))
+    }
+
+    private async Task DrainTouchpadIndicatorAsync()
+    {
+        while (true)
         {
-            _touchpadIndicatorConfirmed = false;
-            _diagnosticLog.TryWrite(
-                "device-operation",
-                $"touchpad indicator follow-up failed: {exception}");
+            (DeviceDescriptor[] Devices, bool Enabled, long Version) request;
+            lock (_touchpadSyncGate)
+            {
+                if (_touchpadPending is not { } pending || IsDisposed || _touchpadSyncStop.IsCancellationRequested)
+                {
+                    _touchpadPending = null;
+                    _touchpadSyncRunning = false;
+                    return;
+                }
+                request = pending;
+                _touchpadPending = null;
+            }
+            var confirmed = false;
+            try
+            {
+                using var deadline = CancellationTokenSource.CreateLinkedTokenSource(_touchpadSyncStop.Token);
+                deadline.CancelAfter(TimeSpan.FromSeconds(5));
+                confirmed = await _deviceTelemetryReader.SetBladeTouchpadStatusAsync(
+                    request.Devices, request.Enabled, deadline.Token).ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                // This background writer must drain the newest request even after a failed write.
+                _diagnosticLog.TryWrite("device-operation", $"touchpad indicator follow-up failed: {exception}");
+            }
+            lock (_touchpadSyncGate)
+            {
+                var sameDevices = request.Devices.Select(device => device.Id).SequenceEqual(
+                    ActiveDescriptors.Select(device => device.Id), StringComparer.OrdinalIgnoreCase);
+                if (!IsDisposed && request.Version == _touchpadSyncVersion && sameDevices &&
+                    _blade._confirmedBladeTouchpadEnabled == request.Enabled)
+                    _touchpadIndicatorConfirmed = confirmed;
+            }
+            if (!confirmed)
+                _diagnosticLog.TryWrite("device-operation", $"touchpad indicator did not acknowledge enabled={request.Enabled}");
         }
     }
 

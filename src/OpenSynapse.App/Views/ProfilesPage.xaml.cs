@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using System.ComponentModel;
 using OpenSynapse.App.ViewModels;
 using OpenSynapse.Core.Devices;
 using Windows.Storage.Pickers;
@@ -11,6 +12,7 @@ public sealed partial class ProfilesPage : UserControl
     private bool _behaviorUiReady;
     private bool _refreshQueued;
     private int[] _refreshRateCycleOptions = [];
+    private ProfilesWorkspace? _selectionProfiles;
 
     internal MainWindow Host { get; set; } = null!;
 
@@ -169,11 +171,42 @@ public sealed partial class ProfilesPage : UserControl
         }
     }
 
+    private void ProfilePickerLoaded(object sender, RoutedEventArgs e) => BindProfileSelection();
+
+    private void ProfilePickerUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (_selectionProfiles is not null) _selectionProfiles.PropertyChanged -= ProfileSelectionPropertyChanged;
+        _selectionProfiles = null;
+    }
+
+    private void ProfilePickerDataContextChanged(FrameworkElement sender, DataContextChangedEventArgs e)
+    {
+        if (sender.IsLoaded) BindProfileSelection();
+    }
+
+    private void BindProfileSelection()
+    {
+        if (_selectionProfiles is not null) _selectionProfiles.PropertyChanged -= ProfileSelectionPropertyChanged;
+        _selectionProfiles = ActiveProfilePicker.DataContext as ProfilesWorkspace;
+        if (_selectionProfiles is null) return;
+        _selectionProfiles.PropertyChanged += ProfileSelectionPropertyChanged;
+        ActiveProfilePicker.SelectedItem = _selectionProfiles.ActiveProfileName;
+    }
+
+    private void ProfileSelectionPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // ComboBox clears its one-way SelectedItem binding when the catalog is rebuilt.
+        if (e.PropertyName == nameof(ProfilesWorkspace.ActiveProfileName))
+            ActiveProfilePicker.SelectedItem = _selectionProfiles?.ActiveProfileName;
+    }
+
     private async void ProfileSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is ComboBox { SelectedItem: string profileName })
+        if (sender is ComboBox { DataContext: ProfilesWorkspace profiles, SelectedItem: string profileName } picker &&
+            !profiles.IsRefreshingProfiles)
         {
-            await ViewModel.Profiles.SelectProfileAsync(profileName, Lifetime);
+            await profiles.SelectProfileAsync(profileName, Host?.LifetimeToken ?? default);
+            if (ReferenceEquals(picker.DataContext, profiles)) picker.SelectedItem = profiles.ActiveProfileName;
         }
     }
 

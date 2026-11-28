@@ -147,12 +147,15 @@ public sealed partial class RazerBleDeviceViewModel
                     log: _diagnostic,
                     mappingProfileSaver: PersistMappingProfileAsync,
                     productId: RazerProductAliases.Canonical(_device.ProductId),
-                    actionCatalog: IsNaga ? new RazerNagaMappingActionCatalog(_device.ProductId) : null,
+                    deviceKind: _service.IsKeyboard ? RazerMappingDeviceKind.Keyboard : RazerMappingDeviceKind.Mouse,
+                    actionCatalog: _service.IsKeyboard ? new RazerKeyboardMappingActionCatalog(RazerProductAliases.Canonical(_device.ProductId)) :
+                        IsNaga ? new RazerNagaMappingActionCatalog(_device.ProductId) : null,
                     softwareTriggerBinder: _softwareMacroBinder,
                     softwareTriggerClearer: _softwareMacroClearer,
                     systemMacros: _systemMacros,
-                    softwareTriggerResolver: buttonId => RazerMouseMacroTriggerResolver.Resolve(
-                        RazerProductAliases.Canonical(_device.ProductId), buttonId, IsNaga),
+                    softwareTriggerResolver: buttonId => _service.IsKeyboard
+                        ? RazerKeyboardMacroTriggerResolver.Resolve(buttonId, RazerProductAliases.Canonical(_device.ProductId))
+                        : RazerMouseMacroTriggerResolver.Resolve(RazerProductAliases.Canonical(_device.ProductId), buttonId, IsNaga),
                     canObserveHyperShiftLayer: false)
                 {
                     DeviceInstanceId = _device.Id,
@@ -446,6 +449,7 @@ public sealed partial class RazerBleDeviceViewModel
         }
 
         if (!applied) return;
+        await LoadHapticStageAsync(cancellationToken);
         await LoadDpiStagesAsync(cancellationToken);
         await LoadScrollAsync(cancellationToken);
         await LoadPowerAsync(cancellationToken);

@@ -245,6 +245,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         {
             if (!SetField(ref _isBusy, value)) return;
             OnPropertyChanged(nameof(CanEdit));
+            OnPropertyChanged(nameof(CanEditSpatialMode));
             OnPropertyChanged(nameof(CanRefresh));
             OnPropertyChanged(nameof(CanApplyLighting));
             OnPropertyChanged(nameof(CanInstallThx));

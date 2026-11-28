@@ -183,6 +183,24 @@ public static class ChromaSdkPipe
 
         var payload = new byte[length];
         ReadExactly(stream, payload, cancellationToken);
+        return Parse(payload);
+    }
+
+    public static async Task<ChromaSdkMessage> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        var header = new byte[4];
+        await stream.ReadExactlyAsync(header, cancellationToken).ConfigureAwait(false);
+        var length = BinaryPrimitives.ReadInt32LittleEndian(header);
+        if (length <= 0 || length > MaxPayload)
+            throw new InvalidDataException("Invalid Chroma SDK frame length.");
+        var payload = new byte[length];
+        await stream.ReadExactlyAsync(payload, cancellationToken).ConfigureAwait(false);
+        return Parse(payload);
+    }
+
+    private static ChromaSdkMessage Parse(byte[] payload)
+    {
         using var reader = new BinaryReader(new MemoryStream(payload, writable: false), Encoding.UTF8, leaveOpen: false);
         var type = (ChromaSdkMessageType)reader.ReadByte();
         return type switch

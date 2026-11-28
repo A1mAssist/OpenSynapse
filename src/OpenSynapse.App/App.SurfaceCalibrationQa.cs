@@ -101,6 +101,13 @@ public partial class App
                 await CheckModelsAsync();
                 foreach (var pid in new ushort[] { 0x0078, 0x00B8, 0x00A3, _smartPid })
                     _devices.Add(pid, CreateDevice(pid, $"ui-{pid:X4}"));
+                using (var cancelledRead = new CancellationTokenSource())
+                {
+                    var viper = _devices[0x00B8];
+                    viper.Client.BeforeNextRead = cancelledRead.Cancel;
+                    await viper.Model.EnsureLoadedAsync(cancelledRead.Token);
+                    Check(viper.Model.SelectedMode is null, "UI retry starts with an interrupted initial read");
+                }
                 await ShowAsync(0x0078);
                 foreach (var button in _toolbar.Children.OfType<Control>()) button.IsEnabled = true;
                 _status.Text = $"READY · {_checks.Count} behavior checks passed";
@@ -129,6 +136,41 @@ public partial class App
             await vm.EnsureLoadedAsync();
             await vm.EnsureLoadedAsync();
             Check(pixart.Client.Reads == 1 && pixart.Client.Applies == 0, "EnsureLoaded reads once and performs zero writes");
+            await using (var cancelled = CreateDevice(0x00B8, "checks-cancelled-read"))
+            {
+                using var cancellation = new CancellationTokenSource();
+                cancelled.Client.BeforeNextRead = cancellation.Cancel;
+                await cancelled.Model.EnsureLoadedAsync(cancellation.Token);
+                Check(cancelled.Model.SelectedMode is null && !cancelled.Model.CanEdit,
+                    "A cancelled initial read never presents an editable default as current");
+                await cancelled.Model.EnsureLoadedAsync();
+                Check(cancelled.Client.Reads == 2 && cancelled.Client.Applies == 0 &&
+                    cancelled.Model.SelectedMode?.Mode == RazerSurfaceCalibrationMode.Adaptive &&
+                    cancelled.Model.TrackingVisibility == Visibility.Visible && double.IsFinite(cancelled.Model.TrackingDistance),
+                    "Re-entering after a cancelled read restores the current mode and parameters without selection or writes");
+                var draftTracking = cancelled.Model.TrackingDistance == cancelled.Model.TrackingMinimum
+                    ? cancelled.Model.TrackingMaximum : cancelled.Model.TrackingMinimum;
+                cancelled.Model.TrackingDistance = draftTracking;
+                await cancelled.Model.EnsureLoadedAsync();
+                Check(cancelled.Client.Reads == 2 && cancelled.Model.TrackingDistance == draftTracking,
+                    "Re-entering a loaded calibration preserves edits without another device read");
+            }
+            await using (var reentered = CreateDevice(0x00B8, "checks-pending-read"))
+            {
+                using var cancellation = new CancellationTokenSource();
+                var readStarted = new TaskCompletionSource();
+                var readCompletion = new TaskCompletionSource();
+                reentered.Client.BeforeNextRead = readStarted.SetResult;
+                reentered.Client.NextReadCompletion = readCompletion.Task;
+                var initialRead = reentered.Model.EnsureLoadedAsync(cancellation.Token);
+                await readStarted.Task;
+                var reentry = reentered.Model.EnsureLoadedAsync();
+                cancellation.Cancel();
+                await Task.WhenAll(initialRead, reentry);
+                Check(reentered.Client.Reads == 2 && reentered.Client.Applies == 0 &&
+                    reentered.Model.SelectedMode?.Mode == RazerSurfaceCalibrationMode.Adaptive,
+                    "Re-entry during a cancelling read waits for cleanup and then reads the current mode");
+            }
             await using (var other = CreateDevice(0x0078, "checks-other-pixart"))
             {
                 await other.Model.EnsureLoadedAsync();
@@ -261,6 +303,10 @@ public partial class App
         private async Task VerifyUiAsync()
         {
             var pixart = _devices[0x0078];
+            var viper = _devices[0x00B8];
+            Check(viper.Client.Reads == 2 && viper.Client.Applies == 0 &&
+                viper.Model.SelectedMode?.Mode == RazerSurfaceCalibrationMode.Adaptive,
+                "UI re-entry recovers an interrupted initial read without changing the mode or writing the mouse", _uiChecks);
             Check(pixart.Client.Reads >= 2, "UI Read invokes the shared VM", _uiChecks);
             Check(pixart.Client.Applies >= 2 && pixart.Model.SavedSurfaces.Count != 0,
                 "UI preset and manual actions apply and save a real record", _uiChecks);
@@ -326,13 +372,22 @@ public partial class App
         public int Results { get; private set; }
         public SurfaceCalibrationQaFault NextApply { get; set; }
         public bool UnknownOriginalMode { get; set; }
-        public Task<RazerSurfaceCalibrationState> ReadAsync(CancellationToken cancellationToken = default)
+        public Action? BeforeNextRead { get; set; }
+        public Task? NextReadCompletion { get; set; }
+        public async Task<RazerSurfaceCalibrationState> ReadAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             Reads++;
+            var beforeRead = BeforeNextRead;
+            BeforeNextRead = null;
+            var completion = NextReadCompletion;
+            NextReadCompletion = null;
+            beforeRead?.Invoke();
+            if (completion is not null) await completion.WaitAsync(cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             if (_failRead) { _failRead = false; throw new IOException("Simulated unavailable readback"); }
-            return Task.FromResult(UnknownOriginalMode ? _state with { LiftMode = null } :
-                profile.Kind == RazerProximityCalibrationKind.SmartPixart ? _state with { LiftMode = 1 } : _state);
+            return UnknownOriginalMode ? _state with { LiftMode = null } :
+                profile.Kind == RazerProximityCalibrationKind.SmartPixart ? _state with { LiftMode = 1 } : _state;
         }
         public Task ApplyAsync(RazerSurfaceCalibrationConfiguration configuration, CancellationToken cancellationToken = default)
         {

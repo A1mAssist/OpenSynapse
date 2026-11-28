@@ -441,8 +441,12 @@ internal static partial class RazerDriverInstaller
     /// </summary>
     internal static bool IsAlreadyInstalledExitCode(int exitCode) => exitCode == 259;
 
-    internal static void EnsureServiceCacheDirectory() =>
+    internal static void EnsureServiceCacheDirectory()
+    {
+        ProgramDataSecurity.ProtectDirectory(ProgramDataSecurity.Root, allowUsersRead: true);
+        ProgramDataSecurity.ProtectDirectory(Path.Combine(ProgramDataSecurity.Root, "Service"), allowUsersRead: false);
         ProgramDataSecurity.ProtectDirectory(ServiceCacheDirectory, allowUsersRead: false);
+    }
 
     /// <summary>
     /// The user cache used to live under the Velopack per-user install root,

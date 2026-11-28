@@ -69,18 +69,24 @@ public static partial class StudioEffectRenderer
             var red = (float)first.R;
             var green = (float)first.G;
             var blue = (float)first.B;
+            var transparency = (float)first.Transparency;
             var redStep = (last.R - first.R) / (float)span;
             var greenStep = (last.G - first.G) / (float)span;
             var blueStep = (last.B - first.B) / (float)span;
+            var transparencyStep = (last.Transparency - first.Transparency) / (float)span;
             for (var position = start + 1; position < end - 1; position++)
             {
                 red += redStep;
                 green += greenStep;
                 blue += blueStep;
+                transparency += transparencyStep;
                 table[position] = new StudioRgb(
                     (byte)Math.Clamp((int)red, 0, 255),
                     (byte)Math.Clamp((int)green, 0, 255),
-                    (byte)Math.Clamp((int)blue, 0, 255));
+                    (byte)Math.Clamp((int)blue, 0, 255))
+                {
+                    Transparency = (byte)Math.Clamp((int)transparency, 0, 100),
+                };
             }
 
             if (stops[index + 1] == 100)
@@ -109,7 +115,8 @@ public static partial class StudioEffectRenderer
         return new StudioRgb(
             (byte)Math.Clamp(Math.Round(color.R * amount), 0, 255),
             (byte)Math.Clamp(Math.Round(color.G * amount), 0, 255),
-            (byte)Math.Clamp(Math.Round(color.B * amount), 0, 255));
+            (byte)Math.Clamp(Math.Round(color.B * amount), 0, 255))
+        { Transparency = color.Transparency };
     }
 
     /// <summary>Native frame scaling truncates each channel instead of rounding.</summary>
@@ -119,7 +126,8 @@ public static partial class StudioEffectRenderer
         return new StudioRgb(
             (byte)Math.Clamp((int)(color.R * amount), 0, 255),
             (byte)Math.Clamp((int)(color.G * amount), 0, 255),
-            (byte)Math.Clamp((int)(color.B * amount), 0, 255));
+            (byte)Math.Clamp((int)(color.B * amount), 0, 255))
+        { Transparency = color.Transparency };
     }
 
     private static StudioRgb RandomHue(long slot) =>

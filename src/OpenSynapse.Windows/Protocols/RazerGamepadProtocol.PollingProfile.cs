@@ -15,7 +15,7 @@ public static partial class RazerGamepadProtocol
 
     public static IReadOnlyList<byte> ReadProfileIdList(ReadOnlySpan<byte> response)
     {
-        var data = ReadData(response);
+        var data = ReadData(response, 1);
         var total = data[0];
         if (total > 0x50 || data.Length < total + 1)
         {

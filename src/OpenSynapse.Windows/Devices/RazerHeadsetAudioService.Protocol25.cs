@@ -81,6 +81,11 @@ public sealed partial class RazerHeadsetAudioService
                 cancellationToken).ConfigureAwait(false)
             : (Ok: false, Value: default(bool));
 
+        var spatialMode = _productId == 0x0548
+            ? await ProbeProtocol25Async("spatial mode", RazerHeadsetAudioProtocol.GetSpatialMode,
+                RazerHeadsetAudioProtocol.ReadSpatialMode, errors, cancellationToken).ConfigureAwait(false)
+            : (Ok: false, Value: default(byte));
+
         var state = new RazerHeadsetAudioState(
             Firmware: firmware.Ok ? firmware.Value : null,
             BatteryPercent: null,
@@ -98,6 +103,7 @@ public sealed partial class RazerHeadsetAudioService
         {
             SerialNumber = serial.Ok ? serial.Value : null,
             Edition = edition.Ok ? edition.Value : null,
+            SpatialMode = spatialMode.Ok ? spatialMode.Value : null,
         };
         return RazerCarolAudioProtocol.IsSupported(_productId)
             ? await ReadCarolStateAsync(state, errors, cancellationToken).ConfigureAwait(false)
@@ -316,6 +322,16 @@ public sealed partial class RazerHeadsetAudioService
             value => value == level,
             "bass",
             cancellationToken);
+
+    public Task SetSpatialModeAsync(byte mode, CancellationToken cancellationToken = default)
+    {
+        RequireProtocol25Support(_productId == 0x0548 && _protocol25Transport is not null, "spatial mode");
+        if (mode > 3) throw new ArgumentOutOfRangeException(nameof(mode));
+        return WriteProtocol25Async(RazerHeadsetAudioProtocol.GetSpatialMode,
+            RazerHeadsetAudioProtocol.ReadSpatialMode, mode,
+            (value, txn) => RazerHeadsetAudioProtocol.SetSpatialMode(txn, value),
+            value => value == mode, "spatial mode", cancellationToken);
+    }
 
     private Task SetProtocol25MicMuteAsync(bool muted, CancellationToken cancellationToken) =>
         WriteProtocol25Async(

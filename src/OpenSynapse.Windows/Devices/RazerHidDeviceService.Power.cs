@@ -71,8 +71,16 @@ public sealed partial class RazerHidDeviceService
 
     public Task SetIndicatorLedConfigurationAsync(
         RazerHidDeviceConnection connection, byte configuration, CancellationToken cancellationToken = default) =>
-        ExecuteWithoutResultAsync(connection,
-            RazerHidMouseProtocol.SetIndicatorLedConfiguration(connection.Definition, configuration), cancellationToken);
+        RunExclusiveAsync(connection, async token =>
+        {
+            await ExecuteWithoutResultAsync(connection,
+                RazerHidMouseProtocol.SetIndicatorLedConfiguration(connection.Definition, configuration), token).ConfigureAwait(false);
+            if (!connection.Capabilities.Contains(RazerHidBackendCapability.IndicatorLedConfigurationRead)) return;
+            var actual = await GetIndicatorLedConfigurationAsync(connection, token).ConfigureAwait(false);
+            WriteDiagnostic(connection.Definition.ProductId, $"Indicator: requested={configuration}, readback={actual}.");
+            if (actual != configuration)
+                throw new RazerReportMismatchException($"Indicator readback mismatch: requested={configuration}, actual={actual}.");
+        }, cancellationToken);
 
     public async Task<RazerHidIndicatorLedConfigurationV2> GetIndicatorLedConfigurationV2Async(
         RazerHidDeviceConnection connection, CancellationToken cancellationToken = default) =>
@@ -83,8 +91,16 @@ public sealed partial class RazerHidDeviceService
         RazerHidDeviceConnection connection,
         RazerHidIndicatorLedConfigurationV2 configuration,
         CancellationToken cancellationToken = default) =>
-        ExecuteWithoutResultAsync(connection,
-            RazerHidDongleIndicatorProtocol.Set(connection.Definition, configuration), cancellationToken);
+        RunExclusiveAsync(connection, async token =>
+        {
+            await ExecuteWithoutResultAsync(connection,
+                RazerHidDongleIndicatorProtocol.Set(connection.Definition, configuration), token).ConfigureAwait(false);
+            if (!connection.Capabilities.Contains(RazerHidBackendCapability.IndicatorLedConfigurationV2Read)) return;
+            var actual = await GetIndicatorLedConfigurationV2Async(connection, token).ConfigureAwait(false);
+            WriteDiagnostic(connection.Definition.ProductId, $"Indicator V2: requested={configuration}, readback={actual}.");
+            if (actual != configuration)
+                throw new RazerReportMismatchException($"Indicator V2 readback mismatch: requested={configuration}, actual={actual}.");
+        }, cancellationToken);
 
     public async Task<RazerHidGpuCardDetection> GetGpuCardDetectionAsync(
         RazerHidDeviceConnection connection, CancellationToken cancellationToken = default) =>

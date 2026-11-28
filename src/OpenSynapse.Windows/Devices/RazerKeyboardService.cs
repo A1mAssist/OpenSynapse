@@ -341,7 +341,7 @@ public sealed partial class RazerKeyboardService
     private IReadOnlyList<byte>? _mappingButtonIds;
 
     /// <summary>
-    /// Probes the two middleware button-assignment families in order. Both are read-only
+    /// Probes the middleware key/button-assignment families in order. All are read-only
     /// GETs; the first non-empty list wins, and no product-id list decides admission here.
     /// The 0x02 family is the shared mouse/keyboard mapping path. Some firmware exposes
     /// the protocol-30 0x08 family instead, which uses the existing frame decoder.
@@ -363,12 +363,14 @@ public sealed partial class RazerKeyboardService
         {
             try
             {
+                var profileId = protocol == RazerKeyboardMappingProtocol.KeyTable8F
+                    ? await ResolveProfileIdAsync(cancellationToken).ConfigureAwait(false) : (byte)0;
                 var response = protocol switch
                 {
                     RazerKeyboardMappingProtocol.KeyTable8F =>
                         await QueryPreparedAsync(
                             RazerHidMappingProtocol.GetKeyAssignmentList(
-                                await ResolveProfileIdAsync(cancellationToken).ConfigureAwait(false),
+                                profileId,
                                 RazerHidMappingProtocol.NormalMode).Report,
                             "mapping 02:8F",
                             cancellationToken).ConfigureAwait(false),
@@ -383,6 +385,12 @@ public sealed partial class RazerKeyboardService
                         "mapping 08:80",
                         cancellationToken).ConfigureAwait(false),
                 };
+                if (protocol == RazerKeyboardMappingProtocol.KeyTable8F)
+                {
+                    var header = RazerHidStandardProtocol.Arguments(response, 2);
+                    if (header[0] != profileId || header[1] != RazerHidMappingProtocol.NormalMode)
+                        throw new InvalidDataException("The keyboard key list does not match the requested profile and mode.");
+                }
                 var ids = protocol switch
                 {
                     RazerKeyboardMappingProtocol.KeyTable8F =>

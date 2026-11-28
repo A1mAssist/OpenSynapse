@@ -48,7 +48,7 @@ public static partial class RazerSurfaceCalibrationAlgorithms
             if ((q & 128) == 0) { positive += power; positiveCount++; }
             else { negative += power; negativeCount++; }
         }
-        var vPower = raw.Q.Length > 31744 ? 10000 : Math.Max(
+        var vPower = raw.Q.Length > 31744 ? 10000 : Math.Min(
             positiveCount == 0 ? 0 : positive / positiveCount,
             negativeCount == 0 ? 0 : negative / negativeCount);
         return (mean, count > 1 ? Math.Sqrt(m2 / (count - 1)) : 0, vPower);

@@ -164,8 +164,7 @@ public static class RazerMxicHeadsetProtocol
     public static bool UsesMabelT1(ushort productId) => MabelT1ProductIds.Contains(productId);
 
     /// <summary>
-    /// BillieT3H (059F) keeps the class 0x18 triplets of this MXIC envelope. It
-    /// does not select rzDevice40's protocol40 frame.
+    /// BillieT3H uses the class 0x18 controls in a Protocol40 feature envelope.
     /// </summary>
     private static readonly FrozenSet<ushort> Class18ProductIds = new ushort[]
     {
@@ -228,17 +227,18 @@ public static class RazerMxicHeadsetProtocol
     public static readonly byte[] SetAudioDndCommandValkyrie = [2, Class18, 0x05];
 
     public static byte[] CreateGetEqPresetClass18() =>
-        Create(RazerCommand, EqPresetRequestClass18, [LiveProfile, 0x00]);
+        RazerProtocol40HeadsetProtocol.CreateRequest(EqPresetRequestClass18, [LiveProfile, SpeakerSource]);
 
     public static byte[] CreateSetEqPresetClass18(byte preset) =>
-        Create(RazerCommand, [4, Class18, 0x00], [LiveProfile, SpeakerSource, 0x00, preset]);
+        RazerProtocol40HeadsetProtocol.CreateRequest([4, Class18, 0x00], [LiveProfile, SpeakerSource, 0x00, preset]);
 
     public static byte[] CreateGetEqBandsClass18()
     {
-        // The bundle allocates the full 12-byte payload and only sets the profile byte.
+        // BillieT3H's parent allocates the declared buffer and sets profile/source.
         var payload = new byte[EqBandsRequestClass18[0]];
         payload[0] = LiveProfile;
-        return Create(RazerCommand, EqBandsRequestClass18, payload);
+        payload[1] = SpeakerSource;
+        return RazerProtocol40HeadsetProtocol.CreateRequest(EqBandsRequestClass18, payload);
     }
 
     public static byte[] CreateSetEqBandsClass18(ReadOnlySpan<byte> bands)
@@ -252,20 +252,20 @@ public static class RazerMxicHeadsetProtocol
         payload[0] = LiveProfile;
         payload[1] = SpeakerSource;
         bands.CopyTo(payload.AsSpan(2));
-        return Create(RazerCommand, [12, Class18, 0x01], payload);
+        return RazerProtocol40HeadsetProtocol.CreateRequest([12, Class18, 0x01], payload);
     }
 
     public static byte[] CreateGetMicMuteClass18(byte reportId = ReportId) =>
-        Create(reportId, RazerCommand, MicMuteRequestClass18, [LiveProfile, MicrophoneSource]);
+        RazerProtocol40HeadsetProtocol.CreateRequest(MicMuteRequestClass18, [LiveProfile, MicrophoneSource]);
 
     public static byte[] CreateSetMicMuteClass18(bool muted, byte reportId = ReportId) =>
-        Create(reportId, RazerCommand, [3, Class18, 0x04], [LiveProfile, MicrophoneSource, muted ? (byte)1 : (byte)0]);
+        RazerProtocol40HeadsetProtocol.CreateRequest([3, Class18, 0x04], [LiveProfile, MicrophoneSource, muted ? (byte)1 : (byte)0]);
 
     public static byte[] CreateGetAudioDnd(ushort productId) =>
         UsesValkyrieT3Commands(productId)
             ? RazerValkyrieT3Protocol.Create(0x85, [LiveProfile, 0x00])
             : UsesClass18Commands(productId)
-                ? Create(RazerCommand, AudioDndRequestClass18, [LiveProfile])
+                ? RazerProtocol40HeadsetProtocol.CreateRequest(AudioDndRequestClass18, [LiveProfile])
                 : CreateRequest(
                     GetAudioDnd,
                     reportId: UsesMabelT1(productId) ? MabelT1ReportId : ReportId);
@@ -276,7 +276,7 @@ public static class RazerMxicHeadsetProtocol
         return UsesValkyrieT3Commands(productId)
             ? RazerValkyrieT3Protocol.Create(0x05, [LiveProfile, state])
             : UsesClass18Commands(productId)
-                ? Create(RazerCommand, SetAudioDndCommandClass18, [LiveProfile, state])
+                ? RazerProtocol40HeadsetProtocol.CreateRequest(SetAudioDndCommandClass18, [LiveProfile, state])
                 : CreateRequest(
                     SetAudioDndCommand,
                     [state],
@@ -358,10 +358,9 @@ public static class RazerMxicHeadsetProtocol
     // [profile, speaker, group, preset, ten unsigned/0x80|abs band levels].
     public static readonly byte[] JolietBassHeader = [LiveProfile];
 
-    // rzDevice40.getEQPreset(profile, speaker, group) sends all three bytes and
-    // replies [profile, speaker, group, preset].
+    // Jolie inherits the two-byte getter; the response adds source/group/preset.
     public static byte[] CreateGetEqPresetJoliet() =>
-        RazerValkyrieT3Protocol.Create(0x80, [LiveProfile, SpeakerSource, 0x00]);
+        RazerValkyrieT3Protocol.Create(0x80, [LiveProfile, 0x00]);
 
     public static byte[] CreateSetEqPresetJoliet(byte preset) =>
         RazerValkyrieT3Protocol.Create(0x00, [LiveProfile, SpeakerSource, 0x00, preset]);

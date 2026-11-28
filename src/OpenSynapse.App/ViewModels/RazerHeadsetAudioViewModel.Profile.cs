@@ -122,6 +122,9 @@ public sealed partial class RazerHeadsetAudioViewModel
             return;
         }
 
+        if (_connection.ProductId == 0x0548 && profile.SpatialMode is { } spatialMode)
+            await AttemptAsync("headset.spatial-mode", token => OpenService().SetSpatialModeAsync((byte)spatialMode, token));
+
         if (ReadBandLevels(profile.EqBands) is { } levels)
         {
             var bands = levels.Select(level => ToFirmwareBand(level)).ToArray();

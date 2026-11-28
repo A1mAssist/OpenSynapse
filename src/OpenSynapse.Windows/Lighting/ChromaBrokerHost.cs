@@ -20,6 +20,7 @@ internal sealed class ChromaBrokerHost : IAsyncDisposable
     private readonly CancellationTokenSource _stop = new();
     private Task? _acceptLoop;
     private NamedPipeServerStream? _listener;
+    private readonly object _listenerGate = new();
     private readonly ConcurrentDictionary<ChromaSdkDeviceType, ChromaSdkEffect> _latest = new();
     private int _sessionApplied;
     private int _connected;
@@ -50,8 +51,12 @@ internal sealed class ChromaBrokerHost : IAsyncDisposable
         if (_acceptLoop is not null) return Task.CompletedTask;
         try
         {
-            _listener = CreateListener();
-            _acceptLoop = AcceptLoopAsync(_listener);
+            lock (_listenerGate)
+            {
+                ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+                _listener = CreateListener();
+                _acceptLoop = AcceptLoopAsync(_listener);
+            }
         }
         catch (Exception exception) when (exception is UnauthorizedAccessException or IOException)
         {
@@ -68,7 +73,7 @@ internal sealed class ChromaBrokerHost : IAsyncDisposable
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         _stop.Cancel();
-        _listener?.Dispose();
+        lock (_listenerGate) _listener?.Dispose();
         var loop = _acceptLoop;
         if (loop is not null)
         {
@@ -131,7 +136,7 @@ internal sealed class ChromaBrokerHost : IAsyncDisposable
                 {
                     while (true)
                     {
-                        var message = ChromaSdkPipe.Read(listener, _stop.Token);
+                        var message = await ChromaSdkPipe.ReadAsync(listener, _stop.Token).ConfigureAwait(false);
                         if (message is ChromaSdkSetEffectMessage set)
                         {
                             _latest[set.Value.DeviceType] = set.Value;
@@ -175,8 +180,12 @@ internal sealed class ChromaBrokerHost : IAsyncDisposable
                 listener.Dispose();
             }
 
-            if (_stop.IsCancellationRequested) return;
-            listener = CreateListener();
+            lock (_listenerGate)
+            {
+                if (_stop.IsCancellationRequested) return;
+                listener = CreateListener();
+                _listener = listener;
+            }
         }
     }
 

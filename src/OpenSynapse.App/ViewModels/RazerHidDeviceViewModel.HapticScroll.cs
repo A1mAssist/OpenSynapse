@@ -8,8 +8,7 @@ using OpenSynapse.Windows.Devices;
 namespace OpenSynapse.App.ViewModels;
 
 /// <summary>
-/// One of the six fixed Hapticore scroll stages. The id is the protocol value (129-134),
-/// not a position; the stage list order never changes.
+/// One of the six Hapticore types (129–134); active stage is a position in the enabled list.
 /// </summary>
 public sealed class RazerHidHapticScrollStageRowViewModel(byte id, string name, bool isActive)
     : INotifyPropertyChanged
@@ -39,9 +38,31 @@ public sealed partial class RazerHidDeviceViewModel
     private const byte HapticScrollProfileId = 0x01;
 
     private bool _isHapticScrollBusy;
-    private int _selectedHapticScrollStageIndex;
+    private byte _selectedHapticScrollStageType = RazerHidHapticScrollStageIds.Standard;
+    private HapticScrollProfile? _confirmedHapticScroll;
+    private bool _hapticCurveEdited;
+    private bool _hapticCurvesLinked;
+    private bool _loadingHapticCurve;
 
-    public Visibility HapticScrollVisibility => VisibleWhen(HasAny(
+    public HapticScrollDirectionViewModel? HapticCurveUp { get; private set; }
+    public HapticScrollDirectionViewModel? HapticCurveDown { get; private set; }
+    public bool HapticCurvesLinked
+    {
+        get => _hapticCurvesLinked;
+        set
+        {
+            if (_hapticCurvesLinked == value) return;
+            SetField(ref _hapticCurvesLinked, value);
+            if (!_loadingHapticCurve) _hapticCurveEdited = true;
+            OnPropertyChanged(nameof(HapticCurveDownVisibility));
+        }
+    }
+    public Visibility HapticCurveDownVisibility => VisibleWhen(!HapticCurvesLinked);
+    public Visibility HapticCurveEditorVisibility => VisibleWhen(HapticCurveUp is not null);
+    public bool CanCreateHapticCurve => CanApplyHapticScroll && _confirmedHapticScroll?.Custom is not null;
+    public bool CanRestoreHapticCurve => CanApplyHapticScroll && ReadProfile(s => s.Viper.HapticScroll) is not null;
+
+    public Visibility HapticScrollVisibility => VisibleWhen(RazerHidDeviceService.SupportsHapticCurve(Connection.Definition.ProductId) && HasAny(
         RazerHidBackendCapability.HapticScrollRead, RazerHidBackendCapability.HapticScrollWrite));
     public Visibility HapticScrollWriteVisibility =>
         VisibleWhen(Has(RazerHidBackendCapability.HapticScrollWrite));
@@ -49,23 +70,31 @@ public sealed partial class RazerHidDeviceViewModel
     public ObservableCollection<RazerHidHapticScrollStageRowViewModel> HapticScrollStages { get; } =
         new(StageDefinitions());
 
-    public IReadOnlyList<string> HapticScrollStageNames { get; } =
-        StageDefinitions().Select(stage => stage.Name).ToArray();
+    public IReadOnlyList<string> HapticScrollStageNames => HapticScrollStages.Where(stage => stage.IsActive).Select(stage => stage.Name).ToArray();
 
     public int SelectedHapticScrollStageIndex
     {
-        get => _selectedHapticScrollStageIndex;
-        set => SetField(ref _selectedHapticScrollStageIndex, Math.Clamp(value, 0, 5));
+        get => HapticScrollStages.Where(stage => stage.IsActive).ToList().FindIndex(stage => stage.Id == _selectedHapticScrollStageType);
+        set
+        {
+            var active = HapticScrollStages.Where(stage => stage.IsActive).ToArray();
+            if (value < 0 || value >= active.Length) return;
+            SetField(ref _selectedHapticScrollStageType, active[value].Id, nameof(SelectedHapticScrollStageIndex));
+        }
     }
 
     public bool IsHapticScrollBusy
     {
         get => _isHapticScrollBusy;
-        private set => SetBusy(ref _isHapticScrollBusy, value,
-            nameof(CanEditHapticScroll), nameof(CanApplyHapticScroll));
+        private set
+        {
+            SetBusy(ref _isHapticScrollBusy, value, nameof(CanEditHapticScroll), nameof(CanApplyHapticScroll));
+            OnPropertyChanged(nameof(CanCreateHapticCurve));
+            OnPropertyChanged(nameof(CanRestoreHapticCurve));
+        }
     }
 
-    public bool CanEditHapticScroll => CanUse(RazerHidBackendCapability.HapticScrollWrite);
+    public bool CanEditHapticScroll => CanApplyHapticScroll && _confirmedHapticScroll is not null;
     public bool CanApplyHapticScroll =>
         CanUse(RazerHidBackendCapability.HapticScrollWrite) && !IsHapticScrollBusy;
 
@@ -79,16 +108,16 @@ public sealed partial class RazerHidDeviceViewModel
         IsHapticScrollBusy = true;
         try
         {
-            var state = await _service
-                .GetHapticScrollStagesAsync(Connection, HapticScrollProfileId, cancellationToken);
-            ApplyHapticScrollState(state);
+            var state = await _service.ReadHapticScrollProfileAsync(Connection, HapticScrollProfileId, cancellationToken: cancellationToken);
+            ApplyHapticProfileState(state);
+            ErrorText = string.Empty;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
         }
         catch (Exception exception)
         {
-            HandleOptionalFailure(exception, RazerHidBackendCapability.HapticScrollRead);
+            ErrorText = exception.Message;
         }
         finally
         {
@@ -98,58 +127,150 @@ public sealed partial class RazerHidDeviceViewModel
 
     [ProfileSetting("mouse.haptic-scroll-level", DeviceCategory.Mouse, powerScoped: true)]
     public Task ApplyHapticScrollAsync(CancellationToken cancellationToken = default) =>
-        RunWriteAsync(RazerHidBackendCapability.HapticScrollWrite,
-            () => IsHapticScrollBusy, value => IsHapticScrollBusy = value,
+        ApplyHapticScrollDraftAsync(null, cancellationToken);
+
+    [NotProfileScoped]
+    private Task ApplyHapticScrollDraftAsync(HapticScrollProfile? captured, CancellationToken cancellationToken) =>
+        RunHapticWriteAsync(
             async () =>
             {
-                var previousIndex = SelectedHapticScrollStageIndex;
-                var previousStageIds = HapticScrollStages
-                    .Where(stage => stage.IsActive)
-                    .Select(stage => stage.Id)
-                    .ToArray();
-                var previousProfile = ReadProfile(settings => settings.Viper.HapticScrollLevel);
-                var stageIds = HapticScrollStages
-                    .Where(stage => stage.IsActive)
-                    .Select(stage => stage.Id)
-                    .ToArray();
-                await _service.SetHapticScrollStagesAsync(
-                    Connection,
-                    HapticScrollProfileId,
-                    (byte)(SelectedHapticScrollStageIndex + 1),
-                    stageIds,
-                    cancellationToken);
-                if (Has(RazerHidBackendCapability.HapticScrollRead))
-                {
-                    ApplyHapticScrollState(await _service
-                        .GetHapticScrollStagesAsync(Connection, HapticScrollProfileId, cancellationToken));
-                }
-                await SaveProfileAsync(
-                    settings => settings.Viper.HapticScrollLevel = SelectedHapticScrollStageIndex + 1,
-                    settings => settings.Viper.HapticScrollLevel = previousProfile,
-                    () => SelectedHapticScrollStageIndex = previousIndex,
-                    token => _service.SetHapticScrollStagesAsync(
-                        Connection,
-                        HapticScrollProfileId,
-                        (byte)(previousIndex + 1),
-                        previousStageIds,
-                        token),
-                    cancellationToken);
+                var draft = captured ?? CaptureHapticProfile();
+                var applied = await _service.ApplyHapticScrollProfileAsync(Connection, draft, HapticScrollProfileId,
+                    PersistHapticProfileAsync, cancellationToken);
+                ApplyHapticProfileState(applied);
             }, cancellationToken);
 
-    private void ApplyHapticScrollState(
-        OpenSynapse.Windows.Protocols.RazerHapticoreScrollStageInformationState state)
+    private HapticScrollProfile CaptureHapticProfile()
     {
-        // Unfilled slots come back as zero, so only the ids the device actually stored count
-        // as enabled.
-        var active = state.StageTypes.ToHashSet();
-        foreach (var stage in HapticScrollStages)
+        if (_confirmedHapticScroll is null) throw new InvalidOperationException(AppStrings.Text("HapticCurveReadFirst"));
+        var draft = new HapticScrollProfile
         {
-            stage.IsActive = active.Contains(
-                (OpenSynapse.Windows.Protocols.RazerHapticoreScrollStageType)stage.Id);
-        }
+            ActiveStage = (byte)(SelectedHapticScrollStageIndex + 1),
+            StageTypes = HapticScrollStages.Where(stage => stage.IsActive).Select(stage => stage.Id).ToList(),
+            Custom = _confirmedHapticScroll.Custom?.Clone(),
+        };
+        if (_hapticCurveEdited && HapticCurveUp is not null && HapticCurveDown is not null)
+            draft.Custom = new HapticScrollCurve { Linked = HapticCurvesLinked, Up = HapticCurveUp.Capture(),
+                Down = HapticCurvesLinked ? HapticCurveUp.Capture() : HapticCurveDown.Capture() }.Generate(HapticScrollProfileId);
+        draft.Validate();
+        return draft;
+    }
 
-        // ActiveStage is a 1-based position in the full six-stage list.
-        SelectedHapticScrollStageIndex = Math.Clamp(state.ActiveStage - 1, 0, 5);
+    private void ApplyHapticProfileState(HapticScrollProfile state)
+    {
+        _confirmedHapticScroll = state.Clone();
+        var definitions = StageDefinitions();
+        HapticScrollStages.Clear();
+        foreach (var id in state.StageTypes.Concat(definitions.Select(s => s.Id).Except(state.StageTypes)))
+        {
+            var row = definitions.Single(s => s.Id == id);
+            row.IsActive = state.StageTypes.Contains(id);
+            row.PropertyChanged += (_, _) =>
+            {
+                if (!HapticScrollStages.Any(s => s.IsActive && s.Id == _selectedHapticScrollStageType))
+                    _selectedHapticScrollStageType = HapticScrollStages.FirstOrDefault(s => s.IsActive)?.Id ?? 0;
+                OnPropertyChanged(nameof(HapticScrollStageNames));
+                OnPropertyChanged(nameof(SelectedHapticScrollStageIndex));
+            };
+            HapticScrollStages.Add(row);
+        }
+        OnPropertyChanged(nameof(HapticScrollStageNames));
+        SelectedHapticScrollStageIndex = state.ActiveStage - 1;
+        OnPropertyChanged(nameof(SelectedHapticScrollStageIndex));
+        HapticScrollCurve? curve = null;
+        if (state.Custom is { } custom)
+            try { curve = HapticScrollCurve.FromMetadata(custom.Metadata); } catch (InvalidDataException) { }
+        SetHapticCurve(curve);
+        _hapticCurveEdited = false;
+    }
+
+    private void SetHapticCurve(HapticScrollCurve? curve)
+    {
+        _loadingHapticCurve = true;
+        HapticCurveUp = curve is null ? null : new(AppStrings.Text("HapticCurveUp"), curve.Up);
+        HapticCurveDown = curve is null ? null : new(AppStrings.Text("HapticCurveDown"), curve.Down);
+        HapticCurvesLinked = curve?.Linked ?? true;
+        if (HapticCurveUp is not null) HapticCurveUp.PropertyChanged += (_, _) => _hapticCurveEdited = true;
+        if (HapticCurveDown is not null) HapticCurveDown.PropertyChanged += (_, _) => _hapticCurveEdited = true;
+        _loadingHapticCurve = false;
+        OnPropertyChanged(nameof(HapticCurveUp));
+        OnPropertyChanged(nameof(HapticCurveDown));
+        OnPropertyChanged(nameof(HapticCurveEditorVisibility));
+        OnPropertyChanged(nameof(CanEditHapticScroll));
+        OnPropertyChanged(nameof(CanCreateHapticCurve));
+        OnPropertyChanged(nameof(CanRestoreHapticCurve));
+    }
+
+    public void CreateDefaultHapticCurve()
+    {
+        if (!CanCreateHapticCurve) return;
+        SetHapticCurve(new HapticScrollCurve());
+        _hapticCurveEdited = true;
+        HapticScrollStages.Single(stage => stage.Id == RazerHidHapticScrollStageIds.Custom).IsActive = true;
+        SelectedHapticScrollStageIndex = HapticScrollStages.Where(s => s.IsActive).ToList().FindIndex(s => s.Id == RazerHidHapticScrollStageIds.Custom);
+    }
+
+    public Task RestoreSavedHapticCurveAsync(CancellationToken token = default) =>
+        RunHapticWriteAsync(async () =>
+            {
+                if (ReadProfile(s => s.Viper.HapticScroll)?.Clone() is not { } saved) return;
+                ApplyHapticProfileState(await _service.ApplyHapticScrollProfileAsync(Connection, saved, HapticScrollProfileId, cancellationToken: token));
+            }, token);
+
+    private async Task RunHapticWriteAsync(Func<Task> action, CancellationToken token)
+    {
+        if (!CanApplyHapticScroll) return;
+        IsHapticScrollBusy = true;
+        _operationSucceeded = false;
+        _operationStatusOverride = null;
+        try
+        {
+            await action();
+            ErrorText = string.Empty;
+            _operationSucceeded = true;
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception error) { ErrorText = error.Message; }
+        finally
+        {
+            IsHapticScrollBusy = false;
+            OnPropertyChanged(nameof(OperationStatusText));
+        }
+    }
+
+    internal Func<Task<string?>>? PrepareHapticAutoApply(CancellationToken token)
+    {
+        if (!CanEditHapticScroll) return null;
+        HapticScrollProfile draft;
+        try { draft = CaptureHapticProfile(); }
+        catch (Exception exception) when (exception is InvalidDataException or InvalidOperationException)
+        { return () => Task.FromResult<string?>(exception.Message); }
+        if (_confirmedHapticScroll!.ContentEquals(draft)) return null;
+        return CaptureMouseApply(() => CanApplyHapticScroll, () => { }, ct => ApplyHapticScrollDraftAsync(draft, ct), token);
+    }
+
+    private async Task PersistHapticProfileAsync(HapticScrollProfile state, CancellationToken token)
+    {
+        if (_getActiveProfile is null || _saveProfileAsync is null) return;
+        var profile = _getActiveProfile();
+        var key = ProfileResolver.GetDeviceKey(Connection.ToDescriptor());
+        var created = !profile.Devices.ContainsKey(key);
+        var settings = ResolveDeviceProfileSettings()!;
+        var previous = settings.Viper.HapticScroll;
+        var previousLevel = settings.Viper.HapticScrollLevel;
+        settings.Viper.HapticScroll = state.Clone();
+        settings.Viper.HapticScrollLevel = state.ActiveStage;
+        try
+        {
+            if (!await _saveProfileAsync(token)) throw new IOException(AppStrings.Text("ViperSettingAppliedProfileSaveFailed"));
+        }
+        catch
+        {
+            settings.Viper.HapticScroll = previous;
+            settings.Viper.HapticScrollLevel = previousLevel;
+            if (created) profile.Devices.Remove(key);
+            throw;
+        }
     }
 
     private static RazerHidHapticScrollStageRowViewModel[] StageDefinitions() =>

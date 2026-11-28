@@ -18,6 +18,20 @@ public sealed partial class RazerFeatureTransport
         private byte _transactionId;
         private int _dockTransactionSequence = -1;
         private int _disposed;
+        private Task? _pendingCall;
+
+        private void EnsureUsable()
+        {
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+            if (_pendingCall is not null) throw new IOException("The HID session timed out and must be reopened.");
+            ThrowIfNativeCallPending(devicePath);
+        }
+
+        private void OnPending(Task task)
+        {
+            _pendingCall = task;
+            TrackPendingCall(devicePath, task);
+        }
 
         public byte NextTransactionId()
         {
@@ -44,12 +58,13 @@ public sealed partial class RazerFeatureTransport
             await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
+                EnsureUsable();
                 PrepareSessionTransaction(devicePath, logicalProductId, report, ref _dockTransactionSequence);
-                var result = await Task.Run(() =>
+                var result = await CancellableNativeCall.RunAsync(() =>
                 {
                     var success = NativeMethods.HidD_SetFeature(handle, report, report.Length);
                     return (Success: success, Error: Marshal.GetLastWin32Error());
-                }, cancellationToken).ConfigureAwait(false);
+                }, NativeCallTimeout, cancellationToken, OnPending).ConfigureAwait(false);
                 if (!result.Success)
                 {
                     throw new Win32Exception(result.Error, "Razer feature session handshake failed.");
@@ -152,8 +167,23 @@ public sealed partial class RazerFeatureTransport
                     nameof(requests));
             }
 
+            // A timed-out native call can still own these buffers after the pump returns.
+            requests = requests.Select(request => request.ToArray()).ToArray();
+
             await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
+            {
+                EnsureUsable();
+                // One bounded worker owns the whole frame, without a pool hop for every row.
+                await CancellableNativeCall.RunAsync(token => SendFrameAsync(token).GetAwaiter().GetResult(),
+                    NativeCallTimeout, cancellationToken, OnPending).ConfigureAwait(false);
+            }
+            finally
+            {
+                gate.Release();
+            }
+
+            async Task<bool> SendFrameAsync(CancellationToken frameToken)
             {
                 var pacedKeyboard = logicalProductId is { } productId &&
                     StudioKeyboardCatalog.TryGet(RazerProductAliases.Canonical(productId), out _);
@@ -161,7 +191,7 @@ public sealed partial class RazerFeatureTransport
                 {
                     var request = requests[index];
                     PrepareSessionTransaction(devicePath, logicalProductId, request, ref _dockTransactionSequence);
-                    var result = await SetFeatureAsync(handle, request, directIo: true, cancellationToken)
+                    var result = await SetFeatureAsync(handle, request, directIo: true, frameToken)
                         .ConfigureAwait(false);
                     if (!result.Success)
                     {
@@ -169,7 +199,7 @@ public sealed partial class RazerFeatureTransport
                     }
                     // rzDevice25.setChromaFrameLightingEngine spaces consecutive rows by 1 ms.
                     if (pacedKeyboard)
-                        await WaitAsync(TimeSpan.FromMilliseconds(1), directIo: true, cancellationToken).ConfigureAwait(false);
+                        await WaitAsync(TimeSpan.FromMilliseconds(1), directIo: true, frameToken).ConfigureAwait(false);
                 }
 
                 var last = requests[^1];
@@ -179,15 +209,12 @@ public sealed partial class RazerFeatureTransport
                     last,
                     deviceWait,
                     last[0],
-                    cancellationToken,
+                    frameToken,
                     allowRemainingPacketsMismatch: true,
                     usesLeviathanReportId: false,
                     usesMouseDockLinker: UsesMouseDockLinker(devicePath),
                     directIo: true).ConfigureAwait(false);
-            }
-            finally
-            {
-                gate.Release();
+                return true;
             }
         }
 
@@ -202,7 +229,14 @@ public sealed partial class RazerFeatureTransport
             await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
+                EnsureUsable();
                 PrepareSessionTransaction(devicePath, logicalProductId, request, ref _dockTransactionSequence);
+                if (directIo)
+                    return await CancellableNativeCall.RunAsync(token => ExecuteOnHandleAsync(
+                        handle, request, deviceWait, responseReportId, token,
+                        allowRemainingPacketsMismatch, false, UsesMouseDockLinker(devicePath),
+                        directIo: true).GetAwaiter().GetResult(), NativeCallTimeout, cancellationToken,
+                        OnPending).ConfigureAwait(false);
                 return await ExecuteOnHandleAsync(
                     handle,
                     request,
@@ -212,7 +246,7 @@ public sealed partial class RazerFeatureTransport
                     allowRemainingPacketsMismatch,
                     usesLeviathanReportId: false,
                     usesMouseDockLinker: UsesMouseDockLinker(devicePath),
-                    directIo: directIo).ConfigureAwait(false);
+                    directIo: false, onPending: OnPending).ConfigureAwait(false);
             }
             finally
             {
@@ -220,13 +254,14 @@ public sealed partial class RazerFeatureTransport
             }
         }
 
-        public ValueTask DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
             if (Interlocked.Exchange(ref _disposed, 1) == 0)
             {
-                handle.Dispose();
+                await gate.WaitAsync().ConfigureAwait(false);
+                try { DisposeHandleAfterCall(handle, _pendingCall); }
+                finally { gate.Release(); }
             }
-            return ValueTask.CompletedTask;
         }
     }
 
@@ -251,7 +286,7 @@ public sealed partial class RazerFeatureTransport
             // Linked children share their rolling counter with single queries across HID opens.
             PrepareStandardTransaction(devicePath, request, childProductId);
         }
-        else if (productId == 0x00A4 || isHost && IsLinkerCommand(request[7], request[8]))
+        else if (productId is 0x00A4 or 0x00CF or 0x00F1 or 0x02DA || isHost && IsLinkerCommand(request[7], request[8]))
         {
             request[2] = PrepareTransactionId(
                 devicePath, request[2], request[7], request[8], ref sequence, logicalProductId);

@@ -12,6 +12,9 @@ internal sealed class RazerHidLightingBaseline
 
     private RazerHidLightingBaseline(IReadOnlyList<ZoneBaseline> zones) => _zones = zones;
 
+    internal bool CanRestoreEffectFor(RazerHidLedZone zone) => _zones.Any(saved =>
+        saved.Zone == zone && saved.Effect is { } effect && CanRestoreEffect(effect, saved.Color));
+
     internal static async Task<RazerHidLightingBaseline?> CaptureAsync(
         RazerHidDeviceService service,
         RazerHidDeviceConnection connection,

@@ -14,6 +14,14 @@ public sealed partial class BladeWorkspace
 
     public async ValueTask DisposeAsync()
     {
+        _touchpadSyncStop.Cancel();
+        Task indicatorWriter;
+        lock (_touchpadSyncGate)
+        {
+            _touchpadPending = null;
+            indicatorWriter = _touchpadSyncTask;
+        }
+        await indicatorWriter.ConfigureAwait(false);
         Task brightnessWriter;
         lock (_bladeBrightnessGate)
         {

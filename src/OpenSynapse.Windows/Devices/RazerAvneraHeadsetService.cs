@@ -13,22 +13,26 @@ public sealed class RazerAvneraHeadsetService : IAsyncDisposable
     private readonly IRazerAvnera65Transport _transport;
     private readonly Action<string>? _diagnostic;
     private readonly bool _linkStatusOptional;
+    private readonly ushort _productId;
 
     public RazerAvneraHeadsetService(
         string devicePath,
         Action<string>? diagnostic = null,
-        int readLength = RazerAvnera65Protocol.ReadLength)
-        : this(new RazerAvnera65Transport(devicePath, readLength), diagnostic, readLength)
+        int readLength = RazerAvnera65Protocol.ReadLength,
+        ushort productId = 0)
+        : this(new RazerAvnera65Transport(devicePath, readLength), diagnostic, readLength, productId)
     {
     }
 
     internal RazerAvneraHeadsetService(
         IRazerAvnera65Transport transport,
         Action<string>? diagnostic = null,
-        int readLength = RazerAvnera65Protocol.ReadLength)
+        int readLength = RazerAvnera65Protocol.ReadLength,
+        ushort productId = 0)
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _diagnostic = diagnostic;
+        _productId = productId;
         // The 2020 receiver answers 64-byte feature reports and does not implement
         // link status; requiring it would leave the card stuck on "partially available".
         _linkStatusOptional = readLength == RazerAvnera65Protocol.WriteLength;
@@ -42,7 +46,7 @@ public sealed class RazerAvneraHeadsetService : IAsyncDisposable
             "firmware",
             RazerAvnera65Protocol.CreateFirmwareRequest(),
             RazerAvnera65Protocol.FirmwareHeader,
-            RazerAvnera65Protocol.ReadFirmware,
+            response => RazerAvnera65Protocol.ReadFirmware(response, _productId),
             errors,
             cancellationToken).ConfigureAwait(false);
         var serial = await ProbeManyAsync(
@@ -78,7 +82,7 @@ public sealed class RazerAvneraHeadsetService : IAsyncDisposable
             "sidetone",
             RazerAvnera65Protocol.CreateSidetoneRequest(),
             RazerAvnera65Protocol.SidetoneHeader,
-            RazerAvnera65Protocol.ReadSidetone,
+            response => RazerAvnera65Protocol.ReadSidetone(response, _productId),
             errors,
             cancellationToken).ConfigureAwait(false);
         var silence = await ProbeAsync(
@@ -167,7 +171,7 @@ public sealed class RazerAvneraHeadsetService : IAsyncDisposable
 
     public Task SetSidetoneAsync(byte percent, CancellationToken cancellationToken = default) =>
         _transport.SendAsync(
-            RazerAvnera65Protocol.CreateSetSidetoneRequest(percent), cancellationToken);
+            RazerAvnera65Protocol.CreateSetSidetoneRequest(percent, _productId), cancellationToken);
 
     /// <summary>
     /// Reads the wireless link state; false means the headset is powered off but the

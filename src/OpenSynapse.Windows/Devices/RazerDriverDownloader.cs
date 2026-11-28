@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
 using Microsoft.Win32.SafeHandles;
+using OpenSynapse.Core.Storage;
 
 namespace OpenSynapse.Windows.Devices;
 
@@ -50,6 +51,16 @@ internal static class RazerDriverDownloader
             Timeout = TimeSpan.FromMinutes(15),
         };
 
+        await DownloadAsync(client, url, destinationPath, progress, cancellationToken).ConfigureAwait(false);
+    }
+
+    internal static async Task DownloadAsync(HttpClient client, string url, string destinationPath,
+        IProgress<RazerDriverDownloadProgress>? progress, CancellationToken cancellationToken)
+    {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(TimeSpan.FromMinutes(15));
+        cancellationToken = deadline.Token;
+
         var (totalBytes, supportsRanges) = await ProbeAsync(
             client, url, cancellationToken).ConfigureAwait(false);
         var segments = supportsRanges && totalBytes >= SegmentThreshold
@@ -62,17 +73,18 @@ internal static class RazerDriverDownloader
             Directory.CreateDirectory(directory);
         }
 
-        if (segments == 1)
+        var partial = destinationPath + "." + Guid.NewGuid().ToString("N") + ".partial";
+        try
         {
-            await DownloadSingleAsync(
-                client, url, destinationPath, totalBytes, progress, cancellationToken)
+            if (segments == 1)
+                await DownloadSingleAsync(client, url, partial, totalBytes, progress, cancellationToken)
+                    .ConfigureAwait(false);
+            else
+                await DownloadSegmentsAsync(client, url, partial, totalBytes, segments, progress, cancellationToken)
                 .ConfigureAwait(false);
-            return;
+            File.Move(partial, destinationPath, overwrite: true);
         }
-
-        await DownloadSegmentsAsync(
-            client, url, destinationPath, totalBytes, segments, progress, cancellationToken)
-            .ConfigureAwait(false);
+        finally { if (File.Exists(partial)) File.Delete(partial); }
     }
 
     private static async Task<(long TotalBytes, bool SupportsRanges)> ProbeAsync(
@@ -120,7 +132,7 @@ internal static class RazerDriverDownloader
         try
         {
             int read;
-            while ((read = await source.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
+            while ((read = await DownloadStream.ReadAsync(source, buffer, cancellationToken).ConfigureAwait(false)) > 0)
             {
                 await target.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
                 tracker.Add(read);
@@ -160,18 +172,24 @@ internal static class RazerDriverDownloader
         var tracker = new ProgressTracker(totalBytes, progress);
         var segmentSize = (totalBytes + segments - 1) / segments;
         var tasks = new Task[segments];
+        using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         for (var index = 0; index < segments; index++)
         {
             var start = index * segmentSize;
             var end = Math.Min(totalBytes - 1, start + segmentSize - 1);
             tasks[index] = start > end
                 ? Task.CompletedTask
-                : DownloadSegmentAsync(
-                    client, url, handle, start, end, tracker, cancellationToken);
+                : DownloadRangeAsync(start, end);
         }
 
         await Task.WhenAll(tasks).ConfigureAwait(false);
         tracker.Complete();
+
+        async Task DownloadRangeAsync(long start, long end)
+        {
+            try { await DownloadSegmentAsync(client, url, handle, start, end, totalBytes, tracker, stop.Token).ConfigureAwait(false); }
+            catch { stop.Cancel(); throw; }
+        }
     }
 
     private static async Task DownloadSegmentAsync(
@@ -180,6 +198,7 @@ internal static class RazerDriverDownloader
         SafeFileHandle handle,
         long start,
         long end,
+        long totalBytes,
         ProgressTracker tracker,
         CancellationToken cancellationToken)
     {
@@ -187,7 +206,9 @@ internal static class RazerDriverDownloader
         request.Headers.Range = new RangeHeaderValue(start, end);
         using var response = await client.SendAsync(
             request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-        if (response.StatusCode != HttpStatusCode.PartialContent)
+        var range = response.Content.Headers.ContentRange;
+        if (response.StatusCode != HttpStatusCode.PartialContent || range?.From != start ||
+            range.To != end || range.Length != totalBytes)
         {
             throw new HttpRequestException(
                 $"Razer CDN ignored the byte range {start}-{end} " +
@@ -202,7 +223,8 @@ internal static class RazerDriverDownloader
             var offset = start;
             int read;
             while (offset <= end &&
-                   (read = await source.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
+                   (read = await DownloadStream.ReadAsync(source,
+                       buffer.AsMemory(0, (int)Math.Min(buffer.Length, end - offset + 1)), cancellationToken).ConfigureAwait(false)) > 0)
             {
                 var count = (int)Math.Min(read, end - offset + 1);
                 await RandomAccess.WriteAsync(

@@ -4,7 +4,7 @@ public static partial class RazerGamepadProtocol
 {
     public static IReadOnlyList<byte> ReadButtonIdList(ReadOnlySpan<byte> response)
     {
-        var data = ReadData(response);
+        var data = ReadData(response, 1);
         var total = data[0];
         if (total > 80 || data.Length < total + 1)
         {
@@ -14,13 +14,14 @@ public static partial class RazerGamepadProtocol
         return data.Slice(1, total).ToArray();
     }
 
-    public static RazerGamepadButtonAssignment ReadButtonAssignment(ReadOnlySpan<byte> response)
+    public static RazerGamepadButtonAssignment ReadButtonAssignment(ReadOnlySpan<byte> response,
+        byte expectedProfileId, byte expectedButtonId, RazerGamepadButtonMode expectedMode)
     {
         var data = ReadData(response);
-        if (data.Length < 10 || data[0] != ButtonCommandClass)
+        if (data.Length < 10 || data[0] != expectedProfileId || data[1] != expectedButtonId || data[2] != (byte)expectedMode)
         {
             throw new InvalidDataException(
-                $"The gamepad reply is not class 0x{ButtonCommandClass:X2} button assignment.");
+                "The gamepad button assignment does not match the requested profile, button and mode.");
         }
 
         var size = data[4];
@@ -37,24 +38,24 @@ public static partial class RazerGamepadProtocol
             data.Slice(5, 5).ToArray());
     }
 
-    public static byte ReadSensitivity(ReadOnlySpan<byte> response, byte controlId) =>
-        ReadValue(response, controlId)[2];
+    public static byte ReadSensitivity(ReadOnlySpan<byte> response, byte controlId, byte expectedProfileId) =>
+        ReadValue(response, controlId, expectedProfileId)[2];
 
-    public static byte ReadVibrationScale(ReadOnlySpan<byte> response, byte controlId) =>
-        ReadValue(response, controlId)[2];
+    public static byte ReadVibrationScale(ReadOnlySpan<byte> response, byte controlId, byte expectedProfileId) =>
+        ReadValue(response, controlId, expectedProfileId)[2];
 
-    public static byte ReadTriggerMode(ReadOnlySpan<byte> response, byte controlId) =>
-        ReadValue(response, controlId)[2];
+    public static byte ReadTriggerMode(ReadOnlySpan<byte> response, byte controlId, byte expectedProfileId) =>
+        ReadValue(response, controlId, expectedProfileId)[2];
 
-    public static (byte Start, byte End) ReadTriggerRange(ReadOnlySpan<byte> response, byte controlId)
+    public static (byte Start, byte End) ReadTriggerRange(ReadOnlySpan<byte> response, byte controlId, byte expectedProfileId)
     {
-        var value = ReadValue(response, controlId);
+        var value = ReadValue(response, controlId, expectedProfileId, 4);
         return (value[2], value[3]);
     }
 
     public static IReadOnlyList<byte> ReadControlIdList(ReadOnlySpan<byte> response)
     {
-        var data = ReadData(response);
+        var data = ReadData(response, 1);
         var total = data[0];
         if (total > 80 || data.Length < total + 1)
         {
@@ -66,9 +67,9 @@ public static partial class RazerGamepadProtocol
 
     public static RazerGamepadAnalogControl ReadAnalogControl(
         ReadOnlySpan<byte> response,
-        byte controlId)
+        byte controlId, byte expectedProfileId)
     {
-        var value = ReadValue(response, controlId);
+        var value = ReadValue(response, controlId, expectedProfileId);
         if (value.Length < 4)
         {
             throw new InvalidDataException("The gamepad analog-control reply is truncated.");
@@ -92,14 +93,14 @@ public static partial class RazerGamepadProtocol
         return ReadUInt16(data, 0);
     }
 
-    public static byte ReadCircularity(ReadOnlySpan<byte> response, byte controlId) =>
-        ReadValue(response, controlId)[2];
+    public static byte ReadCircularity(ReadOnlySpan<byte> response, byte controlId, byte expectedProfileId) =>
+        ReadValue(response, controlId, expectedProfileId)[2];
 
     public static RazerGamepadDigitalTrigger ReadDigitalTrigger(
         ReadOnlySpan<byte> response,
-        byte controlId)
+        byte controlId, byte expectedProfileId)
     {
-        var value = ReadValue(response, controlId);
+        var value = ReadValue(response, controlId, expectedProfileId);
         if (value.Length < 4)
         {
             throw new InvalidDataException("The gamepad digital-trigger reply is truncated.");
@@ -108,14 +109,14 @@ public static partial class RazerGamepadProtocol
         return new(value[2], value[3] != 0);
     }
 
-    public static byte ReadIgnoreDPadDiagonals(ReadOnlySpan<byte> response) => ReadOption(response);
+    public static byte ReadIgnoreDPadDiagonals(ReadOnlySpan<byte> response, byte expectedProfileId) => ReadOption(response, expectedProfileId);
 
-    public static RazerGamepadSocdMode ReadSocdMode(ReadOnlySpan<byte> response) =>
-        (RazerGamepadSocdMode)ReadOption(response);
+    public static RazerGamepadSocdMode ReadSocdMode(ReadOnlySpan<byte> response, byte expectedProfileId) =>
+        (RazerGamepadSocdMode)ReadOption(response, expectedProfileId);
 
-    public static byte ReadControllerModeSwitch(ReadOnlySpan<byte> response) => ReadOption(response);
+    public static byte ReadControllerModeSwitch(ReadOnlySpan<byte> response, byte expectedProfileId) => ReadOption(response, expectedProfileId);
 
-    public static byte ReadActiveProfileId(ReadOnlySpan<byte> response) => ReadData(response)[0];
+    public static byte ReadActiveProfileId(ReadOnlySpan<byte> response) => ReadData(response, 1)[0];
 
     public static RazerGamepadRawInput ReadRawInput(ReadOnlySpan<byte> response)
     {
@@ -151,9 +152,9 @@ public static partial class RazerGamepadProtocol
         return new(data[0], values);
     }
 
-    public static RazerGamepadZones ReadZones(ReadOnlySpan<byte> response, byte controlId)
+    public static RazerGamepadZones ReadZones(ReadOnlySpan<byte> response, byte controlId, byte expectedProfileId)
     {
-        var value = ReadValue(response, controlId);
+        var value = ReadValue(response, controlId, expectedProfileId, 9);
         return new RazerGamepadZones(
             ReadUInt16(value, 2),
             ReadUInt16(value, 4),
@@ -161,19 +162,20 @@ public static partial class RazerGamepadProtocol
             value[8] != 0);
     }
 
-    private static ReadOnlySpan<byte> ReadValue(ReadOnlySpan<byte> response, byte controlId)
+    private static ReadOnlySpan<byte> ReadValue(ReadOnlySpan<byte> response, byte controlId,
+        byte expectedProfileId, int minimumLength = 3)
     {
         var value = ReadData(response);
-        if (value.Length < 3 || value[0] != CommandClass || value[1] != controlId)
+        if (value.Length < minimumLength || value[0] != expectedProfileId || value[1] != controlId)
         {
             throw new InvalidDataException(
-                $"The gamepad reply is not class 0x{CommandClass:X2} control 0x{controlId:X2}.");
+                $"The gamepad reply is truncated or does not match profile 0x{expectedProfileId:X2} control 0x{controlId:X2}.");
         }
 
         return value;
     }
 
-    private static ReadOnlySpan<byte> ReadData(ReadOnlySpan<byte> response)
+    private static ReadOnlySpan<byte> ReadData(ReadOnlySpan<byte> response, int minimumLength = 0)
     {
         if (response.Length != RazerFeatureReport.Length)
         {
@@ -182,16 +184,19 @@ public static partial class RazerGamepadProtocol
                 nameof(response));
         }
 
-        return response[RazerFeatureReport.ArgumentsOffset..];
+        var length = response[RazerFeatureReport.DataSizeOffset];
+        if (length < minimumLength || length > 80)
+            throw new InvalidDataException("The gamepad reply has an invalid payload length.");
+        return response.Slice(RazerFeatureReport.ArgumentsOffset, length);
     }
 
-    private static byte ReadOption(ReadOnlySpan<byte> response)
+    private static byte ReadOption(ReadOnlySpan<byte> response, byte expectedProfileId)
     {
         var value = ReadData(response);
-        if (value.Length < 2 || value[0] != CommandClass)
+        if (value.Length < 2 || value[0] != expectedProfileId)
         {
             throw new InvalidDataException(
-                $"The gamepad reply is not class 0x{CommandClass:X2}.");
+                $"The gamepad option reply is truncated or does not match profile 0x{expectedProfileId:X2}.");
         }
 
         return value[1];

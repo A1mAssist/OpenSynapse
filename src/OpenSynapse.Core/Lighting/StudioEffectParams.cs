@@ -134,6 +134,9 @@ public enum StudioReactiveStyle
 
     /// <summary>Spiral vortex around the press.</summary>
     Vortex,
+
+    /// <summary>Chroma Reactive: each pressed LED fades independently.</summary>
+    KeyFade,
 }
 
 public readonly record struct StudioColorStop(int Stop, StudioRgb Color);
@@ -243,7 +246,7 @@ public sealed class StudioEffectParams
 
     public StudioAudioStyle AudioStyle { get; set; } = StudioAudioStyle.Level;
 
-    public StudioReactiveStyle ReactiveStyle { get; set; } = StudioReactiveStyle.Ripple;
+    public StudioReactiveStyle ReactiveStyle { get; set; } = StudioReactiveStyle.KeyFade;
 
     /// <summary>Preset id used by <see cref="StudioEffectKind.Preset"/>.</summary>
     public string Preset
@@ -359,7 +362,7 @@ public sealed class StudioEffectParams
         Blur = Math.Clamp(Blur, 0, 9);
         if (!Enum.IsDefined(ScreenMode)) ScreenMode = StudioScreenMode.Follow;
         if (!Enum.IsDefined(AudioStyle)) AudioStyle = StudioAudioStyle.Level;
-        if (!Enum.IsDefined(ReactiveStyle)) ReactiveStyle = StudioReactiveStyle.Ripple;
+        if (!Enum.IsDefined(ReactiveStyle)) ReactiveStyle = StudioReactiveStyle.KeyFade;
         Preset = Preset.Trim();
         CenterPointX = Math.Clamp(CenterPointX, 0, 10_000);
         CenterPointY = Math.Clamp(CenterPointY, 0, 10_000);

@@ -1904,7 +1904,7 @@
   <data name="Text_RazerHidAutoSleepOn" xml:space="preserve"><value>開啟</value></data>
   <data name="Text_RazerHidAutoSleepOff" xml:space="preserve"><value>關閉</value></data>
   <data name="RazerHidTimeToDimLabel.Text" xml:space="preserve"><value>自動變暗</value></data>
-  <data name="RazerHidIndicatorLedLabel.Text" xml:space="preserve"><value>指示燈亮度</value></data>
+  <data name="RazerHidIndicatorLedLabel.Text" xml:space="preserve"><value>指示燈</value></data>
   <data name="RazerHidIndicatorLedV2Title.Text" xml:space="preserve"><value>接收器指示燈</value></data>
   <data name="RazerHidIndicatorLed1Label.Header" xml:space="preserve"><value>LED 1</value></data>
   <data name="RazerHidIndicatorLed2Label.Header" xml:space="preserve"><value>LED 2</value></data>
@@ -5462,4 +5462,31 @@
   <data name="MacroDeleteInUseElsewhere" xml:space="preserve">
     <value>此巨集仍被這些設定綁定：{0}。請先在對應設定的裝置頁解除綁定。</value>
   </data>
+  <data name="LeviathanSpatialTitle.Text" xml:space="preserve"><value>空間音訊與頭部追蹤</value></data>
+  <data name="LeviathanModeStereo" xml:space="preserve"><value>立體聲</value></data>
+  <data name="LeviathanModeBinaural" xml:space="preserve"><value>THX 空間音訊 · 虛擬耳機</value></data>
+  <data name="LeviathanModeMultichannel" xml:space="preserve"><value>THX 空間音訊 · 虛擬喇叭</value></data>
+  <data name="LeviathanModeRoomFill" xml:space="preserve"><value>全室音效</value></data>
+  <data name="LeviathanSpatialDescription.Text" xml:space="preserve"><value>虛擬耳機與虛擬喇叭模式會跟隨頭部位置。立體聲和全室音效不使用頭部追蹤。</value></data>
+  <data name="LightingStudioReactiveStyleKeyFade" xml:space="preserve"><value>按鍵漸隱</value></data>
+  <data name="HapticCurveDescription.Text" xml:space="preserve"><value>選擇滾輪循環切換時可用的模式。自訂曲線控制每個刻度內的阻力變化，編輯後會自動套用並儲存。</value></data>
+  <data name="HapticCurveLinked.Header" xml:space="preserve"><value>上下捲動使用同一曲線</value></data>
+  <data name="HapticCurveUp" xml:space="preserve"><value>向上捲動 · 順時針</value></data>
+  <data name="HapticCurveDown" xml:space="preserve"><value>向下捲動 · 逆時針</value></data>
+  <data name="HapticCurveSteps.Header" xml:space="preserve"><value>每圈刻度数</value></data>
+  <data name="HapticCurveTension.Header" xml:space="preserve"><value>阻力（0–100）</value></data>
+  <data name="HapticCurveAxes.Text" xml:space="preserve"><value>橫軸為單個刻度內的位置（0–100%），縱軸為相對阻力（0–100%）。拖動中間三個控制點，或輸入座標。</value></data>
+  <data name="HapticCurvePosition.Header" xml:space="preserve"><value>位置（%）</value></data>
+  <data name="HapticCurveStrength.Header" xml:space="preserve"><value>阻力（%）</value></data>
+  <data name="HapticCurveStart" xml:space="preserve"><value>起點</value></data>
+  <data name="HapticCurveRise" xml:space="preserve"><value>上升控制點</value></data>
+  <data name="HapticCurveMiddle" xml:space="preserve"><value>中點</value></data>
+  <data name="HapticCurveFall" xml:space="preserve"><value>下降控制點</value></data>
+  <data name="HapticCurveEnd" xml:space="preserve"><value>終點</value></data>
+  <data name="HapticCurveRead.Content" xml:space="preserve"><value>讀取裝置</value></data>
+  <data name="HapticCurveDefault.Content" xml:space="preserve"><value>使用預設曲線</value></data>
+  <data name="HapticCurveRestore.Content" xml:space="preserve"><value>還原已存設定</value></data>
+  <data name="HapticCurveInvalid" xml:space="preserve"><value>請輸入顯示範圍內的有限整數。</value></data>
+  <data name="HapticCurveReadFirst" xml:space="preserve"><value>請先讀取裝置，再編輯 Hapticore 設定。</value></data>
+  <data name="HapticBleDescription.Text" xml:space="preserve"><value>選擇目前板載設定中已啟用模式的位置。自訂曲線和模式名稱透過 USB 或接收器設定。修改後會自動套用並儲存。</value></data>
 </root>

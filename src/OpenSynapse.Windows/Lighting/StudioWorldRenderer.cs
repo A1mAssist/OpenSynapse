@@ -95,8 +95,16 @@ public sealed partial class StudioWorldRenderer
                 _outputPlayback.Update(canvas);
                 _previewPlayback.Update(canvas);
             }
-            _outputSource.Update(canvas.Layers);
-            _previewSource.Update(canvas.Layers);
+            var activeLayers = canvas.UsesLayerMapping
+                ? canvas.MappedLayers.Select(layer => layer.Render with { Mask = null }).ToArray()
+                : canvas.Layers;
+            _outputSource.Update(activeLayers);
+            _previewSource.Update(activeLayers);
+            if (!canvas.UsesLayerMapping)
+            {
+                _outputPlayback = null;
+                _previewPlayback = null;
+            }
             _outputCache = null;
             _previewCache = null;
             _outputDevices = null;

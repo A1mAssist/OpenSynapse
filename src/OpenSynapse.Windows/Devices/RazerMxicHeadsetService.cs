@@ -45,7 +45,8 @@ public sealed partial class RazerMxicHeadsetService : IRazerHeadsetControlServic
         if (RazerMxicHeadsetProtocol.UsesValkyrieT3Commands(productId) ||
             RazerMxicHeadsetProtocol.UsesJolietCommands(productId))
         {
-            return new RazerValkyrieT3Transport(devicePath);
+            return new RazerValkyrieT3Transport(devicePath,
+                RazerMxicHeadsetProtocol.UsesJolietCommands(productId) ? (byte)0x60 : (byte)0);
         }
 
         return new RazerMxicHeadsetTransport(
@@ -198,14 +199,14 @@ public sealed partial class RazerMxicHeadsetService : IRazerHeadsetControlServic
         }
 
         var errors = new List<string>();
-        var firmware = _dialect == MxicDialect.ValkyrieT3 ? (Ok: false, Value: (Version)null!) : await ProbeAsync(
+        var firmware = _dialect is MxicDialect.ValkyrieT3 or MxicDialect.Class18 ? (Ok: false, Value: (Version)null!) : await ProbeAsync(
             "firmware",
             RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetFirmware, reportId: ReportId),
             RazerMxicHeadsetProtocol.FirmwareHeader,
             RazerMxicHeadsetProtocol.ReadFirmware,
             errors,
             cancellationToken).ConfigureAwait(false);
-        var battery = _dialect == MxicDialect.ValkyrieT3
+        var battery = _dialect is MxicDialect.ValkyrieT3 or MxicDialect.Class18
             ? _productId == BarracudaV2XProductId
                 ? await ProbeAsync(
                     "battery",
@@ -222,7 +223,7 @@ public sealed partial class RazerMxicHeadsetService : IRazerHeadsetControlServic
                 ReadBatteryWithLog,
                 errors,
                 cancellationToken).ConfigureAwait(false);
-        var charging = _dialect == MxicDialect.ValkyrieT3 ? (Ok: false, Value: false) : await ProbeAsync(
+        var charging = _dialect is MxicDialect.ValkyrieT3 or MxicDialect.Class18 ? (Ok: false, Value: false) : await ProbeAsync(
             "charging",
             RazerMxicHeadsetProtocol.CreateRequest(RazerMxicHeadsetProtocol.GetCharging, reportId: ReportId),
             RazerMxicHeadsetProtocol.ChargingHeader,
@@ -523,7 +524,7 @@ public sealed partial class RazerMxicHeadsetService : IRazerHeadsetControlServic
         CancellationToken cancellationToken)
     {
         await EnsureRemoteModeAsync(cancellationToken).ConfigureAwait(false);
-        _diagnostic?.Invoke(_dialect == MxicDialect.Protocol40
+        _diagnostic?.Invoke(_dialect is MxicDialect.Protocol40 or MxicDialect.Class18
             ? $"protocol40 {label}: size=0x{report[6]:X2} class=0x{report[7]:X2} id=0x{report[8]:X2}"
             : $"mxic {label}: command=0x{report[10]:X2} 0x{report[11]:X2} 0x{report[12]:X2}");
         var value = await _transport.QueryAsync(report, expectedHeader, cancellationToken)
@@ -534,7 +535,7 @@ public sealed partial class RazerMxicHeadsetService : IRazerHeadsetControlServic
 
     private async Task EnsureRemoteModeAsync(CancellationToken cancellationToken)
     {
-        if (_remoteMode || _dialect is MxicDialect.Protocol40 or MxicDialect.ValkyrieT3 or MxicDialect.Joliet)
+        if (_remoteMode || _dialect is MxicDialect.Protocol40 or MxicDialect.Class18 or MxicDialect.ValkyrieT3 or MxicDialect.Joliet)
         {
             return;
         }

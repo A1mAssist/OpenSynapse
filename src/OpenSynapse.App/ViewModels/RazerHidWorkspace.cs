@@ -338,6 +338,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
             row.AttachDetail(selectedDevice);
             SelectedKraken = null;
             NotifyDeviceOverview();
+            await selectedDevice.LoadCalibrationAsync(cancellationToken);
             return;
         }
 
@@ -472,6 +473,7 @@ public sealed partial class RazerHidWorkspace : INotifyPropertyChanged, IAsyncDi
         CancellationToken cancellationToken = default,
         IReadOnlyCollection<string>? instanceIds = null)
     {
+        if (!_displayLightingAvailable) return;
         var targets = instanceIds?.ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (targets is { Count: 0 }) return;
         if (_deviceService is null)

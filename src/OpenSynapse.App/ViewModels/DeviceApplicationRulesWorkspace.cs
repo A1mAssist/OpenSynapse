@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
 using OpenSynapse.App.Runtime;
 using OpenSynapse.Core.Devices;
 using OpenSynapse.Core.Profiles;
@@ -79,6 +80,8 @@ public sealed partial class DeviceApplicationRulesWorkspace : INotifyPropertyCha
     public ObservableCollection<DeviceApplicationRuleRowViewModel> DeviceRules { get; } = new();
     public ObservableCollection<DeviceRuleDeviceOption> BindableDevices { get; } = new();
     public string StatusText { get; internal set; } = string.Empty;
+    public Visibility StatusVisibility => string.IsNullOrWhiteSpace(StatusText)
+        ? Visibility.Collapsed : Visibility.Visible;
     public ObservableCollection<string> RunningApplications { get; } = new();
     public IReadOnlyList<string> ProfileNames => _profiles().Profiles.Keys.Order().ToArray();
     public bool Enabled { get => _document.Enabled; set => _ = SetEnabledAsync(value); }

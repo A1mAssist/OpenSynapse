@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading.Channels;
 using OpenSynapse.Core.Diagnostics;
@@ -196,7 +197,8 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
         return _latest = frame;
     }
 
-    internal static RawDisplayFrame CopyPixels(SoftwareBitmap bitmap, int width, int height)
+    internal static RawDisplayFrame CopyPixels(SoftwareBitmap bitmap, int width, int height,
+        byte[]? reusable = null)
     {
         if (width <= 0 || height <= 0 || width > bitmap.PixelWidth || height > bitmap.PixelHeight)
         {
@@ -211,21 +213,23 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
                 "Windows returned a display capture frame that is not BGRA8.");
         }
 
-        var bitmapStride = checked(bitmap.PixelWidth * 4);
-        var bytes = new byte[checked(bitmapStride * bitmap.PixelHeight)];
-        var destination = new global::Windows.Storage.Streams.Buffer(checked((uint)bytes.Length));
-        bitmap.CopyToBuffer(destination);
-        using var reader = global::Windows.Storage.Streams.DataReader.FromBuffer(destination);
-        reader.ReadBytes(bytes);
         var stride = checked(width * 4);
-        if (width != bitmap.PixelWidth || height != bitmap.PixelHeight)
+        var length = checked(stride * height);
+        var bytes = reusable?.Length == length ? reusable : new byte[length];
+        using var buffer = bitmap.LockBuffer(BitmapBufferAccessMode.Read);
+        using var reference = buffer.CreateReference();
+        var access = WinRT.CastExtensions.As<IMemoryBufferByteAccess>(reference);
+        access.GetBuffer(out var address, out var capacity);
+        var plane = buffer.GetPlaneDescription(0);
+        if (plane.Stride < stride || plane.StartIndex < 0 ||
+            (long)plane.StartIndex + (long)(height - 1) * plane.Stride + stride > capacity)
+            throw new InvalidDataException("The capture bitmap buffer is shorter than its declared dimensions.");
+        if (plane.Stride == stride)
+            Marshal.Copy(address + plane.StartIndex, bytes, 0, length);
+        else
         {
-            var cropped = new byte[checked(stride * height)];
             for (var row = 0; row < height; row++)
-            {
-                Buffer.BlockCopy(bytes, row * bitmapStride, cropped, row * stride, stride);
-            }
-            bytes = cropped;
+                Marshal.Copy(address + plane.StartIndex + row * plane.Stride, bytes, row * stride, stride);
         }
         return new RawDisplayFrame(bytes, width, height, stride);
     }
@@ -239,6 +243,7 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
         var retries = 0;
         var previousWidth = 0;
         var previousHeight = 0;
+        var lastRead = 0L;
         try
         {
             while (!cancellationToken.IsCancellationRequested)
@@ -247,6 +252,12 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
                 try
                 {
                     session ??= await _openSession(cancellationToken).ConfigureAwait(false);
+                    if (lastRead != 0)
+                    {
+                        var remaining = TimeSpan.FromMilliseconds(40) - Stopwatch.GetElapsedTime(lastRead);
+                        if (remaining > TimeSpan.Zero) await Task.Delay(remaining, cancellationToken).ConfigureAwait(false);
+                    }
+                    lastRead = Stopwatch.GetTimestamp();
                     raw = await session.ReadFrameAsync(cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception exception) when (
@@ -396,6 +407,13 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
         throw new InvalidOperationException("Display capture has stopped.");
     }
 
+
+    [ComImport, System.Runtime.InteropServices.Guid("5b0d3235-4dba-4d44-865e-8f1d0e4fd04d")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IMemoryBufferByteAccess
+    {
+        void GetBuffer(out nint value, out uint capacity);
+    }
 
     private sealed class WindowsGraphicsCaptureSession : IDisplayCaptureSession
     {
@@ -606,6 +624,8 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
             }
         }
 
+        private byte[]? _pixelBuffer;
+
         public async ValueTask<RawDisplayFrame> ReadFrameAsync(CancellationToken cancellationToken)
         {
             ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
@@ -651,7 +671,9 @@ internal sealed partial class WindowsDisplayCaptureAdapter : ILightingInputAdapt
                             using var bitmap = await SoftwareBitmap.CreateCopyFromSurfaceAsync(
                                 latest.Surface,
                                 BitmapAlphaMode.Ignore).AsTask(cancellationToken).ConfigureAwait(false);
-                            return CopyPixels(bitmap, contentSize.Width, contentSize.Height);
+                            var raw = CopyPixels(bitmap, contentSize.Width, contentSize.Height, _pixelBuffer);
+                            _pixelBuffer = raw.Bgra;
+                            return raw;
                         }
                     }
                     catch (COMException exception)

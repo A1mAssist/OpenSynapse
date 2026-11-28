@@ -90,24 +90,36 @@ internal sealed class RazerHapticsAccessoryService : IAsyncDisposable
             cancellationToken);
 
     internal Task SetGainAsync(int value, CancellationToken cancellationToken = default) =>
-        SendAsync(
+        SetScalarAsync(
             RazerHapticsAccessoryProtocol.CreateSetScalar(RazerHapticsAccessoryProtocol.SetGain, value),
             cancellationToken);
 
     internal Task SetPerceptionAsync(int value, CancellationToken cancellationToken = default) =>
-        SendAsync(
+        SetScalarAsync(
             RazerHapticsAccessoryProtocol.CreateSetScalar(RazerHapticsAccessoryProtocol.SetPerception, value),
             cancellationToken);
 
     internal Task SetTransientAsync(int value, CancellationToken cancellationToken = default) =>
-        SendAsync(
+        SetScalarAsync(
             RazerHapticsAccessoryProtocol.CreateSetScalar(RazerHapticsAccessoryProtocol.SetTransient, value),
             cancellationToken);
 
     internal Task SetSignalGainAsync(int value, CancellationToken cancellationToken = default) =>
-        SendAsync(
+        SetScalarAsync(
             RazerHapticsAccessoryProtocol.CreateSetScalar(RazerHapticsAccessoryProtocol.SetSignalGain, value),
             cancellationToken);
+
+    private async Task SetScalarAsync(byte[] request, CancellationToken cancellationToken)
+    {
+        await SendAsync(request, cancellationToken).ConfigureAwait(false);
+        var response = await _client.QueryAsync(3, request[7], (byte)(request[8] | 0x80),
+            request.AsMemory(RazerAccessoryProtocol.ArgumentsOffset, 3),
+            candidate => RazerAccessoryProtocol.MatchesCommand(candidate, request[7], (byte)(request[8] | 0x80)),
+            cancellationToken).ConfigureAwait(false);
+        if (RazerHapticsAccessoryProtocol.ReadBigEndianScalar(response) !=
+            RazerHapticsAccessoryProtocol.ReadBigEndianScalar(request))
+            throw new InvalidOperationException("Sensa scalar readback did not match the requested value.");
+    }
 
     private Task SendAsync(byte[] request, CancellationToken cancellationToken) =>
         _client.QueryAsync(

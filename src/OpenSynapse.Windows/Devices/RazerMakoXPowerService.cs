@@ -71,7 +71,7 @@ internal sealed class RazerMakoXPowerService
 
     private async Task SendAsync(byte[] report, string label, CancellationToken cancellationToken)
     {
-        await using var transport = new RazerValkyrieT3Transport(_devicePath);
+        await using var transport = new RazerValkyrieT3Transport(_devicePath, 0x60);
         _diagnostic?.Invoke(
             $"mako-x power {label}: class=0x{report[7]:X2} id=0x{report[8]:X2}");
         await transport.SendAsync(report, cancellationToken).ConfigureAwait(false);
@@ -83,7 +83,7 @@ internal sealed class RazerMakoXPowerService
         string label,
         CancellationToken cancellationToken)
     {
-        await using var transport = new RazerValkyrieT3Transport(_devicePath);
+        await using var transport = new RazerValkyrieT3Transport(_devicePath, 0x60);
         _diagnostic?.Invoke(
             $"mako-x power {label}: class=0x{report[7]:X2} id=0x{report[8]:X2}");
         return await transport.QueryAsync(report, header, cancellationToken).ConfigureAwait(false) ??

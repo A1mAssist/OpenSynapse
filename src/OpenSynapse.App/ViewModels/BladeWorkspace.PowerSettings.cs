@@ -83,14 +83,14 @@ public sealed partial class BladeWorkspace
                 TouchpadEnabled = actual;
                 _blade._confirmedBladeTouchpadEnabled = actual;
                 TouchpadText = actual ? AppStrings.Text("Text_F55AD712") : AppStrings.Text("Text_7E3B0F3C");
-                if (!await _deviceTelemetryReader.SetBladeTouchpadStatusAsync(
-                        ActiveDescriptors, actual, cancellationToken))
+                await SyncObservedTouchpadIndicatorAsync(ActiveDescriptors, actual).WaitAsync(cancellationToken);
+                if (!_touchpadIndicatorConfirmed)
                 {
                     // The Windows state is already committed, so retry once after the
                     // EC settles instead of rolling the touchpad back.
                     await Task.Delay(200, cancellationToken);
-                    if (!await _deviceTelemetryReader.SetBladeTouchpadStatusAsync(
-                            ActiveDescriptors, actual, cancellationToken))
+                    await SyncObservedTouchpadIndicatorAsync(ActiveDescriptors, actual).WaitAsync(cancellationToken);
+                    if (!_touchpadIndicatorConfirmed)
                     {
                         // Keep the watch loop retrying instead of leaving the lamp stale.
                         _touchpadIndicatorConfirmed = false;

@@ -84,7 +84,7 @@ public sealed class RazerThermalChannelRowViewModel : INotifyPropertyChanged
         _actualDuty = channel.ActualDuty;
         _mode = channel.Mode;
         _connected = channel.Connected;
-        _target = IsPwm ? channel.CurrentRpm : channel.TargetDuty;
+        _target = IsPwm ? channel.TargetRpm ?? channel.CurrentRpm : channel.TargetDuty;
         OnPropertyChanged(string.Empty);
     }
 
@@ -162,7 +162,7 @@ public sealed class RazerThermalAccessoryViewModel : INotifyPropertyChanged, IAs
     public string GpuTemperatureText { get => _gpuTemperatureText; private set => SetField(ref _gpuTemperatureText, value); }
     public bool IsHanbo => _productId == RazerThermalAccessoryProtocol.HanboProductId;
     public bool IsPwm => _productId == RazerThermalAccessoryProtocol.PwmProductId;
-    public bool ShowTemperatures => IsHanbo;
+    public bool ShowTemperatures => false;
     public bool ShowModes => IsHanbo;
     public IReadOnlyList<string> ModeOptions =>
     [

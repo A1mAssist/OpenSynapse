@@ -85,11 +85,12 @@ public sealed partial class RazerGamepadService
             : devicePath;
         _deviceWait = deviceWait;
         _diagnostic = diagnostic;
-        _productId = productId;
-        _reportId = productId is 0x0A57 or 0x0A74 or 0x0A7C ? (byte)10 : RazerGamepadProtocol.ReportId;
+        _productId = RazerProductAliases.Canonical(productId);
+        _reportId = _productId is 0x0A57 or 0x0A74 or 0x0A7C ? (byte)10 : RazerGamepadProtocol.ReportId;
+        _profileId = SupportsSingleProfile(_productId) ? (byte)1 : (byte)0;
     }
 
-    public static bool IsSupported(ushort productId) => Products.ContainsKey(productId);
+    public static bool IsSupported(ushort productId) => Products.ContainsKey(RazerProductAliases.Canonical(productId));
 
     public static async Task<RazerGamepadConnection?> FindAsync(
         Action<string>? diagnostic = null,
@@ -124,14 +125,14 @@ public sealed partial class RazerGamepadService
                 $"usage=0x{item.UsagePage:X4}:0x{item.Usage:X4} access={item.Access}")));
         return candidates
             .Select(item => new RazerGamepadConnection(
-                item.DevicePath, item.ProductId, Products[item.ProductId], item.FeatureReportByteLength))
+                item.DevicePath, item.ProductId, Products[RazerProductAliases.Canonical(item.ProductId)], item.FeatureReportByteLength))
             .ToArray();
     }
 
     internal static IReadOnlyList<WindowsHidDiscovery.HidInterfaceDescriptor> SelectCandidates(
         IEnumerable<WindowsHidDiscovery.HidInterfaceDescriptor> interfaces) =>
         interfaces
-            .Where(item => Products.ContainsKey(item.ProductId))
+            .Where(item => IsSupported(item.ProductId))
             .Where(item => RazerHidDeviceCatalog.BuiltIn.Find(0x1532, item.ProductId) is null)
             .GroupBy(item => item.PhysicalDeviceKey, StringComparer.OrdinalIgnoreCase)
             .Select(group => group
@@ -152,6 +153,7 @@ public sealed partial class RazerGamepadService
             cancellationToken).ConfigureAwait(false) is { Ok: true } profile
             ? profile.Value
             : (byte)0;
+        if (_profileId == 0 && SupportsSingleProfile(_productId)) _profileId = 1;
 
         IReadOnlyList<byte> controlIds = [];
         try
@@ -190,21 +192,21 @@ public sealed partial class RazerGamepadService
                 await TryReadAsync(
                     $"sensitivity {controlId}",
                     transaction => RazerGamepadProtocol.CreateGetSensitivityRequest(transaction, _profileId, controlId),
-                    response => RazerGamepadProtocol.ReadSensitivity(response, controlId),
+                    response => RazerGamepadProtocol.ReadSensitivity(response, controlId, _profileId),
                     cancellationToken).ConfigureAwait(false) is { Ok: true } sensitivity
                     ? sensitivity.Value
                     : null,
                 await TryReadAsync(
                     $"zones {controlId}",
                     transaction => RazerGamepadProtocol.CreateGetZonesRequest(transaction, _profileId, controlId),
-                    response => RazerGamepadProtocol.ReadZones(response, controlId),
+                    response => RazerGamepadProtocol.ReadZones(response, controlId, _profileId),
                     cancellationToken).ConfigureAwait(false) is { Ok: true } zones
                     ? zones.Value
                     : null,
                 await TryReadAsync(
                     $"circularity {controlId}",
                     transaction => RazerGamepadProtocol.CreateGetCircularityRequest(transaction, _profileId, controlId),
-                    response => (RazerGamepadCircularity)RazerGamepadProtocol.ReadCircularity(response, controlId),
+                    response => (RazerGamepadCircularity)RazerGamepadProtocol.ReadCircularity(response, controlId, _profileId),
                     cancellationToken).ConfigureAwait(false) is { Ok: true } circularity
                     ? circularity.Value
                     : null));
@@ -212,17 +214,17 @@ public sealed partial class RazerGamepadService
             var range = await TryReadAsync(
                 $"trigger range {controlId}",
                 transaction => RazerGamepadProtocol.CreateGetTriggerRangeRequest(transaction, _profileId, controlId),
-                response => RazerGamepadProtocol.ReadTriggerRange(response, controlId),
+                response => RazerGamepadProtocol.ReadTriggerRange(response, controlId, _profileId),
                 cancellationToken).ConfigureAwait(false);
             var mode = await TryReadAsync(
                 $"trigger mode {controlId}",
                 transaction => RazerGamepadProtocol.CreateGetTriggerModeRequest(transaction, _profileId, controlId),
-                response => (RazerGamepadTriggerMode)RazerGamepadProtocol.ReadTriggerMode(response, controlId),
+                response => (RazerGamepadTriggerMode)RazerGamepadProtocol.ReadTriggerMode(response, controlId, _profileId),
                 cancellationToken).ConfigureAwait(false);
             var digital = await TryReadAsync(
                 $"digital trigger {controlId}",
                 transaction => RazerGamepadProtocol.CreateGetDigitalTriggerRequest(transaction, _profileId, controlId),
-                response => RazerGamepadProtocol.ReadDigitalTrigger(response, controlId),
+                response => RazerGamepadProtocol.ReadDigitalTrigger(response, controlId, _profileId),
                 cancellationToken).ConfigureAwait(false);
             triggers.Add(new RazerGamepadTriggerState(
                 controlId,
@@ -235,17 +237,17 @@ public sealed partial class RazerGamepadService
         var vibration = await TryReadAsync(
             "vibration scale",
             transaction => RazerGamepadProtocol.CreateGetVibrationScaleRequest(transaction, _profileId, 5),
-            response => RazerGamepadProtocol.ReadVibrationScale(response, 5),
+            response => RazerGamepadProtocol.ReadVibrationScale(response, 5, _profileId),
             cancellationToken).ConfigureAwait(false);
         var ignoreDPad = await TryReadAsync(
             "ignore d-pad diagonals",
             transaction => RazerGamepadProtocol.CreateGetIgnoreDPadDiagonalsRequest(transaction, _profileId),
-            response => RazerGamepadProtocol.ReadIgnoreDPadDiagonals(response) != 0,
+            response => RazerGamepadProtocol.ReadIgnoreDPadDiagonals(response, _profileId) != 0,
             cancellationToken).ConfigureAwait(false);
         var socd = await TryReadAsync(
             "socd",
             transaction => RazerGamepadProtocol.CreateGetSocdRequest(transaction, _profileId),
-            response => RazerGamepadProtocol.ReadSocdMode(response),
+            response => RazerGamepadProtocol.ReadSocdMode(response, _profileId),
             cancellationToken).ConfigureAwait(false);
         var adc = await TryReadAsync(
             "adc mask",
@@ -302,7 +304,7 @@ public sealed partial class RazerGamepadService
                         transaction => RazerGamepadProtocol.CreateGetButtonAssignmentRequest(
                             transaction, _profileId, buttonId, mode),
                         $"read button {buttonId}",
-                        cancellationToken).ConfigureAwait(false));
+                        cancellationToken).ConfigureAwait(false), _profileId, buttonId, mode);
                 assignments.Add(assignment);
             }
             catch (Exception exception) when (IsExpected(exception))
@@ -319,7 +321,7 @@ public sealed partial class RazerGamepadService
             "sensitivity",
             (transaction, desired) => RazerGamepadProtocol.CreateSetSensitivityRequest(transaction, _profileId, controlId, desired),
             transaction => RazerGamepadProtocol.CreateGetSensitivityRequest(transaction, _profileId, controlId),
-            response => RazerGamepadProtocol.ReadSensitivity(response, controlId),
+            response => RazerGamepadProtocol.ReadSensitivity(response, controlId, _profileId),
             value,
             cancellationToken);
 
@@ -331,7 +333,7 @@ public sealed partial class RazerGamepadService
             "zones",
             (transaction, desired) => RazerGamepadProtocol.CreateSetZonesRequest(transaction, _profileId, controlId, desired),
             transaction => RazerGamepadProtocol.CreateGetZonesRequest(transaction, _profileId, controlId),
-            response => RazerGamepadProtocol.ReadZones(response, controlId),
+            response => RazerGamepadProtocol.ReadZones(response, controlId, _profileId),
             zones,
             cancellationToken);
 
@@ -343,7 +345,7 @@ public sealed partial class RazerGamepadService
             "circularity",
             (transaction, desired) => RazerGamepadProtocol.CreateSetCircularityRequest(transaction, _profileId, controlId, desired),
             transaction => RazerGamepadProtocol.CreateGetCircularityRequest(transaction, _profileId, controlId),
-            response => (RazerGamepadCircularity)RazerGamepadProtocol.ReadCircularity(response, controlId),
+            response => (RazerGamepadCircularity)RazerGamepadProtocol.ReadCircularity(response, controlId, _profileId),
             circularity,
             cancellationToken);
 
@@ -357,7 +359,7 @@ public sealed partial class RazerGamepadService
             (transaction, desired) => RazerGamepadProtocol.CreateSetTriggerRangeRequest(
                 transaction, _profileId, controlId, desired.Item1, desired.Item2),
             transaction => RazerGamepadProtocol.CreateGetTriggerRangeRequest(transaction, _profileId, controlId),
-            response => RazerGamepadProtocol.ReadTriggerRange(response, controlId),
+            response => RazerGamepadProtocol.ReadTriggerRange(response, controlId, _profileId),
             (start, end),
             cancellationToken);
 
@@ -370,7 +372,7 @@ public sealed partial class RazerGamepadService
             (transaction, desired) => RazerGamepadProtocol.CreateSetTriggerModeRequest(
                 transaction, _profileId, controlId, (byte)desired),
             transaction => RazerGamepadProtocol.CreateGetTriggerModeRequest(transaction, _profileId, controlId),
-            response => (RazerGamepadTriggerMode)RazerGamepadProtocol.ReadTriggerMode(response, controlId),
+            response => (RazerGamepadTriggerMode)RazerGamepadProtocol.ReadTriggerMode(response, controlId, _profileId),
             mode,
             cancellationToken);
 
@@ -383,7 +385,7 @@ public sealed partial class RazerGamepadService
             (transaction, desired) => RazerGamepadProtocol.CreateSetDigitalTriggerRequest(
                 transaction, _profileId, controlId, desired),
             transaction => RazerGamepadProtocol.CreateGetDigitalTriggerRequest(transaction, _profileId, controlId),
-            response => RazerGamepadProtocol.ReadDigitalTrigger(response, controlId),
+            response => RazerGamepadProtocol.ReadDigitalTrigger(response, controlId, _profileId),
             trigger,
             cancellationToken);
 
@@ -392,7 +394,7 @@ public sealed partial class RazerGamepadService
             "ignore d-pad diagonals",
             (transaction, desired) => RazerGamepadProtocol.CreateSetIgnoreDPadDiagonalsRequest(transaction, _profileId, desired),
             transaction => RazerGamepadProtocol.CreateGetIgnoreDPadDiagonalsRequest(transaction, _profileId),
-            response => RazerGamepadProtocol.ReadIgnoreDPadDiagonals(response) != 0,
+            response => RazerGamepadProtocol.ReadIgnoreDPadDiagonals(response, _profileId) != 0,
             enabled,
             cancellationToken);
 
@@ -401,7 +403,7 @@ public sealed partial class RazerGamepadService
             "socd",
             (transaction, desired) => RazerGamepadProtocol.CreateSetSocdRequest(transaction, _profileId, desired),
             transaction => RazerGamepadProtocol.CreateGetSocdRequest(transaction, _profileId),
-            response => RazerGamepadProtocol.ReadSocdMode(response),
+            response => RazerGamepadProtocol.ReadSocdMode(response, _profileId),
             mode,
             cancellationToken);
 
@@ -423,7 +425,7 @@ public sealed partial class RazerGamepadService
                 transaction => RazerGamepadProtocol.CreateGetButtonAssignmentRequest(
                     transaction, _profileId, buttonId, mode),
                 $"read button {buttonId}",
-                cancellationToken).ConfigureAwait(false));
+                cancellationToken).ConfigureAwait(false), _profileId, buttonId, mode);
 
     public async Task SetButtonAssignmentAsync(
         byte buttonId,

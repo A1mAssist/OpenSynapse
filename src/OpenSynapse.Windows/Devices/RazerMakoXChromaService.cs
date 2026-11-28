@@ -198,8 +198,8 @@ internal sealed class RazerMakoXChromaService : IRazerHeadsetLightingService, IA
 
     private RazerValkyrieT3Transport GetTransport() =>
         _keepOpen
-            ? _transport ??= new RazerValkyrieT3Transport(_devicePath)
-            : new RazerValkyrieT3Transport(_devicePath);
+            ? _transport ??= new RazerValkyrieT3Transport(_devicePath, 0x60)
+            : new RazerValkyrieT3Transport(_devicePath, 0x60);
 
     private async Task SendAsync(
         byte[] report,

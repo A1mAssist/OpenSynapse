@@ -7,7 +7,7 @@ internal sealed class RazerDockAccessoryService : IAsyncDisposable
     private readonly RazerAccessoryCommandClient _client;
     private const byte ProfileId = 0;
     private const byte LedId = 0;
-    private int _transactionId = 0x1F;
+    private int _transactionId = -1;
 
     internal RazerDockAccessoryService(RazerAccessoryCommandClient client) => _client = client;
 
@@ -45,7 +45,7 @@ internal sealed class RazerDockAccessoryService : IAsyncDisposable
                 ProfileId,
                 LedId,
                 cancellationToken).ConfigureAwait(false);
-            dockSync = RazerDockAccessoryProtocol.ReadEnabled(response);
+            dockSync = RazerDockAccessoryProtocol.ReadDockSync(response, ProfileId, LedId);
             hasDockSync = true;
         }
         catch (Exception exception) when (IsExpected(exception))
@@ -94,7 +94,7 @@ internal sealed class RazerDockAccessoryService : IAsyncDisposable
             ProfileId,
             LedId,
             cancellationToken).ConfigureAwait(false);
-        if (RazerDockAccessoryProtocol.ReadEnabled(response) != enabled)
+        if (RazerDockAccessoryProtocol.ReadDockSync(response, ProfileId, LedId) != enabled)
         {
             throw new InvalidOperationException("Dock sync readback did not match.");
         }
@@ -127,7 +127,7 @@ internal sealed class RazerDockAccessoryService : IAsyncDisposable
     public ValueTask DisposeAsync() => _client.DisposeAsync();
 
     private byte NextTransaction() =>
-        unchecked((byte)(Interlocked.Increment(ref _transactionId) & 0x1F));
+        (byte)(0xE0 | (unchecked((uint)Interlocked.Increment(ref _transactionId)) % 31));
 
     private Task<byte[]> QueryAsync(
         byte[] request,

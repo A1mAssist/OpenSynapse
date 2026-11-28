@@ -7,59 +7,54 @@ public sealed partial class DevicesPage
 {
     private async void RazerHidFullscreenPollingToggled(object sender, RoutedEventArgs e)
     {
-        if (sender is ToggleSwitch toggle &&
-            SelectedRazerHidDevice is { } device &&
-            toggle.IsOn != device.FullscreenPollingEnabled)
+        if (sender is ToggleSwitch { IsLoaded: true, DataContext: ViewModels.RazerHidDeviceViewModel device } toggle &&
+            !device.IsBasicBusy && !device.IsPollingBusy &&
+            device.HasFullscreenPollingChange(toggle.IsOn, device.SelectedFullscreenPollingRateIndex))
         {
             await device.ApplyFullscreenPollingAsync(
                 toggle.IsOn,
                 device.SelectedFullscreenPollingRateIndex,
-                Lifetime);
-            toggle.IsOn = device.FullscreenPollingEnabled;
+                Host?.LifetimeToken ?? default);
         }
     }
 
     private async void RazerHidFullscreenPollingRateChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is ComboBox combo &&
-            SelectedRazerHidDevice is { } device &&
+        if (sender is ComboBox { IsLoaded: true, DataContext: ViewModels.RazerHidDeviceViewModel device } combo &&
+            !device.IsBasicBusy && !device.IsPollingBusy &&
             combo.SelectedIndex >= 0 &&
-            combo.SelectedIndex != device.SelectedFullscreenPollingRateIndex)
+            device.HasFullscreenPollingChange(device.FullscreenPollingEnabled, combo.SelectedIndex))
         {
             await device.ApplyFullscreenPollingAsync(
                 device.FullscreenPollingEnabled,
                 combo.SelectedIndex,
-                Lifetime);
-            combo.SelectedIndex = device.SelectedFullscreenPollingRateIndex;
+                Host?.LifetimeToken ?? default);
         }
     }
 
     private async void KeyboardFullscreenPollingToggled(object sender, RoutedEventArgs e)
     {
-        if (sender is ToggleSwitch toggle &&
-            ViewModel.Accessories.SelectedKeyboard is { } keyboard &&
-            toggle.IsOn != keyboard.FullscreenPollingEnabled)
+        if (sender is ToggleSwitch { IsLoaded: true, DataContext: ViewModels.RazerKeyboardViewModel keyboard } toggle &&
+            !keyboard.IsBusy &&
+            keyboard.HasFullscreenPollingChange(toggle.IsOn, keyboard.SelectedFullscreenPollingIndex))
         {
             await keyboard.SetFullscreenPollingAsync(
                 toggle.IsOn,
                 keyboard.SelectedFullscreenPollingIndex,
-                Lifetime);
-            toggle.IsOn = keyboard.FullscreenPollingEnabled;
+                Host?.LifetimeToken ?? default);
         }
     }
 
     private async void KeyboardFullscreenPollingRateChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is ComboBox combo &&
-            ViewModel.Accessories.SelectedKeyboard is { } keyboard &&
-            combo.SelectedIndex >= 0 &&
-            combo.SelectedIndex != keyboard.SelectedFullscreenPollingIndex)
+        if (sender is ComboBox { IsLoaded: true, DataContext: ViewModels.RazerKeyboardViewModel keyboard } combo &&
+            !keyboard.IsBusy && combo.SelectedIndex >= 0 &&
+            keyboard.HasFullscreenPollingChange(keyboard.FullscreenPollingEnabled, combo.SelectedIndex))
         {
             await keyboard.SetFullscreenPollingAsync(
                 keyboard.FullscreenPollingEnabled,
                 combo.SelectedIndex,
-                Lifetime);
-            combo.SelectedIndex = keyboard.SelectedFullscreenPollingIndex;
+                Host?.LifetimeToken ?? default);
         }
     }
 }

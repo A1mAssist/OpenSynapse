@@ -49,7 +49,8 @@ public static class RazerProtocol40HeadsetProtocol
     // The Hammerhead V3 Chroma exposes the rzDevice40 frame only as a 64-byte FF14
     // feature report; its FF13 collection is 62 bytes, so Mxic64's output path
     // cannot address it.
-    public static bool UsesFeatureReportChannel(ushort productId) => productId == 0x05B9;
+    // BillieT3H also uses report-2 feature I/O for its class-18 controls.
+    public static bool UsesFeatureReportChannel(ushort productId) => productId is 0x05B9 or 0x059F;
 
     // rzDevice40Headset.connectDevice writes [0,0,135] once to wake the HID channel.
     public static byte[] CreateConnect() => CreateRequest(GetConnect);
@@ -176,8 +177,8 @@ public static class RazerProtocol40HeadsetProtocol
             return false;
         }
 
-        var length = response[6];
-        if (length > ReportLength - 9)
+        var length = (response[5] << 8) | response[6];
+        if (length > ReportLength - 11 || response[62] != Checksum(response))
         {
             return false;
         }

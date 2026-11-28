@@ -8,7 +8,8 @@ public readonly record struct StudioLayerRender(
     StudioBlendMode Blend,
     bool Enabled = true,
     Guid Id = default,
-    StudioEffectState? State = null);
+    StudioEffectState? State = null,
+    Guid TimebaseId = default);
 
 /// <summary>
 /// Deterministic layer compositor. It has no device, clock, capture, or UI
@@ -77,7 +78,7 @@ public static class StudioCompositor
                 rows,
                 columns,
                 time,
-                input,
+                input with { TriggerMask = layer.Mask },
                 layer.State);
             var alpha = Math.Clamp(layer.Opacity / 100, 0, 1);
             for (var pixel = 0; pixel < frame.Length; pixel++)
@@ -186,6 +187,7 @@ public static class StudioCompositor
 
     internal static StudioRgb Blend(StudioRgb destination, StudioRgb source, double alpha, StudioBlendMode mode)
     {
+        alpha *= 1 - Math.Clamp(source.Transparency / 100d, 0, 1);
         var d = destination;
         return new StudioRgb(
             BlendChannel(d.R, source.R, alpha, mode),

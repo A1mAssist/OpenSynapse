@@ -178,6 +178,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
             ? connection.Definition.DefaultLedZone : LightingZones.FirstOrDefault();
         _selectedLightingEffect = DefaultLightingEffect;
         _selectedPollingRate = PollingOptions.FirstOrDefault();
+        RefreshPollingOptions();
         InitializeMatrixEditor();
         RebuildScrollWheelModeChoices();
     }
@@ -306,7 +307,9 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
     public Visibility PollingWriteVisibility => VisibleWhen(Has(RazerHidBackendCapability.PollingRateWrite) &&
         PollingOptions.Count > 0);
     public IReadOnlyList<int> PollingOptions => Connection.EffectivePollingRates;
-    public IReadOnlyList<string> PollingOptionTexts => PollingOptions.Select(rate => $"{rate} Hz").ToArray();
+    private int[] _displayedPollingRates = [];
+    private string[] _pollingOptionTexts = [];
+    public IReadOnlyList<string> PollingOptionTexts => _pollingOptionTexts;
     public int SelectedPollingRateIndex
     {
         get => IndexOf(PollingOptions, SelectedPollingRate);
@@ -320,6 +323,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged, IA
         get => _selectedPollingRate;
         set
         {
+            RefreshPollingOptions();
             if (SetField(ref _selectedPollingRate, value))
             {
                 OnPropertyChanged(nameof(SelectedPollingRateIndex));

@@ -26,19 +26,37 @@ public sealed class RyzenSmuCpuPowerLimit : ICpuPowerLimitController
     private const ulong KrackanPoint = 33;
     private const ulong KrackanPoint2 = 34;
 
-    private readonly RyzenSmuSession _session;
+    private readonly TryReadTable _readTable;
+    private readonly TrySendCommand _send;
+    private readonly Action _dispose;
     private readonly SmuCommands _commands;
     private readonly CpuPowerLimit _firmware;
+    private readonly PowerLimits? _firmwareLimits;
     private bool _disposed;
 
     private RyzenSmuCpuPowerLimit(
         RyzenSmuSession session,
         SmuCommands commands,
-        CpuPowerLimit firmware)
+        CpuPowerLimit firmware,
+        ulong[] firmwareTable)
+        : this(commands, firmware, session.TryReadPowerTable, session.TrySend, session.Dispose, firmwareTable)
     {
-        _session = session;
+    }
+
+    internal RyzenSmuCpuPowerLimit(
+        SmuCommands commands,
+        CpuPowerLimit firmware,
+        TryReadTable readTable,
+        TrySendCommand send,
+        Action dispose,
+        ulong[] firmwareTable)
+    {
+        _readTable = readTable;
+        _send = send;
+        _dispose = dispose;
         _commands = commands;
         _firmware = firmware;
+        _firmwareLimits = TryDecodeLimits(firmwareTable, out var limits, out _) ? limits : null;
     }
 
     /// <summary>
@@ -74,7 +92,7 @@ public sealed class RyzenSmuCpuPowerLimit : ICpuPowerLimitController
                 return CpuPowerLimitAvailability.Failed;
             }
 
-            controller = new RyzenSmuCpuPowerLimit(session, commands.Value, firmware);
+            controller = new RyzenSmuCpuPowerLimit(session, commands.Value, firmware, table);
             detail = null;
             return CpuPowerLimitAvailability.Available;
         }
@@ -88,7 +106,7 @@ public sealed class RyzenSmuCpuPowerLimit : ICpuPowerLimitController
     public CpuPowerLimitReport Read()
     {
         ThrowIfDisposed();
-        return _session.TryReadPowerTable(out var table, out var error) &&
+        return _readTable(out var table, out var error) &&
             TryDecode(table, out var limit, out error)
                 ? BuildReport(limit)
                 : CpuPowerLimitReport.Unavailable(CpuPowerLimitAvailability.Failed, error);
@@ -111,7 +129,15 @@ public sealed class RyzenSmuCpuPowerLimit : ICpuPowerLimitController
     public CpuPowerLimitReport RestoreFirmware()
     {
         ThrowIfDisposed();
-        return RestoreTo(_firmware.Pl1Watts, _firmware.Pl2Watts);
+        if (_firmwareLimits is not { } limits ||
+            limits.Stapm > ToMilliwatts(CpuPowerLimit.MaximumRestoreWatts) ||
+            limits.Slow > ToMilliwatts(CpuPowerLimit.MaximumRestoreWatts) ||
+            limits.Fast > ToMilliwatts(CpuPowerLimit.MaximumRestoreWatts))
+        {
+            return Failed("The opening SMU snapshot is incomplete or outside the restore ceiling; nothing was written.");
+        }
+
+        return Write(limits);
     }
 
     public void Dispose()
@@ -122,7 +148,7 @@ public sealed class RyzenSmuCpuPowerLimit : ICpuPowerLimitController
         }
 
         _disposed = true;
-        _session.Dispose();
+        _dispose();
     }
 
     internal static SmuCommands? CommandsFor(ulong codeName) => codeName switch
@@ -170,39 +196,128 @@ public sealed class RyzenSmuCpuPowerLimit : ICpuPowerLimitController
     internal static uint ToMilliwatts(double watts) =>
         (uint)Math.Round(watts * MilliwattsPerWatt);
 
-    private CpuPowerLimitReport Write(CpuPowerLimit limit)
+    private CpuPowerLimitReport Write(CpuPowerLimit limit) => Write(new PowerLimits(
+        ToMilliwatts(limit.Pl1Watts), ToMilliwatts(limit.Pl1Watts), ToMilliwatts(limit.Pl2Watts)));
+
+    private CpuPowerLimitReport Write(PowerLimits requested)
     {
-        var slow = ToMilliwatts(limit.Pl1Watts);
-        var fast = ToMilliwatts(limit.Pl2Watts);
-        if (!_session.TrySend(_commands.Stapm, slow, out var error) ||
-            !_session.TrySend(_commands.Slow, slow, out error) ||
-            !_session.TrySend(_commands.Fast, fast, out error))
+        // A failed mailbox call may already have changed a limit. Snapshot all three
+        // independent targets before the first write, including STAPM (PM float 0).
+        if (!TryReadLimits(out var previous, out var error))
         {
-            return CpuPowerLimitReport.Unavailable(CpuPowerLimitAvailability.Failed, error);
+            return Failed($"Power limits could not be snapshotted; nothing was written. {error}");
         }
 
-        // PawnIO only sees whether the mailbox accepted the message. On Razer firmware the
-        // message can be accepted while the EC keeps the old table, so treat an unchanged
-        // readback as a failed write instead of showing the requested value as active.
-        if (_session.TryReadPowerTable(out var table, out _) &&
-            TryDecode(table, out var actual, out _))
+        if (TryWrite(_commands.Stapm, requested.Stapm, out error) &&
+            TryWrite(_commands.Slow, requested.Slow, out error) &&
+            TryWrite(_commands.Fast, requested.Fast, out error))
         {
-            if (Math.Abs(actual.Pl1Watts - limit.Pl1Watts) > 1 ||
-                Math.Abs(actual.Pl2Watts - limit.Pl2Watts) > 1)
+            if (TryReadLimits(out var actual, out error))
             {
-                return CpuPowerLimitReport.Unavailable(
-                    CpuPowerLimitAvailability.Failed,
-                    $"The SMU accepted the command but the power table still reports " +
-                    $"{actual.Pl1Watts:0.#} W / {actual.Pl2Watts:0.#} W.");
-            }
+                if (actual == requested)
+                {
+                    return BuildReport(actual.ToLimit());
+                }
 
-            return BuildReport(actual);
+                error = $"SMU readback mismatch: requested {requested}, read {actual}.";
+            }
         }
 
-        return CpuPowerLimitReport.Unavailable(
-            CpuPowerLimitAvailability.Failed,
-            "The SMU accepted the command but the power table could not be read back.");
+        var errors = new List<string> { error ?? "The SMU power write failed." };
+        // Never short-circuit recovery: one rejected restore must not leave the
+        // remaining targets at their requested values.
+        Restore(_commands.Stapm, previous.Stapm);
+        Restore(_commands.Slow, previous.Slow);
+        Restore(_commands.Fast, previous.Fast);
+        if (!TryReadLimits(out var restored, out error))
+        {
+            errors.Add($"Rollback could not be verified: {error}");
+            return Failed(string.Join(" ", errors));
+        }
+
+        errors.Add(restored == previous
+            ? "Previous STAPM, Slow and Fast limits restored and verified."
+            : $"Rollback failed: expected {previous}, read {restored}.");
+        return BuildReport(restored.ToLimit()) with
+        {
+            Availability = CpuPowerLimitAvailability.Failed,
+            Detail = string.Join(" ", errors),
+        };
+
+        void Restore(uint command, uint value)
+        {
+            if (!TryWrite(command, value, out var restoreError))
+            {
+                errors.Add($"Rollback command 0x{command:X2} failed: {restoreError}");
+            }
+        }
     }
+
+    private bool TryReadLimits(out PowerLimits limits, out string? error)
+    {
+        limits = default;
+        try
+        {
+            return _readTable(out var table, out error) && TryDecodeLimits(table, out limits, out error);
+        }
+        catch (Exception exception) when (IsIoFailure(exception))
+        {
+            error = exception.Message;
+            return false;
+        }
+    }
+
+    private static bool TryDecodeLimits(ulong[] table, out PowerLimits limits, out string? error)
+    {
+        limits = default;
+        if (!TryDecode(table, out _, out error)) return false;
+
+        // RyzenAdj lib/api.c: STAPM/Fast/Slow byte offsets 0x0/0x8/0x10.
+        var stapm = FloatAt(table, 0);
+        if (!(stapm >= 1 && stapm < 500))
+        {
+            error = $"The SMU table returned an implausible STAPM limit ({stapm} W).";
+            return false;
+        }
+
+        limits = new PowerLimits(ToMilliwatts(stapm),
+            ToMilliwatts(FloatAt(table, 4)), ToMilliwatts(FloatAt(table, 2)));
+        return true;
+    }
+
+    private bool TryWrite(uint command, uint value, out string? error)
+    {
+        try
+        {
+            return _send(command, value, out error);
+        }
+        catch (Exception exception) when (IsIoFailure(exception))
+        {
+            error = exception.Message;
+            return false;
+        }
+    }
+
+    private static bool IsIoFailure(Exception exception) =>
+        exception is InvalidOperationException or IOException or UnauthorizedAccessException;
+
+    private static CpuPowerLimitReport Failed(string? error) =>
+        CpuPowerLimitReport.Unavailable(CpuPowerLimitAvailability.Failed, error) with { UsesDirectSmu = true };
+
+    private readonly record struct PowerLimits(uint Stapm, uint Slow, uint Fast)
+    {
+        internal CpuPowerLimit ToLimit() => new(
+            Math.Min(Slow, Fast) / MilliwattsPerWatt,
+            Math.Max(Slow, Fast) / MilliwattsPerWatt,
+            CpuPowerLimit.MinimumTimeSeconds, CpuPowerLimit.MaximumTimeSeconds);
+
+        public override string ToString() =>
+            $"STAPM {Stapm / MilliwattsPerWatt:0.###} W, " +
+            $"Slow {Slow / MilliwattsPerWatt:0.###} W, Fast {Fast / MilliwattsPerWatt:0.###} W";
+    }
+
+    internal delegate bool TryReadTable(out ulong[] table, out string? error);
+    internal delegate bool TrySendCommand(uint command, uint value, out string? error);
 
     private CpuPowerLimitReport BuildReport(CpuPowerLimit current) => new(
         CpuPowerLimitAvailability.Available,

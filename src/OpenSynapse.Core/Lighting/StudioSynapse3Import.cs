@@ -385,8 +385,8 @@ internal static class StudioSynapse3Import
     {
         var colors = ReadColors(region);
         if (colors.Count == 0) return;
-        if (!colors[0].IsBlank) parameters.Primary = colors[0].Rgb;
-        if (count > 1 && colors.Count > 1 && !colors[1].IsBlank) parameters.Secondary = colors[1].Rgb;
+        parameters.Primary = colors[0].Rgb;
+        if (count > 1 && colors.Count > 1) parameters.Secondary = colors[1].Rgb;
     }
 
     private static void ApplyPalette(StudioEffectParams parameters, XElement region)
@@ -470,7 +470,10 @@ internal static class StudioSynapse3Import
                 new StudioRgb(
                     ReadByte(Child(color, "Red")),
                     ReadByte(Child(color, "Green")),
-                    ReadByte(Child(color, "Blue"))),
+                    ReadByte(Child(color, "Blue")))
+                {
+                    Transparency = ReadBool(Child(color, "IsBlank")) ? (byte)100 : (byte)0,
+                },
                 ReadBool(Child(color, "IsBlank"))));
         }
 

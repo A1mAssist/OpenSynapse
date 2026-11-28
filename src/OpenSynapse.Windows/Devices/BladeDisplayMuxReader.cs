@@ -181,12 +181,7 @@ internal static class BladeDisplayMuxReader
             CapabilityIds.DisplayMuxCapabilitiesGet)
             ? (CapabilityIds.DisplayMuxGet, CapabilityIds.DisplayMuxSet,
                 CapabilityIds.DisplayMuxCapabilitiesGet)
-            : HasCapabilities(
-                blade, CapabilityIds.LegacyDisplayMuxGet, CapabilityIds.LegacyDisplayMuxSet,
-                CapabilityIds.LegacyDisplayMuxCapabilitiesGet)
-                ? (CapabilityIds.LegacyDisplayMuxGet, CapabilityIds.LegacyDisplayMuxSet,
-                    CapabilityIds.LegacyDisplayMuxCapabilitiesGet)
-                : null;
+            : null;
 
     private static bool HasCapabilities(
         ResolvedRazerDevice blade,

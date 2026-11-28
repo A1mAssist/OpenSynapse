@@ -172,6 +172,9 @@ internal sealed class GiteeSource : IUpdateSource
         CancellationToken cancellationToken)
     {
         var partial = $"{localFile}.gitee-{Guid.NewGuid():N}.partial";
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(TimeSpan.FromMinutes(10));
+        cancellationToken = deadline.Token;
         try
         {
             using var response = await Http.GetAsync(
@@ -192,7 +195,7 @@ internal sealed class GiteeSource : IUpdateSource
                 var buffer = new byte[81920];
                 long received = 0;
                 int read;
-                while ((read = await input.ReadAsync(buffer, cancellationToken)) > 0)
+                while ((read = await OpenSynapse.Core.Storage.DownloadStream.ReadAsync(input, buffer, cancellationToken)) > 0)
                 {
                     await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
                     received += read;

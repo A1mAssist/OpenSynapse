@@ -125,7 +125,7 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
 
     public async Task SelectProfileAsync(string? name, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(name) ||
+        if (IsRefreshingProfiles || string.IsNullOrWhiteSpace(name) ||
             StringComparer.OrdinalIgnoreCase.Equals(name, ActiveProfileName))
         {
             return;
@@ -485,17 +485,25 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
     }
 
     /// <summary>Rebuilds the profile-derived UI and hands the shortcut settings to the shell.</summary>
+    internal bool IsRefreshingProfiles { get; private set; }
+
     internal void RefreshProfileState()
     {
         EnsureActiveProfileExtensions();
         var profile = _getProfile();
-        ProfileNames.Clear();
-        foreach (var name in ProfileCatalog.GetNames(profile))
+        IsRefreshingProfiles = true;
+        try
         {
-            ProfileNames.Add(name);
+            var names = ProfileCatalog.GetNames(profile).ToArray();
+            if (!ProfileNames.SequenceEqual(names))
+            {
+                ProfileNames.Clear();
+                foreach (var name in names) ProfileNames.Add(name);
+            }
+            ActiveProfileName = profile.ActiveProfileName;
+            OnPropertyChanged(nameof(ActiveProfileName));
         }
-
-        ActiveProfileName = profile.ActiveProfileName;
+        finally { IsRefreshingProfiles = false; }
         var shortcuts = _getActiveProfile().Shortcuts;
         var cycleModes = shortcuts.PerformanceCycleModes!
             .Where(_bladePerformanceModes().Contains)
@@ -510,7 +518,6 @@ public sealed partial class ProfilesWorkspace : INotifyPropertyChanged
         {
             ApplicationBindings.Add(new ApplicationBindingRowViewModel(binding.Key, binding.Value));
         }
-        OnPropertyChanged(nameof(ActiveProfileName));
         OnPropertyChanged(nameof(CanDeleteProfile));
     }
 

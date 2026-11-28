@@ -1,3 +1,4 @@
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
@@ -22,6 +23,7 @@ public sealed partial class RazerBleDeviceService : IDisposable
     private readonly RazerBleSession _session;
     private readonly Action<string>? _diagnostic;
     private readonly bool _requiresMappingMode;
+    private readonly ushort _productId;
     private byte? _regionId;
 
     public RazerBleDeviceService(
@@ -34,9 +36,11 @@ public sealed partial class RazerBleDeviceService : IDisposable
         Name = name;
         _diagnostic = diagnostic;
         _requiresMappingMode = productId == 0x00B5;
+        _productId = productId;
     }
 
     public string Name { get; }
+    public bool IsKeyboard => RazerProductAliases.IsBleAlias(_productId);
 
     /// <summary>Onboard profile the mapping table is read from and written to.</summary>
     public byte MappingProfileId
@@ -157,12 +161,14 @@ public sealed partial class RazerBleDeviceService : IDisposable
         try
         {
             var response = await _session.SendAsync(
-                transaction => RazerBleProtocol30.CreateGetButtonList(transaction, MappingProfileId),
+                transaction => IsKeyboard
+                    ? RazerBleProtocol30.CreateGetKeyList(transaction, MappingProfileId)
+                    : RazerBleProtocol30.CreateGetButtonList(transaction, MappingProfileId),
                 "get button list", cancellationToken).ConfigureAwait(false);
             EnsureSuccess(response, "get button list");
-            return RazerBleProtocol30.ReadButtonList(response);
+            return IsKeyboard ? RazerBleProtocol30.ReadKeyList(response) : RazerBleProtocol30.ReadButtonList(response);
         }
-        catch (InvalidOperationException exception)
+        catch (InvalidOperationException exception) when (!IsKeyboard)
         {
             // Razer's onboard-memory path takes the button table from the product bundle
             // and never requires 08:80, so a silent firmware keeps the page usable.
@@ -181,6 +187,8 @@ public sealed partial class RazerBleDeviceService : IDisposable
     private async Task<RazerBleButtonAssignment> GetButtonAssignmentCoreAsync(
         byte buttonId, byte mode, CancellationToken cancellationToken)
     {
+        if (IsKeyboard)
+            return await GetKeyAssignmentAsync(MappingProfileId, buttonId, mode, cancellationToken).ConfigureAwait(false);
         var response = await _session.SendAsync(
             transaction => RazerBleProtocol30.CreateGetButtonAssignment(
                 transaction, MappingProfileId, buttonId),
@@ -203,7 +211,13 @@ public sealed partial class RazerBleDeviceService : IDisposable
     private async Task SetButtonAssignmentCoreAsync(
         byte buttonId, byte mode, byte functionId, ReadOnlyMemory<byte> data, CancellationToken cancellationToken)
     {
-        var normalized = RazerHidMappingActions.NormalizeKeyData(functionId, data.ToArray(), 0);
+        var normalized = RazerHidMappingActions.NormalizeKeyData(functionId, data.ToArray(),
+            RazerProductAliases.Canonical(_productId));
+        if (IsKeyboard)
+        {
+            await SetKeyAssignmentAsync(MappingProfileId, buttonId, mode, functionId, normalized, cancellationToken).ConfigureAwait(false);
+            return;
+        }
         var response = await _session.SendAsync(
             transaction => RazerBleProtocol30.CreateSetButtonAssignment(
                 transaction, MappingProfileId, buttonId, mode, functionId, normalized),

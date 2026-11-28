@@ -48,6 +48,10 @@ public enum RazerChromaChannel
     /// the Basilisk V4 family, 030C-0317 IoT lamps and wireless ARGB controllers.
     /// </summary>
     LegacyBrightness,
+    /// <summary>Class03 brightness and LedMatrix effects (Core X V2).</summary>
+    LedMatrix,
+    /// <summary>Device body controls only; no implemented lighting channel.</summary>
+    None,
 }
 
 /// <summary>
@@ -103,15 +107,7 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
             [0x00EB] = ("Razer Basilisk V4 HyperSpeed", DeviceCategory.Mouse),
             [0x00EF] = ("Razer DeathAdder V4 Pro Carbon Fiber Edition", DeviceCategory.Mouse),
             [0x00F1] = ("Razer Mouse Dock V2 Pro", DeviceCategory.Accessory),
-            [0x030A] = ("Razer Chroma Addressable RGB Controller", DeviceCategory.Accessory),
             [0x0F1F] = ("Razer Chroma Addressable RGB Controller", DeviceCategory.Accessory),
-            [0x030C] = ("Razer Key Light Chroma", DeviceCategory.Accessory),
-            [0x030D] = ("Razer Aether Lamp Pro", DeviceCategory.Accessory),
-            [0x030E] = ("Razer Aether Lamp", DeviceCategory.Accessory),
-            [0x030F] = ("Razer Aether Light Bulb", DeviceCategory.Accessory),
-            [0x0310] = ("Razer Aether Light Strip", DeviceCategory.Accessory),
-            [0x0316] = ("Razer Aether Monitor Light Bar", DeviceCategory.Accessory),
-            [0x0317] = ("Razer Aether Standing Light Bars", DeviceCategory.Accessory),
             [0x0F27] = ("Tomahawk Gaming Desktop", DeviceCategory.Accessory),
             [0x0F28] = ("Razer Raptor 27", DeviceCategory.Monitor),
             [0x0F2C] = ("Razer Chroma Wireless ARGB Controller", DeviceCategory.Accessory),
@@ -146,9 +142,8 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
         Action<string>? diagnostic = null,
         CancellationToken cancellationToken = default)
     {
-        var interfaces = await WindowsHidDiscovery.FindVendorFeatureInterfacesAsync(
+        var interfaces = await WindowsHidDiscovery.FindVendorInterfacesAsync(
             0x1532,
-            RazerFeatureReport.Length,
             cancellationToken).ConfigureAwait(false);
 
         var connections = SelectConnections(interfaces);
@@ -170,10 +165,12 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
 
     public async Task<RazerChromaStandardState> ReadStateAsync(CancellationToken cancellationToken = default)
     {
+        if (_channel == RazerChromaChannel.None)
+            return new(null, null, [], null, null, null, null, []);
         var errors = new List<string>();
         byte? brightness = null;
         if (_channel is RazerChromaChannel.Standard or RazerChromaChannel.LegacyPerLed or
-            RazerChromaChannel.LegacyBrightness)
+            RazerChromaChannel.LegacyBrightness or RazerChromaChannel.LedMatrix)
         {
             try
             {
@@ -198,7 +195,11 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
         IReadOnlyList<byte> colors = [];
         try
         {
-            if (_channel is RazerChromaChannel.Legacy or RazerChromaChannel.LegacyPerLed or
+            if (_channel == RazerChromaChannel.LedMatrix)
+            {
+                // FiverV2 exposes a matrix effect setter without a matching getter.
+            }
+            else if (_channel is RazerChromaChannel.Legacy or RazerChromaChannel.LegacyPerLed or
                 RazerChromaChannel.LegacyBrightness)
             {
                 var legacy = RazerLegacyChromaProtocol.ReadEffect(
@@ -206,7 +207,7 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
                         .ConfigureAwait(false));
                 // Class 0x0F and 0x10 share the Kw effect ids; 4 is Wave, while
                 // AudioMeter is 10 and is not part of the legacy UI set.
-                effect = legacy.EffectId <= (byte)RazerChromaEffect.Wave
+                effect = Enum.IsDefined((RazerChromaEffect)legacy.EffectId)
                     ? (RazerChromaEffect)legacy.EffectId
                     : null;
                 colors = legacy.Colors;
@@ -267,6 +268,7 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
 
     public async Task SetBrightnessAsync(byte percent, CancellationToken cancellationToken = default)
     {
+        if (_channel == RazerChromaChannel.None) throw new NotSupportedException("Lighting is not implemented for this device.");
         if (_channel == RazerChromaChannel.Legacy)
         {
             throw new NotSupportedException("Class 0x0F devices expose no brightness command.");
@@ -277,7 +279,7 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
             throw new ArgumentOutOfRangeException(nameof(percent), "Brightness must be between 0 and 100.");
         }
 
-        if (_channel == RazerChromaChannel.LegacyPerLed)
+        if (_channel is RazerChromaChannel.LegacyPerLed or RazerChromaChannel.LedMatrix)
         {
             await SetLegacyPerLedBrightnessAsync(percent, cancellationToken).ConfigureAwait(false);
             return;
@@ -361,6 +363,13 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
         }
 
         var payload = colors.ToArray();
+        if (_channel == RazerChromaChannel.None) throw new NotSupportedException("Lighting is not implemented for this device.");
+        if (_channel == RazerChromaChannel.LedMatrix)
+        {
+            await QueryAsync(transaction => RazerLegacyChromaProtocol.SetMatrixEffect(transaction, effect, payload),
+                "set matrix effect", cancellationToken).ConfigureAwait(false);
+            return;
+        }
         if (_channel is RazerChromaChannel.Legacy or RazerChromaChannel.LegacyPerLed or
             RazerChromaChannel.LegacyBrightness)
         {
@@ -470,9 +479,16 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
         {
             EnsureLegacyEffectRestorable(snapshot);
         }
-        var expectedFlags = effect == RazerChromaEffect.Breathing ? (byte)(payload.Length / 3) : (byte)0;
+        byte expectedFlags = effect switch
+        {
+            RazerChromaEffect.Breathing or RazerChromaEffect.Starlight => (byte)(payload.Length / 3),
+            RazerChromaEffect.Wave => 1,
+            _ => 0,
+        };
+        // Middleware's default wave speed is 33; starlight uses a one-second duration.
+        byte rate = effect switch { RazerChromaEffect.Wave => 33, RazerChromaEffect.Starlight => 1, _ => 0 };
         if (previous is { } current &&
-            LegacyEffectMatches(current, effect, expectedFlags, 0, payload, compareColors: payload.Length > 0))
+            LegacyEffectMatches(current, effect, expectedFlags, rate, payload, compareColors: payload.Length > 0))
         {
             return;
         }
@@ -480,7 +496,7 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
         try
         {
             await QueryAsync(
-                transaction => RazerLegacyChromaProtocol.SetEffect(transaction, effect, payload),
+                transaction => RazerLegacyChromaProtocol.SetEffect(transaction, effect, payload, flags: expectedFlags, rate: rate),
                 "set effect",
                 cancellationToken).ConfigureAwait(false);
 
@@ -497,7 +513,7 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
                 throw new InvalidOperationException(
                     "Effect readback became unavailable after the update.");
             }
-            if (LegacyEffectMatches(stored.Value, effect, expectedFlags, 0, payload, compareColors: payload.Length > 0))
+            if (LegacyEffectMatches(stored.Value, effect, expectedFlags, rate, payload, compareColors: payload.Length > 0))
             {
                 return;
             }
@@ -635,6 +651,8 @@ public sealed partial class RazerChromaStandardService : IRazerHeadsetLightingSe
         CancellationToken cancellationToken)
     {
         var report = request(NextTransactionId());
+        if (_productId == 0x02DA && !(report[7] == 0 && report[8] is 0x41 or 0x46)) report[2] |= 0x80;
+        if (_productId == 0x0F19) report[2] = 0x1F;
         _diagnostic?.Invoke(
             $"chroma {label}: size={report[6]}, class=0x{report[7]:X2}, command=0x{report[8]:X2}");
         return await _transport.QueryPreparedAsync(

@@ -63,6 +63,7 @@ public sealed partial class RazerBleDeviceViewModel
                 powerSource,
                 ProfileResolver.Resolve(document, descriptor, powerSource)),
             cancellationToken);
+        await LoadHapticStageAsync(cancellationToken);
     }
 
     private async Task<bool> RunWriteAsync<T>(

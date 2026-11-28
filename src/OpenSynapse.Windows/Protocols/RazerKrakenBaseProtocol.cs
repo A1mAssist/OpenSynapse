@@ -12,7 +12,8 @@ internal static class RazerKrakenBaseProtocol
     internal const int ReportLength = 37;
 
     internal static byte[] CreateFirmwareRequest() => Frame(4, 32, 2, 0, 48);
-    internal static byte[] CreateSerialNumberRequest() => Frame(4, 32, 22, 127, 0);
+    internal static byte[] CreateSerialNumberRequest(ushort productId = 0) =>
+        productId == 0x0520 ? Frame(4, 32, 22, 0x3F, 0xB0) : Frame(4, 32, 22, 127, 0);
     internal static byte[] CreateHardwareIdRequest() => Frame(4, 32, 1, 127, 33);
 
     // The bundle writes 37 bytes through a USB control transfer; the HID collection
@@ -25,9 +26,11 @@ internal static class RazerKrakenBaseProtocol
         return padded;
     }
 
-    internal static Version? ParseFirmware(ReadOnlySpan<byte> response)
+    internal static Version? ParseFirmware(ReadOnlySpan<byte> response, ushort productId = 0)
     {
         if (response.Length < 3) return null;
+        if (productId is 0x0520 or 0x0526 or 0x0527 or 0x0529)
+            return new Version(response[2], response[1], 0, 0);
         return new Version(
             (response[2] >> 4) & 0xF,
             response[2] & 0xF,

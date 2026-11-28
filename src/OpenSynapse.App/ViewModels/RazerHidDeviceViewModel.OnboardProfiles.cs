@@ -190,7 +190,7 @@ public sealed partial class RazerHidDeviceViewModel
     /// </summary>
     private async Task<bool> ReadOnboardProfilesAsync(CancellationToken cancellationToken)
     {
-        var currentId = SelectedOnboardProfileId;
+        var previousActiveId = _activeOnboardProfileKnown ? ActiveOnboardProfileId : (byte)0;
         var idsUnavailable = false;
         IReadOnlyList<byte>? ids = null;
 
@@ -297,8 +297,13 @@ public sealed partial class RazerHidDeviceViewModel
             _onboardProfileNameSignature = nameSignature;
         }
 
-        _onboardProfileIds = ids ?? BuildFallbackProfileIds(OnboardProfileCount, OnboardMaxProfiles);
-        OnPropertyChanged(nameof(OnboardProfileOptions));
+        var currentId = SelectedOnboardProfileId;
+        var previousOptions = OnboardProfileOptions;
+        var newIds = ids ?? BuildFallbackProfileIds(OnboardProfileCount, OnboardMaxProfiles);
+        var idsChanged = !_onboardProfileIds.SequenceEqual(newIds);
+        _onboardProfileIds = newIds;
+        if (idsChanged || namesChanged || !previousOptions.SequenceEqual(OnboardProfileOptions))
+            OnPropertyChanged(nameof(OnboardProfileOptions));
         OnPropertyChanged(nameof(ActiveOnboardProfileText));
 
         if (idsUnavailable && OnboardMaxProfiles > 0)
@@ -306,7 +311,10 @@ public sealed partial class RazerHidDeviceViewModel
             SetOnboardProfileStatus(AppStrings.Text("RazerHidOnboardProfileIdsUnavailable"), isError: false);
         }
 
-        var targetId = _activeOnboardProfileKnown ? ActiveOnboardProfileId : currentId;
+        // Polling must not discard an unapplied choice while the active slot is unchanged.
+        var hasDraft = currentId != 0 && currentId != previousActiveId &&
+            (!_activeOnboardProfileKnown || ActiveOnboardProfileId == previousActiveId);
+        var targetId = hasDraft || !_activeOnboardProfileKnown ? currentId : ActiveOnboardProfileId;
         var index = IndexOfOnboardProfile(targetId);
         SelectedOnboardProfileIndex = index >= 0 ? index : (_onboardProfileIds.Count > 0 ? 0 : -1);
         NotifyStateChanged();

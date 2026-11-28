@@ -32,12 +32,16 @@ internal sealed class RazerMixer053ETransport : IRazerMixer053ETransport
     private const int MaxStatusReadAttempts = 3;
 
     private readonly SafeFileHandle _handle;
-    private readonly SemaphoreSlim _gate = new(1, 1);
+    private readonly SemaphoreSlim _gate;
+    private readonly string _devicePath;
     private bool _disposed;
+    private Task? _pending;
 
     internal RazerMixer053ETransport(string devicePath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(devicePath);
+        _devicePath = devicePath;
+        _gate = RazerFeatureTransport.EndpointGate(devicePath);
 
         _handle = NativeMethods.CreateFile(
             devicePath,
@@ -62,7 +66,8 @@ internal sealed class RazerMixer053ETransport : IRazerMixer053ETransport
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await Task.Run(() =>
+            ThrowIfUnavailable();
+            await RunNativeAsync(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (!NativeMethods.HidD_SetFeature(_handle, report, report.Length))
@@ -71,6 +76,7 @@ internal sealed class RazerMixer053ETransport : IRazerMixer053ETransport
                         Marshal.GetLastWin32Error(),
                         "053E HID feature report failed.");
                 }
+                return true;
             }, cancellationToken).ConfigureAwait(false);
         }
         finally
@@ -91,16 +97,13 @@ internal sealed class RazerMixer053ETransport : IRazerMixer053ETransport
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            var sent = await CancellableNativeCall.RunAsync(
-                () => NativeMethods.HidD_SetFeature(_handle, request, request.Length),
-                ResponseTimeout,
-                cancellationToken).ConfigureAwait(false);
-            if (!sent)
+            ThrowIfUnavailable();
+            await RunNativeAsync(() =>
             {
-                throw new Win32Exception(
-                    Marshal.GetLastWin32Error(),
-                    "053E HID feature request failed.");
-            }
+                if (!NativeMethods.HidD_SetFeature(_handle, request, request.Length))
+                    throw new Win32Exception(Marshal.GetLastWin32Error(), "053E HID feature request failed.");
+                return true;
+            }, cancellationToken).ConfigureAwait(false);
 
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(ResponseTimeout);
@@ -110,9 +113,8 @@ internal sealed class RazerMixer053ETransport : IRazerMixer053ETransport
                 {
                     var candidate = new byte[RazerMixer053EProtocol.FeatureReportLength];
                     candidate[0] = RazerMixer053EProtocol.FeatureReportId;
-                    var success = await CancellableNativeCall.RunAsync(
+                    var success = await RunNativeAsync(
                         () => NativeMethods.HidD_GetFeature(_handle, candidate, candidate.Length),
-                        ResponseTimeout,
                         timeout.Token).ConfigureAwait(false);
                     if (success && isMatch(candidate))
                     {
@@ -149,7 +151,8 @@ internal sealed class RazerMixer053ETransport : IRazerMixer053ETransport
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await Task.Run(() =>
+            ThrowIfUnavailable();
+            await RunNativeAsync(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 // Synapse's AudioMixer uses hid.write for the 66-byte output report;
@@ -160,6 +163,7 @@ internal sealed class RazerMixer053ETransport : IRazerMixer053ETransport
                         Marshal.GetLastWin32Error(),
                         "053E HID output report failed.");
                 }
+                return true;
             }, cancellationToken).ConfigureAwait(false);
         }
         finally
@@ -176,11 +180,11 @@ internal sealed class RazerMixer053ETransport : IRazerMixer053ETransport
         {
             for (var attempt = 0; attempt < MaxStatusReadAttempts; attempt++)
             {
+                ThrowIfUnavailable();
                 var report = new byte[RazerMixer053EProtocol.StatusReportLength];
                 report[0] = RazerMixer053EProtocol.StatusReportId;
-                var success = await CancellableNativeCall.RunAsync(
+                var success = await RunNativeAsync(
                     () => NativeMethods.HidD_GetInputReport(_handle, report, report.Length),
-                    ResponseTimeout,
                     cancellationToken).ConfigureAwait(false);
                 if (success && report[0] == RazerMixer053EProtocol.StatusReportId)
                 {
@@ -201,17 +205,33 @@ internal sealed class RazerMixer053ETransport : IRazerMixer053ETransport
         }
     }
 
-    public ValueTask DisposeAsync()
+    private void ThrowIfUnavailable()
     {
-        if (_disposed)
-        {
-            return ValueTask.CompletedTask;
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_pending is not null) throw new IOException("Mixer session cannot be reused after an unfinished HID call.");
+        RazerFeatureTransport.ThrowIfNativeCallPending(_devicePath);
+    }
 
-        _disposed = true;
-        _handle.Dispose();
-        _gate.Dispose();
-        return ValueTask.CompletedTask;
+    private Task<T> RunNativeAsync<T>(Func<T> call, CancellationToken cancellationToken) =>
+        CancellableNativeCall.RunAsync(call, ResponseTimeout, cancellationToken, pending =>
+        {
+            _pending = pending;
+            RazerFeatureTransport.TrackPendingCall(_devicePath, pending);
+        });
+
+    public async ValueTask DisposeAsync()
+    {
+        await _gate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            if (_disposed) return;
+            _disposed = true;
+            if (_pending is { IsCompleted: false } pending)
+                _ = pending.ContinueWith(_ => _handle.Dispose(), CancellationToken.None,
+                    TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            else _handle.Dispose();
+        }
+        finally { _gate.Release(); }
     }
 
     private static void ValidateFeatureReport(byte[] report)

@@ -6,7 +6,7 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class RazerHidWorkspace
 {
-    private sealed record DisplayZoneSnapshot(RazerHidLedZone Zone, bool StateOnly);
+    private sealed record DisplayZoneSnapshot(RazerHidLedZone Zone, bool? Enabled);
 
     private sealed record DisplayDeviceSnapshot(
         ushort ProductId,
@@ -18,12 +18,14 @@ public sealed partial class RazerHidWorkspace
     private readonly Dictionary<string, DisplayDeviceSnapshot> _displayLightingSnapshots =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly SemaphoreSlim _displayLightingGate = new(1, 1);
+    private bool _displayLightingAvailable = true;
 
     internal async Task SetDisplayLightingAvailableAsync(bool available)
     {
         await _displayLightingGate.WaitAsync().ConfigureAwait(true);
         try
         {
+            _displayLightingAvailable = available;
             if (available)
             {
                 await RestoreDisplayLightingAsync().ConfigureAwait(false);
@@ -101,7 +103,6 @@ public sealed partial class RazerHidWorkspace
             }
         }
 
-        using var overall = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         _displayLightingSnapshots.Clear();
         var turnedOff = 0;
         var failed = 0;
@@ -109,9 +110,6 @@ public sealed partial class RazerHidWorkspace
                      connection.IsReady &&
                      connection.Definition.Category != DeviceCategory.Laptop))
         {
-            using var deviceTimeout = CancellationTokenSource.CreateLinkedTokenSource(overall.Token);
-            deviceTimeout.CancelAfter(TimeSpan.FromMilliseconds(700));
-            var token = deviceTimeout.Token;
             var storage = connection.Definition.DefaultStorage;
             var needsBaseline = connection.LightingZones.Any(pair =>
                 !pair.Value.CanWriteState &&
@@ -122,10 +120,11 @@ public sealed partial class RazerHidWorkspace
             {
                 try
                 {
-                    baseline = await RazerHidLightingBaseline.CaptureAsync(service, connection, token)
+                    using var captureTimeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(700));
+                    baseline = await RazerHidLightingBaseline.CaptureAsync(service, connection, captureTimeout.Token)
                         .ConfigureAwait(false);
                 }
-                catch (Exception exception) when (exception is not OperationCanceledException)
+                catch (Exception exception)
                 {
                     _diagnosticLog.TryWrite(
                         "lighting-display-razorhid",
@@ -137,6 +136,24 @@ public sealed partial class RazerHidWorkspace
             var needsFallback = false;
             foreach (var (zone, capabilities) in connection.LightingZones)
             {
+                bool? enabled = null;
+                if (capabilities.CanWriteState && capabilities.CanReadState)
+                {
+                    try
+                    {
+                        using var captureTimeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+                        enabled = await service.GetLedStateAsync(connection, storage, zone, captureTimeout.Token)
+                            .ConfigureAwait(false);
+                    }
+                    catch (Exception exception)
+                    {
+                        _diagnosticLog.TryWrite("lighting-display-razorhid",
+                            $"1532:{connection.Definition.ProductId:X4} {zone} state capture failed: {exception.Message}");
+                    }
+                }
+                // A slow or unsupported read must not consume the budget for the Off write.
+                using var writeTimeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(1500));
+                var token = writeTimeout.Token;
                 try
                 {
                     if (capabilities.CanWriteState)
@@ -144,7 +161,8 @@ public sealed partial class RazerHidWorkspace
                         await service.SetLedStateAsync(
                                 connection, storage, zone, false, token)
                             .ConfigureAwait(false);
-                        zones.Add(new DisplayZoneSnapshot(zone, StateOnly: true));
+                        zones.Add(new DisplayZoneSnapshot(zone, enabled));
+                        needsFallback |= enabled is null;
                         turnedOff++;
                     }
                     else if (capabilities.LightingEffects.Contains(RazerHidLightingEffect.Off))
@@ -157,8 +175,8 @@ public sealed partial class RazerHidWorkspace
                                     Zone: zone),
                                 token)
                             .ConfigureAwait(false);
-                        zones.Add(new DisplayZoneSnapshot(zone, StateOnly: false));
-                        needsFallback |= baseline is null;
+                        zones.Add(new DisplayZoneSnapshot(zone, null));
+                        needsFallback |= baseline?.CanRestoreEffectFor(zone) != true;
                         turnedOff++;
                     }
                 }
@@ -210,11 +228,12 @@ public sealed partial class RazerHidWorkspace
         var restored = 0;
         var failed = 0;
         var missing = 0;
-        var hadSoftwareLighting = false;
-        using var overall = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        var configuredRestore = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var stateRestores = new List<(RazerHidDeviceConnection Connection, DisplayZoneSnapshot Zone)>();
         foreach (var (instanceId, snapshot) in _displayLightingSnapshots.ToArray())
         {
-            hadSoftwareLighting |= snapshot.HadSoftwareLighting;
+            if (snapshot.HadSoftwareLighting || snapshot.NeedsFallback)
+                configuredRestore.Add(instanceId);
             var connection = connections.FirstOrDefault(candidate =>
                 candidate.IsReady &&
                 StringComparer.OrdinalIgnoreCase.Equals(candidate.InstanceId, instanceId));
@@ -224,33 +243,10 @@ public sealed partial class RazerHidWorkspace
                 continue;
             }
 
-            using var deviceTimeout = CancellationTokenSource.CreateLinkedTokenSource(overall.Token);
-            deviceTimeout.CancelAfter(TimeSpan.FromMilliseconds(700));
+            using var deviceTimeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(1500));
             var token = deviceTimeout.Token;
-            var storage = connection.Definition.DefaultStorage;
-            foreach (var zone in snapshot.Zones.Where(item => item.StateOnly))
-            {
-                try
-                {
-                    await service.SetLedStateAsync(connection, storage, zone.Zone, true, token)
-                        .ConfigureAwait(false);
-                    restored++;
-                }
-                catch (Exception exception) when (exception is not OperationCanceledException)
-                {
-                    failed++;
-                    _diagnosticLog.TryWrite(
-                        "lighting-display-razorhid",
-                        $"1532:{snapshot.ProductId:X4} {zone.Zone} restore failed: {exception.Message}");
-                }
-                catch (OperationCanceledException) when (token.IsCancellationRequested)
-                {
-                    failed++;
-                    _diagnosticLog.TryWrite(
-                        "lighting-display-razorhid",
-                        $"1532:{snapshot.ProductId:X4} {zone.Zone} restore timed out.");
-                }
-            }
+            foreach (var zone in snapshot.Zones.Where(item => item.Enabled is not null))
+                stateRestores.Add((connection, zone));
 
             if (snapshot.Baseline is not null)
             {
@@ -265,6 +261,7 @@ public sealed partial class RazerHidWorkspace
                     }
                     else
                     {
+                        configuredRestore.Add(instanceId);
                         failed += failures.Count;
                         foreach (var failure in failures)
                         {
@@ -276,6 +273,7 @@ public sealed partial class RazerHidWorkspace
                 }
                 catch (Exception exception) when (exception is not OperationCanceledException)
                 {
+                    configuredRestore.Add(instanceId);
                     failed++;
                     _diagnosticLog.TryWrite(
                         "lighting-display-razorhid",
@@ -283,50 +281,24 @@ public sealed partial class RazerHidWorkspace
                 }
                 catch (OperationCanceledException) when (token.IsCancellationRequested)
                 {
+                    configuredRestore.Add(instanceId);
                     failed++;
                     _diagnosticLog.TryWrite(
                         "lighting-display-razorhid",
                         $"1532:{snapshot.ProductId:X4} baseline restore timed out.");
                 }
             }
-            else if (snapshot.NeedsFallback)
-            {
-                try
-                {
-                    if (await RazerHidLightingBaseline
-                            .ApplyExitEffectAsync(service, connection, token)
-                            .ConfigureAwait(false))
-                    {
-                        restored++;
-                    }
-                    else
-                    {
-                        failed++;
-                    }
-                }
-                catch (Exception exception) when (exception is not OperationCanceledException)
-                {
-                    failed++;
-                    _diagnosticLog.TryWrite(
-                        "lighting-display-razorhid",
-                        $"1532:{snapshot.ProductId:X4} fallback lighting failed: {exception.Message}");
-                }
-                catch (OperationCanceledException) when (token.IsCancellationRequested)
-                {
-                    failed++;
-                }
-            }
         }
 
         _displayLightingSnapshots.Clear();
-        if (hadSoftwareLighting)
+        if (configuredRestore.Count > 0)
         {
             try
             {
-                using var restoreTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-                await RunOnDispatcherAsync(() =>
-                        _softwareLightingOwner.RestoreAsync(
-                            connections, SelectedDevice, restoreTimeout.Token))
+                using var restoreTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(2 * configuredRestore.Count));
+                await RunOnDispatcherAsync(async () =>
+                    failed += (await _softwareLightingOwner.RestoreAsync(
+                        connections, SelectedDevice, restoreTimeout.Token, configuredRestore, requireRestore: true)).Count)
                     .ConfigureAwait(false);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
@@ -340,6 +312,24 @@ public sealed partial class RazerHidWorkspace
                 _diagnosticLog.TryWrite(
                     "lighting-display-razorhid",
                     "software lighting restore timed out.");
+            }
+        }
+
+        // Apply captured switches last so replaying the card cannot turn on a previously disabled zone.
+        foreach (var (connection, zone) in stateRestores)
+        {
+            try
+            {
+                using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(1500));
+                await service.SetLedStateAsync(connection, connection.Definition.DefaultStorage,
+                    zone.Zone, zone.Enabled!.Value, timeout.Token).ConfigureAwait(false);
+                restored++;
+            }
+            catch (Exception exception)
+            {
+                failed++;
+                _diagnosticLog.TryWrite("lighting-display-razorhid",
+                    $"1532:{connection.Definition.ProductId:X4} {zone.Zone} restore failed: {exception.Message}");
             }
         }
 

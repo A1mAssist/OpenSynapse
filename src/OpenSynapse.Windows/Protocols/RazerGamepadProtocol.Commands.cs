@@ -224,11 +224,11 @@ public static partial class RazerGamepadProtocol
         byte buttonId,
         RazerGamepadButtonMode mode)
     {
-        var arguments = new byte[80];
+        var arguments = new byte[10];
         arguments[0] = profileId;
         arguments[1] = buttonId;
         arguments[2] = (byte)mode;
-        return CreateForClass(transactionId, 80, ButtonCommandClass, SingleButtonAssignmentGet, arguments);
+        return CreateForClass(transactionId, 10, ButtonCommandClass, SingleButtonAssignmentGet, arguments);
     }
 
     public static byte[] CreateSetButtonAssignmentRequest(
@@ -240,19 +240,19 @@ public static partial class RazerGamepadProtocol
         byte dataSize,
         ReadOnlySpan<byte> data)
     {
-        if (dataSize > 5 || data.Length > 5)
+        if (dataSize > 5 || data.Length > 5 || data.Length < dataSize)
         {
             throw new ArgumentException("Button-assignment data is limited to five bytes.", nameof(data));
         }
 
-        var arguments = new byte[80];
+        var arguments = new byte[10];
         arguments[0] = profileId;
         arguments[1] = buttonId;
         arguments[2] = (byte)mode;
         arguments[3] = (byte)function;
         arguments[4] = dataSize;
         data.CopyTo(arguments.AsSpan(5));
-        return CreateForClass(transactionId, 80, ButtonCommandClass, SingleButtonAssignmentSet, arguments);
+        return CreateForClass(transactionId, 10, ButtonCommandClass, SingleButtonAssignmentSet, arguments);
     }
 
     /// <summary>The middleware sends the command tuple itself as the raw-input argument block.</summary>

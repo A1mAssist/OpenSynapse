@@ -256,7 +256,7 @@ public static partial class StudioProjectCodec
             dto.AmbientMapping = p.AmbientMapping;
         if (p.AudioStyle != StudioAudioStyle.Level)
             dto.AudioStyle = p.AudioStyle.ToString().ToLowerInvariant();
-        if (p.ReactiveStyle != StudioReactiveStyle.Ripple)
+        if (p.Effect == StudioEffectKind.Reactive || p.ReactiveStyle != StudioReactiveStyle.KeyFade)
             dto.ReactiveStyle = p.ReactiveStyle.ToString().ToLowerInvariant();
         if (!string.IsNullOrWhiteSpace(p.Preset)) dto.Preset = p.Preset;
         var preset = p.PresetDefinition ??
@@ -386,8 +386,8 @@ public static partial class StudioProjectCodec
     private sealed class LayerExtrasDto { public double? Opacity { get; set; } public string? Blend { get; set; } public string? Effect { get; set; } }
     private sealed class ParamsDto
     {
-        public int Color { get; set; }
-        public int Color2 { get; set; }
+        public int? Color { get; set; }
+        public int? Color2 { get; set; }
         public string? Effect { get; set; }
         public List<ColorStopDto>? ColorStops { get; set; }
         public bool? ColorStopsCustom { get; set; }
@@ -435,7 +435,7 @@ public static partial class StudioProjectCodec
     private sealed class ColorStopDto
     {
         [JsonPropertyName("Stop")] public int Stop { get; set; }
-        [JsonPropertyName("Color")] public int Color { get; set; }
+        [JsonPropertyName("Color")] public int? Color { get; set; }
     }
     private sealed class ScreenRectDto
     {

@@ -89,8 +89,10 @@ public static partial class StudioProjectCodec
                 var name = GetString(extras, "name");
                 if (!string.IsNullOrWhiteSpace(name)) project.Name = name;
             }
+            var reactiveDefault = schemaVersion <= 2 && TryGet(root, "openSynapse", out _)
+                ? StudioReactiveStyle.Ripple : StudioReactiveStyle.KeyFade;
             foreach (var profile in profiles.EnumerateArray())
-                if (profile.ValueKind == JsonValueKind.Object) project.Profiles.Add(ReadProfile(profile));
+                if (profile.ValueKind == JsonValueKind.Object) project.Profiles.Add(ReadProfile(profile, reactiveDefault));
             if (project.Profiles.Count == 0) project.Profiles.Add(new StudioProfile("Default"));
             NormalizeDefaultProfile(project);
             var selected = TryGet(root, "openSynapse", out extras) && extras.ValueKind == JsonValueKind.Object
@@ -220,9 +222,14 @@ public static partial class StudioProjectCodec
         element.TryGetInt32(out var value) ? (byte)Math.Clamp(value, 0, 255)
         : element.TryGetDouble(out var raw) ? (byte)Math.Clamp(Math.Round(raw), 0, 255)
         : (byte)0;
-    private static int Pack(StudioRgb color) => (color.R << 16) | (color.G << 8) | color.B;
+    private static int? Pack(StudioRgb color) => color.Transparency >= 100
+        ? null
+        : (color.Transparency << 24) | (color.R << 16) | (color.G << 8) | color.B;
     private static StudioRgb FromPacked(int packed) =>
-        new((byte)((packed >> 16) & 0xFF), (byte)((packed >> 8) & 0xFF), (byte)(packed & 0xFF));
+        new((byte)((packed >> 16) & 0xFF), (byte)((packed >> 8) & 0xFF), (byte)(packed & 0xFF))
+        {
+            Transparency = (byte)Math.Clamp((packed >> 24) & 0xFF, 0, 100),
+        };
     private static int FromUnit(double value) =>
         Math.Clamp((int)Math.Round(value * 65535, MidpointRounding.AwayFromZero), 0, 65535);
     private static double ToUnit(int value) => Math.Clamp(value / 65535d, 0, 1);

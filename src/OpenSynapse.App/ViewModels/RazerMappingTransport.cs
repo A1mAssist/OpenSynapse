@@ -13,6 +13,7 @@ public sealed record RazerMappingAssignment(byte FunctionId, IReadOnlyList<byte>
 public interface IRazerMappingTransport
 {
     bool SupportsHyperShift => true;
+
     Task<IReadOnlyList<byte>> GetButtonIdsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -97,6 +98,8 @@ public sealed class RazerHidMappingTransport(
 
 public sealed class RazerBleMappingTransport(RazerBleDeviceService service) : IRazerMappingTransport
 {
+    public bool SupportsHyperShift => !service.IsKeyboard;
+
     public Task RunInMappingModeAsync(Func<CancellationToken, Task> action,
         CancellationToken cancellationToken = default, bool forWrite = false) =>
         service.RunMappingModeSessionAsync(action, cancellationToken);

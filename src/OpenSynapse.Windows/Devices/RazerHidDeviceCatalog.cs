@@ -74,6 +74,12 @@ public sealed class RazerHidDeviceDefinition
     public ushort ProductId { get; }
     public string DisplayName { get; }
     public DeviceCategory Category { get; }
+    public bool UsesReceiverIndicatorModes => Category == DeviceCategory.Mouse;
+    // These are the dongleId values declared by the mouse middleware, not the wired siblings.
+    public bool HasReceiverIndicator => ProductId is
+        0x005A or 0x0072 or 0x007D or 0x0083 or 0x0090 or 0x0094 or 0x009C or
+        0x00AB or 0x00B0 or 0x00B7 or 0x00B8 or 0x00B9 or 0x00C1 or 0x00C3 or
+        0x00C5 or 0x00C8 or 0x00CD or 0x00D1 or 0x00D4 or 0x00DB;
     internal IReadOnlySet<string> SourceCapabilities { get; }
     public int? MaximumDpi { get; }
     public IReadOnlyList<int> PollingRates { get; }
@@ -227,8 +233,28 @@ public sealed partial class RazerHidDeviceCatalog
         }
 
         AddLocallyAdmittedDevices(devices);
+        AddReceiverIndicatorCommands(devices);
 
         return new RazerHidDeviceCatalog(devices);
+    }
+
+    private static void AddReceiverIndicatorCommands(IDictionary<ushort, RazerHidDeviceDefinition> devices)
+    {
+        // The product bundle owns these commands, but Synapse sends them to its dongleId.
+        foreach (var receiver in devices.Values.Where(device => device.HasReceiverIndicator).ToArray())
+        {
+            if (!devices.TryGetValue(RazerProductAliases.Canonical(receiver.ProductId), out var product)) continue;
+            var capabilities = new HashSet<string>(receiver.SourceCapabilities, StringComparer.Ordinal);
+            var transactions = new Dictionary<string, byte>(receiver.Transactions, StringComparer.Ordinal);
+            foreach (var capability in new[] { "get_indicator_led_configuration", "set_indicator_led_configuration" })
+            {
+                var builder = "razer_chroma_misc_" + capability;
+                if (!product.Transactions.TryGetValue(builder, out var transaction)) continue;
+                transactions.TryAdd(builder, transaction);
+                capabilities.Add(capability);
+            }
+            devices[receiver.ProductId] = receiver.WithCapabilitiesAndTransactions(capabilities, transactions);
+        }
     }
 
     private static void AddDocument(

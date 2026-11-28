@@ -257,6 +257,10 @@ internal static class TaskbarStatusNative
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool PhysicalToLogicalPointForPerMonitorDPI(IntPtr window, ref Point point);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool ClientToScreen(IntPtr windowHandle, ref Point point);
 
     [DllImport("user32.dll")]

@@ -160,7 +160,8 @@ public sealed partial class StudioWorldCanvas
         var layers = BuildLayers(profile, worldDevices, ref hasChromaFile);
         var legacyWorld = worldDevices.Length >= 2 && !hasChromaFile;
         var mappedLayers = BuildMappedLayers(profile, worldDevices);
-        var usesLayerMapping = mappedLayers.Any(layer => IsMappedAmbient(layer.Render.Params));
+        var usesLayerMapping = mappedLayers.Any(layer =>
+            IsMappedAmbient(layer.Render.Params) || IsKeyFade(layer.Render.Params));
         var active = legacyWorld || usesLayerMapping;
         return new StudioWorldCanvas(
             active, minX, minY, worldWidth, worldHeight, scale, offsetX, offsetY, worldDevices, layers)
@@ -337,7 +338,7 @@ public sealed partial class StudioWorldCanvas
                 if (mask.Any(value => value != 0))
                 {
                     result.Add(new StudioLayerRender(
-                        region.Params, mask, layer.Opacity, layer.Blend, layer.Visible, layer.Id));
+                        region.Params, mask, layer.Opacity, layer.Blend, layer.Visible, region.PlaybackId, TimebaseId: layer.Id));
                 }
             }
         }

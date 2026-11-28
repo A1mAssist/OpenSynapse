@@ -10,6 +10,8 @@ public sealed partial class RazerChromaStandardService
     /// protocol cannot re-encode must still be able to turn off.
     /// </summary>
     public Task TurnOffForShutdownAsync(CancellationToken cancellationToken = default) =>
+        _channel == RazerChromaChannel.None ? Task.CompletedTask :
+        _channel == RazerChromaChannel.LedMatrix ? SetEffectAsync(RazerChromaEffect.Off, [], cancellationToken) :
         _channel is RazerChromaChannel.Legacy or RazerChromaChannel.LegacyPerLed or
             RazerChromaChannel.LegacyBrightness
             ? SetLegacyEffectAsync(RazerChromaEffect.Off, [], cancellationToken)

@@ -1,3 +1,4 @@
+using OpenSynapse.Core.Devices;
 using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
@@ -15,7 +16,7 @@ public sealed record RazerGamepadLightingState(
 
 public sealed partial class RazerGamepadService
 {
-    public static bool SupportsLighting(ushort productId) => productId is 0x0A4C or 0x1013;
+    public static bool SupportsLighting(ushort productId) => RazerProductAliases.Canonical(productId) is 0x0A4C or 0x1013;
 
     public async Task<RazerGamepadLightingState> ReadLightingAsync(
         CancellationToken cancellationToken = default)

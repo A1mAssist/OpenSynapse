@@ -8,9 +8,7 @@ internal sealed record RazerDockState(
     string? Error);
 
 /// <summary>
-/// Mouse Dock V2 Pro's two body switches. The profile and LED ids live in bytes 3 and 4
-/// of the 91-byte frame; the bundle passes profile 0 and the dock LED id through those
-/// header fields, not the data payload.
+/// Mouse Dock V2 Pro's switches; dock sync carries profile/LED selectors in the payload.
 /// </summary>
 internal static class RazerDockAccessoryProtocol
 {
@@ -22,30 +20,42 @@ internal static class RazerDockAccessoryProtocol
     internal const byte SetChargingEffect = 0x10;
 
     internal static byte[] CreateGetDockSync(byte profileId, byte ledId, byte transactionId) =>
-        RazerAccessoryProtocol.CreateProfileRequest(
-            transactionId, profileId, ledId, 0, CommandClass, GetDockSync, []);
+        RazerFeatureReport.CreateRequest(
+            transactionId, 3, CommandClass, GetDockSync, [profileId, ledId, 0]);
 
     internal static byte[] CreateSetDockSync(
         byte profileId,
         byte ledId,
         bool enabled,
         byte transactionId) =>
-        RazerAccessoryProtocol.CreateProfileRequest(
-            transactionId, profileId, ledId, 1, CommandClass, SetDockSync,
-            [enabled ? (byte)1 : (byte)0]);
+        RazerFeatureReport.CreateRequest(
+            transactionId, 3, CommandClass, SetDockSync,
+            [profileId, ledId, enabled ? (byte)1 : (byte)0]);
 
     internal static byte[] CreateGetChargingEffect(byte profileId, byte transactionId) =>
-        RazerAccessoryProtocol.CreateProfileRequest(
-            transactionId, profileId, 0, 0, CommandClass, GetChargingEffect, []);
+        RazerFeatureReport.CreateRequest(
+            transactionId, 1, CommandClass, GetChargingEffect, [0]);
 
     internal static byte[] CreateSetChargingEffect(
         byte profileId,
         bool enabled,
         byte transactionId) =>
-        RazerAccessoryProtocol.CreateProfileRequest(
-            transactionId, profileId, 0, 1, CommandClass, SetChargingEffect,
+        RazerFeatureReport.CreateRequest(
+            transactionId, 1, CommandClass, SetChargingEffect,
             [enabled ? (byte)1 : (byte)0]);
 
-    internal static bool ReadEnabled(byte[] response) =>
-        RazerAccessoryProtocol.Arguments(response) is { Length: > 0 } data && data[0] != 0;
+    internal static bool ReadDockSync(byte[] response, byte profileId = 0, byte ledId = 0)
+    {
+        var data = RazerAccessoryProtocol.Arguments(response);
+        if (data.Length < 3 || data[0] != profileId || data[1] != ledId)
+            throw new InvalidDataException("Dock sync response has invalid selectors or length.");
+        return data[2] != 0;
+    }
+
+    internal static bool ReadEnabled(byte[] response)
+    {
+        var data = RazerAccessoryProtocol.Arguments(response);
+        if (data.Length < 1) throw new InvalidDataException("Dock charging-effect response is empty.");
+        return data[0] != 0;
+    }
 }

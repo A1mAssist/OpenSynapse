@@ -52,6 +52,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         MicEqBands,
         AutoSleep,
         ExternalPower,
+        SpatialMode,
     }
 
     private static readonly HeadsetCapability[] Feature91Capabilities =
@@ -305,6 +306,8 @@ public sealed partial class RazerHeadsetAudioViewModel
                 }
             }
 
+            if (_connection.ProductId == 0x0548) capabilities.Add(HeadsetCapability.SpatialMode);
+
             return capabilities.ToArray();
         }
     }
@@ -421,6 +424,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         HeadsetCapability.MicEqBands => _hasMicEqBands,
         HeadsetCapability.AutoSleep => _hasCarolPower,
         HeadsetCapability.ExternalPower => _carolExternalPowerStatus is not null,
+        HeadsetCapability.SpatialMode => _spatialMode is not null,
         _ => false,
     };
 
@@ -434,6 +438,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         _hasCharging = false;
         _hasEqPreset = false;
         _hasEqBands = false;
+        _spatialMode = null;
         _hasBass = false;
         _hasMicMuted = false;
         _hasMicVolume = false;
@@ -473,6 +478,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         OnPropertyChanged(nameof(ProtocolAvailableCount));
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(CanEdit));
+        OnPropertyChanged(nameof(CanEditSpatialMode));
         OnPropertyChanged(nameof(CanRefresh));
         OnPropertyChanged(nameof(CanApplyLighting));
         OnPropertyChanged(nameof(EqPresetVisibility));
@@ -484,7 +490,7 @@ public sealed partial class RazerHeadsetAudioViewModel
         state.Firmware is not null || state.BatteryPercent is not null || state.Charging is not null ||
         state.EqPreset is not null || state.EqBands is not null || state.MicBands is not null ||
         state.Bass is not null || state.MicMuted is not null || state.MicVolume is not null ||
-        state.AudioSource is not null || state.NoiseSuppression is not null || state.AncState is not null ||
+        state.AudioSource is not null || state.SpatialMode is not null || state.NoiseSuppression is not null || state.AncState is not null ||
         state.AncLevel is not null || state.ParametricEq is not null || state.MicCompressor is not null ||
         state.MicDeEsser is not null || state.MicReverb is not null || state.MicLimiter is not null ||
         state.MicHpf is not null || state.MicLimiterEnabled is not null ||

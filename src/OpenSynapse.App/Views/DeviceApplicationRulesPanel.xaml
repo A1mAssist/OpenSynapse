@@ -1,9 +1,12 @@
 <UserControl x:Name="Root" x:Class="OpenSynapse.App.Views.DeviceApplicationRulesPanel"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:viewModels="using:OpenSynapse.App.ViewModels" xmlns:local="using:OpenSynapse.App">
-  <Expander local:Localized.Uid="DeviceRulesHeader" Header="按程序自动切换" HorizontalAlignment="Stretch" AutomationProperties.AutomationId="DeviceApplicationRulesExpander">
-    <StackPanel Spacing="12" Padding="0,12,0,0">
-      <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+  <Border Style="{StaticResource CardStyle}" Padding="16" AutomationProperties.AutomationId="DeviceApplicationRulesCard">
+    <StackPanel Spacing="12">
+      <TextBlock local:Localized.Uid="DeviceRulesHeader/Header" Text="按程序自动切换"
+                 FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
+      <TextBlock Text="{Binding StatusText}" Visibility="{Binding StatusVisibility}"
+                 Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
       <ToggleSwitch local:Localized.Uid="DeviceRulesEnable" Header="启用此设备的自动切换" IsOn="{Binding Enabled, Mode=TwoWay}" OnContent="" OffContent="" />
       <ItemsControl x:Name="RulesList" ItemsSource="{Binding Rules}">
         <ItemsControl.ItemTemplate><DataTemplate x:DataType="viewModels:DeviceApplicationRuleRowViewModel">
@@ -22,5 +25,5 @@
       </Grid>
       <Button local:Localized.Uid="DeviceRulesBrowse" Content="选择 exe 并重新关联当前设备" Click="BrowseApplicationClick" Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left" />
     </StackPanel>
-  </Expander>
+  </Border>
 </UserControl>

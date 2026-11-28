@@ -282,7 +282,7 @@ public static class RazerGipHeadsetProtocol
         switch (ResolveDialect(productId))
         {
             case RazerGipHeadsetDialect.Simone:
-                if (frame[1] != 0xAA || ReadUInt16BigEndian(frame, 2) != command)
+                if (frame[1] != 0xAA || ReadUInt16BigEndian(frame, 6) != command)
                 {
                     return false;
                 }
@@ -325,7 +325,16 @@ public static class RazerGipHeadsetProtocol
                 {
                     return false;
                 }
-                payload = frame[4..];
+                if ((command & 0x8000) != 0)
+                {
+                    if (frame[3] != 1) return false;
+                    if (frame[4] != 0)
+                    {
+                        retry = frame[4] == 1;
+                        return false;
+                    }
+                }
+                payload = Slice(frame, 4, frame[3], 56);
                 return true;
 
             case RazerGipHeadsetDialect.SimoneX:

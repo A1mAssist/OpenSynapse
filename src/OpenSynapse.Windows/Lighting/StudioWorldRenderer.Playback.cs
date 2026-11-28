@@ -19,6 +19,11 @@ public sealed partial class StudioWorldRenderer
         public void Update(StudioWorldCanvas canvas)
         {
             _canvas = canvas;
+            var activeDevices = canvas.Devices.Select(device => device.InstanceId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            foreach (var id in _keys.Keys.Where(id => !activeDevices.Contains(id)).ToArray()) _keys.Remove(id);
+            foreach (var id in _triggers.Keys.Where(id => !activeDevices.Contains(id)).ToArray()) _triggers.Remove(id);
+            foreach (var layer in canvas.MappedLayers)
+                _timeline.EffectStates.For(layer.Render.Id).RetainScopes(activeDevices);
             foreach (var device in canvas.Devices)
             {
                 if (!_keys.TryGetValue(device.InstanceId, out var keys) ||

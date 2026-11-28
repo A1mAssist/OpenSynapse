@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 
@@ -8,8 +7,6 @@ namespace OpenSynapse.Windows.Protocols;
 internal sealed class RazerHidHidReportTransport
 {
     private static readonly TimeSpan SendTimeout = TimeSpan.FromSeconds(2);
-    private readonly ConcurrentDictionary<string, SemaphoreSlim> _gates =
-        new(StringComparer.OrdinalIgnoreCase);
 
     internal Task SendOutputAsync(
         string devicePath,
@@ -32,11 +29,12 @@ internal sealed class RazerHidHidReportTransport
             throw new ArgumentException("The HID report cannot be empty.", nameof(report));
         }
 
-        var gate = _gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
+        var gate = RazerFeatureTransport.EndpointGate(devicePath);
         await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await CancellableNativeCall.RunAsync(() =>
+            RazerFeatureTransport.ThrowIfNativeCallPending(devicePath);
+            await CancellableNativeCall.RunAsync(token =>
             {
                 using var handle = NativeMethods.CreateFile(
                     devicePath,
@@ -52,6 +50,7 @@ internal sealed class RazerHidHidReportTransport
                 }
 
                 var bytes = report.ToArray();
+                token.ThrowIfCancellationRequested();
                 if (!NativeMethods.HidD_SetFeature(handle, bytes, bytes.Length))
                 {
                     throw new Win32Exception(Marshal.GetLastWin32Error(),
@@ -59,7 +58,7 @@ internal sealed class RazerHidHidReportTransport
                 }
 
                 return true;
-            }, SendTimeout, cancellationToken).ConfigureAwait(false);
+            }, SendTimeout, cancellationToken, task => RazerFeatureTransport.TrackPendingCall(devicePath, task)).ConfigureAwait(false);
         }
         finally
         {
@@ -79,13 +78,12 @@ internal sealed class RazerHidHidReportTransport
             throw new ArgumentException("The HID report cannot be empty.", nameof(report));
         }
 
-        var gate = _gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
+        var gate = RazerFeatureTransport.EndpointGate(devicePath);
         await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            // CancellableNativeCall stops the blocking call at the deadline instead of
-            // leaving it queued in the HID driver behind every later request.
-            return await CancellableNativeCall.RunAsync(() =>
+            RazerFeatureTransport.ThrowIfNativeCallPending(devicePath);
+            return await CancellableNativeCall.RunAsync(token =>
             {
                 using var handle = NativeMethods.CreateFile(
                     devicePath,
@@ -101,6 +99,7 @@ internal sealed class RazerHidHidReportTransport
                 }
 
                 var bytes = report.ToArray();
+                token.ThrowIfCancellationRequested();
                 if (!NativeMethods.WriteFile(
                         handle,
                         bytes,
@@ -113,6 +112,7 @@ internal sealed class RazerHidHidReportTransport
                         "RazerHid output report write failed.");
                 }
 
+                token.ThrowIfCancellationRequested();
                 var buffer = new byte[64];
                 if (!NativeMethods.ReadFile(
                         handle,
@@ -127,7 +127,7 @@ internal sealed class RazerHidHidReportTransport
                 }
 
                 return buffer[..(int)read];
-            }, timeout, cancellationToken).ConfigureAwait(false);
+            }, timeout, cancellationToken, task => RazerFeatureTransport.TrackPendingCall(devicePath, task)).ConfigureAwait(false);
         }
         finally
         {
@@ -153,11 +153,12 @@ internal sealed class RazerHidHidReportTransport
             throw new ArgumentException("The HID report cannot be empty.", nameof(report));
         }
 
-        var gate = _gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
+        var gate = RazerFeatureTransport.EndpointGate(devicePath);
         await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            return await CancellableNativeCall.RunAsync(() =>
+            RazerFeatureTransport.ThrowIfNativeCallPending(devicePath);
+            return await CancellableNativeCall.RunAsync(token =>
             {
                 using var handle = NativeMethods.CreateFile(
                     devicePath,
@@ -173,6 +174,7 @@ internal sealed class RazerHidHidReportTransport
                 }
 
                 var bytes = report.ToArray();
+                token.ThrowIfCancellationRequested();
                 if (!NativeMethods.HidD_SetOutputReport(handle, bytes, bytes.Length))
                 {
                     throw new Win32Exception(Marshal.GetLastWin32Error(),
@@ -183,6 +185,7 @@ internal sealed class RazerHidHidReportTransport
                 for (var attempt = 0; attempt < 5; attempt++)
                 {
                     Thread.Sleep(30);
+                    token.ThrowIfCancellationRequested();
                     buffer[0] = RazerCamyT1Protocol.ReportId;
                     if (!NativeMethods.HidD_GetInputReport(handle, buffer, buffer.Length) ||
                         buffer[2] != expectedCommand)
@@ -195,7 +198,7 @@ internal sealed class RazerHidHidReportTransport
 
                 throw new InvalidDataException(
                     $"CamyT1 command {expectedCommand:X2} did not answer.");
-            }, timeout, cancellationToken).ConfigureAwait(false);
+            }, timeout, cancellationToken, task => RazerFeatureTransport.TrackPendingCall(devicePath, task)).ConfigureAwait(false);
         }
         finally
         {
@@ -215,11 +218,12 @@ internal sealed class RazerHidHidReportTransport
             throw new ArgumentException("The HID report cannot be empty.", nameof(report));
         }
 
-        var gate = _gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
+        var gate = RazerFeatureTransport.EndpointGate(devicePath);
         await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await CancellableNativeCall.RunAsync(() =>
+            RazerFeatureTransport.ThrowIfNativeCallPending(devicePath);
+            await CancellableNativeCall.RunAsync(token =>
             {
                 using var handle = NativeMethods.CreateFile(
                     devicePath,
@@ -234,6 +238,7 @@ internal sealed class RazerHidHidReportTransport
                     throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not open the CamyT1 HID collection.");
                 }
 
+                token.ThrowIfCancellationRequested();
                 var bytes = report.ToArray();
                 if (!NativeMethods.HidD_SetOutputReport(handle, bytes, bytes.Length))
                 {
@@ -242,7 +247,7 @@ internal sealed class RazerHidHidReportTransport
                 }
 
                 return true;
-            }, timeout, cancellationToken).ConfigureAwait(false);
+            }, timeout, cancellationToken, task => RazerFeatureTransport.TrackPendingCall(devicePath, task)).ConfigureAwait(false);
         }
         finally
         {
@@ -261,11 +266,12 @@ internal sealed class RazerHidHidReportTransport
             throw new ArgumentException("The HID report cannot be empty.", nameof(report));
         }
 
-        var gate = _gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
+        var gate = RazerFeatureTransport.EndpointGate(devicePath);
         await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await CancellableNativeCall.RunAsync(() =>
+            RazerFeatureTransport.ThrowIfNativeCallPending(devicePath);
+            await CancellableNativeCall.RunAsync(token =>
             {
                 using var handle = NativeMethods.CreateFile(
                     devicePath,
@@ -280,6 +286,7 @@ internal sealed class RazerHidHidReportTransport
                     throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not open the RazerHid HID collection.");
                 }
 
+                token.ThrowIfCancellationRequested();
                 var bytes = report.ToArray();
                 if (!NativeMethods.WriteFile(
                         handle,
@@ -294,7 +301,7 @@ internal sealed class RazerHidHidReportTransport
                 }
 
                 return true;
-            }, SendTimeout, cancellationToken).ConfigureAwait(false);
+            }, SendTimeout, cancellationToken, task => RazerFeatureTransport.TrackPendingCall(devicePath, task)).ConfigureAwait(false);
         }
         finally
         {

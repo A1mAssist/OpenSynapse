@@ -99,7 +99,7 @@ public sealed partial class LightingStudioViewModel
                 var mask = StudioMaskBuilder.BuildRegion(region, productId, instanceId, rows, columns);
                 if (!HasMask(mask)) continue;
                 layers.Add(new StudioLayerRender(
-                    region.Params, mask, layer.Opacity, layer.Blend, layer.Visible, layer.Id));
+                    region.Params, mask, layer.Opacity, layer.Blend, layer.Visible, region.PlaybackId, TimebaseId: layer.Id));
             }
         }
 

@@ -21,6 +21,9 @@ public sealed partial class StudioWorldCanvas
         parameters.Effect == StudioEffectKind.Ambient &&
         parameters.AmbientMapping is StudioAmbientMapping.PerDevice or StudioAmbientMapping.SharedCanvas;
 
+    private static bool IsKeyFade(StudioEffectParams parameters) =>
+        parameters.Effect == StudioEffectKind.Reactive && parameters.ReactiveStyle == StudioReactiveStyle.KeyFade;
+
     private static StudioWorldLayer[] BuildMappedLayers(
         StudioProfile? profile, IReadOnlyList<StudioWorldDevice> devices)
     {
@@ -29,10 +32,10 @@ public sealed partial class StudioWorldCanvas
         foreach (var layer in profile.EnumerateLayers())
         {
             if (layer.IsGroup) continue;
-            var segments = new List<(StudioEffectParams Params, StudioWorldLayerTarget[] Targets)>();
+            var segments = new List<(Guid Id, StudioEffectParams Params, StudioWorldLayerTarget[] Targets)>();
             if (layer.Regions.Count == 0)
             {
-                segments.Add((layer.Params, devices.Select(device =>
+                segments.Add((layer.Id, layer.Params, devices.Select(device =>
                     new StudioWorldLayerTarget(device, null, null)).ToArray()));
             }
             else
@@ -48,7 +51,7 @@ public sealed partial class StudioWorldCanvas
                             device.InstanceId, device.MatrixRows, device.MatrixColumns);
                         if (mask.Any(value => value != 0)) targets.Add(new(device, mask, null));
                     }
-                    if (targets.Count > 0) segments.Add((region.Params, targets.ToArray()));
+                    if (targets.Count > 0) segments.Add((region.PlaybackId, region.Params, targets.ToArray()));
                 }
             }
 
@@ -60,7 +63,7 @@ public sealed partial class StudioWorldCanvas
             var minY = participants.Min(device => device.LedBounds.MinY);
             var maxX = participants.Max(device => device.LedBounds.MaxX);
             var maxY = participants.Max(device => device.LedBounds.MaxY);
-            foreach (var (parameters, targets) in segments)
+            foreach (var (id, parameters, targets) in segments)
             {
                 for (var index = 0; index < targets.Length; index++)
                 {
@@ -73,8 +76,13 @@ public sealed partial class StudioWorldCanvas
                     targets[index] = target with { Coordinates = coordinates };
                 }
 
-                result.Add(new(new StudioLayerRender(parameters, null,
-                    layer.Opacity, layer.Blend, layer.Visible, layer.Id), targets));
+                var worldMask = new byte[GridSize * GridSize];
+                foreach (var target in targets)
+                    for (var pixel = 0; pixel < target.Device.WorldIndices.Length; pixel++)
+                        if (target.Mask is null || target.Mask[pixel] > 0)
+                            worldMask[target.Device.WorldIndices[pixel]] = StudioMaskBuilder.Full;
+                result.Add(new(new StudioLayerRender(parameters, worldMask,
+                    layer.Opacity, layer.Blend, layer.Visible, id, TimebaseId: layer.Id), targets));
             }
         }
         return result.ToArray();
@@ -100,8 +108,10 @@ public sealed partial class StudioWorldCanvas
             if (!layer.Enabled || layer.Opacity <= 0) continue;
             var time = double.IsFinite(seconds) ? Math.Max(0, seconds) : 0;
             var mapped = IsMappedAmbient(layer.Params);
-            var world = UsesLegacyWorld && !mapped
-                ? StudioEffectRenderer.Render(layer.Params, Rows, Columns, time, input, layer.State)
+            // Reactive belongs to physical keys even when device drawings overlap.
+            var world = UsesLegacyWorld && !mapped && !IsKeyFade(layer.Params)
+                ? StudioEffectRenderer.Render(layer.Params, Rows, Columns, time,
+                    input with { TriggerMask = layer.Mask }, layer.State)
                 : null;
             foreach (var target in MappedLayers[index].Targets)
             {
@@ -110,6 +120,7 @@ public sealed partial class StudioWorldCanvas
                 var localInput = input;
                 if (deviceKeys?.TryGetValue(device.InstanceId, out var keys) == true)
                     localInput = input with { Keys = keys };
+                localInput = localInput with { TriggerMask = target.Mask };
                 var effect = world ?? (mapped
                     ? StudioEffectRenderer.RenderMappedAmbient(layer.Params, device.MatrixRows,
                         device.MatrixColumns, target.Coordinates!, localInput)

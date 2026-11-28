@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Text;
 using OpenSynapse.Core.Sensors;
 using static OpenSynapse.Windows.Lifecycle.TaskbarStatusNative;
 
@@ -27,6 +28,7 @@ public sealed partial class TaskbarStatusWindow
         out int height)
     {
         x = y = width = height = 0;
+        surface.LayoutUnsafe = false;
         var taskbar = surface.Taskbar;
         if (!GetWindowRect(taskbar, out var taskbarRect) ||
             !GetClientRect(taskbar, out var client))
@@ -64,6 +66,13 @@ public sealed partial class TaskbarStatusWindow
             _snapshot.Batteries.Count, TaskbarStatusPolicy.MaximumBatteryCount);
         if (batteryCount <= 0) return false;
 
+        if (!TryGetTrayBounds(surface, taskbarRect, out var trayRect))
+        {
+            surface.LayoutUnsafe = true;
+            return false;
+        }
+        var region = GetFreeRegion(taskbar, client, vertical, trayRect);
+
         if (vertical)
         {
             var verticalWidth = Math.Min(
@@ -93,9 +102,8 @@ public sealed partial class TaskbarStatusWindow
 
             var rowHeight = Math.Max(
                 1, (int)Math.Round(VerticalRowHeightDip * scale));
-            var (regionStart, regionEnd, fromStart) = GetFreeRegion(
-                taskbar, client, vertical: true);
-            var obstacles = GetForeignTaskbarObstacles(
+            var (regionStart, regionEnd, fromStart) = region;
+            var obstacles = GetTaskbarObstacles(
                 taskbar,
                 vertical: true,
                 crossExtent: client.Width,
@@ -122,6 +130,7 @@ public sealed partial class TaskbarStatusWindow
                 y = top;
                 return true;
             }
+            surface.LayoutUnsafe = true;
             return false;
         }
 
@@ -139,9 +148,8 @@ public sealed partial class TaskbarStatusWindow
 
         var maximumWidth = (int)Math.Round(MaximumWidthDip * scale);
         var minimumWidth = (int)Math.Round(BaseWidthDip * scale);
-        var (horizontalStart, horizontalEnd, horizontalFromStart) =
-            GetFreeRegion(taskbar, client, vertical: false);
-        var horizontalObstacles = GetForeignTaskbarObstacles(
+        var (horizontalStart, horizontalEnd, horizontalFromStart) = region;
+        var horizontalObstacles = GetTaskbarObstacles(
             taskbar,
             vertical: false,
             crossExtent: client.Height,
@@ -168,78 +176,77 @@ public sealed partial class TaskbarStatusWindow
             y = Math.Max(0, (clientHeight - height) / 2);
             return true;
         }
+        surface.LayoutUnsafe = true;
         return false;
     }
 
-    private static (int Start, int End, bool FromStart) GetFreeRegion(
+    internal static (int Start, int End, bool FromStart) GetFreeRegion(
         IntPtr taskbar,
         Rect client,
-        bool vertical)
+        bool vertical,
+        Rect trayRect)
     {
-        var tray = FindWindowExW(taskbar, IntPtr.Zero, "TrayNotifyWnd", null);
-        if (tray != IntPtr.Zero && GetWindowRect(tray, out var trayRect))
+        var topLeft = new Point { X = trayRect.Left, Y = trayRect.Top };
+        var bottomRight = new Point { X = trayRect.Right, Y = trayRect.Bottom };
+        if (ScreenToClient(taskbar, ref topLeft) &&
+            ScreenToClient(taskbar, ref bottomRight))
         {
-            var topLeft = new Point { X = trayRect.Left, Y = trayRect.Top };
-            var bottomRight = new Point { X = trayRect.Right, Y = trayRect.Bottom };
-            if (ScreenToClient(taskbar, ref topLeft) &&
-                ScreenToClient(taskbar, ref bottomRight))
+            if (bottomRight.X <= 0 || topLeft.X >= client.Width ||
+                bottomRight.Y <= 0 || topLeft.Y >= client.Height)
+                return (0, 0, false);
+            topLeft.X = Math.Clamp(topLeft.X, 0, client.Width);
+            topLeft.Y = Math.Clamp(topLeft.Y, 0, client.Height);
+            bottomRight.X = Math.Clamp(bottomRight.X, 0, client.Width);
+            bottomRight.Y = Math.Clamp(bottomRight.Y, 0, client.Height);
+            if (vertical)
             {
-                if (vertical)
+                var trayCenter = (topLeft.Y + bottomRight.Y) / 2;
+                if (trayCenter > client.Height / 2)
                 {
-                    var trayCenter = (topLeft.Y + bottomRight.Y) / 2;
-                    if (trayCenter > client.Height / 2)
-                    {
-                        return (0, Math.Max(0, topLeft.Y), false);
-                    }
-                    return (Math.Min(client.Height, bottomRight.Y), client.Height, true);
+                    return (0, Math.Max(0, topLeft.Y), false);
                 }
-
-                var trayCenterX = (topLeft.X + bottomRight.X) / 2;
-                if (trayCenterX > client.Width / 2)
-                {
-                    var taskListRight = 0;
-                    var taskList = FindTaskList(taskbar);
-                    if (taskList != IntPtr.Zero &&
-                        IsWindowVisible(taskList) &&
-                        GetWindowRect(taskList, out var taskListRect))
-                    {
-                        var taskListRightPoint = new Point
-                        {
-                            X = taskListRect.Right,
-                            Y = taskListRect.Top,
-                        };
-                        if (ScreenToClient(taskbar, ref taskListRightPoint))
-                        {
-                            taskListRight = taskListRightPoint.X;
-                        }
-                    }
-                    return TaskbarStatusLayout.GetHorizontalRegion(
-                        client.Width,
-                        topLeft.X,
-                        bottomRight.X,
-                        taskListRight);
-                }
-                return (Math.Min(client.Width, bottomRight.X), client.Width, true);
+                return (Math.Min(client.Height, bottomRight.Y), client.Height, true);
             }
-        }
 
-        return vertical
-            ? (0, client.Height, false)
-            : (0, client.Width, false);
+            var trayCenterX = (topLeft.X + bottomRight.X) / 2;
+            if (trayCenterX > client.Width / 2)
+            {
+                var taskListRight = 0;
+                var taskList = FindTaskList(taskbar);
+                if (taskList != IntPtr.Zero &&
+                    IsWindowVisible(taskList) &&
+                    GetWindowRect(taskList, out var taskListRect))
+                {
+                    var taskListRightPoint = new Point
+                    {
+                        X = taskListRect.Right,
+                        Y = taskListRect.Top,
+                    };
+                    if (ScreenToClient(taskbar, ref taskListRightPoint))
+                    {
+                        taskListRight = taskListRightPoint.X;
+                    }
+                }
+                return TaskbarStatusLayout.GetHorizontalRegion(
+                    client.Width,
+                    topLeft.X,
+                    bottomRight.X,
+                    taskListRight);
+            }
+            return (Math.Min(client.Width, bottomRight.X), client.Width, true);
+        }
+        return (0, 0, false);
     }
 
-    private static IReadOnlyList<TaskbarStatusObstacle> GetForeignTaskbarObstacles(
+    internal static IReadOnlyList<TaskbarStatusObstacle> GetTaskbarObstacles(
         IntPtr taskbar,
         bool vertical,
         int crossExtent,
         int freeExtent)
     {
-        // Third-party taskbar overlays and the shell's own app-button strip are
-        // both obstacles; the tray is handled as the free-region boundary.
+        // Explorer's clocks and app buttons occupy space even without TrayNotifyWnd.
         var obstacles = new List<TaskbarStatusObstacle>();
-        AddTaskListObstacle(
-            taskbar, vertical, crossExtent, freeExtent, obstacles);
-
+        var name = new StringBuilder(128);
         _ = GetWindowThreadProcessId(taskbar, out var shellProcessId);
         var ownProcessId = (uint)Environment.ProcessId;
         _ = EnumChildWindows(taskbar, (child, _) =>
@@ -254,7 +261,12 @@ public sealed partial class TaskbarStatusWindow
             GetWindowThreadProcessId(child, out var processId);
             if (processId == shellProcessId || processId == ownProcessId)
             {
-                return true;
+                GetClassNameW(child, name, name.Capacity);
+                if (name.ToString() is not ("TrayNotifyWnd" or "TrayClockWClass" or
+                    "ClockButton" or "MSTaskSwWClass" or "MSTaskListWClass" or "Start"))
+                {
+                    return true;
+                }
             }
 
             AddObstacle(taskbar, rect, vertical, crossExtent, freeExtent, obstacles);
@@ -263,37 +275,84 @@ public sealed partial class TaskbarStatusWindow
         return obstacles;
     }
 
-    private static void AddTaskListObstacle(
-        IntPtr taskbar,
-        bool vertical,
-        int crossExtent,
-        int freeExtent,
-        List<TaskbarStatusObstacle> obstacles)
+    internal static bool TryGetNativeTrayBounds(IntPtr taskbar, out Rect bounds)
     {
-        var taskList = FindTaskList(taskbar);
-        if (taskList == IntPtr.Zero ||
-            !IsWindowVisible(taskList) ||
-            !GetWindowRect(taskList, out var rect) ||
-            rect.Width <= 0 || rect.Height <= 0)
+        Rect? found = null;
+        var name = new StringBuilder(128);
+        EnumChildWindows(taskbar, (child, _) =>
         {
-            return;
-        }
+            GetClassNameW(child, name, name.Capacity);
+            if (name.ToString() is "TrayNotifyWnd" or "TrayClockWClass" or "ClockButton" &&
+                IsWindowVisible(child) && GetWindowRect(child, out var rect) &&
+                rect.Width > 0 && rect.Height > 0)
+            {
+                found = found is { } previous ? new Rect
+                {
+                    Left = Math.Min(previous.Left, rect.Left),
+                    Top = Math.Min(previous.Top, rect.Top),
+                    Right = Math.Max(previous.Right, rect.Right),
+                    Bottom = Math.Max(previous.Bottom, rect.Bottom),
+                } : rect;
+            }
+            return true;
+        }, IntPtr.Zero);
+        bounds = found.GetValueOrDefault();
+        return found.HasValue;
+    }
 
-        AddObstacle(
-            taskbar,
-            rect,
-            vertical,
-            crossExtent,
-            freeExtent,
-            obstacles);
+    private static bool TryGetTrayBounds(StatusSurface surface, Rect taskbarRect, out Rect bounds)
+    {
+        if (TryGetNativeTrayBounds(surface.Taskbar, out bounds)) return true;
+
+        var sameBounds = surface.TrayQueryBounds.Equals(taskbarRect) &&
+            surface.TrayQueryDpi == surface.Dpi;
+        if (!sameBounds) surface.AutomationTrayBounds = null;
+        if (surface.TrayQuery is { IsCompleted: true } query)
+        {
+            surface.AutomationTrayBounds = sameBounds &&
+                Environment.TickCount64 < surface.NextTrayQuery + 1000 && query.IsCompletedSuccessfully
+                ? query.Result : null;
+            _ = query.Exception;
+            surface.TrayQuery = null;
+        }
+        if (surface.TrayQuery is null &&
+            (!sameBounds || Environment.TickCount64 >= surface.NextTrayQuery))
+        {
+            surface.TrayQueryBounds = taskbarRect;
+            surface.TrayQueryDpi = surface.Dpi;
+            surface.NextTrayQuery = Environment.TickCount64 + 1000;
+            var taskbar = surface.Taskbar;
+            surface.TrayQuery = Task.Run(() => TaskbarStatusAutomation.ReadTrayBounds(taskbar));
+        }
+        if (Environment.TickCount64 >= surface.NextTrayQuery + 1000)
+            surface.AutomationTrayBounds = null;
+        if (surface.AutomationTrayBounds is not { } physical) return false;
+
+        // UIA reports physical screen pixels, including on mixed-DPI secondary monitors.
+        var topLeft = new Point { X = physical.Left, Y = physical.Top };
+        var bottomRight = new Point { X = physical.Right, Y = physical.Bottom };
+        if (!PhysicalToLogicalPointForPerMonitorDPI(surface.Taskbar, ref topLeft) ||
+            !PhysicalToLogicalPointForPerMonitorDPI(surface.Taskbar, ref bottomRight)) return false;
+        bounds = new Rect
+        {
+            Left = topLeft.X, Top = topLeft.Y, Right = bottomRight.X, Bottom = bottomRight.Y,
+        };
+        return true;
     }
 
     private static IntPtr FindTaskList(IntPtr taskbar)
     {
-        var taskList = FindWindowExW(taskbar, IntPtr.Zero, "MSTaskSwWClass", null);
-        return taskList != IntPtr.Zero
-            ? taskList
-            : FindWindowExW(taskbar, IntPtr.Zero, "MSTaskListWClass", null);
+        var taskList = IntPtr.Zero;
+        var name = new StringBuilder(128);
+        EnumChildWindows(taskbar, (child, _) =>
+        {
+            GetClassNameW(child, name, name.Capacity);
+            if (name.ToString() is not ("MSTaskSwWClass" or "MSTaskListWClass") ||
+                !IsWindowVisible(child)) return true;
+            taskList = child;
+            return false;
+        }, IntPtr.Zero);
+        return taskList;
     }
 
     private static void AddObstacle(

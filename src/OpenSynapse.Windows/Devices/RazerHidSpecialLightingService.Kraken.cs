@@ -47,6 +47,12 @@ public sealed partial class RazerHidSpecialLightingService
                 $"RazerHid Kraken 1532:{connection.ProductId:X4} does not support {settings.Effect}.");
         }
 
+        if (RazerKraken40LightingProtocol.IsSupported(connection.ProductId))
+        {
+            await SetKraken40LightingAsync(connection, settings, brightness, cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
         var device = KrakenDevices[connection.ProductId];
         var reports = settings.Effect switch
         {
@@ -82,6 +88,32 @@ public sealed partial class RazerHidSpecialLightingService
         {
             gate.Release();
         }
+    }
+
+    private async Task SetKraken40LightingAsync(
+        RazerHidSpecialLightingConnection connection,
+        RazerHidLightingSettings settings,
+        byte? brightness,
+        CancellationToken cancellationToken)
+    {
+        var reports = new List<byte[]>();
+        if (brightness is { } percent) reports.Add(RazerKraken40LightingProtocol.CreateBrightness(connection.ProductId, percent));
+        // Ultimate's effect command carries no colour. A static colour uses its frame mode.
+        if (connection.ProductId == 0x0527 && settings.Effect == RazerHidLightingEffect.Static)
+            settings = settings with { Effect = RazerHidLightingEffect.Custom };
+        reports.Add(RazerKraken40LightingProtocol.CreateEffect(connection.ProductId, settings));
+        if (settings.Effect == RazerHidLightingEffect.Custom)
+            reports.Add(RazerKraken40LightingProtocol.CreateFrame(connection.ProductId, settings.Primary));
+        var gate = _gates.GetOrAdd(connection.InstanceId, static _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            foreach (var report in reports)
+                await _sendOutput(connection.DevicePath!,
+                    RazerKrakenBaseProtocol.PadOutputReport(report, connection.OutputReportLength), cancellationToken)
+                    .ConfigureAwait(false);
+        }
+        finally { gate.Release(); }
     }
 
     private async Task SetAvneraChromaAsync(

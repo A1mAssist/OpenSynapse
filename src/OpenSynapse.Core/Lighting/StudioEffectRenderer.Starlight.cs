@@ -99,6 +99,7 @@ public static partial class StudioEffectRenderer
             {
                 Mix((uint)stop.Stop);
                 Mix((uint)((stop.Color.R << 16) | (stop.Color.G << 8) | stop.Color.B));
+                Mix(stop.Color.Transparency);
             }
 
             return hash;
@@ -138,18 +139,22 @@ public static partial class StudioEffectRenderer
                 var red = (float)first.R;
                 var green = (float)first.G;
                 var blue = (float)first.B;
+                var transparency = (float)first.Transparency;
                 var redStep = (last.R - first.R) / (float)(span - 1);
                 var greenStep = (last.G - first.G) / (float)(span - 1);
                 var blueStep = (last.B - first.B) / (float)(span - 1);
+                var transparencyStep = (last.Transparency - first.Transparency) / (float)(span - 1);
                 for (var position = start + 1; position < end - 1; position++)
                 {
                     red += redStep;
                     green += greenStep;
                     blue += blueStep;
+                    transparency += transparencyStep;
                     table[position] = new StudioRgb(
                         (byte)Math.Clamp((int)red, 0, 255),
                         (byte)Math.Clamp((int)green, 0, 255),
-                        (byte)Math.Clamp((int)blue, 0, 255));
+                        (byte)Math.Clamp((int)blue, 0, 255))
+                    { Transparency = (byte)Math.Clamp((int)transparency, 0, 100) };
                 }
 
                 if (end - 1 < length)
@@ -171,7 +176,7 @@ public static partial class StudioEffectRenderer
         new(
             (byte)((float)color.R * brightness / 100f),
             (byte)((float)color.G * brightness / 100f),
-            (byte)((float)color.B * brightness / 100f));
+            (byte)((float)color.B * brightness / 100f)) { Transparency = color.Transparency };
 
     private sealed class StarlightRunner
     {

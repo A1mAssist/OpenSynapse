@@ -302,15 +302,7 @@ public sealed partial class RazerBleDeviceViewModel
             },
             () => MaskingTimeVisibility = Visibility.Collapsed);
 
-        await LoadExtraAsync(
-            () => _service!.ReadHapticStageAsync(HapticProfileId, cancellationToken),
-            state =>
-            {
-                MaxHapticStage = state.Max;
-                SelectedHapticStage = state.Active;
-                HapticStageVisibility = Visibility.Visible;
-            },
-            () => HapticStageVisibility = Visibility.Collapsed);
+        await LoadHapticStageAsync(cancellationToken);
 
         await LoadProfileNamesAsync(cancellationToken);
     }
@@ -373,7 +365,6 @@ public sealed partial class RazerBleDeviceViewModel
                 RazerBleScrollTactileMode? tactile = null;
                 byte? acceleration = null;
                 byte? masking = null;
-                byte? haptic = null;
                 if (TactileModeVisibility == Visibility.Visible)
                     tactile = await service.SetScrollTactileModeAsync(
                         (RazerBleScrollTactileMode)SelectedTactileModeIndex, cancellationToken);
@@ -383,10 +374,7 @@ public sealed partial class RazerBleDeviceViewModel
                 if (MaskingTimeVisibility == Visibility.Visible)
                     masking = await service.SetScrollMaskingTimeAsync(
                         (byte)Math.Round(ScrollMaskingTime), cancellationToken);
-                if (HapticStageVisibility == Visibility.Visible)
-                    haptic = await service.SetHapticStageAsync(
-                        (byte)Math.Round(SelectedHapticStage), HapticProfileId, cancellationToken);
-                return new ScrollExtrasState(tactile, acceleration, masking, haptic);
+                return new ScrollExtrasState(tactile, acceleration, masking);
             },
             ApplyScrollExtras,
             (state, token) => PersistMouseAsync(mouse => ApplyScrollExtrasToProfile(mouse, state), token),
@@ -478,15 +466,13 @@ public sealed partial class RazerBleDeviceViewModel
     private sealed record ScrollExtrasState(
         RazerBleScrollTactileMode? Tactile,
         byte? AccelerationLevel,
-        byte? MaskingTime,
-        byte? HapticStage);
+        byte? MaskingTime);
 
     private void ApplyScrollExtras(ScrollExtrasState state)
     {
         if (state.Tactile is { } tactile) SelectedTactileModeIndex = (int)tactile;
         if (state.AccelerationLevel is { } acceleration) ScrollAccelerationLevel = acceleration;
         if (state.MaskingTime is { } masking) ScrollMaskingTime = masking;
-        if (state.HapticStage is { } haptic) SelectedHapticStage = haptic;
     }
 
     private async Task<ScrollExtrasState> ReadScrollExtrasAsync(CancellationToken cancellationToken)
@@ -500,10 +486,7 @@ public sealed partial class RazerBleDeviceViewModel
         var masking = MaskingTimeVisibility == Visibility.Visible
             ? await _service!.ReadScrollMaskingTimeAsync(cancellationToken)
             : (byte?)null;
-        var haptic = HapticStageVisibility == Visibility.Visible
-            ? (await _service!.ReadHapticStageAsync(HapticProfileId, cancellationToken)).Active
-            : (byte?)null;
-        return new ScrollExtrasState(tactile, acceleration, masking, haptic);
+        return new ScrollExtrasState(tactile, acceleration, masking);
     }
 
     private async Task RestoreScrollExtrasAsync(
@@ -525,11 +508,6 @@ public sealed partial class RazerBleDeviceViewModel
             try { await _service!.SetScrollMaskingTimeAsync(masking, cancellationToken); }
             catch { /* The save error is the one the user must see. */ }
         }
-        if (state.HapticStage is { } haptic)
-        {
-            try { await _service!.SetHapticStageAsync(haptic, HapticProfileId, cancellationToken); }
-            catch { /* The save error is the one the user must see. */ }
-        }
     }
 
     private static void ApplyScrollExtrasToProfile(MouseProfileSettings mouse, ScrollExtrasState state)
@@ -537,7 +515,6 @@ public sealed partial class RazerBleDeviceViewModel
         if (state.Tactile is { } tactile) mouse.HapticMode = (int)tactile;
         if (state.AccelerationLevel is { } acceleration) mouse.HapticAccelerationLevel = acceleration;
         if (state.MaskingTime is { } masking) mouse.HapticMaskTime = masking;
-        if (state.HapticStage is { } haptic) mouse.HapticLevel = haptic;
     }
 
     private async Task LoadExtraAsync<T>(Func<Task<T>> read, Action<T> apply, Action hide)

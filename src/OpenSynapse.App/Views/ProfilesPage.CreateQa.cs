@@ -31,8 +31,14 @@ public sealed partial class ProfilesPage
         page.Loaded -= page.ProfilesPageLoaded;
         page.Unloaded += (_, _) => macros.Dispose();
         var root = new StackPanel { Spacing = 16, Background = (Brush)Application.Current.Resources["CanvasBrush"] };
+        var picker = page.ActiveProfilePicker;
+        var profileCard = ((StackPanel)page.PageScrollViewer.Content).Children.OfType<Border>().First();
+        ((StackPanel)profileCard.Child).Children.OfType<Grid>().First().Children.Remove(picker);
         page.Content = root;
         root.Children.Add(new TextBlock { Text = "配置管理 · 隔离验收", FontSize = 26 });
+        picker.DataContext = workspace;
+        picker.IsEnabled = true;
+        root.Children.Add(picker);
         var status = new TextBlock { Text = "READY", TextWrapping = TextWrapping.Wrap };
         AutomationProperties.SetAutomationId(status, "ProfileQaStatus");
         var create = new Button { Content = AppStrings.Text("Loc_9D032642E0/Content"),
@@ -66,6 +72,20 @@ public sealed partial class ProfilesPage
         AddOperation("ProfileQaClone", "Loc_212999B9CD/Content", clone: true);
         AddOperation("ProfileQaRename", "Loc_12964C8CFC/Content", clone: false);
         root.Children.Add(status);
+        var refresh = new Button { Content = "刷新并检查当前配置" };
+        AutomationProperties.SetAutomationId(refresh, "ProfileQaRefresh");
+        refresh.Click += async (_, _) =>
+        {
+            var expected = picker.SelectedItem as string;
+            workspace.RefreshProfileState();
+            await Task.Delay(200);
+            var saved = await store.LoadAsync();
+            status.Text = expected == document.ActiveProfileName && expected == saved.ActiveProfileName &&
+                expected == picker.SelectedItem as string
+                ? "PASS selection persisted: " + expected
+                : $"FAIL selection reverted: before={expected ?? "null"}, document={document.ActiveProfileName}, saved={saved.ActiveProfileName}, after={picker.SelectedItem ?? "null"}";
+        };
+        root.Children.Add(refresh);
         return page;
 
         void AddOperation(string id, string label, bool clone)

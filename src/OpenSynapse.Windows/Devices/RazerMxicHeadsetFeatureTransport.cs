@@ -23,22 +23,43 @@ internal sealed class RazerMxicHeadsetFeatureTransport : IRazerMxicHeadsetTransp
     private static readonly TimeSpan ResponseTimeout = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan RetryDelay = TimeSpan.FromMilliseconds(40);
     private readonly IRazerMxicHeadsetFeatureIo _io;
-    private readonly SemaphoreSlim _gate = new(1, 1);
+    private readonly SemaphoreSlim _gate;
+    private readonly string? _path;
+    private byte _transaction;
     private bool _disposed;
+    private Task? _pending;
 
     internal RazerMxicHeadsetFeatureTransport(string devicePath)
-        : this(new NativeFeatureIo(devicePath))
+        : this(new NativeFeatureIo(devicePath), devicePath)
     {
     }
 
-    internal RazerMxicHeadsetFeatureTransport(IRazerMxicHeadsetFeatureIo io) => _io = io;
+    internal RazerMxicHeadsetFeatureTransport(IRazerMxicHeadsetFeatureIo io, string? path = null)
+    {
+        _io = io;
+        _path = path;
+        _gate = path is null ? new(1, 1) : RazerFeatureTransport.EndpointGate(path);
+    }
+
+    private byte[] Prepare(byte[] report)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_pending is not null) throw new IOException("rzDevice40 session cannot be reused after an unfinished HID call.");
+        if (_path is not null) RazerFeatureTransport.ThrowIfNativeCallPending(_path);
+        if (report.Length != RazerProtocol40HeadsetProtocol.ReportLength || report[0] != RazerProtocol40HeadsetProtocol.ReportId)
+            throw new ArgumentException("A 64-byte rzDevice40 report is required.", nameof(report));
+        var request = report.ToArray();
+        _transaction = (byte)((_transaction % 31) + 1);
+        request[2] = (byte)((report[2] & 0xE0) | _transaction);
+        return request;
+    }
 
     public async Task SendAsync(byte[] report, CancellationToken cancellationToken)
     {
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            ObjectDisposedException.ThrowIf(_disposed, this);
+            report = Prepare(report);
             await RunNativeAsync(() => { _io.Send(report); return true; }, cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -53,16 +74,10 @@ internal sealed class RazerMxicHeadsetFeatureTransport : IRazerMxicHeadsetTransp
         byte[] expectedHeader,
         CancellationToken cancellationToken)
     {
-        if (expectedHeader.Length != 0)
-        {
-            throw new NotSupportedException(
-                "The rzDevice40 feature channel only carries the protocol40 reply layout.");
-        }
-
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            ObjectDisposedException.ThrowIf(_disposed, this);
+            report = Prepare(report);
             await RunNativeAsync(() => { _io.Send(report); return true; }, cancellationToken)
                 .ConfigureAwait(false);
 
@@ -76,7 +91,10 @@ internal sealed class RazerMxicHeadsetFeatureTransport : IRazerMxicHeadsetTransp
                 var reply = await RunNativeAsync(_io.Read, timeout.Token).ConfigureAwait(false);
                 if (RazerProtocol40HeadsetProtocol.TryReadValue(reply, report, out var value))
                 {
-                    return value;
+                    if ((report[8] & 0x80) == 0) return value;
+                    if (!value.AsSpan().StartsWith(expectedHeader))
+                        throw new InvalidDataException("rzDevice40 response selectors did not match.");
+                    return value[expectedHeader.Length..];
                 }
             }
 
@@ -96,14 +114,18 @@ internal sealed class RazerMxicHeadsetFeatureTransport : IRazerMxicHeadsetTransp
         Task.FromException<byte?>(new NotSupportedException(
             "rzDevice40 uses the protocol40 reply layout, not the MXIC status report."));
 
-    private static async Task<T> RunNativeAsync<T>(
+    private async Task<T> RunNativeAsync<T>(
         Func<T> call,
         CancellationToken cancellationToken)
     {
         try
         {
             return await CancellableNativeCall
-                .RunAsync(call, ResponseTimeout, cancellationToken)
+                .RunAsync(call, ResponseTimeout, cancellationToken, pending =>
+                {
+                    _pending = pending;
+                    if (_path is not null) RazerFeatureTransport.TrackPendingCall(_path, pending);
+                })
                 .ConfigureAwait(false);
         }
         catch (TimeoutException exception)
@@ -123,7 +145,10 @@ internal sealed class RazerMxicHeadsetFeatureTransport : IRazerMxicHeadsetTransp
             }
 
             _disposed = true;
-            _io.Dispose();
+            if (_pending is { IsCompleted: false } pending)
+                _ = pending.ContinueWith(_ => _io.Dispose(), CancellationToken.None,
+                    TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            else _io.Dispose();
         }
         finally
         {

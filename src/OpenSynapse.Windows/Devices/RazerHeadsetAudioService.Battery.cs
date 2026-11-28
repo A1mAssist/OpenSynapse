@@ -112,7 +112,7 @@ public sealed partial class RazerHeadsetAudioService
                 case RazerHeadsetAudioTransport.AvneraFeature65:
                 {
                     await using var service = new RazerAvneraHeadsetService(
-                        connection.DevicePath, diagnostic, connection.FeatureReportByteLength);
+                        connection.DevicePath, diagnostic, connection.FeatureReportByteLength, connection.ProductId);
                     return await service.TryReadBatteryPercentAsync(cancellationToken).ConfigureAwait(false);
                 }
                 case RazerHeadsetAudioTransport.Valkyrie64:

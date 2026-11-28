@@ -40,6 +40,7 @@ public sealed partial class RazerHidDeviceViewModel : INotifyPropertyChanged
                 if (state.UnsupportedCapabilities.Contains(RazerHidBackendCapability.SensorRotationRead))
                     ClearSensorRotation();
             }
+            RefreshPollingOptions();
             if (state.PollingRate is { } polling) SelectedPollingRate = polling;
             LoadFullscreenPollingState();
             if (state.DpiX is { } x) DpiX = x;

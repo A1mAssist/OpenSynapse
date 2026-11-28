@@ -41,6 +41,7 @@ public sealed class HeadsetProfileSettings
     public bool? MicrophoneMute { get; set; }
     public bool? NoiseSuppression { get; set; }
     public int? AudioSourceIndex { get; set; }
+    public int? SpatialMode { get; set; }
     public bool? Dolby { get; set; }
     public bool? NightMode { get; set; }
     public bool? VoicePrompts { get; set; }
@@ -96,6 +97,7 @@ public sealed class HeadsetProfileSettings
         MouseProfileSettings.ValidatePercent(
             ThxCaptureVoiceGateLevel, nameof(ThxCaptureVoiceGateLevel));
         MouseProfileSettings.ValidateRange(AudioSourceIndex, 0, 4, nameof(AudioSourceIndex));
+        MouseProfileSettings.ValidateRange(SpatialMode, 0, 3, nameof(SpatialMode));
         MouseProfileSettings.ValidatePercent(MicDeEsser, nameof(MicDeEsser));
         MouseProfileSettings.ValidateRange(MicLimiterDb, -60, 0, nameof(MicLimiterDb));
         MouseProfileSettings.ValidateRange(MicReverbIndex, 0, 3, nameof(MicReverbIndex));

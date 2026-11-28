@@ -21,6 +21,7 @@ public sealed partial class RefreshWorkspace
                 await _deviceWatchSignal.WaitAsync(interval, cancellationToken);
                 try
                 {
+                    if (!IsDisplayAvailable) continue;
                     var powerState = _currentPowerSource();
                     if (active || Profile.ApplicationBindings.Count > 0)
                     {

@@ -1919,7 +1919,7 @@
   <data name="Text_RazerHidAutoSleepOn" xml:space="preserve"><value>开启</value></data>
   <data name="Text_RazerHidAutoSleepOff" xml:space="preserve"><value>关闭</value></data>
   <data name="RazerHidTimeToDimLabel.Text" xml:space="preserve"><value>自动变暗</value></data>
-  <data name="RazerHidIndicatorLedLabel.Text" xml:space="preserve"><value>指示灯亮度</value></data>
+  <data name="RazerHidIndicatorLedLabel.Text" xml:space="preserve"><value>指示灯</value></data>
   <data name="RazerHidIndicatorLedV2Title.Text" xml:space="preserve"><value>接收器指示灯</value></data>
   <data name="RazerHidIndicatorLed1Label.Header" xml:space="preserve"><value>LED 1</value></data>
   <data name="RazerHidIndicatorLed2Label.Header" xml:space="preserve"><value>LED 2</value></data>
@@ -6240,12 +6240,39 @@
   <data name="Help_Specimen_KeyMouse4" xml:space="preserve"><value>鼠标键 4</value></data>
   <data name="Help_Specimen_KeyMouse5" xml:space="preserve"><value>鼠标键 5</value></data>
   <data name="Help_Specimen_KeyF13" xml:space="preserve"><value>F13</value></data>
+  <data name="LeviathanSpatialTitle.Text" xml:space="preserve"><value>空间音频与头部追踪</value></data>
+  <data name="LeviathanModeStereo" xml:space="preserve"><value>立体声</value></data>
+  <data name="LeviathanModeBinaural" xml:space="preserve"><value>THX 空间音频 · 虚拟耳机</value></data>
+  <data name="LeviathanModeMultichannel" xml:space="preserve"><value>THX 空间音频 · 虚拟扬声器</value></data>
+  <data name="LeviathanModeRoomFill" xml:space="preserve"><value>全房间音效</value></data>
+  <data name="LeviathanSpatialDescription.Text" xml:space="preserve"><value>虚拟耳机与虚拟扬声器模式会跟随头部位置。立体声和全房间音效不使用头部追踪。</value></data>
   <data name="RazerMappingHostHint.Text" xml:space="preserve"><value>改键保存在此设备的本地配置中，需要保持 OpenSynapse 运行才能生效。</value></data>
   <data name="RazerMappingKeypadDirectionHint.Text" xml:space="preserve"><value>斜向按动会同时触发相邻两个方向的映射。</value></data>
   <data name="RazerKeypadDriverMissing" xml:space="preserve"><value>单手键盘改键需要此设备的 Razer 过滤驱动。请安装或修复驱动，重新插拔单手键盘后刷新。</value></data>
-  <data name="RazerKeypadDriverInUse" xml:space="preserve"><value>另一个程序正在接管此单手键盘。请退出 Razer Synapse 后刷新。</value></data>
-  <data name="RazerKeypadAmbiguousDevice" xml:space="preserve"><value>无法唯一识别此旧款单手键盘。请只连接一台同型号设备，重新插拔后刷新。</value></data>
   <data name="RazerKeypadRecoveryMissing" xml:space="preserve"><value>按键恢复组件缺失。请先修复 OpenSynapse 安装，再启用单手键盘改键。</value></data>
   <data name="RazerKeypadRuntimeStopped" xml:space="preserve"><value>单手键盘输入已断开。请重新插拔设备后刷新，以恢复改键。</value></data>
+  <data name="LightingStudioReactiveStyleKeyFade" xml:space="preserve"><value>按键渐隐</value></data>
+  <data name="HapticCurveDescription.Text" xml:space="preserve"><value>选择滚轮循环切换时可用的模式。自定义曲线控制每个刻度内的阻力变化，编辑后会自动应用并保存。</value></data>
+  <data name="HapticCurveLinked.Header" xml:space="preserve"><value>上下滚动使用同一曲线</value></data>
+  <data name="HapticCurveUp" xml:space="preserve"><value>向上滚动 · 顺时针</value></data>
+  <data name="HapticCurveDown" xml:space="preserve"><value>向下滚动 · 逆时针</value></data>
+  <data name="HapticCurveSteps.Header" xml:space="preserve"><value>每圈刻度数</value></data>
+  <data name="HapticCurveTension.Header" xml:space="preserve"><value>阻力（0–100）</value></data>
+  <data name="HapticCurveAxes.Text" xml:space="preserve"><value>横轴为单个刻度内的位置（0–100%），纵轴为相对阻力（0–100%）。拖动中间三个控制点，或输入坐标。</value></data>
+  <data name="HapticCurvePosition.Header" xml:space="preserve"><value>位置（%）</value></data>
+  <data name="HapticCurveStrength.Header" xml:space="preserve"><value>阻力（%）</value></data>
+  <data name="HapticCurveStart" xml:space="preserve"><value>起点</value></data>
+  <data name="HapticCurveRise" xml:space="preserve"><value>上升控制点</value></data>
+  <data name="HapticCurveMiddle" xml:space="preserve"><value>中点</value></data>
+  <data name="HapticCurveFall" xml:space="preserve"><value>下降控制点</value></data>
+  <data name="HapticCurveEnd" xml:space="preserve"><value>终点</value></data>
+  <data name="HapticCurveRead.Content" xml:space="preserve"><value>读取设备</value></data>
+  <data name="HapticCurveDefault.Content" xml:space="preserve"><value>使用默认曲线</value></data>
+  <data name="HapticCurveRestore.Content" xml:space="preserve"><value>恢复已存设置</value></data>
+  <data name="HapticCurveInvalid" xml:space="preserve"><value>请输入显示范围内的有限整数。</value></data>
+  <data name="HapticCurveReadFirst" xml:space="preserve"><value>请先读取设备，再编辑 Hapticore 设置。</value></data>
+  <data name="HapticBleDescription.Text" xml:space="preserve"><value>选择当前板载配置中已启用模式的位置。自定义曲线和模式名称通过 USB 或接收器设置。修改后会自动应用并保存。</value></data>
+  <data name="RazerKeypadDriverInUse" xml:space="preserve"><value>另一个程序正在接管此单手键盘。请退出 Razer Synapse 后刷新。</value></data>
+  <data name="RazerKeypadAmbiguousDevice" xml:space="preserve"><value>无法唯一识别此旧款单手键盘。请只连接一台同型号设备，重新插拔后刷新。</value></data>
   <data name="RazerMappingKeypadStickClick" xml:space="preserve"><value>右摇杆按下</value></data>
 </root>

@@ -305,9 +305,9 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
             }
         }
 
-        if (profile.HapticScrollLevel is { } hapticLevel)
+        if (profile.HapticScroll is not null || profile.HapticScrollLevel is not null)
         {
-            await ApplyHapticScrollAsync(connection, (byte)hapticLevel, results, cancellationToken);
+            await ApplyHapticScrollAsync(connection, profile, results, cancellationToken);
         }
 
         if (profile.ButtonMappings is { Count: > 0 } mappings)
@@ -432,7 +432,7 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
 
     private async Task ApplyHapticScrollAsync(
         RazerHidDeviceConnection connection,
-        byte level,
+        MouseProfileSettings profile,
         List<ProfileSettingApplyResult> results,
         CancellationToken cancellationToken)
     {
@@ -451,19 +451,14 @@ public sealed partial class RazerHidProfileApplier : IDeviceProfileApplier
 
         try
         {
-            var current = await _service.GetHapticScrollStagesAsync(connection, ProfileId, cancellationToken);
-            if (current.ActiveStage == level)
+            await _service.RunExclusiveAsync(connection, async token =>
             {
-                results.Add(Applied(key));
-                return;
-            }
-
-            var stages = current.StageTypes.Select(stage => (byte)stage).ToArray();
-            await _service.SetHapticScrollStagesAsync(connection, ProfileId, level, stages, cancellationToken);
-            var applied = await _service.GetHapticScrollStagesAsync(connection, ProfileId, cancellationToken);
-            results.Add(applied.ActiveStage == level
-                ? Applied(key)
-                : Mismatch(key, $"expected {level}, got {applied.ActiveStage}"));
+                var desired = profile.HapticScroll?.Clone() ??
+                    await _service.ReadHapticScrollProfileAsync(connection, ProfileId, includeCustom: false, cancellationToken: token);
+                if (profile.HapticScroll is null) desired.ActiveStage = checked((byte)profile.HapticScrollLevel!.Value);
+                await _service.ApplyHapticScrollProfileAsync(connection, desired, ProfileId, cancellationToken: token);
+            }, cancellationToken);
+            results.Add(Applied(key));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

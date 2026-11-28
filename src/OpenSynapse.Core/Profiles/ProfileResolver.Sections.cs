@@ -127,6 +127,8 @@ public static partial class ProfileResolver
                 power?.HapticScrollLevel,
                 device?.HapticScrollLevel,
                 global?.HapticScrollLevel),
+            HapticScroll = ResolveHapticScroll(global, device, power),
+            HapticProfileId = First(power?.HapticProfileId, device?.HapticProfileId, global?.HapticProfileId),
             PowerPlan = power?.PowerPlan ?? device?.PowerPlan ?? global?.PowerPlan,
             SmartIlluminationEnabled = First(
                 power?.SmartIlluminationEnabled,
@@ -154,6 +156,17 @@ public static partial class ProfileResolver
                 global?.ButtonAssignments)?.Select(assignment => assignment.Clone()).ToList(),
             ButtonMappings = CloneMappings(power?.ButtonMappings ?? device?.ButtonMappings ?? global?.ButtonMappings),
         };
+    }
+
+    private static HapticScrollProfile? ResolveHapticScroll(params MouseProfileSettings?[] scopes)
+    {
+        HapticScrollProfile? result = null;
+        foreach (var scope in scopes)
+        {
+            if (scope?.HapticScroll is { } full) result = full.Clone();
+            else if (scope?.HapticScrollLevel is { } level && result is not null) result.ActiveStage = checked((byte)level);
+        }
+        return result;
     }
 
     private static KeyboardProfileSettings ResolveKeyboard(

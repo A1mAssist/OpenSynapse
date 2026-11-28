@@ -39,7 +39,7 @@ public sealed class ChromaProfileApplier : IDeviceProfileApplier
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(context);
-        if (context.Device.Category != DeviceCategory.Lighting)
+        if (context.Device.Category != DeviceCategory.Lighting || context.Device.ProductId == 0x0F35)
         {
             return new ProfileDeviceApplyResult(context.Device.Id, ProfileDeviceApplyStatus.Skipped, []);
         }
@@ -263,7 +263,7 @@ public sealed class ChromaProfileApplier : IDeviceProfileApplier
         out string? error)
     {
         error = null;
-        if (effect is not (RazerChromaEffect.Static or RazerChromaEffect.Breathing))
+        if (effect is not (RazerChromaEffect.Static or RazerChromaEffect.Breathing or RazerChromaEffect.Starlight))
         {
             return [];
         }

@@ -50,9 +50,8 @@ public sealed partial class RazerHidDeviceViewModel
             ApplyTimeToDimAsync, token);
 
     internal Func<Task<string?>>? PrepareIndicatorAutoApply(CancellationToken token) =>
-        PrepareMouseApply(IndicatorLedEnabled,
-            _basicState?.IndicatorLedConfiguration is { } value ? value != 0 : null,
-            true, () => CanWriteIndicatorLed, value => IndicatorLedEnabled = value, ApplyIndicatorLedAsync, token);
+        PrepareMouseApply(IndicatorLedConfiguration, _basicState?.IndicatorLedConfiguration,
+            true, () => CanWriteIndicatorLed, SetIndicatorLedSelection, ApplyIndicatorLedAsync, token);
 
     internal Func<Task<string?>>? PrepareIndicatorV2AutoApply(CancellationToken token) =>
         PrepareMouseApply((IndicatorLed1Index, IndicatorLed2Index, IndicatorLed3Index),

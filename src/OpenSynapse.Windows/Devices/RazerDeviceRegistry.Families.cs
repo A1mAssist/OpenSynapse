@@ -108,9 +108,6 @@ internal sealed partial class RazerDeviceRegistry
                 [CapabilityIds.DisplayMuxGet] = new(0x02, 0x0D, 0x89, "0000"),
                 [CapabilityIds.DisplayMuxSet] = new(0x02, 0x0D, 0x09, ""),
                 [CapabilityIds.DisplayMuxCapabilitiesGet] = new(0x02, 0x0D, 0x8A, "0000"),
-                [CapabilityIds.LegacyDisplayMuxGet] = new(0x03, 0x0D, 0x90, "000000"),
-                [CapabilityIds.LegacyDisplayMuxSet] = new(0x03, 0x0D, 0x10, ""),
-                [CapabilityIds.LegacyDisplayMuxCapabilitiesGet] = new(0x02, 0x0D, 0x8B, "0000"),
                 [CapabilityIds.NativeDisplayModeGet] = new(0x01, 0x0D, 0x8E, "00", true),
                 [CapabilityIds.NativeDisplayModeSet] = new(0x01, 0x0D, 0x0E, ""),
                 [CapabilityIds.FnKeySwapGet] = new(0x00, 0x07, 0x8B, "", AllowRemainingPacketsMismatch: true),
@@ -217,7 +214,6 @@ internal sealed partial class RazerDeviceRegistry
                     CapabilityIds.LogoModeGet or CapabilityIds.LogoModeSet or
                     CapabilityIds.LogoEffectSet or CapabilityIds.LogoStateSet or
                     CapabilityIds.DisplayMuxGet or CapabilityIds.DisplayMuxSet or CapabilityIds.DisplayMuxCapabilitiesGet or
-                    CapabilityIds.LegacyDisplayMuxGet or CapabilityIds.LegacyDisplayMuxSet or CapabilityIds.LegacyDisplayMuxCapabilitiesGet or
                     CapabilityIds.SkuHardwareConfigurationGet or
                     CapabilityIds.NativeDisplayModeGet or CapabilityIds.NativeDisplayModeSet or CapabilityIds.GamingModeGet or CapabilityIds.GamingModeSet or CapabilityIds.StartupAnimationGet or CapabilityIds.StartupAnimationSet or
                     CapabilityIds.AutoSleepGet or CapabilityIds.AutoSleepSet or

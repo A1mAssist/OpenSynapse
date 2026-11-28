@@ -27,6 +27,7 @@ internal sealed class GdiDesktopCaptureSession : IDisplayCaptureSession
     private readonly int _stride;
     private readonly int _sourceWidth;
     private readonly int _sourceHeight;
+    private readonly byte[] _pixels;
     private bool _disposed;
 
     internal GdiDesktopCaptureSession()
@@ -44,6 +45,7 @@ internal sealed class GdiDesktopCaptureSession : IDisplayCaptureSession
         _width = Math.Max(32, (int)Math.Round(_sourceWidth * scale));
         _height = Math.Max(18, (int)Math.Round(_sourceHeight * scale));
         _stride = checked(_width * 4);
+        _pixels = new byte[_stride * _height];
 
         _screen = GetDC(0);
         if (_screen == 0)
@@ -108,10 +110,9 @@ internal sealed class GdiDesktopCaptureSession : IDisplayCaptureSession
                 new Win32Exception(Marshal.GetLastWin32Error()));
         }
 
-        var bytes = new byte[_stride * _height];
-        Marshal.Copy(_bits, bytes, 0, bytes.Length);
+        Marshal.Copy(_bits, _pixels, 0, _pixels.Length);
         await Task.Delay(FrameDelayMilliseconds, cancellationToken).ConfigureAwait(false);
-        return new RawDisplayFrame(bytes, _width, _height, _stride);
+        return new RawDisplayFrame(_pixels, _width, _height, _stride);
     }
 
     public ValueTask DisposeAsync()

@@ -4,7 +4,8 @@ namespace OpenSynapse.Windows.Devices;
 
 internal sealed class RazerThermalAccessoryService : IAsyncDisposable
 {
-    private readonly RazerAccessoryCommandClient _client;
+    private readonly RazerAccessoryCommandClient? _client;
+    private readonly Func<byte[], bool, CancellationToken, Task<byte[]>>? _elsa;
     private readonly Action<string>? _diagnostic;
 
     internal RazerThermalAccessoryService(
@@ -15,13 +16,26 @@ internal sealed class RazerThermalAccessoryService : IAsyncDisposable
         _diagnostic = diagnostic;
     }
 
-    internal ushort ProductId => _client.ProductId;
+    internal RazerThermalAccessoryService(Func<byte[], bool, CancellationToken, Task<byte[]>> elsa)
+    {
+        _elsa = elsa;
+    }
+
+    internal ushort ProductId => _client?.ProductId ?? RazerThermalAccessoryProtocol.HanboProductId;
 
     internal static async Task<RazerThermalAccessoryService?> ConnectAsync(
         ushort productId,
         Action<string>? diagnostic = null,
         CancellationToken cancellationToken = default)
     {
+        if (productId == RazerThermalAccessoryProtocol.HanboProductId)
+        {
+            var interfaces = await WindowsHidDiscovery.FindVendorInterfacesAsync(0x1532, cancellationToken).ConfigureAwait(false);
+            var endpoint = interfaces.FirstOrDefault(item => item.ProductId == productId && IsElsaInterface(item) &&
+                item.Access == OpenSynapse.Core.Devices.DeviceAccessState.Available);
+            return endpoint is null ? null : new RazerThermalAccessoryService(
+                new RazerElsaTransport(endpoint.DevicePath, endpoint.InputReportByteLength, endpoint.OutputReportByteLength).QueryAsync);
+        }
         var connection = await RazerAccessoryDiscovery.FindAsync(
             productId,
             65,
@@ -65,13 +79,20 @@ internal sealed class RazerThermalAccessoryService : IAsyncDisposable
         var request = isPump
             ? RazerThermalAccessoryProtocol.CreateHanboSetPump(mode, speed)
             : RazerThermalAccessoryProtocol.CreateHanboSetFan(mode, speed);
-        var commandClass = request[7];
-        var commandId = request[8];
+        var commandClass = request[1];
+        var commandId = request[2];
         await QueryHanboAsync(
             request,
             commandClass,
             commandId,
             cancellationToken).ConfigureAwait(false);
+        var read = await QueryHanboAsync(isPump
+            ? RazerThermalAccessoryProtocol.CreateHanboGetPumpInfo()
+            : RazerThermalAccessoryProtocol.CreateHanboGetFanInfo(),
+            isPump ? (byte)0x12 : (byte)0x20, 1, cancellationToken).ConfigureAwait(false);
+        var state = isPump ? RazerThermalAccessoryProtocol.ReadHanboPump(read) : RazerThermalAccessoryProtocol.ReadHanboFan(read);
+        if (state.Mode != mode || state.TargetDuty != speed)
+            throw new InvalidOperationException("Hanbo mode/duty readback did not match.");
     }
 
     internal async Task<int> SetPwmSpeedAsync(
@@ -80,24 +101,24 @@ internal sealed class RazerThermalAccessoryService : IAsyncDisposable
         CancellationToken cancellationToken = default)
     {
         var request = RazerThermalAccessoryProtocol.CreatePwmSetFanSpeed(0x01, thermalId, rpm);
-        await _client.QueryAsync(
-            3,
+        await _client!.QueryAsync(
+            6,
             0x0D,
             0x01,
             request.AsMemory(RazerAccessoryProtocol.ArgumentsOffset, 3),
             response => RazerAccessoryProtocol.MatchesCommand(response, 0x0D, 0x01),
             cancellationToken).ConfigureAwait(false);
         var readback = await ReadPwmChannelAsync(thermalId, cancellationToken).ConfigureAwait(false);
-        if (readback.CurrentRpm != rpm)
+        if (readback.TargetRpm != rpm)
         {
             throw new InvalidOperationException(
-                $"PWM fan {thermalId} readback was {readback.CurrentRpm} RPM, expected {rpm}.");
+                $"PWM fan {thermalId} target readback was {readback.TargetRpm} RPM, expected {rpm}.");
         }
 
-        return readback.CurrentRpm;
+        return readback.TargetRpm.Value;
     }
 
-    internal async Task<IReadOnlyList<RazerThermalCurvePoint>> ReadHanboCurveAsync(
+    internal async Task<IReadOnlyList<byte>> ReadHanboCurveAsync(
         RazerThermalChannelKind kind,
         CancellationToken cancellationToken = default)
     {
@@ -106,15 +127,15 @@ internal sealed class RazerThermalAccessoryService : IAsyncDisposable
             : RazerThermalAccessoryProtocol.CreateHanboGetFanCurve();
         var response = await QueryHanboAsync(
             request,
-            request[7],
-            request[8],
+            request[1],
+            request[2],
             cancellationToken).ConfigureAwait(false);
         return RazerThermalAccessoryProtocol.ReadCurve(response);
     }
 
     internal async Task SetHanboCurveAsync(
         RazerThermalChannelKind kind,
-        IReadOnlyList<RazerThermalCurvePoint> points,
+        IReadOnlyList<byte> points,
         CancellationToken cancellationToken = default)
     {
         var request = kind == RazerThermalChannelKind.Pump
@@ -122,9 +143,11 @@ internal sealed class RazerThermalAccessoryService : IAsyncDisposable
             : RazerThermalAccessoryProtocol.CreateHanboSetFanCurve(points);
         await QueryHanboAsync(
             request,
-            request[7],
-            request[8],
+            request[1],
+            request[2],
             cancellationToken).ConfigureAwait(false);
+        var actual = await ReadHanboCurveAsync(kind, cancellationToken).ConfigureAwait(false);
+        if (!actual.SequenceEqual(points)) throw new InvalidOperationException("Hanbo curve readback did not match.");
     }
 
     private async Task<RazerThermalState> ReadHanboAsync(CancellationToken cancellationToken)
@@ -135,8 +158,8 @@ internal sealed class RazerThermalAccessoryService : IAsyncDisposable
         {
             var info = await QueryHanboAsync(
                 RazerThermalAccessoryProtocol.CreateHanboGetDeviceInfo(),
-                0x02,
-                0x02,
+                0x01,
+                0x01,
                 cancellationToken).ConfigureAwait(false);
             edition = RazerThermalAccessoryProtocol.ReadHanboEdition(info);
         }
@@ -176,19 +199,6 @@ internal sealed class RazerThermalAccessoryService : IAsyncDisposable
 
         double? cpu = null;
         double? gpu = null;
-        try
-        {
-            var temperatures = await QueryHanboAsync(
-                RazerThermalAccessoryProtocol.CreateHanboGetTemperatures(),
-                0xC2,
-                0x01,
-                cancellationToken).ConfigureAwait(false);
-            (cpu, gpu) = RazerThermalAccessoryProtocol.ReadHanboTemperatures(temperatures);
-        }
-        catch (Exception exception) when (IsExpected(exception))
-        {
-            errors.Add($"temperature: {exception.Message}");
-        }
 
         var name = edition == 128
             ? "Razer Hanbo AIO 360MM"
@@ -234,8 +244,8 @@ internal sealed class RazerThermalAccessoryService : IAsyncDisposable
         CancellationToken cancellationToken)
     {
         var request = RazerThermalAccessoryProtocol.CreatePwmGetFanSpeed(0x01, thermalId);
-        var response = await _client.QueryAsync(
-            2,
+        var response = await _client!.QueryAsync(
+            6,
             0x0D,
             0x81,
             request.AsMemory(RazerAccessoryProtocol.ArgumentsOffset, 2),
@@ -247,10 +257,10 @@ internal sealed class RazerThermalAccessoryService : IAsyncDisposable
             $"Fan {thermalId}",
             RazerThermalChannelKind.Fan,
             current,
-            target / RazerThermalAccessoryProtocol.PwmRpmPerUnit,
             0,
             0,
-            true);
+            0,
+            true) { TargetRpm = target };
     }
 
     private async Task<byte[]> QueryHanboAsync(
@@ -259,18 +269,20 @@ internal sealed class RazerThermalAccessoryService : IAsyncDisposable
         byte commandId,
         CancellationToken cancellationToken)
     {
-        var dataSize = request[6];
-        return await _client.QueryAsync(
-            dataSize,
-            commandClass,
-            commandId,
-            request.AsMemory(RazerAccessoryProtocol.ArgumentsOffset, dataSize),
-            response => RazerThermalAccessoryProtocol.MatchesHanbo(response, commandClass, commandId),
-            validateStatus: false,
-            cancellationToken).ConfigureAwait(false);
+        if (_elsa is null) throw new NotSupportedException("This is not an Elsa session.");
+        var ack = commandClass is 0x14 or 0x18 or 0x22 or 0x26;
+        var response = await _elsa(request, ack, cancellationToken).ConfigureAwait(false);
+        if (!RazerThermalAccessoryProtocol.MatchesHanbo(response, commandClass, commandId))
+            throw new InvalidDataException("Elsa returned a different command.");
+        if (ack) RazerThermalAccessoryProtocol.ValidateHanboAck(response);
+        return response;
     }
 
-    public ValueTask DisposeAsync() => _client.DisposeAsync();
+    internal static bool IsElsaInterface(WindowsHidDiscovery.HidInterfaceDescriptor item) =>
+        item.ProductId == RazerThermalAccessoryProtocol.HanboProductId &&
+        item.OutputReportByteLength >= 65 && item.InputReportByteLength is 64 or 65;
+
+    public ValueTask DisposeAsync() => _client?.DisposeAsync() ?? ValueTask.CompletedTask;
 
     private static bool IsExpected(Exception exception) =>
         exception is IOException or InvalidDataException or InvalidOperationException or

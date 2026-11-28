@@ -5,8 +5,13 @@ namespace OpenSynapse.App.ViewModels;
 
 public sealed partial class SurfaceCalibrationViewModel
 {
-    public Task EnsureLoadedAsync(CancellationToken cancellationToken = default) =>
-        _readAttempted || _disposed ? Task.CompletedTask : InitializeAsync(cancellationToken);
+    public async Task EnsureLoadedAsync(CancellationToken cancellationToken = default)
+    {
+        if (_readAttempted || _disposed) return;
+        await _operation.ConfigureAwait(true);
+        if (!_readAttempted && !_disposed && !cancellationToken.IsCancellationRequested)
+            await InitializeAsync(cancellationToken).ConfigureAwait(true);
+    }
 
     public Task InitializeAsync(CancellationToken cancellationToken = default)
     {
@@ -24,7 +29,8 @@ public sealed partial class SurfaceCalibrationViewModel
                 _selectedSurfaceId = null;
                 try
                 {
-                    if (_savedRecord is { } saved && _client.CompareReadback(saved.Configuration, actual) == RazerSurfaceCalibrationReadback.Consistent)
+                    if (_savedRecord is { } saved && RazerSurfaceCalibrationReadbackPolicy.RetainsSavedConfiguration(
+                        _client.CompareReadback(saved.Configuration, actual), saved.Configuration, actual))
                     {
                         configuration = saved.Configuration;
                         _selectedSurfaceId = saved.SelectedSurfaceId;
@@ -42,7 +48,7 @@ public sealed partial class SurfaceCalibrationViewModel
                 _log?.Invoke($"surface-calibration pid={_identity.ProductId:X4} read failed: {exception}");
                 _status = AppStrings.Text("SurfaceCalibrationReadFailed");
             }
-            finally { _readAttempted = true; }
+            _readAttempted = true;
         }, cancellationToken);
     }
 
@@ -119,8 +125,8 @@ public sealed partial class SurfaceCalibrationViewModel
             appliedState = actual;
             var compared = _client.CompareReadback(candidate, actual);
             if (compared == RazerSurfaceCalibrationReadback.Mismatch)
-                _log?.Invoke($"surface-calibration pid={_identity.ProductId:X4} apply readback mismatch mode={candidate.Mode} " +
-                    $"sensor={actual.SensorState?.ToString() ?? "?"} params={Convert.ToHexString(actual.Parameters)}");
+                _log?.Invoke($"surface-calibration pid={_identity.ProductId:X4} apply readback mismatch " +
+                    RazerSurfaceCalibrationReadbackPolicy.DescribeReadback(candidate, actual));
             readback = RazerSurfaceCalibrationReadbackPolicy.NormalizeSampledReadback(compared, candidate, actual);
             if (readback == RazerSurfaceCalibrationReadback.Mismatch)
             {

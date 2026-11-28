@@ -37,7 +37,7 @@ internal sealed partial class MacroRuntime
             // A private key that reports only presses, or whose release was lost
             // with the device, would otherwise repeat until the app restarts.
             // The next press is the stop control.
-            previous.Cancel();
+            try { previous.Cancel(); } catch (ObjectDisposedException) { }
             _log?.Invoke($"turbo stopped by a second press: {key}");
             return;
         }
@@ -67,7 +67,7 @@ internal sealed partial class MacroRuntime
         }
 
         _log?.Invoke($"turbo stopped: {key}");
-        cancellation.Cancel();
+        try { cancellation.Cancel(); } catch (ObjectDisposedException) { }
     }
 
     internal void StopAllTurbo()
@@ -81,7 +81,7 @@ internal sealed partial class MacroRuntime
 
         foreach (var cancellation in active)
         {
-            cancellation.Cancel();
+            try { cancellation.Cancel(); } catch (ObjectDisposedException) { }
         }
     }
 

@@ -305,12 +305,12 @@ public sealed partial class RazerBleProfileApplier : IDeviceProfileApplier
                 (byte)masking, (left, right) => left == right, cancellationToken);
         }
 
-        if (settings.HapticLevel is { } hapticLevel and >= 1 and <= 6)
+        if (service.SupportsHapticStages && settings.HapticLevel is { } hapticLevel and >= 1 and <= 6)
         {
             await ApplySettingAsync(
                 results, "ble.haptic-level",
-                async token => (await service.ReadHapticStageAsync(cancellationToken: token)).Active,
-                (value, token) => service.SetHapticStageAsync(value, cancellationToken: token),
+                async token => (await service.ReadHapticStageAsync((byte)(settings.HapticProfileId ?? 1), token)).Active,
+                (value, token) => service.SetHapticStageAsync(value, (byte)(settings.HapticProfileId ?? 1), token),
                 (byte)hapticLevel, (left, right) => left == right, cancellationToken);
         }
     }

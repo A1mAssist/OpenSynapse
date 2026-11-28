@@ -212,9 +212,7 @@ public sealed class RazerSurfaceCalibrationSession : IAsyncDisposable
                 _appliedState = actual;
                 var compared = _client.CompareReadback(Candidate, actual);
                 if (compared == RazerSurfaceCalibrationReadback.Mismatch)
-                    ReadbackDetail = $"mode={Candidate.Mode} lod={Candidate.Lod} sensor={actual.SensorState?.ToString() ?? "?"} " +
-                        $"params={Convert.ToHexString(actual.Parameters)} calibration={Convert.ToHexString(actual.CalibrationData)} " +
-                        $"thresholds={string.Join(',', actual.Thresholds)}";
+                    ReadbackDetail = RazerSurfaceCalibrationReadbackPolicy.DescribeReadback(Candidate, actual);
                 Readback = RazerSurfaceCalibrationReadbackPolicy.NormalizeSampledReadback(compared, Candidate, actual);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)

@@ -28,7 +28,7 @@ public sealed partial class RefreshWorkspace
     [NotProfileScoped]
     private async Task ApplyDeviceApplicationRulesCoreAsync(string? executablePath, CancellationToken token)
     {
-        if (_razerHidProfileApplier is null) return;
+        if (_razerHidProfileApplier is null || !IsDisplayAvailable) return;
         var connections = _razerHid.CurrentConnections
             .Where(connection => connection.Definition.Category is DeviceCategory.Mouse or DeviceCategory.Keyboard)
             .Select(connection => new DeviceApplicationSwitchDevice(

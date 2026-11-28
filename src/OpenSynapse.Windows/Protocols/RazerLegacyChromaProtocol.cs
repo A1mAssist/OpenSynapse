@@ -105,9 +105,10 @@ public static class RazerLegacyChromaProtocol
         byte rate = 0)
     {
         if (effect is not (RazerChromaEffect.Off or RazerChromaEffect.Static or
-            RazerChromaEffect.Breathing or RazerChromaEffect.Spectrum))
+            RazerChromaEffect.Breathing or RazerChromaEffect.Spectrum or
+            RazerChromaEffect.Wave or RazerChromaEffect.Starlight))
         {
-            throw new ArgumentOutOfRangeException(nameof(effect), "Class 0x0F only defines the four UI effects.");
+            throw new ArgumentOutOfRangeException(nameof(effect), "Unsupported class 0x0F hardware effect.");
         }
         if (colors.Length % 3 != 0 || colors.Length / 3 > MaxColors)
         {
@@ -121,7 +122,12 @@ public static class RazerLegacyChromaProtocol
         arguments[2] = (byte)effect;
         // The flags byte selects random (0), single-colour (1) or dual-colour (2)
         // breathing; leaving it at zero made every breathing request random.
-        arguments[3] = flags ?? (effect == RazerChromaEffect.Breathing ? colorCount : (byte)0);
+        arguments[3] = flags ?? (effect switch
+        {
+            RazerChromaEffect.Breathing or RazerChromaEffect.Starlight => colorCount,
+            RazerChromaEffect.Wave => 1,
+            _ => 0,
+        });
         arguments[4] = rate;
         arguments[5] = colorCount;
         colors.CopyTo(arguments.AsSpan(6));

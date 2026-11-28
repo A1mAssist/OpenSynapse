@@ -13,6 +13,7 @@ public sealed partial class RazerHidDeviceViewModel
     private int _timeToDimSeconds = 60;
     private int _timeToDimPercent = 20;
     private bool _indicatorLedEnabled;
+    private int _indicatorLedStatusIndex;
     private bool _isIndicatorLedBusy;
     private int _indicatorLed1Index;
     private int _indicatorLed2Index;
@@ -81,14 +82,26 @@ public sealed partial class RazerHidDeviceViewModel
     public bool CanEditTimeToDim => CanWriteTimeToDim &&
         TimeToDimSeconds is >= 60 and <= 900 && TimeToDimPercent is >= 1 and <= 100;
 
-    public Visibility IndicatorLedVisibility => VisibleWhen(HasAny(
+    public Visibility IndicatorLedVisibility => VisibleWhen(
+        (!UsesReceiverIndicatorModes || Connection.Definition.HasReceiverIndicator) && HasAny(
         RazerHidBackendCapability.IndicatorLedConfigurationRead,
         RazerHidBackendCapability.IndicatorLedConfigurationWrite));
     public Visibility IndicatorLedWriteVisibility => VisibleWhen(Has(RazerHidBackendCapability.IndicatorLedConfigurationWrite));
-    // The middleware reports the indicator LED as a status byte, not a brightness enum.
+    private bool UsesReceiverIndicatorModes => Connection.Definition.UsesReceiverIndicatorModes;
+    public Visibility IndicatorLedToggleVisibility => VisibleWhen(!UsesReceiverIndicatorModes);
+    public Visibility IndicatorLedStatusVisibility => VisibleWhen(UsesReceiverIndicatorModes);
+    public int IndicatorLedStatusIndex
+    {
+        get => _indicatorLedStatusIndex;
+        set { if (value is >= 0 and < 3) SetField(ref _indicatorLedStatusIndex, value); }
+    }
+    private byte IndicatorLedConfiguration => UsesReceiverIndicatorModes
+        ? (byte)(IndicatorLedStatusIndex + 1) : IndicatorLedEnabled ? (byte)1 : (byte)0;
     public bool IndicatorLedEnabled { get => _indicatorLedEnabled; set => SetField(ref _indicatorLedEnabled, value); }
     public string IndicatorLedText => _basicState?.IndicatorLedConfiguration is { } value
-        ? value != 0 ? OnText : OffText
+        ? UsesReceiverIndicatorModes
+            ? value is >= 1 and <= 3 ? HyperPollingIndicatorOptions[value - 1] : "--"
+            : value != 0 ? OnText : OffText
         : "--";
     public bool IsIndicatorLedBusy { get => _isIndicatorLedBusy; private set => SetBusy(ref _isIndicatorLedBusy, value, nameof(CanWriteIndicatorLed)); }
     public bool CanWriteIndicatorLed => CanUse(RazerHidBackendCapability.IndicatorLedConfigurationWrite) && !IsIndicatorLedBusy;
@@ -287,11 +300,9 @@ public sealed partial class RazerHidDeviceViewModel
             () => IsIndicatorLedBusy, value => IsIndicatorLedBusy = value,
             async () =>
             {
-                var configuration = IndicatorLedEnabled ? (byte)1 : (byte)0;
+                var configuration = IndicatorLedConfiguration;
                 await _service.SetIndicatorLedConfigurationAsync(Connection, configuration, cancellationToken);
-                if (Has(RazerHidBackendCapability.IndicatorLedConfigurationRead))
-                    IndicatorLedEnabled = await _service.GetIndicatorLedConfigurationAsync(Connection, cancellationToken) != 0;
-                UpdateBasic(state => state with { IndicatorLedConfiguration = IndicatorLedEnabled ? (byte)1 : (byte)0 });
+                UpdateBasic(state => state with { IndicatorLedConfiguration = configuration });
             }, cancellationToken);
 
     public Task ApplyIndicatorLedV2Async(CancellationToken cancellationToken = default) =>
@@ -428,7 +439,7 @@ public sealed partial class RazerHidDeviceViewModel
         if (state.TimeToDimEnabled is { } timeEnabled) TimeToDimEnabled = timeEnabled;
         if (state.TimeToDimSeconds is { } seconds) TimeToDimSeconds = seconds;
         if (state.TimeToDimPercent is { } percent) TimeToDimPercent = percent is >= 1 ? percent : 20;
-        if (state.IndicatorLedConfiguration is { } indicator) IndicatorLedEnabled = indicator != 0;
+        if (state.IndicatorLedConfiguration is { } indicator) SetIndicatorLedSelection(indicator);
         if (state.IndicatorLedConfigurationV2 is { } indicatorV2) SetIndicatorLedV2(indicatorV2);
         if (state.BatteryDischargeCurve is { } curve) SelectedBatteryCurveIndex = curve;
         if (state.GpuCardDetectionEnabled is { } gpu) GpuCardDetectionEnabled = gpu;
@@ -514,6 +525,12 @@ public sealed partial class RazerHidDeviceViewModel
         IndicatorLed1Index = value.Led1;
         IndicatorLed2Index = value.Led2;
         IndicatorLed3Index = value.Led3;
+    }
+
+    private void SetIndicatorLedSelection(byte value)
+    {
+        if (UsesReceiverIndicatorModes) IndicatorLedStatusIndex = value - 1;
+        else IndicatorLedEnabled = value != 0;
     }
 
     /// <summary>

@@ -12,8 +12,7 @@ internal sealed record RazerHapticsState(
 
 /// <summary>
 /// Sensa HD haptics on Freyja (0F45) and Soma Sensa HD (0F6D). The commands come from
-/// the bundle's Interhaptics class 0x16 table; scalar gain fields are little-endian on
-/// writes and big-endian on reads, matching the middleware helpers.
+/// the bundle's Interhaptics class 0x16 table; scalar body/value fields are big-endian.
 /// </summary>
 internal static class RazerHapticsAccessoryProtocol
 {
@@ -41,17 +40,17 @@ internal static class RazerHapticsAccessoryProtocol
     internal static byte[] CreateSetIntensity(bool enabled, int intensity) =>
         Request(SetIntensity, 2, [enabled ? (byte)1 : (byte)0, checked((byte)intensity)]);
     internal static byte[] CreateGetScalar(byte commandId, int bodyPartId = 0) =>
-        Request(commandId, 3, [checked((byte)bodyPartId), 0, 0]);
+        Request(commandId, 3, [0, checked((byte)(bodyPartId >> 8)), (byte)(bodyPartId & 0xFF)]);
     internal static byte[] CreateSetScalar(byte commandId, int value, int bodyPartId = 0) =>
         Request(
             commandId,
             5,
             [
                 0,
-                checked((byte)(bodyPartId & 0xFF)),
                 checked((byte)(bodyPartId >> 8)),
-                checked((byte)(value & 0xFF)),
+                checked((byte)(bodyPartId & 0xFF)),
                 checked((byte)(value >> 8)),
+                checked((byte)(value & 0xFF)),
             ]);
     internal static byte[] CreateGetBandVolume(int profileId = 0) =>
         Request(GetBandVolume, 1, [checked((byte)profileId)]);

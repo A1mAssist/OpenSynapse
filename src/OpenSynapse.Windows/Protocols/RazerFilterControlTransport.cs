@@ -21,21 +21,40 @@ internal static class RazerFilterControlTransport
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(controlDevicePath);
         ArgumentNullException.ThrowIfNull(report);
-        return new(Task.Run(() => SetFeature(controlDevicePath, report), cancellationToken));
+        report = report.ToArray();
+        return new(RunAsync(controlDevicePath, token =>
+        {
+            SetFeature(controlDevicePath, report, token);
+            return true;
+        }, cancellationToken));
     }
 
-    private static void SetFeature(string controlDevicePath, byte[] report)
+    private static void SetFeature(string controlDevicePath, byte[] report, CancellationToken token)
     {
         using var handle = CreateFile(controlDevicePath, 0, ShareReadWrite, 0, OpenExisting, 0, 0);
         if (handle.IsInvalid)
             throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not open the Razer control endpoint.");
 
+        token.ThrowIfCancellationRequested();
         if (!DeviceIoControl(handle, RazerFilterInputProtocol.SetFeature, report, report.Length, null, 0, out _, 0))
         {
             throw new Win32Exception(
                 Marshal.GetLastWin32Error(),
                 $"The Razer control endpoint rejected the {report.Length}-byte SET_FEATURE report.");
         }
+    }
+
+    private static async Task<T> RunAsync<T>(string path, Func<CancellationToken, T> call, CancellationToken cancellationToken)
+    {
+        var gate = RazerFeatureTransport.EndpointGate(path);
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            RazerFeatureTransport.ThrowIfNativeCallPending(path);
+            return await CancellableNativeCall.RunAsync(call, TimeSpan.FromSeconds(2), cancellationToken,
+                task => RazerFeatureTransport.TrackPendingCall(path, task)).ConfigureAwait(false);
+        }
+        finally { gate.Release(); }
     }
 
     internal static byte[] Transfer(string controlDevicePath, byte[] input, int outputLength,

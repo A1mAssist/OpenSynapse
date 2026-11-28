@@ -1,11 +1,11 @@
 namespace OpenSynapse.Core.Devices;
 
 /// <summary>
-/// Wireless identities that Windows enumerates for a model whose wired PID owns the
+/// Connection identities that Windows enumerates for a model whose canonical PID owns the
 /// manifest, the device page and the lighting data. Razer's own
 /// <c>DeviceManifest_&lt;pid&gt;_0.json</c> declares both sides through
-/// <c>wiredProductId</c> and <c>dongleProductId</c> / <c>bleProductId</c>; the pairs
-/// below are copied from those manifests for the products this app already drives.
+/// <c>wiredProductId</c> and <c>dongleProductId</c> / <c>bleProductId</c>; product bundles
+/// also declare alternate wired IDs. These aliases belong to products this app already drives.
 /// </summary>
 public static class RazerProductAliases
 {
@@ -15,6 +15,15 @@ public static class RazerProductAliases
             // Razer Basilisk Ultimate: 134/0086 owns the product UI and both driver packages;
             // 0088 is the wireless receiver identity.
             [0x0088] = 0x0086,
+            [0x027B] = 0x0277,
+            // Gamepad alternate wired identities and wireless receivers from product bundles.
+            [0x0A59] = 0x0A57,
+            [0x0A75] = 0x0A74,
+            [0x0A78] = 0x0A74,
+            [0x0A79] = 0x0A74,
+            [0x0A7D] = 0x0A7C,
+            [0x1027] = 0x1025,
+            [0x1032] = 0x1030,
             // Razer BlackWidow V4 Low-profile HyperSpeed
             [0x02C9] = 0x02CC,
             [0x02CA] = 0x02CC,
@@ -95,7 +104,8 @@ public static class RazerProductAliases
     internal static IReadOnlyDictionary<ushort, ushort> Aliases => CanonicalProductIds;
 
     /// <summary>True when the PID is a wireless sibling of a wired model.</summary>
-    public static bool IsWirelessAlias(ushort productId) => CanonicalProductIds.ContainsKey(productId);
+    public static bool IsWirelessAlias(ushort productId) =>
+        productId is not (0x0A75 or 0x0A7D) && CanonicalProductIds.ContainsKey(productId);
 
     /// <summary>True when the PID is the Bluetooth LE sibling handled by the BLE page.</summary>
     public static bool IsBleAlias(ushort productId) => BleProductIds.Contains(productId);

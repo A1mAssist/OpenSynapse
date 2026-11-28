@@ -50,6 +50,12 @@ public sealed class StudioEffectState
         _scopes?.Clear();
         Tag = null;
     }
+
+    public void RetainScopes(IReadOnlySet<string> names)
+    {
+        if (_scopes is null) return;
+        foreach (var name in _scopes.Keys.Where(name => !names.Contains(name)).ToArray()) _scopes.Remove(name);
+    }
 }
 
 /// <summary>Creates and reuses one state bag per layer id.</summary>
@@ -74,7 +80,12 @@ public sealed class StudioEffectStateCache
         return state;
     }
 
-    // shortcut: removed layers keep their bag until the source is rebuilt; clear when layer churn matters.
+    public void Retain(IReadOnlySet<Guid> active)
+    {
+        foreach (var id in _states.Keys.Where(id => !active.Contains(id)).ToArray()) _states.Remove(id);
+        if (!active.Contains(Guid.Empty)) _fallback.Clear();
+    }
+
     public void Clear()
     {
         _states.Clear();

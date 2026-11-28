@@ -1,0 +1,24 @@
+<UserControl x:Class="OpenSynapse.App.Views.DevicePanels.HapticScrollDirectionEditor"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:OpenSynapse.App">
+  <StackPanel Spacing="10">
+    <TextBlock Text="{Binding Title}" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" />
+    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+      <NumberBox AutomationProperties.AutomationId="HapticSteps" local:Localized.Uid="HapticCurveSteps" Value="{Binding Steps, Mode=TwoWay}" Minimum="1" Maximum="255" SmallChange="1" SpinButtonPlacementMode="Compact" />
+      <NumberBox Grid.Column="1" AutomationProperties.AutomationId="HapticTension" local:Localized.Uid="HapticCurveTension" Value="{Binding Tension, Mode=TwoWay}" Minimum="0" Maximum="100" SmallChange="1" SpinButtonPlacementMode="Compact" />
+    </Grid>
+    <TextBlock local:Localized.Uid="HapticCurveAxes" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+    <Canvas x:Name="Plot" AutomationProperties.AutomationId="HapticCurvePlot" Height="220" Background="Transparent"
+            PointerPressed="PlotPressed" PointerMoved="PlotMoved" PointerReleased="PlotReleased" PointerCaptureLost="PlotCaptureLost" />
+    <ItemsControl ItemsSource="{Binding Points}">
+      <ItemsControl.ItemTemplate><DataTemplate>
+        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8" Margin="0,3">
+          <TextBlock Text="{Binding Label}" VerticalAlignment="Center" TextWrapping="Wrap" />
+          <NumberBox Grid.Column="1" local:Localized.Uid="HapticCurvePosition" Value="{Binding X, Mode=TwoWay}" Minimum="0" Maximum="100" SmallChange="1" SpinButtonPlacementMode="Compact" IsEnabled="{Binding CanEdit}" />
+          <NumberBox Grid.Column="2" local:Localized.Uid="HapticCurveStrength" Value="{Binding Y, Mode=TwoWay}" Minimum="0" Maximum="100" SmallChange="1" SpinButtonPlacementMode="Compact" IsEnabled="{Binding CanEdit}" />
+        </Grid>
+      </DataTemplate></ItemsControl.ItemTemplate>
+    </ItemsControl>
+  </StackPanel>
+</UserControl>

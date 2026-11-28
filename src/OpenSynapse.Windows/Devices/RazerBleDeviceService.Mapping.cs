@@ -20,7 +20,7 @@ public sealed partial class RazerBleDeviceService
         CancellationToken cancellationToken)
     {
         // Preserve the caller's UI context for the shared mapping view model's callback.
-        if (!_requiresMappingMode || _mappingSessionProfile.Value.HasValue)
+        if ((!_requiresMappingMode && !IsKeyboard) || _mappingSessionProfile.Value.HasValue)
             return await action(cancellationToken).ConfigureAwait(true);
         if (!await _mappingGate.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken).ConfigureAwait(true))
             throw new TimeoutException("The BLE mapping operation queue timed out.");
@@ -30,6 +30,11 @@ public sealed partial class RazerBleDeviceService
         Exception? failure = null;
         try
         {
+            if (IsKeyboard)
+            {
+                _mappingSessionProfile.Value = MappingProfileId;
+                return await action(cancellationToken).ConfigureAwait(true);
+            }
             original = await ReadMappingDeviceModeAsync(cancellationToken).ConfigureAwait(true);
             // 00B4 setupDevice enters [3,0] before the OBM engine reads any profile assignments.
             if (original.Value != (3, 0))

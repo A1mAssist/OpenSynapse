@@ -63,8 +63,8 @@ public sealed partial class BladeWorkspace
             {
                 // Synapse mirrors the Windows touchpad state onto the EC on
                 // startup so the indicator does not stay stale across restarts.
-                if (!await _deviceTelemetryReader.SetBladeTouchpadStatusAsync(
-                        ActiveDescriptors, touchpadEnabled, cancellationToken))
+                await SyncObservedTouchpadIndicatorAsync(ActiveDescriptors, touchpadEnabled).WaitAsync(cancellationToken);
+                if (!_touchpadIndicatorConfirmed)
                 {
                     _diagnosticLog.TryWrite(
                         "device-operation",

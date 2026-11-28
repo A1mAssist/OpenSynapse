@@ -314,7 +314,7 @@ Blade models with a dedicated manifest expose telemetry, performance, fans, disp
 | Razer Blade Stealth (Mid 2017) | `1532:022D` | — |
 | Razer Book (2020) | `1532:026A` | — |
 
-Blade 16 (2023) exposes firmware-rendered Off, Breathing, Spectrum and Wave effects and has no per-key matrix channel. The Blade 15 Advanced (2019, `023A`) uses the inherited 6x16 `03:0A` effect and `03:0B` frame path. The 2026 Blade 16/18 bundles align with P23/P24 for thermal state, fixed fan speed, the software fan curve, charge limit, power mode, adapter power and VGA MUX. Their native keyboard lighting uses the middleware's 03:0A firmware-effect report and 03:0B software-frame report. MUX writes follow the 0D:8A capability bits; DDS is exposed only when the unit reports DynamicDisplaySwitch, otherwise only Hybrid/Discrete are offered. The 2026 deviceFeatures do not list the maximum-fan switch, so Max Fan remains hidden. The Blade 18 (2026) bundle labels wire value `Gaming` (0x01) as Turbo in its UI, so OpenSynapse shows the same display alias and does not publish a second mode. The Blade 16 (2026) HyperBoost and fan reads were checked on one physical unit; the Blade 18 (2026) remains bundle-aligned. Blade models from 2018–2023 whose middleware sets `hasGPUmode` now expose the same `0D:89/09/8A` VGA MUX with Hybrid/Discrete; the 2021 Blade 15 Advanced keeps its legacy `0D:90/10/8B` path.
+Blade 16 (2023) exposes firmware-rendered Off, Breathing, Spectrum and Wave effects and has no per-key matrix channel. The Blade 15 Advanced (2019, `023A`) uses the inherited 6x16 `03:0A` effect and `03:0B` frame path. The 2026 Blade 16/18 bundles align with P23/P24 for thermal state, fixed fan speed, the software fan curve, charge limit, power mode, adapter power and VGA MUX. Their native keyboard lighting uses the middleware's 03:0A firmware-effect report and 03:0B software-frame report. MUX writes follow the 0D:8A capability bits; DDS is exposed only when the unit reports DynamicDisplaySwitch, otherwise only Hybrid/Discrete are offered. The 2026 deviceFeatures do not list the maximum-fan switch, so Max Fan remains hidden. The Blade 18 (2026) bundle labels wire value `Gaming` (0x01) as Turbo in its UI, so OpenSynapse shows the same display alias and does not publish a second mode. The Blade 16 (2026) HyperBoost and fan reads were checked on one physical unit; the Blade 18 (2026) remains bundle-aligned. Blade models from 2018–2023 whose middleware sets `hasGPUmode` use the same `0D:89/09/8A` VGA MUX. The 2021 Blade 15 Advanced (`0276`) also uses these size=2 reports, admits modes from the actual `0D:8A` capability bits, and verifies both changes and recovery by reading the mode back. `0D:90/10` controls fan cooling and `0D:8B` contains separate Synapse UI flags; neither controls the MUX. The 0276 route follows the original product calls for that PID and still needs a physical switching check.
 
 ## Headsets
 
@@ -386,7 +386,7 @@ The `Billie`, `Valkyrie`, `OdessaT2Wireless`, `MabelT3C`, `Avnera`, `KrakenBase3
 | Razer Kraken V4 | `1532:056C` | Audio page and lighting (2.4 GHz receiver) |
 | Razer Kraken V4 Pro | `1532:0567`, `1532:0568` | Audio page; `0568` is the 2.4 GHz receiver |
 | Razer Kraken V4 X | `1532:056D` | Audio page |
-| Razer Kraken V4 X Sensa HD Haptics | `1532:059F` | Audio page (`rzDevice40BillieT3H`, class 0x18); sidetone/haptics remain limited |
+| Razer Kraken V4 X Sensa HD Haptics | `1532:059F` | Audio page: 64-byte report-2 Protocol40 feature channel for EQ, microphone mute and DND; the separate Sensa endpoint and sidetone remain unsupported |
 | Razer Kraken X USB | `1532:0526` | Audio page |
 | Razer Marci | `1532:0F66` | Audio page |
 | Razer Mako X | `1532:05AD` | Audio page (`rzDeviceJolie`); Synapse-style quick effects (static, breathing, fire, spectrum, starlight, rotation, audio meter) as 25 fps frames, auto sleep |
@@ -499,18 +499,18 @@ Accessory controls cover lighting, docks, stands, fan control and presence signa
 | Device | USB VID:PID | Notes |
 |---|---|---|
 | Lian Li O11 Dynamic - Razer Edition | `1532:0F13` | — |
-| Razer Aether Lamp | `1532:030E` | Lighting only |
-| Razer Aether Lamp Pro | `1532:030D` | Lighting only |
-| Razer Aether Light Bulb | `1532:030F` | Lighting only |
-| Razer Aether Light Strip | `1532:0310` | Lighting only |
-| Razer Aether Monitor Light Bar | `1532:0316` | Lighting only |
-| Razer Aether Standing Light Bars | `1532:0317` | Lighting only |
+| Razer Aether Lamp | `1532:030E` | Unsupported: rzIoT network endpoint is not implemented |
+| Razer Aether Lamp Pro | `1532:030D` | Unsupported: rzIoT network endpoint is not implemented |
+| Razer Aether Light Bulb | `1532:030F` | Unsupported: rzIoT network endpoint is not implemented |
+| Razer Aether Light Strip | `1532:0310` | Unsupported: rzIoT network endpoint is not implemented |
+| Razer Aether Monitor Light Bar | `1532:0316` | Unsupported: rzIoT network endpoint is not implemented |
+| Razer Aether Standing Light Bars | `1532:0317` | Unsupported: rzIoT network endpoint is not implemented |
 | Razer Audio Mixer | `1532:053E` | Dedicated HID subset: firmware/serial/device mode, fader and mute status, channel/mic mute, brightness; faders/routing/EQ stay in Razer's native mixer |
 | Razer Base Station Chroma (Headphone Stand) | `1532:0F08` | — |
 | Razer Base Station V2 Chroma | `1532:0F20` | — |
 | Razer Base Station V3 Chroma | `1532:0F6A` | Lighting only |
 | Razer Charging Pad Chroma | `1532:0F26` | — |
-| Razer Chroma Addressable RGB Controller | `1532:030A` | Standard Chroma lighting |
+| ASRock Chroma motherboard | `1532:030A` | Unsupported: ASRock native/channel endpoint is not implemented |
 | Razer Chroma Addressable RGB Controller | `1532:0F1F` | Per-LED ARGB control; 6 ports x 80 LEDs |
 | Razer Chroma Hardware Development Kit (HDK) | `1532:0F09` | — |
 | Razer Chroma Mug Holder | `1532:0F07` | — |
@@ -518,12 +518,12 @@ Accessory controls cover lighting, docks, stands, fan control and presence signa
 | Razer Chroma Wireless ARGB Controller | `1532:0F2E` | Standard Chroma lighting |
 | Razer Core | `1532:0215` | — |
 | Razer Core X Chroma | `1532:0F1A` | — |
-| Razer Core X V2 | `1532:0F51` | Lighting only |
+| Razer Core X V2 | `1532:0F51` | Class-03 per-LED brightness and LedMatrix effects; effect writes have no implemented readback |
 | Razer Freyja | `1532:0F45` | Lighting + Sensa HD haptics page: enable, intensity, gain, perception/transient/signal gain |
-| Razer Hanbo AIO 240MM | `1532:0F35` | Lighting + AIO page: fan/pump RPM, duty, quiet/balanced/performance modes, temperatures; curve controls are not exposed |
+| Razer Hanbo AIO 240MM / 360MM | `1532:0F35` | Elsa output/input AIO page: fan/pump RPM, duty and modes; lighting and CPU/GPU temperature reads are unsupported; curve controls are not exposed |
 | Razer Handheld Dock Chroma | `1532:0F5C` | Lighting only |
 | Razer Head Cushion Chroma | `1532:0F36` | Lighting only |
-| Razer Key Light Chroma | `1532:030C` | Lighting only |
+| Razer Key Light Chroma | `1532:030C` | Unsupported: rzIoT network endpoint is not implemented |
 | Razer Laptop Cooling Pad | `1532:0F43` | Standalone fan page: current/target RPM with read-back, fixed low/mid/high/off presets, smart quiet/balanced/performance curves, and lighting |
 | Razer Laptop Monitor Stand Chroma | `1532:0F5A` | Lighting only |
 | Razer Laptop Stand Chroma | `1532:0F0D` | — |

@@ -33,7 +33,7 @@ public sealed partial class RazerMxicHeadsetService
                 : null;
         }
 
-        if (_dialect == MxicDialect.Joliet)
+        if (_dialect is MxicDialect.Joliet or MxicDialect.Class18)
         {
             return null;
         }

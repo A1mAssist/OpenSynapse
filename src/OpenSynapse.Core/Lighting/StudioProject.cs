@@ -407,7 +407,11 @@ public sealed class StudioLayerItem : INotifyPropertyChanged
         };
         foreach (var region in Regions)
         {
-            var regionClone = new StudioRegion { Params = region.Params.Clone() };
+            var regionClone = new StudioRegion
+            {
+                PlaybackId = regenerateIds ? Guid.NewGuid() : region.PlaybackId,
+                Params = region.Params.Clone(),
+            };
             foreach (var device in region.Devices) regionClone.Devices.Add(device.Clone());
             clone.Regions.Add(regionClone);
         }
@@ -421,6 +425,9 @@ public sealed class StudioLayerItem : INotifyPropertyChanged
 
 public sealed class StudioRegion
 {
+    /// <summary>Runtime identity survives snapshot clones and region reordering.</summary>
+    public Guid PlaybackId { get; set; } = Guid.NewGuid();
+
     public StudioEffectParams Params { get; set; } = new();
 
     public ObservableCollection<StudioRegionDevice> Devices { get; } = new();

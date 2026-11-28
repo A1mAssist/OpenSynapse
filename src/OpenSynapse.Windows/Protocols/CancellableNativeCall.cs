@@ -4,42 +4,90 @@ using Microsoft.Win32.SafeHandles;
 namespace OpenSynapse.Windows.Protocols;
 
 /// <summary>
-/// Runs a blocking HID call on a worker thread and actually stops it at the deadline.
-/// WaitAsync alone leaves the native request queued in the HID driver, and every later
-/// request queues behind it; on 0555 that turned a 250 ms status probe into minute-long stalls.
+/// Bounds the caller's wait and requests cancellation of synchronous I/O.
+/// A driver may ignore cancellation; onPending transfers cleanup of that operation to its owner.
 /// </summary>
 internal static class CancellableNativeCall
 {
     private static readonly TimeSpan CancelGrace = TimeSpan.FromSeconds(1);
 
-    internal static async Task<T> RunAsync<T>(
+    internal static Task<T> RunAsync<T>(
         Func<T> call,
         TimeSpan timeout,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Action<Task>? onPending = null)
+    {
+        ArgumentNullException.ThrowIfNull(call);
+        return RunAsync(_ => call(), timeout, cancellationToken, onPending);
+    }
+
+    internal static async Task<T> RunAsync<T>(
+        Func<CancellationToken, T> call,
+        TimeSpan timeout,
+        CancellationToken cancellationToken,
+        Action<Task>? onPending = null)
     {
         ArgumentNullException.ThrowIfNull(call);
         cancellationToken.ThrowIfCancellationRequested();
-        var started = new TaskCompletionSource<uint>(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(timeout));
+        var sync = new object();
+        uint threadId = 0;
+        var interrupted = false;
+        var operation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var operationToken = operation.Token;
         // A pool thread, not LongRunning: this helper also runs on every lighting frame,
         // and creating an OS thread per frame costs more than the write itself.
         var task = Task.Run(
             () =>
             {
-                started.TrySetResult(NativeMethods.GetCurrentThreadId());
-                return call();
+                lock (sync)
+                {
+                    if (interrupted) throw new OperationCanceledException();
+                    threadId = NativeMethods.GetCurrentThreadId();
+                }
+                try { return call(operationToken); }
+                finally
+                {
+                    // Do not cancel a pool thread after it has moved to another operation.
+                    lock (sync) threadId = 0;
+                }
             });
 
-        var completed = await Task.WhenAny(task, Task.Delay(timeout, cancellationToken))
-            .ConfigureAwait(false);
-        if (ReferenceEquals(completed, task))
+        try
         {
-            return await task.ConfigureAwait(false);
-        }
+            using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var completed = await Task.WhenAny(task, Task.Delay(timeout, deadline.Token))
+                .ConfigureAwait(false);
+            if (ReferenceEquals(completed, task))
+            {
+                deadline.Cancel();
+                return await task.ConfigureAwait(false);
+            }
 
-        await CancelAsync(started, task).ConfigureAwait(false);
-        cancellationToken.ThrowIfCancellationRequested();
-        throw new TimeoutException(
-            $"The HID call did not answer within {timeout.TotalMilliseconds:0} ms.");
+            operation.Cancel();
+            lock (sync)
+            {
+                interrupted = true;
+                CancelSynchronousIo(threadId);
+            }
+            try { await task.WaitAsync(CancelGrace).ConfigureAwait(false); }
+            catch (Exception) { /* Preserve the timeout/cancellation which initiated cleanup. */ }
+            if (!task.IsCompleted)
+            {
+                onPending?.Invoke(task);
+                _ = task.ContinueWith(completedTask => _ = completedTask.Exception,
+                    CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
+            }
+            cancellationToken.ThrowIfCancellationRequested();
+            throw new TimeoutException(
+                $"The HID call did not answer within {timeout.TotalMilliseconds:0} ms.");
+        }
+        finally
+        {
+            if (task.IsCompleted) operation.Dispose();
+            else _ = task.ContinueWith(_ => operation.Dispose(), CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
     }
 
     internal static uint CurrentThreadId => NativeMethods.GetCurrentThreadId();
@@ -55,32 +103,6 @@ internal static class CancellableNativeCall
         if (!thread.IsInvalid)
         {
             NativeMethods.CancelSynchronousIo(thread);
-        }
-    }
-
-    private static async Task CancelAsync(TaskCompletionSource<uint> started, Task task)
-    {
-        if (task.IsCompleted)
-        {
-            return;
-        }
-
-        // The thread id is published before the blocking call starts, so OpenThread can
-        // reach the thread even when the call itself never returns.
-        if (await Task.WhenAny(started.Task, Task.Delay(TimeSpan.FromMilliseconds(100)))
-                .ConfigureAwait(false) == started.Task)
-        {
-            CancelSynchronousIo(started.Task.Result);
-        }
-
-        // Let the native call unwind before its handle is closed by the caller. Disposing
-        // a handle under a live IOCTL is what left the request in the driver queue.
-        try
-        {
-            await task.WaitAsync(CancelGrace).ConfigureAwait(false);
-        }
-        catch (Exception exception) when (exception is TimeoutException or OperationCanceledException)
-        {
         }
     }
 

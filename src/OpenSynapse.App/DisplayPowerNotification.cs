@@ -285,6 +285,10 @@ internal sealed class DisplayPowerNotification
     {
         try
         {
+            _diagnostic?.Invoke($"Display transition: available={available}, suspend={suspending}, peripheralOff={_turnOffPeripheralLightingOnDisplayOff?.Invoke() == true}.");
+            // Block profile refreshes before stopping frame pumps or writing Off.
+            if (!available)
+                await _viewModel.Lighting.SetDisplayAvailableAsync(false).ConfigureAwait(false);
             var pauseExternal = suspending || (!available && _turnOffPeripheralLightingOnDisplayOff?.Invoke() == true);
             if (pauseExternal && Application.Current is App pausingApp)
                 await pausingApp.SetChromaDisplayAvailableAsync(false).ConfigureAwait(false);
@@ -292,26 +296,17 @@ internal sealed class DisplayPowerNotification
             {
                 await _viewModel.Lighting.PrepareForSuspendAsync().ConfigureAwait(false);
             }
+            else if (available)
+            {
+                // Restore snapshots even if the preference changed while the display was off.
+                await RunOnDispatcherAsync(_viewModel.ResumePeripheralLightingForDisplayAsync)
+                    .ConfigureAwait(false);
+                await _viewModel.Lighting.SetDisplayAvailableAsync(true).ConfigureAwait(false);
+            }
             else if (_turnOffPeripheralLightingOnDisplayOff?.Invoke() == true)
             {
-                if (available)
-                {
-                    await _viewModel.Lighting.SetDisplayAvailableAsync(true).ConfigureAwait(false);
-                    await RunOnDispatcherAsync(
-                            _viewModel.ResumePeripheralLightingForDisplayAsync)
-                        .ConfigureAwait(false);
-                }
-                else
-                {
-                    await RunOnDispatcherAsync(
-                            _viewModel.SuspendPeripheralLightingForDisplayAsync)
-                        .ConfigureAwait(false);
-                    await _viewModel.Lighting.SetDisplayAvailableAsync(false).ConfigureAwait(false);
-                }
-            }
-            else
-            {
-                await _viewModel.Lighting.SetDisplayAvailableAsync(available).ConfigureAwait(false);
+                await RunOnDispatcherAsync(_viewModel.SuspendPeripheralLightingForDisplayAsync)
+                    .ConfigureAwait(false);
             }
 
             if (available && Application.Current is App resumingApp)

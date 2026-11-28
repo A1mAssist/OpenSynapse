@@ -111,6 +111,7 @@
                       </StackPanel>
                       <ToggleSwitch local:Localized.Uid="TaskbarStatusToggle" x:Name="TaskbarStatusToggle" Grid.Column="1" Toggled="TaskbarStatusToggled" OnContent="" OffContent="" MinWidth="44" VerticalAlignment="Center" />
                     </Grid>
+                    <Border Height="1" Background="{StaticResource LineBrush}" />
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                       <StackPanel Spacing="4">
                         <TextBlock local:Localized.Uid="TaskbarStatusClickTitle" FontSize="16" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />

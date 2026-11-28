@@ -4,18 +4,19 @@ namespace OpenSynapse.Windows.Devices;
 
 internal sealed class RazerAccessoryCommandClient : IAsyncDisposable
 {
-    private readonly RazerAccessoryHidTransport _transport;
+    private readonly Func<byte[], Func<byte[], bool>, bool, CancellationToken, Task<byte[]>> _exchange;
     private readonly RazerAccessoryConnection _connection;
     private readonly Action<string>? _diagnostic;
     private int _transactionId = 0x1F;
 
     internal RazerAccessoryCommandClient(
         RazerAccessoryConnection connection,
-        Action<string>? diagnostic = null)
+        Action<string>? diagnostic = null,
+        Func<byte[], Func<byte[], bool>, bool, CancellationToken, Task<byte[]>>? exchange = null)
     {
         _connection = connection;
         _diagnostic = diagnostic;
-        _transport = new RazerAccessoryHidTransport(connection.DevicePath);
+        _exchange = exchange ?? new RazerAccessoryHidTransport(connection.DevicePath).QueryAsync;
     }
 
     internal ushort ProductId => _connection.ProductId;
@@ -64,8 +65,7 @@ internal sealed class RazerAccessoryCommandClient : IAsyncDisposable
             $"{request[7]:X2}:{request[8]:X2} size={request[6]} report={request.Length}");
         try
         {
-            return await _transport
-                .QueryAsync(request, matcher, validateStatus, cancellationToken)
+            return await _exchange(request, matcher, validateStatus, cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (Exception exception) when (IsExpected(exception))
@@ -100,8 +100,7 @@ internal sealed class RazerAccessoryCommandClient : IAsyncDisposable
             $"size={dataSize} report={_connection.ReportLength}");
         try
         {
-            return await _transport
-                .QueryAsync(request, matcher, validateStatus, cancellationToken)
+            return await _exchange(request, matcher, validateStatus, cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (Exception exception) when (IsExpected(exception))

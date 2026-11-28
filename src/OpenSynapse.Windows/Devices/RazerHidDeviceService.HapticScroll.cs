@@ -22,7 +22,7 @@ public sealed partial class RazerHidDeviceService
         byte profileId,
         CancellationToken cancellationToken = default)
     {
-        RequireReady(connection);
+        RequireHapticCurve(connection);
         var request = RazerHapticoreScrollProtocol.CreateGetStageInformationRequest(
             MiddlewareTransactionId, profileId);
         var response = await ExecuteAsync(connection,
@@ -38,9 +38,9 @@ public sealed partial class RazerHidDeviceService
         IReadOnlyList<byte> stageIds,
         CancellationToken cancellationToken = default)
     {
-        RequireReady(connection);
+        RequireHapticCurve(connection);
         ArgumentNullException.ThrowIfNull(stageIds);
-        if (stageIds.Count > RazerHapticoreScrollProtocol.MaxStage)
+        if (stageIds.Count is < 1 or > RazerHapticoreScrollProtocol.MaxStage)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(stageIds),
@@ -82,7 +82,7 @@ public sealed partial class RazerHidDeviceService
         ISet<RazerHidBackendCapability> result,
         CancellationToken cancellationToken)
     {
-        if (definition.Category != DeviceCategory.Mouse)
+        if (definition.Category != DeviceCategory.Mouse || !SupportsHapticCurve(definition.ProductId))
         {
             return;
         }

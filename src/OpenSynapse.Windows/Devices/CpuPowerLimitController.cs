@@ -26,8 +26,9 @@ public sealed class CpuPowerLimitController : ICpuPowerLimitController
 
     private readonly IntPtr _library;
     private readonly IntPtr _handle;
-    private readonly PawnIoExecute _execute;
-    private readonly PawnIoClose _close;
+    private readonly Func<uint, ulong> _readMsr;
+    private readonly Action<uint, ulong> _writeMsr;
+    private readonly PawnIoClose? _close;
     private readonly ulong _firmwareRegister;
     private readonly double _powerUnit;
     private readonly double _energyUnit;
@@ -44,11 +45,23 @@ public sealed class CpuPowerLimitController : ICpuPowerLimitController
         PawnIoClose close,
         ulong firmwareRegister,
         ulong unitRegister)
+        : this(firmwareRegister, unitRegister,
+            msr => ReadMsr(execute, handle, msr),
+            (msr, value) => WriteMsr(execute, handle, msr, value))
     {
         _library = library;
         _handle = handle;
-        _execute = execute;
         _close = close;
+    }
+
+    internal CpuPowerLimitController(
+        ulong firmwareRegister,
+        ulong unitRegister,
+        Func<uint, ulong> readMsr,
+        Action<uint, ulong> writeMsr)
+    {
+        _readMsr = readMsr;
+        _writeMsr = writeMsr;
         _firmwareRegister = firmwareRegister;
         _powerUnit = CpuPowerLimit.PowerUnitFromRegister(unitRegister);
         _energyUnit = CpuPowerLimit.EnergyUnitFromRegister(unitRegister);
@@ -153,26 +166,17 @@ public sealed class CpuPowerLimitController : ICpuPowerLimitController
     public CpuPowerLimitReport Read()
     {
         ThrowIfDisposed();
-        return BuildReport(ReadMsr(_execute, _handle, PowerLimitMsr));
+        return BuildReport(_readMsr(PowerLimitMsr));
     }
 
     /// <summary>
-    /// Writes only the two watt fields, based on the open-time register so the
-    /// firmware enable, clamp and time-window bits survive.
+    /// Writes only the two watt fields, preserving the current firmware flags and
+    /// time windows. A failed write or readback restores the pre-write register.
     /// </summary>
     public CpuPowerLimitReport Apply(CpuPowerLimit limit)
     {
         ThrowIfDisposed();
-        var clamped = limit.Clamp(CpuPowerLimit.MaximumWatts);
-        var current = ReadMsr(_execute, _handle, PowerLimitMsr);
-        ThrowIfLocked(current);
-        ThrowIfLocked(_firmwareRegister);
-        WriteMsr(
-            _execute,
-            _handle,
-            PowerLimitMsr,
-            clamped.EncodeWattsOnly(_firmwareRegister, _powerUnit));
-        return BuildReport(ReadMsr(_execute, _handle, PowerLimitMsr));
+        return WriteVerified(limit.Clamp(CpuPowerLimit.MaximumWatts));
     }
 
     /// <summary>
@@ -184,15 +188,7 @@ public sealed class CpuPowerLimitController : ICpuPowerLimitController
         ThrowIfDisposed();
         var request = new CpuPowerLimit(pl1Watts, pl2Watts, 0, 0)
             .Clamp(CpuPowerLimit.MaximumRestoreWatts);
-        var current = ReadMsr(_execute, _handle, PowerLimitMsr);
-        ThrowIfLocked(current);
-        ThrowIfLocked(_firmwareRegister);
-        WriteMsr(
-            _execute,
-            _handle,
-            PowerLimitMsr,
-            request.EncodeWattsOnly(_firmwareRegister, _powerUnit));
-        return BuildReport(ReadMsr(_execute, _handle, PowerLimitMsr));
+        return WriteVerified(request);
     }
 
     /// <summary>
@@ -215,7 +211,7 @@ public sealed class CpuPowerLimitController : ICpuPowerLimitController
         ThrowIfDisposed();
         lock (_sampleGate)
         {
-            var energy = (uint)ReadMsr(_execute, _handle, EnergyStatusMsr);
+            var energy = (uint)_readMsr(EnergyStatusMsr);
             var timestamp = Stopwatch.GetTimestamp();
             if (_lastEnergy is not { } previous)
             {
@@ -249,13 +245,82 @@ public sealed class CpuPowerLimitController : ICpuPowerLimitController
         _disposed = true;
         try
         {
-            _close(_handle);
+            _close?.Invoke(_handle);
         }
         finally
         {
-            NativeLibrary.Free(_library);
+            if (_library != IntPtr.Zero)
+            {
+                NativeLibrary.Free(_library);
+            }
         }
     }
+
+    private CpuPowerLimitReport WriteVerified(CpuPowerLimit limit)
+    {
+        var previous = _readMsr(PowerLimitMsr);
+        ThrowIfLocked(previous);
+        ThrowIfLocked(_firmwareRegister);
+        var requested = limit.EncodeWattsOnly(previous, _powerUnit);
+        try
+        {
+            _writeMsr(PowerLimitMsr, requested);
+            var actual = _readMsr(PowerLimitMsr);
+            if (!SameWatts(requested, actual))
+            {
+                throw new InvalidOperationException(
+                    $"CPU power readback mismatch: requested {DescribeWatts(requested)}, " +
+                    $"read {DescribeWatts(actual)}.");
+            }
+
+            return BuildReport(actual);
+        }
+        catch (Exception exception) when (IsIoFailure(exception))
+        {
+            var detail = exception.Message;
+            try
+            {
+                _writeMsr(PowerLimitMsr, previous);
+            }
+            catch (Exception restoreError) when (IsIoFailure(restoreError))
+            {
+                detail += $" Rollback write failed: {restoreError.Message}";
+            }
+
+            try
+            {
+                var restored = _readMsr(PowerLimitMsr);
+                detail += SameWatts(previous, restored)
+                    ? " Previous power limits restored and verified."
+                    : $" Rollback failed: expected {DescribeWatts(previous)}, read {DescribeWatts(restored)}.";
+                return BuildReport(restored) with
+                {
+                    Availability = CpuPowerLimitAvailability.Failed,
+                    Detail = detail,
+                };
+            }
+            catch (Exception readError) when (IsIoFailure(readError))
+            {
+                return CpuPowerLimitReport.Unavailable(CpuPowerLimitAvailability.Failed,
+                    $"{detail} Rollback could not be verified: {readError.Message}");
+            }
+        }
+    }
+
+    private static bool SameWatts(ulong expected, ulong actual)
+    {
+        const ulong wattMask = 0x7FFFUL | (0x7FFFUL << 32);
+        return (expected & wattMask) == (actual & wattMask);
+    }
+
+    private string DescribeWatts(ulong register)
+    {
+        var limit = CpuPowerLimit.Decode(register, _powerUnit, _timeUnit);
+        return $"{limit.Pl1Watts:0.###} W / {limit.Pl2Watts:0.###} W";
+    }
+
+    private static bool IsIoFailure(Exception exception) =>
+        exception is InvalidOperationException or IOException or UnauthorizedAccessException;
 
     private CpuPowerLimitReport BuildReport(ulong register)
     {

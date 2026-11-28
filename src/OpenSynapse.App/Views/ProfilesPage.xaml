@@ -18,7 +18,7 @@
                   <StackPanel Spacing="14">
                     <TextBlock local:Localized.Uid="Loc_CA6E17DD3A" FontSize="18" FontFamily="{StaticResource AppFontSemiBoldFamily}" FontWeight="SemiBold" />
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                      <ComboBox ItemsSource="{Binding Profiles.ProfileNames}" SelectedItem="{Binding Profiles.ActiveProfileName, Mode=OneWay}" SelectionChanged="ProfileSelectionChanged" IsEnabled="{Binding CanRefresh}" HorizontalAlignment="Stretch" />
+                      <ComboBox x:Name="ActiveProfilePicker" AutomationProperties.AutomationId="ActiveProfilePicker" DataContext="{Binding Profiles}" ItemsSource="{Binding ProfileNames}" Loaded="ProfilePickerLoaded" Unloaded="ProfilePickerUnloaded" DataContextChanged="ProfilePickerDataContextChanged" SelectionChanged="ProfileSelectionChanged" IsEnabled="{Binding DataContext.CanRefresh, ElementName=PageScrollViewer}" HorizontalAlignment="Stretch" />
                       <Button local:Localized.Uid="Loc_311EB20F8C" Grid.Column="1" Click="DeleteProfileClick" IsEnabled="{Binding Profiles.CanDeleteProfile}" Style="{StaticResource IconButtonStyle}"><SymbolIcon Symbol="Delete" /></Button>
                     </Grid>
                     <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">

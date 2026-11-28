@@ -26,7 +26,7 @@ internal static class RazerAvnera65Protocol
     internal static readonly byte[] BatteryHeader = [0xFE, 0x12, 0x04, 0x1F, 0x08, 0x05];
     internal static readonly byte[] SidetoneHeader = [0xFE, 0x00, 0x04, 0x1F, 0x05, 0x81, 0x60, 0xB4];
     internal static readonly byte[] SilenceDetectionHeader = [0xFE, 0x12, 0x04, 0x1F, 0x05, 0x41];
-    internal static readonly byte[] HapticsHeader = [0xFE, 0x02, 0x04, 0x1F, 0x06, 0x32];
+    internal static readonly byte[] HapticsHeader = [0xFE, 0x02, 0x04, 0x1F, 0x06, 0x20];
     internal static readonly byte[] ChromaEffectHeader = [0xFE, 0x12, 0x04, 0x1F, 0x06, 0x70];
     internal static readonly byte[] ChromaBrightnessHeader = [0xFE, 0x12, 0x04, 0x1F, 0x03, 0x71];
 
@@ -76,9 +76,10 @@ internal static class RazerAvnera65Protocol
     internal static byte[] CreateSidetoneRequest() =>
         Frame([0xFD, 0x04, 0x00, 0xF1, 0x05, 0x81, 0x60, 0xB4, 0x01]);
 
-    internal static byte[] CreateSetSidetoneRequest(byte percent)
+    internal static byte[] CreateSetSidetoneRequest(byte percent, ushort productId = 0)
     {
-        var encoded = unchecked((byte)((percent * 44 / 100) - 64));
+        if (percent > 100) throw new ArgumentOutOfRangeException(nameof(percent));
+        var encoded = unchecked((byte)((percent * (productId == 0x0528 ? 46 : 44) / 100) - 64));
         return Frame([0xFF, 0x04, 0x0E, 0xF1, 0x05, 0x01, 0x04, 0x00], [encoded]);
     }
 
@@ -143,6 +144,15 @@ internal static class RazerAvnera65Protocol
 
     internal static Version ReadFirmware(ReadOnlySpan<byte> response) =>
         ReadFirmware(response, FirmwareHeader);
+
+    internal static Version ReadFirmware(ReadOnlySpan<byte> response, ushort productId)
+    {
+        if (productId is not (0x051A or 0x051C or 0x051E)) return ReadFirmware(response);
+        var data = Payload(response, FirmwareHeader);
+        if (data.Length < 5 || data[0] != 2 || data.Slice(1, 4).ContainsAnyExceptInRange((byte)'0', (byte)'9'))
+            throw new InvalidDataException("Nari returned an invalid four-digit firmware version.");
+        return new Version(data[1] - '0', data[2] - '0', data[3] - '0', data[4] - '0');
+    }
 
     internal static Version ReadDockFirmware(ReadOnlySpan<byte> response) =>
         ReadFirmware(response, DockFirmwareHeader);
@@ -235,7 +245,7 @@ internal static class RazerAvnera65Protocol
         return (data[5], data[0] == 5 || (data[2] & 0x08) != 0);
     }
 
-    internal static byte ReadSidetone(ReadOnlySpan<byte> response)
+    internal static byte ReadSidetone(ReadOnlySpan<byte> response, ushort productId = 0)
     {
         var data = Payload(response, SidetoneHeader);
         if (data.Length < 1)
@@ -244,7 +254,7 @@ internal static class RazerAvnera65Protocol
         }
 
         // Module 33688 maps the raw value -64..-20 to 0..100 percent.
-        return (byte)Math.Clamp(((data[0] - 192) * 100) / 44, 0, 100);
+        return (byte)Math.Clamp(((data[0] - 192) * 100) / (productId == 0x0528 ? 46 : 44), 0, 100);
     }
 
     internal static (bool Enabled, ushort Period) ReadSilenceDetection(ReadOnlySpan<byte> response)

@@ -25,6 +25,7 @@ public sealed partial class HeadsetAudioPanel
         AttachAudioSetting(EqBandsGroup, HeadsetAudioSetting.EqBands);
         AttachAudioSetting(MicEqBandsGroup, HeadsetAudioSetting.MicEqBands);
         AttachAudioSetting(BassGroup, HeadsetAudioSetting.Bass);
+        AttachAudioSetting(SpatialModeGroup, HeadsetAudioSetting.SpatialMode);
         AttachAudioSetting(MicrophoneGroup, HeadsetAudioSetting.Microphone);
         AttachAudioSetting(SourceGroup, HeadsetAudioSetting.Source);
         AttachAudioSetting(NoiseGroup, HeadsetAudioSetting.Noise);

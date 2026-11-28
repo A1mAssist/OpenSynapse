@@ -1,7 +1,7 @@
-using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
+using OpenSynapse.Windows.Protocols;
 
 namespace OpenSynapse.Windows.Devices;
 
@@ -16,9 +16,8 @@ internal sealed class RazerAccessoryHidTransport(string devicePath)
     private const int MaxOutAttempts = 20;
     private const int MaxInAttempts = 10;
     private static readonly TimeSpan RetryDelay = TimeSpan.FromMilliseconds(5);
-    private static readonly ConcurrentDictionary<string, SemaphoreSlim> Gates =
-        new(StringComparer.OrdinalIgnoreCase);
-    private readonly SemaphoreSlim _gate = Gates.GetOrAdd(devicePath, static _ => new SemaphoreSlim(1, 1));
+    private static readonly TimeSpan ExchangeTimeout = TimeSpan.FromSeconds(3);
+    private readonly SemaphoreSlim _gate = RazerFeatureTransport.EndpointGate(devicePath);
 
     public async Task<byte[]> QueryAsync(
         byte[] request,
@@ -33,7 +32,25 @@ internal sealed class RazerAccessoryHidTransport(string devicePath)
             throw new ArgumentException("An accessory feature report must be 64, 65 or 91 bytes.", nameof(request));
         }
 
-        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        if (!await _gate.WaitAsync(ExchangeTimeout, cancellationToken).ConfigureAwait(false))
+            throw new TimeoutException("The accessory channel is still occupied by a pending HID call.");
+        try
+        {
+            RazerFeatureTransport.ThrowIfNativeCallPending(devicePath);
+            return await CancellableNativeCall.RunAsync(
+                token => QueryCore(request, isMatch, validateStatus, token), ExchangeTimeout,
+                cancellationToken, task => RazerFeatureTransport.TrackPendingCall(devicePath, task))
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    private byte[] QueryCore(byte[] request, Func<byte[], bool> isMatch,
+        bool validateStatus, CancellationToken cancellationToken)
+    {
         try
         {
             string? lastReadError = null;
@@ -41,6 +58,7 @@ internal sealed class RazerAccessoryHidTransport(string devicePath)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 using var handle = Open(devicePath);
+                cancellationToken.ThrowIfCancellationRequested();
                 if (!HidD_SetFeature(handle, request, request.Length))
                 {
                     throw new Win32Exception(
@@ -50,7 +68,9 @@ internal sealed class RazerAccessoryHidTransport(string devicePath)
 
                 for (var inAttempt = 0; inAttempt < MaxInAttempts; inAttempt++)
                 {
-                    await Task.Delay(RetryDelay, cancellationToken).ConfigureAwait(false);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    Thread.Sleep(RetryDelay);
+                    cancellationToken.ThrowIfCancellationRequested();
                     var response = new byte[request.Length];
                     response[0] = request[0];
                     if (!HidD_GetFeature(handle, response, response.Length))
@@ -61,37 +81,30 @@ internal sealed class RazerAccessoryHidTransport(string devicePath)
                         continue;
                     }
 
-                    if (validateStatus && !IsRetryable(response))
-                    {
-                        if (response[1] == 0x05)
-                        {
-                            throw new NotSupportedException(
-                                "The accessory does not support this command.");
-                        }
-                    }
-
-                    if (isMatch(response))
-                    {
-                        return response;
-                    }
-
-                    if (validateStatus && response[1] is 0x00 or 0x03)
-                    {
-                        break;
-                    }
+                    if (!isMatch(response) || response[0] != request[0] || response[2] != request[2]) continue;
+                    if (IsSuccessfulResponse(request, response, validateStatus)) return response;
                 }
             }
 
             throw new TimeoutException(
                 lastReadError ?? "The accessory did not return a matching feature report.");
         }
-        finally
-        {
-            _gate.Release();
-        }
+        catch (OperationCanceledException) { throw; }
     }
 
-    private static bool IsRetryable(byte[] response) => response[1] is 0x01 or 0x04;
+    internal static bool IsSuccessfulResponse(byte[] request, byte[] response, bool validateStatus = true)
+    {
+        if (response.Length != request.Length || response[0] != request[0] ||
+            response[2] != request[2] || response[7] != request[7] || response[8] != request[8]) return false;
+        if (!validateStatus) return true;
+        return response[1] switch
+        {
+            2 => true,
+            1 or 4 => false,
+            5 => throw new NotSupportedException("The accessory does not support this command."),
+            _ => throw new InvalidOperationException($"Accessory command failed with status 0x{response[1]:X2}."),
+        };
+    }
 
     private static SafeFileHandle Open(string path)
     {

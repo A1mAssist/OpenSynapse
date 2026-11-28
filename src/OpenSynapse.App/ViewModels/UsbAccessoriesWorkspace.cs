@@ -357,7 +357,7 @@ public sealed partial class UsbAccessoriesWorkspace : INotifyPropertyChanged, IA
                 }
             case RazerHeadsetAudioTransport.AvneraFeature65:
                 await using (var avnera = new RazerAvneraHeadsetService(
-                    connection.DevicePath, Diagnostic, connection.FeatureReportByteLength))
+                    connection.DevicePath, Diagnostic, connection.FeatureReportByteLength, connection.ProductId))
                 {
                     return await avnera.TryReadLinkStatusAsync(cancellationToken).ConfigureAwait(false);
                 }

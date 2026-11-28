@@ -5021,4 +5021,31 @@
   <data name="MacroDeleteInUseElsewhere" xml:space="preserve">
     <value>이 매크로는 다음 프로필에 할당되어 있습니다: {0}. 먼저 해당 프로필의 장치 페이지에서 해제하세요.</value>
   </data>
+  <data name="LeviathanSpatialTitle.Text" xml:space="preserve"><value>공간 오디오 및 헤드 트래킹</value></data>
+  <data name="LeviathanModeStereo" xml:space="preserve"><value>스테레오</value></data>
+  <data name="LeviathanModeBinaural" xml:space="preserve"><value>THX Spatial Audio · 가상 헤드폰</value></data>
+  <data name="LeviathanModeMultichannel" xml:space="preserve"><value>THX Spatial Audio · 가상 스피커</value></data>
+  <data name="LeviathanModeRoomFill" xml:space="preserve"><value>룸 필</value></data>
+  <data name="LeviathanSpatialDescription.Text" xml:space="preserve"><value>가상 헤드폰과 가상 스피커 모드는 머리 위치를 따라갑니다. 스테레오와 룸 필 모드에서는 헤드 트래킹을 사용하지 않습니다.</value></data>
+  <data name="LightingStudioReactiveStyleKeyFade" xml:space="preserve"><value>키 페이드</value></data>
+  <data name="HapticCurveDescription.Text" xml:space="preserve"><value>Choose the modes available when cycling the wheel. Custom curves control resistance within each detent; edits apply and save automatically.</value></data>
+  <data name="HapticCurveLinked.Header" xml:space="preserve"><value>Use the same curve in both directions</value></data>
+  <data name="HapticCurveUp" xml:space="preserve"><value>Scroll up · clockwise</value></data>
+  <data name="HapticCurveDown" xml:space="preserve"><value>Scroll down · counterclockwise</value></data>
+  <data name="HapticCurveSteps.Header" xml:space="preserve"><value>Detents per revolution</value></data>
+  <data name="HapticCurveTension.Header" xml:space="preserve"><value>Resistance (0–100)</value></data>
+  <data name="HapticCurveAxes.Text" xml:space="preserve"><value>Horizontal: position within one detent (0–100%). Vertical: relative resistance (0–100%). Drag the three middle points or enter their coordinates.</value></data>
+  <data name="HapticCurvePosition.Header" xml:space="preserve"><value>Position (%)</value></data>
+  <data name="HapticCurveStrength.Header" xml:space="preserve"><value>Resistance (%)</value></data>
+  <data name="HapticCurveStart" xml:space="preserve"><value>Start</value></data>
+  <data name="HapticCurveRise" xml:space="preserve"><value>Rising control</value></data>
+  <data name="HapticCurveMiddle" xml:space="preserve"><value>Middle</value></data>
+  <data name="HapticCurveFall" xml:space="preserve"><value>Falling control</value></data>
+  <data name="HapticCurveEnd" xml:space="preserve"><value>End</value></data>
+  <data name="HapticCurveRead.Content" xml:space="preserve"><value>Read device</value></data>
+  <data name="HapticCurveDefault.Content" xml:space="preserve"><value>Use default curve</value></data>
+  <data name="HapticCurveRestore.Content" xml:space="preserve"><value>Restore saved settings</value></data>
+  <data name="HapticCurveInvalid" xml:space="preserve"><value>Enter finite whole numbers within the displayed range.</value></data>
+  <data name="HapticCurveReadFirst" xml:space="preserve"><value>Read the device before editing its Hapticore settings.</value></data>
+  <data name="HapticBleDescription.Text" xml:space="preserve"><value>Select a position in this onboard profile’s enabled wheel modes. Custom curves and mode names are configured over USB or the receiver. Changes apply and save automatically.</value></data>
 </root>

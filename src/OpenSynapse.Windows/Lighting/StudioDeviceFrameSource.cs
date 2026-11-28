@@ -74,8 +74,17 @@ public class StudioDeviceFrameSource : ISoftwareLightingFrameSource
     {
         ArgumentNullException.ThrowIfNull(layers);
         var snapshot = layers.ToArray();
-        _trigger.Update(snapshot, _matrixRows, _matrixColumns);
-        Volatile.Write(ref _layers, snapshot);
+        lock (_gate)
+        {
+            var active = snapshot.Select(layer => layer.Id).ToHashSet();
+            foreach (var id in _clocks.Keys.Where(id => !active.Contains(id)).ToArray()) _clocks.Remove(id);
+            _states.Retain(active);
+            foreach (var layer in snapshot)
+                if (!_clocks.ContainsKey(layer.Id))
+                    _clocks[layer.Id] = CreateClock(layer.TimebaseId == Guid.Empty ? layer.Id : layer.TimebaseId);
+            _trigger.Update(snapshot, _matrixRows, _matrixColumns);
+            _layers = snapshot;
+        }
     }
 
     /// <summary>
@@ -92,8 +101,10 @@ public class StudioDeviceFrameSource : ISoftwareLightingFrameSource
     }
 
     /// <summary>Starts playback without fabricating a held key.</summary>
-    public virtual int TriggerPlayback(StudioTriggerInput input, double nowSeconds) =>
-        _trigger.Handle(input, nowSeconds);
+    public virtual int TriggerPlayback(StudioTriggerInput input, double nowSeconds)
+    {
+        lock (_gate) return _trigger.Handle(input, nowSeconds);
+    }
 
     internal virtual void RestoreHeldKeys(IEnumerable<(int Row, int Column)> keys)
     {
@@ -105,12 +116,13 @@ public class StudioDeviceFrameSource : ISoftwareLightingFrameSource
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var layers = Volatile.Read(ref _layers);
         var now = Math.Max(0, elapsed.TotalSeconds);
-        var timed = new (StudioLayerRender Layer, double Seconds)[layers.Length];
+        (StudioLayerRender Layer, double Seconds)[] timed;
         StudioKeyState keys;
         lock (_gate)
         {
+            var layers = _layers;
+            timed = new (StudioLayerRender, double)[layers.Length];
             keys = SnapshotKeys(now);
             for (var index = 0; index < layers.Length; index++)
             {
@@ -194,10 +206,12 @@ public class StudioDeviceFrameSource : ISoftwareLightingFrameSource
         lock (_gate)
         {
             if (_clocks.TryGetValue(id, out var clock)) return clock;
-            var phase = id == Guid.Empty ? 0 : (id.GetHashCode() & 0x7FFF) / 32768d;
-            clock = new StudioPlaybackClock(phase);
+            clock = CreateClock(id);
             _clocks[id] = clock;
             return clock;
         }
     }
+
+    private static StudioPlaybackClock CreateClock(Guid timebaseId) =>
+        new(timebaseId == Guid.Empty ? 0 : (timebaseId.GetHashCode() & 0x7FFF) / 32768d);
 }

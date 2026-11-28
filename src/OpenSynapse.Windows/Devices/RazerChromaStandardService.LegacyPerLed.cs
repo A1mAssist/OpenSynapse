@@ -24,10 +24,17 @@ public sealed partial class RazerChromaStandardService
             return cached;
         }
 
-        var response = await QueryAsync(
-            RazerLegacyChromaProtocol.GetRegionIds, "read region ids", cancellationToken).ConfigureAwait(false);
-        // The bundle falls back to region 1 when the list is empty.
-        _legacyRegionId = RazerLegacyChromaProtocol.ReadFirstRegionId(response) ?? (byte)1;
+        try
+        {
+            var response = await QueryAsync(
+                RazerLegacyChromaProtocol.GetRegionIds, "read region ids", cancellationToken).ConfigureAwait(false);
+            _legacyRegionId = RazerLegacyChromaProtocol.ReadFirstRegionId(response) ?? (byte)1;
+        }
+        catch (Exception exception) when (_productId == 0x0F51 && IsExpected(exception))
+        {
+            // FiverV2 explicitly uses LED 1 if the region-list command is unavailable.
+            _legacyRegionId = 1;
+        }
         return _legacyRegionId.Value;
     }
 

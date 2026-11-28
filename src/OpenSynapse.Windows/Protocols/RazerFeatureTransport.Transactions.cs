@@ -11,7 +11,7 @@ public sealed partial class RazerFeatureTransport
 
     internal static bool UsesPinnedStandardTransaction(string devicePath) =>
         DeviceIdParser.TryParse(devicePath, out var vendorId, out var productId) &&
-        vendorId == 0x1532 && (productId == 0x025C || productId is 0x0086 or 0x0088);
+        vendorId == 0x1532 && productId is 0x025C or 0x0086 or 0x0088 or 0x0F19;
 
     private static bool IsLinkerCommand(byte commandClass, byte commandId) =>
         commandClass == 0x00 && commandId is 0xBF or 0xC5 or 0xC7 or 0x47;
@@ -64,14 +64,21 @@ public sealed partial class RazerFeatureTransport
                 : NextDockTransactionId(ref sequence);
         }
 
+        if (parsed && vendorId == 0x1532 && pathProductId is 0x00CF or 0x00F1)
+        {
+            // LinkerMultiDevices routes all host commands through E0, including lighting.
+            if (freshDockHandle) sequence = -1;
+            var next = NextDockTransactionId(ref sequence);
+            return commandClass == 0 && commandId is 0x41 or 0x46 ? next : (byte)(0xE0 | next);
+        }
         if (DeviceIdParser.TryParse(devicePath, out _, out var productId) &&
-            RazerKeyboardProtocol.UsesDualLinkTransaction(productId))
+            (RazerKeyboardProtocol.UsesDualLinkTransaction(productId) || productId == 0x02DA))
         {
             // DualLinkKeyboard rotates every command from the same high-bank sequence,
             // including the firmware handshake whose catalog transaction is the 0xFF wildcard.
             if (commandClass == 0x00 && commandId is 0x41 or 0x46)
-                return manifestKeyboard ? NextDockTransactionId(ref sequence) : NextTransactionId(ref sequence);
-            return (byte)(0x80 | (manifestKeyboard ? NextDockTransactionId(ref sequence) : NextTransactionId(ref sequence)));
+                return manifestKeyboard || productId == 0x02DA ? NextDockTransactionId(ref sequence) : NextTransactionId(ref sequence);
+            return (byte)(0x80 | (manifestKeyboard || productId == 0x02DA ? NextDockTransactionId(ref sequence) : NextTransactionId(ref sequence)));
         }
         if (isHost && RazerDualDongleCatalog.CategoryOf(pathProductId) == DeviceCategory.Keyboard &&
             IsLinkerCommand(commandClass, commandId))

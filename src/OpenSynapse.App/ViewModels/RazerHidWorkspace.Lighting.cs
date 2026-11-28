@@ -26,7 +26,7 @@ public sealed partial class RazerHidWorkspace
             .Select(EndpointKey)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         _restoredLightingEndpoints.IntersectWith(liveEndpoints);
-        if (connections.Count == 0 || StudioLightingActive?.Invoke() == true)
+        if (!_displayLightingAvailable || connections.Count == 0 || StudioLightingActive?.Invoke() == true)
         {
             return;
         }

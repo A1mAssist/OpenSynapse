@@ -234,25 +234,25 @@
       "commandId": "08",
       "arguments": ""
     },
-    "legacy-display-mux.get": {
-      "transactionId": "1F",
-      "dataSize": "03",
-      "commandClass": "0D",
-      "commandId": "90",
-      "arguments": "000000"
-    },
-    "legacy-display-mux.set": {
-      "transactionId": "1F",
-      "dataSize": "03",
-      "commandClass": "0D",
-      "commandId": "10",
-      "arguments": ""
-    },
-    "legacy-display-mux-capabilities.get": {
+    "display-mux.get": {
       "transactionId": "1F",
       "dataSize": "02",
       "commandClass": "0D",
-      "commandId": "8B",
+      "commandId": "89",
+      "arguments": "0000"
+    },
+    "display-mux.set": {
+      "transactionId": "1F",
+      "dataSize": "02",
+      "commandClass": "0D",
+      "commandId": "09",
+      "arguments": ""
+    },
+    "display-mux-capabilities.get": {
+      "transactionId": "1F",
+      "dataSize": "02",
+      "commandClass": "0D",
+      "commandId": "8A",
       "arguments": "0000"
     }
   },
