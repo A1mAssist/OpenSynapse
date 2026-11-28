@@ -4,7 +4,7 @@
          FileVersion; otherwise an upgrade keeps the old DLLs and mixes XAML with them. -->
     <Version>1.7.4</Version>
     <AssemblyVersion>1.7.4.0</AssemblyVersion>
-    <FileVersion>1.7.4.34</FileVersion>
+    <FileVersion>1.7.4.36</FileVersion>
     <InformationalVersion>$(Version)</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>

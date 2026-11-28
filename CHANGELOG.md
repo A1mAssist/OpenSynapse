@@ -6,7 +6,7 @@ All notable user-visible changes to OpenSynapse are documented here.
 
 ## [Unreleased]
 
-Cumulative changes for 1.7.4, including the beta34 test build and its corrected MSI installer.
+## [1.7.4] - 2026-11-28
 
 ### Added
 
@@ -54,6 +54,7 @@ Cumulative changes for 1.7.4, including the beta34 test build and its corrected 
 - **Onboard and Bluetooth profiles**: background reads preserve an unapplied slot selection. Bluetooth mapping and scroll changes target the active profile; Mouse Dock Pro accepts short linked-device profile replies.
 - **Polling-rate controls**: retain controls after transient readback failures and preserve the selected fullscreen rate instead of showing an empty value after switching, including 8000 Hz. Device changes and initialization no longer save a control's temporary default; failed saves restore the selection.
 - **DPI and calibration**: applying the stage table also applies the active DPI. Viper calibration no longer dismisses its start panel on a valid short reply; Enter, Space or any mouse's left button can finish sampling while the pointer is suspended. Cancellation restores sensor state, and firmware-recalculated Manual/Mini values remain applied but unconfirmed instead of being discarded.
+- **Calibration display**: retry an interrupted initial read when reopening the device page, so the current mode and parameters appear without reopening the selector. Preserve edits after a completed read.
 - **Receiver indicators and mouse power**: use each receiver's command channel and the correct three status modes, with readback checks. Indicator colors follow connection/battery state rather than a custom RGB value. Correct the low-battery threshold command for the affected mouse family.
 - **Mapping layout**: align mouse key lists at the top and place hotspots using the product image's actual offsets, including Basilisk V3 Pro Phantom Green.
 
@@ -89,7 +90,7 @@ Cumulative changes for 1.7.4, including the beta34 test build and its corrected 
 
 #### Installation and device communication
 
-- **MSI shutdown**: fix helper startup failing with WMI error 21 and falsely reporting that input recovery is still running. Report actual launch/query failures and preserve recovery/updater waits. The corrected beta34 installer is `Setup-fixed.msi`.
+- **MSI shutdown**: fix helper startup failing with WMI error 21 and falsely reporting that input recovery is still running. Report actual launch/query failures and preserve recovery/updater waits.
 - **Service installation and requests**: register the service during elevated MSI installation; optional registration can retry on first launch. Protect service-directory ownership, verify driver packages in the protected service cache, and keep invalid-path requests from terminating the service worker.
 - **Download failures**: validate returned byte ranges, cancel remaining segments after a failure, bound stalled reads and replace cached packages only after a complete download. THX manifest requests use the current proxy with a 15-second timeout and one retry.
 - **Device communication**: correct affected peripheral report lengths, product aliases and profile/port response checks, and improve timeout cancellation and native resource cleanup.
